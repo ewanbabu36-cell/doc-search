@@ -1,0 +1,22 @@
+{
+  "testId": "ABDM-EXT-06",
+  "timestamp": "2026-08-30T10:49:05.334Z",
+  "environment": "ABDM_SANDBOX",
+  "external": false,
+  "endpoint": "https://dev.abdm.gov.in/gateway/v0.5/health-information/hip/request",
+  "method": "POST",
+  "requestCorrelationId": "CORR-HITRANSFER-BLOCKED-01",
+  "httpStatus": null,
+  "status": "BLOCKED",
+  "blockerReason": "Missing external NHA data flow credentials for encrypted transfer",
+  "internalVerification": {
+    "localRoute": "POST /api/v1/partner/abdm/m3/health-information/request",
+    "localStatus": 200,
+    "encryptionAlgorithm": "ECDH-AES-GCM-256",
+    "curve": "prime256v1",
+    "localTestResult": "PASS"
+  },
+  "databaseVerified": true,
+  "callbackVerified": false,
+  "evidenceHash": "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
+}

@@ -1,0 +1,32 @@
+name: End-to-End (E2E) Clinical Regression
+
+on:
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    name: Full Clinical Workflows Regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9.15.4
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Execute Full Test Suites
+        run: pnpm test

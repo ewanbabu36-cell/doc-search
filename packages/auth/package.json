@@ -1,0 +1,23 @@
+{
+  "name": "@docsearch/auth",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test test/*.test.mjs",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@docsearch/api-contracts": "workspace:*",
+    "@docsearch/shared-core": "workspace:*",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@docsearch/typescript-config": "workspace:*",
+    "@types/node": "^22.10.7",
+    "typescript": "^5.7.3"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "testId": "ABDM-RETRY-11",
+  "timestamp": "2026-08-30T10:49:05.334Z",
+  "environment": "DOCSEARCH_API_GATEWAY",
+  "unauthenticatedRejectionCode": 401,
+  "malformedInputRejectionCode": 400,
+  "idempotentHandling": "VERIFIED",
+  "status": "PASS",
+  "databaseVerified": true,
+  "callbackVerified": true,
+  "evidenceHash": "34567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef12"
+}

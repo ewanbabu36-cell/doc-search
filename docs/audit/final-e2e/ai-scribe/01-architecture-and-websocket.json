@@ -1,0 +1,9 @@
+{
+  "capability": "AI_SCRIBE_WEBSOCKET",
+  "endpoint": "POST /api/v1/partner/ai-copilot/ambient-scribe/soap",
+  "transport": "Fastify REST & WebSocket Bridge",
+  "authMechanism": "JWT Bearer authenticate Guard",
+  "status": "INTERNAL_ONLY",
+  "realWorldStatus": "BLOCKED_BY_BROWSER_CLIENT",
+  "timestamp": "2026-08-30T10:54:09.021Z"
+}

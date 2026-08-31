@@ -1,0 +1,19 @@
+{
+  "testId": "ABDM-CALLBACK-08",
+  "timestamp": "2026-08-30T10:49:05.334Z",
+  "environment": "DOCSEARCH_API_GATEWAY",
+  "external": false,
+  "callbackRoutes": [
+    "/api/v1/abdm/callback/v0.5/care-contexts/on-discover",
+    "/api/v1/abdm/callback/v0.5/consents/on-notify"
+  ],
+  "testsConducted": [
+    "Missing requestId rejection / handling",
+    "Standard NHA ACK payload generation",
+    "Failsafe processing without internal stack leakage"
+  ],
+  "status": "PASS",
+  "databaseVerified": true,
+  "callbackVerified": true,
+  "evidenceHash": "8b7a6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b"
+}

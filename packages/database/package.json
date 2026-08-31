@@ -1,0 +1,28 @@
+{
+  "name": "@docsearch/database",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@docsearch/shared-core": "workspace:*",
+    "drizzle-orm": "^0.38.4",
+    "pg": "^8.13.1",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@docsearch/typescript-config": "workspace:*",
+    "@types/node": "^22.10.7",
+    "@types/pg": "^8.11.10",
+    "drizzle-kit": "^0.30.2",
+    "typescript": "^5.7.3"
+  },
+  "type": "module"
+}

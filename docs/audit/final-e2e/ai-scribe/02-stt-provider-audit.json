@@ -1,0 +1,8 @@
+{
+  "capability": "REAL_STT_PROVIDER",
+  "configuredProvider": "LOCAL_NLP_SYNTHESIZER",
+  "externalCloudApiKey": null,
+  "status": "BLOCKED",
+  "reason": "No external speech-to-text API keys (e.g. Google Cloud Speech, OpenAI Whisper, AWS Transcribe) configured in process.env",
+  "timestamp": "2026-08-30T10:54:09.021Z"
+}

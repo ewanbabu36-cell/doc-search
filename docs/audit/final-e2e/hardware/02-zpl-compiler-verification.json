@@ -1,0 +1,12 @@
+{
+  "capability": "ZEBRA_ZPL_COMPILER",
+  "templatesTested": [
+    "LIMS_VACUTAINER_TUBE",
+    "PATIENT_ID_WRISTBAND",
+    "PHARMACY_UNIT_DOSE_SACHET"
+  ],
+  "zplOutputSample": "^XA\\n^PW400\\n^LL200\\n^FO20,15^A0N,22,22^FDKavita Joshi (MRN-2026-9041)^FS\\n^FO20,42^A0N,18,18^FDCBC + Differential [PURPLE_EDTA]^FS\\n^FO20,68^BY2,2,45^BCN,45,Y,N,N^FDTUB-2026-9812^FS\\n^FO280,68^BQN,2,4^FDQA,TUB-2026-9812^FS\\n^XZ",
+  "zplSyntaxValid": true,
+  "status": "INTERNAL_ONLY",
+  "timestamp": "2026-08-30T10:54:09.023Z"
+}

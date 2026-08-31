@@ -1,0 +1,45 @@
+# Dependencies & Package Managers
+node_modules/
+.pnpm-store/
+.npm/
+
+# Build outputs & Bundles
+dist/
+build/
+out/
+.next/
+dist/bundle/
+*.tsbuildinfo
+*.map
+
+# Monorepo, Dev Server & Tooling Caches
+.turbo/
+.vite/
+.eslintcache
+.nyc_output/
+coverage/
+scratch/
+
+# Logs & Dumps
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Environment & Secrets (Strictly Blocked)
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# IDE & OS
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+Thumbs.db

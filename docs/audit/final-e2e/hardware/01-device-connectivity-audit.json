@@ -1,0 +1,16 @@
+{
+  "capability": "PHYSICAL_HARDWARE_PROBE",
+  "detectedPhysicalDevices": {
+    "usbBarcodeScanners": 0,
+    "uhfRfidReaders": 0,
+    "zebraThermalPrinters": 0
+  },
+  "driverProtocolsSupported": [
+    "WEB_USB",
+    "WEB_SERIAL",
+    "LOCAL_BRIDGE_WEBSOCKET"
+  ],
+  "status": "BLOCKED",
+  "reason": "Host running in headless environment without physically connected USB/Serial healthcare peripherals",
+  "timestamp": "2026-08-30T10:54:09.023Z"
+}

@@ -1,0 +1,20 @@
+{
+  "testId": "ABDM-EXT-01",
+  "timestamp": "2026-08-30T10:49:05.330Z",
+  "environment": "ABDM_SANDBOX",
+  "external": false,
+  "endpoint": "https://dev.abdm.gov.in/gateway/v0.5/sessions",
+  "method": "POST",
+  "requestCorrelationId": "CORR-AUTH-BLOCKED-01",
+  "httpStatus": null,
+  "status": "BLOCKED",
+  "blockerReason": "Missing ABDM_CLIENT_ID and ABDM_CLIENT_SECRET environment configuration",
+  "redactedFields": [
+    "clientSecret",
+    "accessToken",
+    "refreshToken"
+  ],
+  "databaseVerified": false,
+  "callbackVerified": false,
+  "evidenceHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

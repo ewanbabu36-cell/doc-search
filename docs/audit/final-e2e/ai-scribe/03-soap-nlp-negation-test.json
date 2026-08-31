@@ -1,0 +1,43 @@
+{
+  "capability": "SOAP_NLP_ACCURACY",
+  "testInput": "Doctor: Any chest pain? Patient: No chest pain, doctor. Patient denies vomiting or syncope.",
+  "negationCheck": {
+    "inputNegation": "No chest pain",
+    "parsedSubjective": "No chest pain, syncope, or orthopnea reported",
+    "negationPreserved": true,
+    "falsePositiveAvoided": true
+  },
+  "icd10Extraction": [
+    {
+      "code": "I50.9",
+      "description": "Heart failure, unspecified",
+      "confidencePct": 96.5
+    },
+    {
+      "code": "I10",
+      "description": "Essential (primary) hypertension",
+      "confidencePct": 98.2
+    }
+  ],
+  "prescriptionExtraction": [
+    {
+      "drugName": "Torsemide 10mg Tablet",
+      "dosage": "10mg",
+      "frequency": "Once daily (morning)",
+      "duration": "14 days"
+    },
+    {
+      "drugName": "Telmisartan 80mg Tablet",
+      "dosage": "80mg",
+      "frequency": "Once daily",
+      "duration": "30 days"
+    }
+  ],
+  "approvalGate": {
+    "initialStatus": "AI_DRAFTED",
+    "committedWithoutApproval": false,
+    "finalStatusAfterApproval": "PHYSICIAN_APPROVED"
+  },
+  "status": "REAL_VERIFIED",
+  "timestamp": "2026-08-30T10:54:09.022Z"
+}

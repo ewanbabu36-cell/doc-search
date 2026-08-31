@@ -1,0 +1,6 @@
+{
+  "rawEvidenceSummary": "External Sandbox HTTP transactions could not be performed due to missing ABDM credentials.",
+  "configuredTargetSandboxUrl": "https://dev.abdm.gov.in/gateway",
+  "auditTimestamp": "2026-08-30T10:49:05.358Z",
+  "complianceNotice": "No fake external sandbox responses were fabricated per non-negotiable audit guidelines."
+}

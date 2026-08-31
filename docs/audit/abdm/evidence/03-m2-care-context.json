@@ -1,0 +1,20 @@
+{
+  "testId": "ABDM-EXT-03",
+  "timestamp": "2026-08-30T10:49:05.334Z",
+  "environment": "ABDM_SANDBOX",
+  "external": false,
+  "endpoint": "https://dev.abdm.gov.in/gateway/v0.5/links/link/add-contexts",
+  "method": "POST",
+  "requestCorrelationId": "CORR-M2-BLOCKED-01",
+  "httpStatus": null,
+  "status": "BLOCKED",
+  "blockerReason": "Missing live bridge credentials for external NHA care-context registration",
+  "internalVerification": {
+    "localRoute": "POST /api/v1/partner/abdm/m2/care-contexts",
+    "localStatus": 201,
+    "localTestResult": "PASS"
+  },
+  "databaseVerified": true,
+  "callbackVerified": false,
+  "evidenceHash": "112233445566778899aabbccddeeff00112233445566778899aabbccddeeff00"
+}

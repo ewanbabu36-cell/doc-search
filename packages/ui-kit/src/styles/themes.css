@@ -1,0 +1,452 @@
+/**
+ * DocSearch Enterprise Healthcare Multi-Theme System
+ * 1. Advance Pro (Default Cyber-Medical)
+ * 2. Nordic Pure (Apple Health Minimalist Light)
+ * 3. Oceanic Navy (Johns Hopkins / Enterprise Navy)
+ * 4. Ayur Wellness (Bio-Botanical Organic Green)
+ * 5. Cyber Surgeon (Neon Ultraviolet & Robotics)
+ * 6. Rose Care (Maternity & Pediatrics Soft Coral)
+ * 7. Healthcare Light (Classic Light)
+ * 8. Black & White (Accessibility)
+ */
+
+/* ==========================================================================
+   1. ADVANCE PRO (CYBER-MEDICAL DARK) - DEFAULT
+   ========================================================================== */
+:root,
+.theme-advance-pro {
+  --ds-color-bg: #090e17;
+  --ds-color-surface: #101726;
+  --ds-color-surface-subtle: #182235;
+  --ds-color-surface-hover: #1f2d47;
+  --ds-color-surface-selected: #1e3a5f;
+
+  --ds-color-border: #1e2c45;
+  --ds-color-border-subtle: #162238;
+  --ds-color-border-strong: #334b75;
+
+  --ds-color-text-primary: #f8fafc;
+  --ds-color-text-secondary: #cbd5e1;
+  --ds-color-text-muted: #8da2c0;
+  --ds-color-text-inverse: #090e17;
+
+  --ds-color-primary: #06b6d4;
+  --ds-color-primary-hover: #22d3ee;
+  --ds-color-primary-subtle: #083344;
+  --ds-color-primary-foreground: #090e17;
+
+  --ds-color-secondary: #8b5cf6;
+  --ds-color-secondary-hover: #a855f7;
+  --ds-color-secondary-subtle: #2e1065;
+  --ds-color-secondary-foreground: #ffffff;
+
+  --ds-color-accent: #3b82f6;
+  --ds-color-accent-hover: #60a5fa;
+  --ds-color-accent-foreground: #ffffff;
+
+  --ds-color-success: #10b981;
+  --ds-color-success-subtle: #064e3b;
+  --ds-color-success-foreground: #ffffff;
+
+  --ds-color-warning: #f59e0b;
+  --ds-color-warning-subtle: #451a03;
+  --ds-color-warning-foreground: #ffffff;
+
+  --ds-color-danger: #f43f5e;
+  --ds-color-danger-subtle: #4c0519;
+  --ds-color-danger-foreground: #ffffff;
+
+  --ds-color-focus-ring: #06b6d4;
+  --ds-color-backdrop: rgba(4, 7, 13, 0.85);
+
+  --ds-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4);
+  --ds-shadow-base: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+  --ds-shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.6);
+  --ds-shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.7), 0 0 20px rgba(6, 182, 212, 0.2);
+  --ds-shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 35px rgba(6, 182, 212, 0.3);
+}
+
+/* ==========================================================================
+   2. NORDIC PURE (APPLE HEALTH MINIMALIST LIGHT)
+   ========================================================================== */
+.theme-nordic-pure {
+  --ds-color-bg: #f8fafc;
+  --ds-color-surface: #ffffff;
+  --ds-color-surface-subtle: #f1f5f9;
+  --ds-color-surface-hover: #e2e8f0;
+  --ds-color-surface-selected: #e0f2fe;
+
+  --ds-color-border: #e2e8f0;
+  --ds-color-border-subtle: #f1f5f9;
+  --ds-color-border-strong: #cbd5e1;
+
+  --ds-color-text-primary: #0f172a;
+  --ds-color-text-secondary: #334155;
+  --ds-color-text-muted: #64748b;
+  --ds-color-text-inverse: #ffffff;
+
+  --ds-color-primary: #0284c7;
+  --ds-color-primary-hover: #0369a1;
+  --ds-color-primary-subtle: #e0f2fe;
+  --ds-color-primary-foreground: #ffffff;
+
+  --ds-color-secondary: #6366f1;
+  --ds-color-secondary-hover: #4f46e5;
+  --ds-color-secondary-subtle: #eef2ff;
+  --ds-color-secondary-foreground: #ffffff;
+
+  --ds-color-accent: #0ea5e9;
+  --ds-color-accent-hover: #0284c7;
+  --ds-color-accent-foreground: #ffffff;
+
+  --ds-color-success: #10b981;
+  --ds-color-success-subtle: #d1fae5;
+  --ds-color-success-foreground: #065f46;
+
+  --ds-color-warning: #f59e0b;
+  --ds-color-warning-subtle: #fef3c7;
+  --ds-color-warning-foreground: #92400e;
+
+  --ds-color-danger: #ef4444;
+  --ds-color-danger-subtle: #fee2e2;
+  --ds-color-danger-foreground: #991b1b;
+
+  --ds-color-focus-ring: #0284c7;
+  --ds-color-backdrop: rgba(15, 23, 42, 0.4);
+
+  --ds-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --ds-shadow-base: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --ds-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --ds-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --ds-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+/* ==========================================================================
+   3. OCEANIC NAVY (JOHNS HOPKINS / ENTERPRISE NAVY)
+   ========================================================================== */
+.theme-oceanic-navy {
+  --ds-color-bg: #07101e;
+  --ds-color-surface: #0e1e38;
+  --ds-color-surface-subtle: #142a4d;
+  --ds-color-surface-hover: #1c3866;
+  --ds-color-surface-selected: #1d4ed8;
+
+  --ds-color-border: #1e3a66;
+  --ds-color-border-subtle: #142847;
+  --ds-color-border-strong: #2563eb;
+
+  --ds-color-text-primary: #f0f6fc;
+  --ds-color-text-secondary: #cbd5e1;
+  --ds-color-text-muted: #7dd3fc;
+  --ds-color-text-inverse: #07101e;
+
+  --ds-color-primary: #38bdf8;
+  --ds-color-primary-hover: #7dd3fc;
+  --ds-color-primary-subtle: #0369a1;
+  --ds-color-primary-foreground: #07101e;
+
+  --ds-color-secondary: #3b82f6;
+  --ds-color-secondary-hover: #60a5fa;
+  --ds-color-secondary-subtle: #1e3a8a;
+  --ds-color-secondary-foreground: #ffffff;
+
+  --ds-color-accent: #60a5fa;
+  --ds-color-accent-hover: #93c5fd;
+  --ds-color-accent-foreground: #07101e;
+
+  --ds-color-success: #34d399;
+  --ds-color-success-subtle: #064e3b;
+  --ds-color-success-foreground: #ffffff;
+
+  --ds-color-warning: #fbbf24;
+  --ds-color-warning-subtle: #78350f;
+  --ds-color-warning-foreground: #ffffff;
+
+  --ds-color-danger: #f87171;
+  --ds-color-danger-subtle: #7f1d1d;
+  --ds-color-danger-foreground: #ffffff;
+
+  --ds-color-focus-ring: #38bdf8;
+  --ds-color-backdrop: rgba(7, 16, 30, 0.85);
+
+  --ds-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.5);
+  --ds-shadow-base: 0 4px 6px -1px rgba(0, 0, 0, 0.6);
+  --ds-shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.7);
+  --ds-shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.8), 0 0 20px rgba(56, 189, 248, 0.2);
+  --ds-shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 35px rgba(56, 189, 248, 0.3);
+}
+
+/* ==========================================================================
+   4. AYUR WELLNESS (BIO-BOTANICAL ORGANIC GREEN)
+   ========================================================================== */
+.theme-ayur-wellness {
+  --ds-color-bg: #061c14;
+  --ds-color-surface: #0c2b20;
+  --ds-color-surface-subtle: #133d2e;
+  --ds-color-surface-hover: #1b4f3c;
+  --ds-color-surface-selected: #047857;
+
+  --ds-color-border: #1b4f3c;
+  --ds-color-border-subtle: #113829;
+  --ds-color-border-strong: #10b981;
+
+  --ds-color-text-primary: #f0fdf4;
+  --ds-color-text-secondary: #bbf7d0;
+  --ds-color-text-muted: #86efac;
+  --ds-color-text-inverse: #061c14;
+
+  --ds-color-primary: #10b981;
+  --ds-color-primary-hover: #34d399;
+  --ds-color-primary-subtle: #064e3b;
+  --ds-color-primary-foreground: #061c14;
+
+  --ds-color-secondary: #f59e0b;
+  --ds-color-secondary-hover: #fbbf24;
+  --ds-color-secondary-subtle: #451a03;
+  --ds-color-secondary-foreground: #ffffff;
+
+  --ds-color-accent: #a3e635;
+  --ds-color-accent-hover: #bef264;
+  --ds-color-accent-foreground: #061c14;
+
+  --ds-color-success: #22c55e;
+  --ds-color-success-subtle: #052e16;
+  --ds-color-success-foreground: #ffffff;
+
+  --ds-color-warning: #eab308;
+  --ds-color-warning-subtle: #422006;
+  --ds-color-warning-foreground: #ffffff;
+
+  --ds-color-danger: #f43f5e;
+  --ds-color-danger-subtle: #4c0519;
+  --ds-color-danger-foreground: #ffffff;
+
+  --ds-color-focus-ring: #10b981;
+  --ds-color-backdrop: rgba(6, 28, 20, 0.85);
+
+  --ds-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4);
+  --ds-shadow-base: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+  --ds-shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.6);
+  --ds-shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.7), 0 0 20px rgba(16, 185, 129, 0.2);
+  --ds-shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 35px rgba(16, 185, 129, 0.3);
+}
+
+/* ==========================================================================
+   5. CYBER SURGEON (NEON ULTRAVIOLET & ROBOTICS)
+   ========================================================================== */
+.theme-cyber-surgeon {
+  --ds-color-bg: #05020a;
+  --ds-color-surface: #100620;
+  --ds-color-surface-subtle: #1a0a33;
+  --ds-color-surface-hover: #260f4a;
+  --ds-color-surface-selected: #7c3aed;
+
+  --ds-color-border: #2e1065;
+  --ds-color-border-subtle: #1c083d;
+  --ds-color-border-strong: #8b5cf6;
+
+  --ds-color-text-primary: #faf5ff;
+  --ds-color-text-secondary: #e9d5ff;
+  --ds-color-text-muted: #c084fc;
+  --ds-color-text-inverse: #05020a;
+
+  --ds-color-primary: #a855f7;
+  --ds-color-primary-hover: #c084fc;
+  --ds-color-primary-subtle: #3b0764;
+  --ds-color-primary-foreground: #ffffff;
+
+  --ds-color-secondary: #06b6d4;
+  --ds-color-secondary-hover: #22d3ee;
+  --ds-color-secondary-subtle: #083344;
+  --ds-color-secondary-foreground: #090e17;
+
+  --ds-color-accent: #ec4899;
+  --ds-color-accent-hover: #f472b6;
+  --ds-color-accent-foreground: #ffffff;
+
+  --ds-color-success: #10b981;
+  --ds-color-success-subtle: #064e3b;
+  --ds-color-success-foreground: #ffffff;
+
+  --ds-color-warning: #f59e0b;
+  --ds-color-warning-subtle: #451a03;
+  --ds-color-warning-foreground: #ffffff;
+
+  --ds-color-danger: #f43f5e;
+  --ds-color-danger-subtle: #4c0519;
+  --ds-color-danger-foreground: #ffffff;
+
+  --ds-color-focus-ring: #a855f7;
+  --ds-color-backdrop: rgba(5, 2, 10, 0.85);
+
+  --ds-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.5);
+  --ds-shadow-base: 0 4px 6px -1px rgba(0, 0, 0, 0.6);
+  --ds-shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.7);
+  --ds-shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.8), 0 0 20px rgba(168, 85, 247, 0.25);
+  --ds-shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 35px rgba(168, 85, 247, 0.35);
+}
+
+/* ==========================================================================
+   6. ROSE CARE (MATERNITY & PEDIATRICS SOFT CORAL)
+   ========================================================================== */
+.theme-rose-care {
+  --ds-color-bg: #14080e;
+  --ds-color-surface: #220e18;
+  --ds-color-surface-subtle: #331525;
+  --ds-color-surface-hover: #451c32;
+  --ds-color-surface-selected: #e11d48;
+
+  --ds-color-border: #4c1d37;
+  --ds-color-border-subtle: #2d1020;
+  --ds-color-border-strong: #f43f5e;
+
+  --ds-color-text-primary: #fff1f2;
+  --ds-color-text-secondary: #fecdd3;
+  --ds-color-text-muted: #fda4af;
+  --ds-color-text-inverse: #14080e;
+
+  --ds-color-primary: #f43f5e;
+  --ds-color-primary-hover: #fb7185;
+  --ds-color-primary-subtle: #4c0519;
+  --ds-color-primary-foreground: #ffffff;
+
+  --ds-color-secondary: #fb923c;
+  --ds-color-secondary-hover: #fdba74;
+  --ds-color-secondary-subtle: #431407;
+  --ds-color-secondary-foreground: #ffffff;
+
+  --ds-color-accent: #f472b6;
+  --ds-color-accent-hover: #f9a8d4;
+  --ds-color-accent-foreground: #14080e;
+
+  --ds-color-success: #10b981;
+  --ds-color-success-subtle: #064e3b;
+  --ds-color-success-foreground: #ffffff;
+
+  --ds-color-warning: #f59e0b;
+  --ds-color-warning-subtle: #451a03;
+  --ds-color-warning-foreground: #ffffff;
+
+  --ds-color-danger: #e11d48;
+  --ds-color-danger-subtle: #4c0519;
+  --ds-color-danger-foreground: #ffffff;
+
+  --ds-color-focus-ring: #f43f5e;
+  --ds-color-backdrop: rgba(20, 8, 14, 0.85);
+
+  --ds-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4);
+  --ds-shadow-base: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+  --ds-shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.6);
+  --ds-shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.7), 0 0 20px rgba(244, 63, 94, 0.25);
+  --ds-shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 35px rgba(244, 63, 94, 0.35);
+}
+
+/* ==========================================================================
+   7. HEALTHCARE LIGHT (CLASSIC)
+   ========================================================================== */
+.theme-healthcare-light {
+  --ds-color-bg: #f8fafc;
+  --ds-color-surface: #ffffff;
+  --ds-color-surface-subtle: #f1f5f9;
+  --ds-color-surface-hover: #e2e8f0;
+  --ds-color-surface-selected: #e0f2fe;
+
+  --ds-color-border: #cbd5e1;
+  --ds-color-border-subtle: #e2e8f0;
+  --ds-color-border-strong: #94a3b8;
+
+  --ds-color-text-primary: #0f172a;
+  --ds-color-text-secondary: #334155;
+  --ds-color-text-muted: #64748b;
+  --ds-color-text-inverse: #ffffff;
+
+  --ds-color-primary: #0284c7;
+  --ds-color-primary-hover: #0369a1;
+  --ds-color-primary-subtle: #e0f2fe;
+  --ds-color-primary-foreground: #ffffff;
+
+  --ds-color-secondary: #475569;
+  --ds-color-secondary-hover: #334155;
+  --ds-color-secondary-subtle: #f1f5f9;
+  --ds-color-secondary-foreground: #ffffff;
+
+  --ds-color-accent: #0f766e;
+  --ds-color-accent-hover: #115e59;
+  --ds-color-accent-foreground: #ffffff;
+
+  --ds-color-success: #16a34a;
+  --ds-color-success-subtle: #dcfce7;
+  --ds-color-success-foreground: #ffffff;
+
+  --ds-color-warning: #d97706;
+  --ds-color-warning-subtle: #fef3c7;
+  --ds-color-warning-foreground: #ffffff;
+
+  --ds-color-danger: #dc2626;
+  --ds-color-danger-subtle: #fee2e2;
+  --ds-color-danger-foreground: #ffffff;
+
+  --ds-color-focus-ring: #0284c7;
+  --ds-color-backdrop: rgba(15, 23, 42, 0.4);
+
+  --ds-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --ds-shadow-base: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --ds-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --ds-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --ds-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+/* ==========================================================================
+   8. BLACK & WHITE (ACCESSIBILITY)
+   ========================================================================== */
+.theme-black-white {
+  --ds-color-bg: #000000;
+  --ds-color-surface: #121212;
+  --ds-color-surface-subtle: #1e1e1e;
+  --ds-color-surface-hover: #2d2d2d;
+  --ds-color-surface-selected: #3d3d3d;
+
+  --ds-color-border: #444444;
+  --ds-color-border-subtle: #2a2a2a;
+  --ds-color-border-strong: #ffffff;
+
+  --ds-color-text-primary: #ffffff;
+  --ds-color-text-secondary: #e0e0e0;
+  --ds-color-text-muted: #aaaaaa;
+  --ds-color-text-inverse: #000000;
+
+  --ds-color-primary: #ffffff;
+  --ds-color-primary-hover: #cccccc;
+  --ds-color-primary-subtle: #222222;
+  --ds-color-primary-foreground: #000000;
+
+  --ds-color-secondary: #cccccc;
+  --ds-color-secondary-hover: #ffffff;
+  --ds-color-secondary-subtle: #222222;
+  --ds-color-secondary-foreground: #000000;
+
+  --ds-color-accent: #ffffff;
+  --ds-color-accent-hover: #e0e0e0;
+  --ds-color-accent-foreground: #000000;
+
+  --ds-color-success: #ffffff;
+  --ds-color-success-subtle: #222222;
+  --ds-color-success-foreground: #000000;
+
+  --ds-color-warning: #ffffff;
+  --ds-color-warning-subtle: #222222;
+  --ds-color-warning-foreground: #000000;
+
+  --ds-color-danger: #ffffff;
+  --ds-color-danger-subtle: #222222;
+  --ds-color-danger-foreground: #000000;
+
+  --ds-color-focus-ring: #ffffff;
+  --ds-color-backdrop: rgba(0, 0, 0, 0.9);
+
+  --ds-shadow-sm: 0 0 0 1px #444444;
+  --ds-shadow-base: 0 0 0 1px #444444;
+  --ds-shadow-md: 0 0 0 2px #666666;
+  --ds-shadow-lg: 0 0 0 2px #ffffff;
+  --ds-shadow-xl: 0 0 0 3px #ffffff;
+}

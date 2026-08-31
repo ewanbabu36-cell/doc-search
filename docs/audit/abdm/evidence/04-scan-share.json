@@ -1,0 +1,20 @@
+{
+  "testId": "ABDM-EXT-04",
+  "timestamp": "2026-08-30T10:49:05.334Z",
+  "environment": "ABDM_SANDBOX",
+  "external": false,
+  "endpoint": "https://dev.abdm.gov.in/gateway/v1.0/patients/profile/share",
+  "method": "POST",
+  "requestCorrelationId": "CORR-SCAN-SHARE-BLOCKED-01",
+  "httpStatus": null,
+  "status": "BLOCKED",
+  "blockerReason": "External scan & share counter sync blocked by missing sandbox credentials",
+  "internalVerification": {
+    "localRoute": "POST /api/v1/partner/abdm/m2/scan-and-share",
+    "localStatus": 201,
+    "localTestResult": "PASS"
+  },
+  "databaseVerified": true,
+  "callbackVerified": false,
+  "evidenceHash": "aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899"
+}

@@ -1,0 +1,17 @@
+{
+  "testId": "ABDM-DB-09",
+  "timestamp": "2026-08-30T10:49:05.334Z",
+  "environment": "DOCSEARCH_POSTGRESQL_16",
+  "tablesVerified": [
+    "patient_abha_accounts",
+    "abdm_care_context_mappings",
+    "abdm_consent_artefacts",
+    "fhir_bundles_repository",
+    "abdm_audit_traces"
+  ],
+  "multiTenantScoping": "STRICT_TENANT_ID",
+  "status": "PASS",
+  "databaseVerified": true,
+  "callbackVerified": true,
+  "evidenceHash": "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+}

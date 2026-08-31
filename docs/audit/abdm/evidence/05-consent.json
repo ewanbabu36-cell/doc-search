@@ -1,0 +1,20 @@
+{
+  "testId": "ABDM-EXT-05",
+  "timestamp": "2026-08-30T10:49:05.334Z",
+  "environment": "ABDM_SANDBOX",
+  "external": false,
+  "endpoint": "https://dev.abdm.gov.in/gateway/v0.5/consent-requests/init",
+  "method": "POST",
+  "requestCorrelationId": "CORR-CONSENT-BLOCKED-01",
+  "httpStatus": null,
+  "status": "BLOCKED",
+  "blockerReason": "Missing HIU sandbox credentials for NHA Consent Manager handshake",
+  "internalVerification": {
+    "localRoute": "POST /api/v1/partner/abdm/m3/consent-requests",
+    "localStatus": 201,
+    "localTestResult": "PASS"
+  },
+  "databaseVerified": true,
+  "callbackVerified": false,
+  "evidenceHash": "99887766554433221100ffeeddccbbaa99887766554433221100ffeeddccbbaa"
+}

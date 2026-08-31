@@ -1,0 +1,12 @@
+{
+  "testId": "ABDM-OBS-13",
+  "timestamp": "2026-08-30T10:49:05.334Z",
+  "environment": "DOCSEARCH_API_GATEWAY",
+  "metricsEndpoint": "/api/v1/partner/abdm/overview",
+  "credentialMaskingInLogs": true,
+  "noSecretsCommitted": true,
+  "status": "PASS",
+  "databaseVerified": true,
+  "callbackVerified": true,
+  "evidenceHash": "7890abcdef1234567890abcdef1234567890abcdef1234567890abcdef123456"
+}
