@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Input, Select } from '@docsearch/ui-kit';
 import type { PartnerType, PartnerProfileDto } from '@docsearch/api-contracts';
+import { partnerService } from '../../services/partner-service.js';
 
 interface PartnerOnboardingModalProps {
   isOpen: boolean;
@@ -66,6 +67,7 @@ export const PartnerOnboardingModal: React.FC<PartnerOnboardingModalProps> = ({
       };
 
       setIsSubmitting(false);
+      partnerService.addPartner(created);
       onSuccess(created);
       onClose();
     }, 500);

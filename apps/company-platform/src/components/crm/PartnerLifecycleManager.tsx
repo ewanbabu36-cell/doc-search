@@ -71,11 +71,29 @@ export const PartnerLifecycleManager: React.FC = () => {
 
     if (error || !partner) {
       return (
-        <ErrorState
-          title="Partner Profile Error"
-          message={error || 'Partner data unavailable'}
-          onRetry={() => loadPartnerDetails(selectedPartnerId)}
-        />
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+          <ErrorState
+            title="Partner Profile Error"
+            message={error || 'Partner data unavailable'}
+            onRetry={() => loadPartnerDetails(selectedPartnerId)}
+          />
+          <button
+            type="button"
+            onClick={() => setSelectedPartnerId(null)}
+            style={{
+              padding: '10px 18px',
+              backgroundColor: '#06B6D4',
+              color: '#070C16',
+              border: 'none',
+              borderRadius: '8px',
+              fontWeight: 800,
+              cursor: 'pointer',
+              fontSize: '0.875rem'
+            }}
+          >
+            ← Back to Partner Directory
+          </button>
+        </div>
       );
     }
 

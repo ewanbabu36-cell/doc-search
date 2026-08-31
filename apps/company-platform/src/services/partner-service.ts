@@ -35,11 +35,31 @@ export interface IPartnerService {
 
 export class PartnerService implements IPartnerService {
   private readonly apiUrl?: string | undefined;
-  private partners: PartnerProfileDto[] = [...mockPartnerProfiles];
+  private partners: PartnerProfileDto[] = (() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('docsearch_custom_partners');
+      if (stored) {
+        try {
+          return JSON.parse(stored);
+        } catch {}
+      }
+    }
+    return [...mockPartnerProfiles];
+  })();
   private history: Record<string, PartnerTransitionHistoryDto[]> = { ...mockPartnerTransitionHistory };
 
   constructor(apiUrl?: string | undefined) {
     this.apiUrl = apiUrl;
+  }
+
+  addPartner(partner: PartnerProfileDto): PartnerProfileDto {
+    this.partners = [partner, ...this.partners.filter((p) => p.id !== partner.id)];
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('docsearch_custom_partners', JSON.stringify(this.partners));
+      } catch {}
+    }
+    return partner;
   }
 
   async getPartners(filters?: PartnerListFilters): Promise<PartnerListResponse> {
