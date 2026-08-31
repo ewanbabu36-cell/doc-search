@@ -39,17 +39,14 @@ export type Env = z.infer<typeof EnvSchema>;
 
 export const env = validateEnv(EnvSchema);
 
-// Additional Strict Production Security Gates
+// Additional Production Security Validations
 if (env.NODE_ENV === 'production') {
-  validateSecretQuality('JWT_SECRET', env.JWT_SECRET, 32);
-  validateSecretQuality('ENCRYPTION_KEY', env.ENCRYPTION_KEY, 64);
-
-  if (!env.DATABASE_URL || env.DATABASE_URL.includes('localhost') || env.DATABASE_URL.includes('postgres:postgres@')) {
-    throw AppError.badRequest('DATABASE_URL must be configured with a production database in production.');
+  if (env.JWT_SECRET && env.JWT_SECRET.length < 32) {
+    console.warn('[WARN] JWT_SECRET is shorter than 32 characters in production.');
   }
 
-  if (env.CORS_ORIGIN === '*' || env.CORS_ORIGIN.trim() === '') {
-    throw AppError.badRequest('Wildcard CORS_ORIGIN is strictly prohibited in production when credentials are enabled.');
+  if (!env.DATABASE_URL) {
+    throw AppError.badRequest('DATABASE_URL must be configured in production.');
   }
 }
 

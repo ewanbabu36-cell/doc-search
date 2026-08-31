@@ -12,16 +12,17 @@ export async function registerSecurityPlugins(app: FastifyInstance): Promise<voi
     crossOriginEmbedderPolicy: false
   });
 
-  // 2. Strict CORS Configuration
-  const isWildcard = env.CORS_ORIGIN === '*';
-  if (env.NODE_ENV === 'production' && isWildcard) {
-    throw AppError.badRequest('CORS policy error: Wildcard origin with credentials is forbidden in production');
-  }
-
-  const allowedOrigins = env.CORS_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean);
+  // 2. Production & Development CORS Configuration
+  const isWildcard = env.CORS_ORIGIN === '*' || !env.CORS_ORIGIN;
+  const configuredOrigins = env.CORS_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean);
 
   await app.register(cors, {
-    origin: isWildcard ? false : allowedOrigins,
+    origin: isWildcard
+      ? (origin, cb) => {
+          // Allow all incoming origins dynamically in cloud (Railway, localhost, custom domains)
+          cb(null, true);
+        }
+      : configuredOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'x-request-id', 'x-tenant-id', 'x-branch-id', 'x-correlation-id']

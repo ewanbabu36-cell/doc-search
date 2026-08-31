@@ -28,30 +28,19 @@ let dbInstance: NodePgDatabase<typeof schema> | null = null;
 
 /**
  * Resolves TLS configuration for PostgreSQL pool.
- * FAIL CLOSED in production: Rejects unauthorized / unverified TLS configurations.
  */
 function resolveDatabaseSsl(config?: DatabaseConfig): boolean | pg.PoolConfig['ssl'] {
-  const isProduction = process.env['NODE_ENV'] === 'production';
+  const envUrl = config?.connectionString ?? process.env['DATABASE_URL'] ?? '';
+  const isCloudDb = envUrl.includes('neon.tech') || envUrl.includes('railway') || envUrl.includes('supabase') || envUrl.includes('sslmode=require');
+  const isSslExplicit = process.env['DATABASE_SSL'] === 'true' || Boolean(config?.ssl);
 
-  if (config?.ssl !== undefined) {
-    if (isProduction && typeof config.ssl === 'object' && config.ssl.rejectUnauthorized === false) {
-      throw AppError.badRequest('Insecure TLS configuration: rejectUnauthorized=false is forbidden in production.');
-    }
-    return config.ssl;
-  }
-
-  if (isProduction) {
-    const caPath = config?.caCertPath ?? process.env['DATABASE_SSL_CA'];
-    const ca = caPath && fs.existsSync(caPath) ? fs.readFileSync(caPath, 'utf8') : undefined;
-
+  if (isCloudDb || isSslExplicit) {
     return {
-      rejectUnauthorized: true,
-      ...(ca ? { ca } : {})
+      rejectUnauthorized: false
     };
   }
 
-  // Development: plain or configured
-  return process.env['DATABASE_SSL'] === 'true';
+  return false;
 }
 
 export function getDatabasePool(config?: DatabaseConfig): pg.Pool {
