@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Card, Badge, TableContainer, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@docsearch/ui-kit';
+import { Card, Badge, Button, TableContainer, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@docsearch/ui-kit';
 import { useGlobalLocale } from '../common/GlobalCurrencyLocaleContext.js';
 
-interface RevenueStreamItem {
+export interface RevenueStreamItem {
   id: string;
   streamName: string;
   category: 'OPD' | 'LIMS' | 'IPD' | 'PHARMACY';
@@ -16,13 +16,13 @@ interface RevenueStreamItem {
   description: string;
 }
 
-const REVENUE_STREAMS: RevenueStreamItem[] = [
+export const REVENUE_STREAMS: RevenueStreamItem[] = [
   {
     id: 'STREAM-OPD',
     streamName: 'Doctor OPD Consultations',
     category: 'OPD',
     icon: '🩺',
-    monthlyVolume: '42,800 Completed Consults',
+    monthlyVolume: '42,800 Completed Consults (15,160/hr peak)',
     monthlyGmvInr: 34240000,
     takeRatePercent: 15.0,
     netRevenueInr: 5136000,
@@ -35,7 +35,7 @@ const REVENUE_STREAMS: RevenueStreamItem[] = [
     streamName: 'Pathology Diagnostics (LIMS)',
     category: 'LIMS',
     icon: '🧪',
-    monthlyVolume: '28,500 Lab Investigation Orders',
+    monthlyVolume: '28,500 Lab Investigation Orders / Day',
     monthlyGmvInr: 39900000,
     takeRatePercent: 18.0,
     netRevenueInr: 7182000,
@@ -48,7 +48,7 @@ const REVENUE_STREAMS: RevenueStreamItem[] = [
     streamName: 'Inpatient (IPD) Bed Occupancy',
     category: 'IPD',
     icon: '🛏️',
-    monthlyVolume: '3,120 Hospital Admissions',
+    monthlyVolume: '3,120 Hospital Admissions (14,280 Bed-Days)',
     monthlyGmvInr: 62400000,
     takeRatePercent: 10.0,
     netRevenueInr: 6240000,
@@ -61,7 +61,7 @@ const REVENUE_STREAMS: RevenueStreamItem[] = [
     streamName: 'Pharmacy E-Prescription Sales',
     category: 'PHARMACY',
     icon: '💊',
-    monthlyVolume: '51,400 Prescriptions Dispensed',
+    monthlyVolume: '51,400 Prescriptions Dispensed (99.4% Stock)',
     monthlyGmvInr: 41120000,
     takeRatePercent: 12.0,
     netRevenueInr: 4934400,
@@ -74,13 +74,42 @@ const REVENUE_STREAMS: RevenueStreamItem[] = [
 export const RealtimeFourWayRevenueStreamsView: React.FC = () => {
   const { formatMoney } = useGlobalLocale();
   const [timeHorizon, setTimeHorizon] = useState<'MONTHLY' | 'QUARTERLY' | 'ANNUAL'>('MONTHLY');
+  const [exportNotice, setExportNotice] = useState<string | null>(null);
 
   const multiplier = timeHorizon === 'MONTHLY' ? 1 : timeHorizon === 'QUARTERLY' ? 3 : 12;
-  const horizonLabel = timeHorizon === 'MONTHLY' ? 'Monthly' : timeHorizon === 'QUARTERLY' ? 'Quarterly' : 'Annual Run-Rate';
+  const horizonLabel = timeHorizon === 'MONTHLY' ? 'Monthly' : timeHorizon === 'QUARTERLY' ? 'Quarterly (Q3)' : 'Annualized ARR';
 
   const totalGmv = REVENUE_STREAMS.reduce((acc, s) => acc + s.monthlyGmvInr * multiplier, 0);
   const totalNetRevenue = REVENUE_STREAMS.reduce((acc, s) => acc + s.netRevenueInr * multiplier, 0);
   const blendedTakeRate = ((totalNetRevenue / totalGmv) * 100).toFixed(1);
+
+  // 1-Click Export Financial Matrix CSV
+  const handleExportCsv = () => {
+    const headers = ['Revenue Stream', 'Category', 'Volume Throughput', 'Gross GMV (INR)', 'Take-Rate (%)', 'Net Revenue (INR)', 'MoM Growth'];
+    const rows = REVENUE_STREAMS.map((s) => [
+      `"${s.streamName}"`,
+      s.category,
+      `"${s.monthlyVolume}"`,
+      s.monthlyGmvInr * multiplier,
+      `${s.takeRatePercent}%`,
+      s.netRevenueInr * multiplier,
+      `"${s.momGrowth}"`
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `DocSearch-4Way-Revenue-Matrix-${timeHorizon}-${Date.now()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    setExportNotice(`✓ Successfully exported 4-Way Consolidated Revenue Matrix (${horizonLabel}) to CSV!`);
+    setTimeout(() => setExportNotice(null), 4000);
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -89,7 +118,7 @@ export const RealtimeFourWayRevenueStreamsView: React.FC = () => {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: 'var(--ds-color-text-primary)' }}>
-              💰 Consolidated 4-Way Revenue Streams Breakdown
+              💰 Consolidated 4-Way Real-Time Revenue Matrix
             </h2>
             <Badge variant="success">● Live Financial Ledger Sync</Badge>
           </div>
@@ -98,58 +127,75 @@ export const RealtimeFourWayRevenueStreamsView: React.FC = () => {
           </p>
         </div>
 
-        {/* Time Horizon Filter */}
-        <div style={{ display: 'flex', gap: '6px', backgroundColor: '#0F172A', padding: '4px', borderRadius: '8px', border: '1px solid #334155' }}>
-          <button
-            type="button"
-            onClick={() => setTimeHorizon('MONTHLY')}
-            style={{
-              backgroundColor: timeHorizon === 'MONTHLY' ? '#06B6D4' : 'transparent',
-              color: timeHorizon === 'MONTHLY' ? '#070C16' : '#94A3B8',
-              fontWeight: 800,
-              fontSize: '0.75rem',
-              padding: '6px 12px',
-              borderRadius: '6px',
-              border: 'none',
-              cursor: 'pointer'
-            }}
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* Time Horizon Filter */}
+          <div style={{ display: 'flex', gap: '4px', backgroundColor: '#0F172A', padding: '4px', borderRadius: '8px', border: '1px solid #334155' }}>
+            <button
+              type="button"
+              onClick={() => setTimeHorizon('MONTHLY')}
+              style={{
+                backgroundColor: timeHorizon === 'MONTHLY' ? '#06B6D4' : 'transparent',
+                color: timeHorizon === 'MONTHLY' ? '#070C16' : '#94A3B8',
+                fontWeight: 800,
+                fontSize: '0.75rem',
+                padding: '6px 12px',
+                borderRadius: '6px',
+                border: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              📅 Monthly
+            </button>
+            <button
+              type="button"
+              onClick={() => setTimeHorizon('QUARTERLY')}
+              style={{
+                backgroundColor: timeHorizon === 'QUARTERLY' ? '#06B6D4' : 'transparent',
+                color: timeHorizon === 'QUARTERLY' ? '#070C16' : '#94A3B8',
+                fontWeight: 800,
+                fontSize: '0.75rem',
+                padding: '6px 12px',
+                borderRadius: '6px',
+                border: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              📊 Quarterly (Q3)
+            </button>
+            <button
+              type="button"
+              onClick={() => setTimeHorizon('ANNUAL')}
+              style={{
+                backgroundColor: timeHorizon === 'ANNUAL' ? '#06B6D4' : 'transparent',
+                color: timeHorizon === 'ANNUAL' ? '#070C16' : '#94A3B8',
+                fontWeight: 800,
+                fontSize: '0.75rem',
+                padding: '6px 12px',
+                borderRadius: '6px',
+                border: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              📈 Annualized ARR
+            </button>
+          </div>
+
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleExportCsv}
+            style={{ fontWeight: 700 }}
           >
-            📅 Monthly View
-          </button>
-          <button
-            type="button"
-            onClick={() => setTimeHorizon('QUARTERLY')}
-            style={{
-              backgroundColor: timeHorizon === 'QUARTERLY' ? '#06B6D4' : 'transparent',
-              color: timeHorizon === 'QUARTERLY' ? '#070C16' : '#94A3B8',
-              fontWeight: 800,
-              fontSize: '0.75rem',
-              padding: '6px 12px',
-              borderRadius: '6px',
-              border: 'none',
-              cursor: 'pointer'
-            }}
-          >
-            📊 Quarterly (Q3)
-          </button>
-          <button
-            type="button"
-            onClick={() => setTimeHorizon('ANNUAL')}
-            style={{
-              backgroundColor: timeHorizon === 'ANNUAL' ? '#06B6D4' : 'transparent',
-              color: timeHorizon === 'ANNUAL' ? '#070C16' : '#94A3B8',
-              fontWeight: 800,
-              fontSize: '0.75rem',
-              padding: '6px 12px',
-              borderRadius: '6px',
-              border: 'none',
-              cursor: 'pointer'
-            }}
-          >
-            📈 Annualized ARR
-          </button>
+            📥 Export CSV
+          </Button>
         </div>
       </div>
+
+      {exportNotice && (
+        <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid #10B981', borderRadius: '10px', padding: '12px 16px', color: '#A7F3D0', fontSize: '0.875rem', fontWeight: 700 }}>
+          {exportNotice}
+        </div>
+      )}
 
       {/* Top Total Summary Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
