@@ -165,49 +165,72 @@ export const MASTER_WIDGET_CATALOG: DashboardWidget[] = [
   }
 ];
 
-const STORAGE_KEY = 'docsearch_executive_custom_grid_layout';
+const STORAGE_KEY = 'docsearch_executive_custom_grid_layout_v3';
+
+interface SavedProfileVault {
+  version: string;
+  savedAt: string;
+  activeRolePreset: 'FOUNDER' | 'CFO' | 'CMO' | 'CTO';
+  widgets: DashboardWidget[];
+}
 
 export const CustomizableExecutiveWidgetGridView: React.FC = () => {
   const { formatMoney, t } = useGlobalLocale();
-  const [widgets, setWidgets] = useState<DashboardWidget[]>(() => {
+
+  // Hydrate from LocalStorage vault
+  const [vaultState] = useState<SavedProfileVault>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        const parsed = JSON.parse(saved) as SavedProfileVault;
+        if (parsed && Array.isArray(parsed.widgets) && parsed.widgets.length > 0) {
+          return parsed;
+        }
       }
     } catch {}
-    return MASTER_WIDGET_CATALOG.slice(0, 6);
+    return {
+      version: '3.0',
+      savedAt: new Date().toLocaleTimeString(),
+      activeRolePreset: 'FOUNDER',
+      widgets: MASTER_WIDGET_CATALOG.slice(0, 6)
+    };
   });
 
-  const [activeRolePreset, setActiveRolePreset] = useState<'FOUNDER' | 'CFO' | 'CMO' | 'CTO'>('FOUNDER');
+  const [widgets, setWidgets] = useState<DashboardWidget[]>(vaultState.widgets);
+  const [activeRolePreset, setActiveRolePreset] = useState<'FOUNDER' | 'CFO' | 'CMO' | 'CTO'>(vaultState.activeRolePreset);
+  const [lastSavedTimestamp, setLastSavedTimestamp] = useState<string>(vaultState.savedAt);
   const [isCatalogOpen, setIsCatalogOpen] = useState(false);
   const [catalogCategoryFilter, setCatalogCategoryFilter] = useState<'ALL' | 'REVENUE' | 'CLINICAL' | 'EMERGENCY' | 'SECURITY'>('ALL');
   const [draggedWidgetId, setDraggedWidgetId] = useState<string | null>(null);
   const [dragOverWidgetId, setDragOverWidgetId] = useState<string | null>(null);
   const [saveNotice, setSaveNotice] = useState<string | null>(null);
 
+  // Auto-Save Effect: Runs on every single widget, resize, pin, hide or preset mutation
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(widgets));
+      const now = new Date().toLocaleTimeString();
+      const payload: SavedProfileVault = {
+        version: '3.0',
+        savedAt: now,
+        activeRolePreset,
+        widgets
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      setLastSavedTimestamp(now);
     } catch {}
-  }, [widgets]);
+  }, [widgets, activeRolePreset]);
 
   const applyRolePreset = (role: 'FOUNDER' | 'CFO' | 'CMO' | 'CTO') => {
     setActiveRolePreset(role);
     let targetIds: string[] = [];
 
     if (role === 'CFO') {
-      // CFO View: ARR, Net Take-rate, Pharmacy Sales, Unpaid Invoices
       targetIds = ['WID-ARR-01', 'WID-FX-06', 'WID-PHARM-09', 'WID-BILLING-10'];
     } else if (role === 'CMO') {
-      // CMO View: Live Consults, ER Sirens, Bed Occupancy, Lab Volume, AI Copilot
       targetIds = ['WID-CONSULT-03', 'WID-ER-02', 'WID-BED-07', 'WID-LIMS-08', 'WID-AI-11'];
     } else if (role === 'CTO') {
-      // CTO / SecOps View: SOC2 Threat Radar, Tenant Quota, AI Safety, ARR
       targetIds = ['WID-SEC-05', 'WID-QUOTA-04', 'WID-AI-11', 'WID-ARR-01'];
     } else {
-      // Founder / Default View
       targetIds = ['WID-ARR-01', 'WID-ER-02', 'WID-CONSULT-03', 'WID-QUOTA-04', 'WID-SEC-05', 'WID-FX-06'];
     }
 
@@ -218,26 +241,32 @@ export const CustomizableExecutiveWidgetGridView: React.FC = () => {
     }));
 
     setWidgets(newWidgets);
-    setSaveNotice(`✓ Switched to 1-Click "${role === 'CFO' ? '💰 CFO Financial' : role === 'CMO' ? '🩺 CMO Clinical' : role === 'CTO' ? '🛡️ CTO SecOps' : '👑 Founder Master'}" Dashboard Preset!`);
-    setTimeout(() => setSaveNotice(null), 4000);
+    setSaveNotice(`✓ Switched to "${role === 'CFO' ? '💰 CFO Financial' : role === 'CMO' ? '🩺 CMO Clinical' : role === 'CTO' ? '🛡️ CTO SecOps' : '👑 Founder Master'}" Preset & Auto-Saved to Vault!`);
+    setTimeout(() => setSaveNotice(null), 3500);
   };
 
   const toggleVisibility = (widgetId: string) => {
     setWidgets((prev) =>
       prev.map((w) => (w.id === widgetId ? { ...w, isVisible: !w.isVisible } : w))
     );
+    setSaveNotice('✓ Visibility updated & Auto-Saved to Vault');
+    setTimeout(() => setSaveNotice(null), 2500);
   };
 
   const togglePin = (widgetId: string) => {
     setWidgets((prev) =>
       prev.map((w) => (w.id === widgetId ? { ...w, isPinned: !w.isPinned } : w))
     );
+    setSaveNotice('✓ Pin state updated & Auto-Saved to Vault');
+    setTimeout(() => setSaveNotice(null), 2500);
   };
 
   const changeGridSpan = (widgetId: string, newSpan: '1x1' | '2x1' | '2x2') => {
     setWidgets((prev) =>
       prev.map((w) => (w.id === widgetId ? { ...w, gridSpan: newSpan } : w))
     );
+    setSaveNotice(`✓ Card resized to ${newSpan} & Auto-Saved to Vault`);
+    setTimeout(() => setSaveNotice(null), 2500);
   };
 
   const handleAddWidgetFromCatalog = (item: DashboardWidget) => {
@@ -248,14 +277,14 @@ export const CustomizableExecutiveWidgetGridView: React.FC = () => {
       }
       return [...prev, { ...item, isVisible: true }];
     });
-    setSaveNotice(`✓ Added "${item.defaultTitle}" to your active Executive Board!`);
+    setSaveNotice(`✓ Added "${item.defaultTitle}" & Auto-Saved to Vault!`);
     setTimeout(() => setSaveNotice(null), 3500);
   };
 
   const handleRemoveWidget = (widgetId: string) => {
     setWidgets((prev) => prev.filter((w) => w.id !== widgetId));
-    setSaveNotice('✓ Widget removed from executive board.');
-    setTimeout(() => setSaveNotice(null), 3000);
+    setSaveNotice('✓ Widget removed & Auto-Saved to Vault.');
+    setTimeout(() => setSaveNotice(null), 2500);
   };
 
   // HTML5 Drag & Drop Handlers
@@ -298,8 +327,8 @@ export const CustomizableExecutiveWidgetGridView: React.FC = () => {
     });
 
     setDraggedWidgetId(null);
-    setSaveNotice('✓ Widget position reordered and saved smoothly!');
-    setTimeout(() => setSaveNotice(null), 3500);
+    setSaveNotice('✓ Widget reordered & Auto-Saved to Vault!');
+    setTimeout(() => setSaveNotice(null), 3000);
   };
 
   const handleDragEnd = () => {
@@ -311,12 +340,25 @@ export const CustomizableExecutiveWidgetGridView: React.FC = () => {
     applyRolePreset('FOUNDER');
   };
 
-  const handleSaveLayout = () => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(widgets));
-    } catch {}
-    setSaveNotice('✓ Custom Executive Dashboard Layout saved and synced to your personalized Founder Profile!');
-    setTimeout(() => setSaveNotice(null), 5000);
+  // Export Profile Vault JSON
+  const handleExportProfileVault = () => {
+    const payload: SavedProfileVault = {
+      version: '3.0',
+      savedAt: new Date().toISOString(),
+      activeRolePreset,
+      widgets
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `DocSearch-Executive-Vault-${Date.now()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setSaveNotice('✓ Exported Executive Profile Vault JSON backup successfully!');
+    setTimeout(() => setSaveNotice(null), 3500);
   };
 
   const filteredCatalog = MASTER_WIDGET_CATALOG.filter((item) => {
@@ -333,10 +375,10 @@ export const CustomizableExecutiveWidgetGridView: React.FC = () => {
             <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: 'var(--ds-color-text-primary)' }}>
               🧩 Customizable Executive Widget Grid & Drag-Drop Studio
             </h2>
-            <Badge variant="success">● {widgets.filter((w) => w.isVisible).length} Active Widgets</Badge>
+            <Badge variant="success">● Vault Synced ({lastSavedTimestamp})</Badge>
           </div>
           <p style={{ margin: '4px 0 0', fontSize: '0.8125rem', color: 'var(--ds-color-text-muted)' }}>
-            Switch between 1-Click Role Presets (CFO, CMO, CTO, Founder) or drag & drop (⋮⋮) to arrange your customized layout.
+            Instant LocalStorage Vault Active: Every drag, resize, pin or preset is auto-saved in real-time and persists across page reloads.
           </p>
         </div>
 
@@ -358,24 +400,19 @@ export const CustomizableExecutiveWidgetGridView: React.FC = () => {
           <Button
             variant="secondary"
             size="sm"
-            onClick={handleResetLayout}
+            onClick={handleExportProfileVault}
             style={{ fontWeight: 700 }}
           >
-            🔄 Reset Layout
+            📤 Export Vault
           </Button>
 
           <Button
-            variant="primary"
+            variant="secondary"
             size="sm"
-            onClick={handleSaveLayout}
-            style={{
-              backgroundColor: '#06B6D4',
-              color: '#070C16',
-              fontWeight: 900,
-              boxShadow: '0 4px 14px rgba(6, 182, 212, 0.4)'
-            }}
+            onClick={handleResetLayout}
+            style={{ fontWeight: 700 }}
           >
-            💾 {t('save_layout', 'Save Custom Layout')}
+            🔄 Reset
           </Button>
         </div>
       </div>
@@ -399,7 +436,7 @@ export const CustomizableExecutiveWidgetGridView: React.FC = () => {
             🎭 1-Click Role Presets:
           </span>
           <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
-            Tailored C-Suite Operational Focus
+            Instant Auto-Save Enabled
           </span>
         </div>
 
