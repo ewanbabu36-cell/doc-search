@@ -13,10 +13,18 @@ import { ApiTelemetryView } from './ApiTelemetryView.js';
 import { TenantSegmentationView } from './TenantSegmentationView.js';
 import { SystemInsightCenterView } from './SystemInsightCenterView.js';
 import { SavedReportListView } from './SavedReportListView.js';
-import { Tabs, Badge, Spinner, ErrorState } from '@docsearch/ui-kit';
+import { GeospatialDiseaseHeatmapView } from './GeospatialDiseaseHeatmapView.js';
+import { PredictivePatientBedForecastView } from './PredictivePatientBedForecastView.js';
+import { LivePlatformEventStreamerView } from './LivePlatformEventStreamerView.js';
+import { NaturalLanguageBiQueryModal } from './NaturalLanguageBiQueryModal.js';
+import { ExecutiveBiReportExportModal } from './ExecutiveBiReportExportModal.js';
+import { Tabs, Badge, Button, Spinner, ErrorState } from '@docsearch/ui-kit';
 
 type ActiveTab =
   | 'overview'
+  | 'heatmap'
+  | 'predictive'
+  | 'live-stream'
   | 'usage'
   | 'telemetry'
   | 'segmentation'
@@ -33,6 +41,11 @@ export const AnalyticsDomainManager: React.FC = () => {
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Modals
+  const [isAiQueryOpen, setIsAiQueryOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [successBanner, setSuccessBanner] = useState<string | null>(null);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -92,20 +105,53 @@ export const AnalyticsDomainManager: React.FC = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', backgroundColor: '#0F172A', border: '1.5px solid rgba(6, 182, 212, 0.4)', borderRadius: '14px', padding: '16px 20px' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700', color: 'var(--ds-color-text-primary)' }}>
-              Analytics / BI / Intelligence
+            <h1 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 800, color: '#F8FAFC' }}>
+              🧠 Analytics / BI / Intelligence Data Lakehouse
             </h1>
-            
-            <Badge variant="warning">Production View</Badge>
+            <Badge variant="success">● AI Models & GIS Online</Badge>
           </div>
-          <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--ds-color-text-muted)' }}>
-            Cross-tenant platform usage telemetry, API gateway latency benchmarks, anonymized facility segmentation, and system intelligence
+          <p style={{ margin: 0, fontSize: '0.8125rem', color: '#94A3B8' }}>
+            Epidemiological disease heatmaps, AI predictive bed saturation forecasting, live platform event ticker, and executive board dossiers
           </p>
         </div>
+
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsAiQueryOpen(true)}
+            style={{
+              borderColor: '#06B6D4',
+              color: '#38BDF8',
+              fontWeight: 800
+            }}
+          >
+            🤖 Ask AI BI Co-Pilot
+          </Button>
+
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => setIsExportModalOpen(true)}
+            style={{
+              backgroundColor: '#10B981',
+              color: '#070C16',
+              fontWeight: 900
+            }}
+          >
+            📥 Export Board Dossier
+          </Button>
+        </div>
       </div>
+
+      {successBanner && (
+        <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid #10B981', borderRadius: '10px', padding: '12px 16px', color: '#A7F3D0', fontSize: '0.875rem', fontWeight: 700 }}>
+          ✓ {successBanner}
+        </div>
+      )}
 
       {/* Tabs */}
       <Tabs
@@ -113,6 +159,20 @@ export const AnalyticsDomainManager: React.FC = () => {
           {
             id: 'overview',
             label: '📊 BI Overview'
+          },
+          {
+            id: 'heatmap',
+            label: '🗺️ Disease Heatmap',
+            badge: <Badge variant="danger">Live GIS</Badge>
+          },
+          {
+            id: 'predictive',
+            label: '🔮 Predictive AI',
+            badge: <Badge variant="primary">Forecast</Badge>
+          },
+          {
+            id: 'live-stream',
+            label: '⚡ Live Event Stream'
           },
           {
             id: 'usage',
@@ -152,6 +212,18 @@ export const AnalyticsDomainManager: React.FC = () => {
         />
       )}
 
+      {activeTab === 'heatmap' && (
+        <GeospatialDiseaseHeatmapView />
+      )}
+
+      {activeTab === 'predictive' && (
+        <PredictivePatientBedForecastView />
+      )}
+
+      {activeTab === 'live-stream' && (
+        <LivePlatformEventStreamerView />
+      )}
+
       {activeTab === 'usage' && (
         <PlatformUsageView metrics={usageMetrics} />
       )}
@@ -177,6 +249,21 @@ export const AnalyticsDomainManager: React.FC = () => {
           onGenerateReport={handleGenerateReport}
         />
       )}
+
+      {/* Modals */}
+      <NaturalLanguageBiQueryModal
+        isOpen={isAiQueryOpen}
+        onClose={() => setIsAiQueryOpen(false)}
+      />
+
+      <ExecutiveBiReportExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        onExportSuccess={(title) => {
+          setSuccessBanner(`Dossier "${title}" compiled and downloaded with cryptographic SHA-256 seal!`);
+          setTimeout(() => setSuccessBanner(null), 5000);
+        }}
+      />
     </div>
   );
 };
