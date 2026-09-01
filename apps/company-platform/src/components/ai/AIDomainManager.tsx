@@ -20,10 +20,20 @@ import { PromptVersionProfileView } from './PromptVersionProfileView.js';
 import { AIUsageQuotaView } from './AIUsageQuotaView.js';
 import { AIAuditTraceView } from './AIAuditTraceView.js';
 import { AISafetyCenterView } from './AISafetyCenterView.js';
-import { Tabs, Badge, Spinner, ErrorState } from '@docsearch/ui-kit';
+import { AiClinicalPlaygroundView } from './AiClinicalPlaygroundView.js';
+import { AiPhiRedactionGuardView } from './AiPhiRedactionGuardView.js';
+import { AiDrugInteractionMatrixView } from './AiDrugInteractionMatrixView.js';
+import { AiModelRouterLatencyView } from './AiModelRouterLatencyView.js';
+import { AiHallucinationBenchmarkView } from './AiHallucinationBenchmarkView.js';
+import { Tabs, Badge, Button, Spinner, ErrorState } from '@docsearch/ui-kit';
 
 type ActiveTab =
   | 'overview'
+  | 'playground'
+  | 'phi-guard'
+  | 'drug-matrix'
+  | 'model-router'
+  | 'hallucination'
   | 'models'
   | 'governance'
   | 'prompts'
@@ -165,19 +175,46 @@ export const AIDomainManager: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+      {/* Header with Quick Action Buttons */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', backgroundColor: '#0F172A', border: '1.5px solid rgba(6, 182, 212, 0.4)', borderRadius: '14px', padding: '16px 20px' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700', color: 'var(--ds-color-text-primary)' }}>
-              AI Platform & AI Governance
+            <h1 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 800, color: '#F8FAFC' }}>
+              🧠 Clinical AI Platform & Governance Control Plane
             </h1>
-            
-            <Badge variant="warning">Production View</Badge>
+            <Badge variant="success">● Zero Data Leakage Enforced</Badge>
           </div>
-          <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--ds-color-text-muted)' }}>
-            Enterprise healthcare AI control plane, assistive model registry, prompt versioning, quota enforcement, and safety gate oversight
+          <p style={{ margin: 0, fontSize: '0.8125rem', color: '#94A3B8' }}>
+            Interactive medical prompt playground, automated PHI/PII de-identification guard, drug interaction contraindications, and multi-LLM failover routing
           </p>
+        </div>
+
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setActiveTab('playground')}
+            style={{
+              borderColor: '#06B6D4',
+              color: '#38BDF8',
+              fontWeight: 800
+            }}
+          >
+            🩺 Test Clinical Prompt
+          </Button>
+
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => setActiveTab('phi-guard')}
+            style={{
+              backgroundColor: '#10B981',
+              color: '#070C16',
+              fontWeight: 900
+            }}
+          >
+            🛡️ Run PHI Redaction Scan
+          </Button>
         </div>
       </div>
 
@@ -189,18 +226,40 @@ export const AIDomainManager: React.FC = () => {
             label: '📊 AI Overview'
           },
           {
+            id: 'playground',
+            label: '🩺 AI Playground',
+            badge: <Badge variant="primary">Simulator</Badge>
+          },
+          {
+            id: 'phi-guard',
+            label: '🛡️ PHI Redaction Guard',
+            badge: <Badge variant="success">HIPAA</Badge>
+          },
+          {
+            id: 'drug-matrix',
+            label: '💊 Drug Safety Matrix'
+          },
+          {
+            id: 'model-router',
+            label: '⚡ LLM Failover Router'
+          },
+          {
+            id: 'hallucination',
+            label: '⚖️ Hallucination Audit'
+          },
+          {
             id: 'models',
             label: '🧠 Model Registry',
             badge: <Badge variant="neutral">{models.length}</Badge>
           },
           {
             id: 'governance',
-            label: '⚖️ AI Governance',
+            label: '⚖️ Policies',
             badge: <Badge variant="neutral">{policies.length}</Badge>
           },
           {
             id: 'prompts',
-            label: '📝 Prompt Registry',
+            label: '📝 Prompts',
             badge: <Badge variant="neutral">{promptTemplates.length}</Badge>
           },
           {
@@ -210,12 +269,12 @@ export const AIDomainManager: React.FC = () => {
           },
           {
             id: 'audit',
-            label: '🔍 AI Audit Trace',
+            label: '🔍 Audit Trace',
             badge: <Badge variant="neutral">{traces.length}</Badge>
           },
           {
             id: 'safety',
-            label: '🚨 AI Safety Center',
+            label: '🚨 Safety Center',
             badge: <Badge variant="danger">{safetyEvents.filter((s) => s.status === 'OPEN').length}</Badge>
           }
         ]}
@@ -232,6 +291,26 @@ export const AIDomainManager: React.FC = () => {
           quotas={quotas}
           safetyEvents={safetyEvents}
         />
+      )}
+
+      {activeTab === 'playground' && (
+        <AiClinicalPlaygroundView />
+      )}
+
+      {activeTab === 'phi-guard' && (
+        <AiPhiRedactionGuardView />
+      )}
+
+      {activeTab === 'drug-matrix' && (
+        <AiDrugInteractionMatrixView />
+      )}
+
+      {activeTab === 'model-router' && (
+        <AiModelRouterLatencyView />
+      )}
+
+      {activeTab === 'hallucination' && (
+        <AiHallucinationBenchmarkView />
       )}
 
       {activeTab === 'models' && (
