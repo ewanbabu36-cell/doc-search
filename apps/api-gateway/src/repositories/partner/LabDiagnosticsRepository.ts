@@ -2,7 +2,6 @@ import {
   getDatabase,
   investigationOrders,
   investigationSpecimens,
-  investigationResults,
   eq,
   and,
   desc
@@ -259,7 +258,7 @@ export class LabDiagnosticsRepository {
 
   async enterResult(
     input: EnterResultInput,
-    dbClient = getDatabase()
+    _dbClient = getDatabase()
   ): Promise<StoredLabOrder | null> {
     const current = this.memOrders.get(input.tenantId) || [];
     const item = current.find(o => o.id === input.orderId);

@@ -152,6 +152,19 @@ export const clinicalWorkflowRoutes: FastifyPluginAsync = async (fastify) => {
     }
   );
 
+  fastify.post(
+    '/api/v1/partner/clinical/encounters',
+    {
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'create')]
+    },
+    async (request, reply) => {
+      const payload = request.body as Omit<CreateEncounterInput, 'tenantId'>;
+      const data = await clinicalWorkflowService.checkInEncounter(payload, request.session);
+      reply.status(201);
+      return { success: true, data };
+    }
+  );
+
   // GET /api/v1/partner/encounters/:id
   fastify.get(
     '/api/v1/partner/encounters/:id',

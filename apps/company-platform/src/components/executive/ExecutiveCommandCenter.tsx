@@ -15,6 +15,7 @@ import { NationalHealthcareWarRoomView } from './NationalHealthcareWarRoomView.j
 import { RealtimeEbitdaUnitEconomicsView } from './RealtimeEbitdaUnitEconomicsView.js';
 import { PlatformEmergencyPanicLockModal } from './PlatformEmergencyPanicLockModal.js';
 import { CustomizableExecutiveWidgetGridView } from './CustomizableExecutiveWidgetGridView.js';
+import { generateAndDownloadExecutiveBoardPdf } from '../../utils/clientExecutiveBoardPdf.js';
 
 import { Spinner, ErrorState, Tabs, Badge, Button } from '@docsearch/ui-kit';
 
@@ -88,7 +89,34 @@ export const ExecutiveCommandCenter: React.FC = () => {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => {
+              generateAndDownloadExecutiveBoardPdf({
+                arrAmount: '₹ 2.70 Crore',
+                grossMargin: '84.5% Margin',
+                cacLtvRatio: '1 : 6.4 Ratio',
+                freeCashflow: '+ ₹ 12.40 L/mo',
+                activeHospitals: 486,
+                liveConsultsRate: '15,160 / hr',
+                erDispatches: 89,
+                avgOpdWait: '11.8 Mins',
+                uptimePercent: '99.98%',
+                complianceStatus: 'ABDM M1-M3 & HIPAA Validated'
+              });
+            }}
+            style={{
+              backgroundColor: '#06B6D4',
+              color: '#070C16',
+              fontWeight: 900,
+              boxShadow: '0 4px 14px rgba(6, 182, 212, 0.4)'
+            }}
+          >
+            📥 Export Executive Board PDF
+          </Button>
+
           <Button
             variant="danger"
             size="sm"
