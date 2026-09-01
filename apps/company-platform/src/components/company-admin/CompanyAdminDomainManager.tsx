@@ -27,11 +27,20 @@ import { ComplianceOfficerCenterView } from './ComplianceOfficerCenterView.js';
 import { GovernanceCalendarView } from './GovernanceCalendarView.js';
 import { CompanyAuditTraceView } from './CompanyAuditTraceView.js';
 import { CompanyRoleAccessMatrixTemplate } from './CompanyRoleAccessMatrixTemplate.js';
+
+// 3 New Company Administration Advancements
+import { McaStatutoryRegisterVaultView } from './McaStatutoryRegisterVaultView.js';
+import { PoshEthicsVigilanceView } from './PoshEthicsVigilanceView.js';
+import { SubsidiaryTransferEscrowView } from './SubsidiaryTransferEscrowView.js';
+
 import { Tabs, Badge, Spinner, ErrorState } from '@docsearch/ui-kit';
 
 type ActiveTab =
   | 'role-matrix'
   | 'overview'
+  | 'mca-vault'
+  | 'posh-ethics'
+  | 'subsidiary-escrow'
   | 'entities'
   | 'departments'
   | 'employees'
@@ -104,7 +113,7 @@ export const CompanyAdminDomainManager: React.FC = () => {
       setEvents(evtRes);
       setAuditTraces(tracesRes);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load company administration control plane');
+      setError(err instanceof Error ? err.message : 'Failed to load Company Administration data');
     } finally {
       setIsLoading(false);
     }
@@ -114,12 +123,12 @@ export const CompanyAdminDomainManager: React.FC = () => {
     void loadData();
   }, []);
 
-  const handleUpdateEmployeeStatus = async (employeeId: string, status: EmploymentStatus, reason: string) => {
+  const handleUpdateEmployeeStatus = async (employeeId: string, employmentStatus: EmploymentStatus, reason: string) => {
     const updated = await companyAdminService.updateEmployeeStatus({
       employeeId,
-      employmentStatus: status,
-      actorEmail: 'general.counsel@docsearch.internal',
-      reason
+      employmentStatus,
+      reason,
+      actorEmail: 'admin.director@docsearch.internal'
     });
     setEmployees((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
   };
@@ -128,8 +137,8 @@ export const CompanyAdminDomainManager: React.FC = () => {
     const updated = await companyAdminService.approveCorporatePolicy({
       policyId,
       resolutionReference,
-      actorEmail: 'general.counsel@docsearch.internal',
-      reason
+      reason,
+      actorEmail: 'board.governance@docsearch.internal'
     });
     setPolicies((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
   };
@@ -143,17 +152,17 @@ export const CompanyAdminDomainManager: React.FC = () => {
     regulatoryAuthorityReference: string,
     reason: string
   ) => {
-    const officer = await companyAdminService.appointComplianceOfficer({
+    const updated = await companyAdminService.appointComplianceOfficer({
       officerCode,
       officerRole,
       employeeId,
       officerName,
       workEmail,
       regulatoryAuthorityReference,
-      actorEmail: 'ceo@docsearch.internal',
-      reason
+      reason,
+      actorEmail: 'board.governance@docsearch.internal'
     });
-    setComplianceOfficers((prev) => [officer, ...prev]);
+    setComplianceOfficers((prev) => [updated, ...prev.filter((o) => o.id !== updated.id)]);
   };
 
   const handleCompleteEvent = async (
@@ -166,10 +175,10 @@ export const CompanyAdminDomainManager: React.FC = () => {
       eventId,
       minutesReference,
       resolutionReference,
-      actorEmail: 'general.counsel@docsearch.internal',
-      reason
+      reason,
+      actorEmail: 'governance.secretary@docsearch.internal'
     });
-    setEvents((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
+    setEvents((prev) => prev.map((ev) => (ev.id === updated.id ? updated : ev)));
   };
 
   if (isLoading && !overview) {
@@ -177,7 +186,7 @@ export const CompanyAdminDomainManager: React.FC = () => {
       <div style={{ padding: '60px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
         <Spinner size="lg" />
         <span style={{ fontSize: '0.875rem', color: 'var(--ds-color-text-muted)' }}>
-          Loading Company Administration & Governance control plane...
+          Loading Company Administration & Corporate Governance workspace...
         </span>
       </div>
     );
@@ -185,24 +194,23 @@ export const CompanyAdminDomainManager: React.FC = () => {
 
   if (error && !overview) {
     return (
-      <ErrorState title="Company Administration Control Plane Unavailable" message={error} onRetry={loadData} />
+      <ErrorState title="Company Administration Unavailable" message={error} onRetry={loadData} />
     );
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+      {/* Header Bar */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', backgroundColor: '#0F172A', border: '1.5px solid rgba(6, 182, 212, 0.4)', borderRadius: '14px', padding: '16px 20px' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700', color: 'var(--ds-color-text-primary)' }}>
-              Company Administration & Governance
+            <h1 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 800, color: '#F8FAFC' }}>
+              🏛️ Company Administration, Statutory Registers & Corporate Governance HQ
             </h1>
-            
-            <Badge variant="warning">Production View</Badge>
+            <Badge variant="success">● MCA V3 & POSH 2013 Statutory Active</Badge>
           </div>
-          <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--ds-color-text-muted)' }}>
-            Corporate entity governance, departments, employee directory, board oversight, bylaws, and statutory compliance officers
+          <p style={{ margin: 0, fontSize: '0.8125rem', color: '#94A3B8' }}>
+            MCA/ROC Board resolution vault, statutory POSH Internal Complaints Committee, and multi-subsidiary transfer pricing escrow
           </p>
         </div>
       </div>
@@ -213,6 +221,21 @@ export const CompanyAdminDomainManager: React.FC = () => {
           {
             id: 'overview',
             label: '📊 Overview'
+          },
+          {
+            id: 'mca-vault',
+            label: '📜 MCA / ROC Statutory Vault',
+            badge: <Badge variant="success">Class 3 DSC</Badge>
+          },
+          {
+            id: 'posh-ethics',
+            label: '⚖️ Statutory POSH Desk',
+            badge: <Badge variant="primary">100% Trained</Badge>
+          },
+          {
+            id: 'subsidiary-escrow',
+            label: '🏢 Multi-Subsidiary Escrow',
+            badge: <Badge variant="neutral">Sec 92C</Badge>
           },
           {
             id: 'entities',
@@ -274,6 +297,18 @@ export const CompanyAdminDomainManager: React.FC = () => {
           policies={policies}
           events={events}
         />
+      )}
+
+      {activeTab === 'mca-vault' && (
+        <McaStatutoryRegisterVaultView />
+      )}
+
+      {activeTab === 'posh-ethics' && (
+        <PoshEthicsVigilanceView />
+      )}
+
+      {activeTab === 'subsidiary-escrow' && (
+        <SubsidiaryTransferEscrowView />
       )}
 
       {activeTab === 'entities' && (
