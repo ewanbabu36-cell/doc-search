@@ -7,9 +7,11 @@ import type {
 import { partnerService } from '../../services/partner-service.js';
 import { PartnerListView } from './PartnerListView.js';
 import { PartnerProfileView } from './PartnerProfileView.js';
-import { Spinner, ErrorState } from '@docsearch/ui-kit';
+import { PartnerVerificationConsole } from './PartnerVerificationConsole.js';
+import { Spinner, ErrorState, Tabs } from '@docsearch/ui-kit';
 
 export const PartnerLifecycleManager: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'DIRECTORY' | 'VERIFICATION'>('DIRECTORY');
   const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null);
   const [partner, setPartner] = useState<PartnerProfileDto | null>(null);
   const [history, setHistory] = useState<PartnerTransitionHistoryDto[]>([]);
@@ -107,5 +109,22 @@ export const PartnerLifecycleManager: React.FC = () => {
     );
   }
 
-  return <PartnerListView onSelectPartner={(id) => setSelectedPartnerId(id)} />;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <Tabs
+        tabs={[
+          { id: 'DIRECTORY', label: '📋 Partner Directory & CRM' },
+          { id: 'VERIFICATION', label: '🛡️ Document Verification & AI Compliance Console (3)' }
+        ]}
+        activeTabId={activeTab}
+        onTabChange={(id) => setActiveTab(id as 'DIRECTORY' | 'VERIFICATION')}
+      />
+
+      {activeTab === 'DIRECTORY' ? (
+        <PartnerListView onSelectPartner={(id) => setSelectedPartnerId(id)} />
+      ) : (
+        <PartnerVerificationConsole />
+      )}
+    </div>
+  );
 };
