@@ -1,4 +1,5 @@
 import { GlobalCommandPalette } from './common/GlobalCommandPalette.js';
+import { UniversalAccountSettingsModal } from './common/UniversalAccountSettingsModal.js';
 import React, { useState } from 'react';
 import {
   AppShell,
@@ -100,6 +101,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
   );
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -357,6 +359,26 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
           userSlot={
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Badge variant="success" style={{ fontSize: '0.6875rem' }}>● ONLINE (ABDM 2.0)</Badge>
+              <button
+                type="button"
+                onClick={() => setIsSettingsModalOpen(true)}
+                style={{
+                  backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                  border: '1px solid #06B6D4',
+                  color: '#38BDF8',
+                  padding: '4px 10px',
+                  borderRadius: '6px',
+                  fontSize: '0.75rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+                title="Account Settings (Bank, Address, Password)"
+              >
+                <span>⚙️</span> Settings
+              </button>
               {currentUser && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <div style={{ textAlign: 'right' }}>
@@ -489,6 +511,11 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
         onNavigateModule={(mod) => setActiveModule(mod)}
         onSwitchWorkspace={(wsp) => handleWorkspaceChange(wsp)}
         onToggleTheme={toggleTheme}
+      />
+      <UniversalAccountSettingsModal
+        isOpen={isSettingsModalOpen}
+        onClose={() => setIsSettingsModalOpen(false)}
+        currentUser={currentUser}
       />
     </AppShell>
   );

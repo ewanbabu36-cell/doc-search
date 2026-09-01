@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { UniversalAccountSettingsModal } from './common/UniversalAccountSettingsModal.js';
 import {
   AppShell,
   Header,
@@ -49,6 +50,7 @@ const getThemeLabel = (t: string) => {
 export const CompanyShell: React.FC<CompanyShellProps> = ({ currentUser, onLogout }) => {
   const [activeDomainId, setActiveDomainId] = useState<string>('executive-command-center');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState<boolean>(false);
   const { theme, toggleTheme } = useTheme();
 
   const navSections = buildPhase1NavSections(activeDomainId, (domainId) => {
@@ -143,6 +145,26 @@ export const CompanyShell: React.FC<CompanyShellProps> = ({ currentUser, onLogou
                   {currentUser?.role || 'SUPER_ADMIN'} • {currentUser?.roleTitle || 'Founder & CEO'}
                 </span>
               </div>
+              <button
+                type="button"
+                onClick={() => setIsSettingsModalOpen(true)}
+                style={{
+                  backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                  border: '1px solid #06B6D4',
+                  color: '#38BDF8',
+                  padding: '4px 10px',
+                  borderRadius: '6px',
+                  fontSize: '0.75rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+                title="Account Settings (Bank, Address, Password)"
+              >
+                <span>⚙️</span> Settings
+              </button>
               {onLogout && (
                 <Button
                   variant="outline"
@@ -233,6 +255,11 @@ export const CompanyShell: React.FC<CompanyShellProps> = ({ currentUser, onLogou
           </Card>
         )}
       </ContentArea>
+      <UniversalAccountSettingsModal
+        isOpen={isSettingsModalOpen}
+        onClose={() => setIsSettingsModalOpen(false)}
+        currentUser={currentUser}
+      />
     </AppShell>
   );
 };
