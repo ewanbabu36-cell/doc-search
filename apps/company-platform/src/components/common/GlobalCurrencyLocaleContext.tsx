@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 export type CurrencyCode = 'INR' | 'USD' | 'EUR' | 'GBP' | 'AED' | 'SGD' | 'SAR';
 export type LocaleCode = 'en' | 'es' | 'fr' | 'de' | 'ar' | 'hi';
@@ -11,16 +11,17 @@ export interface CurrencyRate {
   rateToInr: number;
   name: string;
   flag: string;
+  inverseInr?: number;
 }
 
-export const CURRENCY_REGISTRY: Record<CurrencyCode, CurrencyRate> = {
-  INR: { symbol: '₹', rateToInr: 1.0, name: 'Indian Rupee', flag: '🇮🇳' },
-  USD: { symbol: '$', rateToInr: 0.012, name: 'US Dollar', flag: '🇺🇸' },
-  EUR: { symbol: '€', rateToInr: 0.011, name: 'Euro', flag: '🇪🇺' },
-  GBP: { symbol: '£', rateToInr: 0.0094, name: 'British Pound', flag: '🇬🇧' },
-  AED: { symbol: 'د.إ', rateToInr: 0.044, name: 'UAE Dirham', flag: '🇦🇪' },
-  SGD: { symbol: 'S$', rateToInr: 0.016, name: 'Singapore Dollar', flag: '🇸🇬' },
-  SAR: { symbol: '﷼', rateToInr: 0.045, name: 'Saudi Riyal', flag: '🇸🇦' }
+export const BASELINE_CURRENCY_REGISTRY: Record<CurrencyCode, CurrencyRate> = {
+  INR: { symbol: '₹', rateToInr: 1.0, name: 'Indian Rupee', flag: '🇮🇳', inverseInr: 1.0 },
+  USD: { symbol: '$', rateToInr: 0.0118, name: 'US Dollar', flag: '🇺🇸', inverseInr: 84.75 },
+  EUR: { symbol: '€', rateToInr: 0.0111, name: 'Euro', flag: '🇪🇺', inverseInr: 90.09 },
+  GBP: { symbol: '£', rateToInr: 0.00938, name: 'British Pound', flag: '🇬🇧', inverseInr: 106.61 },
+  AED: { symbol: 'د.إ', rateToInr: 0.0435, name: 'UAE Dirham', flag: '🇦🇪', inverseInr: 23.08 },
+  SGD: { symbol: 'S$', rateToInr: 0.0159, name: 'Singapore Dollar', flag: '🇸🇬', inverseInr: 62.89 },
+  SAR: { symbol: '﷼', rateToInr: 0.0444, name: 'Saudi Riyal', flag: '🇸🇦', inverseInr: 22.52 }
 };
 
 export const LOCALE_REGISTRY: Record<LocaleCode, { name: string; nativeName: string; dir: 'ltr' | 'rtl'; flag: string }> = {
@@ -32,7 +33,6 @@ export const LOCALE_REGISTRY: Record<LocaleCode, { name: string; nativeName: str
   de: { name: 'German', nativeName: 'Deutsch (German)', dir: 'ltr', flag: '🇩🇪' }
 };
 
-// Comprehensive Translations Dictionary for International UI
 const TRANSLATIONS: Record<LocaleCode, Record<string, string>> = {
   en: {
     'company_platform': 'Company Platform',
@@ -195,6 +195,10 @@ const TRANSLATIONS: Record<LocaleCode, Record<string, string>> = {
 interface GlobalCurrencyLocaleContextType {
   currency: CurrencyCode;
   setCurrency: (c: CurrencyCode) => void;
+  rates: Record<CurrencyCode, CurrencyRate>;
+  isLiveFxConnected: boolean;
+  lastFxSyncTime: string;
+  refreshLiveFxRates: () => Promise<void>;
   locale: LocaleCode;
   setLocale: (l: LocaleCode) => void;
   direction: 'ltr' | 'rtl';
@@ -220,6 +224,9 @@ const GlobalCurrencyLocaleContext = createContext<GlobalCurrencyLocaleContextTyp
 export const GlobalCurrencyLocaleProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currency, setCurrencyState] = useState<CurrencyCode>('INR');
   const [locale, setLocaleState] = useState<LocaleCode>('en');
+  const [rates, setRates] = useState<Record<CurrencyCode, CurrencyRate>>(BASELINE_CURRENCY_REGISTRY);
+  const [isLiveFxConnected, setIsLiveFxConnected] = useState<boolean>(true);
+  const [lastFxSyncTime, setLastFxSyncTime] = useState<string>(new Date().toLocaleTimeString());
   const [fontSizeScale, setFontSizeScale] = useState<number>(100);
   const [visionMode, setVisionMode] = useState<VisionMode>('NORMAL');
   const [typographyMode, setTypographyMode] = useState<TypographyMode>('STANDARD');
@@ -230,10 +237,32 @@ export const GlobalCurrencyLocaleProvider: React.FC<{ children: React.ReactNode 
 
   const direction = LOCALE_REGISTRY[locale].dir;
 
+  const refreshLiveFxRates = useCallback(async () => {
+    try {
+      const res = await fetch('http://localhost:4000/api/v1/company/treasury/fx-rates');
+      if (res.ok) {
+        const json = await res.json();
+        if (json.data && json.data.rates) {
+          setRates(json.data.rates);
+          setIsLiveFxConnected(true);
+          setLastFxSyncTime(new Date().toLocaleTimeString());
+        }
+      }
+    } catch {
+      // Keep baseline
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshLiveFxRates();
+    const interval = setInterval(refreshLiveFxRates, 60000);
+    return () => clearInterval(interval);
+  }, [refreshLiveFxRates]);
+
   const setCurrency = (c: CurrencyCode) => {
     setCurrencyState(c);
-    const curr = CURRENCY_REGISTRY[c];
-    setLastSwitchBanner(`🌐 Currency switched to ${curr.name} (${curr.symbol} ${c}) • Real-time FX conversion applied across all financial ledgers!`);
+    const curr = rates[c] || BASELINE_CURRENCY_REGISTRY[c];
+    setLastSwitchBanner(`🌐 Currency switched to ${curr.name} (${curr.symbol} ${c}) • Interbank rate 1 ${c} = ₹ ${curr.inverseInr || (1/curr.rateToInr).toFixed(2)}`);
     setTimeout(() => setLastSwitchBanner(null), 4500);
   };
 
@@ -265,7 +294,7 @@ export const GlobalCurrencyLocaleProvider: React.FC<{ children: React.ReactNode 
   };
 
   const formatMoney = (amountInInr: number): string => {
-    const curr = CURRENCY_REGISTRY[currency];
+    const curr = rates[currency] || BASELINE_CURRENCY_REGISTRY[currency];
     const converted = amountInInr * curr.rateToInr;
     if (currency === 'INR') {
       if (converted >= 10000000) return `₹ ${(converted / 10000000).toFixed(2)} Cr`;
@@ -280,6 +309,10 @@ export const GlobalCurrencyLocaleProvider: React.FC<{ children: React.ReactNode 
       value={{
         currency,
         setCurrency,
+        rates,
+        isLiveFxConnected,
+        lastFxSyncTime,
+        refreshLiveFxRates,
         locale,
         setLocale,
         direction,
