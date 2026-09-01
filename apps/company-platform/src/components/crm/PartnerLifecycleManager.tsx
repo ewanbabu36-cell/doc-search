@@ -8,11 +8,23 @@ import { partnerService } from '../../services/partner-service.js';
 import { PartnerListView } from './PartnerListView.js';
 import { PartnerProfileView } from './PartnerProfileView.js';
 import { PartnerVerificationConsole } from './PartnerVerificationConsole.js';
+import { PartnerContractsVaultView } from './PartnerContractsVaultView.js';
+import { PartnerRevenueBillingLedgerView } from './PartnerRevenueBillingLedgerView.js';
+import { PartnerAbdmTelemetryView } from './PartnerAbdmTelemetryView.js';
+import { PartnerOutreachHubView } from './PartnerOutreachHubView.js';
 import { CustomizableSubscriptionPlanManager } from './CustomizableSubscriptionPlanManager.js';
 import { PartnerPipelineAnalyticsView } from './PartnerPipelineAnalyticsView.js';
 import { Spinner, ErrorState, Tabs } from '@docsearch/ui-kit';
 
-export type ActiveCrmTab = 'DIRECTORY' | 'VERIFICATION' | 'PLANS' | 'ANALYTICS';
+export type ActiveCrmTab =
+  | 'DIRECTORY'
+  | 'VERIFICATION'
+  | 'CONTRACTS'
+  | 'BILLING'
+  | 'TELEMETRY'
+  | 'OUTREACH'
+  | 'PLANS'
+  | 'ANALYTICS';
 
 export const PartnerLifecycleManager: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveCrmTab>('DIRECTORY');
@@ -117,10 +129,14 @@ export const PartnerLifecycleManager: React.FC = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       <Tabs
         tabs={[
-          { id: 'DIRECTORY', label: '📋 Partner Directory & CRM' },
-          { id: 'VERIFICATION', label: '🛡️ Document Verification Console (3)' },
-          { id: 'PLANS', label: '💳 Subscription Plans & Entitlements' },
-          { id: 'ANALYTICS', label: '📊 Conversion Funnel & Pipeline Analytics' }
+          { id: 'DIRECTORY', label: '📋 Directory & CRM' },
+          { id: 'VERIFICATION', label: '🛡️ Document Verification (3)' },
+          { id: 'CONTRACTS', label: '📑 Contracts & SLAs' },
+          { id: 'BILLING', label: '💵 Invoicing & GST Ledger' },
+          { id: 'TELEMETRY', label: '⚡ ABDM 2.0 Telemetry' },
+          { id: 'OUTREACH', label: '📞 Communications & QBR' },
+          { id: 'PLANS', label: '💳 Subscription Tiers' },
+          { id: 'ANALYTICS', label: '📊 Pipeline Funnel' }
         ]}
         activeTabId={activeTab}
         onTabChange={(id) => setActiveTab(id as ActiveCrmTab)}
@@ -132,6 +148,22 @@ export const PartnerLifecycleManager: React.FC = () => {
 
       {activeTab === 'VERIFICATION' && (
         <PartnerVerificationConsole />
+      )}
+
+      {activeTab === 'CONTRACTS' && (
+        <PartnerContractsVaultView />
+      )}
+
+      {activeTab === 'BILLING' && (
+        <PartnerRevenueBillingLedgerView />
+      )}
+
+      {activeTab === 'TELEMETRY' && (
+        <PartnerAbdmTelemetryView />
+      )}
+
+      {activeTab === 'OUTREACH' && (
+        <PartnerOutreachHubView />
       )}
 
       {activeTab === 'PLANS' && (

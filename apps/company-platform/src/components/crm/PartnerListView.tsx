@@ -108,6 +108,35 @@ export const PartnerListView: React.FC<PartnerListViewProps> = ({ onSelectPartne
     }
   };
 
+  const handleExportDirectoryCsv = () => {
+    const headers = ['Partner ID', 'Trade Name', 'Legal Name', 'Tenant Slug', 'Partner Type', 'Lifecycle Status', 'Verification Status', 'Branch Count', 'Primary Contact Name', 'Primary Contact Email', 'Phone'];
+    const rows = partners.map(p => [
+      p.id,
+      `"${p.tradeName.replace(/"/g, '""')}"`,
+      `"${p.legalName.replace(/"/g, '""')}"`,
+      p.tenantSlug,
+      p.partnerType,
+      p.lifecycleStatus,
+      p.verificationStatus,
+      p.branchCount,
+      `"${p.primaryContact.name.replace(/"/g, '""')}"`,
+      p.primaryContact.email,
+      p.primaryContact.phone || ''
+    ]);
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `DOCSEARCH_PARTNERS_EXPORT_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setOnboardSuccessMessage('All partner accounts exported to CSV successfully!');
+    setTimeout(() => setOnboardSuccessMessage(null), 4000);
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Header Bar */}
@@ -124,7 +153,10 @@ export const PartnerListView: React.FC<PartnerListViewProps> = ({ onSelectPartne
           </p>
         </div>
 
-        <div>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <Button variant="outline" size="sm" onClick={handleExportDirectoryCsv}>
+            📥 Export CSV
+          </Button>
           <Button variant="primary" size="sm" onClick={() => setIsOnboardingOpen(true)} style={{ backgroundColor: '#06B6D4', color: '#070C16', fontWeight: 800 }}>
             + Onboard New Partner Lead
           </Button>
