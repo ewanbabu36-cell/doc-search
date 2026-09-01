@@ -1,53 +1,21 @@
 @echo off
-TITLE Doc Search — Healthcare SaaS Suite Launcher
+TITLE Doc Search — Healthcare Platform Suite
 COLOR 0A
+cd /d "%~dp0"
+
 echo ======================================================================
-echo    DOC SEARCH — HEALTHCARE SAAS PLATFORM (ENTERPRISE SUITE)
+echo    DOC SEARCH — ENTERPRISE HEALTHCARE SUITE (ALL-IN-ONE RUNNER)
 echo ======================================================================
 echo.
-echo [0/4] Checking and clearing old port bindings (4000, 5173, 5174, 5175)...
-
-:: Kill any existing process on port 4000
-for /f "tokens=5" %%a in ('netstat -aon ^| findstr :4000 ^| findstr LISTENING') do taskkill /f /pid %%a >nul 2>&1
-
-:: Kill any existing process on port 5173
-for /f "tokens=5" %%a in ('netstat -aon ^| findstr :5173 ^| findstr LISTENING') do taskkill /f /pid %%a >nul 2>&1
-
-:: Kill any existing process on port 5174
-for /f "tokens=5" %%a in ('netstat -aon ^| findstr :5174 ^| findstr LISTENING') do taskkill /f /pid %%a >nul 2>&1
-
-:: Kill any existing process on port 5175
-for /f "tokens=5" %%a in ('netstat -aon ^| findstr :5175 ^| findstr LISTENING') do taskkill /f /pid %%a >nul 2>&1
-
-echo [✓] Ports cleared cleanly!
-echo.
-echo Starting all 4 services in independent background processes...
-echo.
-
-:: 1. API Gateway (Port 4000)
-echo [1/4] Starting Fastify API Gateway on http://localhost:4000 ...
-start "DocSearch - API Gateway (Port 4000)" cmd.exe /k "cd /d "%~dp0" && pnpm --filter @docsearch/api-gateway start"
-
-:: 2. Partner Platform (Port 5173)
-echo [2/4] Starting Partner Platform on http://localhost:5173 ...
-start "DocSearch - Partner Platform (Port 5173)" cmd.exe /k "cd /d "%~dp0" && pnpm --filter @docsearch/partner-platform dev --port 5173 --host"
-
-:: 3. Company Platform (Port 5174)
-echo [3/4] Starting Company SaaS HQ Platform on http://localhost:5174 ...
-start "DocSearch - Company HQ (Port 5174)" cmd.exe /k "cd /d "%~dp0" && pnpm --filter @docsearch/company-platform dev --port 5174 --host"
-
-:: 4. Landing Page (Port 5175)
-echo [4/4] Starting Marketing Landing Page on http://localhost:5175 ...
-start "DocSearch - Landing Page (Port 5175)" cmd.exe /k "cd /d "%~dp0" && pnpm --filter @docsearch/landing-page dev --port 5175 --host"
-
+echo Launching all 4 platforms simultaneously:
+echo   - 🏥 Partner Platform:   http://localhost:5173
+echo   - 🏢 Company SaaS HQ:    http://localhost:5174
+echo   - 🌟 Marketing Landing:  http://localhost:5175
+echo   - ⚡ Fastify API Gateway: http://localhost:4000/health
 echo.
 echo ======================================================================
-echo    ALL 4 PLATFORMS LAUNCHED CLEANLY & READY!
-echo ======================================================================
-echo    - Partner Platform:  http://localhost:5173
-echo    - Company SaaS HQ:   http://localhost:5174
-echo    - Public Landing:    http://localhost:5175
-echo    - API Gateway:       http://localhost:4000/health
-echo ======================================================================
-echo (You can minimize this window. Servers are running in background!)
+echo.
+
+node scripts/start-all.js
+
 pause
