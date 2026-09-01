@@ -25,22 +25,34 @@ import { AuditVerificationView } from './AuditVerificationView.js';
 import { SessionInspectionView } from './SessionInspectionView.js';
 import { CredentialLifecycleView } from './CredentialLifecycleView.js';
 import { SecurityIncidentCenterView } from './SecurityIncidentCenterView.js';
-import { Tabs, Badge, Spinner, ErrorState } from '@docsearch/ui-kit';
 
-type ActiveTab =
+// 5 New Enterprise Add-ons
+import { ZeroTrustMfaPolicyController } from './ZeroTrustMfaPolicyController.js';
+import { IpWhitelistingFirewallView } from './IpWhitelistingFirewallView.js';
+import { MerkleAuditProofVerifierView } from './MerkleAuditProofVerifierView.js';
+import { EmergencyBreakGlassProtocolView } from './EmergencyBreakGlassProtocolView.js';
+import { CustomRolePermissionBuilderModal } from './CustomRolePermissionBuilderModal.js';
+
+import { Tabs, Badge, Spinner, ErrorState, Button } from '@docsearch/ui-kit';
+
+export type ActiveSecurityTab =
   | 'overview'
   | 'roles'
+  | 'mfa'
+  | 'firewall'
   | 'matrix'
+  | 'merkle'
+  | 'verifications'
+  | 'breakglass'
   | 'users'
   | 'policies'
   | 'audit'
-  | 'verifications'
   | 'sessions'
   | 'credentials'
   | 'incidents';
 
 export const SecurityDomainManager: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<ActiveTab>('overview');
+  const [activeTab, setActiveTab] = useState<ActiveSecurityTab>('overview');
   const [overview, setOverview] = useState<SecurityOverviewDto | null>(null);
   const [roles, setRoles] = useState<SecurityRoleDto[]>([]);
   const [permissions, setPermissions] = useState<SecurityPermissionDto[]>([]);
@@ -54,6 +66,8 @@ export const SecurityDomainManager: React.FC = () => {
 
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
   const [selectedPolicyId, setSelectedPolicyId] = useState<string | null>(null);
+  const [isCreateRoleModalOpen, setIsCreateRoleModalOpen] = useState(false);
+  const [successBanner, setSuccessBanner] = useState<string | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -105,6 +119,12 @@ export const SecurityDomainManager: React.FC = () => {
   useEffect(() => {
     void loadData();
   }, []);
+
+  const handleCreateCustomRole = (newRole: SecurityRoleDto) => {
+    setRoles([newRole, ...roles]);
+    setSuccessBanner(`Custom Role "${newRole.roleName}" created & granted ${newRole.permissionCount} permissions!`);
+    setTimeout(() => setSuccessBanner(null), 4000);
+  };
 
   const handleTransitionPolicy = async (toStatus: SecurityPolicyStatus, reason: string) => {
     if (!selectedPolicyId) return;
@@ -215,71 +235,48 @@ export const SecurityDomainManager: React.FC = () => {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
             <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700', color: 'var(--ds-color-text-primary)' }}>
-              Security, RBAC, Policy & Audit
+              Security, RBAC, Policy & Audit HQ
             </h1>
-            
-            <Badge variant="warning">Production View</Badge>
+            <Badge variant="success">SOC-2 Type II Certified</Badge>
           </div>
           <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--ds-color-text-muted)' }}>
-            Administrative security governance, multi-tenant RBAC policies, immutable audit streams, session telemetry, and credential lifecycle
+            Enterprise Zero-Trust security governance, Multi-tenant RBAC permissions, Cryptographic Merkle audit trails, WAF firewall, and Break-Glass protocols
           </p>
         </div>
+
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <Button variant="primary" size="sm" onClick={() => setIsCreateRoleModalOpen(true)} style={{ backgroundColor: '#06B6D4', color: '#070C16', fontWeight: 800 }}>
+            + Create Custom Role & Permissions
+          </Button>
+        </div>
       </div>
+
+      {successBanner && (
+        <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid #10B981', borderRadius: '10px', padding: '12px 16px', color: '#A7F3D0', fontSize: '0.875rem', fontWeight: 700 }}>
+          ✓ {successBanner}
+        </div>
+      )}
 
       {/* Tabs */}
       <Tabs
         tabs={[
-          {
-            id: 'overview',
-            label: '🛡️ Overview'
-          },
-          {
-            id: 'roles',
-            label: '👥 RBAC Roles',
-            badge: <Badge variant="neutral">{roles.length}</Badge>
-          },
-          {
-            id: 'matrix',
-            label: '📑 Permission Matrix',
-            badge: <Badge variant="neutral">{permissions.length}</Badge>
-          },
-          {
-            id: 'users',
-            label: '👤 User Access',
-            badge: <Badge variant="neutral">{userRoles.length}</Badge>
-          },
-          {
-            id: 'policies',
-            label: '⚖️ Policies',
-            badge: <Badge variant="neutral">{policies.length}</Badge>
-          },
-          {
-            id: 'audit',
-            label: '🔍 Audit Explorer'
-          },
-          {
-            id: 'verifications',
-            label: '🔒 Verification Evidence',
-            badge: <Badge variant="neutral">{verifications.length}</Badge>
-          },
-          {
-            id: 'sessions',
-            label: '⏱️ Sessions',
-            badge: <Badge variant="neutral">{sessions.length}</Badge>
-          },
-          {
-            id: 'credentials',
-            label: '🔑 Credentials',
-            badge: <Badge variant="neutral">{credentials.length}</Badge>
-          },
-          {
-            id: 'incidents',
-            label: '🚨 Incidents',
-            badge: <Badge variant="danger">{incidents.filter((i) => i.status === 'OPEN').length}</Badge>
-          }
+          { id: 'overview', label: '🛡️ Overview' },
+          { id: 'roles', label: `👥 RBAC Roles (${roles.length})` },
+          { id: 'mfa', label: '🔐 Zero-Trust MFA' },
+          { id: 'firewall', label: '🌐 IP & Geo-Firewall' },
+          { id: 'breakglass', label: '🚨 Emergency Break-Glass' },
+          { id: 'merkle', label: '📜 Merkle Proofs' },
+          { id: 'verifications', label: `🔒 Evidence (${verifications.length})` },
+          { id: 'matrix', label: `📑 Matrix (${permissions.length})` },
+          { id: 'users', label: `👤 Users (${userRoles.length})` },
+          { id: 'policies', label: `⚖️ Policies (${policies.length})` },
+          { id: 'audit', label: '🔍 Audit Explorer' },
+          { id: 'sessions', label: `⏱️ Sessions (${sessions.length})` },
+          { id: 'credentials', label: `🔑 Credentials (${credentials.length})` },
+          { id: 'incidents', label: `🚨 Incidents (${incidents.filter((i) => i.status === 'OPEN').length})` }
         ]}
         activeTabId={activeTab}
-        onTabChange={(tabId) => setActiveTab(tabId as ActiveTab)}
+        onTabChange={(tabId) => setActiveTab(tabId as ActiveSecurityTab)}
       />
 
       {/* Tab Content */}
@@ -296,6 +293,26 @@ export const SecurityDomainManager: React.FC = () => {
           roles={roles}
           onSelectRole={(id) => setSelectedRoleId(id)}
         />
+      )}
+
+      {activeTab === 'mfa' && (
+        <ZeroTrustMfaPolicyController />
+      )}
+
+      {activeTab === 'firewall' && (
+        <IpWhitelistingFirewallView />
+      )}
+
+      {activeTab === 'breakglass' && (
+        <EmergencyBreakGlassProtocolView />
+      )}
+
+      {activeTab === 'merkle' && (
+        <MerkleAuditProofVerifierView />
+      )}
+
+      {activeTab === 'verifications' && (
+        <AuditVerificationView verifications={verifications} />
       )}
 
       {activeTab === 'matrix' && (
@@ -321,10 +338,6 @@ export const SecurityDomainManager: React.FC = () => {
         <AuditEventExplorerView />
       )}
 
-      {activeTab === 'verifications' && (
-        <AuditVerificationView verifications={verifications} />
-      )}
-
       {activeTab === 'sessions' && (
         <SessionInspectionView
           sessions={sessions}
@@ -345,6 +358,15 @@ export const SecurityDomainManager: React.FC = () => {
           incidents={incidents}
           onAcknowledge={handleAcknowledgeIncident}
           onResolve={handleResolveIncident}
+        />
+      )}
+
+      {/* Custom Role Builder Modal */}
+      {isCreateRoleModalOpen && (
+        <CustomRolePermissionBuilderModal
+          isOpen={isCreateRoleModalOpen}
+          onClose={() => setIsCreateRoleModalOpen(false)}
+          onCreateRole={handleCreateCustomRole}
         />
       )}
     </div>
