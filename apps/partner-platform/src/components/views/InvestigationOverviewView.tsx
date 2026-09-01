@@ -60,6 +60,9 @@ export const InvestigationOverviewView: React.FC<InvestigationOverviewViewProps>
               🖨️ Direct Print Result
             </Button>
           )}
+          <Button variant="outline" onClick={() => onOpenTab('reports')} style={{ borderColor: '#3B82F6', color: '#60A5FA', fontWeight: 700 }}>
+            📄 Report History ({orders.filter(o => o.report || o.status === 'VERIFIED' || o.status === 'REVIEWED').length})
+          </Button>
           <Button variant="outline" onClick={() => onOpenTab('catalog')}>
             📚 Catalog & Panels
           </Button>
@@ -180,6 +183,23 @@ export const InvestigationOverviewView: React.FC<InvestigationOverviewViewProps>
           <Button size="sm" variant="outline" onClick={() => onOpenTab('doctorReview')}>
             Open Review Board →
           </Button>
+        </Card>
+
+        <Card padding="md">
+          <h4 style={{ margin: '0 0 8px', fontSize: '1rem', fontWeight: 600 }}>
+            📄 Published Reports & Patient History Archive
+          </h4>
+          <p style={{ margin: '0 0 12px', fontSize: '0.875rem', color: 'var(--ds-color-text-muted, #64748b)' }}>
+            Search past lab reports, print verified NABL copies, and review historical biomarker trends.
+          </p>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <Button size="sm" variant="primary" onClick={() => onOpenTab('reports')}>
+              Open Reports Archive →
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => onOpenTab('patientHistory')}>
+              🕰️ Patient History
+            </Button>
+          </div>
         </Card>
       </div>
 
