@@ -1,18 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Badge, Button } from '@docsearch/ui-kit';
-
-interface WhiteLabelConfig {
-  hospitalName: string;
-  brandTagline: string;
-  logoUrl: string;
-  primaryColorHex: string;
-  accentColorHex: string;
-  customCnameDomain: string;
-  sslStatus: 'PROVISIONED_ACTIVE' | 'PENDING_DNS_VERIFICATION';
-  smsSenderId: string;
-  supportEmail: string;
-  isPublished: boolean;
-}
+import { useGlobalWhiteLabel } from '../common/GlobalWhiteLabelContext.js';
 
 const PRESET_COLORS = [
   { name: 'DocSearch Cyan', primary: '#06B6D4', accent: '#3B82F6' },
@@ -23,24 +11,12 @@ const PRESET_COLORS = [
 ];
 
 export const HospitalWhiteLabelStudioView: React.FC = () => {
-  const [config, setConfig] = useState<WhiteLabelConfig>({
-    hospitalName: 'Apollo Hospitals & Medical Centers',
-    brandTagline: 'Touching Lives, Transforming Healthcare',
-    logoUrl: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=150&auto=format&fit=crop&q=80',
-    primaryColorHex: '#059669',
-    accentColorHex: '#10B981',
-    customCnameDomain: 'portal.apollohospitals.com',
-    sslStatus: 'PROVISIONED_ACTIVE',
-    smsSenderId: 'APOLLO',
-    supportEmail: 'care@apollohospitals.com',
-    isPublished: true
-  });
-
+  const { whiteLabelConfig, updateWhiteLabel, toggleShellApplication } = useGlobalWhiteLabel();
   const [saveNotice, setSaveNotice] = useState<string | null>(null);
 
   const handleSaveWhiteLabel = (e: React.FormEvent) => {
     e.preventDefault();
-    setSaveNotice(`✓ White-Label Theme successfully compiled and deployed to Edge CDN for "${config.customCnameDomain}"!`);
+    setSaveNotice(`✓ White-Label Theme successfully compiled and deployed to Edge CDN for "${whiteLabelConfig.customCnameDomain}"!`);
     setTimeout(() => setSaveNotice(null), 5000);
   };
 
@@ -65,6 +41,37 @@ export const HospitalWhiteLabelStudioView: React.FC = () => {
         </div>
       )}
 
+      {/* Global Shell Apply Toggle Banner */}
+      <div style={{ backgroundColor: '#0F172A', border: '1.5px solid #38BDF8', borderRadius: '12px', padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+        <div>
+          <strong style={{ color: '#F8FAFC', fontSize: '0.9375rem' }}>✨ Apply White-Label Branding Globally to Platform Shell</strong>
+          <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: '#94A3B8' }}>
+            When enabled, sidebar logo, primary colors, and tenant headers switch to <strong>{whiteLabelConfig.hospitalName}</strong> in real-time.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => toggleShellApplication(!whiteLabelConfig.applyToShell)}
+          style={{
+            backgroundColor: whiteLabelConfig.applyToShell ? '#10B981' : '#334155',
+            color: '#FFF',
+            border: 'none',
+            borderRadius: '20px',
+            padding: '8px 18px',
+            fontWeight: 800,
+            fontSize: '0.8125rem',
+            cursor: 'pointer',
+            boxShadow: whiteLabelConfig.applyToShell ? '0 0 16px rgba(16, 185, 129, 0.5)' : 'none',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          <span>{whiteLabelConfig.applyToShell ? '✓ Applied Live to Shell' : '○ Enable Live Shell Sync'}</span>
+        </button>
+      </div>
+
       {/* Grid: Editor Form + Live Interactive Preview Mockup */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: '20px' }}>
         {/* Left: Customizer Controls */}
@@ -75,8 +82,8 @@ export const HospitalWhiteLabelStudioView: React.FC = () => {
               <input
                 type="text"
                 required
-                value={config.hospitalName}
-                onChange={(e) => setConfig({ ...config, hospitalName: e.target.value })}
+                value={whiteLabelConfig.hospitalName}
+                onChange={(e) => updateWhiteLabel({ hospitalName: e.target.value })}
                 style={{ width: '100%', backgroundColor: '#1E293B', border: '1px solid #475569', borderRadius: '6px', padding: '8px 10px', color: '#FFF', fontSize: '0.8125rem' }}
               />
             </div>
@@ -85,8 +92,8 @@ export const HospitalWhiteLabelStudioView: React.FC = () => {
               <label style={{ display: 'block', color: '#94A3B8', marginBottom: '4px', fontWeight: 700 }}>BRAND TAGLINE</label>
               <input
                 type="text"
-                value={config.brandTagline}
-                onChange={(e) => setConfig({ ...config, brandTagline: e.target.value })}
+                value={whiteLabelConfig.brandTagline}
+                onChange={(e) => updateWhiteLabel({ brandTagline: e.target.value })}
                 style={{ width: '100%', backgroundColor: '#1E293B', border: '1px solid #475569', borderRadius: '6px', padding: '8px 10px', color: '#FFF', fontSize: '0.8125rem' }}
               />
             </div>
@@ -99,13 +106,13 @@ export const HospitalWhiteLabelStudioView: React.FC = () => {
                   <button
                     key={p.name}
                     type="button"
-                    onClick={() => setConfig({ ...config, primaryColorHex: p.primary, accentColorHex: p.accent })}
+                    onClick={() => updateWhiteLabel({ primaryColorHex: p.primary, accentColorHex: p.accent })}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
                       gap: '6px',
                       backgroundColor: '#1E293B',
-                      border: config.primaryColorHex === p.primary ? `2px solid ${p.primary}` : '1px solid #475569',
+                      border: whiteLabelConfig.primaryColorHex === p.primary ? `2px solid ${p.primary}` : '1px solid #475569',
                       borderRadius: '6px',
                       padding: '4px 8px',
                       color: '#E2E8F0',
@@ -127,8 +134,8 @@ export const HospitalWhiteLabelStudioView: React.FC = () => {
                 <input
                   type="text"
                   required
-                  value={config.customCnameDomain}
-                  onChange={(e) => setConfig({ ...config, customCnameDomain: e.target.value })}
+                  value={whiteLabelConfig.customCnameDomain}
+                  onChange={(e) => updateWhiteLabel({ customCnameDomain: e.target.value })}
                   style={{ flex: 1, backgroundColor: '#1E293B', border: '1px solid #475569', borderRadius: '6px', padding: '8px 10px', color: '#38BDF8', fontFamily: 'monospace', fontSize: '0.8125rem' }}
                 />
                 <Badge variant="success">✓ SSL Auto-Issued</Badge>
@@ -141,8 +148,8 @@ export const HospitalWhiteLabelStudioView: React.FC = () => {
                 <input
                   type="text"
                   maxLength={6}
-                  value={config.smsSenderId}
-                  onChange={(e) => setConfig({ ...config, smsSenderId: e.target.value.toUpperCase() })}
+                  value={whiteLabelConfig.smsSenderId}
+                  onChange={(e) => updateWhiteLabel({ smsSenderId: e.target.value.toUpperCase() })}
                   style={{ width: '100%', backgroundColor: '#1E293B', border: '1px solid #475569', borderRadius: '6px', padding: '8px 10px', color: '#FFF', fontWeight: 800 }}
                 />
               </div>
@@ -151,8 +158,8 @@ export const HospitalWhiteLabelStudioView: React.FC = () => {
                 <label style={{ display: 'block', color: '#94A3B8', marginBottom: '4px', fontWeight: 700 }}>PATIENT SUPPORT EMAIL</label>
                 <input
                   type="email"
-                  value={config.supportEmail}
-                  onChange={(e) => setConfig({ ...config, supportEmail: e.target.value })}
+                  value={whiteLabelConfig.supportEmail}
+                  onChange={(e) => updateWhiteLabel({ supportEmail: e.target.value })}
                   style={{ width: '100%', backgroundColor: '#1E293B', border: '1px solid #475569', borderRadius: '6px', padding: '8px 10px', color: '#FFF' }}
                 />
               </div>
@@ -162,11 +169,11 @@ export const HospitalWhiteLabelStudioView: React.FC = () => {
               type="submit"
               variant="primary"
               style={{
-                backgroundColor: config.primaryColorHex,
+                backgroundColor: whiteLabelConfig.primaryColorHex,
                 color: '#FFF',
                 fontWeight: 900,
                 marginTop: '8px',
-                boxShadow: `0 4px 16px ${config.primaryColorHex}66`
+                boxShadow: `0 4px 16px ${whiteLabelConfig.primaryColorHex}66`
               }}
             >
               🚀 Save & Deploy Hospital White-Label Theme
@@ -179,13 +186,13 @@ export const HospitalWhiteLabelStudioView: React.FC = () => {
           <div
             style={{
               backgroundColor: '#070C16',
-              border: `2px solid ${config.primaryColorHex}`,
+              border: `2px solid ${whiteLabelConfig.primaryColorHex}`,
               borderRadius: '16px',
               padding: '18px',
               display: 'flex',
               flexDirection: 'column',
               gap: '14px',
-              boxShadow: `0 10px 40px ${config.primaryColorHex}33`
+              boxShadow: `0 10px 40px ${whiteLabelConfig.primaryColorHex}33`
             }}
           >
             {/* Mock Hospital Header */}
@@ -196,7 +203,7 @@ export const HospitalWhiteLabelStudioView: React.FC = () => {
                     width: '36px',
                     height: '36px',
                     borderRadius: '8px',
-                    backgroundColor: config.primaryColorHex,
+                    backgroundColor: whiteLabelConfig.primaryColorHex,
                     color: '#FFF',
                     display: 'flex',
                     alignItems: 'center',
@@ -205,16 +212,16 @@ export const HospitalWhiteLabelStudioView: React.FC = () => {
                     fontSize: '1rem'
                   }}
                 >
-                  {config.hospitalName.charAt(0)}
+                  {whiteLabelConfig.hospitalName.charAt(0)}
                 </div>
                 <div>
-                  <strong style={{ color: '#FFF', fontSize: '0.9375rem', display: 'block' }}>{config.hospitalName}</strong>
-                  <span style={{ fontSize: '0.6875rem', color: '#94A3B8' }}>{config.brandTagline}</span>
+                  <strong style={{ color: '#FFF', fontSize: '0.9375rem', display: 'block' }}>{whiteLabelConfig.hospitalName}</strong>
+                  <span style={{ fontSize: '0.6875rem', color: '#94A3B8' }}>{whiteLabelConfig.brandTagline}</span>
                 </div>
               </div>
 
-              <span style={{ backgroundColor: 'rgba(255,255,255,0.08)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.6875rem', color: config.accentColorHex, fontFamily: 'monospace' }}>
-                {config.customCnameDomain}
+              <span style={{ backgroundColor: 'rgba(255,255,255,0.08)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.6875rem', color: whiteLabelConfig.accentColorHex, fontFamily: 'monospace' }}>
+                {whiteLabelConfig.customCnameDomain}
               </span>
             </div>
 
@@ -223,12 +230,12 @@ export const HospitalWhiteLabelStudioView: React.FC = () => {
               <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 800 }}>PATIENT SELF-SERVICE HUB</span>
               <h4 style={{ margin: '4px 0 8px', color: '#FFF' }}>Book OPD & Video Consultation</h4>
               <p style={{ margin: 0, fontSize: '0.75rem', color: '#CBD5E1', lineHeight: '1.4' }}>
-                Connect with 450+ Top Specialists at {config.hospitalName}. Zero waiting time with instant digital prescription.
+                Connect with 450+ Top Specialists at {whiteLabelConfig.hospitalName}. Zero waiting time with instant digital prescription.
               </p>
               <button
                 type="button"
                 style={{
-                  backgroundColor: config.primaryColorHex,
+                  backgroundColor: whiteLabelConfig.primaryColorHex,
                   color: '#FFF',
                   border: 'none',
                   borderRadius: '6px',
@@ -244,10 +251,10 @@ export const HospitalWhiteLabelStudioView: React.FC = () => {
             </div>
 
             {/* Mock SMS notification */}
-            <div style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: '8px', padding: '10px', borderLeft: `3px solid ${config.accentColorHex}`, fontSize: '0.75rem' }}>
-              <span style={{ color: '#94A3B8', display: 'block', fontSize: '0.6875rem' }}>WhatsApp Sender ID: <strong>{config.smsSenderId}</strong></span>
+            <div style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: '8px', padding: '10px', borderLeft: `3px solid ${whiteLabelConfig.accentColorHex}`, fontSize: '0.75rem' }}>
+              <span style={{ color: '#94A3B8', display: 'block', fontSize: '0.6875rem' }}>WhatsApp Sender ID: <strong>{whiteLabelConfig.smsSenderId}</strong></span>
               <span style={{ color: '#E2E8F0', marginTop: '2px', display: 'block' }}>
-                &ldquo;Dear Patient, your consultation with Dr. Mehta at {config.hospitalName} is confirmed for 4:00 PM.&rdquo;
+                &ldquo;Dear Patient, your consultation with Dr. Mehta at {whiteLabelConfig.hospitalName} is confirmed for 4:00 PM.&rdquo;
               </span>
             </div>
           </div>

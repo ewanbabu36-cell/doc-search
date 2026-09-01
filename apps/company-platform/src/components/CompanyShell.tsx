@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UniversalAccountSettingsModal } from './common/UniversalAccountSettingsModal.js';
 import { GlobalCurrencyLocaleProvider, useGlobalLocale } from './common/GlobalCurrencyLocaleContext.js';
+import { GlobalWhiteLabelProvider, useGlobalWhiteLabel } from './common/GlobalWhiteLabelContext.js';
 import { AccessibilityLocaleToolbar } from './common/AccessibilityLocaleToolbar.js';
 import { GlobalCommandPaletteModal } from './common/GlobalCommandPaletteModal.js';
 import {
@@ -52,6 +53,7 @@ const getThemeLabel = (t: string) => {
 
 const CompanyShellInner: React.FC<CompanyShellProps> = ({ currentUser, onLogout }) => {
   const { t } = useGlobalLocale();
+  const { whiteLabelConfig } = useGlobalWhiteLabel();
   const [activeDomainId, setActiveDomainId] = useState<string>('executive-command-center');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState<boolean>(false);
@@ -75,6 +77,18 @@ const CompanyShellInner: React.FC<CompanyShellProps> = ({ currentUser, onLogout 
 
   const activeDomain = PHASE_1_DOMAINS.find((d) => d.id === activeDomainId);
 
+  const brandDisplayName = whiteLabelConfig.applyToShell
+    ? whiteLabelConfig.hospitalName
+    : t('company_platform', 'Company Platform');
+
+  const brandLogoText = whiteLabelConfig.applyToShell
+    ? whiteLabelConfig.hospitalName.substring(0, 2).toUpperCase()
+    : 'DS';
+
+  const brandLogoBg = whiteLabelConfig.applyToShell
+    ? whiteLabelConfig.primaryColorHex
+    : 'var(--ds-color-primary)';
+
   return (
     <AppShell
       sidebar={
@@ -86,8 +100,8 @@ const CompanyShellInner: React.FC<CompanyShellProps> = ({ currentUser, onLogout 
                   width: '28px',
                   height: '28px',
                   borderRadius: '6px',
-                  backgroundColor: 'var(--ds-color-primary)',
-                  color: 'var(--ds-color-primary-foreground)',
+                  backgroundColor: brandLogoBg,
+                  color: '#FFFFFF',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -95,15 +109,15 @@ const CompanyShellInner: React.FC<CompanyShellProps> = ({ currentUser, onLogout 
                   fontSize: '0.875rem'
                 }}
               >
-                DS
+                {brandLogoText}
               </div>
               {!isSidebarCollapsed && (
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                   <span style={{ fontWeight: '700', fontSize: '0.9375rem', color: 'var(--ds-color-text-primary)' }}>
-                    {t('company_platform', 'Company Platform')}
+                    {brandDisplayName}
                   </span>
                   <span style={{ fontSize: '0.6875rem', color: 'var(--ds-color-text-muted)' }}>
-                    {t('enterprise_governance', 'Enterprise Governance')}
+                    {whiteLabelConfig.applyToShell ? whiteLabelConfig.brandTagline : t('enterprise_governance', 'Enterprise Governance')}
                   </span>
                 </div>
               )}
@@ -115,12 +129,16 @@ const CompanyShellInner: React.FC<CompanyShellProps> = ({ currentUser, onLogout 
       }
       header={
         <Header
-          title={t('company_platform', 'Company Platform')}
+          title={brandDisplayName}
           onMenuToggle={() => setIsSidebarCollapsed((prev) => !prev)}
           organizationSlot={
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ fontSize: '0.75rem', color: 'var(--ds-color-text-muted)' }}>Tenant:</span>
-              <Badge variant="neutral">Doc Search HQ (Platform Scope)</Badge>
+              <Badge variant={whiteLabelConfig.applyToShell ? 'primary' : 'neutral'}>
+                {whiteLabelConfig.applyToShell
+                  ? `${whiteLabelConfig.hospitalName} (White-Label)`
+                  : 'Doc Search HQ (Platform Scope)'}
+              </Badge>
               <button
                 type="button"
                 onClick={() => setIsCommandPaletteOpen(true)}
@@ -304,8 +322,10 @@ const CompanyShellInner: React.FC<CompanyShellProps> = ({ currentUser, onLogout 
 
 export const CompanyShell: React.FC<CompanyShellProps> = (props) => {
   return (
-    <GlobalCurrencyLocaleProvider>
-      <CompanyShellInner {...props} />
-    </GlobalCurrencyLocaleProvider>
+    <GlobalWhiteLabelProvider>
+      <GlobalCurrencyLocaleProvider>
+        <CompanyShellInner {...props} />
+      </GlobalCurrencyLocaleProvider>
+    </GlobalWhiteLabelProvider>
   );
 };
