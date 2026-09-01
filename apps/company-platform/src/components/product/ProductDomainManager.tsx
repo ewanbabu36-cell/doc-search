@@ -16,9 +16,22 @@ import { PlanProfileView } from './PlanProfileView.js';
 import { FeatureCatalogView } from './FeatureCatalogView.js';
 import { PartnerAssignmentView } from './PartnerAssignmentView.js';
 import { AssignPlanDialog } from './AssignPlanDialog.js';
+
+// 3 New Product & Entitlement Advancements
+import { FeatureFlagsCanaryView } from './FeatureFlagsCanaryView.js';
+import { TenantQuotaThrottlerView } from './TenantQuotaThrottlerView.js';
+import { ClinicalAddonMarketplaceView } from './ClinicalAddonMarketplaceView.js';
+
 import { Tabs, Badge, Spinner, ErrorState } from '@docsearch/ui-kit';
 
-type ActiveTab = 'products' | 'plans' | 'features' | 'assignments';
+type ActiveTab =
+  | 'products'
+  | 'flags'
+  | 'quotas'
+  | 'marketplace'
+  | 'plans'
+  | 'features'
+  | 'assignments';
 
 export const ProductDomainManager: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('products');
@@ -104,11 +117,11 @@ export const ProductDomainManager: React.FC = () => {
 
   if (error && products.length === 0) {
     return (
-      <ErrorState title="Catalog Unavailable" message={error} onRetry={loadDomainData} />
+      <ErrorState title="Product Catalog Unavailable" message={error} onRetry={loadDomainData} />
     );
   }
 
-  // Drilldown to Plan Details
+  // Drilldown: Plan Profile View
   if (selectedPlanId) {
     const selectedPlan = plans.find((p) => p.id === selectedPlanId);
     if (selectedPlan) {
@@ -122,7 +135,7 @@ export const ProductDomainManager: React.FC = () => {
     }
   }
 
-  // Drilldown to Product Details
+  // Drilldown: Product Profile View
   if (selectedProductId) {
     const selectedProd = products.find((p) => p.id === selectedProductId);
     if (selectedProd) {
@@ -140,17 +153,16 @@ export const ProductDomainManager: React.FC = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Header Bar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', backgroundColor: '#0F172A', border: '1.5px solid rgba(6, 182, 212, 0.4)', borderRadius: '14px', padding: '16px 20px' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700', color: 'var(--ds-color-text-primary)' }}>
-              Product / Plans / Entitlements
+            <h1 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 800, color: '#F8FAFC' }}>
+              📦 Product, Plans, Entitlements & Add-Ons HQ
             </h1>
-            
-            <Badge variant="warning">Production View</Badge>
+            <Badge variant="success">● Feature Flags & Token Quotas Active</Badge>
           </div>
-          <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--ds-color-text-muted)' }}>
-            Healthcare SaaS product catalog, tier configurations, granular entitlement maps, and partner assignments
+          <p style={{ margin: 0, fontSize: '0.8125rem', color: '#94A3B8' }}>
+            0-Downtime canary feature rollouts, hospital tenant API quota throttler overrides, and clinical department add-on modules
           </p>
         </div>
       </div>
@@ -162,6 +174,21 @@ export const ProductDomainManager: React.FC = () => {
             id: 'products',
             label: '📦 Product Catalog',
             badge: <Badge variant="neutral">{products.length}</Badge>
+          },
+          {
+            id: 'flags',
+            label: '🚩 Feature Flags & Canary',
+            badge: <Badge variant="success">0-Downtime</Badge>
+          },
+          {
+            id: 'quotas',
+            label: '⚡ Tenant Quota Throttler',
+            badge: <Badge variant="primary">Redis Limit</Badge>
+          },
+          {
+            id: 'marketplace',
+            label: '🧩 Clinical Add-On Marketplace',
+            badge: <Badge variant="warning">4 Add-Ons</Badge>
           },
           {
             id: 'plans',
@@ -189,6 +216,18 @@ export const ProductDomainManager: React.FC = () => {
           products={products}
           onSelectProduct={handleSelectProduct}
         />
+      )}
+
+      {activeTab === 'flags' && (
+        <FeatureFlagsCanaryView />
+      )}
+
+      {activeTab === 'quotas' && (
+        <TenantQuotaThrottlerView />
+      )}
+
+      {activeTab === 'marketplace' && (
+        <ClinicalAddonMarketplaceView />
       )}
 
       {activeTab === 'plans' && (
