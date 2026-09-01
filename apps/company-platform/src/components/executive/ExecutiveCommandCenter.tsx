@@ -10,19 +10,23 @@ import { QuickActions } from './QuickActions.js';
 import { TrendAnalytics } from './TrendAnalytics.js';
 import { SystemHealthSummary } from './SystemHealthSummary.js';
 
-// 4 New Executive Advancements
+// 8 Executive Advancements
 import { NationalHealthcareWarRoomView } from './NationalHealthcareWarRoomView.js';
 import { RealtimeEbitdaUnitEconomicsView } from './RealtimeEbitdaUnitEconomicsView.js';
 import { PlatformEmergencyPanicLockModal } from './PlatformEmergencyPanicLockModal.js';
 import { CustomizableExecutiveWidgetGridView } from './CustomizableExecutiveWidgetGridView.js';
 import { AiOutbreakBillingAnomalyCenterView } from './AiOutbreakBillingAnomalyCenterView.js';
+import { AiVoiceWhatsAppAgentStudioView } from './AiVoiceWhatsAppAgentStudioView.js';
+import { AbdmNationalHealthStackConsoleView } from './AbdmNationalHealthStackConsoleView.js';
+import { MultiCloudDisasterRecoveryDrillView } from './MultiCloudDisasterRecoveryDrillView.js';
+import { LimsHl7AstmIotDeviceHubView } from './LimsHl7AstmIotDeviceHubView.js';
 import { generateAndDownloadExecutiveBoardPdf } from '../../utils/clientExecutiveBoardPdf.js';
 
 import { Spinner, ErrorState, Tabs, Badge, Button } from '@docsearch/ui-kit';
 
 export const ExecutiveCommandCenter: React.FC = () => {
   const [data, setData] = useState<ExecutiveDashboardData | null>(null);
-  const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'ANOMALIES' | 'CUSTOM_GRID' | 'WAR_ROOM' | 'EBITDA'>('OVERVIEW');
+  const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'ANOMALIES' | 'CUSTOM_GRID' | 'WAR_ROOM' | 'EBITDA' | 'AI_VOICE' | 'ABDM_STACK' | 'DR_FAILOVER' | 'LIMS_IOT'>('OVERVIEW');
   const [isPanicOpen, setIsPanicOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -141,7 +145,11 @@ export const ExecutiveCommandCenter: React.FC = () => {
           { id: 'ANOMALIES', label: '🤖 AI Outbreak & Billing Anomaly Alert Center', badge: <Badge variant="danger">2 Critical</Badge> },
           { id: 'CUSTOM_GRID', label: '🧩 Customizable Widget Studio', badge: <Badge variant="warning">Drag & Drop</Badge> },
           { id: 'WAR_ROOM', label: '⚡ National Healthcare War-Room', badge: <Badge variant="success">15.1k / hr</Badge> },
-          { id: 'EBITDA', label: '💰 Real-Time EBITDA & Burn Rate', badge: <Badge variant="primary">Cash Positive</Badge> }
+          { id: 'EBITDA', label: '💰 Real-Time EBITDA & Burn Rate', badge: <Badge variant="primary">Cash Positive</Badge> },
+          { id: 'AI_VOICE', label: '🎙️ AI Voice & WhatsApp Triage', badge: <Badge variant="primary">Multi-Lingual</Badge> },
+          { id: 'ABDM_STACK', label: '🧬 ABDM M1-M3 Gateway', badge: <Badge variant="success">NHA Certified</Badge> },
+          { id: 'DR_FAILOVER', label: '🛡️ Multi-Cloud DR Failover', badge: <Badge variant="warning">AWS ↔ GCP</Badge> },
+          { id: 'LIMS_IOT', label: '🧪 LIMS HL7/ASTM IoT Hub', badge: <Badge variant="danger">Panic Sirens</Badge> }
         ]}
         activeTabId={activeTab}
         onTabChange={(id) => setActiveTab(id as typeof activeTab)}
@@ -165,6 +173,26 @@ export const ExecutiveCommandCenter: React.FC = () => {
       {/* Tab: EBITDA */}
       {activeTab === 'EBITDA' && (
         <RealtimeEbitdaUnitEconomicsView />
+      )}
+
+      {/* Tab: AI Voice & WhatsApp Triage */}
+      {activeTab === 'AI_VOICE' && (
+        <AiVoiceWhatsAppAgentStudioView />
+      )}
+
+      {/* Tab: ABDM National Health Stack Console */}
+      {activeTab === 'ABDM_STACK' && (
+        <AbdmNationalHealthStackConsoleView />
+      )}
+
+      {/* Tab: Multi-Cloud Disaster Recovery Drill */}
+      {activeTab === 'DR_FAILOVER' && (
+        <MultiCloudDisasterRecoveryDrillView />
+      )}
+
+      {/* Tab: LIMS HL7/ASTM IoT Hub */}
+      {activeTab === 'LIMS_IOT' && (
+        <LimsHl7AstmIotDeviceHubView />
       )}
 
       {/* Tab: Overview */}
