@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Badge, Button } from '@docsearch/ui-kit';
 import { useGlobalLocale } from '../common/GlobalCurrencyLocaleContext.js';
 
@@ -91,10 +91,30 @@ const INITIAL_WIDGETS: DashboardWidget[] = [
   }
 ];
 
+const STORAGE_KEY = 'docsearch_executive_custom_grid_layout';
+
 export const CustomizableExecutiveWidgetGridView: React.FC = () => {
   const { formatMoney, t } = useGlobalLocale();
-  const [widgets, setWidgets] = useState<DashboardWidget[]>(INITIAL_WIDGETS);
+  const [widgets, setWidgets] = useState<DashboardWidget[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return INITIAL_WIDGETS;
+  });
+
+  const [draggedWidgetId, setDraggedWidgetId] = useState<string | null>(null);
+  const [dragOverWidgetId, setDragOverWidgetId] = useState<string | null>(null);
   const [saveNotice, setSaveNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(widgets));
+    } catch {}
+  }, [widgets]);
 
   const toggleVisibility = (widgetId: string) => {
     setWidgets((prev) =>
@@ -114,7 +134,66 @@ export const CustomizableExecutiveWidgetGridView: React.FC = () => {
     );
   };
 
+  // HTML5 Drag & Drop Handlers
+  const handleDragStart = (e: React.DragEvent, id: string) => {
+    setDraggedWidgetId(id);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', id);
+  };
+
+  const handleDragOver = (e: React.DragEvent, id: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverWidgetId !== id) {
+      setDragOverWidgetId(id);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setDragOverWidgetId(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, targetId: string) => {
+    e.preventDefault();
+    setDragOverWidgetId(null);
+
+    const sourceId = draggedWidgetId || e.dataTransfer.getData('text/plain');
+    if (!sourceId || sourceId === targetId) return;
+
+    setWidgets((prev) => {
+      const sourceIndex = prev.findIndex((w) => w.id === sourceId);
+      const targetIndex = prev.findIndex((w) => w.id === targetId);
+      if (sourceIndex === -1 || targetIndex === -1) return prev;
+
+      const updated = [...prev];
+      const [moved] = updated.splice(sourceIndex, 1);
+      if (moved) {
+        updated.splice(targetIndex, 0, moved);
+      }
+      return updated;
+    });
+
+    setDraggedWidgetId(null);
+    setSaveNotice('✓ Widget position reordered and saved smoothly!');
+    setTimeout(() => setSaveNotice(null), 3500);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedWidgetId(null);
+    setDragOverWidgetId(null);
+  };
+
+  const handleResetLayout = () => {
+    setWidgets(INITIAL_WIDGETS);
+    localStorage.removeItem(STORAGE_KEY);
+    setSaveNotice('✓ Reset to Default Executive Dashboard Grid Layout');
+    setTimeout(() => setSaveNotice(null), 3500);
+  };
+
   const handleSaveLayout = () => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(widgets));
+    } catch {}
     setSaveNotice('✓ Custom Executive Dashboard Layout saved and synced to your personalized Founder Profile!');
     setTimeout(() => setSaveNotice(null), 5000);
   };
@@ -128,25 +207,37 @@ export const CustomizableExecutiveWidgetGridView: React.FC = () => {
             <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: 'var(--ds-color-text-primary)' }}>
               🧩 Customizable Executive Widget Grid & Drag-Drop Studio
             </h2>
-            <Badge variant="success">● Personalized Executive Layout Engine Active</Badge>
+            <Badge variant="success">● HTML5 Drag & Drop Studio Active</Badge>
           </div>
           <p style={{ margin: '4px 0 0', fontSize: '0.8125rem', color: 'var(--ds-color-text-muted)' }}>
-            Rearrange, resize (1x1, 2x1, 2x2), toggle, and pin executive KPI cards tailored to your leadership operational focus
+            Grab any widget card (⋮⋮) to drag and drop reorder positions. Resize (1x1, 2x1, 2x2) and pin cards to customize your C-Suite command board.
           </p>
         </div>
 
-        <Button
-          variant="primary"
-          onClick={handleSaveLayout}
-          style={{
-            backgroundColor: '#06B6D4',
-            color: '#070C16',
-            fontWeight: 900,
-            boxShadow: '0 4px 14px rgba(6, 182, 212, 0.4)'
-          }}
-        >
-          💾 {t('save_layout', 'Save Custom Layout')}
-        </Button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleResetLayout}
+            style={{ fontWeight: 700 }}
+          >
+            🔄 Reset Layout
+          </Button>
+
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={handleSaveLayout}
+            style={{
+              backgroundColor: '#06B6D4',
+              color: '#070C16',
+              fontWeight: 900,
+              boxShadow: '0 4px 14px rgba(6, 182, 212, 0.4)'
+            }}
+          >
+            💾 {t('save_layout', 'Save Custom Layout')}
+          </Button>
+        </div>
       </div>
 
       {saveNotice && (
@@ -166,28 +257,62 @@ export const CustomizableExecutiveWidgetGridView: React.FC = () => {
         {widgets.filter((w) => w.isVisible).map((w) => {
           const displayValue = w.inrAmount ? formatMoney(w.inrAmount) : w.staticValue;
           const displayTitle = t(w.titleKey, w.defaultTitle);
+          const isDragging = draggedWidgetId === w.id;
+          const isDragOver = dragOverWidgetId === w.id;
 
           return (
             <div
               key={w.id}
+              draggable={true}
+              onDragStart={(e) => handleDragStart(e, w.id)}
+              onDragOver={(e) => handleDragOver(e, w.id)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, w.id)}
+              onDragEnd={handleDragEnd}
               style={{
                 gridColumn: w.gridSpan === '2x1' || w.gridSpan === '2x2' ? 'span 2' : 'span 1',
-                backgroundColor: '#0F172A',
-                border: w.isPinned ? `2px solid ${w.accentColor}` : '1px solid #334155',
+                backgroundColor: isDragOver ? '#1E293B' : '#0F172A',
+                border: isDragOver
+                  ? '2px dashed #06B6D4'
+                  : w.isPinned
+                  ? `2px solid ${w.accentColor}`
+                  : '1px solid #334155',
                 borderRadius: '14px',
                 padding: '18px',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
-                boxShadow: w.isPinned ? `0 8px 30px ${w.accentColor}33` : 'none',
-                transition: 'all 0.2s ease'
+                boxShadow: isDragOver
+                  ? '0 0 25px rgba(6, 182, 212, 0.6)'
+                  : w.isPinned
+                  ? `0 8px 30px ${w.accentColor}33`
+                  : 'none',
+                opacity: isDragging ? 0.4 : 1,
+                cursor: 'grab',
+                transform: isDragOver ? 'scale(1.02)' : 'none',
+                transition: 'all 0.2s ease',
+                userSelect: 'none'
               }}
             >
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#F8FAFC' }}>
-                    {displayTitle}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span
+                      style={{
+                        color: '#64748B',
+                        fontSize: '1rem',
+                        cursor: 'grab',
+                        letterSpacing: '-2px'
+                      }}
+                      title="Drag to reorder"
+                    >
+                      ⋮⋮
+                    </span>
+                    <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#F8FAFC' }}>
+                      {displayTitle}
+                    </span>
+                  </div>
+
                   <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                     <button
                       type="button"
@@ -212,7 +337,8 @@ export const CustomizableExecutiveWidgetGridView: React.FC = () => {
                         border: '1px solid #475569',
                         borderRadius: '4px',
                         fontSize: '0.6875rem',
-                        padding: '1px 4px'
+                        padding: '1px 4px',
+                        cursor: 'pointer'
                       }}
                     >
                       <option value="1x1">1x1 Size</option>
@@ -228,7 +354,11 @@ export const CustomizableExecutiveWidgetGridView: React.FC = () => {
                 <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>{w.subtext}</span>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '14px', borderTop: '1px solid #1E293B', paddingTop: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '14px', borderTop: '1px solid #1E293B', paddingTop: '8px' }}>
+                <span style={{ fontSize: '0.6875rem', color: '#64748B' }}>
+                  Drag Handle: <strong>⋮⋮ Click & Drag</strong>
+                </span>
+
                 <button
                   type="button"
                   onClick={() => toggleVisibility(w.id)}

@@ -15,13 +15,14 @@ import { NationalHealthcareWarRoomView } from './NationalHealthcareWarRoomView.j
 import { RealtimeEbitdaUnitEconomicsView } from './RealtimeEbitdaUnitEconomicsView.js';
 import { PlatformEmergencyPanicLockModal } from './PlatformEmergencyPanicLockModal.js';
 import { CustomizableExecutiveWidgetGridView } from './CustomizableExecutiveWidgetGridView.js';
+import { AiOutbreakBillingAnomalyCenterView } from './AiOutbreakBillingAnomalyCenterView.js';
 import { generateAndDownloadExecutiveBoardPdf } from '../../utils/clientExecutiveBoardPdf.js';
 
 import { Spinner, ErrorState, Tabs, Badge, Button } from '@docsearch/ui-kit';
 
 export const ExecutiveCommandCenter: React.FC = () => {
   const [data, setData] = useState<ExecutiveDashboardData | null>(null);
-  const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'CUSTOM_GRID' | 'WAR_ROOM' | 'EBITDA'>('OVERVIEW');
+  const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'ANOMALIES' | 'CUSTOM_GRID' | 'WAR_ROOM' | 'EBITDA'>('OVERVIEW');
   const [isPanicOpen, setIsPanicOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -137,6 +138,7 @@ export const ExecutiveCommandCenter: React.FC = () => {
       <Tabs
         tabs={[
           { id: 'OVERVIEW', label: '📊 Executive Overview' },
+          { id: 'ANOMALIES', label: '🤖 AI Outbreak & Billing Anomaly Alert Center', badge: <Badge variant="danger">2 Critical</Badge> },
           { id: 'CUSTOM_GRID', label: '🧩 Customizable Widget Studio', badge: <Badge variant="warning">Drag & Drop</Badge> },
           { id: 'WAR_ROOM', label: '⚡ National Healthcare War-Room', badge: <Badge variant="success">15.1k / hr</Badge> },
           { id: 'EBITDA', label: '💰 Real-Time EBITDA & Burn Rate', badge: <Badge variant="primary">Cash Positive</Badge> }
@@ -144,6 +146,11 @@ export const ExecutiveCommandCenter: React.FC = () => {
         activeTabId={activeTab}
         onTabChange={(id) => setActiveTab(id as typeof activeTab)}
       />
+
+      {/* Tab: AI Outbreak & Billing Anomaly Alert Center */}
+      {activeTab === 'ANOMALIES' && (
+        <AiOutbreakBillingAnomalyCenterView />
+      )}
 
       {/* Tab: Customizable Widget Grid */}
       {activeTab === 'CUSTOM_GRID' && (
