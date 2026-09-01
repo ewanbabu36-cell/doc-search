@@ -13,9 +13,21 @@ import { TicketProfileView } from './TicketProfileView.js';
 import { PartnerHealthListView } from './PartnerHealthListView.js';
 import { SlaMonitoringView } from './SlaMonitoringView.js';
 import { SuccessCheckinListView } from './SuccessCheckinListView.js';
+
+// 2 New Advanced Support Advancements
+import { AiClinicalTriageSafetyEscalationView } from './AiClinicalTriageSafetyEscalationView.js';
+import { AutomatedPatientRefundArbiterView } from './AutomatedPatientRefundArbiterView.js';
+
 import { Tabs, Badge, Spinner, ErrorState } from '@docsearch/ui-kit';
 
-type ActiveTab = 'overview' | 'tickets' | 'health' | 'sla' | 'checkins';
+type ActiveTab =
+  | 'overview'
+  | 'triage'
+  | 'refunds'
+  | 'tickets'
+  | 'health'
+  | 'sla'
+  | 'checkins';
 
 export const CustomerSuccessDomainManager: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('overview');
@@ -58,16 +70,12 @@ export const CustomerSuccessDomainManager: React.FC = () => {
     void supportService.getTicketComments(selectedTicketId).then((c) => setComments(c));
   }, [selectedTicketId]);
 
-  const handleTransitionTicket = async (
-    toStatus: TicketStatus,
-    reason: string,
-    resolutionNotes?: string
-  ) => {
+  const handleTransitionTicket = async (toStatus: TicketStatus, reason: string, resolutionNotes?: string) => {
     if (!selectedTicketId) return;
     const updated = await supportService.transitionTicket(selectedTicketId, {
       toStatus,
       reason,
-      ...(resolutionNotes ? { resolutionNotes } : {})
+      resolutionNotes
     });
     setTickets((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
   };
@@ -87,7 +95,7 @@ export const CustomerSuccessDomainManager: React.FC = () => {
       <div style={{ padding: '60px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
         <Spinner size="lg" />
         <span style={{ fontSize: '0.875rem', color: 'var(--ds-color-text-muted)' }}>
-          Loading Partner Support & Health telemetry...
+          Loading Customer Success and Ticketing workspace...
         </span>
       </div>
     );
@@ -95,7 +103,7 @@ export const CustomerSuccessDomainManager: React.FC = () => {
 
   if (error && tickets.length === 0) {
     return (
-      <ErrorState title="Support Workspace Unavailable" message={error} onRetry={loadData} />
+      <ErrorState title="Support Telemetry Unavailable" message={error} onRetry={loadData} />
     );
   }
 
@@ -118,17 +126,16 @@ export const CustomerSuccessDomainManager: React.FC = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', backgroundColor: '#0F172A', border: '1.5px solid rgba(6, 182, 212, 0.4)', borderRadius: '14px', padding: '16px 20px' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700', color: 'var(--ds-color-text-primary)' }}>
-              Customer Success & Support
+            <h1 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 800, color: '#F8FAFC' }}>
+              🎧 Support, Ticketing & Patient Dispute Resolution HQ
             </h1>
-            
-            <Badge variant="warning">Production View</Badge>
+            <Badge variant="success">● AI Emergency Triage & 3-Min Refund Active</Badge>
           </div>
-          <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--ds-color-text-muted)' }}>
-            Healthcare partner support cases, SLA resolution deadlines, account health scores, and QBR milestones
+          <p style={{ margin: 0, fontSize: '0.8125rem', color: '#94A3B8' }}>
+            NLP clinical red-flag triage, instant patient refund arbitration, SLA breach monitors, and hospital partner health scorecards
           </p>
         </div>
       </div>
@@ -139,6 +146,16 @@ export const CustomerSuccessDomainManager: React.FC = () => {
           {
             id: 'overview',
             label: '📊 Support & Success Overview'
+          },
+          {
+            id: 'triage',
+            label: '🚨 AI Clinical Triage',
+            badge: <Badge variant="danger">NLP Radar</Badge>
+          },
+          {
+            id: 'refunds',
+            label: '⚡ 1-Click Patient Refunds',
+            badge: <Badge variant="success">&lt; 3 Mins</Badge>
           },
           {
             id: 'tickets',
@@ -171,6 +188,14 @@ export const CustomerSuccessDomainManager: React.FC = () => {
           healthProfiles={healthProfiles}
           checkins={checkins}
         />
+      )}
+
+      {activeTab === 'triage' && (
+        <AiClinicalTriageSafetyEscalationView />
+      )}
+
+      {activeTab === 'refunds' && (
+        <AutomatedPatientRefundArbiterView />
       )}
 
       {activeTab === 'tickets' && (

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Badge, Button } from '@docsearch/ui-kit';
+import { HyperlocalClinicSeoRankView } from './HyperlocalClinicSeoRankView.js';
+import { DoctorAffiliateReferralEngineView } from './DoctorAffiliateReferralEngineView.js';
 
 export interface CarePlan {
   id: string;
@@ -22,7 +24,7 @@ export interface CarePlan {
 }
 
 export const CompanyGrowthEngineDomainManager: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'PLAN_STUDIO' | 'BROADCAST_CAMPAIGNS' | 'PARTNER_PAYOUTS'>('PLAN_STUDIO');
+  const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'PLAN_STUDIO' | 'SEO_BOOSTER' | 'AFFILIATE_ENGINE' | 'BROADCAST_CAMPAIGNS' | 'PARTNER_PAYOUTS'>('PLAN_STUDIO');
 
   // Dynamic Plans Catalog State (Fully Editable & Addable)
   const [plans, setPlans] = useState<CarePlan[]>([
@@ -211,6 +213,8 @@ export const CompanyGrowthEngineDomainManager: React.FC = () => {
       <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px', overflowX: 'auto' }}>
         {[
           { id: 'PLAN_STUDIO', label: '⚙️ Plan Studio & Customizer (Live Editor)' },
+          { id: 'SEO_BOOSTER', label: '📍 Hyperlocal Clinic SEO' },
+          { id: 'AFFILIATE_ENGINE', label: '🔗 Doctor Affiliate Referral Engine' },
           { id: 'OVERVIEW', label: '📊 Network GMV & Growth KPIs' },
           { id: 'BROADCAST_CAMPAIGNS', label: '📢 City-Wide WhatsApp Broadcast Engine' },
           { id: 'PARTNER_PAYOUTS', label: '💸 Partner Settlements Board (Doctors/Labs/Pharma)' }
@@ -240,6 +244,16 @@ export const CompanyGrowthEngineDomainManager: React.FC = () => {
         <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid #10B981', borderRadius: '10px', padding: '12px 16px', color: '#A7F3D0', fontSize: '0.875rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span>✓</span> All plan customizations published live across Patient Portals, Doctor EMRs, and WhatsApp Bots!
         </div>
+      )}
+
+      {/* Tab: SEO Booster */}
+      {activeTab === 'SEO_BOOSTER' && (
+        <HyperlocalClinicSeoRankView />
+      )}
+
+      {/* Tab: Affiliate Referral Engine */}
+      {activeTab === 'AFFILIATE_ENGINE' && (
+        <DoctorAffiliateReferralEngineView />
       )}
 
       {/* Tab 1: Plan Studio & Customizer */}

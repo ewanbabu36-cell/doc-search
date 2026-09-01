@@ -14,10 +14,17 @@ import { PartnerAbdmTelemetryView } from './PartnerAbdmTelemetryView.js';
 import { PartnerOutreachHubView } from './PartnerOutreachHubView.js';
 import { CustomizableSubscriptionPlanManager } from './CustomizableSubscriptionPlanManager.js';
 import { PartnerPipelineAnalyticsView } from './PartnerPipelineAnalyticsView.js';
-import { Spinner, ErrorState, Tabs } from '@docsearch/ui-kit';
+
+// 2 New Advanced CRM Modules
+import { AiWhatsAppEngagementBroadcasterView } from './AiWhatsAppEngagementBroadcasterView.js';
+import { DoctorNmcCredentialingBotView } from './DoctorNmcCredentialingBotView.js';
+
+import { Spinner, ErrorState, Tabs, Badge } from '@docsearch/ui-kit';
 
 export type ActiveCrmTab =
   | 'DIRECTORY'
+  | 'WHATSAPP'
+  | 'NMC_BOT'
   | 'VERIFICATION'
   | 'CONTRACTS'
   | 'BILLING'
@@ -130,6 +137,8 @@ export const PartnerLifecycleManager: React.FC = () => {
       <Tabs
         tabs={[
           { id: 'DIRECTORY', label: '📋 Directory & CRM' },
+          { id: 'WHATSAPP', label: '💬 AI WhatsApp Broadcaster', badge: <Badge variant="success">98.2% Open</Badge> },
+          { id: 'NMC_BOT', label: '🤖 Doctor Credentialing Bot', badge: <Badge variant="primary">NMC API</Badge> },
           { id: 'VERIFICATION', label: '🛡️ Document Verification (3)' },
           { id: 'CONTRACTS', label: '📑 Contracts & SLAs' },
           { id: 'BILLING', label: '💵 Invoicing & GST Ledger' },
@@ -144,6 +153,14 @@ export const PartnerLifecycleManager: React.FC = () => {
 
       {activeTab === 'DIRECTORY' && (
         <PartnerListView onSelectPartner={(id) => setSelectedPartnerId(id)} />
+      )}
+
+      {activeTab === 'WHATSAPP' && (
+        <AiWhatsAppEngagementBroadcasterView />
+      )}
+
+      {activeTab === 'NMC_BOT' && (
+        <DoctorNmcCredentialingBotView />
       )}
 
       {activeTab === 'VERIFICATION' && (

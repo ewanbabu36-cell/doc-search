@@ -14,9 +14,24 @@ import { BillingAccountListView } from './BillingAccountListView.js';
 import { InvoiceListView } from './InvoiceListView.js';
 import { InvoiceProfileView } from './InvoiceProfileView.js';
 import { PaymentRecordListView } from './PaymentRecordListView.js';
-import { Tabs, Badge, Spinner, ErrorState } from '@docsearch/ui-kit';
 
-type ActiveTab = 'overview' | 'subscriptions' | 'billing-accounts' | 'invoices' | 'payments';
+// 4 New Financial & Billing Advancements
+import { GstEInvoicingReconcilerView } from './GstEInvoicingReconcilerView.js';
+import { TpaInsuranceClaimsSettlementView } from './TpaInsuranceClaimsSettlementView.js';
+import { DoctorRevenueSplitEscrowView } from './DoctorRevenueSplitEscrowView.js';
+import { SmartDunningRecurringRecoveryModal } from './SmartDunningRecurringRecoveryModal.js';
+
+import { Tabs, Badge, Spinner, ErrorState, Button } from '@docsearch/ui-kit';
+
+type ActiveTab =
+  | 'overview'
+  | 'gst'
+  | 'tpa'
+  | 'split'
+  | 'subscriptions'
+  | 'billing-accounts'
+  | 'invoices'
+  | 'payments';
 
 export const FinanceDomainManager: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('overview');
@@ -27,6 +42,9 @@ export const FinanceDomainManager: React.FC = () => {
 
   const [selectedSubId, setSelectedSubId] = useState<string | null>(null);
   const [selectedInvId, setSelectedInvId] = useState<string | null>(null);
+
+  // Modals state
+  const [isDunningModalOpen, setIsDunningModalOpen] = useState(false);
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -108,11 +126,11 @@ export const FinanceDomainManager: React.FC = () => {
   if (selectedInvId) {
     const inv = invoices.find((i) => i.id === selectedInvId);
     if (inv) {
-      const invPayments = payments.filter((p) => p.invoiceId === inv.id);
+      const linkedPayments = payments.filter((p) => p.invoiceId === inv.id);
       return (
         <InvoiceProfileView
           invoice={inv}
-          payments={invPayments}
+          payments={linkedPayments}
           onBack={() => setSelectedInvId(null)}
         />
       );
@@ -121,19 +139,33 @@ export const FinanceDomainManager: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+      {/* Header with Quick Action Buttons */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', backgroundColor: '#0F172A', border: '1.5px solid rgba(6, 182, 212, 0.4)', borderRadius: '14px', padding: '16px 20px' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700', color: 'var(--ds-color-text-primary)' }}>
-              Subscription / Billing / Finance
+            <h1 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 800, color: '#F8FAFC' }}>
+              💳 Billing, Invoicing, Tax & Financial Ledger HQ
             </h1>
-            
-            <Badge variant="warning">Production View</Badge>
+            <Badge variant="success">● 18% GST & Section 194J Active</Badge>
           </div>
-          <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--ds-color-text-muted)' }}>
-            Commercial contract management, subscription states, billing account registry, and invoice records
+          <p style={{ margin: 0, fontSize: '0.8125rem', color: '#94A3B8' }}>
+            Automated GST E-Invoicing (IRN), Cashless TPA insurance claim settlement, doctor revenue split escrow, and smart dunning recovery
           </p>
+        </div>
+
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => setIsDunningModalOpen(true)}
+            style={{
+              backgroundColor: '#06B6D4',
+              color: '#070C16',
+              fontWeight: 900
+            }}
+          >
+            ⚡ Smart Dunning Recovery
+          </Button>
         </div>
       </div>
 
@@ -143,6 +175,21 @@ export const FinanceDomainManager: React.FC = () => {
           {
             id: 'overview',
             label: '📊 Commercial Overview'
+          },
+          {
+            id: 'gst',
+            label: '🇮🇳 GST E-Invoicing',
+            badge: <Badge variant="success">NIC IRP</Badge>
+          },
+          {
+            id: 'tpa',
+            label: '🏥 TPA Insurance Claims',
+            badge: <Badge variant="primary">PMJAY</Badge>
+          },
+          {
+            id: 'split',
+            label: '🩺 Doctor Revenue Escrow',
+            badge: <Badge variant="neutral">80:20 Split</Badge>
           },
           {
             id: 'subscriptions',
@@ -179,6 +226,18 @@ export const FinanceDomainManager: React.FC = () => {
         />
       )}
 
+      {activeTab === 'gst' && (
+        <GstEInvoicingReconcilerView />
+      )}
+
+      {activeTab === 'tpa' && (
+        <TpaInsuranceClaimsSettlementView />
+      )}
+
+      {activeTab === 'split' && (
+        <DoctorRevenueSplitEscrowView />
+      )}
+
       {activeTab === 'subscriptions' && (
         <SubscriptionListView
           subscriptions={subscriptions}
@@ -200,6 +259,12 @@ export const FinanceDomainManager: React.FC = () => {
       {activeTab === 'payments' && (
         <PaymentRecordListView payments={payments} />
       )}
+
+      {/* Modals */}
+      <SmartDunningRecurringRecoveryModal
+        isOpen={isDunningModalOpen}
+        onClose={() => setIsDunningModalOpen(false)}
+      />
     </div>
   );
 };
