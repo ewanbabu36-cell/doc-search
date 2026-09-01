@@ -281,7 +281,10 @@ export const CompanyAdminDomainManager: React.FC = () => {
       )}
 
       {activeTab === 'departments' && (
-        <DepartmentHierarchyView departments={departments} />
+        <DepartmentHierarchyView
+          departments={departments}
+          onAddDepartment={(newDept) => setDepartments([newDept, ...departments])}
+        />
       )}
 
       {activeTab === 'role-matrix' && (

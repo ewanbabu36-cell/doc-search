@@ -347,6 +347,7 @@ First Login  : Mandatory Password Change + 2FA Setup Enforced.
                     onChange={(e) => setDepartmentName(e.target.value)}
                     style={{ width: '100%', backgroundColor: '#1E293B', border: '1px solid #475569', borderRadius: '6px', padding: '8px 10px', color: '#FFF' }}
                   >
+                    <option value="Human Resources & People Operations (HR)">Human Resources & People Operations (HR)</option>
                     <option value="Clinical & Hospital Operations">Clinical & Hospital Operations</option>
                     <option value="Platform & Cloud Engineering">Platform & Cloud Engineering</option>
                     <option value="Legal, Risk & Compliance">Legal, Risk & Compliance</option>
