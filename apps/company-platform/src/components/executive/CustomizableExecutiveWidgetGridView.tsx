@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Badge, Button } from '@docsearch/ui-kit';
 import { useGlobalLocale } from '../common/GlobalCurrencyLocaleContext.js';
 
-interface DashboardWidget {
+export interface DashboardWidget {
   id: string;
   titleKey: string;
   defaultTitle: string;
@@ -14,9 +14,10 @@ interface DashboardWidget {
   accentColor: string;
   isPinned: boolean;
   isVisible: boolean;
+  description?: string;
 }
 
-const INITIAL_WIDGETS: DashboardWidget[] = [
+export const MASTER_WIDGET_CATALOG: DashboardWidget[] = [
   {
     id: 'WID-ARR-01',
     titleKey: 'arr_revenue',
@@ -27,7 +28,8 @@ const INITIAL_WIDGETS: DashboardWidget[] = [
     subtext: '+28.4% MoM Net Growth',
     accentColor: '#10B981',
     isPinned: true,
-    isVisible: true
+    isVisible: true,
+    description: 'Consolidated SaaS subscription ARR and take-rate commissions'
   },
   {
     id: 'WID-ER-02',
@@ -39,7 +41,8 @@ const INITIAL_WIDGETS: DashboardWidget[] = [
     subtext: '100% Pre-Arrival Triage',
     accentColor: '#EF4444',
     isPinned: true,
-    isVisible: true
+    isVisible: true,
+    description: 'Real-time 108 ambulance dispatch and emergency triage arrivals'
   },
   {
     id: 'WID-CONSULT-03',
@@ -51,7 +54,8 @@ const INITIAL_WIDGETS: DashboardWidget[] = [
     subtext: '4,820 Active Doctors Online',
     accentColor: '#06B6D4',
     isPinned: false,
-    isVisible: true
+    isVisible: true,
+    description: 'Real-time specialist OPD consultations across 486 hospital nodes'
   },
   {
     id: 'WID-QUOTA-04',
@@ -63,7 +67,8 @@ const INITIAL_WIDGETS: DashboardWidget[] = [
     subtext: '2 Near Capacity (>85%)',
     accentColor: '#FCD34D',
     isPinned: false,
-    isVisible: true
+    isVisible: true,
+    description: 'Multi-tenant API rate limiters and database storage quotas'
   },
   {
     id: 'WID-SEC-05',
@@ -75,7 +80,8 @@ const INITIAL_WIDGETS: DashboardWidget[] = [
     subtext: 'CloudHSM KMS Encrypted',
     accentColor: '#38BDF8',
     isPinned: false,
-    isVisible: true
+    isVisible: true,
+    description: 'Continuous cryptographic KMS audit trail and DDoS defense telemetry'
   },
   {
     id: 'WID-FX-06',
@@ -87,7 +93,75 @@ const INITIAL_WIDGETS: DashboardWidget[] = [
     subtext: 'USD, EUR, AED, INR Settled',
     accentColor: '#A78BFA',
     isPinned: false,
-    isVisible: true
+    isVisible: true,
+    description: 'Cross-border interbank FX Treasury conversion margin'
+  },
+
+  // 5 New Modular Catalog Widgets
+  {
+    id: 'WID-BED-07',
+    titleKey: 'bed_occupancy',
+    defaultTitle: '🛏️ Live Inpatient Bed Occupancy %',
+    category: 'CLINICAL',
+    gridSpan: '2x1',
+    staticValue: '82.4% Occupied',
+    subtext: '14,280 / 17,320 Beds (ICU, Deluxe, General)',
+    accentColor: '#F59E0B',
+    isPinned: false,
+    isVisible: true,
+    description: 'Real-time IPD bed census, ICU vacancy, and ventilator standby'
+  },
+  {
+    id: 'WID-LIMS-08',
+    titleKey: 'lims_volume',
+    defaultTitle: '🧪 Daily LIMS Pathology Lab Volume',
+    category: 'CLINICAL',
+    gridSpan: '1x1',
+    staticValue: '28,500 Orders / Day',
+    subtext: '+31.8% MoM Automated Lab Orders',
+    accentColor: '#10B981',
+    isPinned: false,
+    isVisible: true,
+    description: 'Diagnostic analyzer test throughput across CBC, LFT, and KFT panels'
+  },
+  {
+    id: 'WID-PHARM-09',
+    titleKey: 'pharm_sales',
+    defaultTitle: '💊 Pharmacy Medicine Sales & Stockout Risk',
+    category: 'REVENUE',
+    gridSpan: '2x1',
+    staticValue: '51,400 RX Dispensed',
+    subtext: '99.4% Fulfillment Rate (Zero Stockout)',
+    accentColor: '#A78BFA',
+    isPinned: false,
+    isVisible: true,
+    description: 'E-Prescription dispensing revenue and automated inventory reorder alerts'
+  },
+  {
+    id: 'WID-BILLING-10',
+    titleKey: 'unpaid_invoices',
+    defaultTitle: '💳 Unpaid Hospital Invoices & Dues',
+    category: 'REVENUE',
+    gridSpan: '1x1',
+    inrAmount: 8400000,
+    subtext: 'Pending TPA / Corporate Insurance Pre-Auth',
+    accentColor: '#EF4444',
+    isPinned: false,
+    isVisible: true,
+    description: 'Outstanding institutional claims and cashless patient discharge balances'
+  },
+  {
+    id: 'WID-AI-11',
+    titleKey: 'ai_copilot',
+    defaultTitle: '🤖 AI Clinical Copilot Diagnostic Accuracy',
+    category: 'CLINICAL',
+    gridSpan: '1x1',
+    staticValue: '99.2% Accuracy',
+    subtext: 'ICD-10 Validated with Zero Safety Flags',
+    accentColor: '#06B6D4',
+    isPinned: false,
+    isVisible: true,
+    description: 'Differential diagnosis validation and drug-drug interaction alerts'
   }
 ];
 
@@ -103,9 +177,11 @@ export const CustomizableExecutiveWidgetGridView: React.FC = () => {
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
     } catch {}
-    return INITIAL_WIDGETS;
+    return MASTER_WIDGET_CATALOG.slice(0, 6);
   });
 
+  const [isCatalogOpen, setIsCatalogOpen] = useState(false);
+  const [catalogCategoryFilter, setCatalogCategoryFilter] = useState<'ALL' | 'REVENUE' | 'CLINICAL' | 'EMERGENCY' | 'SECURITY'>('ALL');
   const [draggedWidgetId, setDraggedWidgetId] = useState<string | null>(null);
   const [dragOverWidgetId, setDragOverWidgetId] = useState<string | null>(null);
   const [saveNotice, setSaveNotice] = useState<string | null>(null);
@@ -132,6 +208,24 @@ export const CustomizableExecutiveWidgetGridView: React.FC = () => {
     setWidgets((prev) =>
       prev.map((w) => (w.id === widgetId ? { ...w, gridSpan: newSpan } : w))
     );
+  };
+
+  const handleAddWidgetFromCatalog = (item: DashboardWidget) => {
+    setWidgets((prev) => {
+      const exists = prev.some((w) => w.id === item.id);
+      if (exists) {
+        return prev.map((w) => (w.id === item.id ? { ...w, isVisible: true } : w));
+      }
+      return [...prev, { ...item, isVisible: true }];
+    });
+    setSaveNotice(`✓ Added "${item.defaultTitle}" to your active Executive Board!`);
+    setTimeout(() => setSaveNotice(null), 3500);
+  };
+
+  const handleRemoveWidget = (widgetId: string) => {
+    setWidgets((prev) => prev.filter((w) => w.id !== widgetId));
+    setSaveNotice('✓ Widget removed from executive board.');
+    setTimeout(() => setSaveNotice(null), 3000);
   };
 
   // HTML5 Drag & Drop Handlers
@@ -184,7 +278,7 @@ export const CustomizableExecutiveWidgetGridView: React.FC = () => {
   };
 
   const handleResetLayout = () => {
-    setWidgets(INITIAL_WIDGETS);
+    setWidgets(MASTER_WIDGET_CATALOG.slice(0, 6));
     localStorage.removeItem(STORAGE_KEY);
     setSaveNotice('✓ Reset to Default Executive Dashboard Grid Layout');
     setTimeout(() => setSaveNotice(null), 3500);
@@ -198,23 +292,42 @@ export const CustomizableExecutiveWidgetGridView: React.FC = () => {
     setTimeout(() => setSaveNotice(null), 5000);
   };
 
+  const filteredCatalog = MASTER_WIDGET_CATALOG.filter((item) => {
+    if (catalogCategoryFilter === 'ALL') return true;
+    return item.category === catalogCategoryFilter;
+  });
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {/* Header */}
+      {/* Header & Controls */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: 'var(--ds-color-text-primary)' }}>
               🧩 Customizable Executive Widget Grid & Drag-Drop Studio
             </h2>
-            <Badge variant="success">● HTML5 Drag & Drop Studio Active</Badge>
+            <Badge variant="success">● {widgets.filter((w) => w.isVisible).length} Active Widgets on Board</Badge>
           </div>
           <p style={{ margin: '4px 0 0', fontSize: '0.8125rem', color: 'var(--ds-color-text-muted)' }}>
-            Grab any widget card (⋮⋮) to drag and drop reorder positions. Resize (1x1, 2x1, 2x2) and pin cards to customize your C-Suite command board.
+            Grab any widget card (⋮⋮) to drag and drop reorder. Click "+ Add Widget" to choose from 11 modular clinical and financial KPI cards.
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => setIsCatalogOpen(true)}
+            style={{
+              backgroundColor: '#10B981',
+              color: '#070C16',
+              fontWeight: 900,
+              boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)'
+            }}
+          >
+            ➕ Add Widget ({MASTER_WIDGET_CATALOG.length})
+          </Button>
+
           <Button
             variant="secondary"
             size="sm"
@@ -356,27 +469,203 @@ export const CustomizableExecutiveWidgetGridView: React.FC = () => {
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '14px', borderTop: '1px solid #1E293B', paddingTop: '8px' }}>
                 <span style={{ fontSize: '0.6875rem', color: '#64748B' }}>
-                  Drag Handle: <strong>⋮⋮ Click & Drag</strong>
+                  Drag: <strong>⋮⋮ Grab Handle</strong>
                 </span>
 
-                <button
-                  type="button"
-                  onClick={() => toggleVisibility(w.id)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#64748B',
-                    fontSize: '0.6875rem',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Hide Widget
-                </button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={() => toggleVisibility(w.id)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#64748B',
+                      fontSize: '0.6875rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Hide
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveWidget(w.id)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#EF4444',
+                      fontSize: '0.6875rem',
+                      cursor: 'pointer',
+                      fontWeight: 700
+                    }}
+                  >
+                    ✕ Remove
+                  </button>
+                </div>
               </div>
             </div>
           );
         })}
       </div>
+
+      {/* Modular Widget Catalog Modal */}
+      {isCatalogOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.75)',
+            backdropFilter: 'blur(6px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px'
+          }}
+          onClick={() => setIsCatalogOpen(false)}
+        >
+          <div
+            style={{
+              backgroundColor: '#0F172A',
+              border: '1.5px solid #06B6D4',
+              borderRadius: '16px',
+              padding: '24px',
+              maxWidth: '840px',
+              width: '100%',
+              maxHeight: '85vh',
+              overflowY: 'auto',
+              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.8)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#F8FAFC' }}>
+                    🧩 Modular Executive Widget Catalog
+                  </h3>
+                  <Badge variant="primary">{MASTER_WIDGET_CATALOG.length} Widgets Available</Badge>
+                </div>
+                <p style={{ margin: '4px 0 0', fontSize: '0.8125rem', color: '#94A3B8' }}>
+                  Select any clinical, financial, or operational KPI card to add to your personalized leadership dashboard.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsCatalogOpen(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#94A3B8',
+                  fontSize: '1.5rem',
+                  cursor: 'pointer',
+                  fontWeight: 900
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Category Filter Pills */}
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {(['ALL', 'REVENUE', 'CLINICAL', 'EMERGENCY', 'SECURITY'] as const).map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setCatalogCategoryFilter(cat)}
+                  style={{
+                    backgroundColor: catalogCategoryFilter === cat ? '#06B6D4' : '#1E293B',
+                    color: catalogCategoryFilter === cat ? '#070C16' : '#94A3B8',
+                    border: '1px solid #334155',
+                    borderRadius: '6px',
+                    padding: '6px 12px',
+                    fontSize: '0.75rem',
+                    fontWeight: 800,
+                    cursor: 'pointer'
+                  }}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
+            {/* Catalog Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px' }}>
+              {filteredCatalog.map((item) => {
+                const isAlreadyOnBoard = widgets.some((w) => w.id === item.id && w.isVisible);
+                const displayVal = item.inrAmount ? formatMoney(item.inrAmount) : item.staticValue;
+
+                return (
+                  <div
+                    key={item.id}
+                    style={{
+                      backgroundColor: '#1E293B',
+                      border: isAlreadyOnBoard ? '1px solid #10B981' : '1px solid #334155',
+                      borderRadius: '12px',
+                      padding: '16px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      gap: '10px'
+                    }}
+                  >
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
+                        <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#F8FAFC' }}>
+                          {item.defaultTitle}
+                        </span>
+                        <Badge variant={item.category === 'REVENUE' ? 'success' : 'primary'}>
+                          {item.category}
+                        </Badge>
+                      </div>
+
+                      <div style={{ fontSize: '1.25rem', fontWeight: 900, color: item.accentColor, margin: '6px 0 2px' }}>
+                        {displayVal}
+                      </div>
+
+                      <span style={{ fontSize: '0.6875rem', color: '#94A3B8', display: 'block' }}>
+                        {item.description || item.subtext}
+                      </span>
+                    </div>
+
+                    <Button
+                      variant={isAlreadyOnBoard ? 'secondary' : 'primary'}
+                      size="sm"
+                      onClick={() => handleAddWidgetFromCatalog(item)}
+                      style={{
+                        backgroundColor: isAlreadyOnBoard ? '#334155' : '#10B981',
+                        color: isAlreadyOnBoard ? '#94A3B8' : '#070C16',
+                        fontWeight: 800,
+                        width: '100%'
+                      }}
+                    >
+                      {isAlreadyOnBoard ? '✓ Active on Board' : '➕ Add to Board'}
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid #334155', paddingTop: '12px' }}>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setIsCatalogOpen(false)}
+              >
+                Done
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
