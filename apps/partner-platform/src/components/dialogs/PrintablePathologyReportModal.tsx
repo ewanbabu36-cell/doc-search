@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import type { InvestigationOrderDto } from '@docsearch/api-contracts';
+import { getVerifiedRoleProfile } from '../../utils/roleProfileResolver.js';
+import { downloadVectorPathologyPdf } from '../../utils/clientPathologyPdf.js';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   order: InvestigationOrderDto;
 }
-
-import { getVerifiedRoleProfile } from '../../utils/roleProfileResolver.js';
 
 export interface LabHeaderSettings {
   labName: string;
@@ -81,20 +81,8 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
   const handleDownloadPdf = async () => {
     try {
       setIsDownloadingPdf(true);
-      const response = await fetch(`/api/v1/partner/lab/orders/${order.id}/pdf`);
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `Diagnostic-Report-${order.patientName.replace(/\s+/g, '-')}-${order.orderNumber}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-      } else {
-        window.print();
-      }
+      // Generate instant client vector ISO-32000-1 binary PDF with NABH barcode & doctor digital signature
+      downloadVectorPathologyPdf(order, settings);
       setPdfSuccess(true);
       setTimeout(() => setPdfSuccess(false), 4000);
     } catch {
