@@ -1,4 +1,27 @@
 import { apiRequest } from './api-client.js';
+
+function loadStored<T>(key: string, fallback: T[]): T[] {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const item = window.localStorage.getItem(key);
+      if (item) return JSON.parse(item);
+    } catch {
+      // Fallback
+    }
+  }
+  return [...fallback];
+}
+
+function saveStored<T>(key: string, data: T[]): void {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      window.localStorage.setItem(key, JSON.stringify(data));
+    } catch {
+      // Ignore
+    }
+  }
+}
+
 import type {
   InpatientOverviewMetricsDto,
   InpatientAnalyticsDto,
@@ -112,16 +135,16 @@ export interface IInpatientManagementService {
 
 export class MockInpatientManagementService implements IInpatientManagementService {
   private units: InpatientUnitDto[] = [...mockInpatientUnits];
-  private wards: InpatientWardDto[] = [...mockInpatientWards];
-  private beds: InpatientBedDto[] = [...mockInpatientBeds];
-  private requests: InpatientAdmissionRequestDto[] = [...mockInpatientAdmissionRequests];
-  private admissions: InpatientAdmissionDto[] = [...mockInpatientAdmissions];
-  private transfers: InpatientTransferDto[] = [...mockInpatientTransfers];
+  private wards: InpatientWardDto[] = loadStored("docsearch_inpatient_wards", mockInpatientWards);
+  private beds: InpatientBedDto[] = loadStored("docsearch_inpatient_beds", mockInpatientBeds);
+  private requests: InpatientAdmissionRequestDto[] = loadStored("docsearch_inpatient_admission_requests", mockInpatientAdmissionRequests);
+  private admissions: InpatientAdmissionDto[] = loadStored("docsearch_inpatient_admissions", mockInpatientAdmissions);
+  private transfers: InpatientTransferDto[] = loadStored("docsearch_inpatient_transfers", mockInpatientTransfers);
   private nursingAssessments: InpatientNursingAssessmentDto[] = [...mockInpatientNursingAssessments];
   private vitals: InpatientVitalObservationDto[] = [...mockInpatientVitalObservations];
   private rounds: InpatientDoctorRoundDto[] = [...mockInpatientDoctorRounds];
   private dischargePlans: InpatientDischargePlanDto[] = [...mockInpatientDischargePlans];
-  private dischargeSummaries: InpatientDischargeSummaryDto[] = [...mockInpatientDischargeSummaries];
+  private dischargeSummaries: InpatientDischargeSummaryDto[] = loadStored("docsearch_inpatient_discharge_summaries", mockInpatientDischargeSummaries);
   private bedTurnarounds: InpatientBedTurnaroundDto[] = [...mockInpatientBedTurnarounds];
   private bedBlocks: InpatientBedBlockDto[] = [...mockInpatientBedBlocks];
   private auditTraces: InpatientAuditTraceDto[] = [...mockInpatientAuditTraces];
@@ -518,6 +541,9 @@ export class MockInpatientManagementService implements IInpatientManagementServi
       updatedAt: new Date().toISOString()
     };
     this.admissions.unshift(newAdmission);
+    saveStored("docsearch_inpatient_admissions", this.admissions);
+    saveStored("docsearch_inpatient_beds", this.beds);
+    saveStored("docsearch_inpatient_admission_requests", this.requests);
     this.addTrace(req.approverName, req.approverRole, 'APPROVE_ADMISSION', 'INPATIENT_ADMISSION', newAdmission.admissionNumber, req.justification);
     return newAdmission;
   }
