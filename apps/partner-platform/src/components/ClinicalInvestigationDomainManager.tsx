@@ -44,13 +44,14 @@ import { CollectSpecimenDialog } from './dialogs/CollectSpecimenDialog.js';
 import { RejectSpecimenDialog } from './dialogs/RejectSpecimenDialog.js';
 import { EnterInvestigationResultDialog } from './dialogs/EnterInvestigationResultDialog.js';
 import { PrintablePathologyReportModal } from './dialogs/PrintablePathologyReportModal.js';
+import { DirectLabWalkInReportModal } from './dialogs/DirectLabWalkInReportModal.js';
 import { VerifyInvestigationResultDialog } from './dialogs/VerifyInvestigationResultDialog.js';
 import { FinalizeInvestigationReportDialog } from './dialogs/FinalizeInvestigationReportDialog.js';
 import { ReviewInvestigationResultDialog } from './dialogs/ReviewInvestigationResultDialog.js';
 import { AmendInvestigationResultDialog } from './dialogs/AmendInvestigationResultDialog.js';
 import { CancelInvestigationOrderDialog } from './dialogs/CancelInvestigationOrderDialog.js';
 
-import { Tabs, Spinner, ErrorState } from '@docsearch/ui-kit';
+import { Tabs, Spinner, ErrorState, Button } from '@docsearch/ui-kit';
 
 export type ActiveInvestigationTab =
   | 'overview'
@@ -90,6 +91,7 @@ export const ClinicalInvestigationDomainManager: React.FC = () => {
   const [isRejectSpecimenOpen, setIsRejectSpecimenOpen] = useState(false);
   const [isEnterResultOpen, setIsEnterResultOpen] = useState(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [isWalkInReportOpen, setIsWalkInReportOpen] = useState(false);
   const [isVerifyResultOpen, setIsVerifyResultOpen] = useState(false);
   const [isFinalizeReportOpen, setIsFinalizeReportOpen] = useState(false);
   const [isReviewResultOpen, setIsReviewResultOpen] = useState(false);
@@ -256,6 +258,21 @@ export const ClinicalInvestigationDomainManager: React.FC = () => {
           onContextChange={handleContextChange}
         />
       )}
+
+      {/* Quick Walk-In Lab Test Action Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#0F172A', border: '1.5px solid rgba(6, 182, 212, 0.4)', borderRadius: '12px', padding: '12px 20px', flexWrap: 'wrap', gap: '10px' }}>
+        <div>
+          <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: '#F8FAFC', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span>🧪</span> Diagnostic Pathology & Phlebotomy Counter
+          </div>
+          <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
+            Quick register walk-in patient, enter observed test results, and generate official NABL printable report with 1 click.
+          </div>
+        </div>
+        <Button variant="primary" onClick={() => setIsWalkInReportOpen(true)}>
+          🩸 + Walk-In Patient Blood Test & Print Report
+        </Button>
+      </div>
 
       {/* Navigation tabs */}
       <Tabs
@@ -517,6 +534,14 @@ export const ClinicalInvestigationDomainManager: React.FC = () => {
             order={selectedOrder}
             tenantId={context.activeTenantId}
           />
+
+          {/* Walk-In Patient Blood Test & Print Modal */}
+          {isWalkInReportOpen && (
+            <DirectLabWalkInReportModal
+              isOpen={isWalkInReportOpen}
+              onClose={() => setIsWalkInReportOpen(false)}
+            />
+          )}
         </>
       )}
     </div>
