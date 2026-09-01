@@ -13,14 +13,22 @@ import { ReleaseBroadcastView } from './ReleaseBroadcastView.js';
 import { OperationalBulletinView } from './OperationalBulletinView.js';
 import { NotificationTemplateListView } from './NotificationTemplateListView.js';
 import { DispatchRecordListView } from './DispatchRecordListView.js';
-import { Tabs, Badge, Spinner, ErrorState } from '@docsearch/ui-kit';
+import { WhatsAppCampaignBroadcaster } from './WhatsAppCampaignBroadcaster.js';
+import { TestMessageSandboxView } from './TestMessageSandboxView.js';
+import { CampaignAbTestingAnalyticsView } from './CampaignAbTestingAnalyticsView.js';
+import { AiMultilingualCopywriterModal } from './AiMultilingualCopywriterModal.js';
+import { EmergencyBroadcastTriggerModal } from './EmergencyBroadcastTriggerModal.js';
+import { Tabs, Badge, Button, Spinner, ErrorState } from '@docsearch/ui-kit';
 
 type ActiveTab =
   | 'overview'
+  | 'whatsapp'
   | 'announcements'
   | 'releases'
   | 'bulletins'
   | 'templates'
+  | 'sandbox'
+  | 'ab-testing'
   | 'dispatches';
 
 export const CommunicationDomainManager: React.FC = () => {
@@ -33,6 +41,11 @@ export const CommunicationDomainManager: React.FC = () => {
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Modals state
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState(false);
+  const [successBanner, setSuccessBanner] = useState<string | null>(null);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -99,21 +112,68 @@ export const CommunicationDomainManager: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+      {/* Header with Enterprise Action Buttons */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', backgroundColor: '#0F172A', border: '1.5px solid rgba(6, 182, 212, 0.4)', borderRadius: '14px', padding: '16px 20px' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700', color: 'var(--ds-color-text-primary)' }}>
-              Communication & Content
+            <h1 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 800, color: '#F8FAFC' }}>
+              📢 Omnichannel Communication, Content & Broadcast Engine
             </h1>
-            
-            <Badge variant="warning">Production View</Badge>
+            <Badge variant="success">● Meta & Telecom Gateways Live</Badge>
           </div>
-          <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--ds-color-text-muted)' }}>
-            Platform announcements, release broadcasts, operational bulletins, and multi-channel notification templates
+          <p style={{ margin: 0, fontSize: '0.8125rem', color: '#94A3B8' }}>
+            WhatsApp campaigns, multilingual AI copywriting, hospital emergency flash alerts, and live carrier test sandbox
           </p>
         </div>
+
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsAiModalOpen(true)}
+            style={{
+              borderColor: '#A855F7',
+              color: '#C084FC',
+              fontWeight: 800
+            }}
+          >
+            🤖 AI Copywriter Co-Pilot
+          </Button>
+
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => setIsEmergencyModalOpen(true)}
+            style={{
+              backgroundColor: '#EF4444',
+              color: '#FFF',
+              fontWeight: 800,
+              boxShadow: '0 4px 14px rgba(239, 68, 68, 0.4)'
+            }}
+          >
+            🚨 Emergency Flash Alert
+          </Button>
+
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => setActiveTab('whatsapp')}
+            style={{
+              backgroundColor: '#25D366',
+              color: '#070C16',
+              fontWeight: 900
+            }}
+          >
+            📲 WhatsApp Broadcaster
+          </Button>
+        </div>
       </div>
+
+      {successBanner && (
+        <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid #10B981', borderRadius: '10px', padding: '12px 16px', color: '#A7F3D0', fontSize: '0.875rem', fontWeight: 700 }}>
+          ✓ {successBanner}
+        </div>
+      )}
 
       {/* Tabs */}
       <Tabs
@@ -121,6 +181,11 @@ export const CommunicationDomainManager: React.FC = () => {
           {
             id: 'overview',
             label: '📊 Overview'
+          },
+          {
+            id: 'whatsapp',
+            label: '📲 WhatsApp Campaigns',
+            badge: <Badge variant="primary">New</Badge>
           },
           {
             id: 'announcements',
@@ -141,6 +206,14 @@ export const CommunicationDomainManager: React.FC = () => {
             badge: <Badge variant="neutral">{templates.length}</Badge>
           },
           {
+            id: 'sandbox',
+            label: '📱 Test Sandbox Simulator'
+          },
+          {
+            id: 'ab-testing',
+            label: '📈 A/B Analytics'
+          },
+          {
             id: 'dispatches',
             label: '📨 Dispatch Logs',
             badge: <Badge variant="neutral">{dispatches.length}</Badge>
@@ -157,6 +230,10 @@ export const CommunicationDomainManager: React.FC = () => {
           templates={templates}
           dispatches={dispatches}
         />
+      )}
+
+      {activeTab === 'whatsapp' && (
+        <WhatsAppCampaignBroadcaster />
       )}
 
       {activeTab === 'announcements' && (
@@ -184,9 +261,36 @@ export const CommunicationDomainManager: React.FC = () => {
         <NotificationTemplateListView templates={templates} />
       )}
 
+      {activeTab === 'sandbox' && (
+        <TestMessageSandboxView />
+      )}
+
+      {activeTab === 'ab-testing' && (
+        <CampaignAbTestingAnalyticsView />
+      )}
+
       {activeTab === 'dispatches' && (
         <DispatchRecordListView dispatches={dispatches} />
       )}
+
+      {/* Modals */}
+      <AiMultilingualCopywriterModal
+        isOpen={isAiModalOpen}
+        onClose={() => setIsAiModalOpen(false)}
+        onApplyContent={(text) => {
+          setSuccessBanner(`AI multilingual copy generated and copied to clipboard! (${text.slice(0, 45)}...)`);
+          setTimeout(() => setSuccessBanner(null), 5000);
+        }}
+      />
+
+      <EmergencyBroadcastTriggerModal
+        isOpen={isEmergencyModalOpen}
+        onClose={() => setIsEmergencyModalOpen(false)}
+        onBroadcastSuccess={(title) => {
+          setSuccessBanner(`🚨 Emergency Mass-Broadcast "${title}" dispatched across all facilities and SMS/WhatsApp channels!`);
+          setTimeout(() => setSuccessBanner(null), 6000);
+        }}
+      />
     </div>
   );
 };
