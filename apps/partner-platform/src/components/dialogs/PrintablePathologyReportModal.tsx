@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { InvestigationOrderDto } from '@docsearch/api-contracts';
 
 interface Props {
@@ -6,6 +6,64 @@ interface Props {
   onClose: () => void;
   order: InvestigationOrderDto;
 }
+
+export interface LabHeaderSettings {
+  labName: string;
+  labTagline: string;
+  labAddress: string;
+  certificateNo: string;
+  technicianName: string;
+  technicianTitle: string;
+  pathologistName: string;
+  pathologistTitle: string;
+  pathologistRegNo: string;
+}
+
+const DEFAULT_SETTINGS_STORAGE_KEY = 'docsearch_lab_header_settings';
+
+const getDefaultSettings = (): LabHeaderSettings => {
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem(DEFAULT_SETTINGS_STORAGE_KEY);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {}
+    }
+
+    // Check active user session
+    const authUser = localStorage.getItem('docsearch_partner_staff_auth');
+    if (authUser) {
+      try {
+        const parsed = JSON.parse(authUser);
+        if (parsed.email?.includes('tata') || parsed.tenantName?.includes('Tata')) {
+          return {
+            labName: 'TATA PATHOLOGY & DIAGNOSTIC LABORATORY',
+            labTagline: 'NABL ACCREDITED LAB (ISO 15189:2022) • ICMR APPROVED • CAP COMPLIANT',
+            labAddress: '📍 Main Market Road, Near Civil Hospital | 📞 +91 98765 43210 | 🌐 www.tatapathology.com',
+            certificateNo: 'TP-4892-2026',
+            technicianName: 'Pooja Sharma, BMLT',
+            technicianTitle: 'Senior Medical Lab Technologist',
+            pathologistName: 'Dr. R. K. Tata, MD (Pathology)',
+            pathologistTitle: 'Consultant Pathologist & Lab Director',
+            pathologistRegNo: 'MMC Reg. No: 78291-B'
+          };
+        }
+      } catch {}
+    }
+  }
+
+  return {
+    labName: 'DOC SEARCH ADVANCED PATHOLOGY & DIAGNOSTIC NETWORK',
+    labTagline: 'NABL ACCREDITED LAB (ISO 15189:2022) • ICMR APPROVED • CAP COMPLIANT',
+    labAddress: '📍 DOC SEARCH Demo Hospital — Main Laboratory, Health City, Outer Ring Road, New Delhi | 📞 1800-419-DOCS | 🌐 www.docsearch.health',
+    certificateNo: 'MC-4892-2026',
+    technicianName: 'Pooja Sharma, BMLT',
+    technicianTitle: 'Senior Medical Lab Technologist',
+    pathologistName: 'Dr. Shalini Deshmukh, MD (Pathology)',
+    pathologistTitle: 'Consultant Pathologist & Lab Director',
+    pathologistRegNo: 'DMC Reg. No: 48920-A'
+  };
+};
 
 export const PrintablePathologyReportModal: React.FC<Props> = ({
   isOpen,
@@ -17,6 +75,20 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [pdfSuccess, setPdfSuccess] = useState(false);
 
+  // Lab customization settings state
+  const [settings, setSettings] = useState<LabHeaderSettings>(getDefaultSettings);
+  const [isEditingSettings, setIsEditingSettings] = useState(false);
+  const [formSettings, setFormSettings] = useState<LabHeaderSettings>(getDefaultSettings);
+  const [saveSuccessMessage, setSaveSuccessMessage] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      const active = getDefaultSettings();
+      setSettings(active);
+      setFormSettings(active);
+    }
+  }, [isOpen]);
+
   if (!isOpen || !order) return null;
 
   const handlePrint = () => {
@@ -26,7 +98,6 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
   const handleDownloadPdf = async () => {
     try {
       setIsDownloadingPdf(true);
-      // Fetch real binary PDF from backend endpoint
       const response = await fetch(`/api/v1/partner/lab/orders/${order.id}/pdf`);
       if (response.ok) {
         const blob = await response.blob();
@@ -39,7 +110,6 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
       } else {
-        // Fallback: trigger print to PDF
         window.print();
       }
       setPdfSuccess(true);
@@ -58,6 +128,29 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
       setWhatsAppSuccess(true);
       setTimeout(() => setWhatsAppSuccess(false), 4000);
     }, 800);
+  };
+
+  const handleSaveSettings = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSettings(formSettings);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(DEFAULT_SETTINGS_STORAGE_KEY, JSON.stringify(formSettings));
+    }
+    setSaveSuccessMessage(true);
+    setTimeout(() => {
+      setSaveSuccessMessage(false);
+      setIsEditingSettings(false);
+    }, 1200);
+  };
+
+  const handleResetToDefault = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(DEFAULT_SETTINGS_STORAGE_KEY);
+    }
+    const def = getDefaultSettings();
+    setSettings(def);
+    setFormSettings(def);
+    setIsEditingSettings(false);
   };
 
   return (
@@ -99,8 +192,8 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
 
       <div style={{
         width: '100%',
-        maxWidth: '860px',
-        maxHeight: '92vh',
+        maxWidth: '890px',
+        maxHeight: '94vh',
         backgroundColor: '#FFFFFF',
         color: '#0F172A',
         borderRadius: '16px',
@@ -118,19 +211,43 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          borderBottom: '1px solid rgba(255,255,255,0.1)'
+          borderBottom: '1px solid rgba(255,255,255,0.1)',
+          flexWrap: 'wrap',
+          gap: '10px'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ fontSize: '1.25rem' }}>📄</span>
             <div>
-              <strong style={{ fontSize: '0.875rem' }}>NABL Accredited Diagnostic Report Preview</strong>
+              <strong style={{ fontSize: '0.875rem' }}>NABL Diagnostic Report Preview</strong>
               <span style={{ fontSize: '0.6875rem', color: '#94A3B8', display: 'block' }}>
                 Order #{order.orderNumber} • Patient: {order.patientName} (MRN: {order.patientMrn})
               </span>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            {/* Customize Lab Header & Signature Button */}
+            <button
+              type="button"
+              onClick={() => setIsEditingSettings(!isEditingSettings)}
+              style={{
+                backgroundColor: isEditingSettings ? '#F59E0B' : 'rgba(255,255,255,0.12)',
+                color: isEditingSettings ? '#000' : '#F8FAFC',
+                border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: '8px',
+                padding: '6px 12px',
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <span>⚙️</span>
+              <span>{isEditingSettings ? 'Close Edit Form' : 'Edit Lab Header & Doctor'}</span>
+            </button>
+
             <button
               type="button"
               onClick={handleSendWhatsApp}
@@ -172,7 +289,7 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
               }}
             >
               <span>📄</span>
-              <span>{isDownloadingPdf ? 'Generating PDF...' : pdfSuccess ? '✓ PDF Downloaded' : 'Download Real PDF'}</span>
+              <span>{isDownloadingPdf ? 'Generating PDF...' : pdfSuccess ? '✓ PDF Downloaded' : 'Download PDF'}</span>
             </button>
 
             <button
@@ -214,6 +331,143 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
           </div>
         </div>
 
+        {/* Lab Header & Signatures Customization Panel (Accordion Drawer) */}
+        {isEditingSettings && (
+          <div className="no-print" style={{
+            backgroundColor: '#0F172A',
+            borderBottom: '2px solid #06B6D4',
+            padding: '16px 20px',
+            color: '#FFF'
+          }}>
+            <form onSubmit={handleSaveSettings}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#38BDF8', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>🛠️</span> Customize Lab Name, Address, NABL Certificate & Signatures
+                </span>
+                {saveSuccessMessage && (
+                  <span style={{ fontSize: '0.75rem', color: '#4ADE80', fontWeight: 800 }}>
+                    ✓ Settings Saved & Applied!
+                  </span>
+                )}
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px', marginBottom: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 700, marginBottom: '2px' }}>LAB BRAND NAME *</label>
+                  <input
+                    type="text"
+                    required
+                    value={formSettings.labName}
+                    onChange={(e) => setFormSettings({ ...formSettings, labName: e.target.value })}
+                    style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.75rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 700, marginBottom: '2px' }}>TAGLINE / ACCREDITATION *</label>
+                  <input
+                    type="text"
+                    required
+                    value={formSettings.labTagline}
+                    onChange={(e) => setFormSettings({ ...formSettings, labTagline: e.target.value })}
+                    style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.75rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 700, marginBottom: '2px' }}>NABL / REG NO. *</label>
+                  <input
+                    type="text"
+                    required
+                    value={formSettings.certificateNo}
+                    onChange={(e) => setFormSettings({ ...formSettings, certificateNo: e.target.value })}
+                    style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.75rem' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 700, marginBottom: '2px' }}>LAB ADDRESS, PHONE & WEBSITE *</label>
+                <input
+                  type="text"
+                  required
+                  value={formSettings.labAddress}
+                  onChange={(e) => setFormSettings({ ...formSettings, labAddress: e.target.value })}
+                  style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.75rem' }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px', marginBottom: '14px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 700, marginBottom: '2px' }}>HEAD PATHOLOGIST NAME *</label>
+                  <input
+                    type="text"
+                    required
+                    value={formSettings.pathologistName}
+                    onChange={(e) => setFormSettings({ ...formSettings, pathologistName: e.target.value })}
+                    style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.75rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 700, marginBottom: '2px' }}>PATHOLOGIST REGISTRATION NO. *</label>
+                  <input
+                    type="text"
+                    required
+                    value={formSettings.pathologistRegNo}
+                    onChange={(e) => setFormSettings({ ...formSettings, pathologistRegNo: e.target.value })}
+                    style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.75rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 700, marginBottom: '2px' }}>TECHNOLOGIST NAME *</label>
+                  <input
+                    type="text"
+                    required
+                    value={formSettings.technicianName}
+                    onChange={(e) => setFormSettings({ ...formSettings, technicianName: e.target.value })}
+                    style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.75rem' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  type="submit"
+                  style={{
+                    backgroundColor: '#06B6D4',
+                    color: '#070C16',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '6px 14px',
+                    fontWeight: 900,
+                    fontSize: '0.75rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  💾 Save & Apply to Reports
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResetToDefault}
+                  style={{
+                    backgroundColor: 'rgba(255,255,255,0.1)',
+                    color: '#CBD5E1',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '6px 12px',
+                    fontSize: '0.75rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Reset Defaults
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
         {/* Printable Report Sheet (A4 Dimensions Style) */}
         <div id="printable-pathology-sheet" style={{
           padding: '32px 36px',
@@ -230,22 +484,22 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
                 <span style={{ fontSize: '1.75rem' }}>🧪</span>
                 <div>
                   <h1 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 900, color: '#0369A1', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
-                    DOC SEARCH ADVANCED PATHOLOGY & DIAGNOSTIC NETWORK
+                    {settings.labName}
                   </h1>
                   <span style={{ fontSize: '0.75rem', color: '#475569', fontWeight: 600 }}>
-                    NABL ACCREDITED LAB (ISO 15189:2022) • ICMR APPROVED • CAP COMPLIANT
+                    {settings.labTagline}
                   </span>
                 </div>
               </div>
               <div style={{ fontSize: '0.6875rem', color: '#64748B', marginTop: '4px' }}>
-                📍 DOC SEARCH Demo Hospital — Main Laboratory, Health City, Outer Ring Road, New Delhi | 📞 1800-419-DOCS | 🌐 www.docsearch.health
+                {settings.labAddress}
               </div>
             </div>
 
             <div style={{ textAlign: 'right' }}>
               <div style={{ border: '1.5px solid #0284C7', padding: '4px 8px', borderRadius: '6px', backgroundColor: '#F0F9FF' }}>
                 <span style={{ fontSize: '0.625rem', fontWeight: 800, color: '#0369A1', display: 'block' }}>NABL CERTIFICATE NO.</span>
-                <strong style={{ fontSize: '0.75rem', color: '#0C4A6E' }}>MC-4892-2026</strong>
+                <strong style={{ fontSize: '0.75rem', color: '#0C4A6E' }}>{settings.certificateNo}</strong>
               </div>
               <span style={{ fontSize: '0.625rem', color: '#64748B', marginTop: '2px', display: 'block' }}>ABDM Connected Lab</span>
             </div>
@@ -267,7 +521,7 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
               <div><span style={{ color: '#64748B' }}>Patient Name:</span> <strong>{order.patientName}</strong></div>
               <div><span style={{ color: '#64748B' }}>Age / Gender:</span> <strong>32 Yrs / {order.patientGender || 'Male'}</strong></div>
               <div><span style={{ color: '#64748B' }}>MRN / Patient ID:</span> <strong style={{ fontFamily: 'monospace' }}>{order.patientMrn}</strong></div>
-              <div><span style={{ color: '#64748B' }}>ABHA Address:</span> <strong>rahul.kumar@sbx</strong></div>
+              <div><span style={{ color: '#64748B' }}>ABHA Address:</span> <strong>{order.patientName.toLowerCase().replace(/\s+/g, '.')}@sbx</strong></div>
             </div>
 
             <div>
@@ -348,9 +602,9 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
             
             {/* Tech Signature */}
             <div>
-              <div style={{ fontFamily: 'cursive', fontSize: '1rem', color: '#0369A1', marginBottom: '2px' }}>Pooja Sharma</div>
-              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0F172A' }}>Pooja Sharma, BMLT</div>
-              <div style={{ fontSize: '0.6875rem', color: '#64748B' }}>Senior Medical Lab Technologist</div>
+              <div style={{ fontFamily: 'cursive', fontSize: '1rem', color: '#0369A1', marginBottom: '2px' }}>{settings.technicianName.split(',')[0]}</div>
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0F172A' }}>{settings.technicianName}</div>
+              <div style={{ fontSize: '0.6875rem', color: '#64748B' }}>{settings.technicianTitle}</div>
             </div>
 
             {/* QR Code Verification */}
@@ -365,10 +619,10 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
 
             {/* Pathologist Signature */}
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontFamily: 'cursive', fontSize: '1.1rem', color: '#16A34A', marginBottom: '2px' }}>Dr. Shalini Deshmukh</div>
-              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0F172A' }}>Dr. Shalini Deshmukh, MD (Pathology)</div>
-              <div style={{ fontSize: '0.6875rem', color: '#64748B' }}>Consultant Pathologist & Lab Director</div>
-              <div style={{ fontSize: '0.625rem', color: '#0369A1', fontWeight: 700 }}>DMC Reg. No: 48920-A</div>
+              <div style={{ fontFamily: 'cursive', fontSize: '1.1rem', color: '#16A34A', marginBottom: '2px' }}>{settings.pathologistName.split(',')[0]}</div>
+              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0F172A' }}>{settings.pathologistName}</div>
+              <div style={{ fontSize: '0.6875rem', color: '#64748B' }}>{settings.pathologistTitle}</div>
+              <div style={{ fontSize: '0.625rem', color: '#0369A1', fontWeight: 700 }}>{settings.pathologistRegNo}</div>
             </div>
 
           </div>
