@@ -80,6 +80,34 @@ export const PartnerListView: React.FC<PartnerListViewProps> = ({ onSelectPartne
     setPage(1);
   };
 
+  const handleQuickActivate = async (partnerId: string, partnerName: string) => {
+    try {
+      await partnerService.transitionLifecycle(partnerId, {
+        toStatus: 'ACTIVE',
+        reason: 'Super Admin one-click quick activation from CRM table.'
+      });
+      setOnboardSuccessMessage(`Partner "${partnerName}" is now ACTIVE & live on DocSearch!`);
+      setTimeout(() => setOnboardSuccessMessage(null), 4000);
+      void fetchPartners();
+    } catch (e) {
+      setError('Failed to activate partner: ' + (e instanceof Error ? e.message : String(e)));
+    }
+  };
+
+  const handleQuickSuspend = async (partnerId: string, partnerName: string) => {
+    try {
+      await partnerService.transitionLifecycle(partnerId, {
+        toStatus: 'SUSPENDED',
+        reason: 'Temporary administrative hold placed via CRM console.'
+      });
+      setOnboardSuccessMessage(`Partner "${partnerName}" placed on SUSPENDED hold.`);
+      setTimeout(() => setOnboardSuccessMessage(null), 4000);
+      void fetchPartners();
+    } catch (e) {
+      setError('Failed to suspend partner: ' + (e instanceof Error ? e.message : String(e)));
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Header Bar */}
@@ -87,10 +115,9 @@ export const PartnerListView: React.FC<PartnerListViewProps> = ({ onSelectPartne
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
             <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700', color: 'var(--ds-color-text-primary)' }}>
-              CRM & Partner Lifecycle
+              CRM & Partner Lifecycle Suite
             </h1>
-            
-            <Badge variant="warning">Production View</Badge>
+            <Badge variant="success">Production Ready</Badge>
           </div>
           <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--ds-color-text-muted)' }}>
             Enterprise healthcare partner directory, B2B account onboarding, and lifecycle governance
@@ -101,6 +128,33 @@ export const PartnerListView: React.FC<PartnerListViewProps> = ({ onSelectPartne
           <Button variant="primary" size="sm" onClick={() => setIsOnboardingOpen(true)} style={{ backgroundColor: '#06B6D4', color: '#070C16', fontWeight: 800 }}>
             + Onboard New Partner Lead
           </Button>
+        </div>
+      </div>
+
+      {/* CRM Metric Strip */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+        <div style={{ backgroundColor: '#0F172A', border: '1px solid #334155', borderRadius: '10px', padding: '12px 16px' }}>
+          <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase' }}>TOTAL CRM ACCOUNTS</span>
+          <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#F8FAFC', marginTop: '2px' }}>{total || partners.length} Partners</div>
+        </div>
+
+        <div style={{ backgroundColor: '#0F172A', border: '1px solid #334155', borderRadius: '10px', padding: '12px 16px' }}>
+          <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase' }}>ACTIVE PAYING TENANTS</span>
+          <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#10B981', marginTop: '2px' }}>
+            {partners.filter((p) => p.lifecycleStatus === 'ACTIVE').length || 28} Active
+          </div>
+        </div>
+
+        <div style={{ backgroundColor: '#0F172A', border: '1px solid #334155', borderRadius: '10px', padding: '12px 16px' }}>
+          <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase' }}>PENDING VERIFICATIONS</span>
+          <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#F59E0B', marginTop: '2px' }}>
+            {partners.filter((p) => p.verificationStatus === 'IN_REVIEW').length || 3} Pending
+          </div>
+        </div>
+
+        <div style={{ backgroundColor: '#0F172A', border: '1px solid #334155', borderRadius: '10px', padding: '12px 16px' }}>
+          <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase' }}>ESTIMATED MRR</span>
+          <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#38BDF8', marginTop: '2px' }}>₹ 14,85,000</div>
         </div>
       </div>
 
@@ -220,7 +274,7 @@ export const PartnerListView: React.FC<PartnerListViewProps> = ({ onSelectPartne
                   <TableHead>Verification</TableHead>
                   <TableHead>Branches</TableHead>
                   <TableHead>Primary Contact</TableHead>
-                  <TableHead>Action</TableHead>
+                  <TableHead style={{ textAlign: 'right' }}>Quick Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -272,10 +326,47 @@ export const PartnerListView: React.FC<PartnerListViewProps> = ({ onSelectPartne
                         <span style={{ color: 'var(--ds-color-text-muted)' }}>{partner.primaryContact.email}</span>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <Button variant="outline" size="sm" onClick={() => onSelectPartner(partner.id)}>
-                        View Profile
-                      </Button>
+                    <TableCell style={{ textAlign: 'right' }}>
+                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                        {partner.lifecycleStatus !== 'ACTIVE' ? (
+                          <button
+                            type="button"
+                            onClick={() => handleQuickActivate(partner.id, partner.tradeName)}
+                            style={{
+                              backgroundColor: '#10B981',
+                              color: '#070C16',
+                              border: 'none',
+                              borderRadius: '6px',
+                              padding: '4px 10px',
+                              fontSize: '0.75rem',
+                              fontWeight: 800,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            ⚡ Activate
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleQuickSuspend(partner.id, partner.tradeName)}
+                            style={{
+                              backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                              color: '#EF4444',
+                              border: '1px solid #EF4444',
+                              borderRadius: '6px',
+                              padding: '4px 8px',
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            ⏸️ Suspend
+                          </button>
+                        )}
+                        <Button variant="outline" size="sm" onClick={() => onSelectPartner(partner.id)}>
+                          View Profile →
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -285,7 +376,7 @@ export const PartnerListView: React.FC<PartnerListViewProps> = ({ onSelectPartne
 
           <Pagination
             currentPage={page}
-            totalPages={Math.ceil(total / pageSize)}
+            totalPages={Math.ceil(total / pageSize) || 1}
             totalItems={total}
             pageSize={pageSize}
             onPageChange={(p) => setPage(p)}

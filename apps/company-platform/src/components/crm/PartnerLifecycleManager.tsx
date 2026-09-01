@@ -8,10 +8,14 @@ import { partnerService } from '../../services/partner-service.js';
 import { PartnerListView } from './PartnerListView.js';
 import { PartnerProfileView } from './PartnerProfileView.js';
 import { PartnerVerificationConsole } from './PartnerVerificationConsole.js';
+import { CustomizableSubscriptionPlanManager } from './CustomizableSubscriptionPlanManager.js';
+import { PartnerPipelineAnalyticsView } from './PartnerPipelineAnalyticsView.js';
 import { Spinner, ErrorState, Tabs } from '@docsearch/ui-kit';
 
+export type ActiveCrmTab = 'DIRECTORY' | 'VERIFICATION' | 'PLANS' | 'ANALYTICS';
+
 export const PartnerLifecycleManager: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'DIRECTORY' | 'VERIFICATION'>('DIRECTORY');
+  const [activeTab, setActiveTab] = useState<ActiveCrmTab>('DIRECTORY');
   const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null);
   const [partner, setPartner] = useState<PartnerProfileDto | null>(null);
   const [history, setHistory] = useState<PartnerTransitionHistoryDto[]>([]);
@@ -114,16 +118,28 @@ export const PartnerLifecycleManager: React.FC = () => {
       <Tabs
         tabs={[
           { id: 'DIRECTORY', label: '📋 Partner Directory & CRM' },
-          { id: 'VERIFICATION', label: '🛡️ Document Verification & AI Compliance Console (3)' }
+          { id: 'VERIFICATION', label: '🛡️ Document Verification Console (3)' },
+          { id: 'PLANS', label: '💳 Subscription Plans & Entitlements' },
+          { id: 'ANALYTICS', label: '📊 Conversion Funnel & Pipeline Analytics' }
         ]}
         activeTabId={activeTab}
-        onTabChange={(id) => setActiveTab(id as 'DIRECTORY' | 'VERIFICATION')}
+        onTabChange={(id) => setActiveTab(id as ActiveCrmTab)}
       />
 
-      {activeTab === 'DIRECTORY' ? (
+      {activeTab === 'DIRECTORY' && (
         <PartnerListView onSelectPartner={(id) => setSelectedPartnerId(id)} />
-      ) : (
+      )}
+
+      {activeTab === 'VERIFICATION' && (
         <PartnerVerificationConsole />
+      )}
+
+      {activeTab === 'PLANS' && (
+        <CustomizableSubscriptionPlanManager />
+      )}
+
+      {activeTab === 'ANALYTICS' && (
+        <PartnerPipelineAnalyticsView />
       )}
     </div>
   );
