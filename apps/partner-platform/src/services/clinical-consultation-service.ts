@@ -946,6 +946,56 @@ class ClinicalConsultationService implements IClinicalConsultationService {
       consultation as unknown as Record<string, unknown>
     );
 
+    // AUTO-SYNC DOCTOR E-PRESCRIPTION TO PHARMACY QUEUE
+    if (consultation.medications && consultation.medications.length > 0 && typeof window !== 'undefined') {
+      try {
+        const existingRxList: any[] = JSON.parse(localStorage.getItem('docsearch_pharmacy_prescriptions') || '[]');
+        const newRxNumber = `RX-OPD-2026-${Math.floor(100000 + Math.random() * 900000)}`;
+        const newRx = {
+          id: crypto.randomUUID(),
+          tenantId: req.tenantId,
+          branchId: consultation.branchId || '00000000-0000-4000-8000-000000000003',
+          prescriptionNumber: newRxNumber,
+          patientId: consultation.patientId,
+          patientName: consultation.patientName || 'Rahul Kumar',
+          patientMrn: consultation.patientMrn || 'MRN-84920',
+          doctorId: consultation.doctorId,
+          doctorName: consultation.doctorName || 'Dr. Rajesh Sharma, MD',
+          doctorSpecialty: 'Internal Medicine',
+          departmentName: 'OPD Clinical Care',
+          status: 'READY_FOR_DISPENSING',
+          prescribedAt: new Date().toISOString(),
+          items: consultation.medications.map((m) => ({
+            id: m.id || crypto.randomUUID(),
+            medicationId: 'med-01',
+            medicationName: m.medicationName,
+            genericName: m.genericName,
+            brandName: m.medicationName,
+            dosageForm: 'TABLET',
+            strength: m.strength || '500mg',
+            dose: m.dosage || '1 Tablet',
+            route: m.route || 'ORAL',
+            frequency: m.frequency || 'BID (Twice Daily)',
+            durationDays: m.duration || 5,
+            quantityPrescribed: (m.duration || 5) * 2,
+            quantityDispensed: 0,
+            unitPrice: 4.5,
+            totalPrice: ((m.duration || 5) * 2) * 4.5,
+            instructions: m.instructions || m.beforeAfterFood || 'After meals',
+            substitutionAllowed: true,
+            isGenericAccepted: true,
+            status: 'PENDING_DISPENSE'
+          })),
+          totalAmount: 180.0,
+          notes: consultation.treatmentPlan || 'Auto-generated from finalized Doctor OPD Consultation',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        existingRxList.unshift(newRx);
+        localStorage.setItem('docsearch_pharmacy_prescriptions', JSON.stringify(existingRxList));
+      } catch {}
+    }
+
     return { ...consultation };
   }
 

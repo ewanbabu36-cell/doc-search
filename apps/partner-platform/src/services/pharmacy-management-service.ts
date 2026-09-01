@@ -1,4 +1,27 @@
 import { apiRequest } from './api-client.js';
+
+function loadStored<T>(key: string, fallback: T[]): T[] {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const item = window.localStorage.getItem(key);
+      if (item) return JSON.parse(item);
+    } catch {
+      // Fallback
+    }
+  }
+  return [...fallback];
+}
+
+function saveStored<T>(key: string, data: T[]): void {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      window.localStorage.setItem(key, JSON.stringify(data));
+    } catch {
+      // Ignore
+    }
+  }
+}
+
 import type {
   MedicationCatalogDto,
   PharmacyInventoryDto,
@@ -76,11 +99,11 @@ export interface IPharmacyManagementService {
 }
 
 export class PharmacyManagementService implements IPharmacyManagementService {
-  private catalog: MedicationCatalogDto[] = [...MOCK_MEDICATION_CATALOG];
-  private batches: PharmacyBatchDto[] = [...MOCK_PHARMACY_BATCHES];
-  private inventory: PharmacyInventoryDto[] = [...MOCK_PHARMACY_INVENTORY];
-  private prescriptions: PharmacyPrescriptionDto[] = [...MOCK_PHARMACY_PRESCRIPTIONS];
-  private dispensing: PharmacyDispensingDto[] = [...MOCK_PHARMACY_DISPENSING];
+  private catalog: MedicationCatalogDto[] = loadStored("docsearch_pharmacy_catalog", MOCK_MEDICATION_CATALOG);
+  private batches: PharmacyBatchDto[] = loadStored("docsearch_pharmacy_batches", MOCK_PHARMACY_BATCHES);
+  private inventory: PharmacyInventoryDto[] = loadStored("docsearch_pharmacy_inventory", MOCK_PHARMACY_INVENTORY);
+  private prescriptions: PharmacyPrescriptionDto[] = loadStored("docsearch_pharmacy_prescriptions", MOCK_PHARMACY_PRESCRIPTIONS);
+  private dispensing: PharmacyDispensingDto[] = loadStored("docsearch_pharmacy_dispensing", MOCK_PHARMACY_DISPENSING);
   private movements = [...MOCK_PHARMACY_STOCK_MOVEMENTS];
   private substitutions: PharmacySubstitutionRequestDto[] = [...MOCK_PHARMACY_SUBSTITUTIONS];
   private returns: PharmacyReturnDto[] = [...MOCK_PHARMACY_RETURNS];
@@ -388,6 +411,10 @@ export class PharmacyManagementService implements IPharmacyManagementService {
     };
 
     this.dispensing.unshift(dispensingRecord);
+    saveStored("docsearch_pharmacy_batches", this.batches);
+    saveStored("docsearch_pharmacy_inventory", this.inventory);
+    saveStored("docsearch_pharmacy_prescriptions", this.prescriptions);
+    saveStored("docsearch_pharmacy_dispensing", this.dispensing);
     this.recordAudit(req.tenantId, req.partnerId, req.organizationId, req.branchId, req.actorId, req.actorRole, allFulfilled ? 'MEDICATION_DISPENSED' : 'PARTIAL_DISPENSING_COMMITTED', 'PHARMACY_DISPENSING', dispensingId, req.justification, undefined, dispensingRecord as unknown as Record<string, unknown>, rx.id, rx.patientId);
 
     return dispensingRecord;
