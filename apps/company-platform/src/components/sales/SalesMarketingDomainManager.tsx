@@ -21,10 +21,19 @@ import { CampaignListView } from './CampaignListView.js';
 import { CampaignProfileView } from './CampaignProfileView.js';
 import { MarketingActivityListView } from './MarketingActivityListView.js';
 import { SalesTaskListView } from './SalesTaskListView.js';
+
+// 3 New Enterprise Sales Advancements
+import { HospitalLeadScoringRadarView } from './HospitalLeadScoringRadarView.js';
+import { EnterpriseDealForecastMatrixView } from './EnterpriseDealForecastMatrixView.js';
+import { FieldSalesVisitTrackerView } from './FieldSalesVisitTrackerView.js';
+
 import { Tabs, Badge, Spinner, ErrorState } from '@docsearch/ui-kit';
 
 type ActiveTab =
   | 'overview'
+  | 'ai-scoring'
+  | 'deal-forecast'
+  | 'field-visits'
   | 'leads'
   | 'opportunities'
   | 'partner-sales'
@@ -99,7 +108,7 @@ export const SalesMarketingDomainManager: React.FC = () => {
       <div style={{ padding: '60px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
         <Spinner size="lg" />
         <span style={{ fontSize: '0.875rem', color: 'var(--ds-color-text-muted)' }}>
-          Loading Sales & Marketing pipeline telemetry...
+          Loading Sales Pipeline & Marketing Hub...
         </span>
       </div>
     );
@@ -107,11 +116,11 @@ export const SalesMarketingDomainManager: React.FC = () => {
 
   if (error && leads.length === 0) {
     return (
-      <ErrorState title="Sales Workspace Unavailable" message={error} onRetry={loadData} />
+      <ErrorState title="Sales Telemetry Unavailable" message={error} onRetry={loadData} />
     );
   }
 
-  // Drilldown to Lead Profile
+  // Drilldown: Lead Profile
   if (selectedLeadId) {
     const lead = leads.find((l) => l.id === selectedLeadId);
     if (lead) {
@@ -125,7 +134,7 @@ export const SalesMarketingDomainManager: React.FC = () => {
     }
   }
 
-  // Drilldown to Opportunity Profile
+  // Drilldown: Opportunity Profile
   if (selectedOppId) {
     const opp = opportunities.find((o) => o.id === selectedOppId);
     if (opp) {
@@ -139,11 +148,11 @@ export const SalesMarketingDomainManager: React.FC = () => {
     }
   }
 
-  // Drilldown to Campaign Profile
+  // Drilldown: Campaign Profile
   if (selectedCampId) {
     const camp = campaigns.find((c) => c.id === selectedCampId);
     if (camp) {
-      const campActs = activities.filter((a) => a.campaignId === camp.id);
+      const campActs = activities.filter((a) => a.campaignName === camp.name);
       return (
         <CampaignProfileView
           campaign={camp}
@@ -157,17 +166,16 @@ export const SalesMarketingDomainManager: React.FC = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', backgroundColor: '#0F172A', border: '1.5px solid rgba(6, 182, 212, 0.4)', borderRadius: '14px', padding: '16px 20px' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700', color: 'var(--ds-color-text-primary)' }}>
-              Sales & Marketing
+            <h1 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 800, color: '#F8FAFC' }}>
+              📈 Sales Pipeline, BDM Territories & Enterprise ARR HQ
             </h1>
-            
-            <Badge variant="warning">Production View</Badge>
+            <Badge variant="success">● AI Lead Scorer & GPS Audit Active</Badge>
           </div>
-          <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--ds-color-text-muted)' }}>
-            Enterprise healthcare sales pipeline, deal milestones, marketing campaigns, and partner outreach logs
+          <p style={{ margin: 0, fontSize: '0.8125rem', color: '#94A3B8' }}>
+            Predictive hospital lead scoring (0-100), probability-weighted ARR forecasting, and on-ground field BDM GPS check-in logs
           </p>
         </div>
       </div>
@@ -178,6 +186,21 @@ export const SalesMarketingDomainManager: React.FC = () => {
           {
             id: 'overview',
             label: '📊 Sales Overview'
+          },
+          {
+            id: 'ai-scoring',
+            label: '🎯 AI Lead Scorer',
+            badge: <Badge variant="success">90+ Score</Badge>
+          },
+          {
+            id: 'deal-forecast',
+            label: '📊 ARR Deal Forecast',
+            badge: <Badge variant="primary">₹1.80 Cr ARR</Badge>
+          },
+          {
+            id: 'field-visits',
+            label: '📍 Field BDM GPS Check-In',
+            badge: <Badge variant="neutral">148 Visits</Badge>
           },
           {
             id: 'leads',
@@ -222,6 +245,18 @@ export const SalesMarketingDomainManager: React.FC = () => {
           campaigns={campaigns}
           tasks={tasks}
         />
+      )}
+
+      {activeTab === 'ai-scoring' && (
+        <HospitalLeadScoringRadarView />
+      )}
+
+      {activeTab === 'deal-forecast' && (
+        <EnterpriseDealForecastMatrixView />
+      )}
+
+      {activeTab === 'field-visits' && (
+        <FieldSalesVisitTrackerView />
       )}
 
       {activeTab === 'leads' && (

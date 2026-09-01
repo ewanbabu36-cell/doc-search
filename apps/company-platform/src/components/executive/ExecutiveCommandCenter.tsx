@@ -9,10 +9,18 @@ import { RecentActivities } from './RecentActivities.js';
 import { QuickActions } from './QuickActions.js';
 import { TrendAnalytics } from './TrendAnalytics.js';
 import { SystemHealthSummary } from './SystemHealthSummary.js';
-import { Spinner, ErrorState } from '@docsearch/ui-kit';
+
+// 3 New Executive Advancements
+import { NationalHealthcareWarRoomView } from './NationalHealthcareWarRoomView.js';
+import { RealtimeEbitdaUnitEconomicsView } from './RealtimeEbitdaUnitEconomicsView.js';
+import { PlatformEmergencyPanicLockModal } from './PlatformEmergencyPanicLockModal.js';
+
+import { Spinner, ErrorState, Tabs, Badge, Button } from '@docsearch/ui-kit';
 
 export const ExecutiveCommandCenter: React.FC = () => {
   const [data, setData] = useState<ExecutiveDashboardData | null>(null);
+  const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'WAR_ROOM' | 'EBITDA'>('OVERVIEW');
+  const [isPanicOpen, setIsPanicOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -64,52 +72,115 @@ export const ExecutiveCommandCenter: React.FC = () => {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      {/* 1. Executive Overview & Status Header */}
-      <ExecutiveOverview
-        metrics={data.metrics}
-        lastUpdated={data.lastUpdated}
-        isDevelopmentPreview={data.dataSource === 'development_preview'}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {/* Executive Command Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', backgroundColor: '#0F172A', border: '1.5px solid rgba(6, 182, 212, 0.4)', borderRadius: '14px', padding: '16px 20px' }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+            <h1 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 800, color: '#F8FAFC' }}>
+              ⚡ Executive & Command Center HQ
+            </h1>
+            <Badge variant="success">● Pan-India Live Health Grid Active</Badge>
+          </div>
+          <p style={{ margin: 0, fontSize: '0.8125rem', color: '#94A3B8' }}>
+            National healthcare consultation heatmaps, real-time EBITDA & unit economics, and 1-click platform emergency broadcast
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={() => setIsPanicOpen(true)}
+            style={{
+              backgroundColor: '#EF4444',
+              color: '#FFF',
+              fontWeight: 900,
+              boxShadow: '0 4px 14px rgba(239, 68, 68, 0.4)'
+            }}
+          >
+            🚨 National Panic Siren
+          </Button>
+        </div>
+      </div>
+
+      {/* Navigation Tabs */}
+      <Tabs
+        tabs={[
+          { id: 'OVERVIEW', label: '📊 Executive Overview' },
+          { id: 'WAR_ROOM', label: '⚡ National Healthcare War-Room', badge: <Badge variant="success">15.1k / hr</Badge> },
+          { id: 'EBITDA', label: '💰 Real-Time EBITDA & Burn Rate', badge: <Badge variant="primary">Cash Positive</Badge> }
+        ]}
+        activeTabId={activeTab}
+        onTabChange={(id) => setActiveTab(id as typeof activeTab)}
       />
 
-      {/* 2. Key Operational KPI Summary */}
-      <KpiSummary kpis={data.kpis} />
+      {/* Tab: War Room */}
+      {activeTab === 'WAR_ROOM' && (
+        <NationalHealthcareWarRoomView />
+      )}
 
-      {/* 3 & 4. Two Column Operational Grid: Alerts & Business Performance */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
-          gap: '20px'
-        }}
-      >
-        <AlertsSection alerts={data.alerts} />
-        <BusinessPerformance performance={data.businessPerformance} />
-      </div>
+      {/* Tab: EBITDA */}
+      {activeTab === 'EBITDA' && (
+        <RealtimeEbitdaUnitEconomicsView />
+      )}
 
-      {/* 5 & 6. Quick Actions & Trends */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
-          gap: '20px'
-        }}
-      >
-        <QuickActions actions={data.quickActions} />
-        <TrendAnalytics trends={data.trends} />
-      </div>
+      {/* Tab: Overview */}
+      {activeTab === 'OVERVIEW' && (
+        <>
+          {/* 1. Executive Overview & Status Header */}
+          <ExecutiveOverview
+            metrics={data.metrics}
+            lastUpdated={data.lastUpdated}
+            isDevelopmentPreview={data.dataSource === 'development_preview'}
+          />
 
-      {/* 7 & 8. Recent Activities & System Health Telemetry */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
-          gap: '20px'
-        }}
-      >
-        <RecentActivities activities={data.recentActivities} />
-        <SystemHealthSummary health={data.systemHealth} />
-      </div>
+          {/* 2. Key Operational KPI Summary */}
+          <KpiSummary kpis={data.kpis} />
+
+          {/* 3 & 4. Two Column Operational Grid: Alerts & Business Performance */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
+              gap: '20px'
+            }}
+          >
+            <AlertsSection alerts={data.alerts} />
+            <BusinessPerformance performance={data.businessPerformance} />
+          </div>
+
+          {/* 5 & 6. Quick Actions & Trends */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
+              gap: '20px'
+            }}
+          >
+            <QuickActions actions={data.quickActions} />
+            <TrendAnalytics trends={data.trends} />
+          </div>
+
+          {/* 7 & 8. Recent Activities & System Health Telemetry */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
+              gap: '20px'
+            }}
+          >
+            <RecentActivities activities={data.recentActivities} />
+            <SystemHealthSummary health={data.systemHealth} />
+          </div>
+        </>
+      )}
+
+      {/* Panic Lock Modal */}
+      <PlatformEmergencyPanicLockModal
+        isOpen={isPanicOpen}
+        onClose={() => setIsPanicOpen(false)}
+      />
     </div>
   );
 };
