@@ -19,12 +19,14 @@ export interface RoleListViewProps {
   roles: SecurityRoleDto[];
   onSelectRole: (roleId: string) => void;
   onOpenCreateRole?: () => void;
+  onProvisionAllTemplates?: () => void;
 }
 
 export const RoleListView: React.FC<RoleListViewProps> = ({
   roles,
   onSelectRole,
-  onOpenCreateRole
+  onOpenCreateRole,
+  onProvisionAllTemplates
 }) => {
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<SecurityRoleType | 'ALL'>('ALL');
@@ -59,22 +61,40 @@ export const RoleListView: React.FC<RoleListViewProps> = ({
           </div>
         </div>
 
-        {onOpenCreateRole && (
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={onOpenCreateRole}
-            style={{
-              backgroundColor: '#06B6D4',
-              color: '#070C16',
-              fontWeight: 800,
-              padding: '8px 18px',
-              fontSize: '0.8125rem'
-            }}
-          >
-            ➕ Create Custom Role & Permissions
-          </Button>
-        )}
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {onProvisionAllTemplates && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onProvisionAllTemplates}
+              style={{
+                borderColor: '#10B981',
+                color: '#10B981',
+                fontWeight: 800,
+                fontSize: '0.8125rem'
+              }}
+            >
+              ⚡ 1-Click Load 8 Role Templates
+            </Button>
+          )}
+
+          {onOpenCreateRole && (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={onOpenCreateRole}
+              style={{
+                backgroundColor: '#06B6D4',
+                color: '#070C16',
+                fontWeight: 800,
+                padding: '8px 18px',
+                fontSize: '0.8125rem'
+              }}
+            >
+              ➕ Create Custom Role & Permissions
+            </Button>
+          )}
+        </div>
       </div>
       {/* Search & Filters */}
       <Card padding="md">

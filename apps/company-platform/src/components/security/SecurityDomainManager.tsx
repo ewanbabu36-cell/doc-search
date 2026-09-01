@@ -31,7 +31,7 @@ import { ZeroTrustMfaPolicyController } from './ZeroTrustMfaPolicyController.js'
 import { IpWhitelistingFirewallView } from './IpWhitelistingFirewallView.js';
 import { MerkleAuditProofVerifierView } from './MerkleAuditProofVerifierView.js';
 import { EmergencyBreakGlassProtocolView } from './EmergencyBreakGlassProtocolView.js';
-import { CustomRolePermissionBuilderModal } from './CustomRolePermissionBuilderModal.js';
+import { CustomRolePermissionBuilderModal, ROLE_PRESET_TEMPLATES } from './CustomRolePermissionBuilderModal.js';
 
 import { Tabs, Badge, Spinner, ErrorState, Button } from '@docsearch/ui-kit';
 
@@ -124,6 +124,26 @@ export const SecurityDomainManager: React.FC = () => {
     setRoles([newRole, ...roles]);
     setSuccessBanner(`Custom Role "${newRole.roleName}" created & granted ${newRole.permissionCount} permissions!`);
     setTimeout(() => setSuccessBanner(null), 4000);
+  };
+
+  const handleProvisionAllTemplates = (templateRoles?: SecurityRoleDto[]) => {
+    const toAdd = templateRoles || ROLE_PRESET_TEMPLATES.map((tpl) => ({
+      id: `00000000-0000-0000-0000-${String(Math.floor(100000000000 + Math.random() * 900000000000))}`,
+      roleCode: tpl.code,
+      roleName: tpl.name,
+      description: tpl.description,
+      roleType: 'CUSTOM' as const,
+      scopeType: tpl.scopeType,
+      status: 'ACTIVE' as const,
+      isSystemRole: false,
+      userCount: 0,
+      permissionCount: Object.values(tpl.perms).filter(Boolean).length,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }));
+    setRoles([...toAdd, ...roles]);
+    setSuccessBanner(`⚡ 1-Click Provision: Successfully loaded all ${toAdd.length} standard healthcare role templates!`);
+    setTimeout(() => setSuccessBanner(null), 5000);
   };
 
   const handleTransitionPolicy = async (toStatus: SecurityPolicyStatus, reason: string) => {
@@ -293,6 +313,7 @@ export const SecurityDomainManager: React.FC = () => {
           roles={roles}
           onSelectRole={(id) => setSelectedRoleId(id)}
           onOpenCreateRole={() => setIsCreateRoleModalOpen(true)}
+          onProvisionAllTemplates={handleProvisionAllTemplates}
         />
       )}
 
@@ -369,6 +390,7 @@ export const SecurityDomainManager: React.FC = () => {
           isOpen={isCreateRoleModalOpen}
           onClose={() => setIsCreateRoleModalOpen(false)}
           onCreateRole={handleCreateCustomRole}
+          onProvisionAllTemplates={handleProvisionAllTemplates}
         />
       )}
     </div>
