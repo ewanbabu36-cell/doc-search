@@ -1,4 +1,27 @@
 import { apiRequest } from './api-client.js';
+
+function loadStored<T>(key: string, fallback: T[]): T[] {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const item = window.localStorage.getItem(key);
+      if (item) return JSON.parse(item);
+    } catch {
+      // Fallback
+    }
+  }
+  return [...fallback];
+}
+
+function saveStored<T>(key: string, data: T[]): void {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      window.localStorage.setItem(key, JSON.stringify(data));
+    } catch {
+      // Ignore
+    }
+  }
+}
+
 import type {
   InvestigationCatalogDto,
   InvestigationPanelDto,
@@ -60,14 +83,14 @@ export interface IClinicalInvestigationService {
 }
 
 export class ClinicalInvestigationService implements IClinicalInvestigationService {
-  private catalog: InvestigationCatalogDto[] = [...MOCK_INVESTIGATION_CATALOG];
-  private panels: InvestigationPanelDto[] = [...MOCK_INVESTIGATION_PANELS];
-  private orders: InvestigationOrderDto[] = [...MOCK_INVESTIGATION_ORDERS];
-  private specimens: InvestigationSpecimenDto[] = [...MOCK_INVESTIGATION_SPECIMENS];
-  private results: InvestigationResultDto[] = [...MOCK_INVESTIGATION_RESULTS];
-  private reports: InvestigationReportDto[] = [...MOCK_INVESTIGATION_REPORTS];
-  private amendments: InvestigationResultAmendmentDto[] = [...MOCK_INVESTIGATION_AMENDMENTS];
-  private auditTraces: InvestigationAuditTraceDto[] = [...MOCK_INVESTIGATION_AUDIT_TRACES];
+  private catalog: InvestigationCatalogDto[] = loadStored("docsearch_investigation_catalog", MOCK_INVESTIGATION_CATALOG);
+  private panels: InvestigationPanelDto[] = loadStored("docsearch_investigation_panels", MOCK_INVESTIGATION_PANELS);
+  private orders: InvestigationOrderDto[] = loadStored("docsearch_investigation_orders", MOCK_INVESTIGATION_ORDERS);
+  private specimens: InvestigationSpecimenDto[] = loadStored("docsearch_investigation_specimens", MOCK_INVESTIGATION_SPECIMENS);
+  private results: InvestigationResultDto[] = loadStored("docsearch_investigation_results", MOCK_INVESTIGATION_RESULTS);
+  private reports: InvestigationReportDto[] = loadStored("docsearch_investigation_reports", MOCK_INVESTIGATION_REPORTS);
+  private amendments: InvestigationResultAmendmentDto[] = loadStored("docsearch_investigation_amendments", MOCK_INVESTIGATION_AMENDMENTS);
+  private auditTraces: InvestigationAuditTraceDto[] = loadStored("docsearch_investigation_audit", MOCK_INVESTIGATION_AUDIT_TRACES);
 
   private generateId(): string {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
@@ -131,7 +154,7 @@ export class ClinicalInvestigationService implements IClinicalInvestigationServi
       metadata: {},
       occurredAt: new Date().toISOString()
     };
-    this.auditTraces.unshift(auditRecord);
+    this.auditTraces.unshift(auditRecord); saveStored("docsearch_investigation_audit", this.auditTraces);
   }
 
   public async getOverview(
@@ -201,7 +224,7 @@ export class ClinicalInvestigationService implements IClinicalInvestigationServi
       updatedAt: new Date().toISOString()
     };
 
-    this.catalog.unshift(newRecord);
+    this.catalog.unshift(newRecord); saveStored("docsearch_investigation_catalog", this.catalog);
     this.recordAudit(
       req.tenantId,
       req.partnerId,
@@ -299,7 +322,7 @@ export class ClinicalInvestigationService implements IClinicalInvestigationServi
       updatedAt: new Date().toISOString()
     };
 
-    this.panels.unshift(newPanel);
+    this.panels.unshift(newPanel); saveStored("docsearch_investigation_panels", this.panels);
     this.recordAudit(
       req.tenantId,
       req.partnerId,
@@ -479,7 +502,7 @@ export class ClinicalInvestigationService implements IClinicalInvestigationServi
       updatedAt: new Date().toISOString()
     };
 
-    this.orders.unshift(newOrder);
+    this.orders.unshift(newOrder); saveStored("docsearch_investigation_orders", this.orders);
 
     try {
       await apiRequest<InvestigationOrderDto>('/api/v1/partner/lab/orders', {
@@ -503,7 +526,7 @@ export class ClinicalInvestigationService implements IClinicalInvestigationServi
     }
 
     const previousSnapshot = { ...order };
-    order.status = 'CANCELLED';
+    order.status = 'CANCELLED'; saveStored("docsearch_investigation_orders", this.orders);
     order.cancelledAt = new Date().toISOString();
     order.cancellationReason = req.cancellationReason;
     order.cancelledBy = req.actorId;
@@ -540,7 +563,7 @@ export class ClinicalInvestigationService implements IClinicalInvestigationServi
 
     const previousSnapshot = { ...order };
     order.acknowledgedAt = new Date().toISOString();
-    order.status = order.specimenType === 'NONE' ? 'PROCESSING' : 'SAMPLE_REQUIRED';
+    order.status = order.specimenType === 'NONE' ? 'PROCESSING' : 'SAMPLE_REQUIRED'; saveStored("docsearch_investigation_orders", this.orders);
     order.updatedAt = new Date().toISOString();
 
     this.recordAudit(
@@ -605,7 +628,7 @@ export class ClinicalInvestigationService implements IClinicalInvestigationServi
       updatedAt: new Date().toISOString()
     };
 
-    this.specimens.unshift(newSpecimen);
+    this.specimens.unshift(newSpecimen); saveStored("docsearch_investigation_specimens", this.specimens); saveStored("docsearch_investigation_orders", this.orders);
     order.specimens = [newSpecimen, ...order.specimens];
     order.status = 'PROCESSING';
     order.sampleCollectedAt = new Date().toISOString();
@@ -650,7 +673,7 @@ export class ClinicalInvestigationService implements IClinicalInvestigationServi
     specimen.updatedAt = new Date().toISOString();
 
     // Order status reverts to SAMPLE_REQUIRED
-    order.status = 'SAMPLE_REQUIRED';
+    order.status = 'SAMPLE_REQUIRED'; saveStored("docsearch_investigation_orders", this.orders);
     order.updatedAt = new Date().toISOString();
 
     this.recordAudit(
@@ -788,7 +811,7 @@ export class ClinicalInvestigationService implements IClinicalInvestigationServi
       r.updatedAt = new Date().toISOString();
     });
 
-    order.status = 'VERIFIED';
+    order.status = 'VERIFIED'; saveStored("docsearch_investigation_orders", this.orders);
     order.verifiedAt = new Date().toISOString();
     order.updatedAt = new Date().toISOString();
 
@@ -912,7 +935,7 @@ export class ClinicalInvestigationService implements IClinicalInvestigationServi
       throw new Error(`Order ${req.orderId} not found.`);
     }
 
-    order.status = 'REVIEWED';
+    order.status = 'REVIEWED'; saveStored("docsearch_investigation_orders", this.orders);
     order.reviewedAt = new Date().toISOString();
     order.updatedAt = new Date().toISOString();
 

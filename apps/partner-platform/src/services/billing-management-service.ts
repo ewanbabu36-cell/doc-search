@@ -1,4 +1,27 @@
 import { apiRequest } from './api-client.js';
+
+function loadStored<T>(key: string, fallback: T[]): T[] {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const item = window.localStorage.getItem(key);
+      if (item) return JSON.parse(item);
+    } catch {
+      // Fallback
+    }
+  }
+  return [...fallback];
+}
+
+function saveStored<T>(key: string, data: T[]): void {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      window.localStorage.setItem(key, JSON.stringify(data));
+    } catch {
+      // Ignore
+    }
+  }
+}
+
 import type {
   BillingServiceCatalogDto,
   BillingPriceListDto,
@@ -104,17 +127,17 @@ export interface IBillingManagementService {
 }
 
 export class BillingManagementService implements IBillingManagementService {
-  private services: BillingServiceCatalogDto[] = [...MOCK_BILLING_SERVICE_CATALOG];
-  private priceLists: BillingPriceListDto[] = [...MOCK_BILLING_PRICE_LISTS];
-  private charges: BillingChargeDto[] = [...MOCK_BILLING_CHARGES];
-  private invoices: BillingInvoiceDto[] = [...MOCK_BILLING_INVOICES];
-  private payments: BillingPaymentDto[] = [...MOCK_BILLING_PAYMENTS];
-  private receipts: BillingReceiptDto[] = [...MOCK_BILLING_RECEIPTS];
-  private refunds: BillingRefundDto[] = [...MOCK_BILLING_REFUNDS];
-  private creditNotes: BillingCreditNoteDto[] = [...MOCK_BILLING_CREDIT_NOTES];
-  private debitAdjustments: BillingDebitAdjustmentDto[] = [...MOCK_BILLING_DEBIT_ADJUSTMENTS];
-  private advances: BillingAdvanceDto[] = [...MOCK_BILLING_ADVANCES];
-  private cashierSessions: BillingCashierSessionDto[] = [...MOCK_BILLING_CASHIER_SESSIONS];
+  private services: BillingServiceCatalogDto[] = loadStored("docsearch_billing_services", MOCK_BILLING_SERVICE_CATALOG);
+  private priceLists: BillingPriceListDto[] = loadStored("docsearch_billing_pricelists", MOCK_BILLING_PRICE_LISTS);
+  private charges: BillingChargeDto[] = loadStored("docsearch_billing_charges", MOCK_BILLING_CHARGES);
+  private invoices: BillingInvoiceDto[] = loadStored("docsearch_billing_invoices", MOCK_BILLING_INVOICES);
+  private payments: BillingPaymentDto[] = loadStored("docsearch_billing_payments", MOCK_BILLING_PAYMENTS);
+  private receipts: BillingReceiptDto[] = loadStored("docsearch_billing_receipts", MOCK_BILLING_RECEIPTS);
+  private refunds: BillingRefundDto[] = loadStored("docsearch_billing_refunds", MOCK_BILLING_REFUNDS);
+  private creditNotes: BillingCreditNoteDto[] = loadStored("docsearch_billing_credit_notes", MOCK_BILLING_CREDIT_NOTES);
+  private debitAdjustments: BillingDebitAdjustmentDto[] = loadStored("docsearch_billing_debit_adjustments", MOCK_BILLING_DEBIT_ADJUSTMENTS);
+  private advances: BillingAdvanceDto[] = loadStored("docsearch_billing_advances", MOCK_BILLING_ADVANCES);
+  private cashierSessions: BillingCashierSessionDto[] = loadStored("docsearch_billing_cashier_sessions", MOCK_BILLING_CASHIER_SESSIONS);
   private reconciliations: BillingReconciliationDto[] = [...MOCK_BILLING_RECONCILIATIONS];
   private transactions: BillingFinancialTransactionDto[] = [...MOCK_BILLING_FINANCIAL_TRANSACTIONS];
   private auditTraces: BillingAuditTraceDto[] = [...MOCK_BILLING_AUDIT_TRACES];
@@ -382,7 +405,7 @@ export class BillingManagementService implements IBillingManagementService {
       updatedAt: new Date().toISOString()
     };
 
-    this.charges.unshift(newCharge);
+    this.charges.unshift(newCharge); saveStored("docsearch_billing_charges", this.charges);
 
     this.recordFinancialTransaction({
       tenantId: req.tenantId,
@@ -529,7 +552,7 @@ export class BillingManagementService implements IBillingManagementService {
       updatedAt: new Date().toISOString()
     };
 
-    this.invoices.unshift(newInvoice);
+    this.invoices.unshift(newInvoice); saveStored("docsearch_billing_invoices", this.invoices);
 
     // If chargeIds provided, update their status to INVOICED
     if (req.chargeIds) {
@@ -784,7 +807,7 @@ export class BillingManagementService implements IBillingManagementService {
       updatedAt: new Date().toISOString()
     };
 
-    this.payments.unshift(newPayment);
+    this.payments.unshift(newPayment); saveStored("docsearch_billing_payments", this.payments); saveStored("docsearch_billing_invoices", this.invoices);
 
     // Update invoice status & due balance
     if (inv) {
