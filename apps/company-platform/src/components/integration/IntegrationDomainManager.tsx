@@ -36,12 +36,14 @@ import { IntegrationAuditTraceView } from './IntegrationAuditTraceView.js';
 import { LimsAnalyzerSimulatorView } from './LimsAnalyzerSimulatorView.js';
 import { DicomPacsGatewayView } from './DicomPacsGatewayView.js';
 import { AbdmGatewayBridgeView } from './AbdmGatewayBridgeView.js';
+import { CustomWebhookIngressBuilderView } from './CustomWebhookIngressBuilderView.js';
 import { FhirBundleValidatorModal } from './FhirBundleValidatorModal.js';
 import { ApiKeyVaultManagerModal } from './ApiKeyVaultManagerModal.js';
 import { Tabs, Badge, Button, Spinner, ErrorState } from '@docsearch/ui-kit';
 
 type ActiveTab =
   | 'overview'
+  | 'custom-webhooks'
   | 'lims-streamer'
   | 'dicom-pacs'
   | 'abdm-gateway'
@@ -327,6 +329,11 @@ export const IntegrationDomainManager: React.FC = () => {
             label: '📊 Overview'
           },
           {
+            id: 'custom-webhooks',
+            label: '⚡ Custom Webhook Builder',
+            badge: <Badge variant="success">Zapier/Slack</Badge>
+          },
+          {
             id: 'lims-streamer',
             label: '🧪 LIMS Analyzers',
             badge: <Badge variant="success">Live Socket</Badge>
@@ -413,6 +420,10 @@ export const IntegrationDomainManager: React.FC = () => {
           providers={providers}
           incidents={incidents}
         />
+      )}
+
+      {activeTab === 'custom-webhooks' && (
+        <CustomWebhookIngressBuilderView />
       )}
 
       {activeTab === 'lims-streamer' && (

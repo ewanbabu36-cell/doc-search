@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UniversalAccountSettingsModal } from './common/UniversalAccountSettingsModal.js';
 import { GlobalCurrencyLocaleProvider } from './common/GlobalCurrencyLocaleContext.js';
 import { AccessibilityLocaleToolbar } from './common/AccessibilityLocaleToolbar.js';
+import { GlobalCommandPaletteModal } from './common/GlobalCommandPaletteModal.js';
 import {
   AppShell,
   Header,
@@ -53,7 +54,19 @@ export const CompanyShell: React.FC<CompanyShellProps> = ({ currentUser, onLogou
   const [activeDomainId, setActiveDomainId] = useState<string>('executive-command-center');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState<boolean>(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState<boolean>(false);
   const { theme, toggleTheme } = useTheme();
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const navSections = buildPhase1NavSections(activeDomainId, (domainId) => {
     setActiveDomainId(domainId);
@@ -105,9 +118,30 @@ export const CompanyShell: React.FC<CompanyShellProps> = ({ currentUser, onLogou
             title="Company Platform"
             onMenuToggle={() => setIsSidebarCollapsed((prev) => !prev)}
             organizationSlot={
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ fontSize: '0.75rem', color: 'var(--ds-color-text-muted)' }}>Tenant:</span>
                 <Badge variant="neutral">Doc Search HQ (Platform Scope)</Badge>
+                <button
+                  type="button"
+                  onClick={() => setIsCommandPaletteOpen(true)}
+                  style={{
+                    backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                    border: '1px solid #06B6D4',
+                    color: '#38BDF8',
+                    padding: '3px 8px',
+                    borderRadius: '6px',
+                    fontSize: '0.75rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                  title="Search across 16 domains (Ctrl+K / Cmd+K)"
+                >
+                  <span>🔍 Search</span>
+                  <span style={{ backgroundColor: '#1E293B', color: '#CBD5E1', padding: '1px 5px', borderRadius: '4px', fontSize: '0.6875rem' }}>⌘K</span>
+                </button>
               </div>
             }
             themeSlot={
@@ -263,6 +297,11 @@ export const CompanyShell: React.FC<CompanyShellProps> = ({ currentUser, onLogou
           isOpen={isSettingsModalOpen}
           onClose={() => setIsSettingsModalOpen(false)}
           currentUser={currentUser}
+        />
+        <GlobalCommandPaletteModal
+          isOpen={isCommandPaletteOpen}
+          onClose={() => setIsCommandPaletteOpen(false)}
+          onNavigateDomain={(domainId) => setActiveDomainId(domainId)}
         />
       </AppShell>
     </GlobalCurrencyLocaleProvider>
