@@ -13,6 +13,8 @@ export interface HospitalStaffUser {
   id: string;
   category: 'HEALTHCARE' | 'COMPANY_HQ';
   name: string;
+  email?: string;
+  password?: string;
   role: string;
   roleTitle: string;
   department: string;
@@ -26,11 +28,32 @@ export interface HospitalStaffUser {
 }
 
 export const ALL_SYSTEM_ROLES: HospitalStaffUser[] = [
+  // --- TATA PATHOLOGY LAB (STANDALONE) ---
+  {
+    id: 'ROLE-TATA-LAB',
+    category: 'HEALTHCARE',
+    name: 'Dr. R. K. Tata, MD Path',
+    email: 'tata@doc.com',
+    password: 'TataPass123!',
+    role: 'PATHOLOGIST',
+    roleTitle: 'Tata Pathology Lab (Head & Pathologist)',
+    department: 'Pathology & Diagnostic Laboratory',
+    tenantName: 'Tata Pathology Lab (Standalone Unit)',
+    organizationType: 'PATHOLOGY',
+    allowedWorkspaces: ['PATHOLOGY'],
+    defaultModule: 'clinical-investigation',
+    planTier: 'Independent Pathology LIMS Pro',
+    accessibleFeatures: ['Phlebotomy Barcode Intake', 'Result Verification', 'Direct NABL Print', 'WhatsApp PDF Delivery', 'Daily Cash Accounts'],
+    restrictedFeatures: ['Hospital IPD Wards', 'OT Surgery Logs']
+  },
+
   // --- HEALTHCARE PARTNER ROLES (12) ---
   {
     id: 'ROLE-HOSP-DIR',
     category: 'HEALTHCARE',
     name: 'Dr. Priya Nair, MS, MHA',
+    email: 'director.priya@docsearch.health',
+    password: 'DirectorPass123!',
     role: 'HOSPITAL_DIRECTOR',
     roleTitle: 'Medical Superintendent & Director',
     department: 'Hospital Administration & Governance',
@@ -46,6 +69,8 @@ export const ALL_SYSTEM_ROLES: HospitalStaffUser[] = [
     id: 'ROLE-CLINIC-DOC',
     category: 'HEALTHCARE',
     name: 'Dr. Rajesh Sharma, MD',
+    email: 'doctor.rajesh@docsearch.health',
+    password: 'DoctorPass123!',
     role: 'CLINIC_DOCTOR',
     roleTitle: 'Consultant Physician & Clinic Head',
     department: 'Outpatient Clinic & Cardiology',
@@ -343,9 +368,16 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess }) => {
   const [selectedUser, setSelectedUser] = useState<HospitalStaffUser>(ALL_SYSTEM_ROLES[0]!);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [emailInput, setEmailInput] = useState('pathologist.shalini@docsearch.health');
-  const [passwordInput, setPasswordInput] = useState('PathoPass123!');
+  const [emailInput, setEmailInput] = useState(ALL_SYSTEM_ROLES[0]?.email || 'tata@doc.com');
+  const [passwordInput, setPasswordInput] = useState(ALL_SYSTEM_ROLES[0]?.password || 'TataPass123!');
   const [authError, setAuthError] = useState<string | null>(null);
+
+  const handleSelectRole = (user: HospitalStaffUser) => {
+    setSelectedUser(user);
+    if (user.email) setEmailInput(user.email);
+    if (user.password) setPasswordInput(user.password);
+    setAuthError(null);
+  };
 
   const filteredRoles = ALL_SYSTEM_ROLES.filter((r) => {
     const matchesCategory = activeCategory === 'ALL' || r.category === activeCategory;
@@ -359,6 +391,8 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess }) => {
 
   const handleLogin = async (userToLogin?: HospitalStaffUser) => {
     const targetUser = userToLogin || selectedUser;
+    const emailToUse = (userToLogin?.email || emailInput || '').trim();
+    const passToUse = (userToLogin?.password || passwordInput || '').trim();
     setIsAuthenticating(true);
     setAuthError(null);
 
@@ -367,8 +401,8 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess }) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: emailInput,
-          password: passwordInput
+          email: emailToUse,
+          password: passToUse
         })
       });
 
@@ -493,7 +527,7 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess }) => {
                 return (
                   <div
                     key={r.id}
-                    onClick={() => setSelectedUser(r)}
+                    onClick={() => handleSelectRole(r)}
                     style={{
                       backgroundColor: isSelected ? 'rgba(6, 182, 212, 0.18)' : 'rgba(15, 23, 42, 0.6)',
                       border: isSelected ? '1.5px solid #06B6D4' : '1px solid rgba(255,255,255,0.06)',

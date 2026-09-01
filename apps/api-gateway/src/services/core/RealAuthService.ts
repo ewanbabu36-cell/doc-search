@@ -181,24 +181,150 @@ const PRODUCTION_CREDENTIAL_STORE: Map<string, AuthenticatedUserRecord> = new Ma
     }
   ],
   [
-    'security@docsearch.health',
+    'tata@doc.com',
     {
-      id: 'aaaa1111-8492-4aaa-8aaa-849208492007',
-      email: 'security@docsearch.health',
-      firstName: 'Sunita',
-      lastName: 'Iyer',
+      id: 'aaaa1111-8492-4aaa-8aaa-849208492099',
+      email: 'tata@doc.com',
+      firstName: 'R. K.',
+      lastName: 'Tata',
       status: 'ACTIVE',
       tenantId: '11111111-1111-4111-8111-111111111111',
       organizationId: '33333333-3333-4333-8333-333333333301',
       branchId: '44444444-4444-4444-8444-444444444401',
-      roles: ['COMPLIANCE_OFFICER', 'COMPANY_ADMIN'] as RoleType[],
+      roles: ['PATHOLOGIST', 'HOSPITAL_ADMIN'] as RoleType[],
       permissions: [
-        'compliance:manage',
-        'security:manage',
-        'saas:manage',
-        'audit:read'
+        'lab:orders:read',
+        'lab:orders:create',
+        'lab:specimens:create',
+        'lab:results:create',
+        'lab:results:update',
+        'lab:reports:finalize',
+        'hospital:admin'
       ],
-      passwordHash: hashPassword('SecurityPass123!')
+      passwordHash: hashPassword('TataPass123!')
+    }
+  ],
+  [
+    'admin@tatapathology.com',
+    {
+      id: 'aaaa1111-8492-4aaa-8aaa-849208492098',
+      email: 'admin@tatapathology.com',
+      firstName: 'Tata',
+      lastName: 'Pathology',
+      status: 'ACTIVE',
+      tenantId: '11111111-1111-4111-8111-111111111111',
+      organizationId: '33333333-3333-4333-8333-333333333301',
+      branchId: '44444444-4444-4444-8444-444444444401',
+      roles: ['PATHOLOGIST', 'HOSPITAL_ADMIN'] as RoleType[],
+      permissions: [
+        'lab:orders:read',
+        'lab:orders:create',
+        'lab:specimens:create',
+        'lab:results:create',
+        'lab:results:update',
+        'lab:reports:finalize',
+        'hospital:admin'
+      ],
+      passwordHash: hashPassword('TataPass123!')
+    }
+  ],
+  [
+    'director.priya@docsearch.health',
+    {
+      id: 'aaaa1111-8492-4aaa-8aaa-849208492010',
+      email: 'director.priya@docsearch.health',
+      firstName: 'Priya',
+      lastName: 'Nair',
+      status: 'ACTIVE',
+      tenantId: '11111111-1111-4111-8111-111111111111',
+      organizationId: '33333333-3333-4333-8333-333333333301',
+      branchId: '44444444-4444-4444-8444-444444444401',
+      roles: ['HOSPITAL_ADMIN'] as RoleType[],
+      permissions: [
+        'hospital:admin',
+        'clinical:patients:read',
+        'clinical:orders:read',
+        'lab:orders:read',
+        'saas:manage'
+      ],
+      passwordHash: hashPassword('DirectorPass123!')
+    }
+  ],
+  [
+    'surgeon.sameer@docsearch.health',
+    {
+      id: 'aaaa1111-8492-4aaa-8aaa-849208492011',
+      email: 'surgeon.sameer@docsearch.health',
+      firstName: 'Sameer',
+      lastName: 'Kulkarni',
+      status: 'ACTIVE',
+      tenantId: '11111111-1111-4111-8111-111111111111',
+      organizationId: '33333333-3333-4333-8333-333333333301',
+      branchId: '44444444-4444-4444-8444-444444444401',
+      roles: ['DOCTOR'] as RoleType[],
+      permissions: [
+        'clinical:orders:read',
+        'clinical:orders:create',
+        'clinical:patients:read'
+      ],
+      passwordHash: hashPassword('SurgeonPass123!')
+    }
+  ],
+  [
+    'nurse.sunita@docsearch.health',
+    {
+      id: 'aaaa1111-8492-4aaa-8aaa-849208492012',
+      email: 'nurse.sunita@docsearch.health',
+      firstName: 'Sunita',
+      lastName: 'Verma',
+      status: 'ACTIVE',
+      tenantId: '11111111-1111-4111-8111-111111111111',
+      organizationId: '33333333-3333-4333-8333-333333333301',
+      branchId: '44444444-4444-4444-8444-444444444401',
+      roles: ['NURSE'] as RoleType[],
+      permissions: [
+        'clinical:patients:read',
+        'clinical:encounters:read'
+      ],
+      passwordHash: hashPassword('NursePass123!')
+    }
+  ],
+  [
+    'pharmacist.suresh@docsearch.health',
+    {
+      id: 'aaaa1111-8492-4aaa-8aaa-849208492013',
+      email: 'pharmacist.suresh@docsearch.health',
+      firstName: 'Suresh',
+      lastName: 'Patel',
+      status: 'ACTIVE',
+      tenantId: '11111111-1111-4111-8111-111111111111',
+      organizationId: '33333333-3333-4333-8333-333333333301',
+      branchId: '44444444-4444-4444-8444-444444444401',
+      roles: ['PHARMACIST'] as RoleType[],
+      permissions: [
+        'clinical:orders:read',
+        'clinical:patients:read'
+      ],
+      passwordHash: hashPassword('PharmPass123!')
+    }
+  ],
+  [
+    'radiologist.arvind@docsearch.health',
+    {
+      id: 'aaaa1111-8492-4aaa-8aaa-849208492014',
+      email: 'radiologist.arvind@docsearch.health',
+      firstName: 'Arvind',
+      lastName: 'Mehta',
+      status: 'ACTIVE',
+      tenantId: '11111111-1111-4111-8111-111111111111',
+      organizationId: '33333333-3333-4333-8333-333333333301',
+      branchId: '44444444-4444-4444-8444-444444444401',
+      roles: ['DOCTOR'] as RoleType[],
+      permissions: [
+        'clinical:orders:read',
+        'clinical:patients:read'
+      ],
+      passwordHash: hashPassword('RadPass123!')
     }
   ]
 ]);

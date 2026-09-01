@@ -3,7 +3,6 @@ import helmet from '@fastify/helmet';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import { env } from '../config/env.js';
-import { AppError } from '@docsearch/shared-core';
 
 export async function registerSecurityPlugins(app: FastifyInstance): Promise<void> {
   // 1. Security Headers via Helmet
@@ -18,7 +17,7 @@ export async function registerSecurityPlugins(app: FastifyInstance): Promise<voi
 
   await app.register(cors, {
     origin: isWildcard
-      ? (origin, cb) => {
+      ? (_origin, cb) => {
           // Allow all incoming origins dynamically in cloud (Railway, localhost, custom domains)
           cb(null, true);
         }

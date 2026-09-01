@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { validateEnv, validateSecretQuality, AppError } from '@docsearch/shared-core';
+import { validateEnv, AppError } from '@docsearch/shared-core';
 
 const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
