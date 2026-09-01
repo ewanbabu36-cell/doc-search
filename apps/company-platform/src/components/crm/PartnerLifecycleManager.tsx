@@ -15,9 +15,11 @@ import { PartnerOutreachHubView } from './PartnerOutreachHubView.js';
 import { CustomizableSubscriptionPlanManager } from './CustomizableSubscriptionPlanManager.js';
 import { PartnerPipelineAnalyticsView } from './PartnerPipelineAnalyticsView.js';
 
-// 2 New Advanced CRM Modules
+// 4 Advanced CRM & Lifecycle Modules
 import { AiWhatsAppEngagementBroadcasterView } from './AiWhatsAppEngagementBroadcasterView.js';
 import { DoctorNmcCredentialingBotView } from './DoctorNmcCredentialingBotView.js';
+import { PartnerHealthChurnRadarView } from './PartnerHealthChurnRadarView.js';
+import { PartnerEscrowRevenueSplitView } from './PartnerEscrowRevenueSplitView.js';
 
 import { Spinner, ErrorState, Tabs, Badge } from '@docsearch/ui-kit';
 
@@ -25,6 +27,8 @@ export type ActiveCrmTab =
   | 'DIRECTORY'
   | 'WHATSAPP'
   | 'NMC_BOT'
+  | 'HEALTH_RADAR'
+  | 'ESCROW_PAYOUTS'
   | 'VERIFICATION'
   | 'CONTRACTS'
   | 'BILLING'
@@ -139,6 +143,8 @@ export const PartnerLifecycleManager: React.FC = () => {
           { id: 'DIRECTORY', label: '📋 Directory & CRM' },
           { id: 'WHATSAPP', label: '💬 AI WhatsApp Broadcaster', badge: <Badge variant="success">98.2% Open</Badge> },
           { id: 'NMC_BOT', label: '🤖 Doctor Credentialing Bot', badge: <Badge variant="primary">NMC API</Badge> },
+          { id: 'HEALTH_RADAR', label: '📈 AI Partner Health & Churn Radar', badge: <Badge variant="warning">Early Warning</Badge> },
+          { id: 'ESCROW_PAYOUTS', label: '💸 Escrow Revenue Split & UPI Payouts', badge: <Badge variant="success">Instant UPI</Badge> },
           { id: 'VERIFICATION', label: '🛡️ Document Verification (3)' },
           { id: 'CONTRACTS', label: '📑 Contracts & SLAs' },
           { id: 'BILLING', label: '💵 Invoicing & GST Ledger' },
@@ -161,6 +167,14 @@ export const PartnerLifecycleManager: React.FC = () => {
 
       {activeTab === 'NMC_BOT' && (
         <DoctorNmcCredentialingBotView />
+      )}
+
+      {activeTab === 'HEALTH_RADAR' && (
+        <PartnerHealthChurnRadarView />
+      )}
+
+      {activeTab === 'ESCROW_PAYOUTS' && (
+        <PartnerEscrowRevenueSplitView />
       )}
 
       {activeTab === 'VERIFICATION' && (
