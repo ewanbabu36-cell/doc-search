@@ -29,17 +29,19 @@ import { GovernanceExceptionView } from './GovernanceExceptionView.js';
 import { ComplianceVerificationView } from './ComplianceVerificationView.js';
 import { VerifyControlDialog } from './VerifyControlDialog.js';
 
-// 5 New Compliance Advancements
+// 6 New Compliance Advancements
 import { DpdpConsentErasureView } from './DpdpConsentErasureView.js';
 import { NabhNmcComplianceMatrixView } from './NabhNmcComplianceMatrixView.js';
 import { SyntheticDataSanitizerModal } from './SyntheticDataSanitizerModal.js';
 import { DataPortabilityPassportView } from './DataPortabilityPassportView.js';
 import { RegulatoryRadarWhistleblowerModal } from './RegulatoryRadarWhistleblowerModal.js';
+import { MultiRegionDataSovereigntyRouterView } from './MultiRegionDataSovereigntyRouterView.js';
 
 import { Tabs, Badge, Spinner, ErrorState, Button } from '@docsearch/ui-kit';
 
 type ActiveTab =
   | 'overview'
+  | 'sovereignty-router'
   | 'dpdp'
   | 'nabh-nmc'
   | 'passports'
@@ -292,6 +294,11 @@ export const ComplianceDomainManager: React.FC = () => {
             label: '📊 Overview'
           },
           {
+            id: 'sovereignty-router',
+            label: '🌐 Data Sovereignty Router',
+            badge: <Badge variant="success">4 Sovereign Hubs</Badge>
+          },
+          {
             id: 'dpdp',
             label: '🇮🇳 DPDP Consent & Erasure',
             badge: <Badge variant="success">DPDP 2023</Badge>
@@ -366,6 +373,10 @@ export const ComplianceDomainManager: React.FC = () => {
           overview={overview}
           frameworks={frameworks}
         />
+      )}
+
+      {activeTab === 'sovereignty-router' && (
+        <MultiRegionDataSovereigntyRouterView />
       )}
 
       {activeTab === 'dpdp' && (

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { UniversalAccountSettingsModal } from './common/UniversalAccountSettingsModal.js';
-import { GlobalCurrencyLocaleProvider } from './common/GlobalCurrencyLocaleContext.js';
+import { GlobalCurrencyLocaleProvider, useGlobalLocale } from './common/GlobalCurrencyLocaleContext.js';
 import { AccessibilityLocaleToolbar } from './common/AccessibilityLocaleToolbar.js';
 import { GlobalCommandPaletteModal } from './common/GlobalCommandPaletteModal.js';
 import {
@@ -50,7 +50,8 @@ const getThemeLabel = (t: string) => {
   }
 };
 
-export const CompanyShell: React.FC<CompanyShellProps> = ({ currentUser, onLogout }) => {
+const CompanyShellInner: React.FC<CompanyShellProps> = ({ currentUser, onLogout }) => {
+  const { t } = useGlobalLocale();
   const [activeDomainId, setActiveDomainId] = useState<string>('executive-command-center');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState<boolean>(false);
@@ -75,235 +76,236 @@ export const CompanyShell: React.FC<CompanyShellProps> = ({ currentUser, onLogou
   const activeDomain = PHASE_1_DOMAINS.find((d) => d.id === activeDomainId);
 
   return (
-    <GlobalCurrencyLocaleProvider>
-      <AppShell
-        sidebar={
-          <Sidebar
-            brand={
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div
-                  style={{
-                    width: '28px',
-                    height: '28px',
-                    borderRadius: '6px',
-                    backgroundColor: 'var(--ds-color-primary)',
-                    color: 'var(--ds-color-primary-foreground)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: '700',
-                    fontSize: '0.875rem'
-                  }}
-                >
-                  DS
-                </div>
-                {!isSidebarCollapsed && (
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontWeight: '700', fontSize: '0.9375rem', color: 'var(--ds-color-text-primary)' }}>
-                      Company Platform
-                    </span>
-                    <span style={{ fontSize: '0.6875rem', color: 'var(--ds-color-text-muted)' }}>
-                      Enterprise Governance
-                    </span>
-                  </div>
-                )}
-              </div>
-            }
-            sections={navSections}
-            isCollapsed={isSidebarCollapsed}
-          />
-        }
-        header={
-          <Header
-            title="Company Platform"
-            onMenuToggle={() => setIsSidebarCollapsed((prev) => !prev)}
-            organizationSlot={
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '0.75rem', color: 'var(--ds-color-text-muted)' }}>Tenant:</span>
-                <Badge variant="neutral">Doc Search HQ (Platform Scope)</Badge>
-                <button
-                  type="button"
-                  onClick={() => setIsCommandPaletteOpen(true)}
-                  style={{
-                    backgroundColor: 'rgba(6, 182, 212, 0.15)',
-                    border: '1px solid #06B6D4',
-                    color: '#38BDF8',
-                    padding: '3px 8px',
-                    borderRadius: '6px',
-                    fontSize: '0.75rem',
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}
-                  title="Search across 16 domains (Ctrl+K / Cmd+K)"
-                >
-                  <span>🔍 Search</span>
-                  <span style={{ backgroundColor: '#1E293B', color: '#CBD5E1', padding: '1px 5px', borderRadius: '4px', fontSize: '0.6875rem' }}>⌘K</span>
-                </button>
-              </div>
-            }
-            themeSlot={
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={toggleTheme}
-                title="Cycle theme (Advance Pro / Light / B&W)"
-              >
-                {getThemeLabel(theme)}
-              </Button>
-            }
-            userSlot={
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div
-                  style={{
-                    width: '34px',
-                    height: '34px',
-                    borderRadius: '50%',
-                    background: 'linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%)',
-                    color: '#FFFFFF',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: '700',
-                    fontSize: '0.875rem',
-                    boxShadow: '0 0 10px rgba(6, 182, 212, 0.35)'
-                  }}
-                >
-                  👑
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontSize: '0.8125rem', fontWeight: '700', color: 'var(--ds-color-text-primary)' }}>
-                    {currentUser?.name || 'Dr. Alok Sharma (Founder)'}
-                  </span>
-                  <span style={{ fontSize: '0.6875rem', color: '#06B6D4', fontWeight: 600 }}>
-                    {currentUser?.role || 'SUPER_ADMIN'} • {currentUser?.roleTitle || 'Founder & CEO'}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsSettingsModalOpen(true)}
-                  style={{
-                    backgroundColor: 'rgba(6, 182, 212, 0.15)',
-                    border: '1px solid #06B6D4',
-                    color: '#38BDF8',
-                    padding: '4px 10px',
-                    borderRadius: '6px',
-                    fontSize: '0.75rem',
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px'
-                  }}
-                  title="Account Settings (Bank, Address, Password)"
-                >
-                  <span>⚙️</span> Settings
-                </button>
-                {onLogout && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={onLogout}
-                    style={{ fontSize: '0.75rem', marginLeft: '6px' }}
-                    title="Sign out of Founder HQ"
-                  >
-                    Logout
-                  </Button>
-                )}
-              </div>
-            }
-          />
-        }
-      >
-        <AccessibilityLocaleToolbar />
-        <ContentArea maxWidth="xl" padding="lg">
-          {activeDomainId === 'growth-engine' ? (
-            <CompanyGrowthEngineDomainManager />
-          ) : activeDomainId === 'executive-command-center' ? (
-            <ExecutiveCommandCenter />
-          ) : activeDomainId === 'crm-partner-lifecycle' ? (
-            <PartnerLifecycleManager />
-          ) : activeDomainId === 'product-plans-entitlements' ? (
-            <ProductDomainManager />
-          ) : activeDomainId === 'subscription-billing-finance' ? (
-            <FinanceDomainManager />
-          ) : activeDomainId === 'sales-marketing' ? (
-            <SalesMarketingDomainManager />
-          ) : activeDomainId === 'customer-success-support' ? (
-            <CustomerSuccessDomainManager />
-          ) : activeDomainId === 'communication-content' ? (
-            <CommunicationDomainManager />
-          ) : activeDomainId === 'analytics-bi-intelligence' ? (
-            <AnalyticsDomainManager />
-          ) : activeDomainId === 'ai-platform-governance' ? (
-            <AIDomainManager />
-          ) : activeDomainId === 'security-rbac-policy-audit' ? (
-            <SecurityDomainManager />
-          ) : activeDomainId === 'compliance-data-governance' ? (
-            <ComplianceDomainManager />
-          ) : activeDomainId === 'api-integration-interoperability' ? (
-            <IntegrationDomainManager />
-          ) : activeDomainId === 'platform-engineering' ? (
-            <PlatformEngineeringDomainManager />
-          ) : activeDomainId === 'infrastructure-monitoring-dr' ? (
-            <InfrastructureDomainManager />
-          ) : activeDomainId === 'company-admin-governance' ? (
-            <CompanyAdminDomainManager />
-          ) : (
-            <Card
-              title={
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span>{activeDomain?.icon}</span>
-                  <span>{activeDomain?.title}</span>
-                  <Badge variant="neutral">Planned</Badge>
-                </div>
-              }
-              subtitle={activeDomain?.description}
-              padding="lg"
-            >
+    <AppShell
+      sidebar={
+        <Sidebar
+          brand={
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <div
                 style={{
-                  padding: '40px 20px',
-                  textAlign: 'center',
-                  color: 'var(--ds-color-text-muted)',
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '6px',
+                  backgroundColor: 'var(--ds-color-primary)',
+                  color: 'var(--ds-color-primary-foreground)',
                   display: 'flex',
-                  flexDirection: 'column',
                   alignItems: 'center',
-                  gap: '12px'
+                  justifyContent: 'center',
+                  fontWeight: '700',
+                  fontSize: '0.875rem'
                 }}
               >
-                <div style={{ fontSize: '2rem' }}>{activeDomain?.icon}</div>
-                <h3 style={{ margin: 0, color: 'var(--ds-color-text-primary)' }}>
-                  {activeDomain?.title} Module
-                </h3>
-                <p style={{ margin: 0, maxWidth: '500px', fontSize: '0.875rem' }}>
-                  This operational module is currently being provisioned.
-                </p>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => setActiveDomainId('executive-command-center')}
-                >
-                  Return to Executive & Command Center
-                </Button>
+                DS
               </div>
-            </Card>
-          )}
-        </ContentArea>
-        <UniversalAccountSettingsModal
-          isOpen={isSettingsModalOpen}
-          onClose={() => setIsSettingsModalOpen(false)}
-          currentUser={currentUser}
+              {!isSidebarCollapsed && (
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontWeight: '700', fontSize: '0.9375rem', color: 'var(--ds-color-text-primary)' }}>
+                    {t('company_platform', 'Company Platform')}
+                  </span>
+                  <span style={{ fontSize: '0.6875rem', color: 'var(--ds-color-text-muted)' }}>
+                    {t('enterprise_governance', 'Enterprise Governance')}
+                  </span>
+                </div>
+              )}
+            </div>
+          }
+          sections={navSections}
+          isCollapsed={isSidebarCollapsed}
         />
-        <GlobalCommandPaletteModal
-          isOpen={isCommandPaletteOpen}
-          onClose={() => setIsCommandPaletteOpen(false)}
-          onNavigateDomain={(domainId) => setActiveDomainId(domainId)}
+      }
+      header={
+        <Header
+          title={t('company_platform', 'Company Platform')}
+          onMenuToggle={() => setIsSidebarCollapsed((prev) => !prev)}
+          organizationSlot={
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--ds-color-text-muted)' }}>Tenant:</span>
+              <Badge variant="neutral">Doc Search HQ (Platform Scope)</Badge>
+              <button
+                type="button"
+                onClick={() => setIsCommandPaletteOpen(true)}
+                style={{
+                  backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                  border: '1px solid #06B6D4',
+                  color: '#38BDF8',
+                  padding: '3px 8px',
+                  borderRadius: '6px',
+                  fontSize: '0.75rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+                title="Search across 16 domains (Ctrl+K / Cmd+K)"
+              >
+                <span>🔍 {t('quick_search', 'Search')}</span>
+                <span style={{ backgroundColor: '#1E293B', color: '#CBD5E1', padding: '1px 5px', borderRadius: '4px', fontSize: '0.6875rem' }}>⌘K</span>
+              </button>
+            </div>
+          }
+          themeSlot={
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleTheme}
+              title="Cycle theme (Advance Pro / Light / B&W)"
+            >
+              {getThemeLabel(theme)}
+            </Button>
+          }
+          userSlot={
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div
+                style={{
+                  width: '34px',
+                  height: '34px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%)',
+                  color: '#FFFFFF',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: '700',
+                  fontSize: '0.875rem',
+                  boxShadow: '0 0 10px rgba(6, 182, 212, 0.35)'
+                }}
+              >
+                👑
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '0.8125rem', fontWeight: '700', color: 'var(--ds-color-text-primary)' }}>
+                  {currentUser?.name || 'Dr. Alok Sharma (Founder)'}
+                </span>
+                <span style={{ fontSize: '0.6875rem', color: '#06B6D4', fontWeight: 600 }}>
+                  {currentUser?.role || 'SUPER_ADMIN'} • {currentUser?.roleTitle || 'Founder & CEO'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsSettingsModalOpen(true)}
+                style={{
+                  backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                  border: '1px solid #06B6D4',
+                  color: '#38BDF8',
+                  padding: '4px 10px',
+                  borderRadius: '6px',
+                  fontSize: '0.75rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+                title="Account Settings (Bank, Address, Password)"
+              >
+                <span>⚙️</span> {t('settings', 'Settings')}
+              </button>
+              {onLogout && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onLogout}
+                  style={{ fontSize: '0.75rem', marginLeft: '6px' }}
+                  title="Sign out of Founder HQ"
+                >
+                  {t('logout', 'Logout')}
+                </Button>
+              )}
+            </div>
+          }
         />
-      </AppShell>
+      }
+    >
+      <ContentArea>
+        {/* Global Multi-Currency, Language & WCAG 2.2 AAA Accessibility Toolbar */}
+        <AccessibilityLocaleToolbar />
+
+        {activeDomainId === 'executive-command-center' && <ExecutiveCommandCenter />}
+        {activeDomainId === 'growth-engine' && <CompanyGrowthEngineDomainManager />}
+        {activeDomainId === 'crm-partner-lifecycle' && <PartnerLifecycleManager />}
+        {activeDomainId === 'product-plans-entitlements' && <ProductDomainManager />}
+        {activeDomainId === 'subscription-billing-finance' && <FinanceDomainManager />}
+        {activeDomainId === 'sales-marketing' && <SalesMarketingDomainManager />}
+        {activeDomainId === 'customer-success-support' && <CustomerSuccessDomainManager />}
+        {activeDomainId === 'communication-broadcasting' && <CommunicationDomainManager />}
+        {activeDomainId === 'analytics-reporting-bi' && <AnalyticsDomainManager />}
+        {activeDomainId === 'ai-clinical-intelligence' && <AIDomainManager />}
+        {activeDomainId === 'security-rbac-policy-audit' && <SecurityDomainManager />}
+        {activeDomainId === 'compliance-regulatory-legal' && <ComplianceDomainManager />}
+        {activeDomainId === 'api-integration-interoperability' && <IntegrationDomainManager />}
+        {activeDomainId === 'platform-engineering-devops' && <PlatformEngineeringDomainManager />}
+        {activeDomainId === 'infrastructure-cloud-ops' && <InfrastructureDomainManager />}
+        {activeDomainId === 'company-admin-governance' && <CompanyAdminDomainManager />}
+
+        {/* Fallback for unmounted domains */}
+        {![
+          'executive-command-center',
+          'growth-engine',
+          'crm-partner-lifecycle',
+          'product-plans-entitlements',
+          'subscription-billing-finance',
+          'sales-marketing',
+          'customer-success-support',
+          'communication-broadcasting',
+          'analytics-reporting-bi',
+          'ai-clinical-intelligence',
+          'security-rbac-policy-audit',
+          'compliance-regulatory-legal',
+          'api-integration-interoperability',
+          'platform-engineering-devops',
+          'infrastructure-cloud-ops',
+          'company-admin-governance'
+        ].includes(activeDomainId) && (
+          <Card title={`${activeDomain?.title || 'Operational Domain'}`}>
+            <div
+              style={{
+                padding: '48px',
+                textAlign: 'center',
+                color: 'var(--ds-color-text-muted)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '12px'
+              }}
+            >
+              <div style={{ fontSize: '2rem' }}>{activeDomain?.icon}</div>
+              <h3 style={{ margin: 0, color: 'var(--ds-color-text-primary)' }}>
+                {activeDomain?.title} Module
+              </h3>
+              <p style={{ margin: 0, maxWidth: '500px', fontSize: '0.875rem' }}>
+                This operational module is currently being provisioned.
+              </p>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setActiveDomainId('executive-command-center')}
+              >
+                Return to Executive & Command Center
+              </Button>
+            </div>
+          </Card>
+        )}
+      </ContentArea>
+      <UniversalAccountSettingsModal
+        isOpen={isSettingsModalOpen}
+        onClose={() => setIsSettingsModalOpen(false)}
+        currentUser={currentUser}
+      />
+      <GlobalCommandPaletteModal
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        onNavigateDomain={(domainId) => setActiveDomainId(domainId)}
+      />
+    </AppShell>
+  );
+};
+
+export const CompanyShell: React.FC<CompanyShellProps> = (props) => {
+  return (
+    <GlobalCurrencyLocaleProvider>
+      <CompanyShellInner {...props} />
     </GlobalCurrencyLocaleProvider>
   );
 };
