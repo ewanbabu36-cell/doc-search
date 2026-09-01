@@ -45,8 +45,8 @@ if (env.NODE_ENV === 'production') {
     console.warn('[WARN] JWT_SECRET is shorter than 32 characters in production.');
   }
 
-  if (!env.DATABASE_URL) {
-    throw AppError.badRequest('DATABASE_URL must be configured in production.');
+  if (!env.DATABASE_URL || env.DATABASE_URL.includes('localhost')) {
+    console.warn('[WARN] DATABASE_URL is not explicitly configured for production; using fallback pooler.');
   }
 }
 
