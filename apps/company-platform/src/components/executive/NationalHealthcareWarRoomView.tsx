@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Badge, TableContainer, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@docsearch/ui-kit';
+import { LiveGeographicHospitalBedHeatmapView } from './LiveGeographicHospitalBedHeatmapView.js';
 
 interface RegionalWarRoomState {
   stateZone: string;
@@ -83,6 +84,9 @@ export const NationalHealthcareWarRoomView: React.FC = () => {
           <span style={{ fontSize: '0.75rem', color: '#CBD5E1', marginTop: '4px', display: 'block' }}>Reduced from 75 mins industry average</span>
         </div>
       </div>
+
+      {/* Live Geographic Map & ICU Bed Heatmap */}
+      <LiveGeographicHospitalBedHeatmapView />
 
       {/* War Room Grid */}
       <Card title="📜 Regional Healthcare Traffic & Hospital Network Grid" padding="none">
