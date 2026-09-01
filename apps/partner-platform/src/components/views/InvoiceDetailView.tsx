@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Card,
   Button,
@@ -15,6 +15,7 @@ import type {
   BillingInvoiceDto,
   BillingInvoiceStatus
 } from '@docsearch/api-contracts';
+import { PrintableInvoiceBillModal } from '../dialogs/PrintableInvoiceBillModal.js';
 
 export interface InvoiceDetailViewProps {
   invoice: BillingInvoiceDto;
@@ -37,6 +38,8 @@ export const InvoiceDetailView: React.FC<InvoiceDetailViewProps> = ({
   onCreateDebitAdjustment,
   onCancelInvoice
 }) => {
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+
   const getStatusBadge = (status: BillingInvoiceStatus) => {
     switch (status) {
       case 'PAID':
@@ -78,9 +81,14 @@ export const InvoiceDetailView: React.FC<InvoiceDetailViewProps> = ({
 
         {/* Action Controls */}
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          {/* Role-Aware Printable Tax Invoice Button */}
+          <Button variant="primary" onClick={() => setIsPrintModalOpen(true)}>
+            🖨️ Print Tax Invoice (GST)
+          </Button>
+
           {invoice.status === 'DRAFT' && (
             <>
-              <Button variant="primary" onClick={() => onFinalize(invoice)}>
+              <Button variant="outline" onClick={() => onFinalize(invoice)}>
                 Finalize & Issue
               </Button>
               <Button variant="danger" onClick={() => onCancelInvoice(invoice)}>
@@ -239,6 +247,30 @@ export const InvoiceDetailView: React.FC<InvoiceDetailViewProps> = ({
             </Table>
           </TableContainer>
         </Card>
+      )}
+
+      {/* Role-Aware Printable GST Tax Invoice / Bill Modal */}
+      {isPrintModalOpen && (
+        <PrintableInvoiceBillModal
+          isOpen={isPrintModalOpen}
+          onClose={() => setIsPrintModalOpen(false)}
+          invoiceData={{
+            invoiceNumber: invoice.invoiceNumber,
+            invoiceDate: new Date(invoice.issuedAt || Date.now()).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+            patientName: invoice.patientName,
+            patientMrn: invoice.patientMrn,
+            paymentStatus: invoice.status === 'PAID' ? 'PAID' : 'PENDING',
+            items: invoice.items.map((it, idx) => ({
+              id: it.id || String(idx + 1),
+              description: it.description || it.serviceCode || 'Healthcare Service',
+              sacHsnCode: it.serviceCode || '999311',
+              quantity: it.quantity,
+              rate: it.unitPrice,
+              discount: it.discountAmount || 0,
+              taxRatePercent: it.taxAmount > 0 && it.grossAmount > 0 ? Math.round((it.taxAmount / it.grossAmount) * 100) : 0
+            }))
+          }}
+        />
       )}
     </div>
   );

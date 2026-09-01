@@ -7,6 +7,8 @@ interface Props {
   order: InvestigationOrderDto;
 }
 
+import { getVerifiedRoleProfile } from '../../utils/roleProfileResolver.js';
+
 export interface LabHeaderSettings {
   labName: string;
   labTagline: string;
@@ -22,6 +24,8 @@ export interface LabHeaderSettings {
 const DEFAULT_SETTINGS_STORAGE_KEY = 'docsearch_lab_header_settings';
 
 const getDefaultSettings = (): LabHeaderSettings => {
+  const profile = getVerifiedRoleProfile();
+
   if (typeof window !== 'undefined') {
     const saved = localStorage.getItem(DEFAULT_SETTINGS_STORAGE_KEY);
     if (saved) {
@@ -29,39 +33,18 @@ const getDefaultSettings = (): LabHeaderSettings => {
         return JSON.parse(saved);
       } catch {}
     }
-
-    // Check active user session
-    const authUser = localStorage.getItem('docsearch_partner_staff_auth');
-    if (authUser) {
-      try {
-        const parsed = JSON.parse(authUser);
-        if (parsed.email?.includes('tata') || parsed.tenantName?.includes('Tata')) {
-          return {
-            labName: 'TATA PATHOLOGY & DIAGNOSTIC LABORATORY',
-            labTagline: 'NABL ACCREDITED LAB (ISO 15189:2022) • ICMR APPROVED • CAP COMPLIANT',
-            labAddress: '📍 Main Market Road, Near Civil Hospital | 📞 +91 98765 43210 | 🌐 www.tatapathology.com',
-            certificateNo: 'TP-4892-2026',
-            technicianName: 'Pooja Sharma, BMLT',
-            technicianTitle: 'Senior Medical Lab Technologist',
-            pathologistName: 'Dr. R. K. Tata, MD (Pathology)',
-            pathologistTitle: 'Consultant Pathologist & Lab Director',
-            pathologistRegNo: 'MMC Reg. No: 78291-B'
-          };
-        }
-      } catch {}
-    }
   }
 
   return {
-    labName: 'DOC SEARCH ADVANCED PATHOLOGY & DIAGNOSTIC NETWORK',
-    labTagline: 'NABL ACCREDITED LAB (ISO 15189:2022) • ICMR APPROVED • CAP COMPLIANT',
-    labAddress: '📍 DOC SEARCH Demo Hospital — Main Laboratory, Health City, Outer Ring Road, New Delhi | 📞 1800-419-DOCS | 🌐 www.docsearch.health',
-    certificateNo: 'MC-4892-2026',
+    labName: profile.entityLegalName.toUpperCase(),
+    labTagline: profile.facilityTagline,
+    labAddress: `📍 ${profile.officialAddress} | 📞 ${profile.contactPhone} | 🌐 ${profile.website}`,
+    certificateNo: profile.nablCertificateNo,
     technicianName: 'Pooja Sharma, BMLT',
     technicianTitle: 'Senior Medical Lab Technologist',
-    pathologistName: 'Dr. Shalini Deshmukh, MD (Pathology)',
+    pathologistName: profile.pathologistName,
     pathologistTitle: 'Consultant Pathologist & Lab Director',
-    pathologistRegNo: 'DMC Reg. No: 48920-A'
+    pathologistRegNo: `Reg. No: ${profile.pathologistRegNo}`
   };
 };
 

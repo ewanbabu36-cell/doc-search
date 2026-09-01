@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type {
   ConsultationDto
 } from '@docsearch/api-contracts';
+import { PrintableDoctorPrescriptionModal } from '../dialogs/PrintableDoctorPrescriptionModal.js';
 import {
   Card,
   TableContainer,
@@ -28,6 +29,7 @@ export const PrescriptionCenterView: React.FC<PrescriptionCenterViewProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [printConsultation, setPrintConsultation] = useState<ConsultationDto | null>(null);
 
   // Flatten prescriptions with consultation metadata
   const allMedications = consultations.flatMap((c) =>
@@ -151,9 +153,21 @@ export const PrescriptionCenterView: React.FC<PrescriptionCenterViewProps> = ({
                       <div style={{ fontSize: '0.75rem', color: 'var(--ds-color-text-muted)' }}>{row.doctorSpecialty}</div>
                     </TableCell>
                     <TableCell>
-                      <Button size="sm" variant="outline" onClick={() => onSelectConsultation(row.consultationId)}>
-                        View EMR
-                      </Button>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <Button size="sm" variant="outline" onClick={() => onSelectConsultation(row.consultationId)}>
+                          View EMR
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="primary"
+                          onClick={() => {
+                            const c = consultations.find((item) => item.id === row.consultationId);
+                            if (c) setPrintConsultation(c);
+                          }}
+                        >
+                          🖨️ Print Rx
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -162,6 +176,15 @@ export const PrescriptionCenterView: React.FC<PrescriptionCenterViewProps> = ({
           </Table>
         </TableContainer>
       </Card>
+
+      {/* Printable Rx Prescription Modal */}
+      {printConsultation && (
+        <PrintableDoctorPrescriptionModal
+          isOpen={!!printConsultation}
+          onClose={() => setPrintConsultation(null)}
+          consultation={printConsultation}
+        />
+      )}
     </div>
   );
 };
