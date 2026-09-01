@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, Badge, TableContainer, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@docsearch/ui-kit';
 import { useGlobalLocale } from '../common/GlobalCurrencyLocaleContext.js';
+import { RealtimeFourWayRevenueStreamsView } from './RealtimeFourWayRevenueStreamsView.js';
 
 export const RealtimeEbitdaUnitEconomicsView: React.FC = () => {
   const { formatMoney, t } = useGlobalLocale();
@@ -75,6 +76,9 @@ export const RealtimeEbitdaUnitEconomicsView: React.FC = () => {
           <span style={{ fontSize: '0.75rem', color: '#CBD5E1', marginTop: '4px', display: 'block' }}>Self-sustaining cash flow positive</span>
         </div>
       </div>
+
+      {/* 4-Way Consolidated Revenue Breakdown */}
+      <RealtimeFourWayRevenueStreamsView />
 
       {/* Financial Table */}
       <Card title="📜 Unit Economics & Profitability Benchmarks" padding="none">
