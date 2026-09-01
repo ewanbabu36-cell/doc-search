@@ -18,11 +18,13 @@ import {
 export interface RoleListViewProps {
   roles: SecurityRoleDto[];
   onSelectRole: (roleId: string) => void;
+  onOpenCreateRole?: () => void;
 }
 
 export const RoleListView: React.FC<RoleListViewProps> = ({
   roles,
-  onSelectRole
+  onSelectRole,
+  onOpenCreateRole
 }) => {
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<SecurityRoleType | 'ALL'>('ALL');
@@ -46,6 +48,34 @@ export const RoleListView: React.FC<RoleListViewProps> = ({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {/* Action Header Banner */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#0F172A', border: '1.5px solid rgba(6, 182, 212, 0.4)', borderRadius: '12px', padding: '14px 20px', flexWrap: 'wrap', gap: '12px' }}>
+        <div>
+          <div style={{ fontWeight: 800, fontSize: '1rem', color: '#F8FAFC', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>👥</span> RBAC Role Definitions & Custom Access Profiles ({roles.length})
+          </div>
+          <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
+            Configure granular clinical and administrative access roles for doctors, lab technicians, pharmacists, and billing clerks.
+          </div>
+        </div>
+
+        {onOpenCreateRole && (
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={onOpenCreateRole}
+            style={{
+              backgroundColor: '#06B6D4',
+              color: '#070C16',
+              fontWeight: 800,
+              padding: '8px 18px',
+              fontSize: '0.8125rem'
+            }}
+          >
+            ➕ Create Custom Role & Permissions
+          </Button>
+        )}
+      </div>
       {/* Search & Filters */}
       <Card padding="md">
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', alignItems: 'flex-end' }}>

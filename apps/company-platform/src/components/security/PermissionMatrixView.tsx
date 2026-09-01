@@ -22,12 +22,14 @@ export interface PermissionMatrixViewProps {
   permissions: SecurityPermissionDto[];
   roles: SecurityRoleDto[];
   rolePermissions: SecurityRolePermissionDto[];
+  onOpenCreateRole?: () => void;
 }
 
 export const PermissionMatrixView: React.FC<PermissionMatrixViewProps> = ({
   permissions,
   roles,
-  rolePermissions
+  rolePermissions,
+  onOpenCreateRole
 }) => {
   const [search, setSearch] = useState('');
   const [domainFilter, setDomainFilter] = useState<string>('ALL');
@@ -51,6 +53,36 @@ export const PermissionMatrixView: React.FC<PermissionMatrixViewProps> = ({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {/* Header Banner */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#0F172A', border: '1.5px solid rgba(6, 182, 212, 0.4)', borderRadius: '12px', padding: '14px 20px', flexWrap: 'wrap', gap: '12px' }}>
+        <div>
+          <div style={{ fontWeight: 800, fontSize: '1rem', color: '#F8FAFC', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>📑</span> Multi-Tenant RBAC Permission Matrix ({permissions.length} Permissions × {roles.length} Roles)
+          </div>
+          <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
+            Cross-functional role grant matrix mapping permissions across Platform, Partner Hospital, Diagnostics, and Clinical domains.
+          </div>
+        </div>
+
+        {onOpenCreateRole && (
+          <button
+            type="button"
+            onClick={onOpenCreateRole}
+            style={{
+              backgroundColor: '#06B6D4',
+              color: '#070C16',
+              border: 'none',
+              borderRadius: '8px',
+              fontWeight: 800,
+              padding: '8px 18px',
+              fontSize: '0.8125rem',
+              cursor: 'pointer'
+            }}
+          >
+            ➕ Create Custom Role & Permissions
+          </button>
+        )}
+      </div>
       {/* Search & Filters */}
       <Card padding="md">
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px', alignItems: 'flex-end' }}>

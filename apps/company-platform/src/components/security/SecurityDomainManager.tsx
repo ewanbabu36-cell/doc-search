@@ -292,6 +292,7 @@ export const SecurityDomainManager: React.FC = () => {
         <RoleListView
           roles={roles}
           onSelectRole={(id) => setSelectedRoleId(id)}
+          onOpenCreateRole={() => setIsCreateRoleModalOpen(true)}
         />
       )}
 
@@ -320,6 +321,7 @@ export const SecurityDomainManager: React.FC = () => {
           permissions={permissions}
           roles={roles}
           rolePermissions={rolePermissions}
+          onOpenCreateRole={() => setIsCreateRoleModalOpen(true)}
         />
       )}
 
