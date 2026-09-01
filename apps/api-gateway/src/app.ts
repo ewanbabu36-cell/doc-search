@@ -36,6 +36,7 @@ import { procurementRoutes } from './routes/partner/procurement.routes.js';
 import { abdmRoutes } from './routes/partner/abdm.routes.js';
 import { aiClinicalCopilotRoutes } from './routes/partner/ai-clinical-copilot.routes.js';
 import { hardwareBridgeRoutes } from './routes/partner/hardware-bridge.routes.js';
+import { documentVerificationRoutes } from './routes/compliance/document-verification.routes.js';
 import { AppError } from '@docsearch/shared-core';
 
 export async function buildApp(): Promise<FastifyInstance> {
@@ -126,6 +127,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(abdmRoutes);
   await app.register(aiClinicalCopilotRoutes);
   await app.register(hardwareBridgeRoutes);
+  await app.register(documentVerificationRoutes, { prefix: '/api/v1/compliance/documents' });
 
   return app;
 }

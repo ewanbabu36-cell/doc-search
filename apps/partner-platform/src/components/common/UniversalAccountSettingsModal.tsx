@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { DynamicRoleDocumentChecklist } from './DynamicRoleDocumentChecklist.js';
 
 export interface UniversalAccountSettingsModalProps {
   isOpen: boolean;
@@ -1032,6 +1033,9 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                   Status: {certApprovalStatus === 'APPROVED' ? '✓ VERIFIED & APPROVED' : '⏳ PENDING ADMIN APPROVAL'}
                 </span>
               </div>
+
+              {/* Dynamic Backend-Driven Document Checklist */}
+              <DynamicRoleDocumentChecklist currentUser={currentUser} />
 
               {/* License Expiry Date & Auto-Renewal Alert Bar */}
               <div style={{ backgroundColor: '#070C16', padding: '12px 16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>

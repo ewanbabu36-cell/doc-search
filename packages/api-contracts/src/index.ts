@@ -13,6 +13,7 @@ export * from './analytics/analytics.schema.js';
 export * from './ai/ai.schema.js';
 export * from './security/security.schema.js';
 export * from './compliance/compliance.schema.js';
+export * from './compliance/document-verification.schema.js';
 export * from './integration/integration.schema.js';
 export * from './platform-engineering/platform-engineering.schema.js';
 export * from './infrastructure/infrastructure.schema.js';

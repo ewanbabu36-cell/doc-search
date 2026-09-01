@@ -1,6 +1,5 @@
 import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
-import fs from 'node:fs';
 import * as schema from './schema/index.js';
 import { createLogger, AppError, ErrorCode } from '@docsearch/shared-core';
 
