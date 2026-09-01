@@ -14,19 +14,29 @@ export interface UniversalAccountSettingsModalProps {
   onSettingsSaved?: ((data: any) => void) | undefined;
 }
 
+export type ApprovalStatus = 'APPROVED' | 'PENDING_APPROVAL' | 'REJECTED';
+
 export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsModalProps> = ({
   isOpen,
   onClose,
   currentUser,
   onSettingsSaved
 }) => {
-  const [activeTab, setActiveTab] = useState<'BANK' | 'ADDRESS' | 'PASSWORD'>('BANK');
+  const [activeTab, setActiveTab] = useState<'BANK' | 'ADDRESS' | 'CERTIFICATES' | 'PASSWORD'>('BANK');
   const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const isCompanyAdmin = currentUser?.role === 'SUPER_ADMIN' || currentUser?.role === 'COMPANY_ADMIN' || currentUser?.role === 'COMPLIANCE_OFFICER';
 
   // Storage key specific to user
   const userKey = currentUser?.email || 'default_user';
   const storageKey = `docsearch_account_settings_${userKey}`;
+
+  // Approval Status state
+  const [bankApprovalStatus, setBankApprovalStatus] = useState<ApprovalStatus>('APPROVED');
+  const [addressApprovalStatus, setAddressApprovalStatus] = useState<ApprovalStatus>('APPROVED');
+  const [certApprovalStatus, setCertApprovalStatus] = useState<ApprovalStatus>('APPROVED');
+  const [lastSubmittedAt, setLastSubmittedAt] = useState<string | null>(null);
 
   // Bank Form State
   const [bankData, setBankData] = useState({
@@ -38,7 +48,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
     upiId: 'tatapathology@okhdfcbank',
     accountType: 'CURRENT',
     settlementCycle: 'DAILY_T1',
-    branchName: 'Nariman Point Branch, Mumbai'
+    cancelledChequeFile: 'cancelled_cheque_hdfc.pdf'
   });
 
   // Address Form State
@@ -53,7 +63,21 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
     whatsappNumber: '+91 98765 43210',
     supportEmail: currentUser?.email || 'admin@tatapathology.com',
     website: 'https://www.tatapathology.com',
-    gstin: '27AAAAA0000A1Z5'
+    gstin: '27AAAAA0000A1Z5',
+    addressProofFile: 'clinical_establishment_reg.pdf'
+  });
+
+  // Certificates State
+  const [certData, setCertData] = useState({
+    nablCertificateNo: 'MC-4892-2026',
+    nablCertFile: 'nabl_iso15189_accreditation.pdf',
+    clinicalEstablishmentNo: 'CEA-MH-2026-9812',
+    clinicalCertFile: 'state_clinical_license.pdf',
+    doctorRegCouncil: 'Maharashtra Medical Council (MMC)',
+    doctorRegNo: 'MMC-78291-B',
+    doctorDegreeFile: 'dr_tata_md_pathology_degree.pdf',
+    biomedicalWasteAuthNo: 'BMW-POLLUTION-2026-441',
+    biomedicalFile: 'biomedical_waste_clearance.pdf'
   });
 
   // Password & Security State
@@ -77,6 +101,11 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
           const parsed = JSON.parse(saved);
           if (parsed.bank) setBankData(parsed.bank);
           if (parsed.address) setAddressData(parsed.address);
+          if (parsed.certificates) setCertData(parsed.certificates);
+          if (parsed.bankApprovalStatus) setBankApprovalStatus(parsed.bankApprovalStatus);
+          if (parsed.addressApprovalStatus) setAddressApprovalStatus(parsed.addressApprovalStatus);
+          if (parsed.certApprovalStatus) setCertApprovalStatus(parsed.certApprovalStatus);
+          if (parsed.lastSubmittedAt) setLastSubmittedAt(parsed.lastSubmittedAt);
           if (parsed.security) setSecurityData((prev) => ({ ...prev, twoFactorEnabled: parsed.security.twoFactorEnabled, autoLockMinutes: parsed.security.autoLockMinutes }));
         } catch {}
       }
@@ -84,6 +113,11 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
   }, [isOpen, storageKey]);
 
   if (!isOpen) return null;
+
+  const saveToStorage = (updatedPayload: any) => {
+    localStorage.setItem(storageKey, JSON.stringify(updatedPayload));
+    if (onSettingsSaved) onSettingsSaved(updatedPayload);
+  };
 
   const handleSaveBank = (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,16 +133,29 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
       return;
     }
 
+    const newStatus: ApprovalStatus = isCompanyAdmin ? 'APPROVED' : 'PENDING_APPROVAL';
+    setBankApprovalStatus(newStatus);
+    const now = new Date().toLocaleString();
+    setLastSubmittedAt(now);
+
     const payload = {
       bank: { ...bankData, ifscCode: bankData.ifscCode.toUpperCase() },
       address: addressData,
+      certificates: certData,
+      bankApprovalStatus: newStatus,
+      addressApprovalStatus,
+      certApprovalStatus,
+      lastSubmittedAt: now,
       security: { twoFactorEnabled: securityData.twoFactorEnabled, autoLockMinutes: securityData.autoLockMinutes }
     };
 
-    localStorage.setItem(storageKey, JSON.stringify(payload));
-    setSaveSuccessMessage('✓ Bank Account & Settlement Details updated successfully!');
-    if (onSettingsSaved) onSettingsSaved(payload);
-    setTimeout(() => setSaveSuccessMessage(null), 3500);
+    saveToStorage(payload);
+    setSaveSuccessMessage(
+      isCompanyAdmin
+        ? '✓ Bank details updated and Approved directly by Admin!'
+        : '⏳ Bank change request submitted! Sent to Company Admin for verification & approval.'
+    );
+    setTimeout(() => setSaveSuccessMessage(null), 4500);
   };
 
   const handleSaveAddress = (e: React.FormEvent) => {
@@ -120,16 +167,58 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
       return;
     }
 
+    const newStatus: ApprovalStatus = isCompanyAdmin ? 'APPROVED' : 'PENDING_APPROVAL';
+    setAddressApprovalStatus(newStatus);
+    const now = new Date().toLocaleString();
+    setLastSubmittedAt(now);
+
     const payload = {
       bank: bankData,
       address: addressData,
+      certificates: certData,
+      bankApprovalStatus,
+      addressApprovalStatus: newStatus,
+      certApprovalStatus,
+      lastSubmittedAt: now,
       security: { twoFactorEnabled: securityData.twoFactorEnabled, autoLockMinutes: securityData.autoLockMinutes }
     };
 
-    localStorage.setItem(storageKey, JSON.stringify(payload));
-    setSaveSuccessMessage('✓ Official Address, Contact & Location Profile updated successfully!');
-    if (onSettingsSaved) onSettingsSaved(payload);
-    setTimeout(() => setSaveSuccessMessage(null), 3500);
+    saveToStorage(payload);
+    setSaveSuccessMessage(
+      isCompanyAdmin
+        ? '✓ Official Address & Location updated and Approved directly by Admin!'
+        : '⏳ Address change request submitted! Sent to Company Admin for verification & approval.'
+    );
+    setTimeout(() => setSaveSuccessMessage(null), 4500);
+  };
+
+  const handleSaveCertificates = (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage(null);
+
+    const newStatus: ApprovalStatus = isCompanyAdmin ? 'APPROVED' : 'PENDING_APPROVAL';
+    setCertApprovalStatus(newStatus);
+    const now = new Date().toLocaleString();
+    setLastSubmittedAt(now);
+
+    const payload = {
+      bank: bankData,
+      address: addressData,
+      certificates: certData,
+      bankApprovalStatus,
+      addressApprovalStatus,
+      certApprovalStatus: newStatus,
+      lastSubmittedAt: now,
+      security: { twoFactorEnabled: securityData.twoFactorEnabled, autoLockMinutes: securityData.autoLockMinutes }
+    };
+
+    saveToStorage(payload);
+    setSaveSuccessMessage(
+      isCompanyAdmin
+        ? '✓ NABL & Medical Council licenses verified and Approved directly by Admin!'
+        : '⏳ Uploaded licenses & certificates submitted! Sent to Company Compliance Admin for verification & approval.'
+    );
+    setTimeout(() => setSaveSuccessMessage(null), 4500);
   };
 
   const handleSavePassword = (e: React.FormEvent) => {
@@ -154,6 +243,11 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
     const payload = {
       bank: bankData,
       address: addressData,
+      certificates: certData,
+      bankApprovalStatus,
+      addressApprovalStatus,
+      certApprovalStatus,
+      lastSubmittedAt,
       security: {
         twoFactorEnabled: securityData.twoFactorEnabled,
         autoLockMinutes: securityData.autoLockMinutes,
@@ -161,7 +255,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
       }
     };
 
-    localStorage.setItem(storageKey, JSON.stringify(payload));
+    saveToStorage(payload);
     setSecurityData({
       currentPassword: '',
       newPassword: '',
@@ -170,9 +264,30 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
       autoLockMinutes: securityData.autoLockMinutes
     });
 
-    setSaveSuccessMessage('✓ Password changed and session security updated successfully!');
-    if (onSettingsSaved) onSettingsSaved(payload);
-    setTimeout(() => setSaveSuccessMessage(null), 3500);
+    setSaveSuccessMessage('✓ Password changed immediately! (No admin approval required for security passwords)');
+    setTimeout(() => setSaveSuccessMessage(null), 4500);
+  };
+
+  const handleAdminApproveAll = () => {
+    setBankApprovalStatus('APPROVED');
+    setAddressApprovalStatus('APPROVED');
+    setCertApprovalStatus('APPROVED');
+
+    const payload = {
+      bank: bankData,
+      address: addressData,
+      certificates: certData,
+      bankApprovalStatus: 'APPROVED',
+      addressApprovalStatus: 'APPROVED',
+      certApprovalStatus: 'APPROVED',
+      lastSubmittedAt,
+      approvedAt: new Date().toLocaleString(),
+      approvedBy: currentUser?.email || 'Admin'
+    };
+
+    saveToStorage(payload);
+    setSaveSuccessMessage('👑 [ADMIN ACTION] All submitted Bank, Address, and NABL License details APPROVED & LOCKED!');
+    setTimeout(() => setSaveSuccessMessage(null), 4000);
   };
 
   return (
@@ -189,8 +304,8 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
     }}>
       <div style={{
         width: '100%',
-        maxWidth: '820px',
-        maxHeight: '92vh',
+        maxWidth: '860px',
+        maxHeight: '94vh',
         backgroundColor: '#0F172A',
         color: '#F8FAFC',
         border: '1.5px solid rgba(6, 182, 212, 0.4)',
@@ -207,36 +322,97 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
           borderBottom: '1px solid rgba(255,255,255,0.1)',
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center'
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '10px'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span style={{ fontSize: '1.4rem' }}>⚙️</span>
             <div>
-              <h2 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 800, color: '#F8FAFC' }}>
-                Account Settings & Master Profile
-              </h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h2 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 800, color: '#F8FAFC' }}>
+                  Account Settings & Compliance Profile
+                </h2>
+                {isCompanyAdmin && (
+                  <span style={{ backgroundColor: 'rgba(139, 92, 246, 0.25)', border: '1px solid #8B5CF6', color: '#DDD6FE', padding: '2px 6px', borderRadius: '4px', fontSize: '0.6875rem', fontWeight: 800 }}>
+                    👑 COMPANY ADMIN MODE
+                  </span>
+                )}
+              </div>
               <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
                 Role: <strong style={{ color: '#38BDF8' }}>{currentUser?.role || currentUser?.roleTitle || 'STAFF'}</strong> • {currentUser?.email || 'user@docsearch.health'}
               </span>
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            style={{
-              backgroundColor: 'rgba(255,255,255,0.08)',
-              color: '#CBD5E1',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '6px 12px',
-              fontSize: '0.8125rem',
-              fontWeight: 700,
-              cursor: 'pointer'
-            }}
-          >
-            ✕ Close
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {isCompanyAdmin && (bankApprovalStatus === 'PENDING_APPROVAL' || addressApprovalStatus === 'PENDING_APPROVAL' || certApprovalStatus === 'PENDING_APPROVAL') && (
+              <button
+                type="button"
+                onClick={handleAdminApproveAll}
+                style={{
+                  backgroundColor: '#10B981',
+                  color: '#070C16',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '6px 12px',
+                  fontSize: '0.75rem',
+                  fontWeight: 900,
+                  cursor: 'pointer'
+                }}
+              >
+                ✓ Admin Approve All Pending
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                backgroundColor: 'rgba(255,255,255,0.08)',
+                color: '#CBD5E1',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '6px 12px',
+                fontSize: '0.8125rem',
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              ✕ Close
+            </button>
+          </div>
+        </div>
+
+        {/* Global Compliance Approval Alert Banner */}
+        <div style={{
+          backgroundColor: '#070C16',
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
+          padding: '8px 24px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '8px',
+          fontSize: '0.75rem'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span>🛡️</span>
+            <span style={{ color: '#94A3B8' }}>
+              Governance Rule: <strong>Bank, Address & Certificate updates require Company Admin Approval.</strong> Passwords update instantly.
+            </span>
+          </div>
+          <div>
+            {(bankApprovalStatus === 'PENDING_APPROVAL' || addressApprovalStatus === 'PENDING_APPROVAL' || certApprovalStatus === 'PENDING_APPROVAL') ? (
+              <span style={{ backgroundColor: 'rgba(245, 158, 11, 0.2)', border: '1px solid #F59E0B', color: '#FCD34D', padding: '2px 8px', borderRadius: '4px', fontWeight: 800 }}>
+                ⏳ Pending Admin Review ({lastSubmittedAt || 'Recently'})
+              </span>
+            ) : (
+              <span style={{ backgroundColor: 'rgba(16, 185, 129, 0.2)', border: '1px solid #10B981', color: '#6EE7B7', padding: '2px 8px', borderRadius: '4px', fontWeight: 800 }}>
+                ✓ Verified & Approved by Company Admin
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Tab Navigation */}
@@ -244,13 +420,14 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
           display: 'flex',
           borderBottom: '1px solid rgba(255,255,255,0.1)',
           backgroundColor: '#070C16',
-          padding: '0 16px'
+          padding: '0 16px',
+          overflowX: 'auto'
         }}>
           <button
             type="button"
             onClick={() => { setActiveTab('BANK'); setErrorMessage(null); }}
             style={{
-              padding: '12px 18px',
+              padding: '12px 16px',
               backgroundColor: 'transparent',
               color: activeTab === 'BANK' ? '#38BDF8' : '#94A3B8',
               border: 'none',
@@ -260,17 +437,18 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px'
+              gap: '6px',
+              whiteSpace: 'nowrap'
             }}
           >
-            <span>💳</span> Bank & Settlement Update
+            <span>💳</span> Bank & Cheque Update {bankApprovalStatus === 'PENDING_APPROVAL' && '⏳'}
           </button>
 
           <button
             type="button"
             onClick={() => { setActiveTab('ADDRESS'); setErrorMessage(null); }}
             style={{
-              padding: '12px 18px',
+              padding: '12px 16px',
               backgroundColor: 'transparent',
               color: activeTab === 'ADDRESS' ? '#38BDF8' : '#94A3B8',
               border: 'none',
@@ -280,17 +458,39 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px'
+              gap: '6px',
+              whiteSpace: 'nowrap'
             }}
           >
-            <span>📍</span> Address & Location Profile
+            <span>📍</span> Address & Location {addressApprovalStatus === 'PENDING_APPROVAL' && '⏳'}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => { setActiveTab('CERTIFICATES'); setErrorMessage(null); }}
+            style={{
+              padding: '12px 16px',
+              backgroundColor: 'transparent',
+              color: activeTab === 'CERTIFICATES' ? '#38BDF8' : '#94A3B8',
+              border: 'none',
+              borderBottom: activeTab === 'CERTIFICATES' ? '3px solid #06B6D4' : '3px solid transparent',
+              fontSize: '0.8125rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            <span>📜</span> Upload Certificates & NABL {certApprovalStatus === 'PENDING_APPROVAL' && '⏳'}
           </button>
 
           <button
             type="button"
             onClick={() => { setActiveTab('PASSWORD'); setErrorMessage(null); }}
             style={{
-              padding: '12px 18px',
+              padding: '12px 16px',
               backgroundColor: 'transparent',
               color: activeTab === 'PASSWORD' ? '#38BDF8' : '#94A3B8',
               border: 'none',
@@ -300,10 +500,11 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px'
+              gap: '6px',
+              whiteSpace: 'nowrap'
             }}
           >
-            <span>🔐</span> Password & Security Update
+            <span>🔐</span> Password (Direct Update)
           </button>
         </div>
 
@@ -326,15 +527,15 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
           {/* TAB 1: BANK DETAILS */}
           {activeTab === 'BANK' && (
             <form onSubmit={handleSaveBank} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ backgroundColor: 'rgba(6, 182, 212, 0.08)', border: '1px solid rgba(6, 182, 212, 0.2)', padding: '12px 16px', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ backgroundColor: 'rgba(6, 182, 212, 0.08)', border: '1px solid rgba(6, 182, 212, 0.2)', padding: '12px 16px', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                 <div>
-                  <strong style={{ fontSize: '0.875rem', color: '#38BDF8' }}>Direct B2B Hospital / Lab Settlement Payouts</strong>
+                  <strong style={{ fontSize: '0.875rem', color: '#38BDF8' }}>Direct B2B Bank Payout & Settlement Details</strong>
                   <span style={{ fontSize: '0.75rem', color: '#94A3B8', display: 'block', marginTop: '2px' }}>
-                    All patient digital payments and OPD consultation fees are credited directly to this verified bank account.
+                    Note: Updating bank account requires admin approval and verified cancelled cheque proof.
                   </span>
                 </div>
-                <span style={{ fontSize: '0.75rem', backgroundColor: 'rgba(16, 185, 129, 0.2)', color: '#6EE7B7', padding: '3px 8px', borderRadius: '6px', fontWeight: 700 }}>
-                  ✓ Instant IMPS / NEFT Enabled
+                <span style={{ fontSize: '0.75rem', backgroundColor: bankApprovalStatus === 'APPROVED' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)', color: bankApprovalStatus === 'APPROVED' ? '#6EE7B7' : '#FCD34D', padding: '3px 8px', borderRadius: '6px', fontWeight: 700 }}>
+                  Status: {bankApprovalStatus === 'APPROVED' ? '✓ VERIFIED & APPROVED' : '⏳ PENDING ADMIN APPROVAL'}
                 </span>
               </div>
 
@@ -426,7 +627,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
 
                 <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
-                    SETTLEMENT FREQUENCY
+                    SETTLEMENT CYCLE
                   </label>
                   <select
                     value={bankData.settlementCycle}
@@ -440,17 +641,28 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                 </div>
               </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
-                  UPI ID / VPA FOR INSTANT QR SETTLEMENTS
+              {/* Upload Cancelled Cheque / Bank Proof Certificate */}
+              <div style={{ backgroundColor: '#1E293B', border: '1px dashed rgba(6, 182, 212, 0.4)', borderRadius: '10px', padding: '14px' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: '#38BDF8', marginBottom: '6px' }}>
+                  📎 UPLOAD CANCELLED CHEQUE / PASSBOOK PROOF (PDF/PNG/JPG) *
                 </label>
-                <input
-                  type="text"
-                  value={bankData.upiId}
-                  onChange={(e) => setBankData({ ...bankData, upiId: e.target.value })}
-                  placeholder="tatapathology@okhdfcbank"
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem' }}
-                />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                  <input
+                    type="file"
+                    accept=".pdf,.png,.jpg,.jpeg"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        setBankData({ ...bankData, cancelledChequeFile: e.target.files[0].name });
+                      }
+                    }}
+                    style={{ fontSize: '0.75rem', color: '#CBD5E1' }}
+                  />
+                  {bankData.cancelledChequeFile && (
+                    <span style={{ fontSize: '0.75rem', color: '#6EE7B7', backgroundColor: 'rgba(16, 185, 129, 0.15)', padding: '2px 8px', borderRadius: '4px' }}>
+                      📄 Attached: {bankData.cancelledChequeFile}
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
@@ -467,7 +679,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                     cursor: 'pointer'
                   }}
                 >
-                  💾 Save & Update Bank Details
+                  {isCompanyAdmin ? '👑 Approve & Save Bank Details' : '📤 Submit for Admin Approval'}
                 </button>
               </div>
             </form>
@@ -476,10 +688,15 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
           {/* TAB 2: ADDRESS & LOCATION PROFILE */}
           {activeTab === 'ADDRESS' && (
             <form onSubmit={handleSaveAddress} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ backgroundColor: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '12px 16px', borderRadius: '10px' }}>
-                <strong style={{ fontSize: '0.875rem', color: '#60A5FA' }}>Official Facility Address & Legal Contact Information</strong>
-                <span style={{ fontSize: '0.75rem', color: '#94A3B8', display: 'block', marginTop: '2px' }}>
-                  This official address is printed on invoices, NABL test reports, GST receipts, and prescription letterheads.
+              <div style={{ backgroundColor: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '12px 16px', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                <div>
+                  <strong style={{ fontSize: '0.875rem', color: '#60A5FA' }}>Official Facility Address & Legal Profile</strong>
+                  <span style={{ fontSize: '0.75rem', color: '#94A3B8', display: 'block', marginTop: '2px' }}>
+                    Note: Legal address change reflects on GST bills and NABL reports after Admin verification.
+                  </span>
+                </div>
+                <span style={{ fontSize: '0.75rem', backgroundColor: addressApprovalStatus === 'APPROVED' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)', color: addressApprovalStatus === 'APPROVED' ? '#6EE7B7' : '#FCD34D', padding: '3px 8px', borderRadius: '6px', fontWeight: 700 }}>
+                  Status: {addressApprovalStatus === 'APPROVED' ? '✓ VERIFIED & APPROVED' : '⏳ PENDING ADMIN APPROVAL'}
                 </span>
               </div>
 
@@ -619,6 +836,30 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                 </div>
               </div>
 
+              {/* Upload Address Proof / Establishment Certificate */}
+              <div style={{ backgroundColor: '#1E293B', border: '1px dashed rgba(59, 130, 246, 0.4)', borderRadius: '10px', padding: '14px' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: '#60A5FA', marginBottom: '6px' }}>
+                  📎 UPLOAD CLINICAL ESTABLISHMENT / ELECTRICITY BILL ADDRESS PROOF *
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                  <input
+                    type="file"
+                    accept=".pdf,.png,.jpg,.jpeg"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        setAddressData({ ...addressData, addressProofFile: e.target.files[0].name });
+                      }
+                    }}
+                    style={{ fontSize: '0.75rem', color: '#CBD5E1' }}
+                  />
+                  {addressData.addressProofFile && (
+                    <span style={{ fontSize: '0.75rem', color: '#6EE7B7', backgroundColor: 'rgba(16, 185, 129, 0.15)', padding: '2px 8px', borderRadius: '4px' }}>
+                      📄 Attached: {addressData.addressProofFile}
+                    </span>
+                  )}
+                </div>
+              </div>
+
               <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                 <button
                   type="submit"
@@ -633,19 +874,171 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                     cursor: 'pointer'
                   }}
                 >
-                  💾 Save & Update Address Profile
+                  {isCompanyAdmin ? '👑 Approve & Save Address' : '📤 Submit for Admin Approval'}
                 </button>
               </div>
             </form>
           )}
 
-          {/* TAB 3: PASSWORD & SECURITY */}
+          {/* TAB 3: CERTIFICATES & NABL LICENSES */}
+          {activeTab === 'CERTIFICATES' && (
+            <form onSubmit={handleSaveCertificates} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ backgroundColor: 'rgba(139, 92, 246, 0.08)', border: '1px solid rgba(139, 92, 246, 0.2)', padding: '12px 16px', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                <div>
+                  <strong style={{ fontSize: '0.875rem', color: '#C4B5FD' }}>Regulatory Licenses, NABL & Doctor Registration Certificates</strong>
+                  <span style={{ fontSize: '0.75rem', color: '#94A3B8', display: 'block', marginTop: '2px' }}>
+                    Uploaded certificates are verified by Company Compliance Officers to ensure legal report validation.
+                  </span>
+                </div>
+                <span style={{ fontSize: '0.75rem', backgroundColor: certApprovalStatus === 'APPROVED' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)', color: certApprovalStatus === 'APPROVED' ? '#6EE7B7' : '#FCD34D', padding: '3px 8px', borderRadius: '6px', fontWeight: 700 }}>
+                  Status: {certApprovalStatus === 'APPROVED' ? '✓ VERIFIED & APPROVED' : '⏳ PENDING ADMIN APPROVAL'}
+                </span>
+              </div>
+
+              {/* NABL Certificate */}
+              <div style={{ backgroundColor: '#1E293B', padding: '14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '10px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
+                      NABL ACCREDITATION NUMBER (ISO 15189)
+                    </label>
+                    <input
+                      type="text"
+                      value={certData.nablCertificateNo}
+                      onChange={(e) => setCertData({ ...certData, nablCertificateNo: e.target.value })}
+                      placeholder="MC-4892-2026"
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem', fontFamily: 'monospace' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
+                      UPLOAD NABL CERTIFICATE (PDF/IMAGE)
+                    </label>
+                    <input
+                      type="file"
+                      accept=".pdf,.png,.jpg,.jpeg"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          setCertData({ ...certData, nablCertFile: e.target.files[0].name });
+                        }
+                      }}
+                      style={{ fontSize: '0.75rem', color: '#CBD5E1' }}
+                    />
+                  </div>
+                </div>
+                {certData.nablCertFile && (
+                  <span style={{ fontSize: '0.75rem', color: '#6EE7B7' }}>✓ Attached Document: {certData.nablCertFile}</span>
+                )}
+              </div>
+
+              {/* State Medical Council Registration */}
+              <div style={{ backgroundColor: '#1E293B', padding: '14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '10px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
+                      DOCTOR MEDICAL COUNCIL REG NO. *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={certData.doctorRegNo}
+                      onChange={(e) => setCertData({ ...certData, doctorRegNo: e.target.value })}
+                      placeholder="MMC-78291-B"
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem', fontFamily: 'monospace' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
+                      UPLOAD MBBS / MD DEGREE & REGISTRATION *
+                    </label>
+                    <input
+                      type="file"
+                      accept=".pdf,.png,.jpg,.jpeg"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          setCertData({ ...certData, doctorDegreeFile: e.target.files[0].name });
+                        }
+                      }}
+                      style={{ fontSize: '0.75rem', color: '#CBD5E1' }}
+                    />
+                  </div>
+                </div>
+                {certData.doctorDegreeFile && (
+                  <span style={{ fontSize: '0.75rem', color: '#6EE7B7' }}>✓ Attached Document: {certData.doctorDegreeFile}</span>
+                )}
+              </div>
+
+              {/* State Clinical Establishment Registration */}
+              <div style={{ backgroundColor: '#1E293B', padding: '14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '10px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
+                      CLINICAL ESTABLISHMENT ACT REG NO.
+                    </label>
+                    <input
+                      type="text"
+                      value={certData.clinicalEstablishmentNo}
+                      onChange={(e) => setCertData({ ...certData, clinicalEstablishmentNo: e.target.value })}
+                      placeholder="CEA-MH-2026-9812"
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem', fontFamily: 'monospace' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
+                      UPLOAD STATE GOVT CLINICAL LICENSE
+                    </label>
+                    <input
+                      type="file"
+                      accept=".pdf,.png,.jpg,.jpeg"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          setCertData({ ...certData, clinicalCertFile: e.target.files[0].name });
+                        }
+                      }}
+                      style={{ fontSize: '0.75rem', color: '#CBD5E1' }}
+                    />
+                  </div>
+                </div>
+                {certData.clinicalCertFile && (
+                  <span style={{ fontSize: '0.75rem', color: '#6EE7B7' }}>✓ Attached Document: {certData.clinicalCertFile}</span>
+                )}
+              </div>
+
+              <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button
+                  type="submit"
+                  style={{
+                    backgroundColor: '#06B6D4',
+                    color: '#070C16',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '10px 20px',
+                    fontWeight: 800,
+                    fontSize: '0.8125rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {isCompanyAdmin ? '👑 Approve & Verify All Certificates' : '📤 Submit Certificates for Admin Approval'}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* TAB 4: PASSWORD & SECURITY */}
           {activeTab === 'PASSWORD' && (
             <form onSubmit={handleSavePassword} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ backgroundColor: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.2)', padding: '12px 16px', borderRadius: '10px' }}>
-                <strong style={{ fontSize: '0.875rem', color: '#FBBF24' }}>Cryptographic Password & Multi-Factor Security</strong>
-                <span style={{ fontSize: '0.75rem', color: '#94A3B8', display: 'block', marginTop: '2px' }}>
-                  Passwords are encrypted using zero-knowledge scrypt key derivation. Changing your password will secure your session across all active devices.
+              <div style={{ backgroundColor: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.2)', padding: '12px 16px', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <strong style={{ fontSize: '0.875rem', color: '#FBBF24' }}>Cryptographic Password & Multi-Factor Security</strong>
+                  <span style={{ fontSize: '0.75rem', color: '#94A3B8', display: 'block', marginTop: '2px' }}>
+                    Password changes do NOT require admin approval — they take effect immediately across all sessions.
+                  </span>
+                </div>
+                <span style={{ fontSize: '0.75rem', backgroundColor: 'rgba(16, 185, 129, 0.2)', color: '#6EE7B7', padding: '3px 8px', borderRadius: '6px', fontWeight: 700 }}>
+                  ⚡ Instant Self-Service Update
                 </span>
               </div>
 
@@ -770,7 +1163,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                     cursor: 'pointer'
                   }}
                 >
-                  🔒 Update Password & Security
+                  🔒 Update Password Immediately
                 </button>
               </div>
             </form>
