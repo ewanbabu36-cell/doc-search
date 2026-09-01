@@ -292,6 +292,7 @@ export const CompanyAdminDomainManager: React.FC = () => {
         <EmployeeDirectoryView
           employees={employees}
           onUpdateStatus={handleUpdateEmployeeStatus}
+          onAddEmployee={(newEmp) => setEmployees([newEmp, ...employees])}
         />
       )}
 
