@@ -97,7 +97,7 @@ export const MASTER_WIDGET_CATALOG: DashboardWidget[] = [
     description: 'Cross-border interbank FX Treasury conversion margin'
   },
 
-  // 5 New Modular Catalog Widgets
+  // 5 Modular Catalog Widgets
   {
     id: 'WID-BED-07',
     titleKey: 'bed_occupancy',
@@ -180,6 +180,7 @@ export const CustomizableExecutiveWidgetGridView: React.FC = () => {
     return MASTER_WIDGET_CATALOG.slice(0, 6);
   });
 
+  const [activeRolePreset, setActiveRolePreset] = useState<'FOUNDER' | 'CFO' | 'CMO' | 'CTO'>('FOUNDER');
   const [isCatalogOpen, setIsCatalogOpen] = useState(false);
   const [catalogCategoryFilter, setCatalogCategoryFilter] = useState<'ALL' | 'REVENUE' | 'CLINICAL' | 'EMERGENCY' | 'SECURITY'>('ALL');
   const [draggedWidgetId, setDraggedWidgetId] = useState<string | null>(null);
@@ -191,6 +192,35 @@ export const CustomizableExecutiveWidgetGridView: React.FC = () => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(widgets));
     } catch {}
   }, [widgets]);
+
+  const applyRolePreset = (role: 'FOUNDER' | 'CFO' | 'CMO' | 'CTO') => {
+    setActiveRolePreset(role);
+    let targetIds: string[] = [];
+
+    if (role === 'CFO') {
+      // CFO View: ARR, Net Take-rate, Pharmacy Sales, Unpaid Invoices
+      targetIds = ['WID-ARR-01', 'WID-FX-06', 'WID-PHARM-09', 'WID-BILLING-10'];
+    } else if (role === 'CMO') {
+      // CMO View: Live Consults, ER Sirens, Bed Occupancy, Lab Volume, AI Copilot
+      targetIds = ['WID-CONSULT-03', 'WID-ER-02', 'WID-BED-07', 'WID-LIMS-08', 'WID-AI-11'];
+    } else if (role === 'CTO') {
+      // CTO / SecOps View: SOC2 Threat Radar, Tenant Quota, AI Safety, ARR
+      targetIds = ['WID-SEC-05', 'WID-QUOTA-04', 'WID-AI-11', 'WID-ARR-01'];
+    } else {
+      // Founder / Default View
+      targetIds = ['WID-ARR-01', 'WID-ER-02', 'WID-CONSULT-03', 'WID-QUOTA-04', 'WID-SEC-05', 'WID-FX-06'];
+    }
+
+    const newWidgets = MASTER_WIDGET_CATALOG.map((item) => ({
+      ...item,
+      isVisible: targetIds.includes(item.id),
+      isPinned: targetIds.slice(0, 2).includes(item.id)
+    }));
+
+    setWidgets(newWidgets);
+    setSaveNotice(`✓ Switched to 1-Click "${role === 'CFO' ? '💰 CFO Financial' : role === 'CMO' ? '🩺 CMO Clinical' : role === 'CTO' ? '🛡️ CTO SecOps' : '👑 Founder Master'}" Dashboard Preset!`);
+    setTimeout(() => setSaveNotice(null), 4000);
+  };
 
   const toggleVisibility = (widgetId: string) => {
     setWidgets((prev) =>
@@ -278,10 +308,7 @@ export const CustomizableExecutiveWidgetGridView: React.FC = () => {
   };
 
   const handleResetLayout = () => {
-    setWidgets(MASTER_WIDGET_CATALOG.slice(0, 6));
-    localStorage.removeItem(STORAGE_KEY);
-    setSaveNotice('✓ Reset to Default Executive Dashboard Grid Layout');
-    setTimeout(() => setSaveNotice(null), 3500);
+    applyRolePreset('FOUNDER');
   };
 
   const handleSaveLayout = () => {
@@ -306,10 +333,10 @@ export const CustomizableExecutiveWidgetGridView: React.FC = () => {
             <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: 'var(--ds-color-text-primary)' }}>
               🧩 Customizable Executive Widget Grid & Drag-Drop Studio
             </h2>
-            <Badge variant="success">● {widgets.filter((w) => w.isVisible).length} Active Widgets on Board</Badge>
+            <Badge variant="success">● {widgets.filter((w) => w.isVisible).length} Active Widgets</Badge>
           </div>
           <p style={{ margin: '4px 0 0', fontSize: '0.8125rem', color: 'var(--ds-color-text-muted)' }}>
-            Grab any widget card (⋮⋮) to drag and drop reorder. Click "+ Add Widget" to choose from 11 modular clinical and financial KPI cards.
+            Switch between 1-Click Role Presets (CFO, CMO, CTO, Founder) or drag & drop (⋮⋮) to arrange your customized layout.
           </p>
         </div>
 
@@ -350,6 +377,108 @@ export const CustomizableExecutiveWidgetGridView: React.FC = () => {
           >
             💾 {t('save_layout', 'Save Custom Layout')}
           </Button>
+        </div>
+      </div>
+
+      {/* 🎭 1-Click Executive Role Preset Switcher Bar */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px',
+          backgroundColor: '#0F172A',
+          border: '1px solid #334155',
+          borderRadius: '12px',
+          padding: '10px 16px'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#E2E8F0' }}>
+            🎭 1-Click Role Presets:
+          </span>
+          <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
+            Tailored C-Suite Operational Focus
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={() => applyRolePreset('FOUNDER')}
+            style={{
+              backgroundColor: activeRolePreset === 'FOUNDER' ? '#06B6D4' : '#1E293B',
+              color: activeRolePreset === 'FOUNDER' ? '#070C16' : '#94A3B8',
+              border: '1px solid #334155',
+              borderRadius: '8px',
+              padding: '6px 14px',
+              fontSize: '0.75rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              boxShadow: activeRolePreset === 'FOUNDER' ? '0 0 15px rgba(6, 182, 212, 0.4)' : 'none'
+            }}
+          >
+            👑 Founder / Master View
+          </button>
+
+          <button
+            type="button"
+            onClick={() => applyRolePreset('CFO')}
+            style={{
+              backgroundColor: activeRolePreset === 'CFO' ? '#10B981' : '#1E293B',
+              color: activeRolePreset === 'CFO' ? '#070C16' : '#86EFAC',
+              border: '1px solid #334155',
+              borderRadius: '8px',
+              padding: '6px 14px',
+              fontSize: '0.75rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              boxShadow: activeRolePreset === 'CFO' ? '0 0 15px rgba(16, 185, 129, 0.4)' : 'none'
+            }}
+          >
+            💰 CFO Financial View
+          </button>
+
+          <button
+            type="button"
+            onClick={() => applyRolePreset('CMO')}
+            style={{
+              backgroundColor: activeRolePreset === 'CMO' ? '#06B6D4' : '#1E293B',
+              color: activeRolePreset === 'CMO' ? '#070C16' : '#67E8F9',
+              border: '1px solid #334155',
+              borderRadius: '8px',
+              padding: '6px 14px',
+              fontSize: '0.75rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              boxShadow: activeRolePreset === 'CMO' ? '0 0 15px rgba(6, 182, 212, 0.4)' : 'none'
+            }}
+          >
+            🩺 CMO Clinical View
+          </button>
+
+          <button
+            type="button"
+            onClick={() => applyRolePreset('CTO')}
+            style={{
+              backgroundColor: activeRolePreset === 'CTO' ? '#38BDF8' : '#1E293B',
+              color: activeRolePreset === 'CTO' ? '#070C16' : '#BAE6FD',
+              border: '1px solid #334155',
+              borderRadius: '8px',
+              padding: '6px 14px',
+              fontSize: '0.75rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              boxShadow: activeRolePreset === 'CTO' ? '0 0 15px rgba(56, 189, 248, 0.4)' : 'none'
+            }}
+          >
+            🛡️ CTO / SecOps View
+          </button>
         </div>
       </div>
 
