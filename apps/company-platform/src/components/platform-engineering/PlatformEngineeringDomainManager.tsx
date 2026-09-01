@@ -17,7 +17,6 @@ import type {
   DeveloperExperienceMetricDto,
   PlatformIncidentDto,
   PlatformAuditTraceDto,
-  PlatformEnvironmentType,
   DeploymentStrategy
 } from '@docsearch/api-contracts';
 import { platformEngineeringService } from '../../services/platform-engineering-service.js';
@@ -38,10 +37,19 @@ import { DeploymentListView } from './DeploymentListView.js';
 import { DeveloperExperienceView } from './DeveloperExperienceView.js';
 import { PlatformIncidentCenterView } from './PlatformIncidentCenterView.js';
 import { PlatformAuditTraceView } from './PlatformAuditTraceView.js';
-import { Tabs, Badge, Spinner, ErrorState } from '@docsearch/ui-kit';
+import { CanaryTrafficControllerView } from './CanaryTrafficControllerView.js';
+import { KubernetesPodMeshRadarView } from './KubernetesPodMeshRadarView.js';
+import { CloudFinopsCostOptimizerView } from './CloudFinopsCostOptimizerView.js';
+import { SbomVulnerabilityScannerView } from './SbomVulnerabilityScannerView.js';
+import { EphemeralSandboxSpawnerModal } from './EphemeralSandboxSpawnerModal.js';
+import { Tabs, Badge, Button, Spinner, ErrorState } from '@docsearch/ui-kit';
 
 type ActiveTab =
   | 'overview'
+  | 'canary'
+  | 'k8s-radar'
+  | 'finops'
+  | 'sbom'
   | 'build'
   | 'build-runs'
   | 'cicd'
@@ -77,6 +85,10 @@ export const PlatformEngineeringDomainManager: React.FC = () => {
 
   const [selectedPipelineId, setSelectedPipelineId] = useState<string | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+
+  // Modals state
+  const [isSandboxModalOpen, setIsSandboxModalOpen] = useState(false);
+  const [successBanner, setSuccessBanner] = useState<string | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -140,7 +152,7 @@ export const PlatformEngineeringDomainManager: React.FC = () => {
       setIncidents(incidentsRes);
       setAuditTraces(tracesRes);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load platform engineering control plane');
+      setError(err instanceof Error ? err.message : 'Failed to load Platform Engineering data');
     } finally {
       setIsLoading(false);
     }
@@ -150,31 +162,34 @@ export const PlatformEngineeringDomainManager: React.FC = () => {
     void loadData();
   }, []);
 
-  const handleExecuteBuild = async (
-    pipelineId: string,
-    branch: string,
-    commit: string,
-    env: PlatformEnvironmentType,
-    reason: string
-  ) => {
+  const handleExecuteBuild = async (pipelineId: string, branch: string, commitSha: string) => {
     const run = await platformEngineeringService.executeBuildPipeline({
       pipelineId,
       branchReference: branch,
-      commitReference: commit,
-      environment: env,
-      actorEmail: 'platform.lead@docsearch.internal',
-      reason
+      commitReference: commitSha,
+      environment: 'DEVELOPMENT',
+      actorEmail: 'admin@docsearch.internal',
+      reason: 'Manual build execution'
     });
     setBuildRuns((prev) => [run, ...prev]);
   };
 
-  const handleCancelBuildRun = async (runId: string, reason: string) => {
+  const handleCancelBuildRun = async (buildRunId: string, reason: string) => {
     const updated = await platformEngineeringService.cancelBuildRun({
-      runId,
-      actorEmail: 'platform.lead@docsearch.internal',
+      runId: buildRunId,
+      actorEmail: 'admin@docsearch.internal',
       reason
     });
     setBuildRuns((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+  };
+
+  const handlePromoteRelease = async (releaseId: string, reason: string) => {
+    const updated = await platformEngineeringService.promotePackageRelease({
+      releaseId,
+      actorEmail: 'admin@docsearch.internal',
+      reason
+    });
+    setPackageReleases((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
   };
 
   const handlePromoteDeployment = async (
@@ -184,52 +199,47 @@ export const PlatformEngineeringDomainManager: React.FC = () => {
     strategy: DeploymentStrategy,
     reason: string
   ) => {
-    const dep = await platformEngineeringService.promoteDeployment({
+    const newDep = await platformEngineeringService.promoteDeployment({
       targetEnvironmentId: targetEnvId,
       artifactReference: artifactRef,
       commitReference: commitRef,
       deploymentStrategy: strategy,
-      actorEmail: 'platform.lead@docsearch.internal',
+      actorEmail: 'admin@docsearch.internal',
       reason
     });
-    setDeployments((prev) => [dep, ...prev]);
+    setDeployments((prev) => [newDep, ...prev]);
   };
 
-  const handleRollbackDeployment = async (deploymentId: string, rollbackArtifactRef: string, reason: string) => {
-    const dep = await platformEngineeringService.rollbackDeployment({
+  const handleRollbackDeployment = async (
+    deploymentId: string,
+    rollbackArtifactRef: string,
+    reason: string
+  ) => {
+    const rolledBack = await platformEngineeringService.rollbackDeployment({
       deploymentId,
       rollbackArtifactReference: rollbackArtifactRef,
-      actorEmail: 'platform.lead@docsearch.internal',
+      actorEmail: 'admin@docsearch.internal',
       reason
     });
-    setDeployments((prev) => [dep, ...prev]);
+    setDeployments((prev) => [rolledBack, ...prev]);
   };
 
-  const handlePromoteRelease = async (releaseId: string, reason: string) => {
-    const updated = await platformEngineeringService.promotePackageRelease({
-      releaseId,
-      actorEmail: 'platform.lead@docsearch.internal',
-      reason
-    });
-    setPackageReleases((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
-  };
-
-  const handleAcknowledgeIncident = async (incidentId: string, assignedToEmail: string, reason: string) => {
+  const handleAcknowledgeIncident = async (incidentId: string, reason: string) => {
     const updated = await platformEngineeringService.acknowledgePlatformIncident({
       incidentId,
-      assignedToEmail,
-      actorEmail: 'platform.lead@docsearch.internal',
+      assignedToEmail: 'lead.devops@docsearch.internal',
+      actorEmail: 'admin@docsearch.internal',
       reason
     });
     setIncidents((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
   };
 
-  const handleResolveIncident = async (incidentId: string, resolutionNotes: string, reason: string) => {
+  const handleResolveIncident = async (incidentId: string, resolutionNotes: string) => {
     const updated = await platformEngineeringService.resolvePlatformIncident({
       incidentId,
       resolutionNotes,
-      actorEmail: 'platform.lead@docsearch.internal',
-      reason
+      actorEmail: 'admin@docsearch.internal',
+      reason: 'Resolved build failure incident'
     });
     setIncidents((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
   };
@@ -247,22 +257,21 @@ export const PlatformEngineeringDomainManager: React.FC = () => {
 
   if (error && !overview) {
     return (
-      <ErrorState title="Platform Engineering Control Plane Unavailable" message={error} onRetry={loadData} />
+      <ErrorState title="Platform Engineering Unavailable" message={error} onRetry={loadData} />
     );
   }
 
   // Drilldown: Pipeline Profile
   if (selectedPipelineId) {
-    const pipe = pipelines.find((p) => p.id === selectedPipelineId);
-    if (pipe) {
+    const pipeline = pipelines.find((p) => p.id === selectedPipelineId);
+    if (pipeline) {
+      const runs = buildRuns.filter((r) => r.pipelineId === selectedPipelineId);
       return (
         <BuildPipelineProfileView
-          pipeline={pipe}
-          runs={buildRuns.filter((r) => r.pipelineId === pipe.id)}
+          pipeline={pipeline}
+          runs={runs}
           onBack={() => setSelectedPipelineId(null)}
-          onRunBuild={() => {
-            void handleExecuteBuild(pipe.id, 'main', '7a9c8f2', pipe.defaultEnvironment, 'Triggered from pipeline profile');
-          }}
+          onRunBuild={() => handleExecuteBuild(pipeline.id, 'main', 'latest')}
         />
       );
     }
@@ -272,11 +281,13 @@ export const PlatformEngineeringDomainManager: React.FC = () => {
   if (selectedNodeId) {
     const node = dependencyNodes.find((n) => n.id === selectedNodeId);
     if (node) {
+      const incoming = dependencyEdges.filter((e) => e.targetNodeId === selectedNodeId);
+      const outgoing = dependencyEdges.filter((e) => e.sourceNodeId === selectedNodeId);
       return (
         <DependencyNodeProfileView
           node={node}
-          incomingEdges={dependencyEdges.filter((e) => e.targetNodeId === node.id)}
-          outgoingEdges={dependencyEdges.filter((e) => e.sourceNodeId === node.id)}
+          incomingEdges={incoming}
+          outgoingEdges={outgoing}
           onBack={() => setSelectedNodeId(null)}
         />
       );
@@ -285,21 +296,54 @@ export const PlatformEngineeringDomainManager: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+      {/* Header with Quick Action Buttons */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', backgroundColor: '#0F172A', border: '1.5px solid rgba(6, 182, 212, 0.4)', borderRadius: '14px', padding: '16px 20px' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700', color: 'var(--ds-color-text-primary)' }}>
-              Platform Engineering
+            <h1 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 800, color: '#F8FAFC' }}>
+              🛠️ Platform Engineering, DevOps & Infrastructure HQ
             </h1>
-            
-            <Badge variant="warning">Production View</Badge>
+            <Badge variant="success">● Zero Downtime Rolling Deployments</Badge>
           </div>
-          <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--ds-color-text-muted)' }}>
-            Turborepo build orchestration, CI/CD automation, artifact registry, environment configuration matrices, dependency graphs, and DevEx telemetry
+          <p style={{ margin: 0, fontSize: '0.8125rem', color: '#94A3B8' }}>
+            Canary traffic split router, Kubernetes pod mesh radar, Cloud FinOps optimizer, and ephemeral sandbox spawner
           </p>
         </div>
+
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setActiveTab('canary')}
+            style={{
+              borderColor: '#06B6D4',
+              color: '#38BDF8',
+              fontWeight: 800
+            }}
+          >
+            🚀 Adjust Canary Traffic
+          </Button>
+
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => setIsSandboxModalOpen(true)}
+            style={{
+              backgroundColor: '#10B981',
+              color: '#070C16',
+              fontWeight: 900
+            }}
+          >
+            ⚡ Spawn Ephemeral Sandbox
+          </Button>
+        </div>
       </div>
+
+      {successBanner && (
+        <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid #10B981', borderRadius: '10px', padding: '12px 16px', color: '#A7F3D0', fontSize: '0.875rem', fontWeight: 700 }}>
+          {successBanner}
+        </div>
+      )}
 
       {/* Tabs */}
       <Tabs
@@ -309,13 +353,33 @@ export const PlatformEngineeringDomainManager: React.FC = () => {
             label: '📊 Overview'
           },
           {
+            id: 'canary',
+            label: '🚀 Canary Traffic',
+            badge: <Badge variant="success">Blue/Green</Badge>
+          },
+          {
+            id: 'k8s-radar',
+            label: '☸️ K8s Pod Mesh',
+            badge: <Badge variant="primary">38 Pods</Badge>
+          },
+          {
+            id: 'finops',
+            label: '☁️ Cloud FinOps',
+            badge: <Badge variant="warning">-₹1.48L/mo</Badge>
+          },
+          {
+            id: 'sbom',
+            label: '🔒 SBOM & CVEs',
+            badge: <Badge variant="success">0 CVE</Badge>
+          },
+          {
             id: 'build',
-            label: '🏗️ Build & Turborepo',
+            label: '🔨 Build Pipelines',
             badge: <Badge variant="neutral">{pipelines.length}</Badge>
           },
           {
             id: 'build-runs',
-            label: '📜 Build Runs',
+            label: '⏱️ Build Runs',
             badge: <Badge variant="neutral">{buildRuns.length}</Badge>
           },
           {
@@ -382,6 +446,22 @@ export const PlatformEngineeringDomainManager: React.FC = () => {
           deployments={deployments}
           incidents={incidents}
         />
+      )}
+
+      {activeTab === 'canary' && (
+        <CanaryTrafficControllerView />
+      )}
+
+      {activeTab === 'k8s-radar' && (
+        <KubernetesPodMeshRadarView />
+      )}
+
+      {activeTab === 'finops' && (
+        <CloudFinopsCostOptimizerView />
+      )}
+
+      {activeTab === 'sbom' && (
+        <SbomVulnerabilityScannerView />
       )}
 
       {activeTab === 'build' && (
@@ -463,6 +543,16 @@ export const PlatformEngineeringDomainManager: React.FC = () => {
       {activeTab === 'audit' && (
         <PlatformAuditTraceView auditTraces={auditTraces} />
       )}
+
+      {/* Modals */}
+      <EphemeralSandboxSpawnerModal
+        isOpen={isSandboxModalOpen}
+        onClose={() => setIsSandboxModalOpen(false)}
+        onSpawnSuccess={(url) => {
+          setSuccessBanner(`✓ Ephemeral Sandbox Environment spawned live at: ${url}`);
+          setTimeout(() => setSuccessBanner(null), 5000);
+        }}
+      />
     </div>
   );
 };
