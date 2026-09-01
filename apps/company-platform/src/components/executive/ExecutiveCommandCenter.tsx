@@ -10,16 +10,17 @@ import { QuickActions } from './QuickActions.js';
 import { TrendAnalytics } from './TrendAnalytics.js';
 import { SystemHealthSummary } from './SystemHealthSummary.js';
 
-// 3 New Executive Advancements
+// 4 New Executive Advancements
 import { NationalHealthcareWarRoomView } from './NationalHealthcareWarRoomView.js';
 import { RealtimeEbitdaUnitEconomicsView } from './RealtimeEbitdaUnitEconomicsView.js';
 import { PlatformEmergencyPanicLockModal } from './PlatformEmergencyPanicLockModal.js';
+import { CustomizableExecutiveWidgetGridView } from './CustomizableExecutiveWidgetGridView.js';
 
 import { Spinner, ErrorState, Tabs, Badge, Button } from '@docsearch/ui-kit';
 
 export const ExecutiveCommandCenter: React.FC = () => {
   const [data, setData] = useState<ExecutiveDashboardData | null>(null);
-  const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'WAR_ROOM' | 'EBITDA'>('OVERVIEW');
+  const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'CUSTOM_GRID' | 'WAR_ROOM' | 'EBITDA'>('OVERVIEW');
   const [isPanicOpen, setIsPanicOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -108,12 +109,18 @@ export const ExecutiveCommandCenter: React.FC = () => {
       <Tabs
         tabs={[
           { id: 'OVERVIEW', label: '📊 Executive Overview' },
+          { id: 'CUSTOM_GRID', label: '🧩 Customizable Widget Studio', badge: <Badge variant="warning">Drag & Drop</Badge> },
           { id: 'WAR_ROOM', label: '⚡ National Healthcare War-Room', badge: <Badge variant="success">15.1k / hr</Badge> },
           { id: 'EBITDA', label: '💰 Real-Time EBITDA & Burn Rate', badge: <Badge variant="primary">Cash Positive</Badge> }
         ]}
         activeTabId={activeTab}
         onTabChange={(id) => setActiveTab(id as typeof activeTab)}
       />
+
+      {/* Tab: Customizable Widget Grid */}
+      {activeTab === 'CUSTOM_GRID' && (
+        <CustomizableExecutiveWidgetGridView />
+      )}
 
       {/* Tab: War Room */}
       {activeTab === 'WAR_ROOM' && (
