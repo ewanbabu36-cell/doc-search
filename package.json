@@ -9,6 +9,7 @@
   },
   "packageManager": "pnpm@9.15.4",
   "scripts": {
+    "dev:all": "node scripts/start-all.js",
     "build": "pnpm -r build",
     "lint": "eslint .",
     "typecheck": "pnpm -r typecheck",
