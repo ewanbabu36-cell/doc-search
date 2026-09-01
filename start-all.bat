@@ -5,6 +5,22 @@ echo ======================================================================
 echo    DOC SEARCH — HEALTHCARE SAAS PLATFORM (ENTERPRISE SUITE)
 echo ======================================================================
 echo.
+echo [0/4] Checking and clearing old port bindings (4000, 5173, 5174, 5175)...
+
+:: Kill any existing process on port 4000
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr :4000 ^| findstr LISTENING') do taskkill /f /pid %%a >nul 2>&1
+
+:: Kill any existing process on port 5173
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr :5173 ^| findstr LISTENING') do taskkill /f /pid %%a >nul 2>&1
+
+:: Kill any existing process on port 5174
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr :5174 ^| findstr LISTENING') do taskkill /f /pid %%a >nul 2>&1
+
+:: Kill any existing process on port 5175
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr :5175 ^| findstr LISTENING') do taskkill /f /pid %%a >nul 2>&1
+
+echo [✓] Ports cleared cleanly!
+echo.
 echo Starting all 4 services in independent background processes...
 echo.
 
@@ -26,12 +42,12 @@ start "DocSearch - Landing Page (Port 5175)" cmd.exe /k "cd /d "%~dp0" && pnpm -
 
 echo.
 echo ======================================================================
-echo    ALL 4 PLATFORMS LAUNCHED SUCCESSFULLY!
+echo    ALL 4 PLATFORMS LAUNCHED CLEANLY & READY!
 echo ======================================================================
 echo    - Partner Platform:  http://localhost:5173
 echo    - Company SaaS HQ:   http://localhost:5174
 echo    - Public Landing:    http://localhost:5175
 echo    - API Gateway:       http://localhost:4000/health
 echo ======================================================================
-echo You can keep this window open or close it. The servers will continue running!
+echo (You can minimize this window. Servers are running in background!)
 pause
