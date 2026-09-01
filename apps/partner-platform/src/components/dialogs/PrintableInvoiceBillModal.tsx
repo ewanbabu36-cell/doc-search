@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { getVerifiedRoleProfile } from '../../utils/roleProfileResolver.js';
 
 export interface PrintableInvoiceBillItem {
@@ -9,6 +9,24 @@ export interface PrintableInvoiceBillItem {
   rate: number;
   discount: number;
   taxRatePercent: number;
+}
+
+export interface CustomInvoiceSettings {
+  entityLegalName: string;
+  facilityTagline: string;
+  officialAddress: string;
+  contactPhone: string;
+  supportEmail: string;
+  website: string;
+  gstin: string;
+  licenseNo: string;
+  bankName: string;
+  accountHolder: string;
+  accountNumber: string;
+  ifscCode: string;
+  upiId: string;
+  jurisdictionCity: string;
+  headerThemeColor: string;
 }
 
 export interface PrintableInvoiceBillProps {
@@ -27,14 +45,47 @@ export interface PrintableInvoiceBillProps {
   };
 }
 
+const INVOICE_STORAGE_KEY = 'docsearch_custom_invoice_settings';
+
 export const PrintableInvoiceBillModal: React.FC<PrintableInvoiceBillProps> = ({
   isOpen,
   onClose,
   invoiceData
 }) => {
-  if (!isOpen) return null;
-
   const profile = getVerifiedRoleProfile();
+
+  const [invoiceConfig, setInvoiceConfig] = useState<CustomInvoiceSettings>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(INVOICE_STORAGE_KEY);
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch {}
+      }
+    }
+    return {
+      entityLegalName: profile.entityLegalName,
+      facilityTagline: profile.facilityTagline,
+      officialAddress: profile.officialAddress,
+      contactPhone: profile.contactPhone,
+      supportEmail: profile.supportEmail,
+      website: profile.website,
+      gstin: profile.gstin,
+      licenseNo: profile.roleCategory === 'PATHOLOGY_LAB' ? profile.nablCertificateNo : profile.roleCategory === 'HOSPITAL' ? profile.hospitalCeaRegNo : profile.pharmacyDrugLicense20B,
+      bankName: profile.bankName,
+      accountHolder: profile.accountHolder,
+      accountNumber: profile.accountNumber,
+      ifscCode: profile.ifscCode,
+      upiId: profile.upiId,
+      jurisdictionCity: 'Mumbai / Delhi',
+      headerThemeColor: '#0F172A'
+    };
+  });
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [saveToast, setSaveToast] = useState(false);
+
+  if (!isOpen) return null;
 
   const invoiceNumber = invoiceData?.invoiceNumber || `INV-2026-${Math.floor(10000 + Math.random() * 90000)}`;
   const invoiceDate = invoiceData?.invoiceDate || new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -45,7 +96,6 @@ export const PrintableInvoiceBillModal: React.FC<PrintableInvoiceBillProps> = ({
   const paymentStatus = invoiceData?.paymentStatus || 'PAID';
   const paymentMode = invoiceData?.paymentMode || 'UPI / ONLINE TRANSFER';
 
-  // Default Role-Specific Items if none provided
   const defaultItems: PrintableInvoiceBillItem[] =
     profile.roleCategory === 'PATHOLOGY_LAB'
       ? [
@@ -77,6 +127,39 @@ export const PrintableInvoiceBillModal: React.FC<PrintableInvoiceBillProps> = ({
     window.print();
   };
 
+  const handleSaveConfig = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(INVOICE_STORAGE_KEY, JSON.stringify(invoiceConfig));
+    }
+    setSaveToast(true);
+    setTimeout(() => setSaveToast(false), 2500);
+    setIsEditing(false);
+  };
+
+  const handleResetDefaults = () => {
+    const def = {
+      entityLegalName: profile.entityLegalName,
+      facilityTagline: profile.facilityTagline,
+      officialAddress: profile.officialAddress,
+      contactPhone: profile.contactPhone,
+      supportEmail: profile.supportEmail,
+      website: profile.website,
+      gstin: profile.gstin,
+      licenseNo: profile.roleCategory === 'PATHOLOGY_LAB' ? profile.nablCertificateNo : profile.roleCategory === 'HOSPITAL' ? profile.hospitalCeaRegNo : profile.pharmacyDrugLicense20B,
+      bankName: profile.bankName,
+      accountHolder: profile.accountHolder,
+      accountNumber: profile.accountNumber,
+      ifscCode: profile.ifscCode,
+      upiId: profile.upiId,
+      jurisdictionCity: 'Mumbai / Delhi',
+      headerThemeColor: '#0F172A'
+    };
+    setInvoiceConfig(def);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(INVOICE_STORAGE_KEY);
+    }
+  };
+
   return (
     <div style={{
       position: 'fixed',
@@ -95,8 +178,8 @@ export const PrintableInvoiceBillModal: React.FC<PrintableInvoiceBillProps> = ({
         border: '1.5px solid rgba(6, 182, 212, 0.4)',
         borderRadius: '16px',
         width: '100%',
-        maxWidth: '880px',
-        maxHeight: '94vh',
+        maxWidth: '920px',
+        maxHeight: '95vh',
         display: 'flex',
         flexDirection: 'column',
         boxShadow: '0 25px 70px rgba(0,0,0,0.95)',
@@ -109,21 +192,46 @@ export const PrintableInvoiceBillModal: React.FC<PrintableInvoiceBillProps> = ({
           borderBottom: '1px solid rgba(255,255,255,0.1)',
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center'
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '10px'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ fontSize: '1.25rem' }}>💳</span>
             <div>
               <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: '#F8FAFC' }}>
-                GST Tax Invoice & Payout Bill
+                GST Tax Invoice & Payout Bill Customizer
               </h3>
               <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
-                Invoice: <strong style={{ color: '#38BDF8' }}>{invoiceNumber}</strong> • Role: <strong style={{ color: '#34D399' }}>{profile.roleCategory}</strong>
+                №: <strong style={{ color: '#38BDF8' }}>{invoiceNumber}</strong> • Role: <strong style={{ color: '#34D399' }}>{profile.roleCategory}</strong>
               </span>
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '10px' }}>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            {saveToast && (
+              <span style={{ fontSize: '0.75rem', backgroundColor: '#10B981', color: '#FFF', padding: '4px 10px', borderRadius: '6px', fontWeight: 700 }}>
+                ✓ Invoice Template Saved!
+              </span>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setIsEditing(!isEditing)}
+              style={{
+                backgroundColor: isEditing ? '#F59E0B' : 'rgba(255,255,255,0.1)',
+                color: isEditing ? '#000' : '#E2E8F0',
+                border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: '8px',
+                padding: '8px 14px',
+                fontWeight: 700,
+                fontSize: '0.8125rem',
+                cursor: 'pointer'
+              }}
+            >
+              {isEditing ? '👁️ Preview Invoice' : '✏️ Customize Invoice & Bank'}
+            </button>
+
             <button
               type="button"
               onClick={handlePrint}
@@ -140,6 +248,7 @@ export const PrintableInvoiceBillModal: React.FC<PrintableInvoiceBillProps> = ({
             >
               🖨️ Print Tax Invoice
             </button>
+
             <button
               type="button"
               onClick={onClose}
@@ -159,7 +268,121 @@ export const PrintableInvoiceBillModal: React.FC<PrintableInvoiceBillProps> = ({
           </div>
         </div>
 
-        {/* Printable Canvas (White Paper simulation) */}
+        {/* Customizer Drawer */}
+        {isEditing && (
+          <div style={{
+            backgroundColor: '#1E293B',
+            padding: '16px 20px',
+            borderBottom: '1.5px solid #06B6D4',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: '12px',
+            fontSize: '0.75rem'
+          }}>
+            <div>
+              <label style={{ display: 'block', color: '#94A3B8', fontWeight: 600, marginBottom: '4px' }}>Legal Entity Name:</label>
+              <input
+                type="text"
+                value={invoiceConfig.entityLegalName}
+                onChange={(e) => setInvoiceConfig({ ...invoiceConfig, entityLegalName: e.target.value })}
+                style={{ width: '100%', backgroundColor: '#0F172A', border: '1px solid #475569', borderRadius: '6px', padding: '6px 10px', color: '#FFF' }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', color: '#94A3B8', fontWeight: 600, marginBottom: '4px' }}>Facility Tagline:</label>
+              <input
+                type="text"
+                value={invoiceConfig.facilityTagline}
+                onChange={(e) => setInvoiceConfig({ ...invoiceConfig, facilityTagline: e.target.value })}
+                style={{ width: '100%', backgroundColor: '#0F172A', border: '1px solid #475569', borderRadius: '6px', padding: '6px 10px', color: '#FFF' }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', color: '#94A3B8', fontWeight: 600, marginBottom: '4px' }}>GSTIN & Regulatory License:</label>
+              <div style={{ display: 'flex', gap: '4px' }}>
+                <input
+                  type="text"
+                  placeholder="GSTIN"
+                  value={invoiceConfig.gstin}
+                  onChange={(e) => setInvoiceConfig({ ...invoiceConfig, gstin: e.target.value })}
+                  style={{ width: '50%', backgroundColor: '#0F172A', border: '1px solid #475569', borderRadius: '6px', padding: '6px 8px', color: '#FFF' }}
+                />
+                <input
+                  type="text"
+                  placeholder="License No"
+                  value={invoiceConfig.licenseNo}
+                  onChange={(e) => setInvoiceConfig({ ...invoiceConfig, licenseNo: e.target.value })}
+                  style={{ width: '50%', backgroundColor: '#0F172A', border: '1px solid #475569', borderRadius: '6px', padding: '6px 8px', color: '#FFF' }}
+                />
+              </div>
+            </div>
+            <div>
+              <label style={{ display: 'block', color: '#94A3B8', fontWeight: 600, marginBottom: '4px' }}>Bank Name & Account No:</label>
+              <div style={{ display: 'flex', gap: '4px' }}>
+                <input
+                  type="text"
+                  placeholder="Bank Name"
+                  value={invoiceConfig.bankName}
+                  onChange={(e) => setInvoiceConfig({ ...invoiceConfig, bankName: e.target.value })}
+                  style={{ width: '50%', backgroundColor: '#0F172A', border: '1px solid #475569', borderRadius: '6px', padding: '6px 8px', color: '#FFF' }}
+                />
+                <input
+                  type="text"
+                  placeholder="Account No"
+                  value={invoiceConfig.accountNumber}
+                  onChange={(e) => setInvoiceConfig({ ...invoiceConfig, accountNumber: e.target.value })}
+                  style={{ width: '50%', backgroundColor: '#0F172A', border: '1px solid #475569', borderRadius: '6px', padding: '6px 8px', color: '#FFF' }}
+                />
+              </div>
+            </div>
+            <div>
+              <label style={{ display: 'block', color: '#94A3B8', fontWeight: 600, marginBottom: '4px' }}>IFSC Code & UPI ID:</label>
+              <div style={{ display: 'flex', gap: '4px' }}>
+                <input
+                  type="text"
+                  placeholder="IFSC"
+                  value={invoiceConfig.ifscCode}
+                  onChange={(e) => setInvoiceConfig({ ...invoiceConfig, ifscCode: e.target.value })}
+                  style={{ width: '50%', backgroundColor: '#0F172A', border: '1px solid #475569', borderRadius: '6px', padding: '6px 8px', color: '#FFF' }}
+                />
+                <input
+                  type="text"
+                  placeholder="UPI ID"
+                  value={invoiceConfig.upiId}
+                  onChange={(e) => setInvoiceConfig({ ...invoiceConfig, upiId: e.target.value })}
+                  style={{ width: '50%', backgroundColor: '#0F172A', border: '1px solid #475569', borderRadius: '6px', padding: '6px 8px', color: '#FFF' }}
+                />
+              </div>
+            </div>
+            <div>
+              <label style={{ display: 'block', color: '#94A3B8', fontWeight: 600, marginBottom: '4px' }}>Legal Address:</label>
+              <input
+                type="text"
+                value={invoiceConfig.officialAddress}
+                onChange={(e) => setInvoiceConfig({ ...invoiceConfig, officialAddress: e.target.value })}
+                style={{ width: '100%', backgroundColor: '#0F172A', border: '1px solid #475569', borderRadius: '6px', padding: '6px 10px', color: '#FFF' }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={handleSaveConfig}
+                style={{ flex: 1, backgroundColor: '#10B981', color: '#FFF', border: 'none', borderRadius: '6px', padding: '8px 12px', fontWeight: 800, cursor: 'pointer' }}
+              >
+                💾 Save Custom Invoice
+              </button>
+              <button
+                type="button"
+                onClick={handleResetDefaults}
+                style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: '#CBD5E1', border: 'none', borderRadius: '6px', padding: '8px 10px', fontWeight: 600, cursor: 'pointer' }}
+              >
+                ↺ Reset
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Printable Canvas */}
         <div style={{ padding: '20px', overflowY: 'auto', flex: 1, backgroundColor: '#070C16' }}>
           <div id="printable-tax-invoice-canvas" style={{
             backgroundColor: '#FFFFFF',
@@ -169,20 +392,20 @@ export const PrintableInvoiceBillModal: React.FC<PrintableInvoiceBillProps> = ({
             boxShadow: '0 8px 30px rgba(0,0,0,0.5)',
             fontFamily: 'Inter, system-ui, -apple-system, sans-serif'
           }}>
-            {/* Header: Facility Credentials as per Role */}
-            <div style={{ borderBottom: '2px solid #0F172A', paddingBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            {/* Header: Facility Credentials */}
+            <div style={{ borderBottom: '2.5px solid #0F172A', paddingBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
                 <h1 style={{ margin: '0 0 4px', fontSize: '1.35rem', fontWeight: 900, color: '#0F172A', textTransform: 'uppercase' }}>
-                  {profile.entityLegalName}
+                  {invoiceConfig.entityLegalName}
                 </h1>
                 <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0284C7' }}>
-                  {profile.facilityTagline}
+                  {invoiceConfig.facilityTagline}
                 </div>
                 <div style={{ fontSize: '0.75rem', color: '#475569', marginTop: '4px', lineHeight: 1.4 }}>
-                  {profile.officialAddress}
+                  {invoiceConfig.officialAddress}
                 </div>
                 <div style={{ fontSize: '0.75rem', color: '#475569' }}>
-                  📞 {profile.contactPhone} • ✉️ {profile.supportEmail} • 🌐 {profile.website}
+                  📞 {invoiceConfig.contactPhone} • ✉️ {invoiceConfig.supportEmail} • 🌐 {invoiceConfig.website}
                 </div>
               </div>
 
@@ -197,29 +420,15 @@ export const PrintableInvoiceBillModal: React.FC<PrintableInvoiceBillProps> = ({
                   <strong>Invoice Date:</strong> {invoiceDate}
                 </div>
                 <div style={{ fontSize: '0.75rem', color: '#334155', marginTop: '4px' }}>
-                  <strong>GSTIN:</strong> <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{profile.gstin}</span>
+                  <strong>GSTIN:</strong> <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{invoiceConfig.gstin}</span>
                 </div>
-
-                {/* Role-Specific Regulatory Badges */}
-                {profile.roleCategory === 'PATHOLOGY_LAB' && (
-                  <div style={{ fontSize: '0.6875rem', color: '#0369A1', fontWeight: 700, marginTop: '2px' }}>
-                    NABL Certificate: {profile.nablCertificateNo}
-                  </div>
-                )}
-                {profile.roleCategory === 'HOSPITAL' && (
-                  <div style={{ fontSize: '0.6875rem', color: '#0369A1', fontWeight: 700, marginTop: '2px' }}>
-                    CEA License: {profile.hospitalCeaRegNo} • {profile.hospitalNabhGrade}
-                  </div>
-                )}
-                {profile.roleCategory === 'PHARMACY' && (
-                  <div style={{ fontSize: '0.6875rem', color: '#0369A1', fontWeight: 700, marginTop: '2px' }}>
-                    Drug License: {profile.pharmacyDrugLicense20B}
-                  </div>
-                )}
+                <div style={{ fontSize: '0.6875rem', color: '#0369A1', fontWeight: 700, marginTop: '2px' }}>
+                  License: {invoiceConfig.licenseNo}
+                </div>
               </div>
             </div>
 
-            {/* Billed To / Patient Metadata Box */}
+            {/* Billed To Box */}
             <div style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '12px 16px', margin: '14px 0', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '12px', fontSize: '0.75rem' }}>
               <div>
                 <span style={{ color: '#64748B', display: 'block', fontSize: '0.6875rem', textTransform: 'uppercase', fontWeight: 700 }}>BILLED TO PATIENT:</span>
@@ -239,7 +448,7 @@ export const PrintableInvoiceBillModal: React.FC<PrintableInvoiceBillProps> = ({
               </div>
             </div>
 
-            {/* Itemized Billing Table */}
+            {/* Itemized Table */}
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem', border: '1px solid #CBD5E1', margin: '16px 0' }}>
               <thead>
                 <tr style={{ backgroundColor: '#F1F5F9', borderBottom: '1.5px solid #94A3B8', textAlign: 'left' }}>
@@ -276,21 +485,19 @@ export const PrintableInvoiceBillModal: React.FC<PrintableInvoiceBillProps> = ({
 
             {/* Financial Summary & Bank Payout Box */}
             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px', alignItems: 'flex-start', margin: '14px 0' }}>
-              {/* Direct B2B Bank Payout Settlement Info */}
               <div style={{ backgroundColor: '#F8FAFC', border: '1px dashed #94A3B8', borderRadius: '8px', padding: '12px 16px', fontSize: '0.75rem' }}>
                 <strong style={{ color: '#0369A1', fontSize: '0.8125rem', display: 'block', marginBottom: '4px' }}>
                   🏦 OFFICIAL BANK & UPI PAYMENT SETTLEMENT:
                 </strong>
                 <div style={{ color: '#334155', lineHeight: 1.5 }}>
-                  <div><strong>Account Holder:</strong> {profile.accountHolder}</div>
-                  <div><strong>Bank Name:</strong> {profile.bankName}</div>
-                  <div><strong>Account No:</strong> <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{profile.accountNumber}</span></div>
-                  <div><strong>IFSC Code:</strong> <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{profile.ifscCode}</span></div>
-                  <div><strong>UPI ID:</strong> <span style={{ fontFamily: 'monospace', color: '#0284C7', fontWeight: 700 }}>{profile.upiId}</span></div>
+                  <div><strong>Account Holder:</strong> {invoiceConfig.accountHolder}</div>
+                  <div><strong>Bank Name:</strong> {invoiceConfig.bankName}</div>
+                  <div><strong>Account No:</strong> <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{invoiceConfig.accountNumber}</span></div>
+                  <div><strong>IFSC Code:</strong> <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{invoiceConfig.ifscCode}</span></div>
+                  <div><strong>UPI ID:</strong> <span style={{ fontFamily: 'monospace', color: '#0284C7', fontWeight: 700 }}>{invoiceConfig.upiId}</span></div>
                 </div>
               </div>
 
-              {/* Totals Table */}
               <div style={{ backgroundColor: '#F1F5F9', border: '1px solid #CBD5E1', borderRadius: '8px', padding: '12px 16px', fontSize: '0.75rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                   <span style={{ color: '#64748B' }}>Gross Total:</span>
@@ -315,11 +522,11 @@ export const PrintableInvoiceBillModal: React.FC<PrintableInvoiceBillProps> = ({
               </div>
             </div>
 
-            {/* Signature & Watermark Footer */}
+            {/* Footer */}
             <div style={{ marginTop: '24px', borderTop: '1px solid #E2E8F0', paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
               <div>
                 <span style={{ display: 'block', fontSize: '0.6875rem', color: '#64748B' }}>
-                  Terms: Computer generated invoice. Subject to Mumbai/Delhi Jurisdiction.
+                  Terms: Computer generated invoice. Subject to {invoiceConfig.jurisdictionCity} Jurisdiction.
                 </span>
                 <span style={{ display: 'block', fontSize: '0.6875rem', color: '#16A34A', fontWeight: 700, marginTop: '2px' }}>
                   ✓ Digitally Authenticated & Encrypted Invoice (SHA-256 Vault Verified)
@@ -331,7 +538,7 @@ export const PrintableInvoiceBillModal: React.FC<PrintableInvoiceBillProps> = ({
                   Accounts Officer
                 </div>
                 <div style={{ borderTop: '1px solid #0F172A', paddingTop: '2px' }}>
-                  <strong style={{ fontSize: '0.75rem', color: '#0F172A', display: 'block' }}>For {profile.entityLegalName}</strong>
+                  <strong style={{ fontSize: '0.75rem', color: '#0F172A', display: 'block' }}>For {invoiceConfig.entityLegalName}</strong>
                   <span style={{ fontSize: '0.6875rem', color: '#64748B' }}>Authorized Signatory</span>
                 </div>
               </div>

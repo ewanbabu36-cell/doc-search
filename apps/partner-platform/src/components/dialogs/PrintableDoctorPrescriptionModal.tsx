@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { ConsultationDto } from '@docsearch/api-contracts';
 import { getVerifiedRoleProfile } from '../../utils/roleProfileResolver.js';
 
@@ -8,17 +8,92 @@ interface Props {
   consultation: ConsultationDto;
 }
 
+export interface CustomPrescriptionHeader {
+  doctorName: string;
+  doctorDegree: string;
+  doctorSpecialty: string;
+  doctorCouncilName: string;
+  doctorRegNo: string;
+  entityLegalName: string;
+  officialAddress: string;
+  contactPhone: string;
+  supportEmail: string;
+  footerNotes: string;
+  showWatermark: boolean;
+  themeColor: string;
+}
+
+const STORAGE_KEY = 'docsearch_custom_rx_letterhead';
+
 export const PrintableDoctorPrescriptionModal: React.FC<Props> = ({
   isOpen,
   onClose,
   consultation
 }) => {
-  if (!isOpen || !consultation) return null;
-
   const profile = getVerifiedRoleProfile();
+
+  const [headerConfig, setHeaderConfig] = useState<CustomPrescriptionHeader>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch {}
+      }
+    }
+    return {
+      doctorName: profile.doctorName,
+      doctorDegree: profile.doctorDegree,
+      doctorSpecialty: profile.doctorSpecialty,
+      doctorCouncilName: profile.doctorCouncilName,
+      doctorRegNo: profile.doctorRegNo,
+      entityLegalName: profile.entityLegalName,
+      officialAddress: profile.officialAddress,
+      contactPhone: profile.contactPhone,
+      supportEmail: profile.supportEmail,
+      footerNotes: 'Digitally Signed & Authenticated under IT Act 2000 & NMC Guidelines. Valid for 30 days.',
+      showWatermark: true,
+      themeColor: '#0284C7'
+    };
+  });
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [saveToast, setSaveToast] = useState(false);
+
+  if (!isOpen || !consultation) return null;
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleSaveConfig = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(headerConfig));
+    }
+    setSaveToast(true);
+    setTimeout(() => setSaveToast(false), 2500);
+    setIsEditing(false);
+  };
+
+  const handleResetDefaults = () => {
+    const def = {
+      doctorName: profile.doctorName,
+      doctorDegree: profile.doctorDegree,
+      doctorSpecialty: profile.doctorSpecialty,
+      doctorCouncilName: profile.doctorCouncilName,
+      doctorRegNo: profile.doctorRegNo,
+      entityLegalName: profile.entityLegalName,
+      officialAddress: profile.officialAddress,
+      contactPhone: profile.contactPhone,
+      supportEmail: profile.supportEmail,
+      footerNotes: 'Digitally Signed & Authenticated under IT Act 2000 & NMC Guidelines. Valid for 30 days.',
+      showWatermark: true,
+      themeColor: '#0284C7'
+    };
+    setHeaderConfig(def);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(STORAGE_KEY);
+    }
   };
 
   return (
@@ -39,8 +114,8 @@ export const PrintableDoctorPrescriptionModal: React.FC<Props> = ({
         border: '1.5px solid rgba(6, 182, 212, 0.4)',
         borderRadius: '16px',
         width: '100%',
-        maxWidth: '860px',
-        maxHeight: '94vh',
+        maxWidth: '920px',
+        maxHeight: '95vh',
         display: 'flex',
         flexDirection: 'column',
         boxShadow: '0 25px 70px rgba(0,0,0,0.95)',
@@ -53,21 +128,46 @@ export const PrintableDoctorPrescriptionModal: React.FC<Props> = ({
           borderBottom: '1px solid rgba(255,255,255,0.1)',
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center'
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '10px'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ fontSize: '1.25rem' }}>🩺</span>
             <div>
               <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: '#F8FAFC' }}>
-                Official Doctor Prescription (Rx) Letterhead
+                Doctor Prescription (Rx) Letterhead & Designer
               </h3>
               <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
-                Consultation №: <strong style={{ color: '#38BDF8' }}>{consultation.consultationNumber}</strong> • Certified by {profile.doctorName}
+                №: <strong style={{ color: '#38BDF8' }}>{consultation.consultationNumber}</strong> • {isEditing ? '✏️ Customizer Mode Active' : '👁️ Print Preview Mode'}
               </span>
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '10px' }}>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            {saveToast && (
+              <span style={{ fontSize: '0.75rem', backgroundColor: '#10B981', color: '#FFF', padding: '4px 10px', borderRadius: '6px', fontWeight: 700 }}>
+                ✓ Template Saved!
+              </span>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setIsEditing(!isEditing)}
+              style={{
+                backgroundColor: isEditing ? '#F59E0B' : 'rgba(255,255,255,0.1)',
+                color: isEditing ? '#000' : '#E2E8F0',
+                border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: '8px',
+                padding: '8px 14px',
+                fontWeight: 700,
+                fontSize: '0.8125rem',
+                cursor: 'pointer'
+              }}
+            >
+              {isEditing ? '👁️ Preview Letterhead' : '✏️ Customize Letterhead'}
+            </button>
+
             <button
               type="button"
               onClick={handlePrint}
@@ -84,6 +184,7 @@ export const PrintableDoctorPrescriptionModal: React.FC<Props> = ({
             >
               🖨️ Print Prescription
             </button>
+
             <button
               type="button"
               onClick={onClose}
@@ -103,6 +204,100 @@ export const PrintableDoctorPrescriptionModal: React.FC<Props> = ({
           </div>
         </div>
 
+        {/* Customizer Drawer (When isEditing = true) */}
+        {isEditing && (
+          <div style={{
+            backgroundColor: '#1E293B',
+            padding: '16px 20px',
+            borderBottom: '1.5px solid #06B6D4',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: '12px',
+            fontSize: '0.75rem'
+          }}>
+            <div>
+              <label style={{ display: 'block', color: '#94A3B8', fontWeight: 600, marginBottom: '4px' }}>Doctor Full Name:</label>
+              <input
+                type="text"
+                value={headerConfig.doctorName}
+                onChange={(e) => setHeaderConfig({ ...headerConfig, doctorName: e.target.value })}
+                style={{ width: '100%', backgroundColor: '#0F172A', border: '1px solid #475569', borderRadius: '6px', padding: '6px 10px', color: '#FFF' }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', color: '#94A3B8', fontWeight: 600, marginBottom: '4px' }}>Degrees & Qualifications:</label>
+              <input
+                type="text"
+                value={headerConfig.doctorDegree}
+                onChange={(e) => setHeaderConfig({ ...headerConfig, doctorDegree: e.target.value })}
+                style={{ width: '100%', backgroundColor: '#0F172A', border: '1px solid #475569', borderRadius: '6px', padding: '6px 10px', color: '#FFF' }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', color: '#94A3B8', fontWeight: 600, marginBottom: '4px' }}>Clinical Specialty / Title:</label>
+              <input
+                type="text"
+                value={headerConfig.doctorSpecialty}
+                onChange={(e) => setHeaderConfig({ ...headerConfig, doctorSpecialty: e.target.value })}
+                style={{ width: '100%', backgroundColor: '#0F172A', border: '1px solid #475569', borderRadius: '6px', padding: '6px 10px', color: '#FFF' }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', color: '#94A3B8', fontWeight: 600, marginBottom: '4px' }}>Medical Council & Reg No:</label>
+              <div style={{ display: 'flex', gap: '4px' }}>
+                <input
+                  type="text"
+                  placeholder="Council"
+                  value={headerConfig.doctorCouncilName}
+                  onChange={(e) => setHeaderConfig({ ...headerConfig, doctorCouncilName: e.target.value })}
+                  style={{ width: '50%', backgroundColor: '#0F172A', border: '1px solid #475569', borderRadius: '6px', padding: '6px 8px', color: '#FFF' }}
+                />
+                <input
+                  type="text"
+                  placeholder="Reg No"
+                  value={headerConfig.doctorRegNo}
+                  onChange={(e) => setHeaderConfig({ ...headerConfig, doctorRegNo: e.target.value })}
+                  style={{ width: '50%', backgroundColor: '#0F172A', border: '1px solid #475569', borderRadius: '6px', padding: '6px 8px', color: '#FFF' }}
+                />
+              </div>
+            </div>
+            <div>
+              <label style={{ display: 'block', color: '#94A3B8', fontWeight: 600, marginBottom: '4px' }}>Hospital / Clinic Name:</label>
+              <input
+                type="text"
+                value={headerConfig.entityLegalName}
+                onChange={(e) => setHeaderConfig({ ...headerConfig, entityLegalName: e.target.value })}
+                style={{ width: '100%', backgroundColor: '#0F172A', border: '1px solid #475569', borderRadius: '6px', padding: '6px 10px', color: '#FFF' }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', color: '#94A3B8', fontWeight: 600, marginBottom: '4px' }}>Clinic Address & Contacts:</label>
+              <input
+                type="text"
+                value={headerConfig.officialAddress}
+                onChange={(e) => setHeaderConfig({ ...headerConfig, officialAddress: e.target.value })}
+                style={{ width: '100%', backgroundColor: '#0F172A', border: '1px solid #475569', borderRadius: '6px', padding: '6px 10px', color: '#FFF' }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={handleSaveConfig}
+                style={{ flex: 1, backgroundColor: '#10B981', color: '#FFF', border: 'none', borderRadius: '6px', padding: '8px 12px', fontWeight: 800, cursor: 'pointer' }}
+              >
+                💾 Save Custom Header
+              </button>
+              <button
+                type="button"
+                onClick={handleResetDefaults}
+                style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: '#CBD5E1', border: 'none', borderRadius: '6px', padding: '8px 10px', fontWeight: 600, cursor: 'pointer' }}
+              >
+                ↺ Reset
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Printable Canvas (White Paper simulation) */}
         <div style={{ padding: '20px', overflowY: 'auto', flex: 1, backgroundColor: '#070C16' }}>
           <div id="printable-prescription-canvas" style={{
@@ -114,31 +309,31 @@ export const PrintableDoctorPrescriptionModal: React.FC<Props> = ({
             fontFamily: 'Inter, system-ui, -apple-system, sans-serif'
           }}>
             {/* Header: Verified Doctor & Facility Credentials */}
-            <div style={{ borderBottom: '2px solid #0284C7', paddingBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ borderBottom: `2.5px solid ${headerConfig.themeColor}`, paddingBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
-                <h1 style={{ margin: '0 0 4px', fontSize: '1.4rem', fontWeight: 900, color: '#0369A1' }}>
-                  {profile.doctorName}
+                <h1 style={{ margin: '0 0 4px', fontSize: '1.4rem', fontWeight: 900, color: headerConfig.themeColor }}>
+                  {headerConfig.doctorName}
                 </h1>
                 <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#334155' }}>
-                  {profile.doctorDegree}
+                  {headerConfig.doctorDegree}
                 </div>
-                <div style={{ fontSize: '0.8125rem', color: '#0284C7', fontWeight: 700 }}>
-                  {profile.doctorSpecialty}
+                <div style={{ fontSize: '0.8125rem', color: headerConfig.themeColor, fontWeight: 700 }}>
+                  {headerConfig.doctorSpecialty}
                 </div>
                 <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '2px' }}>
-                  <strong>State Medical Council:</strong> {profile.doctorCouncilName} • <strong>Reg. No:</strong> <span style={{ fontFamily: 'monospace', fontWeight: 800 }}>{profile.doctorRegNo}</span>
+                  <strong>State Medical Council:</strong> {headerConfig.doctorCouncilName} • <strong>Reg. No:</strong> <span style={{ fontFamily: 'monospace', fontWeight: 800 }}>{headerConfig.doctorRegNo}</span>
                 </div>
               </div>
 
               <div style={{ textAlign: 'right', maxWidth: '340px' }}>
                 <h3 style={{ margin: '0 0 2px', fontSize: '1rem', fontWeight: 900, color: '#0F172A' }}>
-                  {profile.entityLegalName}
+                  {headerConfig.entityLegalName}
                 </h3>
                 <p style={{ margin: 0, fontSize: '0.6875rem', color: '#64748B', lineHeight: 1.3 }}>
-                  {profile.officialAddress}
+                  {headerConfig.officialAddress}
                 </p>
                 <p style={{ margin: '2px 0 0', fontSize: '0.6875rem', color: '#64748B' }}>
-                  📞 {profile.contactPhone} • ✉️ {profile.supportEmail}
+                  📞 {headerConfig.contactPhone} • ✉️ {headerConfig.supportEmail}
                 </p>
                 <span style={{ display: 'inline-block', backgroundColor: '#E0F2FE', color: '#0284C7', border: '1px solid #BAE6FD', padding: '2px 6px', borderRadius: '4px', fontSize: '0.625rem', fontWeight: 800, marginTop: '4px' }}>
                   ✓ ABDM 2.0 & NMC COMPLIANT
@@ -171,7 +366,7 @@ export const PrintableDoctorPrescriptionModal: React.FC<Props> = ({
             {/* Clinical Diagnoses */}
             {consultation.diagnoses && consultation.diagnoses.length > 0 && (
               <div style={{ marginBottom: '14px' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0369A1', textTransform: 'uppercase' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: headerConfig.themeColor, textTransform: 'uppercase' }}>
                   PROVISIONAL / CLINICAL DIAGNOSIS:
                 </span>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '4px' }}>
@@ -187,7 +382,7 @@ export const PrintableDoctorPrescriptionModal: React.FC<Props> = ({
             {/* Rx Symbol & Medication Table */}
             <div style={{ margin: '18px 0' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-                <span style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0284C7', fontFamily: 'serif' }}>℞</span>
+                <span style={{ fontSize: '1.6rem', fontWeight: 900, color: headerConfig.themeColor, fontFamily: 'serif' }}>℞</span>
                 <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#0F172A', textTransform: 'uppercase' }}>
                   PRESCRIBED MEDICATIONS & REGIMEN:
                 </span>
@@ -219,7 +414,7 @@ export const PrintableDoctorPrescriptionModal: React.FC<Props> = ({
                         <td style={{ padding: '8px 10px', fontWeight: 600 }}>
                           {m.frequency} ({m.beforeAfterFood.replace('_', ' ')})
                         </td>
-                        <td style={{ padding: '8px 10px', fontWeight: 600, color: '#0284C7' }}>
+                        <td style={{ padding: '8px 10px', fontWeight: 600, color: headerConfig.themeColor }}>
                           {m.duration} {m.durationUnit.toLowerCase()}
                         </td>
                         <td style={{ padding: '8px 10px', color: '#475569', fontSize: '0.6875rem' }}>
@@ -241,7 +436,7 @@ export const PrintableDoctorPrescriptionModal: React.FC<Props> = ({
             {/* Special Instructions & Advice */}
             {consultation.instructions && (
               <div style={{ marginBottom: '14px', backgroundColor: '#F8FAFC', padding: '10px 14px', borderRadius: '6px', border: '1px solid #E2E8F0' }}>
-                <strong style={{ fontSize: '0.75rem', color: '#0369A1', textTransform: 'uppercase' }}>
+                <strong style={{ fontSize: '0.75rem', color: headerConfig.themeColor, textTransform: 'uppercase' }}>
                   DIETARY & GENERAL HEALTH INSTRUCTIONS:
                 </strong>
                 <ul style={{ margin: '4px 0 0', paddingLeft: '20px', fontSize: '0.75rem', color: '#334155' }}>
@@ -260,18 +455,18 @@ export const PrintableDoctorPrescriptionModal: React.FC<Props> = ({
                   Digital Prescription Hash (SHA-256): <span style={{ fontFamily: 'monospace' }}>{profile.sha256Hash.substring(0, 24)}...</span>
                 </div>
                 <div style={{ fontSize: '0.6875rem', color: '#16A34A', fontWeight: 700, marginTop: '2px' }}>
-                  ✓ Digitally Signed & Authenticated under IT Act 2000 & NMC Guidelines
+                  ✓ {headerConfig.footerNotes}
                 </div>
               </div>
 
               <div style={{ textAlign: 'center', minWidth: '220px' }}>
-                <div style={{ fontFamily: 'cursive', fontSize: '1.25rem', color: '#0369A1', marginBottom: '2px' }}>
-                  {profile.doctorName}
+                <div style={{ fontFamily: 'cursive', fontSize: '1.25rem', color: headerConfig.themeColor, marginBottom: '2px' }}>
+                  {headerConfig.doctorName}
                 </div>
                 <div style={{ borderTop: '1px solid #0F172A', paddingTop: '2px' }}>
-                  <strong style={{ fontSize: '0.75rem', color: '#0F172A', display: 'block' }}>{profile.doctorName}</strong>
-                  <span style={{ fontSize: '0.6875rem', color: '#64748B', display: 'block' }}>{profile.doctorDegree}</span>
-                  <span style={{ fontSize: '0.6875rem', color: '#0284C7', fontWeight: 700, display: 'block' }}>MMC Reg: {profile.doctorRegNo}</span>
+                  <strong style={{ fontSize: '0.75rem', color: '#0F172A', display: 'block' }}>{headerConfig.doctorName}</strong>
+                  <span style={{ fontSize: '0.6875rem', color: '#64748B', display: 'block' }}>{headerConfig.doctorDegree}</span>
+                  <span style={{ fontSize: '0.6875rem', color: headerConfig.themeColor, fontWeight: 700, display: 'block' }}>Reg: {headerConfig.doctorRegNo}</span>
                 </div>
               </div>
             </div>
