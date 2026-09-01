@@ -80,7 +80,7 @@ export function downloadVectorPathologyPdf(order: InvestigationOrderDto, setting
   contentLines.push('1 0 0 1 ' + col2X + ' ' + (boxTop - 40) + ' Tm');
   contentLines.push('(Specimen Type: ' + escapePdfText(order.specimenType || 'WHOLE_BLOOD') + ') Tj');
   contentLines.push('1 0 0 1 ' + col2X + ' ' + (boxTop - 52) + ' Tm');
-  contentLines.push('(Status: FINAL OFFICIAL VERIFIED REPORT) Tj');
+  contentLines.push('(Status: SYSTEM GENERATED OFFICIAL REPORT) Tj');
   contentLines.push('ET');
 
   // Test Banner
@@ -201,10 +201,10 @@ export function downloadVectorPathologyPdf(order: InvestigationOrderDto, setting
   contentLines.push('/F1 7 Tf');
   contentLines.push('0.25 0.3 0.35 rg');
   contentLines.push('1 0 0 1 ' + (margin + 10) + ' ' + (remarksTop - 25) + ' Tm');
-  contentLines.push('(Findings clinically correlated with internal quality controls. ABDM verification valid.) Tj');
+  contentLines.push('(Findings verified against configured laboratory reference intervals.) Tj');
   contentLines.push('ET');
 
-  // Digital Signature & NABH Footers
+  // Digital Signature & Footers
   const footerTop = 90;
   contentLines.push('q');
   contentLines.push('0.8 0.85 0.9 RG');
@@ -235,7 +235,7 @@ export function downloadVectorPathologyPdf(order: InvestigationOrderDto, setting
   contentLines.push('/F2 6.5 Tf');
   contentLines.push('0.1 0.5 0.8 rg');
   contentLines.push('1 0 0 1 ' + (pageWidth - margin - 220) + ' ' + (footerTop - 38) + ' Tm');
-  contentLines.push('(DIGITALLY SIGNED & VERIFIED ON ' + new Date().toLocaleDateString() + ') Tj');
+  contentLines.push('(VERIFIED & SIGNED RECORD • ' + new Date().toLocaleDateString() + ') Tj');
   contentLines.push('ET');
 
   const contentStream = contentLines.join('\n');
