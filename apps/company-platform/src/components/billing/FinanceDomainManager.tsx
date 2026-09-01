@@ -20,11 +20,13 @@ import { GstEInvoicingReconcilerView } from './GstEInvoicingReconcilerView.js';
 import { TpaInsuranceClaimsSettlementView } from './TpaInsuranceClaimsSettlementView.js';
 import { DoctorRevenueSplitEscrowView } from './DoctorRevenueSplitEscrowView.js';
 import { SmartDunningRecurringRecoveryModal } from './SmartDunningRecurringRecoveryModal.js';
+import { GlobalTaxMultiRegionLedgerView } from './GlobalTaxMultiRegionLedgerView.js';
 
 import { Tabs, Badge, Spinner, ErrorState, Button } from '@docsearch/ui-kit';
 
 type ActiveTab =
   | 'overview'
+  | 'global-tax'
   | 'gst'
   | 'tpa'
   | 'split'
@@ -177,6 +179,11 @@ export const FinanceDomainManager: React.FC = () => {
             label: '📊 Commercial Overview'
           },
           {
+            id: 'global-tax',
+            label: '🌐 Global Multi-Region Tax & FX',
+            badge: <Badge variant="success">6 Zones</Badge>
+          },
+          {
             id: 'gst',
             label: '🇮🇳 GST E-Invoicing',
             badge: <Badge variant="success">NIC IRP</Badge>
@@ -224,6 +231,10 @@ export const FinanceDomainManager: React.FC = () => {
           invoices={invoices}
           payments={payments}
         />
+      )}
+
+      {activeTab === 'global-tax' && (
+        <GlobalTaxMultiRegionLedgerView />
       )}
 
       {activeTab === 'gst' && (
