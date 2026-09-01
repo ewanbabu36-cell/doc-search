@@ -6,6 +6,7 @@ import { HospitalWhiteLabelStudioView } from './HospitalWhiteLabelStudioView.js'
 import { AiPriceElasticityRecommenderView } from './AiPriceElasticityRecommenderView.js';
 import { MultiCurrencyGeoPricingView } from './MultiCurrencyGeoPricingView.js';
 import { PlanAbTestingEngineView } from './PlanAbTestingEngineView.js';
+import { B2bCorporateWellnessCustomizerView } from './B2bCorporateWellnessCustomizerView.js';
 
 export interface CarePlan {
   id: string;
@@ -28,7 +29,7 @@ export interface CarePlan {
 }
 
 export const CompanyGrowthEngineDomainManager: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'PLAN_STUDIO' | 'AI_ELASTICITY' | 'MULTI_CURRENCY_GEO' | 'AB_TESTING' | 'WHITE_LABEL' | 'SEO_BOOSTER' | 'AFFILIATE_ENGINE' | 'BROADCAST_CAMPAIGNS' | 'PARTNER_PAYOUTS'>('PLAN_STUDIO');
+  const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'PLAN_STUDIO' | 'AI_ELASTICITY' | 'MULTI_CURRENCY_GEO' | 'AB_TESTING' | 'B2B_CORPORATE' | 'WHITE_LABEL' | 'SEO_BOOSTER' | 'AFFILIATE_ENGINE' | 'BROADCAST_CAMPAIGNS' | 'PARTNER_PAYOUTS'>('PLAN_STUDIO');
 
   // Dynamic Plans Catalog State (Fully Editable & Addable)
   const [plans, setPlans] = useState<CarePlan[]>([
@@ -220,6 +221,7 @@ export const CompanyGrowthEngineDomainManager: React.FC = () => {
           { id: 'AI_ELASTICITY', label: '🤖 AI Dynamic Price Elasticity' },
           { id: 'MULTI_CURRENCY_GEO', label: '🌐 Multi-Currency Geo-Pricing (USD/AED/GBP/EUR)' },
           { id: 'AB_TESTING', label: '📊 A/B Testing & Price Split (₹799 vs ₹899)' },
+          { id: 'B2B_CORPORATE', label: '🏢 B2B Corporate Wellness & Invoicing' },
           { id: 'WHITE_LABEL', label: '🎨 Hospital White-Label Studio' },
           { id: 'SEO_BOOSTER', label: '📍 Hyperlocal Clinic SEO' },
           { id: 'AFFILIATE_ENGINE', label: '🔗 Doctor Affiliate Referral Engine' },
@@ -267,6 +269,11 @@ export const CompanyGrowthEngineDomainManager: React.FC = () => {
       {/* Tab: A/B Testing & Price Split */}
       {activeTab === 'AB_TESTING' && (
         <PlanAbTestingEngineView />
+      )}
+
+      {/* Tab: B2B Corporate Wellness Customizer */}
+      {activeTab === 'B2B_CORPORATE' && (
+        <B2bCorporateWellnessCustomizerView />
       )}
 
       {/* Tab: White-Label Studio */}
