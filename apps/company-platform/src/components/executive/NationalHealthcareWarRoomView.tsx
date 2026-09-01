@@ -1,68 +1,145 @@
 import React, { useState } from 'react';
-import { Card, Badge, TableContainer, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@docsearch/ui-kit';
+import { Card, Badge, Button, TableContainer, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@docsearch/ui-kit';
 import { LiveGeographicHospitalBedHeatmapView } from './LiveGeographicHospitalBedHeatmapView.js';
+import { RegionalLiveBedIcuMeterView } from './RegionalLiveBedIcuMeterView.js';
 
 interface RegionalWarRoomState {
+  id: string;
   stateZone: string;
   activeHospitals: number;
   liveConsultationsHr: string;
   erAmbulanceDispatches: number;
   avgOpdWaitMinutes: number;
   systemLoadStatus: 'OPTIMAL' | 'HIGH_DEMAND_SURGE';
+  isBroadcastActive?: boolean;
 }
 
 const REGIONS: RegionalWarRoomState[] = [
   {
+    id: 'ZONE-DEL',
     stateZone: 'Delhi-NCR (AIIMS, Safdarjung, Apollo, Max)',
     activeHospitals: 142,
     liveConsultationsHr: '4,280 consults / hr',
     erAmbulanceDispatches: 28,
     avgOpdWaitMinutes: 12,
-    systemLoadStatus: 'OPTIMAL'
+    systemLoadStatus: 'OPTIMAL',
+    isBroadcastActive: false
   },
   {
+    id: 'ZONE-MAHA',
     stateZone: 'Maharashtra (Mumbai MMR, Pune, Nagpur)',
     activeHospitals: 118,
     liveConsultationsHr: '3,840 consults / hr',
     erAmbulanceDispatches: 19,
     avgOpdWaitMinutes: 14,
-    systemLoadStatus: 'OPTIMAL'
+    systemLoadStatus: 'OPTIMAL',
+    isBroadcastActive: false
   },
   {
+    id: 'ZONE-SOUTH',
     stateZone: 'Karnataka & South (Bengaluru, Hyderabad, Chennai)',
     activeHospitals: 164,
     liveConsultationsHr: '5,120 consults / hr',
     erAmbulanceDispatches: 34,
     avgOpdWaitMinutes: 9,
-    systemLoadStatus: 'OPTIMAL'
+    systemLoadStatus: 'OPTIMAL',
+    isBroadcastActive: false
   },
   {
+    id: 'ZONE-EAST',
     stateZone: 'East Zone (Kolkata, Bhubaneswar, Guwahati)',
     activeHospitals: 62,
     liveConsultationsHr: '1,920 consults / hr',
     erAmbulanceDispatches: 8,
     avgOpdWaitMinutes: 18,
-    systemLoadStatus: 'HIGH_DEMAND_SURGE'
+    systemLoadStatus: 'HIGH_DEMAND_SURGE',
+    isBroadcastActive: true
   }
 ];
 
 export const NationalHealthcareWarRoomView: React.FC = () => {
-  const [regions] = useState<RegionalWarRoomState[]>(REGIONS);
+  const [regions, setRegions] = useState<RegionalWarRoomState[]>(REGIONS);
+  const [broadcastNotice, setBroadcastNotice] = useState<string | null>(null);
+  const [isBroadcastModalOpen, setIsBroadcastModalOpen] = useState(false);
+  const [selectedSurgeZone, setSelectedSurgeZone] = useState<RegionalWarRoomState | null>(
+    REGIONS.find((r) => r.systemLoadStatus === 'HIGH_DEMAND_SURGE') || null
+  );
+
+  const handleTriggerBroadcast = (zoneId: string, zoneName: string) => {
+    setRegions((prev) =>
+      prev.map((r) => (r.id === zoneId ? { ...r, isBroadcastActive: true } : r))
+    );
+    setBroadcastNotice(
+      `🚨 EMERGENCY PROTOCOL BROADCASTED: 485 on-call doctors (180), triage nurses (270), and pathologists (35) mobilized across ${zoneName}!`
+    );
+    setIsBroadcastModalOpen(false);
+    setTimeout(() => setBroadcastNotice(null), 7000);
+  };
+
+  const surgeZones = regions.filter((r) => r.systemLoadStatus === 'HIGH_DEMAND_SURGE');
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Header */}
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: 'var(--ds-color-text-primary)' }}>
-            ⚡ National Healthcare War-Room & Live Consultation Heatmap
-          </h2>
-          <Badge variant="success">● Pan-India Live Health Grid Active (15,160 Consults/Hr)</Badge>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: 'var(--ds-color-text-primary)' }}>
+              ⚡ National Healthcare War-Room & Live Consultation Heatmap
+            </h2>
+            <Badge variant="success">● Pan-India Live Health Grid Active (15,160 Consults/Hr)</Badge>
+          </div>
+          <p style={{ margin: '4px 0 0', fontSize: '0.8125rem', color: 'var(--ds-color-text-muted)' }}>
+            Real-time executive war room monitoring national OPD doctor traffic, emergency ER siren dispatches, and 1-Click Surge Protocol Broadcast
+          </p>
         </div>
-        <p style={{ margin: '4px 0 0', fontSize: '0.8125rem', color: 'var(--ds-color-text-muted)' }}>
-          Real-time executive war room monitoring national OPD doctor traffic, emergency ER siren dispatches, and regional server grid capacity
-        </p>
+
+        {surgeZones.length > 0 && (
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={() => {
+              setSelectedSurgeZone(surgeZones[0]!);
+              setIsBroadcastModalOpen(true);
+            }}
+            style={{
+              backgroundColor: '#EF4444',
+              color: '#FFF',
+              fontWeight: 900,
+              boxShadow: '0 0 20px rgba(239, 68, 68, 0.6)',
+              animation: 'pulse 1.5s infinite'
+            }}
+          >
+            🚨 1-Click Broadcast Standby Protocol ({surgeZones.length} Surge Zone)
+          </Button>
+        )}
       </div>
+
+      {broadcastNotice && (
+        <div
+          style={{
+            backgroundColor: 'rgba(239, 68, 68, 0.2)',
+            border: '2px solid #EF4444',
+            borderRadius: '12px',
+            padding: '14px 18px',
+            color: '#FCA5A5',
+            fontSize: '0.875rem',
+            fontWeight: 800,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            boxShadow: '0 8px 30px rgba(239, 68, 68, 0.4)'
+          }}
+        >
+          <span style={{ fontSize: '1.5rem' }}>📢</span>
+          <div>
+            <div style={{ color: '#FFF', fontSize: '0.9375rem' }}>{broadcastNotice}</div>
+            <span style={{ fontSize: '0.75rem', color: '#CBD5E1', fontWeight: 500 }}>
+              SMS, WhatsApp Dispatch & VoIP Sirens triggered with priority 1 routing.
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* War Room KPI Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
@@ -88,6 +165,9 @@ export const NationalHealthcareWarRoomView: React.FC = () => {
       {/* Live Geographic Map & ICU Bed Heatmap */}
       <LiveGeographicHospitalBedHeatmapView />
 
+      {/* Regional Live ICU & Ventilator Bed Availability Meter */}
+      <RegionalLiveBedIcuMeterView />
+
       {/* War Room Grid */}
       <Card title="📜 Regional Healthcare Traffic & Hospital Network Grid" padding="none">
         <TableContainer style={{ border: 'none', borderRadius: '0' }}>
@@ -99,38 +179,173 @@ export const NationalHealthcareWarRoomView: React.FC = () => {
                 <TableHead>Live Consultation Rate</TableHead>
                 <TableHead>ER Dispatches (24H)</TableHead>
                 <TableHead>Avg OPD Wait</TableHead>
-                <TableHead style={{ textAlign: 'right' }}>Grid Load State</TableHead>
+                <TableHead>Grid Load State</TableHead>
+                <TableHead style={{ textAlign: 'right' }}>Surge Action Protocol</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {regions.map((r) => (
-                <TableRow key={r.stateZone}>
-                  <TableCell>
-                    <strong style={{ color: 'var(--ds-color-text-primary)' }}>{r.stateZone}</strong>
-                  </TableCell>
-                  <TableCell style={{ fontWeight: 700 }}>
-                    {r.activeHospitals} Hospital Nodes
-                  </TableCell>
-                  <TableCell style={{ fontWeight: 800, color: '#10B981' }}>
-                    {r.liveConsultationsHr}
-                  </TableCell>
-                  <TableCell style={{ color: '#FCD34D', fontWeight: 700 }}>
-                    {r.erAmbulanceDispatches} Dispatches
-                  </TableCell>
-                  <TableCell style={{ color: '#38BDF8' }}>
-                    ~ {r.avgOpdWaitMinutes} mins
-                  </TableCell>
-                  <TableCell style={{ textAlign: 'right' }}>
-                    <Badge variant={r.systemLoadStatus === 'OPTIMAL' ? 'success' : 'warning'}>
-                      {r.systemLoadStatus.replace(/_/g, ' ')}
-                    </Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {regions.map((r) => {
+                const isSurge = r.systemLoadStatus === 'HIGH_DEMAND_SURGE';
+
+                return (
+                  <TableRow key={r.id}>
+                    <TableCell>
+                      <strong style={{ color: 'var(--ds-color-text-primary)' }}>{r.stateZone}</strong>
+                    </TableCell>
+                    <TableCell style={{ fontWeight: 700 }}>
+                      {r.activeHospitals} Hospital Nodes
+                    </TableCell>
+                    <TableCell style={{ fontWeight: 800, color: '#10B981' }}>
+                      {r.liveConsultationsHr}
+                    </TableCell>
+                    <TableCell style={{ color: '#FCD34D', fontWeight: 700 }}>
+                      {r.erAmbulanceDispatches} Dispatches
+                    </TableCell>
+                    <TableCell style={{ color: isSurge ? '#EF4444' : '#38BDF8', fontWeight: isSurge ? 800 : 500 }}>
+                      ~ {r.avgOpdWaitMinutes} mins
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={isSurge ? 'danger' : 'success'}>
+                        {r.systemLoadStatus.replace(/_/g, ' ')}
+                      </Badge>
+                    </TableCell>
+                    <TableCell style={{ textAlign: 'right' }}>
+                      {isSurge ? (
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedSurgeZone(r);
+                            setIsBroadcastModalOpen(true);
+                          }}
+                          style={{
+                            backgroundColor: r.isBroadcastActive ? '#10B981' : '#EF4444',
+                            color: '#FFF',
+                            fontWeight: 800,
+                            fontSize: '0.75rem',
+                            padding: '4px 10px'
+                          }}
+                        >
+                          {r.isBroadcastActive ? '✓ Protocol Active' : '🚨 Broadcast Standby'}
+                        </Button>
+                      ) : (
+                        <span style={{ fontSize: '0.75rem', color: '#64748B' }}>
+                          ● Normal Monitoring
+                        </span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </TableContainer>
       </Card>
+
+      {/* Broadcast Standby Protocol Modal */}
+      {isBroadcastModalOpen && selectedSurgeZone && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            backdropFilter: 'blur(6px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px'
+          }}
+          onClick={() => setIsBroadcastModalOpen(false)}
+        >
+          <div
+            style={{
+              backgroundColor: '#0F172A',
+              border: '2px solid #EF4444',
+              borderRadius: '16px',
+              padding: '24px',
+              maxWidth: '560px',
+              width: '100%',
+              boxShadow: '0 20px 60px rgba(239, 68, 68, 0.4)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '1.5rem' }}>🚨</span>
+                  <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900, color: '#EF4444' }}>
+                    Emergency Surge Protocol Broadcast
+                  </h3>
+                </div>
+                <span style={{ fontSize: '0.8125rem', color: '#94A3B8', marginTop: '4px', display: 'block' }}>
+                  Target Zone: <strong style={{ color: '#F8FAFC' }}>{selectedSurgeZone.stateZone}</strong>
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsBroadcastModalOpen(false)}
+                style={{ background: 'none', border: 'none', color: '#94A3B8', fontSize: '1.5rem', cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ backgroundColor: '#1E293B', borderRadius: '12px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.8125rem' }}>
+              <span style={{ color: '#FCA5A5', fontWeight: 700 }}>
+                ⚠️ High Surge Telemetry:
+              </span>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <div>• Current Traffic: <strong>{selectedSurgeZone.liveConsultationsHr}</strong></div>
+                <div>• Connected Nodes: <strong>{selectedSurgeZone.activeHospitals} Hospitals</strong></div>
+                <div>• Avg OPD Wait: <strong>{selectedSurgeZone.avgOpdWaitMinutes} mins</strong></div>
+                <div>• ER Dispatches: <strong>{selectedSurgeZone.erAmbulanceDispatches} Today</strong></div>
+              </div>
+            </div>
+
+            <div style={{ fontSize: '0.8125rem', color: '#CBD5E1', lineHeight: '1.5' }}>
+              Executing this broadcast will instantly send <strong>High-Priority Standby Push Alerts, WhatsApp Triage Rosters, and Automated IVR Calls</strong> to:
+              <ul style={{ margin: '8px 0 0 20px', padding: 0, color: '#A5F3FC' }}>
+                <li>🩺 <strong>180+ On-Call Critical Care Intensivists & Physicians</strong></li>
+                <li>👩‍⚕️ <strong>270+ Emergency Room (ER) & Triage Nurses</strong></li>
+                <li>🧪 <strong>35+ LIMS Pathologists for rapid test turnarounds</strong></li>
+                <li>🚑 <strong>108 Regional Ambulance Dispatch Control Desks</strong></li>
+              </ul>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setIsBroadcastModalOpen(false)}
+              >
+                Cancel
+              </Button>
+
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={() => handleTriggerBroadcast(selectedSurgeZone.id, selectedSurgeZone.stateZone)}
+                style={{
+                  backgroundColor: '#EF4444',
+                  color: '#FFF',
+                  fontWeight: 900,
+                  boxShadow: '0 4px 14px rgba(239, 68, 68, 0.4)'
+                }}
+              >
+                🚨 Confirm & Broadcast Standby Protocol
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
