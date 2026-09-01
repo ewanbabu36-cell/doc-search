@@ -26,17 +26,24 @@ import { SessionInspectionView } from './SessionInspectionView.js';
 import { CredentialLifecycleView } from './CredentialLifecycleView.js';
 import { SecurityIncidentCenterView } from './SecurityIncidentCenterView.js';
 
-// 5 New Enterprise Add-ons
+// Enterprise Security Add-ons
 import { ZeroTrustMfaPolicyController } from './ZeroTrustMfaPolicyController.js';
 import { IpWhitelistingFirewallView } from './IpWhitelistingFirewallView.js';
 import { MerkleAuditProofVerifierView } from './MerkleAuditProofVerifierView.js';
 import { EmergencyBreakGlassProtocolView } from './EmergencyBreakGlassProtocolView.js';
-import { CustomRolePermissionBuilderModal, ROLE_PRESET_TEMPLATES } from './CustomRolePermissionBuilderModal.js';
+import { CustomRolePermissionBuilderModal } from './CustomRolePermissionBuilderModal.js';
+import { AiThreatSiemEngineView } from './AiThreatSiemEngineView.js';
+import { HsmKeyManagementView } from './HsmKeyManagementView.js';
+import { ForensicSessionReplayView } from './ForensicSessionReplayView.js';
+import { Soc2EvidenceCollectorModal } from './Soc2EvidenceCollectorModal.js';
 
 import { Tabs, Badge, Spinner, ErrorState, Button } from '@docsearch/ui-kit';
 
 export type ActiveSecurityTab =
   | 'overview'
+  | 'siem'
+  | 'hsm'
+  | 'forensic'
   | 'roles'
   | 'mfa'
   | 'firewall'
@@ -66,7 +73,10 @@ export const SecurityDomainManager: React.FC = () => {
 
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
   const [selectedPolicyId, setSelectedPolicyId] = useState<string | null>(null);
+
+  // Modals state
   const [isCreateRoleModalOpen, setIsCreateRoleModalOpen] = useState(false);
+  const [isSoc2ModalOpen, setIsSoc2ModalOpen] = useState(false);
   const [successBanner, setSuccessBanner] = useState<string | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -80,13 +90,13 @@ export const SecurityDomainManager: React.FC = () => {
         overviewRes,
         rolesRes,
         permissionsRes,
-        rolePermsRes,
+        rolePermissionsRes,
         userRolesRes,
         policiesRes,
         sessionsRes,
         credentialsRes,
         incidentsRes,
-        verifRes
+        verificationsRes
       ] = await Promise.all([
         securityService.getSecurityOverview(),
         securityService.getRoles(),
@@ -102,15 +112,15 @@ export const SecurityDomainManager: React.FC = () => {
       setOverview(overviewRes);
       setRoles(rolesRes);
       setPermissions(permissionsRes);
-      setRolePermissions(rolePermsRes);
+      setRolePermissions(rolePermissionsRes);
       setUserRoles(userRolesRes);
       setPolicies(policiesRes);
       setSessions(sessionsRes);
       setCredentials(credentialsRes);
       setIncidents(incidentsRes);
-      setVerifications(verifRes);
+      setVerifications(verificationsRes);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load security governance data');
+      setError(err instanceof Error ? err.message : 'Failed to load Security & RBAC workspace');
     } finally {
       setIsLoading(false);
     }
@@ -121,37 +131,30 @@ export const SecurityDomainManager: React.FC = () => {
   }, []);
 
   const handleCreateCustomRole = (newRole: SecurityRoleDto) => {
-    setRoles([newRole, ...roles]);
-    setSuccessBanner(`Custom Role "${newRole.roleName}" created & granted ${newRole.permissionCount} permissions!`);
-    setTimeout(() => setSuccessBanner(null), 4000);
-  };
-
-  const handleProvisionAllTemplates = (templateRoles?: SecurityRoleDto[]) => {
-    const toAdd = templateRoles || ROLE_PRESET_TEMPLATES.map((tpl) => ({
-      id: `00000000-0000-0000-0000-${String(Math.floor(100000000000 + Math.random() * 900000000000))}`,
-      roleCode: tpl.code,
-      roleName: tpl.name,
-      description: tpl.description,
-      roleType: 'CUSTOM' as const,
-      scopeType: tpl.scopeType,
-      status: 'ACTIVE' as const,
-      isSystemRole: false,
-      userCount: 0,
-      permissionCount: Object.values(tpl.perms).filter(Boolean).length,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }));
-    setRoles([...toAdd, ...roles]);
-    setSuccessBanner(`⚡ 1-Click Provision: Successfully loaded all ${toAdd.length} standard healthcare role templates!`);
+    setRoles((prev) => [newRole, ...prev]);
+    setSuccessBanner(`Role "${newRole.roleName}" created successfully!`);
     setTimeout(() => setSuccessBanner(null), 5000);
   };
 
-  const handleTransitionPolicy = async (toStatus: SecurityPolicyStatus, reason: string) => {
+  const handleProvisionAllTemplates = (templates?: SecurityRoleDto[]) => {
+    if (templates && templates.length > 0) {
+      setRoles((prev) => [...templates, ...prev]);
+      setSuccessBanner(`Successfully provisioned all ${templates.length} Enterprise Healthcare Roles!`);
+    } else {
+      setSuccessBanner('All Enterprise Healthcare Role Templates are actively provisioned.');
+    }
+    setTimeout(() => setSuccessBanner(null), 5000);
+  };
+
+  const handleTransitionPolicy = async (
+    toStatus: SecurityPolicyStatus,
+    reason: string
+  ) => {
     if (!selectedPolicyId) return;
     const updated = await securityService.transitionSecurityPolicy(selectedPolicyId, {
       toStatus,
-      actorEmail: 'executive.lead@docsearch.internal',
-      reason
+      reason,
+      actorEmail: 'security.lead@docsearch.internal'
     });
     setPolicies((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
   };
@@ -159,35 +162,37 @@ export const SecurityDomainManager: React.FC = () => {
   const handleTerminateSession = async (sessionId: string, reason: string) => {
     const updated = await securityService.terminateSession({
       sessionId,
-      actorEmail: 'executive.lead@docsearch.internal',
-      reason
+      reason,
+      actorEmail: 'security.lead@docsearch.internal'
     });
-    setSessions((prev) => prev.map((s) => (s.sessionId === updated.sessionId ? updated : s)));
+    setSessions((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
   };
 
-  const handleRotateCredential = async (credentialCode: string, reason: string) => {
+  const handleRotateCredential = async (credentialId: string, reason: string) => {
+    const cred = credentials.find((c) => c.id === credentialId);
     const updated = await securityService.rotateCredential({
-      credentialCode,
-      actorEmail: 'executive.lead@docsearch.internal',
-      reason
+      credentialCode: cred ? cred.credentialCode : credentialId,
+      reason,
+      actorEmail: 'security.lead@docsearch.internal'
     });
-    setCredentials((prev) => prev.map((c) => (c.credentialCode === updated.credentialCode ? updated : c)));
+    setCredentials((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
   };
 
-  const handleRevokeCredential = async (credentialCode: string, reason: string) => {
+  const handleRevokeCredential = async (credentialId: string, reason: string) => {
+    const cred = credentials.find((c) => c.id === credentialId);
     const updated = await securityService.revokeCredential({
-      credentialCode,
-      actorEmail: 'executive.lead@docsearch.internal',
-      reason
+      credentialCode: cred ? cred.credentialCode : credentialId,
+      reason,
+      actorEmail: 'security.lead@docsearch.internal'
     });
-    setCredentials((prev) => prev.map((c) => (c.credentialCode === updated.credentialCode ? updated : c)));
+    setCredentials((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
   };
 
   const handleAcknowledgeIncident = async (incidentId: string, reason: string) => {
     const updated = await securityService.acknowledgeSecurityIncident({
       incidentId,
-      actorEmail: 'security.lead@docsearch.internal',
-      reason
+      reason,
+      actorEmail: 'security.lead@docsearch.internal'
     });
     setIncidents((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
   };
@@ -251,21 +256,43 @@ export const SecurityDomainManager: React.FC = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', backgroundColor: '#0F172A', border: '1.5px solid rgba(6, 182, 212, 0.4)', borderRadius: '14px', padding: '16px 20px' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700', color: 'var(--ds-color-text-primary)' }}>
-              Security, RBAC, Policy & Audit HQ
+            <h1 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 800, color: '#F8FAFC' }}>
+              🛡️ Security, RBAC, Zero-Trust Policy & Audit HQ
             </h1>
             <Badge variant="success">SOC-2 Type II Certified</Badge>
           </div>
-          <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--ds-color-text-muted)' }}>
-            Enterprise Zero-Trust security governance, Multi-tenant RBAC permissions, Cryptographic Merkle audit trails, WAF firewall, and Break-Glass protocols
+          <p style={{ margin: 0, fontSize: '0.8125rem', color: '#94A3B8' }}>
+            AI threat SIEM detection, CloudHSM key management, forensic incident timeline, Merkle audit trees, and break-glass emergency protocols
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <Button variant="primary" size="sm" onClick={() => setIsCreateRoleModalOpen(true)} style={{ backgroundColor: '#06B6D4', color: '#070C16', fontWeight: 800 }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsSoc2ModalOpen(true)}
+            style={{
+              borderColor: '#10B981',
+              color: '#A7F3D0',
+              fontWeight: 800
+            }}
+          >
+            📑 Export SOC2 / ISO Evidence
+          </Button>
+
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => setIsCreateRoleModalOpen(true)}
+            style={{
+              backgroundColor: '#06B6D4',
+              color: '#070C16',
+              fontWeight: 900
+            }}
+          >
             + Create Custom Role & Permissions
           </Button>
         </div>
@@ -281,6 +308,9 @@ export const SecurityDomainManager: React.FC = () => {
       <Tabs
         tabs={[
           { id: 'overview', label: '🛡️ Overview' },
+          { id: 'siem', label: '🤖 AI Threat SIEM', badge: <Badge variant="danger">Live Stream</Badge> },
+          { id: 'hsm', label: '🔑 HSM KMS Keys', badge: <Badge variant="success">FIPS 140-3</Badge> },
+          { id: 'forensic', label: '🕵️ Forensic Replay' },
           { id: 'roles', label: `👥 RBAC Roles (${roles.length})` },
           { id: 'mfa', label: '🔐 Zero-Trust MFA' },
           { id: 'firewall', label: '🌐 IP & Geo-Firewall' },
@@ -306,6 +336,18 @@ export const SecurityDomainManager: React.FC = () => {
           policies={policies}
           incidents={incidents}
         />
+      )}
+
+      {activeTab === 'siem' && (
+        <AiThreatSiemEngineView />
+      )}
+
+      {activeTab === 'hsm' && (
+        <HsmKeyManagementView />
+      )}
+
+      {activeTab === 'forensic' && (
+        <ForensicSessionReplayView />
       )}
 
       {activeTab === 'roles' && (
@@ -384,7 +426,7 @@ export const SecurityDomainManager: React.FC = () => {
         />
       )}
 
-      {/* Custom Role Builder Modal */}
+      {/* Modals */}
       {isCreateRoleModalOpen && (
         <CustomRolePermissionBuilderModal
           isOpen={isCreateRoleModalOpen}
@@ -393,6 +435,15 @@ export const SecurityDomainManager: React.FC = () => {
           onProvisionAllTemplates={handleProvisionAllTemplates}
         />
       )}
+
+      <Soc2EvidenceCollectorModal
+        isOpen={isSoc2ModalOpen}
+        onClose={() => setIsSoc2ModalOpen(false)}
+        onCollectSuccess={(packName) => {
+          setSuccessBanner(`Evidence Pack "${packName}" compiled with cryptographic SHA-256 seal!`);
+          setTimeout(() => setSuccessBanner(null), 6000);
+        }}
+      />
     </div>
   );
 };
