@@ -22,12 +22,16 @@ import { DoctorRevenueSplitEscrowView } from './DoctorRevenueSplitEscrowView.js'
 import { SmartDunningRecurringRecoveryModal } from './SmartDunningRecurringRecoveryModal.js';
 import { GlobalTaxMultiRegionLedgerView } from './GlobalTaxMultiRegionLedgerView.js';
 import { DynamicContractPricingBuilderView } from './DynamicContractPricingBuilderView.js';
+import { AiRevenueLeakageRadarView } from './AiRevenueLeakageRadarView.js';
+import { MultiGatewaySmartRouterView } from './MultiGatewaySmartRouterView.js';
 
 import { Tabs, Badge, Spinner, ErrorState, Button } from '@docsearch/ui-kit';
 
 type ActiveTab =
   | 'overview'
   | 'contract-builder'
+  | 'leakage-radar'
+  | 'gateway-router'
   | 'global-tax'
   | 'gst'
   | 'tpa'
@@ -186,6 +190,16 @@ export const FinanceDomainManager: React.FC = () => {
             badge: <Badge variant="primary">NEW</Badge>
           },
           {
+            id: 'leakage-radar',
+            label: '⚡ AI Revenue Leakage Radar',
+            badge: <Badge variant="danger">5 Active</Badge>
+          },
+          {
+            id: 'gateway-router',
+            label: '💳 Multi-Gateway Smart Router',
+            badge: <Badge variant="success">0% MDR</Badge>
+          },
+          {
             id: 'global-tax',
             label: '🌐 Global Multi-Region Tax & FX',
             badge: <Badge variant="success">6 Zones</Badge>
@@ -242,6 +256,14 @@ export const FinanceDomainManager: React.FC = () => {
 
       {activeTab === 'contract-builder' && (
         <DynamicContractPricingBuilderView />
+      )}
+
+      {activeTab === 'leakage-radar' && (
+        <AiRevenueLeakageRadarView />
+      )}
+
+      {activeTab === 'gateway-router' && (
+        <MultiGatewaySmartRouterView />
       )}
 
       {activeTab === 'global-tax' && (
