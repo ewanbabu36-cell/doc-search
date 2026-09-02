@@ -21,11 +21,13 @@ import { TpaInsuranceClaimsSettlementView } from './TpaInsuranceClaimsSettlement
 import { DoctorRevenueSplitEscrowView } from './DoctorRevenueSplitEscrowView.js';
 import { SmartDunningRecurringRecoveryModal } from './SmartDunningRecurringRecoveryModal.js';
 import { GlobalTaxMultiRegionLedgerView } from './GlobalTaxMultiRegionLedgerView.js';
+import { DynamicContractPricingBuilderView } from './DynamicContractPricingBuilderView.js';
 
 import { Tabs, Badge, Spinner, ErrorState, Button } from '@docsearch/ui-kit';
 
 type ActiveTab =
   | 'overview'
+  | 'contract-builder'
   | 'global-tax'
   | 'gst'
   | 'tpa'
@@ -179,6 +181,11 @@ export const FinanceDomainManager: React.FC = () => {
             label: '📊 Commercial Overview'
           },
           {
+            id: 'contract-builder',
+            label: '🎛️ No-Code Contract & Pricing Builder',
+            badge: <Badge variant="primary">NEW</Badge>
+          },
+          {
             id: 'global-tax',
             label: '🌐 Global Multi-Region Tax & FX',
             badge: <Badge variant="success">6 Zones</Badge>
@@ -231,6 +238,10 @@ export const FinanceDomainManager: React.FC = () => {
           invoices={invoices}
           payments={payments}
         />
+      )}
+
+      {activeTab === 'contract-builder' && (
+        <DynamicContractPricingBuilderView />
       )}
 
       {activeTab === 'global-tax' && (
