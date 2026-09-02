@@ -26,6 +26,29 @@ export const DocSearchLandingPage: React.FC = () => {
   const [symptomSearchQuery, setSymptomSearchQuery] = useState('');
   const [bookingNotice, setBookingNotice] = useState<string | null>(null);
 
+  // AI Spotlight Cmd+K Modal & Video Hover Preview States
+  const [showSpotlightModal, setShowSpotlightModal] = useState(false);
+  const [videoPreviewDoctor, setVideoPreviewDoctor] = useState<{
+    name: string;
+    speciality: string;
+    hospital: string;
+    fee: number;
+    greeting: string;
+    avatar: string;
+  } | null>(null);
+
+  // Listen for Cmd+K / Ctrl+K
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setShowSpotlightModal((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   // ROI Calculator State
   const [bedCount, setBedCount] = useState<number>(250);
   const [dailyOpdCount, setDailyOpdCount] = useState<number>(450);
@@ -575,22 +598,34 @@ export const DocSearchLandingPage: React.FC = () => {
 
             {/* Smart Search Filter Bar */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <input
-                type="text"
-                value={symptomSearchQuery}
-                onChange={(e) => setSymptomSearchQuery(e.target.value)}
-                placeholder="🔍 Search symptoms e.g. Chest pain, Fever..."
+              <div
+                onClick={() => setShowSpotlightModal(true)}
                 style={{
                   backgroundColor: 'rgba(30, 41, 59, 0.7)',
-                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  border: '1.5px solid rgba(56, 189, 248, 0.3)',
                   borderRadius: '10px',
                   padding: '8px 14px',
                   color: '#FFFFFF',
                   fontSize: '0.875rem',
-                  outline: 'none',
-                  minWidth: '260px'
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  cursor: 'pointer',
+                  boxShadow: '0 0 15px rgba(6, 182, 212, 0.2)'
                 }}
-              />
+              >
+                <span>🔍 Search symptoms e.g. Chest pain, Fever...</span>
+                <span style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  fontSize: '0.6875rem',
+                  fontWeight: 700,
+                  color: '#38BDF8'
+                }}>
+                  Cmd + K
+                </span>
+              </div>
             </div>
           </div>
 
@@ -698,10 +733,33 @@ export const DocSearchLandingPage: React.FC = () => {
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '6px', margin: '14px 0', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', gap: '6px', margin: '14px 0', flexWrap: 'wrap', alignItems: 'center' }}>
                       <span style={{ backgroundColor: 'rgba(6, 182, 212, 0.15)', color: '#38BDF8', padding: '2px 8px', borderRadius: '6px', fontSize: '0.6875rem' }}>Chest Tightness</span>
                       <span style={{ backgroundColor: 'rgba(6, 182, 212, 0.15)', color: '#38BDF8', padding: '2px 8px', borderRadius: '6px', fontSize: '0.6875rem' }}>ECG / Echo Triage</span>
                       <span style={{ backgroundColor: 'rgba(6, 182, 212, 0.15)', color: '#38BDF8', padding: '2px 8px', borderRadius: '6px', fontSize: '0.6875rem' }}>Hypertension</span>
+                      <button
+                        type="button"
+                        onClick={() => setVideoPreviewDoctor({
+                          name: 'Dr. Alok Verma',
+                          speciality: 'Interventional Cardiology • AIIMS Delhi',
+                          hospital: 'AIIMS Super Speciality Hospital Delhi',
+                          fee: 800,
+                          greeting: 'Namaste! I am Dr. Alok Verma, Senior Interventional Cardiologist. If you are experiencing acute chest pain, high BP spikes, or breathlessness, I am ready for instant live video consult to review your ECG.',
+                          avatar: '👨‍⚕️'
+                        })}
+                        style={{
+                          backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                          color: '#C084FC',
+                          border: '1px solid rgba(139, 92, 246, 0.35)',
+                          padding: '2px 8px',
+                          borderRadius: '6px',
+                          fontSize: '0.6875rem',
+                          fontWeight: 700,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        ▶️ Video Intro
+                      </button>
                     </div>
                   </div>
 
@@ -1875,6 +1933,352 @@ export const DocSearchLandingPage: React.FC = () => {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 🔍 3. FLOATING CMD+K AI SPOTLIGHT SEARCH MODAL */}
+      {/* ========================================================================= */}
+      {showSpotlightModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(4, 7, 13, 0.85)',
+          backdropFilter: 'blur(16px)',
+          zIndex: 100,
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'center',
+          paddingTop: '80px'
+        }}>
+          <div style={{
+            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+            border: '1.5px solid rgba(6, 182, 212, 0.4)',
+            borderRadius: '16px',
+            width: '90%',
+            maxWidth: '680px',
+            boxShadow: '0 25px 60px rgba(0, 0, 0, 0.85), 0 0 40px rgba(6, 182, 212, 0.25)',
+            overflow: 'hidden'
+          }}>
+            {/* Search Input Bar */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              padding: '16px 20px',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+              gap: '12px'
+            }}>
+              <span style={{ fontSize: '1.25rem' }}>🔍</span>
+              <input
+                type="text"
+                autoFocus
+                placeholder="Search symptoms, doctors, tests, or hospitals..."
+                value={symptomSearchQuery}
+                onChange={(e) => setSymptomSearchQuery(e.target.value)}
+                style={{
+                  flex: 1,
+                  background: 'none',
+                  border: 'none',
+                  outline: 'none',
+                  color: '#FFFFFF',
+                  fontSize: '1.0625rem',
+                  fontWeight: 500
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowSpotlightModal(false)}
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  border: 'none',
+                  color: '#94A3B8',
+                  padding: '4px 10px',
+                  borderRadius: '6px',
+                  fontSize: '0.75rem',
+                  cursor: 'pointer'
+                }}
+              >
+                ESC
+              </button>
+            </div>
+
+            {/* Quick Symptom Filter Chips */}
+            <div style={{ padding: '14px 20px', backgroundColor: 'rgba(30, 41, 59, 0.4)', borderBottom: '1px solid rgba(255, 255, 255, 0.06)' }}>
+              <div style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 600, marginBottom: '8px', textTransform: 'uppercase' }}>
+                Instant Symptom Suggestions
+              </div>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {[
+                  { label: '🔥 High Viral Fever', organ: 'PEDIATRICS' as const },
+                  { label: '💓 Sudden Chest Tightness', organ: 'HEART' as const },
+                  { label: '🧠 Severe Migraine & Aura', organ: 'BRAIN' as const },
+                  { label: '🦴 Knee Joint Arthritis', organ: 'BONES' as const },
+                  { label: '🧪 Full Body Blood Test (84 Tests)', organ: 'PATHOLOGY' as const },
+                  { label: '👁️ Blurry Vision & Eye Strain', organ: 'EYES' as const }
+                ].map((chip) => (
+                  <button
+                    key={chip.label}
+                    type="button"
+                    onClick={() => {
+                      setSelectedOrgan(chip.organ);
+                      setShowSpotlightModal(false);
+                      setBookingNotice(`🔍 Filtered specialists for: "${chip.label}"`);
+                    }}
+                    style={{
+                      backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                      border: '1px solid rgba(6, 182, 212, 0.3)',
+                      color: '#38BDF8',
+                      padding: '4px 10px',
+                      borderRadius: '8px',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {chip.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Live Search Matches List */}
+            <div style={{ padding: '16px 20px', maxHeight: '300px', overflowY: 'auto' }}>
+              <div style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 600, marginBottom: '10px', textTransform: 'uppercase' }}>
+                Top Verified Specialists Online Now
+              </div>
+
+              {[
+                { name: 'Dr. Alok Verma', role: 'Chief Cardiologist • AIIMS Delhi', badge: '🟢 Active Now', fee: '₹800', organ: 'HEART' as const, avatar: '👨‍⚕️' },
+                { name: 'Dr. Vivek Sengupta', role: 'Senior Neurosurgeon • Apollo Delhi', badge: '⚡ Video Ready', fee: '₹1,200', organ: 'BRAIN' as const, avatar: '👨‍⚕️' },
+                { name: 'Dr. Ananya Sen', role: 'Pediatric Specialist • Fortis Memorial', badge: '🟢 Active Now', fee: '₹650', organ: 'PEDIATRICS' as const, avatar: '👩‍⚕️' },
+                { name: 'Tata 1mg Diagnostic Hub', role: 'NABL ISO 15189 Molecular Lab', badge: '⚡ 30m Doorstep', fee: '₹499', organ: 'PATHOLOGY' as const, avatar: '🧪' }
+              ].map((doc) => (
+                <div
+                  key={doc.name}
+                  onClick={() => {
+                    setSelectedOrgan(doc.organ);
+                    setShowSpotlightModal(false);
+                    setBookingNotice(`Connected with ${doc.name} via AI Spotlight.`);
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '10px 14px',
+                    borderRadius: '10px',
+                    backgroundColor: 'rgba(30, 41, 59, 0.3)',
+                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                    marginBottom: '8px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '1.5rem' }}>{doc.avatar}</span>
+                    <div>
+                      <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#FFFFFF' }}>{doc.name}</div>
+                      <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>{doc.role}</div>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#34D399' }}>{doc.fee}</div>
+                    <div style={{ fontSize: '0.6875rem', color: '#38BDF8' }}>{doc.badge}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* ⭐ 4. DOCTOR VIDEO INTRO & AUDIO WAVEFORM PREVIEW MODAL */}
+      {/* ========================================================================= */}
+      {videoPreviewDoctor && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(4, 7, 13, 0.88)',
+          backdropFilter: 'blur(20px)',
+          zIndex: 110,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px'
+        }}>
+          <div style={{
+            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+            border: '1.5px solid rgba(16, 185, 129, 0.4)',
+            borderRadius: '20px',
+            width: '100%',
+            maxWidth: '560px',
+            boxShadow: '0 30px 70px rgba(0, 0, 0, 0.9), 0 0 50px rgba(16, 185, 129, 0.3)',
+            overflow: 'hidden'
+          }}>
+            {/* Simulated Live Camera Stream Area */}
+            <div style={{
+              height: '240px',
+              backgroundColor: '#0A1120',
+              position: 'relative',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+              background: 'radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.15) 0%, rgba(7, 11, 20, 0.9) 100%)'
+            }}>
+              {/* Live Tag */}
+              <div style={{
+                position: 'absolute',
+                top: '14px',
+                left: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                border: '1px solid #EF4444',
+                padding: '3px 10px',
+                borderRadius: '9999px',
+                color: '#F87171',
+                fontSize: '0.6875rem',
+                fontWeight: 700
+              }}>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#EF4444' }} />
+                HD STREAM READY
+              </div>
+
+              {/* Verified Badge */}
+              <div style={{
+                position: 'absolute',
+                top: '14px',
+                right: '16px',
+                backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                border: '1px solid #10B981',
+                padding: '3px 10px',
+                borderRadius: '9999px',
+                color: '#6EE7B7',
+                fontSize: '0.6875rem',
+                fontWeight: 700
+              }}>
+                🏅 Verified NMC Practitioner
+              </div>
+
+              {/* Avatar Animation */}
+              <div style={{
+                fontSize: '4.5rem',
+                filter: 'drop-shadow(0 0 25px rgba(16, 185, 129, 0.5))',
+                marginBottom: '8px'
+              }}>
+                {videoPreviewDoctor.avatar}
+              </div>
+
+              <div style={{ fontSize: '1.1875rem', fontWeight: 800, color: '#FFFFFF' }}>
+                {videoPreviewDoctor.name}
+              </div>
+              <div style={{ fontSize: '0.8125rem', color: '#94A3B8' }}>
+                {videoPreviewDoctor.speciality}
+              </div>
+
+              {/* Animated Simulated Audio Waveform */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                marginTop: '12px',
+                backgroundColor: 'rgba(30, 41, 59, 0.8)',
+                padding: '4px 14px',
+                borderRadius: '9999px'
+              }}>
+                <span style={{ fontSize: '0.75rem', color: '#10B981', fontWeight: 700 }}>🎙️ Live Intro Speaking:</span>
+                {[12, 24, 18, 28, 14, 22, 10, 26, 16].map((h, i) => (
+                  <span
+                    key={i}
+                    style={{
+                      width: '3px',
+                      height: `${h}px`,
+                      backgroundColor: '#34D399',
+                      borderRadius: '2px'
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Doctor Greeting Content */}
+            <div style={{ padding: '24px' }}>
+              <div style={{
+                backgroundColor: 'rgba(30, 41, 59, 0.5)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: '12px',
+                padding: '14px',
+                marginBottom: '20px'
+              }}>
+                <div style={{ fontSize: '0.75rem', color: '#38BDF8', fontWeight: 700, marginBottom: '4px' }}>
+                  💬 DOCTOR'S PERSONAL MESSAGE:
+                </div>
+                <p style={{ color: '#E2E8F0', fontSize: '0.875rem', lineHeight: 1.6, margin: 0, fontStyle: 'italic' }}>
+                  "{videoPreviewDoctor.greeting}"
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>Consultation Fee</div>
+                  <div style={{ fontSize: '1.375rem', fontWeight: 800, color: '#34D399' }}>₹{videoPreviewDoctor.fee}</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>Expected Response Time</div>
+                  <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#38BDF8' }}>⚡ Under 5 Minutes</div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const doc = videoPreviewDoctor;
+                    setVideoPreviewDoctor(null);
+                    setBookingNotice(`✅ Instant Video Call Connected with ${doc.name}! Entering encrypted consultation room.`);
+                  }}
+                  style={{
+                    flex: 1,
+                    background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    borderRadius: '10px',
+                    padding: '12px',
+                    fontSize: '0.9375rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    boxShadow: '0 0 20px rgba(16, 185, 129, 0.4)'
+                  }}
+                >
+                  🚀 Connect Live Video Call Now
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setVideoPreviewDoctor(null)}
+                  style={{
+                    backgroundColor: 'rgba(51, 65, 85, 0.7)',
+                    color: '#E2E8F0',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    borderRadius: '10px',
+                    padding: '12px 20px',
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
