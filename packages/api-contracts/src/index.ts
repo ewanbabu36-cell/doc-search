@@ -50,3 +50,4 @@ export * from './client/api-client.js';
 export * from './integrations/fhir-contracts.js';
 
 export * from './partner-platform/hardware-bridge.schema.js';
+export * from './workflow/dynamic-workflow.js';

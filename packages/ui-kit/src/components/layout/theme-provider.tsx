@@ -49,6 +49,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     setThemeState((prev) => {
       const themeList: ThemeMode[] = [
         themes.ADVANCE_PRO,
+        themes.AURORA_GLOW,
         themes.NORDIC_PURE,
         themes.OCEANIC_NAVY,
         themes.AYUR_WELLNESS,

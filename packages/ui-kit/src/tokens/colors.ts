@@ -1,5 +1,6 @@
 export const themes = {
   ADVANCE_PRO: 'theme-advance-pro',
+  AURORA_GLOW: 'theme-aurora-glow',
   NORDIC_PURE: 'theme-nordic-pure',
   OCEANIC_NAVY: 'theme-oceanic-navy',
   AYUR_WELLNESS: 'theme-ayur-wellness',

@@ -1,4 +1,5 @@
 import { PartnerOnboardingModal } from './PartnerOnboardingModal.js';
+import { PartnerFastTrackPipelineWidget } from './PartnerFastTrackPipelineWidget.js';
 import React, { useState, useEffect } from 'react';
 import type {
   PartnerProfileDto,
@@ -189,6 +190,15 @@ export const PartnerListView: React.FC<PartnerListViewProps> = ({ onSelectPartne
           <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#38BDF8', marginTop: '2px' }}>₹ 14,85,000</div>
         </div>
       </div>
+
+      {/* 5-Step Automated Fast-Track Pipeline Engine */}
+      <PartnerFastTrackPipelineWidget
+        onPartnerActivated={(p) => {
+          setPartners((prev) => [p, ...prev.filter((existing) => existing.id !== p.id)]);
+          setOnboardSuccessMessage(`✓ ${p.tradeName} has been fully activated and is now LIVE on DocSearch!`);
+          setTimeout(() => setOnboardSuccessMessage(null), 5000);
+        }}
+      />
 
       {/* Filter and Search Controls */}
       <Card padding="md">

@@ -6,3 +6,7 @@ export * from './logging/redactor.js';
 export * from './security/crypto.js';
 export * from './security/env-validator.js';
 export * from './clinical/clinical-safety-service.js';
+export * from './workflow/rule-engine.js';
+export * from './workflow/pricing-engine.js';
+export * from './workflow/licence-engine.js';
+export * from './workflow/workflow-engine.js';

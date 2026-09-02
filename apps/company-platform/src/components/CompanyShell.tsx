@@ -41,6 +41,7 @@ export interface CompanyShellProps {
 const getThemeLabel = (t: string) => {
   switch (t) {
     case themes.ADVANCE_PRO: return '✨ Theme: Advance Pro';
+    case themes.AURORA_GLOW: return '🌈 Theme: Aurora Glow';
     case themes.NORDIC_PURE: return '🏥 Theme: Nordic Pure';
     case themes.OCEANIC_NAVY: return '🌊 Theme: Oceanic Navy';
     case themes.AYUR_WELLNESS: return '🌿 Theme: Ayur Wellness';

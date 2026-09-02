@@ -1,6 +1,6 @@
 import { AIReceptionistWidget } from './AIReceptionistWidget.js';
 import React, { useState, useEffect } from 'react';
-import { Badge } from '@docsearch/ui-kit';
+import { Badge, useTheme, themes } from '@docsearch/ui-kit';
 
 interface ModuleCard {
   id: string;
@@ -15,10 +15,16 @@ interface ModuleCard {
 }
 
 export const DocSearchLandingPage: React.FC = () => {
+  const { theme, toggleTheme } = useTheme();
   const [showDemoModal, setShowDemoModal] = useState(false);
   const [demoSubmitted, setDemoSubmitted] = useState(false);
   const [activeTab, setActiveTab] = useState<'clinical' | 'ai_cdss' | 'abdm' | 'operations' | 'security'>('clinical');
   const [activeModuleIndex, setActiveModuleIndex] = useState(0);
+
+  // Interactive Body Symptom Explorer State
+  const [selectedOrgan, setSelectedOrgan] = useState<'HEART' | 'BRAIN' | 'BONES' | 'PEDIATRICS' | 'EYES' | 'PATHOLOGY'>('HEART');
+  const [symptomSearchQuery, setSymptomSearchQuery] = useState('');
+  const [bookingNotice, setBookingNotice] = useState<string | null>(null);
 
   // ROI Calculator State
   const [bedCount, setBedCount] = useState<number>(250);
@@ -345,6 +351,28 @@ export const DocSearchLandingPage: React.FC = () => {
             {liveClock} UTC
           </div>
 
+          {/* Theme Switcher Button */}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            style={{
+              backgroundColor: theme === themes.AURORA_GLOW ? 'rgba(16, 185, 129, 0.2)' : 'rgba(30, 41, 59, 0.8)',
+              border: theme === themes.AURORA_GLOW ? '1.5px solid #10B981' : '1px solid rgba(255, 255, 255, 0.15)',
+              color: theme === themes.AURORA_GLOW ? '#6EE7B7' : '#E2E8F0',
+              padding: '8px 14px',
+              borderRadius: '8px',
+              fontWeight: 800,
+              fontSize: '0.8125rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: theme === themes.AURORA_GLOW ? '0 0 15px rgba(16, 185, 129, 0.4)' : 'none'
+            }}
+          >
+            {theme === themes.AURORA_GLOW ? '🌈 Aurora Glow' : '🎨 Switch Theme'}
+          </button>
+
           <a
             href={partnerPortalUrl}
             target="_blank"
@@ -503,6 +531,584 @@ export const DocSearchLandingPage: React.FC = () => {
             >
               <span>⚡ Open Live Partner Portal</span>
             </a>
+          </div>
+        </div>
+
+        {/* ========================================================================= */}
+        {/* ✨ INTERACTIVE 3D BODY SYMPTOM EXPLORER & INSTANT DOCTOR SPOTLIGHT */}
+        {/* ========================================================================= */}
+        <div style={{
+          backgroundColor: theme === themes.AURORA_GLOW ? 'rgba(15, 23, 42, 0.85)' : 'rgba(16, 23, 38, 0.75)',
+          backdropFilter: 'blur(20px)',
+          border: theme === themes.AURORA_GLOW ? '1.5px solid rgba(16, 185, 129, 0.4)' : '1px solid rgba(56, 189, 248, 0.25)',
+          borderRadius: '20px',
+          padding: '28px',
+          boxShadow: theme === themes.AURORA_GLOW
+            ? '0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 45px rgba(16, 185, 129, 0.25)'
+            : '0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 35px rgba(6, 182, 212, 0.15)',
+          margin: '36px auto 40px auto'
+        }}>
+          {/* Header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '1.5rem' }}>🩺</span>
+                <h2 style={{ fontSize: '1.375rem', fontWeight: 800, color: '#FFFFFF', margin: 0, letterSpacing: '-0.02em' }}>
+                  Interactive Symptom Explorer & Live Specialist Spotlight
+                </h2>
+                <span style={{
+                  backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                  color: '#34D399',
+                  border: '1px solid rgba(16, 185, 129, 0.3)',
+                  padding: '2px 10px',
+                  borderRadius: '9999px',
+                  fontSize: '0.75rem',
+                  fontWeight: 700
+                }}>
+                  🟢 14,200+ Doctors Active
+                </span>
+              </div>
+              <p style={{ fontSize: '0.875rem', color: '#94A3B8', margin: '4px 0 0 0' }}>
+                Select a body system or symptom to instantly connect with verified Super-Specialists for zero-wait video consult or clinic visit.
+              </p>
+            </div>
+
+            {/* Smart Search Filter Bar */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <input
+                type="text"
+                value={symptomSearchQuery}
+                onChange={(e) => setSymptomSearchQuery(e.target.value)}
+                placeholder="🔍 Search symptoms e.g. Chest pain, Fever..."
+                style={{
+                  backgroundColor: 'rgba(30, 41, 59, 0.7)',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  borderRadius: '10px',
+                  padding: '8px 14px',
+                  color: '#FFFFFF',
+                  fontSize: '0.875rem',
+                  outline: 'none',
+                  minWidth: '260px'
+                }}
+              />
+            </div>
+          </div>
+
+          {bookingNotice && (
+            <div style={{
+              backgroundColor: 'rgba(16, 185, 129, 0.2)',
+              border: '1px solid #10B981',
+              borderRadius: '10px',
+              padding: '10px 16px',
+              marginBottom: '18px',
+              color: '#6EE7B7',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <span>{bookingNotice}</span>
+              <button
+                type="button"
+                onClick={() => setBookingNotice(null)}
+                style={{ background: 'none', border: 'none', color: '#6EE7B7', cursor: 'pointer', fontWeight: 800 }}
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
+          {/* Organ Selector Buttons */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px', marginBottom: '24px' }}>
+            {[
+              { key: 'HEART' as const, label: 'Chest & Heart', icon: '❤️', subtitle: 'Cardiology' },
+              { key: 'BRAIN' as const, label: 'Brain & Spine', icon: '🧠', subtitle: 'Neurology' },
+              { key: 'BONES' as const, label: 'Joints & Bones', icon: '🦴', subtitle: 'Orthopedics' },
+              { key: 'PEDIATRICS' as const, label: 'Child & Baby', icon: '👶', subtitle: 'Pediatrics' },
+              { key: 'EYES' as const, label: 'Eyes & Vision', icon: '👁️', subtitle: 'Ophthalmology' },
+              { key: 'PATHOLOGY' as const, label: 'Lab & Blood Test', icon: '🧪', subtitle: 'Diagnostics' }
+            ].map((organ) => {
+              const isSelected = selectedOrgan === organ.key;
+              return (
+                <button
+                  key={organ.key}
+                  type="button"
+                  onClick={() => setSelectedOrgan(organ.key)}
+                  style={{
+                    backgroundColor: isSelected
+                      ? theme === themes.AURORA_GLOW
+                        ? 'rgba(16, 185, 129, 0.25)'
+                        : 'rgba(6, 182, 212, 0.25)'
+                      : 'rgba(30, 41, 59, 0.5)',
+                    border: isSelected
+                      ? theme === themes.AURORA_GLOW
+                        ? '1.5px solid #10B981'
+                        : '1.5px solid #06B6D4'
+                      : '1px solid rgba(255, 255, 255, 0.08)',
+                    borderRadius: '12px',
+                    padding: '12px 14px',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    boxShadow: isSelected ? '0 4px 18px rgba(6, 182, 212, 0.3)' : 'none'
+                  }}
+                >
+                  <div style={{ fontSize: '1.5rem', marginBottom: '4px' }}>{organ.icon}</div>
+                  <div style={{ fontSize: '0.875rem', fontWeight: 700, color: isSelected ? '#FFFFFF' : '#E2E8F0' }}>
+                    {organ.label}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: isSelected ? '#38BDF8' : '#94A3B8' }}>
+                    {organ.subtitle}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Matching Doctors & Action Cards Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
+            {selectedOrgan === 'HEART' && (
+              <>
+                <div style={{
+                  backgroundColor: 'rgba(30, 41, 59, 0.65)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '14px',
+                  padding: '18px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between'
+                }}>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div style={{ display: 'flex', gap: '12px' }}>
+                        <div style={{ fontSize: '2rem' }}>👨‍⚕️</div>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ fontSize: '1.0625rem', fontWeight: 700, color: '#FFFFFF' }}>Dr. Alok Verma</span>
+                            <span title="Verified NMC Practitioner" style={{ color: '#F59E0B', fontSize: '0.875rem' }}>🏅</span>
+                          </div>
+                          <div style={{ fontSize: '0.8125rem', color: '#94A3B8' }}>MD, DM (Cardiology) • AIIMS Delhi</div>
+                          <div style={{ fontSize: '0.75rem', color: '#38BDF8', marginTop: '2px' }}>⚡ 14 Yrs Exp • 1,420+ Consultations</div>
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '1.125rem', fontWeight: 800, color: '#34D399' }}>₹800</div>
+                        <div style={{ fontSize: '0.6875rem', color: '#94A3B8' }}>per consult</div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '6px', margin: '14px 0', flexWrap: 'wrap' }}>
+                      <span style={{ backgroundColor: 'rgba(6, 182, 212, 0.15)', color: '#38BDF8', padding: '2px 8px', borderRadius: '6px', fontSize: '0.6875rem' }}>Chest Tightness</span>
+                      <span style={{ backgroundColor: 'rgba(6, 182, 212, 0.15)', color: '#38BDF8', padding: '2px 8px', borderRadius: '6px', fontSize: '0.6875rem' }}>ECG / Echo Triage</span>
+                      <span style={{ backgroundColor: 'rgba(6, 182, 212, 0.15)', color: '#38BDF8', padding: '2px 8px', borderRadius: '6px', fontSize: '0.6875rem' }}>Hypertension</span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setBookingNotice('✅ Instant Tele-Consult Connected with Dr. Alok Verma (Room ID: #TEL-CARD-918). Audio/Video stream active.')}
+                      style={{
+                        flex: 1,
+                        background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        borderRadius: '8px',
+                        padding: '10px',
+                        fontSize: '0.8125rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <span>📞 Instant Video Call (Ready in 5m)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBookingNotice('🏥 In-Clinic Token Confirmed at AIIMS Delhi for Today 5:30 PM. Token #OPD-24 sent to your SMS.')}
+                      style={{
+                        backgroundColor: 'rgba(51, 65, 85, 0.7)',
+                        color: '#E2E8F0',
+                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                        borderRadius: '8px',
+                        padding: '10px 14px',
+                        fontSize: '0.8125rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <span>🏥 In-Clinic</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{
+                  backgroundColor: 'rgba(30, 41, 59, 0.65)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '14px',
+                  padding: '18px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between'
+                }}>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div style={{ display: 'flex', gap: '12px' }}>
+                        <div style={{ fontSize: '2rem' }}>👩‍⚕️</div>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ fontSize: '1.0625rem', fontWeight: 700, color: '#FFFFFF' }}>Dr. Sunita Deshmukh</span>
+                            <span title="Verified NMC Practitioner" style={{ color: '#F59E0B', fontSize: '0.875rem' }}>🏅</span>
+                          </div>
+                          <div style={{ fontSize: '0.8125rem', color: '#94A3B8' }}>Director, Cardiac Electrophysiology • Medanta</div>
+                          <div style={{ fontSize: '0.75rem', color: '#38BDF8', marginTop: '2px' }}>⚡ 19 Yrs Exp • 890+ Angioplasties</div>
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '1.125rem', fontWeight: 800, color: '#34D399' }}>₹950</div>
+                        <div style={{ fontSize: '0.6875rem', color: '#94A3B8' }}>per consult</div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '6px', margin: '14px 0', flexWrap: 'wrap' }}>
+                      <span style={{ backgroundColor: 'rgba(6, 182, 212, 0.15)', color: '#38BDF8', padding: '2px 8px', borderRadius: '6px', fontSize: '0.6875rem' }}>Arrhythmia</span>
+                      <span style={{ backgroundColor: 'rgba(6, 182, 212, 0.15)', color: '#38BDF8', padding: '2px 8px', borderRadius: '6px', fontSize: '0.6875rem' }}>Pacemaker Check</span>
+                      <span style={{ backgroundColor: 'rgba(6, 182, 212, 0.15)', color: '#38BDF8', padding: '2px 8px', borderRadius: '6px', fontSize: '0.6875rem' }}>Palpitations</span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setBookingNotice('✅ Instant Tele-Consult Connected with Dr. Sunita Deshmukh. Video session starting.')}
+                      style={{
+                        flex: 1,
+                        background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        borderRadius: '8px',
+                        padding: '10px',
+                        fontSize: '0.8125rem',
+                        fontWeight: 700,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <span>📞 Instant Video Call (Ready in 8m)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBookingNotice('🏥 Slot Booked at Medanta Gurugram for Today 6:00 PM.')}
+                      style={{
+                        backgroundColor: 'rgba(51, 65, 85, 0.7)',
+                        color: '#E2E8F0',
+                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                        borderRadius: '8px',
+                        padding: '10px 14px',
+                        fontSize: '0.8125rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <span>🏥 In-Clinic</span>
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {selectedOrgan === 'BRAIN' && (
+              <div style={{
+                backgroundColor: 'rgba(30, 41, 59, 0.65)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: '14px',
+                padding: '18px',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between'
+              }}>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                      <div style={{ fontSize: '2rem' }}>👨‍⚕️</div>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontSize: '1.0625rem', fontWeight: 700, color: '#FFFFFF' }}>Dr. Vivek Sengupta</span>
+                          <span title="Verified NMC Practitioner" style={{ color: '#F59E0B', fontSize: '0.875rem' }}>🏅</span>
+                        </div>
+                        <div style={{ fontSize: '0.8125rem', color: '#94A3B8' }}>Chief Neurosurgeon • Apollo Delhi</div>
+                        <div style={{ fontSize: '0.75rem', color: '#38BDF8', marginTop: '2px' }}>⚡ 22 Yrs Exp • 2,100+ Neuro Surgeries</div>
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '1.125rem', fontWeight: 800, color: '#34D399' }}>₹1,200</div>
+                      <div style={{ fontSize: '0.6875rem', color: '#94A3B8' }}>per consult</div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '6px', margin: '14px 0', flexWrap: 'wrap' }}>
+                    <span style={{ backgroundColor: 'rgba(139, 92, 246, 0.15)', color: '#C084FC', padding: '2px 8px', borderRadius: '6px', fontSize: '0.6875rem' }}>Migraine & Cluster</span>
+                    <span style={{ backgroundColor: 'rgba(139, 92, 246, 0.15)', color: '#C084FC', padding: '2px 8px', borderRadius: '6px', fontSize: '0.6875rem' }}>Spine Disc Herniation</span>
+                    <span style={{ backgroundColor: 'rgba(139, 92, 246, 0.15)', color: '#C084FC', padding: '2px 8px', borderRadius: '6px', fontSize: '0.6875rem' }}>Vertigo Triage</span>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setBookingNotice('✅ Dr. Vivek Sengupta is LIVE now in virtual clinic room #NEURO-88. Starting HD consult.')}
+                    style={{
+                      flex: 1,
+                      background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '10px',
+                      fontSize: '0.8125rem',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <span>📞 Instant Video Call (Active Now)</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {selectedOrgan === 'BONES' && (
+              <div style={{
+                backgroundColor: 'rgba(30, 41, 59, 0.65)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: '14px',
+                padding: '18px',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between'
+              }}>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                      <div style={{ fontSize: '2rem' }}>👨‍⚕️</div>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontSize: '1.0625rem', fontWeight: 700, color: '#FFFFFF' }}>Dr. Rajesh Malhotra</span>
+                          <span title="Verified NMC Practitioner" style={{ color: '#F59E0B', fontSize: '0.875rem' }}>🏅</span>
+                        </div>
+                        <div style={{ fontSize: '0.8125rem', color: '#94A3B8' }}>MS (Ortho), Arthroscopy Specialist • Max Healthcare</div>
+                        <div style={{ fontSize: '0.75rem', color: '#38BDF8', marginTop: '2px' }}>⚡ 16 Yrs Exp • 1,840+ Joint Replacements</div>
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '1.125rem', fontWeight: 800, color: '#34D399' }}>₹700</div>
+                      <div style={{ fontSize: '0.6875rem', color: '#94A3B8' }}>per consult</div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '6px', margin: '14px 0', flexWrap: 'wrap' }}>
+                    <span style={{ backgroundColor: 'rgba(6, 182, 212, 0.15)', color: '#38BDF8', padding: '2px 8px', borderRadius: '6px', fontSize: '0.6875rem' }}>Knee Osteoarthritis</span>
+                    <span style={{ backgroundColor: 'rgba(6, 182, 212, 0.15)', color: '#38BDF8', padding: '2px 8px', borderRadius: '6px', fontSize: '0.6875rem' }}>Lower Back Pain</span>
+                    <span style={{ backgroundColor: 'rgba(6, 182, 212, 0.15)', color: '#38BDF8', padding: '2px 8px', borderRadius: '6px', fontSize: '0.6875rem' }}>ACL Tear</span>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setBookingNotice('✅ Connected with Dr. Rajesh Malhotra for Orthopedic assessment.')}
+                    style={{
+                      flex: 1,
+                      background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '10px',
+                      fontSize: '0.8125rem',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <span>📞 Instant Video Call (Ready in 10m)</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {selectedOrgan === 'PEDIATRICS' && (
+              <div style={{
+                backgroundColor: 'rgba(30, 41, 59, 0.65)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: '14px',
+                padding: '18px',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between'
+              }}>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                      <div style={{ fontSize: '2rem' }}>👩‍⚕️</div>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontSize: '1.0625rem', fontWeight: 700, color: '#FFFFFF' }}>Dr. Ananya Sen</span>
+                          <span title="Verified NMC Practitioner" style={{ color: '#F59E0B', fontSize: '0.875rem' }}>🏅</span>
+                        </div>
+                        <div style={{ fontSize: '0.8125rem', color: '#94A3B8' }}>MD (Pediatrics) • Fortis Memorial</div>
+                        <div style={{ fontSize: '0.75rem', color: '#38BDF8', marginTop: '2px' }}>⚡ 11 Yrs Exp • 1,290+ Child Consults</div>
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '1.125rem', fontWeight: 800, color: '#34D399' }}>₹650</div>
+                      <div style={{ fontSize: '0.6875rem', color: '#94A3B8' }}>per consult</div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '6px', margin: '14px 0', flexWrap: 'wrap' }}>
+                    <span style={{ backgroundColor: 'rgba(244, 63, 94, 0.15)', color: '#FB7185', padding: '2px 8px', borderRadius: '6px', fontSize: '0.6875rem' }}>Child High Fever</span>
+                    <span style={{ backgroundColor: 'rgba(244, 63, 94, 0.15)', color: '#FB7185', padding: '2px 8px', borderRadius: '6px', fontSize: '0.6875rem' }}>Newborn Colic</span>
+                    <span style={{ backgroundColor: 'rgba(244, 63, 94, 0.15)', color: '#FB7185', padding: '2px 8px', borderRadius: '6px', fontSize: '0.6875rem' }}>Vaccination Chart</span>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setBookingNotice('✅ Pediatric emergency consultation connected with Dr. Ananya Sen.')}
+                    style={{
+                      flex: 1,
+                      background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '10px',
+                      fontSize: '0.8125rem',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <span>📞 Instant Pediatric Video Call</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {selectedOrgan === 'EYES' && (
+              <div style={{
+                backgroundColor: 'rgba(30, 41, 59, 0.65)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: '14px',
+                padding: '18px',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between'
+              }}>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                      <div style={{ fontSize: '2rem' }}>👩‍⚕️</div>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontSize: '1.0625rem', fontWeight: 700, color: '#FFFFFF' }}>Dr. Priya Nair</span>
+                          <span title="Verified NMC Practitioner" style={{ color: '#F59E0B', fontSize: '0.875rem' }}>🏅</span>
+                        </div>
+                        <div style={{ fontSize: '0.8125rem', color: '#94A3B8' }}>MS (Ophthalmology) • Sankara Nethralaya</div>
+                        <div style={{ fontSize: '0.75rem', color: '#38BDF8', marginTop: '2px' }}>⚡ 13 Yrs Exp • 920+ Lasik & Retina Cases</div>
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '1.125rem', fontWeight: 800, color: '#34D399' }}>₹500</div>
+                      <div style={{ fontSize: '0.6875rem', color: '#94A3B8' }}>per consult</div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '6px', margin: '14px 0', flexWrap: 'wrap' }}>
+                    <span style={{ backgroundColor: 'rgba(6, 182, 212, 0.15)', color: '#38BDF8', padding: '2px 8px', borderRadius: '6px', fontSize: '0.6875rem' }}>Cataract Evaluation</span>
+                    <span style={{ backgroundColor: 'rgba(6, 182, 212, 0.15)', color: '#38BDF8', padding: '2px 8px', borderRadius: '6px', fontSize: '0.6875rem' }}>Digital Eye Strain</span>
+                    <span style={{ backgroundColor: 'rgba(6, 182, 212, 0.15)', color: '#38BDF8', padding: '2px 8px', borderRadius: '6px', fontSize: '0.6875rem' }}>Glaucoma Check</span>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setBookingNotice('✅ Eye Consultation session connected with Dr. Priya Nair.')}
+                    style={{
+                      flex: 1,
+                      background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '10px',
+                      fontSize: '0.8125rem',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <span>📞 Instant Video Consult</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {selectedOrgan === 'PATHOLOGY' && (
+              <div style={{
+                backgroundColor: 'rgba(30, 41, 59, 0.65)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: '14px',
+                padding: '18px',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between'
+              }}>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                      <div style={{ fontSize: '2rem' }}>🧪</div>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontSize: '1.0625rem', fontWeight: 700, color: '#FFFFFF' }}>Tata 1mg & SRL Diagnostics Hub</span>
+                          <span title="NABL ISO 15189 Certified" style={{ color: '#10B981', fontSize: '0.875rem' }}>🛡️</span>
+                        </div>
+                        <div style={{ fontSize: '0.8125rem', color: '#94A3B8' }}>NABL ISO 15189 Certified Lab • Roche Cobas 8000 Analyzers</div>
+                        <div style={{ fontSize: '0.75rem', color: '#38BDF8', marginTop: '2px' }}>⚡ Phlebotomist at doorstep in 30 Mins</div>
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '1.125rem', fontWeight: 800, color: '#34D399' }}>₹499</div>
+                      <div style={{ fontSize: '0.6875rem', color: '#94A3B8' }}>84 Parameters</div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '6px', margin: '14px 0', flexWrap: 'wrap' }}>
+                    <span style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#34D399', padding: '2px 8px', borderRadius: '6px', fontSize: '0.6875rem' }}>Complete Hemogram (CBC)</span>
+                    <span style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#34D399', padding: '2px 8px', borderRadius: '6px', fontSize: '0.6875rem' }}>Lipid & Liver Profile</span>
+                    <span style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#34D399', padding: '2px 8px', borderRadius: '6px', fontSize: '0.6875rem' }}>HbA1c & Fasting Sugar</span>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setBookingNotice('🧪 Phlebotomist dispatched! ETA 26 mins to your address. Barcode #SMP-9182 generated.')}
+                    style={{
+                      flex: 1,
+                      background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '10px',
+                      fontSize: '0.8125rem',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <span>⚡ Book 30-Min Home Blood Sample</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

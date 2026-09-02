@@ -450,3 +450,59 @@
   --ds-shadow-lg: 0 0 0 2px #ffffff;
   --ds-shadow-xl: 0 0 0 3px #ffffff;
 }
+
+/* ==========================================================================
+   9. AURORA GLOW (NEON CYBER-HEALTH & 3D GLASSMORPHISM)
+   ========================================================================== */
+.theme-aurora-glow {
+  --ds-color-bg: #070c18;
+  --ds-color-surface: rgba(15, 23, 42, 0.75);
+  --ds-color-surface-subtle: rgba(30, 41, 59, 0.6);
+  --ds-color-surface-hover: rgba(51, 65, 85, 0.8);
+  --ds-color-surface-selected: rgba(6, 182, 212, 0.2);
+
+  --ds-color-border: rgba(6, 182, 212, 0.25);
+  --ds-color-border-subtle: rgba(255, 255, 255, 0.08);
+  --ds-color-border-strong: #06b6d4;
+
+  --ds-color-text-primary: #ffffff;
+  --ds-color-text-secondary: #e2e8f0;
+  --ds-color-text-muted: #94a3b8;
+  --ds-color-text-inverse: #070c18;
+
+  --ds-color-primary: #10b981;
+  --ds-color-primary-hover: #34d399;
+  --ds-color-primary-subtle: rgba(16, 185, 129, 0.15);
+  --ds-color-primary-foreground: #070c18;
+
+  --ds-color-secondary: #06b6d4;
+  --ds-color-secondary-hover: #38bdf8;
+  --ds-color-secondary-subtle: rgba(6, 182, 212, 0.15);
+  --ds-color-secondary-foreground: #070c18;
+
+  --ds-color-accent: #38bdf8;
+  --ds-color-accent-hover: #7dd3fc;
+  --ds-color-accent-foreground: #070c18;
+
+  --ds-color-success: #10b981;
+  --ds-color-success-subtle: rgba(16, 185, 129, 0.2);
+  --ds-color-success-foreground: #ffffff;
+
+  --ds-color-warning: #f59e0b;
+  --ds-color-warning-subtle: rgba(245, 158, 11, 0.2);
+  --ds-color-warning-foreground: #ffffff;
+
+  --ds-color-danger: #ef4444;
+  --ds-color-danger-subtle: rgba(239, 68, 68, 0.2);
+  --ds-color-danger-foreground: #ffffff;
+
+  --ds-color-focus-ring: #06b6d4;
+  --ds-color-backdrop: rgba(7, 12, 24, 0.85);
+
+  --ds-shadow-sm: 0 2px 8px 0 rgba(0, 0, 0, 0.4);
+  --ds-shadow-base: 0 4px 14px -1px rgba(6, 182, 212, 0.2);
+  --ds-shadow-md: 0 10px 25px -3px rgba(6, 182, 212, 0.25), 0 0 15px rgba(16, 185, 129, 0.15);
+  --ds-shadow-lg: 0 20px 35px -5px rgba(6, 182, 212, 0.35), 0 0 30px rgba(16, 185, 129, 0.25);
+  --ds-shadow-xl: 0 25px 60px -10px rgba(6, 182, 212, 0.45), 0 0 45px rgba(16, 185, 129, 0.35);
+}
+
