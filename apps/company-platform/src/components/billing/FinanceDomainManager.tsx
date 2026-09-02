@@ -24,6 +24,7 @@ import { GlobalTaxMultiRegionLedgerView } from './GlobalTaxMultiRegionLedgerView
 import { DynamicContractPricingBuilderView } from './DynamicContractPricingBuilderView.js';
 import { AiRevenueLeakageRadarView } from './AiRevenueLeakageRadarView.js';
 import { MultiGatewaySmartRouterView } from './MultiGatewaySmartRouterView.js';
+import { MultiBranchInterCompanyBillingView } from './MultiBranchInterCompanyBillingView.js';
 
 import { Tabs, Badge, Spinner, ErrorState, Button } from '@docsearch/ui-kit';
 
@@ -32,6 +33,7 @@ type ActiveTab =
   | 'contract-builder'
   | 'leakage-radar'
   | 'gateway-router'
+  | 'multi-branch'
   | 'global-tax'
   | 'gst'
   | 'tpa'
@@ -200,6 +202,11 @@ export const FinanceDomainManager: React.FC = () => {
             badge: <Badge variant="success">0% MDR</Badge>
           },
           {
+            id: 'multi-branch',
+            label: '🏢 Multi-Branch & Inter-Company',
+            badge: <Badge variant="primary">5 Hubs</Badge>
+          },
+          {
             id: 'global-tax',
             label: '🌐 Global Multi-Region Tax & FX',
             badge: <Badge variant="success">6 Zones</Badge>
@@ -264,6 +271,10 @@ export const FinanceDomainManager: React.FC = () => {
 
       {activeTab === 'gateway-router' && (
         <MultiGatewaySmartRouterView />
+      )}
+
+      {activeTab === 'multi-branch' && (
+        <MultiBranchInterCompanyBillingView />
       )}
 
       {activeTab === 'global-tax' && (
