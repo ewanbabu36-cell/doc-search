@@ -12,6 +12,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@docsearch/api-contracts": "workspace:*",
     "@docsearch/shared-core": "workspace:*",
     "drizzle-orm": "^0.38.4",
     "pg": "^8.13.1",

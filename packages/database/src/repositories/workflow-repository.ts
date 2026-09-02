@@ -106,7 +106,7 @@ export class WorkflowRepository implements IWorkflowRepository {
     if (!def) return null;
 
     const targetVerNum = version || def.activeVersion;
-    const ver = def.versions.find((v) => v.version === targetVerNum) || def.versions[0];
+    const ver = def.versions.find((v: WorkflowVersionDto) => v.version === targetVerNum) || def.versions[0];
     if (!ver) return null;
 
     return { definition: def, version: ver };
@@ -126,7 +126,7 @@ export class WorkflowRepository implements IWorkflowRepository {
     const def = this.definitions.find((d) => d.code === workflowCode);
     if (!def) throw new Error(`Workflow definition ${workflowCode} not found.`);
 
-    def.versions = def.versions.filter((v) => v.version !== version.version);
+    def.versions = def.versions.filter((v: WorkflowVersionDto) => v.version !== version.version);
     def.versions.push(version);
     def.activeVersion = version.version;
     def.updatedAt = new Date().toISOString();

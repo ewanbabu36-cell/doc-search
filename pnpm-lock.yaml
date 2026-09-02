@@ -251,6 +251,9 @@ importers:
 
   packages/database:
     dependencies:
+      '@docsearch/api-contracts':
+        specifier: workspace:*
+        version: link:../api-contracts
       '@docsearch/shared-core':
         specifier: workspace:*
         version: link:../shared-core
@@ -282,6 +285,9 @@ importers:
 
   packages/shared-core:
     dependencies:
+      '@docsearch/api-contracts':
+        specifier: workspace:*
+        version: link:../api-contracts
       zod:
         specifier: ^3.24.1
         version: 3.25.76

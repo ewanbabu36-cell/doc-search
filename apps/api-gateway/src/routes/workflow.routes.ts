@@ -2,19 +2,22 @@ import type { FastifyPluginAsync } from 'fastify';
 import {
   WorkflowEngine,
   PricingEngine,
-  LicenceEngine,
   type PlanConfig
 } from '@docsearch/shared-core';
 import {
-  workflowRepository
+  WorkflowRepository
 } from '@docsearch/database';
+import { authenticate } from '../plugins/auth-guard.js';
 import type {
   DynamicOfferDto,
   DynamicPricingRequestDto,
   WorkflowDefinitionDto,
   WorkflowInstanceDto,
-  WorkflowVersionDto
+  WorkflowVersionDto,
+  WorkflowStageDto
 } from '@docsearch/api-contracts';
+
+const workflowRepository = new WorkflowRepository();
 
 const DEFAULT_PLANS: Record<string, PlanConfig> = {
   HOSPITAL_ENTERPRISE: {
@@ -60,14 +63,14 @@ const DEFAULT_PLANS: Record<string, PlanConfig> = {
 
 export const workflowRoutes: FastifyPluginAsync = async (fastify) => {
   // 1. List all workflow definitions
-  fastify.get('/definitions', async (request, reply) => {
+  fastify.get('/definitions', { preHandler: [authenticate] }, async (request, reply) => {
     const { orgType } = request.query as { orgType?: string };
     const definitions = await workflowRepository.getDefinitions(orgType);
     return reply.send({ success: true, data: definitions });
   });
 
   // 2. Get workflow definition by code
-  fastify.get('/definitions/:code', async (request, reply) => {
+  fastify.get('/definitions/:code', { preHandler: [authenticate] }, async (request, reply) => {
     const { code } = request.params as { code: string };
     const { version } = request.query as { version?: string };
     const verNum = version ? parseInt(version, 10) : undefined;
@@ -79,14 +82,14 @@ export const workflowRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // 3. Create or update workflow definition
-  fastify.post('/definitions', async (request, reply) => {
+  fastify.post('/definitions', { preHandler: [authenticate] }, async (request, reply) => {
     const body = request.body as WorkflowDefinitionDto;
     const updated = await workflowRepository.createOrUpdateDefinition(body);
     return reply.status(201).send({ success: true, data: updated });
   });
 
   // 4. Create new version for a workflow
-  fastify.post('/definitions/:code/version', async (request, reply) => {
+  fastify.post('/definitions/:code/version', { preHandler: [authenticate] }, async (request, reply) => {
     const { code } = request.params as { code: string };
     const body = request.body as WorkflowVersionDto;
     const newVer = await workflowRepository.createVersion(code, body);
@@ -94,13 +97,13 @@ export const workflowRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // 5. List workflow instances
-  fastify.get('/instances', async (request, reply) => {
+  fastify.get('/instances', { preHandler: [authenticate] }, async (request, reply) => {
     const query = request.query as { workflowCode?: string; status?: string };
     const instances = await workflowRepository.getInstances(query);
 
     // Re-evaluate allowed transitions and Go-Live Gate for each instance dynamically
     const enriched = await Promise.all(
-      instances.map(async (inst) => {
+      instances.map(async (inst: WorkflowInstanceDto) => {
         const defObj = await workflowRepository.getDefinitionByCode(inst.workflowCode, inst.workflowVersion);
         if (defObj) {
           inst.allowedTransitions = WorkflowEngine.evaluateAllowedTransitions(inst, defObj.version);
@@ -114,7 +117,7 @@ export const workflowRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // 6. Get instance by ID with dynamic evaluations
-  fastify.get('/instances/:id', async (request, reply) => {
+  fastify.get('/instances/:id', { preHandler: [authenticate] }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const inst = await workflowRepository.getInstanceById(id);
     if (!inst) {
@@ -131,14 +134,14 @@ export const workflowRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // 7. Create new workflow instance
-  fastify.post('/instances', async (request, reply) => {
+  fastify.post('/instances', { preHandler: [authenticate] }, async (request, reply) => {
     const body = request.body as {
       workflowCode: string;
       version?: number;
       entityId: string;
       entityName: string;
       organizationType: string;
-      contextData?: Record<string, any>;
+      contextData?: Record<string, unknown>;
     };
 
     const defObj = await workflowRepository.getDefinitionByCode(body.workflowCode, body.version);
@@ -146,7 +149,7 @@ export const workflowRoutes: FastifyPluginAsync = async (fastify) => {
       return reply.status(400).send({ success: false, error: `Invalid workflow code "${body.workflowCode}".` });
     }
 
-    const initialStage = defObj.version.stages.find((s) => s.isInitial) || defObj.version.stages[0]!;
+    const initialStage = defObj.version.stages.find((s: WorkflowStageDto) => s.isInitial) || defObj.version.stages[0]!;
 
     const newInst: WorkflowInstanceDto = {
       id: `INST-${body.workflowCode}-${Date.now()}`,
@@ -177,13 +180,13 @@ export const workflowRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // 8. Execute State Transition
-  fastify.post('/instances/:id/transition', async (request, reply) => {
+  fastify.post('/instances/:id/transition', { preHandler: [authenticate] }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const body = request.body as {
       transitionCode: string;
       actorEmail?: string;
       actorRole?: string;
-      inputData?: Record<string, any>;
+      inputData?: Record<string, unknown>;
     };
 
     const inst = await workflowRepository.getInstanceById(id);
@@ -208,8 +211,7 @@ export const workflowRoutes: FastifyPluginAsync = async (fastify) => {
         body.transitionCode,
         actor,
         body.inputData || {},
-        async (action, instance, context) => {
-          // Action dispatcher simulation
+        async (action) => {
           return { success: true, summary: `Executed action ${action.name} successfully.` };
         }
       );
@@ -218,15 +220,16 @@ export const workflowRoutes: FastifyPluginAsync = async (fastify) => {
       await workflowRepository.appendAuditLog(result.auditLog);
 
       return reply.send({ success: true, data: result.updatedInstance, auditLog: result.auditLog });
-    } catch (err: any) {
-      return reply.status(400).send({ success: false, error: err.message });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Unknown transition error';
+      return reply.status(400).send({ success: false, error: msg });
     }
   });
 
   // 9. Fulfill stage requirement
-  fastify.post('/instances/:id/requirements/:requirementCode/fulfill', async (request, reply) => {
+  fastify.post('/instances/:id/requirements/:requirementCode/fulfill', { preHandler: [authenticate] }, async (request, reply) => {
     const { id, requirementCode } = request.params as { id: string; requirementCode: string };
-    const body = request.body as { actorEmail?: string; data?: Record<string, any> };
+    const body = request.body as { actorEmail?: string; data?: Record<string, unknown> };
 
     const inst = await workflowRepository.getInstanceById(id);
     if (!inst) {
@@ -251,28 +254,28 @@ export const workflowRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // 10. Dynamic Offers
-  fastify.get('/offers', async (request, reply) => {
+  fastify.get('/offers', { preHandler: [authenticate] }, async (_request, reply) => {
     const offers = await workflowRepository.getOffers();
     return reply.send({ success: true, data: offers });
   });
 
-  fastify.post('/offers', async (request, reply) => {
+  fastify.post('/offers', { preHandler: [authenticate] }, async (request, reply) => {
     const body = request.body as DynamicOfferDto;
     const updated = await workflowRepository.updateOffer(body);
     return reply.send({ success: true, data: updated });
   });
 
   // 11. Dynamic Licences
-  fastify.get('/licences', async (request, reply) => {
+  fastify.get('/licences', { preHandler: [authenticate] }, async (request, reply) => {
     const { orgType } = request.query as { orgType?: string };
     const rules = await workflowRepository.getLicenceRules(orgType);
     return reply.send({ success: true, data: rules });
   });
 
   // 12. Dynamic Pricing Calculation Endpoint
-  fastify.post('/pricing/calculate', async (request, reply) => {
+  fastify.post('/pricing/calculate', { preHandler: [authenticate] }, async (request, reply) => {
     const body = request.body as DynamicPricingRequestDto;
-    const planConfig = DEFAULT_PLANS[body.planCode] || DEFAULT_PLANS.HOSPITAL_ENTERPRISE!;
+    const planConfig = DEFAULT_PLANS[body.planCode] || DEFAULT_PLANS['HOSPITAL_ENTERPRISE']!;
     const offers = await workflowRepository.getOffers();
 
     const result = PricingEngine.calculatePrice(body, planConfig, [], offers);
