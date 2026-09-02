@@ -25,11 +25,13 @@ import { DynamicContractPricingBuilderView } from './DynamicContractPricingBuild
 import { AiRevenueLeakageRadarView } from './AiRevenueLeakageRadarView.js';
 import { MultiGatewaySmartRouterView } from './MultiGatewaySmartRouterView.js';
 import { MultiBranchInterCompanyBillingView } from './MultiBranchInterCompanyBillingView.js';
+import { PredictiveCashFlowRevenueSimulatorView } from './PredictiveCashFlowRevenueSimulatorView.js';
 
 import { Tabs, Badge, Spinner, ErrorState, Button } from '@docsearch/ui-kit';
 
 type ActiveTab =
   | 'overview'
+  | 'revenue-simulator'
   | 'contract-builder'
   | 'leakage-radar'
   | 'gateway-router'
@@ -187,6 +189,11 @@ export const FinanceDomainManager: React.FC = () => {
             label: '📊 Commercial Overview'
           },
           {
+            id: 'revenue-simulator',
+            label: '📈 Predictive Cash Flow & Simulator',
+            badge: <Badge variant="success">Monte Carlo</Badge>
+          },
+          {
             id: 'contract-builder',
             label: '🎛️ No-Code Contract & Pricing Builder',
             badge: <Badge variant="primary">NEW</Badge>
@@ -259,6 +266,10 @@ export const FinanceDomainManager: React.FC = () => {
           invoices={invoices}
           payments={payments}
         />
+      )}
+
+      {activeTab === 'revenue-simulator' && (
+        <PredictiveCashFlowRevenueSimulatorView />
       )}
 
       {activeTab === 'contract-builder' && (
