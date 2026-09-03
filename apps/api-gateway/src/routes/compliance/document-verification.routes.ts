@@ -15,7 +15,7 @@ export const documentVerificationRoutes: FastifyPluginAsync = async (fastify) =>
     },
     async (request, reply) => {
       const query = request.query as any;
-      const requirements = documentVerificationRepository.getRequirements({
+      const requirements = await documentVerificationRepository.getRequirements({
         entityType: query?.entityType,
         role: query?.role,
         facilityType: query?.facilityType,
@@ -47,7 +47,7 @@ export const documentVerificationRoutes: FastifyPluginAsync = async (fastify) =>
         tenantId: request.session.tenantId
       };
 
-      const doc = documentVerificationRepository.uploadDocument(body, actor);
+      const doc = await documentVerificationRepository.uploadDocument(body, actor);
       return reply.status(201).send({
         success: true,
         data: doc,
@@ -70,7 +70,7 @@ export const documentVerificationRoutes: FastifyPluginAsync = async (fastify) =>
         email: request.session.actorEmail || 'compliance@docsearch.health'
       };
 
-      const doc = documentVerificationRepository.verifyDocument(params.id, body, verifier);
+      const doc = await documentVerificationRepository.verifyDocument(params.id, body, verifier);
       return reply.status(200).send({
         success: true,
         data: doc,
@@ -87,7 +87,7 @@ export const documentVerificationRoutes: FastifyPluginAsync = async (fastify) =>
     },
     async (request, reply) => {
       const query = request.query as any;
-      const queue = documentVerificationRepository.getVerificationQueue(query);
+      const queue = await documentVerificationRepository.getVerificationQueue(query);
       return reply.status(200).send({
         success: true,
         data: queue

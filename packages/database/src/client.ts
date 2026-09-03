@@ -24,6 +24,15 @@ export interface SecurityContextParams {
 
 let pool: pg.Pool | null = null;
 let dbInstance: NodePgDatabase<typeof schema> | null = null;
+let testDatabaseInstance: any = null;
+
+export function setTestDatabase(db: any): void {
+  testDatabaseInstance = db;
+}
+
+export function getTestDatabase(): any {
+  return testDatabaseInstance;
+}
 
 /**
  * Resolves TLS configuration for PostgreSQL pool.
@@ -67,6 +76,9 @@ export function getDatabasePool(config?: DatabaseConfig): pg.Pool {
 }
 
 export function getDatabase(config?: DatabaseConfig): NodePgDatabase<typeof schema> {
+  if (testDatabaseInstance) {
+    return testDatabaseInstance;
+  }
   if (!dbInstance) {
     const activePool = getDatabasePool(config);
     dbInstance = drizzle(activePool, { schema });
@@ -132,6 +144,8 @@ export async function withSecurityContext<T>(
 }
 
 export async function closeDatabase(): Promise<void> {
+  testDatabaseInstance = null;
+  testTransactionRunner = null;
   if (pool) {
     await pool.end();
     pool = null;

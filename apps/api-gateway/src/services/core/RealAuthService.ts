@@ -55,7 +55,9 @@ const PRODUCTION_CREDENTIAL_STORE: Map<string, AuthenticatedUserRecord> = new Ma
         'pharmacy:inventory:read',
         'billing:invoices:create',
         'billing:invoices:read',
-        'billing:invoices:update'
+        'billing:invoices:update',
+        'compliance:documents:read',
+        'compliance:documents:create'
       ],
       passwordHash: hashPassword('DoctorPass123!')
     }
