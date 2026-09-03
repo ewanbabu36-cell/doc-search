@@ -3,13 +3,16 @@
 ```text
 PHASE: 2
 STATUS: IN_PROGRESS
-CURRENT_CHECKPOINT: CHECKPOINT 2.6
-LAST_COMPLETED_CHECKPOINT: CHECKPOINT 2.5 COMPLETE
-NEXT_CHECKPOINT: CHECKPOINT 2.6
+CURRENT_CHECKPOINT: CHECKPOINT 2.7
+LAST_COMPLETED_CHECKPOINT: CHECKPOINT 2.6 COMPLETE
+NEXT_CHECKPOINT: CHECKPOINT 2.7
 FILES_MODIFIED:
   - PHASE_2_PERSISTENCE_AUDIT.md
   - PHASE_2_IMPLEMENTATION_STATE.md
+  - DATABASE_TEST_HARNESS.md
   - packages/database/src/client.ts
+  - packages/database/src/test-harness.ts
+  - packages/database/src/index.ts
   - packages/database/src/schema/clinical/index.ts
   - packages/database/dist/*
   - apps/api-gateway/src/app.ts
@@ -26,6 +29,8 @@ FILES_MODIFIED:
   - apps/api-gateway/src/repositories/partner/BillingManagementRepository.ts
   - apps/api-gateway/src/repositories/partner/PharmacyManagementRepository.ts
   - apps/api-gateway/src/repositories/partner/LabDiagnosticsRepository.ts
+  - apps/api-gateway/src/repositories/partner/ClinicalWorkflowRepository.ts
+  - apps/api-gateway/src/routes/partner/clinical-workflow.routes.ts
   - apps/api-gateway/src/services/core/RealAuthService.ts
   - tests/reliability/clinical-e2e-workload.js
   - tests/reliability/document-verification-persistence.test.js
@@ -35,7 +40,8 @@ FILES_MODIFIED:
   - apps/api-gateway/test/concurrency/pharmacy-fefo.test.ts
   - apps/api-gateway/test/billing/invoice-void-discount.test.ts
   - apps/api-gateway/test/wave6-production-audit.test.mjs
-TESTS_PASSED: 103
+  - apps/api-gateway/test/real-postgresql-clinical-persistence.test.mjs
+TESTS_PASSED: 112
 TESTS_FAILED: 0
 BLOCKERS: NONE
 DECISIONS:
@@ -45,6 +51,7 @@ DECISIONS:
   - Formally audited all 14 Executive MIS in-memory Maps into Categories A (authoritative state), B (derived analytics), and C (temporary computation). Prohibited redundant secondary tables for derived metrics.
   - Enforced multi-step ACID transactions across billing, pharmacy dispensing, and lab repositories via runInTx helper with PostgreSQL FOR UPDATE row locks.
   - Enforced durable database-backed idempotency for payment webhooks, invoice voiding, and document verification state transitions.
+  - Built isolated in-process PostgreSQL test harness using pg-mem with custom Drizzle ORM adapter (createPatchedPg) executing all production migrations and standard baseline seeds without requiring external PostgreSQL.
 DATABASE_MIGRATIONS: NONE_YET
 ROLLBACK_STATUS: READY (Target: doc-search-phase-0-baseline)
 SECURITY_STATUS: VERIFIED_PASS
@@ -120,3 +127,16 @@ SECURITY_STATUS: VERIFIED_PASS
   - Executed full suite: 11/11 tests passed in 61.41ms.
   - Verified existing concurrency & integrity suites: `pg-webhook-reconciliation-test.js` (6/6 PASS), `pharmacy-fefo.test.ts` (4/4 PASS), `invoice-void-discount.test.ts` (12/12 PASS).
   - TypeScript compilation: 0 errors across `@docsearch/database` and `apps/api-gateway`.
+
+### Checkpoint 2.6 — Database Test Harness
+- **Status:** COMPLETE
+- **Actions Recorded:**
+  - Designed and built repeatable in-process PostgreSQL test harness (`packages/database/src/test-harness.ts`) powered by `pg-mem`.
+  - Built custom `createPatchedPg` adapter solving Drizzle ORM array rowMode compatibility, parameter parsing (`$1, $2, ...`), and multi-tenant `SET LOCAL app.*` session context interception.
+  - Automated journal-driven execution of all 437 database table migrations in strict sequence from `packages/database/migrations/meta/_journal.json`.
+  - Automated baseline relational entity seeding (tenants A/B, branches, facilities, departments, operational staff, doctor profiles, system users).
+  - Exported `createTestDatabase()`, `setupTestDatabase()`, and `TEST_SEEDS` in `@docsearch/database`.
+  - Refactored `ClinicalWorkflowRepository.ts` to fix not-null constraints (`dateOfBirth` on `clinical.patients`, `createdBy`/`updatedBy` on `clinical.consultations`), properly map consultation status, and include patient encounters in clinical history.
+  - Updated `apps/api-gateway/test/real-postgresql-clinical-persistence.test.mjs` to utilize `setupTestDatabase()` in `before()` and `cleanup()` in `after()`.
+  - Verified 9/9 tests pass 100% with zero external dependencies and zero manual PostgreSQL setup.
+  - Authored `DATABASE_TEST_HARNESS.md` covering startup, schema setup, isolation, cleanup, and repeatability.

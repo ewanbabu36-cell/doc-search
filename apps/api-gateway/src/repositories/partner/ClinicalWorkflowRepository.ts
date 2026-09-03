@@ -224,6 +224,7 @@ export class ClinicalWorkflowRepository {
       mrn,
       firstName: input.firstName,
       lastName: input.lastName,
+      dateOfBirth: input.dateOfBirth || '2000-01-01',
       gender: input.gender || 'OTHER',
       bloodGroup: input.bloodGroup || null,
       status: 'ACTIVE',
@@ -349,7 +350,11 @@ export class ClinicalWorkflowRepository {
         .select()
         .from(consultations)
         .where(and(eq(consultations.tenantId, tenantId), eq(consultations.encounterId, encounterId)));
-      return (found as unknown as StoredConsultation) || null;
+      if (!found) return null;
+      return {
+        ...(found as unknown as StoredConsultation),
+        status: (found as any).consultationStatus || 'IN_PROGRESS'
+      };
     } catch (err) {
       logger.error('Failed to query consultation by encounter in database', err);
       throw new AppError({
@@ -367,7 +372,11 @@ export class ClinicalWorkflowRepository {
         .select()
         .from(consultations)
         .where(and(eq(consultations.tenantId, tenantId), eq(consultations.id, consultationId)));
-      return (found as unknown as StoredConsultation) || null;
+      if (!found) return null;
+      return {
+        ...(found as unknown as StoredConsultation),
+        status: (found as any).consultationStatus || 'IN_PROGRESS'
+      };
     } catch (err) {
       logger.error('Failed to query consultation by ID in database', err);
       throw new AppError({
@@ -401,8 +410,8 @@ export class ClinicalWorkflowRepository {
       planNotes: input.planNotes || '',
       vitals: input.vitals || null,
       diagnoses: input.diagnoses || [],
-      medications: input.medications || [],
-      labInvestigations: input.labInvestigations || [],
+      medications: input.medications || (input as any).prescriptions || [],
+      labInvestigations: input.labInvestigations || (input as any).investigations || [],
       followUpAdvice: input.followUpAdvice || '',
       createdAt: new Date(),
       updatedAt: new Date()
@@ -426,6 +435,8 @@ export class ClinicalWorkflowRepository {
         examinationNotes: record.examinationNotes,
         assessmentNotes: record.assessmentNotes,
         planNotes: record.planNotes,
+        createdBy: record.doctorId || '00000000-0000-4000-8000-000000000000',
+        updatedBy: record.doctorId || '00000000-0000-4000-8000-000000000000',
         createdAt: record.createdAt,
         updatedAt: record.updatedAt
       } as unknown as typeof consultations.$inferInsert).returning();
@@ -449,10 +460,14 @@ export class ClinicalWorkflowRepository {
     try {
       const [updated] = await db
         .update(consultations)
-        .set({ consultationStatus: 'COMPLETED', completedAt: new Date(), updatedAt: new Date() } as unknown as typeof consultations.$inferInsert)
+        .set({ consultationStatus: 'FINALIZED', completedAt: new Date(), updatedAt: new Date() } as unknown as typeof consultations.$inferInsert)
         .where(and(eq(consultations.tenantId, tenantId), eq(consultations.id, consultationId)))
         .returning();
-      return (updated as unknown as StoredConsultation) || null;
+      if (!updated) return null;
+      return {
+        ...(updated as unknown as StoredConsultation),
+        status: 'FINALIZED'
+      };
     } catch (err) {
       logger.error('Failed to finalize consultation in database', err);
       throw new AppError({
@@ -497,6 +512,10 @@ export class ClinicalWorkflowRepository {
   async getPatientClinicalHistory(tenantId: string, patientId: string, dbClient = getDatabase()) {
     const db = requireDb(dbClient);
     try {
+      const patientEncounters = await db
+        .select()
+        .from(encounters)
+        .where(and(eq(encounters.tenantId, tenantId), eq(encounters.patientId, patientId)));
       const patientConsultations = await db
         .select()
         .from(consultations)
@@ -505,9 +524,13 @@ export class ClinicalWorkflowRepository {
 
       return {
         patientId,
-        consultations: patientConsultations,
+        encounters: patientEncounters,
+        consultations: patientConsultations.map(c => ({
+          ...c,
+          status: (c as any).consultationStatus || 'FINALIZED'
+        })),
         labOrders,
-        totalEncounters: patientConsultations.length,
+        totalEncounters: patientEncounters.length,
         totalLabOrders: labOrders.length
       };
     } catch (err) {

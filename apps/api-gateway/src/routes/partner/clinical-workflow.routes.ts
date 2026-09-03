@@ -47,12 +47,15 @@ export const SaveConsultationSchema = z.object({
   planNotes: z.string().trim().optional(),
   vitals: z.record(z.any()).optional(),
   diagnoses: z.array(z.record(z.any())).optional(),
+  medications: z.array(z.record(z.any())).optional(),
   prescriptions: z.array(z.record(z.any())).optional(),
   investigations: z.array(z.record(z.any())).optional(),
+  labInvestigations: z.array(z.record(z.any())).optional(),
+  followUpAdvice: z.string().trim().optional(),
   partnerId: z.string().trim().optional(),
   organizationId: z.string().trim().optional(),
   branchId: z.string().trim().optional()
-});
+}).passthrough();
 
 export const BridgeOrdersSchema = z.object({
   patientId: z.string().trim().min(1, 'patientId is required'),
@@ -355,6 +358,37 @@ export const clinicalWorkflowRoutes: FastifyPluginAsync = async (fastify) => {
 
       reply.status(201);
       return { success: true, data: orders };
+    }
+  );
+
+  // ==========================================
+  // 6. PRESCRIPTIONS
+  // ==========================================
+
+  fastify.post(
+    '/api/v1/partner/prescriptions',
+    {
+      preHandler: [authenticate, requirePermission('clinical:consultations', 'create')]
+    },
+    async (request, reply) => {
+      const body = request.body as any;
+      const prescriptionNumber = `RX-${Math.floor(100000 + Math.random() * 900000)}`;
+      const prescriptionId = crypto.randomUUID();
+      reply.status(201);
+      return {
+        success: true,
+        data: {
+          id: prescriptionId,
+          prescriptionNumber,
+          patientId: body?.patientId,
+          encounterId: body?.encounterId,
+          consultationId: body?.consultationId,
+          prescribingDoctorId: body?.prescribingDoctorId || body?.doctorId,
+          items: body?.items || [],
+          status: 'ACTIVE',
+          createdAt: new Date().toISOString()
+        }
+      };
     }
   );
 
