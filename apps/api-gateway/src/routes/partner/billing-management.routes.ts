@@ -102,6 +102,23 @@ export const billingManagementRoutes: FastifyPluginAsync = async (fastify) => {
     }
   );
 
+  // 1b. Get Single Invoice by ID
+  fastify.get(
+    '/api/v1/partner/billing/invoices/:id',
+    {
+      preHandler: [authenticate, requirePermission('billing:invoices', 'read')]
+    },
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const data = await billingManagementService.getInvoiceById(request.session, id);
+      if (!data) {
+        reply.status(404);
+        return { success: false, error: { code: 'INVOICE_NOT_FOUND', message: 'Invoice not found' } };
+      }
+      return { success: true, data };
+    }
+  );
+
   // 2. Create Consolidated Invoice
   fastify.post(
     '/api/v1/partner/billing/invoices',

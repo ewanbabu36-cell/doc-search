@@ -21,6 +21,12 @@ export class BillingManagementService {
     });
   }
 
+  async getInvoiceById(session: SessionContext, id: string) {
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      return billingManagementRepository.getInvoiceById(session.tenantId, id, tx);
+    });
+  }
+
   async createInvoice(input: Omit<CreateInvoiceInput, 'tenantId'>, session: SessionContext) {
     return withSecurityContext(getDatabase(), session, async (tx) => {
       const invoice = await billingManagementRepository.createInvoice({

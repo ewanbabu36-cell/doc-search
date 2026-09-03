@@ -401,7 +401,7 @@ async function runCheckpoint25Harness() {
     failTargetTable = null;
     const inv = getRows(billingInvoices).find(i => i.id === successfulInvoice.id);
     assert.strictEqual(inv.status, 'PENDING_PAYMENT', 'Invoice status must remain PENDING_PAYMENT');
-    assert.strictEqual(Number(inv.outstandingBalance), 1000, 'Invoice outstanding balance must remain 1000');
+    assert.strictEqual(Number(inv.dueAmount || inv.outstandingBalance), 1000, 'Invoice outstanding balance must remain 1000');
     assert.strictEqual(getRows(billingPayments).length, 0, 'Zero payment records must remain');
     assert.strictEqual(getRows(billingReceipts).length, 0, 'Zero receipt records must remain');
     console.log('    ✓ 2.3 Payment Collection Rollback: Receipt failure reverted payment & invoice balance');

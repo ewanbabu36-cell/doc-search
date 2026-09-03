@@ -335,10 +335,19 @@ export class BillingManagementRepository {
         .from(billingInvoiceItems)
         .where(and(eq(billingInvoiceItems.tenantId, tenantId), eq(billingInvoiceItems.invoiceId, invoiceId)));
 
+      const payments = await db
+        .select()
+        .from(billingPayments)
+        .where(and(eq(billingPayments.tenantId, tenantId), eq(billingPayments.invoiceId, invoiceId)));
+
       return {
         ...(found as unknown as StoredInvoice),
+        totalAmount: Number(found.totalAmount || 0),
+        patientPayableAmount: Number(found.totalAmount || 0),
+        paidAmount: Number(found.paidAmount || 0),
+        balanceDue: Number(found.dueAmount || 0),
         items: (items as unknown as StoredInvoiceItem[]) || [],
-        payments: []
+        payments: (payments as unknown as StoredPayment[]) || []
       };
     } catch (err) {
       logger.error('Failed to query invoice by ID from database', err);
@@ -411,14 +420,18 @@ export class BillingManagementRepository {
           partnerId: record.partnerId,
           organizationId: record.organizationId,
           branchId: record.branchId,
-          invoiceNumber: record.invoiceNumber,
           patientId: record.patientId,
           encounterId: record.encounterId,
-          totalAmount: record.totalAmount,
-          patientPayable: record.patientPayableAmount,
-          insurancePayable: record.insuranceCoveredAmount,
-          outstandingBalance: record.balanceDue,
+          invoiceNumber: record.invoiceNumber,
+          invoiceType: record.encounterType || 'OPD',
           status: record.status,
+          subtotal: record.totalAmount.toFixed(2),
+          discountTotal: '0.00',
+          taxTotal: '0.00',
+          roundingAdjustment: '0.00',
+          totalAmount: record.totalAmount.toFixed(2),
+          paidAmount: '0.00',
+          dueAmount: record.totalAmount.toFixed(2),
           currency: 'INR'
         } as unknown as typeof billingInvoices.$inferInsert).returning();
 
@@ -426,15 +439,15 @@ export class BillingManagementRepository {
           await tx.insert(billingInvoiceItems).values({
             id: item.id,
             tenantId: record.tenantId,
-            partnerId: record.partnerId,
-            organizationId: record.organizationId,
-            branchId: record.branchId,
             invoiceId: record.id,
+            serviceCode: item.category || 'CONSULTATION',
             description: item.serviceName,
-            category: item.category,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            totalPrice: item.totalPrice
+            quantity: item.quantity.toFixed(2),
+            unitPrice: item.unitPrice.toFixed(2),
+            grossAmount: item.totalPrice.toFixed(2),
+            discountAmount: '0.00',
+            taxAmount: '0.00',
+            netAmount: item.totalPrice.toFixed(2)
           } as unknown as typeof billingInvoiceItems.$inferInsert);
         }
 
@@ -493,9 +506,8 @@ export class BillingManagementRepository {
         await tx
           .update(billingInvoices)
           .set({
-            insurancePayable: invoice.insuranceCoveredAmount,
-            patientPayable: invoice.patientPayableAmount,
-            outstandingBalance: invoice.balanceDue
+            dueAmount: invoice.balanceDue.toFixed(2),
+            updatedAt: now
           } as unknown as typeof billingInvoices.$inferInsert)
           .where(eq(billingInvoices.id, invoice.id));
 
@@ -538,12 +550,13 @@ export class BillingManagementRepository {
     };
 
     invoice.payments.push(payment);
-    invoice.paidAmount += input.amount;
-    invoice.balanceDue = Math.max(0, invoice.patientPayableAmount - invoice.paidAmount);
+    invoice.paidAmount = (invoice.paidAmount || 0) + input.amount;
+    const payable = Number(invoice.patientPayableAmount ?? invoice.totalAmount ?? 0);
+    invoice.balanceDue = Math.max(0, payable - invoice.paidAmount);
     invoice.receiptNumber = receiptNumber;
 
     if (invoice.balanceDue === 0) {
-      invoice.status = 'DISCHARGE_SETTLED';
+      invoice.status = 'PAID';
     } else {
       invoice.status = 'PARTIALLY_PAID';
     }
@@ -551,6 +564,7 @@ export class BillingManagementRepository {
 
     try {
       return await runInTx(db, async (tx: any) => {
+        const paymentNumber = `PMT-${Math.floor(100000 + Math.random() * 900000)}`;
         await tx.insert(billingPayments).values({
           id: paymentId,
           tenantId: input.tenantId,
@@ -559,10 +573,13 @@ export class BillingManagementRepository {
           branchId: invoice.branchId,
           invoiceId: invoice.id,
           patientId: invoice.patientId,
-          amount: input.amount,
+          paymentNumber,
+          amount: input.amount.toFixed(2),
           paymentMethod: input.paymentMode,
+          currency: 'INR',
           status: 'SUCCESS',
-          paidAt: now
+          receivedBy: input.collectedBy || 'STAFF',
+          receivedAt: now
         } as unknown as typeof billingPayments.$inferInsert);
 
         await tx.insert(billingReceipts).values({
@@ -571,17 +588,22 @@ export class BillingManagementRepository {
           partnerId: invoice.partnerId,
           organizationId: invoice.organizationId,
           branchId: invoice.branchId,
+          paymentId,
           invoiceId: invoice.id,
+          patientId: invoice.patientId,
           receiptNumber,
-          amount: input.amount,
-          issuedAt: now
+          amount: input.amount.toFixed(2),
+          paymentMethod: input.paymentMode,
+          issuedBy: input.collectedBy || 'STAFF',
+          issuedAt: now,
+          status: 'ISSUED'
         } as unknown as typeof billingReceipts.$inferInsert);
 
         await tx
           .update(billingInvoices)
           .set({
-            paidAmount: invoice.paidAmount,
-            outstandingBalance: invoice.balanceDue,
+            paidAmount: invoice.paidAmount.toFixed(2),
+            dueAmount: invoice.balanceDue.toFixed(2),
             status: invoice.status
           } as unknown as typeof billingInvoices.$inferInsert)
           .where(eq(billingInvoices.id, invoice.id));
@@ -743,18 +765,22 @@ export class BillingManagementRepository {
           partnerId: invoice.partnerId,
           organizationId: invoice.organizationId,
           branchId: invoice.branchId,
+          paymentId,
           invoiceId: invoice.id,
+          patientId: invoice.patientId,
           receiptNumber,
-          amount: input.amount,
-          issuedAt: now
+          amount: input.amount.toFixed(2),
+          paymentMethod,
+          issuedBy: `SYSTEM_WEBHOOK_${input.gateway}`,
+          issuedAt: now,
+          status: 'ISSUED'
         } as unknown as typeof billingReceipts.$inferInsert);
 
         await tx
           .update(billingInvoices)
           .set({
-            paidAmount: newPaidAmount,
-            dueAmount: newBalanceDue,
-            outstandingBalance: newBalanceDue,
+            paidAmount: newPaidAmount.toFixed(2),
+            dueAmount: newBalanceDue.toFixed(2),
             status: newStatus,
             updatedAt: now
           } as unknown as typeof billingInvoices.$inferInsert)
@@ -1020,8 +1046,7 @@ export class BillingManagementRepository {
         .update(billingInvoices)
         .set({
           status: 'VOIDED',
-          outstandingBalance: 0,
-          dueAmount: 0,
+          dueAmount: '0.00',
           metadata: updatedMetadata,
           updatedAt: now
         } as any)
@@ -1296,9 +1321,8 @@ export class BillingManagementRepository {
       await tx
         .update(billingInvoices)
         .set({
-          discountTotal: newDiscountTotal.toString(),
-          patientPayable: newPatientPayable,
-          outstandingBalance: newBalanceDue,
+          discountTotal: newDiscountTotal.toFixed(2),
+          dueAmount: newBalanceDue.toFixed(2),
           updatedAt: now
         } as any)
         .where(and(eq(billingInvoices.tenantId, input.tenantId), eq(billingInvoices.id, invoice.id)));

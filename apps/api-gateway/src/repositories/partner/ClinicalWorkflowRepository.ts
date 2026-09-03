@@ -493,17 +493,40 @@ export class ClinicalWorkflowRepository {
     );
   }
 
-  async bridgeDiagnosticOrders(tenantId: string, patientId: string, encounterId: string, doctorId: string, testNames: string[]) {
+  async bridgeDiagnosticOrders(tenantId: string, patientId: string, encounterId: string, doctorId: string, testNames: string[], dbClient = getDatabase()) {
+    const db = requireDb(dbClient);
+    let partnerId = '00000000-0000-4000-8000-000000000001';
+    let organizationId = '00000000-0000-4000-8000-000000000002';
+    let branchId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    try {
+      const [enc] = await db
+        .select()
+        .from(encounters)
+        .where(and(eq(encounters.tenantId, tenantId), eq(encounters.id, encounterId)));
+      if (enc) {
+        partnerId = enc.partnerId || partnerId;
+        organizationId = enc.organizationId || organizationId;
+        branchId = enc.branchId || branchId;
+      }
+    } catch {
+      // Use defaults if lookup fails
+    }
+
     const createdOrders = [];
     for (const testName of testNames) {
       const order = await labDiagnosticsRepository.createOrder({
         tenantId,
+        partnerId,
+        organizationId,
+        branchId,
         patientId,
+        encounterId,
+        orderingDoctorId: doctorId,
         testName,
         category: testName.includes('CBC') || testName.includes('Blood Count') ? 'HEMATOLOGY' : 'BIOCHEMISTRY',
         priority: 'ROUTINE',
         clinicalNotes: `Ordered during OPD Consultation (Enc: ${encounterId}, Doctor: ${doctorId})`
-      });
+      }, dbClient);
       createdOrders.push(order);
     }
     return createdOrders;

@@ -21,7 +21,11 @@ export const TEST_SEEDS = {
   ORG_ID_B: '00000000-0000-4000-8000-000000000012',
   FACILITY_ID_B: '00000000-0000-4000-8000-000000000013',
   DEPT_ID_B: '00000000-0000-4000-8000-000000000014',
-  STAFF_ID_B: '00000000-0000-4000-8000-000000000015'
+  STAFF_ID_B: '00000000-0000-4000-8000-000000000015',
+  INVESTIGATION_ID: '00000000-0000-4000-8000-000000000050',
+  INVESTIGATION_ID_ALT: '00000000-0000-4000-8000-000000000005',
+  MEDICATION_ID: '00000000-0000-4000-8000-000000000060',
+  BATCH_ID: '00000000-0000-4000-8000-000000000070'
 };
 
 function toLiteral(val: any): string {
@@ -68,6 +72,78 @@ export function createPatchedPg(mem: IMemoryDb) {
       let sql = text || '';
       if (/^\s*SET\s+(LOCAL\s+)?app\./i.test(sql)) {
         const res = { command: 'SET', rowCount: 0, fields: [], rows: [] };
+        if (cb) {
+          cb(null, res);
+          return null;
+        }
+        return Promise.resolve(res);
+      }
+
+      if (/^\s*(BEGIN|START\s+TRANSACTION)/i.test(sql)) {
+        if (!this._txStack) this._txStack = [];
+        this._txStack.push(mem.backup());
+        const res = { command: 'BEGIN', rowCount: 0, fields: [], rows: [] };
+        if (cb) {
+          cb(null, res);
+          return null;
+        }
+        return Promise.resolve(res);
+      }
+
+      if (/^\s*ROLLBACK/i.test(sql)) {
+        if (this._txStack && this._txStack.length > 0) {
+          const snap = this._txStack.pop();
+          snap.restore();
+        }
+        const res = { command: 'ROLLBACK', rowCount: 0, fields: [], rows: [] };
+        if (cb) {
+          cb(null, res);
+          return null;
+        }
+        return Promise.resolve(res);
+      }
+
+      if (/^\s*COMMIT/i.test(sql)) {
+        if (this._txStack && this._txStack.length > 0) {
+          this._txStack.pop();
+        }
+        const res = { command: 'COMMIT', rowCount: 0, fields: [], rows: [] };
+        if (cb) {
+          cb(null, res);
+          return null;
+        }
+        return Promise.resolve(res);
+      }
+
+      if (/^\s*SAVEPOINT/i.test(sql)) {
+        if (!this._txStack) this._txStack = [];
+        this._txStack.push(mem.backup());
+        const res = { command: 'SAVEPOINT', rowCount: 0, fields: [], rows: [] };
+        if (cb) {
+          cb(null, res);
+          return null;
+        }
+        return Promise.resolve(res);
+      }
+
+      if (/^\s*ROLLBACK\s+TO\s+SAVEPOINT/i.test(sql)) {
+        if (this._txStack && this._txStack.length > 0) {
+          const snap = this._txStack.pop();
+          snap.restore();
+        }
+        const res = { command: 'ROLLBACK', rowCount: 0, fields: [], rows: [] };
+        if (cb) {
+          cb(null, res);
+          return null;
+        }
+        return Promise.resolve(res);
+      }
+
+      if (/^\s*RELEASE\s+SAVEPOINT/i.test(sql)) {
+        if (this._txStack && this._txStack.length > 0) {
+          this._txStack.pop();
+        }
+        const res = { command: 'RELEASE', rowCount: 0, fields: [], rows: [] };
         if (cb) {
           cb(null, res);
           return null;
@@ -198,7 +274,11 @@ export async function createTestDatabase(options: { seedBaseline?: boolean } = {
       ORG_ID_B,
       FACILITY_ID_B,
       DEPT_ID_B,
-      STAFF_ID_B
+      STAFF_ID_B,
+      INVESTIGATION_ID,
+      INVESTIGATION_ID_ALT,
+      MEDICATION_ID,
+      BATCH_ID
     } = TEST_SEEDS;
 
     await pool.query(`
@@ -279,6 +359,48 @@ export async function createTestDatabase(options: { seedBaseline?: boolean } = {
       )
       VALUES 
         ('${DOCTOR_ID}', '${TENANT_A}', '${PARTNER_ID_A}', '${ORG_ID_A}', '${FACILITY_ID_A}', '${DEPT_ID_A}', '${STAFF_ID_A}', 'DOC-01', 'MED-12345', 'MBBS, MD', 'General Medicine')
+      ON CONFLICT DO NOTHING;
+    `);
+
+    await pool.query(`
+      INSERT INTO "clinical"."investigation_catalog" (
+        "id", "tenant_id", "partner_id", "organization_id", "branch_id",
+        "test_code", "test_name", "category", "department"
+      )
+      VALUES 
+        ('${INVESTIGATION_ID_ALT}', '${TENANT_A}', '${PARTNER_ID_A}', '${ORG_ID_A}', '${FACILITY_ID_A}', 'CBC-FULL', 'Complete Blood Count', 'HEMATOLOGY', 'Pathology'),
+        ('${INVESTIGATION_ID}', '${TENANT_A}', '${PARTNER_ID_A}', '${ORG_ID_A}', '${FACILITY_ID_A}', 'LFT-FULL', 'Liver Function Test', 'BIOCHEMISTRY', 'Biochemistry')
+      ON CONFLICT DO NOTHING;
+    `);
+
+    await pool.query(`
+      INSERT INTO "clinical"."medication_catalog" (
+        "id", "tenant_id", "partner_id", "organization_id", "branch_id",
+        "medication_code", "generic_name", "brand_name", "strength", "dosage_form", "manufacturer", "category"
+      )
+      VALUES 
+        ('${MEDICATION_ID}', '${TENANT_A}', '${PARTNER_ID_A}', '${ORG_ID_A}', '${FACILITY_ID_A}', 'MED-AMOX-500', 'Amoxicillin', 'Amoxil', '500mg', 'TABLET', 'Standard Pharma', 'ANTIBIOTIC')
+      ON CONFLICT DO NOTHING;
+    `);
+
+    await pool.query(`
+      INSERT INTO "clinical"."pharmacy_batches" (
+        "id", "tenant_id", "partner_id", "organization_id", "branch_id",
+        "medication_id", "batch_number", "manufacturer", "manufacturing_date", "expiry_date",
+        "received_quantity", "available_quantity", "unit_cost", "status"
+      )
+      VALUES 
+        ('${BATCH_ID}', '${TENANT_A}', '${PARTNER_ID_A}', '${ORG_ID_A}', '${FACILITY_ID_A}', '${MEDICATION_ID}', 'BATCH-2026-01', 'Standard Pharma', '2026-01-01', '2027-12-31', 1000, 1000, '10.00', 'ACTIVE')
+      ON CONFLICT DO NOTHING;
+    `);
+
+    await pool.query(`
+      INSERT INTO "clinical"."pharmacy_inventory" (
+        "id", "tenant_id", "partner_id", "organization_id", "branch_id",
+        "medication_id", "available_quantity"
+      )
+      VALUES 
+        ('00000000-0000-4000-8000-000000000080', '${TENANT_A}', '${PARTNER_ID_A}', '${ORG_ID_A}', '${FACILITY_ID_A}', '${MEDICATION_ID}', 1000)
       ON CONFLICT DO NOTHING;
     `);
   }

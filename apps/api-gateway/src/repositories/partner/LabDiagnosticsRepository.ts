@@ -193,9 +193,9 @@ export class LabDiagnosticsRepository {
     const orderData: StoredLabOrder = {
       id,
       tenantId: input.tenantId,
-      partnerId: input.partnerId || '11111111-1111-4111-8111-111111111111',
-      organizationId: input.organizationId || '33333333-3333-4333-8333-333333333301',
-      branchId: input.branchId || '44444444-4444-4444-8444-444444444401',
+      partnerId: input.partnerId || '00000000-0000-4000-8000-000000000001',
+      organizationId: input.organizationId || '00000000-0000-4000-8000-000000000002',
+      branchId: input.branchId || 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
       patientId: input.patientId,
       encounterId: input.encounterId || '00000000-0000-4000-8000-000000000004',
       orderNumber,
@@ -206,7 +206,7 @@ export class LabDiagnosticsRepository {
       status: 'ORDERED',
       clinicalIndication: input.clinicalIndication || input.clinicalNotes || 'Routine diagnostic workup',
       instructions: input.instructions,
-      orderingDoctorId: input.orderingDoctorId || 'aaaa1111-8492-4aaa-8aaa-849208492001',
+      orderingDoctorId: input.orderingDoctorId || '99999999-9999-4999-8999-999999999999',
       orderedAt: now,
       updatedAt: now,
       results: []
