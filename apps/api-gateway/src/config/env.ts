@@ -17,6 +17,7 @@ const EnvSchema = z.object({
   CORS_ORIGIN: z.string().default('http://localhost:5173,http://localhost:5174'),
   RATE_LIMIT_MAX: z.coerce.number().default(100),
   RATE_LIMIT_TIME_WINDOW: z.coerce.number().default(60000),
+  REDIS_URL: z.string().optional(),
 
   // External ABDM National Health Gateway Configuration
   ABDM_BASE_URL: z.string().url().optional(),

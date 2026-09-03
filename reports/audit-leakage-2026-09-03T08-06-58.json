@@ -1,0 +1,215 @@
+{
+  "timestamp": "2026-09-03T08:06:58.348Z",
+  "auditScope": {
+    "tenantIdFilter": null,
+    "targetDatabase": "postgresql://postgres:postgres@localhost:5432/docsearch (pg-mem embedded fallback)",
+    "isLiveConnection": false
+  },
+  "summary": {
+    "totalUnbilledConsultations": 5,
+    "totalUnbilledConsultationRiskInr": 3750,
+    "totalUnpaidDiagnosticOrders": 5,
+    "totalUnpaidDiagnosticOrdersRiskInr": 4250,
+    "totalPharmacyBatchDiscrepancies": 3,
+    "totalPharmacyDiscrepancyRiskInr": 10425,
+    "grandTotalRevenueLeakageInr": 18425
+  },
+  "tenantSummaries": [
+    {
+      "tenantId": "11111111-1111-4111-8111-111111111111",
+      "tenantName": "Apex Multi-Specialty Hospital & Research Institute",
+      "unbilledConsultationsCount": 3,
+      "unbilledConsultationsRiskInr": 2250,
+      "unpaidDiagnosticOrdersCount": 3,
+      "unpaidDiagnosticOrdersRiskInr": 2550,
+      "pharmacyDiscrepancyCount": 2,
+      "pharmacyDiscrepancyRiskInr": 7875,
+      "totalFinancialRiskInr": 12675
+    },
+    {
+      "tenantId": "22222222-2222-4222-8222-222222222222",
+      "tenantName": "Metro Diagnostics & Specialty Clinics",
+      "unbilledConsultationsCount": 2,
+      "unbilledConsultationsRiskInr": 1500,
+      "unpaidDiagnosticOrdersCount": 2,
+      "unpaidDiagnosticOrdersRiskInr": 1700,
+      "pharmacyDiscrepancyCount": 1,
+      "pharmacyDiscrepancyRiskInr": 2550,
+      "totalFinancialRiskInr": 5750
+    }
+  ],
+  "details": {
+    "unbilledConsultations": [
+      {
+        "consultationId": "c-apex-03",
+        "tenantId": "11111111-1111-4111-8111-111111111111",
+        "tenantName": "Apex Multi-Specialty Hospital & Research Institute",
+        "consultationNumber": "CNS-2026-0083",
+        "consultationStatus": "COMPLETED",
+        "encounterId": "enc-apex-03",
+        "chiefComplaint": "Hypertensive urgency post ER discharge",
+        "invoiceStatus": "NO_INVOICE",
+        "estimatedFeeInr": 750,
+        "createdAt": "2026-09-03T05:06:58.577Z"
+      },
+      {
+        "consultationId": "c-metro-02",
+        "tenantId": "22222222-2222-4222-8222-222222222222",
+        "tenantName": "Metro Diagnostics & Specialty Clinics",
+        "consultationNumber": "CNS-2026-1012",
+        "consultationStatus": "COMPLETED",
+        "encounterId": "enc-metro-02",
+        "chiefComplaint": "Orthopedic knee assessment",
+        "invoiceStatus": "NO_INVOICE",
+        "estimatedFeeInr": 750,
+        "createdAt": "2026-09-03T02:06:58.581Z"
+      },
+      {
+        "consultationId": "c-metro-01",
+        "tenantId": "22222222-2222-4222-8222-222222222222",
+        "tenantName": "Metro Diagnostics & Specialty Clinics",
+        "consultationNumber": "CNS-2026-1011",
+        "consultationStatus": "COMPLETED",
+        "encounterId": "enc-metro-01",
+        "chiefComplaint": "Acute viral pharyngitis",
+        "invoiceStatus": "NO_INVOICE",
+        "estimatedFeeInr": 750,
+        "createdAt": "2026-09-02T08:06:58.580Z"
+      },
+      {
+        "consultationId": "c-apex-02",
+        "tenantId": "11111111-1111-4111-8111-111111111111",
+        "tenantName": "Apex Multi-Specialty Hospital & Research Institute",
+        "consultationNumber": "CNS-2026-0082",
+        "consultationStatus": "COMPLETED",
+        "encounterId": "enc-apex-02",
+        "chiefComplaint": "Type 2 Diabetes Mellitus glycemic follow-up",
+        "invoiceStatus": "NO_INVOICE",
+        "estimatedFeeInr": 750,
+        "createdAt": "2026-09-02T08:06:58.577Z"
+      },
+      {
+        "consultationId": "c-apex-01",
+        "tenantId": "11111111-1111-4111-8111-111111111111",
+        "tenantName": "Apex Multi-Specialty Hospital & Research Institute",
+        "consultationNumber": "CNS-2026-0081",
+        "consultationStatus": "COMPLETED",
+        "encounterId": "enc-apex-01",
+        "chiefComplaint": "Persistent migraine with visual aura",
+        "invoiceStatus": "DRAFT",
+        "estimatedFeeInr": 750,
+        "createdAt": "2026-09-01T08:06:58.576Z"
+      }
+    ],
+    "unpaidDiagnosticOrders": [
+      {
+        "specimenId": "spec-metro-02",
+        "tenantId": "22222222-2222-4222-8222-222222222222",
+        "tenantName": "Metro Diagnostics & Specialty Clinics",
+        "accessionNumber": "ACC-2026-9902",
+        "specimenType": "WHOLE_BLOOD",
+        "collectionStatus": "COLLECTED",
+        "orderId": "ord-metro-02",
+        "orderNumber": "ORD-METRO-402",
+        "orderStatus": "PROCESSING",
+        "billingStatus": "PENDING",
+        "estimatedFeeInr": 850,
+        "collectedAt": "2026-09-03T00:06:58.591Z"
+      },
+      {
+        "specimenId": "spec-metro-01",
+        "tenantId": "22222222-2222-4222-8222-222222222222",
+        "tenantName": "Metro Diagnostics & Specialty Clinics",
+        "accessionNumber": "ACC-2026-9901",
+        "specimenType": "SERUM",
+        "collectionStatus": "COLLECTED",
+        "orderId": "ord-metro-01",
+        "orderNumber": "ORD-METRO-401",
+        "orderStatus": "SAMPLE_COLLECTED",
+        "billingStatus": "PENDING",
+        "estimatedFeeInr": 850,
+        "collectedAt": "2026-09-02T20:06:58.591Z"
+      },
+      {
+        "specimenId": "spec-apex-02",
+        "tenantId": "11111111-1111-4111-8111-111111111111",
+        "tenantName": "Apex Multi-Specialty Hospital & Research Institute",
+        "accessionNumber": "ACC-2026-7702",
+        "specimenType": "SERUM",
+        "collectionStatus": "COLLECTED",
+        "orderId": "ord-apex-02",
+        "orderNumber": "ORD-LAB-902",
+        "orderStatus": "SAMPLE_COLLECTED",
+        "billingStatus": "PENDING",
+        "estimatedFeeInr": 850,
+        "collectedAt": "2026-09-02T14:06:58.586Z"
+      },
+      {
+        "specimenId": "spec-apex-01",
+        "tenantId": "11111111-1111-4111-8111-111111111111",
+        "tenantName": "Apex Multi-Specialty Hospital & Research Institute",
+        "accessionNumber": "ACC-2026-7701",
+        "specimenType": "SERUM",
+        "collectionStatus": "COLLECTED",
+        "orderId": "ord-apex-01",
+        "orderNumber": "ORD-LAB-901",
+        "orderStatus": "SAMPLE_COLLECTED",
+        "billingStatus": "PENDING",
+        "estimatedFeeInr": 850,
+        "collectedAt": "2026-09-02T08:06:58.586Z"
+      },
+      {
+        "specimenId": "spec-apex-03",
+        "tenantId": "11111111-1111-4111-8111-111111111111",
+        "tenantName": "Apex Multi-Specialty Hospital & Research Institute",
+        "accessionNumber": "ACC-2026-7703",
+        "specimenType": "WHOLE_BLOOD",
+        "collectionStatus": "COLLECTED",
+        "orderId": "ord-apex-03",
+        "orderNumber": "ORD-LAB-903",
+        "orderStatus": "VERIFIED",
+        "billingStatus": "BILLED",
+        "estimatedFeeInr": 850,
+        "collectedAt": "2026-09-01T08:06:58.586Z"
+      }
+    ],
+    "pharmacyBatchDiscrepancies": [
+      {
+        "batchId": "b-apex-01",
+        "tenantId": "11111111-1111-4111-8111-111111111111",
+        "tenantName": "Apex Multi-Specialty Hospital & Research Institute",
+        "batchNumber": "AMX-2026-B01",
+        "initialQuantity": 1000,
+        "currentQuantity": 400,
+        "totalDispensed": 550,
+        "discrepancy": 50,
+        "unitCostInr": 45.5,
+        "financialRiskInr": 2275
+      },
+      {
+        "batchId": "b-apex-03",
+        "tenantId": "11111111-1111-4111-8111-111111111111",
+        "tenantName": "Apex Multi-Specialty Hospital & Research Institute",
+        "batchNumber": "AZM-2026-B03",
+        "initialQuantity": 200,
+        "currentQuantity": 80,
+        "totalDispensed": 100,
+        "discrepancy": 20,
+        "unitCostInr": 280,
+        "financialRiskInr": 5600
+      },
+      {
+        "batchId": "b-metro-01",
+        "tenantId": "22222222-2222-4222-8222-222222222222",
+        "tenantName": "Metro Diagnostics & Specialty Clinics",
+        "batchNumber": "CIP-2026-M01",
+        "initialQuantity": 300,
+        "currentQuantity": 120,
+        "totalDispensed": 150,
+        "discrepancy": 30,
+        "unitCostInr": 85,
+        "financialRiskInr": 2550
+      }
+    ]
+  }
+}

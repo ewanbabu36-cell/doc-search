@@ -41,6 +41,9 @@ export const integrationRoutes: FastifyPluginAsync = async (fastify) => {
   // Real Outbound Webhook & Notification Dispatcher (Priority 3)
   fastify.post(
     '/api/v1/company/integration/webhooks/dispatch-test',
+    {
+      preHandler: [authenticate, requirePermission('integrations', 'manage')]
+    },
     async (request) => {
       const body = (request.body || {}) as {
         webhookId?: string;

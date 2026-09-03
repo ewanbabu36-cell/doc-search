@@ -7,6 +7,7 @@ import { emergencyManagementRoutes } from './routes/partner/emergency-management
 import { otManagementRoutes } from './routes/partner/ot-management.routes.js';
 import { bloodBankManagementRoutes } from './routes/partner/blood-bank-management.routes.js';
 import { billingManagementRoutes } from './routes/partner/billing-management.routes.js';
+import { billingWebhookRoutes } from './routes/partner/billing-webhook.routes.js';
 import { mrdManagementRoutes } from './routes/partner/mrd-management.routes.js';
 import { authRoutes } from './routes/auth.routes.js';
 import Fastify, { type FastifyInstance } from 'fastify';
@@ -36,8 +37,11 @@ import { procurementRoutes } from './routes/partner/procurement.routes.js';
 import { abdmRoutes } from './routes/partner/abdm.routes.js';
 import { aiClinicalCopilotRoutes } from './routes/partner/ai-clinical-copilot.routes.js';
 import { hardwareBridgeRoutes } from './routes/partner/hardware-bridge.routes.js';
+import { whatsappEngagementRoutes } from './routes/partner/whatsapp-engagement.routes.js';
+import { executiveMisRoutes } from './routes/partner/executive-mis.routes.js';
 import { documentVerificationRoutes } from './routes/compliance/document-verification.routes.js';
 import { workflowRoutes } from './routes/workflow.routes.js';
+import { paymentWebhookRoutes } from './routes/webhooks/payment-webhook.routes.js';
 import { AppError } from '@docsearch/shared-core';
 
 export async function buildApp(): Promise<FastifyInstance> {
@@ -85,6 +89,65 @@ export async function buildApp(): Promise<FastifyInstance> {
   // 1. Register Core Security (Helmet, CORS, Rate Limit)
   await registerSecurityPlugins(app);
 
+  // Preserve raw request body for webhook cryptographic signature verification (HMAC-SHA256 / SHA-512)
+  app.addContentTypeParser('application/json', { parseAs: 'buffer' }, (req, body, done) => {
+    try {
+      const raw = (body as Buffer).toString('utf8');
+      const json = raw ? JSON.parse(raw) : {};
+      (req as any).rawBody = raw;
+      done(null, json);
+    } catch (err: any) {
+      done(err, undefined);
+    }
+  });
+
+  app.addContentTypeParser('application/x-www-form-urlencoded', { parseAs: 'string' }, (req, body, done) => {
+    try {
+      const parsed = Object.fromEntries(new URLSearchParams(body as string));
+      (req as any).rawBody = body;
+      done(null, parsed);
+    } catch (err: any) {
+      done(err, undefined);
+    }
+  });
+
+  // Global Idempotency Hooks (x-idempotency-key duplicate transaction deduplication)
+  const idempotencyStore = new Map<string, { statusCode: number; payload: string; contentType?: string | undefined; createdAt: number }>();
+  app.addHook('onRequest', async (request, reply) => {
+    const key = request.headers['x-idempotency-key'] as string | undefined;
+    if (!key) return;
+
+    const cached = idempotencyStore.get(key);
+    if (cached) {
+      if (Date.now() - cached.createdAt < 600000) {
+        reply.header('x-cache', 'IDEMPOTENT_HIT');
+        if (cached.contentType) {
+          reply.type(cached.contentType);
+        }
+        return reply.status(cached.statusCode).send(cached.payload);
+      } else {
+        idempotencyStore.delete(key);
+      }
+    }
+  });
+
+  app.addHook('onSend', async (request, reply, payload: unknown) => {
+    const key = request.headers['x-idempotency-key'] as string | undefined;
+    if (!key || reply.getHeader('x-cache') === 'IDEMPOTENT_HIT') return payload;
+
+    if (reply.statusCode >= 200 && reply.statusCode < 400 && typeof payload === 'string') {
+      const ctHeader = reply.getHeader('content-type');
+      idempotencyStore.set(key, {
+        statusCode: reply.statusCode,
+        payload,
+        contentType: typeof ctHeader === 'string' ? ctHeader : undefined,
+        createdAt: Date.now()
+      });
+    }
+
+    return payload;
+  });
+
   // 2. Register Auth Guard Plugin (JWT verification & session context)
   await app.register(authGuardPlugin);
 
@@ -104,6 +167,8 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(otManagementRoutes);
   await app.register(bloodBankManagementRoutes);
   await app.register(billingManagementRoutes);
+  await app.register(billingWebhookRoutes);
+  await app.register(paymentWebhookRoutes);
   await app.register(mrdManagementRoutes);
   await app.register(productRoutes);
   await app.register(subscriptionRoutes);
@@ -128,6 +193,8 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(abdmRoutes);
   await app.register(aiClinicalCopilotRoutes);
   await app.register(hardwareBridgeRoutes);
+  await app.register(whatsappEngagementRoutes);
+  await app.register(executiveMisRoutes);
   await app.register(documentVerificationRoutes, { prefix: '/api/v1/compliance/documents' });
   await app.register(workflowRoutes, { prefix: '/api/v1/workflow' });
 

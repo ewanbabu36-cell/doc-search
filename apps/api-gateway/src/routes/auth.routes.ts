@@ -2,15 +2,30 @@ import { type FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import {
   SessionService,
-  InMemorySessionStore
+  InMemorySessionStore,
+  RedisSessionStore,
+  type SessionStore
 } from '@docsearch/auth';
 import { realAuthService } from '../services/core/RealAuthService.js';
 import { auditRepository } from '../repositories/core/AuditRepository.js';
 import { AppError, ErrorCode } from '@docsearch/shared-core';
 import { env } from '../config/env.js';
 
-const sessionStore = new InMemorySessionStore();
-const sessionService = new SessionService(sessionStore);
+export let sessionStore: SessionStore;
+if (env.REDIS_URL) {
+  sessionStore = new RedisSessionStore(env.REDIS_URL);
+} else if (env.NODE_ENV === 'production') {
+  throw new Error('FATAL: REDIS_URL is mandatory in production for distributed session state and instant token revocation.');
+} else {
+  sessionStore = new InMemorySessionStore();
+}
+
+export function setSessionStore(store: SessionStore): void {
+  sessionStore = store;
+  sessionService = new SessionService(sessionStore);
+}
+
+export let sessionService = new SessionService(sessionStore);
 
 const LoginSchema = z.object({
   email: z.string().email(),

@@ -43,7 +43,19 @@ const PRODUCTION_CREDENTIAL_STORE: Map<string, AuthenticatedUserRecord> = new Ma
         'clinical:consultations:create',
         'clinical:consultations:update',
         'lab:orders:read',
-        'lab:orders:create'
+        'lab:orders:create',
+        'lab:specimens:create',
+        'lab:results:create',
+        'lab:results:update',
+        'pharmacy:dispense',
+        'pharmacy:dispense:create',
+        'pharmacy:dispense:execute',
+        'pharmacy:medications:read',
+        'pharmacy:orders:read',
+        'pharmacy:inventory:read',
+        'billing:invoices:create',
+        'billing:invoices:read',
+        'billing:invoices:update'
       ],
       passwordHash: hashPassword('DoctorPass123!')
     }
@@ -302,6 +314,14 @@ const PRODUCTION_CREDENTIAL_STORE: Map<string, AuthenticatedUserRecord> = new Ma
       branchId: '44444444-4444-4444-8444-444444444401',
       roles: ['PHARMACIST'] as RoleType[],
       permissions: [
+        'pharmacy:medications:read',
+        'pharmacy:medications:create',
+        'pharmacy:orders:read',
+        'pharmacy:inventory:read',
+        'pharmacy:inventory:create',
+        'pharmacy:dispense',
+        'pharmacy:dispense:create',
+        'pharmacy:dispense:execute',
         'clinical:orders:read',
         'clinical:patients:read'
       ],
@@ -325,6 +345,49 @@ const PRODUCTION_CREDENTIAL_STORE: Map<string, AuthenticatedUserRecord> = new Ma
         'clinical:patients:read'
       ],
       passwordHash: hashPassword('RadPass123!')
+    }
+  ],
+  [
+    'billing.karan@docsearch.health',
+    {
+      id: 'aaaa1111-8492-4aaa-8aaa-849208492015',
+      email: 'billing.karan@docsearch.health',
+      firstName: 'Karan',
+      lastName: 'Saxena',
+      status: 'ACTIVE',
+      tenantId: '11111111-1111-4111-8111-111111111111',
+      organizationId: '33333333-3333-4333-8333-333333333301',
+      branchId: '44444444-4444-4444-8444-444444444401',
+      roles: ['BILLING_CLERK'] as RoleType[],
+      permissions: [
+        'billing:invoices:read',
+        'billing:invoices:create',
+        'billing:invoices:update',
+        'billing:invoices:manage',
+        'clinical:patients:read'
+      ],
+      passwordHash: hashPassword('BillingPass123!')
+    }
+  ],
+  [
+    'receptionist.kavita@docsearch.health',
+    {
+      id: 'aaaa1111-8492-4aaa-8aaa-849208492016',
+      email: 'receptionist.kavita@docsearch.health',
+      firstName: 'Kavita',
+      lastName: 'Sharma',
+      status: 'ACTIVE',
+      tenantId: '11111111-1111-4111-8111-111111111111',
+      organizationId: '33333333-3333-4333-8333-333333333301',
+      branchId: '44444444-4444-4444-8444-444444444401',
+      roles: ['RECEPTIONIST'] as RoleType[],
+      permissions: [
+        'clinical:patients:read',
+        'clinical:patients:create',
+        'clinical:encounters:read',
+        'clinical:encounters:create'
+      ],
+      passwordHash: hashPassword('ReceptionPass123!')
     }
   ]
 ]);

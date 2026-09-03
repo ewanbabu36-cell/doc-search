@@ -161,19 +161,19 @@ export class ClinicalWorkflowService {
         bmi: '23.5'
       },
       diagnoses: cons?.diagnoses?.map(d => ({
-        code: d.diagnosisCode,
-        name: d.diagnosisName,
+        code: d.diagnosisCode || d.code || 'I10',
+        name: d.diagnosisName || d.description || 'Clinical Diagnosis',
         isPrimary: Boolean(d.isPrimary)
       })) || [
         { code: 'E11.9', name: 'Type 2 diabetes mellitus without complications', isPrimary: true },
         { code: 'I10', name: 'Essential (primary) hypertension', isPrimary: false }
       ],
       medications: cons?.medications?.map(m => ({
-        name: m.genericName ? `${m.medicationName} (${m.genericName})` : m.medicationName,
-        strength: m.strength,
-        dosage: m.dosage,
-        frequency: m.frequency,
-        duration: `${m.duration} ${m.durationUnit || 'days'}`,
+        name: m.genericName ? `${m.medicationName || m.drugName || 'Medication'} (${m.genericName})` : (m.medicationName || m.drugName || 'Medication'),
+        strength: m.strength || '10mg',
+        dosage: m.dosage || '1 Tab',
+        frequency: m.frequency || 'Once Daily (OD)',
+        duration: `${m.duration || m.durationDays || 30} ${m.durationUnit || 'days'}`,
         instructions: m.instructions || 'After meals'
       })) || [
         { name: 'Metformin Hydrochloride (PMBJP Jan Aushadhi)', strength: '500mg', dosage: '1 Tab', frequency: 'Twice Daily (BD)', duration: '30 days', instructions: 'After meals' },

@@ -243,3 +243,60 @@ export const ProcessScanAndShareRequestSchema = z.object({
   assignedDoctorName: z.string()
 });
 export type ProcessScanAndShareRequest = z.infer<typeof ProcessScanAndShareRequestSchema>;
+
+export const GenerateMobileOtpRequestSchema = z.object({
+  mobileNumber: z.string().min(10)
+});
+export type GenerateMobileOtpRequest = z.infer<typeof GenerateMobileOtpRequestSchema>;
+
+export const VerifyMobileOtpRequestSchema = z.object({
+  txnId: z.string(),
+  otp: z.string().min(4),
+  preferredAbhaAddress: z.string(),
+  patientName: z.string(),
+  patientMrn: z.string(),
+  gender: z.enum(['M', 'F', 'O']).default('M'),
+  dateOfBirth: z.string(),
+  mobileNumber: z.string(),
+  address: z.string()
+});
+export type VerifyMobileOtpRequest = z.infer<typeof VerifyMobileOtpRequestSchema>;
+
+export const VerifyDemographicsRequestSchema = z.object({
+  patientName: z.string(),
+  gender: z.enum(['M', 'F', 'O']),
+  dateOfBirth: z.string(),
+  abhaNumber: z.string().optional(),
+  abhaAddress: z.string().optional()
+});
+export type VerifyDemographicsRequest = z.infer<typeof VerifyDemographicsRequestSchema>;
+
+export const DiscoverCareContextsRequestSchema = z.object({
+  patientAbhaAddress: z.string()
+});
+export type DiscoverCareContextsRequest = z.infer<typeof DiscoverCareContextsRequestSchema>;
+
+export const LinkCareContextInitRequestSchema = z.object({
+  patientAbhaAddress: z.string(),
+  careContextReferences: z.array(z.string())
+});
+export type LinkCareContextInitRequest = z.infer<typeof LinkCareContextInitRequestSchema>;
+
+export const LinkCareContextConfirmRequestSchema = z.object({
+  txnId: z.string(),
+  otp: z.string(),
+  patientAbhaAddress: z.string()
+});
+export type LinkCareContextConfirmRequest = z.infer<typeof LinkCareContextConfirmRequestSchema>;
+
+export const RevokeConsentRequestSchema = z.object({
+  artefactId: z.string()
+});
+export type RevokeConsentRequest = z.infer<typeof RevokeConsentRequestSchema>;
+
+export const EncryptHealthPayloadRequestSchema = z.object({
+  receiverPublicKeyPem: z.string(),
+  plainTextPayload: z.union([z.string(), z.record(z.unknown())])
+});
+export type EncryptHealthPayloadRequest = z.infer<typeof EncryptHealthPayloadRequestSchema>;
+

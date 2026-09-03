@@ -219,7 +219,7 @@ export class WorkflowEngine {
           actionsExecuted.push({
             actionType: action.actionType,
             success: res.success,
-            resultSummary: res.summary
+            ...(res.summary !== undefined ? { resultSummary: res.summary } : {})
           });
           if (!res.success && !action.continueOnError) {
             throw new Error(`Action "${action.name}" failed: ${res.summary}`);
@@ -228,7 +228,7 @@ export class WorkflowEngine {
           actionsExecuted.push({
             actionType: action.actionType,
             success: false,
-            resultSummary: actErr.message
+            ...(actErr?.message !== undefined ? { resultSummary: String(actErr.message) } : {})
           });
           if (!action.continueOnError) {
             throw actErr;

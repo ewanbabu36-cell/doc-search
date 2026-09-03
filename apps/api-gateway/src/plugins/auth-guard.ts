@@ -53,6 +53,81 @@ export async function authenticate(request: FastifyRequest, _reply: FastifyReply
 
     const built = buildSessionContext(claims);
     request.session = Object.freeze(built);
+
+    // =========================================================================
+    // ZERO TRUST IDENTITY & SCOPE ENFORCEMENT
+    // Reject any client attempts to cross tenant boundaries or tamper with scope
+    // =========================================================================
+    const body = (request.body as Record<string, any>) || {};
+    const query = (request.query as Record<string, any>) || {};
+    const params = (request.params as Record<string, any>) || {};
+    const headers = request.headers;
+
+    // 1. Enforce Tenant Isolation: Reject Mismatched Client-Supplied tenantId
+    const clientTenantId =
+      body['tenantId'] || body['tenant_id'] ||
+      query['tenantId'] || query['tenant_id'] ||
+      params['tenantId'] || params['tenant_id'] ||
+      headers['x-tenant-id'];
+
+    if (
+      clientTenantId &&
+      typeof clientTenantId === 'string' &&
+      !request.session.isSuperAdmin &&
+      clientTenantId !== request.session.tenantId
+    ) {
+      logger.warn('Cross-tenant access attempt blocked', {
+        requestId: request.id,
+        sessionTenantId: request.session.tenantId,
+        clientTenantId,
+        userId: request.session.userId,
+        url: request.url
+      });
+      throw new AppError({
+        message: 'Access denied: Cross-tenant access is strictly forbidden',
+        code: ErrorCode.TENANT_ACCESS_DENIED,
+        statusCode: 403
+      });
+    }
+
+    // 2. Enforce Branch Isolation: Reject Unauthorized Client-Supplied branchId
+    const clientBranchId =
+      body['branchId'] || body['branch_id'] ||
+      query['branchId'] || query['branch_id'] ||
+      params['branchId'] || params['branch_id'] ||
+      headers['x-branch-id'];
+
+    if (
+      clientBranchId &&
+      typeof clientBranchId === 'string' &&
+      !request.session.isSuperAdmin
+    ) {
+      // Determine if caller's session is restricted to a branch
+      const isTenantOrGlobalAdmin =
+        request.session.roles.includes('SUPER_ADMIN') ||
+        request.session.roles.includes('COMPANY_ADMIN') ||
+        request.session.roles.includes('HOSPITAL_ADMIN') ||
+        request.session.roles.includes('CLINIC_ADMIN');
+
+      const isBranchScoped =
+        !isTenantOrGlobalAdmin &&
+        (request.session.dataScope === 'branch' || Boolean(request.session.branchId));
+
+      if (isBranchScoped && request.session.branchId && clientBranchId !== request.session.branchId) {
+        logger.warn('Unauthorized cross-branch access attempt blocked', {
+          requestId: request.id,
+          sessionBranchId: request.session.branchId,
+          clientBranchId,
+          userId: request.session.userId,
+          url: request.url
+        });
+        throw new AppError({
+          message: 'Access denied: Access outside your assigned branch is forbidden',
+          code: ErrorCode.BRANCH_ACCESS_DENIED,
+          statusCode: 403
+        });
+      }
+    }
   } catch (err) {
     logger.warn('Authentication token verification failed', {
       requestId: request.id,

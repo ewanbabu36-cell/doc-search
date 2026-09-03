@@ -30,10 +30,9 @@ let dbInstance: NodePgDatabase<typeof schema> | null = null;
  */
 function resolveDatabaseSsl(config?: DatabaseConfig): boolean | pg.PoolConfig['ssl'] {
   const envUrl = config?.connectionString ?? process.env['DATABASE_URL'] ?? '';
-  const isCloudDb = envUrl.includes('neon.tech') || envUrl.includes('railway') || envUrl.includes('supabase') || envUrl.includes('sslmode=require');
-  const isSslExplicit = process.env['DATABASE_SSL'] === 'true' || Boolean(config?.ssl);
+  const isSslExplicit = process.env['DATABASE_SSL'] === 'true' || Boolean(config?.ssl) || envUrl.includes('sslmode=require');
 
-  if (isCloudDb || isSslExplicit) {
+  if (isSslExplicit) {
     return {
       rejectUnauthorized: false
     };
@@ -42,23 +41,17 @@ function resolveDatabaseSsl(config?: DatabaseConfig): boolean | pg.PoolConfig['s
   return false;
 }
 
-export const DEFAULT_CLOUD_DATABASE_URL =
-  'postgresql://neondb_owner:npg_u8nJ0zW4IeqF@ep-ancient-hill-a5d62u94-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require';
-
 export function getDatabasePool(config?: DatabaseConfig): pg.Pool {
   if (!pool) {
-    const isProduction = process.env['NODE_ENV'] === 'production';
     const envUrl = process.env['DATABASE_URL'];
+    const connectionString = config?.connectionString ?? envUrl;
 
-    let connectionString = config?.connectionString ?? envUrl;
-
-    if (!connectionString || (isProduction && (connectionString.includes('localhost') || connectionString.includes('postgres:postgres@')))) {
-      logger.warn('[WARN] No valid production DATABASE_URL supplied; using Cloud Neon DB fallback.');
-      connectionString = DEFAULT_CLOUD_DATABASE_URL;
+    if (!connectionString) {
+      logger.warn('[WARN] No DATABASE_URL supplied in environment variables.');
     }
 
     pool = new Pool({
-      connectionString,
+      connectionString: connectionString || undefined,
       max: config?.maxConnections ?? 20,
       idleTimeoutMillis: config?.idleTimeoutMillis ?? 30000,
       connectionTimeoutMillis: config?.connectionTimeoutMillis ?? 5000,
@@ -91,6 +84,12 @@ export function getDatabase(config?: DatabaseConfig): NodePgDatabase<typeof sche
  * 
  * Automatically rolls back on failure and guarantees no tenant state leaks into pooled connections.
  */
+let testTransactionRunner: ((context: SecurityContextParams, cb: (tx: any) => Promise<any>) => Promise<any>) | null = null;
+
+export function setTestTransactionRunner(runner: typeof testTransactionRunner): void {
+  testTransactionRunner = runner;
+}
+
 export async function withSecurityContext<T>(
   db: NodePgDatabase<typeof schema>,
   context: SecurityContextParams,
@@ -98,6 +97,10 @@ export async function withSecurityContext<T>(
 ): Promise<T> {
   if (!context.tenantId && !context.isSuperAdmin) {
     throw AppError.forbidden('Tenant context is mandatory for security-scoped database operations');
+  }
+
+  if (testTransactionRunner) {
+    return await testTransactionRunner(context, callback as any);
   }
 
   try {
@@ -116,18 +119,15 @@ export async function withSecurityContext<T>(
       return await callback(tx);
     });
   } catch (err: unknown) {
-    const isProduction = process.env['NODE_ENV'] === 'production';
-    if (isProduction) {
-      logger.error('PostgreSQL database connection failed in production', err);
-      throw new AppError({
-        message: 'Database service is unavailable. Writes and clinical transactions are halted.',
-        code: ErrorCode.SERVICE_UNAVAILABLE,
-        statusCode: 503
-      });
+    logger.error('PostgreSQL database transaction/connection failed', err);
+    if (err instanceof AppError || (err && typeof err === 'object' && ('code' in err || 'statusCode' in err))) {
+      throw err;
     }
-
-    // In automated test suites and local dev test harnesses without live PostgreSQL
-    return await callback(null as unknown as Parameters<Parameters<typeof db.transaction>[0]>[0]);
+    throw new AppError({
+      message: 'Database service is unavailable. Writes and clinical transactions are halted.',
+      code: ErrorCode.SERVICE_UNAVAILABLE,
+      statusCode: 503
+    });
   }
 }
 

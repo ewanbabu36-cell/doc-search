@@ -13,7 +13,23 @@ export class RBACEvaluator {
     if (!session.permissions || session.permissions.length === 0) {
       return false;
     }
-    return session.permissions.includes(requiredPermission) || session.permissions.includes('*');
+    if (session.permissions.includes(requiredPermission) || session.permissions.includes('*')) {
+      return true;
+    }
+
+    // Support resource-level or wildcard matches (e.g. 'pharmacy:dispense' matches 'pharmacy:dispense:create')
+    const parts = requiredPermission.split(':');
+    if (parts.length > 1) {
+      const resourcePrefix = parts.slice(0, -1).join(':');
+      if (
+        session.permissions.includes(`${resourcePrefix}:*`) ||
+        session.permissions.includes(resourcePrefix)
+      ) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /**

@@ -6,3 +6,5 @@ export * from './session-service.js';
 export * from './rbac-evaluator.js';
 export * from './scope-guard.js';
 export * from './audit-helper.js';
+export * from './redis-session-store.js';
+export * from './webhook-signature-verifier.js';

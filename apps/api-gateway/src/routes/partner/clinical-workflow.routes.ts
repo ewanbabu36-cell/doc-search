@@ -1,4 +1,6 @@
 import { type FastifyPluginAsync } from 'fastify';
+import { z } from 'zod';
+import { AppError, ErrorCode } from '@docsearch/shared-core';
 import { clinicalWorkflowService } from '../../services/partner/ClinicalWorkflowService.js';
 import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
 import {
@@ -6,6 +8,69 @@ import {
   type CreateEncounterInput,
   type SaveConsultationInput
 } from '../../repositories/partner/ClinicalWorkflowRepository.js';
+
+export const CreatePatientSchema = z.object({
+  firstName: z.string().trim().min(1, 'firstName is required'),
+  lastName: z.string().trim().min(1, 'lastName is required'),
+  gender: z.string().trim().min(1, 'gender is required'),
+  dateOfBirth: z.string().trim().optional(),
+  mobileNumber: z.string().trim().optional(),
+  bloodGroup: z.string().trim().optional(),
+  partnerId: z.string().trim().optional(),
+  organizationId: z.string().trim().optional(),
+  branchId: z.string().trim().optional(),
+  mrn: z.string().trim().optional()
+});
+
+export const CreateEncounterSchema = z.object({
+  patientId: z.string().trim().min(1, 'patientId is required'),
+  doctorId: z.string().trim().optional(),
+  encounterType: z.string().trim().optional(),
+  status: z.string().trim().optional(),
+  chiefComplaint: z.string().trim().optional(),
+  visitType: z.string().trim().optional(),
+  partnerId: z.string().trim().optional(),
+  organizationId: z.string().trim().optional(),
+  branchId: z.string().trim().optional()
+});
+
+export const SaveConsultationSchema = z.object({
+  encounterId: z.string().trim().min(1, 'encounterId is required'),
+  patientId: z.string().trim().min(1, 'patientId is required'),
+  doctorId: z.string().trim().optional(),
+  status: z.string().trim().optional(),
+  chiefComplaint: z.string().trim().optional(),
+  historyOfPresentIllness: z.string().trim().optional(),
+  pastMedicalHistory: z.string().trim().optional(),
+  examinationNotes: z.string().trim().optional(),
+  assessmentNotes: z.string().trim().optional(),
+  planNotes: z.string().trim().optional(),
+  vitals: z.record(z.any()).optional(),
+  diagnoses: z.array(z.record(z.any())).optional(),
+  prescriptions: z.array(z.record(z.any())).optional(),
+  investigations: z.array(z.record(z.any())).optional(),
+  partnerId: z.string().trim().optional(),
+  organizationId: z.string().trim().optional(),
+  branchId: z.string().trim().optional()
+});
+
+export const BridgeOrdersSchema = z.object({
+  patientId: z.string().trim().min(1, 'patientId is required'),
+  doctorId: z.string().trim().min(1, 'doctorId is required'),
+  testNames: z.array(z.string().trim().min(1)).min(1, 'At least one testName is required')
+});
+
+function validateBody<T>(schema: z.ZodSchema<T>, body: unknown): T {
+  const parsed = schema.safeParse(body || {});
+  if (!parsed.success) {
+    throw new AppError({
+      message: parsed.error.issues.map((i) => i.message).join('; '),
+      code: ErrorCode.VALIDATION_ERROR,
+      statusCode: 400
+    });
+  }
+  return parsed.data;
+}
 
 export const clinicalWorkflowRoutes: FastifyPluginAsync = async (fastify) => {
   // ==========================================
@@ -45,7 +110,7 @@ export const clinicalWorkflowRoutes: FastifyPluginAsync = async (fastify) => {
       preHandler: [authenticate, requirePermission('clinical:patients', 'create')]
     },
     async (request, reply) => {
-      const payload = request.body as Omit<CreatePatientInput, 'tenantId'>;
+      const payload = validateBody(CreatePatientSchema, request.body) as Omit<CreatePatientInput, 'tenantId'>;
       const data = await clinicalWorkflowService.createPatient(payload, request.session);
       reply.status(201);
       return { success: true, data };
@@ -58,7 +123,7 @@ export const clinicalWorkflowRoutes: FastifyPluginAsync = async (fastify) => {
       preHandler: [authenticate, requirePermission('clinical:patients', 'create')]
     },
     async (request, reply) => {
-      const payload = request.body as Omit<CreatePatientInput, 'tenantId'>;
+      const payload = validateBody(CreatePatientSchema, request.body) as Omit<CreatePatientInput, 'tenantId'>;
       const data = await clinicalWorkflowService.createPatient(payload, request.session);
       reply.status(201);
       return { success: true, data };
@@ -132,7 +197,7 @@ export const clinicalWorkflowRoutes: FastifyPluginAsync = async (fastify) => {
       preHandler: [authenticate, requirePermission('clinical:encounters', 'create')]
     },
     async (request, reply) => {
-      const payload = request.body as Omit<CreateEncounterInput, 'tenantId'>;
+      const payload = validateBody(CreateEncounterSchema, request.body) as Omit<CreateEncounterInput, 'tenantId'>;
       const data = await clinicalWorkflowService.checkInEncounter(payload, request.session);
       reply.status(201);
       return { success: true, data };
@@ -145,7 +210,7 @@ export const clinicalWorkflowRoutes: FastifyPluginAsync = async (fastify) => {
       preHandler: [authenticate, requirePermission('clinical:encounters', 'create')]
     },
     async (request, reply) => {
-      const payload = request.body as Omit<CreateEncounterInput, 'tenantId'>;
+      const payload = validateBody(CreateEncounterSchema, request.body) as Omit<CreateEncounterInput, 'tenantId'>;
       const data = await clinicalWorkflowService.checkInEncounter(payload, request.session);
       reply.status(201);
       return { success: true, data };
@@ -158,7 +223,7 @@ export const clinicalWorkflowRoutes: FastifyPluginAsync = async (fastify) => {
       preHandler: [authenticate, requirePermission('clinical:encounters', 'create')]
     },
     async (request, reply) => {
-      const payload = request.body as Omit<CreateEncounterInput, 'tenantId'>;
+      const payload = validateBody(CreateEncounterSchema, request.body) as Omit<CreateEncounterInput, 'tenantId'>;
       const data = await clinicalWorkflowService.checkInEncounter(payload, request.session);
       reply.status(201);
       return { success: true, data };
@@ -222,7 +287,7 @@ export const clinicalWorkflowRoutes: FastifyPluginAsync = async (fastify) => {
       preHandler: [authenticate, requirePermission('clinical:consultations', 'create')]
     },
     async (request, reply) => {
-      const payload = request.body as Omit<SaveConsultationInput, 'tenantId'>;
+      const payload = validateBody(SaveConsultationSchema, request.body) as Omit<SaveConsultationInput, 'tenantId'>;
       const data = await clinicalWorkflowService.saveConsultation(payload, request.session);
       reply.status(201);
       return { success: true, data };
@@ -235,7 +300,7 @@ export const clinicalWorkflowRoutes: FastifyPluginAsync = async (fastify) => {
       preHandler: [authenticate, requirePermission('clinical:consultations', 'create')]
     },
     async (request, reply) => {
-      const payload = request.body as Omit<SaveConsultationInput, 'tenantId'>;
+      const payload = validateBody(SaveConsultationSchema, request.body) as Omit<SaveConsultationInput, 'tenantId'>;
       const data = await clinicalWorkflowService.saveConsultation(payload, request.session);
       reply.status(201);
       return { success: true, data };
@@ -278,11 +343,7 @@ export const clinicalWorkflowRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request, reply) => {
       const { id: encounterId } = request.params as { id: string };
-      const { patientId, doctorId, testNames } = request.body as {
-        patientId: string;
-        doctorId: string;
-        testNames: string[];
-      };
+      const { patientId, doctorId, testNames } = validateBody(BridgeOrdersSchema, request.body);
 
       const orders = await clinicalWorkflowService.bridgeDiagnosticOrders(
         encounterId,

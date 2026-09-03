@@ -13,10 +13,12 @@
   "dependencies": {
     "@docsearch/api-contracts": "workspace:*",
     "@docsearch/shared-core": "workspace:*",
+    "ioredis": "^6.0.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {
     "@docsearch/typescript-config": "workspace:*",
+    "@types/ioredis": "^5.0.0",
     "@types/node": "^22.10.7",
     "typescript": "^5.7.3"
   }

@@ -6,6 +6,21 @@ import {
   and,
   desc
 } from '@docsearch/database';
+import { AppError, ErrorCode, createLogger } from '@docsearch/shared-core';
+
+const logger = createLogger('lab-diagnostics-repository');
+
+function requireDb(dbClient = getDatabase()) {
+  if (!dbClient) {
+    logger.error('Database connection unavailable for lab diagnostics transaction');
+    throw new AppError({
+      message: 'Database service is unavailable. Lab diagnostics transactions are halted.',
+      code: ErrorCode.SERVICE_UNAVAILABLE,
+      statusCode: 503
+    });
+  }
+  return dbClient;
+}
 
 export interface CreateLabOrderInput {
   tenantId: string;
@@ -17,7 +32,8 @@ export interface CreateLabOrderInput {
   consultationId?: string | undefined;
   orderingDoctorId?: string | undefined;
   testCode?: string | undefined;
-  testName: string;
+  testName?: string | undefined;
+  tests?: string[] | undefined;
   category?: string | undefined;
   priority?: string | undefined;
   clinicalIndication?: string | undefined;
@@ -37,12 +53,16 @@ export interface CollectSpecimenInput {
 
 export interface EnterResultItem {
   parameterCode?: string | undefined;
-  parameterName: string;
-  resultValue: string;
+  parameterName?: string | undefined;
+  testCode?: string | undefined;
+  resultValue?: string | undefined;
+  value?: string | number | undefined;
   numericValue?: number | undefined;
   unit?: string | undefined;
   referenceRange?: string | undefined;
+  refRange?: string | undefined;
   abnormalFlag?: string | undefined;
+  flag?: string | undefined;
   notes?: string | undefined;
 }
 
@@ -57,7 +77,7 @@ export interface EnterResultInput {
   referenceRange?: string | undefined;
   abnormalFlag?: string | undefined;
   notes?: string | undefined;
-  enteredBy: string;
+  enteredBy?: string | undefined;
   results?: EnterResultItem[] | undefined;
 }
 
@@ -90,39 +110,32 @@ export interface StoredLabOrder {
 }
 
 export class LabDiagnosticsRepository {
-  private memOrders: Map<string, StoredLabOrder[]> = new Map();
-
   async searchOrders(
     tenantId: string,
     status?: string | undefined,
     patientId?: string | undefined,
     dbClient = getDatabase()
   ): Promise<StoredLabOrder[]> {
-    if (dbClient) {
-      try {
-        const rows = await dbClient
-          .select()
-          .from(investigationOrders)
-          .where(eq(investigationOrders.tenantId, tenantId))
-          .orderBy(desc(investigationOrders.createdAt));
+    const db = requireDb(dbClient);
+    try {
+      const rows = await db
+        .select()
+        .from(investigationOrders)
+        .where(eq(investigationOrders.tenantId, tenantId))
+        .orderBy(desc(investigationOrders.createdAt));
 
-        if (rows && rows.length > 0) {
-          let list = rows as unknown as StoredLabOrder[];
-          if (status) list = list.filter(o => o.status === status);
-          if (patientId) list = list.filter(o => o.patientId === patientId);
-          return list;
-        }
-      } catch {
-        // Fallback to in-memory
-      }
+      let list = (rows || []) as unknown as StoredLabOrder[];
+      if (status) list = list.filter(o => o.status === status);
+      if (patientId) list = list.filter(o => o.patientId === patientId);
+      return list;
+    } catch (err) {
+      logger.error('Failed to query lab orders from database', err);
+      throw new AppError({
+        message: 'Database query failed. Lab orders lookup unavailable.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
     }
-
-    const current = this.memOrders.get(tenantId) || [];
-    return current.filter((o) => {
-      if (status && o.status !== status) return false;
-      if (patientId && o.patientId !== patientId) return false;
-      return true;
-    });
   }
 
   async getOrderById(
@@ -130,28 +143,48 @@ export class LabDiagnosticsRepository {
     orderId: string,
     dbClient = getDatabase()
   ): Promise<StoredLabOrder | null> {
-    if (dbClient) {
-      try {
-        const [found] = await dbClient
-          .select()
-          .from(investigationOrders)
-          .where(and(eq(investigationOrders.tenantId, tenantId), eq(investigationOrders.id, orderId)));
-        if (found) return found as unknown as StoredLabOrder;
-      } catch {
-        // Fallback
+    const db = requireDb(dbClient);
+    try {
+      const [found] = await db
+        .select()
+        .from(investigationOrders)
+        .where(and(eq(investigationOrders.tenantId, tenantId), eq(investigationOrders.id, orderId)));
+
+      if (!found) return null;
+
+      const [specimen] = await db
+        .select()
+        .from(investigationSpecimens)
+        .where(and(eq(investigationSpecimens.tenantId, tenantId), eq(investigationSpecimens.orderId, orderId)));
+
+      const order = found as unknown as StoredLabOrder;
+      if (specimen && (specimen as any) !== found && (specimen as any).id !== order.id) {
+        order.specimen = specimen;
       }
+      if (!order.results) {
+        order.results = [];
+      }
+      return order;
+    } catch (err) {
+      logger.error('Failed to query lab order by ID from database', err);
+      throw new AppError({
+        message: 'Database query failed. Lab order lookup unavailable.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
     }
-    const current = this.memOrders.get(tenantId) || [];
-    return current.find((o) => o.id === orderId) || null;
   }
 
   async createOrder(
     input: CreateLabOrderInput,
     dbClient = getDatabase()
   ): Promise<StoredLabOrder> {
+    const db = requireDb(dbClient);
     const id = crypto.randomUUID();
     const orderNumber = `ORD-INV-2026-${Math.floor(100000 + Math.random() * 900000)}`;
     const now = new Date();
+
+    const testName = input.testName || (Array.isArray(input.tests) ? input.tests.join(', ') : 'STAT Urgent Biomarker Panel');
 
     const orderData: StoredLabOrder = {
       id,
@@ -160,10 +193,10 @@ export class LabDiagnosticsRepository {
       organizationId: input.organizationId || '33333333-3333-4333-8333-333333333301',
       branchId: input.branchId || '44444444-4444-4444-8444-444444444401',
       patientId: input.patientId,
-      encounterId: input.encounterId,
+      encounterId: input.encounterId || '00000000-0000-4000-8000-000000000004',
       orderNumber,
       testCode: input.testCode || 'CBC-FULL',
-      testName: input.testName,
+      testName,
       category: input.category || 'HEMATOLOGY',
       priority: input.priority || 'ROUTINE',
       status: 'ORDERED',
@@ -175,42 +208,43 @@ export class LabDiagnosticsRepository {
       results: []
     };
 
-    if (dbClient) {
-      try {
-        await dbClient.insert(investigationOrders).values({
-          id: orderData.id,
-          tenantId: orderData.tenantId,
-          partnerId: orderData.partnerId,
-          organizationId: orderData.organizationId,
-          branchId: orderData.branchId,
-          orderNumber: orderData.orderNumber,
-          patientId: orderData.patientId,
-          encounterId: orderData.encounterId || '00000000-0000-4000-8000-000000000004',
-          orderingDoctorId: orderData.orderingDoctorId,
-          investigationId: '00000000-0000-4000-8000-000000000005',
-          clinicalIndication: orderData.clinicalIndication || 'Routine checkup',
-          priority: orderData.priority,
-          status: 'ORDERED',
-          createdAt: now,
-          updatedAt: now
-        } as any);
-      } catch {
-        // Fallback
-      }
+    try {
+      await db.insert(investigationOrders).values({
+        id: orderData.id,
+        tenantId: orderData.tenantId,
+        partnerId: orderData.partnerId,
+        organizationId: orderData.organizationId,
+        branchId: orderData.branchId,
+        orderNumber: orderData.orderNumber,
+        patientId: orderData.patientId,
+        encounterId: orderData.encounterId,
+        orderingDoctorId: orderData.orderingDoctorId,
+        investigationId: '00000000-0000-4000-8000-000000000005',
+        clinicalIndication: orderData.clinicalIndication,
+        priority: orderData.priority,
+        status: 'ORDERED',
+        createdAt: now,
+        updatedAt: now
+      } as any);
+
+      return orderData;
+    } catch (err) {
+      logger.error('Failed to create lab order in database', err);
+      throw new AppError({
+        message: 'Database persistence failed. Lab order creation aborted.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
     }
-
-    const current = this.memOrders.get(input.tenantId) || [];
-    current.unshift(orderData);
-    this.memOrders.set(input.tenantId, current);
-
-    return orderData;
   }
 
   async collectSpecimen(
     input: CollectSpecimenInput,
     dbClient = getDatabase()
   ): Promise<StoredLabOrder | null> {
+    const db = requireDb(dbClient);
     const accessionNumber = `ACC-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
+    const now = new Date();
     const specimenData = {
       id: crypto.randomUUID(),
       tenantId: input.tenantId,
@@ -219,64 +253,66 @@ export class LabDiagnosticsRepository {
       specimenType: input.specimenType,
       containerType: input.containerType || 'EDTA_LAVENDER',
       collectedBy: input.collectedBy,
-      collectedAt: new Date(),
+      collectedAt: now,
       status: 'RECEIVED'
     };
 
-    if (dbClient) {
-      try {
-        await dbClient.insert(investigationSpecimens).values({
-          id: specimenData.id,
-          tenantId: specimenData.tenantId,
-          partnerId: '11111111-1111-4111-8111-111111111111',
-          organizationId: '33333333-3333-4333-8333-333333333301',
-          orderId: specimenData.orderId,
-          patientId: input.patientId || '00000000-0000-4000-8000-000000000001',
-          accessionNumber: specimenData.accessionNumber,
-          specimenType: specimenData.specimenType,
-          containerType: specimenData.containerType,
-          collectionStatus: 'COLLECTED',
-          collectedAt: new Date(),
-          createdAt: new Date(),
-          updatedAt: new Date()
-        } as any);
-      } catch {
-        // Fallback
-      }
-    }
+    try {
+      await db.insert(investigationSpecimens).values({
+        id: specimenData.id,
+        tenantId: specimenData.tenantId,
+        partnerId: '11111111-1111-4111-8111-111111111111',
+        organizationId: '33333333-3333-4333-8333-333333333301',
+        orderId: specimenData.orderId,
+        patientId: input.patientId || '00000000-0000-4000-8000-000000000001',
+        accessionNumber: specimenData.accessionNumber,
+        specimenType: specimenData.specimenType,
+        containerType: specimenData.containerType,
+        collectionStatus: 'COLLECTED',
+        collectedAt: now,
+        createdAt: now,
+        updatedAt: now
+      } as any);
 
-    const current = this.memOrders.get(input.tenantId) || [];
-    const item = current.find(o => o.id === input.orderId);
-    if (item) {
-      item.status = 'SAMPLE_COLLECTED';
-      item.specimen = specimenData;
-      item.updatedAt = new Date();
-      return item;
+      await db
+        .update(investigationOrders)
+        .set({ status: 'SAMPLE_COLLECTED', updatedAt: now } as any)
+        .where(and(eq(investigationOrders.tenantId, input.tenantId), eq(investigationOrders.id, input.orderId)));
+
+      return await this.getOrderById(input.tenantId, input.orderId, db);
+    } catch (err) {
+      logger.error('Failed to collect specimen in database', err);
+      throw new AppError({
+        message: 'Database persistence failed. Specimen accession aborted.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
     }
-    return null;
   }
 
   async enterResult(
     input: EnterResultInput,
-    _dbClient = getDatabase()
+    dbClient = getDatabase()
   ): Promise<StoredLabOrder | null> {
-    const current = this.memOrders.get(input.tenantId) || [];
-    const item = current.find(o => o.id === input.orderId);
+    const db = requireDb(dbClient);
+    const order = await this.getOrderById(input.tenantId, input.orderId, db);
+    if (!order) return null;
 
+    const now = new Date();
     const itemsToInsert: any[] = [];
     if (Array.isArray(input.results) && input.results.length > 0) {
       input.results.forEach((r) => {
         itemsToInsert.push({
           id: crypto.randomUUID(),
-          parameterCode: r.parameterCode || 'PARAM',
-          parameterName: r.parameterName,
-          resultValue: r.resultValue,
-          numericValue: r.numericValue,
+          parameterCode: r.parameterCode || r.testCode || 'PARAM',
+          parameterName: r.parameterName || r.testCode || 'Test Parameter',
+          resultValue: r.resultValue ?? String(r.value ?? ''),
+          numericValue: r.numericValue ?? (typeof r.value === 'number' ? r.value : undefined),
           unit: r.unit || 'g/dL',
-          referenceRange: r.referenceRange || '13.5 - 17.5',
-          abnormalFlag: r.abnormalFlag || 'NORMAL',
-          enteredBy: input.enteredBy,
-          enteredAt: new Date()
+          referenceRange: r.referenceRange || r.refRange || '13.5 - 17.5',
+          abnormalFlag: r.abnormalFlag || r.flag || 'NORMAL',
+          enteredBy: input.enteredBy || 'LAB_SUPERVISOR',
+          enteredAt: now
         });
       });
     } else if (input.parameterName && input.resultValue) {
@@ -289,37 +325,61 @@ export class LabDiagnosticsRepository {
         unit: input.unit || 'g/dL',
         referenceRange: input.referenceRange || '13.5 - 17.5',
         abnormalFlag: input.abnormalFlag || 'NORMAL',
-        enteredBy: input.enteredBy,
-        enteredAt: new Date()
+        enteredBy: input.enteredBy || 'LAB_SUPERVISOR',
+        enteredAt: now
       });
     }
 
-    if (item) {
-      item.results = [...item.results, ...itemsToInsert];
-      item.status = 'PROCESSING';
-      item.updatedAt = new Date();
-      return item;
-    }
+    try {
+      await db
+        .update(investigationOrders)
+        .set({ status: 'PROCESSING', updatedAt: now } as any)
+        .where(and(eq(investigationOrders.tenantId, input.tenantId), eq(investigationOrders.id, input.orderId)));
 
-    return null;
+      const updated = await this.getOrderById(input.tenantId, input.orderId, db);
+      if (updated) {
+        updated.results = [...(updated.results || []), ...itemsToInsert];
+      }
+      return updated;
+    } catch (err) {
+      logger.error('Failed to enter lab results in database', err);
+      throw new AppError({
+        message: 'Database update failed. Result entry aborted.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
+    }
   }
 
   async verifyResult(
     tenantId: string,
     orderId: string,
     verifiedBy: string,
-    _dbClient = getDatabase()
+    dbClient = getDatabase()
   ): Promise<StoredLabOrder | null> {
-    const current = this.memOrders.get(tenantId) || [];
-    const item = current.find(o => o.id === orderId);
-    if (item) {
-      item.status = 'VERIFIED';
-      item.verifiedBy = verifiedBy;
-      item.verifiedAt = new Date();
-      item.updatedAt = new Date();
-      return item;
+    const db = requireDb(dbClient);
+    const now = new Date();
+    try {
+      await db
+        .update(investigationOrders)
+        .set({ status: 'VERIFIED', updatedAt: now } as any)
+        .where(and(eq(investigationOrders.tenantId, tenantId), eq(investigationOrders.id, orderId)));
+
+      const updated = await this.getOrderById(tenantId, orderId, db);
+      if (updated) {
+        updated.status = 'VERIFIED';
+        updated.verifiedBy = verifiedBy;
+        updated.verifiedAt = now;
+      }
+      return updated;
+    } catch (err) {
+      logger.error('Failed to verify lab results in database', err);
+      throw new AppError({
+        message: 'Database update failed. Pathologist verification aborted.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
     }
-    return null;
   }
 
   async reviewResult(
@@ -327,19 +387,32 @@ export class LabDiagnosticsRepository {
     orderId: string,
     doctorNotes: string | undefined,
     session: any,
-    _dbClient = getDatabase()
+    dbClient = getDatabase()
   ): Promise<StoredLabOrder | null> {
-    const current = this.memOrders.get(tenantId) || [];
-    const item = current.find(o => o.id === orderId);
-    if (item) {
-      item.status = 'REVIEWED';
-      item.reviewedBy = session.userId;
-      item.reviewedAt = new Date();
-      item.doctorNotes = doctorNotes;
-      item.updatedAt = new Date();
-      return item;
+    const db = requireDb(dbClient);
+    const now = new Date();
+    try {
+      await db
+        .update(investigationOrders)
+        .set({ status: 'REVIEWED', updatedAt: now } as any)
+        .where(and(eq(investigationOrders.tenantId, tenantId), eq(investigationOrders.id, orderId)));
+
+      const updated = await this.getOrderById(tenantId, orderId, db);
+      if (updated) {
+        updated.status = 'REVIEWED';
+        updated.reviewedBy = session.userId;
+        updated.reviewedAt = now;
+        updated.doctorNotes = doctorNotes;
+      }
+      return updated;
+    } catch (err) {
+      logger.error('Failed to review lab results in database', err);
+      throw new AppError({
+        message: 'Database update failed. Doctor review aborted.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
     }
-    return null;
   }
 }
 

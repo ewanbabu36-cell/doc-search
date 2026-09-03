@@ -238,3 +238,123 @@ export const OverrideBedAllocationRequestSchema = z.object({
   authorizedBy: z.string()
 });
 export type OverrideBedAllocationRequest = z.infer<typeof OverrideBedAllocationRequestSchema>;
+
+// ============================================================================
+// Executive MIS & Revenue Leakage DTOs (Milestone 3.5)
+// ============================================================================
+
+export const DepartmentWiseBillingSummaryDtoSchema = z.object({
+  department: z.string(), // 'OPD', 'IPD', 'EMERGENCY', 'ICU', 'OPERATION_THEATRE', 'PHARMACY', 'LABORATORY', 'RADIOLOGY'
+  grossBilledInr: z.number(),
+  discountsInr: z.number(),
+  netBilledInr: z.number(),
+  cashCollectedInr: z.number(),
+  insurancePendingInr: z.number(),
+  encounterCount: z.number(),
+  averageTicketSizeInr: z.number()
+});
+export type DepartmentWiseBillingSummaryDto = z.infer<typeof DepartmentWiseBillingSummaryDtoSchema>;
+
+export const UnbilledEncounterItemDtoSchema = z.object({
+  encounterId: z.string(),
+  patientMrn: z.string(),
+  patientName: z.string(),
+  department: z.string(),
+  encounterType: z.enum(['OPD', 'IPD', 'EMERGENCY', 'DAYCARE']),
+  admissionDischargeDate: z.string(),
+  completedServices: z.array(z.string()),
+  unbilledAmountEstimateInr: z.number(),
+  unbilledReason: z.enum([
+    'MISSING_DISCHARGE_ORDER',
+    'PENDING_LAB_VERIFICATION',
+    'UNFINALIZED_SURGICAL_NOTES',
+    'TPA_PRE_AUTH_QUERY',
+    'UNPOSTED_WARD_CONSUMABLES'
+  ]),
+  agingHours: z.number(),
+  status: z.enum(['ACTION_REQUIRED', 'IN_REVIEW', 'ESCALATED_TO_BILLING_LEAD', 'RESOLVED'])
+});
+export type UnbilledEncounterItemDto = z.infer<typeof UnbilledEncounterItemDtoSchema>;
+
+export const InsuranceClaimAgingBucketDtoSchema = z.object({
+  bucket: z.enum(['0_30_DAYS', '31_60_DAYS', '61_90_DAYS', 'OVER_90_DAYS']),
+  totalClaimCount: z.number(),
+  totalClaimAmountInr: z.number(),
+  preAuthPendingCount: z.number(),
+  queryRaisedCount: z.number(),
+  approvedSettledCount: z.number(),
+  deniedCount: z.number(),
+  tpaBreakdown: z.array(z.object({
+    tpaName: z.string(),
+    amountInr: z.number(),
+    claimCount: z.number()
+  }))
+});
+export type InsuranceClaimAgingBucketDto = z.infer<typeof InsuranceClaimAgingBucketDtoSchema>;
+
+export const InventoryShrinkageItemDtoSchema = z.object({
+  itemSku: z.string(),
+  itemName: z.string(),
+  department: z.string(),
+  physicalCount: z.number(),
+  systemRecordedCount: z.number(),
+  discrepancyUnits: z.number(),
+  shrinkageRatePct: z.number(),
+  unitCostInr: z.number(),
+  totalShrinkageLossInr: z.number(),
+  reason: z.enum([
+    'EXPIRED_UNRECORDED',
+    'BREAKAGE_SPILLAGE',
+    'PILFERAGE_UNACCOUNTED',
+    'BATCH_DISCREPANCY',
+    'DATA_ENTRY_LAG'
+  ]),
+  investigationStatus: z.enum(['FLAGGED', 'UNDER_AUDIT', 'RESOLVED_WRITTEN_OFF'])
+});
+export type InventoryShrinkageItemDto = z.infer<typeof InventoryShrinkageItemDtoSchema>;
+
+export const DoctorPayoutCalculationDtoSchema = z.object({
+  doctorId: z.string(),
+  doctorName: z.string(),
+  specialty: z.string(),
+  remunerationModel: z.enum([
+    'FEE_FOR_SERVICE_OPD',
+    'SURGICAL_PROCEDURE_SPLIT',
+    'FIXED_RETAINER_PLUS_INCENTIVE',
+    'IPD_PER_DIEM_ROUNDS'
+  ]),
+  totalPatientsAttended: z.number(),
+  grossBilledRevenueInr: z.number(),
+  hospitalShareInr: z.number(),
+  doctorGrossPayoutInr: z.number(),
+  tdsDeductionInr: z.number(), // Section 194J (10%)
+  netPayableInr: z.number(),
+  settlementStatus: z.enum(['CALCULATED_PENDING_APPROVAL', 'APPROVED_BY_CFO', 'DISBURSED']),
+  payoutPeriod: z.string()
+});
+export type DoctorPayoutCalculationDto = z.infer<typeof DoctorPayoutCalculationDtoSchema>;
+
+export const ExecutiveMisDashboardDtoSchema = z.object({
+  tenantId: z.string().uuid(),
+  generatedAt: z.string(),
+  executiveSnapshot: ExecutiveCommandSnapshotDtoSchema,
+  departmentWiseBilling: z.array(DepartmentWiseBillingSummaryDtoSchema),
+  unbilledEncounters: z.array(UnbilledEncounterItemDtoSchema),
+  insuranceClaimAging: z.array(InsuranceClaimAgingBucketDtoSchema),
+  inventoryShrinkage: z.array(InventoryShrinkageItemDtoSchema),
+  doctorPayouts: z.array(DoctorPayoutCalculationDtoSchema),
+  rcmLeakageRisks: z.array(RcmLeakageRiskItemDtoSchema),
+  summaryKpis: z.object({
+    totalGrossBilledInr: z.number(),
+    totalNetBilledInr: z.number(),
+    totalCashCollectedInr: z.number(),
+    totalInsuranceArInr: z.number(),
+    totalUnbilledRiskInr: z.number(),
+    totalInventoryShrinkageLossInr: z.number(),
+    totalDoctorNetPayoutInr: z.number(),
+    unbilledEncountersCount: z.number(),
+    criticalConsumablesStockoutRiskCount: z.number()
+  })
+});
+export type ExecutiveMisDashboardDto = z.infer<typeof ExecutiveMisDashboardDtoSchema>;
+

@@ -195,7 +195,7 @@ export class PricingEngine {
       basePrice,
       addonsTotal,
       subtotal,
-      appliedOffer,
+      ...(appliedOffer ? { appliedOffer } : {}),
       discountTotal,
       taxableAmount,
       taxRatePercent,

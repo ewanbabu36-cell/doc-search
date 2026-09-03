@@ -8,6 +8,21 @@ import {
   and,
   desc
 } from '@docsearch/database';
+import { AppError, ErrorCode, createLogger } from '@docsearch/shared-core';
+
+const logger = createLogger('emergency-management-repository');
+
+function requireDb(dbClient = getDatabase()) {
+  if (!dbClient) {
+    logger.error('Database connection unavailable for emergency transaction');
+    throw new AppError({
+      message: 'Database service is unavailable. Emergency transactions are halted.',
+      code: ErrorCode.SERVICE_UNAVAILABLE,
+      statusCode: 503
+    });
+  }
+  return dbClient;
+}
 
 export interface EmergencyRegistrationInput {
   tenantId: string;
@@ -49,7 +64,7 @@ export interface EmergencyTreatmentInput {
   orders?: Array<{
     orderType: string; // LAB, RADIOLOGY, MEDICATION
     description: string;
-    priority: string;
+    priority?: string;
   }>;
   reassessmentVitals?: {
     bloodPressure?: string;
@@ -63,7 +78,7 @@ export interface EmergencyDispositionInput {
   encounterId: string;
   patientId: string;
   clinicianId: string;
-  dispositionType: 'DISCHARGED' | 'ADMITTED' | 'TRANSFERRED' | 'REFERRED' | 'LEFT_AGAINST_MEDICAL_ADVICE' | 'DECEASED';
+  dispositionType: 'ADMIT_TO_WARD' | 'ADMIT_TO_ICU' | 'DISCHARGE_HOME' | 'TRANSFER_FACILITY' | 'AGAINST_MEDICAL_ADVICE' | 'DECEASED';
   dispositionNotes: string;
   destinationFacility?: string;
   linkedAdmissionId?: string;
@@ -78,11 +93,11 @@ export interface StoredEmergencyEncounter {
   emergencyNumber: string;
   patientId: string;
   canonicalEncounterId: string;
-  assignedClinicianId: string | null;
+  assignedClinicianId?: string | null | undefined;
   arrivalMode: string;
   chiefComplaint: string;
   priority: string;
-  status: 'REGISTERED' | 'TRIAGED' | 'IN_TREATMENT' | 'UNDER_OBSERVATION' | 'DISPOSITION_COMPLETED';
+  status: 'REGISTERED' | 'TRIAGED' | 'IN_TREATMENT' | 'DISPOSITION_PENDING' | 'DISPOSITION_COMPLETED';
   triage: {
     triageCategory: string;
     triageNurseId: string;
@@ -101,7 +116,7 @@ export interface StoredEmergencyEncounter {
   treatments: Array<{
     clinicianId: string;
     treatmentNotes: string;
-    orders: Array<{ orderType: string; description: string; priority: string }>;
+    orders: Array<{ orderType: string; description: string; priority?: string | undefined }>;
     reassessmentVitals?: { bloodPressure?: string | undefined; pulseRate?: string | undefined; spO2?: string | undefined } | undefined;
     recordedAt: Date;
   }>;
@@ -119,49 +134,50 @@ export interface StoredEmergencyEncounter {
 }
 
 export class EmergencyManagementRepository {
-  private memEncounters = new Map<string, StoredEmergencyEncounter[]>();
-
   async getQueue(tenantId: string, status?: string, priority?: string, dbClient = getDatabase()): Promise<StoredEmergencyEncounter[]> {
-    if (dbClient) {
-      try {
-        const rows = await dbClient
-          .select()
-          .from(emergencyEncounters)
-          .where(eq(emergencyEncounters.tenantId, tenantId))
-          .orderBy(desc(emergencyEncounters.createdAt));
-        if (rows.length > 0) {
-          let list = rows as unknown as StoredEmergencyEncounter[];
-          if (status) list = list.filter(e => e.status === status);
-          if (priority) list = list.filter(e => e.priority === priority);
-          return list;
-        }
-      } catch {
-        // Fallback
-      }
+    const db = requireDb(dbClient);
+    try {
+      const rows = await db
+        .select()
+        .from(emergencyEncounters)
+        .where(eq(emergencyEncounters.tenantId, tenantId))
+        .orderBy(desc(emergencyEncounters.createdAt));
+
+      let list = (rows || []) as unknown as StoredEmergencyEncounter[];
+      if (status) list = list.filter(e => e.status === status);
+      if (priority) list = list.filter(e => e.priority === priority);
+      return list;
+    } catch (err) {
+      logger.error('Failed to query emergency queue from database', err);
+      throw new AppError({
+        message: 'Database query failed. Emergency queue unavailable.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
     }
-    let list = this.memEncounters.get(tenantId) || [];
-    if (status) list = list.filter(e => e.status === status);
-    if (priority) list = list.filter(e => e.priority === priority);
-    return list;
   }
 
   async getEncounterById(tenantId: string, id: string, dbClient = getDatabase()): Promise<StoredEmergencyEncounter | null> {
-    if (dbClient) {
-      try {
-        const [found] = await dbClient
-          .select()
-          .from(emergencyEncounters)
-          .where(and(eq(emergencyEncounters.tenantId, tenantId), eq(emergencyEncounters.id, id)));
-        if (found) return found as unknown as StoredEmergencyEncounter;
-      } catch {
-        // Fallback
-      }
+    const db = requireDb(dbClient);
+    try {
+      const [found] = await db
+        .select()
+        .from(emergencyEncounters)
+        .where(and(eq(emergencyEncounters.tenantId, tenantId), eq(emergencyEncounters.id, id)));
+
+      return (found as unknown as StoredEmergencyEncounter) || null;
+    } catch (err) {
+      logger.error('Failed to query emergency encounter by ID from database', err);
+      throw new AppError({
+        message: 'Database query failed. Emergency encounter lookup unavailable.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
     }
-    const list = this.memEncounters.get(tenantId) || [];
-    return list.find(e => e.id === id) || null;
   }
 
   async registerEmergencyPatient(input: EmergencyRegistrationInput, dbClient = getDatabase()): Promise<StoredEmergencyEncounter> {
+    const db = requireDb(dbClient);
     const id = crypto.randomUUID();
     const canonicalEncounterId = crypto.randomUUID();
     const emergencyNumber = `EMG-${Math.floor(100000 + Math.random() * 900000)}`;
@@ -189,51 +205,49 @@ export class EmergencyManagementRepository {
       updatedAt: now
     };
 
-    if (dbClient) {
-      try {
-        // Create canonical encounter
-        await dbClient.insert(encounters).values({
-          id: canonicalEncounterId,
-          tenantId: record.tenantId,
-          partnerId: record.partnerId,
-          organizationId: record.organizationId,
-          branchId: record.branchId,
-          patientId: record.patientId,
-          doctorId: record.assignedClinicianId || '00000000-0000-0000-0000-000000000000',
-          encounterType: 'EMERGENCY',
-          status: 'IN_PROGRESS',
-          chiefComplaint: record.chiefComplaint,
-          checkedInAt: now
-        } as unknown as typeof encounters.$inferInsert);
+    try {
+      await db.insert(encounters).values({
+        id: canonicalEncounterId,
+        tenantId: record.tenantId,
+        partnerId: record.partnerId,
+        organizationId: record.organizationId,
+        branchId: record.branchId,
+        patientId: record.patientId,
+        doctorId: record.assignedClinicianId || '00000000-0000-0000-0000-000000000000',
+        encounterType: 'EMERGENCY',
+        status: 'IN_PROGRESS',
+        chiefComplaint: record.chiefComplaint,
+        checkedInAt: now
+      } as unknown as typeof encounters.$inferInsert);
 
-        // Create Emergency Encounter
-        const [created] = await dbClient.insert(emergencyEncounters).values({
-          id: record.id,
-          tenantId: record.tenantId,
-          partnerId: record.partnerId,
-          organizationId: record.organizationId,
-          branchId: record.branchId,
-          emergencyNumber: record.emergencyNumber,
-          patientId: record.patientId,
-          encounterId: record.canonicalEncounterId,
-          chiefComplaint: record.chiefComplaint,
-          arrivalMode: record.arrivalMode,
-          status: record.status
-        } as unknown as typeof emergencyEncounters.$inferInsert).returning();
-        if (created) return { ...record, id: created.id };
-      } catch {
-        // Fallback
-      }
+      const [created] = await db.insert(emergencyEncounters).values({
+        id: record.id,
+        tenantId: record.tenantId,
+        partnerId: record.partnerId,
+        organizationId: record.organizationId,
+        branchId: record.branchId,
+        emergencyNumber: record.emergencyNumber,
+        patientId: record.patientId,
+        encounterId: record.canonicalEncounterId,
+        chiefComplaint: record.chiefComplaint,
+        arrivalMode: record.arrivalMode,
+        status: record.status
+      } as unknown as typeof emergencyEncounters.$inferInsert).returning();
+
+      return { ...record, id: created ? created.id : record.id };
+    } catch (err) {
+      logger.error('Failed to register emergency patient in database', err);
+      throw new AppError({
+        message: 'Database persistence failed. Emergency registration aborted.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
     }
-
-    const current = this.memEncounters.get(input.tenantId) || [];
-    current.unshift(record);
-    this.memEncounters.set(input.tenantId, current);
-    return record;
   }
 
   async recordTriage(input: EmergencyTriageInput, dbClient = getDatabase()): Promise<StoredEmergencyEncounter | null> {
-    const item = await this.getEncounterById(input.tenantId, input.encounterId, dbClient);
+    const db = requireDb(dbClient);
+    const item = await this.getEncounterById(input.tenantId, input.encounterId, db);
     if (!item) return null;
 
     const now = new Date();
@@ -258,40 +272,44 @@ export class EmergencyManagementRepository {
     item.status = 'TRIAGED';
     item.updatedAt = now;
 
-    if (dbClient) {
-      try {
-        await dbClient.insert(emergencyTriageAssessments).values({
-          id: crypto.randomUUID(),
-          tenantId: input.tenantId,
-          partnerId: item.partnerId,
-          organizationId: item.organizationId,
-          branchId: item.branchId,
-          emergencyEncounterId: item.id,
-          triageLevel: item.priority,
-          chiefComplaint: input.chiefComplaint || item.chiefComplaint,
-          systolicBP: input.bloodPressure ? parseInt(input.bloodPressure.split('/')[0] || '120') : 120,
-          heartRate: input.pulseRate ? parseInt(input.pulseRate) : 80,
-          spO2: input.spO2 ? parseInt(input.spO2) : 98,
-          painScore: input.painScore || 0,
-          gcsScore: input.glasgowComaScale || 15,
-          triageNurseId: input.triageNurseId,
-          triagedAt: now
-        } as unknown as typeof emergencyTriageAssessments.$inferInsert);
+    try {
+      await db.insert(emergencyTriageAssessments).values({
+        id: crypto.randomUUID(),
+        tenantId: input.tenantId,
+        partnerId: item.partnerId,
+        organizationId: item.organizationId,
+        branchId: item.branchId,
+        emergencyEncounterId: item.id,
+        triageLevel: item.priority,
+        chiefComplaint: input.chiefComplaint || item.chiefComplaint,
+        systolicBP: input.bloodPressure ? parseInt(input.bloodPressure.split('/')[0] || '120') : 120,
+        heartRate: input.pulseRate ? parseInt(input.pulseRate) : 80,
+        spO2: input.spO2 ? parseInt(input.spO2) : 98,
+        painScore: input.painScore || 0,
+        gcsScore: input.glasgowComaScale || 15,
+        triageNurseId: input.triageNurseId,
+        triagedAt: now
+      } as unknown as typeof emergencyTriageAssessments.$inferInsert);
 
-        await dbClient
-          .update(emergencyEncounters)
-          .set({ updatedAt: now })
-          .where(and(eq(emergencyEncounters.tenantId, input.tenantId), eq(emergencyEncounters.id, input.encounterId)));
-      } catch {
-        // Fallback
-      }
+      await db
+        .update(emergencyEncounters)
+        .set({ status: 'TRIAGED', updatedAt: now } as any)
+        .where(and(eq(emergencyEncounters.tenantId, input.tenantId), eq(emergencyEncounters.id, input.encounterId)));
+
+      return item;
+    } catch (err) {
+      logger.error('Failed to record emergency triage in database', err);
+      throw new AppError({
+        message: 'Database persistence failed. Triage assessment aborted.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
     }
-
-    return item;
   }
 
   async recordTreatment(input: EmergencyTreatmentInput, dbClient = getDatabase()): Promise<StoredEmergencyEncounter | null> {
-    const item = await this.getEncounterById(input.tenantId, input.encounterId, dbClient);
+    const db = requireDb(dbClient);
+    const item = await this.getEncounterById(input.tenantId, input.encounterId, db);
     if (!item) return null;
 
     const now = new Date();
@@ -308,22 +326,26 @@ export class EmergencyManagementRepository {
     item.status = 'IN_TREATMENT';
     item.updatedAt = now;
 
-    if (dbClient) {
-      try {
-        await dbClient
-          .update(emergencyEncounters)
-          .set({ updatedAt: now })
-          .where(and(eq(emergencyEncounters.tenantId, input.tenantId), eq(emergencyEncounters.id, input.encounterId)));
-      } catch {
-        // Fallback
-      }
-    }
+    try {
+      await db
+        .update(emergencyEncounters)
+        .set({ status: 'IN_TREATMENT', updatedAt: now } as any)
+        .where(and(eq(emergencyEncounters.tenantId, input.tenantId), eq(emergencyEncounters.id, input.encounterId)));
 
-    return item;
+      return item;
+    } catch (err) {
+      logger.error('Failed to record emergency treatment in database', err);
+      throw new AppError({
+        message: 'Database persistence failed. Emergency treatment aborted.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
+    }
   }
 
   async recordDisposition(input: EmergencyDispositionInput, dbClient = getDatabase()): Promise<StoredEmergencyEncounter | null> {
-    const item = await this.getEncounterById(input.tenantId, input.encounterId, dbClient);
+    const db = requireDb(dbClient);
+    const item = await this.getEncounterById(input.tenantId, input.encounterId, db);
     if (!item) return null;
 
     const now = new Date();
@@ -340,36 +362,54 @@ export class EmergencyManagementRepository {
     item.status = 'DISPOSITION_COMPLETED';
     item.updatedAt = now;
 
-    if (dbClient) {
-      try {
-        await dbClient.insert(emergencyDispositionRecords).values({
-          id: crypto.randomUUID(),
-          tenantId: input.tenantId,
-          partnerId: item.partnerId,
-          organizationId: item.organizationId,
-          branchId: item.branchId,
-          emergencyEncounterId: item.id,
-          dispositionType: input.dispositionType,
-          dispositionNotes: input.dispositionNotes,
-          decidedByDoctorId: input.clinicianId,
-          dispositionedAt: now
-        } as unknown as typeof emergencyDispositionRecords.$inferInsert);
+    try {
+      await db.insert(emergencyDispositionRecords).values({
+        id: crypto.randomUUID(),
+        tenantId: input.tenantId,
+        partnerId: item.partnerId,
+        organizationId: item.organizationId,
+        branchId: item.branchId,
+        emergencyEncounterId: item.id,
+        dispositionType: input.dispositionType,
+        dispositionNotes: input.dispositionNotes,
+        decidedByDoctorId: input.clinicianId,
+        dispositionedAt: now
+      } as unknown as typeof emergencyDispositionRecords.$inferInsert);
 
-        await dbClient
-          .update(emergencyEncounters)
-          .set({ dispositionOutcome: input.dispositionType, updatedAt: now })
-          .where(and(eq(emergencyEncounters.tenantId, input.tenantId), eq(emergencyEncounters.id, input.encounterId)));
-      } catch {
-        // Fallback
-      }
+      await db
+        .update(emergencyEncounters)
+        .set({ status: 'DISPOSITION_COMPLETED', dispositionOutcome: input.dispositionType, updatedAt: now } as any)
+        .where(and(eq(emergencyEncounters.tenantId, input.tenantId), eq(emergencyEncounters.id, input.encounterId)));
+
+      return item;
+    } catch (err) {
+      logger.error('Failed to record emergency disposition in database', err);
+      throw new AppError({
+        message: 'Database persistence failed. Emergency disposition aborted.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
     }
-
-    return item;
   }
 
-  async getPatientEmergencyHistory(tenantId: string, patientId: string): Promise<StoredEmergencyEncounter[]> {
-    const list = this.memEncounters.get(tenantId) || [];
-    return list.filter(e => e.patientId === patientId);
+  async getPatientEmergencyHistory(tenantId: string, patientId: string, dbClient = getDatabase()): Promise<StoredEmergencyEncounter[]> {
+    const db = requireDb(dbClient);
+    try {
+      const rows = await db
+        .select()
+        .from(emergencyEncounters)
+        .where(and(eq(emergencyEncounters.tenantId, tenantId), eq(emergencyEncounters.patientId, patientId)))
+        .orderBy(desc(emergencyEncounters.createdAt));
+
+      return (rows || []) as unknown as StoredEmergencyEncounter[];
+    } catch (err) {
+      logger.error('Failed to query patient emergency history from database', err);
+      throw new AppError({
+        message: 'Database query failed. Emergency history unavailable.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
+    }
   }
 }
 

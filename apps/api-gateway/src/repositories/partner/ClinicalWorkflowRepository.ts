@@ -9,7 +9,22 @@ import {
   type Patient,
   type Encounter
 } from '@docsearch/database';
+import { AppError, ErrorCode, createLogger } from '@docsearch/shared-core';
 import { labDiagnosticsRepository } from './LabDiagnosticsRepository.js';
+
+const logger = createLogger('clinical-workflow-repository');
+
+function requireDb(dbClient = getDatabase()) {
+  if (!dbClient) {
+    logger.error('Database connection unavailable for clinical transaction');
+    throw new AppError({
+      message: 'Database service is unavailable. Clinical transactions are halted.',
+      code: ErrorCode.SERVICE_UNAVAILABLE,
+      statusCode: 503
+    });
+  }
+  return dbClient;
+}
 
 export interface CreatePatientInput {
   tenantId: string;
@@ -46,45 +61,46 @@ export interface SaveConsultationInput {
   encounterId: string;
   patientId: string;
   doctorId: string;
+  status?: string;
   chiefComplaint?: string;
   historyOfPresentIllness?: string;
   pastMedicalHistory?: string;
   examinationNotes?: string;
   assessmentNotes?: string;
   planNotes?: string;
-  status?: string;
   vitals?: {
     temperatureFahrenheit?: number;
-    heartRateBpm?: number;
-    respiratoryRateBpm?: number;
     systolicBp?: number;
     diastolicBp?: number;
+    heartRateBpm?: number;
+    respiratoryRateBpm?: number;
+    spO2Percentage?: number;
     oxygenSaturationPercent?: number;
     weightKg?: number;
     heightCm?: number;
-    bmi?: number;
+    bmi?: number | string;
   };
   diagnoses?: Array<{
-    diagnosisCode: string;
-    diagnosisName: string;
+    code?: string;
+    description?: string;
+    diagnosisCode?: string;
+    diagnosisName?: string;
     isPrimary?: boolean;
+    type?: 'PROVISIONAL' | 'FINAL';
   }>;
   medications?: Array<{
-    medicationName: string;
+    drugName?: string;
     genericName?: string;
-    strength: string;
-    dosage: string;
-    route?: string;
-    frequency: string;
-    duration: number;
+    medicationName?: string;
+    strength?: string;
+    dosage?: string;
+    frequency?: string;
+    duration?: string | number;
     durationUnit?: string;
+    durationDays?: number;
     instructions?: string;
-    beforeAfterFood?: string;
-    isGenericAccepted?: boolean;
-    janAushadhiPrice?: number;
-    brandPrice?: number;
   }>;
-  labInvestigations?: string[];
+  labInvestigations?: any;
   followUpAdvice?: string;
 }
 
@@ -105,117 +121,97 @@ export interface StoredConsultation {
   examinationNotes: string;
   assessmentNotes: string;
   planNotes: string;
-  vitals: SaveConsultationInput['vitals'] | null;
-  diagnoses: SaveConsultationInput['diagnoses'];
-  medications: SaveConsultationInput['medications'];
-  labInvestigations?: string[];
+  vitals?: SaveConsultationInput['vitals'] | null;
+  diagnoses?: SaveConsultationInput['diagnoses'];
+  medications?: SaveConsultationInput['medications'];
+  labInvestigations?: SaveConsultationInput['labInvestigations'];
   followUpAdvice?: string;
-  completedAt?: Date;
+  completedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
 
-export const ICD10_CATALOGUE = [
-  { code: 'E11.9', name: 'Type 2 diabetes mellitus without complications', category: 'Endocrine' },
-  { code: 'E11.65', name: 'Type 2 diabetes mellitus with hyperglycemia', category: 'Endocrine' },
-  { code: 'I10', name: 'Essential (primary) hypertension', category: 'Cardiovascular' },
-  { code: 'E78.5', name: 'Hyperlipidemia, unspecified', category: 'Endocrine' },
-  { code: 'J06.9', name: 'Acute upper respiratory infection, unspecified', category: 'Respiratory' },
-  { code: 'J20.9', name: 'Acute bronchitis, unspecified', category: 'Respiratory' },
-  { code: 'K21.9', name: 'Gastro-esophageal reflux disease without esophagitis', category: 'Gastroenterology' },
-  { code: 'R53.83', name: 'Other fatigue and lethargy', category: 'General' },
-  { code: 'M54.5', name: 'Low back pain', category: 'Musculoskeletal' },
-  { code: 'N39.0', name: 'Urinary tract infection, site not specified', category: 'Genitourinary' },
-  { code: 'A09', name: 'Infectious gastroenteritis and colitis, unspecified', category: 'Infectious' }
+const ICD10_CATALOGUE = [
+  { code: 'I10', name: 'Essential (primary) hypertension', category: 'Circulatory System' },
+  { code: 'I20.9', name: 'Angina pectoris, unspecified', category: 'Circulatory System' },
+  { code: 'E11.9', name: 'Type 2 diabetes mellitus without complications', category: 'Endocrine, Nutritional and Metabolic' },
+  { code: 'J06.9', name: 'Acute upper respiratory infection, unspecified', category: 'Respiratory System' },
+  { code: 'K29.70', name: 'Gastritis, unspecified, without bleeding', category: 'Digestive System' },
+  { code: 'M54.5', name: 'Low back pain', category: 'Musculoskeletal System' },
+  { code: 'R50.9', name: 'Fever, unspecified', category: 'General Symptoms' },
+  { code: 'A09', name: 'Infectious gastroenteritis and colitis, unspecified', category: 'Infectious Diseases' },
+  { code: 'B34.9', name: 'Viral infection, unspecified', category: 'Infectious Diseases' },
+  { code: 'J45.909', name: 'Unspecified asthma, uncomplicated', category: 'Respiratory System' }
 ];
 
-export const GENERIC_DRUG_CATALOGUE = [
-  {
-    brandName: 'Glycomet 500mg',
-    genericName: 'Metformin Hydrochloride 500mg',
-    brandPrice: 65.0,
-    janAushadhiPrice: 12.5,
-    savingsPercent: 80,
-    manufacturer: 'PMBJP (Pradhan Mantri Bhartiya Janaushadhi Pariyojana)',
-    form: 'Tablet'
-  },
-  {
-    brandName: 'Atorva 10mg',
-    genericName: 'Atorvastatin Calcium 10mg',
-    brandPrice: 110.0,
-    janAushadhiPrice: 22.0,
-    savingsPercent: 80,
-    manufacturer: 'PMBJP',
-    form: 'Tablet'
-  },
-  {
-    brandName: 'Telma 40mg',
-    genericName: 'Telmisartan 40mg',
-    brandPrice: 145.0,
-    janAushadhiPrice: 28.0,
-    savingsPercent: 81,
-    manufacturer: 'PMBJP',
-    form: 'Tablet'
-  },
-  {
-    brandName: 'Pan 40mg',
-    genericName: 'Pantoprazole Sodium 40mg',
-    brandPrice: 120.0,
-    janAushadhiPrice: 25.0,
-    savingsPercent: 79,
-    manufacturer: 'PMBJP',
-    form: 'Tablet'
-  },
+const GENERIC_DRUG_CATALOGUE = [
   {
     brandName: 'Augmentin 625 Duo',
-    genericName: 'Amoxicillin and Potassium Clavulanate 625mg',
-    brandPrice: 210.0,
-    janAushadhiPrice: 68.0,
-    savingsPercent: 68,
-    manufacturer: 'PMBJP',
-    form: 'Tablet'
+    genericName: 'Amoxicillin (500mg) + Clavulanic Acid (125mg)',
+    form: 'Tablet',
+    genericAffordableName: 'Generic Co-Amoxiclav 625',
+    savingsPercentage: 65
+  },
+  {
+    brandName: 'Pan 40',
+    genericName: 'Pantoprazole (40mg)',
+    form: 'Tablet',
+    genericAffordableName: 'Generic Pantoprazole 40',
+    savingsPercentage: 72
+  },
+  {
+    brandName: 'Calpol 650',
+    genericName: 'Paracetamol (650mg)',
+    form: 'Tablet',
+    genericAffordableName: 'Generic Paracetamol 650',
+    savingsPercentage: 50
+  },
+  {
+    brandName: 'Lipitor 10',
+    genericName: 'Atorvastatin (10mg)',
+    form: 'Tablet',
+    genericAffordableName: 'Generic Atorvastatin 10',
+    savingsPercentage: 78
+  },
+  {
+    brandName: 'Telma 40',
+    genericName: 'Telmisartan (40mg)',
+    form: 'Tablet',
+    genericAffordableName: 'Generic Telmisartan 40',
+    savingsPercentage: 60
   }
 ];
 
 export class ClinicalWorkflowRepository {
-  private memPatients = new Map<string, Patient[]>();
-  private memEncounters = new Map<string, Encounter[]>();
-  private memConsultations = new Map<string, StoredConsultation[]>();
-
   async searchPatients(tenantId: string, query?: string, dbClient = getDatabase()): Promise<Patient[]> {
-    if (dbClient) {
-      try {
-        const rows = await dbClient
-          .select()
-          .from(patients)
-          .where(eq(patients.tenantId, tenantId))
-          .orderBy(desc(patients.createdAt));
-        if (rows.length > 0) {
-          if (!query) return rows;
-          const q = query.toLowerCase();
-          return rows.filter(r => 
-            (r.firstName && r.firstName.toLowerCase().includes(q)) ||
-            (r.lastName && r.lastName.toLowerCase().includes(q)) ||
-            (r.mrn && r.mrn.toLowerCase().includes(q)) ||
-            (r.patientCode && r.patientCode.toLowerCase().includes(q))
-          );
-        }
-      } catch {
-        // Fallback
-      }
+    const db = requireDb(dbClient);
+    try {
+      const rows = await db
+        .select()
+        .from(patients)
+        .where(eq(patients.tenantId, tenantId))
+        .orderBy(desc(patients.createdAt));
+
+      if (!query) return rows;
+      const q = query.toLowerCase();
+      return rows.filter(r => 
+        (r.firstName && r.firstName.toLowerCase().includes(q)) ||
+        (r.lastName && r.lastName.toLowerCase().includes(q)) ||
+        (r.mrn && r.mrn.toLowerCase().includes(q)) ||
+        (r.patientCode && r.patientCode.toLowerCase().includes(q))
+      );
+    } catch (err) {
+      logger.error('Failed to query patients from database', err);
+      throw new AppError({
+        message: 'Database query failed. Patient data lookup unavailable.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
     }
-    const list = this.memPatients.get(tenantId) || [];
-    if (!query) return list;
-    const q = query.toLowerCase();
-    return list.filter(r => 
-      r.firstName.toLowerCase().includes(q) ||
-      r.lastName.toLowerCase().includes(q) ||
-      r.mrn.toLowerCase().includes(q) ||
-      r.patientCode.toLowerCase().includes(q)
-    );
   }
 
   async createPatient(input: CreatePatientInput, dbClient = getDatabase()): Promise<Patient> {
+    const db = requireDb(dbClient);
     const id = crypto.randomUUID();
     const mrn = input.mrn || `MRN-${Math.floor(100000 + Math.random() * 900000)}`;
     const record = {
@@ -235,59 +231,63 @@ export class ClinicalWorkflowRepository {
       updatedAt: new Date()
     };
 
-    if (dbClient) {
-      try {
-        const [created] = await dbClient.insert(patients).values(record as unknown as typeof patients.$inferInsert).returning();
-        if (created) return created;
-      } catch {
-        // Fallback
+    try {
+      const [created] = await db.insert(patients).values(record as unknown as typeof patients.$inferInsert).returning();
+      if (!created) {
+        throw new Error('Insert returned empty result');
       }
+      return created;
+    } catch (err) {
+      logger.error('Failed to create patient in database', err);
+      throw new AppError({
+        message: 'Database persistence failed. Patient registration aborted.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
     }
-
-    const current = this.memPatients.get(input.tenantId) || [];
-    current.unshift(record as unknown as Patient);
-    this.memPatients.set(input.tenantId, current);
-    return record as unknown as Patient;
   }
 
   async getPatientById(tenantId: string, patientId: string, dbClient = getDatabase()): Promise<Patient | null> {
-    if (dbClient) {
-      try {
-        const [found] = await dbClient
-          .select()
-          .from(patients)
-          .where(and(eq(patients.tenantId, tenantId), eq(patients.id, patientId)));
-        if (found) return found;
-      } catch {
-        // Fallback
-      }
+    const db = requireDb(dbClient);
+    try {
+      const [found] = await db
+        .select()
+        .from(patients)
+        .where(and(eq(patients.tenantId, tenantId), eq(patients.id, patientId)));
+      return found || null;
+    } catch (err) {
+      logger.error('Failed to query patient by ID in database', err);
+      throw new AppError({
+        message: 'Database query failed. Patient lookup unavailable.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
     }
-    const list = this.memPatients.get(tenantId) || [];
-    return list.find(p => p.id === patientId) || null;
   }
 
   async getEncounters(tenantId: string, status?: string, dbClient = getDatabase()): Promise<Encounter[]> {
-    if (dbClient) {
-      try {
-        const rows = await dbClient
-          .select()
-          .from(encounters)
-          .where(eq(encounters.tenantId, tenantId))
-          .orderBy(desc(encounters.createdAt));
-        if (rows.length > 0) {
-          if (!status) return rows;
-          return rows.filter(e => e.status === status);
-        }
-      } catch {
-        // Fallback
-      }
+    const db = requireDb(dbClient);
+    try {
+      const rows = await db
+        .select()
+        .from(encounters)
+        .where(eq(encounters.tenantId, tenantId))
+        .orderBy(desc(encounters.createdAt));
+
+      if (!status) return rows;
+      return rows.filter(e => e.status === status);
+    } catch (err) {
+      logger.error('Failed to query encounters from database', err);
+      throw new AppError({
+        message: 'Database query failed. Encounter lookup unavailable.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
     }
-    const list = this.memEncounters.get(tenantId) || [];
-    if (!status) return list;
-    return list.filter(e => e.status === status);
   }
 
   async createEncounter(input: CreateEncounterInput, dbClient = getDatabase()): Promise<Encounter> {
+    const db = requireDb(dbClient);
     const id = crypto.randomUUID();
     const encNumber = `ENC-${Math.floor(100000 + Math.random() * 900000)}`;
     const record = {
@@ -307,77 +307,79 @@ export class ClinicalWorkflowRepository {
       updatedAt: new Date()
     };
 
-    if (dbClient) {
-      try {
-        const [created] = await dbClient.insert(encounters).values(record as unknown as typeof encounters.$inferInsert).returning();
-        if (created) return created;
-      } catch {
-        // Fallback
+    try {
+      const [created] = await db.insert(encounters).values(record as unknown as typeof encounters.$inferInsert).returning();
+      if (!created) {
+        throw new Error('Insert returned empty result');
       }
+      return created;
+    } catch (err) {
+      logger.error('Failed to create encounter in database', err);
+      throw new AppError({
+        message: 'Database persistence failed. Encounter creation aborted.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
     }
-
-    const current = this.memEncounters.get(input.tenantId) || [];
-    current.unshift(record as unknown as Encounter);
-    this.memEncounters.set(input.tenantId, current);
-    return record as unknown as Encounter;
   }
 
   async updateEncounterStatus(tenantId: string, encounterId: string, status: string, dbClient = getDatabase()): Promise<Encounter | null> {
-    if (dbClient) {
-      try {
-        const [updated] = await dbClient
-          .update(encounters)
-          .set({ status, updatedAt: new Date() })
-          .where(and(eq(encounters.tenantId, tenantId), eq(encounters.id, encounterId)))
-          .returning();
-        if (updated) return updated;
-      } catch {
-        // Fallback
-      }
+    const db = requireDb(dbClient);
+    try {
+      const [updated] = await db
+        .update(encounters)
+        .set({ status, updatedAt: new Date() })
+        .where(and(eq(encounters.tenantId, tenantId), eq(encounters.id, encounterId)))
+        .returning();
+      return updated || null;
+    } catch (err) {
+      logger.error('Failed to update encounter status in database', err);
+      throw new AppError({
+        message: 'Database update failed. Encounter status transition aborted.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
     }
-    const current = this.memEncounters.get(tenantId) || [];
-    const item = current.find(e => e.id === encounterId);
-    if (item) {
-      item.status = status;
-      item.updatedAt = new Date();
-      return item;
-    }
-    return null;
   }
 
   async getConsultationByEncounter(tenantId: string, encounterId: string, dbClient = getDatabase()): Promise<StoredConsultation | null> {
-    if (dbClient) {
-      try {
-        const [found] = await dbClient
-          .select()
-          .from(consultations)
-          .where(and(eq(consultations.tenantId, tenantId), eq(consultations.encounterId, encounterId)));
-        if (found) return found as unknown as StoredConsultation;
-      } catch {
-        // Fallback
-      }
+    const db = requireDb(dbClient);
+    try {
+      const [found] = await db
+        .select()
+        .from(consultations)
+        .where(and(eq(consultations.tenantId, tenantId), eq(consultations.encounterId, encounterId)));
+      return (found as unknown as StoredConsultation) || null;
+    } catch (err) {
+      logger.error('Failed to query consultation by encounter in database', err);
+      throw new AppError({
+        message: 'Database query failed. Consultation lookup unavailable.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
     }
-    const current = this.memConsultations.get(tenantId) || [];
-    return current.find(c => c.encounterId === encounterId) || null;
   }
 
   async getConsultationById(tenantId: string, consultationId: string, dbClient = getDatabase()): Promise<StoredConsultation | null> {
-    if (dbClient) {
-      try {
-        const [found] = await dbClient
-          .select()
-          .from(consultations)
-          .where(and(eq(consultations.tenantId, tenantId), eq(consultations.id, consultationId)));
-        if (found) return found as unknown as StoredConsultation;
-      } catch {
-        // Fallback
-      }
+    const db = requireDb(dbClient);
+    try {
+      const [found] = await db
+        .select()
+        .from(consultations)
+        .where(and(eq(consultations.tenantId, tenantId), eq(consultations.id, consultationId)));
+      return (found as unknown as StoredConsultation) || null;
+    } catch (err) {
+      logger.error('Failed to query consultation by ID in database', err);
+      throw new AppError({
+        message: 'Database query failed. Consultation lookup unavailable.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
     }
-    const current = this.memConsultations.get(tenantId) || [];
-    return current.find(c => c.id === consultationId) || null;
   }
 
   async saveConsultation(input: SaveConsultationInput, dbClient = getDatabase()): Promise<StoredConsultation> {
+    const db = requireDb(dbClient);
     const id = crypto.randomUUID();
     const consNumber = `CON-${Math.floor(100000 + Math.random() * 900000)}`;
     const record: StoredConsultation = {
@@ -406,71 +408,59 @@ export class ClinicalWorkflowRepository {
       updatedAt: new Date()
     };
 
-    if (dbClient) {
-      try {
-        const [created] = await dbClient.insert(consultations).values({
-          id: record.id,
-          tenantId: record.tenantId,
-          partnerId: record.partnerId,
-          organizationId: record.organizationId,
-          branchId: record.branchId,
-          encounterId: record.encounterId,
-          patientId: record.patientId,
-          doctorId: record.doctorId,
-          consultationNumber: record.consultationNumber,
-          consultationStatus: record.status,
-          chiefComplaint: record.chiefComplaint,
-          historyOfPresentIllness: record.historyOfPresentIllness,
-          pastMedicalHistory: record.pastMedicalHistory,
-          examinationNotes: record.examinationNotes,
-          assessmentNotes: record.assessmentNotes,
-          planNotes: record.planNotes,
-          createdAt: record.createdAt,
-          updatedAt: record.updatedAt
-        } as unknown as typeof consultations.$inferInsert).returning();
-        if (created) return record;
-      } catch {
-        // Fallback
-      }
-    }
+    try {
+      const [created] = await db.insert(consultations).values({
+        id: record.id,
+        tenantId: record.tenantId,
+        partnerId: record.partnerId,
+        organizationId: record.organizationId,
+        branchId: record.branchId,
+        encounterId: record.encounterId,
+        patientId: record.patientId,
+        doctorId: record.doctorId,
+        consultationNumber: record.consultationNumber,
+        consultationStatus: record.status,
+        chiefComplaint: record.chiefComplaint,
+        historyOfPresentIllness: record.historyOfPresentIllness,
+        pastMedicalHistory: record.pastMedicalHistory,
+        examinationNotes: record.examinationNotes,
+        assessmentNotes: record.assessmentNotes,
+        planNotes: record.planNotes,
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt
+      } as unknown as typeof consultations.$inferInsert).returning();
 
-    const current = this.memConsultations.get(input.tenantId) || [];
-    current.unshift(record);
-    this.memConsultations.set(input.tenantId, current);
-    return record;
+      if (!created) {
+        throw new Error('Insert returned empty result');
+      }
+      return record;
+    } catch (err) {
+      logger.error('Failed to save consultation in database', err);
+      throw new AppError({
+        message: 'Database persistence failed. Clinical consultation aborted.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
+    }
   }
 
   async finalizeConsultation(tenantId: string, consultationId: string, dbClient = getDatabase()): Promise<StoredConsultation | null> {
-    if (dbClient) {
-      try {
-        const [updated] = await dbClient
-          .update(consultations)
-          .set({ consultationStatus: 'COMPLETED', completedAt: new Date(), updatedAt: new Date() } as unknown as typeof consultations.$inferInsert)
-          .where(and(eq(consultations.tenantId, tenantId), eq(consultations.id, consultationId)))
-          .returning();
-        if (updated) {
-          const item = (this.memConsultations.get(tenantId) || []).find(c => c.id === consultationId);
-          if (item) {
-            item.status = 'COMPLETED';
-            item.completedAt = new Date();
-            return item;
-          }
-          return updated as unknown as StoredConsultation;
-        }
-      } catch {
-        // Fallback
-      }
+    const db = requireDb(dbClient);
+    try {
+      const [updated] = await db
+        .update(consultations)
+        .set({ consultationStatus: 'COMPLETED', completedAt: new Date(), updatedAt: new Date() } as unknown as typeof consultations.$inferInsert)
+        .where(and(eq(consultations.tenantId, tenantId), eq(consultations.id, consultationId)))
+        .returning();
+      return (updated as unknown as StoredConsultation) || null;
+    } catch (err) {
+      logger.error('Failed to finalize consultation in database', err);
+      throw new AppError({
+        message: 'Database update failed. Consultation finalization aborted.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
     }
-
-    const current = this.memConsultations.get(tenantId) || [];
-    const item = current.find(c => c.id === consultationId);
-    if (item) {
-      item.status = 'COMPLETED';
-      item.completedAt = new Date();
-      item.updatedAt = new Date();
-      return item;
-    }
-    return null;
   }
 
   async searchIcd10(query?: string) {
@@ -504,18 +494,30 @@ export class ClinicalWorkflowRepository {
     return createdOrders;
   }
 
-  async getPatientClinicalHistory(tenantId: string, patientId: string) {
-    const current = this.memConsultations.get(tenantId) || [];
-    const patientConsultations = current.filter(c => c.patientId === patientId);
-    const labOrders = await labDiagnosticsRepository.searchOrders(tenantId, undefined, patientId);
+  async getPatientClinicalHistory(tenantId: string, patientId: string, dbClient = getDatabase()) {
+    const db = requireDb(dbClient);
+    try {
+      const patientConsultations = await db
+        .select()
+        .from(consultations)
+        .where(and(eq(consultations.tenantId, tenantId), eq(consultations.patientId, patientId)));
+      const labOrders = await labDiagnosticsRepository.searchOrders(tenantId, undefined, patientId, dbClient);
 
-    return {
-      patientId,
-      consultations: patientConsultations,
-      labOrders,
-      totalEncounters: patientConsultations.length,
-      totalLabOrders: labOrders.length
-    };
+      return {
+        patientId,
+        consultations: patientConsultations,
+        labOrders,
+        totalEncounters: patientConsultations.length,
+        totalLabOrders: labOrders.length
+      };
+    } catch (err) {
+      logger.error('Failed to query patient clinical history from database', err);
+      throw new AppError({
+        message: 'Database query failed. Clinical history lookup unavailable.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
+    }
   }
 }
 

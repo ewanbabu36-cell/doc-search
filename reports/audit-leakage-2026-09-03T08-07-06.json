@@ -1,0 +1,140 @@
+{
+  "timestamp": "2026-09-03T08:07:06.726Z",
+  "auditScope": {
+    "tenantIdFilter": "11111111-1111-4111-8111-111111111111",
+    "targetDatabase": "postgresql://postgres:postgres@localhost:5432/docsearch (pg-mem embedded fallback)",
+    "isLiveConnection": false
+  },
+  "summary": {
+    "totalUnbilledConsultations": 3,
+    "totalUnbilledConsultationRiskInr": 2250,
+    "totalUnpaidDiagnosticOrders": 3,
+    "totalUnpaidDiagnosticOrdersRiskInr": 2550,
+    "totalPharmacyBatchDiscrepancies": 2,
+    "totalPharmacyDiscrepancyRiskInr": 7875,
+    "grandTotalRevenueLeakageInr": 12675
+  },
+  "tenantSummaries": [
+    {
+      "tenantId": "11111111-1111-4111-8111-111111111111",
+      "tenantName": "Apex Multi-Specialty Hospital & Research Institute",
+      "unbilledConsultationsCount": 3,
+      "unbilledConsultationsRiskInr": 2250,
+      "unpaidDiagnosticOrdersCount": 3,
+      "unpaidDiagnosticOrdersRiskInr": 2550,
+      "pharmacyDiscrepancyCount": 2,
+      "pharmacyDiscrepancyRiskInr": 7875,
+      "totalFinancialRiskInr": 12675
+    }
+  ],
+  "details": {
+    "unbilledConsultations": [
+      {
+        "consultationId": "c-apex-03",
+        "tenantId": "11111111-1111-4111-8111-111111111111",
+        "tenantName": "Apex Multi-Specialty Hospital & Research Institute",
+        "consultationNumber": "CNS-2026-0083",
+        "consultationStatus": "COMPLETED",
+        "encounterId": "enc-apex-03",
+        "chiefComplaint": "Hypertensive urgency post ER discharge",
+        "invoiceStatus": "NO_INVOICE",
+        "estimatedFeeInr": 750,
+        "createdAt": "2026-09-03T05:07:06.927Z"
+      },
+      {
+        "consultationId": "c-apex-02",
+        "tenantId": "11111111-1111-4111-8111-111111111111",
+        "tenantName": "Apex Multi-Specialty Hospital & Research Institute",
+        "consultationNumber": "CNS-2026-0082",
+        "consultationStatus": "COMPLETED",
+        "encounterId": "enc-apex-02",
+        "chiefComplaint": "Type 2 Diabetes Mellitus glycemic follow-up",
+        "invoiceStatus": "NO_INVOICE",
+        "estimatedFeeInr": 750,
+        "createdAt": "2026-09-02T08:07:06.927Z"
+      },
+      {
+        "consultationId": "c-apex-01",
+        "tenantId": "11111111-1111-4111-8111-111111111111",
+        "tenantName": "Apex Multi-Specialty Hospital & Research Institute",
+        "consultationNumber": "CNS-2026-0081",
+        "consultationStatus": "COMPLETED",
+        "encounterId": "enc-apex-01",
+        "chiefComplaint": "Persistent migraine with visual aura",
+        "invoiceStatus": "DRAFT",
+        "estimatedFeeInr": 750,
+        "createdAt": "2026-09-01T08:07:06.927Z"
+      }
+    ],
+    "unpaidDiagnosticOrders": [
+      {
+        "specimenId": "spec-apex-02",
+        "tenantId": "11111111-1111-4111-8111-111111111111",
+        "tenantName": "Apex Multi-Specialty Hospital & Research Institute",
+        "accessionNumber": "ACC-2026-7702",
+        "specimenType": "SERUM",
+        "collectionStatus": "COLLECTED",
+        "orderId": "ord-apex-02",
+        "orderNumber": "ORD-LAB-902",
+        "orderStatus": "SAMPLE_COLLECTED",
+        "billingStatus": "PENDING",
+        "estimatedFeeInr": 850,
+        "collectedAt": "2026-09-02T14:07:06.934Z"
+      },
+      {
+        "specimenId": "spec-apex-01",
+        "tenantId": "11111111-1111-4111-8111-111111111111",
+        "tenantName": "Apex Multi-Specialty Hospital & Research Institute",
+        "accessionNumber": "ACC-2026-7701",
+        "specimenType": "SERUM",
+        "collectionStatus": "COLLECTED",
+        "orderId": "ord-apex-01",
+        "orderNumber": "ORD-LAB-901",
+        "orderStatus": "SAMPLE_COLLECTED",
+        "billingStatus": "PENDING",
+        "estimatedFeeInr": 850,
+        "collectedAt": "2026-09-02T08:07:06.933Z"
+      },
+      {
+        "specimenId": "spec-apex-03",
+        "tenantId": "11111111-1111-4111-8111-111111111111",
+        "tenantName": "Apex Multi-Specialty Hospital & Research Institute",
+        "accessionNumber": "ACC-2026-7703",
+        "specimenType": "WHOLE_BLOOD",
+        "collectionStatus": "COLLECTED",
+        "orderId": "ord-apex-03",
+        "orderNumber": "ORD-LAB-903",
+        "orderStatus": "VERIFIED",
+        "billingStatus": "BILLED",
+        "estimatedFeeInr": 850,
+        "collectedAt": "2026-09-01T08:07:06.934Z"
+      }
+    ],
+    "pharmacyBatchDiscrepancies": [
+      {
+        "batchId": "b-apex-01",
+        "tenantId": "11111111-1111-4111-8111-111111111111",
+        "tenantName": "Apex Multi-Specialty Hospital & Research Institute",
+        "batchNumber": "AMX-2026-B01",
+        "initialQuantity": 1000,
+        "currentQuantity": 400,
+        "totalDispensed": 550,
+        "discrepancy": 50,
+        "unitCostInr": 45.5,
+        "financialRiskInr": 2275
+      },
+      {
+        "batchId": "b-apex-03",
+        "tenantId": "11111111-1111-4111-8111-111111111111",
+        "tenantName": "Apex Multi-Specialty Hospital & Research Institute",
+        "batchNumber": "AZM-2026-B03",
+        "initialQuantity": 200,
+        "currentQuantity": 80,
+        "totalDispensed": 100,
+        "discrepancy": 20,
+        "unitCostInr": 280,
+        "financialRiskInr": 5600
+      }
+    ]
+  }
+}

@@ -1,5 +1,7 @@
 import { generatePathologyPdf } from '../../services/partner/PathologyPdfGenerator.js';
 import { type FastifyPluginAsync } from 'fastify';
+import { z } from 'zod';
+import { AppError, ErrorCode } from '@docsearch/shared-core';
 import { labDiagnosticsService } from '../../services/partner/LabDiagnosticsService.js';
 import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
 import {
@@ -7,6 +9,80 @@ import {
   type CollectSpecimenInput,
   type EnterResultInput
 } from '../../repositories/partner/LabDiagnosticsRepository.js';
+
+export const CreateLabOrderSchema = z.object({
+  patientId: z.string().trim().min(1, 'patientId is required'),
+  encounterId: z.string().trim().optional(),
+  consultationId: z.string().trim().optional(),
+  orderingDoctorId: z.string().trim().optional(),
+  testCode: z.string().trim().optional(),
+  testName: z.string().trim().optional(),
+  tests: z.array(z.string().trim().min(1)).optional(),
+  category: z.string().trim().optional(),
+  priority: z.string().trim().optional(),
+  clinicalIndication: z.string().trim().optional(),
+  clinicalNotes: z.string().trim().optional(),
+  instructions: z.string().trim().optional(),
+  partnerId: z.string().trim().optional(),
+  organizationId: z.string().trim().optional(),
+  branchId: z.string().trim().optional()
+});
+
+export const CollectSpecimenSchema = z.object({
+  specimenType: z.string().trim().min(1, 'specimenType is required'),
+  containerType: z.string().trim().optional(),
+  collectedBy: z.string().trim().optional(),
+  collectionNotes: z.string().trim().optional(),
+  patientId: z.string().trim().optional()
+});
+
+export const EnterResultSchema = z.object({
+  parameterCode: z.string().trim().optional(),
+  parameterName: z.string().trim().optional(),
+  testCode: z.string().trim().optional(),
+  resultValue: z.string().trim().optional(),
+  value: z.union([z.string(), z.number()]).optional(),
+  numericValue: z.number().optional(),
+  unit: z.string().trim().optional(),
+  referenceRange: z.string().trim().optional(),
+  refRange: z.string().trim().optional(),
+  abnormalFlag: z.string().trim().optional(),
+  flag: z.string().trim().optional(),
+  notes: z.string().trim().optional(),
+  enteredBy: z.string().trim().optional(),
+  results: z.array(z.object({
+    parameterCode: z.string().trim().optional(),
+    parameterName: z.string().trim().optional(),
+    testCode: z.string().trim().optional(),
+    resultValue: z.string().trim().optional(),
+    value: z.union([z.string(), z.number()]).optional(),
+    numericValue: z.number().optional(),
+    unit: z.string().trim().optional(),
+    referenceRange: z.string().trim().optional(),
+    refRange: z.string().trim().optional(),
+    abnormalFlag: z.string().trim().optional(),
+    flag: z.string().trim().optional(),
+    notes: z.string().trim().optional()
+  })).optional(),
+  validationStatus: z.string().trim().optional(),
+  verify: z.boolean().optional()
+});
+
+export const ReviewResultSchema = z.object({
+  doctorNotes: z.string().trim().optional()
+});
+
+function validateBody<T>(schema: z.ZodSchema<T>, body: unknown): T {
+  const parsed = schema.safeParse(body || {});
+  if (!parsed.success) {
+    throw new AppError({
+      message: parsed.error.issues.map((i) => i.message).join('; '),
+      code: ErrorCode.VALIDATION_ERROR,
+      statusCode: 400
+    });
+  }
+  return parsed.data;
+}
 
 export const labDiagnosticsRoutes: FastifyPluginAsync = async (fastify) => {
   // 1. Doctor creates clinical lab order
@@ -16,7 +92,7 @@ export const labDiagnosticsRoutes: FastifyPluginAsync = async (fastify) => {
       preHandler: [authenticate, requirePermission('lab:orders', 'create')]
     },
     async (request, reply) => {
-      const payload = request.body as Omit<CreateLabOrderInput, 'tenantId'>;
+      const payload = validateBody(CreateLabOrderSchema, request.body) as Omit<CreateLabOrderInput, 'tenantId'>;
       const data = await labDiagnosticsService.createOrder(payload, request.session);
       reply.status(201);
       return { success: true, data };
@@ -61,7 +137,7 @@ export const labDiagnosticsRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
-      const payload = request.body as Omit<CollectSpecimenInput, 'tenantId' | 'orderId'>;
+      const payload = validateBody(CollectSpecimenSchema, request.body) as Omit<CollectSpecimenInput, 'tenantId' | 'orderId'>;
       const data = await labDiagnosticsService.collectSpecimen({
         ...payload,
         orderId: id
@@ -82,7 +158,7 @@ export const labDiagnosticsRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
-      const payload = request.body as Omit<EnterResultInput, 'tenantId' | 'orderId'>;
+      const payload = validateBody(EnterResultSchema, request.body) as Omit<EnterResultInput, 'tenantId' | 'orderId'>;
       const data = await labDiagnosticsService.enterResult({
         ...payload,
         orderId: id
@@ -92,6 +168,31 @@ export const labDiagnosticsRoutes: FastifyPluginAsync = async (fastify) => {
         return { success: false, error: { code: 'ORDER_NOT_FOUND', message: 'Lab order not found' } };
       }
       reply.status(201);
+      return { success: true, data };
+    }
+  );
+
+  // 5b. Result validation & pathologist critical verification
+  fastify.patch(
+    '/api/v1/partner/lab/orders/:id/results',
+    {
+      preHandler: [authenticate, requirePermission('lab:results', 'update')]
+    },
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const payload = validateBody(EnterResultSchema, request.body) as any;
+      let data = await labDiagnosticsService.enterResult({
+        ...payload,
+        orderId: id
+      }, request.session);
+      if (!data) {
+        reply.status(404);
+        return { success: false, error: { code: 'ORDER_NOT_FOUND', message: 'Lab order not found' } };
+      }
+      if (payload?.validationStatus === 'PATHOLOGIST_VERIFIED' || payload?.verify) {
+        const verified = await labDiagnosticsService.verifyResult(id, request.session);
+        if (verified) data = verified;
+      }
       return { success: true, data };
     }
   );
@@ -121,8 +222,8 @@ export const labDiagnosticsRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
-      const payload = request.body as { doctorNotes?: string };
-      const data = await labDiagnosticsService.reviewResult(id, payload?.doctorNotes, request.session);
+      const payload = validateBody(ReviewResultSchema, request.body);
+      const data = await labDiagnosticsService.reviewResult(id, payload.doctorNotes, request.session);
       if (!data) {
         reply.status(404);
         return { success: false, error: { code: 'ORDER_NOT_FOUND', message: 'Lab order not found' } };

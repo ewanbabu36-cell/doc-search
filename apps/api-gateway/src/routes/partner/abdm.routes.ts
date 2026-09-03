@@ -44,6 +44,39 @@ export const abdmRoutes: FastifyPluginAsync = async (app) => {
   );
 
   app.post(
+    '/api/v1/partner/abdm/m1/generate-mobile-otp',
+    { preHandler: [authenticate] },
+    async (request, reply) => {
+      const { tenantId, branchId, userId } = request.session;
+      const payload = (request.body || {}) as Record<string, unknown>;
+      const data = await service.generateMobileOtp(tenantId, branchId || 'branch_default', userId, payload);
+      return reply.status(200).send({ success: true, data });
+    }
+  );
+
+  app.post(
+    '/api/v1/partner/abdm/m1/verify-mobile-otp',
+    { preHandler: [authenticate] },
+    async (request, reply) => {
+      const { tenantId, branchId, userId } = request.session;
+      const payload = (request.body || {}) as Record<string, unknown>;
+      const data = await service.verifyMobileOtp(tenantId, branchId || 'branch_default', userId, payload);
+      return reply.status(201).send({ success: true, data });
+    }
+  );
+
+  app.post(
+    '/api/v1/partner/abdm/m1/verify-demographics',
+    { preHandler: [authenticate] },
+    async (request, reply) => {
+      const { tenantId } = request.session;
+      const payload = (request.body || {}) as Record<string, unknown>;
+      const data = await service.verifyDemographics(tenantId, payload);
+      return reply.status(200).send({ success: true, data });
+    }
+  );
+
+  app.post(
     '/api/v1/partner/abdm/m1/search-by-health-id',
     { preHandler: [authenticate] },
     async (request, reply) => {
@@ -85,6 +118,39 @@ export const abdmRoutes: FastifyPluginAsync = async (app) => {
       const payload = (request.body || {}) as Record<string, unknown>;
       const data = await service.linkCareContext(tenantId, branchId || 'branch_default', userId, payload);
       return reply.status(201).send({ success: true, data });
+    }
+  );
+
+  app.post(
+    '/api/v1/partner/abdm/m2/care-contexts/discover',
+    { preHandler: [authenticate] },
+    async (request, reply) => {
+      const { tenantId } = request.session;
+      const { patientAbhaAddress } = (request.body || {}) as { patientAbhaAddress: string };
+      const data = await service.discoverCareContexts(tenantId, patientAbhaAddress);
+      return reply.status(200).send({ success: true, data });
+    }
+  );
+
+  app.post(
+    '/api/v1/partner/abdm/m2/care-contexts/link/init',
+    { preHandler: [authenticate] },
+    async (request, reply) => {
+      const { tenantId, branchId, userId } = request.session;
+      const payload = (request.body || {}) as Record<string, unknown>;
+      const data = await service.initCareContextLinking(tenantId, branchId || 'branch_default', userId, payload);
+      return reply.status(200).send({ success: true, data });
+    }
+  );
+
+  app.post(
+    '/api/v1/partner/abdm/m2/care-contexts/link/confirm',
+    { preHandler: [authenticate] },
+    async (request, reply) => {
+      const { tenantId, branchId, userId } = request.session;
+      const payload = (request.body || {}) as Record<string, unknown>;
+      const data = await service.confirmCareContextLinking(tenantId, branchId || 'branch_default', userId, payload);
+      return reply.status(200).send({ success: true, data });
     }
   );
 
@@ -133,6 +199,17 @@ export const abdmRoutes: FastifyPluginAsync = async (app) => {
     }
   );
 
+  app.post(
+    '/api/v1/partner/abdm/m3/consents/revoke',
+    { preHandler: [authenticate] },
+    async (request, reply) => {
+      const { tenantId, branchId, userId } = request.session;
+      const { artefactId } = (request.body || {}) as { artefactId: string };
+      const data = await service.revokeConsent(tenantId, branchId || 'branch_default', userId, artefactId);
+      return reply.status(200).send({ success: true, data });
+    }
+  );
+
   app.get(
     '/api/v1/partner/abdm/m3/fhir-bundles',
     { preHandler: [authenticate] },
@@ -161,6 +238,35 @@ export const abdmRoutes: FastifyPluginAsync = async (app) => {
       const { tenantId, branchId, userId } = request.session;
       const payload = (request.body || {}) as Record<string, unknown>;
       const data = await service.requestHealthInformationTransfer(tenantId, branchId || 'branch_default', userId, payload);
+      return reply.status(200).send({ success: true, data });
+    }
+  );
+
+  app.post(
+    '/api/v1/partner/abdm/m3/health-information/encrypt-payload',
+    { preHandler: [authenticate] },
+    async (request, reply) => {
+      const { receiverPublicKeyPem, plainTextPayload } = (request.body || {}) as {
+        receiverPublicKeyPem: string;
+        plainTextPayload: string | Record<string, unknown>;
+      };
+      const data = service.encryptHealthPayload(receiverPublicKeyPem, plainTextPayload);
+      return reply.status(200).send({ success: true, data });
+    }
+  );
+
+  app.post(
+    '/api/v1/partner/abdm/m3/health-information/decrypt-payload',
+    { preHandler: [authenticate] },
+    async (request, reply) => {
+      const { privateKeyPem, senderPublicKeyPem, encryptedData, iv, authTag } = (request.body || {}) as {
+        privateKeyPem: string;
+        senderPublicKeyPem: string;
+        encryptedData: string;
+        iv: string;
+        authTag: string;
+      };
+      const data = service.decryptHealthPayload(privateKeyPem, senderPublicKeyPem, encryptedData, iv, authTag);
       return reply.status(200).send({ success: true, data });
     }
   );
