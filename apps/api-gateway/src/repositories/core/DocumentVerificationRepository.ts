@@ -779,6 +779,13 @@ class DocumentVerificationRepository {
             statusCode: 404
           });
         }
+        if (doc.verificationStatus === 'VERIFIED' || doc.verificationStatus === 'REJECTED') {
+          throw new AppError({
+            message: `Document ${documentId} has already been finalized with status '${doc.verificationStatus}'.`,
+            code: ErrorCode.CONFLICT,
+            statusCode: 409
+          });
+        }
 
         const previousStatus = doc.verificationStatus;
         const newStatus = req.action === 'VERIFY' ? 'VERIFIED' : 'REJECTED';

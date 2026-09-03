@@ -22,6 +22,10 @@ function requireDb(dbClient = getDatabase()) {
   return dbClient;
 }
 
+function runInTx<T>(db: any, fn: (tx: any) => Promise<T>): Promise<T> {
+  return typeof db.transaction === 'function' ? db.transaction(fn) : fn(db);
+}
+
 export interface CreateLabOrderInput {
   tenantId: string;
   partnerId?: string | undefined;
@@ -258,29 +262,32 @@ export class LabDiagnosticsRepository {
     };
 
     try {
-      await db.insert(investigationSpecimens).values({
-        id: specimenData.id,
-        tenantId: specimenData.tenantId,
-        partnerId: '11111111-1111-4111-8111-111111111111',
-        organizationId: '33333333-3333-4333-8333-333333333301',
-        orderId: specimenData.orderId,
-        patientId: input.patientId || '00000000-0000-4000-8000-000000000001',
-        accessionNumber: specimenData.accessionNumber,
-        specimenType: specimenData.specimenType,
-        containerType: specimenData.containerType,
-        collectionStatus: 'COLLECTED',
-        collectedAt: now,
-        createdAt: now,
-        updatedAt: now
-      } as any);
+      return await runInTx(db, async (tx: any) => {
+        await tx.insert(investigationSpecimens).values({
+          id: specimenData.id,
+          tenantId: specimenData.tenantId,
+          partnerId: '11111111-1111-4111-8111-111111111111',
+          organizationId: '33333333-3333-4333-8333-333333333301',
+          orderId: specimenData.orderId,
+          patientId: input.patientId || '00000000-0000-4000-8000-000000000001',
+          accessionNumber: specimenData.accessionNumber,
+          specimenType: specimenData.specimenType,
+          containerType: specimenData.containerType,
+          collectionStatus: 'COLLECTED',
+          collectedAt: now,
+          createdAt: now,
+          updatedAt: now
+        } as any);
 
-      await db
-        .update(investigationOrders)
-        .set({ status: 'SAMPLE_COLLECTED', updatedAt: now } as any)
-        .where(and(eq(investigationOrders.tenantId, input.tenantId), eq(investigationOrders.id, input.orderId)));
+        await tx
+          .update(investigationOrders)
+          .set({ status: 'SAMPLE_COLLECTED', updatedAt: now } as any)
+          .where(and(eq(investigationOrders.tenantId, input.tenantId), eq(investigationOrders.id, input.orderId)));
 
-      return await this.getOrderById(input.tenantId, input.orderId, db);
+        return await this.getOrderById(input.tenantId, input.orderId, tx);
+      });
     } catch (err) {
+      if (err instanceof AppError) throw err;
       logger.error('Failed to collect specimen in database', err);
       throw new AppError({
         message: 'Database persistence failed. Specimen accession aborted.',

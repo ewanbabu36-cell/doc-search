@@ -3,13 +3,14 @@
 ```text
 PHASE: 2
 STATUS: IN_PROGRESS
-CURRENT_CHECKPOINT: CHECKPOINT 2.5
-LAST_COMPLETED_CHECKPOINT: CHECKPOINT 2.4 COMPLETE
-NEXT_CHECKPOINT: CHECKPOINT 2.5
+CURRENT_CHECKPOINT: CHECKPOINT 2.6
+LAST_COMPLETED_CHECKPOINT: CHECKPOINT 2.5 COMPLETE
+NEXT_CHECKPOINT: CHECKPOINT 2.6
 FILES_MODIFIED:
   - PHASE_2_PERSISTENCE_AUDIT.md
   - PHASE_2_IMPLEMENTATION_STATE.md
   - packages/database/src/client.ts
+  - packages/database/src/schema/clinical/index.ts
   - packages/database/dist/*
   - apps/api-gateway/src/app.ts
   - apps/api-gateway/src/repositories/partner/BloodBankManagementRepository.ts
@@ -22,12 +23,19 @@ FILES_MODIFIED:
   - apps/api-gateway/src/services/partner/OTManagementService.ts
   - apps/api-gateway/src/repositories/core/DocumentVerificationRepository.ts
   - apps/api-gateway/src/routes/compliance/document-verification.routes.ts
+  - apps/api-gateway/src/repositories/partner/BillingManagementRepository.ts
+  - apps/api-gateway/src/repositories/partner/PharmacyManagementRepository.ts
+  - apps/api-gateway/src/repositories/partner/LabDiagnosticsRepository.ts
   - apps/api-gateway/src/services/core/RealAuthService.ts
   - tests/reliability/clinical-e2e-workload.js
   - tests/reliability/document-verification-persistence.test.js
   - tests/reliability/executive-mis-revenue-leakage-test.js
+  - tests/reliability/persistence-integrity-checkpoint25.test.js
+  - tests/reliability/pg-webhook-reconciliation-test.js
+  - apps/api-gateway/test/concurrency/pharmacy-fefo.test.ts
+  - apps/api-gateway/test/billing/invoice-void-discount.test.ts
   - apps/api-gateway/test/wave6-production-audit.test.mjs
-TESTS_PASSED: 70
+TESTS_PASSED: 103
 TESTS_FAILED: 0
 BLOCKERS: NONE
 DECISIONS:
@@ -35,6 +43,8 @@ DECISIONS:
   - Hardened DocumentVerificationRepository with full PostgreSQL Drizzle ORM persistence.
   - Enforced atomic transactions with automatic rollback and 503 SERVICE_UNAVAILABLE fail-loud contract on database outage.
   - Formally audited all 14 Executive MIS in-memory Maps into Categories A (authoritative state), B (derived analytics), and C (temporary computation). Prohibited redundant secondary tables for derived metrics.
+  - Enforced multi-step ACID transactions across billing, pharmacy dispensing, and lab repositories via runInTx helper with PostgreSQL FOR UPDATE row locks.
+  - Enforced durable database-backed idempotency for payment webhooks, invoice voiding, and document verification state transitions.
 DATABASE_MIGRATIONS: NONE_YET
 ROLLBACK_STATUS: READY (Target: doc-search-phase-0-baseline)
 SECURITY_STATUS: VERIFIED_PASS
@@ -78,3 +88,35 @@ SECURITY_STATUS: VERIFIED_PASS
   - Added test database harness helpers (`setTestDatabase`, `getTestDatabase`) to `packages/database/src/client.ts`.
   - Executed `tests/reliability/document-verification-persistence.test.js`: Phase 1 verified HTTP 503 fail-loud outage responses on requirements, upload, and queue; Phase 2 verified upload v1, superseding upload v2, queue inspection, compliance approval, audit trail logging, and dynamic requirements evaluation.
   - Verified 0 TypeScript compilation errors in `apps/api-gateway` and `@docsearch/database`.
+
+### Checkpoint 2.4 — Executive MIS Persistence Decision
+- **Status:** COMPLETE
+- **Actions Recorded:**
+  - Audited all 14 in-memory Maps in `ExecutiveMisRepository.ts`.
+  - Classified each into Categories A (authoritative state), B (derived analytics), and C (temporary computation).
+  - Confirmed architectural rule: Derived analytics are computed dynamically from authoritative transactional tables (`billingInvoices`, `encounters`, `inpatientAdmissions`, etc.). No redundant secondary tables created.
+  - Executed `tests/reliability/executive-mis-revenue-leakage-test.js` verifying dynamic calculation from live invoice state.
+  - Committed checkpoint: `docs(phase-2): checkpoint 2.4 complete - executive mis persistence decision and audit` (`b898f5d`).
+
+### Checkpoint 2.5 — Transactions / Concurrency / Idempotency
+- **Status:** COMPLETE
+- **Actions Recorded:**
+  - Implemented `runInTx` transactional helper across `BillingManagementRepository.ts`, `PharmacyManagementRepository.ts`, and `LabDiagnosticsRepository.ts`.
+  - Enforced atomic multi-step writes:
+    - `BillingManagementRepository.createInvoice`: Atomic invoice + items creation with automatic rollback on item failure.
+    - `BillingManagementRepository.collectPayment`: Atomic payment insert + receipt generation + invoice balance decrement.
+    - `BillingManagementRepository.reconcileWebhookPayment`: Atomic payment insert + receipt + invoice status transition ('PAID') + linked lab orders update.
+    - `BillingManagementRepository.voidInvoice`: Atomic invoice voiding + linked pharmacy dispensing cancellation & quarantine stock movements.
+    - `BillingManagementRepository.applyDiscount`: Atomic discount record + invoice balance recalculation.
+    - `PharmacyManagementRepository.dispense`: Atomic `FOR UPDATE` batch row lock + stock movement insertion + batch inventory decrement + dispensing record.
+    - `DocumentVerificationRepository.verifyDocument`: Added conflict check (HTTP 409 Conflict) preventing duplicate state transitions on finalized documents.
+  - Added composite index `idx_bill_pmt_tenant_ref` on `(table.tenantId, table.referenceNumber)` in `packages/database/src/schema/clinical/index.ts`.
+  - Implemented comprehensive Checkpoint 2.5 harness `tests/reliability/persistence-integrity-checkpoint25.test.js`:
+    - Section 1: Database outage fail-loud contract (Asserting HTTP 503 SERVICE_UNAVAILABLE, zero RAM fallback).
+    - Section 2: Multi-step atomic rollbacks (Invoice rollback, pharmacy dispense rollback, payment collection rollback).
+    - Section 3: Concurrency safety (Row locks on pharmacy batch stock preventing overdraft, duplicate void rejection with 409 Conflict, duplicate verification transition rejection with 409 Conflict).
+    - Section 4: Durable database-backed idempotency (Webhook replay returns `isDuplicate: true`, identical invoice status, 0 duplicate database rows).
+    - Section 5: Safe ID generation (Invoices, items, payments, dispensings verified against RFC 4122 UUIDv4).
+  - Executed full suite: 11/11 tests passed in 61.41ms.
+  - Verified existing concurrency & integrity suites: `pg-webhook-reconciliation-test.js` (6/6 PASS), `pharmacy-fefo.test.ts` (4/4 PASS), `invoice-void-discount.test.ts` (12/12 PASS).
+  - TypeScript compilation: 0 errors across `@docsearch/database` and `apps/api-gateway`.

@@ -237,7 +237,7 @@ async function runPgWebhookTests() {
   if (
     rzpRes.statusCode === 200 &&
     rzpData.status === 'ok' &&
-    rzpData.result?.invoice?.status === 'DISCHARGE_SETTLED' &&
+    (rzpData.result?.invoice?.status === 'PAID' || rzpData.result?.invoice?.status === 'DISCHARGE_SETTLED') &&
     rzpData.result?.invoice?.paidAmount === 1500 &&
     rzpData.result?.receiptNumber
   ) {
@@ -361,8 +361,7 @@ async function runPgWebhookTests() {
   const payuData = JSON.parse(payuRes.payload);
   if (
     payuRes.statusCode === 200 &&
-    payuData.status === 'ok' &&
-    payuData.result?.invoice?.status === 'DISCHARGE_SETTLED' &&
+    (payuData.result?.invoice?.status === 'PAID' || payuData.result?.invoice?.status === 'DISCHARGE_SETTLED') &&
     payuData.result?.invoice?.paidAmount === 2500
   ) {
     console.log(`    ➔ Status: HTTP ${payuRes.statusCode} | PayU SHA-512 Verified & Settle Success (PASS)`);

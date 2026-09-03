@@ -32,6 +32,10 @@ function requireDb(dbClient = getDatabase()) {
   return dbClient;
 }
 
+function runInTx<T>(db: any, fn: (tx: any) => Promise<T>): Promise<T> {
+  return typeof db.transaction === 'function' ? db.transaction(fn) : fn(db);
+}
+
 export interface InvoiceLineItemInput {
   serviceName: string;
   category: 'CONSULTATION' | 'BED_CHARGES' | 'PHARMACY' | 'LAB_TEST' | 'SURGERY_OT' | 'BLOOD_BANK' | 'NURSING';
@@ -400,41 +404,44 @@ export class BillingManagementRepository {
     };
 
     try {
-      const [created] = await db.insert(billingInvoices).values({
-        id: record.id,
-        tenantId: record.tenantId,
-        partnerId: record.partnerId,
-        organizationId: record.organizationId,
-        branchId: record.branchId,
-        invoiceNumber: record.invoiceNumber,
-        patientId: record.patientId,
-        encounterId: record.encounterId,
-        totalAmount: record.totalAmount,
-        patientPayable: record.patientPayableAmount,
-        insurancePayable: record.insuranceCoveredAmount,
-        outstandingBalance: record.balanceDue,
-        status: record.status,
-        currency: 'INR'
-      } as unknown as typeof billingInvoices.$inferInsert).returning();
-
-      for (const item of items) {
-        await db.insert(billingInvoiceItems).values({
-          id: item.id,
+      return await runInTx(db, async (tx: any) => {
+        const [created] = await tx.insert(billingInvoices).values({
+          id: record.id,
           tenantId: record.tenantId,
           partnerId: record.partnerId,
           organizationId: record.organizationId,
           branchId: record.branchId,
-          invoiceId: record.id,
-          description: item.serviceName,
-          category: item.category,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          totalPrice: item.totalPrice
-        } as unknown as typeof billingInvoiceItems.$inferInsert);
-      }
+          invoiceNumber: record.invoiceNumber,
+          patientId: record.patientId,
+          encounterId: record.encounterId,
+          totalAmount: record.totalAmount,
+          patientPayable: record.patientPayableAmount,
+          insurancePayable: record.insuranceCoveredAmount,
+          outstandingBalance: record.balanceDue,
+          status: record.status,
+          currency: 'INR'
+        } as unknown as typeof billingInvoices.$inferInsert).returning();
 
-      return { ...record, id: created ? created.id : record.id };
+        for (const item of items) {
+          await tx.insert(billingInvoiceItems).values({
+            id: item.id,
+            tenantId: record.tenantId,
+            partnerId: record.partnerId,
+            organizationId: record.organizationId,
+            branchId: record.branchId,
+            invoiceId: record.id,
+            description: item.serviceName,
+            category: item.category,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            totalPrice: item.totalPrice
+          } as unknown as typeof billingInvoiceItems.$inferInsert);
+        }
+
+        return { ...record, id: created ? created.id : record.id };
+      });
     } catch (err) {
+      if (err instanceof AppError) throw err;
       logger.error('Failed to create invoice in database', err);
       throw new AppError({
         message: 'Database persistence failed. Invoice generation aborted.',
@@ -469,30 +476,33 @@ export class BillingManagementRepository {
     invoice.updatedAt = now;
 
     try {
-      await db.insert(insuranceAuthorizations).values({
-        id: crypto.randomUUID(),
-        tenantId: input.tenantId,
-        partnerId: invoice.partnerId,
-        organizationId: invoice.organizationId,
-        branchId: invoice.branchId,
-        patientId: input.patientId,
-        authorizationNumber: input.preAuthNumber,
-        approvedAmount: input.approvedAmount,
-        status: input.status,
-        approvedAt: now
-      } as unknown as typeof insuranceAuthorizations.$inferInsert);
+      return await runInTx(db, async (tx: any) => {
+        await tx.insert(insuranceAuthorizations).values({
+          id: crypto.randomUUID(),
+          tenantId: input.tenantId,
+          partnerId: invoice.partnerId,
+          organizationId: invoice.organizationId,
+          branchId: invoice.branchId,
+          patientId: input.patientId,
+          authorizationNumber: input.preAuthNumber,
+          approvedAmount: input.approvedAmount,
+          status: input.status,
+          approvedAt: now
+        } as unknown as typeof insuranceAuthorizations.$inferInsert);
 
-      await db
-        .update(billingInvoices)
-        .set({
-          insurancePayable: invoice.insuranceCoveredAmount,
-          patientPayable: invoice.patientPayableAmount,
-          outstandingBalance: invoice.balanceDue
-        } as unknown as typeof billingInvoices.$inferInsert)
-        .where(eq(billingInvoices.id, invoice.id));
+        await tx
+          .update(billingInvoices)
+          .set({
+            insurancePayable: invoice.insuranceCoveredAmount,
+            patientPayable: invoice.patientPayableAmount,
+            outstandingBalance: invoice.balanceDue
+          } as unknown as typeof billingInvoices.$inferInsert)
+          .where(eq(billingInvoices.id, invoice.id));
 
-      return invoice;
+        return invoice;
+      });
     } catch (err) {
+      if (err instanceof AppError) throw err;
       logger.error('Failed to record insurance pre-auth in database', err);
       throw new AppError({
         message: 'Database update failed. Pre-authorization recording aborted.',
@@ -540,43 +550,46 @@ export class BillingManagementRepository {
     invoice.updatedAt = now;
 
     try {
-      await db.insert(billingPayments).values({
-        id: paymentId,
-        tenantId: input.tenantId,
-        partnerId: invoice.partnerId,
-        organizationId: invoice.organizationId,
-        branchId: invoice.branchId,
-        invoiceId: invoice.id,
-        patientId: invoice.patientId,
-        amount: input.amount,
-        paymentMethod: input.paymentMode,
-        status: 'SUCCESS',
-        paidAt: now
-      } as unknown as typeof billingPayments.$inferInsert);
+      return await runInTx(db, async (tx: any) => {
+        await tx.insert(billingPayments).values({
+          id: paymentId,
+          tenantId: input.tenantId,
+          partnerId: invoice.partnerId,
+          organizationId: invoice.organizationId,
+          branchId: invoice.branchId,
+          invoiceId: invoice.id,
+          patientId: invoice.patientId,
+          amount: input.amount,
+          paymentMethod: input.paymentMode,
+          status: 'SUCCESS',
+          paidAt: now
+        } as unknown as typeof billingPayments.$inferInsert);
 
-      await db.insert(billingReceipts).values({
-        id: crypto.randomUUID(),
-        tenantId: input.tenantId,
-        partnerId: invoice.partnerId,
-        organizationId: invoice.organizationId,
-        branchId: invoice.branchId,
-        invoiceId: invoice.id,
-        receiptNumber,
-        amount: input.amount,
-        issuedAt: now
-      } as unknown as typeof billingReceipts.$inferInsert);
+        await tx.insert(billingReceipts).values({
+          id: crypto.randomUUID(),
+          tenantId: input.tenantId,
+          partnerId: invoice.partnerId,
+          organizationId: invoice.organizationId,
+          branchId: invoice.branchId,
+          invoiceId: invoice.id,
+          receiptNumber,
+          amount: input.amount,
+          issuedAt: now
+        } as unknown as typeof billingReceipts.$inferInsert);
 
-      await db
-        .update(billingInvoices)
-        .set({
-          paidAmount: invoice.paidAmount,
-          outstandingBalance: invoice.balanceDue,
-          status: invoice.status
-        } as unknown as typeof billingInvoices.$inferInsert)
-        .where(eq(billingInvoices.id, invoice.id));
+        await tx
+          .update(billingInvoices)
+          .set({
+            paidAmount: invoice.paidAmount,
+            outstandingBalance: invoice.balanceDue,
+            status: invoice.status
+          } as unknown as typeof billingInvoices.$inferInsert)
+          .where(eq(billingInvoices.id, invoice.id));
 
-      return { invoice, receiptNumber };
+        return { invoice, receiptNumber };
+      });
     } catch (err) {
+      if (err instanceof AppError) throw err;
       logger.error('Failed to collect payment in database', err);
       throw new AppError({
         message: 'Database persistence failed. Payment processing aborted.',
@@ -703,145 +716,147 @@ export class BillingManagementRepository {
     }
 
     try {
-      await db.insert(billingPayments).values({
-        id: paymentId,
-        tenantId: input.tenantId,
-        partnerId: invoice.partnerId,
-        organizationId: invoice.organizationId,
-        branchId: invoice.branchId,
-        invoiceId: invoice.id,
-        patientId: invoice.patientId,
-        paymentNumber: `PAY-${input.gateway.substring(0, 3)}-${Math.floor(100000 + Math.random() * 900000)}`,
-        paymentMethod,
-        amount: input.amount,
-        currency: input.currency || 'INR',
-        referenceNumber: input.gatewayPaymentId,
-        status: 'SUCCESS',
-        receivedBy: `SYSTEM_WEBHOOK_${input.gateway}`,
-        receivedAt: now,
-        notes: `Automated PG Webhook Reconciliation (${input.gateway})`,
-        metadata: input.metadata || {}
-      } as unknown as typeof billingPayments.$inferInsert);
+      return await runInTx(db, async (tx: any) => {
+        await tx.insert(billingPayments).values({
+          id: paymentId,
+          tenantId: input.tenantId,
+          partnerId: invoice.partnerId,
+          organizationId: invoice.organizationId,
+          branchId: invoice.branchId,
+          invoiceId: invoice.id,
+          patientId: invoice.patientId,
+          paymentNumber: `PAY-${input.gateway.substring(0, 3)}-${Math.floor(100000 + Math.random() * 900000)}`,
+          paymentMethod,
+          amount: input.amount,
+          currency: input.currency || 'INR',
+          referenceNumber: input.gatewayPaymentId,
+          status: 'SUCCESS',
+          receivedBy: `SYSTEM_WEBHOOK_${input.gateway}`,
+          receivedAt: now,
+          notes: `Automated PG Webhook Reconciliation (${input.gateway})`,
+          metadata: input.metadata || {}
+        } as unknown as typeof billingPayments.$inferInsert);
 
-      await db.insert(billingReceipts).values({
-        id: crypto.randomUUID(),
-        tenantId: input.tenantId,
-        partnerId: invoice.partnerId,
-        organizationId: invoice.organizationId,
-        branchId: invoice.branchId,
-        invoiceId: invoice.id,
-        receiptNumber,
-        amount: input.amount,
-        issuedAt: now
-      } as unknown as typeof billingReceipts.$inferInsert);
+        await tx.insert(billingReceipts).values({
+          id: crypto.randomUUID(),
+          tenantId: input.tenantId,
+          partnerId: invoice.partnerId,
+          organizationId: invoice.organizationId,
+          branchId: invoice.branchId,
+          invoiceId: invoice.id,
+          receiptNumber,
+          amount: input.amount,
+          issuedAt: now
+        } as unknown as typeof billingReceipts.$inferInsert);
 
-      await db
-        .update(billingInvoices)
-        .set({
-          paidAmount: newPaidAmount,
-          dueAmount: newBalanceDue,
-          outstandingBalance: newBalanceDue,
-          status: newStatus,
-          updatedAt: now
-        } as unknown as typeof billingInvoices.$inferInsert)
-        .where(eq(billingInvoices.id, invoice.id));
+        await tx
+          .update(billingInvoices)
+          .set({
+            paidAmount: newPaidAmount,
+            dueAmount: newBalanceDue,
+            outstandingBalance: newBalanceDue,
+            status: newStatus,
+            updatedAt: now
+          } as unknown as typeof billingInvoices.$inferInsert)
+          .where(eq(billingInvoices.id, invoice.id));
 
-      // 4. If invoice contains lab investigation items, update clinical.investigation_orders.billing_status to 'BILLED'
-      const hasLabItems = (invoice.items || []).some((item: any) => {
-        const cat = (item.category || '').toUpperCase();
-        const desc = (item.serviceName || item.description || '').toUpperCase();
-        return (
-          cat === 'LAB_TEST' ||
-          cat === 'DIAGNOSTICS' ||
-          cat === 'LAB' ||
-          desc.includes('LAB') ||
-          desc.includes('TEST') ||
-          desc.includes('PROFILE') ||
-          desc.includes('PANEL') ||
-          desc.includes('INVESTIGATION')
-        );
+        // 4. If invoice contains lab investigation items, update clinical.investigation_orders.billing_status to 'BILLED'
+        const hasLabItems = (invoice.items || []).some((item: any) => {
+          const cat = (item.category || '').toUpperCase();
+          const desc = (item.serviceName || item.description || '').toUpperCase();
+          return (
+            cat === 'LAB_TEST' ||
+            cat === 'DIAGNOSTICS' ||
+            cat === 'LAB' ||
+            desc.includes('LAB') ||
+            desc.includes('TEST') ||
+            desc.includes('PROFILE') ||
+            desc.includes('PANEL') ||
+            desc.includes('INVESTIGATION')
+          );
+        });
+
+        if (hasLabItems || invoice.encounterId) {
+          const labOrderIds: string[] = [];
+          for (const item of invoice.items || []) {
+            const meta = (item as any).metadata;
+            if (meta?.orderId) labOrderIds.push(meta.orderId);
+            if ((item as any).orderId) labOrderIds.push((item as any).orderId);
+          }
+
+          if (invoice.encounterId) {
+            try {
+              const orders = await tx
+                .select()
+                .from(investigationOrders)
+                .where(
+                  and(
+                    eq(investigationOrders.tenantId, input.tenantId),
+                    eq(investigationOrders.encounterId, invoice.encounterId)
+                  )
+                );
+              for (const order of orders) {
+                const existingMeta = (order.metadata && typeof order.metadata === 'object') ? order.metadata : {};
+                await tx
+                  .update(investigationOrders)
+                  .set({
+                    metadata: {
+                      ...existingMeta,
+                      billing_status: 'BILLED',
+                      billingStatus: 'BILLED'
+                    },
+                    updatedAt: now
+                  } as any)
+                  .where(eq(investigationOrders.id, order.id));
+              }
+            } catch (labErr) {
+              logger.warn('Could not update lab investigation orders by encounterId', { error: String(labErr) });
+            }
+          }
+
+          for (const ordId of labOrderIds) {
+            try {
+              const [order] = await tx
+                .select()
+                .from(investigationOrders)
+                .where(
+                  and(
+                    eq(investigationOrders.tenantId, input.tenantId),
+                    eq(investigationOrders.id, ordId)
+                  )
+                );
+              if (order) {
+                const existingMeta = (order.metadata && typeof order.metadata === 'object') ? order.metadata : {};
+                await tx
+                  .update(investigationOrders)
+                  .set({
+                    metadata: {
+                      ...existingMeta,
+                      billing_status: 'BILLED',
+                      billingStatus: 'BILLED'
+                    },
+                    updatedAt: now
+                  } as any)
+                  .where(eq(investigationOrders.id, order.id));
+              }
+            } catch (labErr) {
+              logger.warn('Could not update lab investigation order by orderId', { error: String(labErr) });
+            }
+          }
+        }
+
+        invoice.paidAmount = newPaidAmount;
+        invoice.balanceDue = newBalanceDue;
+        invoice.status = newStatus as any;
+        invoice.receiptNumber = receiptNumber;
+
+        return {
+          isDuplicate: false,
+          invoice,
+          receiptNumber,
+          paymentId
+        };
       });
-
-      if (hasLabItems || invoice.encounterId) {
-        const labOrderIds: string[] = [];
-        for (const item of invoice.items || []) {
-          const meta = (item as any).metadata;
-          if (meta?.orderId) labOrderIds.push(meta.orderId);
-          if ((item as any).orderId) labOrderIds.push((item as any).orderId);
-        }
-
-        if (invoice.encounterId) {
-          try {
-            const orders = await db
-              .select()
-              .from(investigationOrders)
-              .where(
-                and(
-                  eq(investigationOrders.tenantId, input.tenantId),
-                  eq(investigationOrders.encounterId, invoice.encounterId)
-                )
-              );
-            for (const order of orders) {
-              const existingMeta = (order.metadata && typeof order.metadata === 'object') ? order.metadata : {};
-              await db
-                .update(investigationOrders)
-                .set({
-                  metadata: {
-                    ...existingMeta,
-                    billing_status: 'BILLED',
-                    billingStatus: 'BILLED'
-                  },
-                  updatedAt: now
-                } as any)
-                .where(eq(investigationOrders.id, order.id));
-            }
-          } catch (labErr) {
-            logger.warn('Could not update lab investigation orders by encounterId', { error: String(labErr) });
-          }
-        }
-
-        for (const ordId of labOrderIds) {
-          try {
-            const [order] = await db
-              .select()
-              .from(investigationOrders)
-              .where(
-                and(
-                  eq(investigationOrders.tenantId, input.tenantId),
-                  eq(investigationOrders.id, ordId)
-                )
-              );
-            if (order) {
-              const existingMeta = (order.metadata && typeof order.metadata === 'object') ? order.metadata : {};
-              await db
-                .update(investigationOrders)
-                .set({
-                  metadata: {
-                    ...existingMeta,
-                    billing_status: 'BILLED',
-                    billingStatus: 'BILLED'
-                  },
-                  updatedAt: now
-                } as any)
-                .where(eq(investigationOrders.id, order.id));
-            }
-          } catch (labErr) {
-            logger.warn('Could not update lab investigation order by orderId', { error: String(labErr) });
-          }
-        }
-      }
-
-      invoice.paidAmount = newPaidAmount;
-      invoice.balanceDue = newBalanceDue;
-      invoice.status = newStatus as any;
-      invoice.receiptNumber = receiptNumber;
-
-      return {
-        isDuplicate: false,
-        invoice,
-        receiptNumber,
-        paymentId
-      };
     } catch (err) {
       if (err instanceof AppError) throw err;
       logger.error('Failed to reconcile webhook payment in database', err);
@@ -997,169 +1012,172 @@ export class BillingManagementRepository {
       voidedBySupervisor: isPaidOrSettled ? cleanSupervisorId : (input.actorId || cleanSupervisorId)
     };
 
-    // Update invoice status to VOIDED
-    await db
-      .update(billingInvoices)
-      .set({
-        status: 'VOIDED',
-        outstandingBalance: 0,
-        dueAmount: 0,
-        metadata: updatedMetadata,
-        updatedAt: now
-      } as any)
-      .where(and(eq(billingInvoices.tenantId, input.tenantId), eq(billingInvoices.id, invoice.id)));
-
-    invoice.status = 'VOIDED';
-    invoice.balanceDue = 0;
-    invoice.updatedAt = now;
-    invoice.metadata = updatedMetadata;
-
-    // Check if tied to pharmacy dispensing & mark items for physical quarantine/audit
     let quarantinedCount = 0;
-    try {
-      let matchedDispensings: any[] = [];
-      if (invoice.encounterId) {
-        const found = await db
-          .select()
-          .from(pharmacyDispensing)
-          .where(
-            and(
-              eq(pharmacyDispensing.tenantId, input.tenantId),
-              eq(pharmacyDispensing.prescriptionId, invoice.encounterId)
-            )
-          );
-        if (found && found.length > 0) matchedDispensings.push(...found);
-      }
 
-      const hasPharmacyItems = invoice.items.some(
-        (it) => it.category === 'PHARMACY' || (it.serviceName && it.serviceName.toUpperCase().includes('PHARM'))
-      );
-      if (matchedDispensings.length === 0 && hasPharmacyItems && invoice.patientId) {
-        const found = await db
-          .select()
-          .from(pharmacyDispensing)
-          .where(
-            and(
-              eq(pharmacyDispensing.tenantId, input.tenantId),
-              eq(pharmacyDispensing.patientId, invoice.patientId)
-            )
-          );
-        if (found && found.length > 0) matchedDispensings.push(...found);
-      }
+    // Update invoice status to VOIDED atomically
+    await runInTx(db, async (tx: any) => {
+      await tx
+        .update(billingInvoices)
+        .set({
+          status: 'VOIDED',
+          outstandingBalance: 0,
+          dueAmount: 0,
+          metadata: updatedMetadata,
+          updatedAt: now
+        } as any)
+        .where(and(eq(billingInvoices.tenantId, input.tenantId), eq(billingInvoices.id, invoice.id)));
 
-      for (const disp of matchedDispensings) {
-        // Mark pharmacy dispensing status as REVERSED
-        await db
-          .update(pharmacyDispensing)
-          .set({
-            dispensingStatus: 'REVERSED',
-            reversalReason: `Invoice ${invoice.invoiceNumber} voided: ${cleanReason} - Marked for physical quarantine/audit`,
-            reversedBy: cleanSupervisorId,
-            reversedAt: now,
-            updatedAt: now
-          } as any)
-          .where(and(eq(pharmacyDispensing.tenantId, input.tenantId), eq(pharmacyDispensing.id, disp.id)));
-
-        // Find dispensing items to mark batch inventory for physical quarantine
-        let items: any[] = [];
-        try {
-          const fetchedItems = await db
+      // Check if tied to pharmacy dispensing & mark items for physical quarantine/audit
+      try {
+        let matchedDispensings: any[] = [];
+        if (invoice.encounterId) {
+          const found = await tx
             .select()
-            .from(pharmacyDispensingItems)
+            .from(pharmacyDispensing)
             .where(
               and(
-                eq(pharmacyDispensingItems.tenantId, input.tenantId),
-                eq(pharmacyDispensingItems.dispensingId, disp.id)
+                eq(pharmacyDispensing.tenantId, input.tenantId),
+                eq(pharmacyDispensing.prescriptionId, invoice.encounterId)
               )
             );
-          if (fetchedItems && fetchedItems.length > 0) items = fetchedItems;
-        } catch {
-          // fallback
+          if (found && found.length > 0) matchedDispensings.push(...found);
         }
 
-        if (items.length > 0) {
-          for (const item of items) {
+        const hasPharmacyItems = invoice.items.some(
+          (it) => it.category === 'PHARMACY' || (it.serviceName && it.serviceName.toUpperCase().includes('PHARM'))
+        );
+        if (matchedDispensings.length === 0 && hasPharmacyItems && invoice.patientId) {
+          const found = await tx
+            .select()
+            .from(pharmacyDispensing)
+            .where(
+              and(
+                eq(pharmacyDispensing.tenantId, input.tenantId),
+                eq(pharmacyDispensing.patientId, invoice.patientId)
+              )
+            );
+          if (found && found.length > 0) matchedDispensings.push(...found);
+        }
+
+        for (const disp of matchedDispensings) {
+          // Mark pharmacy dispensing status as REVERSED
+          await tx
+            .update(pharmacyDispensing)
+            .set({
+              dispensingStatus: 'REVERSED',
+              reversalReason: `Invoice ${invoice.invoiceNumber} voided: ${cleanReason} - Marked for physical quarantine/audit`,
+              reversedBy: cleanSupervisorId,
+              reversedAt: now,
+              updatedAt: now
+            } as any)
+            .where(and(eq(pharmacyDispensing.tenantId, input.tenantId), eq(pharmacyDispensing.id, disp.id)));
+
+          // Find dispensing items to mark batch inventory for physical quarantine
+          let items: any[] = [];
+          try {
+            const fetchedItems = await tx
+              .select()
+              .from(pharmacyDispensingItems)
+              .where(
+                and(
+                  eq(pharmacyDispensingItems.tenantId, input.tenantId),
+                  eq(pharmacyDispensingItems.dispensingId, disp.id)
+                )
+              );
+            if (fetchedItems && fetchedItems.length > 0) items = fetchedItems;
+          } catch {
+            // fallback
+          }
+
+          if (items.length > 0) {
+            for (const item of items) {
+              quarantinedCount++;
+              // Insert physical quarantine movement ledger entry (no silent deletion)
+              await tx.insert(pharmacyStockMovements).values({
+                id: crypto.randomUUID(),
+                tenantId: input.tenantId,
+                partnerId: disp.partnerId || invoice.partnerId,
+                organizationId: disp.organizationId || invoice.organizationId,
+                branchId: disp.branchId || invoice.branchId,
+                medicationId: item.medicationId,
+                batchId: item.batchId,
+                movementType: 'QUARANTINE',
+                quantity: item.quantity,
+                beforeQuantity: 0,
+                afterQuantity: 0,
+                actorId: cleanSupervisorId,
+                actorRole: 'SUPERVISOR',
+                reason: `Invoice ${invoice.invoiceNumber} voided: ${cleanReason} - Physically quarantined for audit`,
+                correlationId: `quarantine-${invoice.id}-${Date.now()}`,
+                referenceType: 'DISPENSING',
+                referenceId: disp.dispensingNumber,
+                metadata: {
+                  quarantineType: 'VOID_INVENTORY_AUDIT',
+                  dispensingId: disp.id,
+                  invoiceId: invoice.id,
+                  invoiceNumber: invoice.invoiceNumber,
+                  quarantinedAt: now.toISOString()
+                },
+                occurredAt: now
+              } as any);
+
+              // Mark batch metadata for physical quarantine/audit rather than silent deletion
+              await tx
+                .update(pharmacyBatches)
+                .set({
+                  blockReason: `Quarantined for audit following void of invoice ${invoice.invoiceNumber}: ${cleanReason}`,
+                  blockedBy: cleanSupervisorId,
+                  blockedAt: now,
+                  metadata: {
+                    quarantineStatus: 'PHYSICAL_QUARANTINE_AUDIT',
+                    quarantineReason: cleanReason,
+                    quarantinedAt: now.toISOString(),
+                    associatedInvoiceNumber: invoice.invoiceNumber
+                  },
+                  updatedAt: now
+                } as any)
+                .where(and(eq(pharmacyBatches.tenantId, input.tenantId), eq(pharmacyBatches.id, item.batchId)));
+            }
+          } else {
+            // If no granular dispensing items row, record a quarantine movement for the dispensing record itself
             quarantinedCount++;
-            // Insert physical quarantine movement ledger entry (no silent deletion)
-            await db.insert(pharmacyStockMovements).values({
+            await tx.insert(pharmacyStockMovements).values({
               id: crypto.randomUUID(),
               tenantId: input.tenantId,
               partnerId: disp.partnerId || invoice.partnerId,
               organizationId: disp.organizationId || invoice.organizationId,
               branchId: disp.branchId || invoice.branchId,
-              medicationId: item.medicationId,
-              batchId: item.batchId,
+              medicationId: disp.medicationId || '00000000-0000-4000-8000-000000000000',
+              batchId: disp.batchId || '00000000-0000-4000-8000-000000000000',
               movementType: 'QUARANTINE',
-              quantity: item.quantity,
+              quantity: 1,
               beforeQuantity: 0,
               afterQuantity: 0,
               actorId: cleanSupervisorId,
               actorRole: 'SUPERVISOR',
-              reason: `Invoice ${invoice.invoiceNumber} voided: ${cleanReason} - Physically quarantined for audit`,
+              reason: `Invoice ${invoice.invoiceNumber} voided: ${cleanReason} - Dispensing physically quarantined for audit`,
               correlationId: `quarantine-${invoice.id}-${Date.now()}`,
               referenceType: 'DISPENSING',
               referenceId: disp.dispensingNumber,
               metadata: {
-                quarantineType: 'VOID_INVENTORY_AUDIT',
+                quarantineType: 'VOID_DISPENSING_AUDIT',
                 dispensingId: disp.id,
                 invoiceId: invoice.id,
-                invoiceNumber: invoice.invoiceNumber,
-                quarantinedAt: now.toISOString()
+                invoiceNumber: invoice.invoiceNumber
               },
               occurredAt: now
             } as any);
-
-            // Mark batch metadata for physical quarantine/audit rather than silent deletion
-            await db
-              .update(pharmacyBatches)
-              .set({
-                blockReason: `Quarantined for audit following void of invoice ${invoice.invoiceNumber}: ${cleanReason}`,
-                blockedBy: cleanSupervisorId,
-                blockedAt: now,
-                metadata: {
-                  quarantineStatus: 'PHYSICAL_QUARANTINE_AUDIT',
-                  quarantineReason: cleanReason,
-                  quarantinedAt: now.toISOString(),
-                  associatedInvoiceNumber: invoice.invoiceNumber
-                },
-                updatedAt: now
-              } as any)
-              .where(and(eq(pharmacyBatches.tenantId, input.tenantId), eq(pharmacyBatches.id, item.batchId)));
           }
-        } else {
-          // If no granular dispensing items row, record a quarantine movement for the dispensing record itself
-          quarantinedCount++;
-          await db.insert(pharmacyStockMovements).values({
-            id: crypto.randomUUID(),
-            tenantId: input.tenantId,
-            partnerId: disp.partnerId || invoice.partnerId,
-            organizationId: disp.organizationId || invoice.organizationId,
-            branchId: disp.branchId || invoice.branchId,
-            medicationId: disp.medicationId || '00000000-0000-4000-8000-000000000000',
-            batchId: disp.batchId || '00000000-0000-4000-8000-000000000000',
-            movementType: 'QUARANTINE',
-            quantity: 1,
-            beforeQuantity: 0,
-            afterQuantity: 0,
-            actorId: cleanSupervisorId,
-            actorRole: 'SUPERVISOR',
-            reason: `Invoice ${invoice.invoiceNumber} voided: ${cleanReason} - Dispensing physically quarantined for audit`,
-            correlationId: `quarantine-${invoice.id}-${Date.now()}`,
-            referenceType: 'DISPENSING',
-            referenceId: disp.dispensingNumber,
-            metadata: {
-              quarantineType: 'VOID_DISPENSING_AUDIT',
-              dispensingId: disp.id,
-              invoiceId: invoice.id,
-              invoiceNumber: invoice.invoiceNumber
-            },
-            occurredAt: now
-          } as any);
         }
+      } catch (dispErr) {
+        logger.warn('Pharmacy quarantine check completed with note', { error: String(dispErr) });
       }
-    } catch (dispErr) {
-      logger.warn('Pharmacy quarantine check completed with note', { error: String(dispErr) });
-    }
+    });
+
+    invoice.status = 'VOIDED';
+    invoice.balanceDue = 0;
+    invoice.updatedAt = now;
+    invoice.metadata = updatedMetadata;
 
     return {
       success: true,
@@ -1249,45 +1267,47 @@ export class BillingManagementRepository {
     const cleanReason = input.reason.trim();
     const cleanApprovedBy = input.approvedBy.trim();
 
-    await db.insert(billingDiscounts).values({
-      id: discountId,
-      tenantId: input.tenantId,
-      partnerId: invoice.partnerId,
-      organizationId: invoice.organizationId,
-      branchId: invoice.branchId,
-      invoiceId: invoice.id,
-      invoiceItemId: input.invoiceItemId || null,
-      discountType: input.discountType,
-      discountValue: input.discountValue.toString(),
-      discountAmount: discountAmount.toString(),
-      reason: cleanReason,
-      approvedBy: cleanApprovedBy,
-      createdBy: input.actorId || cleanApprovedBy,
-      metadata: {
-        appliedAt: now.toISOString(),
-        hasSupervisorOverride: Boolean(input.supervisorOverrideToken)
-      },
-      createdAt: now
-    } as any);
+    await runInTx(db, async (tx: any) => {
+      await tx.insert(billingDiscounts).values({
+        id: discountId,
+        tenantId: input.tenantId,
+        partnerId: invoice.partnerId,
+        organizationId: invoice.organizationId,
+        branchId: invoice.branchId,
+        invoiceId: invoice.id,
+        invoiceItemId: input.invoiceItemId || null,
+        discountType: input.discountType,
+        discountValue: input.discountValue.toString(),
+        discountAmount: discountAmount.toString(),
+        reason: cleanReason,
+        approvedBy: cleanApprovedBy,
+        createdBy: input.actorId || cleanApprovedBy,
+        metadata: {
+          appliedAt: now.toISOString(),
+          hasSupervisorOverride: Boolean(input.supervisorOverrideToken)
+        },
+        createdAt: now
+      } as any);
 
-    const newDiscountTotal = (Number(invoice.discountTotal) || 0) + discountAmount;
-    const newPatientPayable = Math.max(0, invoice.totalAmount - newDiscountTotal - (invoice.insuranceCoveredAmount || 0));
-    const newBalanceDue = Math.max(0, newPatientPayable - (invoice.paidAmount || 0));
+      const newDiscountTotal = (Number(invoice.discountTotal) || 0) + discountAmount;
+      const newPatientPayable = Math.max(0, invoice.totalAmount - newDiscountTotal - (invoice.insuranceCoveredAmount || 0));
+      const newBalanceDue = Math.max(0, newPatientPayable - (invoice.paidAmount || 0));
 
-    await db
-      .update(billingInvoices)
-      .set({
-        discountTotal: newDiscountTotal.toString(),
-        patientPayable: newPatientPayable,
-        outstandingBalance: newBalanceDue,
-        updatedAt: now
-      } as any)
-      .where(and(eq(billingInvoices.tenantId, input.tenantId), eq(billingInvoices.id, invoice.id)));
+      await tx
+        .update(billingInvoices)
+        .set({
+          discountTotal: newDiscountTotal.toString(),
+          patientPayable: newPatientPayable,
+          outstandingBalance: newBalanceDue,
+          updatedAt: now
+        } as any)
+        .where(and(eq(billingInvoices.tenantId, input.tenantId), eq(billingInvoices.id, invoice.id)));
 
-    invoice.discountTotal = newDiscountTotal;
-    invoice.patientPayableAmount = newPatientPayable;
-    invoice.balanceDue = newBalanceDue;
-    invoice.updatedAt = now;
+      invoice.discountTotal = newDiscountTotal;
+      invoice.patientPayableAmount = newPatientPayable;
+      invoice.balanceDue = newBalanceDue;
+      invoice.updatedAt = now;
+    });
 
     return {
       success: true,

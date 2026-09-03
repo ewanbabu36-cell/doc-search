@@ -3414,7 +3414,8 @@ export const billingPayments = clinicalSchema.table(
     index('idx_bill_pmt_invoice').on(table.invoiceId),
     index('idx_bill_pmt_number').on(table.paymentNumber),
     index('idx_bill_pmt_status').on(table.status),
-    index('idx_bill_pmt_received').on(table.receivedAt)
+    index('idx_bill_pmt_received').on(table.receivedAt),
+    index('idx_bill_pmt_tenant_ref').on(table.tenantId, table.referenceNumber)
   ]
 );
 
