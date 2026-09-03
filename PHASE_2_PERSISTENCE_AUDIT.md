@@ -111,33 +111,37 @@ This persistence architecture audit evaluates the authoritative storage mechanis
 
 ---
 
-## 5. Executive MIS Architecture Decision
+## 5. Executive MIS Architecture Decision & Comprehensive Audit
 
 * **Target File:** `apps/api-gateway/src/repositories/partner/ExecutiveMisRepository.ts`
-* **Analysis of the 14 In-Memory Maps:**
-  1. `snapshots`: Derived summary KPIs (total revenue, active beds, OPD footfall).
-  2. `deptBilling`: Aggregated billing summary by department.
-  3. `unbilledEncounters`: OPD/IPD encounters with no associated final invoice.
-  4. `claimAging`: Insurance claims grouped by days pending.
-  5. `inventoryShrinkage`: Pharmacy stock variances.
-  6. `doctorPayouts`: Commission and consultation share calculations.
-  7. `bedForecasts`: Inpatient occupancy predictive estimates.
-  8. `edHistory`: Emergency department triage throughput.
-  9. `otEfficiencies`: Operation theatre turnaround times.
-  10. `patientAcuity`: Triage and ICU acuity distributions.
-  11. `rcmRisks`: Revenue cycle leakage indicators.
-  12. `criticalConsumables`: Low-stock pharmacy and surgical inventory.
-  13. `simulations`: What-if financial models.
-  14. `auditTraces`: Operational trace records.
-* **Architectural Decision:**
-  * **Rule:** Authoritative financial and clinical metrics must NEVER be maintained as detached in-memory states that can drift from actual database transactions.
-  * **Implementation:**
-    * Aggregate directly from PostgreSQL tables:
-      * `unbilledEncounters` -> SQL query joining `encounters` where `id NOT IN (SELECT encounter_id FROM billing_invoices)`.
-      * `deptBilling` -> SQL query summing `billing_invoice_items.total_price` grouped by `category` / `department_id`.
-      * `criticalConsumables` -> SQL query querying `pharmacy_inventory` or `pharmacy_batches` where `quantity < reorder_level`.
-    * For deterministic what-if simulations, compute dynamically from live parameters; if persisted, save to database scenario records.
-    * Eliminate reliance on unpersisted Map stores for executive decision making.
+* **Classification Framework:**
+  * **Category A: Authoritative Business State** — Must be persisted in PostgreSQL. Survives restarts and process recreation.
+  * **Category B: Derived Analytics** — Calculated dynamically on demand from authoritative transactional tables. No redundant persistent storage.
+  * **Category C: Temporary Computation** — Purely transient what-if / simulation scratchpads that are never durable business state.
+
+### 5.1 Per-Map Audit & Classification Table
+
+| # | Map Identifier | Data Type / DTO | Classification | Authoritative Source Table / Rationale | Persistence Decision |
+|---|---|---|---|---|---|
+| 1 | `snapshots` | `ExecutiveCommandSnapshotDto` | **Category B (Derived Analytics) & Category A (Surge State)** | Total beds, occupancy, ventilator usage, unbilled risk, daily revenue are derived on-demand from `inpatient_beds`, `encounters`, `billing_invoices`. Surge level and active emergency codes represent operational state persisted in `hospital_events` / `audit_events`. | Compute live metrics dynamically from PostgreSQL; persist declared emergency surge events to DB audit ledger. |
+| 2 | `deptBilling` | `DepartmentWiseBillingSummaryDto[]` | **Category B (Derived Analytics)** | Financial aggregations grouped by clinical department (OPD, IPD, ICU, OT, Pharmacy, Lab, Radiology). Sourced from `billing_invoices` joined with `invoice_items` and `encounters`. | Calculate dynamically via SQL aggregations `SUM(total_price)`, `COUNT(DISTINCT encounter_id)`. Zero redundant storage. |
+| 3 | `unbilledEncounters` | `UnbilledEncounterItemDto[]` | **Category B (Derived) & Category A (Resolution State)** | Encounters with completed clinical services lacking posted invoices (`encounters` WHERE `id NOT IN (SELECT encounter_id FROM billing_invoices)`). Resolving an unbilled encounter updates clinical charge capture status and writes an authoritative audit entry. | Sourced via outer join query; resolution recorded transactionally into `audit_events` and encounter status. |
+| 4 | `claimAging` | `InsuranceClaimAgingBucketDto[]` | **Category B (Derived Analytics)** | Accounts Receivable aging brackets (0-30, 31-60, 61-90, 90+ days) derived from `insurance_claims` and `billing_invoices`. | Dynamically computed via date-diff buckets (`CURRENT_DATE - submission_date`). No duplicate persistence. |
+| 5 | `inventoryShrinkage` | `InventoryShrinkageItemDto[]` | **Category A (Authoritative Business State)** | Physical stock audit count reconciliation vs theoretical stock. Discrepancies represent physical loss, wastage, or pilferage. | Must be persisted in `pharmacy_stock_audits` / `inventory_discrepancies` with auditor signature and financial loss values. |
+| 6 | `doctorPayouts` | `DoctorPayoutCalculationDto[]` | **Category B (Calculation) & Category A (Settlement Approval)** | Payout calculations are derived from consultation fees and surgical splits. CFO approval status (`settlementStatus = 'APPROVED_BY_CFO'`) is authoritative financial authorization. | Payouts calculated dynamically from revenue ledger; approval transactionally committed to doctor compensation ledger and audit vault. |
+| 7 | `bedForecasts` | `PredictiveBedForecastDto[]` | **Category B (Derived Analytics)** | Statistical / time-series projections of 24h/48h/72h occupancy derived from admission/discharge turnover velocity. | Purely derived projection based on live census in `inpatient_beds` and historical length-of-stay. |
+| 8 | `edHistory` | `EdNedocsHourlyDto[]` | **Category B (Derived Analytics)** | Hourly historical National Emergency Department Overcrowding Score (NEDOCS). Computed from ED triage waiting count, time to admission, and ICU diversion status. | Derived analytics computed from `encounters` where `encounter_type = 'EMERGENCY'`. |
+| 9 | `otEfficiencies` | `OtSuiteEfficiencyDto[]` | **Category B (Derived Analytics)** | Operating theatre suite utilization and turnaround times. | Derived on-the-fly from `operation_theatre_rooms` and `ot_schedules`. |
+| 10 | `patientAcuity` | `PatientAcuityHeatmapItemDto[]` | **Category B (Acuity Heatmap) & Category A (Bed Allocation Override)** | Early Warning Scores (EWS) are clinical measurements derived from vitals. Executive bed reallocation override (`overrideBedAllocation`) is an authoritative clinical directive. | Acuity scores derived from live vitals; allocation override updates `inpatient_beds.occupied_by_encounter_id` and writes to audit ledger. |
+| 11 | `rcmRisks` | `RcmLeakageRiskItemDto[]` | **Category B (Derived Analytics)** | Revenue Cycle Management leakage risk indicators (delayed coding, pending pre-auths, unposted drugs). | Aggregated dynamically across billing, pharmacy, and insurance claims. |
+| 12 | `criticalConsumables` | `CriticalConsumableRunoutDto[]` | **Category B (Derived Analytics)** | Stockout risk and consumable run-out burn rates. | Dynamically computed by comparing available quantity in `pharmacy_batches` against 7-day moving average consumption. |
+| 13 | `simulations` | `WhatIfScenarioResultDto[]` | **Category C (Temporary Computation)** | Interactive what-if scenario models (e.g. mass casualty surge, elective surgery diversion, fast-track discharge). | Ephemeral in-memory calculation; simulation runs do not alter live hospital operational state. |
+| 14 | `auditTraces` | `ExecutiveAuditTraceDto[]` | **Category A (Authoritative Business State)** | Cryptographic SHA-256 chained audit ledger tracking all executive actions (surge declarations, payout authorizations, bed overrides, shrinkage adjustments). | Authoritative audit trail persisted to PostgreSQL audit tables (`audit_events` / `document_audit_logs`) with tamper-evident chaining. |
+
+### 5.2 Architectural Enforcement Rules
+1. **Zero Fake Authoritative Data:** RAM-based Maps shall not be treated as durable persistence. If the system restarts, actual PostgreSQL state is queried.
+2. **Dynamic Aggregation over Duplicate Tables:** Derived analytics (billing summaries, claim aging, NEDOCS, OT utilization) are calculated from existing transactional tables rather than creating unneeded secondary tables that risk data desynchronization.
+3. **Audit Trail Immutability:** Any executive override, payout authorization, or shrinkage reconciliation must write an immutable audit record to PostgreSQL.
 
 ---
 

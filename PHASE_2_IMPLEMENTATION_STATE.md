@@ -3,9 +3,9 @@
 ```text
 PHASE: 2
 STATUS: IN_PROGRESS
-CURRENT_CHECKPOINT: CHECKPOINT 2.4
-LAST_COMPLETED_CHECKPOINT: CHECKPOINT 2.3 COMPLETE
-NEXT_CHECKPOINT: CHECKPOINT 2.4
+CURRENT_CHECKPOINT: CHECKPOINT 2.5
+LAST_COMPLETED_CHECKPOINT: CHECKPOINT 2.4 COMPLETE
+NEXT_CHECKPOINT: CHECKPOINT 2.5
 FILES_MODIFIED:
   - PHASE_2_PERSISTENCE_AUDIT.md
   - PHASE_2_IMPLEMENTATION_STATE.md
@@ -25,14 +25,16 @@ FILES_MODIFIED:
   - apps/api-gateway/src/services/core/RealAuthService.ts
   - tests/reliability/clinical-e2e-workload.js
   - tests/reliability/document-verification-persistence.test.js
+  - tests/reliability/executive-mis-revenue-leakage-test.js
   - apps/api-gateway/test/wave6-production-audit.test.mjs
-TESTS_PASSED: 62
+TESTS_PASSED: 70
 TESTS_FAILED: 0
 BLOCKERS: NONE
 DECISIONS:
   - Eliminated all silent Map fallbacks in BloodBank, Inpatient, MRD, and OT repositories.
-  - Hardened DocumentVerificationRepository with full PostgreSQL Drizzle ORM persistence (documentTypes, entityDocuments, documentVerifications, documentAuditLogs).
+  - Hardened DocumentVerificationRepository with full PostgreSQL Drizzle ORM persistence.
   - Enforced atomic transactions with automatic rollback and 503 SERVICE_UNAVAILABLE fail-loud contract on database outage.
+  - Formally audited all 14 Executive MIS in-memory Maps into Categories A (authoritative state), B (derived analytics), and C (temporary computation). Prohibited redundant secondary tables for derived metrics.
 DATABASE_MIGRATIONS: NONE_YET
 ROLLBACK_STATUS: READY (Target: doc-search-phase-0-baseline)
 SECURITY_STATUS: VERIFIED_PASS
