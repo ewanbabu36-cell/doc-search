@@ -7,6 +7,21 @@ import {
   and,
   desc
 } from '@docsearch/database';
+import { AppError, ErrorCode, createLogger } from '@docsearch/shared-core';
+
+const logger = createLogger('partner-mrd-repository');
+
+function requireDb(dbClient = getDatabase()) {
+  if (!dbClient) {
+    logger.error('Database connection unavailable for MRD operation');
+    throw new AppError({
+      message: 'Database service is unavailable. MRD operations are halted.',
+      code: ErrorCode.SERVICE_UNAVAILABLE,
+      statusCode: 503
+    });
+  }
+  return dbClient;
+}
 
 export interface CreateMedicalRecordInput {
   tenantId: string;
@@ -143,8 +158,6 @@ export interface StoredMedicalRecord {
 }
 
 export class MRDManagementRepository {
-  private memRecords = new Map<string, StoredMedicalRecord[]>();
-
   async searchICD10(query?: string, category?: string): Promise<ICD10CatalogItem[]> {
     let list = AUTHORITATIVE_ICD10_CATALOG;
     if (query) {
@@ -157,112 +170,213 @@ export class MRDManagementRepository {
     return list;
   }
 
-  async getMedicalRecords(tenantId: string, patientId?: string, status?: string, dbClient = getDatabase()): Promise<StoredMedicalRecord[]> {
-    if (dbClient) {
-      try {
-        const rows = await dbClient
-          .select()
-          .from(medicalRecordIndexes)
-          .where(eq(medicalRecordIndexes.tenantId, tenantId))
-          .orderBy(desc(medicalRecordIndexes.createdAt));
-        if (rows.length > 0) {
-          let list = rows as unknown as StoredMedicalRecord[];
-          if (patientId) list = list.filter(r => r.patientId === patientId);
-          if (status) list = list.filter(r => r.completionStatus === status);
-          return list;
+  async getMedicalRecords(
+    tenantId: string,
+    patientId?: string,
+    status?: string,
+    dbClient = getDatabase()
+  ): Promise<StoredMedicalRecord[]> {
+    const db = requireDb(dbClient);
+    try {
+      const rows = await db
+        .select()
+        .from(medicalRecordIndexes)
+        .where(eq(medicalRecordIndexes.tenantId, tenantId))
+        .orderBy(desc(medicalRecordIndexes.createdAt));
+
+      let matchedRows = rows;
+      if (patientId) matchedRows = matchedRows.filter((r: any) => r.patientId === patientId);
+      if (status) matchedRows = matchedRows.filter((r: any) => r.completionStatus === status);
+
+      const records: StoredMedicalRecord[] = [];
+
+      for (const r of matchedRows) {
+        let diagnoses: StoredDiagnosisCode[] = [];
+        try {
+          const diagRows = await db
+            .select()
+            .from(medicalDiagnosisCodes)
+            .where(and(eq(medicalDiagnosisCodes.tenantId, tenantId), eq(medicalDiagnosisCodes.recordId, r.id)));
+          diagnoses = diagRows.map((d: any) => ({
+            id: d.id,
+            recordId: d.recordId,
+            icdCode: d.icdCode,
+            icdDescription: d.icdDescription,
+            codeType: d.codeType,
+            poaIndicator: d.poaIndicator,
+            sequencingOrder: d.sequencingOrder,
+            assignedByCoder: d.assignedByCoder,
+            coderNotes: d.coderNotes || undefined,
+            createdAt: d.createdAt ? new Date(d.createdAt) : new Date()
+          }));
+        } catch {
+          // Empty if none found
         }
-      } catch {
-        // Fallback
+
+        let reviews: StoredCodingReview[] = [];
+        try {
+          const reviewRows = await db
+            .select()
+            .from(codingReviews)
+            .where(and(eq(codingReviews.tenantId, tenantId), eq(codingReviews.recordId, r.id)));
+          reviews = reviewRows.map((rw: any) => ({
+            id: rw.id,
+            recordId: rw.recordId,
+            reviewNumber: rw.reviewNumber,
+            reviewerName: rw.reviewerName,
+            reviewerRole: rw.reviewerRole,
+            reviewLevel: rw.reviewLevel,
+            status: rw.status,
+            findingsAndErrorsNotes: rw.findingsAndErrorsNotes,
+            codingAccuracyScorePercent: rw.codingAccuracyScorePercent,
+            reviewedAt: rw.reviewedAt ? new Date(rw.reviewedAt) : new Date()
+          }));
+        } catch {
+          // Empty if none found
+        }
+
+        records.push({
+          id: r.id,
+          tenantId: r.tenantId,
+          partnerId: r.partnerId,
+          organizationId: r.organizationId,
+          branchId: r.branchId,
+          recordNumber: r.recordNumber,
+          patientId: r.patientId,
+          patientName: r.patientName,
+          patientMrn: r.patientMrn,
+          encounterId: r.encounterId,
+          encounterNumber: r.encounterNumber,
+          encounterType: r.encounterType,
+          admissionDate: r.admissionDate ? new Date(r.admissionDate) : new Date(),
+          dischargeDate: r.dischargeDate ? new Date(r.dischargeDate) : undefined,
+          primaryAttendingDoctor: r.primaryAttendingDoctor,
+          completionStatus: (r.completionStatus || 'DRAFT') as StoredMedicalRecord['completionStatus'],
+          codingStatus: (r.codingStatus || 'PENDING_INITIAL_CODE') as StoredMedicalRecord['codingStatus'],
+          storageType: r.storageType || 'DIGITAL_ONLY_EHR',
+          isLegalHoldActive: !!r.isLegalHoldActive,
+          diagnoses,
+          reviews,
+          amendments: [],
+          createdAt: r.createdAt ? new Date(r.createdAt) : new Date(),
+          updatedAt: r.updatedAt ? new Date(r.updatedAt) : new Date()
+        });
       }
+
+      return records;
+    } catch (err) {
+      logger.error('Failed to query medical records from database', err);
+      if (err instanceof AppError) throw err;
+      throw new AppError({
+        message: 'Database query failed. Medical records lookup unavailable.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
     }
-    let list = this.memRecords.get(tenantId) || [];
-    if (patientId) list = list.filter(r => r.patientId === patientId);
-    if (status) list = list.filter(r => r.completionStatus === status);
-    return list;
   }
 
-  async getRecordById(tenantId: string, recordId: string): Promise<StoredMedicalRecord | null> {
-    const list = this.memRecords.get(tenantId) || [];
-    return list.find(r => r.id === recordId) || null;
+  async getRecordById(tenantId: string, recordId: string, dbClient = getDatabase()): Promise<StoredMedicalRecord | null> {
+    const records = await this.getMedicalRecords(tenantId, undefined, undefined, dbClient);
+    return records.find(r => r.id === recordId) || null;
   }
 
   async createMedicalRecord(input: CreateMedicalRecordInput, dbClient = getDatabase()): Promise<StoredMedicalRecord> {
+    const db = requireDb(dbClient);
     const id = crypto.randomUUID();
     const now = new Date();
     const recordNumber = `MRD-REC-${Math.floor(100000 + Math.random() * 900000)}`;
+    const partnerId = input.partnerId || '00000000-0000-4000-8000-000000000001';
+    const organizationId = input.organizationId || '00000000-0000-4000-8000-000000000002';
+    const branchId = input.branchId || '00000000-0000-4000-8000-000000000003';
+    const patientName = input.patientName || 'Patient';
+    const patientMrn = input.patientMrn || 'MRN-001';
+    const encounterNumber = input.encounterNumber || `ENC-${Math.floor(100000 + Math.random() * 900000)}`;
+    const encounterType = input.encounterType || 'IPD';
+    const admissionDate = input.admissionDate ? new Date(input.admissionDate) : now;
+    const primaryAttendingDoctor = input.primaryAttendingDoctor || 'Attending Physician';
 
-    const record: StoredMedicalRecord = {
-      id,
-      tenantId: input.tenantId,
-      partnerId: input.partnerId || '00000000-0000-4000-8000-000000000001',
-      organizationId: input.organizationId || '00000000-0000-4000-8000-000000000002',
-      branchId: input.branchId || '00000000-0000-4000-8000-000000000003',
-      recordNumber,
-      patientId: input.patientId,
-      patientName: input.patientName || 'Patient',
-      patientMrn: input.patientMrn || 'MRN-001',
-      encounterId: input.encounterId,
-      encounterNumber: input.encounterNumber || `ENC-${Math.floor(100000 + Math.random() * 900000)}`,
-      encounterType: input.encounterType || 'IPD',
-      admissionDate: input.admissionDate ? new Date(input.admissionDate) : now,
-      primaryAttendingDoctor: input.primaryAttendingDoctor || 'Attending Physician',
-      completionStatus: 'DRAFT',
-      codingStatus: 'PENDING_INITIAL_CODE',
-      storageType: 'DIGITAL_ONLY_EHR',
-      isLegalHoldActive: false,
-      diagnoses: [],
-      reviews: [],
-      amendments: [],
-      createdAt: now,
-      updatedAt: now
-    };
+    try {
+      const [created] = await db.insert(medicalRecordIndexes).values({
+        id,
+        tenantId: input.tenantId,
+        partnerId,
+        organizationId,
+        branchId,
+        recordNumber,
+        patientId: input.patientId,
+        patientName,
+        patientMrn,
+        encounterId: input.encounterId,
+        encounterNumber,
+        encounterType,
+        admissionDate,
+        primaryAttendingDoctor,
+        completionStatus: 'DRAFT',
+        codingStatus: 'PENDING_INITIAL_CODE',
+        storageType: 'DIGITAL_ONLY_EHR',
+        isLegalHoldActive: false
+      } as unknown as typeof medicalRecordIndexes.$inferInsert).returning();
 
-    if (dbClient) {
-      try {
-        const [created] = await dbClient.insert(medicalRecordIndexes).values({
-          id: record.id,
-          tenantId: record.tenantId,
-          partnerId: record.partnerId,
-          organizationId: record.organizationId,
-          branchId: record.branchId,
-          recordNumber: record.recordNumber,
-          patientId: record.patientId,
-          patientName: record.patientName,
-          patientMrn: record.patientMrn,
-          encounterId: record.encounterId,
-          encounterNumber: record.encounterNumber,
-          encounterType: record.encounterType,
-          admissionDate: record.admissionDate,
-          primaryAttendingDoctor: record.primaryAttendingDoctor,
-          completionStatus: record.completionStatus,
-          codingStatus: record.codingStatus,
-          storageType: record.storageType,
-          isLegalHoldActive: record.isLegalHoldActive
-        } as unknown as typeof medicalRecordIndexes.$inferInsert).returning();
-        if (created) return { ...record, id: created.id };
-      } catch {
-        // Fallback
-      }
+      return {
+        id: created?.id || id,
+        tenantId: input.tenantId,
+        partnerId,
+        organizationId,
+        branchId,
+        recordNumber,
+        patientId: input.patientId,
+        patientName,
+        patientMrn,
+        encounterId: input.encounterId,
+        encounterNumber,
+        encounterType,
+        admissionDate,
+        primaryAttendingDoctor,
+        completionStatus: 'DRAFT',
+        codingStatus: 'PENDING_INITIAL_CODE',
+        storageType: 'DIGITAL_ONLY_EHR',
+        isLegalHoldActive: false,
+        diagnoses: [],
+        reviews: [],
+        amendments: [],
+        createdAt: now,
+        updatedAt: now
+      };
+    } catch (err) {
+      logger.error('Failed to create medical record in database', err);
+      if (err instanceof AppError) throw err;
+      throw new AppError({
+        message: 'Database persistence failed. Medical record creation aborted.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
     }
-
-    const current = this.memRecords.get(input.tenantId) || [];
-    current.unshift(record);
-    this.memRecords.set(input.tenantId, current);
-    return record;
   }
 
-  async assignICD10Diagnosis(input: AssignICD10DiagnosisInput, dbClient = getDatabase()): Promise<StoredMedicalRecord | null> {
-    const record = await this.getRecordById(input.tenantId, input.recordId);
+  async assignICD10Diagnosis(
+    input: AssignICD10DiagnosisInput,
+    dbClient = getDatabase()
+  ): Promise<StoredMedicalRecord | null> {
+    const db = requireDb(dbClient);
+    const record = await this.getRecordById(input.tenantId, input.recordId, dbClient);
     if (!record) return null;
 
     // Validate ICD-10 Code
     const isValid = AUTHORITATIVE_ICD10_CATALOG.some(item => item.code.toUpperCase() === input.icdCode.toUpperCase());
     if (!isValid) {
-      throw new Error(`Invalid or unverified ICD-10 Code: ${input.icdCode}. Code must exist in authoritative ICD-10 master.`);
+      throw new AppError({
+        message: `Invalid or unverified ICD-10 Code: ${input.icdCode}. Code must exist in authoritative ICD-10 master.`,
+        code: ErrorCode.VALIDATION_ERROR,
+        statusCode: 400
+      });
     }
 
     if (record.completionStatus === 'FINALIZED') {
-      throw new Error('Medical Record is FINALIZED. Direct diagnosis modifications are locked. Use controlled amendment workflow.');
+      throw new AppError({
+        message: 'Medical Record is FINALIZED. Direct diagnosis modifications are locked. Use controlled amendment workflow.',
+        code: ErrorCode.CONFLICT,
+        statusCode: 409
+      });
     }
 
     const now = new Date();
@@ -280,43 +394,58 @@ export class MRDManagementRepository {
       createdAt: now
     };
 
-    record.diagnoses.push(diagnosisItem);
-    record.codingStatus = 'CODING_COMPLETED';
-    record.updatedAt = now;
+    const executeInTx = async (tx: any) => {
+      await tx.insert(medicalDiagnosisCodes).values({
+        id: diagnosisId,
+        tenantId: input.tenantId,
+        partnerId: record.partnerId,
+        organizationId: record.organizationId,
+        branchId: record.branchId,
+        recordId: record.id,
+        icdCode: diagnosisItem.icdCode,
+        icdDescription: diagnosisItem.icdDescription,
+        codeType: diagnosisItem.codeType,
+        poaIndicator: diagnosisItem.poaIndicator,
+        sequencingOrder: diagnosisItem.sequencingOrder,
+        assignedByCoder: diagnosisItem.assignedByCoder,
+        coderNotes: diagnosisItem.coderNotes,
+        createdAt: now
+      } as unknown as typeof medicalDiagnosisCodes.$inferInsert);
 
-    if (dbClient) {
-      try {
-        await dbClient.insert(medicalDiagnosisCodes).values({
-          id: diagnosisId,
-          tenantId: input.tenantId,
-          partnerId: record.partnerId,
-          organizationId: record.organizationId,
-          branchId: record.branchId,
-          recordId: record.id,
-          icdCode: diagnosisItem.icdCode,
-          icdDescription: diagnosisItem.icdDescription,
-          codeType: diagnosisItem.codeType,
-          poaIndicator: diagnosisItem.poaIndicator,
-          sequencingOrder: diagnosisItem.sequencingOrder,
-          assignedByCoder: diagnosisItem.assignedByCoder,
-          coderNotes: diagnosisItem.coderNotes,
-          createdAt: now
-        } as unknown as typeof medicalDiagnosisCodes.$inferInsert);
+      await tx
+        .update(medicalRecordIndexes)
+        .set({ codingStatus: 'CODING_COMPLETED', updatedAt: now })
+        .where(and(eq(medicalRecordIndexes.tenantId, input.tenantId), eq(medicalRecordIndexes.id, record.id)));
+    };
 
-        await dbClient
-          .update(medicalRecordIndexes)
-          .set({ codingStatus: 'CODING_COMPLETED', updatedAt: now })
-          .where(and(eq(medicalRecordIndexes.tenantId, input.tenantId), eq(medicalRecordIndexes.id, record.id)));
-      } catch {
-        // Fallback
+    try {
+      if (typeof (db as any).transaction === 'function') {
+        await (db as any).transaction(executeInTx);
+      } else {
+        await executeInTx(db);
       }
-    }
 
-    return record;
+      record.diagnoses.push(diagnosisItem);
+      record.codingStatus = 'CODING_COMPLETED';
+      record.updatedAt = now;
+      return record;
+    } catch (err) {
+      logger.error('Failed to assign ICD-10 diagnosis in database', err);
+      if (err instanceof AppError) throw err;
+      throw new AppError({
+        message: 'Database persistence failed. ICD-10 assignment aborted.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
+    }
   }
 
-  async submitCodingReview(input: SubmitCodingReviewInput, dbClient = getDatabase()): Promise<StoredMedicalRecord | null> {
-    const record = await this.getRecordById(input.tenantId, input.recordId);
+  async submitCodingReview(
+    input: SubmitCodingReviewInput,
+    dbClient = getDatabase()
+  ): Promise<StoredMedicalRecord | null> {
+    const db = requireDb(dbClient);
+    const record = await this.getRecordById(input.tenantId, input.recordId, dbClient);
     if (!record) return null;
 
     const now = new Date();
@@ -336,76 +465,108 @@ export class MRDManagementRepository {
       reviewedAt: now
     };
 
-    record.reviews.push(reviewItem);
-    if (input.status === 'CODING_VERIFIED') {
-      record.codingStatus = 'CODING_VERIFIED';
-      record.completionStatus = 'REVIEWED';
-    }
-    record.updatedAt = now;
+    const newCodingStatus = input.status === 'CODING_VERIFIED' ? 'CODING_VERIFIED' : record.codingStatus;
+    const newCompletionStatus = input.status === 'CODING_VERIFIED' ? 'REVIEWED' : record.completionStatus;
 
-    if (dbClient) {
-      try {
-        await dbClient.insert(codingReviews).values({
-          id: reviewId,
-          tenantId: input.tenantId,
-          partnerId: record.partnerId,
-          organizationId: record.organizationId,
-          branchId: record.branchId,
-          recordId: record.id,
-          reviewNumber,
-          reviewerName: reviewItem.reviewerName,
-          reviewerRole: reviewItem.reviewerRole,
-          reviewLevel: reviewItem.reviewLevel,
-          status: reviewItem.status,
-          findingsAndErrorsNotes: reviewItem.findingsAndErrorsNotes,
-          codingAccuracyScorePercent: reviewItem.codingAccuracyScorePercent,
-          reviewedAt: now
-        } as unknown as typeof codingReviews.$inferInsert);
+    const executeInTx = async (tx: any) => {
+      await tx.insert(codingReviews).values({
+        id: reviewId,
+        tenantId: input.tenantId,
+        partnerId: record.partnerId,
+        organizationId: record.organizationId,
+        branchId: record.branchId,
+        recordId: record.id,
+        reviewNumber,
+        reviewerName: reviewItem.reviewerName,
+        reviewerRole: reviewItem.reviewerRole,
+        reviewLevel: reviewItem.reviewLevel,
+        status: reviewItem.status,
+        findingsAndErrorsNotes: reviewItem.findingsAndErrorsNotes,
+        codingAccuracyScorePercent: reviewItem.codingAccuracyScorePercent,
+        reviewedAt: now
+      } as unknown as typeof codingReviews.$inferInsert);
 
-        await dbClient
-          .update(medicalRecordIndexes)
-          .set({ codingStatus: record.codingStatus, completionStatus: record.completionStatus, updatedAt: now })
-          .where(and(eq(medicalRecordIndexes.tenantId, input.tenantId), eq(medicalRecordIndexes.id, record.id)));
-      } catch {
-        // Fallback
+      await tx
+        .update(medicalRecordIndexes)
+        .set({ codingStatus: newCodingStatus, completionStatus: newCompletionStatus, updatedAt: now })
+        .where(and(eq(medicalRecordIndexes.tenantId, input.tenantId), eq(medicalRecordIndexes.id, record.id)));
+    };
+
+    try {
+      if (typeof (db as any).transaction === 'function') {
+        await (db as any).transaction(executeInTx);
+      } else {
+        await executeInTx(db);
       }
-    }
 
-    return record;
+      record.reviews.push(reviewItem);
+      record.codingStatus = newCodingStatus as StoredMedicalRecord['codingStatus'];
+      record.completionStatus = newCompletionStatus as StoredMedicalRecord['completionStatus'];
+      record.updatedAt = now;
+      return record;
+    } catch (err) {
+      logger.error('Failed to submit coding review in database', err);
+      if (err instanceof AppError) throw err;
+      throw new AppError({
+        message: 'Database persistence failed. Coding review submission aborted.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
+    }
   }
 
-  async finalizeMedicalRecord(input: FinalizeMedicalRecordInput, dbClient = getDatabase()): Promise<StoredMedicalRecord | null> {
-    const record = await this.getRecordById(input.tenantId, input.recordId);
+  async finalizeMedicalRecord(
+    input: FinalizeMedicalRecordInput,
+    dbClient = getDatabase()
+  ): Promise<StoredMedicalRecord | null> {
+    const db = requireDb(dbClient);
+    const record = await this.getRecordById(input.tenantId, input.recordId, dbClient);
     if (!record) return null;
 
     if (record.diagnoses.length === 0) {
-      throw new Error('Cannot finalize medical record without at least one primary ICD-10 coded diagnosis.');
+      throw new AppError({
+        message: 'Cannot finalize medical record without at least one primary ICD-10 coded diagnosis.',
+        code: ErrorCode.VALIDATION_ERROR,
+        statusCode: 400
+      });
     }
 
     const now = new Date();
-    record.completionStatus = 'FINALIZED';
-    record.updatedAt = now;
 
-    if (dbClient) {
-      try {
-        await dbClient
-          .update(medicalRecordIndexes)
-          .set({ completionStatus: 'FINALIZED', updatedAt: now })
-          .where(and(eq(medicalRecordIndexes.tenantId, input.tenantId), eq(medicalRecordIndexes.id, record.id)));
-      } catch {
-        // Fallback
-      }
+    try {
+      await db
+        .update(medicalRecordIndexes)
+        .set({ completionStatus: 'FINALIZED', updatedAt: now })
+        .where(and(eq(medicalRecordIndexes.tenantId, input.tenantId), eq(medicalRecordIndexes.id, record.id)));
+
+      record.completionStatus = 'FINALIZED';
+      record.updatedAt = now;
+      return record;
+    } catch (err) {
+      logger.error('Failed to finalize medical record in database', err);
+      if (err instanceof AppError) throw err;
+      throw new AppError({
+        message: 'Database persistence failed. Medical record finalization aborted.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
     }
-
-    return record;
   }
 
-  async amendMedicalRecord(input: AmendMedicalRecordInput, dbClient = getDatabase()): Promise<StoredMedicalRecord | null> {
-    const record = await this.getRecordById(input.tenantId, input.recordId);
+  async amendMedicalRecord(
+    input: AmendMedicalRecordInput,
+    dbClient = getDatabase()
+  ): Promise<StoredMedicalRecord | null> {
+    const db = requireDb(dbClient);
+    const record = await this.getRecordById(input.tenantId, input.recordId, dbClient);
     if (!record) return null;
 
     if (!input.amendmentReason || input.amendmentReason.trim().length === 0) {
-      throw new Error('Formal amendment reason is strictly required to amend a finalized medical record.');
+      throw new AppError({
+        message: 'Formal amendment reason is strictly required to amend a finalized medical record.',
+        code: ErrorCode.VALIDATION_ERROR,
+        statusCode: 400
+      });
     }
 
     const now = new Date();
@@ -417,27 +578,29 @@ export class MRDManagementRepository {
       amendedAt: now
     };
 
-    record.amendments.push(amendment);
-    record.completionStatus = 'AMENDED';
-    record.updatedAt = now;
+    try {
+      await db
+        .update(medicalRecordIndexes)
+        .set({ completionStatus: 'AMENDED', updatedAt: now })
+        .where(and(eq(medicalRecordIndexes.tenantId, input.tenantId), eq(medicalRecordIndexes.id, record.id)));
 
-    if (dbClient) {
-      try {
-        await dbClient
-          .update(medicalRecordIndexes)
-          .set({ completionStatus: 'AMENDED', updatedAt: now })
-          .where(and(eq(medicalRecordIndexes.tenantId, input.tenantId), eq(medicalRecordIndexes.id, record.id)));
-      } catch {
-        // Fallback
-      }
+      record.amendments.push(amendment);
+      record.completionStatus = 'AMENDED';
+      record.updatedAt = now;
+      return record;
+    } catch (err) {
+      logger.error('Failed to amend medical record in database', err);
+      if (err instanceof AppError) throw err;
+      throw new AppError({
+        message: 'Database persistence failed. Medical record amendment aborted.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
     }
-
-    return record;
   }
 
-  async getPatientMRDHistory(tenantId: string, patientId: string): Promise<StoredMedicalRecord[]> {
-    const list = this.memRecords.get(tenantId) || [];
-    return list.filter(r => r.patientId === patientId);
+  async getPatientMRDHistory(tenantId: string, patientId: string, dbClient = getDatabase()): Promise<StoredMedicalRecord[]> {
+    return this.getMedicalRecords(tenantId, patientId, undefined, dbClient);
   }
 }
 

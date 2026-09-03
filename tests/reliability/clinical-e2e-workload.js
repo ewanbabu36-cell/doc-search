@@ -71,7 +71,14 @@ async function runClinicalWorkload() {
   };
   const getTableRecords = (tbl) => {
     const name = getTableName(tbl);
-    if (!mockTableStore.has(name)) mockTableStore.set(name, new Map());
+    if (!mockTableStore.has(name)) {
+      const map = new Map();
+      if (name.includes('batch') || name.includes('pharmacy')) {
+        map.set('BATCH-2026-08', { id: 'BATCH-2026-08', medicationId: 'SORBITRATE_5MG', availableQuantity: 100, status: 'ACTIVE' });
+        map.set('BATCH-2027-01', { id: 'BATCH-2027-01', medicationId: 'ATORVASTATIN_40MG', availableQuantity: 100, status: 'ACTIVE' });
+      }
+      mockTableStore.set(name, map);
+    }
     return mockTableStore.get(name);
   };
   const createSelectChain = (tbl = null) => {
@@ -80,6 +87,8 @@ async function runClinicalWorkload() {
     p.from = (table) => createSelectChain(table);
     p.where = () => p;
     p.limit = () => p;
+    p.orderBy = () => p;
+    p.for = () => p;
     return p;
   };
   const mockTx = {
@@ -323,6 +332,7 @@ async function runClinicalWorkload() {
     payload: {
       encounterId,
       patientId,
+      billingType: 'SELF_PAY',
       lineItems: [
         { description: 'Cardiology Specialist Consultation', sacCode: '999312', amount: 1200, gstRate: 0 },
         { description: 'STAT Cardiac Biomarker Panel (Troponin-I)', sacCode: '999312', amount: 1800, gstRate: 0 },

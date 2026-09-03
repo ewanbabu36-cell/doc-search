@@ -134,8 +134,8 @@ export class MRDManagementService {
   }
 
   async getPatientMRDHistory(session: SessionContext, patientId: string) {
-    return withSecurityContext(getDatabase(), session, async () => {
-      return mrdManagementRepository.getPatientMRDHistory(session.tenantId, patientId);
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      return mrdManagementRepository.getPatientMRDHistory(session.tenantId, patientId, tx);
     });
   }
 }

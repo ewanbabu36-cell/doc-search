@@ -12,6 +12,21 @@ import {
   and,
   desc
 } from '@docsearch/database';
+import { AppError, ErrorCode, createLogger } from '@docsearch/shared-core';
+
+const logger = createLogger('partner-blood-bank-repository');
+
+function requireDb(dbClient = getDatabase()) {
+  if (!dbClient) {
+    logger.error('Database connection unavailable for blood bank transaction');
+    throw new AppError({
+      message: 'Database service is unavailable. Blood bank transactions are halted.',
+      code: ErrorCode.SERVICE_UNAVAILABLE,
+      statusCode: 503
+    });
+  }
+  return dbClient;
+}
 
 export interface RegisterDonorInput {
   tenantId: string;
@@ -217,38 +232,56 @@ export interface StoredBloodRequest {
 }
 
 export class BloodBankManagementRepository {
-  private memDonors = new Map<string, StoredDonor[]>();
-  private memDonations = new Map<string, StoredDonation[]>();
-  private memComponents = new Map<string, StoredBloodComponent[]>();
-  private memRequests = new Map<string, StoredBloodRequest[]>();
+  async getInventory(
+    tenantId: string,
+    bloodGroup?: string,
+    componentType?: string,
+    status?: string,
+    dbClient = getDatabase()
+  ): Promise<StoredBloodComponent[]> {
+    const db = requireDb(dbClient);
+    try {
+      const conditions = [eq(bloodComponents.tenantId, tenantId)];
+      if (bloodGroup) conditions.push(eq(bloodComponents.bloodGroup, bloodGroup));
+      if (componentType) conditions.push(eq(bloodComponents.componentType, componentType));
+      if (status) conditions.push(eq(bloodComponents.status, status));
 
-  async getInventory(tenantId: string, bloodGroup?: string, componentType?: string, status?: string, dbClient = getDatabase()): Promise<StoredBloodComponent[]> {
-    if (dbClient) {
-      try {
-        const rows = await dbClient
-          .select()
-          .from(bloodComponents)
-          .where(eq(bloodComponents.tenantId, tenantId))
-          .orderBy(desc(bloodComponents.createdAt));
-        if (rows.length > 0) {
-          let list = rows as unknown as StoredBloodComponent[];
-          if (bloodGroup) list = list.filter(c => c.bloodGroup === bloodGroup);
-          if (componentType) list = list.filter(c => c.componentType === componentType);
-          if (status) list = list.filter(c => c.status === status);
-          return list;
-        }
-      } catch {
-        // Fallback
-      }
+      const rows = await db
+        .select()
+        .from(bloodComponents)
+        .where(and(...conditions))
+        .orderBy(desc(bloodComponents.createdAt));
+
+      return rows.map((r) => ({
+        id: r.id,
+        tenantId: r.tenantId,
+        partnerId: r.partnerId,
+        organizationId: r.organizationId,
+        branchId: r.branchId,
+        componentCode: r.componentCode,
+        donationId: r.donationId,
+        donorId: r.donationId, // mapped to donation / donor
+        componentType: r.componentType as StoredBloodComponent['componentType'],
+        bloodGroup: r.bloodGroup,
+        volumeMl: r.volumeMl,
+        status: r.status as StoredBloodComponent['status'],
+        expiryDate: r.expiryDate,
+        createdAt: r.createdAt,
+        updatedAt: r.createdAt
+      }));
+    } catch (err) {
+      logger.error('Failed to query blood inventory from database', err);
+      if (err instanceof AppError) throw err;
+      throw new AppError({
+        message: 'Database query failed. Blood bank inventory lookup unavailable.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
     }
-    let list = this.memComponents.get(tenantId) || [];
-    if (bloodGroup) list = list.filter(c => c.bloodGroup === bloodGroup);
-    if (componentType) list = list.filter(c => c.componentType === componentType);
-    if (status) list = list.filter(c => c.status === status);
-    return list;
   }
 
   async registerDonor(input: RegisterDonorInput, dbClient = getDatabase()): Promise<StoredDonor> {
+    const db = requireDb(dbClient);
     const id = crypto.randomUUID();
     const now = new Date();
     const donorNumber = `DNR-${Math.floor(100000 + Math.random() * 900000)}`;
@@ -272,35 +305,50 @@ export class BloodBankManagementRepository {
       updatedAt: now
     };
 
-    if (dbClient) {
-      try {
-        const [created] = await dbClient.insert(bloodDonors).values({
+    try {
+      const [created] = await db
+        .insert(bloodDonors)
+        .values({
           id: record.id,
           tenantId: record.tenantId,
           partnerId: record.partnerId,
           organizationId: record.organizationId,
           branchId: record.branchId,
-          donorNumber: record.donorNumber,
+          donorCode: record.donorNumber,
           fullName: record.fullName,
           gender: record.gender,
-          dateOfBirth: record.dateOfBirth,
+          dateOfBirth: new Date(record.dateOfBirth),
           contactNumber: record.mobileNumber,
           bloodGroup: record.bloodGroup,
-          status: 'ACTIVE'
-        } as unknown as typeof bloodDonors.$inferInsert).returning();
-        if (created) return { ...record, id: created.id };
-      } catch {
-        // Fallback
-      }
-    }
+          donorType: record.donorType,
+          eligibilityStatus: record.screeningPassed ? 'ELIGIBLE_FOR_DONATION' : 'TEMPORARILY_DEFERRED',
+          totalDonationsCount: 0,
+          nextEligibleDate: new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000),
+          createdAt: now
+        } as unknown as typeof bloodDonors.$inferInsert)
+        .returning();
 
-    const current = this.memDonors.get(input.tenantId) || [];
-    current.unshift(record);
-    this.memDonors.set(input.tenantId, current);
-    return record;
+      if (!created) {
+        throw new Error('Insert returned empty result');
+      }
+
+      return {
+        ...record,
+        id: created.id
+      };
+    } catch (err) {
+      logger.error('Failed to register blood donor in database', err);
+      if (err instanceof AppError) throw err;
+      throw new AppError({
+        message: 'Database persistence failed. Blood donor registration aborted.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
+    }
   }
 
   async collectDonation(input: CollectDonationInput, dbClient = getDatabase()): Promise<StoredDonation> {
+    const db = requireDb(dbClient);
     const id = crypto.randomUUID();
     const now = new Date();
     const donationNumber = `DON-${Math.floor(100000 + Math.random() * 900000)}`;
@@ -317,16 +365,17 @@ export class BloodBankManagementRepository {
       bloodGroup: input.bloodGroup,
       donationType: input.donationType || 'WHOLE_BLOOD',
       volumeMl: input.volumeMl || 450,
-      anticoagulant: input.anticoagulant || 'CPDA_1',
+      anticoagulant: input.anticoagulant || 'CPDA-1',
       status: 'COLLECTED',
       collectedAt: now,
       createdAt: now,
       updatedAt: now
     };
 
-    if (dbClient) {
-      try {
-        const [created] = await dbClient.insert(bloodDonations).values({
+    try {
+      const [created] = await db
+        .insert(bloodDonations)
+        .values({
           id: record.id,
           tenantId: record.tenantId,
           partnerId: record.partnerId,
@@ -341,22 +390,33 @@ export class BloodBankManagementRepository {
           anticoagulantType: record.anticoagulant,
           phlebotomistName: 'Staff Phlebotomist',
           collectionLocation: 'Main Blood Bank',
-          unitStatus: record.status,
-          bagBarcode: record.bagBarcode
-        } as unknown as typeof bloodDonations.$inferInsert).returning();
-        if (created) return { ...record, id: created.id };
-      } catch {
-        // Fallback
-      }
-    }
+          unitStatus: 'QUARANTINED',
+          bagBarcode: record.bagBarcode,
+          collectedAt: now
+        } as unknown as typeof bloodDonations.$inferInsert)
+        .returning();
 
-    const current = this.memDonations.get(input.tenantId) || [];
-    current.unshift(record);
-    this.memDonations.set(input.tenantId, current);
-    return record;
+      if (!created) {
+        throw new Error('Insert returned empty result');
+      }
+
+      return {
+        ...record,
+        id: created.id
+      };
+    } catch (err) {
+      logger.error('Failed to collect blood donation in database', err);
+      if (err instanceof AppError) throw err;
+      throw new AppError({
+        message: 'Database persistence failed. Blood donation collection aborted.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
+    }
   }
 
   async separateComponents(input: SeparateComponentsInput, dbClient = getDatabase()): Promise<StoredBloodComponent[]> {
+    const db = requireDb(dbClient);
     const now = new Date();
     const createdComponents: StoredBloodComponent[] = [];
 
@@ -423,49 +483,62 @@ export class BloodBankManagementRepository {
     };
     createdComponents.push(plt);
 
-    if (dbClient) {
-      try {
-        for (const item of createdComponents) {
-          await dbClient.insert(bloodComponents).values({
-            id: item.id,
-            tenantId: item.tenantId,
-            partnerId: item.partnerId,
-            organizationId: item.organizationId,
-            branchId: item.branchId,
-            componentCode: item.componentCode,
-            donationId: item.donationId,
-            componentType: item.componentType,
-            bloodGroup: item.bloodGroup,
-            volumeMl: item.volumeMl,
-            storageLocation: 'Blood Bank Cold Room',
-            storageTemperatureTargetC: '4 C',
-            expiryDate: item.expiryDate,
-            status: item.status,
-            preparedByTechnician: 'Blood Bank Technician'
-          } as unknown as typeof bloodComponents.$inferInsert);
-        }
-
-        await dbClient
-          .update(bloodDonations)
-          .set({ unitStatus: 'SEPARATED' })
-          .where(and(eq(bloodDonations.tenantId, input.tenantId), eq(bloodDonations.id, input.donationId)));
-      } catch {
-        // Fallback
+    const executeSeparation = async (targetTx: any) => {
+      for (const item of createdComponents) {
+        await targetTx.insert(bloodComponents).values({
+          id: item.id,
+          tenantId: item.tenantId,
+          partnerId: item.partnerId,
+          organizationId: item.organizationId,
+          branchId: item.branchId,
+          componentCode: item.componentCode,
+          donationId: item.donationId,
+          componentType: item.componentType,
+          bloodGroup: item.bloodGroup,
+          volumeMl: item.volumeMl,
+          storageLocation: 'Blood Bank Cold Room',
+          storageTemperatureTargetC: '4 C',
+          expiryDate: item.expiryDate,
+          status: item.status,
+          preparedByTechnician: 'Blood Bank Technician',
+          createdAt: now
+        } as unknown as typeof bloodComponents.$inferInsert);
       }
+
+      await targetTx
+        .update(bloodDonations)
+        .set({ unitStatus: 'SEPARATED' })
+        .where(and(eq(bloodDonations.tenantId, input.tenantId), eq(bloodDonations.id, input.donationId)));
+    };
+
+    try {
+      if (typeof (db as any).transaction === 'function') {
+        await (db as any).transaction(executeSeparation);
+      } else {
+        await executeSeparation(db);
+      }
+      return createdComponents;
+    } catch (err) {
+      logger.error('Failed to separate blood components in database', err);
+      if (err instanceof AppError) throw err;
+      throw new AppError({
+        message: 'Database persistence failed. Blood component separation aborted.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
     }
-
-    const current = this.memComponents.get(input.tenantId) || [];
-    current.unshift(...createdComponents);
-    this.memComponents.set(input.tenantId, current);
-
-    return createdComponents;
   }
 
-  async recordBloodTest(input: RecordBloodTestInput, dbClient = getDatabase()): Promise<{ testId: string; status: string }> {
+  async recordBloodTest(
+    input: RecordBloodTestInput,
+    dbClient = getDatabase()
+  ): Promise<{ testId: string; status: string }> {
+    const db = requireDb(dbClient);
     const now = new Date();
     const testId = crypto.randomUUID();
 
-    const isSafe = input.overallStatus === 'TESTED_SAFE' &&
+    const isSafe =
+      input.overallStatus === 'TESTED_SAFE' &&
       input.hivResult === 'NON_REACTIVE' &&
       input.hbsagResult === 'NON_REACTIVE' &&
       input.hcvResult === 'NON_REACTIVE' &&
@@ -474,43 +547,64 @@ export class BloodBankManagementRepository {
 
     const newComponentStatus = isSafe ? 'AVAILABLE' : 'DISCARDED';
 
-    // Update all child components of this donation
-    const components = this.memComponents.get(input.tenantId) || [];
-    components.forEach(c => {
-      if (c.donationId === input.donationId) {
-        c.status = newComponentStatus;
-        c.updatedAt = now;
-      }
-    });
+    const executeTest = async (targetTx: any) => {
+      await targetTx.insert(bloodTests).values({
+        id: testId,
+        tenantId: input.tenantId,
+        partnerId: '00000000-0000-4000-8000-000000000001',
+        organizationId: '00000000-0000-4000-8000-000000000002',
+        branchId: '00000000-0000-4000-8000-000000000003',
+        testCode: `TEST-${testId.substring(0, 8).toUpperCase()}`,
+        donationId: input.donationId,
+        unitBarcode: `BAR-${input.donationId.substring(0, 8)}`,
+        aboGroupingResult: input.aboRhConfirmation,
+        rhFactorResult: 'POSITIVE',
+        antibodyScreen: 'NEGATIVE',
+        hivResult: input.hivResult,
+        hBsAgResult: input.hbsagResult,
+        hcvResult: input.hcvResult,
+        syphilisVDRLResult: input.syphilisResult,
+        malariaResult: input.malariaResult,
+        testingTechnicianName: input.testedBy,
+        pathologistSignOffName: 'Consultant Pathologist',
+        isPassedForRelease: isSafe,
+        testedAt: now
+      } as unknown as typeof bloodTests.$inferInsert);
 
-    if (dbClient) {
-      try {
-        await dbClient.insert(bloodTests).values({
-          id: testId,
-          tenantId: input.tenantId,
-          partnerId: '00000000-0000-4000-8000-000000000001',
-          organizationId: '00000000-0000-4000-8000-000000000002',
-          branchId: '00000000-0000-4000-8000-000000000003',
-          donationId: input.donationId,
-          testName: 'TTI_PANEL',
-          result: input.overallStatus,
-          status: 'COMPLETED',
-          testedAt: now
-        } as unknown as typeof bloodTests.$inferInsert);
+      await targetTx
+        .update(bloodComponents)
+        .set({ status: newComponentStatus })
+        .where(and(eq(bloodComponents.tenantId, input.tenantId), eq(bloodComponents.donationId, input.donationId)));
 
-        await dbClient
-          .update(bloodComponents)
-          .set({ status: newComponentStatus })
-          .where(and(eq(bloodComponents.tenantId, input.tenantId), eq(bloodComponents.donationId, input.donationId)));
-      } catch {
-        // Fallback
+      await targetTx
+        .update(bloodDonations)
+        .set({ unitStatus: isSafe ? 'TESTED_SAFE' : 'DISCARDED' })
+        .where(and(eq(bloodDonations.tenantId, input.tenantId), eq(bloodDonations.id, input.donationId)));
+    };
+
+    try {
+      if (typeof (db as any).transaction === 'function') {
+        await (db as any).transaction(executeTest);
+      } else {
+        await executeTest(db);
       }
+      return { testId, status: newComponentStatus };
+    } catch (err) {
+      logger.error('Failed to record blood test in database', err);
+      if (err instanceof AppError) throw err;
+      throw new AppError({
+        message: 'Database persistence failed. Blood testing aborted.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
     }
-
-    return { testId, status: newComponentStatus };
   }
 
-  async createBloodRequest(input: CreateBloodRequestInput, dbClient = getDatabase()): Promise<StoredBloodRequest> {
+  async createBloodRequest(
+    input: CreateBloodRequestInput,
+    dbClient = getDatabase()
+  ): Promise<StoredBloodRequest> {
+    const db = requireDb(dbClient);
     const id = crypto.randomUUID();
     const now = new Date();
     const requestNumber = `BLD-REQ-${Math.floor(100000 + Math.random() * 900000)}`;
@@ -538,9 +632,10 @@ export class BloodBankManagementRepository {
       updatedAt: now
     };
 
-    if (dbClient) {
-      try {
-        const [created] = await dbClient.insert(bloodRequests).values({
+    try {
+      const [created] = await db
+        .insert(bloodRequests)
+        .values({
           id: record.id,
           tenantId: record.tenantId,
           partnerId: record.partnerId,
@@ -548,8 +643,8 @@ export class BloodBankManagementRepository {
           branchId: record.branchId,
           requestCode: record.requestNumber,
           patientId: record.patientId,
-          patientName: 'Patient',
-          patientMrn: 'MRN-001',
+          patientName: 'Recipient Patient',
+          patientMrn: 'MRN-RECIPIENT',
           encounterId: record.encounterId,
           requestingDepartment: 'Clinical Department',
           orderingPhysicianName: 'Attending Physician',
@@ -558,202 +653,468 @@ export class BloodBankManagementRepository {
           quantityUnits: record.unitsRequested,
           urgency: record.urgency,
           clinicalIndication: record.clinicalIndication,
-          requiredByTimestamp: new Date(),
-          status: record.status
-        } as unknown as typeof bloodRequests.$inferInsert).returning();
-        if (created) return { ...record, id: created.id };
-      } catch {
-        // Fallback
-      }
-    }
+          requiredByTimestamp: new Date(now.getTime() + 24 * 60 * 60 * 1000),
+          status: record.status,
+          requestedAt: now
+        } as unknown as typeof bloodRequests.$inferInsert)
+        .returning();
 
-    const current = this.memRequests.get(input.tenantId) || [];
-    current.unshift(record);
-    this.memRequests.set(input.tenantId, current);
-    return record;
+      if (!created) {
+        throw new Error('Insert returned empty result');
+      }
+
+      return {
+        ...record,
+        id: created.id
+      };
+    } catch (err) {
+      logger.error('Failed to create blood request in database', err);
+      if (err instanceof AppError) throw err;
+      throw new AppError({
+        message: 'Database persistence failed. Blood request requisition aborted.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
+    }
   }
 
-  async performCrossmatch(input: PerformCrossmatchInput, dbClient = getDatabase()): Promise<StoredBloodRequest | null> {
-    const list = this.memRequests.get(input.tenantId) || [];
-    const request = list.find(r => r.id === input.requestId);
-    if (!request) return null;
-
-    const components = this.memComponents.get(input.tenantId) || [];
-    const comp = components.find(c => c.id === input.componentId);
-    if (!comp) throw new Error('Blood component not found in inventory');
-    if (comp.status !== 'AVAILABLE') throw new Error(`Component is not available for crossmatching (Status: ${comp.status})`);
-
+  async performCrossmatch(
+    input: PerformCrossmatchInput,
+    dbClient = getDatabase()
+  ): Promise<StoredBloodRequest | null> {
+    const db = requireDb(dbClient);
     const now = new Date();
-    request.crossmatch = {
-      componentId: input.componentId,
-      technicianId: input.technicianId,
-      compatibilityResult: input.compatibilityResult,
-      crossmatchNotes: input.crossmatchNotes,
-      performedAt: now
-    };
 
-    if (input.compatibilityResult === 'COMPATIBLE') {
-      request.status = 'CROSSMATCHED';
-      comp.status = 'RESERVED';
-      comp.updatedAt = now;
-    }
+    try {
+      const [request] = await db
+        .select()
+        .from(bloodRequests)
+        .where(and(eq(bloodRequests.tenantId, input.tenantId), eq(bloodRequests.id, input.requestId)));
 
-    request.updatedAt = now;
+      if (!request) return null;
 
-    if (dbClient) {
-      try {
-        await dbClient.insert(bloodCrossmatches).values({
-          id: crypto.randomUUID(),
+      const [comp] = await db
+        .select()
+        .from(bloodComponents)
+        .where(and(eq(bloodComponents.tenantId, input.tenantId), eq(bloodComponents.id, input.componentId)));
+
+      if (!comp) {
+        throw new AppError({
+          message: 'Blood component not found in inventory',
+          code: ErrorCode.NOT_FOUND,
+          statusCode: 404
+        });
+      }
+
+      if (comp.status !== 'AVAILABLE') {
+        throw new AppError({
+          message: `Component is not available for crossmatching (Status: ${comp.status})`,
+          code: ErrorCode.BAD_REQUEST,
+          statusCode: 400
+        });
+      }
+
+      const crossmatchId = crypto.randomUUID();
+      const crossmatchCode = `XM-${crossmatchId.substring(0, 8).toUpperCase()}`;
+      const nextRequestStatus = input.compatibilityResult === 'COMPATIBLE' ? 'CROSSMATCHED' : 'REQUESTED';
+      const nextComponentStatus = input.compatibilityResult === 'COMPATIBLE' ? 'RESERVED' : 'AVAILABLE';
+
+      const executeCrossmatch = async (targetTx: any) => {
+        await targetTx.insert(bloodCrossmatches).values({
+          id: crossmatchId,
           tenantId: input.tenantId,
           partnerId: '00000000-0000-4000-8000-000000000001',
           organizationId: '00000000-0000-4000-8000-000000000002',
           branchId: '00000000-0000-4000-8000-000000000003',
+          crossmatchCode,
           requestId: input.requestId,
           componentId: input.componentId,
-          patientId: input.patientId,
-          compatibilityResult: input.compatibilityResult,
-          testedByUserId: input.technicianId,
-          status: 'COMPLETED',
-          testedAt: now
+          componentCode: comp.componentCode,
+          patientName: request.patientName,
+          patientBloodGroup: request.patientBloodGroup,
+          donorBloodGroup: comp.bloodGroup,
+          majorCrossmatchResult: input.compatibilityResult,
+          minorCrossmatchResult: 'COMPATIBLE',
+          coombsTestResult: 'NEGATIVE',
+          overallResult: input.compatibilityResult,
+          testingTechnicianName: input.technicianId,
+          verifiedByPathologist: 'Consultant Pathologist',
+          crossmatchedAt: now,
+          expiresAt: new Date(now.getTime() + 48 * 60 * 60 * 1000)
         } as unknown as typeof bloodCrossmatches.$inferInsert);
 
-        await dbClient
+        await targetTx
           .update(bloodRequests)
-          .set({ status: request.status })
+          .set({ status: nextRequestStatus })
           .where(and(eq(bloodRequests.tenantId, input.tenantId), eq(bloodRequests.id, input.requestId)));
 
         if (input.compatibilityResult === 'COMPATIBLE') {
-          await dbClient
+          await targetTx
             .update(bloodComponents)
-            .set({ status: 'RESERVED' })
+            .set({ status: nextComponentStatus })
             .where(and(eq(bloodComponents.tenantId, input.tenantId), eq(bloodComponents.id, input.componentId)));
         }
-      } catch {
-        // Fallback
-      }
-    }
+      };
 
-    return request;
+      if (typeof (db as any).transaction === 'function') {
+        await (db as any).transaction(executeCrossmatch);
+      } else {
+        await executeCrossmatch(db);
+      }
+
+      return {
+        id: request.id,
+        tenantId: request.tenantId,
+        partnerId: request.partnerId,
+        organizationId: request.organizationId,
+        branchId: request.branchId,
+        requestNumber: request.requestCode,
+        patientId: request.patientId,
+        doctorId: request.orderingPhysicianName,
+        encounterId: request.encounterId,
+        bloodGroup: request.patientBloodGroup,
+        componentType: request.requestedComponentType,
+        unitsRequested: request.quantityUnits,
+        urgency: request.urgency,
+        clinicalIndication: request.clinicalIndication,
+        status: nextRequestStatus as StoredBloodRequest['status'],
+        crossmatch: {
+          componentId: input.componentId,
+          technicianId: input.technicianId,
+          compatibilityResult: input.compatibilityResult,
+          crossmatchNotes: input.crossmatchNotes,
+          performedAt: now
+        },
+        issue: null,
+        transfusion: null,
+        createdAt: request.requestedAt,
+        updatedAt: now
+      };
+    } catch (err) {
+      logger.error('Failed to perform crossmatch in database', err);
+      if (err instanceof AppError) throw err;
+      throw new AppError({
+        message: 'Database persistence failed. Crossmatch operation aborted.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
+    }
   }
 
-  async issueBloodUnit(input: IssueBloodUnitInput, dbClient = getDatabase()): Promise<StoredBloodRequest | null> {
-    const list = this.memRequests.get(input.tenantId) || [];
-    const request = list.find(r => r.id === input.requestId);
-    if (!request) return null;
-
-    const components = this.memComponents.get(input.tenantId) || [];
-    const comp = components.find(c => c.id === input.componentId);
-    if (!comp) throw new Error('Blood component not found in inventory');
-
+  async issueBloodUnit(
+    input: IssueBloodUnitInput,
+    dbClient = getDatabase()
+  ): Promise<StoredBloodRequest | null> {
+    const db = requireDb(dbClient);
     const now = new Date();
-    request.issue = {
-      componentId: input.componentId,
-      issuedToStaff: input.issuedToStaff,
-      issuedBy: input.issuedBy,
-      issuedAt: now
-    };
-    request.status = 'ISSUED';
-    request.updatedAt = now;
 
-    comp.status = 'ISSUED';
-    comp.updatedAt = now;
+    try {
+      const [request] = await db
+        .select()
+        .from(bloodRequests)
+        .where(and(eq(bloodRequests.tenantId, input.tenantId), eq(bloodRequests.id, input.requestId)));
 
-    if (dbClient) {
-      try {
-        await dbClient.insert(bloodIssues).values({
-          id: crypto.randomUUID(),
+      if (!request) return null;
+
+      const [comp] = await db
+        .select()
+        .from(bloodComponents)
+        .where(and(eq(bloodComponents.tenantId, input.tenantId), eq(bloodComponents.id, input.componentId)));
+
+      if (!comp) {
+        throw new AppError({
+          message: 'Blood component not found in inventory',
+          code: ErrorCode.NOT_FOUND,
+          statusCode: 404
+        });
+      }
+
+      const issueId = crypto.randomUUID();
+      const issueCode = `ISSUE-${issueId.substring(0, 8).toUpperCase()}`;
+
+      const executeIssue = async (targetTx: any) => {
+        await targetTx.insert(bloodIssues).values({
+          id: issueId,
           tenantId: input.tenantId,
           partnerId: '00000000-0000-4000-8000-000000000001',
           organizationId: '00000000-0000-4000-8000-000000000002',
           branchId: '00000000-0000-4000-8000-000000000003',
+          issueCode,
           requestId: input.requestId,
           componentId: input.componentId,
-          issuedToUserId: input.issuedToStaff,
-          issuedByUserId: input.issuedBy,
-          status: 'ISSUED',
+          componentCode: comp.componentCode,
+          patientName: request.patientName,
+          patientMrn: request.patientMrn,
+          destinationDepartment: 'ICU / Ward',
+          issuingTechnicianName: input.issuedBy,
+          receivingNurseName: input.issuedToStaff,
+          transportBoxTemperatureC: '4 C',
           issuedAt: now
         } as unknown as typeof bloodIssues.$inferInsert);
 
-        await dbClient
+        await targetTx
           .update(bloodRequests)
           .set({ status: 'ISSUED' })
           .where(and(eq(bloodRequests.tenantId, input.tenantId), eq(bloodRequests.id, input.requestId)));
 
-        await dbClient
+        await targetTx
           .update(bloodComponents)
           .set({ status: 'ISSUED' })
           .where(and(eq(bloodComponents.tenantId, input.tenantId), eq(bloodComponents.id, input.componentId)));
-      } catch {
-        // Fallback
-      }
-    }
+      };
 
-    return request;
+      if (typeof (db as any).transaction === 'function') {
+        await (db as any).transaction(executeIssue);
+      } else {
+        await executeIssue(db);
+      }
+
+      return {
+        id: request.id,
+        tenantId: request.tenantId,
+        partnerId: request.partnerId,
+        organizationId: request.organizationId,
+        branchId: request.branchId,
+        requestNumber: request.requestCode,
+        patientId: request.patientId,
+        doctorId: request.orderingPhysicianName,
+        encounterId: request.encounterId,
+        bloodGroup: request.patientBloodGroup,
+        componentType: request.requestedComponentType,
+        unitsRequested: request.quantityUnits,
+        urgency: request.urgency,
+        clinicalIndication: request.clinicalIndication,
+        status: 'ISSUED',
+        crossmatch: null,
+        issue: {
+          componentId: input.componentId,
+          issuedToStaff: input.issuedToStaff,
+          issuedBy: input.issuedBy,
+          issuedAt: now
+        },
+        transfusion: null,
+        createdAt: request.requestedAt,
+        updatedAt: now
+      };
+    } catch (err) {
+      logger.error('Failed to issue blood unit in database', err);
+      if (err instanceof AppError) throw err;
+      throw new AppError({
+        message: 'Database persistence failed. Blood unit dispensing aborted.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
+    }
   }
 
-  async recordTransfusion(input: RecordTransfusionInput, dbClient = getDatabase()): Promise<StoredBloodRequest | null> {
-    const list = this.memRequests.get(input.tenantId) || [];
-    const request = list.find(r => r.id === input.requestId);
-    if (!request) return null;
-
+  async recordTransfusion(
+    input: RecordTransfusionInput,
+    dbClient = getDatabase()
+  ): Promise<StoredBloodRequest | null> {
+    const db = requireDb(dbClient);
     const now = new Date();
-    request.transfusion = {
-      componentId: input.componentId,
-      transfusedByNurse: input.transfusedByNurse,
-      preTransfusionVitals: input.preTransfusionVitals,
-      postTransfusionVitals: input.postTransfusionVitals,
-      transfusionReactionObserved: input.transfusionReactionObserved,
-      reactionDetails: input.reactionDetails,
-      completedAt: now
-    };
-    request.status = 'TRANSFUSED';
-    request.updatedAt = now;
 
-    const components = this.memComponents.get(input.tenantId) || [];
-    const comp = components.find(c => c.id === input.componentId);
-    if (comp) {
-      comp.status = 'TRANSFUSED';
-      comp.updatedAt = now;
-    }
+    try {
+      const [request] = await db
+        .select()
+        .from(bloodRequests)
+        .where(and(eq(bloodRequests.tenantId, input.tenantId), eq(bloodRequests.id, input.requestId)));
 
-    if (dbClient) {
-      try {
-        await dbClient.insert(transfusionRecords).values({
-          id: crypto.randomUUID(),
+      if (!request) return null;
+
+      const [comp] = await db
+        .select()
+        .from(bloodComponents)
+        .where(and(eq(bloodComponents.tenantId, input.tenantId), eq(bloodComponents.id, input.componentId)));
+
+      const transfusionId = crypto.randomUUID();
+      const transfusionCode = `TXN-${transfusionId.substring(0, 8).toUpperCase()}`;
+
+      const executeTransfusion = async (targetTx: any) => {
+        await targetTx.insert(transfusionRecords).values({
+          id: transfusionId,
           tenantId: input.tenantId,
           partnerId: '00000000-0000-4000-8000-000000000001',
           organizationId: '00000000-0000-4000-8000-000000000002',
           branchId: '00000000-0000-4000-8000-000000000003',
-          patientId: input.patientId,
-          componentId: input.componentId,
-          transfusedByStaffId: input.transfusedByNurse,
-          reactionObserved: input.transfusionReactionObserved,
+          transfusionCode,
+          patientName: request.patientName,
+          patientMrn: request.patientMrn,
+          encounterId: request.encounterId,
+          componentCode: comp ? comp.componentCode : `CMP-${input.componentId.substring(0, 8)}`,
+          componentType: request.requestedComponentType,
+          bloodGroup: request.patientBloodGroup,
+          administeredByNurse: input.transfusedByNurse,
+          supervisingDoctorName: 'Attending Physician',
+          startTime: now,
+          endTime: now,
+          preTransfusionPulse: parseInt(input.preTransfusionVitals?.heartRate || '75', 10),
+          preTransfusionBp: input.preTransfusionVitals?.bloodPressure || '120/80',
+          preTransfusionTempF: '98.6',
+          adverseReactionNoted: input.transfusionReactionObserved,
           status: 'COMPLETED',
-          completedAt: now
+          outcomeNotes: input.reactionDetails || 'Transfusion completed uneventfully.'
         } as unknown as typeof transfusionRecords.$inferInsert);
 
-        await dbClient
+        await targetTx
           .update(bloodRequests)
           .set({ status: 'TRANSFUSED' })
           .where(and(eq(bloodRequests.tenantId, input.tenantId), eq(bloodRequests.id, input.requestId)));
 
         if (comp) {
-          await dbClient
+          await targetTx
             .update(bloodComponents)
             .set({ status: 'TRANSFUSED' })
             .where(and(eq(bloodComponents.tenantId, input.tenantId), eq(bloodComponents.id, input.componentId)));
         }
-      } catch {
-        // Fallback
-      }
-    }
+      };
 
-    return request;
+      if (typeof (db as any).transaction === 'function') {
+        await (db as any).transaction(executeTransfusion);
+      } else {
+        await executeTransfusion(db);
+      }
+
+      return {
+        id: request.id,
+        tenantId: request.tenantId,
+        partnerId: request.partnerId,
+        organizationId: request.organizationId,
+        branchId: request.branchId,
+        requestNumber: request.requestCode,
+        patientId: request.patientId,
+        doctorId: request.orderingPhysicianName,
+        encounterId: request.encounterId,
+        bloodGroup: request.patientBloodGroup,
+        componentType: request.requestedComponentType,
+        unitsRequested: request.quantityUnits,
+        urgency: request.urgency,
+        clinicalIndication: request.clinicalIndication,
+        status: 'TRANSFUSED',
+        crossmatch: null,
+        issue: null,
+        transfusion: {
+          componentId: input.componentId,
+          transfusedByNurse: input.transfusedByNurse,
+          preTransfusionVitals: input.preTransfusionVitals,
+          postTransfusionVitals: input.postTransfusionVitals,
+          transfusionReactionObserved: input.transfusionReactionObserved,
+          reactionDetails: input.reactionDetails,
+          completedAt: now
+        },
+        createdAt: request.requestedAt,
+        updatedAt: now
+      };
+    } catch (err) {
+      logger.error('Failed to record transfusion in database', err);
+      if (err instanceof AppError) throw err;
+      throw new AppError({
+        message: 'Database persistence failed. Blood transfusion recording aborted.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
+    }
   }
 
-  async getPatientTransfusionHistory(tenantId: string, patientId: string): Promise<StoredBloodRequest[]> {
-    const list = this.memRequests.get(tenantId) || [];
-    return list.filter(r => r.patientId === patientId);
+  async getPatientTransfusionHistory(
+    tenantId: string,
+    patientId: string,
+    dbClient = getDatabase()
+  ): Promise<StoredBloodRequest[]> {
+    const db = requireDb(dbClient);
+    try {
+      const requests = await db
+        .select()
+        .from(bloodRequests)
+        .where(and(eq(bloodRequests.tenantId, tenantId), eq(bloodRequests.patientId, patientId)))
+        .orderBy(desc(bloodRequests.requestedAt));
+
+      const results: StoredBloodRequest[] = [];
+
+      for (const req of requests) {
+        const [xm] = await db
+          .select()
+          .from(bloodCrossmatches)
+          .where(and(eq(bloodCrossmatches.tenantId, tenantId), eq(bloodCrossmatches.requestId, req.id)))
+          .limit(1);
+
+        const [iss] = await db
+          .select()
+          .from(bloodIssues)
+          .where(and(eq(bloodIssues.tenantId, tenantId), eq(bloodIssues.requestId, req.id)))
+          .limit(1);
+
+        const [txn] = await db
+          .select()
+          .from(transfusionRecords)
+          .where(and(eq(transfusionRecords.tenantId, tenantId), eq(transfusionRecords.encounterId, req.encounterId)))
+          .limit(1);
+
+        results.push({
+          id: req.id,
+          tenantId: req.tenantId,
+          partnerId: req.partnerId,
+          organizationId: req.organizationId,
+          branchId: req.branchId,
+          requestNumber: req.requestCode,
+          patientId: req.patientId,
+          doctorId: req.orderingPhysicianName,
+          encounterId: req.encounterId,
+          bloodGroup: req.patientBloodGroup,
+          componentType: req.requestedComponentType,
+          unitsRequested: req.quantityUnits,
+          urgency: req.urgency,
+          clinicalIndication: req.clinicalIndication,
+          status: req.status as StoredBloodRequest['status'],
+          crossmatch: xm
+            ? {
+                componentId: xm.componentId,
+                technicianId: xm.testingTechnicianName,
+                compatibilityResult: xm.overallResult,
+                crossmatchNotes: xm.majorCrossmatchResult,
+                performedAt: xm.crossmatchedAt
+              }
+            : null,
+          issue: iss
+            ? {
+                componentId: iss.componentId,
+                issuedToStaff: iss.receivingNurseName,
+                issuedBy: iss.issuingTechnicianName,
+                issuedAt: iss.issuedAt
+              }
+            : null,
+          transfusion: txn
+            ? {
+                componentId: txn.componentCode,
+                transfusedByNurse: txn.administeredByNurse,
+                preTransfusionVitals: {
+                  bloodPressure: txn.preTransfusionBp,
+                  heartRate: String(txn.preTransfusionPulse)
+                },
+                postTransfusionVitals: {
+                  bloodPressure: txn.postTransfusionBp || undefined,
+                  heartRate: txn.postTransfusionPulse ? String(txn.postTransfusionPulse) : undefined
+                },
+                transfusionReactionObserved: txn.adverseReactionNoted,
+                reactionDetails: txn.outcomeNotes || undefined,
+                completedAt: txn.startTime
+              }
+            : null,
+          createdAt: req.requestedAt,
+          updatedAt: req.requestedAt
+        });
+      }
+
+      return results;
+    } catch (err) {
+      logger.error('Failed to query patient transfusion history from database', err);
+      if (err instanceof AppError) throw err;
+      throw new AppError({
+        message: 'Database query failed. Patient transfusion history lookup unavailable.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
+    }
   }
 }
 

@@ -54,24 +54,27 @@ export async function buildApp(): Promise<FastifyInstance> {
   app.setErrorHandler((error: unknown, request, reply) => {
     const requestId = request.id || 'unknown';
 
-    if (error instanceof AppError) {
-      return reply.status(error.statusCode).send({
+    const isAppErr = error instanceof AppError || (error && typeof error === 'object' && ((error as any).name === 'AppError' || (error as any).isOperational));
+    if (isAppErr) {
+      const appErr = error as AppError;
+      return reply.status(appErr.statusCode).send({
         error: {
-          code: error.code,
-          message: error.message,
+          code: appErr.code,
+          message: appErr.message,
           requestId,
-          details: error.details
+          details: appErr.details
         }
       });
     }
 
-    const err = error as { statusCode?: number; code?: string; message?: string };
-    if (err.statusCode && err.statusCode < 500) {
+    const err = error as { statusCode?: number; code?: string; message?: string; details?: unknown[] };
+    if (err.statusCode && (err.statusCode < 500 || err.statusCode === 503 || err.statusCode === 502 || err.statusCode === 504)) {
       return reply.status(err.statusCode).send({
         error: {
-          code: err.code || 'BAD_REQUEST',
+          code: err.code || (err.statusCode === 503 ? 'SERVICE_UNAVAILABLE' : 'BAD_REQUEST'),
           message: err.message || 'Request failed',
-          requestId
+          requestId,
+          details: err.details
         }
       });
     }

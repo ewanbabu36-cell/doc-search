@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { buildApp } from '../dist/app.js';
 import { signJwt, buildSecurityAuditRecord, computeAuditHash } from '@docsearch/auth';
 import { validateSecretQuality } from '@docsearch/shared-core';
+import { setTestTransactionRunner } from '@docsearch/database';
 
 describe('Wave 6 — Full Testing, Security, Reliability & Final Production Audit Suite', () => {
   let app;
@@ -81,10 +82,14 @@ describe('Wave 6 — Full Testing, Security, Reliability & Final Production Audi
     process.env.JWT_AUDIENCE = AUDIENCE;
     process.env.NODE_ENV = 'development';
     process.env.DATABASE_URL = 'postgresql://postgres:postgres@localhost:5432/docsearch';
+    setTestTransactionRunner(async (_ctx, cb) => {
+      return await cb(null);
+    });
     app = await buildApp();
   });
 
   after(async () => {
+    setTestTransactionRunner(null);
     if (app) {
       await app.close();
     }

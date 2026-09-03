@@ -120,7 +120,7 @@ export async function withSecurityContext<T>(
     });
   } catch (err: unknown) {
     logger.error('PostgreSQL database transaction/connection failed', err);
-    if (err instanceof AppError || (err && typeof err === 'object' && ('code' in err || 'statusCode' in err))) {
+    if (err instanceof AppError || (err && typeof err === 'object' && 'name' in err && (err as any).name === 'AppError') || (err && typeof err === 'object' && 'statusCode' in err && typeof (err as any).statusCode === 'number')) {
       throw err;
     }
     throw new AppError({

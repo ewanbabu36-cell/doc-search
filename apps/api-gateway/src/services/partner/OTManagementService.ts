@@ -160,8 +160,8 @@ export class OTManagementService {
   }
 
   async getPatientSurgicalHistory(session: SessionContext, patientId: string) {
-    return withSecurityContext(getDatabase(), session, async () => {
-      return otManagementRepository.getPatientSurgicalHistory(session.tenantId, patientId);
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      return otManagementRepository.getPatientSurgicalHistory(session.tenantId, patientId, tx);
     });
   }
 }

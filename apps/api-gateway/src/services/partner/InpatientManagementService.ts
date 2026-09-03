@@ -134,8 +134,8 @@ export class InpatientManagementService {
   }
 
   async getNursingNotes(session: SessionContext, admissionId?: string, patientId?: string) {
-    return withSecurityContext(getDatabase(), session, async () => {
-      return inpatientManagementRepository.getNursingNotes(session.tenantId, admissionId, patientId);
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      return inpatientManagementRepository.getNursingNotes(session.tenantId, admissionId, patientId, tx);
     });
   }
 

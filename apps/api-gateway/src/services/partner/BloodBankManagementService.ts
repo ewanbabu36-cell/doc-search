@@ -192,8 +192,8 @@ export class BloodBankManagementService {
   }
 
   async getPatientTransfusionHistory(session: SessionContext, patientId: string) {
-    return withSecurityContext(getDatabase(), session, async () => {
-      return bloodBankManagementRepository.getPatientTransfusionHistory(session.tenantId, patientId);
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      return bloodBankManagementRepository.getPatientTransfusionHistory(session.tenantId, patientId, tx);
     });
   }
 }
