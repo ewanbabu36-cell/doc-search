@@ -1,14 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button, Input, Badge } from '@docsearch/ui-kit';
 import type { LeadDto, LeadSource } from '@docsearch/api-contracts';
 
-interface CreateLeadModalProps {
+export interface CreateLeadModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (newLead: LeadDto) => void;
+  initialStartVoice?: boolean;
 }
 
-export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({ isOpen, onClose, onSuccess }) => {
+export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
+  isOpen,
+  onClose,
+  onSuccess,
+  initialStartVoice = false
+}) => {
   const [formData, setFormData] = useState({
     organizationName: '',
     contactName: '',
@@ -22,26 +28,41 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({ isOpen, onClos
   const [isAiProcessing, setIsAiProcessing] = useState(false);
   const [aiNotice, setAiNotice] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  if (!isOpen) return null;
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
 
   const handleAiExtract = (textToParse: string) => {
     if (!textToParse.trim()) return;
     setIsAiProcessing(true);
 
+    // Normalize spoken speech: e.g. "at" -> "@", "dot" -> "."
+    const speechNormalized = textToParse
+      .replace(/\s+at\s+/gi, '@')
+      .replace(/\s+dot\s+/gi, '.');
+
     setTimeout(() => {
       // 1. Email extraction
-      const emailMatch = textToParse.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+      const emailMatch = speechNormalized.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
       const contactEmail = emailMatch ? emailMatch[0] : '';
 
-      // 2. Phone extraction (10-digit Indian mobile or +91 format)
-      const phoneMatch = textToParse.match(/(?:\+91[\s-]?)?[6789]\d{9}/);
-      const contactPhone = phoneMatch ? (phoneMatch[0].startsWith('+91') ? phoneMatch[0] : `+91 ${phoneMatch[0]}`) : '';
+      // 2. Phone extraction (10-digit Indian mobile or +91 format, tolerates spoken spaces)
+      const rawDigits = speechNormalized.replace(/\D/g, '');
+      let contactPhone = '';
+      if (rawDigits.length >= 10) {
+        const last10 = rawDigits.slice(-10);
+        contactPhone = `+91 ${last10}`;
+      } else {
+        const phoneMatch = speechNormalized.match(/(?:\+91[\s-]?)?[6789]\d{9}/);
+        if (phoneMatch) {
+          contactPhone = phoneMatch[0].startsWith('+91') ? phoneMatch[0] : `+91 ${phoneMatch[0]}`;
+        }
+      }
 
       // 3. Clean string without email and phone for name parsing
-      let clean = textToParse
+      let clean = speechNormalized
         .replace(emailMatch ? emailMatch[0] : '', '')
-        .replace(phoneMatch ? phoneMatch[0] : '', '')
+        .replace(/\+?91[\s-]?\d{10}/g, '')
+        .replace(/\d{10}/g, '')
         .trim();
 
       // 4. Contact / Doctor Name extraction
@@ -53,14 +74,16 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({ isOpen, onClos
 
       // 5. Organization / Clinic / Pharmacy extraction
       let orgName = '';
-      const orgMatch = clean.match(/([A-Za-z0-9&'\s]+(?:\s+(?:Hospital|Clinic|Care|Medical|Agency|Pharmacy|Lab|Diagnostic|Center|Centre|Institute|Health|Nursing|Multispeciality|Polyclinic))(?:\s+[A-Za-z]+)*)/i);
+      const orgMatch = clean.match(
+        /([A-Za-z0-9&'\s]+(?:\s+(?:Hospital|Clinic|Care|Medical|Agency|Pharmacy|Lab|Diagnostic|Center|Centre|Institute|Health|Nursing|Multispeciality|Polyclinic))(?:\s+[A-Za-z]+)*)/i
+      );
       if (orgMatch) {
         orgName = orgMatch[0].trim();
       }
 
       // Fallback extraction by comma or tokens if not matched by regex
       if (!contactName || !orgName) {
-        const parts = textToParse.split(/[,;\n]/).map((p) => p.trim()).filter(Boolean);
+        const parts = speechNormalized.split(/[,;\n]/).map((p) => p.trim()).filter(Boolean);
         for (const p of parts) {
           if (!p.includes('@') && !p.match(/\d{5,}/)) {
             const low = p.toLowerCase();
@@ -101,18 +124,92 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({ isOpen, onClos
         contactName: contactName || prev.contactName,
         contactEmail: contactEmail || prev.contactEmail,
         contactPhone: contactPhone || prev.contactPhone,
-        source: textToParse.toLowerCase().includes('referral')
+        source: speechNormalized.toLowerCase().includes('referral')
           ? 'PARTNER_REFERRAL'
-          : textToParse.toLowerCase().includes('conference') || textToParse.toLowerCase().includes('event')
+          : speechNormalized.toLowerCase().includes('conference') || speechNormalized.toLowerCase().includes('event')
           ? 'HEALTHCARE_CONFERENCE'
           : 'INBOUND_WEB'
       }));
 
       setIsAiProcessing(false);
       setAiNotice(`✓ AI Success: Auto-extracted "${orgName || 'Facility'}" and "${contactName || 'Contact'}"!`);
-      setTimeout(() => setAiNotice(null), 5000);
+      setTimeout(() => setAiNotice(null), 6000);
     }, 400);
   };
+
+  const startVoice = () => {
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      setAiNotice('⚠️ Voice Speech Recognition is not supported by this browser. Please use Google Chrome or Microsoft Edge.');
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'en-IN'; // Indian English / Hindi / Hinglish friendly
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognitionRef.current = recognition;
+
+      setIsListening(true);
+      setAiNotice('🎙️ माइक चालू है... बोलिए: हॉस्पिटल, डॉक्टर का नाम, फ़ोन नंबर!');
+
+      recognition.onresult = (event: any) => {
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          transcript += event.results[i][0].transcript;
+        }
+        setAiPrompt(transcript);
+
+        if (event.results[event.results.length - 1].isFinal) {
+          setIsListening(false);
+          handleAiExtract(transcript);
+        }
+      };
+
+      recognition.onerror = (event: any) => {
+        setIsListening(false);
+        if (event.error === 'not-allowed') {
+          setAiNotice('⚠️ माइक की परमिशन बंद है। ब्राउज़र एड्रेस बार में Microphone Allow करें।');
+        } else {
+          setAiNotice(`⚠️ Voice Notice: ${event.error}. आप नीचे दिए Quick Voice सैम्पल्स पर क्लिक करके भी टेस्ट कर सकते हैं।`);
+        }
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognition.start();
+    } catch (err: any) {
+      console.error(err);
+      setIsListening(false);
+      setAiNotice('⚠️ माइक शुरू नहीं हो सका।');
+    }
+  };
+
+  const stopVoice = () => {
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch (e) {}
+    }
+    setIsListening(false);
+  };
+
+  useEffect(() => {
+    let t: ReturnType<typeof setTimeout> | undefined;
+    if (isOpen && initialStartVoice) {
+      t = setTimeout(() => startVoice(), 300);
+    }
+    return () => {
+      if (t) clearTimeout(t);
+    };
+  }, [isOpen, initialStartVoice]);
+
+  if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -159,9 +256,9 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({ isOpen, onClos
       <div
         style={{
           backgroundColor: '#0F172A',
-          border: '2px solid #06B6D4',
+          border: isListening ? '2px solid #EF4444' : '2px solid #06B6D4',
           borderRadius: '20px',
-          maxWidth: '680px',
+          maxWidth: '720px',
           width: '100%',
           maxHeight: '90vh',
           overflowY: 'auto',
@@ -169,7 +266,7 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({ isOpen, onClos
           display: 'flex',
           flexDirection: 'column',
           gap: '16px',
-          boxShadow: '0 25px 70px rgba(0,0,0,0.9)'
+          boxShadow: isListening ? '0 0 35px rgba(239, 68, 68, 0.5)' : '0 25px 70px rgba(0,0,0,0.9)'
         }}
       >
         <div
@@ -186,10 +283,10 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({ isOpen, onClos
               <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900, color: '#F8FAFC' }}>
                 ➕ Add New Sales Lead / Clinic Prospect
               </h2>
-              <Badge variant="success">🤖 AI-Powered</Badge>
+              <Badge variant="success">🤖 AI & Voice Powered</Badge>
             </div>
             <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', color: '#94A3B8' }}>
-              Add via AI Natural Language Prompt or fill out details manually.
+              माइक पर बोलकर या AI प्रॉम्प्ट से एक सेकंड में Lead भरें।
             </p>
           </div>
           <button
@@ -206,29 +303,53 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({ isOpen, onClos
           </button>
         </div>
 
-        {/* AI Smart Lead Intake Box */}
+        {/* AI Voice & Smart Lead Intake Box */}
         <div
           style={{
-            backgroundColor: 'rgba(6, 182, 212, 0.08)',
-            border: '1.5px dashed #06B6D4',
+            backgroundColor: isListening ? 'rgba(239, 68, 68, 0.12)' : 'rgba(6, 182, 212, 0.08)',
+            border: isListening ? '1.5px dashed #EF4444' : '1.5px dashed #06B6D4',
             borderRadius: '12px',
-            padding: '14px',
+            padding: '16px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '10px'
+            gap: '12px'
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#38BDF8' }}>
-              ✨ AI Smart Intake (Paste unstructured text, visiting card, or WhatsApp message)
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+            <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: isListening ? '#F87171' : '#38BDF8' }}>
+              {isListening ? '🔴 माइक चालू है... बोलिए (Doctor Name, Hospital Name, Mobile, Email)' : '🎙️ बोलकर Lead जोड़ें (Voice AI Direct Speech)'}
             </span>
-            <span style={{ fontSize: '0.6875rem', color: '#94A3B8' }}>Zero Manual Typing</span>
+            <span style={{ fontSize: '0.6875rem', color: '#94A3B8' }}>Hindi & English Speech Supported</span>
           </div>
 
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {/* Big Voice Button */}
+            <button
+              type="button"
+              onClick={isListening ? stopVoice : startVoice}
+              style={{
+                backgroundColor: isListening ? '#EF4444' : '#10B981',
+                color: '#FFFFFF',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '10px 18px',
+                fontWeight: 900,
+                fontSize: '0.875rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: isListening ? '0 0 16px rgba(239, 68, 68, 0.8)' : '0 0 10px rgba(16, 185, 129, 0.4)',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              <span style={{ fontSize: '1.1rem' }}>{isListening ? '⏹️' : '🎙️'}</span>
+              <span>{isListening ? 'Stop (सुनना बंद करें)' : 'Speak (बोलकर भरें)'}</span>
+            </button>
+
             <input
               type="text"
-              placeholder="e.g. Dr. A.K. Verma, Apex Heart Hospital Lucknow, 9876543210, alok@apex.org"
+              placeholder="या यहाँ बोलें/पेस्ट करें: Dr. A.K. Verma, Apex Heart Hospital Lucknow, 9876543210..."
               value={aiPrompt}
               onChange={(e) => setAiPrompt(e.target.value)}
               style={{
@@ -236,7 +357,7 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({ isOpen, onClos
                 backgroundColor: 'rgba(15, 23, 42, 0.9)',
                 border: '1px solid #334155',
                 borderRadius: '8px',
-                padding: '8px 12px',
+                padding: '10px 12px',
                 color: '#F8FAFC',
                 fontSize: '0.8125rem',
                 outline: 'none'
@@ -248,6 +369,7 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({ isOpen, onClos
                 }
               }}
             />
+
             <button
               type="button"
               onClick={() => handleAiExtract(aiPrompt)}
@@ -257,32 +379,28 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({ isOpen, onClos
                 color: '#070C16',
                 border: 'none',
                 borderRadius: '8px',
-                padding: '8px 16px',
+                padding: '10px 16px',
                 fontWeight: 900,
                 fontSize: '0.8125rem',
                 cursor: 'pointer',
                 whiteSpace: 'nowrap'
               }}
             >
-              {isAiProcessing ? '⚡ Parsing...' : '⚡ AI Auto-Fill'}
+              {isAiProcessing ? '⚡ Parsing...' : '⚡ AI Fill'}
             </button>
           </div>
 
-          {/* Preset Prompts for Instant Testing */}
+          {/* Quick Voice / Spoken Phrases Samples */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '0.6875rem', color: '#64748B' }}>Quick AI Try:</span>
+            <span style={{ fontSize: '0.6875rem', color: '#F59E0B', fontWeight: 700 }}>🗣️ Quick Spoken Samples (1-Click Try):</span>
             {[
               {
-                label: '🏥 Metro Heart Clinic',
-                text: 'Dr. Amit Roy, Metro Specialty Heart Clinic Patna, 9811223344, amit@metroclinic.in'
+                label: '🏥 "Dr. Rajesh Sharma, Apex Hospital Lucknow, 9876543210"',
+                text: 'Dr. Rajesh Sharma, Apex Heart Hospital Lucknow, 9876543210, dr.sharma at apex dot org'
               },
               {
-                label: '💊 Haji Medical Agency',
-                text: 'Haji Mohammad, Haji Medical Agency Pharmacy Store, 9812345678, haji@agency.com'
-              },
-              {
-                label: '🔬 City Diagnostic Lab',
-                text: 'Dr. Neha Kapoor, City Diagnostic & Imaging Lab, 9899001122, info@citylab.org'
+                label: '💊 "Haji Mohammad, Haji Medical Agency Pharmacy Store, 9812345678"',
+                text: 'Haji Mohammad, Haji Medical Agency Pharmacy Store, 9812345678, haji at agency dot com'
               }
             ].map((p, idx) => (
               <button
@@ -294,10 +412,10 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({ isOpen, onClos
                 }}
                 style={{
                   backgroundColor: 'rgba(30, 41, 59, 0.8)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  border: '1px solid rgba(245, 158, 11, 0.3)',
                   borderRadius: '6px',
-                  padding: '3px 8px',
-                  color: '#94A3B8',
+                  padding: '4px 8px',
+                  color: '#FCD34D',
                   fontSize: '0.6875rem',
                   fontWeight: 600,
                   cursor: 'pointer'
@@ -311,12 +429,12 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({ isOpen, onClos
           {aiNotice && (
             <div
               style={{
-                backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                border: '1px solid #10B981',
+                backgroundColor: isListening ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.15)',
+                border: isListening ? '1px solid #EF4444' : '1px solid #10B981',
                 borderRadius: '6px',
-                padding: '6px 10px',
-                color: '#A7F3D0',
-                fontSize: '0.75rem',
+                padding: '8px 12px',
+                color: isListening ? '#FCA5A5' : '#A7F3D0',
+                fontSize: '0.8125rem',
                 fontWeight: 700
               }}
             >
@@ -441,4 +559,3 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({ isOpen, onClos
     </div>
   );
 };
-

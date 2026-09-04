@@ -29,6 +29,7 @@ export const LeadListView: React.FC<LeadListViewProps> = ({
   const [statusFilter, setStatusFilter] = useState<LeadStatus | 'ALL'>('ALL');
   const [localLeads, setLocalLeads] = useState<LeadDto[]>(leads);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [startVoiceOnOpen, setStartVoiceOnOpen] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const filtered = (localLeads.length > 0 ? localLeads : leads).filter((l) => {
@@ -48,14 +49,48 @@ export const LeadListView: React.FC<LeadListViewProps> = ({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#F8FAFC' }}>Sales Pipeline & Prospects</h2>
           <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>{filtered.length} active leads tracked across all sales territories</span>
         </div>
-        <Button variant="primary" size="sm" onClick={() => setIsCreateOpen(true)} style={{ backgroundColor: '#06B6D4', color: '#070C16', fontWeight: 800 }}>
-          🤖 ➕ Add Lead (AI Smart Intake)
-        </Button>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <button
+            type="button"
+            onClick={() => {
+              setStartVoiceOnOpen(true);
+              setIsCreateOpen(true);
+            }}
+            style={{
+              backgroundColor: '#10B981',
+              color: '#FFFFFF',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '8px 14px',
+              fontWeight: 800,
+              fontSize: '0.8125rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 0 12px rgba(16, 185, 129, 0.4)'
+            }}
+          >
+            <span>🎙️</span>
+            <span>Speak to Add Lead (बोलकर जोड़ें)</span>
+          </button>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => {
+              setStartVoiceOnOpen(false);
+              setIsCreateOpen(true);
+            }}
+            style={{ backgroundColor: '#06B6D4', color: '#070C16', fontWeight: 800 }}
+          >
+            🤖 ➕ Add Lead (AI Smart Intake)
+          </Button>
+        </div>
       </div>
 
       {successMsg && (
@@ -66,7 +101,11 @@ export const LeadListView: React.FC<LeadListViewProps> = ({
 
       <CreateLeadModal
         isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
+        initialStartVoice={startVoiceOnOpen}
+        onClose={() => {
+          setIsCreateOpen(false);
+          setStartVoiceOnOpen(false);
+        }}
         onSuccess={(newLead) => {
           setLocalLeads((prev) => [newLead, ...(prev.length > 0 ? prev : leads)]);
           setSuccessMsg(`Lead "${newLead.organizationName}" created successfully!`);
