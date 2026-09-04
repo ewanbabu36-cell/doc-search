@@ -36,6 +36,72 @@ function escapePdfText(text: string | number | undefined | null): string {
     .replace(/\)/g, '\\)');
 }
 
+export function getCategoryMenuBookItems(classification: string): Array<{ label: string; val: string }> {
+  switch (classification) {
+    case 'PHARMACY':
+      return [
+        { label: 'Daily Prescription POS Capacity:', val: 'Unlimited Retail & OPD Counter Invoicing / Day' },
+        { label: 'Barcode Dispensing & Scanning:', val: 'Active (EAN-13, GS1-128 & QR Batch Scanner)' },
+        { label: 'Expiry & Near-Expiry Radar:', val: 'Active (30/60/90 Days Color-Coded Stock Alerts)' },
+        { label: 'Jan Aushadhi Generic Finder:', val: 'Enabled (Automated High-Margin PMBJP Generic Switches)' },
+        { label: 'Schedule H / H1 Drug Register:', val: 'Active (Cryptographic Digital Narcotics Compliance Log)' },
+        { label: 'Supplier Purchase & Inwarding:', val: 'Automated Inwarding & GST Purchase Tax Ledger' },
+        { label: 'WhatsApp Bill & Refill Reminders:', val: 'Included (2,500 Patient WhatsApp Alerts / mo)' },
+        { label: 'ABDM 2.0 e-Prescription Sync:', val: 'Integrated (Direct Fetch via Patient ABHA ID)' },
+        { label: 'Longitudinal Regulatory Archive:', val: '7 Years Audit Retention (Drugs & Cosmetics Act)' }
+      ];
+    case 'HOSPITAL':
+      return [
+        { label: 'Inpatient Bed Strength Allotted:', val: 'Up to 250 Beds (Expandable Ward Matrix)' },
+        { label: 'IPD Bed Matrix & ADT System:', val: 'Real-time Color-Coded Bed Census with Floor Map' },
+        { label: 'Operation Theatre (OT) Roster:', val: 'Surgical Slots, PAC Clearance & Anesthesia Logs' },
+        { label: 'ICU Critical Care Flowsheets:', val: 'Active (24-Hour Vitals, GCS Score & Infusion Chart)' },
+        { label: 'TPA Cashless Pre-Auth & NHCX:', val: '98% Claim Approval AI Predictor + FHIR Claims Bridge' },
+        { label: 'ABDM Scan & Share OPD Kiosk:', val: '1-Second QR Token Generation via Ayushman Bharat' },
+        { label: 'Concurrent Staff Logins:', val: 'Unlimited (Doctors, Nurses, Cashiers, TPA Staff)' },
+        { label: 'Medical Records Dept (MRD):', val: 'ICD-10 Coding, MLC Forensic Registry & Discharge Index' },
+        { label: 'Disaster & Code Blue Alerts:', val: 'Multi-Department Instant Audio-Visual Emergency Broadcast' }
+      ];
+    case 'CLINIC':
+      return [
+        { label: 'Daily OPD Consult Capacity:', val: 'Up to 150 Consultations / Day (Scalable)' },
+        { label: 'Ambient AI Clinical Voice Scribe:', val: 'Active (Real-time Speech-to-EMR Note Conversion)' },
+        { label: 'Digital Prescription Pad (Rx):', val: '1-Click Rx with Generic Substitutes & Brand Safety' },
+        { label: 'WhatsApp Patient Rx Dispatch:', val: 'Instant High-Res PDF Prescription Sent to Patient' },
+        { label: 'ABHA 2.0 Scan & Share Check-in:', val: 'Instant QR Patient Check-in under 5 Seconds' },
+        { label: 'Drug Allergy & DDI Conflict Shield:', val: 'Real-time AI Drug-Drug Conflict Interception' },
+        { label: 'Multi-Doctor Clinic Rostering:', val: 'OPD Slots, Break Management & SMS Confirmations' },
+        { label: 'Telemedicine & Video Consultation:', val: 'HD Encrypted Video Room with Integrated UPI Payment' },
+        { label: 'Longitudinal Medical Timeline:', val: 'Lifetime Patient Timeline with Past Labs & Prescriptions' }
+      ];
+    case 'DIAGNOSTIC_CENTRE':
+      return [
+        { label: 'Modality Scheduling Capacity:', val: 'X-Ray, Ultrasound, CT, MRI Multi-Modality Grid' },
+        { label: 'Zero-Footprint Web DICOM Viewer:', val: 'Active (200+ Diagnostic Tools, Cine Loop, MPR)' },
+        { label: 'Radiology Structured Voice Reporting:', val: 'Speech-to-Text Reporting with Normal Templates' },
+        { label: 'WhatsApp Diagnostic Scan Link:', val: 'Secure Cloud Link with DICOM Viewer for Patients' },
+        { label: 'Cloud PACS Modality Storage:', val: '10 TB Cloud PACS Storage with Rapid Streaming' },
+        { label: 'AERB & PNDT Compliance Logs:', val: 'Automated Regulatory Audit Registers & Certificates' },
+        { label: 'B2B Doctor Referral Commission:', val: 'Instant Referral Attribution & Commission Tracker' },
+        { label: 'Critical Panic Findings Broadcast:', val: 'Instant SMS & WhatsApp Alert to Referring Doctor' },
+        { label: 'ABDM Diagnostic Report Sync:', val: 'Linked to Patient Ayushman Health Record (ABHA)' }
+      ];
+    case 'PATHOLOGY':
+    default:
+      return [
+        { label: 'Daily Lab Test Capacity:', val: 'Up to 500 Lab Orders / Day (Scalable on Demand)' },
+        { label: 'Phlebotomy Sample Barcoding:', val: 'Active (Code 128 / Dynamic QR Code Labeling)' },
+        { label: 'Bi-Directional Machine Sync:', val: 'Enabled (ASTM / HL7 Automated Analyzer Bridge)' },
+        { label: 'WhatsApp NABL Report Dispatch:', val: 'Included (2,500 Direct Patient WhatsApp PDFs / mo)' },
+        { label: 'Doctor Digital e-Signature:', val: 'Active (Cryptographic SHA-256 Stamp on all Reports)' },
+        { label: 'Concurrent Staff Logins:', val: '10 Logins (Pathologists, Phlebotomists, Front-Desk)' },
+        { label: 'ABDM 2.0 Health Facility ID:', val: 'Integrated (Scan & Share + Ayushman Bharat Token)' },
+        { label: 'Cloud Report Archive Duration:', val: '5 Years Longitudinal Cloud Retention (HIPAA & DPDPA)' },
+        { label: 'B2B Doctor Referral Commission:', val: 'Automated Commission Ledger & Instant UPI Settlement' }
+      ];
+  }
+}
+
 export function generateAndDownloadWelcomeKitPdf(data: PartnerWelcomeKitData): void {
   const pageWidth = 595.28; // A4 Width (points)
   const pageHeight = 841.89; // A4 Height (points)
@@ -178,17 +244,7 @@ export function generateAndDownloadWelcomeKitPdf(data: PartnerWelcomeKitData): v
   contentLines.push(`1 0 0 1 ${margin + 14} ${menuTop - 20} Tm`);
   contentLines.push('(SECTION 3: FEATURE CAPACITY & QUOTA ALLOCATION MATRIX [MENU BOOK]) Tj');
 
-  const menuItems = [
-    { label: 'Daily Lab Test Capacity:', val: 'Up to 500 Lab Orders / Day (Scalable on Demand)' },
-    { label: 'Phlebotomy Sample Barcoding:', val: 'Active (Code 128 / Dynamic QR Code Labeling)' },
-    { label: 'Bi-Directional Machine Sync:', val: 'Enabled (ASTM / HL7 Automated Analyzer Bridge)' },
-    { label: 'WhatsApp NABL Report Dispatch:', val: 'Included (2,500 Direct Patient WhatsApp PDFs / mo)' },
-    { label: 'Doctor Digital e-Signature:', val: 'Active (Cryptographic SHA-256 Stamp on all Reports)' },
-    { label: 'Concurrent Staff Logins:', val: '10 Logins (Pathologists, Phlebotomists, Front-Desk)' },
-    { label: 'ABDM 2.0 Health Facility ID:', val: 'Integrated (Scan & Share + Ayushman Bharat Token)' },
-    { label: 'Cloud Report Archive Duration:', val: '5 Years Longitudinal Cloud Retention (HIPAA & DPDPA)' },
-    { label: 'B2B Doctor Referral Commission:', val: 'Automated Commission Ledger & Instant UPI Settlement' }
-  ];
+  const menuItems = getCategoryMenuBookItems(data.classification);
 
   let curY = menuTop - 40;
   for (let i = 0; i < menuItems.length; i++) {
@@ -431,46 +487,13 @@ export function openPrintableSpeedPostDossier(data: PartnerWelcomeKitData): void
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td><strong>Daily Lab Test Processing Capacity</strong></td>
-              <td>Up to 500 Lab Orders / Day</td>
-              <td><span style="color: #059669; font-weight: 800;">✓ Unlimited Scale</span></td>
-            </tr>
-            <tr>
-              <td><strong>Phlebotomy Sample Barcoding & QR</strong></td>
-              <td>Code 128 & 2D QR Automated Tube Printing</td>
-              <td><span style="color: #059669; font-weight: 800;">✓ Active</span></td>
-            </tr>
-            <tr>
-              <td><strong>Bi-Directional Lab Machine Analyzer Interface</strong></td>
-              <td>Direct ASTM/HL7 IoT Bridge to Hematology/Biochem</td>
-              <td><span style="color: #059669; font-weight: 800;">✓ Active</span></td>
-            </tr>
-            <tr>
-              <td><strong>WhatsApp NABL PDF Report Dispatch</strong></td>
-              <td>2,500 Patient WhatsApp Messages / Month Included</td>
-              <td><span style="color: #059669; font-weight: 800;">✓ Active</span></td>
-            </tr>
-            <tr>
-              <td><strong>Pathologist Digital Signature on Reports</strong></td>
-              <td>SHA-256 Cryptographic Stamp & Medical Council Verification</td>
-              <td><span style="color: #059669; font-weight: 800;">✓ Active</span></td>
-            </tr>
-            <tr>
-              <td><strong>Concurrent Staff Accounts</strong></td>
-              <td>10 Logins (Pathologists, Phlebotomists, Front-Desk)</td>
-              <td><span style="color: #059669; font-weight: 800;">✓ Active</span></td>
-            </tr>
-            <tr>
-              <td><strong>ABDM 2.0 National Health Facility Registry</strong></td>
-              <td>Scan & Share Token Kiosk + Ayushman Bharat Digital Link</td>
-              <td><span style="color: #059669; font-weight: 800;">✓ Integrated</span></td>
-            </tr>
-            <tr>
-              <td><strong>B2B Referral Commission Split Ledger</strong></td>
-              <td>Instant UPI Payout Split with Referring Doctors</td>
-              <td><span style="color: #059669; font-weight: 800;">✓ Active</span></td>
-            </tr>
+            ${getCategoryMenuBookItems(data.classification).map((item: { label: string; val: string }) => `
+              <tr>
+                <td><strong>${item.label.replace(':', '')}</strong></td>
+                <td>${item.val}</td>
+                <td><span style="color: #059669; font-weight: 800;">✓ Active / Allotted</span></td>
+              </tr>
+            `).join('')}
           </tbody>
         </table>
 

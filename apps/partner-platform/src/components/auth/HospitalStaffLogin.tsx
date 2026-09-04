@@ -359,6 +359,62 @@ export const ALL_SYSTEM_ROLES: HospitalStaffUser[] = [
 export const DEMO_ORGANIZATION_USERS = ALL_SYSTEM_ROLES;
 export const DEMO_STAFF_USERS = ALL_SYSTEM_ROLES;
 
+export const getHealthcareOrgDetails = (orgType: OrganizationWorkspaceType, tenantName: string, roleName?: string) => {
+  switch (orgType) {
+    case 'HOSPITAL':
+      return {
+        role: roleName || 'HOSPITAL_DIRECTOR',
+        roleTitle: `${tenantName} (Medical Superintendent & Director)`,
+        department: 'Hospital Administration & Inpatient Governance',
+        defaultModule: 'inpatient-management',
+        allowedWorkspaces: ['HOSPITAL', 'CLINIC', 'PHARMACY', 'PATHOLOGY', 'DIAGNOSTIC_CENTRE', 'ENTERPRISE_COMMAND'] as OrganizationWorkspaceType[],
+        planTier: 'Multi-Specialty Hospital Suite',
+        restrictedFeatures: ['None (Full Hospital Scope)']
+      };
+    case 'PHARMACY':
+      return {
+        role: roleName || 'PHARMACIST',
+        roleTitle: `${tenantName} (Chief Pharmacist & Chemist In-Charge)`,
+        department: 'Pharmacy POS & Stock Inwarding',
+        defaultModule: 'pharmacy-medication',
+        allowedWorkspaces: ['PHARMACY'] as OrganizationWorkspaceType[],
+        planTier: 'Retail Pharmacy POS Suite',
+        restrictedFeatures: ['Hospital Inpatient Wards', 'OT Surgery Logs']
+      };
+    case 'CLINIC':
+      return {
+        role: roleName || 'CLINIC_DOCTOR',
+        roleTitle: `${tenantName} (Lead Consultant Doctor)`,
+        department: 'Outpatient Clinic & Consultation',
+        defaultModule: 'clinical-consultation',
+        allowedWorkspaces: ['CLINIC'] as OrganizationWorkspaceType[],
+        planTier: 'Doctor OPD Clinic Pro',
+        restrictedFeatures: ['IPD Bed Census', 'OT Surgery Logs']
+      };
+    case 'DIAGNOSTIC_CENTRE':
+      return {
+        role: roleName || 'RADIOLOGIST',
+        roleTitle: `${tenantName} (Chief Radiologist & PACS Lead)`,
+        department: 'Radiology, MRI, CT & Imaging',
+        defaultModule: 'radiology-imaging',
+        allowedWorkspaces: ['DIAGNOSTIC_CENTRE'] as OrganizationWorkspaceType[],
+        planTier: 'Diagnostic PACS & Modality Hub',
+        restrictedFeatures: ['Pharmacy POS', 'Hospital Inpatient Beds']
+      };
+    case 'PATHOLOGY':
+    default:
+      return {
+        role: roleName || 'PATHOLOGIST',
+        roleTitle: `${tenantName} (Head Pathologist)`,
+        department: 'Pathology & Diagnostic Laboratory',
+        defaultModule: 'clinical-investigation',
+        allowedWorkspaces: ['PATHOLOGY'] as OrganizationWorkspaceType[],
+        planTier: 'Pathology Pro & Barcode LIMS',
+        restrictedFeatures: ['Hospital IPD Wards', 'OT Surgery Logs']
+      };
+  }
+};
+
 interface Props {
   onLoginSuccess: (user: HospitalStaffUser) => void;
 }
@@ -389,22 +445,26 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess }) => {
           // ignore if backend offline
         }
 
-        const mappedApiRoles: HospitalStaffUser[] = apiPartners.map((p) => ({
-          id: p.id,
-          category: 'HEALTHCARE' as const,
-          name: p.name,
-          email: p.email,
-          role: 'PATHOLOGIST',
-          roleTitle: `${p.tenantName} (Head & Pathologist)`,
-          department: 'Pathology & Diagnostic Laboratory',
-          tenantName: p.tenantName,
-          organizationType: (p.organizationType as any) || 'PATHOLOGY',
-          allowedWorkspaces: [(p.organizationType as any) || 'PATHOLOGY'],
-          defaultModule: 'clinical-investigation',
-          planTier: p.planTier || 'Pathology Pro & Barcode LIMS',
-          accessibleFeatures: p.accessibleFeatures || ['LIMS Workbench'],
-          restrictedFeatures: ['Hospital IPD Wards']
-        }));
+        const mappedApiRoles: HospitalStaffUser[] = apiPartners.map((p) => {
+          const orgType = (p.organizationType as OrganizationWorkspaceType) || 'PATHOLOGY';
+          const details = getHealthcareOrgDetails(orgType, p.tenantName, p.role);
+          return {
+            id: p.id,
+            category: 'HEALTHCARE' as const,
+            name: p.name,
+            email: p.email,
+            role: details.role,
+            roleTitle: details.roleTitle,
+            department: details.department,
+            tenantName: p.tenantName,
+            organizationType: orgType,
+            allowedWorkspaces: details.allowedWorkspaces,
+            defaultModule: details.defaultModule,
+            planTier: p.planTier || details.planTier,
+            accessibleFeatures: p.accessibleFeatures || ['Standard Partner Workbench'],
+            restrictedFeatures: details.restrictedFeatures
+          };
+        });
 
         const combined = [...localCustom, ...mappedApiRoles];
         const unique: HospitalStaffUser[] = [];
@@ -488,22 +548,26 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess }) => {
       }
 
       const returnedUser = json.data?.user;
+      const effectiveOrg = (returnedUser?.organizationType as OrganizationWorkspaceType) || (targetUser.organizationType as OrganizationWorkspaceType) || 'PATHOLOGY';
+      const effectiveTenant = returnedUser?.tenantName || targetUser.tenantName || 'Healthcare Facility';
+      const orgDetails = getHealthcareOrgDetails(effectiveOrg, effectiveTenant, returnedUser?.roles?.[0]);
+
       const resolvedUser: HospitalStaffUser = {
         id: returnedUser?.id || targetUser.id,
         category: 'HEALTHCARE',
         name: `${returnedUser?.firstName || ''} ${returnedUser?.lastName || ''}`.trim() || targetUser.name,
         email: emailToUse,
         password: passToUse,
-        role: returnedUser?.roles?.[0] || targetUser.role || 'PATHOLOGIST',
-        roleTitle: `${returnedUser?.tenantName || targetUser.tenantName} (${returnedUser?.roles?.[0] || targetUser.roleTitle})`,
-        department: returnedUser?.organizationType === 'PATHOLOGY' ? 'Pathology & Diagnostic Laboratory' : targetUser.department,
-        tenantName: returnedUser?.tenantName || targetUser.tenantName,
-        organizationType: (returnedUser?.organizationType as any) || targetUser.organizationType || 'PATHOLOGY',
-        allowedWorkspaces: [(returnedUser?.organizationType as any) || targetUser.organizationType || 'PATHOLOGY'],
-        defaultModule: returnedUser?.organizationType === 'PATHOLOGY' ? 'clinical-investigation' : targetUser.defaultModule,
-        planTier: returnedUser?.planTier || targetUser.planTier,
-        accessibleFeatures: returnedUser?.accessibleFeatures || targetUser.accessibleFeatures,
-        restrictedFeatures: targetUser.restrictedFeatures || ['Hospital IPD Wards']
+        role: returnedUser?.roles?.[0] || targetUser.role || orgDetails.role,
+        roleTitle: orgDetails.roleTitle,
+        department: orgDetails.department,
+        tenantName: effectiveTenant,
+        organizationType: effectiveOrg,
+        allowedWorkspaces: orgDetails.allowedWorkspaces,
+        defaultModule: orgDetails.defaultModule,
+        planTier: returnedUser?.planTier || targetUser.planTier || orgDetails.planTier,
+        accessibleFeatures: returnedUser?.accessibleFeatures || targetUser.accessibleFeatures || ['Standard Partner Access'],
+        restrictedFeatures: orgDetails.restrictedFeatures
       };
 
       if (json.data?.accessToken) {

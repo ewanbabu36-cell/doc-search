@@ -283,6 +283,27 @@ export const partnerRoutes: FastifyPluginAsync = async (fastify) => {
       const firstName = nameParts[0] || 'Doctor';
       const lastName = body.contactPerson.substring(firstName.length).trim() || 'In-Charge';
 
+      const orgType = body.classification || 'PATHOLOGY';
+      let primaryRole: any = 'PATHOLOGIST';
+      let defaultPerms: string[] = [];
+
+      if (orgType === 'HOSPITAL') {
+        primaryRole = 'HOSPITAL_DIRECTOR';
+        defaultPerms = ['clinical:orders:read', 'clinical:orders:create', 'clinical:patients:read', 'inpatient:beds:manage', 'billing:invoices:read', 'billing:invoices:create'];
+      } else if (orgType === 'PHARMACY') {
+        primaryRole = 'PHARMACIST';
+        defaultPerms = ['pharmacy:dispense', 'pharmacy:inventory:read', 'billing:invoices:create', 'billing:invoices:read'];
+      } else if (orgType === 'CLINIC') {
+        primaryRole = 'CLINIC_DOCTOR';
+        defaultPerms = ['clinical:consultations:create', 'clinical:patients:read', 'clinical:orders:create', 'billing:invoices:create'];
+      } else if (orgType === 'DIAGNOSTIC_CENTRE') {
+        primaryRole = 'RADIOLOGIST';
+        defaultPerms = ['radiology:scans:read', 'radiology:reports:create', 'billing:invoices:create'];
+      } else {
+        primaryRole = 'PATHOLOGIST';
+        defaultPerms = ['lab:orders:read', 'lab:orders:create', 'lab:specimens:create', 'lab:results:create', 'billing:invoices:create'];
+      }
+
       // Register cryptographic user credential for Partner Platform login
       const registeredUser = realAuthService.registerPartnerUserCredential({
         email: body.email,
@@ -290,8 +311,10 @@ export const partnerRoutes: FastifyPluginAsync = async (fastify) => {
         firstName,
         lastName,
         tenantName: body.partnerName,
-        organizationType: body.classification || 'PATHOLOGY',
-        planTier: body.planTier || 'Pathology Pro & Barcode LIMS',
+        organizationType: orgType,
+        roles: [primaryRole, 'HOSPITAL_ADMIN'],
+        permissions: defaultPerms,
+        planTier: body.planTier || 'Healthcare Partner Pro',
         accessibleFeatures: body.features || [],
         phone: body.phone
       });
@@ -300,7 +323,7 @@ export const partnerRoutes: FastifyPluginAsync = async (fastify) => {
       const activationVoucher = {
         partnerId,
         partnerName: body.partnerName,
-        classification: body.classification || 'PATHOLOGY',
+        classification: orgType,
         contactPerson: body.contactPerson,
         phone: body.phone,
         city: body.city || 'Lucknow',
