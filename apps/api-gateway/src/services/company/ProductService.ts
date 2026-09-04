@@ -39,6 +39,43 @@ export class ProductService {
       return created;
     });
   }
+
+  async getPlans(session: SessionContext) {
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      return productRepository.findAllPlans(tx);
+    });
+  }
+
+  async getPlanById(planId: string, session: SessionContext) {
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      const plan = await productRepository.findPlanById(planId, tx);
+      if (!plan) {
+        throw AppError.notFound(`Plan ${planId} not found`);
+      }
+      return plan;
+    });
+  }
+
+  async createPlan(data: any, session: SessionContext) {
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      const created = await productRepository.createPlan(data, tx);
+      await auditRepository.recordEvent(
+        {
+          eventType: 'PLAN_CREATED',
+          resourceType: 'PLAN',
+          resourceId: created.id,
+          metadata: {
+            code: created.code,
+            name: created.name
+          }
+        },
+        session,
+        tx
+      );
+      return created;
+    });
+  }
 }
 
 export const productService = new ProductService();
+

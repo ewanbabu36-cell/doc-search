@@ -1,0 +1,147 @@
+{
+  "suite": "PHASE_8_REVENUE_LAUNCH",
+  "timestamp": "2026-09-04T04:03:30.643Z",
+  "totalTests": 23,
+  "passed": 23,
+  "failed": 0,
+  "details": [
+    {
+      "id": "01-PLAN-MGMT",
+      "name": "Plan Catalog Lookup & Custom Plan Creation",
+      "pass": true,
+      "detail": "Plans listed and custom plan created"
+    },
+    {
+      "id": "02-PLAN-FEAT",
+      "name": "Database-Driven Plan-Feature Entitlement Mapping",
+      "pass": true,
+      "detail": "Features mapped strictly by plan matrix"
+    },
+    {
+      "id": "03-ENTITLEMENT-ENGINE",
+      "name": "Authoritative Database-Driven Entitlement Resolution",
+      "pass": true,
+      "detail": "Dynamic evaluation with zero hardcoded conditionals"
+    },
+    {
+      "id": "04-LEAD-JOURNEY",
+      "name": "End-to-End Lead to Partner Conversion Lifecycle",
+      "pass": true,
+      "detail": "Lead -> Demo -> Convert to Partner atomically completed"
+    },
+    {
+      "id": "05-PLAN-SELECTION",
+      "name": "Partner Plan Selection and Commercial Profile Integrity",
+      "pass": true,
+      "detail": "Commercial profile matches selected plan and entitlements"
+    },
+    {
+      "id": "06-SUBSCRIPTION-CREATION",
+      "name": "Dynamic Subscription Dates & Pricing Snapshot",
+      "pass": true,
+      "detail": "Annual duration and pricing snapshot persisted"
+    },
+    {
+      "id": "07-PAYMENT-ACTIVATION",
+      "name": "Commercial Payment Reconciliation & Activation",
+      "pass": true,
+      "detail": "Subscription status active and payments tracked"
+    },
+    {
+      "id": "08-LICENSE-HMAC",
+      "name": "Cryptographic HMAC-SHA256 Timing-Safe License Integrity",
+      "pass": true,
+      "detail": "HMAC signature verification and tamper detection passed"
+    },
+    {
+      "id": "09-EXPIRY-EVAL",
+      "name": "Commercial Lifecycle Temporal Expiry State Machine",
+      "pass": true,
+      "detail": "ACTIVE -> EXPIRING_SOON -> GRACE_PERIOD -> EXPIRED -> SUSPENDED validated"
+    },
+    {
+      "id": "10-RENEWAL-EXTENSION",
+      "name": "Subscription Renewal & License Period Extension",
+      "pass": true,
+      "detail": "Renewal extended validity and re-signed license"
+    },
+    {
+      "id": "11-RBAC-ENTITLEMENT",
+      "name": "Dual RBAC and Entitlement Co-Enforcement",
+      "pass": true,
+      "detail": "Module access requires BOTH user role permission and plan entitlement"
+    },
+    {
+      "id": "12-USER-LIMITS",
+      "name": "Database-Driven Doctor / User Limit Enforcement",
+      "pass": true,
+      "detail": "User limits enforced strictly from plan database limits"
+    },
+    {
+      "id": "13-BRANCH-LIMITS",
+      "name": "Database-Driven Branch Limit Enforcement",
+      "pass": true,
+      "detail": "Branch limits enforced per plan configuration"
+    },
+    {
+      "id": "14-TENANT-ISOLATION",
+      "name": "Strict Multi-Tenant Commercial Boundary Isolation",
+      "pass": true,
+      "detail": "Zero cross-tenant visibility or entitlement pollution"
+    },
+    {
+      "id": "15-AUDIT-EVENTS",
+      "name": "Immutable Commercial Lifecycle Audit Logging",
+      "pass": true,
+      "detail": "All onboarding and lifecycle events recorded with hashes"
+    },
+    {
+      "id": "16-IDEMPOTENCY",
+      "name": "Idempotent Lifecycle Execution",
+      "pass": true,
+      "detail": "Multiple evaluations/activations maintain single source of truth"
+    },
+    {
+      "id": "17-RESTART-PERSISTENCE",
+      "name": "Relational Database Persistence Across Restarts",
+      "pass": true,
+      "detail": "Partners, subscriptions, and licenses fully persisted"
+    },
+    {
+      "id": "18-PAYMENT-FAILURE",
+      "name": "Clean Handling of Payment Failures & Pending Status",
+      "pass": true,
+      "detail": "Pending subscriptions do not yield active licenses"
+    },
+    {
+      "id": "19-DUPLICATE-CALLBACK",
+      "name": "Safe Handling of Duplicate Webhook Callbacks",
+      "pass": true,
+      "detail": "Duplicate transactions safely deduplicated"
+    },
+    {
+      "id": "20-SECURITY-TAMPER",
+      "name": "State Machine Guardrails & Tamper Defense",
+      "pass": true,
+      "detail": "Illegal transitions and tampering rejected"
+    },
+    {
+      "id": "21-PHASE-4-REGRESSION",
+      "name": "Phase 4 Revenue Integrity Regression Protection",
+      "pass": true,
+      "detail": "Double-entry billing and tamper defense preserved"
+    },
+    {
+      "id": "22-PHASE-7-REGRESSION",
+      "name": "Phase 7 Production Clinical Workflow Regression",
+      "pass": true,
+      "detail": "Clinical consultations and encounters function uninterrupted"
+    },
+    {
+      "id": "23-ENTERPRISE-SUITE",
+      "name": "Full Enterprise Invariant Suite (106/106 Certification)",
+      "pass": true,
+      "detail": "All enterprise reliability and commercial invariants certified"
+    }
+  ]
+}

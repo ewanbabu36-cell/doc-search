@@ -61,4 +61,47 @@ export const productRoutes: FastifyPluginAsync = async (fastify) => {
       return { success: true, data: created };
     }
   );
+
+  fastify.get(
+    '/api/v1/company/plans',
+    {
+      preHandler: [authenticate]
+    },
+    async (request) => {
+      const plansList = await productService.getPlans(request.session);
+      return { success: true, data: plansList };
+    }
+  );
+
+  fastify.get(
+    '/api/v1/company/plans/:planId',
+    {
+      preHandler: [authenticate]
+    },
+    async (request) => {
+      const { planId } = request.params as { planId: string };
+      const plan = await productService.getPlanById(planId, request.session);
+      return { success: true, data: plan };
+    }
+  );
+
+  fastify.post(
+    '/api/v1/company/plans',
+    {
+      preHandler: [authenticate, requirePermission('products', 'create')]
+    },
+    async (request, reply) => {
+      const body = request.body as any;
+      if (!body || !body.name || !body.code || !body.productId) {
+        throw new AppError({
+          message: 'Plan name, code, and productId are required',
+          code: ErrorCode.VALIDATION_ERROR,
+          statusCode: 400
+        });
+      }
+      const created = await productService.createPlan(body, request.session);
+      return reply.status(201).send({ success: true, data: created });
+    }
+  );
 };
+

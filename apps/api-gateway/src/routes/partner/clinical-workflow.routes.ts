@@ -197,6 +197,24 @@ export const clinicalWorkflowRoutes: FastifyPluginAsync = async (fastify) => {
     }
   );
 
+  // GET /api/v1/partner/clinical/patients/:id (Clinical namespace alias)
+  fastify.get(
+    '/api/v1/partner/clinical/patients/:id',
+    {
+      preHandler: [authenticate, requirePermission('clinical:patients', 'read')]
+    },
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const data = await clinicalWorkflowService.searchPatients(request.session);
+      const found = data.find(p => p.id === id);
+      if (!found) {
+        reply.status(404);
+        return { success: false, error: { code: 'PATIENT_NOT_FOUND', message: 'Patient not found' } };
+      }
+      return { success: true, data: found };
+    }
+  );
+
   // PATCH /api/v1/partner/patients/:id
   fastify.patch(
     '/api/v1/partner/patients/:id',

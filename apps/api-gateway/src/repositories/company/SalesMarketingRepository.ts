@@ -19,6 +19,80 @@ export class SalesMarketingRepository {
     ];
   }
 
+  async getLeadById(leadId: string, dbClient = getDatabase()) {
+    if (dbClient) {
+      try {
+        const [lead] = await dbClient.select().from(salesLeads).where(eq(salesLeads.id, leadId)).limit(1);
+        return lead || null;
+      } catch {}
+    }
+    return null;
+  }
+
+  async createLead(
+    leadData: {
+      organizationName: string;
+      contactName: string;
+      contactEmail: string;
+      contactPhone?: string;
+      contactRoleTitle?: string;
+      source?: string;
+      status?: string;
+      assignedOwnerId?: string;
+      assignedOwnerEmail?: string;
+      notes?: string;
+      metadata?: Record<string, any>;
+    },
+    dbClient = getDatabase()
+  ) {
+    if (dbClient) {
+      const [inserted] = await dbClient
+        .insert(salesLeads)
+        .values({
+          organizationName: leadData.organizationName,
+          contactName: leadData.contactName,
+          contactEmail: leadData.contactEmail,
+          contactPhone: leadData.contactPhone,
+          contactRoleTitle: leadData.contactRoleTitle,
+          source: leadData.source || 'INBOUND_WEB',
+          status: leadData.status || 'NEW',
+          assignedOwnerId: leadData.assignedOwnerId,
+          assignedOwnerEmail: leadData.assignedOwnerEmail || 'sales@docsearch.internal',
+          notes: leadData.notes,
+          metadata: leadData.metadata || {}
+        })
+        .returning();
+      return inserted;
+    }
+    return null;
+  }
+
+  async updateLead(
+    leadId: string,
+    updates: Partial<{
+      status: string;
+      notes: string | null;
+      nextFollowUpDate: Date | null;
+      lastActivityDate: Date | null;
+      metadata: Record<string, any>;
+    }>,
+
+    dbClient = getDatabase()
+  ) {
+    if (dbClient) {
+      const [updated] = await dbClient
+        .update(salesLeads)
+        .set({
+          ...updates,
+          updatedAt: new Date()
+        })
+        .where(eq(salesLeads.id, leadId))
+        .returning();
+      return updated;
+    }
+    return null;
+  }
+
   async getOpportunities(stage?: string, dbClient = getDatabase()) {
     if (dbClient) {
       try {
@@ -45,3 +119,4 @@ export class SalesMarketingRepository {
 }
 
 export const salesMarketingRepository = new SalesMarketingRepository();
+

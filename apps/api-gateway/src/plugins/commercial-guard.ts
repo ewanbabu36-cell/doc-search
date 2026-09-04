@@ -1,6 +1,7 @@
 import { type FastifyRequest, type FastifyReply } from 'fastify';
 import { licenseRepository } from '../repositories/company/LicenseRepository.js';
 import { licenseService } from '../services/company/LicenseService.js';
+import { entitlementService } from '../services/company/EntitlementService.js';
 import { AppError, ErrorCode } from '@docsearch/shared-core';
 
 /**
@@ -71,3 +72,16 @@ export async function requireActiveCommercialAccess(
     reply.header('x-commercial-days-remaining', String(evaluation.daysRemaining));
   }
 }
+
+/**
+ * Enforces specific database-driven feature entitlement for the active tenant subscription.
+ */
+export function requireFeatureEntitlement(featureCode: string) {
+  return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+    await requireActiveCommercialAccess(request, reply);
+    if (request.session) {
+      await entitlementService.enforceFeatureAccess(request.session, featureCode);
+    }
+  };
+}
+

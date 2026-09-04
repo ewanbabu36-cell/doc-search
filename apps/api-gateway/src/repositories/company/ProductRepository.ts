@@ -1,4 +1,4 @@
-﻿import { eq, desc, and } from '@docsearch/database';
+import { eq, desc, and } from '@docsearch/database';
 import {
   getDatabase,
   products,
@@ -91,10 +91,20 @@ export class ProductRepository {
     return null;
   }
 
+  async createPlan(data: any, dbClient = getDatabase()): Promise<Plan> {
+    if (dbClient) {
+      const [created] = await dbClient.insert(plans).values(data).returning();
+      if (created) return created;
+    }
+    throw new Error('Failed to create plan or database client missing');
+  }
+
+
   async getPlanEntitlements(
     planId: string,
     dbClient = getDatabase()
   ): Promise<Array<{ code: string; name: string; category: string; value: any; entitlementType: string }>> {
+
     if (dbClient) {
       try {
         const rows = await dbClient

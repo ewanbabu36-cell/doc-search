@@ -22,7 +22,7 @@ export const CreateInvoiceSchema = z.object({
   policyNumber: z.string().trim().optional(),
   items: z.array(z.object({
     serviceName: z.string().min(1),
-    category: z.enum(['CONSULTATION', 'BED_CHARGES', 'PHARMACY', 'LAB_TEST', 'SURGERY_OT', 'BLOOD_BANK', 'NURSING']),
+    category: z.enum(['CONSULTATION', 'BED_CHARGES', 'PHARMACY', 'LAB_TEST', 'LABORATORY', 'SURGERY_OT', 'BLOOD_BANK', 'NURSING']),
     quantity: z.number().positive(),
     unitPrice: z.number().nonnegative(),
     totalPrice: z.number().nonnegative()

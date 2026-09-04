@@ -4,11 +4,13 @@ import { z } from 'zod';
 import { AppError, ErrorCode } from '@docsearch/shared-core';
 import { labDiagnosticsService } from '../../services/partner/LabDiagnosticsService.js';
 import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
+import { requireFeatureEntitlement } from '../../plugins/commercial-guard.js';
 import {
   type CreateLabOrderInput,
   type CollectSpecimenInput,
   type EnterResultInput
 } from '../../repositories/partner/LabDiagnosticsRepository.js';
+
 
 export const CreateLabOrderSchema = z.object({
   patientId: z.string().trim().min(1, 'patientId is required'),
@@ -93,9 +95,10 @@ export const labDiagnosticsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/partner/lab/orders',
     {
-      preHandler: [authenticate, requirePermission('lab:orders', 'create')]
+      preHandler: [authenticate, requirePermission('lab:orders', 'create'), requireFeatureEntitlement('LAB_DIAGNOSTICS')]
     },
     async (request, reply) => {
+
       const payload = validateBody(CreateLabOrderSchema, request.body) as Omit<CreateLabOrderInput, 'tenantId'>;
       const data = await labDiagnosticsService.createOrder(payload, request.session);
       reply.status(201);

@@ -1,10 +1,11 @@
-﻿import crypto from 'node:crypto';
+import crypto from 'node:crypto';
 import { partnerRepository, type FindPartnersParams } from '../../repositories/company/PartnerRepository.js';
 import { productRepository } from '../../repositories/company/ProductRepository.js';
 import { subscriptionRepository } from '../../repositories/company/SubscriptionRepository.js';
 import { licenseRepository } from '../../repositories/company/LicenseRepository.js';
 import { subscriptionService } from './SubscriptionService.js';
 import { licenseService } from './LicenseService.js';
+import { entitlementService } from './EntitlementService.js';
 import { auditRepository } from '../../repositories/core/AuditRepository.js';
 import { type SessionContext } from '@docsearch/auth';
 import {
@@ -16,11 +17,13 @@ import {
   operationalOrganizations,
   operationalFacilities,
   partnerPlanAssignments,
+  eq,
   type PartnerProfile,
   type NewPartnerProfile,
   type Subscription,
   type License,
   type Plan
+
 } from '@docsearch/database';
 import { AppError, ErrorCode } from '@docsearch/shared-core';
 
@@ -77,8 +80,12 @@ export class PartnerService {
       if (!partner) {
         throw AppError.notFound(`Partner ${partnerId} not found`);
       }
+      if (!session.isSuperAdmin && session.tenantId && partner.tenantId !== session.tenantId) {
+        throw AppError.forbidden('Cannot access partner profile of another organization');
+      }
       return partner;
     });
+
   }
 
   /**
@@ -281,7 +288,26 @@ export class PartnerService {
         tx
       );
 
+      await auditRepository.recordEvent(
+        {
+          eventType: 'SUBSCRIPTION_CREATED',
+          resourceType: 'SUBSCRIPTION',
+          resourceId: createdSub.id,
+          tenantId,
+          metadata: {
+            partnerId,
+            planId: plan.id,
+            planCode: plan.code,
+            billingCycle,
+            status: createdSub.status
+          }
+        },
+        session,
+        tx
+      );
+
       // 8. Issue Persisted Software License with Cryptographic HMAC-SHA256 Signature
+
       const maxConcurrentUsers = Number(planMeta['maxConcurrentUsers']) || 50;
       const maxDoctors = Number(planMeta['maxDoctors']) || 20;
       const maxBranches = Number(planMeta['maxBranches']) || 5;
@@ -386,6 +412,10 @@ export class PartnerService {
       if (!partner) {
         throw AppError.notFound(`Partner ${partnerId} not found`);
       }
+      if (!session.isSuperAdmin && session.tenantId && partner.tenantId !== session.tenantId) {
+        throw AppError.forbidden('Cannot access commercial profile of another organization');
+      }
+
 
       const subscription = await subscriptionRepository.findByPartnerId(partnerId, tx);
       let license: License | null = null;
@@ -475,6 +505,186 @@ export class PartnerService {
       return updated;
     });
   }
+
+  async getPartnerEntitlements(partnerId: string, session: SessionContext) {
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      const partner = await partnerRepository.findById(partnerId, tx);
+      if (!partner) {
+        throw AppError.notFound(`Partner ${partnerId} not found`);
+      }
+      if (!session.isSuperAdmin && session.tenantId && partner.tenantId !== session.tenantId) {
+        throw AppError.forbidden('Cannot access entitlements of another organization');
+      }
+      return entitlementService.getPartnerEntitlements(partner.tenantId);
+    });
+  }
+
+  async addBranch(
+    partnerId: string,
+    branchData: { name: string; code?: string },
+    session: SessionContext
+  ) {
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      const partner = await partnerRepository.findById(partnerId, tx);
+      if (!partner) {
+        throw AppError.notFound(`Partner ${partnerId} not found`);
+      }
+      if (!session.isSuperAdmin && session.tenantId && partner.tenantId !== session.tenantId) {
+        throw AppError.forbidden('Cannot modify branches of another organization');
+      }
+
+
+      // Enforce database-driven branch limit
+      const limitCheck = await entitlementService.checkBranchLimit(partner.tenantId);
+      if (!limitCheck.allowed) {
+        throw new AppError({
+          message: `Branch limit of ${limitCheck.maxAllowed} reached for current subscription plan. Upgrade plan to add more branches.`,
+          code: ErrorCode.FORBIDDEN,
+          statusCode: 403,
+          details: [
+            {
+              field: 'branches',
+              message: `Current branches: ${limitCheck.currentCount}, Maximum allowed: ${limitCheck.maxAllowed}`
+            }
+          ]
+        });
+      }
+
+
+      const branchId = crypto.randomUUID();
+      const code = branchData.code || `FAC-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
+
+      let orgId = partner.tenantId;
+      try {
+        const [org] = await tx
+          .select({ id: operationalOrganizations.id })
+          .from(operationalOrganizations)
+          .where(eq(operationalOrganizations.partnerId, partnerId))
+          .limit(1);
+        if (org) orgId = org.id;
+      } catch {}
+
+      await tx
+        .insert(operationalFacilities)
+        .values({
+          id: branchId,
+          tenantId: partner.tenantId,
+          partnerId,
+          organizationId: orgId,
+          facilityCode: code,
+          facilityName: branchData.name,
+          facilityType: 'OUTPATIENT_CLINIC',
+          addressStreet: '100 Healthcare Way',
+          addressCity: 'Bangalore',
+          addressState: 'Karnataka',
+          addressPostalCode: '560001',
+          addressCountry: 'IN',
+          contactEmail: partner.primaryContactEmail,
+          contactPhone: partner.primaryContactPhone || '080-12345678',
+          status: 'ACTIVE'
+        })
+
+        .onConflictDoNothing();
+
+      await tx
+        .insert(branches)
+        .values({
+          id: branchId,
+          tenantId: partner.tenantId,
+          name: branchData.name,
+          code,
+          status: 'ACTIVE'
+        })
+        .onConflictDoNothing();
+
+      await auditRepository.recordEvent(
+        {
+          eventType: 'BRANCH_CREATED',
+          resourceType: 'BRANCH',
+          resourceId: branchId,
+          tenantId: partner.tenantId,
+          metadata: {
+            partnerId,
+            branchName: branchData.name,
+            code
+          }
+        },
+        session,
+        tx
+      );
+
+      return {
+        id: branchId,
+        tenantId: partner.tenantId,
+        partnerId,
+        name: branchData.name,
+        code,
+        status: 'ACTIVE'
+      };
+    });
+  }
+
+  async addDoctor(
+    partnerId: string,
+    doctorData: { fullName: string; email: string; specialization?: string; requestedTotalCount?: number },
+    session: SessionContext
+  ) {
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      const partner = await partnerRepository.findById(partnerId, tx);
+      if (!partner) {
+        throw AppError.notFound(`Partner ${partnerId} not found`);
+      }
+      if (!session.isSuperAdmin && session.tenantId && partner.tenantId !== session.tenantId) {
+        throw AppError.forbidden('Cannot modify doctors of another organization');
+      }
+
+
+      // Enforce database-driven user/doctor limit
+      const limitCheck = await entitlementService.checkUserLimit(partner.tenantId, doctorData.requestedTotalCount);
+      if (!limitCheck.allowed) {
+        throw new AppError({
+          message: `Doctor/User limit of ${limitCheck.maxAllowed} reached for current subscription plan. Upgrade plan to add more doctors.`,
+          code: ErrorCode.FORBIDDEN,
+          statusCode: 403,
+          details: [
+            {
+              field: 'doctors',
+              message: `Current count: ${limitCheck.currentCount}, Maximum allowed: ${limitCheck.maxAllowed}`
+            }
+          ]
+        });
+      }
+
+
+      const docId = crypto.randomUUID();
+      await auditRepository.recordEvent(
+        {
+          eventType: 'DOCTOR_ENROLLED',
+          resourceType: 'DOCTOR_PROFILE',
+          resourceId: docId,
+          tenantId: partner.tenantId,
+          metadata: {
+            partnerId,
+            fullName: doctorData.fullName,
+            email: doctorData.email
+          }
+        },
+        session,
+        tx
+      );
+
+      return {
+        id: docId,
+        tenantId: partner.tenantId,
+        partnerId,
+        fullName: doctorData.fullName,
+        email: doctorData.email,
+        specialization: doctorData.specialization || 'General Practice',
+        status: 'ACTIVE'
+      };
+    });
+  }
 }
+
 
 export const partnerService = new PartnerService();

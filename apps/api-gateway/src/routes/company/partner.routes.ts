@@ -142,4 +142,60 @@ export const partnerRoutes: FastifyPluginAsync = async (fastify) => {
       return { success: true, data: updated };
     }
   );
+
+  // GET /api/v1/company/partners/:partnerId/entitlements
+  fastify.get(
+    '/api/v1/company/partners/:partnerId/entitlements',
+    {
+      preHandler: [authenticate, requirePermission('partners', 'read')]
+    },
+    async (request) => {
+      const { partnerId } = request.params as { partnerId: string };
+      const entitlements = await partnerService.getPartnerEntitlements(partnerId, request.session);
+      return { success: true, data: entitlements };
+    }
+  );
+
+  // POST /api/v1/company/partners/:partnerId/branches
+  fastify.post(
+    '/api/v1/company/partners/:partnerId/branches',
+    {
+      preHandler: [authenticate, requirePermission('partners', 'update')]
+    },
+    async (request, reply) => {
+      const { partnerId } = request.params as { partnerId: string };
+      const body = request.body as { name: string; code?: string };
+      if (!body || !body.name) {
+        throw new AppError({
+          message: 'Branch name is required',
+          code: ErrorCode.VALIDATION_ERROR,
+          statusCode: 400
+        });
+      }
+      const branch = await partnerService.addBranch(partnerId, body, request.session);
+      return reply.status(201).send({ success: true, data: branch });
+    }
+  );
+
+  // POST /api/v1/company/partners/:partnerId/doctors
+  fastify.post(
+    '/api/v1/company/partners/:partnerId/doctors',
+    {
+      preHandler: [authenticate, requirePermission('partners', 'update')]
+    },
+    async (request, reply) => {
+      const { partnerId } = request.params as { partnerId: string };
+      const body = request.body as { fullName: string; email: string; specialization?: string; requestedTotalCount?: number };
+      if (!body || !body.fullName || !body.email) {
+        throw new AppError({
+          message: 'Doctor fullName and email are required',
+          code: ErrorCode.VALIDATION_ERROR,
+          statusCode: 400
+        });
+      }
+      const doctor = await partnerService.addDoctor(partnerId, body, request.session);
+      return reply.status(201).send({ success: true, data: doctor });
+    }
+  );
 };
+

@@ -27,6 +27,45 @@ export const salesMarketingRoutes: FastifyPluginAsync = async (fastify) => {
     }
   );
 
+  fastify.post(
+    '/api/v1/company/sales/leads',
+    {
+      preHandler: [authenticate, requirePermission('sales', 'create')]
+    },
+    async (request, reply) => {
+      const body = request.body as any;
+      const lead = await salesMarketingService.createLead(body, request.session);
+      return reply.status(201).send({ success: true, data: lead });
+    }
+  );
+
+  fastify.patch(
+    '/api/v1/company/sales/leads/:id/stage',
+    {
+      preHandler: [authenticate, requirePermission('sales', 'update')]
+    },
+    async (request) => {
+      const { id } = request.params as { id: string };
+      const body = request.body as { status: string; notes?: string };
+      const updated = await salesMarketingService.updateLeadStatus(id, body.status, body.notes, request.session);
+      return { success: true, data: updated };
+    }
+  );
+
+  fastify.post(
+    '/api/v1/company/sales/leads/:id/convert',
+    {
+      preHandler: [authenticate, requirePermission('sales', 'create')]
+    },
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const body = (request.body || {}) as any;
+      const result = await salesMarketingService.convertLeadToPartner(id, body, request.session);
+      return reply.status(201).send({ success: true, data: result });
+    }
+  );
+
+
   fastify.get(
     '/api/v1/company/marketing/campaigns',
     {
@@ -39,3 +78,4 @@ export const salesMarketingRoutes: FastifyPluginAsync = async (fastify) => {
     }
   );
 };
+
