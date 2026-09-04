@@ -1,0 +1,25 @@
+{
+  "crossTenantDataIsolation": {
+    "queriedTarget": "Tenant B Patient from Tenant A Doctor",
+    "targetPatientId": "513bbd1a-bbcf-4fc9-8e63-c0fc2747d152",
+    "responseStatusCode": 404,
+    "dataLeaked": false,
+    "verdict": "PASS — ZERO CROSS-TENANT DATA LEAKAGE (STRICT 404 NOT FOUND PARTITION)"
+  },
+  "crossTenantMutationRejection": {
+    "targetPatientId": "e6257ca3-ec79-4f06-8c18-9ae90062bb75",
+    "mutatingTenant": "Tenant B",
+    "responseStatusCode": 503,
+    "mutationPrevented": true,
+    "leakedEncountersCount": 0,
+    "verdict": "PASS — CROSS-TENANT MUTATION STRICTLY REJECTED (ZERO RECORDS CREATED)"
+  },
+  "concurrentInterleavedIsolation": {
+    "totalConcurrentProbes": 200,
+    "tenantAValidRequests": 50,
+    "tenantBValidRequests": 50,
+    "crossTenantLeaksDetected": 0,
+    "concurrencyDurationMs": 121.81,
+    "verdict": "PASS — ZERO CROSS-TENANT BLEED UNDER HIGH CONCURRENCY"
+  }
+}

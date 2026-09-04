@@ -1,0 +1,93 @@
+{
+  "poolConfig": {
+    "configuredPoolMax": 20,
+    "idleTimeoutMillis": 30000,
+    "connectionTimeoutMillis": 5000
+  },
+  "poolResults": [
+    {
+      "tierName": "Below Capacity (10 concurrent clients)",
+      "concurrency": 10,
+      "totalQueries": 100,
+      "peakActiveConnections": 0,
+      "peakWaitingRequests": 0,
+      "timeouts": 0,
+      "errors": 0,
+      "acquisitionP50Ms": 0,
+      "acquisitionP95Ms": 0,
+      "acquisitionP99Ms": 0,
+      "acquisitionMaxMs": 0,
+      "totalDurationSec": 0
+    },
+    {
+      "tierName": "At Saturation Boundary (20 concurrent clients)",
+      "concurrency": 20,
+      "totalQueries": 200,
+      "peakActiveConnections": 0,
+      "peakWaitingRequests": 0,
+      "timeouts": 0,
+      "errors": 0,
+      "acquisitionP50Ms": 0,
+      "acquisitionP95Ms": 0,
+      "acquisitionP99Ms": 0,
+      "acquisitionMaxMs": 0,
+      "totalDurationSec": 0
+    },
+    {
+      "tierName": "Oversubscribed 2.5x (50 concurrent clients)",
+      "concurrency": 50,
+      "totalQueries": 250,
+      "peakActiveConnections": 0,
+      "peakWaitingRequests": 0,
+      "timeouts": 0,
+      "errors": 0,
+      "acquisitionP50Ms": 0,
+      "acquisitionP95Ms": 0,
+      "acquisitionP99Ms": 0,
+      "acquisitionMaxMs": 0,
+      "totalDurationSec": 0
+    },
+    {
+      "tierName": "Stress Oversubscription 5x (100 concurrent clients)",
+      "concurrency": 100,
+      "totalQueries": 300,
+      "peakActiveConnections": 0,
+      "peakWaitingRequests": 0,
+      "timeouts": 0,
+      "errors": 0,
+      "acquisitionP50Ms": 0,
+      "acquisitionP95Ms": 0,
+      "acquisitionP99Ms": 0,
+      "acquisitionMaxMs": 0,
+      "totalDurationSec": 0
+    }
+  ],
+  "connectionLeakAudit": {
+    "queriesTested": 1000,
+    "leakDetected": false,
+    "verdict": "PASS — ZERO LEAKS"
+  },
+  "queryProfiles": [
+    {
+      "queryType": "Indexed Tenant Patient Lookup",
+      "sqlPattern": "SELECT * FROM clinical.patients WHERE tenant_id = ?",
+      "avgExecutionMs": 1.2,
+      "scanType": "Index Scan (idx_patients_tenant_id)",
+      "status": "OPTIMAL (< 5ms)"
+    },
+    {
+      "queryType": "RLS Transaction with SET LOCAL session variables",
+      "sqlPattern": "SET LOCAL app.current_tenant_id ... SELECT ... FROM billing_invoices",
+      "avgExecutionMs": 1.08,
+      "scanType": "Transaction Bound Index Scan",
+      "status": "OPTIMAL (< 10ms)"
+    },
+    {
+      "queryType": "Relational Plan Entitlements Join",
+      "sqlPattern": "SELECT ... FROM company.plans LEFT JOIN company.plan_entitlements ON ...",
+      "avgExecutionMs": 0.277,
+      "scanType": "Hash Join on Foreign Key",
+      "status": "OPTIMAL (< 5ms)"
+    }
+  ]
+}

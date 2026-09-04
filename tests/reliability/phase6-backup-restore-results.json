@@ -1,0 +1,35 @@
+{
+  "workload": {
+    "totalTablesBackedUp": 16,
+    "totalRowsBackedUp": 113,
+    "totalRowsRestored": 113,
+    "patientsCount": 10,
+    "consultationsCount": 10,
+    "prescriptionsCount": 0,
+    "auditEventsCount": 40
+  },
+  "backupMetrics": {
+    "backupDurationMs": 35.91,
+    "backupSizeBytes": 107909,
+    "backupSizeKb": 105.38,
+    "backupSha256Checksum": "0634e6343437525b5dbeacc8b44ff924e78746b47126ba06f1226d74024e7b36"
+  },
+  "restoreMetrics": {
+    "observedRtoMs": 325.52,
+    "observedRtoSeconds": 0.3255,
+    "recordsRestored": 113,
+    "recordsLostDuringRecovery": 0
+  },
+  "recoveryPointObjective": {
+    "observedRpoSeconds": 0,
+    "observedDataLossTransactions": 0,
+    "snapshotIsolation": "STRICT_TRANSACTIONAL_CONSISTENCY"
+  },
+  "integrityVerification": {
+    "preDisasterSha256": "0634e6343437525b5dbeacc8b44ff924e78746b47126ba06f1226d74024e7b36",
+    "postRecoverySha256": "0634e6343437525b5dbeacc8b44ff924e78746b47126ba06f1226d74024e7b36",
+    "bitPerfectChecksumMatch": true,
+    "relationalIntegrityVerified": true,
+    "verdict": "PASS — BIT-PERFECT RESTORATION (RPO=0s, MEASURED RTO=325.52ms)"
+  }
+}

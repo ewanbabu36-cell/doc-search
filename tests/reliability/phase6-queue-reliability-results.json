@@ -1,0 +1,49 @@
+{
+  "fifoQueueProgression": {
+    "tokensIssued": 3,
+    "tokenNumbers": [
+      "TKN-001",
+      "TKN-002",
+      "TKN-003"
+    ],
+    "fifoOrderingVerified": true,
+    "lifecycleStates": {
+      "initial": "WAITING",
+      "afterCall": "CALLED",
+      "afterStart": "IN_PROGRESS",
+      "afterComplete": "COMPLETED"
+    },
+    "transitionDurationsMs": {
+      "issueTokensAvg": 23.73,
+      "callToken": 20.98,
+      "startToken": 35.3,
+      "completeToken": 25.91
+    },
+    "verdict": "PASS — FIFO ORDERING & STATE MACHINE STRICTLY PRESERVED"
+  },
+  "backgroundJobsReconciliation": {
+    "statusCode": 200,
+    "jobDurationMs": 15.37,
+    "activeSubscriptionsScanned": 2,
+    "expiringSoonCount": 0,
+    "gracePeriodCount": 0,
+    "expiredCount": 0,
+    "verdict": "PASS — BACKGROUND RECONCILIATION EXECUTED CLEANLY"
+  },
+  "idempotentRetryRecovery": {
+    "initialPrescriptions": 1,
+    "initialDispensingRecords": 1,
+    "retryAttempts": 3,
+    "retryStatuses": [
+      200,
+      200,
+      200
+    ],
+    "finalPrescriptions": 1,
+    "finalDispensingRecords": 1,
+    "duplicateRecordsCreated": 0,
+    "duplicateDispensingCreated": 0,
+    "returnedPrescriptionMatch": true,
+    "verdict": "PASS — ZERO DUPLICATE ORDERS / 100% IDEMPOTENT RECOVERY"
+  }
+}

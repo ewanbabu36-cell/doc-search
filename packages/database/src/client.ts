@@ -111,11 +111,11 @@ export async function withSecurityContext<T>(
     throw AppError.forbidden('Tenant context is mandatory for security-scoped database operations');
   }
 
-  if (testTransactionRunner) {
-    return await testTransactionRunner(context, callback as any);
-  }
-
   try {
+    if (testTransactionRunner) {
+      return await testTransactionRunner(context, callback as any);
+    }
+
     return await db.transaction(async (tx) => {
       // Set transaction-local session variables
       const tenantId = context.tenantId || '';

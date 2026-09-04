@@ -1,0 +1,39 @@
+{
+  "unauthenticatedQuota": {
+    "configuredLimit": 100,
+    "requestsSent": 105,
+    "blockedAtRequestNumber": 101,
+    "httpStatus": 429,
+    "errorCode": "RATE_LIMIT_EXCEEDED",
+    "errorMessage": "Too many requests. Rate limit quota exceeded. Retry in 1 minute. Hospital staff: contact system administrator.",
+    "retryAfterHeader": "60",
+    "rateLimitLimitHeader": "100",
+    "rateLimitRemainingHeader": "0",
+    "verdict": "PASS — EXACT 100 REQ/MIN CEILING ENFORCED (BLOCKED AT #101)"
+  },
+  "allowlistBypass": {
+    "endpoint": "/health",
+    "requestsSentFromExhaustedClient": 80,
+    "errorsEncountered": 0,
+    "verdict": "PASS — ALLOWLIST OPERATIONAL (/health 100% ACCESSIBLE)"
+  },
+  "authenticatedHighQuota": {
+    "quotaTarget": 5000,
+    "requestsSent": 120,
+    "requestsPassed": 120,
+    "errorsEncountered": 0,
+    "verdict": "PASS — CLINICAL STAFF UNIMPEDED (100% SUCCESS)"
+  },
+  "multiTenantIsolation": {
+    "tenantBRequestsSent": 50,
+    "tenantBErrors": 0,
+    "tenantAStatus": 200,
+    "isolationIntegrity": "STRICT MULTI-TENANT ISOLATION CONFIRMED",
+    "verdict": "PASS"
+  },
+  "tamperAndBypassDefense": {
+    "forgedTokenStatusCode": 401,
+    "forgedTokenBlocked": true,
+    "verdict": "PASS — FORGED TOKENS PROMPTLY REJECTED 401"
+  }
+}

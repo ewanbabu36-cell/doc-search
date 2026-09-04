@@ -67,6 +67,16 @@ export async function buildApp(): Promise<FastifyInstance> {
       });
     }
 
+    if (error instanceof SyntaxError || (error && typeof error === 'object' && (error as any).name === 'SyntaxError')) {
+      return reply.status(400).send({
+        error: {
+          code: 'BAD_REQUEST',
+          message: 'Malformed JSON payload syntax',
+          requestId
+        }
+      });
+    }
+
     const err = error as { statusCode?: number; code?: string; message?: string; details?: unknown[] };
     if (err.statusCode && (err.statusCode < 500 || err.statusCode === 503 || err.statusCode === 502 || err.statusCode === 504)) {
       return reply.status(err.statusCode).send({
