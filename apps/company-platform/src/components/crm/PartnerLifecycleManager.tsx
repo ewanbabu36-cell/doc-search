@@ -20,10 +20,12 @@ import { AiWhatsAppEngagementBroadcasterView } from './AiWhatsAppEngagementBroad
 import { DoctorNmcCredentialingBotView } from './DoctorNmcCredentialingBotView.js';
 import { PartnerHealthChurnRadarView } from './PartnerHealthChurnRadarView.js';
 import { PartnerEscrowRevenueSplitView } from './PartnerEscrowRevenueSplitView.js';
+import { LeadToPartnerPipelineView } from './LeadToPartnerPipelineView.js';
 
 import { Spinner, ErrorState, Tabs, Badge } from '@docsearch/ui-kit';
 
 export type ActiveCrmTab =
+  | 'PIPELINE'
   | 'DIRECTORY'
   | 'WHATSAPP'
   | 'NMC_BOT'
@@ -140,6 +142,7 @@ export const PartnerLifecycleManager: React.FC = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       <Tabs
         tabs={[
+          { id: 'PIPELINE', label: '🔄 Lead-to-Live Pipeline Tracker', badge: <Badge variant="primary">5 Stages & Forms</Badge> },
           { id: 'DIRECTORY', label: '📋 Directory & CRM' },
           { id: 'WHATSAPP', label: '💬 AI WhatsApp Broadcaster', badge: <Badge variant="success">98.2% Open</Badge> },
           { id: 'NMC_BOT', label: '🤖 Doctor Credentialing Bot', badge: <Badge variant="primary">NMC API</Badge> },
@@ -156,6 +159,10 @@ export const PartnerLifecycleManager: React.FC = () => {
         activeTabId={activeTab}
         onTabChange={(id) => setActiveTab(id as ActiveCrmTab)}
       />
+
+      {activeTab === 'PIPELINE' && (
+        <LeadToPartnerPipelineView />
+      )}
 
       {activeTab === 'DIRECTORY' && (
         <PartnerListView onSelectPartner={(id) => setSelectedPartnerId(id)} />
