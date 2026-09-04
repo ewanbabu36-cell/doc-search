@@ -31,6 +31,11 @@ const EnvSchema = z.object({
   STT_PROVIDER_API_KEY: z.string().optional(),
   STT_PROVIDER_URL: z.string().optional(),
 
+  // External Cloud Text-to-Speech Configuration
+  TTS_PROVIDER: z.enum(['NONE', 'GOOGLE_CLOUD_TTS', 'OPENAI_TTS', 'AWS_POLLY']).default('NONE'),
+  TTS_PROVIDER_API_KEY: z.string().optional(),
+  TTS_PROVIDER_URL: z.string().optional(),
+
   // Physical Hardware Peripherals Configuration
   HARDWARE_BRIDGE_ENABLED: z.preprocess((val) => val === 'true' || val === true, z.boolean()).default(true),
   ZEBRA_PRINTER_DEFAULT_DPI: z.coerce.number().default(203)
@@ -68,6 +73,11 @@ export function getExternalReadinessReport() {
       status: env.STT_PROVIDER !== 'NONE' && env.STT_PROVIDER_API_KEY ? 'CONFIGURED' : 'BLOCKED_MISSING_CREDENTIALS',
       provider: env.STT_PROVIDER,
       hasApiKey: Boolean(env.STT_PROVIDER_API_KEY)
+    },
+    tts: {
+      status: env.TTS_PROVIDER !== 'NONE' && env.TTS_PROVIDER_API_KEY ? 'CONFIGURED' : 'BLOCKED_MISSING_CREDENTIALS',
+      provider: env.TTS_PROVIDER,
+      hasApiKey: Boolean(env.TTS_PROVIDER_API_KEY)
     },
     hardware: {
       status: env.HARDWARE_BRIDGE_ENABLED ? 'BRIDGE_ACTIVE_AWAITING_PHYSICAL_USB' : 'DISABLED',
