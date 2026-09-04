@@ -1,14 +1,33 @@
+import crypto from 'node:crypto';
+import {
+  getDatabase,
+  eq,
+  and,
+  desc,
+  count,
+  ambientAiScribeTranscripts,
+  sepsisNews2Alerts,
+  ddiDrugInteractionChecks,
+  criticalPanicValueAlerts,
+  cdssAuditTraces,
+  type AmbientAiSoapTranscript,
+  type SepsisNews2Alert,
+  type DdiDrugInteractionCheck,
+  type CriticalPanicValueAlert,
+  type CdssAuditTrace
+} from '@docsearch/database';
+
 export interface AmbientAiSoapRecord {
-  id?: string;
+  id?: string | undefined;
   tenantId: string;
-  partnerId?: string;
-  organizationId?: string;
-  branchId?: string;
+  partnerId?: string | undefined;
+  organizationId?: string | undefined;
+  branchId?: string | undefined;
   patientMrn: string;
   patientName: string;
   doctorName: string;
   specialtyName: string;
-  encounterTimestamp?: Date;
+  encounterTimestamp?: Date | undefined;
   audioDurationSeconds: number;
   rawTranscriptExcerpt: string;
   soapNote: {
@@ -29,16 +48,16 @@ export interface AmbientAiSoapRecord {
     duration: string;
   }[];
   reviewStatus: string;
-  createdAt?: Date;
+  createdAt?: Date | undefined;
   [key: string]: unknown;
 }
 
 export interface SepsisNews2AlertRecord {
-  id?: string;
+  id?: string | undefined;
   tenantId: string;
-  partnerId?: string;
-  organizationId?: string;
-  branchId?: string;
+  partnerId?: string | undefined;
+  organizationId?: string | undefined;
+  branchId?: string | undefined;
   patientMrn: string;
   patientName: string;
   bedNumber: string;
@@ -53,7 +72,7 @@ export interface SepsisNews2AlertRecord {
   pulseRate: number;
   temperatureCelsius: number;
   consciousnessLevel: string;
-  serumLactateMmolL?: number | null;
+  serumLactateMmolL?: number | null | undefined;
   bundleChecklist: {
     bloodCulturesOrdered: boolean;
     lactateMeasured: boolean;
@@ -62,18 +81,18 @@ export interface SepsisNews2AlertRecord {
     vasopressorsStarted: boolean;
   };
   alertStatus: string;
-  triggeredAt?: Date;
-  acknowledgedBy?: string | null;
-  createdAt?: Date;
+  triggeredAt?: Date | undefined;
+  acknowledgedBy?: string | null | undefined;
+  createdAt?: Date | undefined;
   [key: string]: unknown;
 }
 
 export interface DdiInteractionCheckRecord {
-  id?: string;
+  id?: string | undefined;
   tenantId: string;
-  partnerId?: string;
-  organizationId?: string;
-  branchId?: string;
+  partnerId?: string | undefined;
+  organizationId?: string | undefined;
+  branchId?: string | undefined;
   patientMrn: string;
   drugA: string;
   drugB: string;
@@ -83,18 +102,18 @@ export interface DdiInteractionCheckRecord {
   recommendedManagement: string;
   evidenceReference: string;
   wasOverridden: boolean;
-  overrideJustification?: string | null;
-  prescribingDoctor?: string;
-  createdAt?: Date;
+  overrideJustification?: string | null | undefined;
+  prescribingDoctor?: string | undefined;
+  createdAt?: Date | undefined;
   [key: string]: unknown;
 }
 
 export interface CriticalPanicValueRecord {
-  id?: string;
+  id?: string | undefined;
   tenantId: string;
-  partnerId?: string;
-  organizationId?: string;
-  branchId?: string;
+  partnerId?: string | undefined;
+  organizationId?: string | undefined;
+  branchId?: string | undefined;
   patientMrn: string;
   patientName: string;
   location: string;
@@ -107,18 +126,18 @@ export interface CriticalPanicValueRecord {
   clinicalRiskSummary: string;
   communicatedToDoctor: boolean;
   doctorName: string;
-  alertTimestamp?: Date;
-  acknowledgementTimestamp?: Date | null;
-  createdAt?: Date;
+  alertTimestamp?: Date | undefined;
+  acknowledgementTimestamp?: Date | null | undefined;
+  createdAt?: Date | undefined;
   [key: string]: unknown;
 }
 
 export interface CdssAuditTraceRecord {
-  id?: string;
+  id?: string | undefined;
   tenantId: string;
-  partnerId?: string;
-  organizationId?: string;
-  branchId?: string;
+  partnerId?: string | undefined;
+  organizationId?: string | undefined;
+  branchId?: string | undefined;
   traceNumber: string;
   action: string;
   entityType: string;
@@ -128,24 +147,53 @@ export interface CdssAuditTraceRecord {
   actorRole: string;
   justification: string;
   integrityHash: string;
-  timestamp?: Date;
+  timestamp?: Date | undefined;
   [key: string]: unknown;
 }
 
-export class AiClinicalCopilotRepository {
-  private soapStore: AmbientAiSoapRecord[] = [];
-  private sepsisStore: SepsisNews2AlertRecord[] = [];
-  private ddiStore: DdiInteractionCheckRecord[] = [];
-  private panicStore: CriticalPanicValueRecord[] = [];
-  private auditStore: CdssAuditTraceRecord[] = [];
+const DEFAULT_PARTNER_ID = '00000000-0000-4000-8000-000000000001';
+const DEFAULT_ORG_ID = '00000000-0000-4000-8000-000000000002';
+const DEFAULT_BRANCH_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 
-  async getOverviewMetrics(_tenantId: string) {
+const GENERAL_UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function toValidUuid(val: unknown, fallback: string): string {
+  if (typeof val === 'string' && GENERAL_UUID_REGEX.test(val)) {
+    return val;
+  }
+  return fallback;
+}
+
+type TransactionDb = Parameters<Parameters<ReturnType<typeof getDatabase>['transaction']>[0]>[0];
+export type DbClient = ReturnType<typeof getDatabase> | TransactionDb;
+
+export class AiClinicalCopilotRepository {
+  async getOverviewMetrics(tenantId: string, tx?: DbClient) {
+    const client = tx || getDatabase();
+    const [sepsisCountRes] = await client.select({ val: count() })
+      .from(sepsisNews2Alerts)
+      .where(and(eq(sepsisNews2Alerts.tenantId, tenantId), eq(sepsisNews2Alerts.alertStatus, 'TRIGGERED_ACTIVE')));
+    const [ddiCountRes] = await client.select({ val: count() })
+      .from(ddiDrugInteractionChecks)
+      .where(eq(ddiDrugInteractionChecks.tenantId, tenantId));
+    const [soapCountRes] = await client.select({ val: count() })
+      .from(ambientAiScribeTranscripts)
+      .where(eq(ambientAiScribeTranscripts.tenantId, tenantId));
+    const [panicCountRes] = await client.select({ val: count() })
+      .from(criticalPanicValueAlerts)
+      .where(eq(criticalPanicValueAlerts.tenantId, tenantId));
+
+    const activeSepsisAlertsCount = Number(sepsisCountRes?.val || 0);
+    const ddiInteractionsBlockedMonth = Number(ddiCountRes?.val || 0);
+    const ambientSoapNotesDraftedMonth = Number(soapCountRes?.val || 0);
+    const criticalPanicValuesToday = Number(panicCountRes?.val || 0);
+
     return {
-      activeSepsisAlertsCount: this.sepsisStore.filter(s => s.alertStatus === 'TRIGGERED_ACTIVE').length + 3,
-      highRiskPatientsCount: 8,
-      ddiInteractionsBlockedMonth: this.ddiStore.length + 42,
-      ambientSoapNotesDraftedMonth: this.soapStore.length + 312,
-      criticalPanicValuesToday: this.panicStore.length + 5,
+      activeSepsisAlertsCount,
+      highRiskPatientsCount: Math.max(activeSepsisAlertsCount, 1),
+      ddiInteractionsBlockedMonth,
+      ambientSoapNotesDraftedMonth,
+      criticalPanicValuesToday,
       averageSepsisBundleCompliancePct: 94.8,
       physicianOverrideRatePct: 4.2,
       aiModelAccuracyPct: 97.6
@@ -153,132 +201,348 @@ export class AiClinicalCopilotRepository {
   }
 
   // SOAP Notes
-  async getSoapNotes(tenantId: string) {
-    return this.soapStore.filter(s => s.tenantId === tenantId);
+  async getSoapNotes(tenantId: string, tx?: DbClient): Promise<AmbientAiSoapRecord[]> {
+    const client = tx || getDatabase();
+    const rows = await client.select().from(ambientAiScribeTranscripts)
+      .where(eq(ambientAiScribeTranscripts.tenantId, tenantId))
+      .orderBy(desc(ambientAiScribeTranscripts.createdAt));
+    return rows.map((r: AmbientAiSoapTranscript) => ({
+      ...r,
+      soapNote: r.soapNote as unknown as AmbientAiSoapRecord['soapNote'],
+      suggestedIcd10Codes: r.suggestedIcd10Codes as unknown as AmbientAiSoapRecord['suggestedIcd10Codes'],
+      suggestedPrescriptions: r.suggestedPrescriptions as unknown as AmbientAiSoapRecord['suggestedPrescriptions']
+    }));
   }
 
-  async getSoapNoteById(tenantId: string, id: string) {
-    return this.soapStore.find(s => s.id === id && s.tenantId === tenantId) || null;
-  }
-
-  async createSoapNote(data: AmbientAiSoapRecord) {
-    const record: AmbientAiSoapRecord = {
-      id: data.id || 'soap_' + Math.random().toString(36).substring(2, 9),
-      ...data,
-      encounterTimestamp: new Date(),
-      createdAt: new Date()
+  async getSoapNoteById(tenantId: string, id: string, tx?: DbClient): Promise<AmbientAiSoapRecord | null> {
+    const client = tx || getDatabase();
+    const [row] = await client.select().from(ambientAiScribeTranscripts)
+      .where(and(eq(ambientAiScribeTranscripts.tenantId, tenantId), eq(ambientAiScribeTranscripts.id, id)));
+    if (!row) return null;
+    return {
+      ...row,
+      soapNote: row.soapNote as unknown as AmbientAiSoapRecord['soapNote'],
+      suggestedIcd10Codes: row.suggestedIcd10Codes as unknown as AmbientAiSoapRecord['suggestedIcd10Codes'],
+      suggestedPrescriptions: row.suggestedPrescriptions as unknown as AmbientAiSoapRecord['suggestedPrescriptions']
     };
-    this.soapStore.unshift(record);
-    return record;
   }
 
-  async updateSoapNote(id: string, updates: Partial<AmbientAiSoapRecord>) {
-    const idx = this.soapStore.findIndex(s => s.id === id);
-    if (idx !== -1) {
-      const current = this.soapStore[idx];
-      if (current) {
-        this.soapStore[idx] = { ...current, ...updates };
-        return this.soapStore[idx];
-      }
+  async createSoapNote(data: AmbientAiSoapRecord, tx?: DbClient): Promise<AmbientAiSoapRecord> {
+    const client = tx || getDatabase();
+    const recordId = toValidUuid(data.id, crypto.randomUUID());
+    const [inserted] = await client.insert(ambientAiScribeTranscripts).values({
+      id: recordId,
+      tenantId: data.tenantId,
+      partnerId: toValidUuid(data.partnerId, DEFAULT_PARTNER_ID),
+      organizationId: toValidUuid(data.organizationId, DEFAULT_ORG_ID),
+      branchId: toValidUuid(data.branchId, DEFAULT_BRANCH_ID),
+      patientMrn: data.patientMrn,
+      patientName: data.patientName,
+      doctorName: data.doctorName,
+      specialtyName: data.specialtyName,
+      encounterTimestamp: data.encounterTimestamp ?? new Date(),
+      audioDurationSeconds: data.audioDurationSeconds ?? 180,
+      rawTranscriptExcerpt: data.rawTranscriptExcerpt,
+      soapNote: data.soapNote,
+      suggestedIcd10Codes: data.suggestedIcd10Codes,
+      suggestedPrescriptions: data.suggestedPrescriptions,
+      reviewStatus: data.reviewStatus ?? 'AI_DRAFTED',
+      createdAt: data.createdAt ?? new Date()
+    }).returning();
+
+    if (!inserted) {
+      throw new Error('Failed to create ambient AI scribe transcript');
     }
-    return null;
+
+    return {
+      ...data,
+      ...inserted,
+      tenantId: data.tenantId,
+      soapNote: inserted.soapNote as unknown as AmbientAiSoapRecord['soapNote'],
+      suggestedIcd10Codes: inserted.suggestedIcd10Codes as unknown as AmbientAiSoapRecord['suggestedIcd10Codes'],
+      suggestedPrescriptions: inserted.suggestedPrescriptions as unknown as AmbientAiSoapRecord['suggestedPrescriptions']
+    };
+  }
+
+  async updateSoapNote(id: string, updates: Partial<AmbientAiSoapRecord>, tx?: DbClient): Promise<AmbientAiSoapRecord | null> {
+    const client = tx || getDatabase();
+    const updateValues: Record<string, unknown> = {};
+    if (updates.reviewStatus !== undefined) updateValues['reviewStatus'] = updates.reviewStatus;
+    if (updates.soapNote !== undefined) updateValues['soapNote'] = updates.soapNote;
+    if (updates.suggestedIcd10Codes !== undefined) updateValues['suggestedIcd10Codes'] = updates.suggestedIcd10Codes;
+    if (updates.suggestedPrescriptions !== undefined) updateValues['suggestedPrescriptions'] = updates.suggestedPrescriptions;
+
+    const [updated] = await client.update(ambientAiScribeTranscripts)
+      .set(updateValues)
+      .where(eq(ambientAiScribeTranscripts.id, id))
+      .returning();
+
+    if (!updated) return null;
+    return {
+      ...updated,
+      soapNote: updated.soapNote as unknown as AmbientAiSoapRecord['soapNote'],
+      suggestedIcd10Codes: updated.suggestedIcd10Codes as unknown as AmbientAiSoapRecord['suggestedIcd10Codes'],
+      suggestedPrescriptions: updated.suggestedPrescriptions as unknown as AmbientAiSoapRecord['suggestedPrescriptions']
+    };
   }
 
   // Sepsis
-  async getSepsisAlerts(tenantId: string) {
-    return this.sepsisStore.filter(s => s.tenantId === tenantId);
+  async getSepsisAlerts(tenantId: string, tx?: DbClient): Promise<SepsisNews2AlertRecord[]> {
+    const client = tx || getDatabase();
+    const rows = await client.select().from(sepsisNews2Alerts)
+      .where(eq(sepsisNews2Alerts.tenantId, tenantId))
+      .orderBy(desc(sepsisNews2Alerts.triggeredAt));
+
+    return rows.map((r: SepsisNews2Alert) => ({
+      ...r,
+      temperatureCelsius: Number(r.temperatureCelsius),
+      serumLactateMmolL: r.serumLactateMmolL != null ? Number(r.serumLactateMmolL) : null,
+      bundleChecklist: r.bundleChecklist as unknown as SepsisNews2AlertRecord['bundleChecklist']
+    }));
   }
 
-  async createSepsisAlert(data: SepsisNews2AlertRecord) {
-    const record: SepsisNews2AlertRecord = {
-      id: data.id || 'sep_' + Math.random().toString(36).substring(2, 9),
-      ...data,
-      triggeredAt: new Date(),
-      createdAt: new Date()
-    };
-    this.sepsisStore.unshift(record);
-    return record;
-  }
+  async createSepsisAlert(data: SepsisNews2AlertRecord, tx?: DbClient): Promise<SepsisNews2AlertRecord> {
+    const client = tx || getDatabase();
+    const recordId = toValidUuid(data.id, crypto.randomUUID());
+    const [inserted] = await client.insert(sepsisNews2Alerts).values({
+      id: recordId,
+      tenantId: data.tenantId,
+      partnerId: toValidUuid(data.partnerId, DEFAULT_PARTNER_ID),
+      organizationId: toValidUuid(data.organizationId, DEFAULT_ORG_ID),
+      branchId: toValidUuid(data.branchId, DEFAULT_BRANCH_ID),
+      patientMrn: data.patientMrn,
+      patientName: data.patientName,
+      bedNumber: data.bedNumber,
+      wardName: data.wardName,
+      news2Score: data.news2Score,
+      qsofaScore: data.qsofaScore,
+      riskGrade: data.riskGrade,
+      respiratoryRate: data.respiratoryRate,
+      spO2Pct: data.spO2Pct,
+      requiresSupplementalO2: data.requiresSupplementalO2 ?? false,
+      systolicBp: data.systolicBp,
+      pulseRate: data.pulseRate,
+      temperatureCelsius: String(data.temperatureCelsius),
+      consciousnessLevel: data.consciousnessLevel ?? 'ALERT',
+      serumLactateMmolL: data.serumLactateMmolL != null ? String(data.serumLactateMmolL) : null,
+      bundleChecklist: data.bundleChecklist,
+      alertStatus: data.alertStatus ?? 'TRIGGERED_ACTIVE',
+      triggeredAt: data.triggeredAt ?? new Date(),
+      acknowledgedBy: data.acknowledgedBy ?? null,
+      createdAt: data.createdAt ?? new Date()
+    }).returning();
 
-  async updateSepsisAlert(id: string, updates: Partial<SepsisNews2AlertRecord>) {
-    const idx = this.sepsisStore.findIndex(s => s.id === id);
-    if (idx !== -1) {
-      const current = this.sepsisStore[idx];
-      if (current) {
-        this.sepsisStore[idx] = { ...current, ...updates };
-        return this.sepsisStore[idx];
-      }
+    if (!inserted) {
+      throw new Error('Failed to create sepsis alert');
     }
-    return null;
+
+    return {
+      ...data,
+      ...inserted,
+      tenantId: data.tenantId,
+      temperatureCelsius: Number(inserted.temperatureCelsius),
+      serumLactateMmolL: inserted.serumLactateMmolL != null ? Number(inserted.serumLactateMmolL) : null,
+      bundleChecklist: inserted.bundleChecklist as unknown as SepsisNews2AlertRecord['bundleChecklist']
+    };
+  }
+
+  async updateSepsisAlert(id: string, updates: Partial<SepsisNews2AlertRecord>, tx?: DbClient): Promise<SepsisNews2AlertRecord | null> {
+    const client = tx || getDatabase();
+    const updateValues: Record<string, unknown> = {};
+    if (updates.alertStatus !== undefined) updateValues['alertStatus'] = updates.alertStatus;
+    if (updates.acknowledgedBy !== undefined) updateValues['acknowledgedBy'] = updates.acknowledgedBy;
+    if (updates.bundleChecklist !== undefined) updateValues['bundleChecklist'] = updates.bundleChecklist;
+
+    const [updated] = await client.update(sepsisNews2Alerts)
+      .set(updateValues)
+      .where(eq(sepsisNews2Alerts.id, id))
+      .returning();
+
+    if (!updated) return null;
+    return {
+      ...updated,
+      temperatureCelsius: Number(updated.temperatureCelsius),
+      serumLactateMmolL: updated.serumLactateMmolL != null ? Number(updated.serumLactateMmolL) : null,
+      bundleChecklist: updated.bundleChecklist as unknown as SepsisNews2AlertRecord['bundleChecklist']
+    };
   }
 
   // DDI
-  async getDdiChecks(tenantId: string) {
-    return this.ddiStore.filter(d => d.tenantId === tenantId);
+  async getDdiChecks(tenantId: string, tx?: DbClient): Promise<DdiInteractionCheckRecord[]> {
+    const client = tx || getDatabase();
+    const rows = await client.select().from(ddiDrugInteractionChecks)
+      .where(eq(ddiDrugInteractionChecks.tenantId, tenantId))
+      .orderBy(desc(ddiDrugInteractionChecks.createdAt));
+    return rows.map((r: DdiDrugInteractionCheck) => ({
+      ...r,
+      wasOverridden: Boolean(r.wasOverridden)
+    }));
   }
 
-  async createDdiCheck(data: DdiInteractionCheckRecord) {
-    const record: DdiInteractionCheckRecord = {
-      id: data.id || 'ddi_' + Math.random().toString(36).substring(2, 9),
-      ...data,
-      createdAt: new Date()
-    };
-    this.ddiStore.unshift(record);
-    return record;
-  }
+  async createDdiCheck(data: DdiInteractionCheckRecord, tx?: DbClient): Promise<DdiInteractionCheckRecord> {
+    const client = tx || getDatabase();
+    const recordId = toValidUuid(data.id, crypto.randomUUID());
+    const [inserted] = await client.insert(ddiDrugInteractionChecks).values({
+      id: recordId,
+      tenantId: data.tenantId,
+      partnerId: toValidUuid(data.partnerId, DEFAULT_PARTNER_ID),
+      organizationId: toValidUuid(data.organizationId, DEFAULT_ORG_ID),
+      branchId: toValidUuid(data.branchId, DEFAULT_BRANCH_ID),
+      patientMrn: data.patientMrn,
+      drugA: data.drugA,
+      drugB: data.drugB,
+      severityLevel: data.severityLevel,
+      clinicalConsequence: data.clinicalConsequence,
+      mechanism: data.mechanism,
+      recommendedManagement: data.recommendedManagement,
+      evidenceReference: data.evidenceReference,
+      wasOverridden: data.wasOverridden ?? false,
+      overrideJustification: data.overrideJustification ?? null,
+      createdAt: data.createdAt ?? new Date()
+    }).returning();
 
-  async updateDdiCheck(id: string, updates: Partial<DdiInteractionCheckRecord>) {
-    const idx = this.ddiStore.findIndex(d => d.id === id);
-    if (idx !== -1) {
-      const current = this.ddiStore[idx];
-      if (current) {
-        this.ddiStore[idx] = { ...current, ...updates };
-        return this.ddiStore[idx];
-      }
+    if (!inserted) {
+      throw new Error('Failed to create DDI check');
     }
-    return null;
+
+    return {
+      ...data,
+      ...inserted,
+      tenantId: data.tenantId,
+      wasOverridden: Boolean(inserted.wasOverridden)
+    };
+  }
+
+  async updateDdiCheck(id: string, updates: Partial<DdiInteractionCheckRecord>, tx?: DbClient): Promise<DdiInteractionCheckRecord | null> {
+    const client = tx || getDatabase();
+    const updateValues: Record<string, unknown> = {};
+    if (updates.wasOverridden !== undefined) updateValues['wasOverridden'] = updates.wasOverridden;
+    if (updates.overrideJustification !== undefined) updateValues['overrideJustification'] = updates.overrideJustification;
+
+    const [updated] = await client.update(ddiDrugInteractionChecks)
+      .set(updateValues)
+      .where(eq(ddiDrugInteractionChecks.id, id))
+      .returning();
+
+    if (!updated) return null;
+    return {
+      ...updated,
+      wasOverridden: Boolean(updated.wasOverridden)
+    };
   }
 
   // Panic Values
-  async getPanicAlerts(tenantId: string) {
-    return this.panicStore.filter(p => p.tenantId === tenantId);
+  async getPanicAlerts(tenantId: string, tx?: DbClient): Promise<CriticalPanicValueRecord[]> {
+    const client = tx || getDatabase();
+    const rows = await client.select().from(criticalPanicValueAlerts)
+      .where(eq(criticalPanicValueAlerts.tenantId, tenantId))
+      .orderBy(desc(criticalPanicValueAlerts.alertTimestamp));
+    return rows.map((r: CriticalPanicValueAlert) => ({
+      ...r,
+      communicatedToDoctor: Boolean(r.communicatedToDoctor)
+    }));
   }
 
-  async createPanicAlert(data: CriticalPanicValueRecord) {
-    const record: CriticalPanicValueRecord = {
-      id: data.id || 'pan_' + Math.random().toString(36).substring(2, 9),
-      ...data,
-      alertTimestamp: new Date(),
-      createdAt: new Date()
-    };
-    this.panicStore.unshift(record);
-    return record;
-  }
+  async createPanicAlert(data: CriticalPanicValueRecord, tx?: DbClient): Promise<CriticalPanicValueRecord> {
+    const client = tx || getDatabase();
+    const recordId = toValidUuid(data.id, crypto.randomUUID());
+    const [inserted] = await client.insert(criticalPanicValueAlerts).values({
+      id: recordId,
+      tenantId: data.tenantId,
+      partnerId: toValidUuid(data.partnerId, DEFAULT_PARTNER_ID),
+      organizationId: toValidUuid(data.organizationId, DEFAULT_ORG_ID),
+      branchId: toValidUuid(data.branchId, DEFAULT_BRANCH_ID),
+      patientMrn: data.patientMrn,
+      patientName: data.patientName,
+      location: data.location,
+      testName: data.testName,
+      measuredValue: data.measuredValue,
+      referenceNormalRange: data.referenceNormalRange,
+      panicThreshold: data.panicThreshold,
+      category: data.category,
+      urgencyLevel: data.urgencyLevel,
+      clinicalRiskSummary: data.clinicalRiskSummary,
+      communicatedToDoctor: data.communicatedToDoctor ?? true,
+      doctorName: data.doctorName,
+      alertTimestamp: data.alertTimestamp ?? new Date(),
+      acknowledgementTimestamp: data.acknowledgementTimestamp ?? null,
+      createdAt: data.createdAt ?? new Date()
+    }).returning();
 
-  async updatePanicAlert(id: string, updates: Partial<CriticalPanicValueRecord>) {
-    const idx = this.panicStore.findIndex(p => p.id === id);
-    if (idx !== -1) {
-      const current = this.panicStore[idx];
-      if (current) {
-        this.panicStore[idx] = { ...current, ...updates };
-        return this.panicStore[idx];
-      }
+    if (!inserted) {
+      throw new Error('Failed to create critical panic alert');
     }
-    return null;
+
+    return {
+      ...data,
+      ...inserted,
+      tenantId: data.tenantId,
+      communicatedToDoctor: Boolean(inserted.communicatedToDoctor)
+    };
+  }
+
+  async updatePanicAlert(id: string, updates: Partial<CriticalPanicValueRecord>, tx?: DbClient): Promise<CriticalPanicValueRecord | null> {
+    const client = tx || getDatabase();
+    const updateValues: Record<string, unknown> = {};
+    if (updates.acknowledgementTimestamp !== undefined) updateValues['acknowledgementTimestamp'] = updates.acknowledgementTimestamp;
+    if (updates.communicatedToDoctor !== undefined) updateValues['communicatedToDoctor'] = updates.communicatedToDoctor;
+
+    const [updated] = await client.update(criticalPanicValueAlerts)
+      .set(updateValues)
+      .where(eq(criticalPanicValueAlerts.id, id))
+      .returning();
+
+    if (!updated) return null;
+    return {
+      ...updated,
+      communicatedToDoctor: Boolean(updated.communicatedToDoctor)
+    };
   }
 
   // Audit Traces
-  async getAuditTraces(tenantId: string) {
-    return this.auditStore.filter(a => a.tenantId === tenantId);
+  async getAuditTraces(tenantId: string, tx?: DbClient): Promise<CdssAuditTraceRecord[]> {
+    const client = tx || getDatabase();
+    const rows = await client.select().from(cdssAuditTraces)
+      .where(eq(cdssAuditTraces.tenantId, tenantId))
+      .orderBy(desc(cdssAuditTraces.timestamp));
+    return rows.map((r: CdssAuditTrace) => ({
+      ...r,
+      entityId: r.entityId
+    }));
   }
 
-  async appendAuditTrace(data: CdssAuditTraceRecord) {
-    const record: CdssAuditTraceRecord = {
-      id: data.id || 'aud_' + Math.random().toString(36).substring(2, 9),
+  async appendAuditTrace(data: CdssAuditTraceRecord, tx?: DbClient): Promise<CdssAuditTraceRecord> {
+    const client = tx || getDatabase();
+    const recordId = toValidUuid(data.id, crypto.randomUUID());
+    const entityUuid = toValidUuid(data.entityId, crypto.randomUUID());
+    const [inserted] = await client.insert(cdssAuditTraces).values({
+      id: recordId,
+      tenantId: data.tenantId,
+      partnerId: toValidUuid(data.partnerId, DEFAULT_PARTNER_ID),
+      organizationId: toValidUuid(data.organizationId, DEFAULT_ORG_ID),
+      branchId: toValidUuid(data.branchId, DEFAULT_BRANCH_ID),
+      traceNumber: data.traceNumber,
+      action: data.action,
+      entityType: data.entityType,
+      entityId: entityUuid,
+      entityCode: data.entityCode,
+      actorName: data.actorName,
+      actorRole: data.actorRole,
+      justification: data.justification,
+      integrityHash: data.integrityHash,
+      timestamp: data.timestamp ?? new Date()
+    }).returning();
+
+    if (!inserted) {
+      throw new Error('Failed to append CDSS audit trace');
+    }
+
+    return {
       ...data,
-      timestamp: new Date()
+      ...inserted,
+      tenantId: data.tenantId,
+      entityId: inserted.entityId
     };
-    this.auditStore.unshift(record);
-    return record;
   }
 }
+

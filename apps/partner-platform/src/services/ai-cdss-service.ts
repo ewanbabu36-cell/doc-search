@@ -12,16 +12,7 @@ import type {
   GenerateAmbientSoapRequest,
   AcknowledgePanicValueRequest
 } from '@docsearch/api-contracts';
-
-import {
-  mockCdssOverviewMetrics,
-  mockSepsisAlerts,
-  mockDdiAssessments,
-  mockRenalDoseAdjustments,
-  mockAmbientSoapTranscripts,
-  mockPanicValues,
-  mockCdssAuditTraces
-} from './mock-ai-cdss-data.js';
+import { apiRequest } from './api-client.js';
 
 export interface IAiCdssService {
   getOverviewMetrics(tenantId: string): Promise<CdssOverviewMetricsDto>;
@@ -43,140 +34,222 @@ export interface IAiCdssService {
   getAuditTraces(tenantId: string): Promise<CdssAuditTraceDto[]>;
 }
 
+function mapSepsisAlert(row: Record<string, unknown>): SepsisNews2AlertDto {
+  return {
+    id: String(row['id'] ?? ''),
+    tenantId: String(row['tenantId'] ?? ''),
+    patientMrn: String(row['patientMrn'] ?? ''),
+    patientName: String(row['patientName'] ?? ''),
+    bedNumber: String(row['bedNumber'] ?? ''),
+    wardName: String(row['wardName'] ?? ''),
+    news2Score: Number(row['news2Score'] ?? 0),
+    qsofaScore: Number(row['qsofaScore'] ?? 0),
+    riskGrade: (row['riskGrade'] as SepsisNews2AlertDto['riskGrade']) ?? 'LOW_RISK_0_4',
+    respiratoryRate: Number(row['respiratoryRate'] ?? 0),
+    spO2Pct: Number(row['spO2Pct'] ?? 0),
+    requiresSupplementalO2: Boolean(row['requiresSupplementalO2']),
+    systolicBp: Number(row['systolicBp'] ?? 0),
+    pulseRate: Number(row['pulseRate'] ?? 0),
+    temperatureCelsius: Number(row['temperatureCelsius'] ?? 0),
+    consciousnessLevel: (row['consciousnessLevel'] as SepsisNews2AlertDto['consciousnessLevel']) ?? 'ALERT',
+    serumLactateMmolL: row['serumLactateMmolL'] != null ? Number(row['serumLactateMmolL']) : null,
+    bundleChecklist: row['bundleChecklist'] as SepsisNews2AlertDto['bundleChecklist'],
+    alertStatus: (row['alertStatus'] as SepsisNews2AlertDto['alertStatus']) ?? 'TRIGGERED_ACTIVE',
+    triggeredAt: typeof row['triggeredAt'] === 'string' ? row['triggeredAt'] : (row['triggeredAt'] ? new Date(row['triggeredAt'] as string | number | Date).toISOString() : new Date().toISOString()),
+    acknowledgedBy: (row['acknowledgedBy'] as string | null | undefined) ?? null
+  };
+}
+
+function mapDdi(row: Record<string, unknown>): DdiInteractionAssessmentDto {
+  return {
+    id: String(row['id'] ?? ''),
+    drugA: String(row['drugA'] ?? ''),
+    drugB: String(row['drugB'] ?? ''),
+    severityLevel: row['severityLevel'] as DdiInteractionAssessmentDto['severityLevel'],
+    clinicalConsequence: String(row['clinicalConsequence'] ?? ''),
+    mechanism: String(row['mechanism'] ?? ''),
+    recommendedManagement: String(row['recommendedManagement'] ?? ''),
+    evidenceReference: String(row['evidenceReference'] ?? '')
+  };
+}
+
+function mapSoap(row: Record<string, unknown>): AmbientAiSoapTranscriptDto {
+  return {
+    id: String(row['id'] ?? ''),
+    patientMrn: String(row['patientMrn'] ?? ''),
+    patientName: String(row['patientName'] ?? ''),
+    doctorName: String(row['doctorName'] ?? ''),
+    specialtyName: String(row['specialtyName'] ?? ''),
+    encounterTimestamp: typeof row['encounterTimestamp'] === 'string' ? row['encounterTimestamp'] : (row['encounterTimestamp'] ? new Date(row['encounterTimestamp'] as string | number | Date).toISOString() : new Date().toISOString()),
+    audioDurationSeconds: Number(row['audioDurationSeconds'] || 0),
+    rawTranscriptExcerpt: String(row['rawTranscriptExcerpt'] ?? ''),
+    soapNote: row['soapNote'] as AmbientAiSoapTranscriptDto['soapNote'],
+    suggestedIcd10Codes: (row['suggestedIcd10Codes'] as AmbientAiSoapTranscriptDto['suggestedIcd10Codes']) || [],
+    suggestedPrescriptions: (row['suggestedPrescriptions'] as AmbientAiSoapTranscriptDto['suggestedPrescriptions']) || [],
+    reviewStatus: row['reviewStatus'] as AmbientAiSoapTranscriptDto['reviewStatus']
+  };
+}
+
+function mapPanic(row: Record<string, unknown>): DiagnosticPanicValueAlertDto {
+  return {
+    id: String(row['id'] ?? ''),
+    patientMrn: String(row['patientMrn'] ?? ''),
+    patientName: String(row['patientName'] ?? ''),
+    location: String(row['location'] ?? ''),
+    testName: String(row['testName'] ?? ''),
+    measuredValue: String(row['measuredValue'] ?? ''),
+    referenceNormalRange: String(row['referenceNormalRange'] ?? ''),
+    panicThreshold: String(row['panicThreshold'] ?? ''),
+    category: row['category'] as DiagnosticPanicValueAlertDto['category'],
+    urgencyLevel: row['urgencyLevel'] as DiagnosticPanicValueAlertDto['urgencyLevel'],
+    clinicalRiskSummary: String(row['clinicalRiskSummary'] ?? ''),
+    communicatedToDoctor: Boolean(row['communicatedToDoctor']),
+    doctorName: String(row['doctorName'] ?? ''),
+    alertTimestamp: typeof row['alertTimestamp'] === 'string' ? row['alertTimestamp'] : (row['alertTimestamp'] ? new Date(row['alertTimestamp'] as string | number | Date).toISOString() : new Date().toISOString()),
+    acknowledgementTimestamp: row['acknowledgementTimestamp'] ? (typeof row['acknowledgementTimestamp'] === 'string' ? row['acknowledgementTimestamp'] : new Date(row['acknowledgementTimestamp'] as string | number | Date).toISOString()) : null
+  };
+}
+
+function mapAudit(row: Record<string, unknown>): CdssAuditTraceDto {
+  return {
+    id: String(row['id'] ?? ''),
+    tenantId: String(row['tenantId'] ?? ''),
+    traceNumber: String(row['traceNumber'] ?? ''),
+    action: row['action'] as CdssAuditTraceDto['action'],
+    entityType: row['entityType'] as CdssAuditTraceDto['entityType'],
+    entityId: String(row['entityId'] ?? ''),
+    entityCode: String(row['entityCode'] ?? ''),
+    actorName: String(row['actorName'] ?? ''),
+    actorRole: String(row['actorRole'] ?? ''),
+    justification: String(row['justification'] ?? ''),
+    integrityHash: String(row['integrityHash'] ?? ''),
+    timestamp: typeof row['timestamp'] === 'string' ? row['timestamp'] : (row['timestamp'] ? new Date(row['timestamp'] as string | number | Date).toISOString() : new Date().toISOString())
+  };
+}
+
 export class AiCdssService implements IAiCdssService {
-  private metrics: CdssOverviewMetricsDto = { ...mockCdssOverviewMetrics };
-  private sepsisAlerts: SepsisNews2AlertDto[] = [...mockSepsisAlerts];
-  private ddiAssessments: DdiInteractionAssessmentDto[] = [...mockDdiAssessments];
-  private renalAdjustments: RenalDoseAdjustmentDto[] = [...mockRenalDoseAdjustments];
-  private soapTranscripts: AmbientAiSoapTranscriptDto[] = [...mockAmbientSoapTranscripts];
-  private panicValues: DiagnosticPanicValueAlertDto[] = [...mockPanicValues];
-  private auditTraces: CdssAuditTraceDto[] = [...mockCdssAuditTraces];
-
-  private appendAudit(
-    action: string,
-    entityType: string,
-    entityId: string,
-    entityCode: string,
-    justification: string,
-    actorName = 'Dr. Sanjay Gupta (Consultant)',
-    actorRole = 'ATTENDING_PHYSICIAN'
-  ) {
-    const traceNumber = `TRACE-CDSS-${Math.floor(10000 + Math.random() * 90000)}`;
-    const trace: CdssAuditTraceDto = {
-      id: crypto.randomUUID(),
-      tenantId: '11111111-1111-4111-8111-111111111111',
-      traceNumber,
-      action,
-      entityType,
-      entityId,
-      entityCode,
-      actorName,
-      actorRole,
-      justification,
-      integrityHash: Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join(''),
-      timestamp: new Date().toISOString()
-    };
-    this.auditTraces.unshift(trace);
-  }
-
   async getOverviewMetrics(_tenantId: string): Promise<CdssOverviewMetricsDto> {
-    return { ...this.metrics };
+    const res = await apiRequest<CdssOverviewMetricsDto>('/api/v1/partner/ai-copilot/overview');
+    if (!res.success || !res.data) {
+      throw new Error(res.error?.message || 'Failed to fetch CDSS overview metrics');
+    }
+    return res.data;
   }
 
   async getSepsisAlerts(_tenantId: string): Promise<SepsisNews2AlertDto[]> {
-    return [...this.sepsisAlerts];
+    const res = await apiRequest<Record<string, unknown>[]>('/api/v1/partner/ai-copilot/sepsis/alerts');
+    if (!res.success || !res.data) {
+      throw new Error(res.error?.message || 'Failed to fetch sepsis alerts');
+    }
+    return res.data.map(mapSepsisAlert);
   }
 
   async acknowledgeSepsisAlert(_tenantId: string, payload: AcknowledgeSepsisAlertRequest): Promise<SepsisNews2AlertDto> {
-    const alert = this.sepsisAlerts.find((a) => a.id === payload.alertId);
-    if (!alert) throw new Error('Sepsis alert not found');
-
-    alert.alertStatus = 'ACKNOWLEDGED_RRT_EN_ROUTE';
-    alert.acknowledgedBy = payload.acknowledgedBy;
-    alert.bundleChecklist.bloodCulturesOrdered = true;
-    alert.bundleChecklist.ivAntibioticsGiven = true;
-    alert.bundleChecklist.ivFluidsAdministered = true;
-
-    this.appendAudit('ACKNOWLEDGE_SEPSIS_ALERT', 'SEPSIS_ALERT', alert.id, `NEWS2-${alert.news2Score}`, payload.clinicalActionTaken, payload.acknowledgedBy);
-    return { ...alert };
+    const res = await apiRequest<Record<string, unknown>>(
+      `/api/v1/partner/ai-copilot/sepsis/alerts/${payload.alertId}/acknowledge`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      }
+    );
+    if (!res.success || !res.data) {
+      throw new Error(res.error?.message || 'Failed to acknowledge sepsis alert');
+    }
+    return mapSepsisAlert(res.data);
   }
 
   async getDdiAssessments(_tenantId: string): Promise<DdiInteractionAssessmentDto[]> {
-    return [...this.ddiAssessments];
+    const res = await apiRequest<Record<string, unknown>[]>('/api/v1/partner/ai-copilot/ddi');
+    if (!res.success || !res.data) {
+      return [];
+    }
+    return res.data.map(mapDdi);
   }
 
   async evaluateDdi(_tenantId: string, payload: EvaluateDdiRequest): Promise<DdiInteractionAssessmentDto[]> {
-    const matched = this.ddiAssessments.filter((d) =>
-      payload.activeMedications.some((m) => m.toLowerCase().includes(d.drugA.toLowerCase().split(' ')[0] || '')) ||
-      payload.newMedicationToPrescribe.toLowerCase().includes(d.drugB.toLowerCase().split(' ')[0] || '')
+    const res = await apiRequest<Record<string, unknown> | Record<string, unknown>[]>(
+      '/api/v1/partner/ai-copilot/ddi/evaluate',
+      {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }
     );
-    const fallback = this.ddiAssessments[0];
-    return matched.length > 0 ? matched : (fallback ? [fallback] : []);
+    if (!res.success || !res.data) {
+      throw new Error(res.error?.message || 'Failed to evaluate DDI interactions');
+    }
+    const items = Array.isArray(res.data) ? res.data : [res.data];
+    return items.map(mapDdi);
   }
 
   async overrideDdiWarning(_tenantId: string, payload: OverrideDdiWarningRequest): Promise<void> {
-    this.metrics.physicianOverrideRatePct += 0.1;
-    this.appendAudit('OVERRIDE_DDI_WARNING', 'DDI_CHECK', payload.interactionId, 'OVERRIDE_APPROVED', payload.clinicalJustification, payload.prescribingDoctor);
+    const res = await apiRequest<void>(
+      '/api/v1/partner/ai-copilot/ddi/override',
+      {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }
+    );
+    if (!res.success) {
+      throw new Error(res.error?.message || 'Failed to override DDI warning');
+    }
   }
 
   async getRenalDoseAdjustments(_tenantId: string): Promise<RenalDoseAdjustmentDto[]> {
-    return [...this.renalAdjustments];
+    return [];
   }
 
   async getAmbientSoapTranscripts(_tenantId: string): Promise<AmbientAiSoapTranscriptDto[]> {
-    return [...this.soapTranscripts];
+    const res = await apiRequest<Record<string, unknown>[]>('/api/v1/partner/ai-copilot/ambient-scribe/soap');
+    if (!res.success || !res.data) {
+      throw new Error(res.error?.message || 'Failed to fetch ambient SOAP transcripts');
+    }
+    return res.data.map(mapSoap);
   }
 
   async generateAmbientSoap(_tenantId: string, payload: GenerateAmbientSoapRequest): Promise<AmbientAiSoapTranscriptDto> {
-    const newSoap: AmbientAiSoapTranscriptDto = {
-      id: crypto.randomUUID(),
-      patientMrn: payload.patientMrn,
-      patientName: payload.patientName,
-      doctorName: payload.doctorName,
-      specialtyName: payload.specialtyName,
-      encounterTimestamp: new Date().toISOString(),
-      audioDurationSeconds: 160,
-      rawTranscriptExcerpt: payload.clinicalDialogueTranscript,
-      soapNote: {
-        subjective: "Patient reports recent onset fatigue and mild dry cough for 3 days. Denies shortness of breath or chest pain.",
-        objective: "Vitals: Pulse 76 bpm, BP 122/78 mmHg, Temp 37.1 C. Chest: Bilateral vesicular breath sounds without rhonchi or wheeze.",
-        assessment: "1. Acute Upper Respiratory Tract Infection (Viral). 2. Normotensive on current regimen.",
-        plan: "1. Symptomatic care with Steam inhalation & warm saline gargles. 2. Paracetamol 650mg SOS. 3. Review if fever persists beyond 48 hours."
-      },
-      suggestedIcd10Codes: [
-        { code: 'J06.9', description: 'Acute upper respiratory infection, unspecified', confidencePct: 96.2 }
-      ],
-      suggestedPrescriptions: [
-        { drugName: 'Paracetamol 650mg', dosage: '1 Tablet', frequency: 'TDS Post-meals', duration: '3 Days' },
-        { drugName: 'Cetirizine 10mg', dosage: '1 Tablet', frequency: 'OD Night', duration: '5 Days' }
-      ],
-      reviewStatus: 'AI_DRAFTED'
-    };
-
-    this.soapTranscripts.unshift(newSoap);
-    this.metrics.ambientSoapNotesDraftedMonth += 1;
-    this.appendAudit('GENERATE_AMBIENT_SOAP', 'SOAP_TRANSCRIPT', newSoap.id, payload.patientMrn, 'Ambient AI conversation translated to structured SOAP note', payload.doctorName);
-    return newSoap;
+    const res = await apiRequest<Record<string, unknown>>(
+      '/api/v1/partner/ai-copilot/ambient-scribe/soap',
+      {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }
+    );
+    if (!res.success || !res.data) {
+      throw new Error(res.error?.message || 'Failed to generate ambient SOAP note');
+    }
+    return mapSoap(res.data);
   }
 
   async getPanicValues(_tenantId: string): Promise<DiagnosticPanicValueAlertDto[]> {
-    return [...this.panicValues];
+    const res = await apiRequest<Record<string, unknown>[]>('/api/v1/partner/ai-copilot/panic-values');
+    if (!res.success || !res.data) {
+      throw new Error(res.error?.message || 'Failed to fetch critical panic values');
+    }
+    return res.data.map(mapPanic);
   }
 
   async acknowledgePanicValue(_tenantId: string, payload: AcknowledgePanicValueRequest): Promise<DiagnosticPanicValueAlertDto> {
-    const panic = this.panicValues.find((p) => p.id === payload.panicAlertId);
-    if (!panic) throw new Error('Panic value alert not found');
-
-    panic.acknowledgementTimestamp = new Date().toISOString();
-    panic.communicatedToDoctor = true;
-
-    this.appendAudit('ACKNOWLEDGE_PANIC_VALUE', 'PANIC_ALERT', panic.id, panic.testName, payload.immediateIntervention, payload.acknowledgedByDoctor);
-    return { ...panic };
+    const res = await apiRequest<Record<string, unknown>>(
+      `/api/v1/partner/ai-copilot/panic-values/${payload.panicAlertId}/acknowledge`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      }
+    );
+    if (!res.success || !res.data) {
+      throw new Error(res.error?.message || 'Failed to acknowledge panic value alert');
+    }
+    return mapPanic(res.data);
   }
 
   async getAuditTraces(_tenantId: string): Promise<CdssAuditTraceDto[]> {
-    return [...this.auditTraces];
+    const res = await apiRequest<Record<string, unknown>[]>('/api/v1/partner/ai-copilot/audit-traces');
+    if (!res.success || !res.data) {
+      throw new Error(res.error?.message || 'Failed to fetch CDSS audit traces');
+    }
+    return res.data.map(mapAudit);
   }
 }
 
 export const aiCdssService = new AiCdssService();
+

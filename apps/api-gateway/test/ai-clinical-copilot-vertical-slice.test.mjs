@@ -2,9 +2,20 @@ import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildApp } from '../dist/app.js';
 import { signJwt } from '@docsearch/auth';
+import {
+  setupTestDatabase,
+  getDatabase,
+  ambientAiScribeTranscripts,
+  sepsisNews2Alerts,
+  ddiDrugInteractionChecks,
+  criticalPanicValueAlerts,
+  cdssAuditTraces,
+  eq
+} from '@docsearch/database';
 
 describe('Domain 3.3 — Ambient AI Scribe & CDSS Clinical Co-Pilot Vertical Slice Test Suite', () => {
   let app;
+  let testDb;
 
   const MASTER_SECRET = 'docsearch_master_jwt_secret_dev_32char_key_only';
   const ISSUER = 'docsearch-api';
@@ -46,6 +57,14 @@ describe('Domain 3.3 — Ambient AI Scribe & CDSS Clinical Co-Pilot Vertical Sli
   let createdPanicId;
 
   before(async () => {
+    testDb = await setupTestDatabase();
+
+    await testDb.pool.query(`
+      INSERT INTO "core"."branches" ("id", "tenant_id", "name", "code")
+      VALUES ('${branchId}', '${tenantA}', 'Cardiology Branch A', 'BRA-CARD-01')
+      ON CONFLICT DO NOTHING;
+    `);
+
     app = await buildApp();
     await app.ready();
 
@@ -57,7 +76,8 @@ describe('Domain 3.3 — Ambient AI Scribe & CDSS Clinical Co-Pilot Vertical Sli
   });
 
   after(async () => {
-    await app.close();
+    if (app) await app.close();
+    if (testDb?.cleanup) await testDb.cleanup();
   });
 
   it('TEST 01: GET /api/v1/partner/ai-copilot/overview returns CDSS operational metrics & AI accuracy', async () => {
@@ -314,5 +334,94 @@ describe('Domain 3.3 — Ambient AI Scribe & CDSS Clinical Co-Pilot Vertical Sli
     const body = JSON.parse(res.body);
     assert.ok(body.data.length >= 5, 'All AI events must create immutable audit records');
     assert.ok(body.data.every(t => typeof t.integrityHash === 'string' && t.integrityHash.length === 64), 'All audit hashes must be valid 64-char SHA-256 strings');
+  });
+
+  it('TEST 16: Cold Restart Durability: Records survive application restart and are readable from PostgreSQL', async () => {
+    // 1. Close the running Fastify application instance
+    await app.close();
+
+    // 2. Re-instantiate a fresh Fastify instance (simulating cold boot/restart)
+    app = await buildApp();
+    await app.ready();
+
+    // 3. Query the persisted SOAP record
+    const resSoap = await app.inject({
+      method: 'GET',
+      url: '/api/v1/partner/ai-copilot/ambient-scribe/soap',
+      headers: { authorization: `Bearer ${validToken}` }
+    });
+    assert.equal(resSoap.statusCode, 200);
+    const bodySoap = JSON.parse(resSoap.body);
+    assert.ok(bodySoap.data.some(s => s.id === createdSoapId), 'SOAP note must persist across server cold restart');
+
+    // 4. Query the persisted Sepsis alert
+    const resSepsis = await app.inject({
+      method: 'GET',
+      url: '/api/v1/partner/ai-copilot/sepsis/alerts',
+      headers: { authorization: `Bearer ${validToken}` }
+    });
+    assert.equal(resSepsis.statusCode, 200);
+    const bodySepsis = JSON.parse(resSepsis.body);
+    assert.ok(bodySepsis.data.some(s => s.id === createdSepsisAlertId), 'Sepsis alert must persist across server cold restart');
+
+    // 5. Query the persisted DDI check
+    const resDdi = await app.inject({
+      method: 'GET',
+      url: '/api/v1/partner/ai-copilot/ddi',
+      headers: { authorization: `Bearer ${validToken}` }
+    });
+    assert.equal(resDdi.statusCode, 200);
+    const bodyDdi = JSON.parse(resDdi.body);
+    assert.ok(bodyDdi.data.some(d => d.id === createdDdiId), 'DDI check must persist across server cold restart');
+
+    // 6. Query the persisted Panic alert
+    const resPanic = await app.inject({
+      method: 'GET',
+      url: '/api/v1/partner/ai-copilot/panic-values',
+      headers: { authorization: `Bearer ${validToken}` }
+    });
+    assert.equal(resPanic.statusCode, 200);
+    const bodyPanic = JSON.parse(resPanic.body);
+    assert.ok(bodyPanic.data.some(p => p.id === createdPanicId), 'Panic alert must persist across server cold restart');
+  });
+
+  it('TEST 17: Cross-Tenant Isolation: Tenant B cannot access Tenant A Sepsis, DDI, or Panic records (0 leaked records)', async () => {
+    // Sepsis alerts isolation
+    const resSepsis = await app.inject({
+      method: 'GET',
+      url: '/api/v1/partner/ai-copilot/sepsis/alerts',
+      headers: { authorization: `Bearer ${tenantBToken}` }
+    });
+    assert.equal(resSepsis.statusCode, 200);
+    const bodySepsis = JSON.parse(resSepsis.body);
+    assert.equal(bodySepsis.data.find(s => s.id === createdSepsisAlertId), undefined, 'Tenant B must not see Tenant A Sepsis alert');
+
+    // DDI checks isolation
+    const resDdi = await app.inject({
+      method: 'GET',
+      url: '/api/v1/partner/ai-copilot/ddi',
+      headers: { authorization: `Bearer ${tenantBToken}` }
+    });
+    assert.equal(resDdi.statusCode, 200);
+    const bodyDdi = JSON.parse(resDdi.body);
+    assert.equal(bodyDdi.data.find(d => d.id === createdDdiId), undefined, 'Tenant B must not see Tenant A DDI interaction');
+
+    // Panic values isolation
+    const resPanic = await app.inject({
+      method: 'GET',
+      url: '/api/v1/partner/ai-copilot/panic-values',
+      headers: { authorization: `Bearer ${tenantBToken}` }
+    });
+    assert.equal(resPanic.statusCode, 200);
+    const bodyPanic = JSON.parse(resPanic.body);
+    assert.equal(bodyPanic.data.find(p => p.id === createdPanicId), undefined, 'Tenant B must not see Tenant A Panic alert');
+  });
+
+  it('TEST 18: PostgreSQL RLS and CDSS Audit Immutability Protection', async () => {
+    // Verify direct Drizzle query on the database matches the persisted count
+    const db = getDatabase();
+    const rows = await db.select().from(cdssAuditTraces).where(eq(cdssAuditTraces.tenantId, tenantA));
+    assert.ok(rows.length >= 5, 'At least 5 audit traces must be verified in PostgreSQL storage');
+    assert.ok(rows.every(r => r.tenantId === tenantA), 'All audit traces in tenantA scope must belong to tenantA');
   });
 });

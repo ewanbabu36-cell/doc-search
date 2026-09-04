@@ -34,4 +34,14 @@ describe('Database Migration & RLS Integrity Gate', () => {
     assert.ok(mig42.includes('p_radiology_orders_isolation'), '0042 must isolate radiology orders');
     assert.ok(mig42.includes('p_dietary_orders_isolation'), '0042 must isolate dietary orders');
   });
+
+  it('RLS Migration 0044 must enforce tenant and branch policies on clinical AI tables and CDSS audit immutability', () => {
+    const mig44 = fs.readFileSync(path.resolve('packages/database/migrations/0044_clinical_ai_rls.sql'), 'utf8');
+    assert.ok(mig44.includes('p_ambient_ai_scribe_transcripts_isolation'), '0044 must isolate ambient scribe transcripts');
+    assert.ok(mig44.includes('p_sepsis_news2_alerts_isolation'), '0044 must isolate sepsis news2 alerts');
+    assert.ok(mig44.includes('p_ddi_drug_interaction_checks_isolation'), '0044 must isolate ddi checks');
+    assert.ok(mig44.includes('p_critical_panic_value_alerts_isolation'), '0044 must isolate panic alerts');
+    assert.ok(mig44.includes('p_cdss_audit_traces_isolation'), '0044 must isolate cdss audit traces');
+    assert.ok(mig44.includes('trg_cdss_audit_traces_immutability'), '0044 must protect cdss audit traces immutability');
+  });
 });

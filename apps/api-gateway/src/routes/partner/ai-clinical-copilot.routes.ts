@@ -10,8 +10,7 @@ export const aiClinicalCopilotRoutes: FastifyPluginAsync = async (app) => {
     '/api/v1/partner/ai-copilot/overview',
     { preHandler: [authenticate] },
     async (request, reply) => {
-      const { tenantId } = request.session;
-      const data = await service.getOverviewMetrics(tenantId);
+      const data = await service.getOverviewMetrics(request.session);
       return reply.send({ success: true, data });
     }
   );
@@ -21,9 +20,8 @@ export const aiClinicalCopilotRoutes: FastifyPluginAsync = async (app) => {
     '/api/v1/partner/ai-copilot/ambient-scribe/soap',
     { preHandler: [authenticate] },
     async (request, reply) => {
-      const { tenantId, branchId, userId } = request.session;
       const payload = (request.body || {}) as Record<string, unknown>;
-      const data = await service.generateSoapNoteFromTranscript(tenantId, branchId || 'branch_default', userId, payload);
+      const data = await service.generateSoapNoteFromTranscript(request.session, payload);
       return reply.status(201).send({ success: true, data });
     }
   );
@@ -32,8 +30,7 @@ export const aiClinicalCopilotRoutes: FastifyPluginAsync = async (app) => {
     '/api/v1/partner/ai-copilot/ambient-scribe/soap',
     { preHandler: [authenticate] },
     async (request, reply) => {
-      const { tenantId } = request.session;
-      const data = await service.getSoapNotes(tenantId);
+      const data = await service.getSoapNotes(request.session);
       return reply.send({ success: true, data });
     }
   );
@@ -42,9 +39,8 @@ export const aiClinicalCopilotRoutes: FastifyPluginAsync = async (app) => {
     '/api/v1/partner/ai-copilot/ambient-scribe/soap/:id/approve',
     { preHandler: [authenticate] },
     async (request, reply) => {
-      const { tenantId, userId } = request.session;
       const { id } = request.params as { id: string };
-      const data = await service.approveSoapNote(tenantId, id, userId);
+      const data = await service.approveSoapNote(request.session, id);
       return reply.send({ success: true, data });
     }
   );
@@ -54,9 +50,8 @@ export const aiClinicalCopilotRoutes: FastifyPluginAsync = async (app) => {
     '/api/v1/partner/ai-copilot/sepsis/evaluate',
     { preHandler: [authenticate] },
     async (request, reply) => {
-      const { tenantId, branchId, userId } = request.session;
       const payload = (request.body || {}) as Record<string, unknown>;
-      const data = await service.evaluateSepsisRisk(tenantId, branchId || 'branch_default', userId, payload);
+      const data = await service.evaluateSepsisRisk(request.session, payload);
       return reply.status(201).send({ success: true, data });
     }
   );
@@ -65,8 +60,7 @@ export const aiClinicalCopilotRoutes: FastifyPluginAsync = async (app) => {
     '/api/v1/partner/ai-copilot/sepsis/alerts',
     { preHandler: [authenticate] },
     async (request, reply) => {
-      const { tenantId } = request.session;
-      const data = await service.getSepsisAlerts(tenantId);
+      const data = await service.getSepsisAlerts(request.session);
       return reply.send({ success: true, data });
     }
   );
@@ -75,10 +69,9 @@ export const aiClinicalCopilotRoutes: FastifyPluginAsync = async (app) => {
     '/api/v1/partner/ai-copilot/sepsis/alerts/:id/acknowledge',
     { preHandler: [authenticate] },
     async (request, reply) => {
-      const { tenantId, userId } = request.session;
       const { id } = request.params as { id: string };
       const payload = (request.body || {}) as Record<string, unknown>;
-      const data = await service.acknowledgeSepsisAlert(tenantId, id, userId, payload);
+      const data = await service.acknowledgeSepsisAlert(request.session, id, payload);
       return reply.send({ success: true, data });
     }
   );
@@ -88,10 +81,18 @@ export const aiClinicalCopilotRoutes: FastifyPluginAsync = async (app) => {
     '/api/v1/partner/ai-copilot/ddi/evaluate',
     { preHandler: [authenticate] },
     async (request, reply) => {
-      const { tenantId, branchId, userId } = request.session;
       const payload = (request.body || {}) as Record<string, unknown>;
-      const data = await service.evaluateDdi(tenantId, branchId || 'branch_default', userId, payload);
+      const data = await service.evaluateDdi(request.session, payload);
       return reply.status(200).send({ success: true, data });
+    }
+  );
+
+  app.get(
+    '/api/v1/partner/ai-copilot/ddi',
+    { preHandler: [authenticate] },
+    async (request, reply) => {
+      const data = await service.getDdiChecks(request.session);
+      return reply.send({ success: true, data });
     }
   );
 
@@ -99,10 +100,9 @@ export const aiClinicalCopilotRoutes: FastifyPluginAsync = async (app) => {
     '/api/v1/partner/ai-copilot/ddi/override',
     { preHandler: [authenticate] },
     async (request, reply) => {
-      const { tenantId, userId } = request.session;
       const payload = (request.body || {}) as Record<string, unknown>;
       const interactionId = String(payload['interactionId'] || '');
-      const data = await service.overrideDdiWarning(tenantId, interactionId, userId, payload);
+      const data = await service.overrideDdiWarning(request.session, interactionId, payload);
       return reply.status(200).send({ success: true, data });
     }
   );
@@ -112,9 +112,8 @@ export const aiClinicalCopilotRoutes: FastifyPluginAsync = async (app) => {
     '/api/v1/partner/ai-copilot/panic-values',
     { preHandler: [authenticate] },
     async (request, reply) => {
-      const { tenantId, branchId, userId } = request.session;
       const payload = (request.body || {}) as Record<string, unknown>;
-      const data = await service.reportPanicValue(tenantId, branchId || 'branch_default', userId, payload);
+      const data = await service.reportPanicValue(request.session, payload);
       return reply.status(201).send({ success: true, data });
     }
   );
@@ -123,8 +122,7 @@ export const aiClinicalCopilotRoutes: FastifyPluginAsync = async (app) => {
     '/api/v1/partner/ai-copilot/panic-values',
     { preHandler: [authenticate] },
     async (request, reply) => {
-      const { tenantId } = request.session;
-      const data = await service.getPanicAlerts(tenantId);
+      const data = await service.getPanicAlerts(request.session);
       return reply.send({ success: true, data });
     }
   );
@@ -133,10 +131,9 @@ export const aiClinicalCopilotRoutes: FastifyPluginAsync = async (app) => {
     '/api/v1/partner/ai-copilot/panic-values/:id/acknowledge',
     { preHandler: [authenticate] },
     async (request, reply) => {
-      const { tenantId, userId } = request.session;
       const { id } = request.params as { id: string };
       const payload = (request.body || {}) as Record<string, unknown>;
-      const data = await service.acknowledgePanicValue(tenantId, id, userId, payload);
+      const data = await service.acknowledgePanicValue(request.session, id, payload);
       return reply.send({ success: true, data });
     }
   );
@@ -146,9 +143,9 @@ export const aiClinicalCopilotRoutes: FastifyPluginAsync = async (app) => {
     '/api/v1/partner/ai-copilot/audit-traces',
     { preHandler: [authenticate] },
     async (request, reply) => {
-      const { tenantId } = request.session;
-      const data = await service.getAuditTraces(tenantId);
+      const data = await service.getAuditTraces(request.session);
       return reply.send({ success: true, data });
     }
   );
 };
+
