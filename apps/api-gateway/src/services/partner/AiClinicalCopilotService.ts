@@ -133,7 +133,7 @@ export class AiClinicalCopilotService {
     const actorIdResolved = session.userId || actorId || 'ATTENDING_PHYSICIAN';
 
     return withSecurityContext(getDatabase(), session, async (tx) => {
-      const updated = await this.repo.updateSoapNote(soapId, {
+      const updated = await this.repo.updateSoapNote(session.tenantId, soapId, {
         reviewStatus: 'PHYSICIAN_APPROVED'
       }, tx);
 
@@ -293,7 +293,7 @@ export class AiClinicalCopilotService {
     }
 
     return withSecurityContext(getDatabase(), session, async (tx) => {
-      const updated = await this.repo.updateSepsisAlert(alertId, {
+      const updated = await this.repo.updateSepsisAlert(session.tenantId, alertId, {
         alertStatus: 'ACKNOWLEDGED_RRT_EN_ROUTE',
         acknowledgedBy: actorIdResolved,
         bundleChecklist: {
@@ -437,7 +437,7 @@ export class AiClinicalCopilotService {
     }
 
     return withSecurityContext(getDatabase(), session, async (tx) => {
-      const updated = await this.repo.updateDdiCheck(interactionId, {
+      const updated = await this.repo.updateDdiCheck(session.tenantId, interactionId, {
         wasOverridden: true,
         overrideJustification: justification
       }, tx);
@@ -550,7 +550,7 @@ export class AiClinicalCopilotService {
     }
 
     return withSecurityContext(getDatabase(), session, async (tx) => {
-      const updated = await this.repo.updatePanicAlert(panicId, {
+      const updated = await this.repo.updatePanicAlert(session.tenantId, panicId, {
         acknowledgementTimestamp: new Date()
       }, tx);
 

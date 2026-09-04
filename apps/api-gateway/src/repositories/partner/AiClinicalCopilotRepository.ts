@@ -264,7 +264,7 @@ export class AiClinicalCopilotRepository {
     };
   }
 
-  async updateSoapNote(id: string, updates: Partial<AmbientAiSoapRecord>, tx?: DbClient): Promise<AmbientAiSoapRecord | null> {
+  async updateSoapNote(tenantId: string, id: string, updates: Partial<AmbientAiSoapRecord>, tx?: DbClient): Promise<AmbientAiSoapRecord | null> {
     const client = tx || getDatabase();
     const updateValues: Record<string, unknown> = {};
     if (updates.reviewStatus !== undefined) updateValues['reviewStatus'] = updates.reviewStatus;
@@ -274,7 +274,7 @@ export class AiClinicalCopilotRepository {
 
     const [updated] = await client.update(ambientAiScribeTranscripts)
       .set(updateValues)
-      .where(eq(ambientAiScribeTranscripts.id, id))
+      .where(and(eq(ambientAiScribeTranscripts.tenantId, tenantId), eq(ambientAiScribeTranscripts.id, id)))
       .returning();
 
     if (!updated) return null;
@@ -346,7 +346,7 @@ export class AiClinicalCopilotRepository {
     };
   }
 
-  async updateSepsisAlert(id: string, updates: Partial<SepsisNews2AlertRecord>, tx?: DbClient): Promise<SepsisNews2AlertRecord | null> {
+  async updateSepsisAlert(tenantId: string, id: string, updates: Partial<SepsisNews2AlertRecord>, tx?: DbClient): Promise<SepsisNews2AlertRecord | null> {
     const client = tx || getDatabase();
     const updateValues: Record<string, unknown> = {};
     if (updates.alertStatus !== undefined) updateValues['alertStatus'] = updates.alertStatus;
@@ -355,7 +355,7 @@ export class AiClinicalCopilotRepository {
 
     const [updated] = await client.update(sepsisNews2Alerts)
       .set(updateValues)
-      .where(eq(sepsisNews2Alerts.id, id))
+      .where(and(eq(sepsisNews2Alerts.tenantId, tenantId), eq(sepsisNews2Alerts.id, id)))
       .returning();
 
     if (!updated) return null;
@@ -413,7 +413,7 @@ export class AiClinicalCopilotRepository {
     };
   }
 
-  async updateDdiCheck(id: string, updates: Partial<DdiInteractionCheckRecord>, tx?: DbClient): Promise<DdiInteractionCheckRecord | null> {
+  async updateDdiCheck(tenantId: string, id: string, updates: Partial<DdiInteractionCheckRecord>, tx?: DbClient): Promise<DdiInteractionCheckRecord | null> {
     const client = tx || getDatabase();
     const updateValues: Record<string, unknown> = {};
     if (updates.wasOverridden !== undefined) updateValues['wasOverridden'] = updates.wasOverridden;
@@ -421,7 +421,7 @@ export class AiClinicalCopilotRepository {
 
     const [updated] = await client.update(ddiDrugInteractionChecks)
       .set(updateValues)
-      .where(eq(ddiDrugInteractionChecks.id, id))
+      .where(and(eq(ddiDrugInteractionChecks.tenantId, tenantId), eq(ddiDrugInteractionChecks.id, id)))
       .returning();
 
     if (!updated) return null;
@@ -481,7 +481,7 @@ export class AiClinicalCopilotRepository {
     };
   }
 
-  async updatePanicAlert(id: string, updates: Partial<CriticalPanicValueRecord>, tx?: DbClient): Promise<CriticalPanicValueRecord | null> {
+  async updatePanicAlert(tenantId: string, id: string, updates: Partial<CriticalPanicValueRecord>, tx?: DbClient): Promise<CriticalPanicValueRecord | null> {
     const client = tx || getDatabase();
     const updateValues: Record<string, unknown> = {};
     if (updates.acknowledgementTimestamp !== undefined) updateValues['acknowledgementTimestamp'] = updates.acknowledgementTimestamp;
@@ -489,7 +489,7 @@ export class AiClinicalCopilotRepository {
 
     const [updated] = await client.update(criticalPanicValueAlerts)
       .set(updateValues)
-      .where(eq(criticalPanicValueAlerts.id, id))
+      .where(and(eq(criticalPanicValueAlerts.tenantId, tenantId), eq(criticalPanicValueAlerts.id, id)))
       .returning();
 
     if (!updated) return null;

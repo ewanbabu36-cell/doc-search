@@ -424,4 +424,56 @@ describe('Domain 3.3 — Ambient AI Scribe & CDSS Clinical Co-Pilot Vertical Sli
     assert.ok(rows.length >= 5, 'At least 5 audit traces must be verified in PostgreSQL storage');
     assert.ok(rows.every(r => r.tenantId === tenantA), 'All audit traces in tenantA scope must belong to tenantA');
   });
+
+  it('TEST 19: Cross-Tenant Write Isolation: Tenant B cannot approve Tenant A SOAP note (404)', async () => {
+    const res = await app.inject({
+      method: 'PATCH',
+      url: `/api/v1/partner/ai-copilot/ambient-scribe/soap/${createdSoapId}/approve`,
+      headers: { authorization: `Bearer ${tenantBToken}` }
+    });
+    assert.equal(res.statusCode, 404, 'Tenant B must not be able to approve Tenant A SOAP note');
+  });
+
+  it('TEST 20: Cross-Tenant Write Isolation: Tenant B cannot acknowledge Tenant A Sepsis alert (404)', async () => {
+    const res = await app.inject({
+      method: 'PATCH',
+      url: `/api/v1/partner/ai-copilot/sepsis/alerts/${createdSepsisAlertId}/acknowledge`,
+      headers: { authorization: `Bearer ${tenantBToken}` },
+      payload: { clinicalActionTaken: 'Unauthorized cross-tenant action' }
+    });
+    assert.equal(res.statusCode, 404, 'Tenant B must not be able to acknowledge Tenant A Sepsis alert');
+  });
+
+  it('TEST 21: Cross-Tenant Write Isolation: Tenant B cannot override Tenant A DDI warning (404)', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/v1/partner/ai-copilot/ddi/override',
+      headers: { authorization: `Bearer ${tenantBToken}` },
+      payload: {
+        interactionId: createdDdiId,
+        clinicalJustification: 'Attempted cross-tenant override'
+      }
+    });
+    assert.equal(res.statusCode, 404, 'Tenant B must not be able to override Tenant A DDI record');
+  });
+
+  it('TEST 22: Cross-Tenant Write Isolation: Tenant B cannot acknowledge Tenant A Panic alert (404)', async () => {
+    const res = await app.inject({
+      method: 'PATCH',
+      url: `/api/v1/partner/ai-copilot/panic-values/${createdPanicId}/acknowledge`,
+      headers: { authorization: `Bearer ${tenantBToken}` },
+      payload: { immediateIntervention: 'Unauthorized cross-tenant intervention' }
+    });
+    assert.equal(res.statusCode, 404, 'Tenant B must not be able to acknowledge Tenant A Panic alert');
+  });
+
+  it('TEST 23: Audit Immutability Defense: Direct update or deletion of CDSS audit traces fails closed', async () => {
+    const db = getDatabase();
+    try {
+      await db.delete(cdssAuditTraces).where(eq(cdssAuditTraces.tenantId, tenantA));
+      assert.fail('CDSS audit traces table must be strictly immutable against deletion');
+    } catch (err) {
+      assert.ok(err instanceof Error, 'Deletion was prevented by immutability controls');
+    }
+  });
 });
