@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { buildApp } from '../dist/app.js';
 import { signJwt } from '@docsearch/auth';
 import { setupTestDatabase, TEST_SEEDS, patients, patientContacts, eq, and } from '@docsearch/database';
+import { clinicalWorkflowRepository } from '../dist/repositories/partner/ClinicalWorkflowRepository.js';
 
 describe('PHASE 8 — PATIENT PHONE DEDUPLICATION & CONTACT PERSISTENCE', () => {
   let app;
@@ -477,7 +478,17 @@ describe('PHASE 8 — PATIENT PHONE DEDUPLICATION & CONTACT PERSISTENCE', () => 
     const patientIdB = JSON.parse(regB.body).data.id;
     assert.equal(patientIdA, patientIdB, 'Both concurrent requests must resolve to the identical patient ID');
 
-    // Verify only one contact row was created
+    // Verify exactly one patient identity exists in patients table
+    const registeredPatients = await dbRef
+      .select()
+      .from(patients)
+      .where(and(
+        eq(patients.tenantId, tenantA),
+        eq(patients.id, patientIdA)
+      ));
+    assert.equal(registeredPatients.length, 1, 'Exactly one patient identity must exist in database');
+
+    // Verify exactly one contact row was created
     const contacts = await dbRef
       .select()
       .from(patientContacts)
@@ -486,6 +497,7 @@ describe('PHASE 8 — PATIENT PHONE DEDUPLICATION & CONTACT PERSISTENCE', () => 
         eq(patientContacts.primaryMobile, '+919876577777')
       ));
     assert.equal(contacts.length, 1, 'Exactly one contact row must exist in database');
+    assert.equal(contacts[0].patientId, patientIdA, 'Contact must be bound to authoritative patient ID');
   });
 
   // ADVERSARIAL TEST 15: Invalid phone on update returns 400 Bad Request
@@ -499,5 +511,34 @@ describe('PHASE 8 — PATIENT PHONE DEDUPLICATION & CONTACT PERSISTENCE', () => 
       }
     });
     assert.equal(res.statusCode, 400);
+  });
+
+  // ADVERSARIAL TEST 16: Transaction rollback on failure ensures no orphan patient or contact
+  it('ADVERSARIAL TEST 16: Transaction rollback on failure ensures no orphan patient or contact', async () => {
+    const invalidTenantId = '00000000-0000-0000-0000-000000000000';
+    await assert.rejects(
+      async () => {
+        await clinicalWorkflowRepository.createPatient({
+          tenantId: invalidTenantId,
+          firstName: 'Invalid',
+          lastName: 'Tenant',
+          gender: 'OTHER',
+          mobileNumber: '9876500099'
+        });
+      },
+      /Database persistence failed/
+    );
+
+    const [orphanPatient] = await dbRef
+      .select()
+      .from(patients)
+      .where(eq(patients.tenantId, invalidTenantId));
+    assert.equal(orphanPatient, undefined, 'No patient must exist on transaction failure');
+
+    const [orphanContact] = await dbRef
+      .select()
+      .from(patientContacts)
+      .where(eq(patientContacts.tenantId, invalidTenantId));
+    assert.equal(orphanContact, undefined, 'No contact must exist on transaction failure');
   });
 });

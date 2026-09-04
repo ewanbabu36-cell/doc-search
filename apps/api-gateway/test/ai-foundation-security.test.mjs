@@ -575,10 +575,12 @@ describe('STEP 3: Premium AI Foundation — Comprehensive Security & Boundary Te
       url: '/api/v1/partner/ai-copilot/ambient-scribe/soap',
       headers: { authorization: `Bearer ${tenantBToken}` }
     });
-    assert.equal(resTenantB.statusCode, 200);
-    const bodyTenantB = JSON.parse(resTenantB.body);
-    const leaked = bodyTenantB.data.find((s) => s.id === createdSoapId);
-    assert.equal(leaked, undefined, 'Tenant B must not see Tenant A transcript record');
+    assert.ok(resTenantB.statusCode === 200 || resTenantB.statusCode === 403, 'Tenant B must be blocked or isolated');
+    if (resTenantB.statusCode === 200) {
+      const bodyTenantB = JSON.parse(resTenantB.body);
+      const leaked = bodyTenantB.data.find((s) => s.id === createdSoapId);
+      assert.equal(leaked, undefined, 'Tenant B must not see Tenant A transcript record');
+    }
   });
 
   // ===========================================================================

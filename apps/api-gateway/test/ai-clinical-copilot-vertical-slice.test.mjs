@@ -4,6 +4,7 @@ import { buildApp } from '../dist/app.js';
 import { signJwt } from '@docsearch/auth';
 import {
   setupTestDatabase,
+  TEST_SEEDS,
   getDatabase,
   ambientAiScribeTranscripts,
   sepsisNews2Alerts,
@@ -62,6 +63,17 @@ describe('Domain 3.3 — Ambient AI Scribe & CDSS Clinical Co-Pilot Vertical Sli
     await testDb.pool.query(`
       INSERT INTO "core"."branches" ("id", "tenant_id", "name", "code")
       VALUES ('${branchId}', '${tenantA}', 'Cardiology Branch A', 'BRA-CARD-01')
+      ON CONFLICT DO NOTHING;
+
+      INSERT INTO "company"."features" ("id", "code", "name", "description", "category", "status")
+      VALUES ('55555555-5555-4555-8555-555555555001', 'MODULE_AI_COPILOT', 'Premium AI Clinical Copilot', 'Ambient Scribe, CDSS & Intelligence', 'MODULE_ACCESS', 'ACTIVE')
+      ON CONFLICT DO NOTHING;
+
+      INSERT INTO "company"."plan_entitlements" ("id", "plan_id", "feature_id", "entitlement_type", "value", "status")
+      VALUES 
+        ('55555555-5555-4555-8555-555555555099', '${TEST_SEEDS.PLAN_PRO_ID}', '55555555-5555-4555-8555-555555555001', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555098', '${TEST_SEEDS.PLAN_ENTERPRISE_ID}', '55555555-5555-4555-8555-555555555001', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555097', '${TEST_SEEDS.PLAN_STARTER_ID}', '55555555-5555-4555-8555-555555555001', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE')
       ON CONFLICT DO NOTHING;
     `);
 
