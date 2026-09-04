@@ -316,6 +316,13 @@
       "when": 1788058000000,
       "tag": "0044_clinical_ai_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1788059000000,
+      "tag": "0045_ai_chat_conversations",
+      "breakpoints": true
     }
   ]
 }

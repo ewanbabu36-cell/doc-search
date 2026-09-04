@@ -34,6 +34,7 @@ import { QualityInfectionDomainManager } from './QualityInfectionDomainManager.j
 import { ExecutiveCommandDomainManager } from './ExecutiveCommandDomainManager.js';
 import { AbdmFhirDomainManager } from './AbdmFhirDomainManager.js';
 import { AiCdssDomainManager } from './AiCdssDomainManager.js';
+import { AiChatAssistantDomainManager } from './AiChatAssistantDomainManager.js';
 import { TelemedicineRpmDomainManager } from './TelemedicineRpmDomainManager.js';
 import { WhatsAppPortalDomainManager } from './WhatsAppPortalDomainManager.js';
 
@@ -47,6 +48,7 @@ export type OrganizationWorkspaceType =
 
 export type PartnerModuleKey =
   | 'executive-command-center'
+  | 'ai-chat-assistant'
   | 'organization-foundation'
   | 'staff-administration'
   | 'doctor-management'
@@ -204,7 +206,8 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
       {
         title: 'Command & Intelligence',
         items: [
-          { id: 'executive-command-center', label: 'Executive Command Center', icon: <span>📊</span>, isActive: activeModule === 'executive-command-center', onClick: () => setActiveModule('executive-command-center') }
+          { id: 'executive-command-center', label: 'Executive Command Center', icon: <span>📊</span>, isActive: activeModule === 'executive-command-center', onClick: () => setActiveModule('executive-command-center') },
+          { id: 'ai-chat-assistant', label: 'AI Copilot & Chat', icon: <span>🤖</span>, isActive: activeModule === 'ai-chat-assistant', onClick: () => setActiveModule('ai-chat-assistant') }
         ]
       },
       {
@@ -431,6 +434,9 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
       <ContentArea>
         {activeModule === 'executive-command-center' && (
           <ExecutiveCommandDomainManager tenantId="11111111-1111-4111-8111-111111111111" />
+        )}
+        {activeModule === 'ai-chat-assistant' && (
+          <AiChatAssistantDomainManager tenantId="11111111-1111-4111-8111-111111111111" role={currentUser?.role} />
         )}
         {activeModule === 'organization-foundation' && (
           <PartnerFoundationDomainManager />

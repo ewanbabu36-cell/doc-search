@@ -37,6 +37,7 @@ import { procurementRoutes } from './routes/partner/procurement.routes.js';
 import { abdmRoutes } from './routes/partner/abdm.routes.js';
 import { aiClinicalCopilotRoutes } from './routes/partner/ai-clinical-copilot.routes.js';
 import { aiFoundationRoutes } from './routes/partner/ai-foundation.routes.js';
+import { aiChatRoutes } from './routes/partner/ai-chat.routes.js';
 import { hardwareBridgeRoutes } from './routes/partner/hardware-bridge.routes.js';
 import { whatsappEngagementRoutes } from './routes/partner/whatsapp-engagement.routes.js';
 import { executiveMisRoutes } from './routes/partner/executive-mis.routes.js';
@@ -207,6 +208,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(abdmRoutes);
   await app.register(aiClinicalCopilotRoutes);
   await app.register(aiFoundationRoutes);
+  await app.register(aiChatRoutes);
   await app.register(hardwareBridgeRoutes);
   await app.register(whatsappEngagementRoutes);
   await app.register(executiveMisRoutes);

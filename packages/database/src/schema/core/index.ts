@@ -7,3 +7,4 @@ export * from './audit-events.js';
 export * from './sessions.js';
 export * from './credentials.js';
 export * from './document-verification.js';
+export * from './ai-chat.js';
