@@ -16,7 +16,14 @@ const CreatePartnerSchema = z.object({
   primaryContactName: z.string().min(2),
   primaryContactEmail: z.string().email(),
   primaryContactPhone: z.string().optional(),
-  primaryContactRole: z.string().optional()
+  primaryContactRole: z.string().optional(),
+  planId: z.string().uuid().optional(),
+  planCode: z.string().optional(),
+  billingCycle: z.enum(['MONTHLY', 'QUARTERLY', 'ANNUAL']).optional(),
+  isTrial: z.boolean().optional(),
+  tenantSlug: z.string().optional(),
+  initialFacilityName: z.string().optional(),
+  metadata: z.record(z.any()).optional()
 });
 
 const UpdatePartnerStatusSchema = z.object({
@@ -60,7 +67,20 @@ export const partnerRoutes: FastifyPluginAsync = async (fastify) => {
     }
   );
 
-  // POST /api/v1/company/partners
+  // GET /api/v1/company/partners/:partnerId/commercial
+  fastify.get(
+    '/api/v1/company/partners/:partnerId/commercial',
+    {
+      preHandler: [authenticate, requirePermission('partners', 'read')]
+    },
+    async (request) => {
+      const { partnerId } = request.params as { partnerId: string };
+      const profile = await partnerService.getPartnerCommercialProfile(partnerId, request.session);
+      return { success: true, data: profile };
+    }
+  );
+
+  // POST /api/v1/company/partners (Transactional Onboarding)
   fastify.post(
     '/api/v1/company/partners',
     {
@@ -82,11 +102,11 @@ export const partnerRoutes: FastifyPluginAsync = async (fastify) => {
 
       const partnerData = {
         ...parseResult.data,
-        tenantId: request.session.tenantId
+        tenantId: parseResult.data.tenantId
       };
-      const created = await partnerService.createPartner(partnerData, request.session);
+      const result = await partnerService.createPartner(partnerData, request.session);
       reply.status(201);
-      return { success: true, data: created };
+      return { success: true, data: result };
     }
   );
 

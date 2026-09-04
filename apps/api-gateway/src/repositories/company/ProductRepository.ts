@@ -1,5 +1,14 @@
-import { eq, desc } from '@docsearch/database';
-import { getDatabase, products, type Product, type NewProduct } from '@docsearch/database';
+﻿import { eq, desc, and } from '@docsearch/database';
+import {
+  getDatabase,
+  products,
+  plans,
+  features,
+  planEntitlements,
+  type Product,
+  type NewProduct,
+  type Plan
+} from '@docsearch/database';
 
 const memoryProducts: Product[] = [];
 
@@ -51,6 +60,59 @@ export class ProductRepository {
     };
     memoryProducts.push(created);
     return created;
+  }
+
+  async findAllPlans(dbClient = getDatabase()): Promise<Plan[]> {
+    if (dbClient) {
+      try {
+        return await dbClient.select().from(plans).orderBy(desc(plans.createdAt));
+      } catch {}
+    }
+    return [];
+  }
+
+  async findPlanById(planId: string, dbClient = getDatabase()): Promise<Plan | null> {
+    if (dbClient) {
+      try {
+        const [plan] = await dbClient.select().from(plans).where(eq(plans.id, planId)).limit(1);
+        if (plan) return plan;
+      } catch {}
+    }
+    return null;
+  }
+
+  async findPlanByCode(planCode: string, dbClient = getDatabase()): Promise<Plan | null> {
+    if (dbClient) {
+      try {
+        const [plan] = await dbClient.select().from(plans).where(eq(plans.code, planCode)).limit(1);
+        if (plan) return plan;
+      } catch {}
+    }
+    return null;
+  }
+
+  async getPlanEntitlements(
+    planId: string,
+    dbClient = getDatabase()
+  ): Promise<Array<{ code: string; name: string; category: string; value: any; entitlementType: string }>> {
+    if (dbClient) {
+      try {
+        const rows = await dbClient
+          .select({
+            code: features.code,
+            name: features.name,
+            category: features.category,
+            value: planEntitlements.value,
+            entitlementType: planEntitlements.entitlementType
+          })
+          .from(planEntitlements)
+          .innerJoin(features, eq(planEntitlements.featureId, features.id))
+          .where(and(eq(planEntitlements.planId, planId), eq(planEntitlements.status, 'ACTIVE')));
+
+        return rows;
+      } catch {}
+    }
+    return [];
   }
 }
 

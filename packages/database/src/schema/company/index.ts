@@ -254,6 +254,54 @@ export const subscriptions = companySchema.table(
 );
 
 /**
+ * Commercial Software Licenses
+ */
+export const licenses = companySchema.table(
+  'licenses',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    licenseKey: varchar('license_key', { length: 100 }).notNull(),
+    partnerId: uuid('partner_id')
+      .notNull()
+      .references(() => partnerProfiles.id, { onDelete: 'cascade' }),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    subscriptionId: uuid('subscription_id')
+      .notNull()
+      .references(() => subscriptions.id, { onDelete: 'cascade' }),
+    planId: uuid('plan_id')
+      .notNull()
+      .references(() => plans.id, { onDelete: 'cascade' }),
+    licenseType: varchar('license_type', { length: 50 }).notNull().default('COMMERCIAL'),
+    status: varchar('status', { length: 50 }).notNull().default('ACTIVE'),
+    activationStatus: varchar('activation_status', { length: 50 }).notNull().default('ACTIVATED'),
+    maxConcurrentUsers: integer('max_concurrent_users').notNull().default(50),
+    maxDoctors: integer('max_doctors').notNull().default(20),
+    maxBranches: integer('max_branches').notNull().default(5),
+    issuedAt: timestamp('issued_at', { withTimezone: true }).notNull().defaultNow(),
+    startDate: timestamp('start_date', { withTimezone: true }).notNull().defaultNow(),
+    expiryDate: timestamp('expiry_date', { withTimezone: true }).notNull(),
+    gracePeriodEnd: timestamp('grace_period_end', { withTimezone: true }),
+    signature: varchar('signature', { length: 255 }).notNull(),
+    metadata: jsonb('metadata').default({}),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex('uq_licenses_key').on(table.licenseKey),
+    index('idx_licenses_partner_id').on(table.partnerId),
+    index('idx_licenses_tenant_id').on(table.tenantId),
+    index('idx_licenses_subscription_id').on(table.subscriptionId),
+    index('idx_licenses_status').on(table.status),
+    index('idx_licenses_expiry').on(table.expiryDate)
+  ]
+);
+
+export type License = typeof licenses.$inferSelect;
+export type NewLicense = typeof licenses.$inferInsert;
+
+/**
  * Phase 1: Partner Billing Accounts
  */
 export const billingAccounts = companySchema.table(

@@ -2,6 +2,7 @@ import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildApp } from '../dist/app.js';
 import { signJwt } from '@docsearch/auth';
+import { setupTestDatabase } from '@docsearch/database';
 
 describe('Wave 3 — Company Platform 15-Domain Real Integration Suite', () => {
   let app;
@@ -49,11 +50,11 @@ describe('Wave 3 — Company Platform 15-Domain Real Integration Suite', () => {
   }
 
   before(async () => {
+    await setupTestDatabase();
     process.env.JWT_SECRET = MASTER_SECRET;
     process.env.JWT_ISSUER = ISSUER;
     process.env.JWT_AUDIENCE = AUDIENCE;
     process.env.NODE_ENV = 'development';
-    process.env.DATABASE_URL = 'postgresql://postgres:postgres@localhost:5432/docsearch';
     app = await buildApp();
   });
 

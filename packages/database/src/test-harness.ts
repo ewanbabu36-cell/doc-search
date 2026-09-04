@@ -25,7 +25,20 @@ export const TEST_SEEDS = {
   INVESTIGATION_ID: '00000000-0000-4000-8000-000000000050',
   INVESTIGATION_ID_ALT: '00000000-0000-4000-8000-000000000005',
   MEDICATION_ID: '00000000-0000-4000-8000-000000000060',
-  BATCH_ID: '00000000-0000-4000-8000-000000000070'
+  BATCH_ID: '00000000-0000-4000-8000-000000000070',
+  PRODUCT_ID: '77777777-7777-4777-8777-777777777777',
+  PLAN_STARTER_ID: '88888888-8888-4888-8888-888888888801',
+  PLAN_PRO_ID: '88888888-8888-4888-8888-888888888802',
+  PLAN_ENTERPRISE_ID: '88888888-8888-4888-8888-888888888803',
+  FEAT_OPD_ID: '66666666-6666-4666-8666-666666666601',
+  FEAT_PHARMACY_ID: '66666666-6666-4666-8666-666666666602',
+  FEAT_LAB_ID: '66666666-6666-4666-8666-666666666603',
+  FEAT_INPATIENT_ID: '66666666-6666-4666-8666-666666666604',
+  FEAT_BILLING_ID: '66666666-6666-4666-8666-666666666605',
+  SUBSCRIPTION_ID_A: '33333333-3333-4333-8333-333333333301',
+  LICENSE_ID_A: '44444444-4444-4444-8444-444444444401',
+  SUBSCRIPTION_ID_B: '33333333-3333-4333-8333-333333333302',
+  LICENSE_ID_B: '44444444-4444-4444-8444-444444444402'
 };
 
 function toLiteral(val: any): string {
@@ -278,7 +291,20 @@ export async function createTestDatabase(options: { seedBaseline?: boolean } = {
       INVESTIGATION_ID,
       INVESTIGATION_ID_ALT,
       MEDICATION_ID,
-      BATCH_ID
+      BATCH_ID,
+      PRODUCT_ID,
+      PLAN_STARTER_ID,
+      PLAN_PRO_ID,
+      PLAN_ENTERPRISE_ID,
+      FEAT_OPD_ID,
+      FEAT_PHARMACY_ID,
+      FEAT_LAB_ID,
+      FEAT_INPATIENT_ID,
+      FEAT_BILLING_ID,
+      SUBSCRIPTION_ID_A,
+      LICENSE_ID_A,
+      SUBSCRIPTION_ID_B,
+      LICENSE_ID_B
     } = TEST_SEEDS;
 
     await pool.query(`
@@ -404,6 +430,97 @@ export async function createTestDatabase(options: { seedBaseline?: boolean } = {
       )
       VALUES 
         ('00000000-0000-4000-8000-000000000080', '${TENANT_A}', '${PARTNER_ID_A}', '${ORG_ID_A}', '${FACILITY_ID_A}', '${MEDICATION_ID}', 1000)
+      ON CONFLICT DO NOTHING;
+    `);
+
+    // Commercial Platform Seeds
+    await pool.query(`
+      INSERT INTO "company"."products" ("id", "code", "name", "description", "category", "status", "version")
+      VALUES 
+        ('${PRODUCT_ID}', 'PROD_HEALTHCARE_SUITE', 'DOC SEARCH Healthcare Platform', 'Complete Hospital, Clinic, Pharmacy and Diagnostic Suite', 'CORE_PLATFORM', 'ACTIVE', '1.0.0')
+      ON CONFLICT DO NOTHING;
+    `);
+
+    await pool.query(`
+      INSERT INTO "company"."plans" ("id", "product_id", "code", "name", "description", "status", "version", "metadata")
+      VALUES 
+        ('${PLAN_STARTER_ID}', '${PRODUCT_ID}', 'PLAN_CLINIC_STARTER', 'Clinic Starter Plan', 'Standard outpatient clinic management', 'ACTIVE', '1.0.0', '{"billingCadence":"MONTHLY","basePrice":15000,"currency":"INR","trialDays":14,"gracePeriodDays":7,"targetPartnerType":"CLINIC","maxConcurrentUsers":10,"maxDoctors":5,"maxBranches":1}'::jsonb),
+        ('${PLAN_PRO_ID}', '${PRODUCT_ID}', 'PLAN_HOSPITAL_PRO', 'Hospital Professional Plan', 'Multi-department hospital management', 'ACTIVE', '1.0.0', '{"billingCadence":"MONTHLY","basePrice":45000,"currency":"INR","trialDays":14,"gracePeriodDays":14,"targetPartnerType":"HOSPITAL_NETWORK","maxConcurrentUsers":50,"maxDoctors":25,"maxBranches":3}'::jsonb),
+        ('${PLAN_ENTERPRISE_ID}', '${PRODUCT_ID}', 'PLAN_ENTERPRISE_NETWORK', 'Enterprise Healthcare Network', 'Multi-facility hospital & diagnostic network', 'ACTIVE', '1.0.0', '{"billingCadence":"ANNUAL","basePrice":120000,"currency":"INR","trialDays":30,"gracePeriodDays":30,"targetPartnerType":"HOSPITAL_NETWORK","maxConcurrentUsers":250,"maxDoctors":100,"maxBranches":10}'::jsonb)
+      ON CONFLICT DO NOTHING;
+    `);
+
+    await pool.query(`
+      INSERT INTO "company"."features" ("id", "code", "name", "description", "category", "status")
+      VALUES 
+        ('${FEAT_OPD_ID}', 'OPD_CLINICAL', 'Outpatient Clinical Core', 'Consultations, patient records, and prescriptions', 'MODULE_ACCESS', 'ACTIVE'),
+        ('${FEAT_PHARMACY_ID}', 'PHARMACY_POS', 'Pharmacy Management & POS', 'Pharmacy inventory, batch tracking, and dispensing', 'MODULE_ACCESS', 'ACTIVE'),
+        ('${FEAT_LAB_ID}', 'LAB_DIAGNOSTICS', 'Laboratory & Diagnostics', 'Specimen accession, testing, and lab reports', 'MODULE_ACCESS', 'ACTIVE'),
+        ('${FEAT_INPATIENT_ID}', 'INPATIENT_ADT', 'Inpatient Care & ADT', 'Admissions, discharges, transfers, and bed management', 'MODULE_ACCESS', 'ACTIVE'),
+        ('${FEAT_BILLING_ID}', 'BILLING_INSURANCE', 'Billing & TPA Insurance', 'Invoicing, receipts, refunds, and insurance claims', 'MODULE_ACCESS', 'ACTIVE')
+      ON CONFLICT DO NOTHING;
+    `);
+
+    await pool.query(`
+      INSERT INTO "company"."plan_entitlements" ("id", "plan_id", "feature_id", "entitlement_type", "value", "status")
+      VALUES 
+        ('55555555-5555-4555-8555-555555555001', '${PLAN_STARTER_ID}', '${FEAT_OPD_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555002', '${PLAN_STARTER_ID}', '${FEAT_PHARMACY_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555003', '${PLAN_STARTER_ID}', '${FEAT_BILLING_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555004', '${PLAN_PRO_ID}', '${FEAT_OPD_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555005', '${PLAN_PRO_ID}', '${FEAT_PHARMACY_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555006', '${PLAN_PRO_ID}', '${FEAT_LAB_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555007', '${PLAN_PRO_ID}', '${FEAT_BILLING_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555008', '${PLAN_ENTERPRISE_ID}', '${FEAT_OPD_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555009', '${PLAN_ENTERPRISE_ID}', '${FEAT_PHARMACY_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555010', '${PLAN_ENTERPRISE_ID}', '${FEAT_LAB_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555011', '${PLAN_ENTERPRISE_ID}', '${FEAT_INPATIENT_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555012', '${PLAN_ENTERPRISE_ID}', '${FEAT_BILLING_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE')
+      ON CONFLICT DO NOTHING;
+    `);
+
+    await pool.query(`
+      INSERT INTO "company"."partner_profiles" (
+        "id", "tenant_id", "partner_type", "lifecycle_status", "verification_status",
+        "onboarding_step", "onboarding_progress_percent", "legal_name", "trade_name",
+        "primary_contact_name", "primary_contact_email"
+      )
+      VALUES 
+        ('${PARTNER_ID_A}', '${TENANT_A}', 'HOSPITAL_NETWORK', 'ACTIVE', 'VERIFIED', 'COMPLETE', 100, 'Partner Corp A Legal', 'Partner Corp A', 'Admin A', 'partner_a@test.com'),
+        ('${PARTNER_ID_B}', '${TENANT_B}', 'CLINIC', 'ACTIVE', 'VERIFIED', 'COMPLETE', 100, 'Partner Corp B Legal', 'Partner Corp B', 'Admin B', 'partner_b@test.com')
+      ON CONFLICT DO NOTHING;
+    `);
+
+    await pool.query(`
+      INSERT INTO "company"."partner_plan_assignments" (
+        "partner_id", "product_id", "plan_id", "assignment_status", "assigned_by_email"
+      )
+      VALUES 
+        ('${PARTNER_ID_A}', '${PRODUCT_ID}', '${PLAN_PRO_ID}', 'ACTIVE', 'system@docsearch.health'),
+        ('${PARTNER_ID_B}', '${PRODUCT_ID}', '${PLAN_STARTER_ID}', 'ACTIVE', 'system@docsearch.health')
+      ON CONFLICT DO NOTHING;
+    `);
+
+    await pool.query(`
+      INSERT INTO "company"."subscriptions" (
+        "id", "partner_id", "product_id", "plan_id", "plan_version", "status", "billing_cycle",
+        "start_date", "renewal_date", "end_date"
+      )
+      VALUES 
+        ('${SUBSCRIPTION_ID_A}', '${PARTNER_ID_A}', '${PRODUCT_ID}', '${PLAN_PRO_ID}', '1.0.0', 'ACTIVE', 'MONTHLY', now(), now() + interval '30 days', now() + interval '30 days'),
+        ('${SUBSCRIPTION_ID_B}', '${PARTNER_ID_B}', '${PRODUCT_ID}', '${PLAN_STARTER_ID}', '1.0.0', 'ACTIVE', 'MONTHLY', now(), now() + interval '30 days', now() + interval '30 days')
+      ON CONFLICT DO NOTHING;
+    `);
+
+    await pool.query(`
+      INSERT INTO "company"."licenses" (
+        "id", "license_key", "partner_id", "tenant_id", "subscription_id", "plan_id", "license_type",
+        "status", "activation_status", "max_concurrent_users", "max_doctors", "max_branches",
+        "issued_at", "start_date", "expiry_date", "grace_period_end", "signature"
+      )
+      VALUES 
+        ('${LICENSE_ID_A}', 'LIC-2026-SEEDA-PRO1', '${PARTNER_ID_A}', '${TENANT_A}', '${SUBSCRIPTION_ID_A}', '${PLAN_PRO_ID}', 'COMMERCIAL', 'ACTIVE', 'ACTIVATED', 50, 25, 3, now(), now(), now() + interval '30 days', now() + interval '44 days', 'seed_signature_a'),
+        ('${LICENSE_ID_B}', 'LIC-2026-SEEDB-STR1', '${PARTNER_ID_B}', '${TENANT_B}', '${SUBSCRIPTION_ID_B}', '${PLAN_STARTER_ID}', 'COMMERCIAL', 'ACTIVE', 'ACTIVATED', 10, 5, 1, now(), now(), now() + interval '30 days', now() + interval '37 days', 'seed_signature_b')
       ON CONFLICT DO NOTHING;
     `);
   }
