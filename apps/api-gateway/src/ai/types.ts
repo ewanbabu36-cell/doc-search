@@ -137,6 +137,7 @@ export interface AiExecutionResult<T = unknown> {
   audit: {
     traceId: string;
     integrityHash: string;
+    previousHash?: string | null | undefined;
     timestamp: string;
   };
 }

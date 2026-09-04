@@ -12,6 +12,7 @@ export interface FirewallEvaluationOptions {
   targetBranchId?: string | undefined;
   isApprovalGranted?: boolean | undefined;
   approverId?: string | undefined;
+  approvalCapabilityId?: string | undefined;
 }
 
 export class AiPermissionFirewall {
@@ -195,17 +196,79 @@ export class AiPermissionFirewall {
 
     // GATE 9: Human-in-the-Loop Approval Check
     if (capability.humanApprovalRequired) {
-      if (options.isApprovalGranted === false || (!options.isApprovalGranted && options.approverId === undefined)) {
-        if (options.toolId) {
-          const tool = toolRegistry.getTool(options.toolId);
-          if (tool?.humanApprovalRequired && !options.isApprovalGranted) {
-            return {
-              allowed: false,
-              failedGate: 'APPROVAL',
-              denialReason: `Operation on tool '${tool.name}' requires verified clinician approval before execution`,
-              statusCode: 400
-            };
-          }
+      if (options.isApprovalGranted === false) {
+        return {
+          allowed: false,
+          failedGate: 'APPROVAL',
+          denialReason: `Operation on capability '${capability.name}' requires verified clinician approval (clinician approval was denied)`,
+          statusCode: 400
+        };
+      }
+
+      if (options.toolId) {
+        const tool = toolRegistry.getTool(options.toolId);
+        if (tool?.humanApprovalRequired && !options.isApprovalGranted) {
+          return {
+            allowed: false,
+            failedGate: 'APPROVAL',
+            denialReason: `Operation on tool '${tool.name}' requires verified clinician approval before execution`,
+            statusCode: 400
+          };
+        }
+      }
+    }
+
+    if (options.isApprovalGranted === true) {
+      // Approver ID mismatch
+      if (options.approverId && options.approverId !== context.userId && !context.session.isSuperAdmin) {
+        return {
+          allowed: false,
+          failedGate: 'APPROVAL',
+          denialReason: `Approver identity mismatch: User '${context.userId}' cannot forge approval for '${options.approverId}'`,
+          statusCode: 403
+        };
+      }
+
+      // Approval capability mismatch
+      if (options.approvalCapabilityId && options.approvalCapabilityId !== context.capabilityId) {
+        return {
+          allowed: false,
+          failedGate: 'APPROVAL',
+          denialReason: `Approval capability mismatch: Approval was granted for '${options.approvalCapabilityId}', but request is for '${context.capabilityId}'`,
+          statusCode: 403
+        };
+      }
+
+      // Forged clinician credentials check if clinical/diagnostic
+      if (capability.category === 'CLINICAL' || capability.category === 'DIAGNOSTIC' || capability.humanApprovalRequired) {
+        const clinicalApprovalRoles = [
+          'DOCTOR',
+          'PHYSICIAN',
+          'ATTENDING_PHYSICIAN',
+          'CONSULTANT',
+          'CARDIOLOGIST',
+          'CARDIOLOGY_HOD',
+          'SURGEON',
+          'CHIEF_MEDICAL_OFFICER',
+          'SUPER_ADMIN'
+        ];
+        const clinicalApprovalPermissions = [
+          'ai_copilot:soap:approve',
+          'ai_copilot:ddi:override',
+          'clinical:consultations:create',
+          'clinical:approvals:create'
+        ];
+        const isClinician = context.roles.some((r) => clinicalApprovalRoles.includes(r));
+        const hasApprovalPerm = clinicalApprovalPermissions.some((p) =>
+          RBACEvaluator.hasPermission(context.session, p)
+        );
+        if (!isClinician && !hasApprovalPerm) {
+          return {
+            allowed: false,
+            failedGate: 'APPROVAL',
+            denialReason: 'Forged approval violation: User lacks clinician role or approval permission to authorize clinical AI actions',
+            statusCode: 403
+          };
         }
       }
     }

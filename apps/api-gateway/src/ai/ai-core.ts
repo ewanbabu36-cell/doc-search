@@ -6,6 +6,8 @@ import { toolRegistry } from './tool-registry.js';
 import { permissionFirewall } from './permission-firewall.js';
 import { defaultModelProvider } from './provider-interface.js';
 import { resolveRoleContext } from './role-context.js';
+import type { AuditEvent } from '@docsearch/database';
+import { auditRepository } from '../repositories/core/AuditRepository.js';
 import type {
   AiActionClassification,
   AiExecutionResult,
@@ -23,6 +25,7 @@ export interface ExecuteCapabilityOptions {
   targetBranchId?: string | undefined;
   isApprovalGranted?: boolean | undefined;
   approverId?: string | undefined;
+  approvalCapabilityId?: string | undefined;
   correlationId?: string | undefined;
   clientIp?: string | undefined;
   userAgent?: string | undefined;
@@ -130,7 +133,8 @@ export class AiCoreOrchestrator {
       targetTenantId: options.targetTenantId,
       targetBranchId: options.targetBranchId,
       isApprovalGranted: options.isApprovalGranted,
-      approverId: options.approverId
+      approverId: options.approverId,
+      approvalCapabilityId: options.approvalCapabilityId
     });
 
     if (!firewallResult.allowed) {
@@ -149,7 +153,15 @@ export class AiCoreOrchestrator {
       });
     }
 
-    const capability = capabilityRegistry.getCapability(capabilityId)!;
+    const capability = capabilityRegistry.getCapability(capabilityId);
+    if (!capability) {
+      throw new AppError({
+        message: `Capability '${capabilityId}' not found`,
+        code: ErrorCode.NOT_FOUND,
+        statusCode: 404
+      });
+    }
+
     let executionOutput: T;
     let inputTokens = 0;
     let outputTokens = 0;
@@ -159,17 +171,41 @@ export class AiCoreOrchestrator {
       // 2. Controlled Execution Path
       if (options.toolId) {
         // Safe Tool Invocation Boundary
-        const tool = toolRegistry.getTool(options.toolId)!;
+        const tool = toolRegistry.getTool(options.toolId);
+        if (!tool) {
+          throw new AppError({
+            message: `Tool '${options.toolId}' not found`,
+            code: ErrorCode.NOT_FOUND,
+            statusCode: 404
+          });
+        }
         actionClassification = tool.actionClassification;
 
         // Input Schema Validation
-        const validatedInput = tool.inputSchema.parse(options.toolInput || {});
+        let validatedInput: unknown;
+        try {
+          validatedInput = tool.inputSchema.parse(options.toolInput || {});
+        } catch {
+          throw new AppError({
+            message: `Malformed tool input: Validation failed for tool '${tool.name}'`,
+            code: ErrorCode.VALIDATION_ERROR,
+            statusCode: 400
+          });
+        }
 
         // Execute Tool Handler under human session context
         executionOutput = (await tool.handler(context, validatedInput)) as T;
 
         // Output Schema Validation
-        tool.outputSchema.parse(executionOutput);
+        try {
+          tool.outputSchema.parse(executionOutput);
+        } catch {
+          throw new AppError({
+            message: `Tool output safety violation: Output schema validation failed for tool '${tool.name}'`,
+            code: ErrorCode.INTERNAL_SERVER_ERROR,
+            statusCode: 502
+          });
+        }
 
         // Approximate token cost for tool payload
         inputTokens = Math.ceil(JSON.stringify(validatedInput).length / 4);
@@ -207,9 +243,48 @@ export class AiCoreOrchestrator {
         success: true
       });
 
-      // 4. Audit Trail Cryptographic Hash Hook
+      // 4. Persistent Audit & Cryptographic Hash Chain Hook
       const traceId = `TRACE-AI-${randomUUID().substring(0, 8)}`;
-      const integrityHash = this.computeAuditHash({
+      let auditRecord: AuditEvent | undefined;
+
+      try {
+        auditRecord = await auditRepository.recordEvent(
+          {
+            tenantId: context.tenantId,
+            branchId: context.branchId,
+            eventType: 'AI_CAPABILITY_EXECUTED',
+            resourceType: 'AI_CAPABILITY',
+            resourceId: capabilityId,
+            correlationId: context.correlationId,
+            ipAddress: context.auditContext.clientIp,
+            userAgent: context.auditContext.userAgent,
+            metadata: {
+              requestId: context.requestId,
+              traceId,
+              tenantId: context.tenantId,
+              branchId: context.branchId,
+              userId: context.userId,
+              capabilityId,
+              toolId: options.toolId,
+              actionClassification,
+              provider: this.modelProvider.name,
+              modelVersion: this.modelProvider.version,
+              inputTokens,
+              outputTokens,
+              durationMs,
+              success: true,
+              timestamp: new Date().toISOString()
+            }
+          },
+          context.session
+        );
+      } catch (auditErr: unknown) {
+        logger.warn('Failed to record persistent AI execution audit event', {
+          error: auditErr instanceof Error ? auditErr.message : String(auditErr)
+        });
+      }
+
+      const integrityHash = auditRecord?.integrityHash || this.computeAuditHash({
         traceId,
         requestId: context.requestId,
         tenantId: context.tenantId,
@@ -234,6 +309,7 @@ export class AiCoreOrchestrator {
         audit: {
           traceId,
           integrityHash,
+          previousHash: auditRecord?.previousHash || undefined,
           timestamp: new Date().toISOString()
         }
       };
@@ -252,6 +328,41 @@ export class AiCoreOrchestrator {
         timestamp: new Date(),
         success: false
       });
+
+      // Attempt persistent failure audit
+      try {
+        await auditRepository.recordEvent(
+          {
+            tenantId: context.tenantId,
+            branchId: context.branchId,
+            eventType: 'AI_CAPABILITY_FAILED',
+            resourceType: 'AI_CAPABILITY',
+            resourceId: capabilityId,
+            correlationId: context.correlationId,
+            ipAddress: context.auditContext.clientIp,
+            userAgent: context.auditContext.userAgent,
+            metadata: {
+              requestId: context.requestId,
+              tenantId: context.tenantId,
+              branchId: context.branchId,
+              userId: context.userId,
+              capabilityId,
+              toolId: options.toolId,
+              provider: this.modelProvider.name,
+              modelVersion: this.modelProvider.version,
+              inputTokens,
+              outputTokens,
+              durationMs,
+              success: false,
+              error: err instanceof Error ? err.message : String(err),
+              timestamp: new Date().toISOString()
+            }
+          },
+          context.session
+        );
+      } catch {
+        // Fall through
+      }
 
       if (err instanceof AppError) {
         throw err;
@@ -286,6 +397,13 @@ export class AiCoreOrchestrator {
    */
   public getTelemetryForTenant(tenantId: string): AiUsageTelemetryRecord[] {
     return this.telemetryStore.filter((r) => r.tenantId === tenantId);
+  }
+
+  /**
+   * Retrieves persistent audit events recorded for an organization.
+   */
+  public async getAuditEventsForTenant(tenantId: string, limit = 50): Promise<AuditEvent[]> {
+    return await auditRepository.getEventsByTenant(tenantId, limit);
   }
 }
 

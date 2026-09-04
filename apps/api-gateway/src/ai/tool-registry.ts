@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { AiToolDefinition } from './types.js';
 
 export class AiToolRegistry {
-  private tools: Map<string, AiToolDefinition<any, any>> = new Map();
+  private tools: Map<string, AiToolDefinition<unknown, unknown>> = new Map();
 
   constructor() {
     this.registerBaselineTools();
@@ -578,19 +578,19 @@ export class AiToolRegistry {
     this.registerTool(getPatientPersonalAppointmentsTool);
   }
 
-  public registerTool(tool: AiToolDefinition<any, any>): void {
-    this.tools.set(tool.id, tool);
+  public registerTool<TIn = unknown, TOut = unknown>(tool: AiToolDefinition<TIn, TOut>): void {
+    this.tools.set(tool.id, tool as unknown as AiToolDefinition<unknown, unknown>);
   }
 
-  public getTool(id: string): AiToolDefinition<any, any> | undefined {
+  public getTool(id: string): AiToolDefinition<unknown, unknown> | undefined {
     return this.tools.get(id);
   }
 
-  public listTools(): AiToolDefinition<any, any>[] {
+  public listTools(): AiToolDefinition<unknown, unknown>[] {
     return Array.from(this.tools.values());
   }
 
-  public listToolsForCapability(capabilityId: string): AiToolDefinition<any, any>[] {
+  public listToolsForCapability(capabilityId: string): AiToolDefinition<unknown, unknown>[] {
     return this.listTools().filter((t) => t.allowedCapabilities.includes(capabilityId));
   }
 }

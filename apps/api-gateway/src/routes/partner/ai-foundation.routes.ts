@@ -89,6 +89,7 @@ export const aiFoundationRoutes: FastifyPluginAsync = async (app) => {
         prompt?: string;
         isApprovalGranted?: boolean;
         approverId?: string;
+        approvalCapabilityId?: string;
         targetTenantId?: string;
         targetBranchId?: string;
       };
@@ -112,6 +113,7 @@ export const aiFoundationRoutes: FastifyPluginAsync = async (app) => {
         targetBranchId: body.targetBranchId,
         isApprovalGranted: body.isApprovalGranted,
         approverId: body.approverId,
+        approvalCapabilityId: body.approvalCapabilityId,
         correlationId,
         clientIp,
         userAgent
