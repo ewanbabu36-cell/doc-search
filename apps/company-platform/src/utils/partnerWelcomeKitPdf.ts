@@ -88,6 +88,78 @@ export function getCategoryMenuBookItems(classification: string): Array<{ label:
         { label: 'Critical Panic Findings Broadcast:', val: 'Instant SMS & WhatsApp Alert to Referring Doctor' },
         { label: 'ABDM Diagnostic Report Sync:', val: 'Linked to Patient Ayushman Health Record (ABHA)' }
       ];
+    case 'BLOOD_BANK':
+      return [
+        { label: 'Voluntary Donor Registry & Camps:', val: 'Active (e-RaktKosh Sync + Camp Rostering)' },
+        { label: 'Component Fractionation Unit:', val: 'PRBC, FFP, Platelet Concentrate & Cryo' },
+        { label: 'Cross-Matching & Blood Grouping:', val: 'Automated Gel Card / Tube Cross-Match' },
+        { label: 'Cold Chain IoT Temperature Monitor:', val: 'Real-time 2°C to 6°C Deep Freeze Monitoring' },
+        { label: 'Transfusion Adverse Event Log:', val: 'NABH / NACO Serious Adverse Event Reporting' },
+        { label: 'Emergency O-Negative Stock Shield:', val: 'Zero-Lag Critical Trauma Broadcast' },
+        { label: 'Apheresis SDP / PRP Protocol:', val: 'Single Donor Platelet Unit Management' },
+        { label: 'Longitudinal Donor History:', val: '10-Year Donor Deferral & Infectious Marker Screening' },
+        { label: 'ABDM e-RaktKosh Cloud Sync:', val: 'Automated Real-Time National Inventory Reporting' }
+      ];
+    case 'DENTAL_CLINIC':
+      return [
+        { label: 'Visual 32-Tooth Odontogram:', val: 'Interactive FDI / Universal Numbering Chart' },
+        { label: 'RVG & Intraoral Sensor DICOM:', val: 'Direct USB Capture with Contrast & Zoom' },
+        { label: 'Dental Chair Slot Rostering:', val: 'Multi-Operatory Roster with Chair Turnaround' },
+        { label: 'Itemized Procedure Step Billing:', val: 'RCT, Crown & Bridge, Implant Package Ledger' },
+        { label: 'Orthodontic Aligner Timeline:', val: 'Multi-Stage Photographic Tracking & Ceph' },
+        { label: 'WhatsApp Post-Op Dental Care:', val: 'Instant Extraction/Surgery Home Care Instructions' },
+        { label: 'Biomaterial & Implant Serial Audit:', val: 'Implant Lot & Expiry Batch Traceability' },
+        { label: 'Dental Lab Fabrication Slips:', val: 'Digital Prosthodontic Lab Job Orders' },
+        { label: 'Periodic 6-Month Dental Recall:', val: 'Automated Patient Scaling & Cleaning SMS' }
+      ];
+    case 'AYUSH_WELLNESS':
+      return [
+        { label: 'Digital Nadi & Tridosha Profiler:', val: 'Prakriti / Vikriti Vata-Pitta-Kapha Analysis' },
+        { label: 'Panchakarma Therapy Scheduler:', val: 'Therapist, Room & Herbal Steam Chamber Roster' },
+        { label: 'Classical Ayush Herbal POS:', val: 'Kashayam, Asava, Arishta & Churna Inventory' },
+        { label: 'Pathya-Apathya Diet Prescription:', val: 'Custom Ayurvedic Lifestyle & Dietary Chart' },
+        { label: 'Ministry of Ayush Protocol Logs:', val: 'NABH Ayush Standards Clinical Documentation' },
+        { label: 'WhatsApp Daily Therapy Care Slips:', val: 'Patient Pre-Therapy & Post-Snehan Protocols' },
+        { label: 'Herbal Raw Drug Stock Ledger:', val: 'Classical Formulations Batch & Expiry Logs' },
+        { label: 'Ayush Wellness Package Billing:', val: '7/14/21-Day Rejuvenation Package Modules' },
+        { label: 'ABHA Ayush Health Record Sync:', val: 'Integration with National Health Stack' }
+      ];
+    case 'DIALYSIS_CENTRE':
+      return [
+        { label: 'Hemodialysis Station Matrix:', val: 'Color-Coded Multi-Bed Bedside Dialysis Census' },
+        { label: 'Kt/V Clearance Adequacy Engine:', val: 'Single-Pool Kt/V & URR Kinetic Modeling' },
+        { label: 'Dialyzer Barcode Reuse Audit:', val: 'AAMI Standard Dialyzer Reprocessing Log' },
+        { label: 'RO Water Quality Compliance:', val: 'Daily Conductivity & Endotoxin Sterility Logs' },
+        { label: 'AV Fistula Cannulation Surveillance:', val: 'Aneurysm & Bruit Monitoring Clinical Journal' },
+        { label: 'Heparin & EPO Medication Matrix:', val: 'Weight-Adjusted Anticoagulant Infusion Chart' },
+        { label: 'Emergency Bedside Crash Roster:', val: 'Bedside Crash Cart & Rapid Transfer Protocol' },
+        { label: 'PMNDP Free Dialysis Scheme Sync:', val: 'Pradhan Mantri National Dialysis Portal Sync' },
+        { label: 'WhatsApp Patient Dry Weight Chart:', val: 'Pre/Post Fluid Gain & Diet Reminder Alerts' }
+      ];
+    case 'EYE_CARE':
+      return [
+        { label: 'Snellen & Refraction Log:', val: 'Auto-Refractometer Digital Sphere/Cyl Matrix' },
+        { label: 'Slit Lamp Anterior Segment Capture:', val: 'High-Resolution Cornea/Lens Photo Archival' },
+        { label: 'IOL Power Biometry SRK-T:', val: 'Automated Intraocular Lens Power Calculation' },
+        { label: 'Optical Dispensary Counter POS:', val: 'Spectacle Frame & Progressive Lens Billing' },
+        { label: 'Glaucoma Tonometry IOP Tracker:', val: 'Applanation Tonometry & Visual Field Progression' },
+        { label: 'Cataract Surgical Package System:', val: 'Phaco / SICS Comprehensive Package Ledger' },
+        { label: 'WhatsApp Eye Drop Alarm Schedule:', val: 'Post-Op Antibiotic/Steroid Drop Instillation' },
+        { label: 'Diabetic Retinopathy Screening:', val: 'Fundus Camera Image Tagging & Tele-Consult' },
+        { label: 'ABDM Ophthalmic Health Record:', val: 'Cloud Eye Prescription & Vision Card Sync' }
+      ];
+    case 'PHYSIOTHERAPY':
+      return [
+        { label: 'Range of Motion (ROM) Goniometry:', val: 'Digital Goniometer Joint Degrees & Symmetry' },
+        { label: 'MRC Muscle Strength Scoring:', val: 'Grade 0 to 5 Medical Research Council Matrix' },
+        { label: 'Personalized Exercise Video Pad:', val: 'Illustrated Patient Home Exercise Program' },
+        { label: 'Multi-Session Rehab Packages:', val: '10/20-Session Punch Card Tracker & Billing' },
+        { label: 'Ergonomic Biomechanical Assessment:', val: 'Spine, Posture & Gait Analysis Report' },
+        { label: 'Electrotherapy Modality Tracker:', val: 'TENS, IFT, Ultrasound & Traction Session Logs' },
+        { label: 'Functional Independence FIM Score:', val: 'Neuro-Rehab ADL Independence Progress Meter' },
+        { label: 'WhatsApp Daily Exercise Check-in:', val: 'Patient Video Exercise Links & Pain Diary' },
+        { label: 'Sports Injury RTP Protocol:', val: 'Return-to-Play Functional Milestone Certification' }
+      ];
     case 'PATHOLOGY':
     default:
       return [
@@ -165,12 +237,12 @@ export function generateAndDownloadWelcomeKitPdf(data: PartnerWelcomeKitData): v
   contentLines.push('/F1 8.5 Tf');
   contentLines.push('0.2 0.3 0.35 rg');
   contentLines.push(`1 0 0 1 ${margin + 14} ${boxTop - 40} Tm`);
-  contentLines.push(`(${escapePdfText(`Authorized Pathologist / In-Charge: ${data.contactPerson}  |  Phone: ${data.phone}  |  Location: ${data.city}, ${data.state}`)}) Tj`);
+  contentLines.push(`(${escapePdfText(`Authorized Clinical Lead / In-Charge: ${data.contactPerson}  |  Phone: ${data.phone}  |  Location: ${data.city}, ${data.state}`)}) Tj`);
 
   contentLines.push('/F1 8 Tf');
   contentLines.push('0.3 0.4 0.45 rg');
   contentLines.push(`1 0 0 1 ${margin + 14} ${boxTop - 54} Tm`);
-  contentLines.push('(Your healthcare facility is now 100% active on the national digital healthcare grid with dedicated LIMS features.) Tj');
+  contentLines.push('(Your healthcare facility is now 100% active on the national digital healthcare grid with full clinical & operational modules.) Tj');
   contentLines.push('ET');
 
   // 3. Section 1: Authorized Login Credentials Card (Dark slate box)

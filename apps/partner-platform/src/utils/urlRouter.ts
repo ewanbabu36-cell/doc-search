@@ -79,7 +79,6 @@ const WORKSPACE_MODULE_ROUTES: Record<OrganizationWorkspaceType, Record<string, 
   }
 };
 
-// Workspace base path mapping
 const WORKSPACE_PREFIXES: Record<string, OrganizationWorkspaceType> = {
   'hospital': 'HOSPITAL',
   'pharmacy': 'PHARMACY',
@@ -87,6 +86,12 @@ const WORKSPACE_PREFIXES: Record<string, OrganizationWorkspaceType> = {
   'pathology': 'PATHOLOGY',
   'radiology': 'DIAGNOSTIC_CENTRE',
   'diagnostic': 'DIAGNOSTIC_CENTRE',
+  'blood-bank': 'HOSPITAL',
+  'dialysis': 'HOSPITAL',
+  'dental': 'CLINIC',
+  'ayush': 'CLINIC',
+  'eye-care': 'CLINIC',
+  'physio': 'CLINIC',
   'command': 'ENTERPRISE_COMMAND',
   'enterprise': 'ENTERPRISE_COMMAND'
 };
@@ -167,6 +172,12 @@ export const getCategoryBasePath = (category: string): string => {
   if (norm === 'CLINIC') return '/clinic';
   if (norm === 'PATHOLOGY') return '/pathology';
   if (norm === 'DIAGNOSTIC_CENTRE' || norm === 'RADIOLOGY') return '/radiology';
+  if (norm === 'BLOOD_BANK') return '/hospital/blood-bank';
+  if (norm === 'DENTAL_CLINIC') return '/clinic/consultation';
+  if (norm === 'AYUSH_WELLNESS') return '/clinic/consultation';
+  if (norm === 'DIALYSIS_CENTRE') return '/hospital/inpatient';
+  if (norm === 'EYE_CARE') return '/clinic/consultation';
+  if (norm === 'PHYSIOTHERAPY') return '/clinic/consultation';
   return '/hospital';
 };
 
@@ -203,9 +214,14 @@ export const parseCurrentUrl = (
   const firstSeg = segments[0]?.toLowerCase() || '';
   const resolvedWorkspace = WORKSPACE_PREFIXES[firstSeg] || defaultWorkspace;
 
+  let defaultForPrefix: PartnerModuleKey = defaultModule;
+  if (firstSeg === 'blood-bank') defaultForPrefix = 'blood-bank-transfusion';
+  else if (firstSeg === 'dialysis') defaultForPrefix = 'inpatient-management';
+  else if (firstSeg === 'dental' || firstSeg === 'ayush' || firstSeg === 'eye-care' || firstSeg === 'physio') defaultForPrefix = 'clinical-consultation';
+
   const subSeg = segments[1]?.toLowerCase() || '';
   const moduleMap = WORKSPACE_MODULE_ROUTES[resolvedWorkspace] || {};
-  const resolvedModule = moduleMap[subSeg] || moduleMap[''] || defaultModule;
+  const resolvedModule = moduleMap[subSeg] || (subSeg === '' ? defaultForPrefix : moduleMap[''] || defaultModule);
 
   return {
     workspace: resolvedWorkspace,

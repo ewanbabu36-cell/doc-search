@@ -2,7 +2,18 @@ import React, { useState } from 'react';
 import { Badge, Button, Card } from '@docsearch/ui-kit';
 import { generateAndDownloadWelcomeKitPdf, openPrintableSpeedPostDossier, getCategoryMenuBookItems } from '../../utils/partnerWelcomeKitPdf.js';
 
-export type HealthcareCategoryType = 'PATHOLOGY' | 'PHARMACY' | 'HOSPITAL' | 'CLINIC' | 'DIAGNOSTIC_CENTRE';
+export type HealthcareCategoryType =
+  | 'PATHOLOGY'
+  | 'PHARMACY'
+  | 'HOSPITAL'
+  | 'CLINIC'
+  | 'DIAGNOSTIC_CENTRE'
+  | 'BLOOD_BANK'
+  | 'DENTAL_CLINIC'
+  | 'AYUSH_WELLNESS'
+  | 'DIALYSIS_CENTRE'
+  | 'EYE_CARE'
+  | 'PHYSIOTHERAPY';
 
 export interface HealthcareDocumentItem {
   id: string;
@@ -506,6 +517,516 @@ export const HEALTHCARE_PRESETS: Record<HealthcareCategoryType, CategoryPreset> 
         verified: true
       }
     ]
+  },
+
+  BLOOD_BANK: {
+    id: 'BLOOD_BANK',
+    label: 'Blood Bank & Transfusion Centre',
+    icon: '🩸',
+    badge: 'NACO & Component Unit',
+    description: 'Voluntary donor registry, component separation (PRBC, FFP, Platelets), cross-matching, cold chain logs & e-RaktKosh sync.',
+    defaultPartnerName: 'Apex Regional Blood Centre & Component Separation Unit',
+    defaultContactPerson: 'Dr. Neha Kapoor, MD Transfusion Medicine',
+    defaultPhone: '+91 98222 33445',
+    defaultEmail: 'blood.neha@docsearch.health',
+    defaultPassword: 'BloodPass123!',
+    defaultCity: 'Lucknow',
+    defaultState: 'Uttar Pradesh',
+    plans: [
+      {
+        id: 'blood-basic',
+        name: 'Basic Blood Storage Centre',
+        fee: 4999,
+        description: 'Whole blood storage, donor registration, blood grouping & cross-match slips',
+        badge: 'Storage Hub'
+      },
+      {
+        id: 'blood-component',
+        name: 'Component Separation & Transfusion Unit',
+        fee: 9999,
+        description: 'PRBC, FFP, Platelet fractionation, Coombs test matrix & IoT cold chain temperature telemetry',
+        badge: '⭐ Most Popular'
+      },
+      {
+        id: 'blood-regional',
+        name: 'Regional Blood Transfusion Network',
+        fee: 19999,
+        description: 'e-RaktKosh national sync, voluntary camp mobile scheduling, apheresis SDP & trauma rapid dispatch',
+        badge: 'Regional Apex'
+      }
+    ],
+    availableFeatures: [
+      { id: 'blood_donor_registry', name: 'Voluntary Donor Registry & Blood Donation Camp Scheduler', default: true },
+      { id: 'blood_component_sep', name: 'Blood Component Fractionation (PRBC, FFP, Cryoprecipitate, Platelets)', default: true },
+      { id: 'blood_cross_match', name: 'Cross-Matching & Coombs Compatibility Test Matrix', default: true },
+      { id: 'blood_cold_chain', name: 'Real-Time Cold Chain IoT Temperature Alert System (2°C to 6°C)', default: true },
+      { id: 'blood_eraktkosh', name: 'e-RaktKosh Central Government National Portal Live Inventory Sync', default: true },
+      { id: 'blood_emergency_oneg', name: 'Emergency O-Negative Zero-Lag Trauma Broadcast', default: false },
+      { id: 'blood_apheresis', name: 'Apheresis Single-Donor Platelet (SDP) Machine Interfacing', default: false }
+    ],
+    documents: [
+      {
+        id: 'doc-blood-1',
+        name: 'State Drug Control Form 28C / 28E Blood Bank Operating License',
+        type: 'DRUG_LICENSE',
+        fileUploaded: true,
+        fileName: 'Blood_Bank_Form28C_License.pdf',
+        regNumber: 'BB-LIC-UP-2026-091',
+        verified: true
+      },
+      {
+        id: 'doc-blood-2',
+        name: 'NACO & NBTC National Blood Transfusion Council Accreditation',
+        type: 'NABH_ACCREDITATION',
+        fileUploaded: true,
+        fileName: 'NACO_Blood_Safety_Accreditation.pdf',
+        regNumber: 'NACO-NBTC-2026-554',
+        verified: true
+      },
+      {
+        id: 'doc-blood-3',
+        name: 'Transfusion Medicine Specialist State Medical Council Certificate (MD)',
+        type: 'DOCTOR_REGISTRATION',
+        fileUploaded: true,
+        fileName: 'Dr_Neha_Kapoor_MD_Transfusion.pdf',
+        regNumber: 'MCI-TRANS-44812',
+        verified: true
+      },
+      {
+        id: 'doc-blood-4',
+        name: 'Blood Centre Commercial Registration & GST Certificate',
+        type: 'GST_PAN',
+        fileUploaded: true,
+        fileName: 'Apex_Blood_Bank_GST.pdf',
+        regNumber: '09AAACB7788K1Z3',
+        verified: true
+      }
+    ]
+  },
+
+  DENTAL_CLINIC: {
+    id: 'DENTAL_CLINIC',
+    label: 'Dental Clinic & Maxillofacial Centre',
+    icon: '🦷',
+    badge: 'Odontogram & RVG',
+    description: 'Interactive 32-tooth odontogram, RVG digital sensor X-ray capture, multi-chair rostering, procedure step pricing & dental recall SMS.',
+    defaultPartnerName: 'Apex 32 Smiles Dental Clinic & Implant Centre',
+    defaultContactPerson: 'Dr. Karan Grover, MDS (Orthodontics)',
+    defaultPhone: '+91 98333 44556',
+    defaultEmail: 'dental.karan@docsearch.health',
+    defaultPassword: 'DentalPass123!',
+    defaultCity: 'Lucknow',
+    defaultState: 'Uttar Pradesh',
+    plans: [
+      {
+        id: 'dental-solo',
+        name: 'Solo Dental Practice',
+        fee: 1999,
+        description: 'Single operatory chair, basic patient EMR, digital Rx & appointment SMS',
+        badge: 'Solo Clinic'
+      },
+      {
+        id: 'dental-pro',
+        name: 'Multi-Chair Dental & Implant Clinic',
+        fee: 4499,
+        description: 'Interactive 32-tooth odontogram, RVG sensor capture, chair rostering & procedure step pricing',
+        badge: '⭐ Most Popular'
+      },
+      {
+        id: 'dental-network',
+        name: 'Multi-Branch Dental Hospital Network',
+        fee: 9999,
+        description: 'Dental lab job slip tracker, clear aligner photo timeline, biomaterial batch tracking & multi-chair sync',
+        badge: 'Network Suite'
+      }
+    ],
+    availableFeatures: [
+      { id: 'dental_odontogram', name: 'Interactive 32-Tooth Visual Odontogram & Treatment Planner', default: true },
+      { id: 'dental_rvg_capture', name: 'Direct USB Intraoral Camera & RVG Sensor DICOM Capture', default: true },
+      { id: 'dental_chair_roster', name: 'Multi-Chair Appointment Rostering & Patient SMS Recalls', default: true },
+      { id: 'dental_procedure_pricing', name: 'Itemized Dental Procedure Steps & Lab Fabrication Slips', default: true },
+      { id: 'dental_aligner_tracker', name: 'Orthodontic & Clear Aligner Treatment Progress Photo Archival', default: true },
+      { id: 'dental_postop_whatsapp', name: 'Automated WhatsApp Post-Extraction Care Instructions', default: false },
+      { id: 'dental_implant_inventory', name: 'Dental Biomaterial & Implant Inventory Serial Number Tracking', default: false }
+    ],
+    documents: [
+      {
+        id: 'doc-dental-1',
+        name: 'State Dental Council (DCI) Specialist Registration Certificate (MDS)',
+        type: 'DOCTOR_REGISTRATION',
+        fileUploaded: true,
+        fileName: 'Dr_Karan_Grover_MDS_Reg.pdf',
+        regNumber: 'DCI-UP-2026-9921',
+        verified: true
+      },
+      {
+        id: 'doc-dental-2',
+        name: 'Clinical Establishment Act Registration for Dental Clinic',
+        type: 'CLINICAL_ESTABLISHMENT',
+        fileUploaded: true,
+        fileName: 'Dental_Clinical_Establishment_Reg.pdf',
+        regNumber: 'CEA-DEN-2026-118',
+        verified: true
+      },
+      {
+        id: 'doc-dental-3',
+        name: 'AERB Registration for Dental RVG / OPG X-Ray Unit',
+        type: 'AERB_LICENSE',
+        fileUploaded: true,
+        fileName: 'AERB_Dental_RVG_Registration.pdf',
+        regNumber: 'AERB-DENT-8841',
+        verified: true
+      },
+      {
+        id: 'doc-dental-4',
+        name: 'Dental Clinic Trade License & Commercial GST Certificate',
+        type: 'GST_PAN',
+        fileUploaded: true,
+        fileName: 'Apex_Dental_GST_Certificate.pdf',
+        regNumber: '09AABCD3322E1Z8',
+        verified: true
+      }
+    ]
+  },
+
+  AYUSH_WELLNESS: {
+    id: 'AYUSH_WELLNESS',
+    label: 'Ayush & Panchakarma Wellness Centre',
+    icon: '🌿',
+    badge: 'Ayurveda & Panchakarma',
+    description: 'Nadi Pariksha & Prakriti assessment, Panchakarma therapy room scheduling, classical herbal dispensary POS & lifestyle diet plans.',
+    defaultPartnerName: 'AyurVeda Wellness & Panchakarma Rejuvenation Centre',
+    defaultContactPerson: 'Dr. Acharya Shrinivas, BAMS, MD Ayur',
+    defaultPhone: '+91 98444 55667',
+    defaultEmail: 'ayush.shrinivas@docsearch.health',
+    defaultPassword: 'AyushPass123!',
+    defaultCity: 'Lucknow',
+    defaultState: 'Uttar Pradesh',
+    plans: [
+      {
+        id: 'ayush-vaidya',
+        name: 'Solo Ayush Vaidya Practice',
+        fee: 1799,
+        description: 'Tridosha assessment, herbal prescription pad & appointment scheduling',
+        badge: 'Solo Vaidya'
+      },
+      {
+        id: 'ayush-panchakarma',
+        name: 'Panchakarma Centre & Dispensary',
+        fee: 4299,
+        description: 'Panchakarma therapy room scheduler, classical herbal dispensary POS & Pathya-Apathya diet plans',
+        badge: '⭐ Most Popular'
+      },
+      {
+        id: 'ayush-resort',
+        name: 'Ayush Inpatient Hospital & Rejuvenation Resort',
+        fee: 8999,
+        description: 'Multi-bed Panchakarma IPD, therapist shifts, Ministry of Ayush quality registers & wellness packages',
+        badge: 'Ayush Resort'
+      }
+    ],
+    availableFeatures: [
+      { id: 'ayush_prakriti_engine', name: 'Digital Prakriti & Vikriti Tridosha Assessment Engine', default: true },
+      { id: 'ayush_panchakarma_roster', name: 'Panchakarma Therapy Room, Therapist & Equipment Scheduler', default: true },
+      { id: 'ayush_herbal_pos', name: 'Classical Ayurvedic Herbal Dispensary & Kashayam POS', default: true },
+      { id: 'ayush_pathya_diet', name: 'Personalized Pathya-Apathya Diet & Lifestyle Prescription Pad', default: true },
+      { id: 'ayush_nabh_protocol', name: 'Ministry of Ayush NABH Quality Protocol Compliance Registers', default: true },
+      { id: 'ayush_whatsapp_care', name: 'WhatsApp Daily Therapy Preparation Instructions for Patients', default: false },
+      { id: 'ayush_autoimmune_tracker', name: 'Long-Term Chronic Autoimmune Reversal Longitudinal Tracker', default: false }
+    ],
+    documents: [
+      {
+        id: 'doc-ayush-1',
+        name: 'Ministry of Ayush / State Ayurvedic Board Registration (BAMS/MD Ayur)',
+        type: 'DOCTOR_REGISTRATION',
+        fileUploaded: true,
+        fileName: 'Acharya_Shrinivas_BAMS_Reg.pdf',
+        regNumber: 'AYUR-UP-2026-3301',
+        verified: true
+      },
+      {
+        id: 'doc-ayush-2',
+        name: 'Clinical Establishment Registration (Ayush Category)',
+        type: 'CLINICAL_ESTABLISHMENT',
+        fileUploaded: true,
+        fileName: 'Ayush_Clinical_Establishment_Reg.pdf',
+        regNumber: 'CEA-AYUSH-2026-441',
+        verified: true
+      },
+      {
+        id: 'doc-ayush-3',
+        name: 'Ayurvedic Herbal Pharmacy / Dispensing Drug License',
+        type: 'DRUG_LICENSE',
+        fileUploaded: true,
+        fileName: 'Ayurvedic_Dispensary_License.pdf',
+        regNumber: 'AYUR-DISP-2026-12',
+        verified: true
+      },
+      {
+        id: 'doc-ayush-4',
+        name: 'Ayush Centre Trade License & GST Certificate',
+        type: 'GST_PAN',
+        fileUploaded: true,
+        fileName: 'AyurVeda_Wellness_GST.pdf',
+        regNumber: '09AAACA4455B1Z9',
+        verified: true
+      }
+    ]
+  },
+
+  DIALYSIS_CENTRE: {
+    id: 'DIALYSIS_CENTRE',
+    label: 'Dialysis & Renal Care Hub',
+    icon: '💧',
+    badge: 'Hemodialysis Stations',
+    description: 'Real-time hemodialysis bed/station monitoring, Kt/V urea clearance calculator, dialyzer reuse barcoding, RO water quality logs.',
+    defaultPartnerName: 'Apex Renal & Hemodialysis Care Hub',
+    defaultContactPerson: 'Dr. Arvind Shenoy, MD, DM Nephrology',
+    defaultPhone: '+91 98555 66778',
+    defaultEmail: 'nephro.arvind@docsearch.health',
+    defaultPassword: 'NephroPass123!',
+    defaultCity: 'Lucknow',
+    defaultState: 'Uttar Pradesh',
+    plans: [
+      {
+        id: 'dialysis-clinic',
+        name: 'Standalone Dialysis Centre (10 Stations)',
+        fee: 5999,
+        description: 'Hemodialysis station shift scheduler, patient pre/post weight log & session summary PDF',
+        badge: 'Clinic Hub'
+      },
+      {
+        id: 'dialysis-hub',
+        name: 'Advanced Renal Hub & Critical Dialysis (25 Stations)',
+        fee: 11999,
+        description: 'Kt/V urea clearance adequacy calculator, dialyzer reuse barcode audit & RO water daily quality log',
+        badge: '⭐ Most Popular'
+      },
+      {
+        id: 'dialysis-network',
+        name: 'Multi-Centre Dialysis Hospital Chain',
+        fee: 24999,
+        description: 'PMNDP national scheme sync, AV fistula surveillance, ICU CRRT sync & multi-branch renal network',
+        badge: 'Renal Enterprise'
+      }
+    ],
+    availableFeatures: [
+      { id: 'dialysis_station_matrix', name: 'Real-Time Hemodialysis Station Bed Matrix & Shift Scheduler', default: true },
+      { id: 'dialysis_ktv_calculator', name: 'Kt/V Urea Kinetic Clearance & Dialysis Adequacy Calculator', default: true },
+      { id: 'dialysis_dialyzer_barcode', name: 'Dialyzer Reprocessing & Reuse Barcode Tracking (AAMI Compliant)', default: true },
+      { id: 'dialysis_ro_water_log', name: 'Reverse Osmosis (RO) Water Quality & Endotoxin Daily Log', default: true },
+      { id: 'dialysis_fistula_care', name: 'Arteriovenous (AV) Fistula Health & Cannulation Surveillance', default: true },
+      { id: 'dialysis_pmndp_sync', name: 'PMNDP (Pradhan Mantri National Dialysis Programme) Portal Sync', default: false },
+      { id: 'dialysis_dry_weight_alert', name: 'Automated WhatsApp Pre-Dialysis Dry Weight & Fluid Check Alerts', default: false }
+    ],
+    documents: [
+      {
+        id: 'doc-dialysis-1',
+        name: 'Clinical Establishment Act Registration for Dialysis Facility',
+        type: 'CLINICAL_ESTABLISHMENT',
+        fileUploaded: true,
+        fileName: 'Dialysis_Facility_CEA_Reg.pdf',
+        regNumber: 'CEA-DIA-2026-778',
+        verified: true
+      },
+      {
+        id: 'doc-dialysis-2',
+        name: 'Senior Nephrologist State Medical Council Degree Certificate (DM Nephro)',
+        type: 'DOCTOR_REGISTRATION',
+        fileUploaded: true,
+        fileName: 'Dr_Arvind_Shenoy_DM_Nephro.pdf',
+        regNumber: 'MCI-NEPH-88902',
+        verified: true
+      },
+      {
+        id: 'doc-dialysis-3',
+        name: 'NABH Dialysis Quality & Bio-Medical Waste Authorization',
+        type: 'NABH_ACCREDITATION',
+        fileUploaded: true,
+        fileName: 'Dialysis_NABH_BMW_Authorization.pdf',
+        regNumber: 'NABH-DIA-2026-302',
+        verified: true
+      },
+      {
+        id: 'doc-dialysis-4',
+        name: 'Dialysis Centre Trade License & GST Certificate',
+        type: 'GST_PAN',
+        fileUploaded: true,
+        fileName: 'Apex_Renal_GST_Certificate.pdf',
+        regNumber: '09AABCN6677D1Z1',
+        verified: true
+      }
+    ]
+  },
+
+  EYE_CARE: {
+    id: 'EYE_CARE',
+    label: 'Eye Care & Laser Vision Hospital',
+    icon: '👁️',
+    badge: 'Ophthalmology & Lasik',
+    description: 'Auto-refraction Snellen charts, IOL power biometry calculator, slit lamp imaging, cataract surgical package billing & optical POS.',
+    defaultPartnerName: 'Apex Vision & Eye Laser Care Hospital',
+    defaultContactPerson: 'Dr. Radhika Iyer, MS Ophthalmology',
+    defaultPhone: '+91 98666 77889',
+    defaultEmail: 'eye.radhika@docsearch.health',
+    defaultPassword: 'EyePass123!',
+    defaultCity: 'Lucknow',
+    defaultState: 'Uttar Pradesh',
+    plans: [
+      {
+        id: 'eye-clinic',
+        name: 'Solo Optometry & Eye OPD',
+        fee: 2499,
+        description: 'Auto-refraction, digital prescription, spectacle power prescription & appointment queue',
+        badge: 'Solo OPD'
+      },
+      {
+        id: 'eye-hospital',
+        name: 'Day Care Eye Hospital & Cataract Centre',
+        fee: 6999,
+        description: 'IOL power biometry SRK-T, slit lamp capture, cataract package billing & optical dispensary POS',
+        badge: '⭐ Most Popular'
+      },
+      {
+        id: 'eye-network',
+        name: 'Tertiary Laser Eye Surgery Network',
+        fee: 14999,
+        description: 'Lasik refractive suite, diabetic retinopathy screening AI, glaucoma IOP progression & multi-branch optical sync',
+        badge: 'Laser Network'
+      }
+    ],
+    availableFeatures: [
+      { id: 'eye_snellen_refraction', name: 'Digital Snellen Visual Acuity & Auto-Refraction Capture', default: true },
+      { id: 'eye_slit_lamp_img', name: 'Slit Lamp Anterior Segment Photo & Retinal Fundus Attachment', default: true },
+      { id: 'eye_biometry_srkt', name: 'IOL Power Biometry SRK-T Calculator for Cataract Surgeries', default: true },
+      { id: 'eye_optical_pos', name: 'Optical Dispensing POS with Frame & Lens Prescription Sync', default: true },
+      { id: 'eye_iop_glaucoma', name: 'Intraocular Pressure (IOP) Tonometry Glaucoma Progression Chart', default: true },
+      { id: 'eye_whatsapp_eyedrops', name: 'WhatsApp Post-Operative Eye Drop Instillation Alarm Schedule', default: false },
+      { id: 'eye_ai_retinopathy', name: 'Diabetic Retinopathy AI Screening Integration', default: false }
+    ],
+    documents: [
+      {
+        id: 'doc-eye-1',
+        name: 'State Medical Council Eye Surgeon Registration Certificate (MS/DNB Opht)',
+        type: 'DOCTOR_REGISTRATION',
+        fileUploaded: true,
+        fileName: 'Dr_Radhika_Iyer_MS_Ophth.pdf',
+        regNumber: 'MCI-EYE-66712',
+        verified: true
+      },
+      {
+        id: 'doc-eye-2',
+        name: 'Clinical Establishment Act Registration for Eye Hospital',
+        type: 'CLINICAL_ESTABLISHMENT',
+        fileUploaded: true,
+        fileName: 'Eye_Hospital_CEA_Registration.pdf',
+        regNumber: 'CEA-EYE-2026-904',
+        verified: true
+      },
+      {
+        id: 'doc-eye-3',
+        name: 'Laser Eye Safety & NABH Eye Care Accreditation',
+        type: 'NABH_ACCREDITATION',
+        fileUploaded: true,
+        fileName: 'NABH_Eye_Care_Safety_Cert.pdf',
+        regNumber: 'NABH-EYE-2026-442',
+        verified: true
+      },
+      {
+        id: 'doc-eye-4',
+        name: 'Optical & Eye Hospital Commercial Trade License & GST Certificate',
+        type: 'GST_PAN',
+        fileUploaded: true,
+        fileName: 'Apex_Vision_GST_Certificate.pdf',
+        regNumber: '09AABCI8899A1Z6',
+        verified: true
+      }
+    ]
+  },
+
+  PHYSIOTHERAPY: {
+    id: 'PHYSIOTHERAPY',
+    label: 'Physiotherapy & Rehabilitation Clinic',
+    icon: '🏃',
+    badge: 'Sports Rehab & ROM',
+    description: 'Range of motion (ROM) goniometry, muscle strength grading (MMT), customized exercise prescription videos & package billing.',
+    defaultPartnerName: 'Apex Motion Physiotherapy & Sports Rehab Centre',
+    defaultContactPerson: 'Dr. Pooja Mishra, BPT, MPT (Ortho Rehab)',
+    defaultPhone: '+91 98777 88990',
+    defaultEmail: 'physio.pooja@docsearch.health',
+    defaultPassword: 'PhysioPass123!',
+    defaultCity: 'Lucknow',
+    defaultState: 'Uttar Pradesh',
+    plans: [
+      {
+        id: 'physio-solo',
+        name: 'Solo Physiotherapy Practice',
+        fee: 1699,
+        description: 'Patient assessment notes, exercise chart PDF, appointment scheduling & SMS alerts',
+        badge: 'Solo Physio'
+      },
+      {
+        id: 'physio-rehab',
+        name: 'Advanced Sports Rehab & Electrotherapy',
+        fee: 3999,
+        description: 'Digital ROM goniometry, MRC muscle strength grading, multi-session package billing & exercise video pad',
+        badge: '⭐ Most Popular'
+      },
+      {
+        id: 'physio-network',
+        name: 'Multi-Centre Neuro-Ortho Rehab Chain',
+        fee: 7999,
+        description: 'Biomechanical gait analysis, FIM functional independence meter, sports injury RTP certification & multi-clinic sync',
+        badge: 'Rehab Chain'
+      }
+    ],
+    availableFeatures: [
+      { id: 'physio_rom_goniometry', name: 'Digital Goniometry Joint Range of Motion (ROM) & Flexibility Assessment', default: true },
+      { id: 'physio_mrc_strength', name: 'Medical Research Council (MRC) Muscle Strength Grading Chart', default: true },
+      { id: 'physio_exercise_pad', name: 'Custom Physical Therapy Video Regimen Prescription for Patients', default: true },
+      { id: 'physio_package_billing', name: 'Multi-Session Treatment Package Billing with Punch-Card Tracking', default: true },
+      { id: 'physio_ergonomic_report', name: 'Ergonomic & Postural Assessment Biomechanical Report', default: true },
+      { id: 'physio_whatsapp_reminders', name: 'WhatsApp Daily Home Exercise Reminder with Video Links', default: false },
+      { id: 'physio_fim_neuro', name: 'Post-Stroke Neuro-Rehabilitation Functional Independence Measure (FIM)', default: false }
+    ],
+    documents: [
+      {
+        id: 'doc-physio-1',
+        name: 'Indian Association of Physiotherapists (IAP) Registration Certificate',
+        type: 'DOCTOR_REGISTRATION',
+        fileUploaded: true,
+        fileName: 'Dr_Pooja_Mishra_IAP_Reg.pdf',
+        regNumber: 'IAP-PT-2026-1104',
+        verified: true
+      },
+      {
+        id: 'doc-physio-2',
+        name: 'Clinical Establishment Registration for Physiotherapy Facility',
+        type: 'CLINICAL_ESTABLISHMENT',
+        fileUploaded: true,
+        fileName: 'Physiotherapy_Facility_CEA_Reg.pdf',
+        regNumber: 'CEA-PHY-2026-882',
+        verified: true
+      },
+      {
+        id: 'doc-physio-3',
+        name: 'Electrotherapy Equipment Safety & Calibration Certificate',
+        type: 'AERB_LICENSE',
+        fileUploaded: true,
+        fileName: 'Electrotherapy_Safety_Calibration.pdf',
+        regNumber: 'CAL-PHY-2026-004',
+        verified: true
+      },
+      {
+        id: 'doc-physio-4',
+        name: 'Physiotherapy Centre Commercial Trade License & GST Certificate',
+        type: 'GST_PAN',
+        fileUploaded: true,
+        fileName: 'Apex_Motion_GST_Certificate.pdf',
+        regNumber: '09AABCP1122M1Z0',
+        verified: true
+      }
+    ]
   }
 };
 
@@ -639,8 +1160,31 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
           case 'PHARMACY': return 'PHARMACIST';
           case 'CLINIC': return 'CLINIC_DOCTOR';
           case 'DIAGNOSTIC_CENTRE': return 'RADIOLOGIST';
+          case 'BLOOD_BANK': return 'BLOOD_BANK_OFFICER';
+          case 'DENTAL_CLINIC': return 'DENTIST';
+          case 'AYUSH_WELLNESS': return 'AYURVEDIC_VAIDYA';
+          case 'DIALYSIS_CENTRE': return 'NEPHROLOGIST';
+          case 'EYE_CARE': return 'OPHTHALMOLOGIST';
+          case 'PHYSIOTHERAPY': return 'PHYSIOTHERAPIST';
           case 'PATHOLOGY':
           default: return 'PATHOLOGIST';
+        }
+      };
+
+      const getCategoryLoginUrl = (cat: HealthcareCategoryType) => {
+        switch (cat) {
+          case 'HOSPITAL': return '/hospital';
+          case 'PHARMACY': return '/pharmacy';
+          case 'CLINIC': return '/clinic';
+          case 'DIAGNOSTIC_CENTRE': return '/radiology';
+          case 'BLOOD_BANK': return '/hospital/blood-bank';
+          case 'DENTAL_CLINIC': return '/clinic/consultation';
+          case 'AYUSH_WELLNESS': return '/clinic/consultation';
+          case 'DIALYSIS_CENTRE': return '/hospital/inpatient';
+          case 'EYE_CARE': return '/clinic/consultation';
+          case 'PHYSIOTHERAPY': return '/clinic/consultation';
+          case 'PATHOLOGY':
+          default: return '/pathology';
         }
       };
 
@@ -683,12 +1227,7 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
             expiryDate: planExpiryFormatted
           },
           credentials: {
-            loginUrl: `http://localhost:5173${
-              formData.classification === 'HOSPITAL' ? '/hospital' :
-              formData.classification === 'PHARMACY' ? '/pharmacy' :
-              formData.classification === 'CLINIC' ? '/clinic' :
-              formData.classification === 'DIAGNOSTIC_CENTRE' ? '/radiology' : '/pathology'
-            }`,
+            loginUrl: `http://localhost:5173${getCategoryLoginUrl(formData.classification)}`,
             userId: formData.email,
             temporaryPassword: formData.password,
             role: getRoleByOrg(formData.classification),
@@ -713,6 +1252,12 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
           case 'PHARMACY': return 'pharmacy-medication';
           case 'CLINIC': return 'clinical-consultation';
           case 'DIAGNOSTIC_CENTRE': return 'radiology-imaging';
+          case 'BLOOD_BANK': return 'blood-bank-transfusion';
+          case 'DENTAL_CLINIC': return 'clinical-consultation';
+          case 'AYUSH_WELLNESS': return 'clinical-consultation';
+          case 'DIALYSIS_CENTRE': return 'inpatient-management';
+          case 'EYE_CARE': return 'clinical-consultation';
+          case 'PHYSIOTHERAPY': return 'clinical-consultation';
           case 'PATHOLOGY':
           default: return 'clinical-investigation';
         }
@@ -724,8 +1269,36 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
           case 'PHARMACY': return 'Pharmacy POS & Stock Inwarding';
           case 'CLINIC': return 'Outpatient Clinic & Clinical Consultation';
           case 'DIAGNOSTIC_CENTRE': return 'Radiology, MRI, CT & Imaging';
+          case 'BLOOD_BANK': return 'Blood Bank & Component Separation Unit';
+          case 'DENTAL_CLINIC': return 'Dental Surgery & Maxillofacial Care';
+          case 'AYUSH_WELLNESS': return 'Ayush, Panchakarma & Holistic Wellness';
+          case 'DIALYSIS_CENTRE': return 'Nephrology & Hemodialysis Unit';
+          case 'EYE_CARE': return 'Ophthalmology & Refractive Surgery';
+          case 'PHYSIOTHERAPY': return 'Physiotherapy, Ergonomics & Sports Rehab';
           case 'PATHOLOGY':
           default: return 'Pathology & Diagnostic Laboratory';
+        }
+      };
+
+      const getWorkspaceByOrg = (cat: HealthcareCategoryType): string[] => {
+        switch (cat) {
+          case 'HOSPITAL':
+          case 'BLOOD_BANK':
+          case 'DIALYSIS_CENTRE':
+            return ['HOSPITAL'];
+          case 'PHARMACY':
+            return ['PHARMACY'];
+          case 'PATHOLOGY':
+            return ['PATHOLOGY'];
+          case 'DIAGNOSTIC_CENTRE':
+            return ['DIAGNOSTIC_CENTRE'];
+          case 'CLINIC':
+          case 'DENTAL_CLINIC':
+          case 'AYUSH_WELLNESS':
+          case 'EYE_CARE':
+          case 'PHYSIOTHERAPY':
+          default:
+            return ['CLINIC'];
         }
       };
 
@@ -740,7 +1313,7 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
         department: getDeptByOrg(formData.classification),
         tenantName: formData.partnerName,
         organizationType: formData.classification,
-        allowedWorkspaces: [formData.classification],
+        allowedWorkspaces: getWorkspaceByOrg(formData.classification),
         defaultModule: getModuleByOrg(formData.classification),
         planTier: formData.planTier,
         planExpiryDate: resultData.credentials?.planExpiryDate || planExpiryFormatted,
@@ -907,6 +1480,18 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
                     ? 'DOCTOR CLINIC / POLYCLINIC NAME *'
                     : selectedCategory === 'DIAGNOSTIC_CENTRE'
                     ? 'DIAGNOSTIC & RADIOLOGY CENTRE NAME *'
+                    : selectedCategory === 'BLOOD_BANK'
+                    ? 'BLOOD BANK & TRANSFUSION CENTRE NAME *'
+                    : selectedCategory === 'DENTAL_CLINIC'
+                    ? 'DENTAL CLINIC & MAXILLOFACIAL CENTRE NAME *'
+                    : selectedCategory === 'AYUSH_WELLNESS'
+                    ? 'AYUSH & PANCHAKARMA WELLNESS CENTRE NAME *'
+                    : selectedCategory === 'DIALYSIS_CENTRE'
+                    ? 'DIALYSIS & RENAL CARE HUB NAME *'
+                    : selectedCategory === 'EYE_CARE'
+                    ? 'EYE CARE & LASER VISION HOSPITAL NAME *'
+                    : selectedCategory === 'PHYSIOTHERAPY'
+                    ? 'PHYSIOTHERAPY & REHAB CLINIC NAME *'
                     : 'PATHOLOGY LAB NAME *'}
                 </label>
                 <input
@@ -936,6 +1521,18 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
                     ? 'LEAD CONSULTING DOCTOR NAME *'
                     : selectedCategory === 'DIAGNOSTIC_CENTRE'
                     ? 'CHIEF RADIOLOGIST / DIRECTOR NAME *'
+                    : selectedCategory === 'BLOOD_BANK'
+                    ? 'TRANSFUSION MEDICINE MEDICAL OFFICER *'
+                    : selectedCategory === 'DENTAL_CLINIC'
+                    ? 'CHIEF DENTAL SURGEON / ORTHODONTIST *'
+                    : selectedCategory === 'AYUSH_WELLNESS'
+                    ? 'SENIOR AYURVEDIC VAIDYA / PANCHAKARMA LEAD *'
+                    : selectedCategory === 'DIALYSIS_CENTRE'
+                    ? 'CONSULTANT NEPHROLOGIST / CLINICAL LEAD *'
+                    : selectedCategory === 'EYE_CARE'
+                    ? 'CHIEF OPHTHALMOLOGIST / EYE SURGEON *'
+                    : selectedCategory === 'PHYSIOTHERAPY'
+                    ? 'CONSULTANT PHYSIOTHERAPIST / REHAB LEAD *'
                     : 'HEAD PATHOLOGIST / LAB IN-CHARGE *'}
                 </label>
                 <input

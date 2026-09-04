@@ -299,6 +299,24 @@ export const partnerRoutes: FastifyPluginAsync = async (fastify) => {
       } else if (orgType === 'DIAGNOSTIC_CENTRE') {
         primaryRole = 'RADIOLOGIST';
         defaultPerms = ['radiology:scans:read', 'radiology:reports:create', 'billing:invoices:create'];
+      } else if (orgType === 'BLOOD_BANK') {
+        primaryRole = 'BLOOD_BANK_OFFICER';
+        defaultPerms = ['blood:inventory:read', 'blood:transfusion:manage', 'billing:invoices:create', 'billing:invoices:read'];
+      } else if (orgType === 'DENTAL_CLINIC') {
+        primaryRole = 'DENTIST';
+        defaultPerms = ['clinical:consultations:create', 'dental:procedures:manage', 'billing:invoices:create', 'billing:invoices:read'];
+      } else if (orgType === 'AYUSH_WELLNESS') {
+        primaryRole = 'AYURVEDIC_VAIDYA';
+        defaultPerms = ['clinical:consultations:create', 'ayush:panchakarma:manage', 'billing:invoices:create', 'billing:invoices:read'];
+      } else if (orgType === 'DIALYSIS_CENTRE') {
+        primaryRole = 'NEPHROLOGIST';
+        defaultPerms = ['dialysis:sessions:manage', 'inpatient:beds:manage', 'billing:invoices:create', 'billing:invoices:read'];
+      } else if (orgType === 'EYE_CARE') {
+        primaryRole = 'OPHTHALMOLOGIST';
+        defaultPerms = ['clinical:consultations:create', 'eyecare:optometry:manage', 'billing:invoices:create', 'billing:invoices:read'];
+      } else if (orgType === 'PHYSIOTHERAPY') {
+        primaryRole = 'PHYSIOTHERAPIST';
+        defaultPerms = ['clinical:consultations:create', 'physio:rehab:manage', 'billing:invoices:create', 'billing:invoices:read'];
       } else {
         primaryRole = 'PATHOLOGIST';
         defaultPerms = ['lab:orders:read', 'lab:orders:create', 'lab:specimens:create', 'lab:results:create', 'billing:invoices:create'];
@@ -318,7 +336,7 @@ export const partnerRoutes: FastifyPluginAsync = async (fastify) => {
         lastName,
         tenantName: body.partnerName,
         organizationType: orgType,
-        roles: [primaryRole, 'HOSPITAL_ADMIN'],
+        roles: [primaryRole, 'HOSPITAL_ADMIN'] as any,
         permissions: defaultPerms,
         planTier: body.planTier || 'Healthcare Partner Pro',
         planExpiryDate: planExpiryFormatted,
@@ -326,10 +344,17 @@ export const partnerRoutes: FastifyPluginAsync = async (fastify) => {
         phone: body.phone
       });
 
-      const categoryLoginPath = orgType === 'HOSPITAL' ? '/hospital' :
+      const categoryLoginPath =
+        orgType === 'HOSPITAL' ? '/hospital' :
         orgType === 'PHARMACY' ? '/pharmacy' :
         orgType === 'CLINIC' ? '/clinic' :
-        orgType === 'DIAGNOSTIC_CENTRE' ? '/radiology' : '/pathology';
+        orgType === 'DIAGNOSTIC_CENTRE' ? '/radiology' :
+        orgType === 'BLOOD_BANK' ? '/hospital/blood-bank' :
+        orgType === 'DENTAL_CLINIC' ? '/clinic/consultation' :
+        orgType === 'AYUSH_WELLNESS' ? '/clinic/consultation' :
+        orgType === 'DIALYSIS_CENTRE' ? '/hospital/inpatient' :
+        orgType === 'EYE_CARE' ? '/clinic/consultation' :
+        orgType === 'PHYSIOTHERAPY' ? '/clinic/consultation' : '/pathology';
 
       const partnerId = `PRT-${Date.now().toString().slice(-6)}`;
       const activationVoucher = {
