@@ -35,8 +35,10 @@ export const RecordInsurancePreAuthSchema = z.object({
   payerName: z.string().trim().min(1, 'payerName is required'),
   policyNumber: z.string().trim().min(1, 'policyNumber is required'),
   preAuthNumber: z.string().trim().min(1, 'preAuthNumber is required'),
+  requestedAmount: z.number().nonnegative().optional(),
   approvedAmount: z.number().nonnegative().optional(),
   coPayAmount: z.number().nonnegative().optional(),
+  status: z.string().trim().optional(),
   claimStatus: z.string().trim().optional(),
   remarks: z.string().trim().optional(),
   metadata: z.record(z.any()).optional()
@@ -45,6 +47,7 @@ export const RecordInsurancePreAuthSchema = z.object({
 export const CollectPaymentSchema = z.object({
   amount: z.number().positive('amount must be greater than 0'),
   paymentMode: z.enum(['CASH', 'UPI', 'CARD', 'NET_BANKING', 'CHEQUE', 'INSURANCE_DIRECT']),
+  transactionReference: z.string().trim().optional(),
   transactionRef: z.string().trim().optional(),
   paymentReference: z.string().trim().optional(),
   metadata: z.record(z.any()).optional()
@@ -86,6 +89,19 @@ export const ApplyDiscountSchema = z.object({
 ).refine(
   (data) => Boolean((data.approved_by && data.approved_by.trim()) || (data.approvedBy && data.approvedBy.trim())),
   { message: 'approved_by is mandatory and cannot be empty' }
+);
+
+export const RefundInvoiceSchema = z.object({
+  amount: z.number().positive('amount must be greater than 0'),
+  reason: z.string().trim().min(1, 'reason is mandatory and cannot be empty'),
+  supervisor_user_id: z.string().trim().min(1, 'supervisor_user_id cannot be empty').optional(),
+  supervisorUserId: z.string().trim().min(1, 'supervisorUserId cannot be empty').optional(),
+  supervisor_override_token: z.string().trim().optional(),
+  supervisorOverrideToken: z.string().trim().optional(),
+  paymentId: z.string().trim().optional()
+}).refine(
+  (data) => Boolean((data.supervisor_user_id && data.supervisor_user_id.trim()) || (data.supervisorUserId && data.supervisorUserId.trim())),
+  { message: 'supervisor_user_id is mandatory and cannot be empty' }
 );
 
 export const billingManagementRoutes: FastifyPluginAsync = async (fastify) => {
@@ -186,6 +202,7 @@ export const billingManagementRoutes: FastifyPluginAsync = async (fastify) => {
       }
       const data = await billingManagementService.collectPayment({
         ...parsed.data,
+        transactionReference: parsed.data.transactionReference || parsed.data.transactionRef || parsed.data.paymentReference,
         invoiceId: id
       } as Omit<CollectPaymentInput, 'tenantId' | 'collectedBy'>, request.session);
       reply.status(201);
@@ -283,6 +300,50 @@ export const billingManagementRoutes: FastifyPluginAsync = async (fastify) => {
           reason: body.reason.trim(),
           approvedBy,
           supervisorOverrideToken
+        },
+        request.session
+      );
+
+      reply.status(200);
+      return { success: true, data };
+    }
+  );
+
+  // 6b. Process Staff Refund on Invoice
+  fastify.post(
+    '/api/v1/partner/billing/invoices/:id/refund',
+    {
+      preHandler: [authenticate, requirePermission('billing:invoices', 'update')]
+    },
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const parsed = RefundInvoiceSchema.safeParse(request.body || {});
+      if (!parsed.success) {
+        reply.status(400);
+        return {
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: parsed.error.issues.map((i) => i.message).join('; ')
+          }
+        };
+      }
+
+      const body = parsed.data;
+      const supervisorUserId = (body.supervisor_user_id || body.supervisorUserId)!.trim();
+      const supervisorOverrideToken =
+        body.supervisor_override_token ||
+        body.supervisorOverrideToken ||
+        (request.headers['x-supervisor-override-token'] as string | undefined);
+
+      const data = await billingManagementService.processRefund(
+        {
+          invoiceId: id,
+          amount: body.amount,
+          reason: body.reason.trim(),
+          supervisorUserId,
+          supervisorOverrideToken,
+          paymentId: body.paymentId
         },
         request.session
       );

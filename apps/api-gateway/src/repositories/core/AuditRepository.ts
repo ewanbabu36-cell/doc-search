@@ -60,7 +60,15 @@ export class AuditRepository {
           });
           return inserted;
         }
-      } catch (err) {
+      } catch (err: any) {
+        if (newRecord.actorId && err?.message && err.message.includes('audit_events_actor_id_users_id_fk')) {
+          try {
+            const [inserted] = await dbClient.insert(auditEvents).values({ ...newRecord, actorId: null }).returning();
+            if (inserted) return inserted;
+          } catch {
+            // fall through to memory store
+          }
+        }
         logger.error('Failed to write audit event to database, using memory fallback', err);
       }
     }

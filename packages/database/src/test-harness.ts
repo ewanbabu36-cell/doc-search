@@ -301,7 +301,10 @@ export async function createTestDatabase(options: { seedBaseline?: boolean } = {
     await pool.query(`
       INSERT INTO "core"."users" ("id", "email", "first_name", "last_name", "status", "is_email_verified")
       VALUES 
-        ('${DOCTOR_ID}', 'doctor@docsearch.health', 'Doctor', 'Test', 'ACTIVE', true)
+        ('${DOCTOR_ID}', 'doctor@docsearch.health', 'Doctor', 'Test', 'ACTIVE', true),
+        ('${STAFF_ID_A}', 'staff_a@docsearch.health', 'Staff', 'A', 'ACTIVE', true),
+        ('${STAFF_ID_B}', 'staff_b@docsearch.health', 'Staff', 'B', 'ACTIVE', true),
+        ('55555555-5555-4555-8555-555555555555', 'billing.head@docsearch.health', 'Billing', 'Head', 'ACTIVE', true)
       ON CONFLICT DO NOTHING;
     `);
 

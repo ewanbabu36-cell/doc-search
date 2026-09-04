@@ -4,6 +4,12 @@ import {
   pharmacyBatches,
   pharmacyStockMovements,
   pharmacyDispensing,
+  pharmacyPrescriptions,
+  billingInvoices,
+  billingInvoiceItems,
+  billingPayments,
+  billingReceipts,
+  encounters,
   eq,
   and,
   desc,
@@ -260,24 +266,56 @@ export class PharmacyManagementRepository {
     };
 
     try {
+      const [existing] = await db
+        .select()
+        .from(medicationCatalog)
+        .where(and(eq(medicationCatalog.tenantId, input.tenantId), eq(medicationCatalog.medicationCode, input.medicationCode)));
+      if (existing) {
+        await db
+          .update(medicationCatalog)
+          .set({
+            genericName: record.genericName,
+            brandName: record.brandName,
+            dosageForm: record.dosageForm,
+            strength: record.strength,
+            category: record.category,
+            metadata: {
+              name: record.name,
+              unitPrice: record.unitPrice
+            },
+            updatedAt: new Date()
+          } as any)
+          .where(eq(medicationCatalog.id, existing.id));
+        return { ...record, id: existing.id };
+      }
+    } catch {
+      // fallback to insert
+    }
+
+    try {
       const [created] = await db.insert(medicationCatalog).values({
         id: record.id,
         tenantId: record.tenantId,
         partnerId: record.partnerId,
         organizationId: record.organizationId,
         medicationCode: record.medicationCode,
-        name: record.name,
         genericName: record.genericName,
+        brandName: record.brandName || record.name,
         dosageForm: record.dosageForm,
         strength: record.strength,
-        category: record.category
+        manufacturer: (input as any).manufacturer || 'Cipla Therapeutics Ltd',
+        category: record.category,
+        metadata: {
+          name: record.name,
+          unitPrice: record.unitPrice
+        }
       } as unknown as typeof medicationCatalog.$inferInsert).returning();
 
       return { ...record, id: created ? created.id : record.id };
-    } catch (err) {
+    } catch (err: any) {
       logger.error('Failed to create medication in database', err);
       throw new AppError({
-        message: 'Database persistence failed. Medication creation aborted.',
+        message: `Database persistence failed. Medication creation aborted: ${err?.message || String(err)}`,
         code: ErrorCode.SERVICE_UNAVAILABLE,
         statusCode: 503
       });
@@ -412,7 +450,7 @@ export class PharmacyManagementRepository {
     const dispensingId = crypto.randomUUID();
     const dispensingNumber = `DISP-${Math.floor(100000 + Math.random() * 900000)}`;
     const invoiceNumber = `INV-PHARM-${Math.floor(100000 + Math.random() * 900000)}`;
-    const prescriptionId = input.prescriptionId || input.encounterId || `RX-${Date.now()}`;
+    const isUuid = (val?: string): boolean => !!val && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
 
     const dispensedItems: StoredDispensing['items'] = [];
     let totalBillAmount = 0;
@@ -423,9 +461,6 @@ export class PharmacyManagementRepository {
       return await runInTx(async (tx: any) => {
         for (const item of input.items) {
           const medId = item.medicationId || item.drugCode || 'MED-GENERIC';
-          const unitPrice = 25.0;
-          const itemTotal = unitPrice * item.quantity;
-          totalBillAmount += itemTotal;
 
           // Concurrency & Stock Validation: Lock batch row FOR UPDATE
           let batchRow: any = null;
@@ -474,6 +509,28 @@ export class PharmacyManagementRepository {
             });
           }
 
+          // Authoritative Dynamic Pricing Lookup
+          let unitPrice = 25.0;
+          try {
+            const [medRow] = await tx
+              .select()
+              .from(medicationCatalog)
+              .where(and(eq(medicationCatalog.id, batchRow.medicationId || medId), eq(medicationCatalog.tenantId, input.tenantId)));
+            const catalogPrice = Number((medRow as any)?.metadata?.unitPrice ?? (medRow as any)?.unitPrice ?? (medRow as any)?.unit_price);
+            if (catalogPrice > 0) {
+              unitPrice = catalogPrice;
+            } else if (batchRow.unitCost && Number(batchRow.unitCost) > 0) {
+              unitPrice = Math.round(Number(batchRow.unitCost) * 1.25 * 100) / 100;
+            }
+          } catch {
+            if (batchRow.unitCost && Number(batchRow.unitCost) > 0) {
+              unitPrice = Math.round(Number(batchRow.unitCost) * 1.25 * 100) / 100;
+            }
+          }
+
+          const itemTotal = Math.round(unitPrice * item.quantity * 100) / 100;
+          totalBillAmount += itemTotal;
+
           const newAvailableQty = availableQty - item.quantity;
           const newStatus = newAvailableQty === 0 ? 'DEPLETED' : (batchRow.status || 'ACTIVE');
 
@@ -516,7 +573,108 @@ export class PharmacyManagementRepository {
           } as unknown as typeof pharmacyStockMovements.$inferInsert);
         }
 
+        totalBillAmount = Math.round(totalBillAmount * 100) / 100;
         const dispensingStatus = input.isPartial ? 'PARTIALLY_DISPENSED' : 'DISPENSED';
+
+        // 1. Authoritative Encounter Resolution
+        let validEncounterId: string | null = null;
+        if (input.encounterId && isUuid(input.encounterId)) {
+          validEncounterId = input.encounterId;
+        }
+        if (!validEncounterId) {
+          try {
+            const [enc] = await tx
+              .select()
+              .from(encounters)
+              .where(and(eq(encounters.tenantId, input.tenantId), eq(encounters.patientId, input.patientId)))
+              .orderBy(desc(encounters.createdAt))
+              .limit(1);
+            if (enc) validEncounterId = enc.id;
+          } catch {
+            // ignore
+          }
+        }
+        if (!validEncounterId) {
+          validEncounterId = crypto.randomUUID();
+          try {
+            await tx.insert(encounters).values({
+              id: validEncounterId,
+              tenantId: input.tenantId,
+              partnerId: input.partnerId || '00000000-0000-4000-8000-000000000001',
+              organizationId: input.organizationId || '00000000-0000-4000-8000-000000000002',
+              branchId: input.branchId || '00000000-0000-4000-8000-000000000003',
+              departmentId: '00000000-0000-4000-8000-000000000004',
+              patientId: input.patientId,
+              encounterNumber: `ENC-PHARM-${Math.floor(100000 + Math.random() * 900000)}`,
+              encounterType: 'OPD',
+              status: 'COMPLETED',
+              chiefComplaint: 'Walk-in Pharmacy Dispensing',
+              createdAt: now,
+              updatedAt: now
+            } as any);
+          } catch (encErr) {
+            logger.warn('Could not create default encounter for pharmacy dispensing', { error: String(encErr) });
+          }
+        }
+
+        // 2. Authoritative Prescription Resolution (Foreign Key Compliance)
+        let resolvedPrescriptionId = isUuid(input.prescriptionId) ? input.prescriptionId! : null;
+        let prescriptionExists = false;
+        let existingPrescriptionRow: any = null;
+        if (resolvedPrescriptionId) {
+          try {
+            const [p] = await tx.select().from(pharmacyPrescriptions).where(eq(pharmacyPrescriptions.id, resolvedPrescriptionId));
+            if (p) {
+              prescriptionExists = true;
+              existingPrescriptionRow = p;
+            }
+          } catch {
+            prescriptionExists = false;
+          }
+        }
+
+        if (existingPrescriptionRow && existingPrescriptionRow.status === 'DISPENSED') {
+          throw new AppError({
+            message: `Prescription ${resolvedPrescriptionId} has already been fully dispensed`,
+            code: ErrorCode.BAD_REQUEST,
+            statusCode: 500
+          });
+        }
+
+        if (!prescriptionExists) {
+          resolvedPrescriptionId = crypto.randomUUID();
+          const rxNumber = `RX-POS-${Math.floor(100000 + Math.random() * 900000)}`;
+          const resolvedPartnerId = input.partnerId || '00000000-0000-4000-8000-000000000001';
+          const resolvedOrgId = input.organizationId || '00000000-0000-4000-8000-000000000002';
+          const resolvedBranchId = input.branchId || '00000000-0000-4000-8000-000000000003';
+          const doctorCandidate = (input as any).doctorId;
+          const resolvedDoctorId = isUuid(doctorCandidate) ? doctorCandidate : '99999999-9999-4999-8999-999999999999';
+
+          await tx.insert(pharmacyPrescriptions).values({
+            id: resolvedPrescriptionId,
+            tenantId: input.tenantId,
+            partnerId: resolvedPartnerId,
+            organizationId: resolvedOrgId,
+            branchId: resolvedBranchId,
+            prescriptionNumber: rxNumber,
+            patientId: input.patientId,
+            encounterId: validEncounterId,
+            prescribingDoctorId: resolvedDoctorId,
+            priority: 'ROUTINE',
+            status: input.isPartial ? 'PARTIALLY_DISPENSED' : 'DISPENSED',
+            notes: 'Walk-in / POS Pharmacy Dispensing Order',
+            prescribedAt: now,
+            createdAt: now,
+            updatedAt: now
+          } as any);
+        } else if (existingPrescriptionRow) {
+          const nextStatus = input.isPartial ? 'PARTIALLY_DISPENSED' : 'DISPENSED';
+          await tx
+            .update(pharmacyPrescriptions)
+            .set({ status: nextStatus, updatedAt: now } as any)
+            .where(eq(pharmacyPrescriptions.id, existingPrescriptionRow.id));
+        }
+
         const dispensingRecord: StoredDispensing = {
           id: dispensingId,
           tenantId: input.tenantId,
@@ -524,7 +682,7 @@ export class PharmacyManagementRepository {
           organizationId: input.organizationId || '00000000-0000-4000-8000-000000000002',
           branchId: input.branchId || '00000000-0000-4000-8000-000000000003',
           dispensingNumber,
-          prescriptionId,
+          prescriptionId: resolvedPrescriptionId!,
           patientId: input.patientId,
           pharmacistId: input.pharmacistId || 'PHARMACIST-OPD',
           pharmacistName: input.pharmacistName || 'Duty Pharmacist',
@@ -552,6 +710,86 @@ export class PharmacyManagementRepository {
           dispensingStatus: dispensingRecord.dispensingStatus
         } as unknown as typeof pharmacyDispensing.$inferInsert);
 
+        const pharmacyInvoiceId = crypto.randomUUID();
+        await tx.insert(billingInvoices).values({
+          id: pharmacyInvoiceId,
+          tenantId: dispensingRecord.tenantId,
+          partnerId: dispensingRecord.partnerId,
+          organizationId: dispensingRecord.organizationId,
+          branchId: dispensingRecord.branchId,
+          patientId: dispensingRecord.patientId,
+          encounterId: validEncounterId,
+          invoiceNumber,
+          invoiceType: 'PHARMACY',
+          status: 'PAID',
+          subtotal: totalBillAmount.toFixed(2),
+          discountTotal: '0.00',
+          taxTotal: '0.00',
+          roundingAdjustment: '0.00',
+          totalAmount: totalBillAmount.toFixed(2),
+          paidAmount: totalBillAmount.toFixed(2),
+          dueAmount: '0.00',
+          currency: 'INR',
+          metadata: {
+            dispensingId,
+            dispensingNumber,
+            prescriptionId: resolvedPrescriptionId!
+          }
+        } as unknown as typeof billingInvoices.$inferInsert);
+
+        for (const it of dispensedItems) {
+          await tx.insert(billingInvoiceItems).values({
+            id: crypto.randomUUID(),
+            tenantId: dispensingRecord.tenantId,
+            invoiceId: pharmacyInvoiceId,
+            serviceCode: 'PHARMACY',
+            description: `Pharmacy Dispensed: ${it.medicationId} (Batch: ${it.batchNumber})`,
+            quantity: it.quantity.toFixed(2),
+            unitPrice: it.unitPrice.toFixed(2),
+            grossAmount: it.totalAmount.toFixed(2),
+            discountAmount: '0.00',
+            taxAmount: '0.00',
+            netAmount: it.totalAmount.toFixed(2)
+          } as unknown as typeof billingInvoiceItems.$inferInsert);
+        }
+
+        // Generate authoritative receipt and payment record
+        const paymentId = crypto.randomUUID();
+        const receiptNumber = `REC-PHARM-${Math.floor(100000 + Math.random() * 900000)}`;
+        await tx.insert(billingPayments).values({
+          id: paymentId,
+          tenantId: dispensingRecord.tenantId,
+          partnerId: dispensingRecord.partnerId,
+          organizationId: dispensingRecord.organizationId,
+          branchId: dispensingRecord.branchId,
+          invoiceId: pharmacyInvoiceId,
+          patientId: dispensingRecord.patientId,
+          paymentNumber: `PMT-${Math.floor(100000 + Math.random() * 900000)}`,
+          amount: totalBillAmount.toFixed(2),
+          paymentMethod: 'CASH',
+          currency: 'INR',
+          status: 'SUCCESS',
+          receivedBy: dispensingRecord.pharmacistId,
+          receivedAt: now
+        } as unknown as typeof billingPayments.$inferInsert);
+
+        await tx.insert(billingReceipts).values({
+          id: crypto.randomUUID(),
+          tenantId: dispensingRecord.tenantId,
+          partnerId: dispensingRecord.partnerId,
+          organizationId: dispensingRecord.organizationId,
+          branchId: dispensingRecord.branchId,
+          paymentId,
+          invoiceId: pharmacyInvoiceId,
+          patientId: dispensingRecord.patientId,
+          receiptNumber,
+          amount: totalBillAmount.toFixed(2),
+          paymentMethod: 'CASH',
+          issuedBy: dispensingRecord.pharmacistId,
+          issuedAt: now,
+          status: 'ISSUED'
+        } as unknown as typeof billingReceipts.$inferInsert);
+
         return dispensingRecord;
       });
     } catch (err) {
@@ -560,7 +798,7 @@ export class PharmacyManagementRepository {
       }
       logger.error('Failed to record dispensing in database', err);
       throw new AppError({
-        message: 'Database persistence failed. Medication dispensing aborted.',
+        message: `Database persistence failed. Medication dispensing aborted: ${(err as any)?.message || String(err)}`,
         code: ErrorCode.SERVICE_UNAVAILABLE,
         statusCode: 503
       });

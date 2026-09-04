@@ -2,16 +2,18 @@ import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildApp } from '../dist/app.js';
 import { signJwt } from '@docsearch/auth';
+import { setupTestDatabase, TEST_SEEDS } from '@docsearch/database';
 
 describe('Pharmacy & Dispensing Vertical Slice: Rx -> Queue -> FEFO -> Dispense -> Ledger -> Billing -> History', () => {
   let app;
+  let testDb;
 
   const MASTER_SECRET = 'docsearch_master_jwt_secret_dev_32char_key_only';
   const ISSUER = 'docsearch-api';
   const AUDIENCE = 'docsearch-platform';
 
-  const TENANT_A = '11111111-1111-4111-8111-111111111111';
-  const TENANT_B = '22222222-2222-4222-8222-222222222222';
+  const TENANT_A = TEST_SEEDS.TENANT_A;
+  const TENANT_B = TEST_SEEDS.TENANT_B;
   const PHARMACIST_ID = '77777777-7777-4777-8777-777777777777';
 
   function createTestToken(overrides = {}) {
@@ -19,7 +21,7 @@ describe('Pharmacy & Dispensing Vertical Slice: Rx -> Queue -> FEFO -> Dispense 
       sub: overrides.userId || PHARMACIST_ID,
       email: overrides.email || 'pharmacist@docsearch.health',
       tenantId: overrides.tenantId !== undefined ? overrides.tenantId : TENANT_A,
-      branchId: overrides.branchId !== undefined ? overrides.branchId : 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      branchId: overrides.branchId !== undefined ? overrides.branchId : TEST_SEEDS.BRANCH_A,
       roles: overrides.roles || ['PHARMACIST', 'HOSPITAL_ADMIN'],
       permissions: overrides.permissions || [
         'clinical:patients:create',
@@ -28,7 +30,13 @@ describe('Pharmacy & Dispensing Vertical Slice: Rx -> Queue -> FEFO -> Dispense 
         'clinical:encounters:read',
         'clinical:consultations:create',
         'clinical:consultations:read',
-        'clinical:consultations:update'
+        'clinical:consultations:update',
+        'pharmacy:medications:create',
+        'pharmacy:medications:read',
+        'pharmacy:inventory:create',
+        'pharmacy:inventory:read',
+        'pharmacy:dispense:create',
+        'pharmacy:orders:read'
       ],
       iss: ISSUER,
       aud: AUDIENCE
@@ -41,6 +49,7 @@ describe('Pharmacy & Dispensing Vertical Slice: Rx -> Queue -> FEFO -> Dispense 
   let testPrescriptionId;
 
   before(async () => {
+    testDb = await setupTestDatabase();
     process.env['JWT_SECRET'] = MASTER_SECRET;
     process.env['NODE_ENV'] = 'development';
     app = await buildApp();
@@ -49,6 +58,7 @@ describe('Pharmacy & Dispensing Vertical Slice: Rx -> Queue -> FEFO -> Dispense 
 
   after(async () => {
     if (app) await app.close();
+    if (testDb) await testDb.cleanup();
   });
 
   // STEP 1: Create Patient Baseline

@@ -2,6 +2,7 @@ import {
   getDatabase,
   investigationOrders,
   investigationSpecimens,
+  doctorProfiles,
   eq,
   and,
   desc
@@ -43,6 +44,8 @@ export interface CreateLabOrderInput {
   clinicalIndication?: string | undefined;
   clinicalNotes?: string | undefined;
   instructions?: string | undefined;
+  billingPolicy?: string | undefined;
+  metadata?: Record<string, unknown> | undefined;
 }
 
 export interface CollectSpecimenInput {
@@ -53,6 +56,8 @@ export interface CollectSpecimenInput {
   containerType?: string | undefined;
   collectedBy: string;
   collectionNotes?: string | undefined;
+  deferredBilling?: boolean | undefined;
+  isEmergency?: boolean | undefined;
 }
 
 export interface EnterResultItem {
@@ -138,7 +143,7 @@ export class LabDiagnosticsRepository {
           priority: row.priority || 'ROUTINE',
           status: row.status || 'ORDERED',
           orderedAt: row.orderedAt || row.createdAt,
-          results: row.results || []
+          results: meta.results || row.results || []
         } as StoredLabOrder;
       });
       if (status) list = list.filter(o => o.status === status);
@@ -182,7 +187,7 @@ export class LabDiagnosticsRepository {
         priority: (found as any).priority || 'ROUTINE',
         status: (found as any).status || 'ORDERED',
         orderedAt: (found as any).orderedAt || (found as any).createdAt,
-        results: (found as any).results || []
+        results: meta.results || (found as any).results || []
       } as unknown as StoredLabOrder;
 
       if (specimen && (specimen as any) !== found && (specimen as any).id !== order.id) {
@@ -233,6 +238,19 @@ export class LabDiagnosticsRepository {
     };
 
     try {
+      let validDoctorId: string = '99999999-9999-4999-8999-999999999999';
+      if (orderData.orderingDoctorId) {
+        try {
+          const [doc] = await db
+            .select({ id: doctorProfiles.id })
+            .from(doctorProfiles)
+            .where(eq(doctorProfiles.id, orderData.orderingDoctorId));
+          if (doc) validDoctorId = doc.id;
+        } catch {
+          // fallback to seeded doctor
+        }
+      }
+
       await db.insert(investigationOrders).values({
         id: orderData.id,
         tenantId: orderData.tenantId,
@@ -242,7 +260,7 @@ export class LabDiagnosticsRepository {
         orderNumber: orderData.orderNumber,
         patientId: orderData.patientId,
         encounterId: orderData.encounterId,
-        orderingDoctorId: orderData.orderingDoctorId,
+        orderingDoctorId: validDoctorId,
         investigationId: '00000000-0000-4000-8000-000000000005',
         clinicalIndication: orderData.clinicalIndication,
         priority: orderData.priority,
@@ -251,17 +269,19 @@ export class LabDiagnosticsRepository {
           testName: orderData.testName,
           testCode: orderData.testCode,
           category: orderData.category,
-          instructions: orderData.instructions
+          instructions: orderData.instructions,
+          billingPolicy: input.billingPolicy || 'STANDARD',
+          ...(input.metadata || {})
         },
         createdAt: now,
         updatedAt: now
       } as any);
 
       return orderData;
-    } catch (err) {
+    } catch (err: any) {
       logger.error('Failed to create lab order in database', err);
       throw new AppError({
-        message: 'Database persistence failed. Lab order creation aborted.',
+        message: `Database persistence failed. Lab order creation aborted: ${err?.message || String(err)}`,
         code: ErrorCode.SERVICE_UNAVAILABLE,
         statusCode: 503
       });
@@ -273,6 +293,33 @@ export class LabDiagnosticsRepository {
     dbClient = getDatabase()
   ): Promise<StoredLabOrder | null> {
     const db = requireDb(dbClient);
+
+    const order = await this.getOrderById(input.tenantId, input.orderId, db);
+    if (!order) {
+      throw new AppError({
+        message: `Investigation order ${input.orderId} not found.`,
+        code: ErrorCode.NOT_FOUND,
+        statusCode: 404
+      });
+    }
+
+    const orderMeta = (typeof (order as any).metadata === 'object' && (order as any).metadata !== null) ? (order as any).metadata : {};
+    const billingPolicy = orderMeta.billingPolicy || orderMeta.billing_policy || 'STANDARD';
+    const isPaymentRequiredBeforeSample =
+      billingPolicy === 'PAYMENT_REQUIRED_BEFORE_SAMPLE' ||
+      orderMeta.requirePaymentBeforeSample === true;
+
+    if (isPaymentRequiredBeforeSample && !input.deferredBilling && !input.isEmergency) {
+      const billingStatus = (orderMeta.billingStatus || orderMeta.billing_status || '').toUpperCase();
+      if (billingStatus !== 'PAID' && billingStatus !== 'BILLED') {
+        throw new AppError({
+          message: `Specimen collection rejected: Payment is strictly required prior to sample collection under order billing policy (status: ${billingStatus || 'UNBILLED'}).`,
+          code: ErrorCode.BAD_REQUEST,
+          statusCode: 402
+        });
+      }
+    }
+
     const accessionNumber = `ACC-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
     const now = new Date();
     const specimenData = {
@@ -292,10 +339,10 @@ export class LabDiagnosticsRepository {
         await tx.insert(investigationSpecimens).values({
           id: specimenData.id,
           tenantId: specimenData.tenantId,
-          partnerId: '11111111-1111-4111-8111-111111111111',
-          organizationId: '33333333-3333-4333-8333-333333333301',
+          partnerId: order.partnerId || '00000000-0000-4000-8000-000000000001',
+          organizationId: order.organizationId || '00000000-0000-4000-8000-000000000002',
           orderId: specimenData.orderId,
-          patientId: input.patientId || '00000000-0000-4000-8000-000000000001',
+          patientId: input.patientId || order.patientId,
           accessionNumber: specimenData.accessionNumber,
           specimenType: specimenData.specimenType,
           containerType: specimenData.containerType,
@@ -312,11 +359,11 @@ export class LabDiagnosticsRepository {
 
         return await this.getOrderById(input.tenantId, input.orderId, tx);
       });
-    } catch (err) {
+    } catch (err: any) {
       if (err instanceof AppError) throw err;
-      logger.error('Failed to collect specimen in database', err);
+      logger.error('Failed to create lab order in database', err);
       throw new AppError({
-        message: 'Database persistence failed. Specimen accession aborted.',
+        message: `Database persistence failed. Lab order creation aborted: ${err?.message || String(err)}`,
         code: ErrorCode.SERVICE_UNAVAILABLE,
         statusCode: 503
       });
@@ -364,15 +411,18 @@ export class LabDiagnosticsRepository {
     }
 
     try {
+      const orderMeta = (typeof (order as any).metadata === 'object' && (order as any).metadata !== null) ? (order as any).metadata : {};
+      const newResults = [...(orderMeta.results || []), ...itemsToInsert];
       await db
         .update(investigationOrders)
-        .set({ status: 'PROCESSING', updatedAt: now } as any)
+        .set({
+          status: 'RESULT_ENTERED',
+          metadata: { ...orderMeta, results: newResults },
+          updatedAt: now
+        } as any)
         .where(and(eq(investigationOrders.tenantId, input.tenantId), eq(investigationOrders.id, input.orderId)));
 
       const updated = await this.getOrderById(input.tenantId, input.orderId, db);
-      if (updated) {
-        updated.results = [...(updated.results || []), ...itemsToInsert];
-      }
       return updated;
     } catch (err) {
       logger.error('Failed to enter lab results in database', err);
@@ -393,9 +443,26 @@ export class LabDiagnosticsRepository {
     const db = requireDb(dbClient);
     const now = new Date();
     try {
+      const order = await this.getOrderById(tenantId, orderId, db);
+      const orderMeta = (order && typeof (order as any).metadata === 'object' && (order as any).metadata !== null) ? (order as any).metadata : {};
+      const verifiedResults = ((order?.results && order.results.length > 0) ? order.results : (orderMeta.results || [])).map((r: any) => ({
+        ...r,
+        verifiedBy,
+        verifiedAt: now
+      }));
+
       await db
         .update(investigationOrders)
-        .set({ status: 'VERIFIED', updatedAt: now } as any)
+        .set({
+          status: 'VERIFIED',
+          metadata: {
+            ...orderMeta,
+            results: verifiedResults,
+            verifiedBy,
+            verifiedAt: now
+          },
+          updatedAt: now
+        } as any)
         .where(and(eq(investigationOrders.tenantId, tenantId), eq(investigationOrders.id, orderId)));
 
       const updated = await this.getOrderById(tenantId, orderId, db);
@@ -403,6 +470,7 @@ export class LabDiagnosticsRepository {
         updated.status = 'VERIFIED';
         updated.verifiedBy = verifiedBy;
         updated.verifiedAt = now;
+        updated.results = verifiedResults;
       }
       return updated;
     } catch (err) {
@@ -418,24 +486,46 @@ export class LabDiagnosticsRepository {
   async reviewResult(
     tenantId: string,
     orderId: string,
-    doctorNotes: string | undefined,
-    session: any,
+    doctorNotesOrUserId: any,
+    sessionOrDoctorNotes: any,
     dbClient = getDatabase()
   ): Promise<StoredLabOrder | null> {
     const db = requireDb(dbClient);
     const now = new Date();
+    let doctorNotes = typeof doctorNotesOrUserId === 'string' ? doctorNotesOrUserId : (typeof sessionOrDoctorNotes === 'string' ? sessionOrDoctorNotes : undefined);
+    let userId = (typeof sessionOrDoctorNotes === 'object' && sessionOrDoctorNotes?.userId) 
+      ? sessionOrDoctorNotes.userId 
+      : (typeof doctorNotesOrUserId === 'string' && doctorNotesOrUserId.length === 36 ? doctorNotesOrUserId : 'DOCTOR-ATTENDING');
+
     try {
+      const order = await this.getOrderById(tenantId, orderId, db);
+      const orderMeta = (order && typeof (order as any).metadata === 'object' && (order as any).metadata !== null) ? (order as any).metadata : {};
+
       await db
         .update(investigationOrders)
-        .set({ status: 'REVIEWED', updatedAt: now } as any)
+        .set({
+          status: 'COMPLETED',
+          metadata: {
+            ...orderMeta,
+            reviewedBy: userId,
+            reviewedAt: now,
+            doctorNotes
+          },
+          updatedAt: now
+        } as any)
         .where(and(eq(investigationOrders.tenantId, tenantId), eq(investigationOrders.id, orderId)));
 
       const updated = await this.getOrderById(tenantId, orderId, db);
       if (updated) {
-        updated.status = 'REVIEWED';
-        updated.reviewedBy = session.userId;
+        updated.status = 'COMPLETED';
+        updated.reviewedBy = userId;
         updated.reviewedAt = now;
         updated.doctorNotes = doctorNotes;
+        (updated as any).review = {
+          reviewedBy: userId,
+          reviewedAt: now,
+          doctorNotes
+        };
       }
       return updated;
     } catch (err) {

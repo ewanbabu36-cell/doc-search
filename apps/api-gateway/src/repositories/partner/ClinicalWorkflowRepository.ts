@@ -1237,6 +1237,43 @@ export class ClinicalWorkflowRepository {
     const branchId = input.branchId || 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
     const doctorId = input.prescribingDoctorId || '99999999-9999-4999-8999-999999999999';
 
+    let encounterId = input.encounterId;
+    if (!encounterId) {
+      try {
+        const [enc] = await db
+          .select()
+          .from(encounters)
+          .where(and(eq(encounters.tenantId, input.tenantId), eq(encounters.patientId, input.patientId)))
+          .orderBy(desc(encounters.createdAt))
+          .limit(1);
+        if (enc) encounterId = enc.id;
+      } catch {
+        // ignore
+      }
+    }
+    if (!encounterId) {
+      encounterId = crypto.randomUUID();
+      try {
+        await db.insert(encounters).values({
+          id: encounterId,
+          tenantId: input.tenantId,
+          partnerId,
+          organizationId,
+          branchId,
+          departmentId: '00000000-0000-4000-8000-000000000004',
+          patientId: input.patientId,
+          encounterNumber: `ENC-RX-${Math.floor(100000 + Math.random() * 900000)}`,
+          encounterType: 'OPD',
+          status: 'COMPLETED',
+          chiefComplaint: 'OPD Prescription Order',
+          createdAt: now,
+          updatedAt: now
+        } as any);
+      } catch (encErr) {
+        logger.warn('Failed to insert fallback encounter for prescription', { error: String(encErr) });
+      }
+    }
+
     try {
       const [rx] = await db.insert(pharmacyPrescriptions).values({
         id: prescriptionId,
@@ -1246,7 +1283,7 @@ export class ClinicalWorkflowRepository {
         branchId,
         prescriptionNumber,
         patientId: input.patientId,
-        encounterId: input.encounterId || null,
+        encounterId,
         consultationId: input.consultationId || null,
         prescribingDoctorId: doctorId,
         priority: input.priority || 'ROUTINE',

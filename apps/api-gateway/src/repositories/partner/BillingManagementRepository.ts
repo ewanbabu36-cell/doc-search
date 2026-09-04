@@ -5,18 +5,40 @@ import {
   billingDiscounts,
   billingPayments,
   billingReceipts,
+  billingRefunds,
   insuranceAuthorizations,
   investigationOrders,
   pharmacyDispensing,
   pharmacyDispensingItems,
   pharmacyBatches,
   pharmacyStockMovements,
+  encounters,
   eq,
   and,
   desc
 } from '@docsearch/database';
 import { verifyJwt } from '@docsearch/auth';
 import { AppError, ErrorCode, createLogger } from '@docsearch/shared-core';
+
+export interface ProcessRefundInput {
+  tenantId: string;
+  invoiceId: string;
+  amount: number;
+  reason: string;
+  supervisorUserId: string;
+  supervisorOverrideToken?: string | undefined;
+  actorId?: string | undefined;
+  paymentId?: string | undefined;
+}
+
+export interface ProcessRefundResult {
+  success: boolean;
+  refundId: string;
+  refundNumber: string;
+  amount: number;
+  invoice: StoredInvoice;
+  message: string;
+}
 
 const logger = createLogger('billing-management-repository');
 
@@ -340,14 +362,33 @@ export class BillingManagementRepository {
         .from(billingPayments)
         .where(and(eq(billingPayments.tenantId, tenantId), eq(billingPayments.invoiceId, invoiceId)));
 
+      const meta = (typeof (found as any).metadata === 'object' && (found as any).metadata !== null) ? (found as any).metadata : {};
+      const preAuth = meta.preAuth || null;
+      const insuranceCoveredAmount = preAuth ? Number(preAuth.approvedAmount || 0) : Number(meta.insuranceCoveredAmount || 0);
+      const totalAmount = Number(found.totalAmount || 0);
+      const patientPayableAmount = meta.patientPayableAmount !== undefined ? Number(meta.patientPayableAmount) : Math.max(0, totalAmount - insuranceCoveredAmount);
+      const paidAmount = Number(found.paidAmount || 0);
+      const balanceDue = Number(found.dueAmount || 0);
+
       return {
         ...(found as unknown as StoredInvoice),
-        totalAmount: Number(found.totalAmount || 0),
-        patientPayableAmount: Number(found.totalAmount || 0),
-        paidAmount: Number(found.paidAmount || 0),
-        balanceDue: Number(found.dueAmount || 0),
+        totalAmount,
+        insuranceCoveredAmount,
+        patientPayableAmount,
+        paidAmount,
+        balanceDue,
+        preAuth,
+        metadata: meta,
         items: (items as unknown as StoredInvoiceItem[]) || [],
-        payments: (payments as unknown as StoredPayment[]) || []
+        payments: (payments || []).map((p: any) => ({
+          id: p.id,
+          invoiceId: p.invoiceId,
+          amount: Number(p.amount || 0),
+          paymentMode: p.paymentMethod || p.paymentMode || 'CASH',
+          transactionReference: p.referenceNumber || p.transactionReference,
+          collectedBy: p.receivedBy || p.collectedBy || 'STAFF',
+          collectedAt: p.receivedAt || p.collectedAt || p.createdAt
+        }))
       };
     } catch (err) {
       logger.error('Failed to query invoice by ID from database', err);
@@ -368,12 +409,31 @@ export class BillingManagementRepository {
     const rawItems = input.items || (input.lineItems?.map((li) => ({
       serviceName: li.description || li.serviceName || 'Clinical Service',
       category: (li.category || 'CONSULTATION') as any,
-      quantity: li.quantity || 1,
-      unitPrice: li.unitPrice || li.amount || 0,
-      totalPrice: li.totalPrice || ((li.amount || li.unitPrice || 0) * (li.quantity || 1))
+      quantity: li.quantity !== undefined ? li.quantity : 1,
+      unitPrice: li.unitPrice !== undefined ? li.unitPrice : (li.amount !== undefined ? li.amount : 0),
+      totalPrice: li.totalPrice
     }))) || [];
 
-    const totalAmount = rawItems.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
+    for (const item of rawItems) {
+      if (typeof item.quantity !== 'number' || item.quantity <= 0 || isNaN(item.quantity)) {
+        throw new AppError({
+          message: 'Invoice item quantity must be a positive number greater than zero.',
+          code: ErrorCode.VALIDATION_ERROR,
+          statusCode: 400
+        });
+      }
+      if (typeof item.unitPrice !== 'number' || item.unitPrice < 0 || isNaN(item.unitPrice)) {
+        throw new AppError({
+          message: 'Invoice item unit price cannot be negative or invalid.',
+          code: ErrorCode.VALIDATION_ERROR,
+          statusCode: 400
+        });
+      }
+      // Authoritative calculation: server recalculates line total, preventing client manipulation
+      item.totalPrice = Math.round(item.quantity * item.unitPrice * 100) / 100;
+    }
+
+    const totalAmount = Math.round(rawItems.reduce((sum, item) => sum + (item.totalPrice || 0), 0) * 100) / 100;
 
     const items: StoredInvoiceItem[] = rawItems.map(item => ({
       id: crypto.randomUUID(),
@@ -382,7 +442,7 @@ export class BillingManagementRepository {
       category: item.category,
       quantity: item.quantity,
       unitPrice: item.unitPrice,
-      totalPrice: item.totalPrice
+      totalPrice: item.totalPrice ?? Math.round(item.quantity * item.unitPrice * 100) / 100
     }));
 
     const record: StoredInvoice = {
@@ -414,6 +474,21 @@ export class BillingManagementRepository {
 
     try {
       return await runInTx(db, async (tx: any) => {
+        let resolvedEncounterId: string | null = record.encounterId;
+        if (resolvedEncounterId) {
+          try {
+            const [enc] = await tx
+              .select({ id: encounters.id })
+              .from(encounters)
+              .where(and(eq(encounters.tenantId, record.tenantId), eq(encounters.id, resolvedEncounterId)));
+            if (!enc) {
+              resolvedEncounterId = null;
+            }
+          } catch {
+            resolvedEncounterId = null;
+          }
+        }
+
         const [created] = await tx.insert(billingInvoices).values({
           id: record.id,
           tenantId: record.tenantId,
@@ -421,7 +496,7 @@ export class BillingManagementRepository {
           organizationId: record.organizationId,
           branchId: record.branchId,
           patientId: record.patientId,
-          encounterId: record.encounterId,
+          encounterId: resolvedEncounterId,
           invoiceNumber: record.invoiceNumber,
           invoiceType: record.encounterType || 'OPD',
           status: record.status,
@@ -470,43 +545,62 @@ export class BillingManagementRepository {
     if (!invoice) return null;
 
     const now = new Date();
+    const approved = Number(input.approvedAmount ?? 0);
+    const status = input.status || (input as any).claimStatus || 'APPROVED';
+    const requested = Number(input.requestedAmount ?? approved);
+    const coPay = Number(input.coPayAmount ?? 0);
+
     invoice.preAuth = {
       preAuthNumber: input.preAuthNumber,
       payerName: input.payerName,
       policyNumber: input.policyNumber,
-      requestedAmount: input.requestedAmount,
-      approvedAmount: input.approvedAmount,
-      coPayAmount: input.coPayAmount,
-      status: input.status,
+      requestedAmount: requested,
+      approvedAmount: approved,
+      coPayAmount: coPay,
+      status,
       approvedAt: now
     };
 
-    if (input.status === 'APPROVED' || input.status === 'PARTIALLY_APPROVED') {
-      invoice.insuranceCoveredAmount = input.approvedAmount;
-      invoice.patientPayableAmount = Math.max(0, invoice.totalAmount - input.approvedAmount);
+    if (status === 'APPROVED' || status === 'PARTIALLY_APPROVED') {
+      invoice.insuranceCoveredAmount = approved;
+      invoice.patientPayableAmount = Math.max(0, invoice.totalAmount - approved);
       invoice.balanceDue = Math.max(0, invoice.patientPayableAmount - invoice.paidAmount);
     }
     invoice.updatedAt = now;
 
     try {
       return await runInTx(db, async (tx: any) => {
-        await tx.insert(insuranceAuthorizations).values({
-          id: crypto.randomUUID(),
-          tenantId: input.tenantId,
-          partnerId: invoice.partnerId,
-          organizationId: invoice.organizationId,
-          branchId: invoice.branchId,
-          patientId: input.patientId,
-          authorizationNumber: input.preAuthNumber,
-          approvedAmount: input.approvedAmount,
-          status: input.status,
-          approvedAt: now
-        } as unknown as typeof insuranceAuthorizations.$inferInsert);
+        try {
+          await tx.insert(insuranceAuthorizations).values({
+            id: crypto.randomUUID(),
+            tenantId: input.tenantId,
+            partnerId: invoice.partnerId,
+            organizationId: invoice.organizationId,
+            branchId: invoice.branchId,
+            patientId: input.patientId,
+            authorizationNumber: input.preAuthNumber,
+            approvedAmount: approved.toString(),
+            requestedAmount: requested.toString(),
+            requestedServices: 'Hospital Services Pre-Auth',
+            diagnosisContext: 'Insurance Pre-Auth',
+            status,
+            validFrom: now
+          } as any);
+        } catch (authErr) {
+          logger.warn('Could not insert raw insurance_authorizations record, pre-auth persisted in invoice metadata', { error: String(authErr) });
+        }
 
+        const existingMeta = (invoice.metadata && typeof invoice.metadata === 'object') ? invoice.metadata : {};
         await tx
           .update(billingInvoices)
           .set({
             dueAmount: invoice.balanceDue.toFixed(2),
+            metadata: {
+              ...existingMeta,
+              preAuth: invoice.preAuth,
+              insuranceCoveredAmount: invoice.insuranceCoveredAmount,
+              patientPayableAmount: invoice.patientPayableAmount
+            },
             updatedAt: now
           } as unknown as typeof billingInvoices.$inferInsert)
           .where(eq(billingInvoices.id, invoice.id));
@@ -526,6 +620,15 @@ export class BillingManagementRepository {
 
   async collectPayment(input: CollectPaymentInput, dbClient = getDatabase()): Promise<{ invoice: StoredInvoice; receiptNumber: string }> {
     const db = requireDb(dbClient);
+
+    if (typeof input.amount !== 'number' || isNaN(input.amount) || input.amount <= 0) {
+      throw new AppError({
+        message: 'Payment amount must be a positive number greater than zero.',
+        code: ErrorCode.VALIDATION_ERROR,
+        statusCode: 400
+      });
+    }
+
     const invoice = await this.getInvoiceById(input.tenantId, input.invoiceId, db);
     if (!invoice) {
       throw new AppError({
@@ -535,35 +638,107 @@ export class BillingManagementRepository {
       });
     }
 
+    if (invoice.status === 'VOIDED' || invoice.status === 'CANCELLED') {
+      throw new AppError({
+        message: `Cannot collect payment for ${invoice.status.toLowerCase()} invoice ${invoice.invoiceNumber}.`,
+        code: ErrorCode.CONFLICT,
+        statusCode: 409
+      });
+    }
+
+    if (invoice.status === 'PAID') {
+      throw new AppError({
+        message: `Invoice ${invoice.invoiceNumber} is already fully paid.`,
+        code: ErrorCode.CONFLICT,
+        statusCode: 409
+      });
+    }
+
+    const currentDue = Number(invoice.balanceDue ?? 0);
+    if (input.amount > currentDue + 0.01) {
+      throw new AppError({
+        message: `Payment amount (${input.amount}) exceeds outstanding balance due (${currentDue}). Overpayment is strictly rejected.`,
+        code: ErrorCode.VALIDATION_ERROR,
+        statusCode: 400
+      });
+    }
+
+    // Idempotency check: check if transaction reference was already processed for this invoice
+    if (input.transactionReference && input.transactionReference.trim()) {
+      const existingPayment = invoice.payments.find(
+        (p) => p.transactionReference && p.transactionReference.trim() === input.transactionReference!.trim()
+      );
+      if (existingPayment) {
+        throw new AppError({
+          message: `Transaction reference ${input.transactionReference} has already been processed for invoice ${invoice.invoiceNumber}.`,
+          code: ErrorCode.CONFLICT,
+          statusCode: 409
+        });
+      }
+    }
+
     const now = new Date();
     const paymentId = crypto.randomUUID();
     const receiptNumber = `REC-${Math.floor(100000 + Math.random() * 900000)}`;
 
-    const payment: StoredPayment = {
-      id: paymentId,
-      invoiceId: invoice.id,
-      amount: input.amount,
-      paymentMode: input.paymentMode,
-      transactionReference: input.transactionReference,
-      collectedBy: input.collectedBy,
-      collectedAt: now
-    };
-
-    invoice.payments.push(payment);
-    invoice.paidAmount = (invoice.paidAmount || 0) + input.amount;
-    const payable = Number(invoice.patientPayableAmount ?? invoice.totalAmount ?? 0);
-    invoice.balanceDue = Math.max(0, payable - invoice.paidAmount);
-    invoice.receiptNumber = receiptNumber;
-
-    if (invoice.balanceDue === 0) {
-      invoice.status = 'PAID';
-    } else {
-      invoice.status = 'PARTIALLY_PAID';
-    }
-    invoice.updatedAt = now;
-
     try {
       return await runInTx(db, async (tx: any) => {
+        // Concurrency lock: Acquire transactional row lock on invoice
+        let lockQuery: any = tx
+          .select()
+          .from(billingInvoices)
+          .where(and(eq(billingInvoices.tenantId, input.tenantId), eq(billingInvoices.id, invoice.id)));
+        if (typeof lockQuery.for === 'function') {
+          lockQuery = lockQuery.for('update');
+        }
+        const [lockedInvoiceRow] = await lockQuery;
+        if (!lockedInvoiceRow) {
+          throw new AppError({
+            message: 'Invoice not found during payment transaction.',
+            code: ErrorCode.NOT_FOUND,
+            statusCode: 404
+          });
+        }
+
+        const freshPaid = Number(lockedInvoiceRow.paidAmount ?? 0);
+        const freshDue = Number(lockedInvoiceRow.dueAmount ?? lockedInvoiceRow.totalAmount ?? 0);
+        const lockedStatus = lockedInvoiceRow.status;
+
+        if (lockedStatus === 'VOIDED' || lockedStatus === 'CANCELLED' || lockedStatus === 'PAID') {
+          throw new AppError({
+            message: `Invoice ${invoice.invoiceNumber} status (${lockedStatus}) does not permit payment.`,
+            code: ErrorCode.CONFLICT,
+            statusCode: 409
+          });
+        }
+
+        if (input.amount > freshDue + 0.01) {
+          throw new AppError({
+            message: `Payment amount (${input.amount}) exceeds outstanding balance due (${freshDue}). Overpayment is rejected.`,
+            code: ErrorCode.VALIDATION_ERROR,
+            statusCode: 400
+          });
+        }
+        if (input.transactionReference && input.transactionReference.trim()) {
+          const [dupTxn] = await tx
+            .select()
+            .from(billingPayments)
+            .where(
+              and(
+                eq(billingPayments.tenantId, input.tenantId),
+                eq(billingPayments.invoiceId, invoice.id),
+                eq(billingPayments.referenceNumber, input.transactionReference.trim())
+              )
+            );
+          if (dupTxn) {
+            throw new AppError({
+              message: `Transaction reference ${input.transactionReference} has already been processed for invoice ${invoice.invoiceNumber}.`,
+              code: ErrorCode.CONFLICT,
+              statusCode: 409
+            });
+          }
+        }
+
         const paymentNumber = `PMT-${Math.floor(100000 + Math.random() * 900000)}`;
         await tx.insert(billingPayments).values({
           id: paymentId,
@@ -578,6 +753,7 @@ export class BillingManagementRepository {
           paymentMethod: input.paymentMode,
           currency: 'INR',
           status: 'SUCCESS',
+          referenceNumber: input.transactionReference || null,
           receivedBy: input.collectedBy || 'STAFF',
           receivedAt: now
         } as unknown as typeof billingPayments.$inferInsert);
@@ -599,14 +775,74 @@ export class BillingManagementRepository {
           status: 'ISSUED'
         } as unknown as typeof billingReceipts.$inferInsert);
 
+        const newPaidAmount = Math.round((freshPaid + input.amount) * 100) / 100;
+        const newBalanceDue = Math.max(0, Math.round((freshDue - input.amount) * 100) / 100);
+        const newStatus = newBalanceDue === 0 ? 'PAID' : 'PARTIALLY_PAID';
+
         await tx
           .update(billingInvoices)
           .set({
-            paidAmount: invoice.paidAmount.toFixed(2),
-            dueAmount: invoice.balanceDue.toFixed(2),
-            status: invoice.status
+            paidAmount: newPaidAmount.toFixed(2),
+            dueAmount: newBalanceDue.toFixed(2),
+            status: newStatus,
+            updatedAt: now
           } as unknown as typeof billingInvoices.$inferInsert)
           .where(eq(billingInvoices.id, invoice.id));
+
+        const payment: StoredPayment = {
+          id: paymentId,
+          invoiceId: invoice.id,
+          amount: input.amount,
+          paymentMode: input.paymentMode,
+          transactionReference: input.transactionReference,
+          collectedBy: input.collectedBy,
+          collectedAt: now
+        };
+
+        invoice.payments.push(payment);
+        invoice.paidAmount = newPaidAmount;
+        invoice.balanceDue = newBalanceDue;
+        invoice.status = newStatus as any;
+        invoice.receiptNumber = receiptNumber;
+        invoice.updatedAt = now;
+
+        // If invoice contains lab items or orderId, mark investigation_orders billing_status as 'BILLED'
+        try {
+          const hasLabItems = (invoice.items || []).some((item: any) => {
+            const cat = (item.category || '').toUpperCase();
+            const desc = (item.serviceName || item.description || '').toUpperCase();
+            return cat.includes('LAB') || cat.includes('DIAG') || desc.includes('TEST') || desc.includes('LAB');
+          });
+          const labOrderId = (invoice.metadata as any)?.orderId || (invoice.metadata as any)?.labOrderId;
+          if (hasLabItems || labOrderId) {
+            const conditions: any[] = [eq(investigationOrders.tenantId, input.tenantId)];
+            if (labOrderId) {
+              conditions.push(eq(investigationOrders.id, labOrderId));
+            } else if (invoice.encounterId) {
+              conditions.push(eq(investigationOrders.encounterId, invoice.encounterId));
+            } else if (invoice.patientId) {
+              conditions.push(eq(investigationOrders.patientId, invoice.patientId));
+            }
+
+            const labOrders = await tx.select().from(investigationOrders).where(and(...conditions));
+            for (const order of labOrders) {
+              const existingMeta = (order.metadata && typeof order.metadata === 'object') ? order.metadata : {};
+              await tx
+                .update(investigationOrders)
+                .set({
+                  metadata: {
+                    ...existingMeta,
+                    billing_status: 'BILLED',
+                    billingStatus: 'BILLED'
+                  },
+                  updatedAt: now
+                } as any)
+                .where(eq(investigationOrders.id, order.id));
+            }
+          }
+        } catch (labErr) {
+          logger.warn('Could not update lab investigation orders on payment collection', { error: String(labErr) });
+        }
 
         return { invoice, receiptNumber };
       });
@@ -615,6 +851,196 @@ export class BillingManagementRepository {
       logger.error('Failed to collect payment in database', err);
       throw new AppError({
         message: 'Database persistence failed. Payment processing aborted.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
+    }
+  }
+
+  async processRefund(
+    input: ProcessRefundInput,
+    dbClient = getDatabase()
+  ): Promise<ProcessRefundResult> {
+    const db = requireDb(dbClient);
+
+    if (typeof input.amount !== 'number' || isNaN(input.amount) || input.amount <= 0) {
+      throw new AppError({
+        message: 'Refund amount must be a positive number greater than zero.',
+        code: ErrorCode.VALIDATION_ERROR,
+        statusCode: 400
+      });
+    }
+
+    if (!input.reason || typeof input.reason !== 'string' || !input.reason.trim()) {
+      throw new AppError({
+        message: 'Refund reason is mandatory and cannot be empty.',
+        code: ErrorCode.VALIDATION_ERROR,
+        statusCode: 400
+      });
+    }
+
+    if (!input.supervisorUserId || typeof input.supervisorUserId !== 'string' || !input.supervisorUserId.trim()) {
+      throw new AppError({
+        message: 'supervisorUserId is mandatory for refund authorization.',
+        code: ErrorCode.VALIDATION_ERROR,
+        statusCode: 400
+      });
+    }
+
+    const invoice = await this.getInvoiceById(input.tenantId, input.invoiceId, db);
+    if (!invoice) {
+      throw new AppError({
+        message: `Invoice ${input.invoiceId} not found for refund processing.`,
+        code: ErrorCode.NOT_FOUND,
+        statusCode: 404
+      });
+    }
+
+    if (invoice.status === 'VOIDED' || invoice.status === 'CANCELLED') {
+      throw new AppError({
+        message: `Cannot refund ${invoice.status.toLowerCase()} invoice ${invoice.invoiceNumber}.`,
+        code: ErrorCode.CONFLICT,
+        statusCode: 409
+      });
+    }
+
+    if (!invoice.paidAmount || invoice.paidAmount <= 0) {
+      throw new AppError({
+        message: `Invoice ${invoice.invoiceNumber} has no paid amount to refund.`,
+        code: ErrorCode.VALIDATION_ERROR,
+        statusCode: 400
+      });
+    }
+
+    if (input.amount > invoice.paidAmount + 0.01) {
+      throw new AppError({
+        message: `Requested refund amount (${input.amount}) exceeds total paid amount (${invoice.paidAmount}).`,
+        code: ErrorCode.VALIDATION_ERROR,
+        statusCode: 400
+      });
+    }
+
+    // High-value refund policy: refunds > 5,000 INR or on PAID/SETTLED invoices require supervisor override
+    const requiresSupervisorOverride = input.amount > 5000 || invoice.status === 'PAID' || invoice.status === 'DISCHARGE_SETTLED';
+    if (requiresSupervisorOverride) {
+      validateSupervisorOverrideToken(input.supervisorOverrideToken, input.supervisorUserId.trim());
+    }
+
+    const now = new Date();
+    const refundId = crypto.randomUUID();
+    const refundNumber = `REF-${Math.floor(100000 + Math.random() * 900000)}`;
+    const cleanReason = input.reason.trim();
+    const cleanSupervisorId = input.supervisorUserId.trim();
+
+    try {
+      return await runInTx(db, async (tx: any) => {
+        // Concurrency lock: Acquire row lock on invoice
+        let lockQuery: any = tx
+          .select()
+          .from(billingInvoices)
+          .where(and(eq(billingInvoices.tenantId, input.tenantId), eq(billingInvoices.id, invoice.id)));
+        if (typeof lockQuery.for === 'function') {
+          lockQuery = lockQuery.for('update');
+        }
+        const [lockedInvoiceRow] = await lockQuery;
+        if (!lockedInvoiceRow) {
+          throw new AppError({
+            message: 'Invoice not found during refund transaction.',
+            code: ErrorCode.NOT_FOUND,
+            statusCode: 404
+          });
+        }
+
+        const freshPaid = Number(lockedInvoiceRow.paidAmount ?? 0);
+        if (input.amount > freshPaid + 0.01) {
+          throw new AppError({
+            message: `Requested refund amount (${input.amount}) exceeds current paid balance (${freshPaid}).`,
+            code: ErrorCode.VALIDATION_ERROR,
+            statusCode: 400
+          });
+        }
+
+        // 1. Insert corresponding refund ledger entry in billing_payments first
+        const refundPaymentId = crypto.randomUUID();
+        const originalPaymentId = input.paymentId || (invoice.payments && invoice.payments[0]?.id);
+
+        await tx.insert(billingPayments).values({
+          id: refundPaymentId,
+          tenantId: input.tenantId,
+          partnerId: invoice.partnerId,
+          organizationId: invoice.organizationId,
+          branchId: invoice.branchId,
+          invoiceId: invoice.id,
+          patientId: invoice.patientId,
+          paymentNumber: `PMT-${refundNumber}`,
+          amount: (-input.amount).toFixed(2),
+          paymentMethod: 'REFUND',
+          currency: 'INR',
+          status: 'REFUNDED',
+          receivedBy: input.actorId || cleanSupervisorId,
+          receivedAt: now,
+          notes: `Staff Refund Processed: ${cleanReason}`
+        } as unknown as typeof billingPayments.$inferInsert);
+
+        // 2. Insert record into clinical.billing_refunds
+        await tx.insert(billingRefunds).values({
+          id: refundId,
+          tenantId: input.tenantId,
+          partnerId: invoice.partnerId,
+          organizationId: invoice.organizationId,
+          branchId: invoice.branchId,
+          paymentId: originalPaymentId || refundPaymentId,
+          invoiceId: invoice.id,
+          patientId: invoice.patientId,
+          refundNumber,
+          amount: input.amount.toFixed(2),
+          reason: cleanReason,
+          status: 'COMPLETED',
+          approvedBy: cleanSupervisorId,
+          processedBy: input.actorId || cleanSupervisorId,
+          processedAt: now,
+          metadata: {
+            requiresSupervisorOverride,
+            supervisorUserId: cleanSupervisorId,
+            actorId: input.actorId
+          }
+        } as unknown as typeof billingRefunds.$inferInsert);
+
+        // 3. Atomically update billingInvoices
+        const newPaidAmount = Math.max(0, Math.round((freshPaid - input.amount) * 100) / 100);
+        const currentDue = Number(lockedInvoiceRow.dueAmount ?? 0);
+        const newBalanceDue = Math.round((currentDue + input.amount) * 100) / 100;
+        const newStatus = newPaidAmount === 0 ? 'PENDING_PAYMENT' : 'PARTIALLY_PAID';
+
+        await tx
+          .update(billingInvoices)
+          .set({
+            paidAmount: newPaidAmount.toFixed(2),
+            dueAmount: newBalanceDue.toFixed(2),
+            status: newStatus,
+            updatedAt: now
+          } as unknown as typeof billingInvoices.$inferInsert)
+          .where(eq(billingInvoices.id, invoice.id));
+
+        invoice.paidAmount = newPaidAmount;
+        invoice.balanceDue = newBalanceDue;
+        invoice.status = newStatus as any;
+        invoice.updatedAt = now;
+
+        return {
+          success: true,
+          refundId,
+          refundNumber,
+          amount: input.amount,
+          invoice,
+          message: `Refund of ₹${input.amount.toFixed(2)} processed successfully for invoice ${invoice.invoiceNumber}.`
+        };
+      });
+    } catch (err) {
+      if (err instanceof AppError) throw err;
+      logger.error('Failed to process refund in database', err);
+      throw new AppError({
+        message: 'Database persistence failed. Refund processing aborted.',
         code: ErrorCode.SERVICE_UNAVAILABLE,
         statusCode: 503
       });
@@ -1260,7 +1686,11 @@ export class BillingManagementRepository {
     }
 
     const isPaidOrSettled = invoice.status === 'PAID' || invoice.status === 'DISCHARGE_SETTLED';
-    if (isPaidOrSettled) {
+    const isHighDiscount =
+      (input.discountType === 'PERCENTAGE' && input.discountValue > 20) ||
+      (input.discountType === 'FIXED_AMOUNT' && input.discountValue > (invoice.totalAmount * 0.2));
+
+    if (isPaidOrSettled || isHighDiscount) {
       validateSupervisorOverrideToken(input.supervisorOverrideToken, input.approvedBy.trim());
     }
 

@@ -57,6 +57,7 @@ export const DispenseSchema = z.object({
   patientId: z.string().trim().min(1, 'patientId is mandatory'),
   doctorId: z.string().optional(),
   prescriptionId: z.string().optional(),
+  isPartial: z.boolean().optional(),
   items: z.array(DispenseItemSchema).min(1, 'At least one medication item is mandatory for dispensing')
 });
 

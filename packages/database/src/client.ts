@@ -136,7 +136,7 @@ export async function withSecurityContext<T>(
       throw err;
     }
     throw new AppError({
-      message: 'Database service is unavailable. Writes and clinical transactions are halted.',
+      message: `Database service is unavailable. Writes and clinical transactions are halted: ${(err as any)?.message || String(err)}`,
       code: ErrorCode.SERVICE_UNAVAILABLE,
       statusCode: 503
     });

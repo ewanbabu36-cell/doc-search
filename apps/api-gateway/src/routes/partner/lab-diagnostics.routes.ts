@@ -25,7 +25,9 @@ export const CreateLabOrderSchema = z.object({
   instructions: z.string().trim().optional(),
   partnerId: z.string().trim().optional(),
   organizationId: z.string().trim().optional(),
-  branchId: z.string().trim().optional()
+  branchId: z.string().trim().optional(),
+  billingPolicy: z.string().trim().optional(),
+  metadata: z.record(z.unknown()).optional()
 });
 
 export const CollectSpecimenSchema = z.object({
@@ -33,7 +35,9 @@ export const CollectSpecimenSchema = z.object({
   containerType: z.string().trim().optional(),
   collectedBy: z.string().trim().optional(),
   collectionNotes: z.string().trim().optional(),
-  patientId: z.string().trim().optional()
+  patientId: z.string().trim().optional(),
+  deferredBilling: z.boolean().optional(),
+  isEmergency: z.boolean().optional()
 });
 
 export const EnterResultSchema = z.object({

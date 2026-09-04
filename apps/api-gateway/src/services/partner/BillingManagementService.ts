@@ -4,7 +4,8 @@ import {
   type RecordInsurancePreAuthInput,
   type CollectPaymentInput,
   type VoidInvoiceInput,
-  type ApplyDiscountInput
+  type ApplyDiscountInput,
+  type ProcessRefundInput
 } from '../../repositories/partner/BillingManagementRepository.js';
 import { auditRepository } from '../../repositories/core/AuditRepository.js';
 import { type SessionContext, verifyRazorpaySignature, verifyPayUSignature } from '@docsearch/auth';
@@ -171,6 +172,47 @@ export class BillingManagementService {
             reason: input.reason,
             approvedBy: input.approvedBy,
             hasSupervisorOverride: Boolean(input.supervisorOverrideToken)
+          }
+        },
+        session,
+        tx
+      );
+
+      return result;
+    });
+  }
+
+  async processRefund(
+    input: Omit<ProcessRefundInput, 'tenantId' | 'actorId'>,
+    session: SessionContext
+  ) {
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      const result = await billingManagementRepository.processRefund(
+        {
+          ...input,
+          tenantId: session.tenantId,
+          actorId: session.userId
+        },
+        tx
+      );
+
+      await auditRepository.recordEvent(
+        {
+          eventType: 'REFUND_PROCESSED',
+          resourceType: 'billing_refund',
+          resourceId: result.refundId,
+          tenantId: session.tenantId,
+          branchId: session.branchId,
+          metadata: {
+            refundNumber: result.refundNumber,
+            invoiceId: result.invoice.id,
+            invoiceNumber: result.invoice.invoiceNumber,
+            amount: result.amount,
+            reason: input.reason,
+            supervisorUserId: input.supervisorUserId,
+            hasSupervisorOverride: Boolean(input.supervisorOverrideToken),
+            newPaidAmount: result.invoice.paidAmount,
+            newDueAmount: result.invoice.balanceDue
           }
         },
         session,

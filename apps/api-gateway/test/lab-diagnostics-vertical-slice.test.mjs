@@ -2,17 +2,19 @@ import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildApp } from '../dist/app.js';
 import { signJwt } from '@docsearch/auth';
+import { setupTestDatabase, TEST_SEEDS } from '@docsearch/database';
 
 describe('Lab & Diagnostics Vertical Slice: Order -> Specimen -> Result -> Verification -> Review -> History', () => {
   let app;
+  let testDb;
 
   const MASTER_SECRET = 'docsearch_master_jwt_secret_dev_32char_key_only';
   const ISSUER = 'docsearch-api';
   const AUDIENCE = 'docsearch-platform';
 
-  const TENANT_A = '11111111-1111-4111-8111-111111111111';
-  const TENANT_B = '22222222-2222-4222-8222-222222222222';
-  const DOCTOR_ID = '99999999-9999-4999-8999-999999999999';
+  const TENANT_A = TEST_SEEDS.TENANT_A;
+  const TENANT_B = TEST_SEEDS.TENANT_B;
+  const DOCTOR_ID = TEST_SEEDS.DOCTOR_ID;
   const LAB_TECH_ID = '88888888-8888-4888-8888-888888888888';
 
   function createTestToken(overrides = {}) {
@@ -20,7 +22,7 @@ describe('Lab & Diagnostics Vertical Slice: Order -> Specimen -> Result -> Verif
       sub: overrides.userId || DOCTOR_ID,
       email: overrides.email || 'doctor@docsearch.health',
       tenantId: overrides.tenantId !== undefined ? overrides.tenantId : TENANT_A,
-      branchId: overrides.branchId !== undefined ? overrides.branchId : 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      branchId: overrides.branchId !== undefined ? overrides.branchId : TEST_SEEDS.BRANCH_A,
       roles: overrides.roles || ['DOCTOR', 'HOSPITAL_ADMIN', 'LAB_TECHNICIAN', 'PATHOLOGIST'],
       permissions: overrides.permissions || [
         'clinical:patients:create',
@@ -47,6 +49,7 @@ describe('Lab & Diagnostics Vertical Slice: Order -> Specimen -> Result -> Verif
   let testOrderId;
 
   before(async () => {
+    testDb = await setupTestDatabase();
     process.env['JWT_SECRET'] = MASTER_SECRET;
     process.env['NODE_ENV'] = 'development';
     app = await buildApp();
@@ -55,6 +58,7 @@ describe('Lab & Diagnostics Vertical Slice: Order -> Specimen -> Result -> Verif
 
   after(async () => {
     if (app) await app.close();
+    if (testDb) await testDb.cleanup();
   });
 
   // STEP 1: Register Patient & Encounter
