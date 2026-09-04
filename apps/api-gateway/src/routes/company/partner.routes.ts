@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { partnerService } from '../../services/company/PartnerService.js';
 import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
 import { AppError, ErrorCode } from '@docsearch/shared-core';
+import { partnerClassificationRepository } from '../../repositories/company/PartnerClassificationRepository.js';
 
 const CreatePartnerSchema = z.object({
   tenantId: z.string().uuid().optional(),
@@ -195,6 +196,55 @@ export const partnerRoutes: FastifyPluginAsync = async (fastify) => {
       }
       const doctor = await partnerService.addDoctor(partnerId, body, request.session);
       return reply.status(201).send({ success: true, data: doctor });
+    }
+  );
+
+  // GET /api/v1/company/partner-classifications
+  fastify.get(
+    '/api/v1/company/partner-classifications',
+    async (request) => {
+      const query = request.query as { status?: string };
+      const items = await partnerClassificationRepository.findAll(query.status || 'ACTIVE');
+      return { success: true, data: items, total: items.length };
+    }
+  );
+
+  // POST /api/v1/company/partner-classifications
+  fastify.post(
+    '/api/v1/company/partner-classifications',
+    {
+      preHandler: [authenticate, requirePermission('partners', 'create')]
+    },
+    async (request, reply) => {
+      const body = request.body as {
+        code: string;
+        label: string;
+        description?: string;
+        category?: string;
+        icon?: string;
+        defaultPlanCode?: string;
+        sortOrder?: number;
+      };
+
+      if (!body || !body.code || !body.label) {
+        throw new AppError({
+          message: 'Classification code and label are required',
+          code: ErrorCode.VALIDATION_ERROR,
+          statusCode: 400
+        });
+      }
+
+      const existing = await partnerClassificationRepository.findByCode(body.code);
+      if (existing) {
+        throw new AppError({
+          message: `Classification code ${body.code} already exists`,
+          code: ErrorCode.CONFLICT,
+          statusCode: 409
+        });
+      }
+
+      const created = await partnerClassificationRepository.create(body);
+      return reply.status(201).send({ success: true, data: created });
     }
   );
 };

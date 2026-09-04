@@ -3,9 +3,73 @@ import type {
   PartnerTransitionHistoryDto,
   PartnerTransitionRequest,
   PartnerLifecycleStatus,
-  PartnerType
+  PartnerType,
+  PartnerClassificationDto
 } from '@docsearch/api-contracts';
 import { mockPartnerProfiles, mockPartnerTransitionHistory } from './mock-partner-data.js';
+
+export const CANONICAL_PARTNER_CLASSIFICATIONS: PartnerClassificationDto[] = [
+  {
+    code: 'HOSPITAL_NETWORK',
+    label: 'Hospital Network',
+    description: 'Multi-specialty tertiary or secondary care hospital network',
+    category: 'HEALTHCARE_PROVIDER',
+    icon: '🏥',
+    defaultPlanCode: 'PLAN_HOSPITAL_PRO',
+    status: 'ACTIVE',
+    sortOrder: 1
+  },
+  {
+    code: 'CLINIC_GROUP',
+    label: 'Clinic Group / Polyclinic',
+    description: 'Outpatient primary and multi-specialty care clinics',
+    category: 'HEALTHCARE_PROVIDER',
+    icon: '🩺',
+    defaultPlanCode: 'PLAN_CLINIC_STARTER',
+    status: 'ACTIVE',
+    sortOrder: 2
+  },
+  {
+    code: 'PHARMACY',
+    label: 'Independent Pharmacy Store (Chemist & Druggist)',
+    description: 'Retail allopathic medication dispensing and inventory store',
+    category: 'RETAIL_HEALTHCARE',
+    icon: '💊',
+    defaultPlanCode: 'PLAN_CLINIC_STARTER',
+    status: 'ACTIVE',
+    sortOrder: 3
+  },
+  {
+    code: 'DIAGNOSTIC_LAB',
+    label: 'Diagnostic Pathology Lab',
+    description: 'NABL accredited pathology and clinical diagnostics',
+    category: 'DIAGNOSTICS',
+    icon: '🧪',
+    defaultPlanCode: 'PLAN_CLINIC_STARTER',
+    status: 'ACTIVE',
+    sortOrder: 4
+  },
+  {
+    code: 'SURGICAL_CENTER',
+    label: 'Surgical Center',
+    description: 'Ambulatory day care and day-surgery pavilion',
+    category: 'HEALTHCARE_PROVIDER',
+    icon: '🏥',
+    defaultPlanCode: 'PLAN_CLINIC_STARTER',
+    status: 'ACTIVE',
+    sortOrder: 5
+  },
+  {
+    code: 'INDIVIDUAL_PRACTICE',
+    label: 'Individual Specialist Practice',
+    description: 'Solo physician outpatient consulting room',
+    category: 'HEALTHCARE_PROVIDER',
+    icon: '👨‍⚕️',
+    defaultPlanCode: 'PLAN_CLINIC_STARTER',
+    status: 'ACTIVE',
+    sortOrder: 6
+  }
+];
 
 export interface PartnerListFilters {
   search?: string | undefined;
@@ -31,10 +95,23 @@ export interface IPartnerService {
     req: PartnerTransitionRequest,
     actorEmail?: string
   ): Promise<PartnerProfileDto>;
+  getClassifications(): Promise<PartnerClassificationDto[]>;
+  addClassification(classification: PartnerClassificationDto): Promise<PartnerClassificationDto>;
 }
 
 export class PartnerService implements IPartnerService {
   private readonly apiUrl?: string | undefined;
+  private classifications: PartnerClassificationDto[] = (() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('docsearch_partner_classifications');
+      if (stored) {
+        try {
+          return JSON.parse(stored);
+        } catch {}
+      }
+    }
+    return [...CANONICAL_PARTNER_CLASSIFICATIONS];
+  })();
   private partners: PartnerProfileDto[] = (() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('docsearch_custom_partners');
@@ -50,6 +127,62 @@ export class PartnerService implements IPartnerService {
 
   constructor(apiUrl?: string | undefined) {
     this.apiUrl = apiUrl;
+  }
+
+  async getClassifications(): Promise<PartnerClassificationDto[]> {
+    try {
+      const res = await fetch('/api/v1/company/partner-classifications');
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+          this.classifications = json.data;
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem('docsearch_partner_classifications', JSON.stringify(this.classifications));
+            } catch {}
+          }
+          return [...this.classifications];
+        }
+      }
+    } catch {
+      // Fallback
+    }
+    return [...this.classifications];
+  }
+
+  async addClassification(classification: PartnerClassificationDto): Promise<PartnerClassificationDto> {
+    try {
+      const res = await fetch('/api/v1/company/partner-classifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(classification)
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.data) {
+          this.classifications = [...this.classifications, json.data];
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem('docsearch_partner_classifications', JSON.stringify(this.classifications));
+            } catch {}
+          }
+          return json.data;
+        }
+      }
+    } catch {}
+
+    const created: PartnerClassificationDto = {
+      ...classification,
+      id: crypto.randomUUID(),
+      sortOrder: this.classifications.length + 1
+    };
+    this.classifications = [...this.classifications, created];
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('docsearch_partner_classifications', JSON.stringify(this.classifications));
+      } catch {}
+    }
+    return created;
   }
 
   addPartner(partner: PartnerProfileDto): PartnerProfileDto {

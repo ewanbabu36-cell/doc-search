@@ -17,7 +17,8 @@ export const PartnerTypeSchema = z.enum([
   'CLINIC_GROUP',
   'SURGICAL_CENTER',
   'DIAGNOSTIC_LAB',
-  'INDIVIDUAL_PRACTICE'
+  'INDIVIDUAL_PRACTICE',
+  'PHARMACY'
 ]);
 
 export type PartnerType = z.infer<typeof PartnerTypeSchema>;
@@ -89,3 +90,17 @@ export const PartnerTransitionHistoryDtoSchema = z.object({
 });
 
 export type PartnerTransitionHistoryDto = z.infer<typeof PartnerTransitionHistoryDtoSchema>;
+
+export const PartnerClassificationDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  code: z.string().min(1),
+  label: z.string().min(1),
+  description: z.string().optional(),
+  category: z.string().default('HEALTHCARE_PROVIDER'),
+  icon: z.string().optional(),
+  defaultPlanCode: z.string().optional(),
+  status: z.enum(['ACTIVE', 'INACTIVE']).default('ACTIVE'),
+  sortOrder: z.number().default(0)
+});
+
+export type PartnerClassificationDto = z.infer<typeof PartnerClassificationDtoSchema>;

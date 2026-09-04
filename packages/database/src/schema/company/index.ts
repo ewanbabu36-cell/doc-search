@@ -3802,3 +3802,30 @@ export type NewGovernanceEvent = typeof governanceEvents.$inferInsert;
 export type CompanyAuditTrace = typeof companyAuditTraces.$inferSelect;
 export type NewCompanyAuditTrace = typeof companyAuditTraces.$inferInsert;
 
+/**
+ * Partner Classifications Master Catalog
+ */
+export const partnerClassifications = companySchema.table(
+  'partner_classifications',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    code: varchar('code', { length: 50 }).notNull().unique(),
+    label: varchar('label', { length: 100 }).notNull(),
+    description: text('description'),
+    category: varchar('category', { length: 50 }).notNull().default('HEALTHCARE_PROVIDER'),
+    icon: varchar('icon', { length: 20 }),
+    defaultPlanCode: varchar('default_plan_code', { length: 50 }),
+    status: varchar('status', { length: 20 }).notNull().default('ACTIVE'),
+    sortOrder: integer('sort_order').notNull().default(0),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    index('idx_partner_class_status').on(table.status),
+    index('idx_partner_class_sort').on(table.sortOrder)
+  ]
+);
+
+export type PartnerClassification = typeof partnerClassifications.$inferSelect;
+export type NewPartnerClassification = typeof partnerClassifications.$inferInsert;
+

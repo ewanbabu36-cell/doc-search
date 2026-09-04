@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button, Input, Select, Badge } from '@docsearch/ui-kit';
-import type { PartnerType, PartnerProfileDto } from '@docsearch/api-contracts';
-import { partnerService } from '../../services/partner-service.js';
+import type { PartnerType, PartnerProfileDto, PartnerClassificationDto } from '@docsearch/api-contracts';
+import { partnerService, CANONICAL_PARTNER_CLASSIFICATIONS } from '../../services/partner-service.js';
 
 interface PartnerOnboardingModalProps {
   isOpen: boolean;
@@ -14,6 +14,20 @@ export const PartnerOnboardingModal: React.FC<PartnerOnboardingModalProps> = ({
   onClose,
   onSuccess
 }) => {
+  const [classifications, setClassifications] = useState<PartnerClassificationDto[]>(CANONICAL_PARTNER_CLASSIFICATIONS);
+
+  useEffect(() => {
+    let isMounted = true;
+    partnerService.getClassifications().then((data) => {
+      if (isMounted && data && data.length > 0) {
+        setClassifications(data);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const [formData, setFormData] = useState({
     legalName: '',
     tradeName: '',
@@ -189,13 +203,10 @@ export const PartnerOnboardingModal: React.FC<PartnerOnboardingModalProps> = ({
             <div>
               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>PARTNER CLASSIFICATION *</label>
               <Select
-                options={[
-                  { label: 'Hospital Network', value: 'HOSPITAL_NETWORK' },
-                  { label: 'Clinic Group', value: 'CLINIC_GROUP' },
-                  { label: 'Surgical Center', value: 'SURGICAL_CENTER' },
-                  { label: 'Diagnostic Pathology Lab', value: 'DIAGNOSTIC_LAB' },
-                  { label: 'Individual Specialist Practice', value: 'INDIVIDUAL_PRACTICE' }
-                ]}
+                options={classifications.map((c) => ({
+                  label: `${c.icon ? c.icon + ' ' : ''}${c.label}`,
+                  value: c.code
+                }))}
                 value={formData.partnerType}
                 onChange={(e) => setFormData({ ...formData, partnerType: e.target.value as PartnerType })}
               />
@@ -232,11 +243,22 @@ export const PartnerOnboardingModal: React.FC<PartnerOnboardingModalProps> = ({
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>CONTACT PERSON *</label>
-                <Input required placeholder="Dr. Rajesh / Administrator" value={formData.contactName} onChange={(e) => setFormData({ ...formData, contactName: e.target.value })} />
+                <Input
+                  required
+                  placeholder={formData.partnerType === 'PHARMACY' ? 'Pharmacist / Store Head' : 'Dr. Rajesh / Administrator'}
+                  value={formData.contactName}
+                  onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
+                />
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>WORK EMAIL *</label>
-                <Input required type="email" placeholder="admin@hospital.com" value={formData.contactEmail} onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })} />
+                <Input
+                  required
+                  type="email"
+                  placeholder={formData.partnerType === 'PHARMACY' ? 'pharmacist@pharmacy.com' : 'admin@hospital.com'}
+                  value={formData.contactEmail}
+                  onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
+                />
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>PHONE NUMBER *</label>
@@ -248,7 +270,7 @@ export const PartnerOnboardingModal: React.FC<PartnerOnboardingModalProps> = ({
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '16px', marginTop: '8px' }}>
             <Button type="button" variant="outline" size="md" onClick={onClose}>Cancel</Button>
             <Button type="submit" variant="primary" size="md" disabled={isSubmitting} style={{ backgroundColor: '#06B6D4', borderColor: '#06B6D4', color: '#070C16', fontWeight: 800 }}>
-              {isSubmitting ? 'Registering Partner...' : '🚀 Submit & Onboard Hospital'}
+              {isSubmitting ? 'Registering Partner...' : `🚀 Submit & Onboard ${formData.partnerType === 'PHARMACY' ? 'Pharmacy Store' : 'Hospital'}`}
             </Button>
           </div>
         </form>

@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import type {
   PartnerProfileDto,
   PartnerLifecycleStatus,
-  PartnerType
+  PartnerType,
+  PartnerClassificationDto
 } from '@docsearch/api-contracts';
 import {
   Card,
@@ -24,7 +25,7 @@ import {
   ErrorState,
   EmptyState
 } from '@docsearch/ui-kit';
-import { partnerService, type PartnerListFilters } from '../../services/partner-service.js';
+import { partnerService, CANONICAL_PARTNER_CLASSIFICATIONS, type PartnerListFilters } from '../../services/partner-service.js';
 
 export interface PartnerListViewProps {
   onSelectPartner: (partnerId: string) => void;
@@ -34,6 +35,7 @@ export const PartnerListView: React.FC<PartnerListViewProps> = ({ onSelectPartne
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [onboardSuccessMessage, setOnboardSuccessMessage] = useState<string | null>(null);
   const [partners, setPartners] = useState<PartnerProfileDto[]>([]);
+  const [classifications, setClassifications] = useState<PartnerClassificationDto[]>(CANONICAL_PARTNER_CLASSIFICATIONS);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
@@ -42,6 +44,12 @@ export const PartnerListView: React.FC<PartnerListViewProps> = ({ onSelectPartne
   const [typeFilter, setTypeFilter] = useState<PartnerType | 'ALL'>('ALL');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    partnerService.getClassifications().then((items) => {
+      if (items && items.length > 0) setClassifications(items);
+    });
+  }, []);
 
   const fetchPartners = async () => {
     setIsLoading(true);
@@ -249,11 +257,10 @@ export const PartnerListView: React.FC<PartnerListViewProps> = ({ onSelectPartne
             <Select
               options={[
                 { label: 'All Partner Types', value: 'ALL' },
-                { label: 'Hospital Network', value: 'HOSPITAL_NETWORK' },
-                { label: 'Clinic Group', value: 'CLINIC_GROUP' },
-                { label: 'Surgical Center', value: 'SURGICAL_CENTER' },
-                { label: 'Diagnostic Lab', value: 'DIAGNOSTIC_LAB' },
-                { label: 'Individual Practice', value: 'INDIVIDUAL_PRACTICE' }
+                ...classifications.map((c) => ({
+                  label: `${c.icon ? c.icon + ' ' : ''}${c.label}`,
+                  value: c.code
+                }))
               ]}
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value as PartnerType | 'ALL')}
