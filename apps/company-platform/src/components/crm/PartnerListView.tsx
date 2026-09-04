@@ -478,7 +478,8 @@ export const PartnerListView: React.FC<PartnerListViewProps> = ({ onSelectPartne
                                   monthlyFee: meta.monthlyFee || 2999,
                                   features: meta.accessibleFeatures || ['Standard Healthcare Portal'],
                                   planExpiryDate: meta.planExpiryDate,
-                                  activatedAt: partner.createdAt
+                                  activatedAt: partner.createdAt,
+                                  loginUrl: meta.credentials?.loginUrl
                                 })
                               }
                               style={{
@@ -512,7 +513,8 @@ export const PartnerListView: React.FC<PartnerListViewProps> = ({ onSelectPartne
                                   monthlyFee: meta.monthlyFee || 2999,
                                   features: meta.accessibleFeatures || ['Standard Healthcare Portal'],
                                   planExpiryDate: meta.planExpiryDate,
-                                  activatedAt: partner.createdAt
+                                  activatedAt: partner.createdAt,
+                                  loginUrl: meta.credentials?.loginUrl
                                 })
                               }
                               style={{

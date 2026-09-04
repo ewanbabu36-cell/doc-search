@@ -27,6 +27,7 @@ export interface PartnerWelcomeKitData {
   staffAccountsLimit?: number | undefined;
   whatsappCreditsLimit?: number | undefined;
   cloudStorageGb?: number | undefined;
+  loginUrl?: string | undefined;
 }
 
 function escapePdfText(text: string | number | undefined | null): string {
@@ -190,7 +191,7 @@ export function generateAndDownloadWelcomeKitPdf(data: PartnerWelcomeKitData): v
   contentLines.push('/F1 8.5 Tf');
   contentLines.push('0.7 0.8 0.9 rg');
   contentLines.push(`1 0 0 1 ${margin + 14} ${credTop - 38} Tm`);
-  contentLines.push(`(${escapePdfText(`Partner Portal URL: http://localhost:5173/  (Accessible 24x7 from any device/browser)`)}) Tj`);
+  contentLines.push(`(${escapePdfText(`Partner Portal URL: ${data.loginUrl || 'http://localhost:5173/'}  (Accessible 24x7 from any device/browser)`)}) Tj`);
 
   contentLines.push('/F2 10 Tf');
   contentLines.push('1 1 1 rg');
@@ -468,7 +469,7 @@ export function openPrintableSpeedPostDossier(data: PartnerWelcomeKitData): void
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 14px;">
             <div>
               <span style="color: #64748b; font-size: 12px;">Partner Login URL:</span><br/>
-              <strong style="color: #0284c7;">http://localhost:5173/</strong>
+              <strong style="color: #0284c7;">${data.loginUrl || 'http://localhost:5173/'}</strong>
             </div>
             <div>
               <span style="color: #64748b; font-size: 12px;">Subscribed Tier:</span><br/>

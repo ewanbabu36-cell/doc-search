@@ -1,6 +1,7 @@
 import { GlobalCommandPalette } from './common/GlobalCommandPalette.js';
 import { UniversalAccountSettingsModal } from './common/UniversalAccountSettingsModal.js';
-import React, { useState } from 'react';
+import { parseCurrentUrl, updateBrowserUrlWithoutReload } from '../utils/urlRouter.js';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   AppShell,
   Header,
@@ -95,12 +96,15 @@ const getThemeLabel = (t: string) => {
 };
 
 export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ currentUser, onLogout }) => {
-  const [workspace, setWorkspace] = useState<OrganizationWorkspaceType>(
-    currentUser?.organizationType || 'ENTERPRISE_COMMAND'
-  );
-  const [activeModule, setActiveModule] = useState<PartnerModuleKey>(
-    (currentUser?.defaultModule as PartnerModuleKey) || 'executive-command-center'
-  );
+  const initialRoute = useMemo(() => {
+    return parseCurrentUrl(
+      currentUser?.organizationType || 'ENTERPRISE_COMMAND',
+      (currentUser?.defaultModule as PartnerModuleKey) || 'executive-command-center'
+    );
+  }, [currentUser]);
+
+  const [workspace, setWorkspace] = useState<OrganizationWorkspaceType>(initialRoute.workspace);
+  const [activeModule, setActiveModule] = useState<PartnerModuleKey>(initialRoute.activeModule);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
@@ -113,7 +117,26 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
   });
   const isPwdChanged = typeof window !== 'undefined' && localStorage.getItem(`docsearch_day1_pwd_${currentUser?.email || 'default'}`) === 'true';
 
-  React.useEffect(() => {
+  // Synchronize browser address bar with active workspace and module
+  useEffect(() => {
+    updateBrowserUrlWithoutReload(workspace, activeModule);
+  }, [workspace, activeModule]);
+
+  // Listen to browser Back and Forward navigation events
+  useEffect(() => {
+    const handlePopState = () => {
+      const parsed = parseCurrentUrl(
+        currentUser?.organizationType || 'ENTERPRISE_COMMAND',
+        (currentUser?.defaultModule as PartnerModuleKey) || 'executive-command-center'
+      );
+      setWorkspace(parsed.workspace);
+      setActiveModule(parsed.activeModule);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [currentUser]);
+
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
@@ -138,8 +161,9 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
   const currentWsp = workspaceProfiles[workspace];
 
   const handleWorkspaceChange = (newWsp: OrganizationWorkspaceType) => {
+    const defMod = workspaceProfiles[newWsp].defaultModule;
     setWorkspace(newWsp);
-    setActiveModule(workspaceProfiles[newWsp].defaultModule);
+    setActiveModule(defMod);
   };
 
   // Build dynamic navigation sections based on active workspace

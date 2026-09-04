@@ -683,7 +683,12 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
             expiryDate: planExpiryFormatted
           },
           credentials: {
-            loginUrl: 'http://localhost:5173/',
+            loginUrl: `http://localhost:5173${
+              formData.classification === 'HOSPITAL' ? '/hospital' :
+              formData.classification === 'PHARMACY' ? '/pharmacy' :
+              formData.classification === 'CLINIC' ? '/clinic' :
+              formData.classification === 'DIAGNOSTIC_CENTRE' ? '/radiology' : '/pathology'
+            }`,
             userId: formData.email,
             temporaryPassword: formData.password,
             role: getRoleByOrg(formData.classification),
@@ -1709,7 +1714,8 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
                     monthlyFee: activationResult.subscriptionPlan.monthlyFee,
                     features: activationResult.subscriptionPlan.activeFeatures,
                     planExpiryDate: activationResult.credentials.planExpiryDate || activationResult.subscriptionPlan.expiryDate,
-                    activatedAt: activationResult.credentials.activatedAt
+                    activatedAt: activationResult.credentials.activatedAt,
+                    loginUrl: activationResult.credentials.loginUrl
                   })
                 }
                 style={{ borderColor: '#F59E0B', color: '#FBBF24', fontWeight: 800 }}
@@ -1761,7 +1767,8 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
                       monthlyFee: activationResult.subscriptionPlan.monthlyFee,
                       features: activationResult.subscriptionPlan.activeFeatures,
                       planExpiryDate: activationResult.credentials.planExpiryDate || activationResult.subscriptionPlan.expiryDate,
-                      activatedAt: activationResult.credentials.activatedAt
+                      activatedAt: activationResult.credentials.activatedAt,
+                      loginUrl: activationResult.credentials.loginUrl
                     })
                   }
                   style={{
@@ -1801,7 +1808,8 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
                       monthlyFee: activationResult.subscriptionPlan.monthlyFee,
                       features: activationResult.subscriptionPlan.activeFeatures,
                       planExpiryDate: activationResult.credentials.planExpiryDate || activationResult.subscriptionPlan.expiryDate,
-                      activatedAt: activationResult.credentials.activatedAt
+                      activatedAt: activationResult.credentials.activatedAt,
+                      loginUrl: activationResult.credentials.loginUrl
                     })
                   }
                   style={{
@@ -2026,7 +2034,7 @@ Please change your password upon first login.`}
                   transition: 'all 0.15s ease'
                 }}
               >
-                <span>🚪 Open Partner Login Panel (localhost:5173) ➔</span>
+                <span>🚪 Launch Partner Portal ({activationResult.credentials.loginUrl.replace('http://localhost:5173', '') || '/'}) ➔</span>
               </a>
             </div>
           </div>

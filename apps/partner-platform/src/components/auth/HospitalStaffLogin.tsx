@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Badge, Button } from '@docsearch/ui-kit';
+import { getUrlForModule } from '../../utils/urlRouter.js';
 
 export type OrganizationWorkspaceType =
   | 'HOSPITAL'
@@ -579,9 +580,18 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess }) => {
         localStorage.setItem('docsearch_partner_staff_auth', JSON.stringify(resolvedUser));
       }
 
+      if (typeof window !== 'undefined' && (window.location.pathname === '/' || window.location.pathname === '/login')) {
+        const targetPath = getUrlForModule(resolvedUser.organizationType, resolvedUser.defaultModule as any);
+        window.history.replaceState({ path: targetPath }, '', targetPath);
+      }
+
       setIsAuthenticating(false);
       onLoginSuccess(resolvedUser);
     } catch {
+      if (typeof window !== 'undefined' && (window.location.pathname === '/' || window.location.pathname === '/login')) {
+        const targetPath = getUrlForModule(targetUser.organizationType, targetUser.defaultModule as any);
+        window.history.replaceState({ path: targetPath }, '', targetPath);
+      }
       setIsAuthenticating(false);
       onLoginSuccess(targetUser);
     }

@@ -326,6 +326,11 @@ export const partnerRoutes: FastifyPluginAsync = async (fastify) => {
         phone: body.phone
       });
 
+      const categoryLoginPath = orgType === 'HOSPITAL' ? '/hospital' :
+        orgType === 'PHARMACY' ? '/pharmacy' :
+        orgType === 'CLINIC' ? '/clinic' :
+        orgType === 'DIAGNOSTIC_CENTRE' ? '/radiology' : '/pathology';
+
       const partnerId = `PRT-${Date.now().toString().slice(-6)}`;
       const activationVoucher = {
         partnerId,
@@ -347,7 +352,7 @@ export const partnerRoutes: FastifyPluginAsync = async (fastify) => {
           renewalCycle: 'MONTHLY'
         },
         credentials: {
-          loginUrl: 'http://localhost:5173/',
+          loginUrl: `http://localhost:5173${categoryLoginPath}`,
           userId: registeredUser.email,
           temporaryPassword: plainPassword,
           role: registeredUser.roles[0],
