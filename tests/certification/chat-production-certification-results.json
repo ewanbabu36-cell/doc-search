@@ -1,0 +1,208 @@
+{
+  "timestamp": "2026-09-04T08:06:39.681Z",
+  "totalTests": 40,
+  "passedTests": 40,
+  "failedTests": 0,
+  "results": [
+    {
+      "id": "TEST-01",
+      "name": "Request without JWT token is rejected (401)",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-02",
+      "name": "Request with invalid/malformed JWT is rejected (401)",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-03",
+      "name": "Request with tampered signature JWT is rejected (401)",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-04",
+      "name": "Cross-tenant conversation access is blocked (404 fail-closed)",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-05",
+      "name": "Model/tool attempting cross-branch target is rejected by Permission Firewall (403)",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-06",
+      "name": "RECEPTION requesting DOCTOR capability is blocked (403)",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-07",
+      "name": "NURSE requesting FINANCE capability is blocked (403)",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-08",
+      "name": "PHARMACY requesting OWNER executive capability is blocked (403)",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-09",
+      "name": "FINANCE requesting DOCTOR clinical capability is blocked (403)",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-10",
+      "name": "PATIENT requesting STAFF capability is blocked (403)",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-11",
+      "name": "Patient A attempting to access Patient B data is blocked (403)",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-12",
+      "name": "Patient A accessing own data succeeds (200)",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-13",
+      "name": "Unknown capability is blocked (403)",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-14",
+      "name": "Unauthorized capability for user role is blocked (403)",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-15",
+      "name": "Unknown tool invocation is blocked (403)",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-16",
+      "name": "Tool not associated with capability is blocked (403)",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-17",
+      "name": "Tool not allowed for caller role is blocked (403)",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-18",
+      "name": "Expired license blocks AI chat access (403)",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-19",
+      "name": "Unentitled tenant without MODULE_AI_COPILOT is blocked (403)",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-20",
+      "name": "High-risk clinical commit without approval is blocked (400/403)",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-21",
+      "name": "High-risk clinical commit with verified clinician approval succeeds (200)",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-22",
+      "name": "\"Ignore previous rules\" prompt cannot escalate role or bypass security",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-23",
+      "name": "Model attempt to invoke unauthorized tool is blocked fail-closed",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-24",
+      "name": "Malicious cross-tenant argument in toolInput is blocked",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-25",
+      "name": "Malicious cross-branch argument in toolInput is blocked",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-26",
+      "name": "Malicious cross-patient argument is blocked for patient token",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-27",
+      "name": "Conversation creation persists in storage",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-28",
+      "name": "Chat messages persist in conversation history",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-29",
+      "name": "Conversation remains intact across simulated API restart",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-30",
+      "name": "Persistent conversation remains strictly tenant-isolated",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-31",
+      "name": "Model provider timeout handling",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-32",
+      "name": "Model provider error safely caught without process crash",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-33",
+      "name": "Malformed model output safely handled",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-34",
+      "name": "Duplicate request with x-idempotency-key returns cached result safely",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-35",
+      "name": "Exceeding user sliding window returns 429 Too Many Requests",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-36",
+      "name": "Repeated security violations trigger 15-minute abuse lockout",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-37",
+      "name": "Successful Chat execution generates cryptographic audit trail",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-38",
+      "name": "Denied Chat execution is logged and auditable",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-39",
+      "name": "Tool execution details and metrics are tracked in message metadata",
+      "status": "PASS"
+    },
+    {
+      "id": "TEST-40",
+      "name": "Cryptographic integrity hash chain is mathematically valid",
+      "status": "PASS"
+    }
+  ]
+}
