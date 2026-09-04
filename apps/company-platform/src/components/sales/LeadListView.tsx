@@ -54,7 +54,7 @@ export const LeadListView: React.FC<LeadListViewProps> = ({
           <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>{filtered.length} active leads tracked across all sales territories</span>
         </div>
         <Button variant="primary" size="sm" onClick={() => setIsCreateOpen(true)} style={{ backgroundColor: '#06B6D4', color: '#070C16', fontWeight: 800 }}>
-          ➕ Add New Doctor / Clinic Lead
+          🤖 ➕ Add Lead (AI Smart Intake)
         </Button>
       </div>
 
