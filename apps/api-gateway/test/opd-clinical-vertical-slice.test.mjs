@@ -2,9 +2,11 @@ import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildApp } from '../dist/app.js';
 import { signJwt } from '@docsearch/auth';
+import { setupTestDatabase } from '@docsearch/database';
 
 describe('Production Vertical Slice: OPD -> Encounter -> Consultation -> Prescription -> History', () => {
   let app;
+  let testDb;
 
   const MASTER_SECRET = 'docsearch_master_jwt_secret_dev_32char_key_only';
   const ISSUER = 'docsearch-api';
@@ -41,6 +43,7 @@ describe('Production Vertical Slice: OPD -> Encounter -> Consultation -> Prescri
   let testConsultationId;
 
   before(async () => {
+    testDb = await setupTestDatabase();
     process.env['JWT_SECRET'] = MASTER_SECRET;
     process.env['NODE_ENV'] = 'development';
     app = await buildApp();
@@ -49,6 +52,7 @@ describe('Production Vertical Slice: OPD -> Encounter -> Consultation -> Prescri
 
   after(async () => {
     if (app) await app.close();
+    if (testDb) await testDb.cleanup();
   });
 
   // STEP 1: Register Patient

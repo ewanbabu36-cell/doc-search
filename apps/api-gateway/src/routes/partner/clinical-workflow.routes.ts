@@ -6,7 +6,9 @@ import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
 import {
   type CreatePatientInput,
   type CreateEncounterInput,
-  type SaveConsultationInput
+  type SaveConsultationInput,
+  type CreateQueueTokenInput,
+  type CreatePrescriptionInput
 } from '../../repositories/partner/ClinicalWorkflowRepository.js';
 
 export const CreatePatientSchema = z.object({
@@ -34,6 +36,20 @@ export const CreateEncounterSchema = z.object({
   branchId: z.string().trim().optional()
 });
 
+export const UpdateEncounterStatusSchema = z.object({
+  status: z.string().trim().min(1, 'status is required')
+});
+
+export const CreateQueueTokenSchema = z.object({
+  encounterId: z.string().trim().min(1, 'encounterId is required'),
+  doctorId: z.string().trim().optional(),
+  branchId: z.string().trim().optional(),
+  departmentId: z.string().trim().optional(),
+  queueDate: z.string().trim().optional(),
+  estimatedWaitMinutes: z.number().int().positive().optional(),
+  metadata: z.record(z.any()).optional()
+});
+
 export const SaveConsultationSchema = z.object({
   encounterId: z.string().trim().min(1, 'encounterId is required'),
   patientId: z.string().trim().min(1, 'patientId is required'),
@@ -46,16 +62,46 @@ export const SaveConsultationSchema = z.object({
   assessmentNotes: z.string().trim().optional(),
   planNotes: z.string().trim().optional(),
   vitals: z.record(z.any()).optional(),
-  diagnoses: z.array(z.record(z.any())).optional(),
+  diagnoses: z.union([z.array(z.string()), z.array(z.record(z.any()))]).optional(),
   medications: z.array(z.record(z.any())).optional(),
   prescriptions: z.array(z.record(z.any())).optional(),
-  investigations: z.array(z.record(z.any())).optional(),
-  labInvestigations: z.array(z.record(z.any())).optional(),
+  investigations: z.union([
+    z.array(z.string()),
+    z.array(z.record(z.any())),
+    z.record(z.any())
+  ]).optional(),
+  labInvestigations: z.union([
+    z.array(z.string()),
+    z.array(z.record(z.any())),
+    z.record(z.any())
+  ]).optional(),
   followUpAdvice: z.string().trim().optional(),
   partnerId: z.string().trim().optional(),
   organizationId: z.string().trim().optional(),
   branchId: z.string().trim().optional()
 }).passthrough();
+
+export const CreatePrescriptionSchema = z.object({
+  patientId: z.string().trim().min(1, 'patientId is required'),
+  encounterId: z.string().trim().optional(),
+  consultationId: z.string().trim().optional(),
+  prescribingDoctorId: z.string().trim().optional(),
+  doctorId: z.string().trim().optional(),
+  priority: z.string().trim().optional(),
+  notes: z.string().trim().optional(),
+  items: z.array(z.object({
+    medicationId: z.string().trim().optional(),
+    medicationName: z.string().trim().optional(),
+    dosage: z.string().trim().optional(),
+    frequency: z.string().trim().optional(),
+    route: z.string().trim().optional(),
+    duration: z.union([z.number(), z.string()]).optional(),
+    durationUnit: z.string().trim().optional(),
+    prescribedQuantity: z.union([z.number(), z.string()]).optional(),
+    quantity: z.union([z.number(), z.string()]).optional(),
+    instructions: z.string().trim().optional()
+  })).optional()
+});
 
 export const BridgeOrdersSchema = z.object({
   patientId: z.string().trim().min(1, 'patientId is required'),
@@ -157,10 +203,32 @@ export const clinicalWorkflowRoutes: FastifyPluginAsync = async (fastify) => {
     {
       preHandler: [authenticate, requirePermission('clinical:patients', 'update')]
     },
-    async (request) => {
+    async (request, reply) => {
       const { id } = request.params as { id: string };
       const payload = request.body as Partial<CreatePatientInput>;
-      return { success: true, data: { id, ...payload, updatedAt: new Date().toISOString() } };
+      const updated = await clinicalWorkflowService.updatePatient(id, payload, request.session);
+      if (!updated) {
+        reply.status(404);
+        return { success: false, error: { code: 'PATIENT_NOT_FOUND', message: 'Patient not found' } };
+      }
+      return { success: true, data: updated };
+    }
+  );
+
+  fastify.patch(
+    '/api/v1/partner/clinical/patients/:id',
+    {
+      preHandler: [authenticate, requirePermission('clinical:patients', 'update')]
+    },
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const payload = request.body as Partial<CreatePatientInput>;
+      const updated = await clinicalWorkflowService.updatePatient(id, payload, request.session);
+      if (!updated) {
+        reply.status(404);
+        return { success: false, error: { code: 'PATIENT_NOT_FOUND', message: 'Patient not found' } };
+      }
+      return { success: true, data: updated };
     }
   );
 
@@ -251,6 +319,120 @@ export const clinicalWorkflowRoutes: FastifyPluginAsync = async (fastify) => {
     }
   );
 
+  fastify.get(
+    '/api/v1/partner/clinical/encounters/:id',
+    {
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'read')]
+    },
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const encounters = await clinicalWorkflowService.getEncounters(request.session);
+      const found = encounters.find(e => e.id === id);
+      if (!found) {
+        reply.status(404);
+        return { success: false, error: { code: 'ENCOUNTER_NOT_FOUND', message: 'Encounter not found' } };
+      }
+      return { success: true, data: found };
+    }
+  );
+
+  // PATCH /api/v1/partner/encounters/:id/status
+  fastify.patch(
+    '/api/v1/partner/encounters/:id/status',
+    {
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'update')]
+    },
+    async (request) => {
+      const { id } = request.params as { id: string };
+      const { status } = validateBody(UpdateEncounterStatusSchema, request.body);
+      const data = await clinicalWorkflowService.updateEncounterStatus(id, status, request.session);
+      return { success: true, data };
+    }
+  );
+
+  fastify.patch(
+    '/api/v1/partner/clinical/encounters/:id/status',
+    {
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'update')]
+    },
+    async (request) => {
+      const { id } = request.params as { id: string };
+      const { status } = validateBody(UpdateEncounterStatusSchema, request.body);
+      const data = await clinicalWorkflowService.updateEncounterStatus(id, status, request.session);
+      return { success: true, data };
+    }
+  );
+
+  // ==========================================
+  // 3. OPERATIONAL QUEUE & TOKEN MANAGEMENT
+  // ==========================================
+
+  // POST /api/v1/partner/clinical/queues/tokens
+  fastify.post(
+    '/api/v1/partner/clinical/queues/tokens',
+    {
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'create')]
+    },
+    async (request, reply) => {
+      const payload = validateBody(CreateQueueTokenSchema, request.body) as Omit<CreateQueueTokenInput, 'tenantId'>;
+      const data = await clinicalWorkflowService.createQueueToken(payload, request.session);
+      reply.status(201);
+      return { success: true, data };
+    }
+  );
+
+  // GET /api/v1/partner/clinical/queues
+  fastify.get(
+    '/api/v1/partner/clinical/queues',
+    {
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'read')]
+    },
+    async (request) => {
+      const q = request.query as { branchId?: string; doctorId?: string; queueDate?: string; queueStatus?: string };
+      const data = await clinicalWorkflowService.getQueue(q || {}, request.session);
+      return { success: true, data };
+    }
+  );
+
+  // PATCH /api/v1/partner/clinical/queues/:id/call
+  fastify.patch(
+    '/api/v1/partner/clinical/queues/:id/call',
+    {
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'update')]
+    },
+    async (request) => {
+      const { id } = request.params as { id: string };
+      const data = await clinicalWorkflowService.callQueueToken(id, request.session);
+      return { success: true, data };
+    }
+  );
+
+  // PATCH /api/v1/partner/clinical/queues/:id/start
+  fastify.patch(
+    '/api/v1/partner/clinical/queues/:id/start',
+    {
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'update')]
+    },
+    async (request) => {
+      const { id } = request.params as { id: string };
+      const data = await clinicalWorkflowService.startQueueToken(id, request.session);
+      return { success: true, data };
+    }
+  );
+
+  // PATCH /api/v1/partner/clinical/queues/:id/complete
+  fastify.patch(
+    '/api/v1/partner/clinical/queues/:id/complete',
+    {
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'update')]
+    },
+    async (request) => {
+      const { id } = request.params as { id: string };
+      const data = await clinicalWorkflowService.completeQueueToken(id, request.session);
+      return { success: true, data };
+    }
+  );
+
   // ==========================================
   // 3. ICD-10 DIAGNOSES & GENERIC ALTERNATIVES
   // ==========================================
@@ -335,6 +517,60 @@ export const clinicalWorkflowRoutes: FastifyPluginAsync = async (fastify) => {
     }
   );
 
+  // POST /api/v1/partner/consultations/:id/complete
+  fastify.post(
+    '/api/v1/partner/consultations/:id/complete',
+    {
+      preHandler: [authenticate, requirePermission('clinical:consultations', 'update')]
+    },
+    async (request) => {
+      const { id } = request.params as { id: string };
+      const doctorId = (request.body as any)?.doctorId;
+      const data = await clinicalWorkflowService.completeConsultationWorkflow(id, doctorId, request.session);
+      return { success: true, data };
+    }
+  );
+
+  // POST /api/v1/partner/clinical/consultations/:id/complete
+  fastify.post(
+    '/api/v1/partner/clinical/consultations/:id/complete',
+    {
+      preHandler: [authenticate, requirePermission('clinical:consultations', 'update')]
+    },
+    async (request) => {
+      const { id } = request.params as { id: string };
+      const doctorId = (request.body as any)?.doctorId;
+      const data = await clinicalWorkflowService.completeConsultationWorkflow(id, doctorId, request.session);
+      return { success: true, data };
+    }
+  );
+
+  // POST /api/v1/partner/consultations/:id/retry-orders
+  fastify.post(
+    '/api/v1/partner/consultations/:id/retry-orders',
+    {
+      preHandler: [authenticate, requirePermission('clinical:consultations', 'update')]
+    },
+    async (request) => {
+      const { id } = request.params as { id: string };
+      const data = await clinicalWorkflowService.retryDownstreamOrders(id, request.session);
+      return { success: true, data };
+    }
+  );
+
+  // POST /api/v1/partner/clinical/consultations/:id/retry-orders
+  fastify.post(
+    '/api/v1/partner/clinical/consultations/:id/retry-orders',
+    {
+      preHandler: [authenticate, requirePermission('clinical:consultations', 'update')]
+    },
+    async (request) => {
+      const { id } = request.params as { id: string };
+      const data = await clinicalWorkflowService.retryDownstreamOrders(id, request.session);
+      return { success: true, data };
+    }
+  );
+
   // ==========================================
   // 5. DIAGNOSTIC INVESTIGATION ORDER BRIDGE TO LIMS
   // ==========================================
@@ -362,7 +598,7 @@ export const clinicalWorkflowRoutes: FastifyPluginAsync = async (fastify) => {
   );
 
   // ==========================================
-  // 6. PRESCRIPTIONS
+  // 6. PRESCRIPTIONS (POSTGRESQL-BACKED)
   // ==========================================
 
   fastify.post(
@@ -371,24 +607,23 @@ export const clinicalWorkflowRoutes: FastifyPluginAsync = async (fastify) => {
       preHandler: [authenticate, requirePermission('clinical:consultations', 'create')]
     },
     async (request, reply) => {
-      const body = request.body as any;
-      const prescriptionNumber = `RX-${Math.floor(100000 + Math.random() * 900000)}`;
-      const prescriptionId = crypto.randomUUID();
+      const payload = validateBody(CreatePrescriptionSchema, request.body) as Omit<CreatePrescriptionInput, 'tenantId'>;
+      const data = await clinicalWorkflowService.createPrescription(payload, request.session);
       reply.status(201);
-      return {
-        success: true,
-        data: {
-          id: prescriptionId,
-          prescriptionNumber,
-          patientId: body?.patientId,
-          encounterId: body?.encounterId,
-          consultationId: body?.consultationId,
-          prescribingDoctorId: body?.prescribingDoctorId || body?.doctorId,
-          items: body?.items || [],
-          status: 'ACTIVE',
-          createdAt: new Date().toISOString()
-        }
-      };
+      return { success: true, data };
+    }
+  );
+
+  fastify.post(
+    '/api/v1/partner/clinical/prescriptions',
+    {
+      preHandler: [authenticate, requirePermission('clinical:consultations', 'create')]
+    },
+    async (request, reply) => {
+      const payload = validateBody(CreatePrescriptionSchema, request.body) as Omit<CreatePrescriptionInput, 'tenantId'>;
+      const data = await clinicalWorkflowService.createPrescription(payload, request.session);
+      reply.status(201);
+      return { success: true, data };
     }
   );
 

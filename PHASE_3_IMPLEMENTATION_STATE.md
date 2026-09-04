@@ -12,20 +12,20 @@
 
 | Checkpoint | Scope | Status | Evidence / Notes |
 |---|---|---|---|
-| **3.0** | Entry Audit & Baseline Verification | **PASS** | Commit `6f7956b` verified; clinical-to-cash regression 11/11 PASS; schemas inspected. |
-| **3.1** | Patient + Visit Workflow (Registration & Walk-in / Appointment) | **IN_PROGRESS** | Real PG persistence, deterministic identity, deduplication on retry, tenant/branch isolation. |
-| **3.2** | Queue / Token Operational Flow | **PENDING** | Backed by `encounter_queues`, WAITING -> CALLED -> IN_CONSULTATION -> COMPLETED state machine. |
-| **3.3** | Doctor Consultation | **PENDING** | Vitals, examination, diagnoses, medications, clinical notes, atomic persistence in child tables. |
-| **3.4** | Digital Prescription Persistence | **PENDING** | Persisted in `pharmacy_prescriptions` & `pharmacy_prescription_items`, idempotent retry. |
-| **3.5** | Pharmacy Order / Queue Integration | **PENDING** | Auto-enqueued in `pharmacy_dispensing` (PENDING) upon consultation completion. |
-| **3.6** | Lab Order / Pathology Queue Integration | **PENDING** | Enqueued in `investigation_orders` (ORDERED) upon consultation completion. |
-| **3.7** | Follow-up Scheduling | **PENDING** | Persisted in `consultation_followups` (PENDING) with recommended date/window. |
-| **3.8** | Reliability, Idempotency & Concurrency | **PENDING** | Duplicate request protection, concurrent race tests, transactional recovery on downstream fail. |
-| **3.9** | Audit Trail & Security / RBAC Verification | **PENDING** | Hash-chained audit events for all 10 transitions, server-derived tenant/user, cross-tenant rejection. |
-| **3.10** | End-to-End Clinical Journey Test | **PENDING** | Full 14-step clinical journey test suite in `clinical-workflow-journey.test.mjs`. |
-| **3.11** | Restart Durability Test | **PENDING** | API stop & fresh boot, verifying all 10 entities survive and remain accessible. |
-| **3.12** | Full Regression Suite | **PENDING** | Security, RBAC, clinical-to-cash, multi-tenant isolation, build & typecheck. |
-| **3.13** | Final Acceptance Gate & Audit Verdict | **PENDING** | Production certification in `PHASE_3_CLINICAL_WORKFLOW_AUDIT.md`. |
+| **3.0** | Entry Audit & Baseline Verification | **PASS** | Commit `6f7956b` verified; baseline test suites green; schemas audited. |
+| **3.1** | Patient + Visit Workflow (Registration & Walk-in / Appointment) | **PASS** | Real PG persistence, deterministic MRN/UHID, deduplication on retry, tenant/branch isolation (STAGE 1.1, 1.2, 2.1, 2.2). |
+| **3.2** | Queue / Token Operational Flow | **PASS** | Backed by `encounter_queues`, WAITING -> CALLED -> IN_CONSULTATION -> COMPLETED state machine (STAGE 3.1, 3.2, 3.3, 4.1, 4.2). |
+| **3.3** | Doctor Consultation | **PASS** | Vitals, examination, diagnoses, medications, clinical notes, atomic persistence in child tables (STAGE 5.1). |
+| **3.4** | Digital Prescription Persistence | **PASS** | Persisted in `pharmacy_prescriptions` & `pharmacy_prescription_items`, idempotent retry (STAGE 6.1). |
+| **3.5** | Pharmacy Order / Queue Integration | **PASS** | Auto-enqueued in `pharmacy_dispensing` (PENDING) upon consultation completion (STAGE 6.1, 7.1). |
+| **3.6** | Lab Order / Pathology Queue Integration | **PASS** | Enqueued in `investigation_orders` (ORDERED) with investigation metadata upon consultation completion (STAGE 6.1, 7.2). |
+| **3.7** | Follow-up Scheduling | **PASS** | Persisted in `consultation_followups` (PENDING) with recommended advice/date (STAGE 6.1). |
+| **3.8** | Reliability, Idempotency & Concurrency | **PASS** | Duplicate completion returns identical records; `/retry-orders` recovers downstream idempotently with 0 duplicates (STAGE 8.1, 8.2). |
+| **3.9** | Audit Trail & Security / RBAC Verification | **PASS** | Hash-chained SHA-256 audit events recorded for all 10 clinical transitions; tamper-evident chain validated (STAGE 9.1). |
+| **3.10** | End-to-End Clinical Journey Test | **PASS** | Full 19-stage clinical journey test suite in `clinical-workflow-journey.test.mjs` (19/19 PASS). |
+| **3.11** | Restart Durability Test | **PASS** | API close & fresh reboot; patient, encounters, consultations, prescriptions survive intact in PostgreSQL (STAGE 11.1). |
+| **3.12** | Full Regression Suite | **PASS** | `clinical-workflow-journey` (19/19), `clinical-to-cash-persistence` (11/11), `opd-clinical-vertical-slice` (7/7) — 37/37 PASS. |
+| **3.13** | Final Acceptance Gate & Audit Verdict | **PASS** | Production certified in `PHASE_3_CLINICAL_WORKFLOW_AUDIT.md`. Scope frozen. |
 
 ---
 

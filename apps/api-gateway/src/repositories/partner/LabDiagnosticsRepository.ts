@@ -128,7 +128,19 @@ export class LabDiagnosticsRepository {
         .where(eq(investigationOrders.tenantId, tenantId))
         .orderBy(desc(investigationOrders.createdAt));
 
-      let list = (rows || []) as unknown as StoredLabOrder[];
+      let list = (rows || []).map((row: any) => {
+        const meta = (typeof row.metadata === 'object' && row.metadata !== null) ? row.metadata : {};
+        return {
+          ...row,
+          testName: meta.testName || row.clinicalIndication || 'Investigation',
+          testCode: meta.testCode || 'LAB-TEST',
+          category: meta.category || 'HEMATOLOGY',
+          priority: row.priority || 'ROUTINE',
+          status: row.status || 'ORDERED',
+          orderedAt: row.orderedAt || row.createdAt,
+          results: row.results || []
+        } as StoredLabOrder;
+      });
       if (status) list = list.filter(o => o.status === status);
       if (patientId) list = list.filter(o => o.patientId === patientId);
       return list;
@@ -161,12 +173,20 @@ export class LabDiagnosticsRepository {
         .from(investigationSpecimens)
         .where(and(eq(investigationSpecimens.tenantId, tenantId), eq(investigationSpecimens.orderId, orderId)));
 
-      const order = found as unknown as StoredLabOrder;
+      const meta = (typeof (found as any).metadata === 'object' && (found as any).metadata !== null) ? (found as any).metadata : {};
+      const order = {
+        ...found,
+        testName: meta.testName || (found as any).clinicalIndication || 'Investigation',
+        testCode: meta.testCode || 'LAB-TEST',
+        category: meta.category || 'HEMATOLOGY',
+        priority: (found as any).priority || 'ROUTINE',
+        status: (found as any).status || 'ORDERED',
+        orderedAt: (found as any).orderedAt || (found as any).createdAt,
+        results: (found as any).results || []
+      } as unknown as StoredLabOrder;
+
       if (specimen && (specimen as any) !== found && (specimen as any).id !== order.id) {
         order.specimen = specimen;
-      }
-      if (!order.results) {
-        order.results = [];
       }
       return order;
     } catch (err) {
@@ -227,6 +247,12 @@ export class LabDiagnosticsRepository {
         clinicalIndication: orderData.clinicalIndication,
         priority: orderData.priority,
         status: 'ORDERED',
+        metadata: {
+          testName: orderData.testName,
+          testCode: orderData.testCode,
+          category: orderData.category,
+          instructions: orderData.instructions
+        },
         createdAt: now,
         updatedAt: now
       } as any);

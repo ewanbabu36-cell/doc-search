@@ -1,4 +1,5 @@
-import { desc } from '@docsearch/database';
+import crypto from 'node:crypto';
+import { desc, eq } from '@docsearch/database';
 import { getDatabase, auditEvents, type AuditEvent, type NewAuditEvent } from '@docsearch/database';
 import { buildSecurityAuditRecord, type SecurityEventPayload, type SessionContext } from '@docsearch/auth';
 import { createLogger } from '@docsearch/shared-core';
@@ -10,10 +11,9 @@ export class AuditRepository {
   async getLatestEvent(tenantId?: string, dbClient = getDatabase()): Promise<AuditEvent | null> {
     if (dbClient) {
       try {
-        const query = dbClient.select().from(auditEvents);
         const results = tenantId
-          ? await query.orderBy(desc(auditEvents.timestamp)).limit(1)
-          : await query.orderBy(desc(auditEvents.timestamp)).limit(1);
+          ? await dbClient.select().from(auditEvents).where(eq(auditEvents.tenantId, tenantId)).orderBy(desc(auditEvents.timestamp)).limit(1)
+          : await dbClient.select().from(auditEvents).orderBy(desc(auditEvents.timestamp)).limit(1);
         return results[0] || null;
       } catch {
         // Fallback to memory store if db is offline
@@ -34,6 +34,7 @@ export class AuditRepository {
     const auditRecord = buildSecurityAuditRecord(payload, session, previousHash || undefined);
 
     const newRecord: NewAuditEvent = {
+      id: crypto.randomUUID(),
       tenantId: auditRecord.tenantId,
       branchId: auditRecord.branchId,
       actorId: auditRecord.actorId,
@@ -59,8 +60,8 @@ export class AuditRepository {
           });
           return inserted;
         }
-      } catch {
-        // Fallback to memory store
+      } catch (err) {
+        logger.error('Failed to write audit event to database, using memory fallback', err);
       }
     }
 

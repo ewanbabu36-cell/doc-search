@@ -2,7 +2,12 @@ import {
   clinicalWorkflowRepository,
   type CreatePatientInput,
   type CreateEncounterInput,
-  type SaveConsultationInput
+  type SaveConsultationInput,
+  type CreateQueueTokenInput,
+  type CreatePrescriptionInput,
+  type ConsultationWorkflowResult,
+  type StoredQueueToken,
+  type StoredPrescription
 } from '../../repositories/partner/ClinicalWorkflowRepository.js';
 import { auditRepository } from '../../repositories/core/AuditRepository.js';
 import { prescriptionPdfGenerator } from './PrescriptionPdfGenerator.js';
@@ -36,6 +41,25 @@ export class ClinicalWorkflowService {
     });
   }
 
+  async updatePatient(patientId: string, patch: Partial<CreatePatientInput>, session: SessionContext) {
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      const updated = await clinicalWorkflowRepository.updatePatient(session.tenantId, patientId, patch, tx);
+
+      if (updated) {
+        await auditRepository.recordEvent({
+          eventType: 'PATIENT_UPDATED',
+          resourceType: 'patient',
+          resourceId: patientId,
+          tenantId: session.tenantId,
+          branchId: session.branchId,
+          metadata: { mrn: updated.mrn, fields: Object.keys(patch) }
+        }, session, tx);
+      }
+
+      return updated;
+    });
+  }
+
   async getEncounters(session: SessionContext, status?: string) {
     return withSecurityContext(getDatabase(), session, async (tx) => {
       return clinicalWorkflowRepository.getEncounters(session.tenantId, status, tx);
@@ -47,7 +71,7 @@ export class ClinicalWorkflowService {
       const encounter = await clinicalWorkflowRepository.createEncounter({
         ...input,
         tenantId: session.tenantId,
-        status: 'CHECKED_IN'
+        status: input.status || 'CHECKED_IN'
       }, tx);
 
       await auditRepository.recordEvent({
@@ -62,6 +86,111 @@ export class ClinicalWorkflowService {
       return encounter;
     });
   }
+
+  async updateEncounterStatus(encounterId: string, targetStatus: string, session: SessionContext) {
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      const updated = await clinicalWorkflowRepository.updateEncounterStatus(session.tenantId, encounterId, targetStatus, tx);
+
+      await auditRepository.recordEvent({
+        eventType: 'ENCOUNTER_STATUS_UPDATED',
+        resourceType: 'encounter',
+        resourceId: encounterId,
+        tenantId: session.tenantId,
+        branchId: session.branchId,
+        metadata: { targetStatus }
+      }, session, tx);
+
+      return updated;
+    });
+  }
+
+  // ==========================================
+  // OPERATIONAL QUEUE & TOKEN MANAGEMENT
+  // ==========================================
+
+  async createQueueToken(input: Omit<CreateQueueTokenInput, 'tenantId'>, session: SessionContext): Promise<StoredQueueToken> {
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      const token = await clinicalWorkflowRepository.createQueueToken({
+        ...input,
+        tenantId: session.tenantId
+      }, tx);
+
+      await auditRepository.recordEvent({
+        eventType: 'QUEUE_TOKEN_ISSUED',
+        resourceType: 'queue_token',
+        resourceId: token.id,
+        tenantId: session.tenantId,
+        branchId: session.branchId,
+        metadata: { tokenNumber: token.tokenNumber, encounterId: token.encounterId }
+      }, session, tx);
+
+      return token;
+    });
+  }
+
+  async getQueue(
+    filters: { branchId?: string; doctorId?: string; queueDate?: string; queueStatus?: string },
+    session: SessionContext
+  ): Promise<StoredQueueToken[]> {
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      return clinicalWorkflowRepository.getQueue(session.tenantId, filters, tx);
+    });
+  }
+
+  async callQueueToken(queueId: string, session: SessionContext): Promise<StoredQueueToken> {
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      const token = await clinicalWorkflowRepository.callQueueToken(session.tenantId, queueId, tx);
+
+      await auditRepository.recordEvent({
+        eventType: 'QUEUE_TOKEN_CALLED',
+        resourceType: 'queue_token',
+        resourceId: queueId,
+        tenantId: session.tenantId,
+        branchId: session.branchId,
+        metadata: { tokenNumber: token.tokenNumber, encounterId: token.encounterId }
+      }, session, tx);
+
+      return token;
+    });
+  }
+
+  async startQueueToken(queueId: string, session: SessionContext): Promise<StoredQueueToken> {
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      const token = await clinicalWorkflowRepository.startQueueToken(session.tenantId, queueId, tx);
+
+      await auditRepository.recordEvent({
+        eventType: 'CONSULTATION_STARTED',
+        resourceType: 'encounter',
+        resourceId: token.encounterId,
+        tenantId: session.tenantId,
+        branchId: session.branchId,
+        metadata: { queueId, tokenNumber: token.tokenNumber }
+      }, session, tx);
+
+      return token;
+    });
+  }
+
+  async completeQueueToken(queueId: string, session: SessionContext): Promise<StoredQueueToken> {
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      const token = await clinicalWorkflowRepository.completeQueueToken(session.tenantId, queueId, tx);
+
+      await auditRepository.recordEvent({
+        eventType: 'QUEUE_TOKEN_COMPLETED',
+        resourceType: 'queue_token',
+        resourceId: queueId,
+        tenantId: session.tenantId,
+        branchId: session.branchId,
+        metadata: { tokenNumber: token.tokenNumber, encounterId: token.encounterId }
+      }, session, tx);
+
+      return token;
+    });
+  }
+
+  // ==========================================
+  // CONSULTATIONS & PRESCRIPTIONS
+  // ==========================================
 
   async saveConsultation(input: Omit<SaveConsultationInput, 'tenantId'>, session: SessionContext) {
     return withSecurityContext(getDatabase(), session, async (tx) => {
@@ -97,6 +226,154 @@ export class ClinicalWorkflowService {
       }, session, tx);
 
       return consultation;
+    });
+  }
+
+  async createPrescription(input: Omit<CreatePrescriptionInput, 'tenantId'>, session: SessionContext): Promise<StoredPrescription> {
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      const prescription = await clinicalWorkflowRepository.createPrescription({
+        ...input,
+        tenantId: session.tenantId
+      }, tx);
+
+      await auditRepository.recordEvent({
+        eventType: 'PRESCRIPTION_CREATED',
+        resourceType: 'prescription',
+        resourceId: prescription.id,
+        tenantId: session.tenantId,
+        branchId: session.branchId,
+        metadata: {
+          prescriptionNumber: prescription.prescriptionNumber,
+          patientId: prescription.patientId,
+          itemCount: prescription.items?.length || 0
+        }
+      }, session, tx);
+
+      return prescription;
+    });
+  }
+
+  async completeConsultationWorkflow(
+    consultationId: string,
+    doctorId: string | undefined,
+    session: SessionContext
+  ): Promise<ConsultationWorkflowResult> {
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      const effectiveDoctorId = doctorId || session.userId || '99999999-9999-4999-8999-999999999999';
+      const result = await clinicalWorkflowRepository.completeConsultationWorkflow(
+        session.tenantId,
+        consultationId,
+        effectiveDoctorId,
+        tx
+      );
+
+      // Audit consultation finalized
+      await auditRepository.recordEvent({
+        eventType: 'CONSULTATION_FINALIZED',
+        resourceType: 'consultation',
+        resourceId: consultationId,
+        tenantId: session.tenantId,
+        branchId: session.branchId,
+        metadata: { status: 'FINALIZED', doctorId: effectiveDoctorId }
+      }, session, tx);
+
+      // Audit encounter completed
+      if (result.encounter) {
+        await auditRepository.recordEvent({
+          eventType: 'ENCOUNTER_COMPLETED',
+          resourceType: 'encounter',
+          resourceId: result.encounter.id,
+          tenantId: session.tenantId,
+          branchId: session.branchId,
+          metadata: { status: 'COMPLETED' }
+        }, session, tx);
+      }
+
+      // Audit queue completed
+      if (result.queueToken) {
+        await auditRepository.recordEvent({
+          eventType: 'QUEUE_TOKEN_COMPLETED',
+          resourceType: 'queue_token',
+          resourceId: result.queueToken.id,
+          tenantId: session.tenantId,
+          branchId: session.branchId,
+          metadata: { tokenNumber: result.queueToken.tokenNumber }
+        }, session, tx);
+      }
+
+      // Audit prescription created
+      if (result.prescription) {
+        await auditRepository.recordEvent({
+          eventType: 'PRESCRIPTION_ISSUED',
+          resourceType: 'prescription',
+          resourceId: result.prescription.id,
+          tenantId: session.tenantId,
+          branchId: session.branchId,
+          metadata: { prescriptionNumber: result.prescription.prescriptionNumber }
+        }, session, tx);
+      }
+
+      // Audit pharmacy order queued
+      if (result.pharmacyOrder) {
+        await auditRepository.recordEvent({
+          eventType: 'PHARMACY_ORDER_CREATED',
+          resourceType: 'pharmacy_dispensing',
+          resourceId: result.pharmacyOrder.id,
+          tenantId: session.tenantId,
+          branchId: session.branchId,
+          metadata: { dispensingNumber: result.pharmacyOrder.dispensingNumber, status: 'PENDING' }
+        }, session, tx);
+      }
+
+      // Audit lab orders queued
+      if (result.labOrders && result.labOrders.length > 0) {
+        for (const lab of result.labOrders) {
+          await auditRepository.recordEvent({
+            eventType: 'DIAGNOSTIC_INVESTIGATIONS_ORDERED',
+            resourceType: 'investigation_order',
+            resourceId: lab.id,
+            tenantId: session.tenantId,
+            branchId: session.branchId,
+            metadata: { testName: lab.testName, status: lab.status }
+          }, session, tx);
+        }
+      }
+
+      // Audit follow-up scheduled
+      if (result.followUp) {
+        await auditRepository.recordEvent({
+          eventType: 'FOLLOWUP_SCHEDULED',
+          resourceType: 'followup',
+          resourceId: result.followUp.id,
+          tenantId: session.tenantId,
+          branchId: session.branchId,
+          metadata: { reason: result.followUp.reason, status: result.followUp.status }
+        }, session, tx);
+      }
+
+      return result;
+    });
+  }
+
+  async retryDownstreamOrders(consultationId: string, session: SessionContext): Promise<ConsultationWorkflowResult> {
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      const result = await clinicalWorkflowRepository.retryDownstreamOrders(session.tenantId, consultationId, tx);
+
+      await auditRepository.recordEvent({
+        eventType: 'CLINICAL_DOWNSTREAM_RETRY',
+        resourceType: 'consultation',
+        resourceId: consultationId,
+        tenantId: session.tenantId,
+        branchId: session.branchId,
+        metadata: {
+          hasPrescription: Boolean(result.prescription),
+          hasPharmacyOrder: Boolean(result.pharmacyOrder),
+          labOrdersCount: result.labOrders.length,
+          hasFollowUp: Boolean(result.followUp)
+        }
+      }, session, tx);
+
+      return result;
     });
   }
 
