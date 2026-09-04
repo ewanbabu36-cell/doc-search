@@ -13,6 +13,7 @@ import { auditRepository } from '../../repositories/core/AuditRepository.js';
 import { prescriptionPdfGenerator } from './PrescriptionPdfGenerator.js';
 import { type SessionContext } from '@docsearch/auth';
 import { withSecurityContext, getDatabase } from '@docsearch/database';
+import { AppError, ErrorCode } from '@docsearch/shared-core';
 
 export class ClinicalWorkflowService {
   async searchPatients(session: SessionContext, query?: string) {
@@ -408,64 +409,120 @@ export class ClinicalWorkflowService {
     });
   }
 
-  async generatePrescriptionPdf(consultationId: string, session: SessionContext): Promise<Buffer> {
+  async generateConsultationPdf(consultationId: string, session: SessionContext): Promise<Buffer> {
     const cons = await clinicalWorkflowRepository.getConsultationById(session.tenantId, consultationId);
-    const patient = cons ? await clinicalWorkflowRepository.getPatientById(session.tenantId, cons.patientId) : null;
+    if (!cons) {
+      throw AppError.notFound('Consultation not found or not accessible within tenant', ErrorCode.NOT_FOUND);
+    }
+    const patient = await clinicalWorkflowRepository.getPatientById(session.tenantId, cons.patientId);
+    if (!patient) {
+      throw AppError.notFound('Patient record not found or not accessible within tenant', ErrorCode.NOT_FOUND);
+    }
 
     const pdfBuffer = prescriptionPdfGenerator.generatePrescriptionPdf({
-      prescriptionNumber: cons ? `RX-${cons.consultationNumber.replace('CON-', '')}` : 'RX-849201',
-      encounterNumber: cons?.encounterId || 'ENC-OPD-001',
+      prescriptionNumber: `RX-${cons.consultationNumber.replace('CON-', '')}`,
+      encounterNumber: cons.encounterId || 'ENC-OPD-001',
       hospitalName: 'Doc Search Multi-Specialty Hospital & Research Institute',
       facilityAddress: 'OPD Clinical Wing, Metro Medical Enclave, New Delhi - 110001',
-      patientName: patient ? `${patient.firstName} ${patient.lastName}` : 'Rahul Kumar',
-      patientMrn: patient?.mrn || 'MRN-84920',
-      ageGender: '32 Y / Male',
-      consultationDate: cons ? new Date(cons.createdAt).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN'),
+      patientName: `${patient.firstName} ${patient.lastName}`,
+      patientMrn: patient.mrn || 'MRN-RECORD',
+      ageGender: patient.gender ? `${patient.gender}` : 'Not Specified',
+      consultationDate: cons.createdAt ? new Date(cons.createdAt).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN'),
       doctorName: 'Dr. Rajesh Sharma, MD (Internal Medicine)',
       doctorSpecialty: 'Senior Consultant Physician & Diabetologist',
       doctorRegistrationNumber: 'DMC-58291 / MCI-2012',
-      vitals: cons?.vitals ? {
-        bp: `${cons.vitals.systolicBp}/${cons.vitals.diastolicBp}`,
-        pulse: `${cons.vitals.heartRateBpm}`,
-        spo2: `${cons.vitals.oxygenSaturationPercent}%`,
-        temp: `${cons.vitals.temperatureFahrenheit} F`,
-        bmi: `${cons.vitals.bmi}`
-      } : {
-        bp: '120/80',
-        pulse: '72',
-        spo2: '98%',
-        temp: '98.4F',
-        bmi: '23.5'
-      },
-      diagnoses: cons?.diagnoses?.map(d => ({
-        code: d.diagnosisCode || d.code || 'I10',
-        name: d.diagnosisName || d.description || 'Clinical Diagnosis',
+      vitals: cons.vitals ? {
+        bp: cons.vitals.systolicBp && cons.vitals.diastolicBp ? `${cons.vitals.systolicBp}/${cons.vitals.diastolicBp}` : undefined,
+        pulse: cons.vitals.heartRateBpm ? `${cons.vitals.heartRateBpm}` : undefined,
+        spo2: cons.vitals.oxygenSaturationPercent ? `${cons.vitals.oxygenSaturationPercent}%` : undefined,
+        temp: cons.vitals.temperatureFahrenheit ? `${cons.vitals.temperatureFahrenheit} F` : undefined,
+        bmi: cons.vitals.bmi ? `${cons.vitals.bmi}` : undefined
+      } : undefined,
+      diagnoses: cons.diagnoses && cons.diagnoses.length > 0 ? cons.diagnoses.map(d => ({
+        code: d.diagnosisCode || d.code || '',
+        name: d.diagnosisName || d.description || 'Diagnosis',
         isPrimary: Boolean(d.isPrimary)
-      })) || [
-        { code: 'E11.9', name: 'Type 2 diabetes mellitus without complications', isPrimary: true },
-        { code: 'I10', name: 'Essential (primary) hypertension', isPrimary: false }
-      ],
-      medications: cons?.medications?.map(m => ({
+      })) : [],
+      medications: cons.medications && cons.medications.length > 0 ? cons.medications.map(m => ({
         name: m.genericName ? `${m.medicationName || m.drugName || 'Medication'} (${m.genericName})` : (m.medicationName || m.drugName || 'Medication'),
-        strength: m.strength || '10mg',
-        dosage: m.dosage || '1 Tab',
-        frequency: m.frequency || 'Once Daily (OD)',
-        duration: `${m.duration || m.durationDays || 30} ${m.durationUnit || 'days'}`,
-        instructions: m.instructions || 'After meals'
-      })) || [
-        { name: 'Metformin Hydrochloride (PMBJP Jan Aushadhi)', strength: '500mg', dosage: '1 Tab', frequency: 'Twice Daily (BD)', duration: '30 days', instructions: 'After meals' },
-        { name: 'Atorvastatin Calcium (PMBJP Jan Aushadhi)', strength: '10mg', dosage: '1 Tab', frequency: 'Once Daily (OD)', duration: '30 days', instructions: 'At bedtime' },
-        { name: 'Telmisartan (PMBJP Jan Aushadhi)', strength: '40mg', dosage: '1 Tab', frequency: 'Once Daily (OD)', duration: '30 days', instructions: 'Morning after food' }
-      ],
-      labInvestigations: cons?.labInvestigations || [
-        'Complete Blood Count (CBC) with Differential',
-        'Comprehensive Lipid Profile',
-        'Fasting Blood Glucose (FBS)'
-      ],
-      followUpAdvice: cons?.followUpAdvice || 'Review in OPD after 30 days with fresh Fasting Blood Sugar & Lipid Profile reports.'
+        strength: m.strength || '',
+        dosage: m.dosage || 'As directed',
+        frequency: m.frequency || 'As directed',
+        duration: m.duration || m.durationDays ? `${m.duration || m.durationDays} ${m.durationUnit || 'days'}` : 'As directed',
+        instructions: m.instructions || 'Follow physician directions'
+      })) : [],
+      labInvestigations: cons.labInvestigations || [],
+      followUpAdvice: cons.followUpAdvice || undefined
     });
 
     return pdfBuffer;
+  }
+
+  async generatePrescriptionPdf(prescriptionIdOrConsultationId: string, session: SessionContext): Promise<Buffer> {
+    // 1. Try resolving as pharmacy prescription record
+    const rx = await clinicalWorkflowRepository.getPrescriptionById(session.tenantId, prescriptionIdOrConsultationId);
+    if (rx) {
+      const patient = await clinicalWorkflowRepository.getPatientById(session.tenantId, rx.patientId);
+      if (!patient) {
+        throw AppError.notFound('Patient record not found for prescription', ErrorCode.NOT_FOUND);
+      }
+      const cons = rx.consultationId ? await clinicalWorkflowRepository.getConsultationById(session.tenantId, rx.consultationId) : null;
+
+      const rxItemsList = (rx.items || []) as Array<Record<string, unknown>>;
+      const consMedsList = (cons?.medications || []) as Array<Record<string, unknown>>;
+      const hasRxMeds = rxItemsList.some(m => Boolean(m['medicationName'] || (m['metadata'] as Record<string, unknown> | undefined)?.['medicationName']));
+      const sourceItems = (rxItemsList.length > 0 && hasRxMeds)
+        ? rxItemsList
+        : (consMedsList.length > 0 ? consMedsList : rxItemsList);
+
+      const pdfBuffer = prescriptionPdfGenerator.generatePrescriptionPdf({
+        prescriptionNumber: rx.prescriptionNumber || `RX-${rx.id.substring(0, 8)}`,
+        encounterNumber: rx.encounterId || 'ENC-OPD-001',
+        hospitalName: 'Doc Search Multi-Specialty Hospital & Research Institute',
+        facilityAddress: 'OPD Clinical Wing, Metro Medical Enclave, New Delhi - 110001',
+        patientName: `${patient.firstName} ${patient.lastName}`,
+        patientMrn: patient.mrn || 'MRN-RECORD',
+        ageGender: patient.gender ? `${patient.gender}` : 'Not Specified',
+        consultationDate: rx.createdAt ? new Date(rx.createdAt).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN'),
+        doctorName: 'Dr. Rajesh Sharma, MD (Internal Medicine)',
+        doctorSpecialty: 'Senior Consultant Physician & Diabetologist',
+        doctorRegistrationNumber: 'DMC-58291 / MCI-2012',
+        vitals: cons?.vitals ? {
+          bp: cons.vitals.systolicBp && cons.vitals.diastolicBp ? `${cons.vitals.systolicBp}/${cons.vitals.diastolicBp}` : undefined,
+          pulse: cons.vitals.heartRateBpm ? `${cons.vitals.heartRateBpm}` : undefined,
+          spo2: cons.vitals.oxygenSaturationPercent ? `${cons.vitals.oxygenSaturationPercent}%` : undefined,
+          temp: cons.vitals.temperatureFahrenheit ? `${cons.vitals.temperatureFahrenheit} F` : undefined,
+          bmi: cons.vitals.bmi ? `${cons.vitals.bmi}` : undefined
+        } : undefined,
+        diagnoses: cons?.diagnoses && cons.diagnoses.length > 0 ? cons.diagnoses.map(d => ({
+          code: d.diagnosisCode || d.code || '',
+          name: d.diagnosisName || d.description || 'Diagnosis',
+          isPrimary: Boolean(d.isPrimary)
+        })) : [],
+        medications: sourceItems.map(m => {
+          const meta = m['metadata'] as Record<string, unknown> | undefined;
+          const rawName = (m['medicationName'] as string | undefined) || (m['drugName'] as string | undefined) || (meta?.['medicationName'] as string | undefined) || 'Medication';
+          const generic = (m['genericName'] as string | undefined) || (meta?.['genericName'] as string | undefined);
+          const durationVal = m['duration'] || m['durationDays'];
+          const durationUnitVal = (m['durationUnit'] as string | undefined) || 'days';
+          return {
+            name: generic && generic !== rawName ? `${rawName} (${generic})` : rawName,
+            strength: (m['strength'] as string | undefined) || (meta?.['strength'] as string | undefined) || '',
+            dosage: (m['dosage'] as string | undefined) || 'As directed',
+            frequency: (m['frequency'] as string | undefined) || 'As directed',
+            duration: durationVal ? `${durationVal} ${durationUnitVal}` : 'As directed',
+            instructions: (m['instructions'] as string | undefined) || 'Follow physician directions'
+          };
+        }),
+        labInvestigations: cons?.labInvestigations || [],
+        followUpAdvice: cons?.followUpAdvice || rx.notes || undefined
+      });
+
+      return pdfBuffer;
+    }
+
+    // 2. Fallback: try resolving as consultation ID
+    return this.generateConsultationPdf(prescriptionIdOrConsultationId, session);
   }
 
   async getPatientClinicalHistory(patientId: string, session: SessionContext) {

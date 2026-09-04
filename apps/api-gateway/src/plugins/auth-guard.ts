@@ -10,6 +10,7 @@ import {
 import type { PermissionAction, RoleType } from '@docsearch/api-contracts';
 import { AppError, ErrorCode, createLogger } from '@docsearch/shared-core';
 import { env } from '../config/env.js';
+import { enforceIdempotency } from './idempotency.js';
 
 const logger = createLogger('auth-guard');
 
@@ -32,7 +33,7 @@ Object.assign(authGuardPlugin, { [Symbol.for('skip-override')]: true });
  * Validates cryptographic signature, issuer, audience, and expiration.
  * Establishes the typed, immutable request.session context.
  */
-export async function authenticate(request: FastifyRequest, _reply: FastifyReply): Promise<void> {
+export async function authenticate(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const authHeader = request.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -58,9 +59,9 @@ export async function authenticate(request: FastifyRequest, _reply: FastifyReply
     // ZERO TRUST IDENTITY & SCOPE ENFORCEMENT
     // Reject any client attempts to cross tenant boundaries or tamper with scope
     // =========================================================================
-    const body = (request.body as Record<string, any>) || {};
-    const query = (request.query as Record<string, any>) || {};
-    const params = (request.params as Record<string, any>) || {};
+    const body = (request.body as Record<string, unknown>) || {};
+    const query = (request.query as Record<string, unknown>) || {};
+    const params = (request.params as Record<string, unknown>) || {};
     const headers = request.headers;
 
     // 1. Enforce Tenant Isolation: Reject Mismatched Client-Supplied tenantId
@@ -128,6 +129,9 @@ export async function authenticate(request: FastifyRequest, _reply: FastifyReply
         });
       }
     }
+
+    // 3. Post-Authentication Idempotency Deduplication (Tenant & User Scoped)
+    await enforceIdempotency(request, reply);
   } catch (err) {
     logger.warn('Authentication token verification failed', {
       requestId: request.id,

@@ -13,6 +13,7 @@ import { authRoutes } from './routes/auth.routes.js';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { registerSecurityPlugins } from './plugins/security.js';
 import { authGuardPlugin } from './plugins/auth-guard.js';
+import { saveIdempotentResponse } from './plugins/idempotency.js';
 import { healthRoutes } from './routes/health.js';
 import { executiveRoutes } from './routes/company/executive.routes.js';
 import { partnerRoutes } from './routes/company/partner.routes.js';
@@ -127,33 +128,14 @@ export async function buildApp(): Promise<FastifyInstance> {
     }
   });
 
-  // Global Idempotency Hooks (x-idempotency-key duplicate transaction deduplication)
-  const idempotencyStore = new Map<string, { statusCode: number; payload: string; contentType?: string | undefined; createdAt: number }>();
-  app.addHook('onRequest', async (request, reply) => {
-    const key = request.headers['x-idempotency-key'] as string | undefined;
-    if (!key) return;
-
-    const cached = idempotencyStore.get(key);
-    if (cached) {
-      if (Date.now() - cached.createdAt < 600000) {
-        reply.header('x-cache', 'IDEMPOTENT_HIT');
-        if (cached.contentType) {
-          reply.type(cached.contentType);
-        }
-        return reply.status(cached.statusCode).send(cached.payload);
-      } else {
-        idempotencyStore.delete(key);
-      }
-    }
-  });
-
+  // Global Idempotency onSend Hook: Caches successful responses under tenant-isolated cache key
   app.addHook('onSend', async (request, reply, payload: unknown) => {
-    const key = request.headers['x-idempotency-key'] as string | undefined;
-    if (!key || reply.getHeader('x-cache') === 'IDEMPOTENT_HIT') return payload;
+    const cacheKey = (request as any).idempotencyCacheKey as string | undefined;
+    if (!cacheKey || reply.getHeader('x-cache') === 'IDEMPOTENT_HIT') return payload;
 
     if (reply.statusCode >= 200 && reply.statusCode < 400 && typeof payload === 'string') {
       const ctHeader = reply.getHeader('content-type');
-      idempotencyStore.set(key, {
+      saveIdempotentResponse(cacheKey, {
         statusCode: reply.statusCode,
         payload,
         contentType: typeof ctHeader === 'string' ? ctHeader : undefined,

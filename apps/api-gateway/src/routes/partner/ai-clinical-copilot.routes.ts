@@ -1,14 +1,52 @@
-import type { FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import { AiClinicalCopilotService } from '../../services/partner/AiClinicalCopilotService.js';
 import { authenticate } from '../../plugins/auth-guard.js';
+import { requireFeatureEntitlement } from '../../plugins/commercial-guard.js';
+import { RBACEvaluator } from '@docsearch/auth';
+import { AppError, ErrorCode } from '@docsearch/shared-core';
 
 const service = new AiClinicalCopilotService();
 
+const CLINICIAN_ROLES = [
+  'DOCTOR',
+  'ATTENDING_PHYSICIAN',
+  'PHYSICIAN',
+  'CONSULTANT',
+  'CARDIOLOGIST',
+  'CARDIOLOGY_HOD',
+  'SURGEON',
+  'CHIEF_MEDICAL_OFFICER',
+  'SUPER_ADMIN'
+];
+
+function requireClinicianOrPermission(permission: string) {
+  return async (request: FastifyRequest, _reply: FastifyReply): Promise<void> => {
+    const session = request.session;
+    if (!session) {
+      throw AppError.unauthorized('Authentication required');
+    }
+    if (session.isSuperAdmin) {
+      return;
+    }
+    const hasRole = session.roles?.some((r) => CLINICIAN_ROLES.includes(r));
+    const hasPerm = RBACEvaluator.hasPermission(session, permission);
+    if (!hasRole && !hasPerm) {
+      throw new AppError({
+        message: `Clinical safety violation: Only licensed medical practitioners with ${permission} permission may perform this clinical mutation.`,
+        code: ErrorCode.FORBIDDEN,
+        statusCode: 403
+      });
+    }
+  };
+}
+
 export const aiClinicalCopilotRoutes: FastifyPluginAsync = async (app) => {
+  const copilotGuard = [authenticate, requireFeatureEntitlement('MODULE_AI_COPILOT')];
+
   // 1. Overview & Metrics
   app.get(
     '/api/v1/partner/ai-copilot/overview',
-    { preHandler: [authenticate] },
+    { preHandler: copilotGuard },
     async (request, reply) => {
       const data = await service.getOverviewMetrics(request.session);
       return reply.send({ success: true, data });
@@ -18,7 +56,7 @@ export const aiClinicalCopilotRoutes: FastifyPluginAsync = async (app) => {
   // 2. Ambient AI Scribe & SOAP Generation
   app.post(
     '/api/v1/partner/ai-copilot/ambient-scribe/soap',
-    { preHandler: [authenticate] },
+    { preHandler: copilotGuard },
     async (request, reply) => {
       const payload = (request.body || {}) as Record<string, unknown>;
       const data = await service.generateSoapNoteFromTranscript(request.session, payload);
@@ -28,7 +66,7 @@ export const aiClinicalCopilotRoutes: FastifyPluginAsync = async (app) => {
 
   app.get(
     '/api/v1/partner/ai-copilot/ambient-scribe/soap',
-    { preHandler: [authenticate] },
+    { preHandler: copilotGuard },
     async (request, reply) => {
       const data = await service.getSoapNotes(request.session);
       return reply.send({ success: true, data });
@@ -37,7 +75,7 @@ export const aiClinicalCopilotRoutes: FastifyPluginAsync = async (app) => {
 
   app.patch(
     '/api/v1/partner/ai-copilot/ambient-scribe/soap/:id/approve',
-    { preHandler: [authenticate] },
+    { preHandler: [...copilotGuard, requireClinicianOrPermission('ai_copilot:soap:approve')] },
     async (request, reply) => {
       const { id } = request.params as { id: string };
       const data = await service.approveSoapNote(request.session, id);
@@ -48,7 +86,7 @@ export const aiClinicalCopilotRoutes: FastifyPluginAsync = async (app) => {
   // 3. Sepsis NEWS2 Alerts & Care Bundle
   app.post(
     '/api/v1/partner/ai-copilot/sepsis/evaluate',
-    { preHandler: [authenticate] },
+    { preHandler: copilotGuard },
     async (request, reply) => {
       const payload = (request.body || {}) as Record<string, unknown>;
       const data = await service.evaluateSepsisRisk(request.session, payload);
@@ -58,7 +96,7 @@ export const aiClinicalCopilotRoutes: FastifyPluginAsync = async (app) => {
 
   app.get(
     '/api/v1/partner/ai-copilot/sepsis/alerts',
-    { preHandler: [authenticate] },
+    { preHandler: copilotGuard },
     async (request, reply) => {
       const data = await service.getSepsisAlerts(request.session);
       return reply.send({ success: true, data });
@@ -67,7 +105,7 @@ export const aiClinicalCopilotRoutes: FastifyPluginAsync = async (app) => {
 
   app.patch(
     '/api/v1/partner/ai-copilot/sepsis/alerts/:id/acknowledge',
-    { preHandler: [authenticate] },
+    { preHandler: [...copilotGuard, requireClinicianOrPermission('ai_copilot:sepsis:ack')] },
     async (request, reply) => {
       const { id } = request.params as { id: string };
       const payload = (request.body || {}) as Record<string, unknown>;
@@ -79,7 +117,7 @@ export const aiClinicalCopilotRoutes: FastifyPluginAsync = async (app) => {
   // 4. Drug-Drug Interaction (DDI) Evaluator
   app.post(
     '/api/v1/partner/ai-copilot/ddi/evaluate',
-    { preHandler: [authenticate] },
+    { preHandler: copilotGuard },
     async (request, reply) => {
       const payload = (request.body || {}) as Record<string, unknown>;
       const data = await service.evaluateDdi(request.session, payload);
@@ -89,7 +127,7 @@ export const aiClinicalCopilotRoutes: FastifyPluginAsync = async (app) => {
 
   app.get(
     '/api/v1/partner/ai-copilot/ddi',
-    { preHandler: [authenticate] },
+    { preHandler: copilotGuard },
     async (request, reply) => {
       const data = await service.getDdiChecks(request.session);
       return reply.send({ success: true, data });
@@ -98,7 +136,7 @@ export const aiClinicalCopilotRoutes: FastifyPluginAsync = async (app) => {
 
   app.post(
     '/api/v1/partner/ai-copilot/ddi/override',
-    { preHandler: [authenticate] },
+    { preHandler: [...copilotGuard, requireClinicianOrPermission('ai_copilot:ddi:override')] },
     async (request, reply) => {
       const payload = (request.body || {}) as Record<string, unknown>;
       const interactionId = String(payload['interactionId'] || '');
@@ -110,7 +148,7 @@ export const aiClinicalCopilotRoutes: FastifyPluginAsync = async (app) => {
   // 5. Critical Diagnostic Panic Values
   app.post(
     '/api/v1/partner/ai-copilot/panic-values',
-    { preHandler: [authenticate] },
+    { preHandler: copilotGuard },
     async (request, reply) => {
       const payload = (request.body || {}) as Record<string, unknown>;
       const data = await service.reportPanicValue(request.session, payload);
@@ -120,7 +158,7 @@ export const aiClinicalCopilotRoutes: FastifyPluginAsync = async (app) => {
 
   app.get(
     '/api/v1/partner/ai-copilot/panic-values',
-    { preHandler: [authenticate] },
+    { preHandler: copilotGuard },
     async (request, reply) => {
       const data = await service.getPanicAlerts(request.session);
       return reply.send({ success: true, data });
@@ -129,7 +167,7 @@ export const aiClinicalCopilotRoutes: FastifyPluginAsync = async (app) => {
 
   app.patch(
     '/api/v1/partner/ai-copilot/panic-values/:id/acknowledge',
-    { preHandler: [authenticate] },
+    { preHandler: [...copilotGuard, requireClinicianOrPermission('ai_copilot:panic:ack')] },
     async (request, reply) => {
       const { id } = request.params as { id: string };
       const payload = (request.body || {}) as Record<string, unknown>;
@@ -141,7 +179,7 @@ export const aiClinicalCopilotRoutes: FastifyPluginAsync = async (app) => {
   // 6. Audit Traces
   app.get(
     '/api/v1/partner/ai-copilot/audit-traces',
-    { preHandler: [authenticate] },
+    { preHandler: copilotGuard },
     async (request, reply) => {
       const data = await service.getAuditTraces(request.session);
       return reply.send({ success: true, data });

@@ -1216,6 +1216,45 @@ export class ClinicalWorkflowRepository {
     }
   }
 
+  async getPrescriptionById(tenantId: string, prescriptionId: string, dbClient = getDatabase()): Promise<StoredPrescription | null> {
+    const db = requireDb(dbClient);
+    try {
+      const [r] = await db
+        .select()
+        .from(pharmacyPrescriptions)
+        .where(and(eq(pharmacyPrescriptions.tenantId, tenantId), eq(pharmacyPrescriptions.id, prescriptionId)));
+
+      if (!r) return null;
+
+      const items = await db
+        .select()
+        .from(pharmacyPrescriptionItems)
+        .where(and(eq(pharmacyPrescriptionItems.tenantId, tenantId), eq(pharmacyPrescriptionItems.prescriptionId, r.id)));
+
+      const formattedItems = items.map((it: any) => {
+        const meta: any = it.metadata || {};
+        return {
+          ...it,
+          medicationName: meta['medicationName'] || it['medicationName'] || meta['drugName'] || 'Medication',
+          genericName: meta['genericName'] || it['genericName'],
+          strength: meta['strength'] || it['strength'] || ''
+        };
+      });
+
+      return {
+        ...(r as any),
+        items: formattedItems
+      };
+    } catch (err) {
+      logger.error('Failed to query prescription by ID from database', err);
+      throw new AppError({
+        message: 'Database query failed. Prescription lookup unavailable.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
+    }
+  }
+
   async createPrescription(input: CreatePrescriptionInput, dbClient = getDatabase()): Promise<StoredPrescription> {
     const db = requireDb(dbClient);
 
@@ -1326,10 +1365,21 @@ export class ClinicalWorkflowRepository {
           durationUnit: item.durationUnit || 'DAYS',
           fulfillmentStatus: 'PENDING',
           instructions: item.instructions || 'Take after meals',
+          metadata: {
+            medicationName: item.medicationName || (item as any)['drugName'],
+            genericName: (item as any)['genericName'],
+            strength: (item as any)['strength'],
+            ...(((item as any)['metadata'] as Record<string, any>) || {})
+          },
           createdAt: now,
           updatedAt: now
         } as any).returning();
-        insertedItems.push(insertedItem);
+        insertedItems.push({
+          ...insertedItem,
+          medicationName: item.medicationName || (item as any)['drugName'],
+          genericName: (item as any)['genericName'],
+          strength: (item as any)['strength']
+        });
       }
 
       return {

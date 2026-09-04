@@ -671,7 +671,7 @@ export const clinicalWorkflowRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
-      const pdfBuffer = await clinicalWorkflowService.generatePrescriptionPdf(id, request.session);
+      const pdfBuffer = await clinicalWorkflowService.generateConsultationPdf(id, request.session);
 
       reply.header('Content-Type', 'application/pdf');
       reply.header('Content-Disposition', `inline; filename="consultation-${id}.pdf"`);

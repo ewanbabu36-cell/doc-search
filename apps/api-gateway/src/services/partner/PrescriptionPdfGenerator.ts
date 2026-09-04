@@ -2,8 +2,8 @@ export interface PrescriptionPdfData {
   prescriptionNumber: string;
   encounterNumber: string;
   hospitalName: string;
-  facilityAddress?: string;
-  facilityPhone?: string;
+  facilityAddress?: string | undefined;
+  facilityPhone?: string | undefined;
   patientName: string;
   patientMrn: string;
   ageGender: string;
@@ -12,17 +12,17 @@ export interface PrescriptionPdfData {
   doctorSpecialty: string;
   doctorRegistrationNumber: string;
   vitals?: {
-    bp?: string;
-    pulse?: string;
-    spo2?: string;
-    temp?: string;
-    weight?: string;
-    bmi?: string;
-  };
+    bp?: string | undefined;
+    pulse?: string | undefined;
+    spo2?: string | undefined;
+    temp?: string | undefined;
+    weight?: string | undefined;
+    bmi?: string | undefined;
+  } | undefined;
   diagnoses: Array<{
     code: string;
     name: string;
-    isPrimary?: boolean;
+    isPrimary?: boolean | undefined;
   }>;
   medications: Array<{
     name: string;
@@ -31,10 +31,10 @@ export interface PrescriptionPdfData {
     frequency: string;
     duration: string;
     instructions: string;
-    isGeneric?: boolean;
+    isGeneric?: boolean | undefined;
   }>;
-  labInvestigations?: string[];
-  followUpAdvice?: string;
+  labInvestigations?: string[] | undefined;
+  followUpAdvice?: string | undefined;
 }
 
 export class PrescriptionPdfGenerator {
@@ -153,14 +153,24 @@ export class PrescriptionPdfGenerator {
     streamContent.push('ET');
 
     currentY -= 14;
-    for (const d of data.diagnoses) {
+    if (!data.diagnoses || data.diagnoses.length === 0) {
       streamContent.push('BT');
       streamContent.push('/F2 8 Tf');
-      streamContent.push('0.2 0.25 0.35 rg');
+      streamContent.push('0.35 0.4 0.5 rg');
       streamContent.push(`60 ${currentY} Td`);
-      streamContent.push(`(- [${this.escape(d.code)}] ${this.escape(d.name)}${d.isPrimary ? ' (Primary Diagnosis)' : ''}) Tj`);
+      streamContent.push('(No specific diagnoses recorded for this encounter) Tj');
       streamContent.push('ET');
       currentY -= 12;
+    } else {
+      for (const d of data.diagnoses) {
+        streamContent.push('BT');
+        streamContent.push('/F2 8 Tf');
+        streamContent.push('0.2 0.25 0.35 rg');
+        streamContent.push(`60 ${currentY} Td`);
+        streamContent.push(`(- [${this.escape(d.code)}] ${this.escape(d.name)}${d.isPrimary ? ' (Primary Diagnosis)' : ''}) Tj`);
+        streamContent.push('ET');
+        currentY -= 12;
+      }
     }
 
     // Rx Symbol & Medications Table
@@ -200,36 +210,46 @@ export class PrescriptionPdfGenerator {
     streamContent.push('ET');
 
     currentY -= 18;
-    data.medications.forEach((med, idx) => {
-      const isEven = idx % 2 === 0;
-      if (isEven) {
-        streamContent.push('q');
-        streamContent.push('0.97 0.98 0.99 rg');
-        streamContent.push(`36 ${currentY - 4} 540 20 re f`);
-        streamContent.push('Q');
-      }
-
-      const displayName = med.isGeneric && med.name.includes('(') ? med.name : (med.name.includes('PMBJP') ? med.name : `${med.name}`);
+    if (!data.medications || data.medications.length === 0) {
       streamContent.push('BT');
-      streamContent.push('/F1 8 Tf');
-      streamContent.push('0.1 0.15 0.25 rg');
-      streamContent.push(`46 ${currentY + 4} Td`);
-      streamContent.push(`(${this.escape(displayName)} ${this.escape(med.strength)}) Tj`);
+      streamContent.push('/F2 8 Tf');
+      streamContent.push('0.35 0.4 0.5 rg');
+      streamContent.push(`46 ${currentY} Td`);
+      streamContent.push('(No medications prescribed during this consultation) Tj');
       streamContent.push('ET');
-
-      streamContent.push('BT');
-      streamContent.push('/F2 7.5 Tf');
-      streamContent.push('0.2 0.25 0.35 rg');
-      streamContent.push(`240 ${currentY + 4} Td`);
-      streamContent.push(`(${this.escape(med.dosage)} | ${this.escape(med.frequency)}) Tj`);
-      streamContent.push(`380 ${currentY + 4} Td`);
-      streamContent.push(`(${this.escape(med.duration)}) Tj`);
-      streamContent.push(`460 ${currentY + 4} Td`);
-      streamContent.push(`(${this.escape(med.instructions)}) Tj`);
-      streamContent.push('ET');
-
       currentY -= 20;
-    });
+    } else {
+      data.medications.forEach((med, idx) => {
+        const isEven = idx % 2 === 0;
+        if (isEven) {
+          streamContent.push('q');
+          streamContent.push('0.97 0.98 0.99 rg');
+          streamContent.push(`36 ${currentY - 4} 540 20 re f`);
+          streamContent.push('Q');
+        }
+
+        const displayName = med.isGeneric && med.name.includes('(') ? med.name : (med.name.includes('PMBJP') ? med.name : `${med.name}`);
+        streamContent.push('BT');
+        streamContent.push('/F1 8 Tf');
+        streamContent.push('0.1 0.15 0.25 rg');
+        streamContent.push(`46 ${currentY + 4} Td`);
+        streamContent.push(`(${this.escape(displayName)} ${this.escape(med.strength)}) Tj`);
+        streamContent.push('ET');
+
+        streamContent.push('BT');
+        streamContent.push('/F2 7.5 Tf');
+        streamContent.push('0.2 0.25 0.35 rg');
+        streamContent.push(`240 ${currentY + 4} Td`);
+        streamContent.push(`(${this.escape(med.dosage)} | ${this.escape(med.frequency)}) Tj`);
+        streamContent.push(`380 ${currentY + 4} Td`);
+        streamContent.push(`(${this.escape(med.duration)}) Tj`);
+        streamContent.push(`460 ${currentY + 4} Td`);
+        streamContent.push(`(${this.escape(med.instructions)}) Tj`);
+        streamContent.push('ET');
+
+        currentY -= 20;
+      });
+    }
 
     // Diagnostic Orders if any
     if (data.labInvestigations && data.labInvestigations.length > 0) {
