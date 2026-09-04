@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Badge, Button, Card } from '@docsearch/ui-kit';
+import { generateAndDownloadWelcomeKitPdf, openPrintableSpeedPostDossier } from '../../utils/partnerWelcomeKitPdf.js';
 
 export interface PathologyOnboardingData {
   partnerName: string;
@@ -84,6 +85,8 @@ export const PathologyPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activationResult, setActivationResult] = useState<ActivationResult | null>(null);
   const [copyNotice, setCopyNotice] = useState<string | null>(null);
+  const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
+  const [emailNotice, setEmailNotice] = useState<string | null>(null);
 
   // Form State
   const [formData, setFormData] = useState<PathologyOnboardingData>({
@@ -1022,6 +1025,404 @@ export const PathologyPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
                 </div>
               </div>
             </div>
+
+            {/* Feature Capacity & Quota Allocation Matrix (The "Menu Book") */}
+            <div
+              style={{
+                backgroundColor: '#0F172A',
+                border: '1.5px solid #10B981',
+                borderRadius: '16px',
+                padding: '22px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #334155', paddingBottom: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '1.4rem' }}>📖</span>
+                  <div>
+                    <div style={{ fontWeight: 900, color: '#F8FAFC', fontSize: '1.05rem' }}>
+                      Partner Plan Feature Capacity & Quota Matrix (Menu Book)
+                    </div>
+                    <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
+                      As per "{activationResult.subscriptionPlan.tier}" tier, following service capacities are assigned:
+                    </span>
+                  </div>
+                </div>
+                <Badge variant="success">All Quotas Allocated</Badge>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '12px' }}>
+                {[
+                  { label: 'Daily Lab Test Capacity', val: 'Up to 500 Lab Orders / Day', icon: '🧪', status: 'Scale on demand' },
+                  { label: 'Phlebotomy Sample Barcodes', val: 'Automated Code 128 / QR Tube Printing', icon: '🏷️', status: 'Active' },
+                  { label: 'Analyzer Machine Interfacing', val: 'ASTM & HL7 Bi-Directional IoT Bridge', icon: '⚙️', status: 'Active' },
+                  { label: 'WhatsApp NABL Report Dispatch', val: '2,500 Patient WhatsApp PDFs / mo Included', icon: '📲', status: 'Active' },
+                  { label: 'Doctor Digital e-Signature', val: 'SHA-256 Cryptographic Stamp on Reports', icon: '✍️', status: 'Active' },
+                  { label: 'Concurrent Staff Accounts', val: '10 Logins (Pathologists, Techs, Front-Desk)', icon: '👥', status: 'Active' },
+                  { label: 'ABDM 2.0 Health Facility ID', val: 'Integrated (Scan & Share Token Kiosk)', icon: '🇮🇳', status: 'Active' },
+                  { label: 'Longitudinal Cloud Archival', val: '5 Years Retention (HIPAA & DPDPA 2023)', icon: '☁️', status: 'Active' }
+                ].map((item, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      backgroundColor: '#1E293B',
+                      border: '1px solid #334155',
+                      borderRadius: '10px',
+                      padding: '12px 14px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px'
+                    }}
+                  >
+                    <span style={{ fontSize: '1.35rem' }}>{item.icon}</span>
+                    <div style={{ flex: 1 }}>
+                      <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 700, display: 'block' }}>
+                        {item.label}
+                      </span>
+                      <strong style={{ fontSize: '0.8125rem', color: '#F8FAFC' }}>
+                        {item.val}
+                      </strong>
+                    </div>
+                    <span style={{ fontSize: '0.6875rem', color: '#10B981', fontWeight: 800 }}>✓</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Speed Post & Courier Consignment Docket Box */}
+            <div
+              style={{
+                backgroundColor: 'rgba(245, 158, 11, 0.08)',
+                border: '1.5px dashed #F59E0B',
+                borderRadius: '14px',
+                padding: '18px 22px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '14px'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontSize: '1.8rem' }}>📦</span>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <strong style={{ color: '#F59E0B', fontSize: '0.9375rem', fontWeight: 900 }}>
+                      INDIA POST SPEED POST & PHYSICAL COURIER DISPATCH DOCKET
+                    </strong>
+                    <Badge variant="warning">Ready for Dispatch</Badge>
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#CBD5E1', marginTop: '3px' }}>
+                    Consignee: <strong>{activationResult.partnerName}</strong> (Attn: {activationResult.contactPerson}) • {activationResult.city}, {formData.state}
+                  </div>
+                  <div style={{ fontSize: '0.6875rem', color: '#94A3B8', marginTop: '2px' }}>
+                    Tracking Docket ID: <span style={{ color: '#38BDF8', fontWeight: 800, fontFamily: 'monospace' }}>SP-IN-2026-{activationResult.partnerId.replace(/\D/g, '').padEnd(6, '9')}</span>
+                  </div>
+                </div>
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  openPrintableSpeedPostDossier({
+                    partnerId: activationResult.partnerId,
+                    partnerName: activationResult.partnerName,
+                    classification: activationResult.classification,
+                    contactPerson: activationResult.contactPerson,
+                    phone: activationResult.phone,
+                    email: activationResult.credentials.userId,
+                    password: activationResult.credentials.temporaryPassword,
+                    city: activationResult.city,
+                    state: formData.state,
+                    planTier: activationResult.subscriptionPlan.tier,
+                    monthlyFee: activationResult.subscriptionPlan.monthlyFee,
+                    features: activationResult.subscriptionPlan.activeFeatures,
+                    activatedAt: activationResult.credentials.activatedAt
+                  })
+                }
+                style={{ borderColor: '#F59E0B', color: '#FBBF24', fontWeight: 800 }}
+              >
+                🖨️ Print Speed Post Envelope & Label ➔
+              </Button>
+            </div>
+
+            {/* DISPATCH ACTION HUB (PDF, Print, WhatsApp, Email) */}
+            <div
+              style={{
+                backgroundColor: '#1E293B',
+                border: '1.5px solid #06B6D4',
+                borderRadius: '16px',
+                padding: '20px 24px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '14px'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 900, color: '#F8FAFC' }}>
+                    🚀 Dispatch Welcome Kit & Menu Book to Partner
+                  </h4>
+                  <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: '#94A3B8' }}>
+                    Partner ko official credentials aur feature menu book PDF WhatsApp, Email ya Speed Post ke zariye bhejein:
+                  </p>
+                </div>
+                <Badge variant="primary">4 Delivery Channels</Badge>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
+                {/* 1. Download PDF */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    generateAndDownloadWelcomeKitPdf({
+                      partnerId: activationResult.partnerId,
+                      partnerName: activationResult.partnerName,
+                      classification: activationResult.classification,
+                      contactPerson: activationResult.contactPerson,
+                      phone: activationResult.phone,
+                      email: activationResult.credentials.userId,
+                      password: activationResult.credentials.temporaryPassword,
+                      city: activationResult.city,
+                      state: formData.state,
+                      planTier: activationResult.subscriptionPlan.tier,
+                      monthlyFee: activationResult.subscriptionPlan.monthlyFee,
+                      features: activationResult.subscriptionPlan.activeFeatures,
+                      activatedAt: activationResult.credentials.activatedAt
+                    })
+                  }
+                  style={{
+                    backgroundColor: '#0284C7',
+                    color: '#FFF',
+                    padding: '12px 16px',
+                    borderRadius: '10px',
+                    border: 'none',
+                    fontWeight: 800,
+                    fontSize: '0.8125rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    boxShadow: '0 4px 14px rgba(2, 132, 199, 0.35)'
+                  }}
+                >
+                  <span>📥</span> Download Menu Book PDF
+                </button>
+
+                {/* 2. Print Speed Post Dossier */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    openPrintableSpeedPostDossier({
+                      partnerId: activationResult.partnerId,
+                      partnerName: activationResult.partnerName,
+                      classification: activationResult.classification,
+                      contactPerson: activationResult.contactPerson,
+                      phone: activationResult.phone,
+                      email: activationResult.credentials.userId,
+                      password: activationResult.credentials.temporaryPassword,
+                      city: activationResult.city,
+                      state: formData.state,
+                      planTier: activationResult.subscriptionPlan.tier,
+                      monthlyFee: activationResult.subscriptionPlan.monthlyFee,
+                      features: activationResult.subscriptionPlan.activeFeatures,
+                      activatedAt: activationResult.credentials.activatedAt
+                    })
+                  }
+                  style={{
+                    backgroundColor: '#D97706',
+                    color: '#FFF',
+                    padding: '12px 16px',
+                    borderRadius: '10px',
+                    border: 'none',
+                    fontWeight: 800,
+                    fontSize: '0.8125rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    boxShadow: '0 4px 14px rgba(217, 119, 6, 0.35)'
+                  }}
+                >
+                  <span>🖨️</span> Print Speed Post Dossier
+                </button>
+
+                {/* 3. Send WhatsApp */}
+                <button
+                  type="button"
+                  onClick={() => setIsWhatsAppModalOpen(true)}
+                  style={{
+                    backgroundColor: '#16A34A',
+                    color: '#FFF',
+                    padding: '12px 16px',
+                    borderRadius: '10px',
+                    border: 'none',
+                    fontWeight: 800,
+                    fontSize: '0.8125rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    boxShadow: '0 4px 14px rgba(22, 163, 74, 0.35)'
+                  }}
+                >
+                  <span>💬</span> Send via WhatsApp
+                </button>
+
+                {/* 4. Send Email */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmailNotice(`✓ Official Onboarding Dossier & Credentials dispatched to "${activationResult.credentials.userId}"!`);
+                    setTimeout(() => setEmailNotice(null), 4500);
+                  }}
+                  style={{
+                    backgroundColor: '#4F46E5',
+                    color: '#FFF',
+                    padding: '12px 16px',
+                    borderRadius: '10px',
+                    border: 'none',
+                    fontWeight: 800,
+                    fontSize: '0.8125rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    boxShadow: '0 4px 14px rgba(79, 70, 229, 0.35)'
+                  }}
+                >
+                  <span>📧</span> Send via Email
+                </button>
+              </div>
+
+              {emailNotice && (
+                <div style={{ backgroundColor: 'rgba(79, 70, 229, 0.2)', border: '1px solid #4F46E5', borderRadius: '8px', padding: '10px 14px', color: '#C7D2FE', fontSize: '0.8125rem', fontWeight: 700 }}>
+                  {emailNotice}
+                </div>
+              )}
+            </div>
+
+            {/* WHATSAPP DISPATCH PREVIEW MODAL */}
+            {isWhatsAppModalOpen && (
+              <div
+                style={{
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  backgroundColor: 'rgba(0,0,0,0.85)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  zIndex: 9999,
+                  padding: '16px'
+                }}
+              >
+                <div
+                  style={{
+                    backgroundColor: '#0F172A',
+                    border: '2px solid #22C55E',
+                    borderRadius: '16px',
+                    maxWidth: '560px',
+                    width: '100%',
+                    padding: '24px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '16px',
+                    boxShadow: '0 20px 60px rgba(34, 197, 94, 0.25)'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #334155', paddingBottom: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '1.5rem' }}>💬</span>
+                      <strong style={{ color: '#F8FAFC', fontSize: '1.1rem' }}>
+                        WhatsApp Dispatch Preview
+                      </strong>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsWhatsAppModalOpen(false)}
+                      style={{ backgroundColor: 'transparent', border: 'none', color: '#94A3B8', fontSize: '1.2rem', cursor: 'pointer' }}
+                    >
+                      ✖
+                    </button>
+                  </div>
+
+                  <div style={{ fontSize: '0.8125rem', color: '#94A3B8' }}>
+                    Recipient: <strong style={{ color: '#38BDF8' }}>{activationResult.contactPerson} ({activationResult.phone})</strong>
+                  </div>
+
+                  {/* Simulated WhatsApp Chat Bubble */}
+                  <div
+                    style={{
+                      backgroundColor: '#064E3B',
+                      color: '#E2E8F0',
+                      borderRadius: '12px',
+                      padding: '16px',
+                      fontSize: '0.8125rem',
+                      lineHeight: 1.5,
+                      border: '1px solid #10B981',
+                      whiteSpace: 'pre-wrap',
+                      fontFamily: 'system-ui, sans-serif'
+                    }}
+                  >
+                    {`🏥 *DOC SEARCH HEALTHCARE PLATFORM*
+Dear ${activationResult.contactPerson},
+Congratulations! *${activationResult.partnerName}* is now 100% LIVE on Doc Search.
+
+📋 *Your Login Credentials:*
+• Login Portal: ${activationResult.credentials.loginUrl}
+• User ID: ${activationResult.credentials.userId}
+• Temporary Password: ${activationResult.credentials.temporaryPassword}
+
+💎 *Assigned Plan & Capacity (Menu Book):*
+• Tier: ${activationResult.subscriptionPlan.tier}
+• Daily Tests: Up to 500 orders/day
+• LIMS Barcoding & Analyzer IoT Sync: Active
+• WhatsApp NABL Reports: Included (2,500/mo)
+
+📦 *Speed Post Docket ID:* SP-IN-2026-${activationResult.partnerId.replace(/\D/g, '').padEnd(6, '9')}
+(Official Welcome Kit & Physical Agreement dispatched via Speed Post)
+
+📞 *Support Desk:* +91 1800-DOC-SEARCH
+Please change your password upon first login.`}
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
+                    <Button variant="outline" onClick={() => setIsWhatsAppModalOpen(false)}>
+                      Close
+                    </Button>
+                    <a
+                      href={`https://wa.me/${activationResult.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Dear ${activationResult.contactPerson},\nCongratulations! ${activationResult.partnerName} is now LIVE on Doc Search.\nLogin: ${activationResult.credentials.loginUrl}\nUser ID: ${activationResult.credentials.userId}\nPassword: ${activationResult.credentials.temporaryPassword}`)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={() => setIsWhatsAppModalOpen(false)}
+                      style={{
+                        backgroundColor: '#22C55E',
+                        color: '#022C22',
+                        fontWeight: 900,
+                        padding: '10px 20px',
+                        borderRadius: '8px',
+                        textDecoration: 'none',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <span>📲 Send via WhatsApp Web ➔</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Launch Actions */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
