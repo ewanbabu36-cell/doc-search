@@ -101,7 +101,11 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
           organizationId: user.organizationId,
           branchId: user.branchId,
           roles: user.roles,
-          permissions: user.permissions
+          permissions: user.permissions,
+          tenantName: user.tenantName,
+          organizationType: user.organizationType,
+          planTier: user.planTier,
+          accessibleFeatures: user.accessibleFeatures
         }
       }
     });
@@ -143,5 +147,73 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       success: true,
       data: { message: 'Logged out successfully' }
     });
+  });
+
+  // POST /api/v1/auth/register-partner-user (Immediate partner credential registration)
+  fastify.post('/api/v1/auth/register-partner-user', async (request, reply) => {
+    const body = request.body as {
+      email: string;
+      password?: string;
+      plainPassword?: string;
+      firstName?: string;
+      lastName?: string;
+      tenantName: string;
+      organizationType?: string;
+      planTier?: string;
+      accessibleFeatures?: string[];
+      phone?: string;
+    };
+
+    const plainPassword = body.password || body.plainPassword;
+    if (!body.email || !plainPassword || !body.tenantName) {
+      throw new AppError({
+        message: 'email, password and tenantName are required',
+        code: ErrorCode.VALIDATION_ERROR,
+        statusCode: 400
+      });
+    }
+
+    const nameParts = (body.firstName || 'Pathologist').split(' ');
+    const firstName = nameParts[0] || 'Pathologist';
+    const lastName = body.lastName || nameParts.slice(1).join(' ') || 'In-Charge';
+
+    const registered = realAuthService.registerPartnerUserCredential({
+      email: body.email,
+      plainPassword,
+      firstName,
+      lastName,
+      tenantName: body.tenantName,
+      organizationType: body.organizationType || 'PATHOLOGY',
+      planTier: body.planTier || 'Pathology Pro & Barcode LIMS',
+      accessibleFeatures: body.accessibleFeatures || ['LIMS Workbench', 'Barcodes', 'WhatsApp Reports'],
+      phone: body.phone
+    });
+
+    return reply.status(201).send({
+      success: true,
+      data: {
+        id: registered.id,
+        email: registered.email,
+        tenantName: registered.tenantName,
+        organizationType: registered.organizationType,
+        planTier: registered.planTier,
+        message: 'Partner credentials successfully registered and ready for live login.'
+      }
+    });
+  });
+
+  // GET /api/v1/auth/live-partners (List of newly onboarded live partners for fast login switch)
+  fastify.get('/api/v1/auth/live-partners', async (_request, reply) => {
+    const partners = realAuthService.getAllLivePartnerUsers().map((p) => ({
+      id: p.id,
+      email: p.email,
+      name: `${p.firstName} ${p.lastName}`.trim(),
+      tenantName: p.tenantName,
+      organizationType: p.organizationType,
+      planTier: p.planTier,
+      accessibleFeatures: p.accessibleFeatures,
+      phone: p.phone
+    }));
+    return reply.status(200).send({ success: true, data: partners });
   });
 };

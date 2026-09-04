@@ -120,11 +120,11 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
   // Dynamic Workspace definitions with specialized colors & tags
   const workspaceProfiles: Record<OrganizationWorkspaceType, { name: string; icon: string; badge: string; color: string; defaultModule: PartnerModuleKey }> = {
     ENTERPRISE_COMMAND: { name: 'ABC Healthcare Group (Enterprise Combined)', icon: '👑', badge: 'All-in-One Multi-Org Hub', color: '#8B5CF6', defaultModule: 'executive-command-center' },
-    HOSPITAL: { name: 'Apex Metropolitan Hospital', icon: '🏥', badge: 'Inpatient & Tertiary Suite', color: '#3B82F6', defaultModule: 'inpatient-management' },
-    CLINIC: { name: 'Apex Doctor Clinic & Polyclinic', icon: '🩺', badge: 'OPD & Scribe EMR', color: '#06B6D4', defaultModule: 'clinical-consultation' },
-    PHARMACY: { name: 'MetroCare Chemist & Pharmacy POS', icon: '💊', badge: 'Retail POS & Inventory', color: '#10B981', defaultModule: 'pharmacy-medication' },
-    PATHOLOGY: { name: 'BioCore Pathology & LIMS Lab', icon: '🧪', badge: 'Diagnostic LIS Hub', color: '#A855F7', defaultModule: 'clinical-investigation' },
-    DIAGNOSTIC_CENTRE: { name: 'Apex Imaging & Radiology PACS', icon: '🔬', badge: 'DICOM & Modality Centre', color: '#F59E0B', defaultModule: 'radiology-imaging' }
+    HOSPITAL: { name: currentUser?.tenantName || 'Apex Metropolitan Hospital', icon: '🏥', badge: currentUser?.planTier || 'Inpatient & Tertiary Suite', color: '#3B82F6', defaultModule: 'inpatient-management' },
+    CLINIC: { name: currentUser?.tenantName || 'Apex Doctor Clinic & Polyclinic', icon: '🩺', badge: currentUser?.planTier || 'OPD & Scribe EMR', color: '#06B6D4', defaultModule: 'clinical-consultation' },
+    PHARMACY: { name: currentUser?.tenantName || 'MetroCare Chemist & Pharmacy POS', icon: '💊', badge: currentUser?.planTier || 'Retail POS & Inventory', color: '#10B981', defaultModule: 'pharmacy-medication' },
+    PATHOLOGY: { name: currentUser?.tenantName || 'BioCore Pathology & LIMS Lab', icon: '🧪', badge: currentUser?.planTier || 'Diagnostic LIS Hub', color: '#A855F7', defaultModule: 'clinical-investigation' },
+    DIAGNOSTIC_CENTRE: { name: currentUser?.tenantName || 'Apex Imaging & Radiology PACS', icon: '🔬', badge: currentUser?.planTier || 'DICOM & Modality Centre', color: '#F59E0B', defaultModule: 'radiology-imaging' }
   };
 
   const currentWsp = workspaceProfiles[workspace];

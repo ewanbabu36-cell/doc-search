@@ -365,12 +365,71 @@ interface Props {
 
 export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess }) => {
   const [activeCategory, setActiveCategory] = useState<'ALL' | 'HEALTHCARE' | 'COMPANY_HQ'>('ALL');
+  const [customRoles, setCustomRoles] = useState<HospitalStaffUser[]>([]);
   const [selectedUser, setSelectedUser] = useState<HospitalStaffUser>(ALL_SYSTEM_ROLES[0]!);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [emailInput, setEmailInput] = useState(ALL_SYSTEM_ROLES[0]?.email || 'tata@doc.com');
   const [passwordInput, setPasswordInput] = useState(ALL_SYSTEM_ROLES[0]?.password || 'TataPass123!');
   const [authError, setAuthError] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    const loadLivePartners = async () => {
+      try {
+        const localCustom: HospitalStaffUser[] = JSON.parse(localStorage.getItem('docsearch_custom_partner_users') || '[]');
+        
+        let apiPartners: any[] = [];
+        try {
+          const res = await fetch('/api/v1/auth/live-partners');
+          if (res.ok) {
+            const j = await res.json();
+            if (j.data) apiPartners = j.data;
+          }
+        } catch {
+          // ignore if backend offline
+        }
+
+        const mappedApiRoles: HospitalStaffUser[] = apiPartners.map((p) => ({
+          id: p.id,
+          category: 'HEALTHCARE' as const,
+          name: p.name,
+          email: p.email,
+          role: 'PATHOLOGIST',
+          roleTitle: `${p.tenantName} (Head & Pathologist)`,
+          department: 'Pathology & Diagnostic Laboratory',
+          tenantName: p.tenantName,
+          organizationType: (p.organizationType as any) || 'PATHOLOGY',
+          allowedWorkspaces: [(p.organizationType as any) || 'PATHOLOGY'],
+          defaultModule: 'clinical-investigation',
+          planTier: p.planTier || 'Pathology Pro & Barcode LIMS',
+          accessibleFeatures: p.accessibleFeatures || ['LIMS Workbench'],
+          restrictedFeatures: ['Hospital IPD Wards']
+        }));
+
+        const combined = [...localCustom, ...mappedApiRoles];
+        const unique: HospitalStaffUser[] = [];
+        const seen = new Set<string>();
+
+        for (const u of combined) {
+          if (u.email && !seen.has(u.email.toLowerCase())) {
+            seen.add(u.email.toLowerCase());
+            unique.push(u);
+          }
+        }
+
+        if (unique.length > 0) {
+          setCustomRoles(unique);
+          const firstNew = unique[0]!;
+          setSelectedUser(firstNew);
+          if (firstNew.email) setEmailInput(firstNew.email);
+          if (firstNew.password) setPasswordInput(firstNew.password);
+        }
+      } catch (err) {
+        console.error('Failed to load custom partners:', err);
+      }
+    };
+    void loadLivePartners();
+  }, []);
 
   const handleSelectRole = (user: HospitalStaffUser) => {
     setSelectedUser(user);
@@ -379,12 +438,15 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess }) => {
     setAuthError(null);
   };
 
-  const filteredRoles = ALL_SYSTEM_ROLES.filter((r) => {
+  const allAvailableRoles = [...customRoles, ...ALL_SYSTEM_ROLES];
+
+  const filteredRoles = allAvailableRoles.filter((r) => {
     const matchesCategory = activeCategory === 'ALL' || r.category === activeCategory;
     const matchesSearch =
       r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       r.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
       r.roleTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      r.tenantName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       r.department.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
@@ -409,19 +471,49 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess }) => {
       const json = await res.json();
 
       if (!res.ok || !json.success) {
+        // Fallback: If matching a registered custom role
+        const matchingCustom = customRoles.find(
+          (c) => c.email?.toLowerCase() === emailToUse.toLowerCase() && (!c.password || c.password === passToUse)
+        );
+        if (matchingCustom) {
+          localStorage.setItem('docsearch_partner_staff_auth', JSON.stringify(matchingCustom));
+          setIsAuthenticating(false);
+          onLoginSuccess(matchingCustom);
+          return;
+        }
+
         setAuthError(json.error?.message || json.message || 'Authentication failed. Please check email and password.');
         setIsAuthenticating(false);
         return;
       }
 
+      const returnedUser = json.data?.user;
+      const resolvedUser: HospitalStaffUser = {
+        id: returnedUser?.id || targetUser.id,
+        category: 'HEALTHCARE',
+        name: `${returnedUser?.firstName || ''} ${returnedUser?.lastName || ''}`.trim() || targetUser.name,
+        email: emailToUse,
+        password: passToUse,
+        role: returnedUser?.roles?.[0] || targetUser.role || 'PATHOLOGIST',
+        roleTitle: `${returnedUser?.tenantName || targetUser.tenantName} (${returnedUser?.roles?.[0] || targetUser.roleTitle})`,
+        department: returnedUser?.organizationType === 'PATHOLOGY' ? 'Pathology & Diagnostic Laboratory' : targetUser.department,
+        tenantName: returnedUser?.tenantName || targetUser.tenantName,
+        organizationType: (returnedUser?.organizationType as any) || targetUser.organizationType || 'PATHOLOGY',
+        allowedWorkspaces: [(returnedUser?.organizationType as any) || targetUser.organizationType || 'PATHOLOGY'],
+        defaultModule: returnedUser?.organizationType === 'PATHOLOGY' ? 'clinical-investigation' : targetUser.defaultModule,
+        planTier: returnedUser?.planTier || targetUser.planTier,
+        accessibleFeatures: returnedUser?.accessibleFeatures || targetUser.accessibleFeatures,
+        restrictedFeatures: targetUser.restrictedFeatures || ['Hospital IPD Wards']
+      };
+
       if (json.data?.accessToken) {
         localStorage.setItem('docsearch_auth_token', json.data.accessToken);
-        localStorage.setItem('docsearch_user_session', JSON.stringify(json.data.user));
-        localStorage.setItem('docsearch_partner_staff_auth', JSON.stringify(targetUser));
+        localStorage.setItem('docsearch_user_session', JSON.stringify(returnedUser));
+        localStorage.setItem('docsearch_partner_staff_auth', JSON.stringify(resolvedUser));
       }
 
       setIsAuthenticating(false);
-      onLoginSuccess(targetUser);
+      onLoginSuccess(resolvedUser);
     } catch {
       setIsAuthenticating(false);
       onLoginSuccess(targetUser);
@@ -671,6 +763,57 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess }) => {
                 </div>
               </div>
             </div>
+
+            {/* Newly Activated Live Partners Banner */}
+            {customRoles.length > 0 && (
+              <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.12)', border: '1.5px solid #10B981', borderRadius: '12px', padding: '12px 16px', marginBottom: '14px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#86EFAC', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>🟢</span> Newly Activated Live Partners ({customRoles.length})
+                  </span>
+                  <Badge variant="success">HQ Onboarded</Badge>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {customRoles.map((cr) => (
+                    <div
+                      key={cr.id}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        backgroundColor: '#0B132B',
+                        padding: '8px 12px',
+                        borderRadius: '8px',
+                        border: '1px solid ' + (selectedUser.id === cr.id ? '#06B6D4' : '#10B981')
+                      }}
+                    >
+                      <div>
+                        <strong style={{ color: '#F8FAFC', fontSize: '0.8125rem' }}>{cr.tenantName}</strong>
+                        <div style={{ fontSize: '0.6875rem', color: '#94A3B8' }}>
+                          ID: <span style={{ color: '#38BDF8', fontWeight: 700 }}>{cr.email}</span> • Plan: <span style={{ color: '#10B981' }}>{cr.planTier}</span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleSelectRole(cr)}
+                        style={{
+                          backgroundColor: '#10B981',
+                          color: '#064E3B',
+                          fontWeight: 900,
+                          fontSize: '0.6875rem',
+                          padding: '5px 12px',
+                          borderRadius: '6px',
+                          border: 'none',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        ⚡ Use Credentials
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Real Database Credential Form */}
             <div style={{ backgroundColor: 'rgba(15, 23, 42, 0.8)', border: '1.5px solid rgba(6, 182, 212, 0.3)', borderRadius: '12px', padding: '14px', marginBottom: '16px' }}>

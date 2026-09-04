@@ -21,6 +21,7 @@ import { AbdmNationalHealthStackConsoleView } from './AbdmNationalHealthStackCon
 import { MultiCloudDisasterRecoveryDrillView } from './MultiCloudDisasterRecoveryDrillView.js';
 import { LimsHl7AstmIotDeviceHubView } from './LimsHl7AstmIotDeviceHubView.js';
 import { generateAndDownloadExecutiveBoardPdf } from '../../utils/clientExecutiveBoardPdf.js';
+import { PathologyPartnerOnboardingWizard } from '../crm/PathologyPartnerOnboardingWizard.js';
 
 import { Spinner, ErrorState, Tabs, Badge, Button } from '@docsearch/ui-kit';
 
@@ -28,6 +29,7 @@ export const ExecutiveCommandCenter: React.FC = () => {
   const [data, setData] = useState<ExecutiveDashboardData | null>(null);
   const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'ANOMALIES' | 'CUSTOM_GRID' | 'WAR_ROOM' | 'EBITDA' | 'AI_VOICE' | 'ABDM_STACK' | 'DR_FAILOVER' | 'LIMS_IOT'>('OVERVIEW');
   const [isPanicOpen, setIsPanicOpen] = useState(false);
+  const [showOnboardingWizard, setShowOnboardingWizard] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -123,6 +125,20 @@ export const ExecutiveCommandCenter: React.FC = () => {
           </Button>
 
           <Button
+            variant="primary"
+            size="sm"
+            onClick={() => setShowOnboardingWizard(!showOnboardingWizard)}
+            style={{
+              backgroundColor: '#06B6D4',
+              color: '#070C16',
+              fontWeight: 900,
+              boxShadow: '0 4px 14px rgba(6, 182, 212, 0.4)'
+            }}
+          >
+            {showOnboardingWizard ? '✖️ Close Wizard' : '🧪 + Onboard Pathology Lab (Live)'}
+          </Button>
+
+          <Button
             variant="danger"
             size="sm"
             onClick={() => setIsPanicOpen(true)}
@@ -137,6 +153,61 @@ export const ExecutiveCommandCenter: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      {/* Prominent Fast-Track Onboarding Banner */}
+      <div
+        style={{
+          backgroundColor: 'rgba(6, 182, 212, 0.12)',
+          border: '1.5px solid #06B6D4',
+          borderRadius: '14px',
+          padding: '16px 20px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '12px',
+          boxShadow: '0 4px 20px rgba(6, 182, 212, 0.15)'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span style={{ fontSize: '1.75rem' }}>🧪</span>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontWeight: 900, color: '#F8FAFC', fontSize: '1rem' }}>
+                Healthcare Partner Live Onboarding Pipeline
+              </span>
+              <Badge variant="success">Step-by-Step Live</Badge>
+            </div>
+            <p style={{ margin: '2px 0 0', fontSize: '0.8125rem', color: '#94A3B8' }}>
+              Add Pathology ➔ Verify KYC Docs ➔ Customize Features & Subscription ➔ Set User ID/Password ➔ Partner Login (localhost:5173).
+            </p>
+          </div>
+        </div>
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={() => setShowOnboardingWizard(true)}
+          style={{ backgroundColor: '#10B981', color: '#064E3B', fontWeight: 900, padding: '8px 18px' }}
+        >
+          🚀 Start Pathology Onboarding Wizard ➔
+        </Button>
+      </div>
+
+      {/* Onboarding Wizard Embed when opened */}
+      {showOnboardingWizard && (
+        <div style={{ backgroundColor: '#070C16', border: '2px solid #06B6D4', borderRadius: '16px', padding: '16px', boxShadow: '0 10px 40px rgba(0,0,0,0.8)' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}>
+            <button
+              type="button"
+              onClick={() => setShowOnboardingWizard(false)}
+              style={{ backgroundColor: '#334155', color: '#CBD5E1', border: 'none', borderRadius: '6px', padding: '6px 12px', fontWeight: 700, cursor: 'pointer' }}
+            >
+              ✖️ Close Onboarding Hub
+            </button>
+          </div>
+          <PathologyPartnerOnboardingWizard />
+        </div>
+      )}
 
       {/* Navigation Tabs */}
       <Tabs

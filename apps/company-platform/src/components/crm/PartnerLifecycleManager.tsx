@@ -21,10 +21,12 @@ import { DoctorNmcCredentialingBotView } from './DoctorNmcCredentialingBotView.j
 import { PartnerHealthChurnRadarView } from './PartnerHealthChurnRadarView.js';
 import { PartnerEscrowRevenueSplitView } from './PartnerEscrowRevenueSplitView.js';
 import { LeadToPartnerPipelineView } from './LeadToPartnerPipelineView.js';
+import { PathologyPartnerOnboardingWizard } from './PathologyPartnerOnboardingWizard.js';
 
 import { Spinner, ErrorState, Tabs, Badge } from '@docsearch/ui-kit';
 
 export type ActiveCrmTab =
+  | 'ONBOARD_PATHOLOGY'
   | 'PIPELINE'
   | 'DIRECTORY'
   | 'WHATSAPP'
@@ -40,7 +42,7 @@ export type ActiveCrmTab =
   | 'ANALYTICS';
 
 export const PartnerLifecycleManager: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<ActiveCrmTab>('DIRECTORY');
+  const [activeTab, setActiveTab] = useState<ActiveCrmTab>('ONBOARD_PATHOLOGY');
   const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null);
   const [partner, setPartner] = useState<PartnerProfileDto | null>(null);
   const [history, setHistory] = useState<PartnerTransitionHistoryDto[]>([]);
@@ -142,6 +144,7 @@ export const PartnerLifecycleManager: React.FC = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       <Tabs
         tabs={[
+          { id: 'ONBOARD_PATHOLOGY', label: '🧪 + Onboard Pathology Lab (Live Wizard)', badge: <Badge variant="success">Step-by-Step Live</Badge> },
           { id: 'PIPELINE', label: '🔄 Lead-to-Live Pipeline Tracker', badge: <Badge variant="primary">5 Stages & Forms</Badge> },
           { id: 'DIRECTORY', label: '📋 Directory & CRM' },
           { id: 'WHATSAPP', label: '💬 AI WhatsApp Broadcaster', badge: <Badge variant="success">98.2% Open</Badge> },
@@ -159,6 +162,10 @@ export const PartnerLifecycleManager: React.FC = () => {
         activeTabId={activeTab}
         onTabChange={(id) => setActiveTab(id as ActiveCrmTab)}
       />
+
+      {activeTab === 'ONBOARD_PATHOLOGY' && (
+        <PathologyPartnerOnboardingWizard />
+      )}
 
       {activeTab === 'PIPELINE' && (
         <LeadToPartnerPipelineView />

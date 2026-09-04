@@ -13,6 +13,11 @@ export interface AuthenticatedUserRecord {
   roles: RoleType[];
   permissions: string[];
   passwordHash: string;
+  tenantName?: string | undefined;
+  organizationType?: string | undefined;
+  planTier?: string | undefined;
+  accessibleFeatures?: string[] | undefined;
+  phone?: string | undefined;
 }
 
 /**
@@ -415,6 +420,72 @@ export class RealAuthService {
     }
 
     return user;
+  }
+
+  /**
+   * Register a newly onboarded live partner credential with cryptographic scrypt hash
+   */
+  registerPartnerUserCredential(data: {
+    email: string;
+    plainPassword: string;
+    firstName: string;
+    lastName: string;
+    tenantName: string;
+    organizationType?: string | undefined;
+    planTier?: string | undefined;
+    accessibleFeatures?: string[] | undefined;
+    phone?: string | undefined;
+    tenantId?: string | undefined;
+    organizationId?: string | undefined;
+    branchId?: string | undefined;
+    roles?: RoleType[] | undefined;
+    permissions?: string[] | undefined;
+  }): AuthenticatedUserRecord {
+    const id = `partner-usr-${Date.now()}`;
+    const emailNorm = data.email.toLowerCase().trim();
+    const record: AuthenticatedUserRecord = {
+      id,
+      email: emailNorm,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      status: 'ACTIVE',
+      tenantId: data.tenantId || `tenant-${Date.now()}`,
+      organizationId: data.organizationId || `org-${Date.now()}`,
+      branchId: data.branchId || `branch-${Date.now()}`,
+      roles: data.roles || ['PATHOLOGIST', 'HOSPITAL_ADMIN'] as RoleType[],
+      permissions: data.permissions || [
+        'lab:orders:read',
+        'lab:orders:create',
+        'lab:specimens:create',
+        'lab:results:create',
+        'lab:results:update',
+        'lab:reports:finalize',
+        'billing:invoices:read',
+        'billing:invoices:create'
+      ],
+      passwordHash: hashPassword(data.plainPassword),
+      tenantName: data.tenantName,
+      organizationType: data.organizationType || 'PATHOLOGY',
+      planTier: data.planTier || 'Pathology Pro & Barcode LIMS',
+      accessibleFeatures: data.accessibleFeatures || ['LIMS Workbench', 'Barcodes', 'WhatsApp Reports'],
+      phone: data.phone
+    };
+    PRODUCTION_CREDENTIAL_STORE.set(emailNorm, record);
+    return record;
+  }
+
+  getUserByEmail(email: string): AuthenticatedUserRecord | undefined {
+    return PRODUCTION_CREDENTIAL_STORE.get(email.toLowerCase().trim());
+  }
+
+  getAllLivePartnerUsers(): AuthenticatedUserRecord[] {
+    const results: AuthenticatedUserRecord[] = [];
+    for (const record of PRODUCTION_CREDENTIAL_STORE.values()) {
+      if (record.tenantName) {
+        results.push(record);
+      }
+    }
+    return results;
   }
 }
 
