@@ -304,6 +304,12 @@ export const partnerRoutes: FastifyPluginAsync = async (fastify) => {
         defaultPerms = ['lab:orders:read', 'lab:orders:create', 'lab:specimens:create', 'lab:results:create', 'billing:invoices:create'];
       }
 
+      const activationDate = new Date();
+      const expiryDate = new Date(activationDate);
+      expiryDate.setDate(expiryDate.getDate() + 30); // 30-day billing cycle
+      const planExpiryDate = expiryDate.toISOString();
+      const planExpiryFormatted = expiryDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+
       // Register cryptographic user credential for Partner Platform login
       const registeredUser = realAuthService.registerPartnerUserCredential({
         email: body.email,
@@ -315,6 +321,7 @@ export const partnerRoutes: FastifyPluginAsync = async (fastify) => {
         roles: [primaryRole, 'HOSPITAL_ADMIN'],
         permissions: defaultPerms,
         planTier: body.planTier || 'Healthcare Partner Pro',
+        planExpiryDate: planExpiryFormatted,
         accessibleFeatures: body.features || [],
         phone: body.phone
       });
@@ -334,14 +341,18 @@ export const partnerRoutes: FastifyPluginAsync = async (fastify) => {
         subscriptionPlan: {
           tier: body.planTier,
           monthlyFee: body.monthlyFee || 6999,
-          activeFeatures: body.features
+          activeFeatures: body.features,
+          expiryDate: planExpiryFormatted,
+          expiryIso: planExpiryDate,
+          renewalCycle: 'MONTHLY'
         },
         credentials: {
           loginUrl: 'http://localhost:5173/',
           userId: registeredUser.email,
           temporaryPassword: plainPassword,
           role: registeredUser.roles[0],
-          activatedAt: new Date().toISOString()
+          activatedAt: activationDate.toISOString(),
+          planExpiryDate: planExpiryFormatted
         }
       };
 
@@ -365,6 +376,7 @@ export const partnerRoutes: FastifyPluginAsync = async (fastify) => {
         tenantName: p.tenantName,
         organizationType: p.organizationType,
         planTier: p.planTier,
+        planExpiryDate: p.planExpiryDate || '30 days from activation',
         accessibleFeatures: p.accessibleFeatures,
         phone: p.phone,
         status: 'LIVE_ACTIVE'

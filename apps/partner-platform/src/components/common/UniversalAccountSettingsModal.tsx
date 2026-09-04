@@ -13,6 +13,7 @@ export interface UniversalAccountSettingsModalProps {
     tenantName?: string;
     organizationType?: string;
   } | undefined;
+  initialTab?: 'BANK' | 'ADDRESS' | 'CERTIFICATES' | 'SECURITY_SEAL' | 'PASSWORD' | undefined;
   onSettingsSaved?: ((data: any) => void) | undefined;
 }
 
@@ -55,9 +56,18 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
   isOpen,
   onClose,
   currentUser,
+  initialTab,
   onSettingsSaved
 }) => {
-  const [activeTab, setActiveTab] = useState<'BANK' | 'ADDRESS' | 'CERTIFICATES' | 'SECURITY_SEAL' | 'PASSWORD'>('BANK');
+  const [activeTab, setActiveTab] = useState<'BANK' | 'ADDRESS' | 'CERTIFICATES' | 'SECURITY_SEAL' | 'PASSWORD'>(
+    initialTab || 'BANK'
+  );
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab, isOpen]);
   const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isAiScanning, setIsAiScanning] = useState<boolean>(false);
@@ -305,7 +315,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
     setTimeout(() => setSaveSuccessMessage(null), 4500);
   };
 
-  const handleSavePassword = (e: React.FormEvent) => {
+  const handleSavePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
@@ -322,6 +332,35 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
     if (securityData.newPassword !== securityData.confirmPassword) {
       setErrorMessage('New password and confirm password do not match.');
       return;
+    }
+
+    // Call API Gateway to update password
+    if (currentUser?.email) {
+      try {
+        await fetch('/api/v1/auth/change-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: currentUser.email,
+            oldPassword: securityData.currentPassword,
+            newPassword: securityData.newPassword
+          })
+        });
+      } catch (err) {
+        console.warn('Backend password change sync error:', err);
+      }
+
+      // Update custom users local storage cache as well
+      try {
+        const customUsers = JSON.parse(localStorage.getItem('docsearch_custom_partner_users') || '[]');
+        const updated = customUsers.map((u: any) =>
+          u.email?.toLowerCase() === currentUser.email?.toLowerCase()
+            ? { ...u, password: securityData.newPassword }
+            : u
+        );
+        localStorage.setItem('docsearch_custom_partner_users', JSON.stringify(updated));
+        localStorage.setItem(`docsearch_day1_pwd_${currentUser.email}`, 'true');
+      } catch {}
     }
 
     const payload = {

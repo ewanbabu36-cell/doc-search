@@ -144,7 +144,7 @@ export const PartnerLifecycleManager: React.FC = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       <Tabs
         tabs={[
-          { id: 'ONBOARD_PATHOLOGY', label: '🧪 + Onboard Pathology Lab (Live Wizard)', badge: <Badge variant="success">Step-by-Step Live</Badge> },
+          { id: 'ONBOARD_PATHOLOGY', label: '✨ + Universal Partner Onboarding (5 Categories)', badge: <Badge variant="success">Hospital, Pharmacy, Lab, Clinic, Radiology</Badge> },
           { id: 'PIPELINE', label: '🔄 Lead-to-Live Pipeline Tracker', badge: <Badge variant="primary">5 Stages & Forms</Badge> },
           { id: 'DIRECTORY', label: '📋 Directory & CRM' },
           { id: 'WHATSAPP', label: '💬 AI WhatsApp Broadcaster', badge: <Badge variant="success">98.2% Open</Badge> },

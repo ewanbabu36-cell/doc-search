@@ -23,6 +23,7 @@ export interface HospitalStaffUser {
   allowedWorkspaces: OrganizationWorkspaceType[];
   defaultModule: string;
   planTier: string;
+  planExpiryDate?: string;
   accessibleFeatures: string[];
   restrictedFeatures: string[];
 }
@@ -461,6 +462,7 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess }) => {
             allowedWorkspaces: details.allowedWorkspaces,
             defaultModule: details.defaultModule,
             planTier: p.planTier || details.planTier,
+            planExpiryDate: p.planExpiryDate || '30 Days Validity',
             accessibleFeatures: p.accessibleFeatures || ['Standard Partner Workbench'],
             restrictedFeatures: details.restrictedFeatures
           };
@@ -566,6 +568,7 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess }) => {
         allowedWorkspaces: orgDetails.allowedWorkspaces,
         defaultModule: orgDetails.defaultModule,
         planTier: returnedUser?.planTier || targetUser.planTier || orgDetails.planTier,
+        planExpiryDate: returnedUser?.planExpiryDate || targetUser.planExpiryDate || '30 Days Validity',
         accessibleFeatures: returnedUser?.accessibleFeatures || targetUser.accessibleFeatures || ['Standard Partner Access'],
         restrictedFeatures: orgDetails.restrictedFeatures
       };

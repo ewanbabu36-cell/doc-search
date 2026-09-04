@@ -16,6 +16,7 @@ export interface AuthenticatedUserRecord {
   tenantName?: string | undefined;
   organizationType?: string | undefined;
   planTier?: string | undefined;
+  planExpiryDate?: string | undefined;
   accessibleFeatures?: string[] | undefined;
   phone?: string | undefined;
 }
@@ -433,6 +434,7 @@ export class RealAuthService {
     tenantName: string;
     organizationType?: string | undefined;
     planTier?: string | undefined;
+    planExpiryDate?: string | undefined;
     accessibleFeatures?: string[] | undefined;
     phone?: string | undefined;
     tenantId?: string | undefined;
@@ -467,6 +469,7 @@ export class RealAuthService {
       tenantName: data.tenantName,
       organizationType: data.organizationType || 'PATHOLOGY',
       planTier: data.planTier || 'Pathology Pro & Barcode LIMS',
+      planExpiryDate: data.planExpiryDate,
       accessibleFeatures: data.accessibleFeatures || ['LIMS Workbench', 'Barcodes', 'WhatsApp Reports'],
       phone: data.phone
     };
@@ -476,6 +479,21 @@ export class RealAuthService {
 
   getUserByEmail(email: string): AuthenticatedUserRecord | undefined {
     return PRODUCTION_CREDENTIAL_STORE.get(email.toLowerCase().trim());
+  }
+
+  changePassword(email: string, oldPassword: string, newPassword: string): boolean {
+    const emailNorm = email.toLowerCase().trim();
+    const user = PRODUCTION_CREDENTIAL_STORE.get(emailNorm);
+    if (!user) {
+      throw new Error('User not found');
+    }
+    const isOldValid = verifyPassword(oldPassword, user.passwordHash);
+    if (!isOldValid) {
+      throw new Error('Current password does not match');
+    }
+    user.passwordHash = hashPassword(newPassword);
+    PRODUCTION_CREDENTIAL_STORE.set(emailNorm, user);
+    return true;
   }
 
   getAllLivePartnerUsers(): AuthenticatedUserRecord[] {

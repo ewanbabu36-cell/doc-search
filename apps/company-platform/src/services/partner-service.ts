@@ -212,7 +212,59 @@ export class PartnerService implements IPartnerService {
     }
 
     // Local / In-Memory Mock Implementation
-    let filtered = [...this.partners];
+    let livePartnerDtos: PartnerProfileDto[] = [];
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('docsearch_live_partners');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            livePartnerDtos = parsed.map((p: any) => {
+              const pType: PartnerType =
+                p.classification === 'HOSPITAL' ? 'HOSPITAL_NETWORK' :
+                p.classification === 'CLINIC' ? 'CLINIC_GROUP' :
+                p.classification === 'PHARMACY' ? 'PHARMACY' :
+                'DIAGNOSTIC_LAB';
+              return {
+                id: p.partnerId || `PRT-${Date.now()}`,
+                tenantId: `TNT-${p.partnerId || '001'}`,
+                tenantSlug: (p.partnerName || 'partner').toLowerCase().replace(/[^a-z0-9]/g, '-'),
+                legalName: p.partnerName || 'Healthcare Facility',
+                tradeName: p.partnerName || 'Healthcare Facility',
+                partnerType: pType,
+                lifecycleStatus: 'ACTIVE' as const,
+                verificationStatus: 'VERIFIED' as const,
+                onboardingStep: 'COMPLETED',
+                onboardingProgressPercent: 100,
+                primaryContact: {
+                  name: p.contactPerson || 'Authorized Representative',
+                  email: p.credentials?.userId || p.email || 'partner@docsearch.health',
+                  phone: p.phone || '+91 98000 00000',
+                  roleTitle: p.credentials?.role || 'Partner Director'
+                },
+                branchCount: 1,
+                userCount: 5,
+                metadata: {
+                  classification: p.classification,
+                  planTier: p.subscriptionPlan?.tier,
+                  planExpiryDate: p.credentials?.planExpiryDate || p.subscriptionPlan?.expiryDate || p.subscriptionPlan?.planExpiryDate,
+                  credentials: p.credentials,
+                  monthlyFee: p.subscriptionPlan?.monthlyFee,
+                  city: p.city
+                },
+                createdAt: p.credentials?.activatedAt || new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+              };
+            });
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to parse docsearch_live_partners:', err);
+      }
+    }
+
+    const liveIds = new Set(livePartnerDtos.map((p) => p.id));
+    let filtered = [...livePartnerDtos, ...this.partners.filter((p) => !liveIds.has(p.id))];
 
     if (filters?.search) {
       const q = filters.search.toLowerCase().trim();

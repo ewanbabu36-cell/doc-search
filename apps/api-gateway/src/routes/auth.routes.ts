@@ -105,6 +105,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
           tenantName: user.tenantName,
           organizationType: user.organizationType,
           planTier: user.planTier,
+          planExpiryDate: user.planExpiryDate,
           accessibleFeatures: user.accessibleFeatures
         }
       }
@@ -211,9 +212,36 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       tenantName: p.tenantName,
       organizationType: p.organizationType,
       planTier: p.planTier,
+      planExpiryDate: p.planExpiryDate || '30 days from activation',
       accessibleFeatures: p.accessibleFeatures,
       phone: p.phone
     }));
     return reply.status(200).send({ success: true, data: partners });
+  });
+
+  // POST /api/v1/auth/change-password (First-time password setup and self-service password updates)
+  fastify.post('/api/v1/auth/change-password', async (request, reply) => {
+    const body = request.body as { email: string; currentPassword?: string; oldPassword?: string; newPassword: string };
+    if (!body || !body.email || !(body.currentPassword || body.oldPassword) || !body.newPassword) {
+      throw new AppError({
+        message: 'email, currentPassword, and newPassword are required',
+        code: ErrorCode.VALIDATION_ERROR,
+        statusCode: 400
+      });
+    }
+    const currentPass = body.currentPassword || body.oldPassword || '';
+    try {
+      realAuthService.changePassword(body.email, currentPass, body.newPassword);
+      return reply.status(200).send({
+        success: true,
+        message: 'Password successfully updated! Your account is now secured.'
+      });
+    } catch (err: any) {
+      throw new AppError({
+        message: err.message || 'Password update failed',
+        code: ErrorCode.BAD_REQUEST,
+        statusCode: 400
+      });
+    }
   });
 };

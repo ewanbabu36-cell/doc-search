@@ -41,6 +41,8 @@ export interface ActivationResult {
     tier: string;
     monthlyFee: number;
     activeFeatures: string[];
+    planExpiryDate?: string;
+    expiryDate?: string;
   };
   credentials: {
     loginUrl: string;
@@ -48,6 +50,7 @@ export interface ActivationResult {
     temporaryPassword: string;
     role: string;
     activatedAt: string;
+    planExpiryDate?: string;
   };
 }
 
@@ -641,8 +644,27 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
         }
       };
 
+      // Compute 30-day renewal date
+      const expiryDateObj = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      const planExpiryFormatted = expiryDateObj.toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+
       if (res.ok && json.data) {
-        resultData = json.data;
+        resultData = {
+          ...json.data,
+          subscriptionPlan: {
+            ...json.data.subscriptionPlan,
+            planExpiryDate: json.data.subscriptionPlan?.planExpiryDate || json.data.subscriptionPlan?.expiryDate || planExpiryFormatted,
+            expiryDate: json.data.subscriptionPlan?.expiryDate || planExpiryFormatted
+          },
+          credentials: {
+            ...json.data.credentials,
+            planExpiryDate: json.data.credentials?.planExpiryDate || json.data.subscriptionPlan?.expiryDate || planExpiryFormatted
+          }
+        };
       } else {
         // Fallback activation voucher if offline
         resultData = {
@@ -656,14 +678,17 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
           subscriptionPlan: {
             tier: formData.planTier,
             monthlyFee: formData.monthlyFee,
-            activeFeatures: formData.features
+            activeFeatures: formData.features,
+            planExpiryDate: planExpiryFormatted,
+            expiryDate: planExpiryFormatted
           },
           credentials: {
             loginUrl: 'http://localhost:5173/',
             userId: formData.email,
             temporaryPassword: formData.password,
             role: getRoleByOrg(formData.classification),
-            activatedAt: new Date().toISOString()
+            activatedAt: new Date().toISOString(),
+            planExpiryDate: planExpiryFormatted
           }
         };
       }
@@ -713,6 +738,7 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
         allowedWorkspaces: [formData.classification],
         defaultModule: getModuleByOrg(formData.classification),
         planTier: formData.planTier,
+        planExpiryDate: resultData.credentials?.planExpiryDate || planExpiryFormatted,
         accessibleFeatures: formData.features,
         restrictedFeatures: formData.classification === 'HOSPITAL' ? ['None (Full Hospital Scope)'] : ['Hospital IPD Wards']
       };
@@ -1349,6 +1375,30 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
                     </button>
                   </div>
                 </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', color: '#94A3B8', fontWeight: 700, marginBottom: '6px' }}>
+                    SUBSCRIPTION PLAN VALIDITY & RENEWAL
+                  </label>
+                  <div
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      backgroundColor: '#0B132B',
+                      border: '1px solid #10B981',
+                      color: '#10B981',
+                      fontWeight: 800,
+                      fontSize: '0.875rem',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}
+                  >
+                    <span>📅 30 Days (Renews ~{new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })})</span>
+                    <span style={{ fontSize: '0.6875rem', backgroundColor: 'rgba(16, 185, 129, 0.2)', padding: '2px 6px', borderRadius: '4px' }}>Auto-Renew</span>
+                  </div>
+                </div>
               </div>
 
               {/* Onboarding Summary Bar */}
@@ -1510,6 +1560,19 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
                     </button>
                   </div>
                 </div>
+
+                {/* Plan Validity & Expiry */}
+                <div style={{ backgroundColor: '#1E293B', padding: '14px', borderRadius: '10px' }}>
+                  <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 700, display: 'block', marginBottom: '4px' }}>
+                    PLAN VALIDITY & EXPIRY DATE
+                  </span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ color: '#F59E0B', fontWeight: 900, fontSize: '0.9375rem' }}>
+                      📅 {activationResult.credentials.planExpiryDate || activationResult.subscriptionPlan.expiryDate || '30 Days Validity'}
+                    </span>
+                    <Badge variant="warning">Auto-Renews</Badge>
+                  </div>
+                </div>
               </div>
 
               {/* Active Features Badges */}
@@ -1645,6 +1708,7 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
                     planTier: activationResult.subscriptionPlan.tier,
                     monthlyFee: activationResult.subscriptionPlan.monthlyFee,
                     features: activationResult.subscriptionPlan.activeFeatures,
+                    planExpiryDate: activationResult.credentials.planExpiryDate || activationResult.subscriptionPlan.expiryDate,
                     activatedAt: activationResult.credentials.activatedAt
                   })
                 }
@@ -1696,6 +1760,7 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
                       planTier: activationResult.subscriptionPlan.tier,
                       monthlyFee: activationResult.subscriptionPlan.monthlyFee,
                       features: activationResult.subscriptionPlan.activeFeatures,
+                      planExpiryDate: activationResult.credentials.planExpiryDate || activationResult.subscriptionPlan.expiryDate,
                       activatedAt: activationResult.credentials.activatedAt
                     })
                   }
@@ -1735,6 +1800,7 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
                       planTier: activationResult.subscriptionPlan.tier,
                       monthlyFee: activationResult.subscriptionPlan.monthlyFee,
                       features: activationResult.subscriptionPlan.activeFeatures,
+                      planExpiryDate: activationResult.credentials.planExpiryDate || activationResult.subscriptionPlan.expiryDate,
                       activatedAt: activationResult.credentials.activatedAt
                     })
                   }
@@ -1891,6 +1957,7 @@ Congratulations! *${activationResult.partnerName}* (${currentPreset.label}) is n
 💎 *Assigned Plan & Capacity (Menu Book):*
 • Tier: ${activationResult.subscriptionPlan.tier}
 • Active Features: ${activationResult.subscriptionPlan.activeFeatures.slice(0, 3).join(', ')}...
+• Plan Expiry & Renewal: ${activationResult.credentials.planExpiryDate || activationResult.subscriptionPlan.expiryDate || '30 Days Active'}
 • 24x7 Digital Portal Access: Enabled
 
 📦 *Speed Post Docket ID:* SP-IN-2026-${activationResult.partnerId.replace(/\D/g, '').padEnd(6, '9')}
@@ -1905,7 +1972,7 @@ Please change your password upon first login.`}
                       Close
                     </Button>
                     <a
-                      href={`https://wa.me/${activationResult.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Dear ${activationResult.contactPerson},\nCongratulations! ${activationResult.partnerName} (${currentPreset.label}) is now LIVE on Doc Search.\nLogin: ${activationResult.credentials.loginUrl}\nUser ID: ${activationResult.credentials.userId}\nPassword: ${activationResult.credentials.temporaryPassword}`)}`}
+                      href={`https://wa.me/${activationResult.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Dear ${activationResult.contactPerson},\nCongratulations! ${activationResult.partnerName} (${currentPreset.label}) is now LIVE on Doc Search.\nLogin: ${activationResult.credentials.loginUrl}\nUser ID: ${activationResult.credentials.userId}\nPassword: ${activationResult.credentials.temporaryPassword}\nPlan Valid Till: ${activationResult.credentials.planExpiryDate || activationResult.subscriptionPlan.expiryDate || '30 Days'}`)}`}
                       target="_blank"
                       rel="noreferrer"
                       onClick={() => setIsWhatsAppModalOpen(false)}

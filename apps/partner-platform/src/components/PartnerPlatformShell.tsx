@@ -104,6 +104,14 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [settingsInitialTab, setSettingsInitialTab] = useState<'BANK' | 'ADDRESS' | 'CERTIFICATES' | 'SECURITY_SEAL' | 'PASSWORD'>('BANK');
+  const [isDay1Dismissed, setIsDay1Dismissed] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(`docsearch_day1_dismissed_${currentUser?.email || 'default'}`) === 'true';
+    }
+    return false;
+  });
+  const isPwdChanged = typeof window !== 'undefined' && localStorage.getItem(`docsearch_day1_pwd_${currentUser?.email || 'default'}`) === 'true';
 
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -316,10 +324,45 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                 <span>🔍 Quick Launcher</span>
                 <kbd style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: '#38BDF8', padding: '1px 5px', borderRadius: '4px', fontSize: '0.625rem', fontFamily: 'monospace' }}>Ctrl+K</kbd>
               </button>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
               <span style={{ fontSize: '1rem' }}>{currentWsp.icon}</span>
               <span style={{ fontSize: '0.875rem', fontWeight: 800 }}>{currentWsp.name}</span>
               <Badge variant="primary" style={{ fontSize: '0.625rem', padding: '1px 5px' }}>{currentWsp.badge}</Badge>
+              {currentUser?.planExpiryDate ? (
+                <span
+                  style={{
+                    fontSize: '0.6875rem',
+                    fontWeight: 800,
+                    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                    border: '1px solid #10B981',
+                    color: '#34D399',
+                    padding: '2px 8px',
+                    borderRadius: '6px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                  title={`Plan active till ${currentUser.planExpiryDate}`}
+                >
+                  <span>🟢 Active</span>
+                  <span style={{ color: '#94A3B8' }}>•</span>
+                  <span>Renews: {currentUser.planExpiryDate}</span>
+                </span>
+              ) : (
+                <span
+                  style={{
+                    fontSize: '0.6875rem',
+                    fontWeight: 700,
+                    backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                    border: '1px solid #06B6D4',
+                    color: '#38BDF8',
+                    padding: '2px 8px',
+                    borderRadius: '6px'
+                  }}
+                >
+                  🟢 Active B2B SaaS
+                </span>
+              )}
             </div>
             </div>
           }
@@ -431,6 +474,137 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
           )}
         </div>
       </div>
+
+      {/* DAY-1 PARTNER SETUP & SECURITY CHECKLIST */}
+      {!isDay1Dismissed && (
+        <div
+          style={{
+            backgroundColor: '#0F172A',
+            borderBottom: '2px solid #06B6D4',
+            padding: '10px 20px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '12px'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '1.4rem' }}>🚀</span>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <strong style={{ color: '#F8FAFC', fontSize: '0.875rem' }}>
+                  Day-1 Healthcare Partner Setup & Security Checklist
+                </strong>
+                <Badge variant="warning">Action Recommended</Badge>
+                {currentUser?.planExpiryDate && (
+                  <span style={{ fontSize: '0.75rem', color: '#10B981', fontWeight: 800 }}>
+                    📅 Plan Active Till: {currentUser.planExpiryDate}
+                  </span>
+                )}
+              </div>
+              <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
+                Complete these initial security & settlement steps to activate automated escrow payouts:
+              </span>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            {/* Step 1: Change Password */}
+            <button
+              type="button"
+              onClick={() => {
+                setSettingsInitialTab('PASSWORD');
+                setIsSettingsModalOpen(true);
+              }}
+              style={{
+                backgroundColor: isPwdChanged ? 'rgba(16, 185, 129, 0.2)' : '#0284C7',
+                border: isPwdChanged ? '1px solid #10B981' : 'none',
+                color: isPwdChanged ? '#6EE7B7' : '#FFF',
+                padding: '6px 12px',
+                borderRadius: '8px',
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <span>{isPwdChanged ? '✓' : '🔐'}</span>
+              <span>{isPwdChanged ? 'Password Changed' : '1. Change Password'}</span>
+            </button>
+
+            {/* Step 2: Bank UPI Settlement */}
+            <button
+              type="button"
+              onClick={() => {
+                setSettingsInitialTab('BANK');
+                setIsSettingsModalOpen(true);
+              }}
+              style={{
+                backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                border: '1px solid #F59E0B',
+                color: '#FBBF24',
+                padding: '6px 12px',
+                borderRadius: '8px',
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <span>🏦</span>
+              <span>2. Set Bank & UPI</span>
+            </button>
+
+            {/* Step 3: Add Staff Account */}
+            <button
+              type="button"
+              onClick={() => setActiveModule('staff-administration')}
+              style={{
+                backgroundColor: 'rgba(139, 92, 246, 0.15)',
+                border: '1px solid #8B5CF6',
+                color: '#C4B5FD',
+                padding: '6px 12px',
+                borderRadius: '8px',
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <span>👥</span>
+              <span>3. Add Staff Account</span>
+            </button>
+
+            {/* Step 4: Dismiss */}
+            <button
+              type="button"
+              onClick={() => {
+                setIsDay1Dismissed(true);
+                localStorage.setItem(`docsearch_day1_dismissed_${currentUser?.email || 'default'}`, 'true');
+              }}
+              style={{
+                backgroundColor: 'transparent',
+                border: 'none',
+                color: '#64748b',
+                padding: '4px 8px',
+                fontSize: '0.75rem',
+                cursor: 'pointer'
+              }}
+              title="Dismiss Checklist"
+            >
+              ✕ Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
       <ContentArea>
         {activeModule === 'executive-command-center' && (
           <ExecutiveCommandDomainManager tenantId="11111111-1111-4111-8111-111111111111" />
@@ -522,6 +696,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
         currentUser={currentUser}
+        initialTab={settingsInitialTab}
       />
     </AppShell>
   );

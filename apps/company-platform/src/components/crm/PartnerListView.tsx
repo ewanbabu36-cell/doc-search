@@ -26,9 +26,44 @@ import {
   EmptyState
 } from '@docsearch/ui-kit';
 import { partnerService, CANONICAL_PARTNER_CLASSIFICATIONS, type PartnerListFilters } from '../../services/partner-service.js';
+import { generateAndDownloadWelcomeKitPdf, openPrintableSpeedPostDossier } from '../../utils/partnerWelcomeKitPdf.js';
 
 export interface PartnerListViewProps {
   onSelectPartner: (partnerId: string) => void;
+}
+
+export interface PartnerCustomMetadata {
+  classification?: string;
+  planTier?: string;
+  planExpiryDate?: string;
+  credentials?: {
+    loginUrl?: string;
+    userId?: string;
+    temporaryPassword?: string;
+    role?: string;
+    activatedAt?: string;
+    planExpiryDate?: string;
+  };
+  monthlyFee?: number;
+  accessibleFeatures?: string[];
+  city?: string;
+}
+
+export function getPartnerMeta(partner?: PartnerProfileDto | null): PartnerCustomMetadata {
+  if (!partner) return {};
+  return (partner.metadata as unknown as PartnerCustomMetadata) || {};
+}
+
+export function getCategoryIcon(partner?: PartnerProfileDto | null): string {
+  if (!partner) return '🏥';
+  const meta = getPartnerMeta(partner);
+  const cls = String(meta.classification || partner.partnerType || '').toUpperCase();
+  if (cls.includes('HOSPITAL')) return '🏥';
+  if (cls.includes('PHARMACY')) return '💊';
+  if (cls.includes('CLINIC')) return '🩺';
+  if (cls.includes('DIAGNOSTIC') && !cls.includes('LAB')) return '🔬';
+  if (cls.includes('LAB') || cls.includes('PATHOLOGY')) return '🧪';
+  return '🏥';
 }
 
 export const PartnerListView: React.FC<PartnerListViewProps> = ({ onSelectPartner }) => {
@@ -44,6 +79,14 @@ export const PartnerListView: React.FC<PartnerListViewProps> = ({ onSelectPartne
   const [typeFilter, setTypeFilter] = useState<PartnerType | 'ALL'>('ALL');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [viewCredModal, setViewCredModal] = useState<PartnerProfileDto | null>(null);
+  const [copiedLabel, setCopiedLabel] = useState<string | null>(null);
+
+  const copyText = (val: string, label: string) => {
+    navigator.clipboard.writeText(val);
+    setCopiedLabel(`Copied ${label}!`);
+    setTimeout(() => setCopiedLabel(null), 2500);
+  };
 
   useEffect(() => {
     partnerService.getClassifications().then((items) => {
@@ -221,10 +264,10 @@ export const PartnerListView: React.FC<PartnerListViewProps> = ({ onSelectPartne
         >
           <div>
             <label style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--ds-color-text-muted)', marginBottom: '4px', display: 'block' }}>
-              Search Partner / Organization
+              Search Partners
             </label>
             <Input
-              placeholder="Search by legal, trade name, or contact..."
+              placeholder="Search by name, contact, email..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -236,14 +279,11 @@ export const PartnerListView: React.FC<PartnerListViewProps> = ({ onSelectPartne
             </label>
             <Select
               options={[
-                { label: 'All Lifecycle Statuses', value: 'ALL' },
-                { label: 'Lead', value: 'LEAD' },
-                { label: 'Prospect', value: 'PROSPECT' },
-                { label: 'Onboarding', value: 'ONBOARDING' },
-                { label: 'Verification', value: 'VERIFICATION' },
-                { label: 'Active', value: 'ACTIVE' },
-                { label: 'Suspended', value: 'SUSPENDED' },
-                { label: 'Offboarded', value: 'OFFBOARDED' }
+                { label: 'All Lifecycle Stages', value: 'ALL' },
+                { label: '🟢 Active', value: 'ACTIVE' },
+                { label: '🟡 Verification', value: 'VERIFICATION' },
+                { label: '🔵 Onboarding', value: 'ONBOARDING' },
+                { label: '🔴 Suspended', value: 'SUSPENDED' }
               ]}
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as PartnerLifecycleStatus | 'ALL')}
@@ -284,6 +324,12 @@ export const PartnerListView: React.FC<PartnerListViewProps> = ({ onSelectPartne
         </div>
       )}
 
+      {copiedLabel && (
+        <div style={{ backgroundColor: 'rgba(6, 182, 212, 0.2)', border: '1px solid #06B6D4', borderRadius: '8px', padding: '8px 14px', color: '#38BDF8', fontSize: '0.8125rem', fontWeight: 700 }}>
+          ✓ {copiedLabel}
+        </div>
+      )}
+
       <PartnerOnboardingModal
         isOpen={isOnboardingOpen}
         onClose={() => setIsOnboardingOpen(false)}
@@ -317,28 +363,45 @@ export const PartnerListView: React.FC<PartnerListViewProps> = ({ onSelectPartne
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Partner Name & Organization</TableHead>
+                  <TableHead>Partner & Facility</TableHead>
                   <TableHead>Classification</TableHead>
+                  <TableHead>Plan & Validity</TableHead>
                   <TableHead>Lifecycle Stage</TableHead>
                   <TableHead>Verification</TableHead>
                   <TableHead>Branches</TableHead>
                   <TableHead>Primary Contact</TableHead>
-                  <TableHead style={{ textAlign: 'right' }}>Quick Actions</TableHead>
+                  <TableHead style={{ textAlign: 'right' }}>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {partners.map((partner) => (
+                {partners.map((partner) => {
+                  const meta = getPartnerMeta(partner);
+                  return (
                   <TableRow key={partner.id}>
                     <TableCell>
-                      <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <strong style={{ color: 'var(--ds-color-text-primary)' }}>{partner.tradeName}</strong>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--ds-color-text-muted)' }}>
-                          {partner.legalName}
-                        </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '1.25rem' }}>{getCategoryIcon(partner)}</span>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <strong style={{ color: 'var(--ds-color-text-primary)' }}>{partner.tradeName}</strong>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--ds-color-text-muted)' }}>
+                            {partner.legalName}
+                          </span>
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant="neutral">{partner.partnerType}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#38BDF8' }}>
+                          {meta.planTier || 'Standard Tier'}
+                        </span>
+                        <span style={{ fontSize: '0.6875rem', color: '#10B981', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span>📅</span>
+                          <span>Renews: {meta.planExpiryDate || '30-Day Cycle'}</span>
+                        </span>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge
@@ -377,6 +440,97 @@ export const PartnerListView: React.FC<PartnerListViewProps> = ({ onSelectPartne
                     </TableCell>
                     <TableCell style={{ textAlign: 'right' }}>
                       <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                        {meta.credentials && (
+                          <button
+                            type="button"
+                            onClick={() => setViewCredModal(partner)}
+                            style={{
+                              backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                              border: '1px solid #06B6D4',
+                              color: '#38BDF8',
+                              borderRadius: '6px',
+                              padding: '4px 8px',
+                              fontSize: '0.75rem',
+                              fontWeight: 800,
+                              cursor: 'pointer'
+                            }}
+                            title="View Login Credentials"
+                          >
+                            🔐 Creds
+                          </button>
+                        )}
+                        {meta.credentials && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                generateAndDownloadWelcomeKitPdf({
+                                  partnerId: partner.id,
+                                  partnerName: partner.tradeName,
+                                  classification: meta.classification || 'PATHOLOGY',
+                                  contactPerson: partner.primaryContact.name,
+                                  phone: partner.primaryContact.phone || '+91 98765 43210',
+                                  email: meta.credentials?.userId || partner.primaryContact.email,
+                                  password: meta.credentials?.temporaryPassword || 'DocSearch2026!',
+                                  city: meta.city || 'India',
+                                  state: 'India',
+                                  planTier: meta.planTier || 'Standard Tier',
+                                  monthlyFee: meta.monthlyFee || 2999,
+                                  features: meta.accessibleFeatures || ['Standard Healthcare Portal'],
+                                  planExpiryDate: meta.planExpiryDate,
+                                  activatedAt: partner.createdAt
+                                })
+                              }
+                              style={{
+                                backgroundColor: 'rgba(2, 132, 199, 0.15)',
+                                border: '1px solid #0284C7',
+                                color: '#38BDF8',
+                                borderRadius: '6px',
+                                padding: '4px 8px',
+                                fontSize: '0.75rem',
+                                fontWeight: 800,
+                                cursor: 'pointer'
+                              }}
+                              title="Download Welcome Kit PDF"
+                            >
+                              📥 Kit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                openPrintableSpeedPostDossier({
+                                  partnerId: partner.id,
+                                  partnerName: partner.tradeName,
+                                  classification: meta.classification || 'PATHOLOGY',
+                                  contactPerson: partner.primaryContact.name,
+                                  phone: partner.primaryContact.phone || '+91 98765 43210',
+                                  email: meta.credentials?.userId || partner.primaryContact.email,
+                                  password: meta.credentials?.temporaryPassword || 'DocSearch2026!',
+                                  city: meta.city || 'India',
+                                  state: 'India',
+                                  planTier: meta.planTier || 'Standard Tier',
+                                  monthlyFee: meta.monthlyFee || 2999,
+                                  features: meta.accessibleFeatures || ['Standard Healthcare Portal'],
+                                  planExpiryDate: meta.planExpiryDate,
+                                  activatedAt: partner.createdAt
+                                })
+                              }
+                              style={{
+                                backgroundColor: 'rgba(234, 88, 12, 0.15)',
+                                border: '1px solid #EA580C',
+                                color: '#FB923C',
+                                borderRadius: '6px',
+                                padding: '4px 8px',
+                                fontSize: '0.75rem',
+                                fontWeight: 800,
+                                cursor: 'pointer'
+                              }}
+                              title="Print Speed Post Official Dispatch Dossier"
+                            >
+                              📮 Post
+                            </button>
+                          </>
+                        )}
                         {partner.lifecycleStatus !== 'ACTIVE' ? (
                           <button
                             type="button"
@@ -418,7 +572,8 @@ export const PartnerListView: React.FC<PartnerListViewProps> = ({ onSelectPartne
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           </TableContainer>
@@ -432,6 +587,103 @@ export const PartnerListView: React.FC<PartnerListViewProps> = ({ onSelectPartne
           />
         </Card>
       )}
+
+      {/* CREDENTIALS QUICK VIEW MODAL */}
+      {viewCredModal && (() => {
+        const meta = getPartnerMeta(viewCredModal);
+        return (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.85)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 9999,
+              padding: '16px'
+            }}
+          >
+            <div
+              style={{
+                backgroundColor: '#0F172A',
+                border: '1.5px solid #06B6D4',
+                borderRadius: '16px',
+                maxWidth: '520px',
+                width: '100%',
+                padding: '24px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px',
+                boxShadow: '0 20px 60px rgba(6, 182, 212, 0.25)'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #334155', paddingBottom: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '1.3rem' }}>{getCategoryIcon(viewCredModal)}</span>
+                  <strong style={{ color: '#F8FAFC', fontSize: '1.1rem' }}>
+                    {viewCredModal.tradeName}
+                  </strong>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setViewCredModal(null)}
+                  style={{ backgroundColor: 'transparent', border: 'none', color: '#94A3B8', fontSize: '1.2rem', cursor: 'pointer' }}
+                >
+                  ✖
+                </button>
+              </div>
+
+              <div style={{ backgroundColor: '#1E293B', borderRadius: '10px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div>
+                  <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 700, display: 'block' }}>PORTAL LOGIN URL</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2px' }}>
+                    <a href="http://localhost:5173/" target="_blank" rel="noreferrer" style={{ color: '#38BDF8', fontWeight: 700, fontSize: '0.875rem', textDecoration: 'underline' }}>
+                      http://localhost:5173/
+                    </a>
+                    <button type="button" onClick={() => copyText('http://localhost:5173/', 'URL')} style={{ background: '#334155', color: '#FFF', border: 'none', borderRadius: '4px', padding: '2px 8px', fontSize: '0.6875rem', cursor: 'pointer' }}>Copy</button>
+                  </div>
+                </div>
+
+                <div>
+                  <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 700, display: 'block' }}>AUTHORIZED USER ID (EMAIL)</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2px' }}>
+                    <span style={{ color: '#F8FAFC', fontWeight: 800, fontSize: '0.875rem' }}>{meta.credentials?.userId || viewCredModal.primaryContact.email}</span>
+                    <button type="button" onClick={() => copyText(meta.credentials?.userId || viewCredModal.primaryContact.email, 'Email')} style={{ background: '#334155', color: '#FFF', border: 'none', borderRadius: '4px', padding: '2px 8px', fontSize: '0.6875rem', cursor: 'pointer' }}>Copy</button>
+                  </div>
+                </div>
+
+                <div>
+                  <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 700, display: 'block' }}>TEMPORARY PASSWORD</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2px' }}>
+                    <span style={{ color: '#10B981', fontWeight: 900, fontSize: '0.9375rem', fontFamily: 'monospace' }}>{meta.credentials?.temporaryPassword || '••••••••'}</span>
+                    <button type="button" onClick={() => copyText(meta.credentials?.temporaryPassword || '', 'Password')} style={{ background: '#334155', color: '#FFF', border: 'none', borderRadius: '4px', padding: '2px 8px', fontSize: '0.6875rem', cursor: 'pointer' }}>Copy</button>
+                  </div>
+                </div>
+
+                <div>
+                  <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 700, display: 'block' }}>PLAN EXPIRY & RENEWAL DATE</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2px' }}>
+                    <span style={{ color: '#F59E0B', fontWeight: 800, fontSize: '0.875rem' }}>
+                      📅 {meta.planExpiryDate || '30-Day Auto Cycle'}
+                    </span>
+                    <Badge variant="warning">Auto-Renews</Badge>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                <Button variant="outline" size="sm" onClick={() => setViewCredModal(null)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };

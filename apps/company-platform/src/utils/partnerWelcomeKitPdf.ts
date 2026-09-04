@@ -21,11 +21,12 @@ export interface PartnerWelcomeKitData {
   planTier: string;
   monthlyFee: number;
   features: string[];
-  activatedAt?: string;
-  dailyCapacity?: number;
-  staffAccountsLimit?: number;
-  whatsappCreditsLimit?: number;
-  cloudStorageGb?: number;
+  planExpiryDate?: string | undefined;
+  activatedAt?: string | undefined;
+  dailyCapacity?: number | undefined;
+  staffAccountsLimit?: number | undefined;
+  whatsappCreditsLimit?: number | undefined;
+  cloudStorageGb?: number | undefined;
 }
 
 function escapePdfText(text: string | number | undefined | null): string {
@@ -204,11 +205,12 @@ export function generateAndDownloadWelcomeKitPdf(data: PartnerWelcomeKitData): v
 
   // 4. Section 2: Subscribed Plan & Financial Schedule
   const planTop = credTop - 110;
+  const expiryStr = data.planExpiryDate || '30 Days Validity (Auto-Renewable)';
   contentLines.push('q');
   contentLines.push('0.96 0.97 0.99 rg');
   contentLines.push('0.8 0.85 0.9 RG');
   contentLines.push('1 w');
-  contentLines.push(`${margin} ${planTop - 75} ${pageWidth - 2 * margin} 75 re b`);
+  contentLines.push(`${margin} ${planTop - 85} ${pageWidth - 2 * margin} 85 re b`);
   contentLines.push('Q');
 
   contentLines.push('BT');
@@ -219,18 +221,25 @@ export function generateAndDownloadWelcomeKitPdf(data: PartnerWelcomeKitData): v
 
   contentLines.push('/F1 8.5 Tf');
   contentLines.push('0.2 0.3 0.4 rg');
-  contentLines.push(`1 0 0 1 ${margin + 14} ${planTop - 36} Tm`);
+  contentLines.push(`1 0 0 1 ${margin + 14} ${planTop - 34} Tm`);
   contentLines.push(`(${escapePdfText(`Subscribed Plan Tier:  ${data.planTier.toUpperCase()}  (Active B2B SaaS Tier)`)}) Tj`);
 
-  contentLines.push(`1 0 0 1 ${margin + 14} ${planTop - 52} Tm`);
+  contentLines.push(`1 0 0 1 ${margin + 14} ${planTop - 48} Tm`);
   contentLines.push(`(${escapePdfText(`Monthly Subscription Fee:  INR ${data.monthlyFee.toLocaleString('en-IN')} / month  (+ 18% GST as per Indian Tax Code)`)}) Tj`);
 
-  contentLines.push(`1 0 0 1 ${margin + 14} ${planTop - 66} Tm`);
+  contentLines.push('/F2 8.5 Tf');
+  contentLines.push('0.06 0.5 0.35 rg');
+  contentLines.push(`1 0 0 1 ${margin + 14} ${planTop - 62} Tm`);
+  contentLines.push(`(${escapePdfText(`Plan Validity & Renewal:   ${expiryStr}  (30-Day Escrow Cycle)`)}) Tj`);
+
+  contentLines.push('/F1 8 Tf');
+  contentLines.push('0.3 0.4 0.5 rg');
+  contentLines.push(`1 0 0 1 ${margin + 14} ${planTop - 76} Tm`);
   contentLines.push('(Settlement Cycle: Monthly Automated Escrow Clearing  |  Payment Gateway: Instant UPI & NetBanking) Tj');
   contentLines.push('ET');
 
   // 5. Section 3: Feature Capacity & Quota Matrix (The "Menu Book")
-  const menuTop = planTop - 95;
+  const menuTop = planTop - 100;
   contentLines.push('q');
   contentLines.push('0.98 0.98 1.0 rg');
   contentLines.push('0.2 0.5 0.8 RG');
@@ -455,7 +464,7 @@ export function openPrintableSpeedPostDossier(data: PartnerWelcomeKitData): void
 
         <!-- Credentials Box -->
         <div class="card" style="border-left: 5px solid #06b6d4;">
-          <h3 style="margin: 0 0 10px; font-size: 16px; color: #0f172a;">🔐 Official Partner Access Credentials</h3>
+          <h3 style="margin: 0 0 10px; font-size: 16px; color: #0f172a;">🔐 Official Partner Access Credentials & Subscription Schedule</h3>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 14px;">
             <div>
               <span style="color: #64748b; font-size: 12px;">Partner Login URL:</span><br/>
@@ -472,6 +481,14 @@ export function openPrintableSpeedPostDossier(data: PartnerWelcomeKitData): void
             <div>
               <span style="color: #64748b; font-size: 12px;">Temporary Access Password:</span><br/>
               <strong style="color: #059669; font-family: monospace; font-size: 16px;">${data.password}</strong>
+            </div>
+            <div>
+              <span style="color: #64748b; font-size: 12px;">Plan Validity & Renewal Date:</span><br/>
+              <strong style="color: #ea580c; font-weight: 800;">📅 ${data.planExpiryDate || '30 Days Validity (Auto-Renewable)'}</strong>
+            </div>
+            <div>
+              <span style="color: #64748b; font-size: 12px;">Settlement Gateway:</span><br/>
+              <strong style="color: #0f172a;">Instant UPI Escrow Split (Daily T+1)</strong>
             </div>
           </div>
         </div>
