@@ -1,6 +1,7 @@
 import {
   getDatabase,
   patients,
+  patientContacts,
   encounters,
   encounterQueues,
   consultations,
@@ -12,13 +13,14 @@ import {
   pharmacyPrescriptionItems,
   pharmacyDispensing,
   eq,
+  ne,
   and,
   desc,
   asc,
   type Patient,
   type Encounter
 } from '@docsearch/database';
-import { AppError, ErrorCode, createLogger } from '@docsearch/shared-core';
+import { AppError, ErrorCode, createLogger, normalizePhoneNumber } from '@docsearch/shared-core';
 import { labDiagnosticsRepository } from './LabDiagnosticsRepository.js';
 
 const logger = createLogger('clinical-workflow-repository');
@@ -33,6 +35,10 @@ function requireDb(dbClient = getDatabase()) {
     });
   }
   return dbClient;
+}
+
+function runInTx<T>(db: any, fn: (tx: any) => Promise<T>): Promise<T> {
+  return typeof db.transaction === 'function' ? db.transaction(fn) : fn(db);
 }
 
 export interface CreatePatientInput {
@@ -332,8 +338,30 @@ export class ClinicalWorkflowRepository {
         .select()
         .from(patients)
         .where(and(eq(patients.tenantId, tenantId), eq(patients.id, patientId)));
-      return found || null;
+      if (!found) return null;
+
+      try {
+        const [contact] = await db
+          .select()
+          .from(patientContacts)
+          .where(and(eq(patientContacts.tenantId, tenantId), eq(patientContacts.patientId, patientId)));
+
+        if (contact) {
+          return {
+            ...found,
+            mobileNumber: contact.primaryMobile,
+            primaryMobile: contact.primaryMobile,
+            email: contact.email,
+            contact
+          } as any;
+        }
+      } catch (contactErr) {
+        logger.warn('Failed to query patient contact information', { error: String(contactErr) });
+      }
+
+      return found;
     } catch (err) {
+      if (err instanceof AppError) throw err;
       logger.error('Failed to query patient by ID in database', err);
       throw new AppError({
         message: 'Database query failed. Patient lookup unavailable.',
@@ -346,8 +374,7 @@ export class ClinicalWorkflowRepository {
   async createPatient(input: CreatePatientInput, dbClient = getDatabase()): Promise<Patient> {
     const db = requireDb(dbClient);
 
-    // Idempotency / Duplicate Prevention Check:
-    // Check if patient with exact MRN already exists within this tenant
+    // Tier 1 Authority: Idempotency / Duplicate Prevention by MRN
     if (input.mrn) {
       const [existingByMrn] = await db
         .select()
@@ -355,34 +382,71 @@ export class ClinicalWorkflowRepository {
         .where(and(eq(patients.tenantId, input.tenantId), eq(patients.mrn, input.mrn)));
       if (existingByMrn) {
         logger.info('Duplicate patient registration prevented by MRN. Returning existing record.', { mrn: input.mrn, id: existingByMrn.id });
+        try {
+          const [contact] = await db
+            .select()
+            .from(patientContacts)
+            .where(and(eq(patientContacts.tenantId, input.tenantId), eq(patientContacts.patientId, existingByMrn.id)));
+          if (contact) {
+            return {
+              ...existingByMrn,
+              mobileNumber: contact.primaryMobile,
+              primaryMobile: contact.primaryMobile,
+              contact
+            } as any;
+          }
+        } catch {
+          // Fallback to existing patient without contact
+        }
         return existingByMrn;
       }
     }
 
-    // Check if patient with same name and mobile already exists in tenant
-    if (input.mobileNumber && input.firstName && input.lastName) {
-      const existingList = await db
+    // Tier 2 Authority: Deduplication by Canonical Primary Mobile Number
+    const normalizedMobile = input.mobileNumber ? normalizePhoneNumber(input.mobileNumber) : null;
+    if (normalizedMobile) {
+      const [existingContact] = await db
         .select()
-        .from(patients)
+        .from(patientContacts)
         .where(and(
-          eq(patients.tenantId, input.tenantId),
-          eq(patients.firstName, input.firstName),
-          eq(patients.lastName, input.lastName)
+          eq(patientContacts.tenantId, input.tenantId),
+          eq(patientContacts.primaryMobile, normalizedMobile)
         ));
-      
-      const matched = existingList.find(p => (p as any).mobileNumber === input.mobileNumber);
-      if (matched) {
-        logger.info('Duplicate patient registration prevented by mobile/name. Returning existing record.', { id: matched.id });
-        return matched;
+
+      if (existingContact) {
+        const [existingPatient] = await db
+          .select()
+          .from(patients)
+          .where(and(
+            eq(patients.tenantId, input.tenantId),
+            eq(patients.id, existingContact.patientId)
+          ));
+
+        if (existingPatient) {
+          logger.info('Duplicate patient registration prevented by phone number. Returning existing record.', {
+            tenantId: input.tenantId,
+            phone: normalizedMobile,
+            id: existingPatient.id,
+            mrn: existingPatient.mrn
+          });
+          return {
+            ...existingPatient,
+            mobileNumber: existingContact.primaryMobile,
+            primaryMobile: existingContact.primaryMobile,
+            email: existingContact.email,
+            contact: existingContact
+          } as any;
+        }
       }
     }
 
     const id = crypto.randomUUID();
     const mrn = input.mrn || `MRN-${Math.floor(100000 + Math.random() * 900000)}`;
+    const partnerId = input.partnerId || '00000000-0000-4000-8000-000000000001';
     const record = {
       id,
       tenantId: input.tenantId,
-      partnerId: input.partnerId || '00000000-0000-4000-8000-000000000001',
+      partnerId,
       organizationId: input.organizationId || '00000000-0000-4000-8000-000000000002',
       branchId: input.branchId || 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
       patientCode: input.patientCode || `PAT-${Math.floor(100000 + Math.random() * 900000)}`,
@@ -398,13 +462,102 @@ export class ClinicalWorkflowRepository {
     };
 
     try {
-      const [created] = await db.insert(patients).values(record as unknown as typeof patients.$inferInsert).returning();
-      if (!created) {
-        throw new Error('Insert returned empty result');
+      return await runInTx(db, async (tx) => {
+        const [created] = await tx.insert(patients).values(record as unknown as typeof patients.$inferInsert).returning();
+        if (!created) {
+          throw new Error('Insert returned empty result');
+        }
+
+        let contactRecord = null;
+        if (normalizedMobile) {
+          const [contact] = await tx
+            .insert(patientContacts)
+            .values({
+              id: crypto.randomUUID(),
+              tenantId: input.tenantId,
+              partnerId,
+              patientId: created.id,
+              primaryMobile: normalizedMobile,
+              preferredContactMethod: 'MOBILE',
+              metadata: {},
+              createdAt: new Date(),
+              updatedAt: new Date()
+            })
+            .returning();
+          contactRecord = contact;
+        }
+
+        return {
+          ...created,
+          ...(contactRecord ? {
+            mobileNumber: contactRecord.primaryMobile,
+            primaryMobile: contactRecord.primaryMobile,
+            contact: contactRecord
+          } : (normalizedMobile ? { mobileNumber: normalizedMobile, primaryMobile: normalizedMobile } : {}))
+        } as any;
+      });
+    } catch (err: any) {
+      // Check if this was a concurrent unique constraint violation on primary_mobile or mrn
+      const isUniqueViolation =
+        err?.code === '23505' ||
+        err?.message?.includes('unique') ||
+        err?.message?.includes('duplicate key') ||
+        err?.message?.includes('idx_patient_contacts_tenant_primary_mobile_uidx') ||
+        err?.message?.includes('idx_patients_tenant_mrn');
+
+      if (isUniqueViolation) {
+        // Resolve concurrent phone collision
+        if (normalizedMobile) {
+          try {
+            const [existingContact] = await db
+              .select()
+              .from(patientContacts)
+              .where(and(
+                eq(patientContacts.tenantId, input.tenantId),
+                eq(patientContacts.primaryMobile, normalizedMobile)
+              ));
+            if (existingContact) {
+              const [existingPatient] = await db
+                .select()
+                .from(patients)
+                .where(and(
+                  eq(patients.tenantId, input.tenantId),
+                  eq(patients.id, existingContact.patientId)
+                ));
+              if (existingPatient) {
+                logger.info('Resolved concurrent duplicate registration via phone collision.', { id: existingPatient.id });
+                return {
+                  ...existingPatient,
+                  mobileNumber: existingContact.primaryMobile,
+                  primaryMobile: existingContact.primaryMobile,
+                  contact: existingContact
+                } as any;
+              }
+            }
+          } catch (resErr) {
+            logger.warn('Failed to resolve concurrent race via phone lookup', { error: String(resErr) });
+          }
+        }
+
+        // Resolve concurrent MRN collision
+        if (input.mrn) {
+          try {
+            const [existingByMrn] = await db
+              .select()
+              .from(patients)
+              .where(and(eq(patients.tenantId, input.tenantId), eq(patients.mrn, input.mrn)));
+            if (existingByMrn) {
+              logger.info('Resolved concurrent duplicate registration via MRN collision.', { id: existingByMrn.id });
+              return existingByMrn;
+            }
+          } catch (resErr) {
+            logger.warn('Failed to resolve concurrent race via MRN lookup', { error: String(resErr) });
+          }
+        }
       }
-      return created;
-    } catch (err) {
-      logger.error('Failed to create patient in database', err);
+
+      if (err instanceof AppError) throw err;
+      logger.error('Failed to create patient in database', { error: err?.message || String(err), stack: err?.stack });
       throw new AppError({
         message: 'Database persistence failed. Patient registration aborted.',
         code: ErrorCode.SERVICE_UNAVAILABLE,
@@ -421,21 +574,134 @@ export class ClinicalWorkflowRepository {
   ): Promise<Patient | null> {
     const db = requireDb(dbClient);
     try {
-      const updateData: Record<string, any> = { updatedAt: new Date() };
-      if (patch.firstName !== undefined) updateData['firstName'] = patch.firstName;
-      if (patch.lastName !== undefined) updateData['lastName'] = patch.lastName;
-      if (patch.gender !== undefined) updateData['gender'] = patch.gender;
-      if (patch.dateOfBirth !== undefined) updateData['dateOfBirth'] = patch.dateOfBirth;
-      if (patch.bloodGroup !== undefined) updateData['bloodGroup'] = patch.bloodGroup;
+      // 1. Verify patient exists in this tenant
+      const [existingPatient] = await db
+        .select()
+        .from(patients)
+        .where(and(eq(patients.tenantId, tenantId), eq(patients.id, patientId)));
 
-      const [updated] = await db
-        .update(patients)
-        .set(updateData as any)
-        .where(and(eq(patients.tenantId, tenantId), eq(patients.id, patientId)))
-        .returning();
+      if (!existingPatient) {
+        return null;
+      }
 
-      return updated || null;
-    } catch (err) {
+      return await runInTx(db, async (tx) => {
+        let updatedContact = null;
+
+        // 2. Handle mobileNumber update if supplied
+        if (patch.mobileNumber !== undefined) {
+          const rawMobile = patch.mobileNumber;
+          if (rawMobile !== null && rawMobile !== '') {
+            const normalizedMobile = normalizePhoneNumber(rawMobile);
+            if (!normalizedMobile) {
+              throw AppError.badRequest('Invalid mobile number format provided for patient contact');
+            }
+
+            // Check if this normalized mobile number is already in use by ANOTHER patient in the SAME tenant
+            const [collision] = await tx
+              .select()
+              .from(patientContacts)
+              .where(and(
+                eq(patientContacts.tenantId, tenantId),
+                eq(patientContacts.primaryMobile, normalizedMobile),
+                ne(patientContacts.patientId, patientId)
+              ));
+
+            if (collision) {
+              logger.warn('Patient mobile number collision detected within tenant', {
+                tenantId,
+                patientId,
+                existingPatientWithMobile: collision.patientId,
+                mobile: normalizedMobile
+              });
+              throw AppError.conflict(`Mobile number ${normalizedMobile} is already registered to another patient in this tenant`);
+            }
+
+            // Check if this patient already has a contact record
+            const [existingContact] = await tx
+              .select()
+              .from(patientContacts)
+              .where(and(
+                eq(patientContacts.tenantId, tenantId),
+                eq(patientContacts.patientId, patientId)
+              ));
+
+            if (existingContact) {
+              // Update existing contact record - preserve alternateMobile, email, metadata
+              const [saved] = await tx
+                .update(patientContacts)
+                .set({
+                  primaryMobile: normalizedMobile,
+                  updatedAt: new Date()
+                })
+                .where(and(
+                  eq(patientContacts.tenantId, tenantId),
+                  eq(patientContacts.patientId, patientId)
+                ))
+                .returning();
+              updatedContact = saved;
+            } else {
+              // Insert new contact record for this patient
+              const [saved] = await tx
+                .insert(patientContacts)
+                .values({
+                  id: crypto.randomUUID(),
+                  tenantId,
+                  partnerId: existingPatient.partnerId,
+                  patientId,
+                  primaryMobile: normalizedMobile,
+                  preferredContactMethod: 'MOBILE',
+                  metadata: {},
+                  createdAt: new Date(),
+                  updatedAt: new Date()
+                })
+                .returning();
+              updatedContact = saved;
+            }
+          }
+        }
+
+        // 3. Update demographic fields on patients table
+        const updateData: Record<string, any> = { updatedAt: new Date() };
+        if (patch.firstName !== undefined) updateData['firstName'] = patch.firstName;
+        if (patch.lastName !== undefined) updateData['lastName'] = patch.lastName;
+        if (patch.gender !== undefined) updateData['gender'] = patch.gender;
+        if (patch.dateOfBirth !== undefined) updateData['dateOfBirth'] = patch.dateOfBirth;
+        if (patch.bloodGroup !== undefined) updateData['bloodGroup'] = patch.bloodGroup;
+
+        const [updated] = await tx
+          .update(patients)
+          .set(updateData as any)
+          .where(and(eq(patients.tenantId, tenantId), eq(patients.id, patientId)))
+          .returning();
+
+        if (!updated) {
+          return null;
+        }
+
+        // If contact wasn't updated in this call, retrieve existing contact if present
+        if (!updatedContact) {
+          const [contact] = await tx
+            .select()
+            .from(patientContacts)
+            .where(and(
+              eq(patientContacts.tenantId, tenantId),
+              eq(patientContacts.patientId, patientId)
+            ));
+          updatedContact = contact || null;
+        }
+
+        return {
+          ...updated,
+          ...(updatedContact ? {
+            mobileNumber: updatedContact.primaryMobile,
+            primaryMobile: updatedContact.primaryMobile,
+            email: updatedContact.email,
+            contact: updatedContact
+          } : {})
+        } as any;
+      });
+    } catch (err: any) {
+      if (err instanceof AppError) throw err;
       logger.error('Failed to update patient in database', err);
       throw new AppError({
         message: 'Database update failed. Patient modification aborted.',

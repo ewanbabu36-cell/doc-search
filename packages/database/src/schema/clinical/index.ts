@@ -879,7 +879,8 @@ export const patientContacts = clinicalSchema.table(
     index('idx_patient_contacts_tenant').on(table.tenantId),
     index('idx_patient_contacts_patient').on(table.patientId),
     index('idx_patient_contacts_mobile').on(table.primaryMobile),
-    index('idx_patient_contacts_email').on(table.email)
+    index('idx_patient_contacts_email').on(table.email),
+    uniqueIndex('idx_patient_contacts_tenant_primary_mobile_uidx').on(table.tenantId, table.primaryMobile)
   ]
 );
 
