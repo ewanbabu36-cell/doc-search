@@ -132,7 +132,7 @@ export const PartnerFastTrackPipelineWidget: React.FC<FastTrackPipelineProps> = 
             <Badge variant="primary">Production Fast-Track</Badge>
           </div>
           <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
-            Automated progression from Lead Capture $\rightarrow$ AI Document OCR $\rightarrow$ Regulatory KYC $\rightarrow$ MSA E-Sign $\rightarrow$ 100% Live Activation
+            Automated progression from Lead Capture ➔ AI Document OCR ➔ Regulatory KYC ➔ MSA E-Sign ➔ 100% Live Activation
           </span>
         </div>
 
