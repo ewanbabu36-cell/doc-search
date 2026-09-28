@@ -5,6 +5,7 @@ import type {
 } from '@docsearch/api-contracts';
 import {
   Card,
+  Button,
   Badge,
   TableContainer,
   Table,
@@ -18,11 +19,13 @@ import {
 export interface EncounterProfileViewProps {
   encounter: EncounterDto | null;
   auditTraces: EncounterAuditTraceDto[];
+  onBack?: () => void;
 }
 
 export const EncounterProfileView: React.FC<EncounterProfileViewProps> = ({
   encounter,
-  auditTraces
+  auditTraces,
+  onBack
 }) => {
   if (!encounter) {
     return (
@@ -41,11 +44,17 @@ export const EncounterProfileView: React.FC<EncounterProfileViewProps> = ({
       {/* Header Dossier */}
       <Card padding="md">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-              <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '700', color: 'var(--ds-color-text-primary)' }}>
-                {encounter.patientName}
-              </h2>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+            {onBack && (
+              <Button variant="outline" size="sm" onClick={onBack} style={{ marginTop: '2px' }}>
+                ← Back to Encounters
+              </Button>
+            )}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '700', color: 'var(--ds-color-text-primary)' }}>
+                  {encounter.patientName}
+                </h2>
               <Badge
                 variant={
                   encounter.status === 'IN_CONSULTATION'
@@ -68,6 +77,7 @@ export const EncounterProfileView: React.FC<EncounterProfileViewProps> = ({
               MRN: <strong>{encounter.patientMrn}</strong> · DOB: <strong>{encounter.patientDob ?? '—'}</strong> · Type: <strong>{encounter.encounterType}</strong> · Priority: <strong>{encounter.priority}</strong>
             </span>
           </div>
+        </div>
 
           <div style={{ textAlign: 'right' }}>
             <span style={{ fontSize: '0.6875rem', color: 'var(--ds-color-text-muted)', display: 'block' }}>

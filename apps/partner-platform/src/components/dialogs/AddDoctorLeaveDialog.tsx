@@ -4,6 +4,7 @@ import type {
   AddDoctorLeaveRequest
 } from '@docsearch/api-contracts';
 import { Dialog, Button, Input, Select, Alert } from '@docsearch/ui-kit';
+import { AuditJustificationField } from '../common/AuditJustificationField.js';
 
 export interface AddDoctorLeaveDialogProps {
   isOpen: boolean;
@@ -87,7 +88,7 @@ export const AddDoctorLeaveDialog: React.FC<AddDoctorLeaveDialogProps> = ({
           <Button variant="outline" size="sm" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button variant="primary" size="sm" onClick={handleSubmit} isLoading={isSubmitting}>
+          <Button variant="primary" size="sm" onClick={handleSubmit} isLoading={isSubmitting} disabled={isSubmitting}>
             Submit Leave Request
           </Button>
         </div>
@@ -146,17 +147,12 @@ export const AddDoctorLeaveDialog: React.FC<AddDoctorLeaveDialogProps> = ({
           </div>
         </div>
 
-        <div>
-          <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: '600', marginBottom: '4px' }}>
-            Reason & Justification *
-          </label>
-          <Input
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder="e.g. Attending National Cardiology Summit"
-            required
-          />
-        </div>
+        <AuditJustificationField
+          label="Reason & Justification"
+          value={reason}
+          onChange={setReason}
+          defaultJustification="Planned clinical leave / Medical conference"
+        />
       </form>
     </Dialog>
   );

@@ -39,6 +39,7 @@ export const partnerProfiles = companySchema.table(
       .notNull()
       .references(() => tenants.id, { onDelete: 'cascade' }),
     partnerType: varchar('partner_type', { length: 50 }).notNull().default('HOSPITAL_NETWORK'),
+    operatingModel: varchar('operating_model', { length: 64 }),
     lifecycleStatus: varchar('lifecycle_status', { length: 50 }).notNull().default('LEAD'),
     verificationStatus: varchar('verification_status', { length: 50 }).notNull().default('PENDING'),
     onboardingStep: varchar('onboarding_step', { length: 50 }).notNull().default('ORGANIZATION_PROFILE'),
@@ -49,6 +50,10 @@ export const partnerProfiles = companySchema.table(
     primaryContactEmail: varchar('primary_contact_email', { length: 255 }).notNull(),
     primaryContactPhone: varchar('primary_contact_phone', { length: 50 }),
     primaryContactRole: varchar('primary_contact_role', { length: 100 }),
+    appliedTemplateId: uuid('applied_template_id'),
+    appliedTemplateVersion: integer('applied_template_version'),
+    configurationVersion: integer('configuration_version').default(1),
+    activeProfiles: jsonb('active_profiles').default([]),
     metadata: jsonb('metadata').default({}),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
@@ -124,6 +129,16 @@ export const plans = companySchema.table(
     description: text('description').notNull(),
     status: varchar('status', { length: 50 }).notNull().default('DRAFT'),
     version: varchar('version', { length: 20 }).notNull().default('1.0.0'),
+    basePrice: integer('base_price').default(0),
+    currency: varchar('currency', { length: 10 }).default('INR'),
+    billingInterval: varchar('billing_interval', { length: 50 }).default('MONTHLY'),
+    trialDurationDays: integer('trial_duration_days').default(0),
+    maxConcurrentUsers: integer('max_concurrent_users').default(10),
+    maxDoctors: integer('max_doctors').default(5),
+    maxBranches: integer('max_branches').default(1),
+    maxBeds: integer('max_beds').default(0),
+    storageQuotaGb: integer('storage_quota_gb').default(10),
+    monthlyWhatsAppCredits: integer('monthly_whatsapp_credits').default(500),
     effectiveDate: timestamp('effective_date', { withTimezone: true }),
     expirationDate: timestamp('expiration_date', { withTimezone: true }),
     metadata: jsonb('metadata').default({}),
@@ -136,6 +151,86 @@ export const plans = companySchema.table(
     index('idx_plans_status').on(table.status)
   ]
 );
+
+/**
+ * Phase 1: Price Versions
+ */
+export const priceVersions = companySchema.table(
+  'price_versions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    productId: uuid('product_id').references(() => products.id, { onDelete: 'set null' }),
+    planId: uuid('plan_id')
+      .notNull()
+      .references(() => plans.id, { onDelete: 'cascade' }),
+    versionNumber: varchar('version_number', { length: 50 }).notNull(),
+    annualBasePriceInr: integer('annual_base_price_inr').notNull(),
+    currency: varchar('currency', { length: 10 }).notNull().default('INR'),
+    gstRatePercent: integer('gst_rate_percent').notNull().default(18),
+    taxInclusive: boolean('tax_inclusive').notNull().default(true),
+    sacCode: varchar('sac_code', { length: 20 }).notNull().default('998313'),
+    effectiveFrom: timestamp('effective_from', { withTimezone: true }).notNull().defaultNow(),
+    effectiveTo: timestamp('effective_to', { withTimezone: true }),
+    isActive: boolean('is_active').notNull().default(true),
+    status: varchar('status', { length: 50 }).notNull().default('ACTIVE'), // ACTIVE, ARCHIVED, SCHEDULED
+    createdBy: varchar('created_by', { length: 255 }),
+    metadata: jsonb('metadata').default({}),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex('uq_price_versions_plan_version').on(table.planId, table.versionNumber),
+    index('idx_price_versions_plan_id').on(table.planId),
+    index('idx_price_versions_active').on(table.isActive)
+  ]
+);
+
+export type PriceVersion = typeof priceVersions.$inferSelect;
+export type NewPriceVersion = typeof priceVersions.$inferInsert;
+
+/**
+ * Phase 1: Commercial Order Snapshots
+ */
+export const commercialOrderSnapshots = companySchema.table(
+  'commercial_order_snapshots',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    partnerId: uuid('partner_id')
+      .notNull()
+      .references(() => partnerProfiles.id, { onDelete: 'cascade' }),
+    planId: uuid('plan_id')
+      .notNull()
+      .references(() => plans.id, { onDelete: 'cascade' }),
+    priceVersionId: uuid('price_version_id').references(() => priceVersions.id, { onDelete: 'set null' }),
+    billingDurationYears: integer('billing_duration_years').notNull(), // 1, 2, 3, 5
+    annualBasePriceInr: integer('annual_base_price_inr').notNull(),
+    grossAmountInr: integer('gross_amount_inr').notNull(),
+    discountRatePercent: integer('discount_rate_percent').notNull().default(0), // 0, 2, 10, 20
+    discountAmountInr: integer('discount_amount_inr').notNull().default(0),
+    taxableAmountInr: integer('taxable_amount_inr').notNull(),
+    taxRatePercent: integer('tax_rate_percent').notNull().default(18),
+    cgstAmountInr: integer('cgst_amount_inr').notNull().default(0),
+    sgstAmountInr: integer('sgst_amount_inr').notNull().default(0),
+    igstAmountInr: integer('igst_amount_inr').notNull().default(0),
+    finalAmountInr: integer('final_amount_inr').notNull(),
+    currency: varchar('currency', { length: 10 }).notNull().default('INR'),
+    isInterstate: boolean('is_interstate').notNull().default(false),
+    customerGstin: varchar('customer_gstin', { length: 50 }),
+    customerBillingAddress: text('customer_billing_address'),
+    calculationHash: varchar('calculation_hash', { length: 128 }),
+    status: varchar('status', { length: 50 }).notNull().default('PENDING'), // PENDING, PAID, CANCELLED
+    metadata: jsonb('metadata').default({}),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    index('idx_commercial_snapshots_partner_id').on(table.partnerId),
+    index('idx_commercial_snapshots_status').on(table.status)
+  ]
+);
+
+export type CommercialOrderSnapshot = typeof commercialOrderSnapshots.$inferSelect;
+export type NewCommercialOrderSnapshot = typeof commercialOrderSnapshots.$inferInsert;
 
 /**
  * Phase 1: Features Registry
@@ -184,6 +279,43 @@ export const planEntitlements = companySchema.table(
     index('idx_plan_entitlements_feature_id').on(table.featureId)
   ]
 );
+
+/**
+ * Phase 1: Authoritative Partner Governance & Remote Control Overrides
+ */
+export const partnerGovernanceOverrides = companySchema.table(
+  'partner_governance_overrides',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    partnerId: varchar('partner_id', { length: 100 }).notNull(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    moduleCode: varchar('module_code', { length: 100 }).notNull(),
+    featureCode: varchar('feature_code', { length: 100 }),
+    status: varchar('status', { length: 50 }).notNull().default('ACTIVE'), // ACTIVE, DISABLED, TRIAL
+    trialEndsAt: timestamp('trial_ends_at', { withTimezone: true }),
+    maxBeds: integer('max_beds'),
+    maxDoctorSeats: integer('max_doctor_seats'),
+    storageQuotaGb: integer('storage_quota_gb'),
+    monthlyWhatsAppCredits: integer('monthly_whatsapp_credits'),
+    globalFreeze: boolean('global_freeze').default(false),
+    billingFreeze: boolean('billing_freeze').default(false),
+    communicationFreeze: boolean('communication_freeze').default(false),
+    reason: text('reason'),
+    updatedBy: varchar('updated_by', { length: 255 }),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex('uq_partner_gov_tenant_module').on(table.tenantId, table.moduleCode),
+    index('idx_partner_gov_partner').on(table.partnerId),
+    index('idx_partner_gov_tenant').on(table.tenantId),
+    index('idx_partner_gov_status').on(table.status)
+  ]
+);
+
+export type PartnerGovernanceOverride = typeof partnerGovernanceOverrides.$inferSelect;
+export type NewPartnerGovernanceOverride = typeof partnerGovernanceOverrides.$inferInsert;
 
 /**
  * Phase 1: Partner-Plan Assignments
@@ -314,7 +446,7 @@ export const billingAccounts = companySchema.table(
     billingContactName: varchar('billing_contact_name', { length: 100 }).notNull(),
     billingEmail: varchar('billing_email', { length: 255 }).notNull(),
     taxIdReference: varchar('tax_id_reference', { length: 100 }),
-    currency: varchar('currency', { length: 10 }).notNull().default('USD'),
+    currency: varchar('currency', { length: 10 }).notNull().default('INR'),
     billingCycle: varchar('billing_cycle', { length: 50 }).notNull().default('MONTHLY'),
     status: varchar('status', { length: 50 }).notNull().default('ACTIVE'),
     metadata: jsonb('metadata').default({}),
@@ -341,7 +473,7 @@ export const invoices = companySchema.table(
     invoiceNumber: varchar('invoice_number', { length: 100 }).notNull(),
     issueDate: timestamp('issue_date', { withTimezone: true }).notNull().defaultNow(),
     dueDate: timestamp('due_date', { withTimezone: true }).notNull(),
-    currency: varchar('currency', { length: 10 }).notNull().default('USD'),
+    currency: varchar('currency', { length: 10 }).notNull().default('INR'),
     subtotal: varchar('subtotal', { length: 50 }).notNull().default('0.00'),
     taxAmount: varchar('tax_amount', { length: 50 }).notNull().default('0.00'),
     totalAmount: varchar('total_amount', { length: 50 }).notNull().default('0.00'),
@@ -370,7 +502,7 @@ export const payments = companySchema.table(
       .notNull()
       .references(() => invoices.id, { onDelete: 'cascade' }),
     amount: varchar('amount', { length: 50 }).notNull(),
-    currency: varchar('currency', { length: 10 }).notNull().default('USD'),
+    currency: varchar('currency', { length: 10 }).notNull().default('INR'),
     paymentStatus: varchar('payment_status', { length: 50 }).notNull().default('PENDING'),
     provider: varchar('provider', { length: 100 }).notNull().default('MANUAL_WIRE'),
     providerReference: varchar('provider_reference', { length: 255 }),
@@ -3817,6 +3949,7 @@ export const partnerClassifications = companySchema.table(
     defaultPlanCode: varchar('default_plan_code', { length: 50 }),
     status: varchar('status', { length: 20 }).notNull().default('ACTIVE'),
     sortOrder: integer('sort_order').notNull().default(0),
+    metadata: jsonb('metadata').default({}),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
   },
@@ -3828,4 +3961,387 @@ export const partnerClassifications = companySchema.table(
 
 export type PartnerClassification = typeof partnerClassifications.$inferSelect;
 export type NewPartnerClassification = typeof partnerClassifications.$inferInsert;
+
+/**
+ * Commercial Pricing Overrides & Negotiated Enterprise Terms
+ */
+export const commercialOverrides = companySchema.table(
+  'commercial_overrides',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    partnerId: uuid('partner_id')
+      .notNull()
+      .references(() => partnerProfiles.id, { onDelete: 'cascade' }),
+    planId: uuid('plan_id')
+      .notNull()
+      .references(() => plans.id, { onDelete: 'cascade' }),
+    priceVersionId: uuid('price_version_id').references(() => priceVersions.id, { onDelete: 'set null' }),
+    overrideType: varchar('override_type', { length: 50 }).notNull().default('FIXED_PRICE'), // FIXED_PRICE, PERCENTAGE_DISCOUNT
+    overrideValue: integer('override_value').notNull(), // e.g. 5000 (INR) or 15 (percent)
+    validUntil: timestamp('valid_until', { withTimezone: true }),
+    reason: text('reason').notNull(),
+    approvedBy: varchar('approved_by', { length: 255 }).notNull(),
+    approvalTimestamp: timestamp('approval_timestamp', { withTimezone: true }).notNull().defaultNow(),
+    status: varchar('status', { length: 50 }).notNull().default('ACTIVE'), // ACTIVE, REVOKED, EXPIRED
+    metadata: jsonb('metadata').default({}),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    index('idx_commercial_overrides_partner').on(table.partnerId),
+    index('idx_commercial_overrides_plan').on(table.planId),
+    index('idx_commercial_overrides_status').on(table.status)
+  ]
+);
+
+export type CommercialOverride = typeof commercialOverrides.$inferSelect;
+export type NewCommercialOverride = typeof commercialOverrides.$inferInsert;
+
+/**
+ * Founder Master Approval & Governance Requests
+ * Mandates that all form mutations by non-founder roles (Sales, Finance, Ops, Support)
+ * require explicit Founder (Shah Alam) review & sign-off before task completion.
+ */
+export const founderApprovalRequests = companySchema.table(
+  'founder_approval_requests',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    requestNumber: varchar('request_number', { length: 100 }).notNull().unique(),
+    entityType: varchar('entity_type', { length: 100 }).notNull(),
+    taskTitle: varchar('task_title', { length: 255 }).notNull(),
+    submitterName: varchar('submitter_name', { length: 255 }).notNull(),
+    submitterEmail: varchar('submitter_email', { length: 255 }).notNull(),
+    submitterRole: varchar('submitter_role', { length: 100 }).notNull(),
+    payloadData: jsonb('payload_data').notNull().default({}),
+    approvalStatus: varchar('approval_status', { length: 50 }).notNull().default('PENDING_FOUNDER_APPROVAL'),
+    taskStatus: varchar('task_status', { length: 50 }).notNull().default('AWAITING_FOUNDER_APPROVAL'),
+    founderRemarks: text('founder_remarks'),
+    approvedByEmail: varchar('approved_by_email', { length: 255 }),
+    approvedAt: timestamp('approved_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    index('idx_founder_appr_status').on(table.approvalStatus),
+    index('idx_founder_appr_submitter').on(table.submitterEmail),
+    index('idx_founder_appr_type').on(table.entityType)
+  ]
+);
+
+export type FounderApprovalRequest = typeof founderApprovalRequests.$inferSelect;
+export type NewFounderApprovalRequest = typeof founderApprovalRequests.$inferInsert;
+
+/**
+ * Partner Onboarding & Staged Verification Registrations
+ * Replaces ephemeral JSON persistence with durable, ACID-compliant PostgreSQL storage.
+ */
+export const partnerOnboardingStagedRegistrations = companySchema.table(
+  'partner_onboarding_staged_registrations',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantDraftId: uuid('tenant_draft_id').references(() => tenants.id, { onDelete: 'set null' }),
+    organizationName: text('organization_name').notNull(),
+    organizationType: varchar('organization_type', { length: 50 }).notNull(),
+    contactEmail: text('contact_email').notNull(),
+    contactPhone: varchar('contact_phone', { length: 20 }).notNull(),
+    registrationPayload: jsonb('registration_payload').notNull().default({}),
+    kycDocuments: jsonb('kyc_documents').notNull().default([]),
+    status: varchar('status', { length: 50 }).notNull().default('PENDING'),
+    rejectionReason: text('rejection_reason'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+    approvedAt: timestamp('approved_at', { withTimezone: true }),
+    approvedBy: uuid('approved_by').references(() => users.id, { onDelete: 'set null' }),
+    // Attribution & Origin Tracking (Who registered this partner?)
+    registeredByUserId: text('registered_by_user_id'),
+    registeredByName: text('registered_by_name'),
+    registeredByEmail: text('registered_by_email'),
+    registeredByRole: text('registered_by_role'),
+    registrationSource: varchar('registration_source', { length: 64 }).default('SELF_REGISTRATION_PORTAL'),
+    // Reviewer Assignment
+    assignedReviewerId: uuid('assigned_reviewer_id').references(() => users.id, { onDelete: 'set null' }),
+    assignedReviewerName: text('assigned_reviewer_name'),
+    assignedReviewerEmail: text('assigned_reviewer_email'),
+    assignedAt: timestamp('assigned_at', { withTimezone: true }),
+    // Review Lifecycle Transitions
+    reviewStartedAt: timestamp('review_started_at', { withTimezone: true }),
+    reviewStartedBy: text('review_started_by'),
+    requestedInfoReason: text('requested_info_reason'),
+    infoRequestedAt: timestamp('info_requested_at', { withTimezone: true }),
+    resubmittedAt: timestamp('resubmitted_at', { withTimezone: true })
+  },
+  (table) => [
+    index('idx_partner_onboarding_status').on(table.status),
+    index('idx_partner_onboarding_email').on(table.contactEmail),
+    index('idx_partner_onboarding_tenant_draft').on(table.tenantDraftId),
+    index('idx_partner_onboarding_org_type').on(table.organizationType),
+    index('idx_partner_onboarding_reviewer').on(table.assignedReviewerId),
+    index('idx_partner_onboarding_registered_by').on(table.registeredByEmail)
+  ]
+);
+
+export type PartnerOnboardingStagedRegistration = typeof partnerOnboardingStagedRegistrations.$inferSelect;
+export type NewPartnerOnboardingStagedRegistration = typeof partnerOnboardingStagedRegistrations.$inferInsert;
+
+/**
+ * Master Capabilities Catalog
+ */
+export const capabilities = companySchema.table(
+  'capabilities',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    code: varchar('code', { length: 50 }).notNull().unique(),
+    name: varchar('name', { length: 100 }).notNull(),
+    category: varchar('category', { length: 50 }).notNull().default('CLINICAL'),
+    description: text('description'),
+    dependencies: jsonb('dependencies').default([]),
+    entitlementRequired: varchar('entitlement_required', { length: 100 }),
+    status: varchar('status', { length: 50 }).notNull().default('ACTIVE'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    index('idx_capabilities_code').on(table.code),
+    index('idx_capabilities_category').on(table.category),
+    index('idx_capabilities_status').on(table.status)
+  ]
+);
+
+export type Capability = typeof capabilities.$inferSelect;
+export type NewCapability = typeof capabilities.$inferInsert;
+
+/**
+ * Partner Activated Capabilities with HQ Overrides
+ */
+export const partnerCapabilities = companySchema.table(
+  'partner_capabilities',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    partnerId: varchar('partner_id', { length: 100 }).notNull(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    capabilityCode: varchar('capability_code', { length: 50 }).notNull(),
+    status: varchar('status', { length: 50 }).notNull().default('ACTIVE'),
+    trialEndsAt: timestamp('trial_ends_at', { withTimezone: true }),
+    isHqOverride: boolean('is_hq_override').default(false),
+    overrideReason: text('override_reason'),
+    updatedBy: varchar('updated_by', { length: 255 }),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex('uq_partner_cap_tenant_code').on(table.tenantId, table.capabilityCode),
+    index('idx_partner_cap_partner').on(table.partnerId),
+    index('idx_partner_cap_tenant').on(table.tenantId),
+    index('idx_partner_cap_status').on(table.status)
+  ]
+);
+
+export type PartnerCapability = typeof partnerCapabilities.$inferSelect;
+export type NewPartnerCapability = typeof partnerCapabilities.$inferInsert;
+
+/**
+ * Master Partner Blueprint Templates
+ */
+export const partnerTemplates = companySchema.table(
+  'partner_templates',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    code: varchar('code', { length: 100 }).notNull().unique(),
+    name: varchar('name', { length: 255 }).notNull(),
+    description: text('description'),
+    category: varchar('category', { length: 50 }).notNull().default('HOSPITAL'),
+    isSystem: boolean('is_system').default(false),
+    status: varchar('status', { length: 50 }).notNull().default('ACTIVE'),
+    currentVersion: integer('current_version').notNull().default(1),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    index('idx_partner_templates_code').on(table.code),
+    index('idx_partner_templates_category').on(table.category)
+  ]
+);
+
+export type PartnerTemplate = typeof partnerTemplates.$inferSelect;
+export type NewPartnerTemplate = typeof partnerTemplates.$inferInsert;
+
+/**
+ * Immutable Template Version Blueprint Snapshots
+ */
+export const templateVersions = companySchema.table(
+  'template_versions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    templateId: uuid('template_id')
+      .notNull()
+      .references(() => partnerTemplates.id, { onDelete: 'cascade' }),
+    versionNumber: integer('version_number').notNull(),
+    status: varchar('status', { length: 50 }).notNull().default('PUBLISHED'),
+    supportedProfiles: jsonb('supported_profiles').default([]),
+    capabilities: jsonb('capabilities').default([]),
+    departments: jsonb('departments').default([]),
+    defaultRoles: jsonb('default_roles').default([]),
+    permissionPacks: jsonb('permission_packs').default([]),
+    features: jsonb('features').default([]),
+    limits: jsonb('limits').default({}),
+    policies: jsonb('policies').default([]),
+    changeSummary: text('change_summary'),
+    createdBy: varchar('created_by', { length: 255 }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex('uq_tpl_versions_tpl_num').on(table.templateId, table.versionNumber),
+    index('idx_tpl_versions_template').on(table.templateId),
+    index('idx_tpl_versions_status').on(table.status)
+  ]
+);
+
+export type TemplateVersion = typeof templateVersions.$inferSelect;
+export type NewTemplateVersion = typeof templateVersions.$inferInsert;
+
+/**
+ * Permission Packs Reusable Bundles
+ */
+export const permissionPacks = companySchema.table(
+  'permission_packs',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    code: varchar('code', { length: 100 }).notNull().unique(),
+    name: varchar('name', { length: 255 }).notNull(),
+    description: text('description'),
+    category: varchar('category', { length: 50 }).notNull().default('GENERAL'),
+    permissions: jsonb('permissions').notNull().default([]),
+    isSystem: boolean('is_system').default(true),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    index('idx_permission_packs_code').on(table.code)
+  ]
+);
+
+export type PermissionPack = typeof permissionPacks.$inferSelect;
+export type NewPermissionPack = typeof permissionPacks.$inferInsert;
+
+/**
+ * Feature & Capability Dependencies Graph
+ */
+export const featureDependencies = companySchema.table(
+  'feature_dependencies',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    sourceCode: varchar('source_code', { length: 100 }).notNull(),
+    dependsOnCode: varchar('depends_on_code', { length: 100 }).notNull(),
+    dependencyType: varchar('dependency_type', { length: 50 }).notNull().default('CAPABILITY'),
+    errorMessage: text('error_message').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex('uq_feature_deps_src_dep').on(table.sourceCode, table.dependsOnCode),
+    index('idx_feature_deps_src').on(table.sourceCode)
+  ]
+);
+
+export type FeatureDependency = typeof featureDependencies.$inferSelect;
+export type NewFeatureDependency = typeof featureDependencies.$inferInsert;
+
+/**
+ * Conditional Access Policies
+ */
+export const accessPolicies = companySchema.table(
+  'access_policies',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }),
+    partnerId: varchar('partner_id', { length: 100 }),
+    code: varchar('code', { length: 100 }).notNull(),
+    name: varchar('name', { length: 255 }).notNull(),
+    description: text('description'),
+    effect: varchar('effect', { length: 10 }).notNull().default('ALLOW'),
+    priority: integer('priority').notNull().default(100),
+    conditions: jsonb('conditions').notNull().default([]),
+    actions: jsonb('actions').notNull().default([]),
+    timeWindow: jsonb('time_window'),
+    status: varchar('status', { length: 50 }).notNull().default('ACTIVE'),
+    isSystem: boolean('is_system').default(false),
+    createdBy: varchar('created_by', { length: 255 }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    index('idx_access_policies_tenant').on(table.tenantId),
+    index('idx_access_policies_code').on(table.code),
+    index('idx_access_policies_status').on(table.status)
+  ]
+);
+
+export type AccessPolicy = typeof accessPolicies.$inferSelect;
+export type NewAccessPolicy = typeof accessPolicies.$inferInsert;
+
+/**
+ * Break-Glass Emergency Clinical Access Ledger
+ */
+export const breakGlassAccess = companySchema.table(
+  'break_glass_access',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    partnerId: varchar('partner_id', { length: 100 }).notNull(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    userEmail: varchar('user_email', { length: 255 }).notNull(),
+    patientId: varchar('patient_id', { length: 255 }),
+    encounterId: varchar('encounter_id', { length: 255 }),
+    reason: text('reason').notNull(),
+    scope: varchar('scope', { length: 100 }).notNull().default('CLINICAL_EMERGENCY'),
+    triggeredAt: timestamp('triggered_at', { withTimezone: true }).notNull().defaultNow(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+    revokedBy: varchar('revoked_by', { length: 255 }),
+    ipAddress: varchar('ip_address', { length: 100 })
+  },
+  (table) => [
+    index('idx_break_glass_tenant').on(table.tenantId),
+    index('idx_break_glass_user').on(table.userId),
+    index('idx_break_glass_expires').on(table.expiresAt)
+  ]
+);
+
+export type BreakGlassAccess = typeof breakGlassAccess.$inferSelect;
+export type NewBreakGlassAccess = typeof breakGlassAccess.$inferInsert;
+
+/**
+ * Partner Configuration Snapshots, Version History & Rollback Targets
+ */
+export const partnerConfigurationVersions = companySchema.table(
+  'partner_configuration_versions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    partnerId: varchar('partner_id', { length: 100 }).notNull(),
+    versionNumber: integer('version_number').notNull(),
+    appliedTemplateId: uuid('applied_template_id'),
+    appliedTemplateVersion: integer('applied_template_version'),
+    snapshot: jsonb('snapshot').notNull(),
+    diffSummary: text('diff_summary'),
+    changeReason: text('change_reason').notNull(),
+    changedBy: varchar('changed_by', { length: 255 }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex('uq_cfg_versions_tenant_num').on(table.tenantId, table.versionNumber),
+    index('idx_cfg_versions_tenant').on(table.tenantId),
+    index('idx_cfg_versions_partner').on(table.partnerId)
+  ]
+);
+
+export type PartnerConfigurationVersion = typeof partnerConfigurationVersions.$inferSelect;
+export type NewPartnerConfigurationVersion = typeof partnerConfigurationVersions.$inferInsert;
+
 

@@ -9,69 +9,85 @@ export interface EscrowSettlement {
   grossFulfillmentsInr: number;
   docsearchTakeRatePercent: number;
   netPayoutDueInr: number;
-  utrNumber?: string;
+  utrNumber?: string | undefined;
   status: 'PENDING_DISBURSEMENT' | 'SETTLED_INSTANT';
 }
 
-const INITIAL_SETTLEMENTS: EscrowSettlement[] = [
-  {
-    id: 'ESC-DOC-01',
-    partnerName: 'Dr. Vivek Sengupta (Chief Cardiologist)',
-    partnerType: 'DOCTOR',
-    bankAccountUpi: 'dr.vivek@okhdfcbank',
-    grossFulfillmentsInr: 184000,
-    docsearchTakeRatePercent: 15,
-    netPayoutDueInr: 156400,
-    status: 'PENDING_DISBURSEMENT'
-  },
-  {
-    id: 'ESC-HOSP-02',
-    partnerName: 'Apollo Hospitals Chennai (Main Campus)',
-    partnerType: 'HOSPITAL',
-    bankAccountUpi: 'apollo.escrow@icici',
-    grossFulfillmentsInr: 1420000,
-    docsearchTakeRatePercent: 10,
-    netPayoutDueInr: 1278000,
-    status: 'PENDING_DISBURSEMENT'
-  },
-  {
-    id: 'ESC-LAB-03',
-    partnerName: 'Care Diagnostics & Pathology Labs',
-    partnerType: 'DIAGNOSTIC_LAB',
-    bankAccountUpi: 'carediagnostics@hdfcbank',
-    grossFulfillmentsInr: 460000,
-    docsearchTakeRatePercent: 18,
-    netPayoutDueInr: 377200,
-    status: 'PENDING_DISBURSEMENT'
+const loadDynamicSettlements = (): EscrowSettlement[] => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const saved = localStorage.getItem('docsearch_escrow_settlements');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+    const regPartners = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');
+    if (Array.isArray(regPartners) && regPartners.length > 0) {
+      return regPartners.map((p: any, idx: number) => {
+        const isVerified = p.kycStatus === 'KYC_VERIFIED';
+        const gross = isVerified ? 12000 : 0;
+        const takeRate = 10;
+        const net = isVerified ? 10800 : 0;
+        const type = p.facilityType === 'PATHOLOGY' ? 'DIAGNOSTIC_LAB' : p.facilityType === 'CLINIC' ? 'DOCTOR' : p.facilityType === 'PHARMACY' ? 'PHARMACY' : 'HOSPITAL';
+        return {
+          id: p.id || `ESC-${idx + 1}`,
+          partnerName: p.facilityName || p.name || 'Healthcare Partner',
+          partnerType: type as EscrowSettlement['partnerType'],
+          bankAccountUpi: p.phone ? `${p.phone.replace(/[^0-9]/g, '')}@okaxis` : 'partner@upi',
+          grossFulfillmentsInr: gross,
+          docsearchTakeRatePercent: takeRate,
+          netPayoutDueInr: net,
+          status: isVerified ? 'PENDING_DISBURSEMENT' : 'SETTLED_INSTANT',
+          utrNumber: isVerified ? undefined : `UTR-${Date.now().toString().slice(-8)}`
+        };
+      });
+    }
+    return [];
+  } catch {
+    return [];
   }
-];
+};
 
 export const PartnerEscrowRevenueSplitView: React.FC = () => {
-  const [settlements, setSettlements] = useState<EscrowSettlement[]>(INITIAL_SETTLEMENTS);
+  const [settlements, setSettlements] = useState<EscrowSettlement[]>(loadDynamicSettlements);
   const [payoutNotice, setPayoutNotice] = useState<string | null>(null);
 
+  const saveSettlements = (updated: EscrowSettlement[]) => {
+    setSettlements(updated);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('docsearch_escrow_settlements', JSON.stringify(updated));
+      } catch {}
+    }
+  };
+
+  const totalGrossInr = settlements.reduce((acc, s) => acc + s.grossFulfillmentsInr, 0);
+  const totalCommissionInr = settlements.reduce(
+    (acc, s) => acc + Math.round(s.grossFulfillmentsInr * (s.docsearchTakeRatePercent / 100)),
+    0
+  );
   const totalPendingInr = settlements
     .filter((s) => s.status === 'PENDING_DISBURSEMENT')
     .reduce((acc, s) => acc + s.netPayoutDueInr, 0);
 
   const handleDisburseSingle = (id: string, name: string) => {
     const utr = `UTR-UPI-${Date.now().toString().slice(-8)}`;
-    setSettlements((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, status: 'SETTLED_INSTANT', utrNumber: utr } : s))
+    const updated = settlements.map((s) =>
+      s.id === id ? { ...s, status: 'SETTLED_INSTANT' as const, utrNumber: utr } : s
     );
+    saveSettlements(updated);
     setPayoutNotice(`✓ Payout of ₹${settlements.find((s) => s.id === id)?.netPayoutDueInr.toLocaleString('en-IN')} transferred to "${name}" via Instant UPI (UTR: ${utr})!`);
     setTimeout(() => setPayoutNotice(null), 5000);
   };
 
   const handleDisburseAll = () => {
-    setSettlements((prev) =>
-      prev.map((s) => ({
-        ...s,
-        status: 'SETTLED_INSTANT',
-        utrNumber: `UTR-BATCH-${Math.floor(10000000 + Math.random() * 90000000)}`
-      }))
-    );
-    setPayoutNotice(`✓ All ₹${totalPendingInr.toLocaleString('en-IN')} successfully settled across Doctor & Hospital bank accounts via Instant RTGS/UPI Batch!`);
+    const updated = settlements.map((s) => ({
+      ...s,
+      status: 'SETTLED_INSTANT' as const,
+      utrNumber: `UTR-BATCH-${Math.floor(10000000 + Math.random() * 90000000)}`
+    }));
+    saveSettlements(updated);
+    setPayoutNotice(`✓ All ₹${totalPendingInr.toLocaleString('en-IN')} successfully settled across partner bank accounts via Instant UPI Batch!`);
     setTimeout(() => setPayoutNotice(null), 6000);
   };
 
@@ -93,18 +109,12 @@ export const PartnerEscrowRevenueSplitView: React.FC = () => {
         </div>
 
         {totalPendingInr > 0 && (
-          <Button
-            variant="primary"
+          <Button variant="success"
             size="sm"
             onClick={handleDisburseAll}
-            style={{
-              backgroundColor: '#10B981',
-              color: '#070C16',
-              fontWeight: 900,
-              boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)'
-            }}
+            
           >
-            ⚡ Settle All ₹{(totalPendingInr / 100000).toFixed(2)}L via Instant UPI / RTGS
+            ⚡ Settle All ₹{totalPendingInr.toLocaleString('en-IN')} via Instant UPI
           </Button>
         )}
       </div>
@@ -119,13 +129,13 @@ export const PartnerEscrowRevenueSplitView: React.FC = () => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
         <div style={{ backgroundColor: '#0F172A', border: '1.5px solid #10B981', borderRadius: '12px', padding: '16px' }}>
           <span style={{ fontSize: '0.6875rem', color: '#86EFAC', fontWeight: 800, textTransform: 'uppercase' }}>
-            TOTAL REVENUE FULFILLED (30D)
+            TOTAL REVENUE FULFILLED
           </span>
           <div style={{ fontSize: '1.625rem', fontWeight: 900, color: '#10B981', margin: '4px 0', fontFamily: 'monospace' }}>
-            ₹ 2.35 Crore
+            ₹ {totalGrossInr.toLocaleString('en-IN')}
           </div>
           <span style={{ fontSize: '0.75rem', color: '#CBD5E1' }}>
-            Across 486 connected healthcare nodes
+            Across {settlements.length} active healthcare partners
           </span>
         </div>
 
@@ -134,7 +144,7 @@ export const PartnerEscrowRevenueSplitView: React.FC = () => {
             PENDING ESCROW DISBURSEMENT
           </span>
           <div style={{ fontSize: '1.625rem', fontWeight: 900, color: '#F59E0B', margin: '4px 0', fontFamily: 'monospace' }}>
-            ₹ {(totalPendingInr / 100000).toFixed(2)} Lakhs
+            ₹ {totalPendingInr.toLocaleString('en-IN')}
           </div>
           <span style={{ fontSize: '0.75rem', color: '#CBD5E1' }}>
             Ready for instant T+0 automated bank clearance
@@ -146,10 +156,10 @@ export const PartnerEscrowRevenueSplitView: React.FC = () => {
             DOCSEARCH NET COMMISSION TAKEN
           </span>
           <div style={{ fontSize: '1.625rem', fontWeight: 900, color: '#38BDF8', margin: '4px 0', fontFamily: 'monospace' }}>
-            ₹ 28.4 Lakhs
+            ₹ {totalCommissionInr.toLocaleString('en-IN')}
           </div>
           <span style={{ fontSize: '0.75rem', color: '#CBD5E1' }}>
-            13.2% Blended platform commission
+            Dynamic platform take-rate revenue
           </span>
         </div>
       </div>
@@ -169,9 +179,20 @@ export const PartnerEscrowRevenueSplitView: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {settlements.map((s) => (
-                <TableRow key={s.id}>
-                  <TableCell>
+              {settlements.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} style={{ textAlign: 'center', padding: '36px 20px', color: 'var(--ds-color-text-muted)' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '2rem' }}>💸</span>
+                      <span style={{ fontWeight: 700, color: '#F8FAFC' }}>No Escrow Settlements Recorded</span>
+                      <span style={{ fontSize: '0.8125rem' }}>Patient consultation payouts and lab referral commissions will appear here dynamically.</span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                settlements.map((s) => (
+                  <TableRow key={s.id}>
+                    <TableCell>
                     <div>
                       <strong style={{ color: '#F8FAFC' }}>{s.partnerName}</strong>
                       <span style={{ fontSize: '0.6875rem', color: '#94A3B8', display: 'block' }}>{s.partnerType}</span>
@@ -219,8 +240,9 @@ export const PartnerEscrowRevenueSplitView: React.FC = () => {
                       </div>
                     )}
                   </TableCell>
-                </TableRow>
-              ))}
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>

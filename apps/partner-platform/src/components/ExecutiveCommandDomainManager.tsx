@@ -29,6 +29,9 @@ import { RcmLeakageDenialRiskView } from './views/RcmLeakageDenialRiskView.js';
 import { CriticalConsumableRunoutView } from './views/CriticalConsumableRunoutView.js';
 import { WhatIfSimulationSandboxView } from './views/WhatIfSimulationSandboxView.js';
 import { ExecutiveAuditVaultView } from './views/ExecutiveAuditVaultView.js';
+import { HospitalPatientJourneyCommandBar } from './common/HospitalPatientJourneyCommandBar.js';
+import type { PartnerModuleKey } from './PartnerPlatformShell.js';
+import { TabOverflowMenu } from './common/TabOverflowMenu.js';
 
 // Dialogs
 import { DeclareSurgeEventDialog } from './dialogs/DeclareSurgeEventDialog.js';
@@ -50,9 +53,15 @@ type ExecutiveTab =
 
 interface Props {
   tenantId: string;
+  onNavigateModule?: ((moduleKey: PartnerModuleKey) => void) | undefined;
+  currentUserRole?: string | undefined;
 }
 
-export const ExecutiveCommandDomainManager: React.FC<Props> = ({ tenantId }) => {
+export const ExecutiveCommandDomainManager: React.FC<Props> = ({
+  tenantId,
+  onNavigateModule,
+  currentUserRole
+}) => {
   const [activeTab, setActiveTab] = useState<ExecutiveTab>('OVERVIEW');
   const [targetBedIdForOverride, setTargetBedIdForOverride] = useState<string | null>(null);
 
@@ -138,72 +147,92 @@ export const ExecutiveCommandDomainManager: React.FC<Props> = ({ tenantId }) => 
   return (
     <div className="space-y-4">
       {/* Domain Navigation Tabs */}
-      <div className="flex items-center gap-1 border-b pb-2 overflow-x-auto text-xs font-semibold">
-        <button
-          onClick={() => setActiveTab('OVERVIEW')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'OVERVIEW' ? 'bg-slate-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          📊 Executive Overview
-        </button>
-        <button
-          onClick={() => setActiveTab('COMMAND_WALL')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'COMMAND_WALL' ? 'bg-slate-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          🖥️ Situational Command Wall
-        </button>
-        <button
-          onClick={() => setActiveTab('BED_FORECASTS')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'BED_FORECASTS' ? 'bg-slate-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          🛏️ Predictive Bed Capacity
-        </button>
-        <button
-          onClick={() => setActiveTab('ED_NEDOCS')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'ED_NEDOCS' ? 'bg-slate-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          🚨 ED NEDOCS Overcrowding
-        </button>
-        <button
-          onClick={() => setActiveTab('OT_EFFICIENCY')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'OT_EFFICIENCY' ? 'bg-slate-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          🔪 OT Suites Heatmap
-        </button>
-        <button
-          onClick={() => setActiveTab('CLINICAL_ACUITY')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'CLINICAL_ACUITY' ? 'bg-slate-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          🩺 Clinical Acuity Radar
-        </button>
-        <button
-          onClick={() => setActiveTab('RCM_LEAKAGE')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'RCM_LEAKAGE' ? 'bg-slate-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          💳 RCM Revenue Leakage AI
-        </button>
-        <button
-          onClick={() => setActiveTab('CONSUMABLES')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'CONSUMABLES' ? 'bg-slate-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          🩸 Critical Consumables Burn-Rate
-        </button>
-        <button
-          onClick={() => setActiveTab('WHAT_IF_SANDBOX')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'WHAT_IF_SANDBOX' ? 'bg-slate-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          🤖 What-If Simulation Sandbox
-        </button>
-        <button
-          onClick={() => setActiveTab('AUDIT_VAULT')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'AUDIT_VAULT' ? 'bg-slate-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          🔐 Executive Audit Vault
-        </button>
+      <div
+        style={{
+          position: 'relative',
+          zIndex: 40,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          flexWrap: 'wrap',
+          backgroundColor: 'var(--ds-color-surface)',
+          border: '1px solid var(--ds-color-border)',
+          borderRadius: '10px',
+          padding: '6px 8px'
+        }}
+      >
+        {[
+          { key: 'OVERVIEW', label: '📊 Executive Overview' },
+          { key: 'COMMAND_WALL', label: '🖥️ Command Wall' },
+          { key: 'BED_FORECASTS', label: '🛏️ Bed Capacity' },
+          { key: 'ED_NEDOCS', label: '🚨 ED NEDOCS' },
+          { key: 'OT_EFFICIENCY', label: '🔪 OT Heatmap' }
+        ].map((tab) => {
+          const isActive = activeTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key as ExecutiveTab)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                borderRadius: '6px',
+                border: isActive ? '1px solid var(--ds-color-accent, #38BDF8)' : '1px solid transparent',
+                backgroundColor: isActive ? 'var(--ds-color-primary, #0284C7)' : 'transparent',
+                color: isActive ? '#FFFFFF' : 'var(--ds-color-text-muted)',
+                fontWeight: isActive ? 700 : 500,
+                fontSize: '0.8rem',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = 'var(--ds-color-surface-hover)';
+                  e.currentTarget.style.color = 'var(--ds-color-text-primary)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = 'var(--ds-color-text-muted)';
+                }
+              }}
+            >
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+
+        {/* Secondary Modules Dropdown */}
+        <TabOverflowMenu
+          label="More Executive Engines"
+          options={[
+            { id: 'CLINICAL_ACUITY', label: '🩺 Clinical Acuity Radar' },
+            { id: 'RCM_LEAKAGE', label: '💳 RCM Revenue Leakage AI' },
+            { id: 'CONSUMABLES', label: '🩸 Critical Consumables Burn-Rate' },
+            { id: 'WHAT_IF_SANDBOX', label: '🤖 What-If Simulation Sandbox' },
+            { id: 'AUDIT_VAULT', label: '🔐 Executive Audit Vault' }
+          ]}
+          activeId={activeTab}
+          onSelect={(id) => setActiveTab(id as ExecutiveTab)}
+          onReset={() => setActiveTab('OVERVIEW')}
+          accentColor="#0284C7"
+          activeBorderColor="#38BDF8"
+        />
       </div>
 
       {/* Facility Template Switcher & Tab Renderers */}
       {activeTab === 'OVERVIEW' && (
         <>
+          <HospitalPatientJourneyCommandBar
+            onNavigateModule={onNavigateModule}
+            activeModule="executive-command-center"
+            currentUserRole={currentUserRole}
+          />
           <FacilityTemplateConfiguratorStudio />
           <ExecutiveCommandCenterOverviewView
           snapshot={snapshot}

@@ -6,6 +6,7 @@ import {
   Select,
   Alert
 } from '@docsearch/ui-kit';
+import { AuditJustificationField } from '../common/AuditJustificationField.js';
 import type {
   InvestigationOrderDto,
   InvestigationSpecimenDto,
@@ -31,7 +32,7 @@ export const RejectSpecimenDialog: React.FC<RejectSpecimenDialogProps> = ({
 }) => {
   const [rejectionReasonCode, setRejectionReasonCode] = useState('HEMOLYZED');
   const [additionalDetails, setAdditionalDetails] = useState('');
-  const [justification, setJustification] = useState('');
+  const [justification, setJustification] = useState('Clinical specimen rejected due to pre-analytical criteria violation per laboratory SOP.');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -125,16 +126,12 @@ export const RejectSpecimenDialog: React.FC<RejectSpecimenDialogProps> = ({
           />
         </div>
 
-        <div>
-          <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '6px' }}>
-            Audit Justification *
-          </label>
-          <Input
-            value={justification}
-            onChange={(e) => setJustification(e.target.value)}
-            placeholder="Document QA/QC rejection compliance note..."
-          />
-        </div>
+        <AuditJustificationField
+          value={justification}
+          onChange={setJustification}
+          defaultJustification="Clinical specimen rejected due to pre-analytical criteria violation per laboratory SOP."
+          placeholder="Document QA/QC rejection compliance note..."
+        />
       </form>
     </Dialog>
   );

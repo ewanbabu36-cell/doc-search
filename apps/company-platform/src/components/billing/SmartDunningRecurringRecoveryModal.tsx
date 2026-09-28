@@ -106,7 +106,6 @@ export const SmartDunningRecurringRecoveryModal: React.FC<Props> = ({
               <button
                 type="button"
                 onClick={handleRetryAll}
-                style={{ backgroundColor: '#06B6D4', color: '#070C16', border: 'none', borderRadius: '6px', padding: '8px 20px', fontWeight: 800, cursor: 'pointer' }}
               >
                 ⚡ Execute Smart Retries
               </button>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Card, Badge, Button } from '@docsearch/ui-kit';
 import { useGlobalWhiteLabel } from '../common/GlobalWhiteLabelContext.js';
+import { generateAndDownloadWelcomeKitPdf, openPrintableSpeedPostDossier } from '../../utils/partnerWelcomeKitPdf.js';
 
 const PRESET_COLORS = [
   { name: 'DocSearch Cyan', primary: '#06B6D4', accent: '#3B82F6' },
@@ -13,6 +14,82 @@ const PRESET_COLORS = [
 export const HospitalWhiteLabelStudioView: React.FC = () => {
   const { whiteLabelConfig, updateWhiteLabel, toggleShellApplication } = useGlobalWhiteLabel();
   const [saveNotice, setSaveNotice] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  const testEmail = 'whitelabel.admin@docsearch.health';
+  const testPassword = 'Hospital@2026!';
+  const localhostLoginUrl = 'http://localhost:5175/';
+
+  const handleCopy = (text: string, key: string) => {
+    try {
+      navigator.clipboard.writeText(text);
+      setCopiedKey(key);
+      setTimeout(() => setCopiedKey(null), 2500);
+    } catch {
+      setCopiedKey(key);
+      setTimeout(() => setCopiedKey(null), 2500);
+    }
+  };
+
+  const handleDownloadCredentialsPdf = () => {
+    generateAndDownloadWelcomeKitPdf({
+      partnerId: 'WL-HOSP-2026',
+      partnerName: whiteLabelConfig.hospitalName || 'Apollo Super-Speciality Hospital',
+      classification: 'HOSPITAL',
+      contactPerson: 'Medical Director / Hospital Administrator',
+      phone: '+91 98765 43210',
+      email: testEmail,
+      password: testPassword,
+      city: 'New Delhi',
+      state: 'Delhi NCR',
+      planTier: 'Enterprise Hospital Network & White-Label Suite',
+      monthlyFee: 9999,
+      features: [
+        `Custom CNAME Domain: ${whiteLabelConfig.customCnameDomain || 'care.apollohospital.com'}`,
+        'Hospital Core HIS & IPD Admissions Desk',
+        'Ward & Bed Census Sensor Management',
+        'OT Scheduling & ICU Monitoring Suite',
+        'Dedicated Doctor Teleconsultation EMR',
+        `Custom SMS / WhatsApp Sender ID (${whiteLabelConfig.smsSenderId || 'APOLLO'})`,
+        'ABDM 2.0 National Telemetry Integration'
+      ],
+      planExpiryDate: '365 Days Validity (Enterprise Annual)',
+      activatedAt: new Date().toISOString().split('T')[0],
+      loginUrl: localhostLoginUrl
+    });
+
+    setSaveNotice(`✓ White-Label Credentials & Feature Capacity Menu Book PDF generated and downloaded for "${whiteLabelConfig.hospitalName}"!`);
+    setTimeout(() => setSaveNotice(null), 5000);
+  };
+
+  const handleOpenDossier = () => {
+    openPrintableSpeedPostDossier({
+      partnerId: 'WL-HOSP-2026',
+      partnerName: whiteLabelConfig.hospitalName || 'Apollo Super-Speciality Hospital',
+      classification: 'HOSPITAL',
+      contactPerson: 'Medical Director / Hospital Administrator',
+      phone: '+91 98765 43210',
+      email: testEmail,
+      password: testPassword,
+      city: 'New Delhi',
+      state: 'Delhi NCR',
+      planTier: 'Enterprise Hospital Network & White-Label Suite',
+      monthlyFee: 9999,
+      features: [
+        `Custom CNAME Domain: ${whiteLabelConfig.customCnameDomain || 'care.apollohospital.com'}`,
+        'Hospital Core HIS & IPD Admissions Desk',
+        'Ward & Bed Census Sensor Management',
+        'OT Scheduling & ICU Monitoring Suite',
+        'Dedicated Doctor Teleconsultation EMR',
+        `Custom SMS / WhatsApp Sender ID (${whiteLabelConfig.smsSenderId || 'APOLLO'})`,
+        'ABDM 2.0 National Telemetry Integration'
+      ],
+      planExpiryDate: '365 Days Validity (Enterprise Annual)',
+      activatedAt: new Date().toISOString().split('T')[0],
+      loginUrl: localhostLoginUrl
+    });
+  };
 
   const handleSaveWhiteLabel = (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,6 +147,157 @@ export const HospitalWhiteLabelStudioView: React.FC = () => {
         >
           <span>{whiteLabelConfig.applyToShell ? '✓ Applied Live to Shell' : '○ Enable Live Shell Sync'}</span>
         </button>
+      </div>
+
+      {/* Official White-Label Partner Credentials & Localhost Testing Station */}
+      <div style={{
+        backgroundColor: '#0F172A',
+        border: '1.5px solid #10B981',
+        borderRadius: '16px',
+        padding: '20px 24px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '16px',
+        boxShadow: '0 8px 30px rgba(16, 185, 129, 0.15)'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '1.4rem' }}>🔐</span>
+              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 900, color: '#F8FAFC' }}>
+                White-Label Partner Credentials & Localhost Testing Station
+              </h3>
+              <Badge variant="success">● KYC Approved & Active</Badge>
+              <Badge variant="primary">Localhost Port :5175 Live</Badge>
+            </div>
+            <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: '#94A3B8' }}>
+              Download official ISO 32000-1 Credentials PDF for <strong>{whiteLabelConfig.hospitalName}</strong>, or test live portal login directly on localhost.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <Button variant="success"
+              size="md"
+              onClick={handleDownloadCredentialsPdf}
+              
+            >
+              📥 Download Credentials PDF
+            </Button>
+
+            <Button
+              variant="outline"
+              size="md"
+              onClick={handleOpenDossier}
+              style={{
+                borderColor: '#F59E0B',
+                color: '#FCD34D',
+                fontWeight: 800
+              }}
+            >
+              🖨️ Speed Post Dossier
+            </Button>
+
+            <a
+              href="http://localhost:5175/"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ textDecoration: 'none' }}
+            >
+              <Button
+                variant="primary"
+                size="md"
+              >
+                ⚡ Test on Localhost :5175 ↗
+              </Button>
+            </a>
+          </div>
+        </div>
+
+        {/* Credentials Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '12px' }}>
+          {/* Card 1: Portal URL */}
+          <div style={{ backgroundColor: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '12px 14px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+              <span style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase' }}>
+                LOGIN PORTAL URL
+              </span>
+              <button
+                type="button"
+                onClick={() => handleCopy(localhostLoginUrl, 'url')}
+                style={{ background: 'transparent', border: 'none', color: copiedKey === 'url' ? '#10B981' : '#38BDF8', fontSize: '0.6875rem', fontWeight: 800, cursor: 'pointer' }}
+              >
+                {copiedKey === 'url' ? '✓ Copied!' : '📋 Copy URL'}
+              </button>
+            </div>
+            <div style={{ fontSize: '0.875rem', fontWeight: 800, color: '#38BDF8', fontFamily: 'monospace' }}>
+              {localhostLoginUrl}
+            </div>
+            <div style={{ fontSize: '0.6875rem', color: '#64748B', marginTop: '2px' }}>
+              Production CNAME: https://{whiteLabelConfig.customCnameDomain || 'care.hospital.com'}
+            </div>
+          </div>
+
+          {/* Card 2: User ID */}
+          <div style={{ backgroundColor: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '12px 14px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+              <span style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase' }}>
+                HOSPITAL ADMIN USER ID
+              </span>
+              <button
+                type="button"
+                onClick={() => handleCopy(testEmail, 'email')}
+                style={{ background: 'transparent', border: 'none', color: copiedKey === 'email' ? '#10B981' : '#38BDF8', fontSize: '0.6875rem', fontWeight: 800, cursor: 'pointer' }}
+              >
+                {copiedKey === 'email' ? '✓ Copied!' : '📋 Copy Email'}
+              </button>
+            </div>
+            <div style={{ fontSize: '0.875rem', fontWeight: 800, color: '#F8FAFC', fontFamily: 'monospace' }}>
+              {testEmail}
+            </div>
+            <div style={{ fontSize: '0.6875rem', color: '#10B981', marginTop: '2px', fontWeight: 700 }}>
+              Role: HOSPITAL_ADMIN (Dr. Rajesh Verma)
+            </div>
+          </div>
+
+          {/* Card 3: Password */}
+          <div style={{ backgroundColor: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '12px 14px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+              <span style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase' }}>
+                ASSIGNED TEMPORARY PASSWORD
+              </span>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{ background: 'transparent', border: 'none', color: '#94A3B8', fontSize: '0.6875rem', fontWeight: 700, cursor: 'pointer' }}
+                >
+                  {showPassword ? 'Hide' : 'Show'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleCopy(testPassword, 'pass')}
+                  style={{ background: 'transparent', border: 'none', color: copiedKey === 'pass' ? '#10B981' : '#FCD34D', fontSize: '0.6875rem', fontWeight: 800, cursor: 'pointer' }}
+                >
+                  {copiedKey === 'pass' ? '✓ Copied!' : '📋 Copy Password'}
+                </button>
+              </div>
+            </div>
+            <div style={{ fontSize: '0.875rem', fontWeight: 900, color: '#FCD34D', fontFamily: 'monospace' }}>
+              {showPassword ? testPassword : '•••••••••••••'}
+            </div>
+            <div style={{ fontSize: '0.6875rem', color: '#64748B', marginTop: '2px' }}>
+              Raw string: <code style={{ color: '#FCD34D' }}>{testPassword}</code>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Instructions Banner */}
+        <div style={{ backgroundColor: 'rgba(6, 182, 212, 0.1)', border: '1px solid rgba(6, 182, 212, 0.3)', borderRadius: '8px', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ fontSize: '1.1rem' }}>💡</span>
+          <span style={{ fontSize: '0.75rem', color: '#BAE6FD' }}>
+            <strong>Localhost Test Guide:</strong> Click <strong>"⚡ Test on Localhost :5175 ↗"</strong> (ya direct <code>http://localhost:5175/</code> open karein), wahan <code>whitelabel.admin@docsearch.health</code> aur password <code>Hospital@2026!</code> enter karein — aap seedhe Hospital Ward, Bed Census, OT aur EMR Workbench me login ho jayenge!
+          </span>
+        </div>
       </div>
 
       {/* Grid: Editor Form + Live Interactive Preview Mockup */}

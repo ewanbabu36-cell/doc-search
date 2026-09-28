@@ -1,4 +1,4 @@
-import { count, eq } from '@docsearch/database';
+import { count, eq, desc } from '@docsearch/database';
 import {
   getDatabase,
   partnerProfiles,
@@ -86,12 +86,13 @@ export interface CompanyExecutiveSummary {
 
 export class ExecutiveRepository {
   async getExecutiveSummary(dbClient = getDatabase()): Promise<CompanyExecutiveSummary> {
-    let totalPartners = 3;
-    let activePartners = 3;
-    let totalSubs = 2;
-    let totalBranches = 4;
-    let totalSessions = 2;
-    let totalAudits = 12;
+    let totalPartners = 0;
+    let activePartners = 0;
+    let totalSubs = 0;
+    let totalBranches = 0;
+    let totalSessions = 0;
+    let totalAudits = 0;
+    let recentLogs: Array<{ id: string; eventType: string; timestamp: Date | null }> = [];
 
     if (dbClient) {
       try {
@@ -111,6 +112,16 @@ export class ExecutiveRepository {
         if (bCount && typeof bCount.val === 'number') totalBranches = bCount.val;
         if (sessCount && typeof sessCount.val === 'number') totalSessions = sessCount.val;
         if (aCount && typeof aCount.val === 'number') totalAudits = aCount.val;
+
+        recentLogs = await dbClient
+          .select({
+            id: auditEvents.id,
+            eventType: auditEvents.eventType,
+            timestamp: auditEvents.timestamp
+          })
+          .from(auditEvents)
+          .orderBy(desc(auditEvents.timestamp))
+          .limit(5);
       } catch {
         // Fallback for isolated test runs
       }
@@ -178,7 +189,7 @@ export class ExecutiveRepository {
           isSampleData: false
         }
       ],
-      businessPerformance: [
+      businessPerformance: activePartners > 0 ? [
         {
           id: 'perf-1',
           tenantCategory: 'Multi-Specialty Hospital Networks',
@@ -193,7 +204,7 @@ export class ExecutiveRepository {
           utilizationRate: 88,
           growthStatus: 'steady'
         }
-      ],
+      ] : [],
       alerts: [
         {
           id: 'alert-1',
@@ -204,16 +215,26 @@ export class ExecutiveRepository {
           timestamp: now
         }
       ],
-      recentActivities: [
-        {
-          id: 'act-1',
-          eventType: 'SECURITY_AUDIT_VERIFIED',
-          actor: 'System Admin',
-          organization: 'DOC SEARCH Global',
-          timestamp: now,
-          status: 'SUCCESS'
-        }
-      ],
+      recentActivities:
+        recentLogs.length > 0
+          ? recentLogs.map((log) => ({
+              id: log.id,
+              eventType: log.eventType,
+              actor: 'Platform Engine',
+              organization: 'DOC SEARCH Global',
+              timestamp: log.timestamp ? log.timestamp.toISOString() : now,
+              status: 'SUCCESS' as const
+            }))
+          : [
+              {
+                id: 'act-1',
+                eventType: 'COMMAND_CENTER_OPERATIONAL',
+                actor: 'System Admin',
+                organization: 'DOC SEARCH Global',
+                timestamp: now,
+                status: 'SUCCESS' as const
+              }
+            ],
       quickActions: [
         {
           id: 'qa-1',
@@ -224,11 +245,11 @@ export class ExecutiveRepository {
           isAvailable: true
         }
       ],
-      trends: [
-        { period: 'Jan', activeTenants: 1, apiRequestsMillions: 0.8 },
-        { period: 'Feb', activeTenants: 2, apiRequestsMillions: 1.4 },
-        { period: 'Mar', activeTenants: activePartners, apiRequestsMillions: 2.5 }
-      ],
+      trends: activePartners > 0 ? [
+        { period: 'Jan', activeTenants: 0, apiRequestsMillions: 0 },
+        { period: 'Feb', activeTenants: 0, apiRequestsMillions: 0 },
+        { period: 'Mar', activeTenants: activePartners, apiRequestsMillions: 0 }
+      ] : [],
       systemHealth: {
         overallStatus: 'OPERATIONAL',
         isLiveTelemetryConnected: true,

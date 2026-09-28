@@ -1,4 +1,4 @@
-import { apiRequest } from './api-client.js';
+import { apiRequest, isMockFallbackAllowed } from './api-client.js';
 import type {
   RadiologyDepartmentDto,
   RadiologyModalityDto,
@@ -126,8 +126,8 @@ class RadiologyManagementService implements IRadiologyManagementService {
     try {
       const res = await apiRequest<RadiologyOverviewMetricsDto>('/api/v1/partner/radiology/overview');
       if (res.success && res.data) return res.data;
-    } catch {
-      // fallback
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
     }
     const tenantOrders = this.orders.filter((o) => o.tenantId === tenantId);
     const tenantStudies = this.studies.filter((s) => s.tenantId === tenantId);
@@ -148,8 +148,8 @@ class RadiologyManagementService implements IRadiologyManagementService {
     try {
       const res = await apiRequest<RadiologyAnalyticsDto>('/api/v1/partner/radiology/analytics');
       if (res.success && res.data) return res.data;
-    } catch {
-      // fallback
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
     }
     return { ...mockRadiologyAnalytics };
   }
@@ -158,8 +158,8 @@ class RadiologyManagementService implements IRadiologyManagementService {
     try {
       const res = await apiRequest<RadiologyDepartmentDto>('/api/v1/partner/radiology/department');
       if (res.success && res.data) return res.data;
-    } catch {
-      // fallback
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
     }
     return { ...mockRadiologyDepartment, tenantId };
   }
@@ -167,9 +167,9 @@ class RadiologyManagementService implements IRadiologyManagementService {
   async getModalities(tenantId: string): Promise<RadiologyModalityDto[]> {
     try {
       const res = await apiRequest<RadiologyModalityDto[]>('/api/v1/partner/radiology/modalities');
-      if (res.success && res.data && Array.isArray(res.data) && res.data.length > 0) return res.data;
-    } catch {
-      // fallback
+      if (res.success && res.data && Array.isArray(res.data)) return res.data;
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
     }
     return this.modalities.filter((m) => m.tenantId === tenantId);
   }
@@ -177,9 +177,9 @@ class RadiologyManagementService implements IRadiologyManagementService {
   async getProcedures(tenantId: string): Promise<RadiologyProcedureCatalogDto[]> {
     try {
       const res = await apiRequest<RadiologyProcedureCatalogDto[]>('/api/v1/partner/radiology/procedures');
-      if (res.success && res.data && Array.isArray(res.data) && res.data.length > 0) return res.data;
-    } catch {
-      // fallback
+      if (res.success && res.data && Array.isArray(res.data)) return res.data;
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
     }
     return this.procedures.filter((p) => p.tenantId === tenantId);
   }
@@ -187,9 +187,9 @@ class RadiologyManagementService implements IRadiologyManagementService {
   async getOrders(tenantId: string): Promise<RadiologyOrderDto[]> {
     try {
       const res = await apiRequest<RadiologyOrderDto[]>('/api/v1/partner/radiology/orders');
-      if (res.success && res.data && Array.isArray(res.data) && res.data.length > 0) return res.data;
-    } catch {
-      // fallback
+      if (res.success && res.data && Array.isArray(res.data)) return res.data;
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
     }
     return this.orders.filter((o) => o.tenantId === tenantId);
   }
@@ -197,9 +197,9 @@ class RadiologyManagementService implements IRadiologyManagementService {
   async getAppointments(tenantId: string): Promise<RadiologyAppointmentDto[]> {
     try {
       const res = await apiRequest<RadiologyAppointmentDto[]>('/api/v1/partner/radiology/appointments');
-      if (res.success && res.data && Array.isArray(res.data) && res.data.length > 0) return res.data;
-    } catch {
-      // fallback
+      if (res.success && res.data && Array.isArray(res.data)) return res.data;
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
     }
     return this.appointments.filter((a) => a.tenantId === tenantId);
   }
@@ -207,9 +207,9 @@ class RadiologyManagementService implements IRadiologyManagementService {
   async getPreparationRecords(tenantId: string): Promise<RadiologyPreparationRecordDto[]> {
     try {
       const res = await apiRequest<RadiologyPreparationRecordDto[]>('/api/v1/partner/radiology/preparation-records');
-      if (res.success && res.data && Array.isArray(res.data) && res.data.length > 0) return res.data;
-    } catch {
-      // fallback
+      if (res.success && res.data && Array.isArray(res.data)) return res.data;
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
     }
     return this.preps.filter((p) => p.tenantId === tenantId);
   }
@@ -217,9 +217,9 @@ class RadiologyManagementService implements IRadiologyManagementService {
   async getStudies(tenantId: string): Promise<RadiologyStudyDto[]> {
     try {
       const res = await apiRequest<RadiologyStudyDto[]>('/api/v1/partner/radiology/studies');
-      if (res.success && res.data && Array.isArray(res.data) && res.data.length > 0) return res.data;
-    } catch {
-      // fallback
+      if (res.success && res.data && Array.isArray(res.data)) return res.data;
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
     }
     return this.studies.filter((s) => s.tenantId === tenantId);
   }
@@ -227,9 +227,9 @@ class RadiologyManagementService implements IRadiologyManagementService {
   async getReports(tenantId: string): Promise<RadiologyReportDto[]> {
     try {
       const res = await apiRequest<RadiologyReportDto[]>('/api/v1/partner/radiology/reports');
-      if (res.success && res.data && Array.isArray(res.data) && res.data.length > 0) return res.data;
-    } catch {
-      // fallback
+      if (res.success && res.data && Array.isArray(res.data)) return res.data;
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
     }
     return this.reports.filter((r) => r.tenantId === tenantId);
   }
@@ -237,9 +237,9 @@ class RadiologyManagementService implements IRadiologyManagementService {
   async getCriticalFindings(tenantId: string): Promise<RadiologyCriticalFindingDto[]> {
     try {
       const res = await apiRequest<RadiologyCriticalFindingDto[]>('/api/v1/partner/radiology/critical-findings');
-      if (res.success && res.data && Array.isArray(res.data) && res.data.length > 0) return res.data;
-    } catch {
-      // fallback
+      if (res.success && res.data && Array.isArray(res.data)) return res.data;
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
     }
     return this.criticalFindings.filter((c) => c.tenantId === tenantId);
   }
@@ -247,9 +247,9 @@ class RadiologyManagementService implements IRadiologyManagementService {
   async getQualityEvents(tenantId: string): Promise<RadiologyQualityEventDto[]> {
     try {
       const res = await apiRequest<RadiologyQualityEventDto[]>('/api/v1/partner/radiology/quality-events');
-      if (res.success && res.data && Array.isArray(res.data) && res.data.length > 0) return res.data;
-    } catch {
-      // fallback
+      if (res.success && res.data && Array.isArray(res.data)) return res.data;
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
     }
     return this.qualityEvents.filter((q) => q.tenantId === tenantId);
   }
@@ -257,9 +257,9 @@ class RadiologyManagementService implements IRadiologyManagementService {
   async getAuditTraces(tenantId: string): Promise<RadiologyAuditTraceDto[]> {
     try {
       const res = await apiRequest<RadiologyAuditTraceDto[]>('/api/v1/partner/radiology/audit-traces');
-      if (res.success && res.data && Array.isArray(res.data) && res.data.length > 0) return res.data;
-    } catch {
-      // fallback
+      if (res.success && res.data && Array.isArray(res.data)) return res.data;
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
     }
     return this.auditTraces.filter((t) => t.tenantId === tenantId);
   }
@@ -274,8 +274,8 @@ class RadiologyManagementService implements IRadiologyManagementService {
         this.orders.unshift(res.data);
         return res.data;
       }
-    } catch {
-      // fallback
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
     }
     const orderNumber = `RAD-ORD-${Date.now().toString().slice(-6)}`;
     const newOrder: RadiologyOrderDto = {
@@ -329,8 +329,8 @@ class RadiologyManagementService implements IRadiologyManagementService {
         this.appointments.unshift(res.data);
         return res.data;
       }
-    } catch {
-      // fallback
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
     }
     const order = this.orders.find((o) => o.id === req.orderId);
     if (order) order.status = 'SCHEDULED';
@@ -378,8 +378,8 @@ class RadiologyManagementService implements IRadiologyManagementService {
         body: JSON.stringify(req)
       });
       if (res.success && res.data) return res.data;
-    } catch {
-      // fallback
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
     }
     const app = this.appointments.find((a) => a.id === req.appointmentId);
     if (app) {
@@ -416,8 +416,8 @@ class RadiologyManagementService implements IRadiologyManagementService {
         body: JSON.stringify(req)
       });
       if (res.success && res.data) return res.data;
-    } catch {
-      // fallback
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
     }
     const app = this.appointments.find((a) => a.orderId === req.orderId);
     if (app) app.status = 'CANCELLED';
@@ -460,8 +460,8 @@ class RadiologyManagementService implements IRadiologyManagementService {
         this.preps.unshift(res.data);
         return res.data;
       }
-    } catch {
-      // fallback
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
     }
     const newPrep: RadiologyPreparationRecordDto = {
       id: `rad-prp-${Date.now()}`,
@@ -493,8 +493,8 @@ class RadiologyManagementService implements IRadiologyManagementService {
         body: JSON.stringify({ fromStatus: 'SCHEDULED', toStatus: 'IN_PROGRESS' })
       });
       if (res.success && res.data) return res.data;
-    } catch {
-      // fallback
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
     }
     const order = this.orders.find((o) => o.id === req.orderId);
     if (order) {
@@ -535,8 +535,8 @@ class RadiologyManagementService implements IRadiologyManagementService {
         this.studies.unshift(res.data);
         return res.data;
       }
-    } catch {
-      // fallback
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
     }
     const order = this.orders.find((o) => o.id === req.orderId);
     if (order) order.status = 'COMPLETED';
@@ -579,8 +579,8 @@ class RadiologyManagementService implements IRadiologyManagementService {
         this.reports.unshift(res.data);
         return res.data;
       }
-    } catch {
-      // fallback
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
     }
     const newReport: RadiologyReportDto = {
       id: `rad-rpt-${Date.now()}`,
@@ -618,8 +618,8 @@ class RadiologyManagementService implements IRadiologyManagementService {
         body: JSON.stringify(req)
       });
       if (res.success && res.data) return res.data;
-    } catch {
-      // fallback
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
     }
     const report = this.reports.find((r) => r.id === req.reportId);
     if (report) {
@@ -662,8 +662,8 @@ class RadiologyManagementService implements IRadiologyManagementService {
         body: JSON.stringify(req)
       });
       if (res.success && res.data) return res.data;
-    } catch {
-      // fallback
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
     }
     const report = this.reports.find((r) => r.id === req.reportId);
     if (report) {
@@ -714,8 +714,8 @@ class RadiologyManagementService implements IRadiologyManagementService {
         this.criticalFindings.unshift(res.data);
         return res.data;
       }
-    } catch {
-      // fallback
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
     }
     const newFinding: RadiologyCriticalFindingDto = {
       id: `rad-cf-${Date.now()}`,
@@ -750,8 +750,8 @@ class RadiologyManagementService implements IRadiologyManagementService {
         })
       });
       if (res.success && res.data) return res.data;
-    } catch {
-      // fallback
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
     }
     const finding = this.criticalFindings.find((f) => f.id === req.alertId);
     if (finding) {

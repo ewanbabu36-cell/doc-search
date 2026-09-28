@@ -1,0 +1,66 @@
+[
+  {
+    "name": "@docsearch/api-contracts",
+    "tsconfig": "packages/api-contracts/tsconfig.json",
+    "status": "PASSED",
+    "exitCode": 0,
+    "durationMs": 23393,
+    "output": ""
+  },
+  {
+    "name": "@docsearch/auth",
+    "tsconfig": "packages/auth/tsconfig.json",
+    "status": "PASSED",
+    "exitCode": 0,
+    "durationMs": 8653,
+    "output": ""
+  },
+  {
+    "name": "@docsearch/shared-core",
+    "tsconfig": "packages/shared-core/tsconfig.json",
+    "status": "PASSED",
+    "exitCode": 0,
+    "durationMs": 5603,
+    "output": ""
+  },
+  {
+    "name": "@docsearch/database",
+    "tsconfig": "packages/database/tsconfig.json",
+    "status": "PASSED",
+    "exitCode": 0,
+    "durationMs": 45930,
+    "output": ""
+  },
+  {
+    "name": "api-gateway",
+    "tsconfig": "apps/api-gateway/tsconfig.json",
+    "status": "PASSED",
+    "exitCode": 0,
+    "durationMs": 62912,
+    "output": ""
+  },
+  {
+    "name": "partner-platform",
+    "tsconfig": "apps/partner-platform/tsconfig.json",
+    "status": "PASSED",
+    "exitCode": 0,
+    "durationMs": 73770,
+    "output": ""
+  },
+  {
+    "name": "company-platform",
+    "tsconfig": "apps/company-platform/tsconfig.json",
+    "status": "PASSED",
+    "exitCode": 0,
+    "durationMs": 20406,
+    "output": ""
+  },
+  {
+    "name": "landing-page",
+    "tsconfig": "apps/landing-page/tsconfig.json",
+    "status": "PASSED",
+    "exitCode": 0,
+    "durationMs": 5479,
+    "output": ""
+  }
+]

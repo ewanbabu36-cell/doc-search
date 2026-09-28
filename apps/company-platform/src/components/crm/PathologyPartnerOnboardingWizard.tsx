@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
-import { Badge, Button, Card } from '@docsearch/ui-kit';
+import React, { useState, useEffect } from 'react';
+import { Badge, Button, Card, Spinner } from '@docsearch/ui-kit';
 import { generateAndDownloadWelcomeKitPdf, openPrintableSpeedPostDossier, getCategoryMenuBookItems } from '../../utils/partnerWelcomeKitPdf.js';
+import { partnerService } from '../../services/partner-service.js';
 
 export type HealthcareCategoryType =
   | 'PATHOLOGY'
   | 'PHARMACY'
   | 'HOSPITAL'
   | 'CLINIC'
+  | 'COMBO_CLINIC_PATHOLOGY'
+  | 'COMBO_CLINIC_PHARMACY'
   | 'DIAGNOSTIC_CENTRE'
   | 'BLOOD_BANK'
   | 'DENTAL_CLINIC'
@@ -34,10 +37,21 @@ export interface UniversalOnboardingData {
   password: string;
   city: string;
   state: string;
+  streetAddress?: string;
+  pincode?: string;
+  agreementAccepted?: boolean;
   documents: HealthcareDocumentItem[];
   planTier: string;
   monthlyFee: number;
   features: string[];
+  planId?: string;
+  billingInterval?: string;
+  quotas?: {
+    maxDoctors?: number;
+    maxBranches?: number;
+    monthlyWhatsAppCredits?: number;
+    storageQuotaGb?: number;
+  };
 }
 
 export interface ActivationResult {
@@ -102,32 +116,25 @@ export const HEALTHCARE_PRESETS: Record<HealthcareCategoryType, CategoryPreset> 
     description: 'Phlebotomy sample barcodes, bi-directional analyzer interfacing, NABL WhatsApp PDFs & doctor e-sign.',
     defaultPartnerName: 'Apex Diagnostic & Pathology Lab',
     defaultContactPerson: 'Dr. Shalini Deshmukh, MD Path',
-    defaultPhone: '+91 98765 43210',
+    defaultPhone: '9876543210',
     defaultEmail: 'shalini.pathology@docsearch.health',
     defaultPassword: 'PathoPass123!',
     defaultCity: 'Lucknow',
     defaultState: 'Uttar Pradesh',
     plans: [
       {
-        id: 'path-starter',
-        name: 'Pathology Starter LIMS',
-        fee: 2999,
-        description: 'Basic token queue, patient registration, test catalog & standard PDF lab reports',
-        badge: 'Standard'
+        id: 'path-free-yr1',
+        name: 'Pathology Founding Partner (1st Year Free)',
+        fee: 0,
+        description: '100% Free for 365 Days - Phlebotomy sample barcodes, bi-directional analyzer sync, WhatsApp NABL reports & doctor e-sign. Renews at ₹10,000/yr from Year 2.',
+        badge: '🎁 1st Year Free'
       },
       {
-        id: 'path-pro',
-        name: 'Pathology Pro & Barcode LIMS',
-        fee: 6999,
-        description: 'Phlebotomy sample barcoding, WhatsApp report auto-dispatch, bi-dir analyzer interface & doctor e-sign',
-        badge: '⭐ Most Popular'
-      },
-      {
-        id: 'path-enterprise',
-        name: 'Enterprise Diagnostic Network',
-        fee: 14999,
-        description: 'Multi-collection center branches, B2B doctor referral commission splits & NABL audit logs',
-        badge: 'Multi-Branch'
+        id: 'path-annual-yr2',
+        name: 'Pathology Lab LIMS Annual Plan',
+        fee: 10000,
+        description: 'Full LIMS suite: Multi-collection centers, bi-directional analyzer sync, automated WhatsApp reports, doctor referral ledger & NABL logs.',
+        badge: '⭐ Year 2: ₹10,000/yr'
       }
     ],
     availableFeatures: [
@@ -186,32 +193,25 @@ export const HEALTHCARE_PRESETS: Record<HealthcareCategoryType, CategoryPreset> 
     description: 'High-speed POS billing, batch/expiry radar, Jan Aushadhi generic switcher, Schedule H1 drug register & supplier inwarding.',
     defaultPartnerName: 'Apollo Lifecare Chemist & Druggist',
     defaultContactPerson: 'Sunil Kumar, B.Pharm (Chief Pharmacist)',
-    defaultPhone: '+91 98321 54321',
+    defaultPhone: '9832154321',
     defaultEmail: 'sunil.pharmacy@docsearch.health',
     defaultPassword: 'PharmaPass123!',
     defaultCity: 'New Delhi',
     defaultState: 'Delhi',
     plans: [
       {
-        id: 'pharma-starter',
-        name: 'Solo Chemist Basic POS',
-        fee: 1999,
-        description: 'High-speed barcode counter billing, daily cashier ledger & Jan Aushadhi generic alternate finder',
-        badge: 'Solo Chemist'
+        id: 'pharma-free-yr1',
+        name: 'Pharmacy Founding Partner (1st Year Free)',
+        fee: 0,
+        description: '100% Free for 365 Days - High-speed barcode POS, batch/expiry radar, Jan Aushadhi generic switcher & Schedule H1 narcotics register. Renews at ₹10,000/yr from Year 2.',
+        badge: '🎁 1st Year Free'
       },
       {
-        id: 'pharma-pro',
-        name: 'Retail Pharmacy Pro POS',
-        fee: 3999,
-        description: 'Automated batch/expiry radar, supplier inwarding, WhatsApp bill SMS & auto-refill reminders',
-        badge: '⭐ Most Popular'
-      },
-      {
-        id: 'pharma-enterprise',
-        name: 'Multi-Store Pharmacy Chain',
-        fee: 8999,
-        description: 'Centralized multi-store warehouse, automated purchase orders, Schedule H1 narcotics register & GST filing',
-        badge: 'Multi-Store'
+        id: 'pharma-annual-yr2',
+        name: 'Pharmacy & Chemist Annual Plan',
+        fee: 10000,
+        description: 'Full Chemist POS suite: Automated batch/expiry radar, PMBJP generic switcher, supplier purchase inwarding, WhatsApp bills & Schedule H1 narcotics register.',
+        badge: '⭐ Year 2: ₹10,000/yr'
       }
     ],
     availableFeatures: [
@@ -271,32 +271,25 @@ export const HEALTHCARE_PRESETS: Record<HealthcareCategoryType, CategoryPreset> 
     description: 'Inpatient ADT bed matrix, nursing flowsheets, OT surgical scheduling, ICU vitals, TPA cashless pre-auth & ABDM kiosk.',
     defaultPartnerName: 'Max Super Specialty Hospital (250 Beds)',
     defaultContactPerson: 'Dr. Alok Verma, MS, MHA (Medical Director)',
-    defaultPhone: '+91 99112 33445',
+    defaultPhone: '9911233445',
     defaultEmail: 'director.max@docsearch.health',
     defaultPassword: 'HospitalPass123!',
     defaultCity: 'New Delhi',
     defaultState: 'Delhi',
     plans: [
       {
-        id: 'hosp-secondary',
-        name: 'Secondary Care Hospital HIS',
-        fee: 14999,
-        description: 'Up to 50 beds, ward ADT bed matrix, nursing flowsheets, OPD token queue & general billing',
-        badge: '50 Beds'
+        id: 'hosp-free-yr1',
+        name: 'Hospital Founding Partner (1st Year Free)',
+        fee: 0,
+        description: '100% Free for 365 Days - Complete Multi-Specialty Hospital HIS: All departments & modules pre-selected and unlocked. Renews at ₹30,000/yr from Year 2.',
+        badge: '🎁 1st Year Free'
       },
       {
-        id: 'hosp-tertiary',
-        name: 'Tertiary Multi-Specialty Hospital',
-        fee: 29999,
-        description: 'Up to 250 beds, OT scheduling, ICU vitals, TPA cashless pre-auth with AI 98% prediction & NHCX',
-        badge: '⭐ Most Popular'
-      },
-      {
-        id: 'hosp-enterprise',
-        name: 'Super-Specialty Medical Group',
-        fee: 59999,
-        description: 'Multi-branch hospital chain, AI command wall, robotic surgery roster & multi-tier insurance split',
-        badge: 'Enterprise Group'
+        id: 'hosp-annual-yr2',
+        name: 'Multi-Specialty Hospital Annual Plan',
+        fee: 30000,
+        description: 'All-inclusive Multi-Specialty HIS: Inpatient ADT Bed Matrix, OT Rostering, ICU Flowsheets, TPA IRDAI NHCX Cashless Bridge, ABDM Kiosk, MRD ICD-10 & Blood Bank.',
+        badge: '⭐ Year 2: ₹30,000/yr'
       }
     ],
     availableFeatures: [
@@ -306,8 +299,8 @@ export const HEALTHCARE_PRESETS: Record<HealthcareCategoryType, CategoryPreset> 
       { id: 'hosp_tpa_claims', name: 'TPA Cashless Pre-Auth & IRDAI NHCX FHIR Bridge (98% Approval)', default: true },
       { id: 'hosp_emergency_code_blue', name: 'Emergency & Code Blue Instant Audio-Visual Broadcast', default: true },
       { id: 'hosp_abdm_kiosk', name: 'ABDM 2.0 Scan & Share Fast OPD Token Kiosk', default: true },
-      { id: 'hosp_mrd_icd10', name: 'MRD ICD-10 Medical Coding & Forensic MLC Registry', default: false },
-      { id: 'hosp_blood_bank', name: 'Blood Bank Component Cross-Matching & PRBC Inventory', default: false }
+      { id: 'hosp_mrd_icd10', name: 'MRD ICD-10 Medical Coding & Forensic MLC Registry', default: true },
+      { id: 'hosp_blood_bank', name: 'Blood Bank Component Cross-Matching & PRBC Inventory', default: true }
     ],
     documents: [
       {
@@ -357,32 +350,25 @@ export const HEALTHCARE_PRESETS: Record<HealthcareCategoryType, CategoryPreset> 
     description: 'Ambient AI voice scribe, digital prescription pad with generic switcher, WhatsApp Rx dispatch & ABHA scan check-in.',
     defaultPartnerName: 'Dr. Sharma Heart & Child Care Clinic',
     defaultContactPerson: 'Dr. Ramesh Sharma, MBBS, MD (Lead Consultant)',
-    defaultPhone: '+91 94150 99887',
+    defaultPhone: '9415099887',
     defaultEmail: 'dr.sharma@docsearch.health',
     defaultPassword: 'ClinicPass123!',
     defaultCity: 'Lucknow',
     defaultState: 'Uttar Pradesh',
     plans: [
       {
-        id: 'clinic-starter',
-        name: 'Solo Doctor Clinic EMR',
-        fee: 1499,
-        description: 'Patient token queue, digital prescription pad, OPD history archive & SMS appointment reminders',
-        badge: 'Solo Doctor'
+        id: 'clinic-free-yr1',
+        name: 'Clinic Founding Partner (1st Year Free)',
+        fee: 0,
+        description: '100% Free for 365 Days - Patient token queue, digital prescription pad, ambient AI voice scribe, WhatsApp Rx & ABHA QR scan. Renews at ₹20,000/yr from Year 2.',
+        badge: '🎁 1st Year Free'
       },
       {
-        id: 'clinic-pro',
-        name: 'Doctor OPD Clinic Pro',
-        fee: 3499,
-        description: 'Ambient AI clinical voice scribe, WhatsApp Rx dispatch, Jan Aushadhi generic switch & ABHA scan',
-        badge: '⭐ Most Popular'
-      },
-      {
-        id: 'clinic-enterprise',
-        name: 'Polyclinic Multi-Specialty Network',
-        fee: 7999,
-        description: '10+ Doctor consult rooms, combined cashier POS, lab/radiology referral splits & unified patient MPI',
-        badge: 'Polyclinic Hub'
+        id: 'clinic-annual-yr2',
+        name: 'Doctor OPD Clinic Annual Plan',
+        fee: 20000,
+        description: 'Full Doctor OPD Practice Suite: Ambient AI Clinical Voice Scribe, WhatsApp Rx Dispatch, Jan Aushadhi Generic Switcher, ABHA 2.0 QR Scan & DDI Conflict Shield.',
+        badge: '⭐ Year 2: ₹20,000/yr'
       }
     ],
     availableFeatures: [
@@ -434,6 +420,164 @@ export const HEALTHCARE_PRESETS: Record<HealthcareCategoryType, CategoryPreset> 
     ]
   },
 
+  COMBO_CLINIC_PATHOLOGY: {
+    id: 'COMBO_CLINIC_PATHOLOGY',
+    label: 'Clinic + Pathology Combo',
+    icon: '🩺🧪',
+    badge: 'OPD & Lab Suite',
+    description: 'Integrated doctor OPD consultations, ambient AI voice scribe, phlebotomy sample barcode tracking, automated analyzer sync & direct EMR lab report attachment.',
+    defaultPartnerName: 'Lifecare Polyclinic & Diagnostic Lab',
+    defaultContactPerson: 'Dr. A. K. Saxena, MD (Physician & Lab Director)',
+    defaultPhone: '9810123456',
+    defaultEmail: 'contact.lifecare@docsearch.health',
+    defaultPassword: 'ComboPass123!',
+    defaultCity: 'Lucknow',
+    defaultState: 'Uttar Pradesh',
+    plans: [
+      {
+        id: 'combo-cp-free-yr1',
+        name: 'Clinic + Lab Founding Partner (1st Year Free)',
+        fee: 0,
+        description: '100% Free for 365 Days - Integrated OPD Rx + Lab Order Queue, WhatsApp reports & unified cashier. Renews at ₹25,000/yr from Year 2.',
+        badge: '🎁 1st Year Free'
+      },
+      {
+        id: 'combo-cp-annual-yr2',
+        name: 'Clinic + Lab Combo Annual Plan',
+        fee: 25000,
+        description: 'Complete integrated suite: Doctor OPD Rx, phlebotomy barcoding, bi-directional analyzer sync, WhatsApp NABL reports & doctor referral splits.',
+        badge: '⭐ Year 2: ₹25,000/yr'
+      }
+    ],
+    availableFeatures: [
+      { id: 'combo_staff_directory', name: 'Universal Staff Directory & RBAC', default: true },
+      { id: 'combo_opd_rx', name: 'Doctor OPD Digital Prescription Pad with Brand Safety', default: true },
+      { id: 'combo_lab_queue', name: 'Direct EMR Lab Order Queue & Sample Token', default: true },
+      { id: 'combo_barcoding', name: 'Phlebotomy Sample Barcode Intake & Tracking', default: true },
+      { id: 'combo_analyzer_sync', name: 'Bi-Directional Lab Machine / Analyzer Interface', default: true },
+      { id: 'combo_whatsapp_reports', name: 'WhatsApp NABL Lab Report & Rx Auto-Dispatch', default: true },
+      { id: 'combo_ai_scribe', name: 'Ambient AI Voice Scribe (Consultation to EMR)', default: false },
+      { id: 'combo_commission_splits', name: 'Doctor-Lab Referral Commission Splits & Unified Cashier', default: false }
+    ],
+    documents: [
+      {
+        id: 'doc-combo-cp-1',
+        name: 'Lead Consulting Doctor Medical Council (SMC/NMC) Reg Certificate',
+        type: 'DOCTOR_SMC_REG',
+        fileUploaded: true,
+        fileName: 'Dr_AK_Saxena_MD_Reg.pdf',
+        regNumber: 'NMC-UP-24190',
+        verified: true
+      },
+      {
+        id: 'doc-combo-cp-2',
+        name: 'NABL Accreditation / Clinical Establishment License (LIMS Lab)',
+        type: 'CLINICAL_LICENSE',
+        fileUploaded: true,
+        fileName: 'NABL_Lab_Accreditation_Lifecare.pdf',
+        regNumber: 'NABL-MC-2026-4419',
+        verified: true
+      },
+      {
+        id: 'doc-combo-cp-3',
+        name: 'Bio-Medical Waste (BMW) Disposal Agreement & State PCB NOC',
+        type: 'BMW_NOC',
+        fileUploaded: true,
+        fileName: 'BMW_Disposal_Auth_Lifecare.pdf',
+        regNumber: 'BMW-CP-2026-1182',
+        verified: true
+      },
+      {
+        id: 'doc-combo-cp-4',
+        name: 'Commercial GSTIN Registration & PAN Card Copy',
+        type: 'GST_PAN',
+        fileUploaded: true,
+        fileName: 'Lifecare_Clinic_Lab_GST_PAN.pdf',
+        regNumber: '09AABCL9912D1Z8',
+        verified: true
+      }
+    ]
+  },
+
+  COMBO_CLINIC_PHARMACY: {
+    id: 'COMBO_CLINIC_PHARMACY',
+    label: 'Clinic + Pharmacy Combo',
+    icon: '🩺💊',
+    badge: 'OPD & Chemist POS',
+    description: 'Integrated doctor OPD consultation with automated electronic prescription routing to in-house chemist counter, batch/expiry radar & combined billing.',
+    defaultPartnerName: 'Metro Health Clinic & Medicos',
+    defaultContactPerson: 'Dr. Neha Gupta, MBBS & R.Ph (Clinical Lead)',
+    defaultPhone: '9820234567',
+    defaultEmail: 'contact.metromedicos@docsearch.health',
+    defaultPassword: 'ComboPass123!',
+    defaultCity: 'New Delhi',
+    defaultState: 'Delhi',
+    plans: [
+      {
+        id: 'combo-cpr-free-yr1',
+        name: 'Clinic + Pharmacy Founding Partner (1st Year Free)',
+        fee: 0,
+        description: '100% Free for 365 Days - Integrated OPD e-Rx to chemist queue, POS billing & unified records. Renews at ₹25,000/yr from Year 2.',
+        badge: '🎁 1st Year Free'
+      },
+      {
+        id: 'combo-cpr-annual-yr2',
+        name: 'Clinic + Pharmacy Combo Annual Plan',
+        fee: 25000,
+        description: 'Complete integrated suite: Doctor OPD e-Rx push, thermal POS cashier, batch/expiry radar, Jan Aushadhi generic switch & Schedule H1 narcotics register.',
+        badge: '⭐ Year 2: ₹25,000/yr'
+      }
+    ],
+    availableFeatures: [
+      { id: 'combo_cpr_staff_directory', name: 'Universal Staff Directory & RBAC', default: true },
+      { id: 'combo_cpr_opd_rx', name: 'Doctor OPD Prescription Pad with Brand Safety', default: true },
+      { id: 'combo_cpr_dispense_queue', name: 'Zero-Lag Instant Dispense Queue to Chemist Counter', default: true },
+      { id: 'combo_cpr_pos_billing', name: 'High-Speed Barcode POS Billing & Thermal Print', default: true },
+      { id: 'combo_cpr_expiry_radar', name: 'Automated Batch & Expiry Radar (30/60/90 Days Alerts)', default: true },
+      { id: 'combo_cpr_generic_finder', name: 'Jan Aushadhi Generic Alternate Recommender', default: true },
+      { id: 'combo_cpr_schedule_h1', name: 'Schedule H & H1 Narcotics Digital Compliance Register', default: false },
+      { id: 'combo_cpr_whatsapp', name: 'WhatsApp Unified Prescription & Tax Invoice Dispatch', default: false }
+    ],
+    documents: [
+      {
+        id: 'doc-combo-cpr-1',
+        name: 'Consulting Doctor State Medical Council (SMC/NMC) Degree & Reg',
+        type: 'DOCTOR_SMC_REG',
+        fileUploaded: true,
+        fileName: 'Dr_Neha_Gupta_MBBS_Reg.pdf',
+        regNumber: 'NMC-DL-55219',
+        verified: true
+      },
+      {
+        id: 'doc-combo-cpr-2',
+        name: 'Retail Drug License (Form 20 & Form 21) from State FDA',
+        type: 'DRUG_LICENSE',
+        fileUploaded: true,
+        fileName: 'Drug_License_Form20_21_Metro.pdf',
+        regNumber: 'DL-20-21-DL-33410',
+        verified: true
+      },
+      {
+        id: 'doc-combo-cpr-3',
+        name: 'Registered Pharmacist State Pharmacy Council Degree Certificate',
+        type: 'PHARMACIST_REG',
+        fileUploaded: true,
+        fileName: 'Pharmacist_PCI_Registration_Metro.pdf',
+        regNumber: 'PCI-DL-11928',
+        verified: true
+      },
+      {
+        id: 'doc-combo-cpr-4',
+        name: 'Commercial GSTIN Registration & PAN Tax Certificate',
+        type: 'GST_PAN',
+        fileUploaded: true,
+        fileName: 'Metro_Clinic_Pharmacy_GST.pdf',
+        regNumber: '07AABCM2291K1ZS',
+        verified: true
+      }
+    ]
+  },
+
   DIAGNOSTIC_CENTRE: {
     id: 'DIAGNOSTIC_CENTRE',
     label: 'Radiology & Imaging Centre',
@@ -442,32 +586,25 @@ export const HEALTHCARE_PRESETS: Record<HealthcareCategoryType, CategoryPreset> 
     description: 'Zero-footprint web DICOM viewer, speech-to-text reporting, WhatsApp scan links, AERB & PNDT compliance registers.',
     defaultPartnerName: 'Apex Imaging & Advanced Radiology Centre',
     defaultContactPerson: 'Dr. Arvind Mehta, MD DMRD (Chief Radiologist)',
-    defaultPhone: '+91 98111 22334',
+    defaultPhone: '9811122334',
     defaultEmail: 'arvind.radiology@docsearch.health',
     defaultPassword: 'RadioPass123!',
     defaultCity: 'Lucknow',
     defaultState: 'Uttar Pradesh',
     plans: [
       {
-        id: 'radio-starter',
-        name: 'Diagnostic X-Ray & Ultrasound',
-        fee: 3999,
-        description: 'Modality token scheduling, patient queue, structured PDF radiology report & appointment SMS',
-        badge: 'Modality Basic'
+        id: 'radio-free-yr1',
+        name: 'Radiology Founding Partner (1st Year Free)',
+        fee: 0,
+        description: '100% Free for 365 Days - Zero-footprint web DICOM viewer, speech-to-text reporting & WhatsApp scan links. Renews at ₹20,000/yr from Year 2.',
+        badge: '🎁 1st Year Free'
       },
       {
-        id: 'radio-pro',
-        name: 'Diagnostic PACS & Modality Hub',
-        fee: 8999,
-        description: 'Zero-footprint web DICOM viewer, speech-to-text report writer & WhatsApp secure imaging link',
-        badge: '⭐ Most Popular'
-      },
-      {
-        id: 'radio-enterprise',
-        name: 'Multi-Modality Imaging Network',
-        fee: 18999,
-        description: 'Cloud PACS for CT/MRI, teleradiology second opinions, AI chest nodule detection & multi-centre sync',
-        badge: 'Enterprise PACS'
+        id: 'radio-annual-yr2',
+        name: 'Radiology & PACS Annual Plan',
+        fee: 20000,
+        description: 'Complete Imaging suite: Cloud PACS, DICOM CT/MRI machine sync, speech-to-text structured reporting & WhatsApp scan links.',
+        badge: '⭐ Year 2: ₹20,000/yr'
       }
     ],
     availableFeatures: [
@@ -527,32 +664,25 @@ export const HEALTHCARE_PRESETS: Record<HealthcareCategoryType, CategoryPreset> 
     description: 'Voluntary donor registry, component separation (PRBC, FFP, Platelets), cross-matching, cold chain logs & e-RaktKosh sync.',
     defaultPartnerName: 'Apex Regional Blood Centre & Component Separation Unit',
     defaultContactPerson: 'Dr. Neha Kapoor, MD Transfusion Medicine',
-    defaultPhone: '+91 98222 33445',
+    defaultPhone: '9822233445',
     defaultEmail: 'blood.neha@docsearch.health',
     defaultPassword: 'BloodPass123!',
     defaultCity: 'Lucknow',
     defaultState: 'Uttar Pradesh',
     plans: [
       {
-        id: 'blood-basic',
-        name: 'Basic Blood Storage Centre',
-        fee: 4999,
-        description: 'Whole blood storage, donor registration, blood grouping & cross-match slips',
-        badge: 'Storage Hub'
+        id: 'blood-free-yr1',
+        name: 'Blood Bank Founding Partner (1st Year Free)',
+        fee: 0,
+        description: '100% Free for 365 Days - Donor registry, component fractionation, cross-matching & e-RaktKosh sync. Renews at ₹20,000/yr from Year 2.',
+        badge: '🎁 1st Year Free'
       },
       {
-        id: 'blood-component',
-        name: 'Component Separation & Transfusion Unit',
-        fee: 9999,
-        description: 'PRBC, FFP, Platelet fractionation, Coombs test matrix & IoT cold chain temperature telemetry',
-        badge: '⭐ Most Popular'
-      },
-      {
-        id: 'blood-regional',
-        name: 'Regional Blood Transfusion Network',
-        fee: 19999,
-        description: 'e-RaktKosh national sync, voluntary camp mobile scheduling, apheresis SDP & trauma rapid dispatch',
-        badge: 'Regional Apex'
+        id: 'blood-annual-yr2',
+        name: 'Blood Bank & Transfusion Annual Plan',
+        fee: 20000,
+        description: 'Complete Transfusion suite: Voluntary donor registry, PRBC/FFP/Platelet component separation, Coombs cross-matching matrix & e-RaktKosh national sync.',
+        badge: '⭐ Year 2: ₹20,000/yr'
       }
     ],
     availableFeatures: [
@@ -612,32 +742,25 @@ export const HEALTHCARE_PRESETS: Record<HealthcareCategoryType, CategoryPreset> 
     description: 'Interactive 32-tooth odontogram, RVG digital sensor X-ray capture, multi-chair rostering, procedure step pricing & dental recall SMS.',
     defaultPartnerName: 'Apex 32 Smiles Dental Clinic & Implant Centre',
     defaultContactPerson: 'Dr. Karan Grover, MDS (Orthodontics)',
-    defaultPhone: '+91 98333 44556',
+    defaultPhone: '9833344556',
     defaultEmail: 'dental.karan@docsearch.health',
     defaultPassword: 'DentalPass123!',
     defaultCity: 'Lucknow',
     defaultState: 'Uttar Pradesh',
     plans: [
       {
-        id: 'dental-solo',
-        name: 'Solo Dental Practice',
-        fee: 1999,
-        description: 'Single operatory chair, basic patient EMR, digital Rx & appointment SMS',
-        badge: 'Solo Clinic'
+        id: 'dental-free-yr1',
+        name: 'Dental Founding Partner (1st Year Free)',
+        fee: 0,
+        description: '100% Free for 365 Days - Interactive 32-tooth odontogram, RVG sensor capture & chair rostering. Renews at ₹20,000/yr from Year 2.',
+        badge: '🎁 1st Year Free'
       },
       {
-        id: 'dental-pro',
-        name: 'Multi-Chair Dental & Implant Clinic',
-        fee: 4499,
-        description: 'Interactive 32-tooth odontogram, RVG sensor capture, chair rostering & procedure step pricing',
-        badge: '⭐ Most Popular'
-      },
-      {
-        id: 'dental-network',
-        name: 'Multi-Branch Dental Hospital Network',
-        fee: 9999,
-        description: 'Dental lab job slip tracker, clear aligner photo timeline, biomaterial batch tracking & multi-chair sync',
-        badge: 'Network Suite'
+        id: 'dental-annual-yr2',
+        name: 'Dental Clinic Annual Plan',
+        fee: 20000,
+        description: 'Full Dental Clinic suite: 32-tooth odontogram, RVG sensor capture, multi-chair rostering & procedure step pricing.',
+        badge: '⭐ Year 2: ₹20,000/yr'
       }
     ],
     availableFeatures: [
@@ -697,7 +820,7 @@ export const HEALTHCARE_PRESETS: Record<HealthcareCategoryType, CategoryPreset> 
     description: 'Nadi Pariksha & Prakriti assessment, Panchakarma therapy room scheduling, classical herbal dispensary POS & lifestyle diet plans.',
     defaultPartnerName: 'AyurVeda Wellness & Panchakarma Rejuvenation Centre',
     defaultContactPerson: 'Dr. Acharya Shrinivas, BAMS, MD Ayur',
-    defaultPhone: '+91 98444 55667',
+    defaultPhone: '9844455667',
     defaultEmail: 'ayush.shrinivas@docsearch.health',
     defaultPassword: 'AyushPass123!',
     defaultCity: 'Lucknow',
@@ -782,7 +905,7 @@ export const HEALTHCARE_PRESETS: Record<HealthcareCategoryType, CategoryPreset> 
     description: 'Real-time hemodialysis bed/station monitoring, Kt/V urea clearance calculator, dialyzer reuse barcoding, RO water quality logs.',
     defaultPartnerName: 'Apex Renal & Hemodialysis Care Hub',
     defaultContactPerson: 'Dr. Arvind Shenoy, MD, DM Nephrology',
-    defaultPhone: '+91 98555 66778',
+    defaultPhone: '9855566778',
     defaultEmail: 'nephro.arvind@docsearch.health',
     defaultPassword: 'NephroPass123!',
     defaultCity: 'Lucknow',
@@ -867,7 +990,7 @@ export const HEALTHCARE_PRESETS: Record<HealthcareCategoryType, CategoryPreset> 
     description: 'Auto-refraction Snellen charts, IOL power biometry calculator, slit lamp imaging, cataract surgical package billing & optical POS.',
     defaultPartnerName: 'Apex Vision & Eye Laser Care Hospital',
     defaultContactPerson: 'Dr. Radhika Iyer, MS Ophthalmology',
-    defaultPhone: '+91 98666 77889',
+    defaultPhone: '9866677889',
     defaultEmail: 'eye.radhika@docsearch.health',
     defaultPassword: 'EyePass123!',
     defaultCity: 'Lucknow',
@@ -952,7 +1075,7 @@ export const HEALTHCARE_PRESETS: Record<HealthcareCategoryType, CategoryPreset> 
     description: 'Range of motion (ROM) goniometry, muscle strength grading (MMT), customized exercise prescription videos & package billing.',
     defaultPartnerName: 'Apex Motion Physiotherapy & Sports Rehab Centre',
     defaultContactPerson: 'Dr. Pooja Mishra, BPT, MPT (Ortho Rehab)',
-    defaultPhone: '+91 98777 88990',
+    defaultPhone: '9877788990',
     defaultEmail: 'physio.pooja@docsearch.health',
     defaultPassword: 'PhysioPass123!',
     defaultCity: 'Lucknow',
@@ -1030,7 +1153,24 @@ export const HEALTHCARE_PRESETS: Record<HealthcareCategoryType, CategoryPreset> 
   }
 };
 
-export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: ActivationResult) => void }> = ({ onComplete }) => {
+export const sanitizeIndianPhone = (raw: string): string => {
+  let digits = (raw || '').replace(/\D/g, '');
+  if (digits.length === 12 && digits.startsWith('91')) digits = digits.slice(2);
+  else if (digits.length === 11 && digits.startsWith('0')) digits = digits.slice(1);
+  return digits.slice(0, 10);
+};
+
+export interface UniversalPartnerOnboardingWizardProps {
+  onComplete?: (res: ActivationResult) => void;
+  onClose?: () => void;
+  isModal?: boolean;
+}
+
+export const UniversalPartnerOnboardingWizard: React.FC<UniversalPartnerOnboardingWizardProps> = ({
+  onComplete,
+  onClose,
+  isModal
+}) => {
   const [selectedCategory, setSelectedCategory] = useState<HealthcareCategoryType>('PATHOLOGY');
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -1039,20 +1179,100 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
   const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
   const [emailNotice, setEmailNotice] = useState<string | null>(null);
 
-  // Initialize form data from preset
+  // Dynamic Master Database Plans State
+  const [dbPlans, setDbPlans] = useState<any[]>([]);
+  const [isLoadingPlans, setIsLoadingPlans] = useState<boolean>(true);
+  const [planMode, setPlanMode] = useState<'SELECT_EXISTING' | 'CREATE_CUSTOM'>('SELECT_EXISTING');
+  const [customPlanForm, setCustomPlanForm] = useState({
+    name: 'Custom Facility Tier',
+    monthlyFee: 4999,
+    billingInterval: 'MONTHLY',
+    maxDoctors: 10,
+    maxBranches: 1,
+    storageGb: 25,
+    monthlyWhatsAppCredits: 1000,
+    badge: 'Custom Config'
+  });
+
+  const getFilteredCategoryPlans = (plans: any[], category: HealthcareCategoryType) => {
+    return plans.filter((plan) => {
+      const v = (plan.metadata?.vertical || '').toUpperCase();
+      const c = (plan.code || '').toUpperCase();
+      if (category === 'HOSPITAL') return v === 'HOSPITAL' || c.includes('HOSP');
+      if (category === 'CLINIC') return v === 'CLINIC' || (c.includes('CLINIC') && !c.includes('COMBO'));
+      if (category === 'PHARMACY') return v === 'PHARMACY' || c.includes('PHARMA');
+      if (category === 'PATHOLOGY') return v === 'PATHOLOGY' || (c.includes('PATH') && !c.includes('COMBO'));
+      if (category === 'COMBO_CLINIC_PATHOLOGY') return v === 'COMBO_CLINIC_PATHOLOGY' || c.includes('COMBO_CP');
+      if (category === 'COMBO_CLINIC_PHARMACY') return v === 'COMBO_CLINIC_PHARMACY' || c.includes('COMBO_CPR');
+      if (category === 'DIAGNOSTIC_CENTRE') return v === 'PATHOLOGY' || c.includes('PATH') || c.includes('RADIO') || c.includes('DIAG');
+      return v === category || c.includes(category);
+    });
+  };
+
+  // Fetch real plans & features from Database API
+  useEffect(() => {
+    let isMounted = true;
+    async function loadLivePlansAndFeatures() {
+      setIsLoadingPlans(true);
+      try {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('docsearch_company_token') : null;
+        const headers: Record<string, string> = token ? { 'Authorization': `Bearer ${token}` } : {};
+        const plansRes = await fetch('/api/v1/company/plans', { headers })
+          .then((r) => r.json())
+          .catch(() => ({ success: false, data: [] }));
+
+        if (isMounted) {
+          if (plansRes.success && Array.isArray(plansRes.data) && plansRes.data.length > 0) {
+            setDbPlans(plansRes.data);
+            const catPlans = getFilteredCategoryPlans(plansRes.data, selectedCategory);
+            const targetPlan = catPlans.find((p) => p.basePrice === 0 || p.metadata?.basePrice === 0 || (p.code || '').includes('FREE')) || catPlans[0] || plansRes.data[0];
+            const planPrice = targetPlan ? (targetPlan.metadata?.basePrice ?? targetPlan.basePrice ?? 0) : 0;
+            setFormData((prev) => ({
+              ...prev,
+              planTier: targetPlan.name,
+              monthlyFee: planPrice,
+              planId: targetPlan.id,
+              billingInterval: targetPlan.billingInterval || 'ANNUAL',
+              quotas: {
+                maxDoctors: targetPlan.maxDoctors || targetPlan.metadata?.maxDoctors || 5,
+                maxBranches: targetPlan.maxBranches || targetPlan.metadata?.maxBranches || 1,
+                monthlyWhatsAppCredits: targetPlan.monthlyWhatsAppCredits || targetPlan.metadata?.whatsAppQuota || 1500,
+                storageQuotaGb: targetPlan.storageQuotaGb || targetPlan.metadata?.storageGb || 20
+              }
+            }));
+          }
+        }
+      } catch (err) {
+        console.warn('Could not load live plans and features:', err);
+      } finally {
+        if (isMounted) setIsLoadingPlans(false);
+      }
+    }
+    void loadLivePlansAndFeatures();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Initialize form data from preset (1st Year 100% Free Plan Default)
   const initialPreset = HEALTHCARE_PRESETS.PATHOLOGY;
   const [formData, setFormData] = useState<UniversalOnboardingData>({
     partnerName: initialPreset.defaultPartnerName,
     classification: 'PATHOLOGY',
     contactPerson: initialPreset.defaultContactPerson,
-    phone: initialPreset.defaultPhone,
+    phone: sanitizeIndianPhone(initialPreset.defaultPhone),
     email: initialPreset.defaultEmail,
     password: initialPreset.defaultPassword,
     city: initialPreset.defaultCity,
     state: initialPreset.defaultState,
+    streetAddress: '',
+    pincode: '',
+    agreementAccepted: false,
     documents: initialPreset.documents,
-    planTier: initialPreset.plans[1]?.name || initialPreset.plans[0]?.name || 'Standard Tier',
-    monthlyFee: initialPreset.plans[1]?.fee || initialPreset.plans[0]?.fee || 2999,
+    planTier: initialPreset.plans[0]?.name || 'Pathology Founding Partner (1st Year Free)',
+    monthlyFee: initialPreset.plans[0]?.fee ?? 0,
+    planId: initialPreset.plans[0]?.id || 'path-free-yr1',
+    billingInterval: 'ANNUAL',
     features: initialPreset.availableFeatures.filter((f) => f.default).map((f) => f.name)
   });
 
@@ -1063,22 +1283,43 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
   const handleSelectCategory = (cat: HealthcareCategoryType) => {
     setSelectedCategory(cat);
     const preset = HEALTHCARE_PRESETS[cat];
-    const recPlan = preset.plans[1] || preset.plans[0];
+    const catPlans = getFilteredCategoryPlans(dbPlans, cat);
+    // Find Plan 1 (Free 1st Year) or fallback to first plan
+    const targetPlan = catPlans.find((p) => p.basePrice === 0 || p.metadata?.basePrice === 0 || (p.code || '').includes('FREE')) || catPlans[0];
+    const planPrice = targetPlan ? (targetPlan.metadata?.basePrice ?? targetPlan.basePrice ?? 0) : preset.plans[0]?.fee ?? 0;
+    const planName = targetPlan ? targetPlan.name : preset.plans[0]?.name || `${preset.label} Founding Partner (1st Year Free)`;
 
-    setFormData({
+    // MULTI-SPECIALTY HOSPITAL: All departments and modules MUST BE PRE-SELECTED!
+    const selectedFeatures = cat === 'HOSPITAL'
+      ? preset.availableFeatures.map((f) => f.name)
+      : preset.availableFeatures.filter((f) => f.default).map((f) => f.name);
+
+    setFormData((prev) => ({
+      ...prev,
       partnerName: preset.defaultPartnerName,
       classification: cat,
       contactPerson: preset.defaultContactPerson,
-      phone: preset.defaultPhone,
+      phone: sanitizeIndianPhone(preset.defaultPhone),
       email: preset.defaultEmail,
       password: preset.defaultPassword,
       city: preset.defaultCity,
       state: preset.defaultState,
+      streetAddress: prev.streetAddress || '',
+      pincode: prev.pincode || '',
+      agreementAccepted: false,
       documents: preset.documents,
-      planTier: recPlan?.name || 'Healthcare Partner Pro',
-      monthlyFee: recPlan?.fee || 4999,
-      features: preset.availableFeatures.filter((f) => f.default).map((f) => f.name)
-    });
+      planTier: planName,
+      monthlyFee: planPrice,
+      planId: targetPlan?.id || preset.plans[0]?.id || 'dynamic-plan',
+      billingInterval: targetPlan?.billingInterval || 'ANNUAL',
+      quotas: {
+        maxDoctors: targetPlan?.maxDoctors || targetPlan?.metadata?.maxDoctors || (cat === 'HOSPITAL' ? 50 : 5),
+        maxBranches: targetPlan?.maxBranches || targetPlan?.metadata?.maxBranches || (cat === 'HOSPITAL' ? 3 : 1),
+        monthlyWhatsAppCredits: targetPlan?.monthlyWhatsAppCredits || targetPlan?.metadata?.whatsAppQuota || (cat === 'HOSPITAL' ? 10000 : 1500),
+        storageQuotaGb: targetPlan?.storageQuotaGb || targetPlan?.metadata?.storageGb || (cat === 'HOSPITAL' ? 200 : 20)
+      },
+      features: selectedFeatures
+    }));
     setKycStatus('VERIFIED');
   };
 
@@ -1127,9 +1368,17 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
     setIsSubmitting(true);
     try {
       // 1. Post to API Gateway
+      const token = typeof window !== 'undefined'
+        ? (localStorage.getItem('docsearch_company_token') || localStorage.getItem('docsearch_auth_token'))
+        : null;
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      };
+
       const res = await fetch('/api/v1/company/partners/complete-onboarding-activation', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           partnerName: formData.partnerName,
           classification: formData.classification,
@@ -1139,6 +1388,8 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
           password: formData.password,
           city: formData.city,
           state: formData.state,
+          streetAddress: formData.streetAddress || '',
+          pincode: formData.pincode || '',
           planTier: formData.planTier,
           monthlyFee: formData.monthlyFee,
           features: formData.features,
@@ -1158,7 +1409,9 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
         switch (cat) {
           case 'HOSPITAL': return 'HOSPITAL_DIRECTOR';
           case 'PHARMACY': return 'PHARMACIST';
-          case 'CLINIC': return 'CLINIC_DOCTOR';
+          case 'CLINIC':
+          case 'COMBO_CLINIC_PATHOLOGY':
+          case 'COMBO_CLINIC_PHARMACY': return 'CLINIC_DOCTOR';
           case 'DIAGNOSTIC_CENTRE': return 'RADIOLOGIST';
           case 'BLOOD_BANK': return 'BLOOD_BANK_OFFICER';
           case 'DENTAL_CLINIC': return 'DENTIST';
@@ -1175,7 +1428,9 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
         switch (cat) {
           case 'HOSPITAL': return '/hospital';
           case 'PHARMACY': return '/pharmacy';
-          case 'CLINIC': return '/clinic';
+          case 'CLINIC':
+          case 'COMBO_CLINIC_PATHOLOGY':
+          case 'COMBO_CLINIC_PHARMACY': return '/clinic';
           case 'DIAGNOSTIC_CENTRE': return '/radiology';
           case 'BLOOD_BANK': return '/hospital/blood-bank';
           case 'DENTAL_CLINIC': return '/clinic/consultation';
@@ -1188,8 +1443,8 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
         }
       };
 
-      // Compute 30-day renewal date
-      const expiryDateObj = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      // Compute 365-day 1st Year Free renewal date
+      const expiryDateObj = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
       const planExpiryFormatted = expiryDateObj.toLocaleDateString('en-IN', {
         day: '2-digit',
         month: 'short',
@@ -1242,6 +1497,47 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
       const updatedList = [resultData, ...storedPartners.filter((p: any) => p.credentials?.userId !== resultData.credentials.userId)];
       localStorage.setItem('docsearch_live_partners', JSON.stringify(updatedList));
 
+      // Also persist in docsearch_registered_partners for full Directory and CRM synchronization
+      try {
+        const storedRegPartners = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');
+        const newRegEntry = {
+          id: resultData.partnerId,
+          facilityName: formData.partnerName,
+          tradeName: formData.partnerName,
+          legalName: formData.partnerName,
+          name: formData.contactPerson,
+          contactPerson: formData.contactPerson,
+          email: formData.email,
+          phone: formData.phone,
+          organizationType: formData.classification,
+          partnerType: (
+            formData.classification === 'HOSPITAL'
+              ? 'HOSPITAL_NETWORK'
+              : formData.classification === 'PHARMACY'
+              ? 'PHARMACY'
+              : formData.classification === 'PATHOLOGY' || formData.classification === 'DIAGNOSTIC_CENTRE'
+              ? 'DIAGNOSTIC_LAB'
+              : 'CLINIC_GROUP'
+          ),
+          planTier: formData.planTier,
+          monthlyFee: formData.monthlyFee,
+          features: formData.features,
+          status: 'APPROVED',
+          lifecycleStatus: 'ACTIVE',
+          verificationStatus: 'VERIFIED',
+          kycStatus: 'KYC_VERIFIED',
+          onboardingStep: 'COMPLETED',
+          onboardingProgressPercent: 100,
+          city: formData.city,
+          credentials: resultData.credentials,
+          createdAt: new Date().toISOString()
+        };
+        const updatedRegList = [newRegEntry, ...storedRegPartners.filter((p: any) => p.email !== formData.email && p.id !== resultData.partnerId)];
+        localStorage.setItem('docsearch_registered_partners', JSON.stringify(updatedRegList));
+      } catch (e) {
+        console.warn('Local storage sync error:', e);
+      }
+
       // Also register credentials into partner staff login cache with category-specific workspace config
       const customUsers = JSON.parse(localStorage.getItem('docsearch_custom_partner_users') || '[]');
       const primaryRole = getRoleByOrg(formData.classification);
@@ -1250,7 +1546,9 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
         switch (cat) {
           case 'HOSPITAL': return 'inpatient-management';
           case 'PHARMACY': return 'pharmacy-medication';
-          case 'CLINIC': return 'clinical-consultation';
+          case 'CLINIC':
+          case 'COMBO_CLINIC_PATHOLOGY':
+          case 'COMBO_CLINIC_PHARMACY': return 'clinical-consultation';
           case 'DIAGNOSTIC_CENTRE': return 'radiology-imaging';
           case 'BLOOD_BANK': return 'blood-bank-transfusion';
           case 'DENTAL_CLINIC': return 'clinical-consultation';
@@ -1265,6 +1563,8 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
 
       const getDeptByOrg = (cat: HealthcareCategoryType) => {
         switch (cat) {
+          case 'COMBO_CLINIC_PATHOLOGY': return 'OPD Clinical Consultation & In-House Diagnostic Lab';
+          case 'COMBO_CLINIC_PHARMACY': return 'OPD Clinical Consultation & In-House Pharmacy POS';
           case 'HOSPITAL': return 'Hospital Administration & Inpatient Governance';
           case 'PHARMACY': return 'Pharmacy POS & Stock Inwarding';
           case 'CLINIC': return 'Outpatient Clinic & Clinical Consultation';
@@ -1292,6 +1592,10 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
             return ['PATHOLOGY'];
           case 'DIAGNOSTIC_CENTRE':
             return ['DIAGNOSTIC_CENTRE'];
+          case 'COMBO_CLINIC_PATHOLOGY':
+            return ['CLINIC', 'PATHOLOGY'];
+          case 'COMBO_CLINIC_PHARMACY':
+            return ['CLINIC', 'PHARMACY'];
           case 'CLINIC':
           case 'DENTAL_CLINIC':
           case 'AYUSH_WELLNESS':
@@ -1320,7 +1624,59 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
         accessibleFeatures: formData.features,
         restrictedFeatures: formData.classification === 'HOSPITAL' ? ['None (Full Hospital Scope)'] : ['Hospital IPD Wards']
       };
-      localStorage.setItem('docsearch_custom_partner_users', JSON.stringify([newCustomUser, ...customUsers.filter((u: any) => u.email !== formData.email)]));
+      try {
+        localStorage.setItem('docsearch_custom_partner_users', JSON.stringify([newCustomUser, ...customUsers.filter((u: any) => u.email !== formData.email)]));
+      } catch {}
+      // Also register in-memory in partnerService for instant CRM Directory display
+      try {
+        partnerService.addPartner({
+          id: resultData.partnerId,
+          tenantId: resultData.partnerId,
+          tenantSlug: formData.partnerName.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+          legalName: formData.partnerName,
+          tradeName: formData.partnerName,
+          partnerType: (
+            formData.classification === 'HOSPITAL'
+              ? 'HOSPITAL_NETWORK'
+              : formData.classification === 'PHARMACY'
+              ? 'PHARMACY'
+              : formData.classification === 'PATHOLOGY' || formData.classification === 'DIAGNOSTIC_CENTRE'
+              ? 'DIAGNOSTIC_LAB'
+              : 'CLINIC_GROUP'
+          ) as any,
+          lifecycleStatus: 'ACTIVE',
+          verificationStatus: 'VERIFIED',
+          onboardingStep: 'COMPLETED',
+          onboardingProgressPercent: 100,
+          primaryContact: {
+            name: formData.contactPerson,
+            email: formData.email,
+            phone: formData.phone,
+            roleTitle: primaryRole
+          },
+          branchCount: 1,
+          userCount: 5,
+          metadata: {
+            classification: formData.classification,
+            city: formData.city,
+            planTier: formData.planTier,
+            monthlyFee: formData.monthlyFee,
+            activeFeatures: formData.features,
+            temporaryPassword: resultData.credentials?.temporaryPassword,
+            loginUrl: resultData.credentials?.loginUrl,
+            activationVoucher: resultData.partnerId
+          },
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+      } catch (err) {
+        console.warn('Failed to add to in-memory partnerService:', err);
+      }
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('docsearch:partner_registered', { detail: resultData }));
+        window.dispatchEvent(new Event('storage'));
+      }
 
       setActivationResult(resultData);
       setCurrentStep(5);
@@ -1339,7 +1695,7 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: isModal ? '16px' : '20px' }}>
       {/* Header Banner */}
       <div
         style={{
@@ -1403,6 +1759,26 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
               {s.num < currentStep ? `✓ ${s.label}` : s.label}
             </button>
           ))}
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                border: '1px solid #EF4444',
+                color: '#F87171',
+                borderRadius: '8px',
+                padding: '6px 12px',
+                fontSize: '0.8125rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                marginLeft: '8px'
+              }}
+              title="Close Onboarding Wizard"
+            >
+              ✕ Exit
+            </button>
+          )}
         </div>
       </div>
 
@@ -1422,19 +1798,24 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
                   📋 Step 1: Select Healthcare Category & Facility Profile
                 </h3>
                 <span style={{ fontSize: '0.8125rem', color: '#94A3B8' }}>
-                  Aap kis category ka healthcare partner live add karna chahte hain select karein (Hospital, Pharmacy, Clinic, Pathology, Radiology):
+                  Aap kis category ka healthcare partner live add karna chahte hain select karein (Hospital, Clinic, Pathology, Pharmacy):
                 </span>
               </div>
               <Badge variant="primary">Stage 1 of 5</Badge>
             </div>
 
-            {/* CATEGORY SWITCHER CARDS */}
+            {/* CATEGORY SWITCHER CARDS (STRICT 4 CANONICAL PROFILES) */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', color: '#CBD5E1', fontWeight: 800, marginBottom: '8px' }}>
-                SELECT HEALTHCARE PROVIDER TYPE:
-              </label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <label style={{ fontSize: '0.75rem', color: '#CBD5E1', fontWeight: 800 }}>
+                  CANONICAL HEALTHCARE PROFILES (4 KEY VERTICALS):
+                </label>
+                <span style={{ fontSize: '0.75rem', color: '#06B6D4', fontWeight: 700 }}>
+                  Selected: <strong>{HEALTHCARE_PRESETS[selectedCategory]?.label}</strong>
+                </span>
+              </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
-                {(Object.keys(HEALTHCARE_PRESETS) as HealthcareCategoryType[]).map((catKey) => {
+                {(['HOSPITAL', 'CLINIC', 'PATHOLOGY', 'PHARMACY'] as HealthcareCategoryType[]).map((catKey) => {
                   const item = HEALTHCARE_PRESETS[catKey];
                   const isSelected = selectedCategory === catKey;
                   return (
@@ -1450,7 +1831,8 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
                         display: 'flex',
                         flexDirection: 'column',
                         gap: '4px',
-                        transition: 'all 0.15s ease'
+                        transition: 'all 0.15s ease',
+                        boxShadow: isSelected ? '0 0 15px rgba(6, 182, 212, 0.2)' : 'none'
                       }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1477,7 +1859,11 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
                     : selectedCategory === 'PHARMACY'
                     ? 'PHARMACY / CHEMIST SHOP NAME *'
                     : selectedCategory === 'CLINIC'
-                    ? 'DOCTOR CLINIC / POLYCLINIC NAME *'
+                    ? 'DOCTOR CLINIC / PRACTICE NAME *'
+                    : selectedCategory === 'COMBO_CLINIC_PATHOLOGY'
+                    ? 'POLYCLINIC & PATHOLOGY LAB NAME *'
+                    : selectedCategory === 'COMBO_CLINIC_PHARMACY'
+                    ? 'CLINIC & PHARMACY NAME *'
                     : selectedCategory === 'DIAGNOSTIC_CENTRE'
                     ? 'DIAGNOSTIC & RADIOLOGY CENTRE NAME *'
                     : selectedCategory === 'BLOOD_BANK'
@@ -1519,6 +1905,10 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
                     ? 'CHIEF PHARMACIST / PROPRIETOR NAME *'
                     : selectedCategory === 'CLINIC'
                     ? 'LEAD CONSULTING DOCTOR NAME *'
+                    : selectedCategory === 'COMBO_CLINIC_PATHOLOGY'
+                    ? 'LEAD CONSULTING DOCTOR / LAB DIRECTOR *'
+                    : selectedCategory === 'COMBO_CLINIC_PHARMACY'
+                    ? 'LEAD CONSULTING DOCTOR / CHIEF PHARMACIST *'
                     : selectedCategory === 'DIAGNOSTIC_CENTRE'
                     ? 'CHIEF RADIOLOGIST / DIRECTOR NAME *'
                     : selectedCategory === 'BLOOD_BANK'
@@ -1554,23 +1944,61 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
 
               <div>
                 <label style={{ display: 'block', fontSize: '0.75rem', color: '#94A3B8', fontWeight: 700, marginBottom: '6px' }}>
-                  CONTACT PHONE (WHATSAPP ENABLED) *
+                  CONTACT PHONE (STANDARD 10-DIGIT MOBILE) *
                 </label>
-                <input
-                  type="text"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    borderRadius: '8px',
-                    backgroundColor: '#1E293B',
-                    border: '1px solid #475569',
-                    color: '#F8FAFC',
-                    fontSize: '0.875rem'
-                  }}
-                  placeholder="+91 98765 43210"
-                />
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <span
+                    style={{
+                      position: 'absolute',
+                      left: '12px',
+                      color: '#38BDF8',
+                      fontWeight: 800,
+                      fontSize: '0.875rem',
+                      userSelect: 'none',
+                      pointerEvents: 'none'
+                    }}
+                  >
+                    +91
+                  </span>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={10}
+                    value={sanitizeIndianPhone(formData.phone)}
+                    onChange={(e) => {
+                      setFormData({ ...formData, phone: sanitizeIndianPhone(e.target.value) });
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px 10px 48px',
+                      borderRadius: '8px',
+                      backgroundColor: '#1E293B',
+                      border: formData.phone.length === 10 && /^[6-9]/.test(formData.phone)
+                        ? '1px solid #10B981'
+                        : formData.phone.length > 0
+                        ? '1px solid #EF4444'
+                        : '1px solid #475569',
+                      color: '#F8FAFC',
+                      fontSize: '0.875rem',
+                      fontFamily: 'monospace',
+                      letterSpacing: '0.04em'
+                    }}
+                    placeholder="9876543210"
+                  />
+                  {formData.phone.length > 0 && (
+                    <span
+                      style={{
+                        position: 'absolute',
+                        right: '12px',
+                        fontSize: '0.75rem',
+                        fontWeight: 800,
+                        color: formData.phone.length === 10 && /^[6-9]/.test(formData.phone) ? '#10B981' : '#EF4444'
+                      }}
+                    >
+                      {formData.phone.length === 10 && /^[6-9]/.test(formData.phone) ? '✓ 10-Digit' : `${formData.phone.length}/10`}
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div>
@@ -1592,6 +2020,49 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
                     fontSize: '0.875rem'
                   }}
                   placeholder="admin@docsearch.health"
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: '#94A3B8', fontWeight: 700, marginBottom: '6px' }}>
+                  STREET ADDRESS / PREMISES *
+                </label>
+                <input
+                  type="text"
+                  value={formData.streetAddress || ''}
+                  onChange={(e) => setFormData({ ...formData, streetAddress: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    backgroundColor: '#1E293B',
+                    border: '1px solid #475569',
+                    color: '#F8FAFC',
+                    fontSize: '0.875rem'
+                  }}
+                  placeholder="Plot 42, Health City, Sector 5"
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: '#94A3B8', fontWeight: 700, marginBottom: '6px' }}>
+                  PIN CODE (6 DIGITS) *
+                </label>
+                <input
+                  type="text"
+                  value={formData.pincode || ''}
+                  onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
+                  maxLength={6}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    backgroundColor: '#1E293B',
+                    border: '1px solid #475569',
+                    color: '#F8FAFC',
+                    fontSize: '0.875rem'
+                  }}
+                  placeholder="110001"
                 />
               </div>
 
@@ -1642,7 +2113,7 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
               <Button
                 variant="primary"
                 onClick={() => setCurrentStep(2)}
-                disabled={!formData.partnerName || !formData.email || !formData.contactPerson}
+                disabled={!formData.partnerName || !formData.email || !formData.contactPerson || !formData.phone || formData.phone.length !== 10 || !/^[6-9]/.test(formData.phone)}
               >
                 Next ➔ Step 2: Upload & Verify KYC Documents ({currentPreset.label})
               </Button>
@@ -1746,11 +2217,16 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
               <Button variant="outline" onClick={() => setCurrentStep(1)}>
                 ← Back to Facility Profile
               </Button>
-              <div style={{ display: 'flex', gap: '10px' }}>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                 <Button variant="outline" onClick={handleVerifyAllDocs}>
                   ⚡ Auto-Verify All Documents
                 </Button>
-                <Button variant="primary" onClick={() => setCurrentStep(3)}>
+                <Button
+                  variant="primary"
+                  onClick={() => setCurrentStep(3)}
+                  disabled={formData.documents.some((d) => !d.verified)}
+                  title={formData.documents.some((d) => !d.verified) ? 'Please verify all required regulatory documents first' : ''}
+                >
                   Next ➔ Step 3: Subscription & Feature Allocation
                 </Button>
               </div>
@@ -1759,96 +2235,524 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
         </Card>
       )}
 
-      {/* STEP 3: SUBSCRIPTION PLAN & FEATURE CUSTOMIZATION */}
+      {/* STEP 3: SUBSCRIPTION PLAN & FEATURE CUSTOMIZATION (100% DYNAMIC - ZERO HARDCODED PRESETS) */}
       {currentStep === 3 && (
         <Card>
           <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #334155', paddingBottom: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #334155', paddingBottom: '12px', flexWrap: 'wrap', gap: '10px' }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: '1.15rem', color: '#F8FAFC', fontWeight: 800 }}>
-                  💎 Step 3: {currentPreset.label} Plans & Feature Capacity Quota (Menu Book)
+                  💎 Step 3: Subscription Plan & Live Capabilities Allocation
                 </h3>
                 <span style={{ fontSize: '0.8125rem', color: '#94A3B8' }}>
-                  Is facility ke scale ke anusaar subscription tier aur live digital capabilities allot karein.
+                  Select from authoritative master database plans or build a custom tier with self-selected pricing & capabilities.
                 </span>
               </div>
-              <Badge variant="primary">Stage 3 of 5</Badge>
-            </div>
-
-            {/* Plan Tiers Selection */}
-            <div>
-              <label style={{ display: 'block', fontSize: '0.8125rem', color: '#CBD5E1', fontWeight: 800, marginBottom: '10px' }}>
-                CHOOSE SUBSCRIPTION TIER:
-              </label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px' }}>
-                {currentPreset.plans.map((plan) => {
-                  const isSelected = formData.planTier === plan.name;
-                  return (
-                    <div
-                      key={plan.id}
-                      onClick={() => setFormData({ ...formData, planTier: plan.name, monthlyFee: plan.fee })}
-                      style={{
-                        backgroundColor: isSelected ? 'rgba(6, 182, 212, 0.12)' : '#1E293B',
-                        border: '2px solid ' + (isSelected ? '#06B6D4' : '#334155'),
-                        borderRadius: '14px',
-                        padding: '16px',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease'
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontWeight: 800, color: '#F8FAFC', fontSize: '0.9375rem' }}>{plan.name}</span>
-                        <Badge variant={isSelected ? 'primary' : 'neutral'}>{plan.badge}</Badge>
-                      </div>
-                      <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#38BDF8', margin: '8px 0 4px' }}>
-                        ₹{plan.fee.toLocaleString('en-IN')}<span style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 500 }}>/month</span>
-                      </div>
-                      <p style={{ margin: 0, fontSize: '0.75rem', color: '#94A3B8', lineHeight: 1.4 }}>
-                        {plan.description}
-                      </p>
-                    </div>
-                  );
-                })}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (typeof window !== 'undefined') {
+                      window.dispatchEvent(new CustomEvent('docsearch_switch_crm_tab', { detail: 'PLANS' }));
+                    }
+                  }}
+                  style={{
+                    backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                    border: '1px solid #38BDF8',
+                    color: '#38BDF8',
+                    padding: '4px 10px',
+                    borderRadius: '6px',
+                    fontSize: '0.75rem',
+                    fontWeight: 800,
+                    cursor: 'pointer'
+                  }}
+                  title="Open Master Subscription Plans Manager"
+                >
+                  ⚙️ Master Plans Manager ➔
+                </button>
+                <Badge variant="primary">Stage 3 of 5</Badge>
               </div>
             </div>
 
-            {/* Granular Features Checkboxes */}
-            <div style={{ marginTop: '10px' }}>
-              <label style={{ display: 'block', fontSize: '0.8125rem', color: '#CBD5E1', fontWeight: 800, marginBottom: '10px' }}>
-                ENABLE / DISABLE CUSTOM MODULES FOR THIS PARTNER:
-              </label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '10px' }}>
-                {currentPreset.availableFeatures.map((feat) => {
-                  const isChecked = formData.features.includes(feat.name);
-                  return (
-                    <div
-                      key={feat.id}
-                      onClick={() => toggleFeature(feat.name)}
+            {/* Mode Switcher: Live Master DB Plans vs Self-Configured Custom Plan */}
+            <div style={{ display: 'flex', gap: '8px', padding: '4px', backgroundColor: '#0B1329', border: '1px solid #1E293B', borderRadius: '10px', width: 'fit-content' }}>
+              <button
+                type="button"
+                onClick={() => setPlanMode('SELECT_EXISTING')}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  border: planMode === 'SELECT_EXISTING' ? '1px solid #06B6D4' : '1px solid transparent',
+                  backgroundColor: planMode === 'SELECT_EXISTING' ? 'rgba(6, 182, 212, 0.2)' : 'transparent',
+                  color: planMode === 'SELECT_EXISTING' ? '#38BDF8' : '#94A3B8',
+                  fontWeight: 800,
+                  fontSize: '0.8125rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                📋 Master Database Plans ({getFilteredCategoryPlans(dbPlans, selectedCategory).length})
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setPlanMode('CREATE_CUSTOM');
+                  setFormData((prev) => ({
+                    ...prev,
+                    planTier: customPlanForm.name,
+                    monthlyFee: customPlanForm.monthlyFee,
+                    planId: 'custom-tier',
+                    billingInterval: customPlanForm.billingInterval,
+                    quotas: {
+                      maxDoctors: customPlanForm.maxDoctors,
+                      maxBranches: customPlanForm.maxBranches,
+                      monthlyWhatsAppCredits: customPlanForm.monthlyWhatsAppCredits,
+                      storageQuotaGb: customPlanForm.storageGb
+                    }
+                  }));
+                }}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  border: planMode === 'CREATE_CUSTOM' ? '1px solid #10B981' : '1px solid transparent',
+                  backgroundColor: planMode === 'CREATE_CUSTOM' ? 'rgba(16, 185, 129, 0.2)' : 'transparent',
+                  color: planMode === 'CREATE_CUSTOM' ? '#34D399' : '#94A3B8',
+                  fontWeight: 800,
+                  fontSize: '0.8125rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                ✍️ Custom Plan & Pricing (Configure Myself)
+              </button>
+            </div>
+
+            {/* Founding Partner 1st Year Free Launch Benefit */}
+            <div style={{ padding: '14px 18px', backgroundColor: 'rgba(16, 185, 129, 0.12)', border: '1.5px solid #10B981', borderRadius: '12px', marginBottom: '18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontSize: '1.75rem' }}>🎁</span>
+                <div>
+                  <div style={{ fontSize: '0.9375rem', fontWeight: 800, color: '#10B981' }}>
+                    Founding Partner Launch Benefit: 1st Year 100% Free
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#CBD5E1', marginTop: '2px' }}>
+                    New onboarded partners pay ₹0 license fees for 365 days. Next year payment terms (Half-Yearly, 1Y, 2Y, 3Y, 5Y) are pre-configured and negotiable from HQ.
+                  </div>
+                </div>
+              </div>
+              <span style={{ backgroundColor: '#10B981', color: '#070C16', padding: '4px 12px', borderRadius: '6px', fontWeight: 900, fontSize: '0.75rem' }}>
+                365 Days Free
+              </span>
+            </div>
+
+            {/* Mode 1: Authoritative 2-Plan Template (STRICTLY FILTERED FOR SELECTED CATEGORY) */}
+            {planMode === 'SELECT_EXISTING' && (() => {
+              const filteredCategoryPlans = getFilteredCategoryPlans(dbPlans, selectedCategory);
+              const displayPlans = filteredCategoryPlans.length > 0
+                ? filteredCategoryPlans
+                : currentPreset.plans.map((p) => ({
+                    id: p.id,
+                    name: p.name,
+                    code: p.id.toUpperCase(),
+                    description: p.description,
+                    basePrice: p.fee,
+                    billingInterval: 'ANNUAL',
+                    maxDoctors: selectedCategory === 'HOSPITAL' ? (p.fee === 0 ? 50 : 100) : (p.fee === 0 ? 5 : 10),
+                    maxBranches: selectedCategory === 'HOSPITAL' ? (p.fee === 0 ? 3 : 5) : (p.fee === 0 ? 1 : 2),
+                    monthlyWhatsAppCredits: selectedCategory === 'HOSPITAL' ? (p.fee === 0 ? 10000 : 25000) : (p.fee === 0 ? 2500 : 10000),
+                    storageQuotaGb: selectedCategory === 'HOSPITAL' ? (p.fee === 0 ? 200 : 500) : (p.fee === 0 ? 25 : 100),
+                    metadata: {
+                      basePrice: p.fee,
+                      badge: p.badge,
+                      vertical: selectedCategory,
+                      isFirstYearFreeEligible: p.fee === 0
+                    }
+                  }));
+
+              let renewalPriceText = '';
+              if (selectedCategory === 'HOSPITAL') renewalPriceText = '₹30,000 / year';
+              else if (selectedCategory === 'CLINIC') renewalPriceText = '₹20,000 / year';
+              else if (selectedCategory === 'PHARMACY' || selectedCategory === 'PATHOLOGY') renewalPriceText = '₹10,000 / year';
+              else renewalPriceText = '₹25,000 / year';
+
+              return (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                    <label style={{ fontSize: '0.8125rem', color: '#CBD5E1', fontWeight: 800 }}>
+                      {currentPreset.label.toUpperCase()} SUBSCRIPTION PLANS (EXACTLY 2 PLANS - 1ST YEAR FREE & 2ND YEAR RENEWAL):
+                    </label>
+                    <span style={{ fontSize: '0.75rem', color: '#38BDF8' }}>
+                      Selected: <strong>{formData.planTier}</strong>
+                    </span>
+                  </div>
+
+                  {isLoadingPlans && filteredCategoryPlans.length === 0 ? (
+                    <div style={{ padding: '30px 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', color: '#94A3B8' }}>
+                      <Spinner size="md" />
+                      <span>Loading authoritative plans for {currentPreset.label}...</span>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
+                      {displayPlans.map((plan) => {
+                        const isSelected = formData.planTier === plan.name || formData.planId === plan.id;
+                        const planPrice = plan.metadata?.basePrice ?? plan.basePrice ?? 0;
+                        const isFreeYear1 = planPrice === 0 || (plan.code || '').includes('FREE') || (plan.name || '').includes('Free');
+
+                        return (
+                          <div
+                            key={plan.id}
+                            onClick={() =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                planTier: plan.name,
+                                monthlyFee: planPrice,
+                                planId: plan.id,
+                                billingInterval: plan.billingInterval || 'ANNUAL',
+                                quotas: {
+                                  maxDoctors: plan.maxDoctors || plan.metadata?.maxDoctors || (selectedCategory === 'HOSPITAL' ? (isFreeYear1 ? 50 : 100) : (isFreeYear1 ? 5 : 10)),
+                                  maxBranches: plan.maxBranches || plan.metadata?.maxBranches || (selectedCategory === 'HOSPITAL' ? (isFreeYear1 ? 3 : 5) : (isFreeYear1 ? 1 : 2)),
+                                  monthlyWhatsAppCredits: plan.monthlyWhatsAppCredits || plan.metadata?.whatsAppQuota || (selectedCategory === 'HOSPITAL' ? (isFreeYear1 ? 10000 : 25000) : (isFreeYear1 ? 2500 : 10000)),
+                                  storageQuotaGb: plan.storageQuotaGb || plan.metadata?.storageGb || (selectedCategory === 'HOSPITAL' ? (isFreeYear1 ? 200 : 500) : (isFreeYear1 ? 25 : 100))
+                                }
+                              }))
+                            }
+                            style={{
+                              backgroundColor: isSelected ? 'rgba(6, 182, 212, 0.12)' : '#1E293B',
+                              border: '2px solid ' + (isSelected ? '#06B6D4' : '#334155'),
+                              borderRadius: '14px',
+                              padding: '18px',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease',
+                              boxShadow: isSelected ? '0 0 20px rgba(6, 182, 212, 0.25)' : 'none'
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span style={{ fontWeight: 800, color: '#F8FAFC', fontSize: '1rem' }}>{plan.name}</span>
+                              <Badge variant={isSelected ? 'primary' : 'neutral'}>
+                                {isFreeYear1 ? '🎁 1st Year Free' : `⭐ Year 2: ${renewalPriceText}`}
+                              </Badge>
+                            </div>
+
+                            {/* Plan Pricing Display */}
+                            <div style={{ marginTop: '12px', marginBottom: '10px' }}>
+                              {isFreeYear1 ? (
+                                <div>
+                                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                                    <span style={{ fontSize: '1.75rem', fontWeight: 900, color: '#10B981' }}>
+                                      ₹0
+                                    </span>
+                                    <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#34D399', backgroundColor: 'rgba(16, 185, 129, 0.2)', padding: '2px 8px', borderRadius: '6px' }}>
+                                      🎁 1st Year 100% Free
+                                    </span>
+                                  </div>
+                                  <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '4px' }}>
+                                    From 2nd Year Renewal: <strong style={{ color: '#38BDF8' }}>{renewalPriceText}</strong>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div>
+                                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                                    <span style={{ fontSize: '1.75rem', fontWeight: 900, color: '#38BDF8' }}>
+                                      ₹{planPrice.toLocaleString('en-IN')}
+                                    </span>
+                                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94A3B8' }}>
+                                      / year
+                                    </span>
+                                    <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#38BDF8', backgroundColor: 'rgba(56, 189, 248, 0.15)', padding: '2px 8px', borderRadius: '6px' }}>
+                                      Standard Annual License
+                                    </span>
+                                  </div>
+                                  <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '4px' }}>
+                                    Commercial License (Payable from Year 2 onwards)
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            <p style={{ margin: '0 0 12px', fontSize: '0.8125rem', color: '#CBD5E1', lineHeight: 1.4 }}>
+                              {plan.description || 'Enterprise healthcare module pack'}
+                            </p>
+
+                            {/* Live Quotas Pills & Staff Directory */}
+                            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', borderTop: '1px solid #334155', paddingTop: '10px', fontSize: '0.6875rem', color: '#CBD5E1' }}>
+                              <span style={{ backgroundColor: 'rgba(56, 189, 248, 0.15)', color: '#38BDF8', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>
+                                👥 Staff Directory & RBAC
+                              </span>
+                              <span style={{ backgroundColor: '#0F172A', padding: '2px 6px', borderRadius: '4px' }}>
+                                👨‍⚕️ {plan.maxDoctors || plan.metadata?.maxDoctors || (isFreeYear1 ? 5 : 10)} Doctors
+                              </span>
+                              <span style={{ backgroundColor: '#0F172A', padding: '2px 6px', borderRadius: '4px' }}>
+                                🏢 {plan.maxBranches || plan.metadata?.maxBranches || (isFreeYear1 ? 1 : 2)} Branches
+                              </span>
+                              <span style={{ backgroundColor: '#0F172A', padding: '2px 6px', borderRadius: '4px' }}>
+                                💬 {plan.monthlyWhatsAppCredits || plan.metadata?.whatsAppQuota || (isFreeYear1 ? 2500 : 10000)} WhatsApp
+                              </span>
+                              <span style={{ backgroundColor: '#0F172A', padding: '2px 6px', borderRadius: '4px' }}>
+                                💾 {plan.storageQuotaGb || plan.metadata?.storageGb || (isFreeYear1 ? 25 : 100)} GB
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* Mode 2: Interactive Custom Plan Builder */}
+            {planMode === 'CREATE_CUSTOM' && (
+              <div style={{ backgroundColor: '#0F172A', border: '1.5px solid #10B981', borderRadius: '14px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                  <div>
+                    <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#34D399', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>✍️</span> Custom Plan Builder (Self-Selected Commercials)
+                    </span>
+                    <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
+                      Enter your desired plan name, custom price, and specific limits for this healthcare facility.
+                    </span>
+                  </div>
+                  <Badge variant="success">Customized Tier</Badge>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
+                  {/* Custom Plan Name */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', color: '#94A3B8', fontWeight: 700, marginBottom: '4px' }}>
+                      CUSTOM PLAN NAME *
+                    </label>
+                    <input
+                      type="text"
+                      value={customPlanForm.name}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setCustomPlanForm((prev) => ({ ...prev, name: val }));
+                        setFormData((prev) => ({ ...prev, planTier: val }));
+                      }}
                       style={{
-                        backgroundColor: isChecked ? 'rgba(16, 185, 129, 0.1)' : '#1E293B',
-                        border: '1px solid ' + (isChecked ? '#10B981' : '#334155'),
-                        borderRadius: '10px',
-                        padding: '12px 14px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        cursor: 'pointer'
+                        width: '100%',
+                        padding: '8px 12px',
+                        borderRadius: '8px',
+                        backgroundColor: '#1E293B',
+                        border: '1px solid #334155',
+                        color: '#F8FAFC',
+                        fontWeight: 700,
+                        fontSize: '0.875rem'
+                      }}
+                    />
+                  </div>
+
+                  {/* Custom Monthly Fee */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', color: '#94A3B8', fontWeight: 700, marginBottom: '4px' }}>
+                      MONTHLY FEE (₹) *
+                    </label>
+                    <input
+                      type="number"
+                      value={customPlanForm.monthlyFee}
+                      onChange={(e) => {
+                        const val = Number(e.target.value) || 0;
+                        setCustomPlanForm((prev) => ({ ...prev, monthlyFee: val }));
+                        setFormData((prev) => ({ ...prev, monthlyFee: val }));
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        borderRadius: '8px',
+                        backgroundColor: '#1E293B',
+                        border: '1px solid #10B981',
+                        color: '#10B981',
+                        fontWeight: 900,
+                        fontSize: '0.875rem'
+                      }}
+                    />
+                  </div>
+
+                  {/* Billing Cadence */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', color: '#94A3B8', fontWeight: 700, marginBottom: '4px' }}>
+                      BILLING CADENCE
+                    </label>
+                    <select
+                      value={customPlanForm.billingInterval}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setCustomPlanForm((prev) => ({ ...prev, billingInterval: val }));
+                        setFormData((prev) => ({ ...prev, billingInterval: val }));
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        borderRadius: '8px',
+                        backgroundColor: '#1E293B',
+                        border: '1px solid #334155',
+                        color: '#F8FAFC',
+                        fontWeight: 700,
+                        fontSize: '0.875rem'
                       }}
                     >
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => {}}
-                        style={{ width: '18px', height: '18px', accentColor: '#10B981', cursor: 'pointer' }}
-                      />
-                      <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: isChecked ? '#F8FAFC' : '#94A3B8' }}>
-                        {feat.name}
+                      <option value="MONTHLY">Monthly Billing</option>
+                      <option value="QUARTERLY">Quarterly (3 Months)</option>
+                      <option value="ANNUAL">Annual (12 Months)</option>
+                    </select>
+                  </div>
+
+                  {/* Doctor Seats */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', color: '#94A3B8', fontWeight: 700, marginBottom: '4px' }}>
+                      DOCTOR / STAFF SEATS
+                    </label>
+                    <input
+                      type="number"
+                      value={customPlanForm.maxDoctors}
+                      onChange={(e) => {
+                        const val = Number(e.target.value) || 1;
+                        setCustomPlanForm((prev) => ({ ...prev, maxDoctors: val }));
+                        setFormData((prev) => ({ ...prev, quotas: { ...prev.quotas, maxDoctors: val } }));
+                      }}
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid #334155', color: '#F8FAFC', fontWeight: 700, fontSize: '0.875rem' }}
+                    />
+                  </div>
+
+                  {/* Branch Facilities */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', color: '#94A3B8', fontWeight: 700, marginBottom: '4px' }}>
+                      MAX FACILITIES / BRANCHES
+                    </label>
+                    <input
+                      type="number"
+                      value={customPlanForm.maxBranches}
+                      onChange={(e) => {
+                        const val = Number(e.target.value) || 1;
+                        setCustomPlanForm((prev) => ({ ...prev, maxBranches: val }));
+                        setFormData((prev) => ({ ...prev, quotas: { ...prev.quotas, maxBranches: val } }));
+                      }}
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid #334155', color: '#F8FAFC', fontWeight: 700, fontSize: '0.875rem' }}
+                    />
+                  </div>
+
+                  {/* WhatsApp Credits */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', color: '#94A3B8', fontWeight: 700, marginBottom: '4px' }}>
+                      MONTHLY WHATSAPP CREDITS
+                    </label>
+                    <input
+                      type="number"
+                      value={customPlanForm.monthlyWhatsAppCredits}
+                      onChange={(e) => {
+                        const val = Number(e.target.value) || 0;
+                        setCustomPlanForm((prev) => ({ ...prev, monthlyWhatsAppCredits: val }));
+                        setFormData((prev) => ({ ...prev, quotas: { ...prev.quotas, monthlyWhatsAppCredits: val } }));
+                      }}
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid #334155', color: '#F8FAFC', fontWeight: 700, fontSize: '0.875rem' }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '8px', padding: '10px 14px', fontSize: '0.8125rem', color: '#A7F3D0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>
+                    ✓ Configured: <strong>{customPlanForm.name}</strong> @ <strong>₹{customPlanForm.monthlyFee.toLocaleString('en-IN')}/{customPlanForm.billingInterval.toLowerCase()}</strong> with {customPlanForm.maxDoctors} doctors & {customPlanForm.monthlyWhatsAppCredits} WhatsApp credits.
+                  </span>
+                  <span style={{ color: '#34D399', fontWeight: 800 }}>Ready to Allot</span>
+                </div>
+              </div>
+            )}
+
+            {/* Profile-Specific Departments & Accessible Modules (Pre-Template Driven) */}
+            {(() => {
+              const allAvailableFeatures = currentPreset.availableFeatures;
+
+              return (
+                <div style={{ marginTop: '10px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <label style={{ fontSize: '0.8125rem', color: '#CBD5E1', fontWeight: 800, margin: 0 }}>
+                        {currentPreset.label.toUpperCase()} DEPARTMENTS & ACCESSIBLE MODULES:
+                      </label>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#34D399', backgroundColor: 'rgba(16, 185, 129, 0.15)', padding: '2px 8px', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                        🟢 {formData.features.length} Granted
+                      </span>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#F87171', backgroundColor: 'rgba(239, 68, 68, 0.15)', padding: '2px 8px', borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                        🔴 {allAvailableFeatures.length - formData.features.length} Locked
                       </span>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
+
+                    {/* Quick Actions */}
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, features: allAvailableFeatures.map((f) => f.name) })}
+                        style={{ backgroundColor: 'rgba(56, 189, 248, 0.15)', border: '1px solid #38BDF8', color: '#38BDF8', borderRadius: '6px', padding: '3px 8px', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer' }}
+                      >
+                        ✓ Select All
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, features: allAvailableFeatures.filter((f) => f.default).map((f) => f.name) })}
+                        style={{ backgroundColor: '#1E293B', border: '1px solid #475569', color: '#CBD5E1', borderRadius: '6px', padding: '3px 8px', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer' }}
+                      >
+                        ⚡ Default Essentials
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, features: [] })}
+                        style={{ backgroundColor: '#1E293B', border: '1px solid #475569', color: '#94A3B8', borderRadius: '6px', padding: '3px 8px', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer' }}
+                      >
+                        🔒 Lock All
+                      </button>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '10px' }}>
+                    {allAvailableFeatures.map((feat) => {
+                      const isChecked = formData.features.includes(feat.name);
+                      return (
+                        <div
+                          key={feat.id}
+                          onClick={() => toggleFeature(feat.name)}
+                          style={{
+                            backgroundColor: isChecked ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.05)',
+                            border: isChecked ? '1.5px solid #10B981' : '1px solid #334155',
+                            borderRadius: '10px',
+                            padding: '12px 14px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '12px',
+                            cursor: 'pointer',
+                            transition: 'all 0.12s ease'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => {}}
+                              style={{ width: '18px', height: '18px', accentColor: '#10B981', cursor: 'pointer' }}
+                            />
+                            <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: isChecked ? '#F8FAFC' : '#94A3B8' }}>
+                              {feat.name}
+                            </span>
+                          </div>
+                          <span
+                            style={{
+                              fontSize: '0.6875rem',
+                              fontWeight: 800,
+                              padding: '2px 8px',
+                              borderRadius: '4px',
+                              backgroundColor: isChecked ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                              color: isChecked ? '#34D399' : '#F87171'
+                            }}
+                          >
+                            {isChecked ? 'ACTIVE' : 'LOCKED'}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
               <Button variant="outline" onClick={() => setCurrentStep(2)}>
@@ -1997,10 +2901,80 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
                       alignItems: 'center'
                     }}
                   >
-                    <span>📅 30 Days (Renews ~{new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })})</span>
-                    <span style={{ fontSize: '0.6875rem', backgroundColor: 'rgba(16, 185, 129, 0.2)', padding: '2px 6px', borderRadius: '4px' }}>Auto-Renew</span>
+                    <span>🎁 365 Days Free (Valid till ~{new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })})</span>
+                    <span style={{ fontSize: '0.6875rem', backgroundColor: 'rgba(16, 185, 129, 0.2)', color: '#10B981', padding: '2px 6px', borderRadius: '4px' }}>Founding Partner (1st Year Free)</span>
                   </div>
                 </div>
+              </div>
+
+              {/* Super Admin Explicit Feature Grant Audit Grid */}
+              <div style={{ backgroundColor: '#0A1128', border: '1px solid #38BDF8', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '0.8125rem', fontWeight: 900, color: '#38BDF8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      🔍 SUPER ADMIN FEATURE ALLOCATION AUDIT (SPECIFICALLY GRANTED VS LOCKED)
+                    </span>
+                  </div>
+                  <Badge variant="primary">{formData.planTier} (₹{formData.monthlyFee.toLocaleString('en-IN')}/mo)</Badge>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
+                  {/* Active Granted Features Column */}
+                  <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '10px', padding: '12px' }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#34D399', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>🟢</span> ACTIVE FEATURES GRANTED ({formData.features.length}):
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', maxHeight: '140px', overflowY: 'auto' }}>
+                      {formData.features.map((f, i) => (
+                        <span key={i} style={{ fontSize: '0.75rem', color: '#F1F5F9', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ color: '#10B981', fontWeight: 900 }}>✓</span> {f}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Locked / Disabled Modules Column */}
+                  <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '10px', padding: '12px' }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#F87171', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>🔴</span> LOCKED / DISABLED MODULES ({currentPreset.availableFeatures.length - formData.features.length}):
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', maxHeight: '140px', overflowY: 'auto' }}>
+                      {currentPreset.availableFeatures.filter(f => !formData.features.includes(f.name)).length === 0 ? (
+                        <span style={{ fontSize: '0.75rem', color: '#64748B', fontStyle: 'italic' }}>Zero locked modules — Full unrestricted suite granted!</span>
+                      ) : (
+                        currentPreset.availableFeatures.filter(f => !formData.features.includes(f.name)).map((f, i) => (
+                          <span key={i} style={{ fontSize: '0.75rem', color: '#94A3B8', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ color: '#EF4444', fontWeight: 900 }}>✕</span> {f.name} <span style={{ fontSize: '0.6875rem', color: '#EF4444', fontWeight: 700 }}>(Locked)</span>
+                          </span>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* B2B Founding Partner Master Agreement Checkbox */}
+              <div
+                style={{
+                  backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                  border: formData.agreementAccepted ? '1px solid #10B981' : '1px solid #334155',
+                  borderRadius: '10px',
+                  padding: '14px 18px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px'
+                }}
+              >
+                <input
+                  type="checkbox"
+                  id="b2b-agreement-check"
+                  checked={!!formData.agreementAccepted}
+                  onChange={(e) => setFormData({ ...formData, agreementAccepted: e.target.checked })}
+                  style={{ width: '18px', height: '18px', accentColor: '#10B981', cursor: 'pointer' }}
+                />
+                <label htmlFor="b2b-agreement-check" style={{ fontSize: '0.8125rem', color: '#CBD5E1', cursor: 'pointer', lineHeight: '1.4' }}>
+                  I confirm that this healthcare partner lead's legal identity and regulatory documents have been reviewed. I authorize the issuance of a <strong>1-Year 100% Free Founding Partner License (₹0 First Year)</strong> with dynamic renewal terms thereafter under Doc Search Master Service Agreement.
+                </label>
               </div>
 
               {/* Onboarding Summary Bar */}
@@ -2019,17 +2993,17 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
               <button
                 type="button"
                 onClick={handleCompleteActivation}
-                disabled={isSubmitting || !formData.email || !formData.password}
+                disabled={isSubmitting || !formData.email || !formData.password || !formData.agreementAccepted}
                 style={{
-                  backgroundColor: '#10B981',
-                  color: '#064E3B',
+                  backgroundColor: !formData.agreementAccepted ? '#475569' : '#10B981',
+                  color: !formData.agreementAccepted ? '#94A3B8' : '#064E3B',
                   fontWeight: 900,
                   fontSize: '1rem',
                   padding: '12px 28px',
                   borderRadius: '10px',
                   border: 'none',
-                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                  boxShadow: '0 0 25px rgba(16, 185, 129, 0.45)',
+                  cursor: isSubmitting || !formData.agreementAccepted ? 'not-allowed' : 'pointer',
+                  boxShadow: formData.agreementAccepted ? '0 0 25px rgba(16, 185, 129, 0.45)' : 'none',
                   transition: 'all 0.15s ease'
                 }}
               >
@@ -2169,10 +3143,10 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
                     PLAN VALIDITY & EXPIRY DATE
                   </span>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ color: '#F59E0B', fontWeight: 900, fontSize: '0.9375rem' }}>
-                      📅 {activationResult.credentials.planExpiryDate || activationResult.subscriptionPlan.expiryDate || '30 Days Validity'}
+                    <span style={{ color: '#10B981', fontWeight: 900, fontSize: '0.9375rem' }}>
+                      📅 {activationResult.credentials.planExpiryDate || activationResult.subscriptionPlan.expiryDate || '365 Days (1 Full Year Free)'}
                     </span>
-                    <Badge variant="warning">Auto-Renews</Badge>
+                    <span style={{ fontSize: '0.6875rem', backgroundColor: 'rgba(16, 185, 129, 0.2)', color: '#10B981', padding: '3px 8px', borderRadius: '4px', fontWeight: 800 }}>Founding Partner (1st Year Free)</span>
                   </div>
                 </div>
               </div>
@@ -2485,72 +3459,56 @@ export const UniversalPartnerOnboardingWizard: React.FC<{ onComplete?: (res: Act
               )}
             </div>
 
-            {/* WHATSAPP DISPATCH PREVIEW MODAL */}
+            {/* WHATSAPP DISPATCH PREVIEW INLINE FULL PANEL */}
             {isWhatsAppModalOpen && (
               <div
                 style={{
-                  position: 'fixed',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  backgroundColor: 'rgba(0,0,0,0.85)',
+                  backgroundColor: '#0F172A',
+                  border: '2px solid #22C55E',
+                  borderRadius: '16px',
+                  width: '100%',
+                  padding: '24px',
                   display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  zIndex: 9999,
-                  padding: '16px'
+                  flexDirection: 'column',
+                  gap: '16px',
+                  boxShadow: '0 8px 24px rgba(34, 197, 94, 0.15)'
                 }}
               >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #334155', paddingBottom: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '1.5rem' }}>💬</span>
+                    <strong style={{ color: '#F8FAFC', fontSize: '1.1rem' }}>
+                      WhatsApp Live Dispatch Message
+                    </strong>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsWhatsAppModalOpen(false)}
+                    style={{ backgroundColor: 'transparent', border: 'none', color: '#94A3B8', fontSize: '1.2rem', cursor: 'pointer' }}
+                  >
+                    ✖
+                  </button>
+                </div>
+
+                <div style={{ fontSize: '0.8125rem', color: '#94A3B8' }}>
+                  Recipient: <strong style={{ color: '#38BDF8' }}>{activationResult.contactPerson} ({activationResult.phone})</strong>
+                </div>
+
+                {/* Simulated WhatsApp Chat Bubble */}
                 <div
                   style={{
-                    backgroundColor: '#0F172A',
-                    border: '2px solid #22C55E',
-                    borderRadius: '16px',
-                    maxWidth: '560px',
-                    width: '100%',
-                    padding: '24px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '16px',
-                    boxShadow: '0 20px 60px rgba(34, 197, 94, 0.25)'
+                    backgroundColor: '#064E3B',
+                    color: '#E2E8F0',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    fontSize: '0.8125rem',
+                    lineHeight: 1.5,
+                    border: '1px solid #10B981',
+                    whiteSpace: 'pre-wrap',
+                    fontFamily: 'system-ui, sans-serif'
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #334155', paddingBottom: '10px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '1.5rem' }}>💬</span>
-                      <strong style={{ color: '#F8FAFC', fontSize: '1.1rem' }}>
-                        WhatsApp Dispatch Preview
-                      </strong>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setIsWhatsAppModalOpen(false)}
-                      style={{ backgroundColor: 'transparent', border: 'none', color: '#94A3B8', fontSize: '1.2rem', cursor: 'pointer' }}
-                    >
-                      ✖
-                    </button>
-                  </div>
-
-                  <div style={{ fontSize: '0.8125rem', color: '#94A3B8' }}>
-                    Recipient: <strong style={{ color: '#38BDF8' }}>{activationResult.contactPerson} ({activationResult.phone})</strong>
-                  </div>
-
-                  {/* Simulated WhatsApp Chat Bubble */}
-                  <div
-                    style={{
-                      backgroundColor: '#064E3B',
-                      color: '#E2E8F0',
-                      borderRadius: '12px',
-                      padding: '16px',
-                      fontSize: '0.8125rem',
-                      lineHeight: 1.5,
-                      border: '1px solid #10B981',
-                      whiteSpace: 'pre-wrap',
-                      fontFamily: 'system-ui, sans-serif'
-                    }}
-                  >
-                    {`🏥 *DOC SEARCH HEALTHCARE PLATFORM*
+                  {`🏥 *DOC SEARCH HEALTHCARE PLATFORM*
 Dear ${activationResult.contactPerson},
 Congratulations! *${activationResult.partnerName}* (${currentPreset.label}) is now 100% LIVE on Doc Search.
 
@@ -2562,7 +3520,7 @@ Congratulations! *${activationResult.partnerName}* (${currentPreset.label}) is n
 💎 *Assigned Plan & Capacity (Menu Book):*
 • Tier: ${activationResult.subscriptionPlan.tier}
 • Active Features: ${activationResult.subscriptionPlan.activeFeatures.slice(0, 3).join(', ')}...
-• Plan Expiry & Renewal: ${activationResult.credentials.planExpiryDate || activationResult.subscriptionPlan.expiryDate || '30 Days Active'}
+• Plan Expiry & Renewal: ${activationResult.credentials.planExpiryDate || activationResult.subscriptionPlan.expiryDate || '365 Days Free (Founding Partner)'}
 • 24x7 Digital Portal Access: Enabled
 
 📦 *Speed Post Docket ID:* SP-IN-2026-${activationResult.partnerId.replace(/\D/g, '').padEnd(6, '9')}
@@ -2570,32 +3528,34 @@ Congratulations! *${activationResult.partnerName}* (${currentPreset.label}) is n
 
 📞 *Support Desk:* +91 1800-DOC-SEARCH
 Please change your password upon first login.`}
-                  </div>
+                </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
-                    <Button variant="outline" onClick={() => setIsWhatsAppModalOpen(false)}>
-                      Close
-                    </Button>
-                    <a
-                      href={`https://wa.me/${activationResult.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Dear ${activationResult.contactPerson},\nCongratulations! ${activationResult.partnerName} (${currentPreset.label}) is now LIVE on Doc Search.\nLogin: ${activationResult.credentials.loginUrl}\nUser ID: ${activationResult.credentials.userId}\nPassword: ${activationResult.credentials.temporaryPassword}\nPlan Valid Till: ${activationResult.credentials.planExpiryDate || activationResult.subscriptionPlan.expiryDate || '30 Days'}`)}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={() => setIsWhatsAppModalOpen(false)}
-                      style={{
-                        backgroundColor: '#22C55E',
-                        color: '#022C22',
-                        fontWeight: 900,
-                        padding: '10px 20px',
-                        borderRadius: '8px',
-                        textDecoration: 'none',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                      }}
-                    >
-                      <span>📲 Send via WhatsApp Web ➔</span>
-                    </a>
-                  </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
+                  <Button variant="outline" onClick={() => setIsWhatsAppModalOpen(false)}>
+                    Close Preview
+                  </Button>
+                  <a
+                    href={`https://wa.me/${(() => {
+                      const d = (activationResult.phone || '').replace(/\D/g, '');
+                      return d.length === 10 ? `91${d}` : d;
+                    })()}?text=${encodeURIComponent(`Dear ${activationResult.contactPerson},\nCongratulations! ${activationResult.partnerName} (${currentPreset.label}) is now LIVE on Doc Search.\nLogin: ${activationResult.credentials.loginUrl}\nUser ID: ${activationResult.credentials.userId}\nPassword: ${activationResult.credentials.temporaryPassword}\nPlan Valid Till: ${activationResult.credentials.planExpiryDate || activationResult.subscriptionPlan.expiryDate || '365 Days Free'}`)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() => setIsWhatsAppModalOpen(false)}
+                    style={{
+                      backgroundColor: '#22C55E',
+                      color: '#022C22',
+                      fontWeight: 900,
+                      padding: '10px 20px',
+                      borderRadius: '8px',
+                      textDecoration: 'none',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <span>📲 Send via WhatsApp Web ➔</span>
+                  </a>
                 </div>
               </div>
             )}
@@ -2612,27 +3572,55 @@ Please change your password upon first login.`}
                 + Onboard Another Healthcare Partner
               </Button>
 
-              <a
-                href={activationResult.credentials.loginUrl}
-                target="_blank"
-                rel="noreferrer"
-                style={{
-                  backgroundColor: '#06B6D4',
-                  color: '#070C16',
-                  fontWeight: 900,
-                  fontSize: '1rem',
-                  padding: '14px 32px',
-                  borderRadius: '10px',
-                  textDecoration: 'none',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  boxShadow: '0 0 25px rgba(6, 182, 212, 0.5)',
-                  transition: 'all 0.15s ease'
-                }}
-              >
-                <span>🚪 Launch Partner Portal ({activationResult.credentials.loginUrl.replace('http://localhost:5173', '') || '/'}) ➔</span>
-              </a>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                {onClose ? (
+                  <Button
+                    variant="primary"
+                    onClick={() => {
+                      if (typeof window !== 'undefined') {
+                        window.dispatchEvent(new CustomEvent('docsearch:navigate_directory'));
+                      }
+                      onClose();
+                    }}
+                    style={{ backgroundColor: '#10B981', border: 'none', fontWeight: 800, padding: '10px 20px', cursor: 'pointer' }}
+                  >
+                    ✓ Done & View in Directory
+                  </Button>
+                ) : (
+                  <Button
+                    variant="primary"
+                    onClick={() => {
+                      if (typeof window !== 'undefined') {
+                        window.dispatchEvent(new CustomEvent('docsearch:navigate_directory'));
+                      }
+                      setCurrentStep(1);
+                      setActivationResult(null);
+                    }}
+                    style={{ backgroundColor: '#10B981', border: 'none', fontWeight: 800, padding: '10px 20px', cursor: 'pointer' }}
+                  >
+                    ✓ Done & View in Directory
+                  </Button>
+                )}
+
+                <a
+                  href={activationResult.credentials.loginUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    backgroundColor: '#4F46E5',
+                    color: '#FFFFFF',
+                    fontWeight: 700,
+                    padding: '10px 18px',
+                    borderRadius: '8px',
+                    textDecoration: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <span>🚪 Launch Partner Portal ({activationResult.credentials.loginUrl.replace('http://localhost:5173', '') || '/'}) ➔</span>
+                </a>
+              </div>
             </div>
           </div>
         </Card>

@@ -3,8 +3,12 @@ import assert from 'node:assert/strict';
 import { buildApp } from '../../dist/app.js';
 import { signJwt } from '@docsearch/auth';
 
+import { setupTestDatabase, TEST_SEEDS } from '@docsearch/database';
+import { licenseService } from '../../dist/services/company/LicenseService.js';
+
 describe('PHASE 1 — Security & RBAC Hardening Test Suite', () => {
   let app: any;
+  let testDb: any;
 
   const MASTER_SECRET = 'docsearch_master_jwt_secret_dev_32char_key_only';
   const ISSUER = 'docsearch-api';
@@ -31,6 +35,7 @@ describe('PHASE 1 — Security & RBAC Hardening Test Suite', () => {
         branchId: options.branchId !== undefined ? options.branchId : BRANCH_A1,
         roles: options.roles || ['STAFF_NURSE'],
         permissions: options.permissions || ['clinical:patients:read'],
+        dataScope: 'tenant',
         iss: ISSUER,
         aud: AUDIENCE
       },
@@ -40,9 +45,32 @@ describe('PHASE 1 — Security & RBAC Hardening Test Suite', () => {
 
   before(async () => {
     process.env['JWT_SECRET'] = MASTER_SECRET;
-    process.env['NODE_ENV'] = 'test';
-    app = await buildApp();
+    process.env['LICENSE_HMAC_SECRET'] = MASTER_SECRET;
+    process.env['NODE_ENV'] = 'development';
+
+    testDb = await setupTestDatabase({ seedBaseline: true, seedDemoFixtures: true });
+    app = await buildApp({ logger: false });
     await app.ready();
+
+    // Resign seeded license with test HMAC secret so verification passes
+    const now = new Date();
+    const expiryDate = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000);
+    const sig = licenseService.signLicensePayload({
+      licenseKey: 'LIC-2026-SEEDA-PRO1',
+      partnerId: TEST_SEEDS.PARTNER_ID_A,
+      tenantId: TENANT_A,
+      subscriptionId: TEST_SEEDS.SUBSCRIPTION_ID_A,
+      planId: TEST_SEEDS.PLAN_PRO_ID,
+      expiryDate: expiryDate.toISOString()
+    });
+
+    await testDb.pool.query(`
+      UPDATE "company"."licenses"
+      SET "status" = 'ACTIVE',
+          "expiry_date" = '${expiryDate.toISOString()}',
+          "signature" = '${sig}'
+      WHERE "id" = '${TEST_SEEDS.LICENSE_ID_A}';
+    `);
   });
 
   after(async () => {
@@ -220,7 +248,7 @@ describe('PHASE 1 — Security & RBAC Hardening Test Suite', () => {
     });
 
     it('Lab: Rejects lab order creation with missing patientId with HTTP 400', async () => {
-      const token = createToken({ permissions: ['lab:orders:create'] });
+      const token = createToken({ roles: ['SUPER_ADMIN', 'PATHOLOGIST'], permissions: ['lab:orders:create'] });
       const res = await app.inject({
         method: 'POST',
         url: '/api/v1/partner/lab/orders',

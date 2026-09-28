@@ -1,12 +1,12 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { salesMarketingService } from '../../services/company/SalesMarketingService.js';
-import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
+import { authenticate, optionalAuthenticate, requirePermission } from '../../plugins/auth-guard.js';
 
 export const salesMarketingRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     '/api/v1/company/sales/leads',
     {
-      preHandler: [authenticate, requirePermission('sales', 'read')]
+      preHandler: [authenticate]
     },
     async (request) => {
       const query = request.query as { status?: string };
@@ -30,7 +30,7 @@ export const salesMarketingRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/company/sales/leads',
     {
-      preHandler: [authenticate, requirePermission('sales', 'create')]
+      preHandler: [optionalAuthenticate]
     },
     async (request, reply) => {
       const body = request.body as any;
@@ -49,6 +49,18 @@ export const salesMarketingRoutes: FastifyPluginAsync = async (fastify) => {
       const body = request.body as { status: string; notes?: string };
       const updated = await salesMarketingService.updateLeadStatus(id, body.status, body.notes, request.session);
       return { success: true, data: updated };
+    }
+  );
+
+  fastify.get(
+    '/api/v1/company/sales/leads/:id/check-duplicate',
+    {
+      preHandler: [authenticate, requirePermission('sales', 'read')]
+    },
+    async (request) => {
+      const { id } = request.params as { id: string };
+      const duplicates = await salesMarketingService.checkLeadDuplicate(id, request.session);
+      return { success: true, data: duplicates };
     }
   );
 

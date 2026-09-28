@@ -11,6 +11,7 @@ import type {
   DiscountType,
   BillingInvoiceDto
 } from '@docsearch/api-contracts';
+import { AuditJustificationField } from '../common/AuditJustificationField.js';
 
 export interface ApplyDiscountDialogProps {
   isOpen: boolean;
@@ -147,17 +148,13 @@ export const ApplyDiscountDialog: React.FC<ApplyDiscountDialogProps> = ({
           />
         </div>
 
-        <div>
-          <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.25rem' }}>
-            Management Approval & Audit Justification *
-          </label>
-          <Input
-            value={justification}
-            onChange={(e) => setJustification(e.target.value)}
-            placeholder="Reason for concession approval"
-            required
-          />
-        </div>
+        <AuditJustificationField
+          value={justification}
+          onChange={setJustification}
+          defaultJustification="Authorized institutional billing concession"
+          label="Management Approval & Audit Justification"
+          placeholder="Reason for concession approval..."
+        />
       </form>
     </Dialog>
   );

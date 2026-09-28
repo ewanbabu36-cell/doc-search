@@ -8,6 +8,7 @@ interface Props {
   onReassess: (enc: EmergencyEncounterDto) => void;
   onAssign: (enc: EmergencyEncounterDto) => void;
   onDisposition: (enc: EmergencyEncounterDto) => void;
+  onSelectPatient?: (enc: EmergencyEncounterDto) => void;
 }
 
 export const EmergencyQueueView: React.FC<Props> = ({
@@ -15,7 +16,8 @@ export const EmergencyQueueView: React.FC<Props> = ({
   onTriage,
   onReassess,
   onAssign,
-  onDisposition
+  onDisposition,
+  onSelectPatient
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -52,7 +54,20 @@ export const EmergencyQueueView: React.FC<Props> = ({
           <tbody className="divide-y text-sm">
             {filtered.map((e) => (
               <tr key={e.id}>
-                <td className="py-2 font-bold text-gray-900">{e.encounterNumber}</td>
+                <td className="py-2 font-bold text-gray-900">
+                  {onSelectPatient ? (
+                    <button
+                      type="button"
+                      onClick={() => onSelectPatient(e)}
+                      className="text-red-700 hover:text-red-900 underline font-bold"
+                      title="Open Emergency Patient Dossier"
+                    >
+                      {e.encounterNumber}
+                    </button>
+                  ) : (
+                    e.encounterNumber
+                  )}
+                </td>
                 <td className="py-2">
                   <div className="font-semibold">{e.patientName}</div>
                   <div className="text-xs text-gray-500">{e.patientGender}, {e.patientAge || 'Unknown'} yrs</div>
@@ -72,6 +87,9 @@ export const EmergencyQueueView: React.FC<Props> = ({
                   {e.triageEsiLevel && <Button variant="outline" onClick={() => onReassess(e)}>Re-Triage</Button>}
                   <Button variant="outline" onClick={() => onAssign(e)}>Assign</Button>
                   <Button variant="primary" onClick={() => onDisposition(e)}>Disposition</Button>
+                  {onSelectPatient && (
+                    <Button variant="outline" onClick={() => onSelectPatient(e)}>View</Button>
+                  )}
                 </td>
               </tr>
             ))}

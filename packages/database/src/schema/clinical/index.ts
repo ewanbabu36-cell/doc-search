@@ -49,6 +49,7 @@ export const operationalPartners = clinicalSchema.table(
     partnerCode: varchar('partner_code', { length: 100 }).notNull().unique(),
     legalBusinessName: varchar('legal_business_name', { length: 255 }).notNull(),
     partnerType: varchar('partner_type', { length: 50 }).notNull().default('CLINIC_NETWORK'), // CLINIC_NETWORK, HOSPITAL_SYSTEM, INTEGRATED_HEALTHCARE, ENTERPRISE
+    operatingModel: varchar('operating_model', { length: 64 }),
     contactEmail: varchar('contact_email', { length: 255 }).notNull(),
     contactPhone: varchar('contact_phone', { length: 50 }),
     status: varchar('status', { length: 50 }).notNull().default('ONBOARDING'), // ONBOARDING, ACTIVE, SUSPENDED, INACTIVE, TERMINATED
@@ -83,6 +84,7 @@ export const operationalOrganizations = clinicalSchema.table(
     organizationCode: varchar('organization_code', { length: 100 }).notNull().unique(),
     organizationName: varchar('organization_name', { length: 255 }).notNull(),
     organizationType: varchar('organization_type', { length: 50 }).notNull().default('CLINIC'), // CLINIC, HOSPITAL
+    operatingModel: varchar('operating_model', { length: 64 }),
     legalEntityReference: varchar('legal_entity_reference', { length: 255 }),
     contactEmail: varchar('contact_email', { length: 255 }).notNull(),
     contactPhone: varchar('contact_phone', { length: 50 }),
@@ -818,6 +820,7 @@ export const patients = clinicalSchema.table(
     branchId: uuid('branch_id')
       .notNull()
       .references(() => operationalFacilities.id, { onDelete: 'cascade' }),
+    uhid: varchar('uhid', { length: 100 }),
     mrn: varchar('mrn', { length: 100 }).notNull(),
     patientCode: varchar('patient_code', { length: 100 }).notNull(),
     firstName: varchar('first_name', { length: 100 }).notNull(),
@@ -847,7 +850,8 @@ export const patients = clinicalSchema.table(
     index('idx_patients_status').on(table.status),
     index('idx_patients_dob').on(table.dateOfBirth),
     index('idx_patients_name').on(table.lastName, table.firstName),
-    uniqueIndex('idx_patients_tenant_mrn').on(table.tenantId, table.mrn)
+    uniqueIndex('idx_patients_tenant_mrn').on(table.tenantId, table.mrn),
+    uniqueIndex('idx_patients_tenant_uhid').on(table.tenantId, table.uhid)
   ]
 );
 
@@ -9004,6 +9008,94 @@ export type RadiologyCriticalFinding = typeof radiologyCriticalFindings.$inferSe
 export type RadiologyQualityEvent = typeof radiologyQualityEvents.$inferSelect;
 export type RadiologyAuditTrace = typeof radiologyAuditTraces.$inferSelect;
 
+export const imagingSeries = clinicalSchema.table(
+  'imaging_series',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    tenantId: uuid('tenant_id').notNull(),
+    partnerId: uuid('partner_id').notNull(),
+    organizationId: uuid('organization_id').notNull(),
+    branchId: uuid('branch_id').notNull(),
+    studyId: uuid('study_id').notNull().references(() => radiologyStudies.id, { onDelete: 'cascade' }),
+    seriesInstanceUid: varchar('series_instance_uid', { length: 128 }).notNull(),
+    seriesNumber: integer('series_number').notNull().default(1),
+    modality: varchar('modality', { length: 64 }).notNull(),
+    seriesDescription: text('series_description').notNull(),
+    numberOfInstances: integer('number_of_instances').notNull().default(1),
+    bodyPartExamined: varchar('body_part_examined', { length: 128 }),
+    protocolName: varchar('protocol_name', { length: 255 }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => [
+    index('idx_is_tenant_study').on(table.tenantId, table.studyId),
+    uniqueIndex('idx_is_uid').on(table.tenantId, table.seriesInstanceUid)
+  ]
+);
+
+export const imagingInstances = clinicalSchema.table(
+  'imaging_instances',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    tenantId: uuid('tenant_id').notNull(),
+    partnerId: uuid('partner_id').notNull(),
+    organizationId: uuid('organization_id').notNull(),
+    branchId: uuid('branch_id').notNull(),
+    seriesId: uuid('series_id').notNull().references(() => imagingSeries.id, { onDelete: 'cascade' }),
+    studyId: uuid('study_id').notNull().references(() => radiologyStudies.id, { onDelete: 'cascade' }),
+    sopInstanceUid: varchar('sop_instance_uid', { length: 128 }).notNull(),
+    sopClassUid: varchar('sop_class_uid', { length: 128 }).notNull().default('1.2.840.10008.5.1.4.1.1.7'),
+    instanceNumber: integer('instance_number').notNull().default(1),
+    rows: integer('rows'),
+    columns: integer('columns'),
+    bitsAllocated: integer('bits_allocated').default(16),
+    bitsStored: integer('bits_stored').default(12),
+    windowCenter: numeric('window_center', { precision: 8, scale: 2 }),
+    windowWidth: numeric('window_width', { precision: 8, scale: 2 }),
+    sliceThickness: numeric('slice_thickness', { precision: 6, scale: 2 }),
+    sliceLocation: numeric('slice_location', { precision: 8, scale: 2 }),
+    imageUrl: text('image_url').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => [
+    index('idx_ii_tenant_series').on(table.tenantId, table.seriesId),
+    uniqueIndex('idx_ii_uid').on(table.tenantId, table.sopInstanceUid)
+  ]
+);
+
+export const radiologyReportAmendments = clinicalSchema.table(
+  'radiology_report_amendments',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    tenantId: uuid('tenant_id').notNull(),
+    partnerId: uuid('partner_id').notNull(),
+    organizationId: uuid('organization_id').notNull(),
+    branchId: uuid('branch_id').notNull(),
+    reportId: uuid('report_id').notNull().references(() => radiologyReports.id, { onDelete: 'cascade' }),
+    amendmentNumber: varchar('amendment_number', { length: 64 }).notNull(),
+    versionFrom: integer('version_from').notNull(),
+    versionTo: integer('version_to').notNull(),
+    previousFindings: text('previous_findings').notNull(),
+    previousImpression: text('previous_impression').notNull(),
+    amendedFindings: text('amended_findings').notNull(),
+    amendedImpression: text('amended_impression').notNull(),
+    reasonForAmendment: text('reason_for_amendment').notNull(),
+    amendedByRadiologistName: varchar('amended_by_radiologist_name', { length: 255 }).notNull(),
+    digitalSignature: text('digital_signature').notNull(),
+    amendedAt: timestamp('amended_at', { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => [
+    index('idx_rra_tenant_report').on(table.tenantId, table.reportId),
+    uniqueIndex('idx_rra_number').on(table.tenantId, table.amendmentNumber)
+  ]
+);
+
+export type ImagingSeries = typeof imagingSeries.$inferSelect;
+export type ImagingInstance = typeof imagingInstances.$inferSelect;
+export type RadiologyReportAmendment = typeof radiologyReportAmendments.$inferSelect;
+export type NewImagingSeries = typeof imagingSeries.$inferInsert;
+export type NewImagingInstance = typeof imagingInstances.$inferInsert;
+export type NewRadiologyReportAmendment = typeof radiologyReportAmendments.$inferInsert;
+
 /**
  * ============================================================================
  * Phase 2.18: Dietary & Kitchen Management Schema
@@ -11120,3 +11212,829 @@ export type LiveQueueToken = typeof liveQueueTokens.$inferSelect;
 export type WhatsappPortalAuditTrace = typeof whatsappPortalAuditTraces.$inferSelect;
 
 export type NewRadiologyOrder = typeof radiologyOrders.$inferInsert;
+
+/**
+ * Enterprise Declarative Partitioned Schema Tables (10M+ Daily Capacity)
+ */
+export const appointmentsPartitioned = clinicalSchema.table(
+  'appointments_partitioned',
+  {
+    id: uuid('id').defaultRandom().notNull(),
+    tenantId: uuid('tenant_id').notNull(),
+    branchId: uuid('branch_id'),
+    patientId: uuid('patient_id').notNull(),
+    doctorId: uuid('doctor_id').notNull(),
+    department: varchar('department', { length: 100 }),
+    slotTime: timestamp('slot_time', { withTimezone: true }).notNull(),
+    status: varchar('status', { length: 50 }).notNull().default('SCHEDULED'),
+    appointmentType: varchar('appointment_type', { length: 50 }).notNull().default('CONSULTATION'),
+    queueToken: varchar('queue_token', { length: 50 }),
+    consultationFee: numeric('consultation_fee', { precision: 12, scale: 2 }).notNull().default('0.00'),
+    metadata: jsonb('metadata').default({}),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    index('idx_apt_tenant_created').on(table.tenantId, table.createdAt),
+    index('idx_apt_doctor_slot').on(table.doctorId, table.slotTime)
+  ]
+);
+
+export const billingInvoicesPartitioned = clinicalSchema.table(
+  'billing_invoices_partitioned',
+  {
+    id: uuid('id').defaultRandom().notNull(),
+    tenantId: uuid('tenant_id').notNull(),
+    branchId: uuid('branch_id'),
+    patientId: uuid('patient_id').notNull(),
+    invoiceNumber: varchar('invoice_number', { length: 100 }).notNull(),
+    subtotalAmount: numeric('subtotal_amount', { precision: 14, scale: 2 }).notNull().default('0.00'),
+    discountAmount: numeric('discount_amount', { precision: 14, scale: 2 }).notNull().default('0.00'),
+    taxAmount: numeric('tax_amount', { precision: 14, scale: 2 }).notNull().default('0.00'),
+    totalAmount: numeric('total_amount', { precision: 14, scale: 2 }).notNull().default('0.00'),
+    paymentStatus: varchar('payment_status', { length: 50 }).notNull().default('PENDING'),
+    paymentMode: varchar('payment_mode', { length: 50 }),
+    currency: varchar('currency', { length: 10 }).notNull().default('INR'),
+    idempotencyKey: varchar('idempotency_key', { length: 128 }),
+    metadata: jsonb('metadata').default({}),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    index('idx_inv_tenant_created').on(table.tenantId, table.createdAt)
+  ]
+);
+
+export const financialTransactionsPartitioned = clinicalSchema.table(
+  'financial_transactions_partitioned',
+  {
+    id: uuid('id').defaultRandom().notNull(),
+    tenantId: uuid('tenant_id').notNull(),
+    invoiceId: uuid('invoice_id'),
+    transactionType: varchar('transaction_type', { length: 50 }).notNull(),
+    gatewayProvider: varchar('gateway_provider', { length: 50 }).notNull(),
+    gatewayRefId: varchar('gateway_ref_id', { length: 255 }),
+    amount: numeric('amount', { precision: 14, scale: 2 }).notNull(),
+    status: varchar('status', { length: 50 }).notNull().default('SUCCESS'),
+    reconciliationStatus: varchar('reconciliation_status', { length: 50 }).notNull().default('SETTLED'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    index('idx_fin_tenant_created').on(table.tenantId, table.createdAt)
+  ]
+);
+
+export type AppointmentPartitioned = typeof appointmentsPartitioned.$inferSelect;
+export type BillingInvoicePartitioned = typeof billingInvoicesPartitioned.$inferSelect;
+export type FinancialTransactionPartitioned = typeof financialTransactionsPartitioned.$inferSelect;
+
+// ============================================================================
+// PHASE 11: FINANCE + COMMERCIAL ADVANCED ENGINE SCHEMAS
+// ============================================================================
+
+export const billingPackages = clinicalSchema.table(
+  'billing_packages',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    tenantId: uuid('tenant_id').notNull(),
+    partnerId: uuid('partner_id').notNull(),
+    organizationId: uuid('organization_id').notNull(),
+    branchId: uuid('branch_id'),
+    packageCode: varchar('package_code', { length: 64 }).notNull(),
+    packageName: varchar('package_name', { length: 255 }).notNull(),
+    description: text('description'),
+    category: varchar('category', { length: 64 }).notNull().default('GENERAL'),
+    totalPrice: numeric('total_price', { precision: 12, scale: 2 }).notNull().default('0.00'),
+    validityDays: integer('validity_days').notNull().default(365),
+    isActive: boolean('is_active').notNull().default(true),
+    metadata: jsonb('metadata').default({}),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => [
+    index('idx_bp_tenant').on(table.tenantId),
+    uniqueIndex('idx_bp_code').on(table.tenantId, table.packageCode)
+  ]
+);
+
+export const billingPackageItems = clinicalSchema.table(
+  'billing_package_items',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    tenantId: uuid('tenant_id').notNull(),
+    packageId: uuid('package_id').notNull().references(() => billingPackages.id, { onDelete: 'cascade' }),
+    serviceCatalogId: uuid('service_catalog_id'),
+    serviceCode: varchar('service_code', { length: 64 }).notNull(),
+    serviceName: varchar('service_name', { length: 255 }).notNull(),
+    quantityIncluded: integer('quantity_included').notNull().default(1),
+    unitPrice: numeric('unit_price', { precision: 12, scale: 2 }).notNull().default('0.00'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => [
+    index('idx_bpi_tenant_pkg').on(table.tenantId, table.packageId)
+  ]
+);
+
+export const patientPackages = clinicalSchema.table(
+  'patient_packages',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    tenantId: uuid('tenant_id').notNull(),
+    partnerId: uuid('partner_id').notNull(),
+    organizationId: uuid('organization_id').notNull(),
+    branchId: uuid('branch_id'),
+    patientId: uuid('patient_id').notNull(),
+    packageId: uuid('package_id').notNull().references(() => billingPackages.id, { onDelete: 'cascade' }),
+    invoiceId: uuid('invoice_id'),
+    packageNumber: varchar('package_number', { length: 64 }).notNull(),
+    purchasedAt: timestamp('purchased_at', { withTimezone: true }).defaultNow().notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    status: varchar('status', { length: 64 }).notNull().default('ACTIVE'),
+    totalPrice: numeric('total_price', { precision: 12, scale: 2 }).notNull().default('0.00'),
+    notes: text('notes'),
+    metadata: jsonb('metadata').default({}),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => [
+    index('idx_pp_tenant_pat').on(table.tenantId, table.patientId),
+    uniqueIndex('idx_pp_code').on(table.tenantId, table.packageNumber)
+  ]
+);
+
+export const patientPackageConsumptions = clinicalSchema.table(
+  'patient_package_consumptions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    tenantId: uuid('tenant_id').notNull(),
+    patientPackageId: uuid('patient_package_id').notNull().references(() => patientPackages.id, { onDelete: 'cascade' }),
+    packageItemId: uuid('package_item_id'),
+    encounterId: uuid('encounter_id'),
+    serviceCode: varchar('service_code', { length: 64 }).notNull(),
+    serviceName: varchar('service_name', { length: 255 }).notNull(),
+    quantityConsumed: integer('quantity_consumed').notNull().default(1),
+    consumedAt: timestamp('consumed_at', { withTimezone: true }).defaultNow().notNull(),
+    recordedBy: varchar('recorded_by', { length: 255 }).notNull(),
+    notes: text('notes')
+  },
+  (table) => [
+    index('idx_ppc_tenant_pp').on(table.tenantId, table.patientPackageId)
+  ]
+);
+
+export const patientCreditAccounts = clinicalSchema.table(
+  'patient_credit_accounts',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    tenantId: uuid('tenant_id').notNull(),
+    partnerId: uuid('partner_id').notNull(),
+    organizationId: uuid('organization_id').notNull(),
+    branchId: uuid('branch_id'),
+    patientId: uuid('patient_id').notNull(),
+    creditLimit: numeric('credit_limit', { precision: 12, scale: 2 }).notNull().default('0.00'),
+    outstandingBalance: numeric('outstanding_balance', { precision: 12, scale: 2 }).notNull().default('0.00'),
+    status: varchar('status', { length: 64 }).notNull().default('ACTIVE'),
+    authorizedBy: varchar('authorized_by', { length: 255 }).notNull(),
+    notes: text('notes'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => [
+    uniqueIndex('idx_pca_tenant_patient').on(table.tenantId, table.patientId)
+  ]
+);
+
+export const purchaseInvoicePayments = clinicalSchema.table(
+  'purchase_invoice_payments',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    tenantId: uuid('tenant_id').notNull(),
+    partnerId: uuid('partner_id').notNull(),
+    organizationId: uuid('organization_id').notNull(),
+    branchId: uuid('branch_id'),
+    purchaseInvoiceId: uuid('purchase_invoice_id').notNull().references(() => purchaseInvoices.id, { onDelete: 'cascade' }),
+    paymentNumber: varchar('payment_number', { length: 64 }).notNull(),
+    amount: numeric('amount', { precision: 14, scale: 2 }).notNull(),
+    paymentMethod: varchar('payment_method', { length: 50 }).notNull().default('BANK_TRANSFER'),
+    referenceNumber: varchar('reference_number', { length: 255 }),
+    paidAt: timestamp('paid_at', { withTimezone: true }).defaultNow().notNull(),
+    paidBy: varchar('paid_by', { length: 255 }).notNull(),
+    notes: text('notes'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => [
+    index('idx_pip_tenant_pinv').on(table.tenantId, table.purchaseInvoiceId),
+    uniqueIndex('idx_pip_number').on(table.tenantId, table.paymentNumber)
+  ]
+);
+
+export const billingEodClosings = clinicalSchema.table(
+  'billing_eod_closings',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    tenantId: uuid('tenant_id').notNull(),
+    partnerId: uuid('partner_id').notNull(),
+    organizationId: uuid('organization_id').notNull(),
+    branchId: uuid('branch_id').notNull(),
+    closingDate: varchar('closing_date', { length: 10 }).notNull(),
+    grossBilling: numeric('gross_billing', { precision: 14, scale: 2 }).notNull().default('0.00'),
+    discountTotal: numeric('discount_total', { precision: 14, scale: 2 }).notNull().default('0.00'),
+    taxTotal: numeric('tax_total', { precision: 14, scale: 2 }).notNull().default('0.00'),
+    netBilling: numeric('net_billing', { precision: 14, scale: 2 }).notNull().default('0.00'),
+    totalCollected: numeric('total_collected', { precision: 14, scale: 2 }).notNull().default('0.00'),
+    cashCollected: numeric('cash_collected', { precision: 14, scale: 2 }).notNull().default('0.00'),
+    digitalCollected: numeric('digital_collected', { precision: 14, scale: 2 }).notNull().default('0.00'),
+    totalRefunded: numeric('total_refunded', { precision: 14, scale: 2 }).notNull().default('0.00'),
+    creditIssued: numeric('credit_issued', { precision: 14, scale: 2 }).notNull().default('0.00'),
+    arCollected: numeric('ar_collected', { precision: 14, scale: 2 }).notNull().default('0.00'),
+    apPaid: numeric('ap_paid', { precision: 14, scale: 2 }).notNull().default('0.00'),
+    departmentBreakdown: jsonb('department_breakdown').default({}),
+    varianceTotal: numeric('variance_total', { precision: 14, scale: 2 }).notNull().default('0.00'),
+    exceptionsCount: integer('exceptions_count').notNull().default(0),
+    status: varchar('status', { length: 50 }).notNull().default('CLOSED'),
+    closedBy: varchar('closed_by', { length: 255 }).notNull(),
+    closedAt: timestamp('closed_at', { withTimezone: true }).defaultNow().notNull(),
+    reopenedBy: varchar('reopened_by', { length: 255 }),
+    reopenedAt: timestamp('reopened_at', { withTimezone: true }),
+    reopenReason: text('reopen_reason'),
+    notes: text('notes'),
+    metadata: jsonb('metadata').default({}),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => [
+    uniqueIndex('idx_eod_tenant_branch_date').on(table.tenantId, table.branchId, table.closingDate)
+  ]
+);
+
+export const gstTaxRates = clinicalSchema.table(
+  'gst_tax_rates',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    tenantId: uuid('tenant_id').notNull(),
+    taxCategory: varchar('tax_category', { length: 64 }).notNull(),
+    hsnSacCode: varchar('hsn_sac_code', { length: 32 }).notNull(),
+    cgstRatePercent: numeric('cgst_rate_percent', { precision: 5, scale: 2 }).notNull().default('0.00'),
+    sgstRatePercent: numeric('sgst_rate_percent', { precision: 5, scale: 2 }).notNull().default('0.00'),
+    igstRatePercent: numeric('igst_rate_percent', { precision: 5, scale: 2 }).notNull().default('0.00'),
+    isExempt: boolean('is_exempt').notNull().default(false),
+    description: text('description'),
+    effectiveFrom: timestamp('effective_from', { withTimezone: true }).defaultNow().notNull(),
+    effectiveTo: timestamp('effective_to', { withTimezone: true }),
+    isActive: boolean('is_active').notNull().default(true),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => [
+    uniqueIndex('idx_gst_tenant_cat').on(table.tenantId, table.taxCategory)
+  ]
+);
+
+export type BillingPackage = typeof billingPackages.$inferSelect;
+export type BillingPackageItem = typeof billingPackageItems.$inferSelect;
+export type PatientPackage = typeof patientPackages.$inferSelect;
+export type PatientPackageConsumption = typeof patientPackageConsumptions.$inferSelect;
+export type PatientCreditAccount = typeof patientCreditAccounts.$inferSelect;
+export type PurchaseInvoicePayment = typeof purchaseInvoicePayments.$inferSelect;
+export type BillingEodClosing = typeof billingEodClosings.$inferSelect;
+export type GstTaxRate = typeof gstTaxRates.$inferSelect;
+
+/**
+ * ============================================================================
+ * PHASE 12: SUPPLY CHAIN MANAGEMENT (HOSPITAL + PHARMACY + LIMS/PATHOLOGY)
+ * ============================================================================
+ */
+
+/**
+ * 1. Supply Chain Warehouses & Departmental Stores
+ */
+export const supplyChainWarehouses = clinicalSchema.table(
+  'supply_chain_warehouses',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    partnerId: uuid('partner_id')
+      .notNull()
+      .references(() => operationalPartners.id, { onDelete: 'cascade' }),
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => operationalOrganizations.id, { onDelete: 'cascade' }),
+    branchId: uuid('branch_id').references(() => operationalFacilities.id, { onDelete: 'set null' }),
+    code: varchar('code', { length: 50 }).notNull(),
+    name: varchar('name', { length: 255 }).notNull(),
+    type: varchar('type', { length: 50 }).notNull().default('DEPARTMENTAL'), // CENTRAL, DEPARTMENTAL, SUB_STORE, TRANSIT
+    departmentId: uuid('department_id').references(() => operationalDepartments.id, { onDelete: 'set null' }),
+    departmentName: varchar('department_name', { length: 150 }).notNull(), // PHARMACY, LIMS, IPD, OT, ICU, EMERGENCY, BLOOD_BANK, DIETARY, HOUSEKEEPING, BIOMEDICAL, CENTRAL
+    location: text('location'),
+    isColdChain: boolean('is_cold_chain').notNull().default(false),
+    status: varchar('status', { length: 50 }).notNull().default('ACTIVE'), // ACTIVE, INACTIVE
+    managerName: varchar('manager_name', { length: 150 }),
+    contactNumber: varchar('contact_number', { length: 50 }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    index('idx_sc_wh_tenant').on(table.tenantId),
+    index('idx_sc_wh_org').on(table.organizationId),
+    index('idx_sc_wh_code').on(table.code),
+    index('idx_sc_wh_dept').on(table.departmentName),
+    index('idx_sc_wh_status').on(table.status),
+    uniqueIndex('idx_sc_wh_tenant_code').on(table.tenantId, table.code)
+  ]
+);
+
+/**
+ * 2. Supply Chain Storage Locations (Racks, Bins, Shelves, Cold Chambers)
+ */
+export const supplyChainLocations = clinicalSchema.table(
+  'supply_chain_locations',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    warehouseId: uuid('warehouse_id')
+      .notNull()
+      .references(() => supplyChainWarehouses.id, { onDelete: 'cascade' }),
+    code: varchar('code', { length: 50 }).notNull(),
+    zone: varchar('zone', { length: 50 }),
+    aisle: varchar('aisle', { length: 50 }),
+    rack: varchar('rack', { length: 50 }),
+    shelf: varchar('shelf', { length: 50 }),
+    bin: varchar('bin', { length: 50 }),
+    isTemperatureControlled: boolean('is_temperature_controlled').notNull().default(false),
+    minTempCelsius: numeric('min_temp_celsius', { precision: 5, scale: 2 }),
+    maxTempCelsius: numeric('max_temp_celsius', { precision: 5, scale: 2 }),
+    status: varchar('status', { length: 50 }).notNull().default('ACTIVE'), // ACTIVE, FULL, MAINTENANCE
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    index('idx_sc_loc_tenant').on(table.tenantId),
+    index('idx_sc_loc_wh').on(table.warehouseId),
+    index('idx_sc_loc_code').on(table.code)
+  ]
+);
+
+/**
+ * 3. Supply Chain Inventory (Aggregated Stock Levels per Item per Warehouse)
+ */
+export const supplyChainInventory = clinicalSchema.table(
+  'supply_chain_inventory',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    partnerId: uuid('partner_id')
+      .notNull()
+      .references(() => operationalPartners.id, { onDelete: 'cascade' }),
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => operationalOrganizations.id, { onDelete: 'cascade' }),
+    branchId: uuid('branch_id').references(() => operationalFacilities.id, { onDelete: 'set null' }),
+    warehouseId: uuid('warehouse_id')
+      .notNull()
+      .references(() => supplyChainWarehouses.id, { onDelete: 'cascade' }),
+    procurementItemId: uuid('procurement_item_id')
+      .notNull()
+      .references(() => procurementItems.id, { onDelete: 'cascade' }),
+    itemCode: varchar('item_code', { length: 50 }).notNull(),
+    itemName: varchar('item_name', { length: 255 }).notNull(),
+    currentStock: integer('current_stock').notNull().default(0),
+    reservedStock: integer('reserved_stock').notNull().default(0),
+    availableStock: integer('available_stock').notNull().default(0),
+    reorderLevel: integer('reorder_level').notNull().default(10),
+    safetyStock: integer('safety_stock').notNull().default(5),
+    minStock: integer('min_stock').notNull().default(5),
+    maxStock: integer('max_stock').notNull().default(500),
+    unitOfMeasure: varchar('unit_of_measure', { length: 50 }).notNull().default('UNIT'),
+    lastRestockedAt: timestamp('last_restocked_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    index('idx_sc_inv_tenant').on(table.tenantId),
+    index('idx_sc_inv_wh').on(table.warehouseId),
+    index('idx_sc_inv_item').on(table.procurementItemId),
+    index('idx_sc_inv_code').on(table.itemCode),
+    uniqueIndex('idx_sc_inv_wh_item').on(table.warehouseId, table.procurementItemId)
+  ]
+);
+
+/**
+ * 4. Supply Chain Batches (Batch/Lot specific tracking with Expiry & Quarantines)
+ */
+export const supplyChainBatches = clinicalSchema.table(
+  'supply_chain_batches',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    partnerId: uuid('partner_id')
+      .notNull()
+      .references(() => operationalPartners.id, { onDelete: 'cascade' }),
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => operationalOrganizations.id, { onDelete: 'cascade' }),
+    branchId: uuid('branch_id').references(() => operationalFacilities.id, { onDelete: 'set null' }),
+    warehouseId: uuid('warehouse_id')
+      .notNull()
+      .references(() => supplyChainWarehouses.id, { onDelete: 'cascade' }),
+    locationId: uuid('location_id').references(() => supplyChainLocations.id, { onDelete: 'set null' }),
+    procurementItemId: uuid('procurement_item_id')
+      .notNull()
+      .references(() => procurementItems.id, { onDelete: 'cascade' }),
+    itemCode: varchar('item_code', { length: 50 }).notNull(),
+    itemName: varchar('item_name', { length: 255 }).notNull(),
+    batchNumber: varchar('batch_number', { length: 100 }).notNull(),
+    expiryDate: timestamp('expiry_date', { withTimezone: true }).notNull(),
+    mfgDate: timestamp('mfg_date', { withTimezone: true }),
+    initialQuantity: integer('initial_quantity').notNull().default(0),
+    currentQuantity: integer('current_quantity').notNull().default(0),
+    reservedQuantity: integer('reserved_quantity').notNull().default(0),
+    availableQuantity: integer('available_quantity').notNull().default(0),
+    unitCost: numeric('unit_cost', { precision: 12, scale: 2 }).notNull().default('0.00'),
+    mrp: numeric('mrp', { precision: 12, scale: 2 }),
+    status: varchar('status', { length: 50 }).notNull().default('ACTIVE'), // ACTIVE, NEAR_EXPIRY, EXPIRED, QUARANTINED, RECALLED, DEPLETED
+    quarantineReason: text('quarantine_reason'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    index('idx_sc_batch_tenant').on(table.tenantId),
+    index('idx_sc_batch_wh').on(table.warehouseId),
+    index('idx_sc_batch_item').on(table.procurementItemId),
+    index('idx_sc_batch_num').on(table.batchNumber),
+    index('idx_sc_batch_exp').on(table.expiryDate),
+    index('idx_sc_batch_status').on(table.status),
+    uniqueIndex('idx_sc_batch_wh_item_num').on(table.warehouseId, table.procurementItemId, table.batchNumber)
+  ]
+);
+
+/**
+ * 5. Supply Chain Stock Ledger (Immutable append-only movement journal)
+ */
+export const supplyChainStockLedger = clinicalSchema.table(
+  'supply_chain_stock_ledger',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    partnerId: uuid('partner_id')
+      .notNull()
+      .references(() => operationalPartners.id, { onDelete: 'cascade' }),
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => operationalOrganizations.id, { onDelete: 'cascade' }),
+    branchId: uuid('branch_id').references(() => operationalFacilities.id, { onDelete: 'set null' }),
+    warehouseId: uuid('warehouse_id')
+      .notNull()
+      .references(() => supplyChainWarehouses.id, { onDelete: 'cascade' }),
+    procurementItemId: uuid('procurement_item_id')
+      .notNull()
+      .references(() => procurementItems.id, { onDelete: 'cascade' }),
+    batchId: uuid('batch_id').references(() => supplyChainBatches.id, { onDelete: 'set null' }),
+    itemCode: varchar('item_code', { length: 50 }).notNull(),
+    batchNumber: varchar('batch_number', { length: 100 }),
+    movementType: varchar('movement_type', { length: 50 }).notNull(), // GRN_RECEIPT, CONSUMPTION, TRANSFER_OUT, TRANSFER_IN, ADJUSTMENT_ADD, ADJUSTMENT_DEDUCT, RETURN_TO_VENDOR, RECALL_QUARANTINE, CYCLE_COUNT_ADJUSTMENT
+    quantity: integer('quantity').notNull(), // signed integer
+    balanceBefore: integer('balance_before').notNull(),
+    balanceAfter: integer('balance_after').notNull(),
+    referenceType: varchar('reference_type', { length: 50 }).notNull(), // GRN, PO, REQUISITION, TRANSFER, CONSUMPTION, STOCK_COUNT, RECALL, ADJUSTMENT
+    referenceId: varchar('reference_id', { length: 100 }).notNull(),
+    departmentName: varchar('department_name', { length: 150 }),
+    performedBy: varchar('performed_by', { length: 150 }).notNull(),
+    performedRole: varchar('performed_role', { length: 100 }),
+    notes: text('notes'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    index('idx_sc_ledg_tenant').on(table.tenantId),
+    index('idx_sc_ledg_wh').on(table.warehouseId),
+    index('idx_sc_ledg_item').on(table.procurementItemId),
+    index('idx_sc_ledg_batch').on(table.batchId),
+    index('idx_sc_ledg_type').on(table.movementType),
+    index('idx_sc_ledg_ref').on(table.referenceType, table.referenceId)
+  ]
+);
+
+/**
+ * 6. Supply Chain Inter-Store Transfers
+ */
+export const supplyChainTransfers = clinicalSchema.table(
+  'supply_chain_transfers',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    partnerId: uuid('partner_id')
+      .notNull()
+      .references(() => operationalPartners.id, { onDelete: 'cascade' }),
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => operationalOrganizations.id, { onDelete: 'cascade' }),
+    branchId: uuid('branch_id').references(() => operationalFacilities.id, { onDelete: 'set null' }),
+    transferNumber: varchar('transfer_number', { length: 100 }).notNull().unique(),
+    sourceWarehouseId: uuid('source_warehouse_id')
+      .notNull()
+      .references(() => supplyChainWarehouses.id, { onDelete: 'cascade' }),
+    sourceWarehouseName: varchar('source_warehouse_name', { length: 255 }).notNull(),
+    destinationWarehouseId: uuid('destination_warehouse_id')
+      .notNull()
+      .references(() => supplyChainWarehouses.id, { onDelete: 'cascade' }),
+    destinationWarehouseName: varchar('destination_warehouse_name', { length: 255 }).notNull(),
+    requestingDepartment: varchar('requesting_department', { length: 150 }).notNull(),
+    status: varchar('status', { length: 50 }).notNull().default('REQUESTED'), // REQUESTED, APPROVED, DISPATCHED, IN_TRANSIT, RECEIVED, REJECTED, CANCELLED
+    requestedBy: varchar('requested_by', { length: 150 }).notNull(),
+    requestedAt: timestamp('requested_at', { withTimezone: true }).notNull().defaultNow(),
+    approvedBy: varchar('approved_by', { length: 150 }),
+    approvedAt: timestamp('approved_at', { withTimezone: true }),
+    dispatchedBy: varchar('dispatched_by', { length: 150 }),
+    dispatchedAt: timestamp('dispatched_at', { withTimezone: true }),
+    receivedBy: varchar('received_by', { length: 150 }),
+    receivedAt: timestamp('received_at', { withTimezone: true }),
+    notes: text('notes'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    index('idx_sc_trf_tenant').on(table.tenantId),
+    index('idx_sc_trf_num').on(table.transferNumber),
+    index('idx_sc_trf_src').on(table.sourceWarehouseId),
+    index('idx_sc_trf_dst').on(table.destinationWarehouseId),
+    index('idx_sc_trf_status').on(table.status)
+  ]
+);
+
+/**
+ * 7. Supply Chain Transfer Line Items
+ */
+export const supplyChainTransferItems = clinicalSchema.table(
+  'supply_chain_transfer_items',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    transferId: uuid('transfer_id')
+      .notNull()
+      .references(() => supplyChainTransfers.id, { onDelete: 'cascade' }),
+    procurementItemId: uuid('procurement_item_id')
+      .notNull()
+      .references(() => procurementItems.id, { onDelete: 'cascade' }),
+    batchId: uuid('batch_id').references(() => supplyChainBatches.id, { onDelete: 'set null' }),
+    itemCode: varchar('item_code', { length: 50 }).notNull(),
+    itemName: varchar('item_name', { length: 255 }).notNull(),
+    batchNumber: varchar('batch_number', { length: 100 }),
+    requestedQuantity: integer('requested_quantity').notNull(),
+    dispatchedQuantity: integer('dispatched_quantity').notNull().default(0),
+    receivedQuantity: integer('received_quantity').notNull().default(0),
+    unit: varchar('unit', { length: 50 }).notNull().default('UNIT'),
+    status: varchar('status', { length: 50 }).notNull().default('PENDING'), // PENDING, DISPATCHED, RECEIVED, DISCREPANCY
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    index('idx_sc_trf_item_tenant').on(table.tenantId),
+    index('idx_sc_trf_item_trf').on(table.transferId),
+    index('idx_sc_trf_item_proc').on(table.procurementItemId)
+  ]
+);
+
+/**
+ * 8. Supply Chain Consumptions (Clinical & Departmental Material Consumption)
+ */
+export const supplyChainConsumptions = clinicalSchema.table(
+  'supply_chain_consumptions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    partnerId: uuid('partner_id')
+      .notNull()
+      .references(() => operationalPartners.id, { onDelete: 'cascade' }),
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => operationalOrganizations.id, { onDelete: 'cascade' }),
+    branchId: uuid('branch_id').references(() => operationalFacilities.id, { onDelete: 'set null' }),
+    consumptionNumber: varchar('consumption_number', { length: 100 }).notNull().unique(),
+    warehouseId: uuid('warehouse_id')
+      .notNull()
+      .references(() => supplyChainWarehouses.id, { onDelete: 'cascade' }),
+    departmentName: varchar('department_name', { length: 150 }).notNull(), // PHARMACY, LIMS, IPD, OT, ICU, EMERGENCY, BLOOD_BANK, DIETARY, HOUSEKEEPING, BIOMEDICAL
+    patientId: uuid('patient_id').references(() => patients.id, { onDelete: 'set null' }),
+    encounterId: uuid('encounter_id').references(() => encounters.id, { onDelete: 'set null' }),
+    procedureName: varchar('procedure_name', { length: 255 }),
+    consumedBy: varchar('consumed_by', { length: 150 }).notNull(),
+    consumedAt: timestamp('consumed_at', { withTimezone: true }).notNull().defaultNow(),
+    totalCost: numeric('total_cost', { precision: 14, scale: 2 }).notNull().default('0.00'),
+    notes: text('notes'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    index('idx_sc_csm_tenant').on(table.tenantId),
+    index('idx_sc_csm_wh').on(table.warehouseId),
+    index('idx_sc_csm_num').on(table.consumptionNumber),
+    index('idx_sc_csm_dept').on(table.departmentName),
+    index('idx_sc_csm_pat').on(table.patientId),
+    index('idx_sc_csm_enc').on(table.encounterId)
+  ]
+);
+
+/**
+ * 9. Supply Chain Consumption Line Items
+ */
+export const supplyChainConsumptionItems = clinicalSchema.table(
+  'supply_chain_consumption_items',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    consumptionId: uuid('consumption_id')
+      .notNull()
+      .references(() => supplyChainConsumptions.id, { onDelete: 'cascade' }),
+    procurementItemId: uuid('procurement_item_id')
+      .notNull()
+      .references(() => procurementItems.id, { onDelete: 'cascade' }),
+    batchId: uuid('batch_id')
+      .notNull()
+      .references(() => supplyChainBatches.id, { onDelete: 'cascade' }),
+    itemCode: varchar('item_code', { length: 50 }).notNull(),
+    itemName: varchar('item_name', { length: 255 }).notNull(),
+    batchNumber: varchar('batch_number', { length: 100 }).notNull(),
+    quantity: integer('quantity').notNull(),
+    unitCost: numeric('unit_cost', { precision: 12, scale: 2 }).notNull().default('0.00'),
+    totalCost: numeric('total_cost', { precision: 14, scale: 2 }).notNull().default('0.00'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    index('idx_sc_csm_item_tenant').on(table.tenantId),
+    index('idx_sc_csm_item_csm').on(table.consumptionId),
+    index('idx_sc_csm_item_proc').on(table.procurementItemId),
+    index('idx_sc_csm_item_batch').on(table.batchId)
+  ]
+);
+
+/**
+ * 10. Supply Chain Stock Counts & Cycle Audits
+ */
+export const supplyChainStockCounts = clinicalSchema.table(
+  'supply_chain_stock_counts',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    partnerId: uuid('partner_id')
+      .notNull()
+      .references(() => operationalPartners.id, { onDelete: 'cascade' }),
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => operationalOrganizations.id, { onDelete: 'cascade' }),
+    branchId: uuid('branch_id').references(() => operationalFacilities.id, { onDelete: 'set null' }),
+    countNumber: varchar('count_number', { length: 100 }).notNull().unique(),
+    warehouseId: uuid('warehouse_id')
+      .notNull()
+      .references(() => supplyChainWarehouses.id, { onDelete: 'cascade' }),
+    countType: varchar('count_type', { length: 50 }).notNull().default('CYCLE'), // CYCLE, ANNUAL, SPOT_CHECK, BLIND
+    status: varchar('status', { length: 50 }).notNull().default('PLANNED'), // PLANNED, IN_PROGRESS, REVIEW_REQUIRED, RECONCILED, CANCELLED
+    initiatedBy: varchar('initiated_by', { length: 150 }).notNull(),
+    conductedBy: varchar('conducted_by', { length: 150 }),
+    reconciledBy: varchar('reconciled_by', { length: 150 }),
+    initiatedAt: timestamp('initiated_at', { withTimezone: true }).notNull().defaultNow(),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+    reconciledAt: timestamp('reconciled_at', { withTimezone: true }),
+    totalExpectedQuantity: integer('total_expected_quantity').notNull().default(0),
+    totalCountedQuantity: integer('total_counted_quantity').notNull().default(0),
+    totalVarianceQuantity: integer('total_variance_quantity').notNull().default(0),
+    totalVarianceValue: numeric('total_variance_value', { precision: 14, scale: 2 }).notNull().default('0.00'),
+    notes: text('notes'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    index('idx_sc_cnt_tenant').on(table.tenantId),
+    index('idx_sc_cnt_wh').on(table.warehouseId),
+    index('idx_sc_cnt_num').on(table.countNumber),
+    index('idx_sc_cnt_status').on(table.status)
+  ]
+);
+
+/**
+ * 11. Supply Chain Stock Count Items
+ */
+export const supplyChainStockCountItems = clinicalSchema.table(
+  'supply_chain_stock_count_items',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    stockCountId: uuid('stock_count_id')
+      .notNull()
+      .references(() => supplyChainStockCounts.id, { onDelete: 'cascade' }),
+    procurementItemId: uuid('procurement_item_id')
+      .notNull()
+      .references(() => procurementItems.id, { onDelete: 'cascade' }),
+    batchId: uuid('batch_id').references(() => supplyChainBatches.id, { onDelete: 'set null' }),
+    itemCode: varchar('item_code', { length: 50 }).notNull(),
+    itemName: varchar('item_name', { length: 255 }).notNull(),
+    batchNumber: varchar('batch_number', { length: 100 }),
+    expectedQuantity: integer('expected_quantity').notNull(),
+    countedQuantity: integer('counted_quantity'),
+    varianceQuantity: integer('variance_quantity').notNull().default(0),
+    varianceValue: numeric('variance_value', { precision: 12, scale: 2 }).notNull().default('0.00'),
+    notes: text('notes'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    index('idx_sc_cnt_item_tenant').on(table.tenantId),
+    index('idx_sc_cnt_item_cnt').on(table.stockCountId),
+    index('idx_sc_cnt_item_proc').on(table.procurementItemId)
+  ]
+);
+
+/**
+ * 12. Supply Chain Batch Recalls & Quarantines
+ */
+export const supplyChainRecalls = clinicalSchema.table(
+  'supply_chain_recalls',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    partnerId: uuid('partner_id')
+      .notNull()
+      .references(() => operationalPartners.id, { onDelete: 'cascade' }),
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => operationalOrganizations.id, { onDelete: 'cascade' }),
+    branchId: uuid('branch_id').references(() => operationalFacilities.id, { onDelete: 'set null' }),
+    recallNumber: varchar('recall_number', { length: 100 }).notNull().unique(),
+    procurementItemId: uuid('procurement_item_id')
+      .notNull()
+      .references(() => procurementItems.id, { onDelete: 'cascade' }),
+    itemCode: varchar('item_code', { length: 50 }).notNull(),
+    itemName: varchar('item_name', { length: 255 }).notNull(),
+    batchNumber: varchar('batch_number', { length: 100 }).notNull(),
+    vendorId: uuid('vendor_id').references(() => procurementVendors.id, { onDelete: 'set null' }),
+    recallClass: varchar('recall_class', { length: 50 }).notNull().default('CLASS_II'), // CLASS_I, CLASS_II, CLASS_III, INTERNAL_QUARANTINE
+    reason: text('reason').notNull(),
+    status: varchar('status', { length: 50 }).notNull().default('ACTIVE'), // ACTIVE, INVESTIGATING, COMPLETED, REVOKED
+    initiatedBy: varchar('initiated_by', { length: 150 }).notNull(),
+    totalQuarantinedQuantity: integer('total_quarantined_quantity').notNull().default(0),
+    dispositionAction: varchar('disposition_action', { length: 50 }).notNull().default('PENDING'), // RETURN_TO_VENDOR, DESTROYED, RELEASED, PENDING
+    notes: text('notes'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    index('idx_sc_rcl_tenant').on(table.tenantId),
+    index('idx_sc_rcl_item').on(table.procurementItemId),
+    index('idx_sc_rcl_batch').on(table.batchNumber),
+    index('idx_sc_rcl_num').on(table.recallNumber),
+    index('idx_sc_rcl_status').on(table.status)
+  ]
+);
+
+export type SupplyChainWarehouse = typeof supplyChainWarehouses.$inferSelect;
+export type NewSupplyChainWarehouse = typeof supplyChainWarehouses.$inferInsert;
+
+export type SupplyChainLocation = typeof supplyChainLocations.$inferSelect;
+export type NewSupplyChainLocation = typeof supplyChainLocations.$inferInsert;
+
+export type SupplyChainInventory = typeof supplyChainInventory.$inferSelect;
+export type NewSupplyChainInventory = typeof supplyChainInventory.$inferInsert;
+
+export type SupplyChainBatch = typeof supplyChainBatches.$inferSelect;
+export type NewSupplyChainBatch = typeof supplyChainBatches.$inferInsert;
+
+export type SupplyChainStockLedger = typeof supplyChainStockLedger.$inferSelect;
+export type NewSupplyChainStockLedger = typeof supplyChainStockLedger.$inferInsert;
+
+export type SupplyChainTransfer = typeof supplyChainTransfers.$inferSelect;
+export type NewSupplyChainTransfer = typeof supplyChainTransfers.$inferInsert;
+
+export type SupplyChainTransferItem = typeof supplyChainTransferItems.$inferSelect;
+export type NewSupplyChainTransferItem = typeof supplyChainTransferItems.$inferInsert;
+
+export type SupplyChainConsumption = typeof supplyChainConsumptions.$inferSelect;
+export type NewSupplyChainConsumption = typeof supplyChainConsumptions.$inferInsert;
+
+export type SupplyChainConsumptionItem = typeof supplyChainConsumptionItems.$inferSelect;
+export type NewSupplyChainConsumptionItem = typeof supplyChainConsumptionItems.$inferInsert;
+
+export type SupplyChainStockCount = typeof supplyChainStockCounts.$inferSelect;
+export type NewSupplyChainStockCount = typeof supplyChainStockCounts.$inferInsert;
+
+export type SupplyChainStockCountItem = typeof supplyChainStockCountItems.$inferSelect;
+export type NewSupplyChainStockCountItem = typeof supplyChainStockCountItems.$inferInsert;
+
+export type SupplyChainRecall = typeof supplyChainRecalls.$inferSelect;
+export type NewSupplyChainRecall = typeof supplyChainRecalls.$inferInsert;
+
+

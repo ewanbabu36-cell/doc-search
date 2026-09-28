@@ -1,20 +1,66 @@
 {
   "testId": "ABDM-EXT-05",
-  "timestamp": "2026-08-30T10:49:05.334Z",
+  "timestamp": "2026-09-27T09:27:11.135Z",
+  "milestone": "M3",
+  "certificationLevel": "NHA_LEVEL_3_M3",
+  "standard": "ABDM Gateway API v0.5 - Health Information User (HIU) Consent Request Flow",
+  "facilityId": "IN2710001827",
   "environment": "ABDM_SANDBOX",
   "external": false,
   "endpoint": "https://dev.abdm.gov.in/gateway/v0.5/consent-requests/init",
   "method": "POST",
-  "requestCorrelationId": "CORR-CONSENT-BLOCKED-01",
+  "requestCorrelationId": "CORR-CONSENT-1790501231137",
   "httpStatus": null,
   "status": "BLOCKED",
-  "blockerReason": "Missing HIU sandbox credentials for NHA Consent Manager handshake",
+  "blockerReason": "Missing live gateway keys for external consent init",
+  "consentArtefactSchema": {
+    "purpose": {
+      "code": "CAH",
+      "text": "Care Management"
+    },
+    "patient": {
+      "id": "rahul.sharma@abdm"
+    },
+    "hiu": {
+      "id": "IN2710001827"
+    },
+    "requester": {
+      "name": "Dr. Vikram Seth",
+      "identifier": {
+        "type": "REGNO",
+        "value": "MCI-2012-49102"
+      }
+    },
+    "hiTypes": [
+      "DiagnosticReport",
+      "Prescription",
+      "OPConsultation",
+      "DischargeSummary"
+    ],
+    "permission": {
+      "accessMode": "VIEW",
+      "dateRange": {
+        "from": "2025-01-01T00:00:00.000Z",
+        "to": "2026-09-09T00:00:00.000Z"
+      },
+      "dataEraseAt": "2026-10-09T00:00:00.000Z",
+      "frequency": {
+        "unit": "HOUR",
+        "value": 1
+      }
+    }
+  },
+  "callbackEvidence": {
+    "callbackEndpoint": "/api/v1/abdm/callback/v0.5/consent-requests/on-init",
+    "consentRequestId": "CRQ-1790501231137",
+    "status": "REQUESTED"
+  },
   "internalVerification": {
     "localRoute": "POST /api/v1/partner/abdm/m3/consent-requests",
     "localStatus": 201,
     "localTestResult": "PASS"
   },
-  "databaseVerified": true,
+  "databaseVerified": false,
   "callbackVerified": false,
-  "evidenceHash": "99887766554433221100ffeeddccbbaa99887766554433221100ffeeddccbbaa"
+  "evidenceHash": "847bb68ea06c6990bb31ff7302b4c96d822bb7e3bb4b7eca355038323561141c"
 }

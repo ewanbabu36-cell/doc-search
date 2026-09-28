@@ -33,13 +33,13 @@ export const RecordPaymentDialog: React.FC<RecordPaymentDialogProps> = ({
   organizationId,
   branchId
 }) => {
-  const [paymentMethod, setPaymentMethod] = useState<BillingPaymentMethod>('CARD');
-  const [amount, setAmount] = useState(invoice ? invoice.dueAmount.toString() : '50.00');
+  const [paymentMethod, setPaymentMethod] = useState<BillingPaymentMethod>('UPI');
+  const [amount, setAmount] = useState(invoice ? Number(invoice.dueAmount || 0).toString() : '50.00');
   const [patientId] = useState(invoice ? invoice.patientId : '55555555-5555-4555-8555-555555555501');
-  const [patientName, setPatientName] = useState(invoice ? invoice.patientName : 'Eleanor Vance');
-  const [patientMrn, setPatientMrn] = useState(invoice ? invoice.patientMrn : 'MRN-2026-00891');
-  const [referenceNumber, setReferenceNumber] = useState('TXN-POS-98172');
-  const [justification, setJustification] = useState('Patient point-of-sale card transaction settled at cashier desk.');
+  const [patientName, setPatientName] = useState(invoice ? invoice.patientName || 'Eleanor Vance' : 'Eleanor Vance');
+  const [patientMrn, setPatientMrn] = useState(invoice ? invoice.patientMrn || 'MRN-2026-00891' : 'MRN-2026-00891');
+  const [referenceNumber, setReferenceNumber] = useState(() => `UPI-${Math.floor(100000 + Math.random() * 900000)}`);
+  const [justification, setJustification] = useState('Patient clinical encounter payment settled at cashier desk.');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -140,13 +140,13 @@ export const RecordPaymentDialog: React.FC<RecordPaymentDialogProps> = ({
               value={paymentMethod}
               onChange={(e) => setPaymentMethod(e.target.value as BillingPaymentMethod)}
               options={[
-                { value: 'CARD', label: 'Credit / Debit Card' },
+                { value: 'UPI', label: 'UPI / Online QR Scan (GooglePay / PhonePe / Paytm)' },
                 { value: 'CASH', label: 'Cash Currency' },
-                { value: 'UPI', label: 'UPI / QR Code Scan' },
-                { value: 'BANK_TRANSFER', label: 'Bank Wire Transfer' },
-                { value: 'CHEQUE', label: 'Bank Cheque' },
-                { value: 'WALLET', label: 'Digital Wallet' },
-                { value: 'INSURANCE', label: 'Insurance Direct Settlement' }
+                { value: 'CARD', label: 'Credit / Debit Card (POS Machine)' },
+                { value: 'BANK_TRANSFER', label: 'Bank Wire Transfer / IMPS' },
+                { value: 'INSURANCE', label: 'Insurance Direct TPA Settlement' },
+                { value: 'CHEQUE', label: 'Bank Cheque / DD' },
+                { value: 'WALLET', label: 'Digital Wallet' }
               ]}
             />
           </div>
@@ -164,6 +164,84 @@ export const RecordPaymentDialog: React.FC<RecordPaymentDialogProps> = ({
             />
           </div>
         </div>
+
+        {paymentMethod === 'UPI' && (
+          <div
+            style={{
+              backgroundColor: 'rgba(6, 182, 212, 0.08)',
+              border: '1.5px solid rgba(6, 182, 212, 0.3)',
+              borderRadius: '12px',
+              padding: '14px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '10px'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '1.2rem' }}>⚡</span>
+                <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--ds-color-text-primary, #F8FAFC)' }}>
+                  Dynamic NPCI UPI QR (Amount: ₹{parseFloat(amount) || 0})
+                </span>
+              </div>
+              <span style={{ fontSize: '0.7rem', color: '#10B981', fontWeight: 700, backgroundColor: 'rgba(16, 185, 129, 0.15)', padding: '2px 8px', borderRadius: '999px' }}>
+                UPI 2.0 Live
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', width: '100%', flexWrap: 'wrap' }}>
+              <div
+                style={{
+                  backgroundColor: '#070C16',
+                  padding: '8px',
+                  borderRadius: '10px',
+                  border: '1.5px solid #06B6D4',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(
+                    `upi://pay?pa=hospital.settlement@docsearch&pn=DocSearch%20Hospital&am=${(parseFloat(amount) || 0).toFixed(2)}&cu=INR&tn=Invoice%20${invoice?.invoiceNumber || 'Direct'}`
+                  )}&color=06B6D4&bgcolor=0B132B`}
+                  alt="UPI QR Code"
+                  style={{ width: '100px', height: '100px', borderRadius: '6px' }}
+                />
+              </div>
+
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
+                  UPI VPA: <strong style={{ color: '#38BDF8' }}>hospital.settlement@docsearch</strong>
+                </div>
+                <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
+                  Supported Apps: <strong style={{ color: '#F1F5F9' }}>PhonePe, Google Pay, Paytm, BHIM</strong>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  onClick={() => {
+                    const simUtr = `UTR-RAZORPAY-${Math.floor(10000000 + Math.random() * 90000000)}`;
+                    setReferenceNumber(simUtr);
+                    setJustification(`Instant UPI Payment confirmed via Razorpay/Cashfree Sandbox simulation (Ref: ${simUtr})`);
+                  }}
+                  style={{
+                    marginTop: '4px',
+                    backgroundColor: '#10B981',
+                    borderColor: '#10B981',
+                    fontWeight: 800,
+                    fontSize: '0.75rem'
+                  }}
+                >
+                  ⚡ Simulate Instant Payment (Sandbox Test)
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div>
           <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.25rem' }}>

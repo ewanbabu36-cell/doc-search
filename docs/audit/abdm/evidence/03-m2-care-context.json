@@ -1,20 +1,51 @@
 {
   "testId": "ABDM-EXT-03",
-  "timestamp": "2026-08-30T10:49:05.334Z",
+  "timestamp": "2026-09-27T09:27:11.131Z",
+  "milestone": "M2",
+  "certificationLevel": "NHA_LEVEL_2_M2",
+  "standard": "ABDM Gateway API v0.5 - Health Information Provider (HIP) Care Context Linking",
+  "facilityId": "IN2710001827",
   "environment": "ABDM_SANDBOX",
   "external": false,
   "endpoint": "https://dev.abdm.gov.in/gateway/v0.5/links/link/add-contexts",
   "method": "POST",
-  "requestCorrelationId": "CORR-M2-BLOCKED-01",
+  "requestCorrelationId": "CORR-M2-1790501231133",
   "httpStatus": null,
   "status": "BLOCKED",
   "blockerReason": "Missing live bridge credentials for external NHA care-context registration",
+  "requestEnvelope": {
+    "headers": {
+      "Authorization": "Bearer <GATEWAY_TOKEN>",
+      "X-CM-ID": "sbx",
+      "REQUEST-ID": "req-m2-1790501231133",
+      "TIMESTAMP": "2026-09-27T09:27:11.131Z"
+    },
+    "patientAbha": "rahul.sharma@abdm",
+    "careContexts": [
+      {
+        "referenceNumber": "OPD-2026-94812",
+        "display": "General Medicine Consultation & Prescription"
+      },
+      {
+        "referenceNumber": "PHARM-2026-10294",
+        "display": "Pharmacy Dispensation - BTH-AUG-8491"
+      }
+    ]
+  },
+  "callbackEvidence": {
+    "callbackEndpoint": "/api/v1/abdm/callback/v0.5/links/link/on-add-contexts",
+    "status": "SUCCESS",
+    "acknowledgment": {
+      "status": "SUCCESS",
+      "patientReference": "rahul.sharma@abdm"
+    }
+  },
   "internalVerification": {
     "localRoute": "POST /api/v1/partner/abdm/m2/care-contexts",
     "localStatus": 201,
     "localTestResult": "PASS"
   },
-  "databaseVerified": true,
+  "databaseVerified": false,
   "callbackVerified": false,
-  "evidenceHash": "112233445566778899aabbccddeeff00112233445566778899aabbccddeeff00"
+  "evidenceHash": "ac5b3ba06dbc44cf7fc25c20bd1cbf02637c03ae0518d87b62dfb70ee61448dc"
 }

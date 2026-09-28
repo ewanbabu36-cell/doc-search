@@ -1,6 +1,7 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { bloodBankManagementService } from '../../services/partner/BloodBankManagementService.js';
 import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
+import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 import {
   type RegisterDonorInput,
   type CollectDonationInput,
@@ -13,6 +14,20 @@ import {
 } from '../../repositories/partner/BloodBankManagementRepository.js';
 
 export const bloodBankManagementRoutes: FastifyPluginAsync = async (fastify) => {
+  fastify.addHook('preHandler', requireModuleCommercialAccess('BLOOD_BANK'));
+
+  // 0. Blood Bank Overview Metrics
+  fastify.get(
+    '/api/v1/partner/blood-bank/overview',
+    {
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'read')]
+    },
+    async (request) => {
+      const data = await bloodBankManagementService.getOverviewMetrics(request.session);
+      return { success: true, data };
+    }
+  );
+
   // 1. Blood Inventory
   fastify.get(
     '/api/v1/partner/blood-bank/inventory',
@@ -113,6 +128,18 @@ export const bloodBankManagementRoutes: FastifyPluginAsync = async (fastify) => 
     }
   );
 
+  // 7b. Blood Bank Crossmatches (List)
+  fastify.get(
+    '/api/v1/partner/blood-bank/crossmatches',
+    {
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'read')]
+    },
+    async (request) => {
+      const data = await bloodBankManagementService.getCrossmatches(request.session);
+      return { success: true, data };
+    }
+  );
+
   // 8. Issue Blood Unit
   fastify.post(
     '/api/v1/partner/blood-bank/issue',
@@ -126,6 +153,18 @@ export const bloodBankManagementRoutes: FastifyPluginAsync = async (fastify) => 
         reply.status(404);
         return { success: false, error: { code: 'REQUEST_NOT_FOUND', message: 'Blood request not found' } };
       }
+      return { success: true, data };
+    }
+  );
+
+  // 8b. Blood Bank Issues (List)
+  fastify.get(
+    '/api/v1/partner/blood-bank/issues',
+    {
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'read')]
+    },
+    async (request) => {
+      const data = await bloodBankManagementService.getIssues(request.session);
       return { success: true, data };
     }
   );

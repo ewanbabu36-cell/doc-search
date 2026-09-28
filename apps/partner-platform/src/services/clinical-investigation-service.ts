@@ -1,16 +1,35 @@
-import { apiRequest } from './api-client.js';
+import { apiRequest, isMockFallbackAllowed } from './api-client.js';
+import { getUnifiedPartnerProfile } from '../utils/roleProfileResolver.js';
+import { pathologyRevenueService } from './pathology-revenue-service.js';
 
-function loadStored<T>(key: string, fallback: T[]): T[] {
+function loadStored<T extends { id?: string }>(key: string, fallback: T[]): T[] {
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
       const item = window.localStorage.getItem(key);
-      if (item) return JSON.parse(item);
+      if (item) {
+        const parsed = JSON.parse(item);
+        if (Array.isArray(parsed)) {
+          const storedIds = new Set(parsed.map((x: any) => x?.id).filter(Boolean));
+          const missingFallback = fallback.filter((fb) => fb?.id && !storedIds.has(fb.id));
+          if (missingFallback.length > 0) {
+            const merged = [...parsed, ...missingFallback];
+            try {
+              window.localStorage.setItem(key, JSON.stringify(merged));
+            } catch {
+              // Ignore quota errors
+            }
+            return merged;
+          }
+          return parsed;
+        }
+      }
     } catch {
       // Fallback
     }
   }
   return [...fallback];
 }
+
 
 function saveStored<T>(key: string, data: T[]): void {
   if (typeof window !== 'undefined' && window.localStorage) {
@@ -59,6 +78,106 @@ import {
   MOCK_INVESTIGATION_AUDIT_TRACES
 } from './mock-clinical-investigation-data.js';
 
+export interface VacuumTubeStandard {
+  code: string;
+  name: string;
+  colorName: string;
+  hex: string;
+  bgRgba: string;
+  additive: string;
+  icon: string;
+  typicalTests: string;
+}
+
+export const VACUUM_TUBE_STANDARDS: Record<string, VacuumTubeStandard> = {
+  EDTA_LAVENDER: {
+    code: 'EDTA_LAVENDER',
+    name: 'Lavender / Purple Top (K2/K3 EDTA)',
+    colorName: 'Lavender Purple',
+    hex: '#A855F7',
+    bgRgba: 'rgba(168, 85, 247, 0.15)',
+    additive: 'K2/K3 EDTA Anticoagulant',
+    icon: '💜',
+    typicalTests: 'CBC with Diff, ESR, HbA1c, Blood Group, Peripheral Smear'
+  },
+  SERUM_SST_GOLD: {
+    code: 'SERUM_SST_GOLD',
+    name: 'Gold SST / Red Top (Clot Activator)',
+    colorName: 'Gold / Red SST',
+    hex: '#EF4444',
+    bgRgba: 'rgba(239, 68, 68, 0.15)',
+    additive: 'Silica Clot Activator & Separator Gel',
+    icon: '🔴',
+    typicalTests: 'LFT, KFT/RFT, Lipid Profile, Thyroid T3/T4/TSH, Electrolytes, Serology'
+  },
+  FLUORIDE_GREY: {
+    code: 'FLUORIDE_GREY',
+    name: 'Grey Top (Sodium Fluoride)',
+    colorName: 'Fluoride Grey',
+    hex: '#94A3B8',
+    bgRgba: 'rgba(148, 163, 184, 0.18)',
+    additive: 'Sodium Fluoride (Glycolysis Inhibitor) + Potassium Oxalate',
+    icon: '⚪',
+    typicalTests: 'Fasting Blood Glucose, Post-Prandial Glucose (PPBS), Oral GTT'
+  },
+  CITRATE_BLUE: {
+    code: 'CITRATE_BLUE',
+    name: 'Light Blue Top (Sodium Citrate 3.2%)',
+    colorName: 'Sodium Citrate Blue',
+    hex: '#38BDF8',
+    bgRgba: 'rgba(56, 189, 248, 0.15)',
+    additive: '3.2% Buffered Sodium Citrate (1:9 ratio)',
+    icon: '🔵',
+    typicalTests: 'Prothrombin Time (PT/INR), APTT, D-Dimer, Fibrinogen'
+  }
+};
+
+export const ClinicalCalculators = {
+  // CBC Indices: MCV, MCH, MCHC
+  calculateCbcIndices: (hb: number, rbc: number, pcv: number) => {
+    if (rbc <= 0 || pcv <= 0) return null;
+    const mcv = Number(((pcv * 10) / rbc).toFixed(1)); // fL (80 - 100)
+    const mch = Number(((hb * 10) / rbc).toFixed(1));  // pg (27 - 33)
+    const mchc = Number(((hb * 100) / pcv).toFixed(1)); // g/dL (32 - 36)
+    return { mcv, mch, mchc };
+  },
+
+  // Lipid Profile: LDL and VLDL via Friedewald equation
+  calculateLipidFractions: (totalChol: number, trig: number, hdl: number) => {
+    if (totalChol <= 0 || trig <= 0 || hdl <= 0) return null;
+    const vldl = Number((trig / 5).toFixed(1)); // mg/dL
+    const ldl = Number(Math.max(0, totalChol - hdl - vldl).toFixed(1)); // mg/dL
+    return { vldl, ldl };
+  },
+
+  // Diabetes: Estimated Average Glucose from HbA1c (Nathan formula)
+  calculateEag: (hba1c: number) => {
+    if (hba1c <= 0) return null;
+    return Number(((28.7 * hba1c) - 46.7).toFixed(1)); // mg/dL
+  },
+
+  // Renal: eGFR estimation from Creatinine and Age
+  calculateEgfr: (creatinine: number, age: number, isFemale = false) => {
+    if (creatinine <= 0 || age <= 0) return null;
+    const weight = isFemale ? 60 : 70;
+    const rawEgfr = ((140 - age) * weight) / (72 * creatinine);
+    const egfr = isFemale ? rawEgfr * 0.85 : rawEgfr;
+    return Math.max(10, Math.min(130, Math.round(egfr)));
+  }
+};
+
+export interface PanicIntimationRecord {
+  orderId: string;
+  orderNumber: string;
+  doctorName: string;
+  doctorPhone?: string;
+  callerStaffName: string;
+  readBackConfirmed: boolean;
+  criticalParameters: string[];
+  intimatedAt: string;
+  notes?: string;
+}
+
 export interface IClinicalInvestigationService {
   getOverview(tenantId: string, partnerId?: string, organizationId?: string, branchId?: string): Promise<InvestigationOverviewDto>;
   searchCatalog(tenantId: string, category?: string, searchTerm?: string): Promise<InvestigationCatalogDto[]>;
@@ -79,7 +198,21 @@ export interface IClinicalInvestigationService {
   reviewResults(req: ReviewInvestigationResultRequest): Promise<InvestigationOrderDto>;
   amendResult(req: AmendInvestigationResultRequest): Promise<InvestigationOrderDto>;
   getPatientInvestigationHistory(tenantId: string, patientId: string): Promise<InvestigationOrderDto[]>;
+  getOrdersSync(): InvestigationOrderDto[];
+  getOrders(tenantId?: string): Promise<InvestigationOrderDto[]>;
+  getReports(tenantId?: string): Promise<InvestigationReportDto[]>;
+  registerDirectWalkInOrder(order: InvestigationOrderDto): void;
+  updateDirectWalkInOrder(order: InvestigationOrderDto): void;
+  updateOrderBilling(orderId: string, billingData: {
+    invoiceNumber: string;
+    billedAmount: number;
+    paidAmount: number;
+    paymentMode: string;
+    balanceDue?: number;
+  }): InvestigationOrderDto | null;
+  logPanicIntimation(orderId: string, payload: Partial<PanicIntimationRecord>): Promise<any>;
   getAuditTraces(params: QueryInvestigationAuditRequest): Promise<InvestigationAuditTraceDto[]>;
+  clearAllMockAndTestData(): void;
 }
 
 export class ClinicalInvestigationService implements IClinicalInvestigationService {
@@ -113,6 +246,75 @@ export class ClinicalInvestigationService implements IClinicalInvestigationServi
   private generateReportNumber(): string {
     const randomSeq = Math.floor(100000 + Math.random() * 900000);
     return `REP-LAB-2026-${randomSeq}`;
+  }
+
+  private mapStoredOrderToDto(order: any): InvestigationOrderDto {
+    const rawStatus = order.status || 'ORDERED';
+    const normalizedStatus = rawStatus === 'COMPLETED' ? 'REVIEWED' : rawStatus;
+    const invId = order.investigationId || order.id || this.catalog[0]?.id;
+    const inv = this.catalog.find((c) => c.id === invId);
+
+    const mappedSpecimens: InvestigationSpecimenDto[] = Array.isArray(order.specimens)
+      ? order.specimens
+      : (order.specimen ? [order.specimen] : []);
+
+    const mappedResults: InvestigationResultDto[] = Array.isArray(order.results)
+      ? order.results
+      : [];
+
+    return {
+      id: order.id,
+      tenantId: order.tenantId || '00000000-0000-0000-0000-000000000001',
+      partnerId: order.partnerId || '00000000-0000-0000-0000-000000000001',
+      organizationId: order.organizationId || '00000000-0000-0000-0000-000000000001',
+      organizationName: order.organizationName || 'Healthcare Facility',
+      branchId: order.branchId || undefined,
+      branchName: order.branchName || 'Main Branch',
+      orderNumber: order.orderNumber || `ORD-INV-${(order.id || '').slice(0, 8)}`,
+      patientId: order.patientId,
+      patientName: order.patientName || 'Patient',
+      patientMrn: order.patientMrn || (order.patientId ? `MRN-${order.patientId.slice(0, 8)}` : 'MRN-UNKNOWN'),
+      patientDob: order.patientDob || '1990-01-01',
+      patientGender: order.patientGender || 'OTHER',
+      encounterId: order.encounterId || '00000000-0000-0000-0000-000000000001',
+      encounterNumber: order.encounterNumber || 'ENC-1001',
+      consultationId: order.consultationId || undefined,
+      consultationNumber: order.consultationNumber || undefined,
+      orderingDoctorId: order.orderingDoctorId || '00000000-0000-0000-0000-000000000001',
+      orderingDoctorName: order.orderingDoctorName || 'Dr. Treating Physician',
+      orderingDoctorSpecialty: order.orderingDoctorSpecialty || 'General Medicine',
+      investigationId: invId,
+      investigationCode: order.investigationCode || order.testCode || inv?.testCode || 'LAB-TEST',
+      investigationName: order.investigationName || order.testName || inv?.testName || 'Investigation Test',
+      investigationCategory: order.investigationCategory || order.category || inv?.category || 'GENERAL',
+      panelId: order.panelId || undefined,
+      panelName: order.panelName || undefined,
+      priority: order.priority || 'ROUTINE',
+      clinicalIndication: order.clinicalIndication || 'Clinical Investigation',
+      diagnosisContext: order.diagnosisContext || undefined,
+      specimenType: order.specimenType || 'WHOLE_BLOOD',
+      fastingConfirmed: Boolean(order.fastingConfirmed),
+      status: normalizedStatus as any,
+      isAbnormal: Boolean(order.isAbnormal),
+      isCritical: Boolean(order.isCritical),
+      specimens: mappedSpecimens,
+      results: mappedResults,
+      report: order.report || undefined,
+      amendments: Array.isArray(order.amendments) ? order.amendments : [],
+      orderedAt: typeof order.orderedAt === 'string' ? order.orderedAt : (order.orderedAt?.toISOString?.() || new Date().toISOString()),
+      acknowledgedAt: order.acknowledgedAt ? (typeof order.acknowledgedAt === 'string' ? order.acknowledgedAt : order.acknowledgedAt?.toISOString?.()) : undefined,
+      sampleCollectedAt: order.sampleCollectedAt ? (typeof order.sampleCollectedAt === 'string' ? order.sampleCollectedAt : order.sampleCollectedAt?.toISOString?.()) : undefined,
+      processingStartedAt: order.processingStartedAt ? (typeof order.processingStartedAt === 'string' ? order.processingStartedAt : order.processingStartedAt?.toISOString?.()) : undefined,
+      resultEnteredAt: order.resultEnteredAt ? (typeof order.resultEnteredAt === 'string' ? order.resultEnteredAt : order.resultEnteredAt?.toISOString?.()) : undefined,
+      verifiedAt: order.verifiedAt ? (typeof order.verifiedAt === 'string' ? order.verifiedAt : order.verifiedAt?.toISOString?.()) : undefined,
+      reviewedAt: order.reviewedAt ? (typeof order.reviewedAt === 'string' ? order.reviewedAt : order.reviewedAt?.toISOString?.()) : undefined,
+      cancelledAt: order.cancelledAt ? (typeof order.cancelledAt === 'string' ? order.cancelledAt : order.cancelledAt?.toISOString?.()) : undefined,
+      cancellationReason: order.cancellationReason || undefined,
+      cancelledBy: order.cancelledBy || undefined,
+      metadata: (typeof order.metadata === 'object' && order.metadata !== null) ? order.metadata : {},
+      createdAt: typeof order.createdAt === 'string' ? order.createdAt : (order.createdAt?.toISOString?.() || new Date().toISOString()),
+      updatedAt: typeof order.updatedAt === 'string' ? order.updatedAt : (order.updatedAt?.toISOString?.() || new Date().toISOString()),
+    };
   }
 
   private recordAudit(
@@ -163,8 +365,22 @@ export class ClinicalInvestigationService implements IClinicalInvestigationServi
     organizationId?: string,
     _branchId?: string
   ): Promise<InvestigationOverviewDto> {
+    try {
+      const res = await apiRequest<any[]>('/api/v1/partner/lab/orders');
+      if (res.success && Array.isArray(res.data)) {
+        const mapped = res.data.map((o) => this.mapStoredOrderToDto(o));
+        const serverIds = new Set(mapped.map((d) => d.id));
+        const localCreated = this.orders.filter((o) => !serverIds.has(o.id));
+        this.orders = [...localCreated, ...mapped];
+        saveStored("docsearch_investigation_orders", this.orders);
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
+
     const tenantOrders = this.orders.filter(
-      (o) => o.tenantId === tenantId && (!organizationId || o.organizationId === organizationId)
+      (o) => (!tenantId || o.tenantId === tenantId || o.tenantId === '22222222-2222-4222-8222-222222222222') &&
+             (!organizationId || o.organizationId === organizationId || o.organizationId === '00000000-0000-0000-0000-000000000001')
     );
 
     return {
@@ -184,6 +400,21 @@ export class ClinicalInvestigationService implements IClinicalInvestigationServi
     category?: string,
     searchTerm?: string
   ): Promise<InvestigationCatalogDto[]> {
+    try {
+      const params = new URLSearchParams();
+      if (category && category !== 'ALL') params.append('category', category);
+      if (searchTerm) params.append('searchTerm', searchTerm);
+      const qs = params.toString() ? `?${params.toString()}` : '';
+      const res = await apiRequest<InvestigationCatalogDto[]>(`/api/v1/partner/lab/catalog${qs}`);
+      if (res.success && Array.isArray(res.data)) {
+        this.catalog = res.data;
+        saveStored("docsearch_investigation_catalog", this.catalog);
+        return res.data;
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
+    if (!isMockFallbackAllowed()) return [];
     return this.catalog.filter((item) => {
       if (item.tenantId !== tenantId) return false;
       if (category && category !== 'ALL' && item.category !== category) return false;
@@ -286,6 +517,17 @@ export class ClinicalInvestigationService implements IClinicalInvestigationServi
   }
 
   public async getPanels(tenantId: string): Promise<InvestigationPanelDto[]> {
+    try {
+      const res = await apiRequest<InvestigationPanelDto[]>('/api/v1/partner/lab/panels');
+      if (res.success && Array.isArray(res.data)) {
+        this.panels = res.data;
+        saveStored("docsearch_investigation_panels", this.panels);
+        return res.data;
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
+    if (!isMockFallbackAllowed()) return [];
     return this.panels.filter((p) => p.tenantId === tenantId);
   }
 
@@ -343,22 +585,23 @@ export class ClinicalInvestigationService implements IClinicalInvestigationServi
     return { ...newPanel };
   }
 
-    public async searchOrders(params: SearchInvestigationOrdersRequest): Promise<InvestigationOrderDto[]> {
+  public async searchOrders(params: SearchInvestigationOrdersRequest): Promise<InvestigationOrderDto[]> {
     try {
       const q = params.status ? `?status=${encodeURIComponent(params.status)}` : '';
-      const res = await apiRequest<InvestigationOrderDto[]>(`/api/v1/partner/lab/orders${q}`);
-      if (res.success && Array.isArray(res.data) && res.data.length > 0) {
-        const serverIds = new Set(res.data.map((d) => d.id));
+      const res = await apiRequest<any[]>(`/api/v1/partner/lab/orders${q}`);
+      if (res.success && Array.isArray(res.data)) {
+        const mapped = res.data.map((o) => this.mapStoredOrderToDto(o));
+        const serverIds = new Set(mapped.map((d) => d.id));
         const localCreated = this.orders.filter((o) => !serverIds.has(o.id));
-        this.orders = [...localCreated, ...res.data];
-        return this.orders;
+        this.orders = [...localCreated, ...mapped];
+        saveStored("docsearch_investigation_orders", this.orders);
       }
     } catch {
       // Fallback
     }
     return this.orders.filter((o) => {
-      if (o.tenantId !== params.tenantId) return false;
-      if (params.organizationId && o.organizationId !== params.organizationId) return false;
+      if (params.tenantId && o.tenantId && o.tenantId !== params.tenantId && o.tenantId !== '22222222-2222-4222-8222-222222222222') return false;
+      if (params.organizationId && o.organizationId && o.organizationId !== params.organizationId && o.organizationId !== '00000000-0000-0000-0000-000000000001') return false;
       if (params.patientId && o.patientId !== params.patientId) return false;
       if (params.encounterId && o.encounterId !== params.encounterId) return false;
       if (params.orderingDoctorId && o.orderingDoctorId !== params.orderingDoctorId) return false;
@@ -383,28 +626,92 @@ export class ClinicalInvestigationService implements IClinicalInvestigationServi
     });
   }
 
+  public getOrdersSync(): InvestigationOrderDto[] {
+    const raw = loadStored("docsearch_investigation_orders", this.orders);
+    return raw.map((o) => this.mapStoredOrderToDto(o));
+  }
+
+  public async getOrders(tenantId?: string): Promise<InvestigationOrderDto[]> {
+    const all = this.getOrdersSync();
+    if (tenantId) {
+      return all.filter((o) => o.tenantId === tenantId);
+    }
+    return all;
+  }
+
   public async getOrderById(tenantId: string, orderId: string): Promise<InvestigationOrderDto | null> {
+    try {
+      const res = await apiRequest<any>(`/api/v1/partner/lab/orders/${orderId}`);
+      if (res.success && res.data) {
+        const mapped = this.mapStoredOrderToDto(res.data);
+        const idx = this.orders.findIndex((o) => o.id === orderId || o.id === mapped.id);
+        if (idx >= 0) {
+          this.orders[idx] = mapped;
+        } else {
+          this.orders.unshift(mapped);
+        }
+        saveStored("docsearch_investigation_orders", this.orders);
+        return mapped;
+      }
+    } catch {
+      // Fallback
+    }
     const found = this.orders.find((o) => o.tenantId === tenantId && o.id === orderId);
     return found ? { ...found } : null;
   }
 
-    public async createInvestigationOrder(req: CreateInvestigationOrderRequest): Promise<InvestigationOrderDto> {
+  public async createInvestigationOrder(req: CreateInvestigationOrderRequest): Promise<InvestigationOrderDto> {
     const inv = this.catalog.find((c) => c.id === req.investigationId) || this.catalog[0];
+    const initialStatus = inv?.specimenType === 'NONE' ? 'PROCESSING' : 'SAMPLE_REQUIRED';
+    const profile = getUnifiedPartnerProfile();
+
+    try {
+      const res = await apiRequest<any>('/api/v1/partner/lab/orders', {
+        method: 'POST',
+        body: JSON.stringify({
+          patientId: req.patientId,
+          patientName: req.patientName,
+          encounterId: req.encounterId,
+          consultationId: req.consultationId,
+          orderingDoctorId: req.orderingDoctorId,
+          orderingDoctorName: req.orderingDoctorName || req.referringDoctor || profile.doctorName,
+          investigationId: inv?.id || req.investigationId,
+          testCode: inv?.testCode || 'LAB-HEM-CBC',
+          testName: inv?.testName || 'Complete Blood Count with Differential',
+          category: inv?.category || 'HEMATOLOGY',
+          priority: req.priority,
+          clinicalIndication: req.clinicalIndication
+        })
+      });
+      if (res.success && res.data) {
+        const mapped = this.mapStoredOrderToDto(res.data);
+        this.orders.unshift(mapped);
+        saveStored("docsearch_investigation_orders", this.orders);
+        return mapped;
+      }
+      if (!isMockFallbackAllowed() && res.error) {
+        throw new Error(res.error.message || 'Failed to create lab order on server');
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) {
+        throw err instanceof Error ? err : new Error('Lab order creation network error');
+      }
+    }
+
     const orderId = this.generateId();
     const orderNumber = this.generateOrderNumber();
-    const initialStatus = inv?.specimenType === 'NONE' ? 'PROCESSING' : 'SAMPLE_REQUIRED';
 
     const newOrder: InvestigationOrderDto = {
       id: orderId,
       tenantId: req.tenantId,
       partnerId: req.partnerId,
       organizationId: req.organizationId,
-      organizationName: 'Apex Multi-Specialty Clinics',
+      organizationName: profile.entityLegalName || 'Clinical Healthcare Facility',
       branchId: req.branchId,
-      branchName: 'Apex Downtown Care Center',
+      branchName: profile.entityLegalName ? `${profile.entityLegalName} (Main Center)` : 'Main Diagnostic Center',
       orderNumber,
       patientId: req.patientId,
-      patientName: req.patientName || 'Amit Kumar',
+      patientName: req.patientName || 'Patient',
       patientMrn: `DS-MRN-${Math.floor(100000 + Math.random() * 900000)}`,
       patientDob: req.patientAge ? `${2026 - (parseInt(req.patientAge, 10) || 28)}-05-12` : '1998-05-12',
       patientGender: (req.patientGender as any) || 'MALE',
@@ -413,8 +720,8 @@ export class ClinicalInvestigationService implements IClinicalInvestigationServi
       consultationId: req.consultationId,
       consultationNumber: `CON-${Math.floor(100000 + Math.random() * 900000)}`,
       orderingDoctorId: req.orderingDoctorId,
-      orderingDoctorName: req.orderingDoctorName || req.referringDoctor || 'Dr. Rajesh Sharma, MD',
-      orderingDoctorSpecialty: 'Internal Medicine',
+      orderingDoctorName: req.orderingDoctorName || req.referringDoctor || profile.doctorName || 'Consulting Clinician',
+      orderingDoctorSpecialty: profile.doctorSpecialty || 'Internal Medicine',
       investigationId: inv?.id || req.investigationId,
       investigationCode: inv?.testCode || 'LAB-HEM-CBC',
       investigationName: inv?.testName || 'Complete Blood Count with Differential',
@@ -502,21 +809,108 @@ export class ClinicalInvestigationService implements IClinicalInvestigationServi
       updatedAt: new Date().toISOString()
     };
 
-    this.orders.unshift(newOrder); saveStored("docsearch_investigation_orders", this.orders);
-
     try {
-      await apiRequest<InvestigationOrderDto>('/api/v1/partner/lab/orders', {
+      const res = await apiRequest<any>('/api/v1/partner/lab/orders', {
         method: 'POST',
-        body: JSON.stringify(req)
+        body: JSON.stringify({
+          ...req,
+          id: orderId
+        })
       });
-    } catch {
-      // Fallback
+      if (res.success && res.data) {
+        const mapped = this.mapStoredOrderToDto(res.data);
+        const idx = this.orders.findIndex((o) => o.id === mapped.id || o.id === orderId);
+        if (idx >= 0) {
+          this.orders[idx] = mapped;
+        } else {
+          this.orders.unshift(mapped);
+        }
+        saveStored("docsearch_investigation_orders", this.orders);
+        this.recordAudit(
+          req.tenantId,
+          mapped.partnerId,
+          mapped.organizationId,
+          mapped.branchId,
+          mapped.id,
+          mapped.patientId,
+          req.actorId,
+          req.actorRole,
+          'INVESTIGATION_ORDER_CREATED',
+          'investigation_orders',
+          mapped.id,
+          req.justification,
+          undefined,
+          mapped as unknown as Record<string, unknown>
+        );
+        return mapped;
+      }
+      if (!isMockFallbackAllowed()) {
+        throw new Error(res?.error?.message || 'Lab order creation failed on server');
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) {
+        throw err instanceof Error ? err : new Error('Lab order creation network error');
+      }
     }
+
+    this.orders.unshift(newOrder); saveStored("docsearch_investigation_orders", this.orders);
+    this.recordAudit(
+      req.tenantId,
+      req.partnerId,
+      req.organizationId,
+      req.branchId,
+      orderId,
+      req.patientId,
+      req.actorId,
+      req.actorRole,
+      'INVESTIGATION_ORDER_CREATED',
+      'investigation_orders',
+      orderId,
+      req.justification,
+      undefined,
+      newOrder as unknown as Record<string, unknown>
+    );
 
     return { ...newOrder };
   }
 
   public async cancelInvestigationOrder(req: CancelInvestigationOrderRequest): Promise<InvestigationOrderDto> {
+    try {
+      const res = await apiRequest<any>(`/api/v1/partner/lab/orders/${req.orderId}/cancel`, {
+        method: 'POST',
+        body: JSON.stringify(req)
+      });
+      if (res.success && res.data) {
+        const mapped = this.mapStoredOrderToDto(res.data);
+        const idx = this.orders.findIndex((o) => o.id === req.orderId || o.id === mapped.id);
+        if (idx >= 0) {
+          this.orders[idx] = mapped;
+        } else {
+          this.orders.unshift(mapped);
+        }
+        saveStored("docsearch_investigation_orders", this.orders);
+        this.recordAudit(
+          req.tenantId,
+          mapped.partnerId,
+          mapped.organizationId,
+          mapped.branchId,
+          mapped.id,
+          mapped.patientId,
+          req.actorId,
+          req.actorRole,
+          'INVESTIGATION_ORDER_CANCELLED',
+          'investigation_orders',
+          mapped.id,
+          req.justification,
+          undefined,
+          mapped as unknown as Record<string, unknown>
+        );
+        return mapped;
+      }
+    } catch {
+      // Fallback
+    }
+
     const order = this.orders.find((o) => o.tenantId === req.tenantId && o.id === req.orderId);
     if (!order) {
       throw new Error(`Order ${req.orderId} not found.`);
@@ -588,15 +982,28 @@ export class ClinicalInvestigationService implements IClinicalInvestigationServi
 
   public async collectSpecimen(req: CollectSpecimenRequest): Promise<InvestigationOrderDto> {
     try {
-      const res = await apiRequest<InvestigationOrderDto>(`/api/v1/partner/lab/orders/${req.orderId}/collect-sample`, {
+      const res = await apiRequest<any>(`/api/v1/partner/lab/orders/${req.orderId}/collect-sample`, {
         method: 'POST',
         body: JSON.stringify(req)
       });
       if (res.success && res.data) {
-        return res.data;
+        const mapped = this.mapStoredOrderToDto(res.data);
+        const idx = this.orders.findIndex((o) => o.id === req.orderId || o.id === mapped.id);
+        if (idx >= 0) {
+          this.orders[idx] = mapped;
+        } else {
+          this.orders.unshift(mapped);
+        }
+        saveStored("docsearch_investigation_orders", this.orders);
+        return mapped;
       }
-    } catch {
-      // Fallback
+      if (!isMockFallbackAllowed() && res.error) {
+        throw new Error(res.error.message || 'Failed to collect specimen on server');
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) {
+        throw err instanceof Error ? err : new Error('Specimen collection network error');
+      }
     }
     const order = this.orders.find((o) => o.tenantId === req.tenantId && o.id === req.orderId);
     if (!order) {
@@ -698,15 +1105,28 @@ export class ClinicalInvestigationService implements IClinicalInvestigationServi
 
   public async enterResults(req: EnterInvestigationResultRequest): Promise<InvestigationOrderDto> {
     try {
-      const res = await apiRequest<InvestigationOrderDto>(`/api/v1/partner/lab/orders/${req.orderId}/results`, {
+      const res = await apiRequest<any>(`/api/v1/partner/lab/orders/${req.orderId}/results`, {
         method: 'POST',
         body: JSON.stringify(req)
       });
       if (res.success && res.data) {
-        return res.data;
+        const mapped = this.mapStoredOrderToDto(res.data);
+        const idx = this.orders.findIndex((o) => o.id === req.orderId || o.id === mapped.id);
+        if (idx >= 0) {
+          this.orders[idx] = mapped;
+        } else {
+          this.orders.unshift(mapped);
+        }
+        saveStored("docsearch_investigation_orders", this.orders);
+        return mapped;
       }
-    } catch {
-      // Fallback
+      if (!isMockFallbackAllowed() && res.error) {
+        throw new Error(res.error.message || 'Failed to enter lab results on server');
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) {
+        throw err instanceof Error ? err : new Error('Lab results entry network error');
+      }
     }
     const order = this.orders.find((o) => o.tenantId === req.tenantId && o.id === req.orderId);
     if (!order) {
@@ -786,15 +1206,28 @@ export class ClinicalInvestigationService implements IClinicalInvestigationServi
 
   public async verifyResults(req: VerifyInvestigationResultRequest): Promise<InvestigationOrderDto> {
     try {
-      const res = await apiRequest<InvestigationOrderDto>(`/api/v1/partner/lab/orders/${req.orderId}/verify`, {
+      const res = await apiRequest<any>(`/api/v1/partner/lab/orders/${req.orderId}/verify`, {
         method: 'PATCH',
         body: JSON.stringify(req)
       });
       if (res.success && res.data) {
-        return res.data;
+        const mapped = this.mapStoredOrderToDto(res.data);
+        const idx = this.orders.findIndex((o) => o.id === req.orderId || o.id === mapped.id);
+        if (idx >= 0) {
+          this.orders[idx] = mapped;
+        } else {
+          this.orders.unshift(mapped);
+        }
+        saveStored("docsearch_investigation_orders", this.orders);
+        return mapped;
       }
-    } catch {
-      // Fallback
+      if (!isMockFallbackAllowed() && res.error) {
+        throw new Error(res.error.message || 'Failed to verify lab results on server');
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) {
+        throw err instanceof Error ? err : new Error('Lab verification network error');
+      }
     }
     const order = this.orders.find((o) => o.tenantId === req.tenantId && o.id === req.orderId);
     if (!order) {
@@ -841,6 +1274,8 @@ export class ClinicalInvestigationService implements IClinicalInvestigationServi
       };
       this.reports.unshift(newReport);
       order.report = newReport;
+      saveStored("docsearch_investigation_reports", this.reports);
+      saveStored("docsearch_investigation_orders", this.orders);
     }
 
     this.recordAudit(
@@ -897,6 +1332,8 @@ export class ClinicalInvestigationService implements IClinicalInvestigationServi
     order.status = 'VERIFIED';
     order.verifiedAt = new Date().toISOString();
     order.updatedAt = new Date().toISOString();
+    saveStored("docsearch_investigation_reports", this.reports);
+    saveStored("docsearch_investigation_orders", this.orders);
 
     this.recordAudit(
       req.tenantId,
@@ -920,12 +1357,20 @@ export class ClinicalInvestigationService implements IClinicalInvestigationServi
 
   public async reviewResults(req: ReviewInvestigationResultRequest): Promise<InvestigationOrderDto> {
     try {
-      const res = await apiRequest<InvestigationOrderDto>(`/api/v1/partner/lab/orders/${req.orderId}/review`, {
+      const res = await apiRequest<any>(`/api/v1/partner/lab/orders/${req.orderId}/review`, {
         method: 'PATCH',
         body: JSON.stringify(req)
       });
       if (res.success && res.data) {
-        return res.data;
+        const mapped = this.mapStoredOrderToDto(res.data);
+        const idx = this.orders.findIndex((o) => o.id === req.orderId || o.id === mapped.id);
+        if (idx >= 0) {
+          this.orders[idx] = mapped;
+        } else {
+          this.orders.unshift(mapped);
+        }
+        saveStored("docsearch_investigation_orders", this.orders);
+        return mapped;
       }
     } catch {
       // Fallback
@@ -1042,15 +1487,181 @@ export class ClinicalInvestigationService implements IClinicalInvestigationServi
   }
 
   public async getPatientInvestigationHistory(tenantId: string, patientId: string): Promise<InvestigationOrderDto[]> {
+    const local = this.orders.filter((o) => (!tenantId || o.tenantId === tenantId) && o.patientId === patientId);
     try {
-      const res = await apiRequest<InvestigationOrderDto[]>(`/api/v1/partner/patients/${patientId}/lab-history`);
+      const res = await apiRequest<any[]>(`/api/v1/partner/patients/${patientId}/lab-history`);
       if (res.success && Array.isArray(res.data) && res.data.length > 0) {
-        return res.data;
+        const mapped = res.data.map((o) => this.mapStoredOrderToDto(o));
+        const serverIds = new Set(mapped.map((d) => d.id));
+        return [...mapped, ...local.filter((l) => !serverIds.has(l.id))];
       }
     } catch {
       // Fallback
     }
-    return this.orders.filter((o) => o.tenantId === tenantId && o.patientId === patientId);
+    return local;
+  }
+
+  public async getReports(tenantId?: string): Promise<InvestigationReportDto[]> {
+    if (!tenantId) return [...this.reports];
+    return this.reports.filter((r) => r.tenantId === tenantId);
+  }
+
+  public registerDirectWalkInOrder(order: InvestigationOrderDto): void {
+    const existingIdx = this.orders.findIndex((o) => o.id === order.id);
+    if (existingIdx >= 0) {
+      this.orders[existingIdx] = order;
+    } else {
+      this.orders.unshift(order);
+    }
+    saveStored("docsearch_investigation_orders", this.orders);
+
+    if (order.report) {
+      const repIdx = this.reports.findIndex((r) => r.id === order.report!.id);
+      if (repIdx >= 0) {
+        this.reports[repIdx] = order.report;
+      } else {
+        this.reports.unshift(order.report);
+      }
+      saveStored("docsearch_investigation_reports", this.reports);
+    }
+
+    // Persist live to backend API Gateway for multi-user / permanent durability
+    try {
+      void apiRequest('/api/v1/partner/lab/orders', {
+        method: 'POST',
+        body: JSON.stringify({
+          id: order.id,
+          patientId: order.patientId,
+          patientName: order.patientName,
+          patientMrn: order.patientMrn,
+          patientGender: order.patientGender,
+          patientPhone: (order.metadata as any)?.patientPhone || '+91 98765 00000',
+          testCode: order.investigationCode,
+          testName: order.investigationName,
+          category: order.investigationCategory,
+          priority: order.priority,
+          clinicalIndication: order.clinicalIndication,
+          orderingDoctorName: order.orderingDoctorName,
+          metadata: order.metadata
+        })
+      });
+    } catch {
+      // Async sync
+    }
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('docsearch_orders_updated'));
+    }
+  }
+
+  public updateDirectWalkInOrder(order: InvestigationOrderDto): void {
+    this.registerDirectWalkInOrder(order);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('docsearch_orders_updated'));
+    }
+  }
+
+  public updateOrderBilling(orderId: string, billingData: {
+    invoiceNumber: string;
+    billedAmount: number;
+    paidAmount: number;
+    paymentMode: string;
+    balanceDue?: number;
+  }): InvestigationOrderDto | null {
+    const idx = this.orders.findIndex((o) => o.id === orderId);
+    if (idx < 0) return null;
+
+    const existing = this.orders[idx]!;
+    const updated: InvestigationOrderDto = {
+      ...existing,
+      metadata: {
+        ...(existing.metadata || {}),
+        billingStatus: 'BILLED',
+        invoiceNumber: billingData.invoiceNumber,
+        billedAmount: billingData.billedAmount,
+        paidAmount: billingData.paidAmount,
+        paymentMode: billingData.paymentMode,
+        balanceDue: billingData.balanceDue || 0,
+        billedAt: new Date().toISOString()
+      }
+    };
+    this.orders[idx] = updated;
+    saveStored("docsearch_investigation_orders", this.orders);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('docsearch_orders_updated'));
+    }
+    return updated;
+  }
+
+  public clearAllMockAndTestData(): void {
+    this.orders = [];
+    this.specimens = [];
+    this.results = [];
+    this.reports = [];
+    this.amendments = [];
+    this.auditTraces = [];
+
+    saveStored("docsearch_investigation_orders", []);
+    saveStored("docsearch_investigation_specimens", []);
+    saveStored("docsearch_investigation_results", []);
+    saveStored("docsearch_investigation_reports", []);
+    saveStored("docsearch_investigation_amendments", []);
+    saveStored("docsearch_investigation_audit", []);
+
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        window.localStorage.setItem("docsearch_pending_lab_orders", JSON.stringify([]));
+        window.localStorage.setItem("docsearch_referral_transactions", JSON.stringify([]));
+      } catch {
+        // Ignore quota
+      }
+    }
+
+    pathologyRevenueService.clearAllInvoices();
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('docsearch_orders_updated'));
+      window.dispatchEvent(new Event('docsearch_billing_updated'));
+    }
+  }
+
+  public async logPanicIntimation(orderId: string, payload: Partial<PanicIntimationRecord>): Promise<any> {
+    const intimationRecord = {
+      orderId,
+      doctorName: payload.doctorName || 'Dr. Attending Physician',
+      doctorPhone: payload.doctorPhone || '+91 98765 00000',
+      callerStaffName: payload.callerStaffName || 'Duty Technologist',
+      readBackConfirmed: Boolean(payload.readBackConfirmed !== false),
+      criticalParameters: payload.criticalParameters || [],
+      intimatedAt: new Date().toISOString(),
+      notes: payload.notes || 'Verbal telephonic notification completed and read-back confirmed.'
+    };
+
+    let serverData: any = null;
+    try {
+      const res = await apiRequest<any>(`/api/v1/partner/lab/orders/${orderId}/panic-intimation`, {
+        method: 'POST',
+        body: JSON.stringify(intimationRecord)
+      });
+      if (res.success && res.data) {
+        serverData = res.data;
+      }
+    } catch (err) {
+      console.warn('[Lab Diagnostics] Backend panic intimation sync notice (offline/mock active):', err);
+    }
+
+    const order = this.orders.find((o) => o.id === orderId);
+    if (order) {
+      order.metadata = {
+        ...(order.metadata || {}),
+        panicIntimation: intimationRecord,
+        isPanicIntimated: true,
+        isCritical: true
+      };
+      saveStored("docsearch_investigation_orders", this.orders);
+    }
+
+    return serverData || { orderId, panicIntimation: intimationRecord };
   }
 
   public async getAuditTraces(params: QueryInvestigationAuditRequest): Promise<InvestigationAuditTraceDto[]> {

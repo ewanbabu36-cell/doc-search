@@ -136,7 +136,7 @@ export const SmartWaitingRoomVitalsGateway: React.FC = () => {
             size="sm"
             disabled={isStreaming}
             onClick={handleSimulateDeviceCapture}
-          style={{ backgroundColor: '#38BDF8', borderColor: '#38BDF8', color: '#070C16', fontWeight: 900 }}
+          
         >
           {isStreaming ? '📡 Streaming IoT Packets...' : '⚡ Simulate Smart Waiting Room Scan'}
           </Button>

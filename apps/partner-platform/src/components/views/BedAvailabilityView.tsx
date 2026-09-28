@@ -7,7 +7,10 @@ export interface BedAvailabilityViewProps {
   wards: InpatientWardDto[];
 }
 
-export const BedAvailabilityView: React.FC<BedAvailabilityViewProps> = ({ beds, wards }) => {
+export const BedAvailabilityView: React.FC<BedAvailabilityViewProps> = ({ beds = [], wards = [] }) => {
+  const safeBeds = Array.isArray(beds) ? beds : [];
+  const safeWards = Array.isArray(wards) ? wards : [];
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div>
@@ -20,11 +23,14 @@ export const BedAvailabilityView: React.FC<BedAvailabilityViewProps> = ({ beds, 
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1rem' }}>
-        {wards.map((w) => {
-          const wardBeds = beds.filter((b) => b.wardId === w.id);
-          const avail = wardBeds.filter((b) => b.status === 'AVAILABLE').length;
-          const occ = wardBeds.filter((b) => b.status === 'OCCUPIED').length;
-          const blk = wardBeds.filter((b) => b.status === 'BLOCKED').length;
+        {safeWards.length === 0 ? (
+          <div style={{ color: '#64748b', padding: '1rem' }}>No wards configured.</div>
+        ) : (
+          safeWards.map((w) => {
+            const wardBeds = safeBeds.filter((b) => b && b.wardId === w.id);
+            const avail = wardBeds.filter((b) => b?.status === 'AVAILABLE').length;
+            const occ = wardBeds.filter((b) => b?.status === 'OCCUPIED').length;
+            const blk = wardBeds.filter((b) => b?.status === 'BLOCKED').length;
           return (
             <Card key={w.id} style={{ padding: '1rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -37,9 +43,10 @@ export const BedAvailabilityView: React.FC<BedAvailabilityViewProps> = ({ beds, 
                 <span style={{ color: '#2563eb' }}>Occupied: {occ}</span>
                 <span style={{ color: '#dc2626' }}>Blocked: {blk}</span>
               </div>
-            </Card>
-          );
-        })}
+              </Card>
+            );
+          })
+        )}
       </div>
     </div>
   );

@@ -76,6 +76,7 @@ import { DietaryCostingView } from './views/DietaryCostingView.js';
 import { DietaryBillingView } from './views/DietaryBillingView.js';
 import { DietaryAnalyticsView } from './views/DietaryAnalyticsView.js';
 import { DietaryAuditVaultView } from './views/DietaryAuditVaultView.js';
+import { TabOverflowMenu } from './common/TabOverflowMenu.js';
 
 // Dialogs
 import { CreateKitchenDialog } from './dialogs/CreateKitchenDialog.js';
@@ -109,32 +110,33 @@ interface Props {
   tenantId?: string;
 }
 
+export type DietaryTab =
+  | 'overview'
+  | 'control-center'
+  | 'kitchens'
+  | 'diet-types'
+  | 'food-items'
+  | 'assessments'
+  | 'orders'
+  | 'dietitian-workbench'
+  | 'patient-timeline'
+  | 'meal-planning'
+  | 'menus'
+  | 'production'
+  | 'preparation'
+  | 'tray-assembly'
+  | 'dispatch'
+  | 'delivery'
+  | 'safety'
+  | 'waste'
+  | 'procurement'
+  | 'costing'
+  | 'billing'
+  | 'analytics'
+  | 'audit-vault';
+
 export const DietaryDomainManager: React.FC<Props> = ({ tenantId = '11111111-1111-4111-8111-111111111111' }) => {
-  const [activeTab, setActiveTab] = useState<
-    | 'overview'
-    | 'control-center'
-    | 'kitchens'
-    | 'diet-types'
-    | 'food-items'
-    | 'assessments'
-    | 'orders'
-    | 'dietitian-workbench'
-    | 'patient-timeline'
-    | 'meal-planning'
-    | 'menus'
-    | 'production'
-    | 'preparation'
-    | 'tray-assembly'
-    | 'dispatch'
-    | 'delivery'
-    | 'safety'
-    | 'waste'
-    | 'procurement'
-    | 'costing'
-    | 'billing'
-    | 'analytics'
-    | 'audit-vault'
-  >('overview');
+  const [activeTab, setActiveTab] = useState<DietaryTab>('overview');
 
   // State
   const [metrics, setMetrics] = useState<DietaryOverviewMetricsDto | null>(null);
@@ -285,7 +287,7 @@ export const DietaryDomainManager: React.FC<Props> = ({ tenantId = '11111111-111
           </div>
           <p className="text-xs text-gray-500 mt-0.5">Clinical nutrition, medical diet orders, batch kitchen production, tray assembly, and bedside meal delivery</p>
         </div>
-        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        <div className="flex flex-wrap items-center gap-2 pb-1">
           <Badge variant="primary">{metrics?.totalActiveDietaryPatients || 0} Inpatients on Diet</Badge>
           <Badge variant="primary">{metrics?.mealsDueToday || 0} Meals Today</Badge>
           {(metrics?.activeSafetyAlerts || 0) > 0 && (
@@ -295,21 +297,98 @@ export const DietaryDomainManager: React.FC<Props> = ({ tenantId = '11111111-111
       </div>
 
       {/* Domain Navigation Tabs */}
-      <div className="flex items-center gap-1 border-b border-gray-200 overflow-x-auto pb-px text-xs font-semibold text-gray-600">
-        <button className={`px-3.5 py-2 rounded-t-lg transition-colors ${activeTab === 'overview' ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600' : 'hover:bg-gray-50'}`} onClick={() => { setActiveTab('overview'); setSelectedKitchen(null); setSelectedOrder(null); }}>Overview</button>
-        <button className={`px-3.5 py-2 rounded-t-lg transition-colors ${activeTab === 'control-center' ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600' : 'hover:bg-gray-50'}`} onClick={() => { setActiveTab('control-center'); setSelectedKitchen(null); setSelectedOrder(null); }}>Control Center</button>
-        <button className={`px-3.5 py-2 rounded-t-lg transition-colors ${activeTab === 'orders' ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600' : 'hover:bg-gray-50'}`} onClick={() => { setActiveTab('orders'); setSelectedOrder(null); }}>Diet Orders ({orders.length})</button>
-        <button className={`px-3.5 py-2 rounded-t-lg transition-colors ${activeTab === 'dietitian-workbench' ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600' : 'hover:bg-gray-50'}`} onClick={() => setActiveTab('dietitian-workbench')}>Dietitian Workbench</button>
-        <button className={`px-3.5 py-2 rounded-t-lg transition-colors ${activeTab === 'assessments' ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600' : 'hover:bg-gray-50'}`} onClick={() => setActiveTab('assessments')}>Assessments</button>
-        <button className={`px-3.5 py-2 rounded-t-lg transition-colors ${activeTab === 'kitchens' ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600' : 'hover:bg-gray-50'}`} onClick={() => { setActiveTab('kitchens'); setSelectedKitchen(null); }}>Kitchens ({kitchens.length})</button>
-        <button className={`px-3.5 py-2 rounded-t-lg transition-colors ${activeTab === 'production' ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600' : 'hover:bg-gray-50'}`} onClick={() => setActiveTab('production')}>Batch Production</button>
-        <button className={`px-3.5 py-2 rounded-t-lg transition-colors ${activeTab === 'tray-assembly' ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600' : 'hover:bg-gray-50'}`} onClick={() => setActiveTab('tray-assembly')}>Tray Assembly</button>
-        <button className={`px-3.5 py-2 rounded-t-lg transition-colors ${activeTab === 'dispatch' ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600' : 'hover:bg-gray-50'}`} onClick={() => setActiveTab('dispatch')}>Meal Dispatch & Delivery</button>
-        <button className={`px-3.5 py-2 rounded-t-lg transition-colors ${activeTab === 'safety' ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600' : 'hover:bg-gray-50'}`} onClick={() => setActiveTab('safety')}>Safety & Allergies</button>
-        <button className={`px-3.5 py-2 rounded-t-lg transition-colors ${activeTab === 'waste' ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600' : 'hover:bg-gray-50'}`} onClick={() => setActiveTab('waste')}>Food Waste</button>
-        <button className={`px-3.5 py-2 rounded-t-lg transition-colors ${activeTab === 'costing' ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600' : 'hover:bg-gray-50'}`} onClick={() => setActiveTab('costing')}>Costing & Billing</button>
-        <button className={`px-3.5 py-2 rounded-t-lg transition-colors ${activeTab === 'analytics' ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600' : 'hover:bg-gray-50'}`} onClick={() => setActiveTab('analytics')}>Analytics</button>
-        <button className={`px-3.5 py-2 rounded-t-lg transition-colors ${activeTab === 'audit-vault' ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600' : 'hover:bg-gray-50'}`} onClick={() => setActiveTab('audit-vault')}>Audit Vault</button>
+      <div
+        style={{
+          position: 'relative',
+          zIndex: 40,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          flexWrap: 'wrap',
+          backgroundColor: 'var(--ds-color-surface)',
+          border: '1px solid var(--ds-color-border)',
+          borderRadius: '10px',
+          padding: '6px 8px'
+        }}
+      >
+        {[
+          { id: 'overview', label: 'Overview' },
+          { id: 'control-center', label: 'Control Center' },
+          { id: 'orders', label: `Diet Orders (${orders.length})` },
+          { id: 'dietitian-workbench', label: 'Dietitian Desk' },
+          { id: 'kitchens', label: `Kitchens (${kitchens.length})` }
+        ].map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => {
+                setActiveTab(tab.id as DietaryTab);
+                setSelectedKitchen(null);
+                setSelectedOrder(null);
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                fontSize: '0.78rem',
+                fontWeight: isActive ? 700 : 500,
+                color: isActive ? '#FFFFFF' : 'var(--ds-color-text-muted)',
+                backgroundColor: isActive ? 'var(--ds-color-primary, #0284C7)' : 'transparent',
+                borderRadius: '6px',
+                border: isActive ? '1px solid var(--ds-color-accent, #38BDF8)' : '1px solid transparent',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = 'var(--ds-color-surface-hover)';
+                  e.currentTarget.style.color = 'var(--ds-color-text-primary)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = 'var(--ds-color-text-muted)';
+                }
+              }}
+            >
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+
+        {/* Secondary Modules Selector Dropdown */}
+        <TabOverflowMenu
+          label="More Dietary Modules"
+          options={[
+            { id: 'diet-types', label: '🥗 Master Diet Types' },
+            { id: 'food-items', label: '🍎 Food Ingredients Catalog' },
+            { id: 'menus', label: '📋 Menu Management Templates' },
+            { id: 'meal-planning', label: '🗓️ Daily Meal Planning' },
+            { id: 'preparation', label: '👨‍🍳 Kitchen Meal Preparation' },
+            { id: 'delivery', label: '🚪 Ward Bedside Delivery' },
+            { id: 'patient-timeline', label: '📈 Patient Nutrition Timeline' },
+            { id: 'assessments', label: 'Clinical Nutrition Assessments' },
+            { id: 'production', label: 'Batch Kitchen Production' },
+            { id: 'tray-assembly', label: 'Tray Assembly Line' },
+            { id: 'dispatch', label: 'Meal Dispatch & Delivery' },
+            { id: 'safety', label: 'Allergies & Food Safety' },
+            { id: 'waste', label: 'Food Waste Tracking' },
+            { id: 'procurement', label: '📦 Dietary Procurement Indents' },
+            { id: 'costing', label: 'Costing Ledger' },
+            { id: 'billing', label: '💳 Dietary Billing Ledger' },
+            { id: 'analytics', label: 'Dietary Analytics' },
+            { id: 'audit-vault', label: 'Cryptographic Audit Vault' }
+          ]}
+          activeId={activeTab}
+          onSelect={(id) => setActiveTab(id as DietaryTab)}
+          onReset={() => setActiveTab('overview')}
+          accentColor="#0284C7"
+          activeBorderColor="#38BDF8"
+        />
       </div>
 
       {/* Main View Router */}

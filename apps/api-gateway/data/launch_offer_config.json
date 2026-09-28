@@ -1,0 +1,31 @@
+{
+  "campaignId": "early-bird-launch-2026",
+  "title": "Founder's 1000 Early-Bird Launch Initiative",
+  "subtitle": "First 100 Healthcare Facilities Get 1-Year Free Enterprise Suite!",
+  "badgeText": "LIMITED LAUNCH OFFER",
+  "targetSeats": 1000,
+  "claimedBaseline": 680,
+  "offerEndDate": "2026-11-11T23:59",
+  "planName": "Early-Bird Launch Partner License",
+  "planTier": "Enterprise Suite (Early-Bird Launch Partner)",
+  "originalPriceInr": 59999,
+  "discountedPriceInr": 0,
+  "durationMonths": 12,
+  "promoCode": "LAUNCH100",
+  "status": "ACTIVE",
+  "allowedFacilityTypes": [
+    "HOSPITAL",
+    "CLINIC",
+    "PATHOLOGY",
+    "PHARMACY"
+  ],
+  "autoLockOnTargetReached": false,
+  "highlightFeatures": [
+    "₹0 Platform & Setup Fee for Full Year 1 (Worth ₹59,999)",
+    "100% ABDM M1/M2/M3 National Health Gateway Certified",
+    "AI Ambient Voice Scribe 3.0 & E-Prescriptions Included",
+    "Full Multi-Department Clinical Operations & LIS/RIS/POS"
+  ],
+  "updatedAt": "2026-09-11T05:25:27.156Z",
+  "updatedBy": "DocSearch Founder Command"
+}

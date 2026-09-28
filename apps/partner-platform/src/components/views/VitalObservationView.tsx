@@ -6,7 +6,9 @@ export interface VitalObservationViewProps {
   vitals: InpatientVitalObservationDto[];
 }
 
-export const VitalObservationView: React.FC<VitalObservationViewProps> = ({ vitals }) => {
+export const VitalObservationView: React.FC<VitalObservationViewProps> = ({ vitals = [] }) => {
+  const safeVitals = Array.isArray(vitals) ? vitals : [];
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div>
@@ -26,16 +28,22 @@ export const VitalObservationView: React.FC<VitalObservationViewProps> = ({ vita
             </tr>
           </thead>
           <tbody>
-            {vitals.map((v) => (
-              <tr key={v.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                <td style={{ padding: '0.75rem 1rem' }}>{new Date(v.recordedAt).toLocaleString()}</td>
-                <td style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>{v.systolicBpMmHg}/{v.diastolicBpMmHg} mmHg</td>
-                <td style={{ padding: '0.75rem 1rem' }}>{v.pulseBpm} BPM</td>
-                <td style={{ padding: '0.75rem 1rem', color: '#16a34a', fontWeight: 600 }}>{v.spo2Percentage}%</td>
-                <td style={{ padding: '0.75rem 1rem' }}>{v.temperatureCelsius}°C</td>
-                <td style={{ padding: '0.75rem 1rem', color: '#64748b' }}>{v.recordedBy}</td>
+            {safeVitals.length === 0 ? (
+              <tr>
+                <td colSpan={6} style={{ padding: '1.5rem', textAlign: 'center', color: '#64748b' }}>No vital signs recorded yet.</td>
               </tr>
-            ))}
+            ) : (
+              safeVitals.map((v) => (
+                <tr key={v.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                  <td style={{ padding: '0.75rem 1rem' }}>{v.recordedAt ? new Date(v.recordedAt).toLocaleString() : 'N/A'}</td>
+                  <td style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>{v.systolicBpMmHg}/{v.diastolicBpMmHg} mmHg</td>
+                  <td style={{ padding: '0.75rem 1rem' }}>{v.pulseBpm} BPM</td>
+                  <td style={{ padding: '0.75rem 1rem', color: '#16a34a', fontWeight: 600 }}>{v.spo2Percentage}%</td>
+                  <td style={{ padding: '0.75rem 1rem' }}>{v.temperatureCelsius}°C</td>
+                  <td style={{ padding: '0.75rem 1rem', color: '#64748b' }}>{v.recordedBy}</td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </Card>

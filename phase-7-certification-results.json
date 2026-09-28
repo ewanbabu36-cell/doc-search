@@ -1,15 +1,15 @@
 {
-  "timestamp": "2026-09-04T05:06:00.245Z",
+  "timestamp": "2026-09-27T01:00:04.356Z",
   "environment": {
     "platform": "win32",
-    "nodeVersion": "v24.14.0",
+    "nodeVersion": "v24.20.0",
     "arch": "x64",
     "cwd": "C:\\Users\\alamr\\OneDrive\\Desktop\\DOC SEARCH"
   },
   "stages": {
     "unit": {
       "status": "PASS",
-      "durationMs": 1172,
+      "durationMs": 2063,
       "testsExecuted": 23,
       "testsPassed": 23,
       "testsFailed": 0,
@@ -19,11 +19,11 @@
       ]
     },
     "integration": {
-      "status": "PASS",
-      "durationMs": 10479,
+      "status": "FAIL",
+      "durationMs": 15430,
       "testsExecuted": 27,
-      "testsPassed": 27,
-      "testsFailed": 0,
+      "testsPassed": 0,
+      "testsFailed": 27,
       "suites": [
         "billing-tpa-insurance-vertical-slice.test.mjs",
         "pharmacy-management-vertical-slice.test.mjs",
@@ -32,17 +32,17 @@
     },
     "e2eCriticalWorkflows": {
       "status": "PASS",
-      "durationMs": 6687,
+      "durationMs": 16819,
       "totalWorkflows": 15,
       "passedWorkflows": 15,
       "failedWorkflows": 0
     },
     "security": {
-      "status": "PASS",
-      "durationMs": 9525,
+      "status": "FAIL",
+      "durationMs": 14260,
       "testsExecuted": 47,
-      "testsPassed": 47,
-      "testsFailed": 0,
+      "testsPassed": 0,
+      "testsFailed": 47,
       "suites": [
         "ai-foundation-security.test.mjs",
         "ai-role-security.test.mjs"
@@ -121,11 +121,11 @@
       }
     },
     "regression": {
-      "status": "PASS",
-      "durationMs": 15323,
+      "status": "FAIL",
+      "durationMs": 16185,
       "testsExecuted": 41,
-      "testsPassed": 41,
-      "testsFailed": 0
+      "testsPassed": 0,
+      "testsFailed": 41
     }
   },
   "workflowMatrix": [
@@ -138,8 +138,8 @@
       "setup": "Authenticated clinical receptionist with tenant token",
       "execution": "POST /api/v1/partner/clinical/patients",
       "expectedResult": "HTTP 201 with generated UUID and MRN",
-      "actualResult": "HTTP 201 (MRN: MRN-274953)",
-      "evidence": "Patient ID: 85ac92ab-2a1c-44e8-82ca-ebb67b2efa01, MRN: MRN-274953, PostgreSQL tenantId: 11111111-1111-4111-8111-111111111111"
+      "actualResult": "HTTP 201 (MRN: MRN-654120)",
+      "evidence": "Patient ID: 46d50cba-cc1c-4968-9b6f-0b5495732956, MRN: MRN-654120, PostgreSQL tenantId: 11111111-1111-4111-8111-111111111111"
     },
     {
       "workflow": "Appointment",
@@ -147,11 +147,11 @@
       "automated": "YES",
       "persistence": "YES",
       "security": "YES",
-      "setup": "Active registered patient 85ac92ab-2a1c-44e8-82ca-ebb67b2efa01 and provider 99999999-9999-4999-8999-999999999999",
+      "setup": "Active registered patient 46d50cba-cc1c-4968-9b6f-0b5495732956 and provider 99999999-9999-4999-8999-999999999999",
       "execution": "POST /api/v1/partner/clinical/encounters",
       "expectedResult": "HTTP 201 with status CHECKED_IN and valid foreign keys",
       "actualResult": "HTTP 201 (Status: CHECKED_IN)",
-      "evidence": "Encounter ID: fce5ac34-72b1-4122-b8fb-33cce23ab5eb, Doctor: 99999999-9999-4999-8999-999999999999, Tenant: 11111111-1111-4111-8111-111111111111"
+      "evidence": "Encounter ID: 4d871d6f-110b-41eb-abc6-6ce37f24b239, Doctor: 99999999-9999-4999-8999-999999999999, Tenant: 11111111-1111-4111-8111-111111111111"
     },
     {
       "workflow": "Token",
@@ -159,11 +159,11 @@
       "automated": "YES",
       "persistence": "YES",
       "security": "YES",
-      "setup": "Encounter fce5ac34-72b1-4122-b8fb-33cce23ab5eb checked in at branch aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "setup": "Encounter 4d871d6f-110b-41eb-abc6-6ce37f24b239 checked in at branch aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
       "execution": "POST /clinical/queues/tokens & PATCH /call & PATCH /start",
       "expectedResult": "Sequential token issued, WAITING -> CALLED -> IN_PROGRESS transition",
       "actualResult": "HTTP 201 (Token: TKN-001, State: IN_PROGRESS)",
-      "evidence": "Queue Token ID: 2c1d23d7-34cd-43e5-80c2-65f2d376e63d, Number: TKN-001, Final Status: IN_PROGRESS"
+      "evidence": "Queue Token ID: 5ff44dff-6deb-484d-9525-de4706463976, Number: TKN-001, Final Status: IN_PROGRESS"
     },
     {
       "workflow": "Consultation",
@@ -171,11 +171,11 @@
       "automated": "YES",
       "persistence": "YES",
       "security": "YES",
-      "setup": "In-progress encounter fce5ac34-72b1-4122-b8fb-33cce23ab5eb with consulting doctor 99999999-9999-4999-8999-999999999999",
+      "setup": "In-progress encounter 4d871d6f-110b-41eb-abc6-6ce37f24b239 with consulting doctor 99999999-9999-4999-8999-999999999999",
       "execution": "POST /clinical/consultations & POST /clinical/consultations/:id/complete",
       "expectedResult": "Consultation saved and finalized; encounter and token marked COMPLETED",
       "actualResult": "HTTP 200 (Status: FINALIZED)",
-      "evidence": "Consultation ID: 278512cf-0006-4820-b9e0-31c92d6eb4ee, Prescription ID: 9af9cdb3-ce4d-4f85-996f-fb02d689d5a6, Pharmacy Order: 347a1d92-1eaa-45ee-9240-5ad404ace423"
+      "evidence": "Consultation ID: 6b9cc9ce-781d-4004-9a40-c17edc9819b8, Prescription ID: f332f756-c5e0-4c44-8925-4b957a1a60e5, Pharmacy Order: dbee3f74-88b5-4dbb-93c0-ad82cadef05c"
     },
     {
       "workflow": "Prescription",
@@ -183,11 +183,11 @@
       "automated": "YES",
       "persistence": "YES",
       "security": "YES",
-      "setup": "Finalized consultation 278512cf-0006-4820-b9e0-31c92d6eb4ee",
+      "setup": "Finalized consultation 6b9cc9ce-781d-4004-9a40-c17edc9819b8",
       "execution": "Automatic atomic downstream generation from consultation completion",
       "expectedResult": "Prescription row persisted with ACTIVE status and linked medication items",
-      "actualResult": "Prescription RX-708853 with 1 items",
-      "evidence": "Prescription ID: 9af9cdb3-ce4d-4f85-996f-fb02d689d5a6, Number: RX-708853, Doctor: 99999999-9999-4999-8999-999999999999"
+      "actualResult": "Prescription RX-642094 with 1 items",
+      "evidence": "Prescription ID: f332f756-c5e0-4c44-8925-4b957a1a60e5, Number: RX-642094, Doctor: 99999999-9999-4999-8999-999999999999"
     },
     {
       "workflow": "Pharmacy",
@@ -195,11 +195,11 @@
       "automated": "YES",
       "persistence": "YES",
       "security": "YES",
-      "setup": "Catalog medication 8b2e2f78-fe28-493e-a612-7059b95c95c9 and received batch BATCH-CERT-3235",
+      "setup": "Catalog medication c05476ea-5796-4647-b61e-9e2d58445229 and received batch BATCH-CERT-6751",
       "execution": "POST /api/v1/partner/pharmacy/dispense",
       "expectedResult": "Dispenses 30 units, computes ₹450 total, deducts stock, creates pharmacy invoice",
       "actualResult": "HTTP 201 (Status: DISPENSED, Bill: ₹450)",
-      "evidence": "Dispensing ID: e0bc5569-89c1-44c8-b09d-a3c0e85eb7f0, Invoice: INV-PHARM-360556, Pharmacist: 55555555-5555-4555-8555-555555555555"
+      "evidence": "Dispensing ID: c96ca362-f31c-4e9a-b3b0-14189fa2e35d, Invoice: INV-PHARM-679934, Pharmacist: 55555555-5555-4555-8555-555555555555"
     },
     {
       "workflow": "Inventory",
@@ -207,11 +207,11 @@
       "automated": "YES",
       "persistence": "YES",
       "security": "YES",
-      "setup": "Batch f6123dbe-f41d-4f0f-a0a0-29a0f282bb09 initial stock 100 units, 30 units dispensed",
+      "setup": "Batch 7e2f6cd1-eb07-40e7-8624-09525c182a14 initial stock 100 units, 30 units dispensed",
       "execution": "Direct inventory balance check and negative-stock rejection test",
       "expectedResult": "Balance correctly deducted to 70 units; over-dispensing blocked HTTP 409",
       "actualResult": "Remaining stock: 70 units; Over-dispense rejection: HTTP 409",
-      "evidence": "Batch ID: f6123dbe-f41d-4f0f-a0a0-29a0f282bb09, Balance: 70 units, Negative stock prevention active"
+      "evidence": "Batch ID: 7e2f6cd1-eb07-40e7-8624-09525c182a14, Balance: 70 units, Negative stock prevention active"
     },
     {
       "workflow": "Lab",
@@ -219,11 +219,11 @@
       "automated": "YES",
       "persistence": "YES",
       "security": "YES",
-      "setup": "Encounter fce5ac34-72b1-4122-b8fb-33cce23ab5eb requiring diagnostic cardiac investigation",
+      "setup": "Encounter 4d871d6f-110b-41eb-abc6-6ce37f24b239 requiring diagnostic cardiac investigation",
       "execution": "POST /lab/orders & POST /lab/orders/:id/collect-sample",
       "expectedResult": "Order created; PAYMENT_REQUIRED_BEFORE_SAMPLE policy blocks unpaid collection (402); deferred bypass succeeds (200)",
       "actualResult": "HTTP 201 Order Created, HTTP 402 Blocked Unpaid, HTTP 200 Deferred Sample Collected",
-      "evidence": "Lab Order ID: 8592c57e-7634-4b49-951d-f4b3bb238869, Policy: PAYMENT_REQUIRED_BEFORE_SAMPLE strictly enforced"
+      "evidence": "Lab Order ID: c947173a-8fb5-4785-a033-53aa615c1752, Policy: PAYMENT_REQUIRED_BEFORE_SAMPLE strictly enforced"
     },
     {
       "workflow": "Invoice",
@@ -231,11 +231,11 @@
       "automated": "YES",
       "persistence": "YES",
       "security": "YES",
-      "setup": "Billable clinical consultation & cardiac troponin diagnostic test for patient 85ac92ab-2a1c-44e8-82ca-ebb67b2efa01",
+      "setup": "Billable clinical consultation & cardiac troponin diagnostic test for patient 46d50cba-cc1c-4968-9b6f-0b5495732956",
       "execution": "POST /api/v1/partner/billing/invoices (with client total tampering)",
       "expectedResult": "Server calculates authoritative total (₹2,700); client tampering neutralized",
       "actualResult": "HTTP 201 (Authoritative Total: ₹2700, Balance: ₹2700)",
-      "evidence": "Invoice ID: 34cdeac7-0dde-4772-b53f-507aeef93d27, Number: INV-HOSP-927269, Server Price Authority Active"
+      "evidence": "Invoice ID: bf24d7f8-6d3d-4b68-b184-9dbe5763264b, Number: INV-HOSP-336703, Server Price Authority Active"
     },
     {
       "workflow": "Payment",
@@ -243,11 +243,11 @@
       "automated": "YES",
       "persistence": "YES",
       "security": "YES",
-      "setup": "Unpaid invoice 34cdeac7-0dde-4772-b53f-507aeef93d27 with balance ₹2,700",
+      "setup": "Unpaid invoice bf24d7f8-6d3d-4b68-b184-9dbe5763264b with balance ₹2,700",
       "execution": "POST /billing/invoices/:id/payments (Overpayment attempt + Full Settlement)",
       "expectedResult": "Overpayment rejected; full payment updates invoice to PAID and emits receipt",
       "actualResult": "HTTP 400 Overpayment Blocked; HTTP 201 Succeeded (Balance: ₹0)",
-      "evidence": "Payment ID: 82b2e481-1d70-4a8a-9a73-21cae6429fa2, Invoice Status: PAID, Receipt Generated"
+      "evidence": "Payment ID: ebb4b1ea-1627-4581-b979-1bb3204a7ee1, Invoice Status: PAID, Receipt Generated"
     },
     {
       "workflow": "Refund",
@@ -255,11 +255,11 @@
       "automated": "YES",
       "persistence": "YES",
       "security": "YES",
-      "setup": "Settled invoice 34cdeac7-0dde-4772-b53f-507aeef93d27 with total paid ₹2,700",
+      "setup": "Settled invoice bf24d7f8-6d3d-4b68-b184-9dbe5763264b with total paid ₹2,700",
       "execution": "POST /billing/invoices/:id/refund (without token vs with supervisor token)",
       "expectedResult": "Unauthorized refund rejected HTTP 403; authorized refund creates negative ledger",
       "actualResult": "HTTP 403 Blocked without Token; HTTP 200 Succeeded with Supervisor Token",
-      "evidence": "Refund ID: b50fb2aa-482c-4428-b192-896913d35b6c, Refunded Amount: ₹500, Negative Ledger Recorded"
+      "evidence": "Refund ID: 998b8df1-bcda-4661-aa11-ee6b4d25e195, Refunded Amount: ₹500, Negative Ledger Recorded"
     },
     {
       "workflow": "RBAC",
@@ -307,17 +307,17 @@
       "execution": "Full Fastify instance shutdown (app.close) followed by cold reboot and relational re-query",
       "expectedResult": "100% of entities and foreign key relationships survive restart intact without memory dependency",
       "actualResult": "HTTP 200 on patient lookup; All 7 core entity types verified present in DB post-restart",
-      "evidence": "Post-Restart Verification: Patient(85ac92ab-2a1c-44e8-82ca-ebb67b2efa01), Encounter(fce5ac34-72b1-4122-b8fb-33cce23ab5eb), Invoice(34cdeac7-0dde-4772-b53f-507aeef93d27), Payment(82b2e481-1d70-4a8a-9a73-21cae6429fa2)"
+      "evidence": "Post-Restart Verification: Patient(46d50cba-cc1c-4968-9b6f-0b5495732956), Encounter(4d871d6f-110b-41eb-abc6-6ce37f24b239), Invoice(bf24d7f8-6d3d-4b68-b184-9dbe5763264b), Payment(ebb4b1ea-1627-4581-b979-1bb3204a7ee1)"
     }
   ],
   "summary": {
     "totalStages": 7,
-    "passedStages": 7,
-    "failedStages": 0,
-    "totalTests": 153,
-    "passedTests": 153,
+    "passedStages": 4,
+    "failedStages": 3,
+    "totalTests": 38,
+    "passedTests": 38,
     "failedTests": 0
   },
-  "decision": "CERTIFIED",
-  "totalDurationMs": 43191
+  "decision": "NOT CERTIFIED",
+  "totalDurationMs": 64884
 }

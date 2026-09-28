@@ -76,7 +76,6 @@ export const HospitalLeadScoringRadarView: React.FC = () => {
         <button
           type="button"
           onClick={handleAutoAssign}
-          style={{ backgroundColor: '#06B6D4', color: '#070C16', border: 'none', borderRadius: '8px', padding: '8px 16px', fontWeight: 900, fontSize: '0.8125rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(6, 182, 212, 0.4)' }}
         >
           ⚡ Auto-Assign to Senior BDMs
         </button>

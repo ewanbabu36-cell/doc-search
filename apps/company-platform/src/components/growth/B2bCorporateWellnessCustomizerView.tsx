@@ -18,63 +18,17 @@ export interface CorporateContract {
   addonsIncluded: string[];
 }
 
-const INITIAL_CONTRACTS: CorporateContract[] = [
-  {
-    id: 'CORP-TCS-01',
-    companyName: 'Tata Consultancy Services (TCS)',
-    logo: '🏢',
-    gstin: '27AABCT2345M1Z2',
-    corporateDomain: '@tcs.com',
-    employeeHeadcount: 45000,
-    planName: 'Enterprise Health Pass (Custom Shield)',
-    ratePerEmployeeInr: 399,
-    annualContractValueInr: 17955000, // ₹ 1.795 Cr
-    contractStartDate: '01 Apr 2026',
-    contractEndDate: '31 Mar 2027',
-    status: 'ACTIVE_CONTRACT',
-    addonsIncluded: ['Unlimited Tele-OPD', '20% Pharmacy', '108 Ambulance Dispatch']
-  },
-  {
-    id: 'CORP-INFY-02',
-    companyName: 'Infosys Limited',
-    logo: '🏢',
-    gstin: '29AABCI1234L1Z9',
-    corporateDomain: '@infosys.com',
-    employeeHeadcount: 32000,
-    planName: 'Executive Wellness & Mental Health Pass',
-    ratePerEmployeeInr: 449,
-    annualContractValueInr: 14368000, // ₹ 1.436 Cr
-    contractStartDate: '01 May 2026',
-    contractEndDate: '30 Apr 2027',
-    status: 'ACTIVE_CONTRACT',
-    addonsIncluded: ['24/7 Mental Health', 'Annual Full Body Panel', 'Priority Chamber Access']
-  },
-  {
-    id: 'CORP-WIPRO-03',
-    companyName: 'Wipro Enterprises',
-    logo: '🏢',
-    gstin: '29AABCW9876K1Z1',
-    corporateDomain: '@wipro.com',
-    employeeHeadcount: 18500,
-    planName: 'Comprehensive Family Health Shield',
-    ratePerEmployeeInr: 499,
-    annualContractValueInr: 9231500, // ₹ 92.31 Lakhs
-    contractStartDate: '15 Jan 2026',
-    contractEndDate: '14 Jan 2027',
-    status: 'ACTIVE_CONTRACT',
-    addonsIncluded: ['Family Tele-Pediatrics', '25% Lab Discount', 'Free Home Collection']
-  }
-];
+const INITIAL_CONTRACTS: CorporateContract[] = [];
 
 export const B2bCorporateWellnessCustomizerView: React.FC = () => {
   const [contracts, setContracts] = useState<CorporateContract[]>(INITIAL_CONTRACTS);
   const [notice, setNotice] = useState<string | null>(null);
 
   // Interactive Bulk Calculator State
-  const [clientName, setClientName] = useState('HCLTech Enterprises');
-  const [clientGstin, setClientGstin] = useState('07AABCH4567N1Z8');
-  const [clientDomain, setClientDomain] = useState('@hcltech.com');
-  const [headcount, setHeadcount] = useState<number>(15000);
+  const [clientName, setClientName] = useState('');
+  const [clientGstin, setClientGstin] = useState('');
+  const [clientDomain, setClientDomain] = useState('');
+  const [headcount, setHeadcount] = useState<number>(0);
   const [baseTier, setBaseTier] = useState<'STANDARD' | 'EXECUTIVE' | 'VIP'>('EXECUTIVE');
 
   // Add-on switches
@@ -184,6 +138,9 @@ export const B2bCorporateWellnessCustomizerView: React.FC = () => {
     setTimeout(() => setNotice(null), 5000);
   };
 
+  const totalLives = contracts.reduce((acc, c) => acc + c.employeeHeadcount, 0);
+  const totalAcv = contracts.reduce((acc, c) => acc + c.annualContractValueInr, 0);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Header */}
@@ -194,23 +151,17 @@ export const B2bCorporateWellnessCustomizerView: React.FC = () => {
             <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900, color: '#F8FAFC' }}>
               B2B Corporate Employee Wellness Bulk Customizer & Auto-Invoicing HQ
             </h2>
-            <Badge variant="success">● 95,500 Active Corporate Lives</Badge>
+            <Badge variant="success">● {totalLives.toLocaleString('en-IN')} Active Corporate Lives</Badge>
           </div>
           <p style={{ margin: '4px 0 0', fontSize: '0.8125rem', color: '#94A3B8' }}>
-            Enterprise employee healthcare contracting for major IT & Corporate giants (TCS, Infosys, Wipro) with bulk headcount discounts and 1-click GST invoices.
+            Enterprise employee healthcare contracting for corporate clients with bulk headcount discounts and 1-click GST invoices.
           </p>
         </div>
 
-        <Button
-          variant="primary"
+        <Button variant="success"
           size="sm"
           onClick={handleGenerateQuoteAndDownloadInvoice}
-          style={{
-            backgroundColor: '#10B981',
-            color: '#070C16',
-            fontWeight: 900,
-            boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)'
-          }}
+          
         >
           📄 Generate & Download Pro-Forma Invoice PDF
         </Button>
@@ -229,7 +180,7 @@ export const B2bCorporateWellnessCustomizerView: React.FC = () => {
             ANNUAL B2B CONTRACT VALUE (ACV)
           </span>
           <div style={{ fontSize: '1.625rem', fontWeight: 900, color: '#10B981', margin: '4px 0', fontFamily: 'monospace' }}>
-            ₹ 4.15 Crore / yr
+            ₹ {(totalAcv / 10000000).toFixed(2)} Crore / yr
           </div>
           <span style={{ fontSize: '0.75rem', color: '#CBD5E1' }}>
             100% Guaranteed recurring corporate annual retainers
@@ -241,10 +192,10 @@ export const B2bCorporateWellnessCustomizerView: React.FC = () => {
             TOTAL COVERED EMPLOYEES
           </span>
           <div style={{ fontSize: '1.625rem', fontWeight: 900, color: '#38BDF8', margin: '4px 0', fontFamily: 'monospace' }}>
-            95,500 Lives
+            {totalLives.toLocaleString('en-IN')} Lives
           </div>
           <span style={{ fontSize: '0.75rem', color: '#CBD5E1' }}>
-            Across TCS, Infosys, Wipro & Tech campuses
+            Across corporate partner campuses
           </span>
         </div>
 
@@ -253,7 +204,7 @@ export const B2bCorporateWellnessCustomizerView: React.FC = () => {
             B2B SAAS GROSS MARGIN
           </span>
           <div style={{ fontSize: '1.625rem', fontWeight: 900, color: '#FCD34D', margin: '4px 0', fontFamily: 'monospace' }}>
-            82.4% Net Margin
+            {contracts.length > 0 ? '82.4% Net Margin' : '0% Net Margin'}
           </div>
           <span style={{ fontSize: '0.75rem', color: '#CBD5E1' }}>
             Low claim frequency with bulk corporate leverage
@@ -276,54 +227,62 @@ export const B2bCorporateWellnessCustomizerView: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {contracts.map((c) => (
-                <TableRow key={c.id}>
-                  <TableCell>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ fontSize: '1.25rem' }}>{c.logo}</span>
-                        <strong style={{ color: '#F8FAFC', fontSize: '0.875rem' }}>{c.companyName}</strong>
-                      </div>
-                      <span style={{ fontSize: '0.6875rem', color: '#94A3B8', display: 'block', marginTop: '2px' }}>
-                        Domain: <code style={{ color: '#38BDF8' }}>{c.corporateDomain}</code> • GSTIN: {c.gstin}
-                      </span>
-                    </div>
-                  </TableCell>
-
-                  <TableCell style={{ fontWeight: 800, color: '#38BDF8', fontFamily: 'monospace' }}>
-                    {c.employeeHeadcount.toLocaleString('en-IN')} Employees
-                  </TableCell>
-
-                  <TableCell style={{ fontWeight: 800, color: '#FCD34D', fontFamily: 'monospace' }}>
-                    ₹{c.ratePerEmployeeInr} / yr
-                  </TableCell>
-
-                  <TableCell style={{ fontWeight: 900, color: '#10B981', fontFamily: 'monospace', fontSize: '0.9375rem' }}>
-                    ₹ {(c.annualContractValueInr / 100000).toFixed(2)} Lakhs
-                  </TableCell>
-
-                  <TableCell style={{ fontSize: '0.75rem', color: '#CBD5E1' }}>
-                    {c.contractStartDate} — {c.contractEndDate}
-                  </TableCell>
-
-                  <TableCell style={{ textAlign: 'right' }}>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDownloadInvoice(c)}
-                      style={{
-                        borderColor: '#10B981',
-                        color: '#10B981',
-                        fontWeight: 800,
-                        fontSize: '0.75rem',
-                        padding: '4px 8px'
-                      }}
-                    >
-                      📄 GST Invoice PDF
-                    </Button>
+              {contracts.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} style={{ textAlign: 'center', padding: '32px', color: '#94A3B8' }}>
+                    No B2B enterprise corporate contracts active yet. Use the customizer below to generate the first contract proposal.
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                contracts.map((c) => (
+                  <TableRow key={c.id}>
+                    <TableCell>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontSize: '1.25rem' }}>{c.logo}</span>
+                          <strong style={{ color: '#F8FAFC', fontSize: '0.875rem' }}>{c.companyName}</strong>
+                        </div>
+                        <span style={{ fontSize: '0.6875rem', color: '#94A3B8', display: 'block', marginTop: '2px' }}>
+                          Domain: <code style={{ color: '#38BDF8' }}>{c.corporateDomain}</code> • GSTIN: {c.gstin}
+                        </span>
+                      </div>
+                    </TableCell>
+
+                    <TableCell style={{ fontWeight: 800, color: '#38BDF8', fontFamily: 'monospace' }}>
+                      {c.employeeHeadcount.toLocaleString('en-IN')} Employees
+                    </TableCell>
+
+                    <TableCell style={{ fontWeight: 800, color: '#FCD34D', fontFamily: 'monospace' }}>
+                      ₹{c.ratePerEmployeeInr} / yr
+                    </TableCell>
+
+                    <TableCell style={{ fontWeight: 900, color: '#10B981', fontFamily: 'monospace', fontSize: '0.9375rem' }}>
+                      ₹ {(c.annualContractValueInr / 100000).toFixed(2)} Lakhs
+                    </TableCell>
+
+                    <TableCell style={{ fontSize: '0.75rem', color: '#CBD5E1' }}>
+                      {c.contractStartDate} — {c.contractEndDate}
+                    </TableCell>
+
+                    <TableCell style={{ textAlign: 'right' }}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDownloadInvoice(c)}
+                        style={{
+                          borderColor: '#10B981',
+                          color: '#10B981',
+                          fontWeight: 800,
+                          fontSize: '0.75rem',
+                          padding: '4px 8px'
+                        }}
+                      >
+                        📄 GST Invoice PDF
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>
@@ -503,18 +462,13 @@ export const B2bCorporateWellnessCustomizerView: React.FC = () => {
                 fontWeight: 800
               }}
             >
-              📄 Download Pro-Forma Invoice PDF
+              📄 Generate & Download Pro-Forma Invoice PDF
             </Button>
 
             <Button
               variant="primary"
               size="md"
               onClick={handleActivateNewContract}
-              style={{
-                backgroundColor: '#EAB308',
-                color: '#000',
-                fontWeight: 900
-              }}
             >
               🚀 Activate Corporate Contract
             </Button>

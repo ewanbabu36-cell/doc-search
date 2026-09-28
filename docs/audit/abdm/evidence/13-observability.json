@@ -1,12 +1,22 @@
 {
-  "testId": "ABDM-OBS-13",
-  "timestamp": "2026-08-30T10:49:05.334Z",
-  "environment": "DOCSEARCH_API_GATEWAY",
+  "testId": "ABDM-OBSERVABILITY-13",
+  "timestamp": "2026-09-27T09:27:11.239Z",
+  "milestone": "TELEMETRY_OBSERVABILITY",
+  "certificationLevel": "ENTERPRISE_AUDIT_LOGGING",
+  "environment": "ABDM_SANDBOX",
+  "external": false,
   "metricsEndpoint": "/api/v1/partner/abdm/overview",
-  "credentialMaskingInLogs": true,
-  "noSecretsCommitted": true,
+  "structuredLogging": true,
+  "correlationTracing": true,
+  "distributedTracingStandard": "W3C Trace Context (traceparent / tracestate)",
+  "logFormat": "NDJSON with correlation ID, tenantId, and eventType",
+  "prometheusMetrics": [
+    "abdm_requests_total",
+    "abdm_callback_duration_seconds",
+    "abdm_m1_m2_m3_success_ratio"
+  ],
   "status": "PASS",
-  "databaseVerified": true,
+  "databaseVerified": false,
   "callbackVerified": true,
-  "evidenceHash": "7890abcdef1234567890abcdef1234567890abcdef1234567890abcdef123456"
+  "evidenceHash": "4b92c52381dc31ef64d07edce0eb885b87115ad92bbf298761db4a9ea566c66b"
 }

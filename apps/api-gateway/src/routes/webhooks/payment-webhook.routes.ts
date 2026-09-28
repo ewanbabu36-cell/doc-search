@@ -19,7 +19,15 @@ export const paymentWebhookRoutes: FastifyPluginAsync = async (fastify) => {
 
     // Raw body buffer or string for HMAC-SHA256 signature verification
     const rawBody = request.rawBody || (typeof request.body === 'string' ? request.body : JSON.stringify(request.body));
-    const webhookSecret = process.env['RAZORPAY_WEBHOOK_SECRET'] || 'rzp_test_secret_key_123';
+    const webhookSecret = process.env['RAZORPAY_WEBHOOK_SECRET'];
+    if (!webhookSecret) {
+      logger.error('CRITICAL: RAZORPAY_WEBHOOK_SECRET is not configured on server.');
+      throw new AppError({
+        message: 'Payment gateway webhook processing is not configured securely on this server.',
+        code: ErrorCode.INTERNAL_SERVER_ERROR,
+        statusCode: 500
+      });
+    }
 
     const isValid = verifyRazorpaySignature(rawBody, signature, webhookSecret);
     if (!isValid) {
@@ -88,4 +96,5 @@ export const paymentWebhookRoutes: FastifyPluginAsync = async (fastify) => {
 
   // Alias endpoints
   fastify.post('/api/v1/webhooks/payment/razorpay', razorpayHandler);
+  fastify.post('/api/v1/webhooks/razorpay/b2b-subscription', razorpayHandler);
 };

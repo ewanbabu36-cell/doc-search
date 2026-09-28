@@ -112,7 +112,11 @@ export const PatientGrowthLoyaltyHubView: React.FC = () => {
                 <li>Free Home Blood Sample Collection</li>
               </ul>
             </div>
-            <Button variant={selectedPlan === 'SILVER' ? 'primary' : 'outline'} size="sm">
+            <Button
+              variant={selectedPlan === 'SILVER' ? 'primary' : 'outline'}
+              size="sm"
+              onClick={() => setSelectedPlan('SILVER')}
+            >
               {selectedPlan === 'SILVER' ? '✓ Plan Selected' : 'Choose Silver'}
             </Button>
           </div>
@@ -152,7 +156,11 @@ export const PatientGrowthLoyaltyHubView: React.FC = () => {
                 <li>Free Unlimited AI Health Assistant & Diet Chart</li>
               </ul>
             </div>
-            <Button variant={selectedPlan === 'GOLD' ? 'primary' : 'outline'} size="sm" style={{ backgroundColor: '#EAB308', borderColor: '#EAB308', color: '#000', fontWeight: 800 }}>
+            <Button
+              variant={selectedPlan === 'GOLD' ? 'primary' : 'outline'}
+              size="sm"
+              onClick={() => setSelectedPlan('GOLD')}
+            >
               {selectedPlan === 'GOLD' ? '✓ Plan Selected' : 'Choose Gold Family'}
             </Button>
           </div>
@@ -187,7 +195,11 @@ export const PatientGrowthLoyaltyHubView: React.FC = () => {
                 <li>Dedicated WhatsApp Care Manager & SOS Doctor Line</li>
               </ul>
             </div>
-            <Button variant={selectedPlan === 'PLATINUM' ? 'primary' : 'outline'} size="sm">
+            <Button
+              variant={selectedPlan === 'PLATINUM' ? 'primary' : 'outline'}
+              size="sm"
+              onClick={() => setSelectedPlan('PLATINUM')}
+            >
               {selectedPlan === 'PLATINUM' ? '✓ Plan Selected' : 'Choose Platinum'}
             </Button>
           </div>

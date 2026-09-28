@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Badge } from '@docsearch/ui-kit';
 import type {
   OperationTheatreComplexDto,
   OperationTheatreRoomDto,
@@ -56,6 +55,8 @@ import { OTUtilizationView } from './views/OTUtilizationView.js';
 import { SurgicalAnalyticsView } from './views/SurgicalAnalyticsView.js';
 import { OTReportsView } from './views/OTReportsView.js';
 import { OTAuditVaultView } from './views/OTAuditVaultView.js';
+import { TabOverflowMenu } from './common/TabOverflowMenu.js';
+import { DocSearchSpatialCore3D } from '@docsearch/ui-kit';
 
 // Import Dialogs
 import { CreateOperationTheatreDialog } from './dialogs/CreateOperationTheatreDialog.js';
@@ -269,33 +270,109 @@ export const OTDomainManager: React.FC<Props> = ({
     { id: 'audit-vault', label: 'Audit Vault' }
   ];
 
+  const primaryNavIds = ['overview', 'command-center', 'ot-schedules', 'preop-workbench', 'emergency-ot'];
+  const primaryNavItems = navItems.filter((i) => primaryNavIds.includes(i.id));
+  const secondaryNavItems = navItems.filter((i) => !primaryNavIds.includes(i.id));
+
   return (
-    <div className="flex flex-col lg:flex-row min-h-[85vh] gap-6 bg-slate-50/50 p-4 sm:p-6 rounded-2xl border border-slate-200">
-      {/* Sidebar Navigation */}
-      <div className="w-full lg:w-64 shrink-0 space-y-1 bg-white p-3 rounded-xl border border-slate-200 shadow-sm max-h-[85vh] overflow-y-auto">
-        <div className="px-3 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
-          OT & Surgery Modules
-        </div>
-        {navItems.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => setActiveTab(item.id)}
-            className={`w-full text-left px-3 py-2 rounded-lg text-xs font-semibold transition-colors flex items-center justify-between ${
-              activeTab === item.id
-                ? 'bg-indigo-50 text-indigo-700 border border-indigo-200 font-bold'
-                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-            }`}
-          >
-            <span>{item.label}</span>
-            {item.id === 'emergency-ot' && <Badge variant="danger">STAT</Badge>}
-            {item.id === 'command-center' && <span className="h-2 w-2 rounded-full bg-emerald-500" />}
-          </button>
-        ))}
+    <div className="space-y-4">
+      {/* 3D Spatial Feature Core: Operation Theatre & Surgical Suite */}
+      <DocSearchSpatialCore3D
+        preset="ot"
+        height={360}
+        interactive={true}
+        onNodeClick={(id) => {
+          if (id === 'ot-roster') {
+            setActiveTab('ot-schedules');
+          } else if (id === 'pac-clearance') {
+            setActiveTab('preop-workbench');
+          } else if (id === 'who-checklist') {
+            setActiveTab('safety-checklists');
+          } else if (id === 'intraop-telemetry') {
+            setActiveTab('intraoperative');
+          } else if (id === 'pacu-recovery') {
+            setActiveTab('pacu-recovery');
+          } else if (id === 'implant-ledger') {
+            setActiveTab('implants');
+          } else if (id === 'cssd-sterilization') {
+            setActiveTab('consumables');
+          }
+        }}
+      />
+
+      {/* Sub-page Navigation Tabs */}
+      <div
+        style={{
+          position: 'relative',
+          zIndex: 40,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          flexWrap: 'wrap',
+          backgroundColor: '#0F172A',
+          border: '1px solid #1E293B',
+          borderRadius: '10px',
+          padding: '6px 8px'
+        }}
+      >
+        {primaryNavItems.map((item) => {
+          const isActive = activeTab === item.id;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setActiveTab(item.id)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                fontSize: '0.78rem',
+                fontWeight: isActive ? 700 : 500,
+                color: isActive ? '#FFFFFF' : '#94A3B8',
+                backgroundColor: isActive ? '#4F46E5' : 'transparent',
+                borderRadius: '6px',
+                border: isActive ? '1px solid #6366F1' : '1px solid transparent',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = '#1E293B';
+                  e.currentTarget.style.color = '#F8FAFC';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = '#94A3B8';
+                }
+              }}
+            >
+              <span>{item.label}</span>
+              {item.id === 'emergency-ot' && (
+                <span style={{ backgroundColor: '#EF4444', color: '#FFF', padding: '1px 5px', borderRadius: '4px', fontSize: '0.625rem', fontWeight: 800 }}>
+                  STAT
+                </span>
+              )}
+            </button>
+          );
+        })}
+
+        {/* Secondary Modules Selector Dropdown */}
+        <TabOverflowMenu
+          label="More OT Modules"
+          options={secondaryNavItems}
+          activeId={activeTab}
+          onSelect={(id) => setActiveTab(id)}
+          onReset={() => setActiveTab('overview')}
+          accentColor="#4F46E5"
+          activeBorderColor="#6366F1"
+        />
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 min-w-0 bg-white p-6 rounded-xl border border-slate-200 shadow-sm overflow-y-auto max-h-[85vh]">
+      <div className="w-full space-y-6">
         {activeTab === 'overview' && metrics && (
           <OTOverviewView
             metrics={metrics}

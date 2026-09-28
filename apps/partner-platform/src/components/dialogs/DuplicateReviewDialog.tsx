@@ -76,7 +76,7 @@ export const DuplicateReviewDialog: React.FC<DuplicateReviewDialogProps> = ({
             <Button variant="outline" size="sm" onClick={onClose} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button variant="outline" size="sm" onClick={handleSubmit} isLoading={isSubmitting}>
+            <Button variant="outline" size="sm" onClick={handleSubmit} isLoading={isSubmitting} disabled={isSubmitting}>
               Confirm Adjudication
             </Button>
           </div>

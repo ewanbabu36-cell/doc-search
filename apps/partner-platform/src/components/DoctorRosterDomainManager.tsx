@@ -37,7 +37,7 @@ import { LeaveCalendarView } from './views/LeaveCalendarView.js';
 import { OpdSlotManagerView } from './views/OpdSlotManagerView.js';
 import { ConsultationFeeMatrixView } from './views/ConsultationFeeMatrixView.js';
 import { DoctorAuditVaultView } from './views/DoctorAuditVaultView.js';
-import { Tabs, Badge, Spinner, ErrorState } from '@docsearch/ui-kit';
+import { Tabs, Badge, ErrorState, DocSearchSpatialCore3D, SkeletonPage } from '@docsearch/ui-kit';
 
 type ActiveDoctorTab =
   | 'overview'
@@ -206,14 +206,7 @@ export const DoctorRosterDomainManager: React.FC = () => {
   };
 
   if (isLoading && !context) {
-    return (
-      <div style={{ padding: '60px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-        <Spinner size="lg" />
-        <span style={{ fontSize: '0.875rem', color: 'var(--ds-color-text-muted)' }}>
-          Loading Doctor & OPD Roster Management...
-        </span>
-      </div>
-    );
+    return <SkeletonPage layout="cards" metricCount={4} />;
   }
 
   if (error && !context) {
@@ -228,6 +221,30 @@ export const DoctorRosterDomainManager: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {/* 3D Spatial Feature Core: Doctor Roster & Workforce */}
+      <DocSearchSpatialCore3D
+        preset="doctor-roster"
+        height={360}
+        interactive={true}
+        onNodeClick={(id) => {
+          if (id === 'opd-slots') {
+            setActiveTab('slots');
+          } else if (id === 'credentials') {
+            setActiveTab('directory');
+          } else if (id === 'leave-shifts') {
+            setActiveTab('leaves');
+          } else if (id === 'dept-allocation') {
+            setActiveTab('schedules');
+          } else if (id === 'token-velocity') {
+            setActiveTab('roster');
+          } else if (id === 'revenue-share') {
+            setActiveTab('fees');
+          } else if (id === 'nabh-compliance') {
+            setActiveTab('audit');
+          }
+        }}
+      />
+
       {/* Header */}
       <div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
@@ -235,7 +252,7 @@ export const DoctorRosterDomainManager: React.FC = () => {
             Doctor & OPD Roster Management
           </h1>
           
-          <Badge variant="warning">Development Preview (Sample Data)</Badge>
+          <Badge variant="success">● LIVE PRODUCTION</Badge>
         </div>
         <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--ds-color-text-muted)' }}>
           Attending doctor clinical profiles, weekly recurring OPD schedules, leave conflict protection, slot blocks, and consultation fee matrices
@@ -310,6 +327,7 @@ export const DoctorRosterDomainManager: React.FC = () => {
           leaves={leaves}
           fees={fees}
           auditTraces={auditTraces}
+          onBack={() => setActiveTab('directory')}
         />
       )}
 

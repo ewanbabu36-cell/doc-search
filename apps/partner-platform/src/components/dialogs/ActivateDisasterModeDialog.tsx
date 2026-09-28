@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Input } from '@docsearch/ui-kit';
 import type { ActivateDisasterModeRequest } from '@docsearch/api-contracts';
+import { AuditJustificationField } from '../common/AuditJustificationField.js';
 
 interface Props {
   isOpen: boolean;
@@ -61,10 +62,12 @@ export const ActivateDisasterModeDialog: React.FC<Props> = ({
             <label className="block text-xs font-semibold text-gray-700 mb-1">Incident Commander</label>
             <Input value={commander} onChange={(e) => setCommander(e.target.value)} required />
           </div>
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">Activation Justification & Emergency Authorization</label>
-            <Input value={justification} onChange={(e) => setJustification(e.target.value)} required />
-          </div>
+          <AuditJustificationField
+            label="Activation Justification & Emergency Authorization"
+            value={justification}
+            onChange={setJustification}
+            defaultJustification="Multiple casualties incoming (>20 victims); surge capacity and rapid tag triage activated."
+          />
           <div className="flex justify-end gap-2 pt-4">
             <Button variant="outline" type="button" onClick={onClose} disabled={loading}>Cancel</Button>
             <Button variant="danger" type="submit" disabled={loading}>{loading ? 'Activating...' : 'BROADCAST DISASTER ACTIVATION'}</Button>

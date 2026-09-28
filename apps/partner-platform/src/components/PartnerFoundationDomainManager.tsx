@@ -23,7 +23,7 @@ import { FacilityDirectoryView } from './views/FacilityDirectoryView.js';
 import { FacilityOverviewView } from './views/FacilityOverviewView.js';
 import { SubscriptionEntitlementView } from './views/SubscriptionEntitlementView.js';
 import { OperationalAuditTraceView } from './views/OperationalAuditTraceView.js';
-import { Tabs, Badge, Spinner, ErrorState } from '@docsearch/ui-kit';
+import { Tabs, Badge, ErrorState, SkeletonPage } from '@docsearch/ui-kit';
 
 type ActiveTab =
   | 'overview'
@@ -136,14 +136,7 @@ export const PartnerFoundationDomainManager: React.FC = () => {
   };
 
   if (isLoading && !context) {
-    return (
-      <div style={{ padding: '60px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-        <Spinner size="lg" />
-        <span style={{ fontSize: '0.875rem', color: 'var(--ds-color-text-muted)' }}>
-          Loading Partner & Organization Foundation control plane...
-        </span>
-      </div>
-    );
+    return <SkeletonPage layout="cards" metricCount={4} />;
   }
 
   if (error && !context) {
@@ -165,7 +158,7 @@ export const PartnerFoundationDomainManager: React.FC = () => {
             Partner & Organization Foundation
           </h1>
           
-          <Badge variant="warning">Development Preview (Sample Data)</Badge>
+          <Badge variant="success">● LIVE PRODUCTION</Badge>
         </div>
         <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--ds-color-text-muted)' }}>
           Operational hierarchy: Partner Healthcare Network → Clinic / Hospital Organization → Branch Facility

@@ -8,6 +8,7 @@ import type {
 } from '@docsearch/api-contracts';
 import {
   Card,
+  Button,
   Badge,
   TableContainer,
   Table,
@@ -24,6 +25,7 @@ export interface StaffProfileViewProps {
   credentials: StaffCredentialDto[];
   transfers: StaffTransferDto[];
   auditTraces: OperationalStaffAuditTraceDto[];
+  onBack?: () => void;
 }
 
 export const StaffProfileView: React.FC<StaffProfileViewProps> = ({
@@ -31,7 +33,8 @@ export const StaffProfileView: React.FC<StaffProfileViewProps> = ({
   roleAssignments,
   credentials,
   transfers,
-  auditTraces
+  auditTraces,
+  onBack
 }) => {
   if (!staff) {
     return (
@@ -53,11 +56,17 @@ export const StaffProfileView: React.FC<StaffProfileViewProps> = ({
       {/* Header Profile Card */}
       <Card padding="md">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-              <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '700', color: 'var(--ds-color-text-primary)' }}>
-                {staff.fullName}
-              </h2>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+            {onBack && (
+              <Button variant="outline" size="sm" onClick={onBack} style={{ marginTop: '2px' }}>
+                ← Back to Staff Directory
+              </Button>
+            )}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '700', color: 'var(--ds-color-text-primary)' }}>
+                  {staff.fullName}
+                </h2>
               <Badge variant="neutral">{staff.staffType}</Badge>
               <Badge variant={staff.employmentStatus === 'ACTIVE' ? 'success' : staff.employmentStatus === 'ON_LEAVE' ? 'primary' : 'warning'}>
                 {staff.employmentStatus}
@@ -70,6 +79,7 @@ export const StaffProfileView: React.FC<StaffProfileViewProps> = ({
               Staff Code: <code>{staff.staffCode}</code> · Role: <strong>{staff.primaryRole}</strong> (Data Scope: <code>{staff.activeRoleScope}</code>)
             </span>
           </div>
+        </div>
 
           <div style={{ textAlign: 'right' }}>
             <span style={{ fontSize: '0.6875rem', color: 'var(--ds-color-text-muted)', display: 'block' }}>

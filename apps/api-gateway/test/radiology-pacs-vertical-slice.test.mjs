@@ -78,6 +78,47 @@ describe('Domain 2.17 — Radiology / PACS / Medical Imaging Vertical Slice Test
   });
 
   it('TEST 02: GET /api/v1/partner/radiology/modalities & /procedures returns catalog', async () => {
+    const deptRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/partner/radiology/department',
+      headers: { authorization: `Bearer ${validToken}` },
+      payload: {
+        partnerId,
+        organizationId,
+        branchId,
+        departmentCode: 'RAD-MAIN-01',
+        departmentName: 'Department of Diagnostic Radiology & Imaging',
+        aerbLicenseNumber: 'AERB/ISD/2026/99102',
+        pcpndtRegistrationNumber: 'PCPNDT/DL/2026/4412',
+        pacsAeTitle: 'DOCSEARCH_PACS_SCP',
+        dicomPort: 11112,
+        headRadiologistName: 'Dr. Vikramaditya Sen, MD',
+        radiationSafetyOfficerName: 'Mr. S. K. Nair, RSO-III'
+      }
+    });
+    assert.equal(deptRes.statusCode, 201);
+    const dept = JSON.parse(deptRes.payload);
+
+    const createModRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/partner/radiology/modalities',
+      headers: { authorization: `Bearer ${validToken}` },
+      payload: {
+        partnerId,
+        organizationId,
+        branchId,
+        departmentId: dept.id || dept.data?.id,
+        modalityCode: 'CT-01',
+        modalityName: 'Siemens SOMATOM Force 128-Slice CT',
+        modalityType: 'COMPUTED_TOMOGRAPHY_CT',
+        manufacturerModel: 'Siemens Healthineers SOMATOM Force',
+        dicomAeTitle: 'CT_SOMATOM_01',
+        roomNumber: 'Room 102',
+        dailySlotCapacity: 40
+      }
+    });
+    assert.equal(createModRes.statusCode, 201);
+
     const resMod = await app.inject({
       method: 'GET',
       url: '/api/v1/partner/radiology/modalities',
@@ -86,6 +127,7 @@ describe('Domain 2.17 — Radiology / PACS / Medical Imaging Vertical Slice Test
     assert.equal(resMod.statusCode, 200);
     const modalities = JSON.parse(resMod.payload);
     assert.ok(Array.isArray(modalities));
+    assert.ok(modalities.length >= 1);
 
     const resProc = await app.inject({
       method: 'GET',
@@ -393,6 +435,6 @@ describe('Domain 2.17 — Radiology / PACS / Medical Imaging Vertical Slice Test
       headers: { authorization: `Bearer ${tenantBToken}` }
     });
 
-    assert.equal(res.statusCode, 404);
+    assert.ok([403, 404].includes(res.statusCode), `Expected fail-closed 403 or 404, received ${res.statusCode}`);
   });
 });

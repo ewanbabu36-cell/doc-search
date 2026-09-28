@@ -26,82 +26,7 @@ export interface AbExperiment {
   winningVariantId?: string;
 }
 
-const INITIAL_EXPERIMENTS: AbExperiment[] = [
-  {
-    id: 'EXP-GOLD-799-VS-899',
-    title: 'Gold Care Pass: ₹799 vs ₹899 Revenue Maximization Test',
-    hypothesis: 'Testing whether a ₹100 price increase with "Priority Chamber Token" badge yields higher total net SaaS revenue despite a marginal conversion dip.',
-    status: 'RUNNING',
-    statisticalSignificance: '99.2% Bayesian Significance (p < 0.01)',
-    sampleSize: 28400,
-    winningVariantId: 'VAR-B',
-    variants: [
-      {
-        id: 'VAR-A',
-        label: 'Variant A (Control)',
-        name: 'Gold Family Care Pass',
-        priceInr: 799,
-        trafficAllocationPercent: 50,
-        impressions: 14200,
-        conversions: 1846,
-        conversionRatePercent: 13.0,
-        totalGmvInr: 1474954,
-        netSaaSRevenueInr: 221243,
-        isWinning: false
-      },
-      {
-        id: 'VAR-B',
-        label: 'Variant B (Challenger 🚀)',
-        name: 'Gold Family Health Shield + Priority Token',
-        priceInr: 899,
-        trafficAllocationPercent: 50,
-        impressions: 14200,
-        conversions: 1732,
-        conversionRatePercent: 12.2,
-        totalGmvInr: 1557068,
-        netSaaSRevenueInr: 233560,
-        isWinning: true
-      }
-    ]
-  },
-  {
-    id: 'EXP-SILVER-NAMING',
-    title: 'Silver Essential: Name Framing & Clinic Home Pass Test',
-    hypothesis: 'Testing if mentioning "Free Home Lab Sample" in plan title lifts checkout conversion for individual working professionals.',
-    status: 'RUNNING',
-    statisticalSignificance: '96.8% Statistical Significance',
-    sampleSize: 16800,
-    winningVariantId: 'VAR-SILVER-B',
-    variants: [
-      {
-        id: 'VAR-SILVER-A',
-        label: 'Variant A (Control)',
-        name: 'Silver Essential Pass',
-        priceInr: 299,
-        trafficAllocationPercent: 50,
-        impressions: 8400,
-        conversions: 1176,
-        conversionRatePercent: 14.0,
-        totalGmvInr: 351624,
-        netSaaSRevenueInr: 52743,
-        isWinning: false
-      },
-      {
-        id: 'VAR-SILVER-B',
-        label: 'Variant B (Challenger 🚀)',
-        name: 'Silver Home Lab & Doctor Care Pass',
-        priceInr: 349,
-        trafficAllocationPercent: 50,
-        impressions: 8400,
-        conversions: 1310,
-        conversionRatePercent: 15.6,
-        totalGmvInr: 457190,
-        netSaaSRevenueInr: 68578,
-        isWinning: true
-      }
-    ]
-  }
-];
+const INITIAL_EXPERIMENTS: AbExperiment[] = [];
 
 export const PlanAbTestingEngineView: React.FC = () => {
   const [experiments, setExperiments] = useState<AbExperiment[]>(INITIAL_EXPERIMENTS);
@@ -195,12 +120,6 @@ export const PlanAbTestingEngineView: React.FC = () => {
           variant="primary"
           size="sm"
           onClick={() => setIsCreateModalOpen(true)}
-          style={{
-            backgroundColor: '#EAB308',
-            color: '#000',
-            fontWeight: 900,
-            boxShadow: '0 4px 14px rgba(234, 179, 8, 0.4)'
-          }}
         >
           ➕ Launch New A/B Experiment
         </Button>
@@ -219,10 +138,10 @@ export const PlanAbTestingEngineView: React.FC = () => {
             WINNING NET REVENUE LIFT
           </span>
           <div style={{ fontSize: '1.625rem', fontWeight: 900, color: '#10B981', margin: '4px 0', fontFamily: 'monospace' }}>
-            + 5.57% Net Lift
+            0.00% Net Lift
           </div>
           <span style={{ fontSize: '0.75rem', color: '#CBD5E1' }}>
-            ₹899 variant generated ₹82,114 higher GMV despite 0.8% lower checkout count
+            Day-0 baseline active across all care passes
           </span>
         </div>
 
@@ -231,10 +150,10 @@ export const PlanAbTestingEngineView: React.FC = () => {
             TOTAL TESTED AUDIENCE
           </span>
           <div style={{ fontSize: '1.625rem', fontWeight: 900, color: '#F8FAFC', margin: '4px 0', fontFamily: 'monospace' }}>
-            45,200 Patients
+            0 Patients
           </div>
           <span style={{ fontSize: '0.75rem', color: '#CBD5E1' }}>
-            Randomized deterministic cookie hashes
+            0 cookie hashes tracked
           </span>
         </div>
 
@@ -243,16 +162,28 @@ export const PlanAbTestingEngineView: React.FC = () => {
             BAYESIAN DECISION CONFIDENCE
           </span>
           <div style={{ fontSize: '1.625rem', fontWeight: 900, color: '#FCD34D', margin: '4px 0', fontFamily: 'monospace' }}>
-            99.2% Statistical Power
+            0% Statistical Power
           </div>
           <span style={{ fontSize: '0.75rem', color: '#CBD5E1' }}>
-            Ready for automated 100% winner rollout
+            Awaiting first A/B experiment telemetry
           </span>
         </div>
       </div>
 
       {/* Experiments Cards */}
-      {experiments.map((exp) => {
+      {experiments.length === 0 ? (
+        <div style={{ backgroundColor: '#0F172A', border: '1px solid #334155', borderRadius: '16px', padding: '36px', textAlign: 'center' }}>
+          <div style={{ fontSize: '2rem', marginBottom: '8px' }}>📊</div>
+          <strong style={{ fontSize: '1rem', color: '#F8FAFC', display: 'block' }}>No Active A/B Testing Experiments</strong>
+          <p style={{ fontSize: '0.8125rem', color: '#94A3B8', margin: '6px 0 16px' }}>
+            All experiments reset to Day-0 clean slate. Click "Launch New A/B Experiment" to configure price elasticity split tests.
+          </p>
+          <Button variant="outline" size="sm" onClick={() => setIsCreateModalOpen(true)} style={{ color: '#EAB308', borderColor: '#EAB308' }}>
+            ➕ Launch First Experiment
+          </Button>
+        </div>
+      ) : (
+        experiments.map((exp) => {
         const isWinnerDeclared = exp.status === 'WINNER_DECLARED';
         const winningVar = exp.variants.find((v) => v.id === exp.winningVariantId);
 
@@ -369,7 +300,7 @@ export const PlanAbTestingEngineView: React.FC = () => {
             </TableContainer>
           </div>
         );
-      })}
+      }))}
 
       {/* Create Experiment Modal */}
       {isCreateModalOpen && (
@@ -459,7 +390,6 @@ export const PlanAbTestingEngineView: React.FC = () => {
                 variant="primary"
                 size="sm"
                 onClick={handleCreateExperiment}
-                style={{ backgroundColor: '#EAB308', color: '#000', fontWeight: 900 }}
               >
                 🚀 Deploy Experiment
               </Button>

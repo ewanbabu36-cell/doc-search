@@ -20,7 +20,8 @@ import {
   TableBody,
   TableRow,
   TableHead,
-  TableCell
+  TableCell,
+  Dropdown
 } from '@docsearch/ui-kit';
 import { CreateDoctorProfileDialog } from '../dialogs/CreateDoctorProfileDialog.js';
 import { EditDoctorProfileDialog } from '../dialogs/EditDoctorProfileDialog.js';
@@ -217,23 +218,22 @@ export const DoctorDirectoryView: React.FC<DoctorDirectoryViewProps> = ({
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                        <Button variant="outline" size="sm" onClick={() => onSelectDoctor(d.id)}>
-                          Profile
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => setEditDoc(d)}>
-                          Edit
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => setScheduleDoc(d)}>
-                          Schedule
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => setLeaveDoc(d)}>
-                          Leave
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => setLocationDoc(d)}>
-                          Location
-                        </Button>
-                      </div>
+                      <Dropdown
+                        align="right"
+                        trigger={
+                          <Button variant="outline" size="sm" style={{ padding: '4px 10px', fontSize: '0.75rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                            ⋮ Actions
+                          </Button>
+                        }
+                        items={[
+                          { id: 'profile', label: 'Doctor Profile Dossier', icon: '👨‍⚕️', onClick: () => onSelectDoctor(d.id) },
+                          { id: 'edit', label: 'Edit Qualifications & Bio', icon: '✏️', onClick: () => setEditDoc(d) },
+                          'divider',
+                          { id: 'schedule', label: 'Manage OPD Schedule', icon: '📅', onClick: () => setScheduleDoc(d) },
+                          { id: 'leave', label: 'Record Leave / Absence', icon: '🏖️', onClick: () => setLeaveDoc(d) },
+                          { id: 'location', label: 'Assign Room / OPD Slot', icon: '📍', onClick: () => setLocationDoc(d) }
+                        ]}
+                      />
                     </TableCell>
                   </TableRow>
                 ))

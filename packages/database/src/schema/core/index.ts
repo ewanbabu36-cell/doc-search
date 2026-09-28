@@ -8,3 +8,8 @@ export * from './sessions.js';
 export * from './credentials.js';
 export * from './document-verification.js';
 export * from './ai-chat.js';
+export * from './revocations.js';
+export * from './outbox-jobs.js';
+export * from './idempotency-records.js';
+export * from './reliability.js';
+export * from './ai-intelligence.js';

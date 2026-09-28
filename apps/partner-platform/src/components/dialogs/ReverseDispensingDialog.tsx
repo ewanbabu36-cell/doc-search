@@ -9,6 +9,7 @@ import type {
   PharmacyDispensingDto,
   ReverseDispensingRequest
 } from '@docsearch/api-contracts';
+import { AuditJustificationField } from '../common/AuditJustificationField.js';
 
 export interface ReverseDispensingDialogProps {
   isOpen: boolean;
@@ -63,6 +64,8 @@ export const ReverseDispensingDialog: React.FC<ReverseDispensingDialogProps> = (
       isOpen={isOpen}
       onClose={onClose}
       title={`Reverse Dispensing Transaction — ${dispensing.dispensingNumber}`}
+      isFullPage={true}
+      maxWidth="full"
       footer={
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
           <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
@@ -101,16 +104,11 @@ export const ReverseDispensingDialog: React.FC<ReverseDispensingDialogProps> = (
           />
         </div>
 
-        <div>
-          <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.25rem' }}>
-            Audit Justification *
-          </label>
-          <Input
-            value={justification}
-            onChange={(e) => setJustification(e.target.value)}
-            required
-          />
-        </div>
+        <AuditJustificationField
+          value={justification}
+          onChange={setJustification}
+          defaultJustification="Supervisor authorized complete transaction rollback and batch inventory restoration."
+        />
       </form>
     </Dialog>
   );

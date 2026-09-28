@@ -14,6 +14,7 @@ import {
   billingInvoiceItems,
   billingPayments,
   billingReceipts,
+  encounters,
   pharmacyBatches,
   pharmacyStockMovements,
   pharmacyDispensing,
@@ -173,6 +174,9 @@ async function runCheckpoint25Harness() {
             conditions = extractConditions(cond);
             return query;
           },
+          leftJoin: () => query,
+          innerJoin: () => query,
+          rightJoin: () => query,
           orderBy: () => query,
           limit: (n) => {
             limitN = n;
@@ -309,6 +313,11 @@ async function runCheckpoint25Harness() {
   setTestTransactionRunner(async (ctx, cb) => mockDb.transaction(cb));
 
   const tenantId = '00000000-0000-4000-8000-000000000001';
+  getRows(encounters).push(
+    { id: 'encounter-rollback-01', tenantId },
+    { id: 'encounter-pmt-01', tenantId },
+    { id: 'encounter-rzp-01', tenantId }
+  );
 
   // Test 2.1: Invoice creation rollback when line items insert fails
   totalTests++;

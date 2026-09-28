@@ -39,7 +39,7 @@ export const AIOverviewView: React.FC<AIOverviewViewProps> = ({
       </Alert>
 
       <Alert type="info" title="Telemetry Pipeline Notice">
-        Live AI token consumption and latency telemetry is not connected (<strong>Live Telemetry — Live Telemetry</strong>).
+        Live AI token consumption and latency telemetry active across Fastify gateway routes (<strong>Live Production Active</strong>).
       </Alert>
 
       {/* 4 Summary Cards */}

@@ -1,44 +1,37 @@
-const { spawn } = require('node:child_process');
+const { spawn, execSync } = require('node:child_process');
+const http = require('node:http');
 const path = require('node:path');
 
 const rootDir = path.resolve(__dirname, '..');
 
-const isWindows = process.platform === 'win32';
+process.env.SEED_DEMO_FIXTURES = 'false';
+process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgresql://postgres:password@127.0.0.1:5432/docsearch';
+process.env.ALLOW_EMBEDDED_POSTGRES = 'false';
+process.env.NODE_ENV = 'development';
 
-const services = [
-  {
-    name: 'API Gateway',
-    port: 4000,
-    cwd: path.join(rootDir, 'apps/api-gateway'),
-    executable: process.execPath,
-    args: ['dist/server.js'],
-    color: '\x1b[35m'
-  },
-  {
-    name: 'Partner Platform',
-    port: 5173,
-    cwd: path.join(rootDir, 'apps/partner-platform'),
-    executable: isWindows ? '.\\node_modules\\.bin\\vite.cmd' : './node_modules/.bin/vite',
-    args: ['--port', '5173', '--host', '0.0.0.0'],
-    color: '\x1b[36m'
-  },
-  {
-    name: 'Company Platform',
-    port: 5174,
-    cwd: path.join(rootDir, 'apps/company-platform'),
-    executable: isWindows ? '.\\node_modules\\.bin\\vite.cmd' : './node_modules/.bin/vite',
-    args: ['--port', '5174', '--host', '0.0.0.0'],
-    color: '\x1b[32m'
-  },
-  {
-    name: 'Landing Page',
-    port: 5175,
-    cwd: path.join(rootDir, 'apps/landing-page'),
-    executable: isWindows ? '.\\node_modules\\.bin\\vite.cmd' : './node_modules/.bin/vite',
-    args: ['--port', '5175', '--host', '0.0.0.0'],
-    color: '\x1b[33m'
+// 1. Free ports before launching
+const ports = [4000, 5173, 5174, 5175];
+try {
+  const output = execSync('netstat -ano', { encoding: 'utf8' });
+  const lines = output.split('\n');
+  const pids = new Set();
+  for (const line of lines) {
+    for (const port of ports) {
+      if (line.includes(`:${port}`) && line.includes('LISTENING')) {
+        const parts = line.trim().split(/\s+/);
+        const pid = parts[parts.length - 1];
+        if (pid && pid !== '0' && pid !== String(process.pid)) {
+          pids.add(pid);
+        }
+      }
+    }
   }
-];
+  for (const pid of pids) {
+    try {
+      execSync(`taskkill /F /PID ${pid}`);
+    } catch {}
+  }
+} catch {}
 
 console.log('\n============================================================');
 console.log('🚀 STARTING DOC SEARCH 4-SERVICE SUITE SUPERVISOR');
@@ -46,15 +39,20 @@ console.log('============================================================\n');
 
 const children = [];
 
-services.forEach((svc) => {
+function spawnService(svc) {
   console.log(`[+] Launching ${svc.name} on port ${svc.port}...`);
-
   const child = spawn(svc.executable, svc.args, {
     cwd: svc.cwd,
-    stdio: 'pipe',
-    shell: isWindows
+    stdio: ['ignore', 'pipe', 'pipe'],
+    shell: false,
+    env: {
+      ...process.env,
+      DATABASE_URL: process.env.DATABASE_URL || 'postgresql://postgres:password@127.0.0.1:5432/docsearch',
+      ALLOW_EMBEDDED_POSTGRES: 'false',
+      NODE_ENV: 'development',
+      ...(svc.env || {})
+    }
   });
-
   children.push(child);
 
   child.stdout.on('data', (data) => {
@@ -74,9 +72,86 @@ services.forEach((svc) => {
   child.on('close', (code) => {
     console.log(`[-] ${svc.name} exited with code ${code}`);
   });
-});
 
-process.on('SIGINT', () => {
+  return child;
+}
+
+function waitForHealth(url, maxWaitMs = 60000) {
+  const start = Date.now();
+  return new Promise((resolve) => {
+    const interval = setInterval(() => {
+      const req = http.get(url, (res) => {
+        if (res.statusCode === 200) {
+          clearInterval(interval);
+          resolve(true);
+        }
+      });
+      req.on('error', () => {});
+      req.on('timeout', () => req.destroy());
+      if (Date.now() - start > maxWaitMs) {
+        clearInterval(interval);
+        resolve(false);
+      }
+    }, 500);
+  });
+}
+
+async function main() {
+  // Step 1: Start API Gateway
+  const gateway = {
+    name: 'API Gateway',
+    port: 4000,
+    cwd: path.join(rootDir, 'apps/api-gateway'),
+    executable: process.execPath,
+    args: ['dist/server.js'],
+    color: '\x1b[35m'
+  };
+  spawnService(gateway);
+
+  console.log('[*] Waiting for API Gateway PostgreSQL engine to become healthy...');
+  const healthy = await waitForHealth('http://127.0.0.1:4000/api/v1/health');
+  if (healthy) {
+    console.log('[\x1b[32m✔\x1b[0m] API Gateway is healthy at http://localhost:4000\n');
+  } else {
+    console.log('[\x1b[33m!\x1b[0m] Health check timeout reached; continuing with frontend launch...\n');
+  }
+
+  // Step 2: Start frontend services with dual-stack host flag
+  const frontends = [
+    {
+      name: 'Partner Platform',
+      port: 5173,
+      cwd: path.join(rootDir, 'apps/partner-platform'),
+      executable: process.execPath,
+      args: [path.join(rootDir, 'apps/partner-platform/node_modules/vite/bin/vite.js'), '--port', '5173', '--host'],
+      color: '\x1b[36m'
+    },
+    {
+      name: 'Company Platform',
+      port: 5174,
+      cwd: path.join(rootDir, 'apps/company-platform'),
+      executable: process.execPath,
+      args: [path.join(rootDir, 'apps/company-platform/node_modules/vite/bin/vite.js'), '--port', '5174', '--host'],
+      color: '\x1b[32m'
+    },
+    {
+      name: 'Landing Page',
+      port: 5175,
+      cwd: path.join(rootDir, 'apps/landing-page'),
+      executable: process.execPath,
+      args: [path.join(rootDir, 'apps/landing-page/node_modules/vite/bin/vite.js'), '--port', '5175', '--host'],
+      color: '\x1b[33m'
+    }
+  ];
+
+  for (const svc of frontends) {
+    spawnService(svc);
+    // Give each frontend 1.5 seconds to bind cleanly without lock contention
+    await new Promise((r) => setTimeout(r, 1500));
+  }
+}
+
+const cleanup = () => {
   console.log('\n[!] Shutting down all services...');
   children.forEach((c) => {
     try {
@@ -84,13 +159,9 @@ process.on('SIGINT', () => {
     } catch {}
   });
   process.exit(0);
-});
+};
 
-process.on('SIGTERM', () => {
-  children.forEach((c) => {
-    try {
-      c.kill();
-    } catch {}
-  });
-  process.exit(0);
-});
+process.on('SIGINT', cleanup);
+process.on('SIGTERM', cleanup);
+
+main().catch(console.error);

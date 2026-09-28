@@ -78,6 +78,7 @@ export const NationalHealthcareWarRoomView: React.FC = () => {
     if (!isStreamActive) return;
 
     const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       setStreamTick((prev) => prev + 1);
       setPulseGlow(true);
 

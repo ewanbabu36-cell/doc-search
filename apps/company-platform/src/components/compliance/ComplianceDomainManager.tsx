@@ -37,7 +37,7 @@ import { DataPortabilityPassportView } from './DataPortabilityPassportView.js';
 import { RegulatoryRadarWhistleblowerModal } from './RegulatoryRadarWhistleblowerModal.js';
 import { MultiRegionDataSovereigntyRouterView } from './MultiRegionDataSovereigntyRouterView.js';
 
-import { Tabs, Badge, Spinner, ErrorState, Button } from '@docsearch/ui-kit';
+import { Tabs, Badge, Spinner, ErrorState, Button, DocSearchSpatialCore3D } from '@docsearch/ui-kit';
 
 type ActiveTab =
   | 'overview'
@@ -237,6 +237,30 @@ export const ComplianceDomainManager: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {/* 3D Spatial Feature Core: Regulatory Compliance & Legal Audit */}
+      <DocSearchSpatialCore3D
+        preset="compliance"
+        height={360}
+        interactive={true}
+        onNodeClick={(id) => {
+          if (id === 'dpdp-consent') {
+            setActiveTab('dpdp');
+          } else if (id === 'hipaa-baa') {
+            setActiveTab('baa');
+          } else if (id === 'nabh-safeguards') {
+            setActiveTab('nabh-nmc');
+          } else if (id === 'phi-logs') {
+            setActiveTab('data-gov');
+          } else if (id === 'incident-reporting') {
+            setActiveTab('exceptions');
+          } else if (id === 'cert-renewals') {
+            setActiveTab('frameworks');
+          } else if (id === 'forensic-vault') {
+            setActiveTab('evidence');
+          }
+        }}
+      />
+
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', backgroundColor: '#0F172A', border: '1.5px solid rgba(6, 182, 212, 0.4)', borderRadius: '14px', padding: '16px 20px' }}>
         <div>

@@ -85,7 +85,7 @@ export const MergePatientDialog: React.FC<MergePatientDialogProps> = ({
           <Button variant="outline" size="sm" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button variant="danger" size="sm" onClick={handleSubmit} isLoading={isSubmitting}>
+          <Button variant="danger" size="sm" onClick={handleSubmit} isLoading={isSubmitting} disabled={isSubmitting}>
             Execute Irreversible Merge
           </Button>
         </div>

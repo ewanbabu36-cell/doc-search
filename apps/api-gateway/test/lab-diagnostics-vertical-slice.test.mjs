@@ -271,4 +271,88 @@ describe('Lab & Diagnostics Vertical Slice: Order -> Specimen -> Result -> Verif
     const body = JSON.parse(res.body);
     assert.strictEqual(body.data.length, 0, 'Tenant B must see 0 orders for Tenant A patient');
   });
+
+  // STEP 10: Investigation Catalog Retrieval
+  it('STEP 10: GET /api/v1/partner/lab/catalog retrieves available diagnostic test catalog', async () => {
+    const token = createTestToken();
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/v1/partner/lab/catalog',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    assert.strictEqual(res.statusCode, 200);
+    const body = JSON.parse(res.body);
+    assert.strictEqual(body.success, true);
+    assert.ok(Array.isArray(body.data));
+  });
+
+  // STEP 11: Investigation Panels Retrieval
+  it('STEP 11: GET /api/v1/partner/lab/panels retrieves pre-configured test panels', async () => {
+    const token = createTestToken();
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/v1/partner/lab/panels',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    assert.strictEqual(res.statusCode, 200);
+    const body = JSON.parse(res.body);
+    assert.strictEqual(body.success, true);
+    assert.ok(Array.isArray(body.data));
+  });
+
+  // STEP 12: Order Cancellation
+  it('STEP 12: POST /api/v1/partner/lab/orders/:id/cancel cancels a pending lab order', async () => {
+    const token = createTestToken();
+    const createRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/partner/lab/orders',
+      headers: { Authorization: `Bearer ${token}` },
+      payload: {
+        patientId: testPatientId,
+        testCode: 'LAB-LIPID',
+        testName: 'Lipid Panel',
+        category: 'BIOCHEMISTRY',
+        priority: 'ROUTINE',
+        specimenType: 'SERUM',
+        fastingConfirmed: true,
+        clinicalIndication: 'Routine health screening',
+        billingPolicy: 'STANDARD'
+      }
+    });
+
+    assert.strictEqual(createRes.statusCode, 201);
+    const orderToCancel = JSON.parse(createRes.body).data;
+
+    const cancelRes = await app.inject({
+      method: 'POST',
+      url: `/api/v1/partner/lab/orders/${orderToCancel.id}/cancel`,
+      headers: { Authorization: `Bearer ${token}` },
+      payload: {
+        cancellationReason: 'Patient cancelled appointment',
+        cancelledBy: 'frontdesk-admin'
+      }
+    });
+
+    assert.strictEqual(cancelRes.statusCode, 200);
+    const cancelBody = JSON.parse(cancelRes.body);
+    assert.strictEqual(cancelBody.success, true);
+    assert.strictEqual(cancelBody.data.status, 'CANCELLED');
+  });
+
+  // STEP 13: Attempt to cancel a completed order rejected
+  it('STEP 13: POST /api/v1/partner/lab/orders/:id/cancel on verified/completed order is rejected', async () => {
+    const token = createTestToken();
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api/v1/partner/lab/orders/${testOrderId}/cancel`,
+      headers: { Authorization: `Bearer ${token}` },
+      payload: {
+        cancellationReason: 'Invalid late cancellation attempt'
+      }
+    });
+
+    assert.ok(res.statusCode >= 400, 'Late cancellation of completed order must fail');
+  });
 });

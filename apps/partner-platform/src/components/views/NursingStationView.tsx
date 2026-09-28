@@ -13,8 +13,8 @@ export interface NursingStationViewProps {
 }
 
 export const NursingStationView: React.FC<NursingStationViewProps> = ({
-  admissions,
-  wards,
+  admissions = [],
+  wards = [],
   onOpenNursingAssessment,
   onOpenNursingNote,
   onOpenCarePlan,
@@ -23,7 +23,10 @@ export const NursingStationView: React.FC<NursingStationViewProps> = ({
 }) => {
   const [selectedWard, setSelectedWard] = useState('ALL');
 
-  const filtered = admissions.filter((a) => selectedWard === 'ALL' || a.wardId === selectedWard);
+  const safeAdmissions = Array.isArray(admissions) ? admissions : [];
+  const safeWards = Array.isArray(wards) ? wards : [];
+
+  const filtered = safeAdmissions.filter((a) => a && (selectedWard === 'ALL' || a.wardId === selectedWard));
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -36,7 +39,7 @@ export const NursingStationView: React.FC<NursingStationViewProps> = ({
           <Select
             value={selectedWard}
             onChange={(e) => setSelectedWard(e.target.value)}
-            options={[{ value: 'ALL', label: 'All Nursing Stations' }, ...wards.map((w) => ({ value: w.id, label: w.nursingStationName }))]}
+            options={[{ value: 'ALL', label: 'All Nursing Stations' }, ...safeWards.map((w) => ({ value: w?.id || '', label: w?.nursingStationName || 'Station' }))]}
           />
         </div>
       </div>
@@ -45,11 +48,11 @@ export const NursingStationView: React.FC<NursingStationViewProps> = ({
         {filtered.map((adm) => (
           <Card key={adm.id} style={{ padding: '1rem', borderLeft: '4px solid #2563eb' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-              <strong style={{ fontSize: '1rem', color: '#0f172a' }}>{adm.patientName}</strong>
+              <strong style={{ fontSize: '1rem', color: 'var(--ds-color-text-primary, #f8fafc)' }}>{adm.patientName}</strong>
               <Badge variant="neutral">Bed: {adm.bedCode}</Badge>
             </div>
-            <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{adm.patientMrn} • {adm.wardName}</div>
-            <div style={{ fontSize: '0.85rem', margin: '0.5rem 0', color: '#334155' }}>
+            <div style={{ fontSize: '0.8rem', color: 'var(--ds-color-text-muted, #94a3b8)' }}>{adm.patientMrn} • {adm.wardName}</div>
+            <div style={{ fontSize: '0.85rem', margin: '0.5rem 0', color: 'var(--ds-color-text-secondary, #cbd5e1)' }}>
               <strong>Diagnosis:</strong> {adm.primaryDiagnosis}
             </div>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.75rem' }}>

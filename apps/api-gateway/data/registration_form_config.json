@@ -1,0 +1,297 @@
+{
+  "showPlanSelection": true,
+  "showModuleSelection": true,
+  "allowAdvancePayment": true,
+  "defaultPlanTier": "FOUNDING",
+  "bannerNotice": "Universal Healthcare Partner Registration • 1st Year Free Founding Partner Offer Active",
+  "allowedFacilityTypes": [
+    "HOSPITAL",
+    "CLINIC",
+    "PATHOLOGY",
+    "PHARMACY",
+    "DIAGNOSTIC_CENTRE",
+    "PHARMACY_WHOLESALE"
+  ],
+  "availablePlans": [
+    {
+      "id": "plan-hosp-free-yr1",
+      "code": "PLAN_HOSP_FREE_YR1",
+      "tier": "FOUNDING",
+      "name": "Hospital Founding Partner (1st Year Free)",
+      "price": 0,
+      "billingInterval": "ANNUAL",
+      "icon": "🏥",
+      "tag": "🎁 1st Year Free • Inpatient Beds, OT & ICU",
+      "description": "100% Free for 365 Days - Complete Multi-Specialty Hospital HIS: Inpatient ADT Bed Matrix, OT Surgical Rostering, ICU Flowsheets, TPA IRDAI NHCX Bridge & ABDM Kiosk.",
+      "features": [
+        "Universal Staff Directory & RBAC",
+        "Inpatient ADT Bed Matrix (All Wards)",
+        "OT Surgical Rostering & PAC Clearance",
+        "ICU 24-Hour Digital Flowsheet",
+        "TPA Cashless Pre-Auth & IRDAI NHCX Bridge",
+        "Emergency & Code Blue Broadcast",
+        "ABDM 2.0 Fast OPD Kiosk",
+        "MRD ICD-10 Medical Coding",
+        "Blood Bank Component Cross-Matching"
+      ],
+      "recommended": true,
+      "maxDoctors": 50,
+      "maxBeds": 200,
+      "isActive": true,
+      "applicableFacilityTypes": [
+        "HOSPITAL"
+      ]
+    },
+    {
+      "id": "plan-hosp-annual-yr2",
+      "code": "PLAN_HOSP_ANNUAL_YR2",
+      "tier": "ANNUAL",
+      "name": "Multi-Specialty Hospital Annual Plan",
+      "price": 30000,
+      "billingInterval": "ANNUAL",
+      "icon": "🏥",
+      "tag": "⭐ Year 2: ₹30,000/yr",
+      "description": "All-inclusive Multi-Specialty Hospital Enterprise HIS: Inpatient Bed Matrix, OT, ICU, Cashless TPA Claims & Complete LIMS.",
+      "features": [
+        "Universal Staff Directory & RBAC",
+        "Inpatient ADT Bed Matrix (All Wards)",
+        "OT Surgical Rostering & PAC Clearance",
+        "ICU 24-Hour Digital Flowsheet",
+        "TPA Cashless Pre-Auth & IRDAI NHCX Bridge",
+        "Emergency & Code Blue Broadcast",
+        "ABDM 2.0 Fast OPD Kiosk",
+        "MRD ICD-10 Medical Coding",
+        "Blood Bank Component Cross-Matching"
+      ],
+      "recommended": false,
+      "maxDoctors": 100,
+      "maxBeds": 500,
+      "isActive": true,
+      "applicableFacilityTypes": [
+        "HOSPITAL"
+      ]
+    },
+    {
+      "id": "plan-clinic-free-yr1",
+      "code": "PLAN_CLINIC_FREE_YR1",
+      "tier": "FOUNDING",
+      "name": "Clinic Founding Partner (1st Year Free)",
+      "price": 0,
+      "billingInterval": "ANNUAL",
+      "icon": "🩺",
+      "tag": "🎁 1st Year Free • Ambient AI Scribe & Rx",
+      "description": "100% Free for 365 Days - Ambient AI voice scribe, digital prescription pad, WhatsApp Rx & ABHA scan check-in.",
+      "features": [
+        "Universal Staff Directory & RBAC",
+        "Ambient AI Voice Scribe",
+        "Digital Prescription Pad (Rx)",
+        "WhatsApp High-Res PDF Rx Dispatch",
+        "ABHA 2.0 QR Scan Fast OPD Check-in",
+        "Real-Time Drug-Drug Interaction Shield"
+      ],
+      "recommended": true,
+      "maxDoctors": 5,
+      "maxBeds": 0,
+      "isActive": true,
+      "applicableFacilityTypes": [
+        "CLINIC"
+      ]
+    },
+    {
+      "id": "plan-clinic-annual-yr2",
+      "code": "PLAN_CLINIC_ANNUAL_YR2",
+      "tier": "ANNUAL",
+      "name": "Doctor OPD Clinic Annual Plan",
+      "price": 20000,
+      "billingInterval": "ANNUAL",
+      "icon": "👨‍⚕️",
+      "tag": "⭐ Year 2: ₹20,000/yr",
+      "description": "Full Doctor OPD Practice Suite: Ambient AI Voice Scribe, WhatsApp Rx Dispatch, Jan Aushadhi Generic Switcher & DDI Shield.",
+      "features": [
+        "Universal Staff Directory & RBAC",
+        "Ambient AI Voice Scribe",
+        "Digital Prescription Pad (Rx)",
+        "WhatsApp High-Res PDF Rx Dispatch",
+        "ABHA 2.0 QR Scan Fast OPD Check-in",
+        "Real-Time Drug-Drug Interaction Shield",
+        "Multi-Doctor Room Rostering & Central Cashier"
+      ],
+      "recommended": false,
+      "maxDoctors": 15,
+      "maxBeds": 5,
+      "isActive": true,
+      "applicableFacilityTypes": [
+        "CLINIC"
+      ]
+    },
+    {
+      "id": "plan-path-free-yr1",
+      "code": "PLAN_PATH_FREE_YR1",
+      "tier": "FOUNDING",
+      "name": "Pathology Founding Partner (1st Year Free)",
+      "price": 0,
+      "billingInterval": "ANNUAL",
+      "icon": "🧪",
+      "tag": "🎁 1st Year Free • Barcode LIMS & Analyzer Sync",
+      "description": "100% Free for 365 Days - Phlebotomy sample barcodes, bi-directional analyzer sync, WhatsApp NABL reports & doctor e-sign.",
+      "features": [
+        "Universal Staff Directory & RBAC",
+        "Phlebotomy Sample Barcode Intake & Tracking",
+        "Bi-Directional Lab Machine Analyzer Interface",
+        "WhatsApp NABL Lab Report Auto-Dispatch",
+        "Doctor Digital Signature on Lab Reports"
+      ],
+      "recommended": true,
+      "maxDoctors": 5,
+      "maxBeds": 0,
+      "isActive": true,
+      "applicableFacilityTypes": [
+        "PATHOLOGY"
+      ]
+    },
+    {
+      "id": "plan-path-annual-yr2",
+      "code": "PLAN_PATH_ANNUAL_YR2",
+      "tier": "ANNUAL",
+      "name": "Pathology Lab LIMS Annual Plan",
+      "price": 10000,
+      "billingInterval": "ANNUAL",
+      "icon": "🔬",
+      "tag": "⭐ Year 2: ₹10,000/yr",
+      "description": "Full LIMS suite: Multi-collection centers, bi-directional analyzer sync, automated WhatsApp reports, doctor referral ledger & NABL logs.",
+      "features": [
+        "Universal Staff Directory & RBAC",
+        "Phlebotomy Sample Barcode Intake & Tracking",
+        "Bi-Directional Lab Machine Analyzer Interface",
+        "WhatsApp NABL Lab Report Auto-Dispatch",
+        "Doctor Digital Signature on Lab Reports",
+        "Multi-Collection Center Branches",
+        "Doctor Referral B2B Commission Split & Ledger"
+      ],
+      "recommended": false,
+      "maxDoctors": 20,
+      "maxBeds": 0,
+      "isActive": true,
+      "applicableFacilityTypes": [
+        "PATHOLOGY"
+      ]
+    },
+    {
+      "id": "plan-pharma-free-yr1",
+      "code": "PLAN_PHARMA_FREE_YR1",
+      "tier": "FOUNDING",
+      "name": "Pharmacy Founding Partner (1st Year Free)",
+      "price": 0,
+      "billingInterval": "ANNUAL",
+      "icon": "💊",
+      "tag": "🎁 1st Year Free • Barcode POS & Expiry Radar",
+      "description": "100% Free for 365 Days - High-speed barcode POS, batch/expiry radar, Jan Aushadhi generic switcher & Schedule H1 narcotics register.",
+      "features": [
+        "Universal Staff Directory & RBAC",
+        "High-Speed Barcode POS & Thermal Print",
+        "Automated Batch & Expiry Radar",
+        "Jan Aushadhi Generic Alternate Recommender",
+        "Schedule H & H1 Narcotics Digital Register",
+        "WhatsApp Invoice PDF & Auto-Refills"
+      ],
+      "recommended": true,
+      "maxDoctors": 3,
+      "maxBeds": 0,
+      "isActive": true,
+      "applicableFacilityTypes": [
+        "PHARMACY"
+      ]
+    },
+    {
+      "id": "plan-pharma-annual-yr2",
+      "code": "PLAN_PHARMA_ANNUAL_YR2",
+      "tier": "ANNUAL",
+      "name": "Pharmacy & Chemist Annual Plan",
+      "price": 10000,
+      "billingInterval": "ANNUAL",
+      "icon": "🏪",
+      "tag": "⭐ Year 2: ₹10,000/yr",
+      "description": "Full Chemist POS suite: Automated batch/expiry radar, PMBJP generic switcher, supplier purchase inwarding, WhatsApp bills & Schedule H1 narcotics register.",
+      "features": [
+        "Universal Staff Directory & RBAC",
+        "High-Speed Barcode POS & Thermal Print",
+        "Automated Batch & Expiry Radar",
+        "Jan Aushadhi Generic Alternate Recommender",
+        "Schedule H & H1 Narcotics Digital Register",
+        "WhatsApp Invoice PDF & Auto-Refills",
+        "Central Multi-Store Warehouse & Stock Transfer",
+        "Supplier Purchase Orders & Automated GST Inwarding"
+      ],
+      "recommended": false,
+      "maxDoctors": 10,
+      "maxBeds": 0,
+      "isActive": true,
+      "applicableFacilityTypes": [
+        "PHARMACY"
+      ]
+    },
+    {
+      "id": "plan-radio-free-yr1",
+      "code": "PLAN_RADIO_FREE_YR1",
+      "tier": "FOUNDING",
+      "name": "Radiology Founding Partner (1st Year Free)",
+      "price": 0,
+      "billingInterval": "ANNUAL",
+      "icon": "🩻",
+      "tag": "🎁 1st Year Free • Web DICOM Viewer & Speech EMR",
+      "description": "100% Free for 365 Days - Zero-footprint web DICOM viewer, speech-to-text reporting & WhatsApp scan links.",
+      "features": [
+        "Universal Staff Directory & RBAC",
+        "Zero-Footprint Web DICOM Viewer",
+        "Radiologist Speech-to-Text Reporting",
+        "WhatsApp Diagnostic Scan & DICOM Links"
+      ],
+      "recommended": true,
+      "maxDoctors": 5,
+      "maxBeds": 0,
+      "isActive": true,
+      "applicableFacilityTypes": [
+        "DIAGNOSTIC_CENTRE"
+      ]
+    },
+    {
+      "id": "plan-radio-annual-yr2",
+      "code": "PLAN_RADIO_ANNUAL_YR2",
+      "tier": "ANNUAL",
+      "name": "Radiology & PACS Annual Plan",
+      "price": 20000,
+      "billingInterval": "ANNUAL",
+      "icon": "☢️",
+      "tag": "⭐ Year 2: ₹20,000/yr",
+      "description": "Complete Imaging suite: Cloud PACS, DICOM CT/MRI machine sync, speech-to-text structured reporting & WhatsApp scan links.",
+      "features": [
+        "Universal Staff Directory & RBAC",
+        "Zero-Footprint Web DICOM Viewer",
+        "Radiologist Speech-to-Text Reporting",
+        "WhatsApp Diagnostic Scan & DICOM Links",
+        "Cloud PACS & DICOM CT/MRI Machine Sync",
+        "AERB & PNDT Automated Regulatory Registers"
+      ],
+      "recommended": false,
+      "maxDoctors": 20,
+      "maxBeds": 0,
+      "isActive": true,
+      "applicableFacilityTypes": [
+        "DIAGNOSTIC_CENTRE"
+      ]
+    }
+  ],
+  "fieldRules": {
+    "ownerAadhaar": "MANDATORY",
+    "aadhaarDocUpload": "MANDATORY",
+    "clinicalLicense": "MANDATORY",
+    "licenseDocUpload": "MANDATORY",
+    "gstinNumber": "OPTIONAL",
+    "bedCapacity": "OPTIONAL",
+    "mobileWhatsapp": "MANDATORY",
+    "cityState": "MANDATORY",
+    "passwordCreation": "MANDATORY"
+  },
+  "updatedAt": "2026-09-24T08:39:06.481Z",
+  "updatedBy": "DocSearch Founder Command"
+}

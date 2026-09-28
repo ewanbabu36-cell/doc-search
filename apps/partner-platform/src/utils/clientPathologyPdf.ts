@@ -34,7 +34,7 @@ export function downloadVectorPathologyPdf(order: InvestigationOrderDto, setting
   contentLines.push('/F1 7.5 Tf');
   contentLines.push('0.3 0.35 0.4 rg');
   contentLines.push('1 0 0 1 ' + margin + ' ' + (pageHeight - 72) + ' Tm');
-  contentLines.push('(NABL ACCREDITED ISO 15189:2022 | ABDM AYUSHMAN BHARAT LINKED | CERT: ' + escapePdfText(settings.certificateNo || 'MC-4892-2026') + ') Tj');
+  contentLines.push('(NABL ACCREDITED ISO 15189:2022 | ABDM AYUSHMAN BHARAT LINKED' + (settings.certificateNo ? ' | CERT: ' + escapePdfText(settings.certificateNo) : '') + ') Tj');
   contentLines.push('ET');
 
   contentLines.push('BT');
@@ -65,7 +65,7 @@ export function downloadVectorPathologyPdf(order: InvestigationOrderDto, setting
   contentLines.push('1 0 0 1 ' + (margin + 12) + ' ' + (boxTop - 40) + ' Tm');
   contentLines.push('(Age / Sex: ' + escapePdfText(order.patientDob || '28 Yrs') + ' / ' + escapePdfText(order.patientGender || 'Male') + ') Tj');
   contentLines.push('1 0 0 1 ' + (margin + 12) + ' ' + (boxTop - 52) + ' Tm');
-  contentLines.push('(Referred By: ' + escapePdfText(order.orderingDoctorName || 'Dr. Rajesh Sharma, MD') + ') Tj');
+  contentLines.push('(Referred By: ' + escapePdfText(order.orderingDoctorName || 'Self / Direct Walk-In') + ') Tj');
   contentLines.push('ET');
 
   // Col 2: Order & Barcode Info
@@ -76,7 +76,7 @@ export function downloadVectorPathologyPdf(order: InvestigationOrderDto, setting
   contentLines.push('1 0 0 1 ' + col2X + ' ' + (boxTop - 16) + ' Tm');
   contentLines.push('(Order Number: ' + escapePdfText(order.orderNumber) + ') Tj');
   contentLines.push('1 0 0 1 ' + col2X + ' ' + (boxTop - 28) + ' Tm');
-  contentLines.push('(Sample Barcode: ' + escapePdfText(order.specimens?.[0]?.accessionNumber || 'ACC-2026-89410') + ') Tj');
+  contentLines.push('(Barcode: ' + escapePdfText(order.specimens?.[0]?.accessionNumber || 'ACC-2026-89410') + ') Tj');
   contentLines.push('1 0 0 1 ' + col2X + ' ' + (boxTop - 40) + ' Tm');
   contentLines.push('(Specimen Type: ' + escapePdfText(order.specimenType || 'WHOLE_BLOOD') + ') Tj');
   contentLines.push('1 0 0 1 ' + col2X + ' ' + (boxTop - 52) + ' Tm');
@@ -217,7 +217,7 @@ export function downloadVectorPathologyPdf(order: InvestigationOrderDto, setting
   contentLines.push('/F2 7.5 Tf');
   contentLines.push('0.1 0.15 0.25 rg');
   contentLines.push('1 0 0 1 ' + (margin + 10) + ' ' + (footerTop - 18) + ' Tm');
-  contentLines.push('(' + escapePdfText(settings.technicianName || 'Pooja Sharma, BMLT') + ') Tj');
+  contentLines.push('(' + escapePdfText(settings.technicianName || 'Authorized Medical Lab Technologist') + ') Tj');
   contentLines.push('/F1 6.5 Tf');
   contentLines.push('0.4 0.45 0.5 rg');
   contentLines.push('1 0 0 1 ' + (margin + 10) + ' ' + (footerTop - 28) + ' Tm');
@@ -227,11 +227,11 @@ export function downloadVectorPathologyPdf(order: InvestigationOrderDto, setting
   contentLines.push('/F2 8 Tf');
   contentLines.push('0.08 0.55 0.25 rg');
   contentLines.push('1 0 0 1 ' + (pageWidth - margin - 220) + ' ' + (footerTop - 18) + ' Tm');
-  contentLines.push('(' + escapePdfText(settings.pathologistName || 'Dr. Shalini Deshmukh, MD') + ') Tj');
+  contentLines.push('(' + escapePdfText(settings.pathologistName || 'Authorized Consulting Pathologist') + ') Tj');
   contentLines.push('/F1 6.5 Tf');
   contentLines.push('0.4 0.45 0.5 rg');
   contentLines.push('1 0 0 1 ' + (pageWidth - margin - 220) + ' ' + (footerTop - 28) + ' Tm');
-  contentLines.push('(' + escapePdfText(settings.pathologistTitle || 'Consultant Pathologist') + ' • ' + escapePdfText(settings.pathologistRegNo || 'Reg: DMC-48920') + ') Tj');
+  contentLines.push('(' + escapePdfText(settings.pathologistTitle || 'Consultant Pathologist') + (settings.pathologistRegNo ? ' • Reg: ' + escapePdfText(settings.pathologistRegNo) : '') + ') Tj');
   contentLines.push('/F2 6.5 Tf');
   contentLines.push('0.1 0.5 0.8 rg');
   contentLines.push('1 0 0 1 ' + (pageWidth - margin - 220) + ' ' + (footerTop - 38) + ' Tm');

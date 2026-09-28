@@ -1,4 +1,4 @@
-import { eq, desc, and } from '@docsearch/database';
+import { eq, desc, and, or } from '@docsearch/database';
 import {
   getDatabase,
   products,
@@ -7,7 +7,11 @@ import {
   planEntitlements,
   type Product,
   type NewProduct,
-  type Plan
+  type Plan,
+  type NewPlan,
+  type Feature,
+  type NewFeature,
+  type PlanEntitlement
 } from '@docsearch/database';
 
 const memoryProducts: Product[] = [];
@@ -99,12 +103,141 @@ export class ProductRepository {
     throw new Error('Failed to create plan or database client missing');
   }
 
+  async updatePlan(planId: string, updates: Partial<NewPlan>, dbClient = getDatabase()): Promise<Plan> {
+    if (dbClient) {
+      const [updated] = await dbClient
+        .update(plans)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(plans.id, planId))
+        .returning();
+      if (updated) return updated;
+    }
+    throw new Error(`Failed to update plan ${planId}`);
+  }
+
+  async updatePlanStatus(planId: string, status: string, dbClient = getDatabase()): Promise<Plan> {
+    return this.updatePlan(planId, { status }, dbClient);
+  }
+
+  async findAllFeatures(dbClient = getDatabase()): Promise<Feature[]> {
+    if (dbClient) {
+      try {
+        return await dbClient.select().from(features).orderBy(features.name);
+      } catch {}
+    }
+    return [];
+  }
+
+  async findFeatureById(featureId: string, dbClient = getDatabase()): Promise<Feature | null> {
+    if (dbClient) {
+      try {
+        const [feature] = await dbClient.select().from(features).where(eq(features.id, featureId)).limit(1);
+        if (feature) return feature;
+      } catch {}
+    }
+    return null;
+  }
+
+  async findFeatureByCode(code: string, dbClient = getDatabase()): Promise<Feature | null> {
+    if (dbClient) {
+      try {
+        const [feature] = await dbClient.select().from(features).where(eq(features.code, code)).limit(1);
+        if (feature) return feature;
+      } catch {}
+    }
+    return null;
+  }
+
+  async createFeature(data: NewFeature, dbClient = getDatabase()): Promise<Feature> {
+    if (dbClient) {
+      const [created] = await dbClient.insert(features).values(data).returning();
+      if (created) return created;
+    }
+    throw new Error('Failed to create feature or database client missing');
+  }
+
+  async addPlanEntitlement(
+    planId: string,
+    featureId: string,
+    value: any = { enabled: true },
+    entitlementType = 'FEATURE_ACCESS',
+    dbClient = getDatabase()
+  ): Promise<PlanEntitlement> {
+    if (dbClient) {
+      const [entitlement] = await dbClient
+        .insert(planEntitlements)
+        .values({
+          planId,
+          featureId,
+          value,
+          entitlementType,
+          status: 'ACTIVE'
+        })
+        .onConflictDoUpdate({
+          target: [planEntitlements.planId, planEntitlements.featureId],
+          set: {
+            value,
+            entitlementType,
+            status: 'ACTIVE'
+          }
+        })
+        .returning();
+      if (entitlement) return entitlement;
+    }
+    throw new Error(`Failed to add entitlement for plan ${planId} and feature ${featureId}`);
+  }
+
+  async removePlanEntitlement(
+    planId: string,
+    featureId: string,
+    dbClient = getDatabase()
+  ): Promise<boolean> {
+    if (dbClient) {
+      const result = await dbClient
+        .delete(planEntitlements)
+        .where(
+          or(
+            and(eq(planEntitlements.planId, planId), eq(planEntitlements.featureId, featureId)),
+            and(eq(planEntitlements.planId, planId), eq(planEntitlements.id, featureId))
+          )
+        )
+        .returning();
+      return result.length > 0;
+    }
+    return false;
+  }
+
+  async getPlanEntitlementsWithFeature(
+    planId: string,
+    dbClient = getDatabase()
+  ): Promise<Array<{ id: string; featureId: string; code: string; name: string; category: string; value: any; status: string; entitlementType: string }>> {
+    if (dbClient) {
+      try {
+        const rows = await dbClient
+          .select({
+            id: planEntitlements.id,
+            featureId: planEntitlements.featureId,
+            code: features.code,
+            name: features.name,
+            category: features.category,
+            value: planEntitlements.value,
+            status: planEntitlements.status,
+            entitlementType: planEntitlements.entitlementType
+          })
+          .from(planEntitlements)
+          .innerJoin(features, eq(planEntitlements.featureId, features.id))
+          .where(eq(planEntitlements.planId, planId));
+
+        return rows;
+      } catch {}
+    }
+    return [];
+  }
 
   async getPlanEntitlements(
     planId: string,
     dbClient = getDatabase()
   ): Promise<Array<{ code: string; name: string; category: string; value: any; entitlementType: string }>> {
-
     if (dbClient) {
       try {
         const rows = await dbClient

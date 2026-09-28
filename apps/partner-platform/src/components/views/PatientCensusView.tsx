@@ -6,14 +6,18 @@ export interface PatientCensusViewProps {
   admissions: InpatientAdmissionDto[];
 }
 
-export const PatientCensusView: React.FC<PatientCensusViewProps> = ({ admissions }) => {
+export const PatientCensusView: React.FC<PatientCensusViewProps> = ({ admissions = [] }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const safeAdmissions = Array.isArray(admissions) ? admissions : [];
 
-  const filtered = admissions.filter((a) =>
-    a.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    a.patientMrn.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    a.wardName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filtered = safeAdmissions.filter((a) => {
+    if (!a) return false;
+    const term = (searchTerm || '').toLowerCase();
+    const name = (a.patientName || '').toLowerCase();
+    const mrn = (a.patientMrn || '').toLowerCase();
+    const ward = (a.wardName || '').toLowerCase();
+    return name.includes(term) || mrn.includes(term) || ward.includes(term);
+  });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>

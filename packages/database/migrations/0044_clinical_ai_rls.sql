@@ -1,4 +1,4 @@
-﻿-- ============================================================================
+-- ============================================================================
 -- 0044_clinical_ai_rls.sql
 -- Production Multi-Tenant & Branch Row-Level Security (RLS) Policies
 -- for Phase 3.3 Clinical AI Tables and Audit Immutability Protection

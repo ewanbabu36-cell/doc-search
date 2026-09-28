@@ -40,8 +40,8 @@ export const OutstandingReceivablesView: React.FC<OutstandingReceivablesViewProp
     if (agingFilter === 'OVERDUE' && inv.status !== 'OVERDUE') return false;
     if (searchTerm.trim()) {
       const lower = searchTerm.toLowerCase();
-      const matchNumber = inv.invoiceNumber.toLowerCase().includes(lower);
-      const matchPatient = inv.patientName.toLowerCase().includes(lower) || inv.patientMrn.toLowerCase().includes(lower);
+      const matchNumber = (inv.invoiceNumber || '').toLowerCase().includes(lower);
+      const matchPatient = (inv.patientName || '').toLowerCase().includes(lower) || (inv.patientMrn || '').toLowerCase().includes(lower);
       if (!matchNumber && !matchPatient) return false;
     }
     return true;

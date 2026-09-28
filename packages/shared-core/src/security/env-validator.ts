@@ -53,7 +53,7 @@ export function validateSecretQuality(name: string, value: string | undefined, m
 
 export function validateEnv<T extends z.ZodRawShape>(
   schema: z.ZodObject<T>,
-  env: Record<string, string | undefined> = process.env
+  env: Record<string, string | undefined> = (typeof process !== 'undefined' && process.env) ? process.env : {}
 ): z.infer<z.ZodObject<T>> {
   const result = schema.safeParse(env);
   if (!result.success) {

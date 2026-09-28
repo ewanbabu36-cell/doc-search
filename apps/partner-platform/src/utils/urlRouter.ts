@@ -4,12 +4,15 @@ export interface ParsedRoute {
   workspace: OrganizationWorkspaceType;
   activeModule: PartnerModuleKey;
   path: string;
+  subTab?: string | undefined;
 }
 
 // Canonical sub-path mappings per workspace
 const WORKSPACE_MODULE_ROUTES: Record<OrganizationWorkspaceType, Record<string, PartnerModuleKey>> = {
   HOSPITAL: {
-    '': 'inpatient-management',
+    '': 'hospital-home',
+    'home': 'hospital-home',
+    'overview': 'hospital-home',
     'inpatient': 'inpatient-management',
     'ot': 'operation-theatre-management',
     'emergency': 'emergency-trauma',
@@ -28,15 +31,29 @@ const WORKSPACE_MODULE_ROUTES: Record<OrganizationWorkspaceType, Record<string, 
     'ai': 'ai-chat-assistant',
     'dietary': 'dietary-kitchen-management',
     'mrd': 'medical-records',
-    'procurement': 'procurement-supply-chain'
+    'procurement': 'procurement-supply-chain',
+    'account': 'account-plan-features',
+    'plan': 'account-plan-features',
+    'my-account': 'account-plan-features'
   },
   PHARMACY: {
     '': 'pharmacy-medication',
     'dispense': 'pharmacy-medication',
     'pos': 'pharmacy-medication',
-    'inventory': 'procurement-supply-chain',
-    'billing': 'billing-revenue-cycle',
-    'whatsapp': 'whatsapp-patient-portal'
+    'prescriptions': 'pharmacy-medication',
+    'inventory': 'pharmacy-medication',
+    'expiry': 'pharmacy-medication',
+    'batches': 'pharmacy-medication',
+    'compliance': 'pharmacy-medication',
+    'billing': 'pharmacy-medication',
+    'invoicing': 'pharmacy-medication',
+    'whatsapp': 'whatsapp-patient-portal',
+    'catalog': 'pharmacy-medication',
+    'overview': 'pharmacy-medication',
+    'procurement': 'pharmacy-medication',
+    'account': 'account-plan-features',
+    'plan': 'account-plan-features',
+    'my-account': 'account-plan-features'
   },
   CLINIC: {
     '': 'clinical-consultation',
@@ -48,7 +65,10 @@ const WORKSPACE_MODULE_ROUTES: Record<OrganizationWorkspaceType, Record<string, 
     'telemedicine': 'telemedicine-rpm',
     'billing': 'billing-revenue-cycle',
     'abdm': 'abdm-fhir-gateway',
-    'whatsapp': 'whatsapp-patient-portal'
+    'whatsapp': 'whatsapp-patient-portal',
+    'account': 'account-plan-features',
+    'plan': 'account-plan-features',
+    'my-account': 'account-plan-features'
   },
   PATHOLOGY: {
     '': 'clinical-investigation',
@@ -56,7 +76,10 @@ const WORKSPACE_MODULE_ROUTES: Record<OrganizationWorkspaceType, Record<string, 
     'lims': 'clinical-investigation',
     'barcodes': 'patient-registration',
     'billing': 'billing-revenue-cycle',
-    'reports': 'whatsapp-patient-portal'
+    'reports': 'whatsapp-patient-portal',
+    'account': 'account-plan-features',
+    'plan': 'account-plan-features',
+    'my-account': 'account-plan-features'
   },
   DIAGNOSTIC_CENTRE: {
     '': 'radiology-imaging',
@@ -64,7 +87,10 @@ const WORKSPACE_MODULE_ROUTES: Record<OrganizationWorkspaceType, Record<string, 
     'dicom': 'radiology-imaging',
     'scheduling': 'encounters-visits',
     'insurance': 'insurance-claims',
-    'billing': 'billing-revenue-cycle'
+    'billing': 'billing-revenue-cycle',
+    'account': 'account-plan-features',
+    'plan': 'account-plan-features',
+    'my-account': 'account-plan-features'
   },
   ENTERPRISE_COMMAND: {
     '': 'executive-command-center',
@@ -75,7 +101,10 @@ const WORKSPACE_MODULE_ROUTES: Record<OrganizationWorkspaceType, Record<string, 
     'pharmacy': 'pharmacy-medication',
     'lab': 'clinical-investigation',
     'radiology': 'radiology-imaging',
-    'billing': 'billing-revenue-cycle'
+    'billing': 'billing-revenue-cycle',
+    'account': 'account-plan-features',
+    'plan': 'account-plan-features',
+    'my-account': 'account-plan-features'
   }
 };
 
@@ -83,7 +112,11 @@ const WORKSPACE_PREFIXES: Record<string, OrganizationWorkspaceType> = {
   'hospital': 'HOSPITAL',
   'pharmacy': 'PHARMACY',
   'clinic': 'CLINIC',
+  'clinic-group': 'CLINIC',
   'pathology': 'PATHOLOGY',
+  'lab': 'PATHOLOGY',
+  'lims': 'PATHOLOGY',
+  'diagnostic-lab': 'PATHOLOGY',
   'radiology': 'DIAGNOSTIC_CENTRE',
   'diagnostic': 'DIAGNOSTIC_CENTRE',
   'blood-bank': 'HOSPITAL',
@@ -108,6 +141,7 @@ const WORKSPACE_CANONICAL_PREFIX: Record<OrganizationWorkspaceType, string> = {
 // Reverse map: Module -> Sub-path
 const MODULE_TO_SUBPATH: Record<OrganizationWorkspaceType, Partial<Record<PartnerModuleKey, string>>> = {
   HOSPITAL: {
+    'hospital-home': 'home',
     'inpatient-management': 'inpatient',
     'operation-theatre-management': 'ot',
     'emergency-trauma': 'emergency',
@@ -123,13 +157,15 @@ const MODULE_TO_SUBPATH: Record<OrganizationWorkspaceType, Partial<Record<Partne
     'abdm-fhir-gateway': 'abdm',
     'whatsapp-patient-portal': 'whatsapp',
     'executive-command-center': 'command',
-    'ai-chat-assistant': 'ai'
+    'ai-chat-assistant': 'ai',
+    'account-plan-features': 'account'
   },
   PHARMACY: {
-    'pharmacy-medication': 'dispense',
-    'procurement-supply-chain': 'inventory',
+    'pharmacy-medication': 'pos',
+    'procurement-supply-chain': 'procurement',
     'billing-revenue-cycle': 'billing',
-    'whatsapp-patient-portal': 'whatsapp'
+    'whatsapp-patient-portal': 'whatsapp',
+    'account-plan-features': 'account'
   },
   CLINIC: {
     'clinical-consultation': 'consultation',
@@ -139,19 +175,22 @@ const MODULE_TO_SUBPATH: Record<OrganizationWorkspaceType, Partial<Record<Partne
     'telemedicine-rpm': 'telemedicine',
     'billing-revenue-cycle': 'billing',
     'abdm-fhir-gateway': 'abdm',
-    'whatsapp-patient-portal': 'whatsapp'
+    'whatsapp-patient-portal': 'whatsapp',
+    'account-plan-features': 'account'
   },
   PATHOLOGY: {
     'clinical-investigation': 'workbench',
     'patient-registration': 'barcodes',
     'billing-revenue-cycle': 'billing',
-    'whatsapp-patient-portal': 'reports'
+    'whatsapp-patient-portal': 'reports',
+    'account-plan-features': 'account'
   },
   DIAGNOSTIC_CENTRE: {
     'radiology-imaging': 'pacs',
     'encounters-visits': 'scheduling',
     'insurance-claims': 'insurance',
-    'billing-revenue-cycle': 'billing'
+    'billing-revenue-cycle': 'billing',
+    'account-plan-features': 'account'
   },
   ENTERPRISE_COMMAND: {
     'executive-command-center': 'command',
@@ -161,7 +200,8 @@ const MODULE_TO_SUBPATH: Record<OrganizationWorkspaceType, Partial<Record<Partne
     'pharmacy-medication': 'pharmacy',
     'clinical-investigation': 'lab',
     'radiology-imaging': 'radiology',
-    'billing-revenue-cycle': 'billing'
+    'billing-revenue-cycle': 'billing',
+    'account-plan-features': 'account'
   }
 };
 
@@ -181,8 +221,21 @@ export const getCategoryBasePath = (category: string): string => {
   return '/hospital';
 };
 
-export const getUrlForModule = (workspace: OrganizationWorkspaceType, moduleKey: PartnerModuleKey): string => {
+export const getUrlForModule = (
+  workspace: OrganizationWorkspaceType,
+  moduleKey: PartnerModuleKey,
+  subTab?: string
+): string => {
   const prefix = WORKSPACE_CANONICAL_PREFIX[workspace] || '/hospital';
+  if (workspace === 'PHARMACY') {
+    if (moduleKey === 'whatsapp-patient-portal') {
+      return `${prefix}/whatsapp`;
+    }
+    if (subTab) {
+      return `${prefix}/${subTab}`;
+    }
+    return `${prefix}/pos`;
+  }
   const submap = MODULE_TO_SUBPATH[workspace] || {};
   const subpath = submap[moduleKey] || '';
   return subpath ? `${prefix}/${subpath}` : prefix;
@@ -190,7 +243,8 @@ export const getUrlForModule = (workspace: OrganizationWorkspaceType, moduleKey:
 
 export const parseCurrentUrl = (
   defaultWorkspace: OrganizationWorkspaceType = 'HOSPITAL',
-  defaultModule: PartnerModuleKey = 'inpatient-management'
+  defaultModule: PartnerModuleKey = 'hospital-home',
+  allowedWorkspaces?: OrganizationWorkspaceType[]
 ): ParsedRoute => {
   if (typeof window === 'undefined') {
     return {
@@ -207,12 +261,19 @@ export const parseCurrentUrl = (
     return {
       workspace: defaultWorkspace,
       activeModule: defaultModule,
-      path: '/'
+      path: pathname || '/'
     };
   }
 
   const firstSeg = segments[0]?.toLowerCase() || '';
-  const resolvedWorkspace = WORKSPACE_PREFIXES[firstSeg] || defaultWorkspace;
+  let candidateWorkspace = WORKSPACE_PREFIXES[firstSeg] || defaultWorkspace;
+
+  // Strict RBAC Guard: If user has restricted allowedWorkspaces and candidate is not permitted, fallback to default
+  if (allowedWorkspaces && allowedWorkspaces.length > 0 && !allowedWorkspaces.includes(candidateWorkspace)) {
+    candidateWorkspace = defaultWorkspace;
+  }
+
+  const resolvedWorkspace = candidateWorkspace;
 
   let defaultForPrefix: PartnerModuleKey = defaultModule;
   if (firstSeg === 'blood-bank') defaultForPrefix = 'blood-bank-transfusion';
@@ -223,10 +284,28 @@ export const parseCurrentUrl = (
   const moduleMap = WORKSPACE_MODULE_ROUTES[resolvedWorkspace] || {};
   const resolvedModule = moduleMap[subSeg] || (subSeg === '' ? defaultForPrefix : moduleMap[''] || defaultModule);
 
+  let subTab: string | undefined = undefined;
+  if (resolvedWorkspace === 'PHARMACY') {
+    if (['inventory', 'expiry', 'batches'].includes(subSeg)) {
+      subTab = 'inventory';
+    } else if (['prescriptions', 'dispense'].includes(subSeg)) {
+      subTab = 'prescriptions';
+    } else if (['compliance', 'billing', 'invoicing'].includes(subSeg)) {
+      subTab = 'compliance';
+    } else if (subSeg === 'catalog') {
+      subTab = 'catalog';
+    } else if (subSeg === 'overview') {
+      subTab = 'overview';
+    } else {
+      subTab = 'pos';
+    }
+  }
+
   return {
     workspace: resolvedWorkspace,
     activeModule: resolvedModule,
-    path: pathname
+    path: pathname,
+    subTab
   };
 };
 
@@ -246,10 +325,11 @@ export const navigateTo = (path: string, replace = false): void => {
 
 export const updateBrowserUrlWithoutReload = (
   workspace: OrganizationWorkspaceType,
-  moduleKey: PartnerModuleKey
+  moduleKey: PartnerModuleKey,
+  subTab?: string
 ): void => {
   if (typeof window === 'undefined') return;
-  const canonicalUrl = getUrlForModule(workspace, moduleKey);
+  const canonicalUrl = getUrlForModule(workspace, moduleKey, subTab);
   if (window.location.pathname !== canonicalUrl) {
     window.history.pushState({ path: canonicalUrl }, '', canonicalUrl);
   }

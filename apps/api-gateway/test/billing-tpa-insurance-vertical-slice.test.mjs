@@ -43,12 +43,13 @@ describe('Centralized Hospital Billing & TPA / Insurance (Ayushman Bharat / PM-J
 
   let testPatientId;
   let testInvoiceId;
+  let testEncounterId;
 
   before(async () => {
     testDb = await setupTestDatabase();
     process.env['JWT_SECRET'] = MASTER_SECRET;
     process.env['NODE_ENV'] = 'development';
-    app = await buildApp();
+    app = await buildApp({ db: testDb });
     await app.ready();
   });
 
@@ -75,6 +76,22 @@ describe('Centralized Hospital Billing & TPA / Insurance (Ayushman Bharat / PM-J
     });
     assert.strictEqual(patRes.statusCode, 201);
     testPatientId = JSON.parse(patRes.body).data.id;
+
+    const encRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/partner/encounters',
+      headers: { Authorization: `Bearer ${token}` },
+      payload: {
+        patientId: testPatientId,
+        doctorId: '99999999-9999-4999-8999-999999999999',
+        encounterType: 'IPD',
+        status: 'ADMITTED',
+        department: 'Surgery',
+        reason: 'Laparoscopic Cholecystectomy'
+      }
+    });
+    assert.strictEqual(encRes.statusCode, 201);
+    testEncounterId = JSON.parse(encRes.body).data.id;
   });
 
   // STEP 2: Consolidated IPD Invoice Generation (Auto-Aggregation)
@@ -83,7 +100,7 @@ describe('Centralized Hospital Billing & TPA / Insurance (Ayushman Bharat / PM-J
     const payload = {
       patientId: testPatientId,
       patientName: 'Suresh Menon',
-      encounterId: '00000000-0000-4000-8000-000000000099',
+      encounterId: testEncounterId,
       encounterType: 'IPD',
       billingType: 'AYUSHMAN_BHARAT_PMJAY',
       insurancePayerName: 'National Health Authority (PM-JAY Ayushman Bharat)',
@@ -209,6 +226,22 @@ describe('Centralized Hospital Billing & TPA / Insurance (Ayushman Bharat / PM-J
   // STEP 5: Self-Pay OPD Consultation & Diagnostics Invoice
   it('STEP 5: POST /api/v1/partner/billing/invoices creates and settles direct OPD invoice (₹ 2,200 Cash)', async () => {
     const token = createTestToken();
+    const opdEncRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/partner/encounters',
+      headers: { Authorization: `Bearer ${token}` },
+      payload: {
+        patientId: testPatientId,
+        doctorId: '99999999-9999-4999-8999-999999999999',
+        encounterType: 'OPD',
+        status: 'IN_PROGRESS',
+        department: 'Cardiology',
+        reason: 'Consultation'
+      }
+    });
+    assert.strictEqual(opdEncRes.statusCode, 201);
+    const opdEncounterId = JSON.parse(opdEncRes.body).data.id;
+
     const invoiceRes = await app.inject({
       method: 'POST',
       url: '/api/v1/partner/billing/invoices',
@@ -216,7 +249,7 @@ describe('Centralized Hospital Billing & TPA / Insurance (Ayushman Bharat / PM-J
       payload: {
         patientId: testPatientId,
         patientName: 'Suresh Menon',
-        encounterId: '00000000-0000-4000-8000-000000000100',
+        encounterId: opdEncounterId,
         encounterType: 'OPD',
         billingType: 'SELF_PAY',
         items: [

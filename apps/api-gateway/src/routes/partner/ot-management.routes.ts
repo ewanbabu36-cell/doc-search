@@ -1,6 +1,7 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { otManagementService } from '../../services/partner/OTManagementService.js';
 import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
+import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 import {
   type CreateOTRoomInput,
   type CreateSurgeryBookingInput,
@@ -11,6 +12,8 @@ import {
 } from '../../repositories/partner/OTManagementRepository.js';
 
 export const otManagementRoutes: FastifyPluginAsync = async (fastify) => {
+  fastify.addHook('preHandler', requireModuleCommercialAccess('OT_SURGERY'));
+
   // 1. OT Rooms
   fastify.get(
     '/api/v1/partner/ot/rooms',

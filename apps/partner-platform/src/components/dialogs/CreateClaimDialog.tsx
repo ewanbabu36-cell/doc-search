@@ -13,6 +13,7 @@ import type {
   ClaimType,
   ClaimSubmissionMode
 } from '@docsearch/api-contracts';
+import { getUnifiedPartnerProfile } from '../../utils/roleProfileResolver.js';
 
 export interface CreateClaimDialogProps {
   isOpen: boolean;
@@ -45,7 +46,10 @@ export const CreateClaimDialog: React.FC<CreateClaimDialogProps> = ({
   const [authorizationId, setAuthorizationId] = useState('');
   const [primaryDiagnosisCode, setPrimaryDiagnosisCode] = useState('I10');
   const [primaryDiagnosisDescription, setPrimaryDiagnosisDescription] = useState('Essential (primary) hypertension');
-  const [attendingDoctorName, setAttendingDoctorName] = useState('Dr. Sarah Jenkins');
+  const [attendingDoctorName, setAttendingDoctorName] = useState(() => {
+    const p = getUnifiedPartnerProfile();
+    return p.doctorName ? `${p.doctorName}${p.doctorDegree ? `, ${p.doctorDegree}` : ''}` : 'Attending Specialist';
+  });
   const [serviceCode, setServiceCode] = useState('SRV-CONS-OPD');
   const [serviceDescription, setServiceDescription] = useState('Specialist Clinical Consultation');
   const [quantity, setQuantity] = useState('1');

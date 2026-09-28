@@ -10,6 +10,7 @@ import type {
   InvestigationOrderDto,
   CancelInvestigationOrderRequest
 } from '@docsearch/api-contracts';
+import { AuditJustificationField } from '../common/AuditJustificationField.js';
 
 export interface CancelInvestigationOrderDialogProps {
   isOpen: boolean;
@@ -28,7 +29,7 @@ export const CancelInvestigationOrderDialog: React.FC<CancelInvestigationOrderDi
 }) => {
   const [reasonCategory, setReasonCategory] = useState('ORDERED_IN_ERROR');
   const [customReason, setCustomReason] = useState('');
-  const [justification, setJustification] = useState('');
+  const [justification, setJustification] = useState('Order cancelled per treating physician direction / patient request prior to sample processing.');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -119,16 +120,11 @@ export const CancelInvestigationOrderDialog: React.FC<CancelInvestigationOrderDi
           />
         </div>
 
-        <div>
-          <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '6px' }}>
-            Audit Justification *
-          </label>
-          <Input
-            value={justification}
-            onChange={(e) => setJustification(e.target.value)}
-            placeholder="Document authorization for cancellation..."
-          />
-        </div>
+        <AuditJustificationField
+          value={justification}
+          onChange={setJustification}
+          defaultJustification="Order cancelled per treating physician direction / patient request prior to sample processing."
+        />
       </form>
     </Dialog>
   );

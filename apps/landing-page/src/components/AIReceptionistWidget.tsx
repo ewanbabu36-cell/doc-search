@@ -17,8 +17,26 @@ interface ChatMessage {
   time: string;
 }
 
-export const AIReceptionistWidget: React.FC = () => {
-  const [isOpen, setIsOpen] = useState(false);
+export interface AIReceptionistWidgetProps {
+  isOpenExternal?: boolean;
+  onCloseExternal?: () => void;
+  hideFloatingButton?: boolean;
+}
+
+export const AIReceptionistWidget: React.FC<AIReceptionistWidgetProps> = ({
+  isOpenExternal,
+  onCloseExternal,
+  hideFloatingButton = false
+}) => {
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+  const isOpen = isOpenExternal !== undefined ? isOpenExternal : internalIsOpen;
+  const handleClose = () => {
+    if (onCloseExternal) onCloseExternal();
+    else setInternalIsOpen(false);
+  };
+  const handleOpen = () => {
+    setInternalIsOpen(true);
+  };
   const [inputMessage, setInputMessage] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isTyping, setIsTyping] = useState(false);
@@ -136,9 +154,10 @@ export const AIReceptionistWidget: React.FC = () => {
   return (
     <>
       {/* Floating Trigger Button */}
-      {!isOpen && (
+      {!isOpen && !hideFloatingButton && (
         <button
-          onClick={() => setIsOpen(true)}
+          onClick={handleOpen}
+          className="docsearch-ai-receptionist-btn"
           style={{
             position: 'fixed',
             bottom: '24px',
@@ -160,8 +179,9 @@ export const AIReceptionistWidget: React.FC = () => {
           }}
         >
           <span style={{ fontSize: '1.4rem' }}>🤖</span>
-          <span>24x7 AI Receptionist</span>
-          <span style={{ backgroundColor: '#10B981', color: '#FFF', borderRadius: '10px', padding: '2px 6px', fontSize: '0.6875rem' }}>
+          <span className="docsearch-ai-full-text">24x7 AI Receptionist</span>
+          <span className="docsearch-ai-short-text">AI Receptionist</span>
+          <span className="docsearch-ai-online-badge" style={{ backgroundColor: '#10B981', color: '#FFF', borderRadius: '10px', padding: '2px 6px', fontSize: '0.6875rem' }}>
             ONLINE
           </span>
         </button>
@@ -227,7 +247,7 @@ export const AIReceptionistWidget: React.FC = () => {
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <button
-                onClick={() => setIsOpen(false)}
+                onClick={handleClose}
                 style={{
                   background: 'none',
                   border: 'none',

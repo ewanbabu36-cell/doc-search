@@ -1,0 +1,41 @@
+{
+  "name": "DocSearch Partner Platform - Pharmacy OS",
+  "short_name": "DocSearch POS",
+  "description": "Offline-First Indian Chemist Counter & Hospital Dispensary OS with Background Sync",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0F172A",
+  "theme_color": "#0F172A",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230F172A'/><text y='.75em' x='50%' text-anchor='middle' font-size='60'>💊</text></svg>",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Pharmacy POS Counter",
+      "short_name": "POS Billing",
+      "description": "High-speed zero-mouse keyboard counter billing",
+      "url": "/?tab=pos",
+      "icons": [{ "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>", "sizes": "96x96" }]
+    },
+    {
+      "name": "Galla & Revenue Desk",
+      "short_name": "Galla Desk",
+      "description": "Cash drawer reconciliation and shift handover",
+      "url": "/?tab=revenueGalla",
+      "icons": [{ "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>", "sizes": "96x96" }]
+    },
+    {
+      "name": "CDSCO Audit Vault",
+      "short_name": "CDSCO Vault",
+      "description": "Drug Inspector 1-click statutory audit export",
+      "url": "/?tab=auditVault",
+      "icons": [{ "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚖️</text></svg>", "sizes": "96x96" }]
+    }
+  ]
+}

@@ -29,127 +29,122 @@ export interface IAnalyticsService {
   ): Promise<{ success: boolean; generatedAt: string; message: string }>;
 }
 
+import { apiCall, isMockFallbackAllowed } from './api-client.js';
+
 export class AnalyticsService implements IAnalyticsService {
-  private readonly apiUrl?: string | undefined;
   private usageMetrics: PlatformUsageMetricDto[] = [...mockPlatformUsageMetrics];
   private crossTenantAggs: CrossTenantAggregatedMetricDto[] = [...mockCrossTenantAggregates];
   private apiTelemetry: ApiTelemetryTimeSeriesDto[] = [...mockApiTelemetrySeries];
   private insights: SystemInsightDto[] = [...mockSystemInsights];
   private reports: SavedReportDto[] = [...mockSavedReports];
 
-  constructor(apiUrl?: string | undefined) {
-    this.apiUrl = apiUrl;
-  }
+  constructor(_apiUrl?: string | undefined) {}
 
   async getPlatformUsageMetrics(
     category?: ReportCategory | 'ALL'
   ): Promise<PlatformUsageMetricDto[]> {
-    if (this.apiUrl) {
+    try {
       const params = new URLSearchParams();
       if (category && category !== 'ALL') params.set('category', category);
-      const res = await fetch(`${this.apiUrl}/api/v1/company/analytics/usage-metrics?${params.toString()}`);
-      if (!res.ok) throw new Error(`Failed to fetch analytics usage metrics: ${res.statusText}`);
-      return (await res.json()) as PlatformUsageMetricDto[];
+      const query = params.toString() ? `?${params.toString()}` : '';
+      return await apiCall<PlatformUsageMetricDto[]>(`/api/v1/company/analytics/usage-metrics${query}`);
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+      let result = [...this.usageMetrics];
+      if (category && category !== 'ALL') {
+        result = result.filter((m) => m.category === category);
+      }
+      return result;
     }
-
-    let result = [...this.usageMetrics];
-    if (category && category !== 'ALL') {
-      result = result.filter((m) => m.category === category);
-    }
-    return result;
   }
 
   async getCrossTenantAggregates(): Promise<CrossTenantAggregatedMetricDto[]> {
-    if (this.apiUrl) {
-      const res = await fetch(`${this.apiUrl}/api/v1/company/analytics/cross-tenant-aggregates`);
-      if (!res.ok) throw new Error(`Failed to fetch cross-tenant aggregates: ${res.statusText}`);
-      return (await res.json()) as CrossTenantAggregatedMetricDto[];
+    try {
+      return await apiCall<CrossTenantAggregatedMetricDto[]>('/api/v1/company/analytics/cross-tenant-aggregates');
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+      return [...this.crossTenantAggs];
     }
-    return [...this.crossTenantAggs];
   }
 
   async getApiTelemetry(): Promise<ApiTelemetryTimeSeriesDto[]> {
-    if (this.apiUrl) {
-      const res = await fetch(`${this.apiUrl}/api/v1/company/analytics/api-telemetry`);
-      if (!res.ok) throw new Error(`Failed to fetch API telemetry: ${res.statusText}`);
-      return (await res.json()) as ApiTelemetryTimeSeriesDto[];
+    try {
+      return await apiCall<ApiTelemetryTimeSeriesDto[]>('/api/v1/company/analytics/api-telemetry');
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+      return [...this.apiTelemetry];
     }
-    return [...this.apiTelemetry];
   }
 
   async getSystemInsights(): Promise<SystemInsightDto[]> {
-    if (this.apiUrl) {
-      const res = await fetch(`${this.apiUrl}/api/v1/company/analytics/insights`);
-      if (!res.ok) throw new Error(`Failed to fetch system insights: ${res.statusText}`);
-      return (await res.json()) as SystemInsightDto[];
+    try {
+      return await apiCall<SystemInsightDto[]>('/api/v1/company/analytics/insights');
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+      return [...this.insights];
     }
-    return [...this.insights];
   }
 
   async acknowledgeInsight(
     req: AcknowledgeInsightRequest,
     _actorEmail = 'lead.architect@docsearch.internal'
   ): Promise<SystemInsightDto> {
-    if (this.apiUrl) {
-      const res = await fetch(`${this.apiUrl}/api/v1/company/analytics/insights/acknowledge`, {
+    try {
+      return await apiCall<SystemInsightDto>('/api/v1/company/analytics/insights/acknowledge', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(req)
       });
-      if (!res.ok) throw new Error(`Failed to acknowledge insight: ${res.statusText}`);
-      return (await res.json()) as SystemInsightDto;
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+      const idx = this.insights.findIndex((i) => i.id === req.insightId);
+      const item = this.insights[idx];
+      if (idx === -1 || !item) throw new Error(`System insight ${req.insightId} not found`);
+
+      const updated: SystemInsightDto = {
+        ...item,
+        isAcknowledged: true
+      };
+      this.insights[idx] = updated;
+      return { ...updated };
     }
-
-    const idx = this.insights.findIndex((i) => i.id === req.insightId);
-    const item = this.insights[idx];
-    if (idx === -1 || !item) throw new Error(`System insight ${req.insightId} not found`);
-
-    const updated: SystemInsightDto = {
-      ...item,
-      isAcknowledged: true
-    };
-    this.insights[idx] = updated;
-    return { ...updated };
   }
 
   async getSavedReports(): Promise<SavedReportDto[]> {
-    if (this.apiUrl) {
-      const res = await fetch(`${this.apiUrl}/api/v1/company/analytics/saved-reports`);
-      if (!res.ok) throw new Error(`Failed to fetch saved reports: ${res.statusText}`);
-      return (await res.json()) as SavedReportDto[];
+    try {
+      return await apiCall<SavedReportDto[]>('/api/v1/company/analytics/reports');
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+      return [...this.reports];
     }
-    return [...this.reports];
   }
 
   async generateReportSnapshot(
     req: GenerateReportRequest,
     _actorEmail = 'bi.analyst@docsearch.internal'
   ): Promise<{ success: boolean; generatedAt: string; message: string }> {
-    if (this.apiUrl) {
-      const res = await fetch(`${this.apiUrl}/api/v1/company/analytics/saved-reports/generate`, {
+    try {
+      return await apiCall<{ success: boolean; generatedAt: string; message: string }>('/api/v1/company/analytics/reports/generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(req)
       });
-      if (!res.ok) throw new Error(`Failed to generate report snapshot: ${res.statusText}`);
-      return (await res.json()) as { success: boolean; generatedAt: string; message: string };
-    }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+      const now = new Date().toISOString();
+      const idx = this.reports.findIndex((r) => r.id === req.reportId);
+      if (idx !== -1 && this.reports[idx]) {
+        this.reports[idx] = {
+          ...this.reports[idx],
+          lastGeneratedAt: now,
+          updatedAt: now
+        };
+      }
 
-    const now = new Date().toISOString();
-    const idx = this.reports.findIndex((r) => r.id === req.reportId);
-    if (idx !== -1 && this.reports[idx]) {
-      this.reports[idx] = {
-        ...this.reports[idx],
-        lastGeneratedAt: now,
-        updatedAt: now
+      return {
+        success: true,
+        generatedAt: now,
+        message: `Report snapshot compiled successfully for range: ${req.dateRange}.`
       };
     }
-
-    return {
-      success: true,
-      generatedAt: now,
-      message: `Report snapshot compiled successfully for range: ${req.dateRange}.`
-    };
   }
 }
 

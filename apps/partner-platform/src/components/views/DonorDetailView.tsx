@@ -1,20 +1,28 @@
 import React from 'react';
-import { Card, Badge } from '@docsearch/ui-kit';
+import { Card, Button, Badge } from '@docsearch/ui-kit';
 import type { BloodDonorDto, BloodDonorScreeningDto, BloodDonationDto } from '@docsearch/api-contracts';
 
 interface Props {
   donor: BloodDonorDto;
   screenings: BloodDonorScreeningDto[];
   donations: BloodDonationDto[];
+  onBack?: () => void;
 }
 
-export const DonorDetailView: React.FC<Props> = ({ donor, screenings, donations }) => {
+export const DonorDetailView: React.FC<Props> = ({ donor, screenings, donations, onBack }) => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">{donor.fullName}</h2>
-          <p className="text-xs text-gray-500">Donor ID: {donor.donorCode} | Phone: {donor.contactNumber}</p>
+        <div className="flex items-center gap-3">
+          {onBack && (
+            <Button variant="outline" size="sm" onClick={onBack}>
+              ← Back to Donors
+            </Button>
+          )}
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">{donor.fullName}</h2>
+            <p className="text-xs text-gray-500">Donor ID: {donor.donorCode} | Phone: {donor.contactNumber}</p>
+          </div>
         </div>
         <Badge variant={donor.eligibilityStatus === 'ELIGIBLE_FOR_DONATION' ? 'success' : 'warning'}>
           {donor.eligibilityStatus.replace(/_/g, ' ')}

@@ -134,7 +134,6 @@ export const NaturalLanguageBiQueryModal: React.FC<Props> = ({ isOpen, onClose }
             <button
               type="submit"
               disabled={isProcessing}
-              style={{ backgroundColor: '#06B6D4', color: '#070C16', border: 'none', borderRadius: '8px', padding: '8px 20px', fontWeight: 900, cursor: 'pointer', boxShadow: '0 4px 14px rgba(6, 182, 212, 0.4)' }}
             >
               {isProcessing ? '⚡ Analyzing Platform Data Lake...' : '✨ Execute AI Query'}
             </button>

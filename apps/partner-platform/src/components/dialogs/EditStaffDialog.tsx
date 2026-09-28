@@ -84,7 +84,7 @@ export const EditStaffDialog: React.FC<EditStaffDialogProps> = ({
           <Button variant="outline" size="sm" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button variant="primary" size="sm" onClick={handleSubmit} isLoading={isSubmitting}>
+          <Button variant="primary" size="sm" onClick={handleSubmit} isLoading={isSubmitting} disabled={isSubmitting}>
             Save Changes
           </Button>
         </div>
@@ -113,9 +113,23 @@ export const EditStaffDialog: React.FC<EditStaffDialogProps> = ({
           </div>
           <div>
             <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: '600', marginBottom: '4px' }}>
-              Work Phone
+              Work Phone (10-Digit Mobile)
             </label>
-            <Input value={workPhone} onChange={(e) => setWorkPhone(e.target.value)} />
+            <Input
+              type="tel"
+              inputMode="numeric"
+              maxLength={10}
+              placeholder="98765 43210"
+              value={workPhone}
+              onChange={(e) => {
+                let digits = e.target.value.replace(/\D/g, '');
+                if (digits.length === 12 && digits.startsWith('91')) digits = digits.slice(2);
+                else if (digits.length === 11 && digits.startsWith('0')) digits = digits.slice(1);
+                setWorkPhone(digits.slice(0, 10));
+              }}
+              leftElement={<span style={{ fontWeight: 800, color: 'var(--ds-color-primary, #38BDF8)', fontSize: '0.75rem' }}>+91</span>}
+              style={{ paddingLeft: '44px', fontFamily: 'monospace' }}
+            />
           </div>
         </div>
 

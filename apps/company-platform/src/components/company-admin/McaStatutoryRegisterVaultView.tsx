@@ -133,16 +133,6 @@ export const McaStatutoryRegisterVaultView: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => handleSealDsc(r.resolutionId)}
-                        style={{
-                          backgroundColor: '#06B6D4',
-                          color: '#070C16',
-                          border: 'none',
-                          borderRadius: '6px',
-                          padding: '4px 10px',
-                          fontSize: '0.75rem',
-                          fontWeight: 800,
-                          cursor: 'pointer'
-                        }}
                       >
                         📜 Seal with DSC
                       </button>

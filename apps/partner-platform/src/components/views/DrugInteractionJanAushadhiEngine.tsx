@@ -21,8 +21,8 @@ export interface DrugInteractionAlert {
 }
 
 interface DrugInteractionJanAushadhiEngineProps {
-  currentMedications?: string[];
-  onSubstituteGeneric?: (genericName: string, strength: string) => void;
+  currentMedications?: string[] | undefined;
+  onSubstituteGeneric?: ((genericName: string, strength: string) => void) | undefined;
 }
 
 export const DrugInteractionJanAushadhiEngine: React.FC<DrugInteractionJanAushadhiEngineProps> = ({

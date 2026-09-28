@@ -1,0 +1,305 @@
+{
+  "count": 50,
+  "suspicious": [
+    {
+      "file": "apps/partner-platform/src/components/views/CentralHelpDeskExitHubView.tsx",
+      "line": 29,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const MOCK_EXIT_PATIENTS: ExitPatientRecord[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/clinical-test-knowledge-base.ts",
+      "line": 623,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const MOCK_PATIENT_HISTORICAL_BASELINES: Record<string, DeltaCheckBaseline[]> = {"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-asset-biomedical-data.ts",
+      "line": 24,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const mockBreakdownWorkOrders: BreakdownWorkOrderDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-billing-data.ts",
+      "line": 46,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const MOCK_BILLING_INVOICES: BillingInvoiceDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-billing-data.ts",
+      "line": 68,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const MOCK_PATIENT_BILLING_HISTORIES: Record<string, PatientBillingHistoryDto> = {};"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-clinical-investigation-data.ts",
+      "line": 48,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const MOCK_INVESTIGATION_ORDERS: InvestigationOrderDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-dietary-data.ts",
+      "line": 33,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const mockDietaryOrders: DietaryOrderDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-doctor-roster-data.ts",
+      "line": 14,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const MOCK_DOCTOR_SPECIALIZATIONS: DoctorSpecializationDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-doctor-roster-data.ts",
+      "line": 16,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const MOCK_DOCTOR_PROFILES: DoctorProfileDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-doctor-roster-data.ts",
+      "line": 18,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const MOCK_DOCTOR_SCHEDULES: DoctorScheduleDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-doctor-roster-data.ts",
+      "line": 20,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const MOCK_DOCTOR_LEAVES: DoctorLeaveDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-doctor-roster-data.ts",
+      "line": 26,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const MOCK_DOCTOR_OPD_AUDIT_TRACES: DoctorOpdAuditTraceDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-doctor-roster-data.ts",
+      "line": 28,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const MOCK_DOCTOR_ROSTER_OVERVIEW: DoctorRosterOverviewDto = {"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-emergency-data.ts",
+      "line": 46,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const mockEmergencyEncounters: EmergencyEncounterDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-encounter-data.ts",
+      "line": 9,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const MOCK_ENCOUNTER_REFERRALS: EncounterReferralDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-encounter-data.ts",
+      "line": 10,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const MOCK_ENCOUNTER_QUEUES: EncounterQueueDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-encounter-data.ts",
+      "line": 11,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const MOCK_ENCOUNTERS: EncounterDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-encounter-data.ts",
+      "line": 12,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const MOCK_ENCOUNTER_AUDIT_TRACES: EncounterAuditTraceDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-encounter-data.ts",
+      "line": 14,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const MOCK_ENCOUNTER_OVERVIEW: EncounterOverviewDto = {"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-executive-command-data.ts",
+      "line": 53,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const mockPatientAcuityHeatmap: PatientAcuityHeatmapItemDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-inpatient-data.ts",
+      "line": 20,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const mockInpatientUnits: InpatientUnitDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-inpatient-data.ts",
+      "line": 21,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const mockInpatientWards: InpatientWardDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-inpatient-data.ts",
+      "line": 22,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const mockInpatientBeds: InpatientBedDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-inpatient-data.ts",
+      "line": 23,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const mockInpatientAdmissionRequests: InpatientAdmissionRequestDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-inpatient-data.ts",
+      "line": 24,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const mockInpatientAdmissions: InpatientAdmissionDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-inpatient-data.ts",
+      "line": 25,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const mockInpatientTransfers: InpatientTransferDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-inpatient-data.ts",
+      "line": 26,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const mockInpatientNursingAssessments: InpatientNursingAssessmentDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-inpatient-data.ts",
+      "line": 27,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const mockInpatientVitalObservations: InpatientVitalObservationDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-inpatient-data.ts",
+      "line": 28,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const mockInpatientDoctorRounds: InpatientDoctorRoundDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-inpatient-data.ts",
+      "line": 29,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const mockInpatientDischargePlans: InpatientDischargePlanDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-inpatient-data.ts",
+      "line": 30,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const mockInpatientDischargeSummaries: InpatientDischargeSummaryDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-inpatient-data.ts",
+      "line": 31,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const mockInpatientBedTurnarounds: InpatientBedTurnaroundDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-inpatient-data.ts",
+      "line": 32,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const mockInpatientBedBlocks: InpatientBedBlockDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-inpatient-data.ts",
+      "line": 33,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const mockInpatientAuditTraces: InpatientAuditTraceDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-inpatient-data.ts",
+      "line": 35,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const mockInpatientOverviewMetrics: InpatientOverviewMetricsDto = {"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-inpatient-data.ts",
+      "line": 55,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const mockInpatientAnalytics: InpatientAnalyticsDto = {"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-insurance-claims-data.ts",
+      "line": 23,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const MOCK_PATIENT_POLICIES: InsurancePatientPolicyDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-insurance-claims-data.ts",
+      "line": 55,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const MOCK_PATIENT_INSURANCE_HISTORIES: Record<string, PatientInsuranceHistoryDto> = {};"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-patient-registration-data.ts",
+      "line": 9,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const MOCK_PATIENTS: PatientDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-patient-registration-data.ts",
+      "line": 10,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const MOCK_PATIENT_DUPLICATE_CANDIDATES: PatientDuplicateCandidateDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-patient-registration-data.ts",
+      "line": 11,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const MOCK_PATIENT_MERGE_EVENTS: PatientMergeEventDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-patient-registration-data.ts",
+      "line": 12,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const MOCK_PATIENT_REGISTRATION_AUDIT_TRACES: PatientRegistrationAuditTraceDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-patient-registration-data.ts",
+      "line": 14,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const MOCK_PATIENT_REGISTRATION_OVERVIEW: PatientRegistrationOverviewDto = {"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-procurement-data.ts",
+      "line": 22,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const MOCK_PURCHASE_ORDERS: PurchaseOrderDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-procurement-data.ts",
+      "line": 25,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const MOCK_PURCHASE_INVOICES: PurchaseInvoiceDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-procurement-data.ts",
+      "line": 26,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const MOCK_PURCHASE_INVOICE_MATCHES: PurchaseInvoiceMatchDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-quality-infection-data.ts",
+      "line": 46,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const mockPatientIsolations: PatientIsolationDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-radiology-data.ts",
+      "line": 44,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const mockRadiologyOrders: RadiologyOrderDto[] = [];"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-whatsapp-portal-data.ts",
+      "line": 25,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const mockAarogyaPatientProfile: AarogyaPatientProfileDto = {"
+    },
+    {
+      "file": "apps/company-platform/src/services/mock-subscription-data.ts",
+      "line": 13,
+      "matchedPattern": "/mock/i",
+      "snippet": "export const mockInvoices: InvoiceDto[] = [];"
+    }
+  ]
+}

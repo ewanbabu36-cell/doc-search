@@ -9,6 +9,7 @@ import type {
   InvestigationOrderDto,
   FinalizeInvestigationReportRequest
 } from '@docsearch/api-contracts';
+import { getVerifiedRoleProfile } from '../../utils/roleProfileResolver.js';
 
 export interface FinalizeInvestigationReportDialogProps {
   isOpen: boolean;
@@ -25,6 +26,11 @@ export const FinalizeInvestigationReportDialog: React.FC<FinalizeInvestigationRe
   order,
   tenantId
 }) => {
+  const profile = getVerifiedRoleProfile();
+  const defaultClinician = profile.pathologistName
+    ? `${profile.pathologistName}, ${profile.pathologistDegree || 'MD (Pathology)'}`
+    : (profile.doctorName ? `${profile.doctorName}, ${profile.doctorDegree || 'MD'}` : 'Authorized Clinical Pathologist');
+
   const [reportTitle, setReportTitle] = useState(
     order ? `Diagnostic Report: ${order.investigationName}` : ''
   );
@@ -33,7 +39,7 @@ export const FinalizeInvestigationReportDialog: React.FC<FinalizeInvestigationRe
   );
   const [impression, setImpression] = useState('');
   const [recommendations, setRecommendations] = useState('');
-  const [reportingClinician, setReportingClinician] = useState('Dr. Marcus Vance, MD (Clinical Pathologist)');
+  const [reportingClinician, setReportingClinician] = useState(defaultClinician);
   const [justification, setJustification] = useState('Final diagnostic laboratory report generation.');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);

@@ -22,7 +22,7 @@ function request(path, options = {}) {
   return new Promise((resolve, reject) => {
     const url = new URL(path, BASE_URL);
     const method = options.method || 'GET';
-    const headers = options.headers || {};
+    const headers = { ...(options.headers || {}) };
     let body = options.body;
 
     if (body && typeof body === 'object' && !Buffer.isBuffer(body)) {
@@ -32,6 +32,9 @@ function request(path, options = {}) {
 
     if (body) {
       headers['Content-Length'] = Buffer.byteLength(body);
+    } else {
+      delete headers['Content-Length'];
+      delete headers['content-length'];
     }
 
     const req = http.request(url, { method, headers }, (res) => {
@@ -95,7 +98,7 @@ async function run() {
     const doctorLoginRes = await request('/api/v1/auth/login', {
       method: 'POST',
       body: {
-        email: 'doctor.rajesh@docsearch.health',
+        email: 'doctor@docsearch.health',
         password: 'DoctorPass123!'
       }
     });
@@ -113,8 +116,8 @@ async function run() {
     const pathoLoginRes = await request('/api/v1/auth/login', {
       method: 'POST',
       body: {
-        email: 'pathologist.shalini@docsearch.health',
-        password: 'PathoPass123!'
+        email: 'pathology@docsearch.health',
+        password: 'PathologyPass123!'
       }
     });
     const pathoToken = pathoLoginRes.data?.data?.accessToken;
@@ -145,7 +148,7 @@ async function run() {
       lastName: 'Kumar',
       gender: 'MALE',
       dateOfBirth: '1988-03-24',
-      mobileNumber: '+91 98765 43210',
+      mobileNumber: `+91 98${TEST_RUN_ID.slice(-8)}`,
       bloodGroup: 'B_POSITIVE',
       mrn: testMrn
     };
@@ -474,6 +477,7 @@ async function run() {
     const webhookRes = await request('/api/v1/company/integration/webhooks/dispatch-test', {
       method: 'POST',
       headers: {
+        ...authHeaders,
         'Content-Type': 'application/json'
       },
       body: {
@@ -511,7 +515,7 @@ async function run() {
       'GATE-17',
       'Treasury Multi-Currency Forex (FX) Rate Ingress',
       hasFxRates,
-      `Base: INR, 1 USD = ₹ ${fxRes.data?.data?.rates?.USD || 84.75}, Freshness: ${fxRes.data?.data?.freshness || 'LIVE_SYNC'}`
+      `Base: INR, 1 USD = ₹ ${fxRes.data?.data?.rates?.USD?.inverseInr || fxRes.data?.data?.rates?.USD || 84.75}, Freshness: ${fxRes.data?.data?.freshness || 'LIVE_SYNC'}`
     );
 
   } catch (err) {

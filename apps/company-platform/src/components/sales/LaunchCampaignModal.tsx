@@ -220,7 +220,7 @@ export const LaunchCampaignModal: React.FC<LaunchCampaignModalProps> = ({
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '14px' }}>
             <Button type="button" variant="outline" size="md" onClick={onClose}>Cancel</Button>
-            <Button type="submit" variant="primary" size="md" disabled={isSubmitting} style={{ backgroundColor: '#06B6D4', borderColor: '#06B6D4', color: '#070C16', fontWeight: 800 }}>
+            <Button type="submit" variant="primary" size="md" disabled={isSubmitting} >
               {isSubmitting ? 'Launching...' : '🚀 Launch Campaign'}
             </Button>
           </div>

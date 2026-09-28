@@ -12,6 +12,7 @@ import type {
   ReturnDisposition,
   CreateReturnRequest
 } from '@docsearch/api-contracts';
+import { AuditJustificationField } from '../common/AuditJustificationField.js';
 
 export interface ReturnMedicationDialogProps {
   isOpen: boolean;
@@ -40,7 +41,7 @@ export const ReturnMedicationDialog: React.FC<ReturnMedicationDialogProps> = ({
   const [condition, setCondition] = useState<'INTACT_SEALED' | 'OPENED_UNUSABLE' | 'DAMAGED' | 'COMPROMISED'>('INTACT_SEALED');
   const [disposition, setDisposition] = useState<ReturnDisposition>('RESTOCK');
   const [notes, setNotes] = useState('');
-  const [justification, setJustification] = useState('Patient return processed with physical seal inspection.');
+  const [justification, setJustification] = useState('Patient return processed with physical seal inspection and batch verification.');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -89,6 +90,8 @@ export const ReturnMedicationDialog: React.FC<ReturnMedicationDialogProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title={`Log Medication Return — Dispensing ${dispensing.dispensingNumber}`}
+      isFullPage={true}
+      maxWidth="full"
       footer={
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
           <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
@@ -193,16 +196,11 @@ export const ReturnMedicationDialog: React.FC<ReturnMedicationDialogProps> = ({
           />
         </div>
 
-        <div>
-          <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.25rem' }}>
-            Audit Justification *
-          </label>
-          <Input
-            value={justification}
-            onChange={(e) => setJustification(e.target.value)}
-            required
-          />
-        </div>
+        <AuditJustificationField
+          value={justification}
+          onChange={setJustification}
+          defaultJustification="Patient return processed with physical seal inspection and batch verification."
+        />
       </form>
     </Dialog>
   );

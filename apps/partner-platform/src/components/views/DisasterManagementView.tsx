@@ -6,9 +6,10 @@ interface Props {
   events: EmergencyDisasterEventDto[];
   onActivateDisaster: () => void;
   onRegisterVictim: () => void;
+  onOpenMeshNetwork?: () => void;
 }
 
-export const DisasterManagementView: React.FC<Props> = ({ events, onActivateDisaster, onRegisterVictim }) => {
+export const DisasterManagementView: React.FC<Props> = ({ events, onActivateDisaster, onRegisterVictim, onOpenMeshNetwork }) => {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-red-950 text-white p-6 rounded-xl border border-red-800">
@@ -16,7 +17,12 @@ export const DisasterManagementView: React.FC<Props> = ({ events, onActivateDisa
           <h1 className="text-2xl font-bold tracking-tight">Mass Casualty Incident (MCI) & Disaster Hub</h1>
           <p className="text-xs text-red-200 mt-1">Multi-casualty triage tags (Red, Yellow, Green, Black), surge capacity, and incident command</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          {onOpenMeshNetwork && (
+            <Button variant="outline" onClick={onOpenMeshNetwork} className="bg-amber-600/20 border-amber-400 text-amber-200 hover:bg-amber-600/30">
+              🌐 Open P2P Mesh Network
+            </Button>
+          )}
           <Button variant="danger" onClick={onActivateDisaster}>🚨 Declare Disaster Mode</Button>
           <Button variant="primary" onClick={onRegisterVictim}>+ Fast-Tag Victim</Button>
         </div>

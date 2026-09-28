@@ -26,14 +26,14 @@ export class ExecutiveMisService {
   constructor(private readonly repo: ExecutiveMisRepository = executiveMisRepository) {}
 
   async getExecutiveDashboard(tenantId: string): Promise<ExecutiveMisDashboardDto> {
-    const executiveSnapshot = this.repo.getCommandSnapshot(tenantId);
-    const departmentWiseBilling = this.repo.getDepartmentWiseBilling(tenantId);
-    const unbilledEncounters = this.repo.getUnbilledEncounters(tenantId);
-    const insuranceClaimAging = this.repo.getInsuranceClaimAging(tenantId);
-    const inventoryShrinkage = this.repo.getInventoryShrinkage(tenantId);
-    const doctorPayouts = this.repo.getDoctorPayouts(tenantId);
-    const rcmLeakageRisks = this.repo.getRcmLeakageRisks(tenantId);
-    const consumables = this.repo.getCriticalConsumables(tenantId);
+    const executiveSnapshot = await this.repo.getCommandSnapshot(tenantId);
+    const departmentWiseBilling = await this.repo.getDepartmentWiseBilling(tenantId);
+    const unbilledEncounters = await this.repo.getUnbilledEncounters(tenantId);
+    const insuranceClaimAging = await this.repo.getInsuranceClaimAging(tenantId);
+    const inventoryShrinkage = await this.repo.getInventoryShrinkage(tenantId);
+    const doctorPayouts = await this.repo.getDoctorPayouts(tenantId);
+    const rcmLeakageRisks = await this.repo.getRcmLeakageRisks(tenantId);
+    const consumables = await this.repo.getCriticalConsumables(tenantId);
 
     const totalGrossBilledInr = departmentWiseBilling.reduce((acc, d) => acc + d.grossBilledInr, 0);
     const totalNetBilledInr = departmentWiseBilling.reduce((acc, d) => acc + d.netBilledInr, 0);
@@ -75,12 +75,12 @@ export class ExecutiveMisService {
 
   // --- Department-Wise Billing ---
   async getDepartmentWiseBilling(tenantId: string): Promise<DepartmentWiseBillingSummaryDto[]> {
-    return this.repo.getDepartmentWiseBilling(tenantId);
+    return await this.repo.getDepartmentWiseBilling(tenantId);
   }
 
   // --- Outstanding Unbilled Encounters ---
   async getUnbilledEncounters(tenantId: string): Promise<UnbilledEncounterItemDto[]> {
-    return this.repo.getUnbilledEncounters(tenantId);
+    return await this.repo.getUnbilledEncounters(tenantId);
   }
 
   async resolveUnbilledEncounter(
@@ -89,7 +89,7 @@ export class ExecutiveMisService {
     resolutionNotes: string,
     resolvedBy: string
   ): Promise<UnbilledEncounterItemDto> {
-    const resolved = this.repo.resolveUnbilledEncounter(tenantId, encounterId, resolutionNotes, resolvedBy);
+    const resolved = await this.repo.resolveUnbilledEncounter(tenantId, encounterId, resolutionNotes, resolvedBy);
     if (!resolved) {
       throw new AppError({ message: `Unbilled encounter ${encounterId} not found.`, statusCode: 404 });
     }
@@ -98,12 +98,12 @@ export class ExecutiveMisService {
 
   // --- Insurance Claim Aging ---
   async getInsuranceClaimAging(tenantId: string): Promise<InsuranceClaimAgingBucketDto[]> {
-    return this.repo.getInsuranceClaimAging(tenantId);
+    return await this.repo.getInsuranceClaimAging(tenantId);
   }
 
   // --- Inventory Shrinkage ---
   async getInventoryShrinkage(tenantId: string): Promise<InventoryShrinkageItemDto[]> {
-    return this.repo.getInventoryShrinkage(tenantId);
+    return await this.repo.getInventoryShrinkage(tenantId);
   }
 
   async recordShrinkageAudit(
@@ -111,16 +111,16 @@ export class ExecutiveMisService {
     item: InventoryShrinkageItemDto,
     auditor: string
   ): Promise<InventoryShrinkageItemDto> {
-    return this.repo.recordShrinkageAudit(tenantId, item, auditor);
+    return await this.repo.recordShrinkageAudit(tenantId, item, auditor);
   }
 
   // --- Doctor Payouts ---
   async getDoctorPayouts(tenantId: string, period?: string): Promise<DoctorPayoutCalculationDto[]> {
-    return this.repo.getDoctorPayouts(tenantId, period);
+    return await this.repo.getDoctorPayouts(tenantId, period);
   }
 
   async approveDoctorPayout(tenantId: string, doctorId: string, approvedBy: string): Promise<DoctorPayoutCalculationDto> {
-    const approved = this.repo.approveDoctorPayout(tenantId, doctorId, approvedBy);
+    const approved = await this.repo.approveDoctorPayout(tenantId, doctorId, approvedBy);
     if (!approved) {
       throw new AppError({ message: `Doctor payout record for ${doctorId} not found.`, statusCode: 404 });
     }
@@ -129,55 +129,55 @@ export class ExecutiveMisService {
 
   // --- Executive Situational Command ---
   async getCommandSnapshot(tenantId: string): Promise<ExecutiveCommandSnapshotDto> {
-    return this.repo.getCommandSnapshot(tenantId);
+    return await this.repo.getCommandSnapshot(tenantId);
   }
 
   async declareSurgeEvent(tenantId: string, payload: DeclareSurgeEventRequest): Promise<ExecutiveCommandSnapshotDto> {
-    return this.repo.declareSurgeEvent(tenantId, payload);
+    return await this.repo.declareSurgeEvent(tenantId, payload);
   }
 
   async resolveSurgeEvent(tenantId: string, payload: ResolveSurgeEventRequest): Promise<ExecutiveCommandSnapshotDto> {
-    return this.repo.resolveSurgeEvent(tenantId, payload);
+    return await this.repo.resolveSurgeEvent(tenantId, payload);
   }
 
   async getBedForecasts(tenantId: string): Promise<PredictiveBedForecastDto[]> {
-    return this.repo.getBedForecasts(tenantId);
+    return await this.repo.getBedForecasts(tenantId);
   }
 
   async getEdNedocsHistory(tenantId: string): Promise<EdNedocsHourlyDto[]> {
-    return this.repo.getEdNedocsHistory(tenantId);
+    return await this.repo.getEdNedocsHistory(tenantId);
   }
 
   async getOtEfficiencies(tenantId: string): Promise<OtSuiteEfficiencyDto[]> {
-    return this.repo.getOtEfficiencies(tenantId);
+    return await this.repo.getOtEfficiencies(tenantId);
   }
 
   async getPatientAcuityHeatmap(tenantId: string): Promise<PatientAcuityHeatmapItemDto[]> {
-    return this.repo.getPatientAcuityHeatmap(tenantId);
+    return await this.repo.getPatientAcuityHeatmap(tenantId);
   }
 
   async getRcmLeakageRisks(tenantId: string): Promise<RcmLeakageRiskItemDto[]> {
-    return this.repo.getRcmLeakageRisks(tenantId);
+    return await this.repo.getRcmLeakageRisks(tenantId);
   }
 
   async getCriticalConsumables(tenantId: string): Promise<CriticalConsumableRunoutDto[]> {
-    return this.repo.getCriticalConsumables(tenantId);
+    return await this.repo.getCriticalConsumables(tenantId);
   }
 
   async runWhatIfSimulation(tenantId: string, payload: WhatIfScenarioRequest): Promise<WhatIfScenarioResultDto> {
-    return this.repo.runWhatIfSimulation(tenantId, payload);
+    return await this.repo.runWhatIfSimulation(tenantId, payload);
   }
 
   async getSimulationHistory(tenantId: string): Promise<WhatIfScenarioResultDto[]> {
-    return this.repo.getSimulationHistory(tenantId);
+    return await this.repo.getSimulationHistory(tenantId);
   }
 
   async overrideBedAllocation(tenantId: string, payload: OverrideBedAllocationRequest): Promise<void> {
-    this.repo.overrideBedAllocation(tenantId, payload);
+    await this.repo.overrideBedAllocation(tenantId, payload);
   }
 
   async getAuditTraces(tenantId: string): Promise<ExecutiveAuditTraceDto[]> {
-    return this.repo.getAuditTraces(tenantId);
+    return await this.repo.getAuditTraces(tenantId);
   }
 }
 

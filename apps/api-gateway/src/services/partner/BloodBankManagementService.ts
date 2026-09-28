@@ -196,6 +196,24 @@ export class BloodBankManagementService {
       return bloodBankManagementRepository.getPatientTransfusionHistory(session.tenantId, patientId, tx);
     });
   }
+
+  async getOverviewMetrics(session: SessionContext) {
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      return bloodBankManagementRepository.getOverviewMetrics(session.tenantId, tx);
+    });
+  }
+
+  async getCrossmatches(session: SessionContext) {
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      return bloodBankManagementRepository.getCrossmatches(session.tenantId, tx);
+    });
+  }
+
+  async getIssues(session: SessionContext) {
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      return bloodBankManagementRepository.getIssues(session.tenantId, tx);
+    });
+  }
 }
 
 export const bloodBankManagementService = new BloodBankManagementService();

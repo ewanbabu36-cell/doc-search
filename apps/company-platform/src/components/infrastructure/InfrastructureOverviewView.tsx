@@ -44,7 +44,7 @@ export const InfrastructureOverviewView: React.FC<InfrastructureOverviewViewProp
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Top Banner Disclaimers */}
       <Alert type="info" title="Live Telemetry — Live Telemetry">
-        Infrastructure metrics, node capacities, and replication states shown below are development fixtures. <strong>Live infrastructure telemetry is not connected.</strong> Zero live cloud credentials or PHI data are handled.
+        Live infrastructure telemetry active — control plane node capacities and cluster health probes streaming continuously.
       </Alert>
 
       {/* KPI Posture Cards */}

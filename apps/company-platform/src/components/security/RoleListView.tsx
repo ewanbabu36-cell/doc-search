@@ -83,13 +83,6 @@ export const RoleListView: React.FC<RoleListViewProps> = ({
               variant="primary"
               size="sm"
               onClick={onOpenCreateRole}
-              style={{
-                backgroundColor: '#06B6D4',
-                color: '#070C16',
-                fontWeight: 800,
-                padding: '8px 18px',
-                fontSize: '0.8125rem'
-              }}
             >
               ➕ Create Custom Role & Permissions
             </Button>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Input } from '@docsearch/ui-kit';
 import type { EmergencyEncounterDto, CreateAmbulanceTransferRequest } from '@docsearch/api-contracts';
+import { getUnifiedPartnerProfile } from '../../utils/roleProfileResolver.js';
 
 interface Props {
   isOpen: boolean;
@@ -23,12 +24,13 @@ export const CreateAmbulanceTransferDialog: React.FC<Props> = ({
   organizationId,
   branchId
 }) => {
+  const profile = getUnifiedPartnerProfile();
   const [ambulance, setAmbulance] = useState('EMS-MEDIC-08');
   const [type, setType] = useState<'INBOUND_RECEIVAL' | 'OUTBOUND_INTER_FACILITY'>('OUTBOUND_INTER_FACILITY');
-  const [sending, setSending] = useState('Apex Emergency Department');
-  const [receiving, setReceiving] = useState('Apex Regional Super Specialty Hospital');
-  const [paramedic, setParamedic] = useState('Paramedic Rajesh Kumar');
-  const [reason, setReason] = useState('Need for emergent neuro-interventional thrombectomy');
+  const [sending, setSending] = useState(profile.entityLegalName ? `${profile.entityLegalName} (Emergency Unit)` : 'Emergency Department');
+  const [receiving, setReceiving] = useState('Tertiary Referral Center');
+  const [paramedic, setParamedic] = useState(profile.doctorName ? `Paramedic Lead (${profile.doctorName})` : 'Authorized Paramedic Lead');
+  const [reason, setReason] = useState('Need for emergent inter-facility care and advanced management');
   const [loading, setLoading] = useState(false);
 
   if (!isOpen || !encounter) return null;

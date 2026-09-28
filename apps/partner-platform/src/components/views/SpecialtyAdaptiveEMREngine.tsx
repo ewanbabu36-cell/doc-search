@@ -452,7 +452,7 @@ export const SpecialtyAdaptiveEMREngine: React.FC<SpecialtyAdaptiveEMREngineProp
           variant="primary"
           size="sm"
           onClick={handlePushToRx}
-          style={{ backgroundColor: '#06B6D4', borderColor: '#06B6D4', color: '#070C16', fontWeight: 800 }}
+          
         >
           ⚡ Append ${specialty.replace('_', ' ')} Findings to Prescription Note
         </Button>

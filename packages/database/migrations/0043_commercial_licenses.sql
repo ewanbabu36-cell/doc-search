@@ -1,4 +1,4 @@
-﻿CREATE TABLE IF NOT EXISTS "company"."licenses" (
+CREATE TABLE IF NOT EXISTS "company"."licenses" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"license_key" varchar(100) NOT NULL,
 	"partner_id" uuid NOT NULL,

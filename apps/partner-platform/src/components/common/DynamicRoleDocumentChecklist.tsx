@@ -41,7 +41,7 @@ export const DynamicRoleDocumentChecklist: React.FC<DynamicRoleDocumentChecklist
       const role = currentUser?.role || 'DOCTOR';
       const facilityType = currentUser?.organizationType || 'LABORATORY';
       const res = await fetch(
-        `http://localhost:4000/api/v1/compliance/documents/requirements?role=${encodeURIComponent(role)}&facilityType=${encodeURIComponent(facilityType)}&tenantId=11111111-1111-4111-8111-111111111111`
+        `/api/v1/compliance/documents/requirements?role=${encodeURIComponent(role)}&facilityType=${encodeURIComponent(facilityType)}&tenantId=11111111-1111-4111-8111-111111111111`
       );
       if (res.ok) {
         const json = await res.json();
@@ -109,7 +109,7 @@ export const DynamicRoleDocumentChecklist: React.FC<DynamicRoleDocumentChecklist
         fileSizeBytes: uploadFormData.fileSize
       };
 
-      const res = await fetch('http://localhost:4000/api/v1/compliance/documents/upload', {
+      const res = await fetch('/api/v1/compliance/documents/upload', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -444,7 +444,6 @@ export const DynamicRoleDocumentChecklist: React.FC<DynamicRoleDocumentChecklist
                 <button
                   type="submit"
                   disabled={isUploading}
-                  style={{ backgroundColor: '#06B6D4', color: '#070C16', border: 'none', borderRadius: '6px', padding: '8px 18px', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer' }}
                 >
                   {isUploading ? 'Uploading...' : 'Submit for Verification'}
                 </button>

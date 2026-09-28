@@ -16,9 +16,9 @@ export interface AdmissionDetailViewProps {
 
 export const AdmissionDetailView: React.FC<AdmissionDetailViewProps> = ({
   admission,
-  assessments,
-  vitals,
-  rounds,
+  assessments = [],
+  vitals = [],
+  rounds = [],
   onBack,
   onOpenTransfer,
   onOpenRecordVital,
@@ -27,9 +27,13 @@ export const AdmissionDetailView: React.FC<AdmissionDetailViewProps> = ({
 }) => {
   if (!admission) return null;
 
-  const patientAssessments = assessments.filter((a) => a.admissionId === admission.id);
-  const patientVitals = vitals.filter((v) => v.admissionId === admission.id);
-  const patientRounds = rounds.filter((r) => r.admissionId === admission.id);
+  const safeAssessments = Array.isArray(assessments) ? assessments : [];
+  const safeVitals = Array.isArray(vitals) ? vitals : [];
+  const safeRounds = Array.isArray(rounds) ? rounds : [];
+
+  const patientAssessments = safeAssessments.filter((a) => a && a.admissionId === admission.id);
+  const patientVitals = safeVitals.filter((v) => v && v.admissionId === admission.id);
+  const patientRounds = safeRounds.filter((r) => r && r.admissionId === admission.id);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>

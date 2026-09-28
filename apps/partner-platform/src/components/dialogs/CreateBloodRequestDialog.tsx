@@ -21,16 +21,27 @@ export const CreateBloodRequestDialog: React.FC<Props> = ({
   organizationId,
   branchId
 }) => {
-  const [patName, setPatName] = useState('David K. Miller');
-  const [mrn, setMrn] = useState('MRN-772101');
-  const [dept, setDept] = useState('Emergency & Trauma Resuscitation');
-  const [doctor, setDoctor] = useState('Dr. Evelyn Reed, MD');
+  const [patName, setPatName] = useState('');
+  const [mrn, setMrn] = useState('');
+  const [dept, setDept] = useState('Emergency & Trauma');
+  const [doctor, setDoctor] = useState('');
   const [comp, setComp] = useState<BloodComponentType>('PACKED_RED_BLOOD_CELLS_PRBC');
-  const [bloodGroup, setBloodGroup] = useState<TransfusionBloodGroup>('O_NEGATIVE');
-  const [qty, setQty] = useState('2');
-  const [urgency, setUrgency] = useState<BloodRequestUrgency>('STAT_EMERGENCY_IMMEDIATE');
-  const [indication, setIndication] = useState('Massive internal hemorrhage secondary to polytrauma.');
+  const [bloodGroup, setBloodGroup] = useState<TransfusionBloodGroup>('O_POSITIVE');
+  const [qty, setQty] = useState('1');
+  const [urgency, setUrgency] = useState<BloodRequestUrgency>('ROUTINE_SCHEDULED_OT');
+  const [indication, setIndication] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const handleFillSample = () => {
+    setPatName('Ramesh Kumar');
+    setMrn('MRN-772101');
+    setDept('Emergency & Trauma Resuscitation');
+    setDoctor('Dr. Arvind Saxena');
+    setBloodGroup('O_NEGATIVE');
+    setQty('2');
+    setUrgency('STAT_EMERGENCY_IMMEDIATE');
+    setIndication('Acute blood loss secondary to polytrauma.');
+  };
 
   if (!isOpen) return null;
 
@@ -53,7 +64,7 @@ export const CreateBloodRequestDialog: React.FC<Props> = ({
         patientBloodGroup: bloodGroup,
         quantityUnits: parseInt(qty) || 1,
         urgency,
-        clinicalIndication: indication,
+        clinicalIndication: indication || 'Urgent transfusion requested',
         requiredByTimestamp: new Date(Date.now() + 3600000).toISOString()
       });
       onClose();
@@ -65,27 +76,52 @@ export const CreateBloodRequestDialog: React.FC<Props> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl">
-        <h2 className="text-xl font-bold text-gray-900 mb-2">Create Clinical Blood Requisition</h2>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-xl font-bold text-gray-900">Create Clinical Blood Requisition</h2>
+          <Button variant="outline" size="sm" type="button" onClick={handleFillSample} title="Fill demo data">
+            ✨ Demo
+          </Button>
+        </div>
         <p className="text-xs text-gray-500 mb-4">Request crossmatch and blood components from blood bank</p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">Patient Name</label>
-              <Input value={patName} onChange={(e) => setPatName(e.target.value)} required />
+              <Input
+                value={patName}
+                onChange={(e) => setPatName(e.target.value)}
+                placeholder="e.g. Ramesh Kumar"
+                required
+              />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">Patient MRN</label>
-              <Input value={mrn} onChange={(e) => setMrn(e.target.value)} required />
+              <Input
+                value={mrn}
+                onChange={(e) => setMrn(e.target.value)}
+                placeholder="e.g. MRN-772101"
+                required
+              />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">Requesting Ward/Dept</label>
-              <Input value={dept} onChange={(e) => setDept(e.target.value)} required />
+              <Input
+                value={dept}
+                onChange={(e) => setDept(e.target.value)}
+                placeholder="e.g. Emergency & Trauma"
+                required
+              />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">Ordering Physician</label>
-              <Input value={doctor} onChange={(e) => setDoctor(e.target.value)} required />
+              <Input
+                value={doctor}
+                onChange={(e) => setDoctor(e.target.value)}
+                placeholder="e.g. Dr. Arvind Saxena"
+                required
+              />
             </div>
           </div>
           <div className="grid grid-cols-3 gap-3">
@@ -128,7 +164,12 @@ export const CreateBloodRequestDialog: React.FC<Props> = ({
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">Clinical Indication</label>
-              <Input value={indication} onChange={(e) => setIndication(e.target.value)} required />
+              <Input
+                value={indication}
+                onChange={(e) => setIndication(e.target.value)}
+                placeholder="e.g. Acute hemorrhage secondary to trauma"
+                required
+              />
             </div>
           </div>
           <div className="flex justify-end gap-2 pt-4">

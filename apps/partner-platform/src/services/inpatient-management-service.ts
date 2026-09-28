@@ -1,10 +1,23 @@
-import { apiRequest } from './api-client.js';
+import { apiRequest, isMockFallbackAllowed } from './api-client.js';
 
 function loadStored<T>(key: string, fallback: T[]): T[] {
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
       const item = window.localStorage.getItem(key);
-      if (item) return JSON.parse(item);
+      if (item) {
+        const parsed = JSON.parse(item);
+        if (Array.isArray(parsed)) {
+          if (key === 'docsearch_inpatient_admissions' && parsed.some((a: any) => a?.admissionNumber === 'ADM-2026-0089' || a?.patientId === 'pat-001')) {
+            window.localStorage.removeItem(key);
+            return [...fallback];
+          }
+          if (key === 'docsearch_inpatient_beds' && parsed.some((b: any) => b?.currentPatientId === 'pat-001')) {
+            window.localStorage.removeItem(key);
+            return [...fallback];
+          }
+          return parsed;
+        }
+      }
     } catch {
       // Fallback
     }
@@ -130,29 +143,48 @@ export interface IInpatientManagementService {
   completeDischarge(req: CompleteDischargeRequest): Promise<InpatientAdmissionDto>;
   finalizeDischargeSummary(req: FinalizeDischargeSummaryRequest): Promise<InpatientDischargeSummaryDto>;
   releaseBed(req: ReleaseBedRequest): Promise<InpatientBedDto>;
-  completeCleaning(req: CompleteCleaningRequest): Promise<InpatientBedDto>;
+  completeCleaning(req: CompleteCleaningRequest & { bedId?: string }): Promise<InpatientBedDto>;
+  directAdmitPatient(req: DirectAdmitPatientRequest): Promise<InpatientAdmissionDto>;
+}
+
+export interface DirectAdmitPatientRequest {
+  tenantId: string;
+  partnerId: string;
+  organizationId: string;
+  branchId: string;
+  patientName: string;
+  patientMrn: string;
+  patientAge: number;
+  patientGender: 'M' | 'F' | 'OTHER';
+  bedId: string;
+  wardId: string;
+  admittingDoctorName: string;
+  department: string;
+  provisionalDiagnosis: string;
+  admissionType?: 'EMERGENCY' | 'ELECTIVE';
+  expectedLengthOfStayDays?: number;
 }
 
 export class MockInpatientManagementService implements IInpatientManagementService {
-  private units: InpatientUnitDto[] = [...mockInpatientUnits];
-  private wards: InpatientWardDto[] = loadStored("docsearch_inpatient_wards", mockInpatientWards);
-  private beds: InpatientBedDto[] = loadStored("docsearch_inpatient_beds", mockInpatientBeds);
-  private requests: InpatientAdmissionRequestDto[] = loadStored("docsearch_inpatient_admission_requests", mockInpatientAdmissionRequests);
-  private admissions: InpatientAdmissionDto[] = loadStored("docsearch_inpatient_admissions", mockInpatientAdmissions);
-  private transfers: InpatientTransferDto[] = loadStored("docsearch_inpatient_transfers", mockInpatientTransfers);
-  private nursingAssessments: InpatientNursingAssessmentDto[] = [...mockInpatientNursingAssessments];
-  private vitals: InpatientVitalObservationDto[] = [...mockInpatientVitalObservations];
-  private rounds: InpatientDoctorRoundDto[] = [...mockInpatientDoctorRounds];
-  private dischargePlans: InpatientDischargePlanDto[] = [...mockInpatientDischargePlans];
-  private dischargeSummaries: InpatientDischargeSummaryDto[] = loadStored("docsearch_inpatient_discharge_summaries", mockInpatientDischargeSummaries);
-  private bedTurnarounds: InpatientBedTurnaroundDto[] = [...mockInpatientBedTurnarounds];
-  private bedBlocks: InpatientBedBlockDto[] = [...mockInpatientBedBlocks];
-  private auditTraces: InpatientAuditTraceDto[] = [...mockInpatientAuditTraces];
+  private units: InpatientUnitDto[] = isMockFallbackAllowed() ? [...mockInpatientUnits] : [];
+  private wards: InpatientWardDto[] = isMockFallbackAllowed() ? loadStored("docsearch_inpatient_wards", mockInpatientWards) : [];
+  private beds: InpatientBedDto[] = isMockFallbackAllowed() ? loadStored("docsearch_inpatient_beds", mockInpatientBeds) : [];
+  private requests: InpatientAdmissionRequestDto[] = isMockFallbackAllowed() ? loadStored("docsearch_inpatient_admission_requests", mockInpatientAdmissionRequests) : [];
+  private admissions: InpatientAdmissionDto[] = isMockFallbackAllowed() ? loadStored("docsearch_inpatient_admissions", mockInpatientAdmissions) : [];
+  private transfers: InpatientTransferDto[] = isMockFallbackAllowed() ? loadStored("docsearch_inpatient_transfers", mockInpatientTransfers) : [];
+  private nursingAssessments: InpatientNursingAssessmentDto[] = isMockFallbackAllowed() ? [...mockInpatientNursingAssessments] : [];
+  private vitals: InpatientVitalObservationDto[] = isMockFallbackAllowed() ? [...mockInpatientVitalObservations] : [];
+  private rounds: InpatientDoctorRoundDto[] = isMockFallbackAllowed() ? [...mockInpatientDoctorRounds] : [];
+  private dischargePlans: InpatientDischargePlanDto[] = isMockFallbackAllowed() ? [...mockInpatientDischargePlans] : [];
+  private dischargeSummaries: InpatientDischargeSummaryDto[] = isMockFallbackAllowed() ? loadStored("docsearch_inpatient_discharge_summaries", mockInpatientDischargeSummaries) : [];
+  private bedTurnarounds: InpatientBedTurnaroundDto[] = isMockFallbackAllowed() ? [...mockInpatientBedTurnarounds] : [];
+  private bedBlocks: InpatientBedBlockDto[] = isMockFallbackAllowed() ? [...mockInpatientBedBlocks] : [];
+  private auditTraces: InpatientAuditTraceDto[] = isMockFallbackAllowed() ? [...mockInpatientAuditTraces] : [];
 
-  private addTrace(actorName: string, actorRole: string, action: string, entityType: string, entityCode: string, justification: string) {
+  private addTrace(actorName: string, actorRole: string, action: string, entityType: string, entityCode: string, justification: string, tenantId = '11111111-1111-4111-8111-111111111111') {
     const trace: InpatientAuditTraceDto = {
       id: 'aud-' + Math.random().toString(36).substring(2, 9),
-      tenantId: '11111111-1111-4111-8111-111111111111',
+      tenantId,
       partnerId: '22222222-2222-4222-8222-222222222222',
       organizationId: '33333333-3333-4333-8333-333333333333',
       branchId: '44444444-4444-4444-8444-444444444444',
@@ -174,19 +206,571 @@ export class MockInpatientManagementService implements IInpatientManagementServi
     this.auditTraces.unshift(trace);
   }
 
+  private saveTenantBeds(tenantId: string) {
+    const tenantKey = `docsearch_inpatient_beds_${tenantId}`;
+    const bedsForTenant = this.beds.filter((b) => b.tenantId === tenantId);
+    saveStored(tenantKey, bedsForTenant.length > 0 ? bedsForTenant : this.beds);
+    saveStored("docsearch_inpatient_beds", this.beds);
+  }
+
+  private saveTenantAdmissions(tenantId: string) {
+    const tenantKey = `docsearch_inpatient_admissions_${tenantId}`;
+    const admsForTenant = this.admissions.filter((a) => a.tenantId === tenantId);
+    saveStored(tenantKey, admsForTenant.length > 0 ? admsForTenant : this.admissions);
+    saveStored("docsearch_inpatient_admissions", this.admissions);
+  }
+
+  private saveTenantWards(tenantId: string) {
+    const tenantKey = `docsearch_inpatient_wards_${tenantId}`;
+    const wardsForTenant = this.wards.filter((w) => w.tenantId === tenantId);
+    saveStored(tenantKey, wardsForTenant.length > 0 ? wardsForTenant : this.wards);
+    saveStored("docsearch_inpatient_wards", this.wards);
+  }
+
+  private ensureTenantData(tenantId: string) {
+    if (!tenantId || tenantId === 'undefined') return;
+    if (!isMockFallbackAllowed()) return;
+    const tenantWardKey = `docsearch_inpatient_wards_${tenantId}`;
+    const tenantBedKey = `docsearch_inpatient_beds_${tenantId}`;
+    const tenantAdmKey = `docsearch_inpatient_admissions_${tenantId}`;
+
+    const storedWards = loadStored<InpatientWardDto>(tenantWardKey, []);
+    const storedBeds = loadStored<InpatientBedDto>(tenantBedKey, []);
+    const storedAdms = loadStored<InpatientAdmissionDto>(tenantAdmKey, []);
+
+    if (storedWards.length > 0) {
+      for (const w of storedWards) {
+        if (!this.wards.some((existing) => existing.id === w.id)) {
+          this.wards.push(w);
+        }
+      }
+    } else if (tenantId !== '11111111-1111-4111-8111-111111111111') {
+      const starterWards: InpatientWardDto[] = [
+        {
+          id: `wrd-${tenantId}-1`,
+          tenantId,
+          partnerId: '22222222-2222-4222-8222-222222222222',
+          organizationId: '33333333-3333-4333-8333-333333333333',
+          branchId: '44444444-4444-4444-8444-444444444444',
+          unitId: 'unit-1',
+          wardCode: 'GW-M',
+          wardName: 'General Medical Ward',
+          wardType: 'GENERAL',
+          careLevel: 'LEVEL_1_OBSERVATION',
+          genderPolicy: 'ALL',
+          building: 'Main Hospital Block',
+          floor: '2nd Floor, Wing A',
+          nursingStationName: 'Station 2A',
+          totalBeds: 4,
+          activeBeds: 4,
+          occupiedBeds: 1,
+          blockedBeds: 0,
+          cleaningBeds: 1,
+          isolationCapable: false,
+          ventilatorCapable: false,
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          id: `wrd-${tenantId}-2`,
+          tenantId,
+          partnerId: '22222222-2222-4222-8222-222222222222',
+          organizationId: '33333333-3333-4333-8333-333333333333',
+          branchId: '44444444-4444-4444-8444-444444444444',
+          unitId: 'unit-2',
+          wardCode: 'ICU-1',
+          wardName: 'Intensive Care Unit (ICU)',
+          wardType: 'ICU',
+          careLevel: 'LEVEL_3_ICU',
+          genderPolicy: 'ALL',
+          building: 'Main Hospital Block',
+          floor: '3rd Floor, Critical Wing',
+          nursingStationName: 'ICU Central Console',
+          totalBeds: 3,
+          activeBeds: 3,
+          occupiedBeds: 1,
+          blockedBeds: 0,
+          cleaningBeds: 0,
+          isolationCapable: true,
+          ventilatorCapable: true,
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          id: `wrd-${tenantId}-3`,
+          tenantId,
+          partnerId: '22222222-2222-4222-8222-222222222222',
+          organizationId: '33333333-3333-4333-8333-333333333333',
+          branchId: '44444444-4444-4444-8444-444444444444',
+          unitId: 'unit-3',
+          wardCode: 'EM-OBS',
+          wardName: 'Emergency Observation Unit',
+          wardType: 'HDU',
+          careLevel: 'LEVEL_2_STEPDOWN',
+          genderPolicy: 'ALL',
+          building: 'Emergency & Trauma Block',
+          floor: 'Ground Floor, ER',
+          nursingStationName: 'Triage Desk',
+          totalBeds: 3,
+          activeBeds: 3,
+          occupiedBeds: 0,
+          blockedBeds: 0,
+          cleaningBeds: 0,
+          isolationCapable: false,
+          ventilatorCapable: true,
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          id: `wrd-${tenantId}-4`,
+          tenantId,
+          partnerId: '22222222-2222-4222-8222-222222222222',
+          organizationId: '33333333-3333-4333-8333-333333333333',
+          branchId: '44444444-4444-4444-8444-444444444444',
+          unitId: 'unit-4',
+          wardCode: 'PVT-D',
+          wardName: 'Private Deluxe Suite',
+          wardType: 'PRIVATE',
+          careLevel: 'LEVEL_1_OBSERVATION',
+          genderPolicy: 'ALL',
+          building: 'Specialty Tower',
+          floor: '4th Floor, Premium Wing',
+          nursingStationName: 'Station 4P',
+          totalBeds: 2,
+          activeBeds: 2,
+          occupiedBeds: 0,
+          blockedBeds: 0,
+          cleaningBeds: 0,
+          isolationCapable: false,
+          ventilatorCapable: false,
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      ];
+      this.wards.push(...starterWards);
+      saveStored(tenantWardKey, starterWards);
+    }
+
+    if (storedBeds.length > 0) {
+      for (const b of storedBeds) {
+        if (!this.beds.some((existing) => existing.id === b.id)) {
+          this.beds.push(b);
+        }
+      }
+    } else if (tenantId !== '11111111-1111-4111-8111-111111111111') {
+      const starterBeds: InpatientBedDto[] = [
+        {
+          id: `bed-${tenantId}-101`,
+          tenantId,
+          partnerId: '22222222-2222-4222-8222-222222222222',
+          organizationId: '33333333-3333-4333-8333-333333333333',
+          branchId: '44444444-4444-4444-8444-444444444444',
+          wardId: `wrd-${tenantId}-1`,
+          wardName: 'General Medical Ward',
+          bedCode: 'GW-101',
+          bedNumber: '101',
+          bedType: 'STANDARD_ELECTRIC',
+          bedClass: 'GENERAL',
+          status: 'OCCUPIED',
+          genderEligibility: 'ALL',
+          hasOxygenPort: true,
+          hasSuctionPort: true,
+          hasVentilator: false,
+          hasCardiacMonitor: true,
+          dailyChargeRate: 1800,
+          currentPatientId: `pat-${tenantId}-1`,
+          currentPatientName: 'Ananya Deshmukh',
+          currentPatientMrn: 'MRN-2026-9041',
+          currentAdmissionId: `adm-${tenantId}-1`,
+          lastOccupiedAt: new Date(Date.now() - 48 * 3600 * 1000).toISOString(),
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          id: `bed-${tenantId}-102`,
+          tenantId,
+          partnerId: '22222222-2222-4222-8222-222222222222',
+          organizationId: '33333333-3333-4333-8333-333333333333',
+          branchId: '44444444-4444-4444-8444-444444444444',
+          wardId: `wrd-${tenantId}-1`,
+          wardName: 'General Medical Ward',
+          bedCode: 'GW-102',
+          bedNumber: '102',
+          bedType: 'STANDARD_ELECTRIC',
+          bedClass: 'GENERAL',
+          status: 'AVAILABLE',
+          genderEligibility: 'ALL',
+          hasOxygenPort: true,
+          hasSuctionPort: true,
+          hasVentilator: false,
+          hasCardiacMonitor: false,
+          dailyChargeRate: 1800,
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          id: `bed-${tenantId}-103`,
+          tenantId,
+          partnerId: '22222222-2222-4222-8222-222222222222',
+          organizationId: '33333333-3333-4333-8333-333333333333',
+          branchId: '44444444-4444-4444-8444-444444444444',
+          wardId: `wrd-${tenantId}-1`,
+          wardName: 'General Medical Ward',
+          bedCode: 'GW-103',
+          bedNumber: '103',
+          bedType: 'STANDARD_ELECTRIC',
+          bedClass: 'GENERAL',
+          status: 'CLEANING',
+          genderEligibility: 'ALL',
+          hasOxygenPort: true,
+          hasSuctionPort: true,
+          hasVentilator: false,
+          hasCardiacMonitor: false,
+          dailyChargeRate: 1800,
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          id: `bed-${tenantId}-104`,
+          tenantId,
+          partnerId: '22222222-2222-4222-8222-222222222222',
+          organizationId: '33333333-3333-4333-8333-333333333333',
+          branchId: '44444444-4444-4444-8444-444444444444',
+          wardId: `wrd-${tenantId}-1`,
+          wardName: 'General Medical Ward',
+          bedCode: 'GW-104',
+          bedNumber: '104',
+          bedType: 'STANDARD_ELECTRIC',
+          bedClass: 'GENERAL',
+          status: 'AVAILABLE',
+          genderEligibility: 'ALL',
+          hasOxygenPort: true,
+          hasSuctionPort: true,
+          hasVentilator: false,
+          hasCardiacMonitor: false,
+          dailyChargeRate: 1800,
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          id: `bed-${tenantId}-icu-1`,
+          tenantId,
+          partnerId: '22222222-2222-4222-8222-222222222222',
+          organizationId: '33333333-3333-4333-8333-333333333333',
+          branchId: '44444444-4444-4444-8444-444444444444',
+          wardId: `wrd-${tenantId}-2`,
+          wardName: 'Intensive Care Unit (ICU)',
+          bedCode: 'ICU-01',
+          bedNumber: 'ICU-1',
+          bedType: 'ICU_CRITICAL',
+          bedClass: 'ICU',
+          status: 'OCCUPIED',
+          genderEligibility: 'ALL',
+          hasOxygenPort: true,
+          hasSuctionPort: true,
+          hasVentilator: true,
+          hasCardiacMonitor: true,
+          dailyChargeRate: 6500,
+          currentPatientId: `pat-${tenantId}-2`,
+          currentPatientName: 'Rajinder Singh',
+          currentPatientMrn: 'MRN-2026-8812',
+          currentAdmissionId: `adm-${tenantId}-2`,
+          lastOccupiedAt: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          id: `bed-${tenantId}-icu-2`,
+          tenantId,
+          partnerId: '22222222-2222-4222-8222-222222222222',
+          organizationId: '33333333-3333-4333-8333-333333333333',
+          branchId: '44444444-4444-4444-8444-444444444444',
+          wardId: `wrd-${tenantId}-2`,
+          wardName: 'Intensive Care Unit (ICU)',
+          bedCode: 'ICU-02',
+          bedNumber: 'ICU-2',
+          bedType: 'ICU_CRITICAL',
+          bedClass: 'ICU',
+          status: 'AVAILABLE',
+          genderEligibility: 'ALL',
+          hasOxygenPort: true,
+          hasSuctionPort: true,
+          hasVentilator: true,
+          hasCardiacMonitor: true,
+          dailyChargeRate: 6500,
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          id: `bed-${tenantId}-icu-3`,
+          tenantId,
+          partnerId: '22222222-2222-4222-8222-222222222222',
+          organizationId: '33333333-3333-4333-8333-333333333333',
+          branchId: '44444444-4444-4444-8444-444444444444',
+          wardId: `wrd-${tenantId}-2`,
+          wardName: 'Intensive Care Unit (ICU)',
+          bedCode: 'ICU-03',
+          bedNumber: 'ICU-3',
+          bedType: 'ICU_CRITICAL',
+          bedClass: 'ICU',
+          status: 'AVAILABLE',
+          genderEligibility: 'ALL',
+          hasOxygenPort: true,
+          hasSuctionPort: true,
+          hasVentilator: true,
+          hasCardiacMonitor: true,
+          dailyChargeRate: 6500,
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          id: `bed-${tenantId}-em-1`,
+          tenantId,
+          partnerId: '22222222-2222-4222-8222-222222222222',
+          organizationId: '33333333-3333-4333-8333-333333333333',
+          branchId: '44444444-4444-4444-8444-444444444444',
+          wardId: `wrd-${tenantId}-3`,
+          wardName: 'Emergency Observation Unit',
+          bedCode: 'EM-01',
+          bedNumber: 'EM-1',
+          bedType: 'STANDARD_ELECTRIC',
+          bedClass: 'HDU',
+          status: 'AVAILABLE',
+          genderEligibility: 'ALL',
+          hasOxygenPort: true,
+          hasSuctionPort: true,
+          hasVentilator: false,
+          hasCardiacMonitor: true,
+          dailyChargeRate: 3200,
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          id: `bed-${tenantId}-em-2`,
+          tenantId,
+          partnerId: '22222222-2222-4222-8222-222222222222',
+          organizationId: '33333333-3333-4333-8333-333333333333',
+          branchId: '44444444-4444-4444-8444-444444444444',
+          wardId: `wrd-${tenantId}-3`,
+          wardName: 'Emergency Observation Unit',
+          bedCode: 'EM-02',
+          bedNumber: 'EM-2',
+          bedType: 'STANDARD_ELECTRIC',
+          bedClass: 'HDU',
+          status: 'AVAILABLE',
+          genderEligibility: 'ALL',
+          hasOxygenPort: true,
+          hasSuctionPort: true,
+          hasVentilator: false,
+          hasCardiacMonitor: true,
+          dailyChargeRate: 3200,
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          id: `bed-${tenantId}-pvt-1`,
+          tenantId,
+          partnerId: '22222222-2222-4222-8222-222222222222',
+          organizationId: '33333333-3333-4333-8333-333333333333',
+          branchId: '44444444-4444-4444-8444-444444444444',
+          wardId: `wrd-${tenantId}-4`,
+          wardName: 'Private Deluxe Suite',
+          bedCode: 'PVT-201',
+          bedNumber: '201',
+          bedType: 'STANDARD_ELECTRIC',
+          bedClass: 'DELUXE',
+          status: 'AVAILABLE',
+          genderEligibility: 'ALL',
+          hasOxygenPort: true,
+          hasSuctionPort: true,
+          hasVentilator: false,
+          hasCardiacMonitor: true,
+          dailyChargeRate: 4500,
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          id: `bed-${tenantId}-pvt-2`,
+          tenantId,
+          partnerId: '22222222-2222-4222-8222-222222222222',
+          organizationId: '33333333-3333-4333-8333-333333333333',
+          branchId: '44444444-4444-4444-8444-444444444444',
+          wardId: `wrd-${tenantId}-4`,
+          wardName: 'Private Deluxe Suite',
+          bedCode: 'PVT-202',
+          bedNumber: '202',
+          bedType: 'STANDARD_ELECTRIC',
+          bedClass: 'DELUXE',
+          status: 'AVAILABLE',
+          genderEligibility: 'ALL',
+          hasOxygenPort: true,
+          hasSuctionPort: true,
+          hasVentilator: false,
+          hasCardiacMonitor: true,
+          dailyChargeRate: 4500,
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      ];
+      this.beds.push(...starterBeds);
+      saveStored(tenantBedKey, starterBeds);
+    }
+
+    if (storedAdms.length > 0) {
+      for (const a of storedAdms) {
+        if (!this.admissions.some((existing) => existing.id === a.id)) {
+          this.admissions.push(a);
+        }
+      }
+    } else if (tenantId !== '11111111-1111-4111-8111-111111111111') {
+      const starterAdmissions: InpatientAdmissionDto[] = [
+        {
+          id: `adm-${tenantId}-1`,
+          tenantId,
+          partnerId: '22222222-2222-4222-8222-222222222222',
+          organizationId: '33333333-3333-4333-8333-333333333333',
+          branchId: '44444444-4444-4444-8444-444444444444',
+          admissionNumber: `ADM-${Date.now().toString().slice(-6)}`,
+          patientId: `pat-${tenantId}-1`,
+          patientName: 'Ananya Deshmukh',
+          patientMrn: 'MRN-2026-9041',
+          patientAge: 38,
+          patientGender: 'F',
+          wardId: `wrd-${tenantId}-1`,
+          wardName: 'General Medical Ward',
+          bedId: `bed-${tenantId}-101`,
+          bedCode: 'GW-101',
+          department: 'Internal Medicine',
+          specialty: 'Infectious Disease',
+          admittingDoctorName: 'Dr. Rajesh Verma, MD',
+          attendingConsultantName: 'Dr. Rajesh Verma, MD',
+          admissionDateTime: new Date(Date.now() - 48 * 3600 * 1000).toISOString(),
+          expectedDischargeDate: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
+          primaryDiagnosis: 'Dengue Fever with mild thrombocytopenia (Platelets 85,000)',
+          admissionType: 'EMERGENCY',
+          admissionSource: 'EMERGENCY_DEPT',
+          isolationRequired: false,
+          payerType: 'INSURANCE_TPA',
+          payerName: 'Star Health Insurance',
+          financialDepositAmount: 5000,
+          clinicalClearance: false,
+          billingCleared: false,
+          insuranceCleared: true,
+          dischargeSummaryFinalized: false,
+          status: 'ADMITTED',
+          createdAt: new Date(Date.now() - 48 * 3600 * 1000).toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          id: `adm-${tenantId}-2`,
+          tenantId,
+          partnerId: '22222222-2222-4222-8222-222222222222',
+          organizationId: '33333333-3333-4333-8333-333333333333',
+          branchId: '44444444-4444-4444-8444-444444444444',
+          admissionNumber: `ADM-${(Date.now() + 1).toString().slice(-6)}`,
+          patientId: `pat-${tenantId}-2`,
+          patientName: 'Rajinder Singh',
+          patientMrn: 'MRN-2026-8812',
+          patientAge: 64,
+          patientGender: 'M',
+          wardId: `wrd-${tenantId}-2`,
+          wardName: 'Intensive Care Unit (ICU)',
+          bedId: `bed-${tenantId}-icu-1`,
+          bedCode: 'ICU-01',
+          department: 'Pulmonology & Critical Care',
+          specialty: 'Critical Care',
+          admittingDoctorName: 'Dr. Priya Nair, MD',
+          attendingConsultantName: 'Dr. Priya Nair, MD',
+          admissionDateTime: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
+          expectedDischargeDate: new Date(Date.now() + 72 * 3600 * 1000).toISOString(),
+          primaryDiagnosis: 'COPD with Acute Exacerbation & Type 2 Respiratory Failure (BiPAP Support)',
+          admissionType: 'EMERGENCY',
+          admissionSource: 'EMERGENCY_DEPT',
+          isolationRequired: false,
+          payerType: 'CASH_SELF_PAY',
+          payerName: 'Self Pay',
+          financialDepositAmount: 25000,
+          clinicalClearance: false,
+          billingCleared: false,
+          insuranceCleared: false,
+          dischargeSummaryFinalized: false,
+          status: 'ADMITTED',
+          createdAt: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      ];
+      this.admissions.push(...starterAdmissions);
+      saveStored(tenantAdmKey, starterAdmissions);
+    }
+  }
+
   async getOverviewMetrics(tenantId: string): Promise<InpatientOverviewMetricsDto> {
-    const totalBeds = this.beds.filter((b) => b.tenantId === tenantId).length;
-    const occupiedBeds = this.beds.filter((b) => b.tenantId === tenantId && b.status === 'OCCUPIED').length;
-    const availableBeds = this.beds.filter((b) => b.tenantId === tenantId && b.status === 'AVAILABLE').length;
-    const blockedBeds = this.beds.filter((b) => b.tenantId === tenantId && b.status === 'BLOCKED').length;
-    const cleaningBeds = this.beds.filter((b) => b.tenantId === tenantId && b.status === 'CLEANING').length;
-    const totalInpatients = this.admissions.filter((a) => a.tenantId === tenantId && (a.status === 'ADMITTED' || a.status === 'DISCHARGE_PLANNED')).length;
-    const pendingAdmissions = this.requests.filter((r) => r.tenantId === tenantId && (r.status === 'SUBMITTED' || r.status === 'UNDER_REVIEW')).length;
-    const transferBacklog = this.transfers.filter((t) => t.tenantId === tenantId && (t.status === 'REQUESTED' || t.status === 'APPROVED')).length;
-    const dischargeBacklog = this.admissions.filter((a) => a.tenantId === tenantId && a.status === 'DISCHARGE_PLANNED' && !a.billingCleared).length;
+    this.ensureTenantData(tenantId);
+    const bedsToUse = this.beds.filter((b) => b.tenantId === tenantId).length > 0
+      ? this.beds.filter((b) => b.tenantId === tenantId)
+      : this.beds;
+    const admissionsToUse = this.admissions.filter((a) => a.tenantId === tenantId).length > 0
+      ? this.admissions.filter((a) => a.tenantId === tenantId)
+      : this.admissions;
+    const requestsToUse = this.requests.filter((r) => r.tenantId === tenantId).length > 0
+      ? this.requests.filter((r) => r.tenantId === tenantId)
+      : this.requests;
+    const transfersToUse = this.transfers.filter((t) => t.tenantId === tenantId).length > 0
+      ? this.transfers.filter((t) => t.tenantId === tenantId)
+      : this.transfers;
+
+    const totalBeds = bedsToUse.length;
+    const occupiedBeds = bedsToUse.filter((b) => b.status === 'OCCUPIED').length;
+    const availableBeds = bedsToUse.filter((b) => b.status === 'AVAILABLE').length;
+    const blockedBeds = bedsToUse.filter((b) => b.status === 'BLOCKED').length;
+    const cleaningBeds = bedsToUse.filter((b) => b.status === 'CLEANING').length;
+    const totalInpatients = admissionsToUse.filter((a) => a.status === 'ADMITTED' || a.status === 'DISCHARGE_PLANNED').length;
+    const pendingAdmissions = requestsToUse.filter((r) => r.status === 'SUBMITTED' || r.status === 'UNDER_REVIEW').length;
+    const transferBacklog = transfersToUse.filter((t) => t.status === 'REQUESTED' || t.status === 'APPROVED').length;
+    const dischargeBacklog = admissionsToUse.filter((a) => a.status === 'DISCHARGE_PLANNED' && !a.billingCleared).length;
     const occupancyRatePercentage = totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0;
-    return {
+    const icuBeds = bedsToUse.filter((b) => b.wardName?.toLowerCase().includes('icu') || b.bedCode?.includes('ICU'));
+    const icuOccupied = icuBeds.filter((b) => b.status === 'OCCUPIED').length;
+    const icuOccupancyRatePercentage = icuBeds.length > 0 ? Math.round((icuOccupied / icuBeds.length) * 100) : 0;
+
+    const baseOverview = isMockFallbackAllowed() ? mockInpatientOverviewMetrics : {
       ...mockInpatientOverviewMetrics,
+      totalBeds: 0,
+      occupiedBeds: 0,
+      availableBeds: 0,
+      blockedBeds: 0,
+      cleaningBeds: 0,
+      totalInpatients: 0,
+      pendingAdmissions: 0,
+      transferBacklog: 0,
+      dischargeBacklog: 0,
+      occupancyRatePercentage: 0,
+      icuOccupancyRatePercentage: 0,
+      averageLengthOfStayDays: 0,
+      admissionsToday: 0,
+      dischargesToday: 0,
+      reservedBeds: 0,
+      cleaningBacklog: 0,
+      criticalAlertsCount: 0
+    };
+
+    return {
+      ...baseOverview,
       totalBeds,
       occupiedBeds,
       availableBeds,
@@ -196,7 +780,8 @@ export class MockInpatientManagementService implements IInpatientManagementServi
       pendingAdmissions,
       transferBacklog,
       dischargeBacklog,
-      occupancyRatePercentage
+      occupancyRatePercentage,
+      icuOccupancyRatePercentage
     };
   }
 
@@ -205,86 +790,138 @@ export class MockInpatientManagementService implements IInpatientManagementServi
   }
 
   async getUnits(tenantId: string): Promise<InpatientUnitDto[]> {
-    return this.units.filter((u) => u.tenantId === tenantId);
+    this.ensureTenantData(tenantId);
+    const matched = this.units.filter((u) => u.tenantId === tenantId);
+    return matched.length > 0 ? matched : this.units;
   }
 
   async getWards(tenantId: string): Promise<InpatientWardDto[]> {
+    this.ensureTenantData(tenantId);
     try {
       const res = await apiRequest<InpatientWardDto[]>('/api/v1/partner/inpatient/wards');
-      if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+      if (res.success && Array.isArray(res.data)) {
+        this.wards = res.data;
+        this.saveTenantWards(tenantId);
         return res.data;
       }
     } catch {
       // Fallback
     }
-    return this.wards.filter((w) => w.tenantId === tenantId);
+    const matched = this.wards.filter((w) => w.tenantId === tenantId);
+    return matched.length > 0 ? matched : this.wards;
   }
 
   async getBeds(tenantId: string): Promise<InpatientBedDto[]> {
+    this.ensureTenantData(tenantId);
     try {
       const res = await apiRequest<InpatientBedDto[]>('/api/v1/partner/inpatient/beds');
-      if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+      if (res.success && Array.isArray(res.data)) {
+        this.beds = res.data;
+        this.saveTenantBeds(tenantId);
         return res.data;
       }
     } catch {
       // Fallback
     }
-    return this.beds.filter((b) => b.tenantId === tenantId);
+    const matched = this.beds.filter((b) => b.tenantId === tenantId);
+    return matched.length > 0 ? matched : this.beds;
   }
 
   async getAdmissionRequests(tenantId: string): Promise<InpatientAdmissionRequestDto[]> {
-    return this.requests.filter((r) => r.tenantId === tenantId);
-  }
-
-  async getAdmissions(tenantId: string): Promise<InpatientAdmissionDto[]> {
+    this.ensureTenantData(tenantId);
     try {
-      const res = await apiRequest<InpatientAdmissionDto[]>('/api/v1/partner/inpatient/admissions');
-      if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+      const res = await apiRequest<InpatientAdmissionRequestDto[]>('/api/v1/partner/inpatient/admission-requests');
+      if (res.success && Array.isArray(res.data)) {
+        this.requests = res.data;
         return res.data;
       }
     } catch {
       // Fallback
     }
-    return this.admissions.filter((a) => a.tenantId === tenantId);
+    const matched = this.requests.filter((r) => r.tenantId === tenantId);
+    return matched.length > 0 ? matched : this.requests;
+  }
+
+  async getAdmissions(tenantId: string): Promise<InpatientAdmissionDto[]> {
+    this.ensureTenantData(tenantId);
+    try {
+      const res = await apiRequest<InpatientAdmissionDto[]>('/api/v1/partner/inpatient/admissions');
+      if (res.success && Array.isArray(res.data)) {
+        this.admissions = res.data;
+        this.saveTenantAdmissions(tenantId);
+        return res.data;
+      }
+    } catch {
+      // Fallback
+    }
+    const matched = this.admissions.filter((a) => a.tenantId === tenantId);
+    return matched.length > 0 ? matched : this.admissions;
   }
 
   async getTransfers(tenantId: string): Promise<InpatientTransferDto[]> {
-    return this.transfers.filter((t) => t.tenantId === tenantId);
+    const matched = (this.transfers || []).filter((t) => t.tenantId === tenantId);
+    return matched.length > 0 ? matched : (this.transfers || []);
   }
 
   async getNursingAssessments(tenantId: string): Promise<InpatientNursingAssessmentDto[]> {
-    return this.nursingAssessments.filter((n) => n.tenantId === tenantId);
+    const matched = (this.nursingAssessments || []).filter((n) => n.tenantId === tenantId);
+    return matched.length > 0 ? matched : (this.nursingAssessments || []);
   }
 
   async getVitalObservations(tenantId: string): Promise<InpatientVitalObservationDto[]> {
-    return this.vitals.filter((v) => v.tenantId === tenantId);
+    const matched = (this.vitals || []).filter((v) => v.tenantId === tenantId);
+    return matched.length > 0 ? matched : (this.vitals || []);
   }
 
   async getDoctorRounds(tenantId: string): Promise<InpatientDoctorRoundDto[]> {
-    return this.rounds.filter((r) => r.tenantId === tenantId);
+    const matched = (this.rounds || []).filter((r) => r.tenantId === tenantId);
+    return matched.length > 0 ? matched : (this.rounds || []);
   }
 
   async getDischargePlans(tenantId: string): Promise<InpatientDischargePlanDto[]> {
-    return this.dischargePlans.filter((d) => d.tenantId === tenantId);
+    const matched = (this.dischargePlans || []).filter((d) => d.tenantId === tenantId);
+    return matched.length > 0 ? matched : (this.dischargePlans || []);
   }
 
   async getDischargeSummaries(tenantId: string): Promise<InpatientDischargeSummaryDto[]> {
-    return this.dischargeSummaries.filter((d) => d.tenantId === tenantId);
+    const matched = (this.dischargeSummaries || []).filter((d) => d.tenantId === tenantId);
+    return matched.length > 0 ? matched : (this.dischargeSummaries || []);
   }
 
   async getBedTurnarounds(tenantId: string): Promise<InpatientBedTurnaroundDto[]> {
-    return this.bedTurnarounds.filter((b) => b.tenantId === tenantId);
+    const matched = (this.bedTurnarounds || []).filter((b) => b.tenantId === tenantId);
+    return matched.length > 0 ? matched : (this.bedTurnarounds || []);
   }
 
   async getBedBlocks(tenantId: string): Promise<InpatientBedBlockDto[]> {
-    return this.bedBlocks.filter((b) => b.tenantId === tenantId);
+    const matched = (this.bedBlocks || []).filter((b) => b.tenantId === tenantId);
+    return matched.length > 0 ? matched : (this.bedBlocks || []);
   }
 
   async getAuditTraces(tenantId: string): Promise<InpatientAuditTraceDto[]> {
-    return this.auditTraces.filter((a) => a.tenantId === tenantId);
+    const matched = (this.auditTraces || []).filter((a) => a.tenantId === tenantId);
+    return matched.length > 0 ? matched : (this.auditTraces || []);
   }
 
   async createWard(req: CreateWardRequest): Promise<InpatientWardDto> {
+    try {
+      const res = await apiRequest<InpatientWardDto>('/api/v1/partner/inpatient/wards', {
+        method: 'POST',
+        body: JSON.stringify({
+          ...req,
+          name: req.wardName,
+          capacity: req.totalBeds
+        })
+      });
+      if (res.success && res.data) {
+        this.wards.unshift(res.data);
+        saveStored("docsearch_inpatient_wards", this.wards);
+        this.addTrace('Hospital Admin', 'ADMINISTRATOR', 'CREATE_WARD', 'INPATIENT_WARD', res.data.wardCode, 'Ward registered in roster');
+        return res.data;
+      }
+    } catch {
+      // Fallback
+    }
     const newWard: InpatientWardDto = {
       id: 'wrd-' + Math.random().toString(36).substring(2, 9),
       tenantId: req.tenantId,
@@ -312,6 +949,7 @@ export class MockInpatientManagementService implements IInpatientManagementServi
       updatedAt: new Date().toISOString()
     };
     this.wards.push(newWard);
+    saveStored("docsearch_inpatient_wards", this.wards);
     this.addTrace('Hospital Admin', 'ADMINISTRATOR', 'CREATE_WARD', 'INPATIENT_WARD', newWard.wardCode, 'Ward registered in roster');
     return newWard;
   }
@@ -337,6 +975,23 @@ export class MockInpatientManagementService implements IInpatientManagementServi
   }
 
   async createBed(req: CreateBedRequest): Promise<InpatientBedDto> {
+    try {
+      const res = await apiRequest<InpatientBedDto>('/api/v1/partner/inpatient/beds', {
+        method: 'POST',
+        body: JSON.stringify({
+          ...req,
+          bedNumber: req.bedNumber || req.bedCode
+        })
+      });
+      if (res.success && res.data) {
+        this.beds.unshift(res.data);
+        saveStored("docsearch_inpatient_beds", this.beds);
+        this.addTrace('Hospital Admin', 'ADMINISTRATOR', 'CREATE_BED', 'INPATIENT_BED', res.data.bedCode, 'Bed registered');
+        return res.data;
+      }
+    } catch {
+      // Fallback
+    }
     const ward = this.wards.find((w) => w.id === req.wardId);
     const newBed: InpatientBedDto = {
       id: 'bed-' + Math.random().toString(36).substring(2, 9),
@@ -362,6 +1017,7 @@ export class MockInpatientManagementService implements IInpatientManagementServi
       updatedAt: new Date().toISOString()
     };
     this.beds.push(newBed);
+    saveStored("docsearch_inpatient_beds", this.beds);
     this.addTrace('Hospital Admin', 'ADMINISTRATOR', 'CREATE_BED', 'INPATIENT_BED', newBed.bedCode, 'Bed registered');
     return newBed;
   }
@@ -493,6 +1149,61 @@ export class MockInpatientManagementService implements IInpatientManagementServi
 
     const ward = this.wards.find((w) => w.id === req.allocatedWardId);
     const bed = this.beds.find((b) => b.id === req.allocatedBedId);
+
+    try {
+      const res = await apiRequest<InpatientAdmissionDto>('/api/v1/partner/inpatient/admissions', {
+        method: 'POST',
+        body: JSON.stringify({
+          tenantId: admissionReq.tenantId,
+          partnerId: admissionReq.partnerId,
+          organizationId: admissionReq.organizationId,
+          branchId: admissionReq.branchId,
+          patientId: admissionReq.patientId,
+          doctorId: admissionReq.admittingDoctorName,
+          department: admissionReq.department,
+          bedId: req.allocatedBedId,
+          admissionReason: admissionReq.admissionReason || admissionReq.provisionalDiagnosis
+        })
+      });
+      if (res.success && res.data) {
+        if (bed) {
+          bed.status = 'OCCUPIED';
+          bed.currentPatientId = admissionReq.patientId;
+          bed.currentPatientName = admissionReq.patientName;
+          bed.currentPatientMrn = admissionReq.patientMrn;
+          bed.currentAdmissionId = res.data.id;
+          bed.lastOccupiedAt = new Date().toISOString();
+        }
+        const createdAdmission: InpatientAdmissionDto = {
+          ...res.data,
+          patientName: admissionReq.patientName,
+          patientMrn: admissionReq.patientMrn,
+          wardId: req.allocatedWardId,
+          wardName: ward?.wardName || 'Inpatient Ward',
+          bedId: req.allocatedBedId,
+          bedCode: bed?.bedCode || 'BED-01',
+          department: admissionReq.department,
+          specialty: admissionReq.specialty,
+          admittingDoctorName: admissionReq.admittingDoctorName,
+          attendingConsultantName: admissionReq.admittingDoctorName,
+          status: 'ADMITTED'
+        };
+        this.admissions.unshift(createdAdmission);
+        saveStored("docsearch_inpatient_admissions", this.admissions);
+        saveStored("docsearch_inpatient_beds", this.beds);
+        saveStored("docsearch_inpatient_admission_requests", this.requests);
+        this.addTrace(req.approverName, req.approverRole, 'APPROVE_ADMISSION', 'INPATIENT_ADMISSION', createdAdmission.admissionNumber, req.justification);
+        return createdAdmission;
+      }
+      if (!isMockFallbackAllowed()) {
+        throw new Error(res.error?.message || 'Patient admission failed on server');
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) {
+        throw err instanceof Error ? err : new Error('Patient admission network error');
+      }
+    }
+
     if (bed) {
       bed.status = 'OCCUPIED';
       bed.currentPatientId = admissionReq.patientId;
@@ -638,19 +1349,56 @@ export class MockInpatientManagementService implements IInpatientManagementServi
   }
 
   async completeTransfer(req: CompleteTransferRequest): Promise<InpatientTransferDto> {
+    const trf = this.transfers.find((t) => t.id === req.transferId);
+    if (!trf) throw new Error('Transfer not found');
+
     try {
       const res = await apiRequest<InpatientTransferDto>('/api/v1/partner/inpatient/transfers', {
         method: 'POST',
-        body: JSON.stringify(req)
+        body: JSON.stringify({
+          admissionId: trf.admissionId,
+          patientId: trf.patientId,
+          sourceBedId: trf.sourceBedId,
+          destinationBedId: trf.destinationBedId || req.transferId,
+          transferReason: trf.transferReason,
+          transferredBy: req.completedBy
+        })
       });
       if (res.success && res.data) {
-        return res.data;
+        trf.status = 'COMPLETED';
+        trf.completedAt = new Date().toISOString();
+        trf.updatedAt = new Date().toISOString();
+
+        const oldBed = this.beds.find((b) => b.id === trf.sourceBedId);
+        if (oldBed) {
+          oldBed.status = 'AVAILABLE';
+          oldBed.currentPatientName = undefined;
+          oldBed.currentPatientMrn = undefined;
+          oldBed.currentPatientId = undefined;
+        }
+        const newBed = this.beds.find((b) => b.id === trf.destinationBedId);
+        if (newBed) {
+          newBed.status = 'OCCUPIED';
+          newBed.currentPatientName = trf.patientName;
+          newBed.currentPatientMrn = trf.patientMrn;
+        }
+        const adm = this.admissions.find((a) => a.id === trf.admissionId);
+        if (adm) {
+          adm.wardId = trf.destinationWardId;
+          adm.wardName = trf.destinationWardName;
+          adm.bedId = trf.destinationBedId || adm.bedId;
+          adm.bedCode = trf.destinationBedCode || adm.bedCode;
+        }
+
+        saveStored("docsearch_inpatient_transfers", this.transfers);
+        saveStored("docsearch_inpatient_beds", this.beds);
+        saveStored("docsearch_inpatient_admissions", this.admissions);
+        this.addTrace(req.completedBy, 'RECEIVING_NURSE', 'COMPLETE_TRANSFER', 'INPATIENT_TRANSFER', trf.transferNumber, 'Bedside handover verified');
+        return { ...trf, ...res.data };
       }
     } catch {
       // Fallback
     }
-    const trf = this.transfers.find((t) => t.id === req.transferId);
-    if (!trf) throw new Error('Transfer not found');
 
     // Free source bed and route to cleaning
     const oldBed = this.beds.find((b) => b.id === trf.sourceBedId);
@@ -732,6 +1480,20 @@ export class MockInpatientManagementService implements IInpatientManagementServi
   }
 
   async recordNursingNote(req: RecordNursingNoteRequest): Promise<void> {
+    try {
+      await apiRequest('/api/v1/partner/inpatient/nursing-notes', {
+        method: 'POST',
+        body: JSON.stringify({
+          admissionId: req.admissionId,
+          patientId: req.patientId,
+          nurseName: req.authorName,
+          notes: req.noteContent,
+          careObservations: (req as any).shiftHandoverNotes || 'Routine nursing care'
+        })
+      });
+    } catch {
+      // Fallback
+    }
     this.addTrace(req.authorName, 'STAFF_NURSE', 'RECORD_NURSING_NOTE', 'NURSING_NOTE', req.admissionId, req.noteContent);
   }
 
@@ -740,6 +1502,25 @@ export class MockInpatientManagementService implements IInpatientManagementServi
   }
 
   async recordVitalObservation(req: RecordVitalObservationRequest): Promise<InpatientVitalObservationDto> {
+    try {
+      await apiRequest('/api/v1/partner/inpatient/nursing-notes', {
+        method: 'POST',
+        body: JSON.stringify({
+          admissionId: req.admissionId,
+          patientId: req.patientId,
+          nurseName: req.recordedBy,
+          temperature: req.temperatureCelsius ? `${req.temperatureCelsius} C` : undefined,
+          bloodPressure: req.systolicBpMmHg && req.diastolicBpMmHg ? `${req.systolicBpMmHg}/${req.diastolicBpMmHg} mmHg` : undefined,
+          pulseRate: req.pulseBpm ? `${req.pulseBpm} bpm` : undefined,
+          spO2: req.spo2Percentage ? `${req.spo2Percentage}%` : undefined,
+          respiratoryRate: req.respiratoryRateBpm ? `${req.respiratoryRateBpm} bpm` : undefined,
+          notes: req.notes || 'Telemetry recorded',
+          careObservations: req.isAbnormal ? 'Telemetry abnormal vitals' : 'Routine telemetry vitals'
+        })
+      });
+    } catch {
+      // Fallback
+    }
     const newVital: InpatientVitalObservationDto = {
       id: 'vit-' + Math.random().toString(36).substring(2, 9),
       tenantId: req.tenantId,
@@ -846,18 +1627,39 @@ export class MockInpatientManagementService implements IInpatientManagementServi
   }
 
   async completeDischarge(req: CompleteDischargeRequest): Promise<InpatientAdmissionDto> {
+    const adm = this.admissions.find((a) => a.id === req.admissionId);
     try {
       const res = await apiRequest<InpatientAdmissionDto>(`/api/v1/partner/inpatient/admissions/${req.admissionId}/discharge`, {
         method: 'POST',
-        body: JSON.stringify(req)
+        body: JSON.stringify({
+          patientId: adm?.patientId || req.admissionId,
+          dischargeReason: req.dischargeDisposition || 'Routine clinical recovery',
+          dischargeCondition: 'Patient stable on discharge',
+          finalClinicalNotes: (req as any).summaryNotes || 'Treatment regimen completed successfully'
+        })
       });
       if (res.success && res.data) {
-        return res.data;
+        if (adm) {
+          adm.status = 'DISCHARGED';
+          adm.actualDischargeDateTime = new Date().toISOString();
+          adm.dischargeDisposition = req.dischargeDisposition;
+          adm.updatedAt = new Date().toISOString();
+          const bed = this.beds.find((b) => b.id === adm.bedId);
+          if (bed) {
+            bed.status = 'AVAILABLE';
+            bed.currentPatientName = undefined;
+            bed.currentPatientMrn = undefined;
+            bed.currentPatientId = undefined;
+            bed.currentAdmissionId = undefined;
+          }
+          saveStored("docsearch_inpatient_admissions", this.admissions);
+          saveStored("docsearch_inpatient_beds", this.beds);
+        }
+        return { ...(adm || {}), ...res.data } as InpatientAdmissionDto;
       }
     } catch {
       // Fallback
     }
-    const adm = this.admissions.find((a) => a.id === req.admissionId);
     if (!adm) throw new Error('Admission not found');
     adm.status = 'DISCHARGED';
     adm.actualDischargeDateTime = new Date().toISOString();
@@ -945,6 +1747,7 @@ export class MockInpatientManagementService implements IInpatientManagementServi
     bed.currentPatientName = undefined;
     bed.currentPatientMrn = undefined;
     bed.currentAdmissionId = undefined;
+    bed.updatedAt = new Date().toISOString();
     const turnaround: InpatientBedTurnaroundDto = {
       id: 'trn-' + Math.random().toString(36).substring(2, 9),
       tenantId: req.tenantId,
@@ -964,24 +1767,145 @@ export class MockInpatientManagementService implements IInpatientManagementServi
       updatedAt: new Date().toISOString()
     };
     this.bedTurnarounds.unshift(turnaround);
+    this.saveTenantBeds(req.tenantId || bed.tenantId);
     this.addTrace(req.releasedBy, 'NURSE_SUPERVISOR', 'RELEASE_BED', 'INPATIENT_BED', bed.bedCode, req.reason);
     return bed;
   }
 
-  async completeCleaning(req: CompleteCleaningRequest): Promise<InpatientBedDto> {
-    const trn = this.bedTurnarounds.find((t) => t.id === req.turnaroundId);
-    if (!trn) throw new Error('Turnaround ticket not found');
-    trn.status = 'AVAILABLE';
-    trn.inspectedBy = req.inspectedBy;
-    trn.environmentalInspectionPassed = req.passed;
-    trn.cleaningCompletedAt = new Date().toISOString();
+  async completeCleaning(req: CompleteCleaningRequest & { bedId?: string }): Promise<InpatientBedDto> {
+    let trn = req.turnaroundId ? this.bedTurnarounds.find((t) => t.id === req.turnaroundId) : undefined;
+    if (!trn && req.bedId) {
+      trn = this.bedTurnarounds.find((t) => t.bedId === req.bedId && t.status === 'IN_PROGRESS');
+    }
+    if (trn) {
+      trn.status = 'AVAILABLE';
+      trn.inspectedBy = req.inspectedBy;
+      trn.environmentalInspectionPassed = req.passed;
+      trn.cleaningCompletedAt = new Date().toISOString();
+    }
 
-    const bed = this.beds.find((b) => b.id === trn.bedId);
+    const bed = req.bedId
+      ? this.beds.find((b) => b.id === req.bedId)
+      : (trn ? this.beds.find((b) => b.id === trn.bedId) : undefined);
+
     if (!bed) throw new Error('Bed not found for turnaround ticket');
     bed.status = 'AVAILABLE';
     bed.updatedAt = new Date().toISOString();
-    this.addTrace(req.inspectedBy, 'INFECTION_CONTROL', 'COMPLETE_CLEANING', 'INPATIENT_BED', trn.bedCode, req.notes || 'Terminal disinfection certified');
+    this.saveTenantBeds(bed.tenantId);
+    this.addTrace(req.inspectedBy || 'Nurse / Housekeeping', 'INFECTION_CONTROL', 'COMPLETE_CLEANING', 'INPATIENT_BED', bed.bedCode, req.notes || 'Terminal disinfection certified');
     return bed;
+  }
+
+  async directAdmitPatient(req: DirectAdmitPatientRequest): Promise<InpatientAdmissionDto> {
+    this.ensureTenantData(req.tenantId);
+
+    const bed = this.beds.find((b) => b.id === req.bedId);
+    const ward = this.wards.find((w) => w.id === req.wardId) || this.wards.find((w) => w.id === bed?.wardId);
+
+    try {
+      const res = await apiRequest<InpatientAdmissionDto>('/api/v1/partner/inpatient/admissions', {
+        method: 'POST',
+        body: JSON.stringify({
+          tenantId: req.tenantId,
+          partnerId: req.partnerId,
+          organizationId: req.organizationId,
+          branchId: req.branchId,
+          patientId: 'pat-' + Math.random().toString(36).substring(2, 9),
+          patientName: req.patientName,
+          patientMrn: req.patientMrn,
+          department: req.department,
+          doctorId: req.admittingDoctorName,
+          bedId: req.bedId,
+          admissionReason: req.provisionalDiagnosis
+        })
+      });
+      if (res.success && res.data) {
+        if (bed) {
+          bed.status = 'OCCUPIED';
+          bed.currentPatientName = req.patientName;
+          bed.currentPatientMrn = req.patientMrn;
+          bed.currentAdmissionId = res.data.id;
+          bed.lastOccupiedAt = new Date().toISOString();
+        }
+        const adm: InpatientAdmissionDto = {
+          ...res.data,
+          patientName: req.patientName,
+          patientMrn: req.patientMrn,
+          patientAge: req.patientAge,
+          patientGender: req.patientGender,
+          wardId: ward?.id || bed?.wardId || 'wrd-1',
+          wardName: ward?.wardName || bed?.wardName || 'Inpatient Ward',
+          bedId: req.bedId,
+          bedCode: bed?.bedCode || 'BED',
+          department: req.department,
+          admittingDoctorName: req.admittingDoctorName,
+          attendingConsultantName: req.admittingDoctorName,
+          primaryDiagnosis: req.provisionalDiagnosis,
+          status: 'ADMITTED'
+        };
+        this.admissions.unshift(adm);
+        this.saveTenantBeds(req.tenantId);
+        this.saveTenantAdmissions(req.tenantId);
+        this.addTrace(req.admittingDoctorName, 'PHYSICIAN', 'DIRECT_ADMIT', 'INPATIENT_BED', bed?.bedCode || req.bedId, req.provisionalDiagnosis);
+        return adm;
+      }
+    } catch {
+      // Fallback
+    }
+
+    const admId = 'adm-' + Math.random().toString(36).substring(2, 9);
+    if (bed) {
+      bed.status = 'OCCUPIED';
+      bed.currentPatientName = req.patientName;
+      bed.currentPatientMrn = req.patientMrn;
+      bed.currentAdmissionId = admId;
+      bed.lastOccupiedAt = new Date().toISOString();
+      bed.updatedAt = new Date().toISOString();
+    }
+
+    const newAdmission: InpatientAdmissionDto = {
+      id: admId,
+      tenantId: req.tenantId,
+      partnerId: req.partnerId,
+      organizationId: req.organizationId,
+      branchId: req.branchId,
+      admissionNumber: `ADM-${Date.now().toString().slice(-6)}`,
+      patientId: 'pat-' + Math.random().toString(36).substring(2, 9),
+      patientName: req.patientName,
+      patientMrn: req.patientMrn,
+      patientAge: req.patientAge,
+      patientGender: req.patientGender,
+      wardId: ward?.id || bed?.wardId || 'wrd-1',
+      wardName: ward?.wardName || bed?.wardName || 'Inpatient Ward',
+      bedId: req.bedId,
+      bedCode: bed?.bedCode || 'BED',
+      department: req.department,
+      specialty: req.department,
+      attendingConsultantName: req.admittingDoctorName,
+      admittingDoctorName: req.admittingDoctorName,
+      admissionDateTime: new Date().toISOString(),
+      expectedDischargeDate: new Date(Date.now() + (req.expectedLengthOfStayDays || 3) * 24 * 3600 * 1000).toISOString(),
+      primaryDiagnosis: req.provisionalDiagnosis,
+      admissionType: (req.admissionType as any) || 'ELECTIVE',
+      admissionSource: 'DIRECT_BED_BOARD',
+      isolationRequired: false,
+      payerType: 'CASH_SELF_PAY',
+      payerName: 'Direct Admission',
+      financialDepositAmount: 0,
+      clinicalClearance: false,
+      billingCleared: false,
+      insuranceCleared: false,
+      dischargeSummaryFinalized: false,
+      status: 'ADMITTED',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    this.admissions.unshift(newAdmission);
+    this.saveTenantBeds(req.tenantId);
+    this.saveTenantAdmissions(req.tenantId);
+    this.addTrace(req.admittingDoctorName, 'PHYSICIAN', 'DIRECT_ADMIT', 'INPATIENT_BED', bed?.bedCode || req.bedId, req.provisionalDiagnosis);
+    return newAdmission;
   }
 }
 

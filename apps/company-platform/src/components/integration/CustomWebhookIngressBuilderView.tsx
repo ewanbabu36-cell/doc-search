@@ -63,7 +63,7 @@ export const CustomWebhookIngressBuilderView: React.FC = () => {
     setIsDispatching(true);
     setDispatchResult(null);
     try {
-      const res = await fetch('http://localhost:4000/api/v1/company/integration/webhooks/dispatch-test', {
+      const res = await fetch('/api/v1/company/integration/webhooks/dispatch-test', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -247,17 +247,6 @@ export const CustomWebhookIngressBuilderView: React.FC = () => {
                       type="button"
                       disabled={isDispatching}
                       onClick={() => handleTestDispatch(w)}
-                      style={{
-                        backgroundColor: '#06B6D4',
-                        color: '#070C16',
-                        border: 'none',
-                        borderRadius: '6px',
-                        padding: '6px 12px',
-                        fontSize: '0.75rem',
-                        fontWeight: 800,
-                        cursor: isDispatching ? 'not-allowed' : 'pointer',
-                        opacity: isDispatching ? 0.7 : 1
-                      }}
                     >
                       {isDispatching ? '⏳ Dispatching...' : '⚡ Test Dispatch'}
                     </button>

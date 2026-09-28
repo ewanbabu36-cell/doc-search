@@ -97,7 +97,7 @@ export const WhatsAppCampaignBroadcaster: React.FC = () => {
           </p>
         </div>
 
-        <Button variant="primary" size="sm" onClick={() => setIsComposerOpen(true)} style={{ backgroundColor: '#25D366', color: '#070C16', fontWeight: 900 }}>
+        <Button variant="success" size="sm" onClick={() => setIsComposerOpen(true)}>
           💬 + Launch WhatsApp Campaign
         </Button>
       </div>

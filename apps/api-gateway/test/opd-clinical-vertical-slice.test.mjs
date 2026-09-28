@@ -46,7 +46,7 @@ describe('Production Vertical Slice: OPD -> Encounter -> Consultation -> Prescri
     testDb = await setupTestDatabase();
     process.env['JWT_SECRET'] = MASTER_SECRET;
     process.env['NODE_ENV'] = 'development';
-    app = await buildApp();
+    app = await buildApp({ db: testDb });
     await app.ready();
   });
 

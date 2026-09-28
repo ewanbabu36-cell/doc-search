@@ -1,8 +1,11 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { dietaryService } from '../../services/partner/DietaryService.js';
 import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
+import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 
 export const dietaryRoutes: FastifyPluginAsync = async (fastify) => {
+  fastify.addHook('preHandler', requireModuleCommercialAccess('DIETARY'));
+
   // 1. Overview & Telemetry
   fastify.get(
     '/api/v1/partner/dietary/overview',

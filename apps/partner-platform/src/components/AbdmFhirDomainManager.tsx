@@ -25,6 +25,7 @@ import { FhirR4BundleViewer } from './views/FhirR4BundleViewer.js';
 import { ScanAndShareCounterView } from './views/ScanAndShareCounterView.js';
 import { HfrHprRegistryView } from './views/HfrHprRegistryView.js';
 import { AbdmGatewayAuditVaultView } from './views/AbdmGatewayAuditVaultView.js';
+import { TabOverflowMenu } from './common/TabOverflowMenu.js';
 
 // Dialogs
 import { CreateAbhaNumberDialog } from './dialogs/CreateAbhaNumberDialog.js';
@@ -131,55 +132,79 @@ export const AbdmFhirDomainManager: React.FC<Props> = ({ tenantId }) => {
   return (
     <div className="space-y-4">
       {/* Domain Navigation Tabs */}
-      <div className="flex items-center gap-1 border-b pb-2 overflow-x-auto text-xs font-semibold">
-        <button
-          onClick={() => setActiveTab('OVERVIEW')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'OVERVIEW' ? 'bg-slate-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          🇮🇳 ABDM Overview
-        </button>
-        <button
-          onClick={() => setActiveTab('ABHA_REGISTRY')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'ABHA_REGISTRY' ? 'bg-slate-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          🪪 ABHA Accounts (M1)
-        </button>
-        <button
-          onClick={() => setActiveTab('CARE_CONTEXTS')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'CARE_CONTEXTS' ? 'bg-slate-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          🔗 Care Contexts (HIP M2)
-        </button>
-        <button
-          onClick={() => setActiveTab('CONSENT_MANAGER')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'CONSENT_MANAGER' ? 'bg-slate-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          🛡️ Consent Manager (HIU)
-        </button>
-        <button
-          onClick={() => setActiveTab('FHIR_BUNDLES')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'FHIR_BUNDLES' ? 'bg-slate-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          📦 FHIR R4 Bundles (M3)
-        </button>
-        <button
-          onClick={() => setActiveTab('SCAN_AND_SHARE')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'SCAN_AND_SHARE' ? 'bg-slate-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          📲 Scan & Share Counter
-        </button>
-        <button
-          onClick={() => setActiveTab('HFR_HPR')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'HFR_HPR' ? 'bg-slate-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          🏥 HFR / HPR Registries
-        </button>
-        <button
-          onClick={() => setActiveTab('AUDIT_VAULT')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'AUDIT_VAULT' ? 'bg-slate-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          🔐 Gateway Audit Vault
-        </button>
+      <div
+        style={{
+          position: 'relative',
+          zIndex: 40,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          flexWrap: 'wrap',
+          backgroundColor: 'var(--ds-color-surface)',
+          border: '1px solid var(--ds-color-border)',
+          borderRadius: '10px',
+          padding: '6px 8px'
+        }}
+      >
+        {[
+          { id: 'OVERVIEW' as AbdmTab, label: '🏛️ Gateway Overview' },
+          { id: 'ABHA_REGISTRY' as AbdmTab, label: '🪪 ABHA (M1)' },
+          { id: 'CARE_CONTEXTS' as AbdmTab, label: '🔗 Care Contexts (M2)' },
+          { id: 'CONSENT_MANAGER' as AbdmTab, label: '🛡️ Consents (HIU)' },
+          { id: 'FHIR_BUNDLES' as AbdmTab, label: '📦 FHIR R4 (M3)' }
+        ].map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                fontSize: '0.78rem',
+                fontWeight: isActive ? 700 : 500,
+                color: isActive ? '#FFFFFF' : 'var(--ds-color-text-muted)',
+                backgroundColor: isActive ? 'var(--ds-color-primary, #0284C7)' : 'transparent',
+                borderRadius: '6px',
+                border: isActive ? '1px solid var(--ds-color-accent, #38BDF8)' : '1px solid transparent',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = 'var(--ds-color-surface-hover)';
+                  e.currentTarget.style.color = 'var(--ds-color-text-primary)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = 'var(--ds-color-text-muted)';
+                }
+              }}
+            >
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+
+        {/* Secondary ABDM Modules Selector */}
+        <TabOverflowMenu
+          label="More ABDM Features"
+          options={[
+            { id: 'SCAN_AND_SHARE', label: '📲 Scan & Share Counter' },
+            { id: 'HFR_HPR', label: '🏥 HFR / HPR Registries' },
+            { id: 'AUDIT_VAULT', label: '🔐 Gateway Audit Vault' }
+          ]}
+          activeId={activeTab}
+          onSelect={(id) => setActiveTab(id as AbdmTab)}
+          onReset={() => setActiveTab('OVERVIEW')}
+          accentColor="#0284C7"
+          activeBorderColor="#38BDF8"
+        />
       </div>
 
       {/* Tab Renderers */}

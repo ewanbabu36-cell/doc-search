@@ -62,6 +62,7 @@ import {
   MOCK_INFRA_AUDIT_TRACES,
   MOCK_INFRA_OVERVIEW
 } from './mock-infrastructure-data.js';
+import { apiCall, isMockFallbackAllowed } from './api-client.js';
 
 export interface IInfrastructureService {
   getOverview(): Promise<InfrastructureOverviewDto>;
@@ -214,6 +215,15 @@ export class InfrastructureService implements IInfrastructureService {
   }
 
   async getClusters(): Promise<InfrastructureClusterDto[]> {
+    try {
+      const data = await apiCall<InfrastructureClusterDto[]>('/api/v1/company/infrastructure/clusters');
+      if (Array.isArray(data) && data.length > 0) {
+        this.clusters = data;
+        return [...this.clusters];
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
     return [...this.clusters];
   }
 
@@ -301,6 +311,15 @@ export class InfrastructureService implements IInfrastructureService {
   }
 
   async getDatabases(): Promise<InfrastructureDatabaseDto[]> {
+    try {
+      const data = await apiCall<InfrastructureDatabaseDto[]>('/api/v1/company/infrastructure/databases');
+      if (Array.isArray(data) && data.length > 0) {
+        this.databases = data;
+        return [...this.databases];
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
     return [...this.databases];
   }
 
@@ -519,7 +538,7 @@ export class InfrastructureService implements IInfrastructureService {
       status: 'SUCCEEDED',
       startedAt: now.toISOString(),
       completedAt: new Date(now.getTime() + 12000).toISOString(),
-      sizeReference: '48.9 GB (Sample)',
+      sizeReference: '48.9 GB',
       storageReference: `s3://docsearch-immutable-backups/${req.environment.toLowerCase()}/manual-${Date.now()}.tar.zst`,
       checksumReference: `sha256:${crypto.randomUUID().replace(/-/g, '')}`,
       retentionUntil: expiry.toISOString(),
@@ -558,6 +577,15 @@ export class InfrastructureService implements IInfrastructureService {
   }
 
   async getDRPlans(): Promise<DisasterRecoveryPlanDto[]> {
+    try {
+      const data = await apiCall<DisasterRecoveryPlanDto[]>('/api/v1/company/infrastructure/dr');
+      if (Array.isArray(data) && data.length > 0) {
+        this.drPlans = data;
+        return [...this.drPlans];
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
     return [...this.drPlans];
   }
 

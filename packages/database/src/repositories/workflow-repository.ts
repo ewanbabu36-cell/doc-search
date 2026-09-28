@@ -1,3 +1,5 @@
+import crypto from 'node:crypto';
+import { eq, desc } from 'drizzle-orm';
 import type {
   DynamicLicenceRuleDto,
   DynamicOfferDto,
@@ -7,88 +9,125 @@ import type {
   WorkflowTransitionLogDto,
   WorkflowVersionDto
 } from '@docsearch/api-contracts';
+import { getDatabase } from '../client.js';
+import {
+  workflowDefinitions,
+  workflowInstances,
+  workflowRequirementInstances,
+  workflowApprovals,
+  workflowTransitionLogs
+} from '../schema/workflow-schema.js';
 import {
   SEED_DYNAMIC_OFFERS,
   SEED_LICENCE_RULES,
   SEED_WORKFLOW_DEFINITIONS
 } from '../seeds/workflow-seeds.js';
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function toUuid(idOrSeed: string): string {
+  if (UUID_REGEX.test(idOrSeed)) {
+    return idOrSeed.toLowerCase();
+  }
+  const hash = crypto.createHash('sha256').update(`wf:${idOrSeed}`).digest('hex');
+  return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-8${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
+}
+
 export interface IWorkflowRepository {
   getDefinitions(orgType?: string): Promise<WorkflowDefinitionDto[]>;
   getDefinitionByCode(code: string, version?: number): Promise<{ definition: WorkflowDefinitionDto; version: WorkflowVersionDto } | null>;
   createOrUpdateDefinition(definition: WorkflowDefinitionDto): Promise<WorkflowDefinitionDto>;
   createVersion(workflowCode: string, version: WorkflowVersionDto): Promise<WorkflowVersionDto>;
-  
-  getInstances(filter?: { workflowCode?: string; status?: string }): Promise<WorkflowInstanceDto[]>;
-  getInstanceById(id: string): Promise<WorkflowInstanceDto | null>;
+
+  getInstances(filter?: { workflowCode?: string; status?: string; tenantId?: string }): Promise<WorkflowInstanceDto[]>;
+  getInstanceById(id: string, tenantId?: string): Promise<WorkflowInstanceDto | null>;
   createInstance(instance: WorkflowInstanceDto): Promise<WorkflowInstanceDto>;
   updateInstance(instance: WorkflowInstanceDto): Promise<WorkflowInstanceDto>;
-  
+
   recordApproval(approval: WorkflowApprovalDto): Promise<WorkflowApprovalDto>;
   appendAuditLog(log: WorkflowTransitionLogDto): Promise<void>;
-  
+
   getOffers(): Promise<DynamicOfferDto[]>;
   updateOffer(offer: DynamicOfferDto): Promise<DynamicOfferDto>;
-  
+
   getLicenceRules(orgType?: string): Promise<DynamicLicenceRuleDto[]>;
   updateLicenceRule(rule: DynamicLicenceRuleDto): Promise<DynamicLicenceRuleDto>;
 }
 
 export class WorkflowRepository implements IWorkflowRepository {
   private definitions: WorkflowDefinitionDto[] = JSON.parse(JSON.stringify(SEED_WORKFLOW_DEFINITIONS));
-  private instances: WorkflowInstanceDto[] = [];
-  private approvals: WorkflowApprovalDto[] = [];
-  private auditLogs: WorkflowTransitionLogDto[] = [];
   private offers: DynamicOfferDto[] = JSON.parse(JSON.stringify(SEED_DYNAMIC_OFFERS));
   private licenceRules: DynamicLicenceRuleDto[] = JSON.parse(JSON.stringify(SEED_LICENCE_RULES));
 
   constructor() {
-    // Seed initial instances
-    this.seedInitialInstances();
+    // Legitimate zero-state: do not seed fabricated demo hospital instances (e.g. INST-HOSP-AIIMS-01).
+    // All workflow instances, approvals, requirement evaluations, and transition logs are persisted in PostgreSQL.
   }
 
-  private seedInitialInstances() {
-    const hospDef = this.definitions.find((d) => d.code === 'HOSPITAL_LIFECYCLE');
-    const hospVer = hospDef?.versions[0];
-    if (hospDef && hospVer) {
-      const initialStage = hospVer.stages[0]!;
-      this.instances.push({
-        id: 'INST-HOSP-AIIMS-01',
-        workflowId: hospDef.id,
-        workflowCode: hospDef.code,
-        workflowVersion: hospVer.version,
-        organizationType: 'HOSPITAL',
-        entityId: 'AIIMS-NEW-DELHI',
-        entityName: 'AIIMS Super Speciality Hospital Delhi',
-        currentStageId: initialStage.id,
-        currentStageCode: initialStage.code,
-        currentStageName: initialStage.name,
-        status: 'IN_PROGRESS',
-        contextData: {
-          customer: { is_new: true, tier: 'ENTERPRISE' },
-          organization: { type: 'HOSPITAL', beds: 800, branches: 1 }
-        },
-        requirements: [
-          {
-            id: 'REQ-INST-01',
-            instanceId: 'INST-HOSP-AIIMS-01',
-            requirementId: initialStage.requirements[0]?.id || 'REQ-HOSP-01-01',
-            requirementCode: 'ENTITY_REGISTRATION_DETAILS',
-            name: 'Hospital Entity & GST Registration',
-            requirementType: 'DOCUMENT',
-            isFulfilled: true,
-            fulfilledAt: '2026-09-01T10:00:00Z',
-            fulfilledBy: 'admin@aiims.edu',
-            data: { gstin: '07AAAAA0000A1Z5', entityType: 'GOVERNMENT_INSTITUTE' }
-          }
-        ],
-        pendingApprovals: [],
-        allowedTransitions: [],
-        auditHistory: [],
-        createdAt: '2026-09-01T10:00:00Z',
-        updatedAt: '2026-09-01T10:00:00Z'
-      });
+  private resolveDb() {
+    return getDatabase();
+  }
+
+  private resolveInstanceTenantUuid(instance: WorkflowInstanceDto): string | null {
+    const rawTenant =
+      (instance as any).tenantId ||
+      (instance.contextData as any)?.tenantId ||
+      (UUID_REGEX.test(instance.entityId) ? instance.entityId : null);
+    if (!rawTenant) return null;
+    return toUuid(String(rawTenant));
+  }
+
+  private mapRowToDto(row: typeof workflowInstances.$inferSelect): WorkflowInstanceDto {
+    const ctx = (row.contextData && typeof row.contextData === 'object') ? (row.contextData as Record<string, any>) : {};
+    const snapshot = ctx['__workflowInstanceDto'] && typeof ctx['__workflowInstanceDto'] === 'object'
+      ? (ctx['__workflowInstanceDto'] as WorkflowInstanceDto)
+      : null;
+
+    const cleanContext = { ...ctx };
+    delete cleanContext['__workflowInstanceDto'];
+
+    if (snapshot) {
+      return {
+        ...snapshot,
+        id: snapshot.id || row.id,
+        tenantId: (snapshot as any).tenantId || row.tenantId || undefined,
+        workflowId: snapshot.workflowId || row.workflowId,
+        workflowCode: row.workflowCode,
+        workflowVersion: row.workflowVersion,
+        organizationType: row.organizationType as any,
+        entityId: row.entityId,
+        entityName: row.entityName,
+        currentStageId: snapshot.currentStageId || row.currentStageId,
+        currentStageCode: row.currentStageCode,
+        currentStageName: row.currentStageName,
+        status: row.status as any,
+        contextData: cleanContext,
+        createdAt: row.createdAt.toISOString(),
+        updatedAt: row.updatedAt.toISOString()
+      } as WorkflowInstanceDto;
     }
+
+    return {
+      id: row.id,
+      tenantId: row.tenantId || undefined,
+      workflowId: row.workflowId,
+      workflowCode: row.workflowCode,
+      workflowVersion: row.workflowVersion,
+      organizationType: row.organizationType as any,
+      entityId: row.entityId,
+      entityName: row.entityName,
+      currentStageId: row.currentStageId,
+      currentStageCode: row.currentStageCode,
+      currentStageName: row.currentStageName,
+      status: row.status as any,
+      contextData: cleanContext,
+      requirements: [],
+      pendingApprovals: [],
+      allowedTransitions: [],
+      auditHistory: [],
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString()
+    } as unknown as WorkflowInstanceDto;
   }
 
   async getDefinitions(orgType?: string): Promise<WorkflowDefinitionDto[]> {
@@ -119,6 +158,20 @@ export class WorkflowRepository implements IWorkflowRepository {
     } else {
       this.definitions.push(definition);
     }
+    const db = this.resolveDb();
+    await db
+      .insert(workflowDefinitions)
+      .values({
+        id: toUuid(definition.id || definition.code),
+        code: definition.code,
+        name: definition.name,
+        description: definition.description || null,
+        entityType: definition.entityType,
+        organizationType: definition.organizationType,
+        activeVersion: definition.activeVersion,
+        status: definition.status
+      })
+      .onConflictDoNothing();
     return definition;
   }
 
@@ -133,44 +186,215 @@ export class WorkflowRepository implements IWorkflowRepository {
     return version;
   }
 
-  async getInstances(filter?: { workflowCode?: string; status?: string }): Promise<WorkflowInstanceDto[]> {
-    let list = [...this.instances];
+  async getInstances(filter?: { workflowCode?: string; status?: string; tenantId?: string }): Promise<WorkflowInstanceDto[]> {
+    const db = this.resolveDb();
+    const rows = await db
+      .select()
+      .from(workflowInstances)
+      .orderBy(desc(workflowInstances.updatedAt));
+
+    let list: WorkflowInstanceDto[] = rows.map((r: typeof workflowInstances.$inferSelect) => this.mapRowToDto(r));
+    if (filter?.tenantId) {
+      const targetTenantUuid = toUuid(filter.tenantId);
+      list = list.filter((i: any) => {
+        const instTenantRaw = i.tenantId || i.contextData?.tenantId;
+        const instTenantUuid = instTenantRaw ? toUuid(String(instTenantRaw)) : null;
+        return instTenantRaw === filter.tenantId || instTenantUuid === targetTenantUuid || i.entityId === filter.tenantId;
+      });
+    }
     if (filter?.workflowCode && filter.workflowCode !== 'ALL') {
-      list = list.filter((i) => i.workflowCode === filter.workflowCode);
+      list = list.filter((i: WorkflowInstanceDto) => i.workflowCode === filter.workflowCode);
     }
     if (filter?.status && filter.status !== 'ALL') {
-      list = list.filter((i) => i.status === filter.status);
+      list = list.filter((i: WorkflowInstanceDto) => i.status === filter.status);
     }
     return list;
   }
 
-  async getInstanceById(id: string): Promise<WorkflowInstanceDto | null> {
-    const inst = this.instances.find((i) => i.id === id || i.entityId === id);
-    return inst || null;
+  async getInstanceById(id: string, tenantId?: string): Promise<WorkflowInstanceDto | null> {
+    const db = this.resolveDb();
+    const rows = await db
+      .select()
+      .from(workflowInstances)
+      .orderBy(desc(workflowInstances.updatedAt));
+
+    for (const row of rows) {
+      const dto = this.mapRowToDto(row);
+      const idMatch = dto.id === id || row.id === toUuid(id) || dto.entityId === id;
+      if (!idMatch) continue;
+
+      if (tenantId) {
+        const instTenantRaw = (dto as any).tenantId || (dto.contextData as any)?.tenantId || row.tenantId;
+        const targetTenantUuid = toUuid(tenantId);
+        const instTenantUuid = instTenantRaw ? toUuid(String(instTenantRaw)) : null;
+        if (instTenantRaw && instTenantRaw !== tenantId && instTenantUuid !== targetTenantUuid && dto.entityId !== tenantId) {
+          return null;
+        }
+      }
+      return dto;
+    }
+    return null;
   }
 
   async createInstance(instance: WorkflowInstanceDto): Promise<WorkflowInstanceDto> {
-    this.instances = [instance, ...this.instances.filter((i) => i.id !== instance.id)];
-    return instance;
+    const db = this.resolveDb();
+    const dbId = toUuid(instance.id);
+    const tenantUuid = this.resolveInstanceTenantUuid(instance);
+    const enrichedDto: WorkflowInstanceDto = {
+      ...instance,
+      ...(tenantUuid && !(instance as any).tenantId ? { tenantId: tenantUuid } : {})
+    } as any;
+
+    const storedContext = {
+      ...(instance.contextData || {}),
+      ...(tenantUuid ? { tenantId: (instance as any).tenantId || tenantUuid } : {}),
+      __workflowInstanceDto: enrichedDto
+    };
+
+    await db
+      .delete(workflowInstances)
+      .where(eq(workflowInstances.id, dbId));
+
+    await db.insert(workflowInstances).values({
+      id: dbId,
+      tenantId: tenantUuid,
+      workflowId: toUuid(instance.workflowId || instance.workflowCode),
+      workflowCode: instance.workflowCode,
+      workflowVersion: instance.workflowVersion || 1,
+      organizationType: instance.organizationType,
+      entityId: instance.entityId,
+      entityName: instance.entityName,
+      currentStageId: toUuid(instance.currentStageId || instance.currentStageCode),
+      currentStageCode: instance.currentStageCode,
+      currentStageName: instance.currentStageName,
+      status: instance.status,
+      contextData: storedContext,
+      createdAt: instance.createdAt ? new Date(instance.createdAt) : new Date(),
+      updatedAt: instance.updatedAt ? new Date(instance.updatedAt) : new Date()
+    });
+
+    if (Array.isArray(instance.requirements)) {
+      await db.delete(workflowRequirementInstances).where(eq(workflowRequirementInstances.instanceId, dbId));
+      for (const req of instance.requirements) {
+        await db.insert(workflowRequirementInstances).values({
+          id: toUuid(`${dbId}:${req.requirementCode}`),
+          instanceId: dbId,
+          requirementId: req.requirementId || req.requirementCode,
+          requirementCode: req.requirementCode,
+          name: req.name,
+          requirementType: req.requirementType || (req as any).type || 'DOCUMENT',
+          isFulfilled: Boolean(req.isFulfilled),
+          fulfilledAt: req.fulfilledAt ? new Date(req.fulfilledAt) : null,
+          fulfilledBy: req.fulfilledBy || null,
+          data: req.data || null,
+          evaluationResult: req.evaluationResult || null
+        }).onConflictDoNothing();
+      }
+    }
+
+    return enrichedDto;
   }
 
   async updateInstance(instance: WorkflowInstanceDto): Promise<WorkflowInstanceDto> {
-    const idx = this.instances.findIndex((i) => i.id === instance.id);
-    if (idx >= 0) {
-      this.instances[idx] = instance;
-    } else {
-      this.instances.push(instance);
+    const db = this.resolveDb();
+    const dbId = toUuid(instance.id);
+    const existing = await this.getInstanceById(instance.id);
+    const existingTenant = (existing as any)?.tenantId || (existing?.contextData as any)?.tenantId;
+    const incomingTenant = (instance as any).tenantId || (instance.contextData as any)?.tenantId;
+
+    if (existingTenant && incomingTenant && toUuid(String(existingTenant)) !== toUuid(String(incomingTenant))) {
+      throw new Error(`Cross-tenant workflow instance update denied for instance ${instance.id}.`);
     }
-    return instance;
+
+    const tenantUuid = this.resolveInstanceTenantUuid(instance) || (existingTenant ? toUuid(String(existingTenant)) : null);
+    const enrichedDto: WorkflowInstanceDto = {
+      ...instance,
+      updatedAt: new Date().toISOString(),
+      ...(existingTenant || incomingTenant ? { tenantId: incomingTenant || existingTenant } : {})
+    } as any;
+
+    const storedContext = {
+      ...(instance.contextData || {}),
+      ...(existingTenant || incomingTenant ? { tenantId: incomingTenant || existingTenant } : {}),
+      __workflowInstanceDto: enrichedDto
+    };
+
+    if (existing) {
+      await db
+        .update(workflowInstances)
+        .set({
+          tenantId: tenantUuid,
+          currentStageId: toUuid(instance.currentStageId || instance.currentStageCode),
+          currentStageCode: instance.currentStageCode,
+          currentStageName: instance.currentStageName,
+          status: instance.status,
+          contextData: storedContext,
+          updatedAt: new Date()
+        })
+        .where(eq(workflowInstances.id, dbId));
+    } else {
+      await this.createInstance(enrichedDto);
+    }
+
+    if (Array.isArray(instance.requirements)) {
+      await db.delete(workflowRequirementInstances).where(eq(workflowRequirementInstances.instanceId, dbId));
+      for (const req of instance.requirements) {
+        await db.insert(workflowRequirementInstances).values({
+          id: toUuid(`${dbId}:${req.requirementCode}`),
+          instanceId: dbId,
+          requirementId: req.requirementId || req.requirementCode,
+          requirementCode: req.requirementCode,
+          name: req.name,
+          requirementType: req.requirementType || (req as any).type || 'DOCUMENT',
+          isFulfilled: Boolean(req.isFulfilled),
+          fulfilledAt: req.fulfilledAt ? new Date(req.fulfilledAt) : null,
+          fulfilledBy: req.fulfilledBy || null,
+          data: req.data || null,
+          evaluationResult: req.evaluationResult || null
+        }).onConflictDoNothing();
+      }
+    }
+
+    return enrichedDto;
   }
 
   async recordApproval(approval: WorkflowApprovalDto): Promise<WorkflowApprovalDto> {
-    this.approvals = [approval, ...this.approvals.filter((a) => a.id !== approval.id)];
+    const db = this.resolveDb();
+    const approvalUuid = toUuid(approval.id);
+    const instanceUuid = toUuid(approval.instanceId);
+    await db.delete(workflowApprovals).where(eq(workflowApprovals.id, approvalUuid));
+    await db.insert(workflowApprovals).values({
+      id: approvalUuid,
+      instanceId: instanceUuid,
+      transitionId: toUuid(approval.transitionId || 'DEFAULT_TRANSITION'),
+      requiredRole: approval.requiredRole,
+      status: approval.status,
+      approvedBy: approval.approvedBy || null,
+      approvedAt: approval.approvedAt ? new Date(approval.approvedAt) : null,
+      comments: approval.comments || null
+    });
     return approval;
   }
 
   async appendAuditLog(log: WorkflowTransitionLogDto): Promise<void> {
-    this.auditLogs.unshift(log);
+    const db = this.resolveDb();
+    const logUuid = toUuid(log.id || `${log.instanceId}:${log.transitionCode}:${log.timestamp}`);
+    await db.insert(workflowTransitionLogs).values({
+      id: logUuid,
+      instanceId: toUuid(log.instanceId),
+      workflowId: toUuid(log.workflowId || 'DEFAULT_WORKFLOW'),
+      version: log.version || 1,
+      fromStageCode: log.fromStageCode,
+      toStageCode: log.toStageCode,
+      transitionCode: log.transitionCode,
+      actorEmail: log.actorEmail,
+      actorRole: log.actorRole,
+      rulesEvaluated: log.rulesEvaluated || [],
+      requirementsEvaluated: log.requirementsEvaluated || [],
+      actionsExecuted: log.actionsExecuted || [],
+      reason: log.reason || null,
+      timestamp: log.timestamp ? new Date(log.timestamp) : new Date()
+    }).onConflictDoNothing();
   }
 
   async getOffers(): Promise<DynamicOfferDto[]> {
@@ -195,7 +419,7 @@ export class WorkflowRepository implements IWorkflowRepository {
   }
 
   async updateLicenceRule(rule: DynamicLicenceRuleDto): Promise<DynamicLicenceRuleDto> {
-    const idx = this.licenceRules.findIndex((r) => r.id === rule.id || (r.organizationType === rule.organizationType && r.licenceTypeCode === rule.licenceTypeCode));
+    const idx = this.licenceRules.findIndex((r) => r.id === rule.id);
     if (idx >= 0) {
       this.licenceRules[idx] = rule;
     } else {
@@ -204,5 +428,3 @@ export class WorkflowRepository implements IWorkflowRepository {
     return rule;
   }
 }
-
-export const workflowRepository = new WorkflowRepository();

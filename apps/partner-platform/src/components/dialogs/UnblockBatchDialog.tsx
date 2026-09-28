@@ -9,6 +9,7 @@ import type {
   PharmacyBatchDto,
   UnblockBatchRequest
 } from '@docsearch/api-contracts';
+import { AuditJustificationField } from '../common/AuditJustificationField.js';
 
 export interface UnblockBatchDialogProps {
   isOpen: boolean;
@@ -26,7 +27,7 @@ export const UnblockBatchDialog: React.FC<UnblockBatchDialogProps> = ({
   tenantId
 }) => {
   const [unblockReason, setUnblockReason] = useState('Certificate of Analysis (COA) cleared by Quality Control.');
-  const [justification, setJustification] = useState('Pharmacist verified laboratory clearance report.');
+  const [justification, setJustification] = useState('Pharmacist verified manufacturer certificate of analysis and laboratory clearance report.');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,6 +64,8 @@ export const UnblockBatchDialog: React.FC<UnblockBatchDialogProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title={`Release Batch from Quarantine — ${batch.batchNumber}`}
+      isFullPage={true}
+      maxWidth="full"
       footer={
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
           <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
@@ -103,16 +106,11 @@ export const UnblockBatchDialog: React.FC<UnblockBatchDialogProps> = ({
           />
         </div>
 
-        <div>
-          <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.25rem' }}>
-            Audit Justification *
-          </label>
-          <Input
-            value={justification}
-            onChange={(e) => setJustification(e.target.value)}
-            required
-          />
-        </div>
+        <AuditJustificationField
+          value={justification}
+          onChange={setJustification}
+          defaultJustification="Pharmacist verified manufacturer certificate of analysis and laboratory clearance report."
+        />
       </form>
     </Dialog>
   );

@@ -1,4 +1,4 @@
-import { apiRequest } from './api-client.js';
+import { apiRequest, isMockFallbackAllowed } from './api-client.js';
 import type {
   BloodBankFacilityDto,
   BloodDonorDto,
@@ -96,27 +96,49 @@ export interface IBloodBankManagementService {
   resolveStorageExcursion(req: ResolveStorageExcursionRequest): Promise<void>;
 }
 
+function loadStored<T>(key: string, fallback: T[]): T[] {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const item = window.localStorage.getItem(key);
+      if (item) return JSON.parse(item);
+    } catch {
+      // Fallback
+    }
+  }
+  return [...fallback];
+}
+
+function saveStored<T>(key: string, data: T[]): void {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      window.localStorage.setItem(key, JSON.stringify(data));
+    } catch {
+      // Ignore
+    }
+  }
+}
+
 export class MockBloodBankManagementService implements IBloodBankManagementService {
   private facility: BloodBankFacilityDto = { ...mockBloodBankFacility };
-  private donors: BloodDonorDto[] = [...mockBloodDonors];
-  private screenings: BloodDonorScreeningDto[] = [...mockDonorScreenings];
-  private donations: BloodDonationDto[] = [...mockBloodDonations];
-  private tests: BloodTestRecordDto[] = [...mockBloodTests];
-  private components: BloodComponentDto[] = [...mockBloodComponents];
-  private requests: BloodRequestDto[] = [...mockBloodRequests];
-  private crossmatches: BloodCrossmatchDto[] = [...mockCrossmatches];
-  private issues: BloodIssueDto[] = [...mockBloodIssues];
-  private transfusions: TransfusionRecordDto[] = [...mockTransfusions];
-  private reactions: TransfusionReactionDto[] = [...mockReactions];
-  private qualityChecks: BloodQualityCheckDto[] = [...mockQualityChecks];
-  private temperatureLogs: BloodStorageTemperatureLogDto[] = [...mockTemperatureLogs];
-  private discards: BloodDiscardRecordDto[] = [...mockDiscards];
+  private donors: BloodDonorDto[] = loadStored('docsearch_blood_donors', mockBloodDonors);
+  private screenings: BloodDonorScreeningDto[] = loadStored('docsearch_blood_donor_screenings', mockDonorScreenings);
+  private donations: BloodDonationDto[] = loadStored('docsearch_blood_donations', mockBloodDonations);
+  private tests: BloodTestRecordDto[] = loadStored('docsearch_blood_tests', mockBloodTests);
+  private components: BloodComponentDto[] = loadStored('docsearch_blood_components', mockBloodComponents);
+  private requests: BloodRequestDto[] = loadStored('docsearch_blood_requests', mockBloodRequests);
+  private crossmatches: BloodCrossmatchDto[] = loadStored('docsearch_blood_crossmatches', mockCrossmatches);
+  private issues: BloodIssueDto[] = loadStored('docsearch_blood_issues', mockBloodIssues);
+  private transfusions: TransfusionRecordDto[] = loadStored('docsearch_blood_transfusions', mockTransfusions);
+  private reactions: TransfusionReactionDto[] = loadStored('docsearch_blood_reactions', mockReactions);
+  private qualityChecks: BloodQualityCheckDto[] = loadStored('docsearch_blood_quality_checks', mockQualityChecks);
+  private temperatureLogs: BloodStorageTemperatureLogDto[] = loadStored('docsearch_blood_temperature_logs', mockTemperatureLogs);
+  private discards: BloodDiscardRecordDto[] = loadStored('docsearch_blood_discards', mockDiscards);
   private auditTraces: BloodBankAuditTraceDto[] = [...mockBloodBankAuditTraces];
 
-  private addTrace(actorName: string, actorRole: string, action: string, entityType: string, entityCode: string, justification: string) {
+  private addTrace(actorName: string, actorRole: string, action: string, entityType: string, entityCode: string, justification: string, tenantId = '11111111-1111-4111-8111-111111111111') {
     const trace: BloodBankAuditTraceDto = {
       id: 'bba-' + Math.random().toString(36).substring(2, 9),
-      tenantId: '11111111-1111-4111-8111-111111111111',
+      tenantId,
       partnerId: '22222222-2222-4222-8222-222222222222',
       organizationId: '33333333-3333-4333-8333-333333333333',
       branchId: '44444444-4444-4444-8444-444444444444',
@@ -139,6 +161,12 @@ export class MockBloodBankManagementService implements IBloodBankManagementServi
   }
 
   async getOverviewMetrics(tenantId: string): Promise<BloodBankOverviewMetricsDto> {
+    try {
+      const res = await apiRequest<BloodBankOverviewMetricsDto>('/api/v1/partner/blood-bank/overview');
+      if (res.success && res.data) return res.data;
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
     const available = this.components.filter((c) => c.tenantId === tenantId && c.status === 'RELEASED_USABLE');
     const quarantine = this.components.filter((c) => c.tenantId === tenantId && c.status === 'QUARANTINED');
     const prbc = available.filter((c) => c.componentType === 'PACKED_RED_BLOOD_CELLS_PRBC').length;
@@ -170,6 +198,15 @@ export class MockBloodBankManagementService implements IBloodBankManagementServi
   }
 
   async getDonors(tenantId: string): Promise<BloodDonorDto[]> {
+    try {
+      const res = await apiRequest<BloodDonorDto[]>('/api/v1/partner/blood-bank/donors');
+      if (res.success && Array.isArray(res.data)) {
+        this.donors = res.data;
+        return res.data;
+      }
+    } catch {
+      // Fallback
+    }
     return this.donors.filter((d) => d.tenantId === tenantId);
   }
 
@@ -178,6 +215,15 @@ export class MockBloodBankManagementService implements IBloodBankManagementServi
   }
 
   async getDonations(tenantId: string): Promise<BloodDonationDto[]> {
+    try {
+      const res = await apiRequest<BloodDonationDto[]>('/api/v1/partner/blood-bank/donations');
+      if (res.success && Array.isArray(res.data)) {
+        this.donations = res.data;
+        return res.data;
+      }
+    } catch {
+      // Fallback
+    }
     return this.donations.filter((d) => d.tenantId === tenantId);
   }
 
@@ -188,7 +234,8 @@ export class MockBloodBankManagementService implements IBloodBankManagementServi
   async getComponents(tenantId: string): Promise<BloodComponentDto[]> {
     try {
       const res = await apiRequest<BloodComponentDto[]>('/api/v1/partner/blood-bank/inventory');
-      if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+      if (res.success && Array.isArray(res.data)) {
+        this.components = res.data;
         return res.data;
       }
     } catch {
@@ -198,18 +245,56 @@ export class MockBloodBankManagementService implements IBloodBankManagementServi
   }
 
   async getRequests(tenantId: string): Promise<BloodRequestDto[]> {
+    try {
+      const res = await apiRequest<BloodRequestDto[]>('/api/v1/partner/blood-bank/requests');
+      if (res.success && Array.isArray(res.data)) {
+        this.requests = res.data;
+        return res.data;
+      }
+    } catch {
+      // Fallback
+    }
     return this.requests.filter((r) => r.tenantId === tenantId);
   }
 
   async getCrossmatches(tenantId: string): Promise<BloodCrossmatchDto[]> {
+    try {
+      const res = await apiRequest<BloodCrossmatchDto[]>('/api/v1/partner/blood-bank/crossmatches');
+      if (res.success && Array.isArray(res.data)) {
+        this.crossmatches = res.data;
+        saveStored('docsearch_blood_crossmatches', this.crossmatches);
+        return res.data;
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
     return this.crossmatches.filter((c) => c.tenantId === tenantId);
   }
 
   async getIssues(tenantId: string): Promise<BloodIssueDto[]> {
+    try {
+      const res = await apiRequest<BloodIssueDto[]>('/api/v1/partner/blood-bank/issues');
+      if (res.success && Array.isArray(res.data)) {
+        this.issues = res.data;
+        saveStored('docsearch_blood_issues', this.issues);
+        return res.data;
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
     return this.issues.filter((i) => i.tenantId === tenantId);
   }
 
   async getTransfusions(tenantId: string): Promise<TransfusionRecordDto[]> {
+    try {
+      const res = await apiRequest<TransfusionRecordDto[]>('/api/v1/partner/blood-bank/transfusions');
+      if (res.success && Array.isArray(res.data)) {
+        this.transfusions = res.data;
+        return res.data;
+      }
+    } catch {
+      // Fallback
+    }
     return this.transfusions.filter((t) => t.tenantId === tenantId);
   }
 
@@ -240,10 +325,17 @@ export class MockBloodBankManagementService implements IBloodBankManagementServi
         body: JSON.stringify(req)
       });
       if (res.success && res.data) {
+        this.donors.unshift(res.data);
+        saveStored('docsearch_blood_donors', this.donors);
         return res.data;
       }
-    } catch {
-      // Fallback
+      if (!isMockFallbackAllowed()) {
+        throw new Error(res.error?.message || 'Failed to register blood donor on server');
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) {
+        throw err instanceof Error ? err : new Error('Blood donor registration network error');
+      }
     }
     const newDonor: BloodDonorDto = {
       id: 'bd-' + Math.random().toString(36).substring(2, 9),
@@ -265,6 +357,7 @@ export class MockBloodBankManagementService implements IBloodBankManagementServi
       createdAt: new Date().toISOString()
     };
     this.donors.unshift(newDonor);
+    saveStored('docsearch_blood_donors', this.donors);
     this.addTrace(req.fullName, 'DONOR_REGISTRAR', 'REGISTER_DONOR', 'BLOOD_DONOR', newDonor.donorCode, 'New blood donor registered');
     return newDonor;
   }
@@ -292,10 +385,12 @@ export class MockBloodBankManagementService implements IBloodBankManagementServi
       screenedAt: new Date().toISOString()
     };
     this.screenings.unshift(newScreening);
+    saveStored('docsearch_blood_donor_screenings', this.screenings);
 
     const d = this.donors.find((donor) => donor.id === req.donorId);
     if (d) {
       d.eligibilityStatus = req.eligibilityDecision;
+      saveStored('docsearch_blood_donors', this.donors);
     }
     this.addTrace(req.screeningNurseName, 'SCREENING_NURSE', 'SCREEN_DONOR', 'DONOR_SCREENING', newScreening.screeningCode, `Decision: ${req.eligibilityDecision}`);
     return newScreening;
@@ -308,6 +403,8 @@ export class MockBloodBankManagementService implements IBloodBankManagementServi
         body: JSON.stringify(req)
       });
       if (res.success && res.data) {
+        this.donations.unshift(res.data);
+        saveStored('docsearch_blood_donations', this.donations);
         return res.data;
       }
     } catch {
@@ -333,6 +430,7 @@ export class MockBloodBankManagementService implements IBloodBankManagementServi
       collectedAt: new Date().toISOString()
     };
     this.donations.unshift(newDonation);
+    saveStored('docsearch_blood_donations', this.donations);
 
     const d = this.donors.find((donor) => donor.id === req.donorId);
     if (d) {
@@ -341,6 +439,7 @@ export class MockBloodBankManagementService implements IBloodBankManagementServi
       const nextDate = new Date();
       nextDate.setDate(nextDate.getDate() + 90);
       d.nextEligibleDate = nextDate.toISOString();
+      saveStored('docsearch_blood_donors', this.donors);
     }
     this.addTrace(req.phlebotomistName, 'PHLEBOTOMIST', 'COLLECT_BLOOD', 'BLOOD_DONATION', newDonation.donationNumber, `Collected ${req.collectedVolumeMl}ml from ${req.donorName}`);
     return newDonation;
@@ -353,6 +452,8 @@ export class MockBloodBankManagementService implements IBloodBankManagementServi
         body: JSON.stringify(req)
       });
       if (res.success && res.data) {
+        this.tests.unshift(res.data);
+        saveStored('docsearch_blood_tests', this.tests);
         return res.data;
       }
     } catch {
@@ -381,10 +482,12 @@ export class MockBloodBankManagementService implements IBloodBankManagementServi
       testedAt: new Date().toISOString()
     };
     this.tests.unshift(newTest);
+    saveStored('docsearch_blood_tests', this.tests);
 
     const don = this.donations.find((d) => d.id === req.donationId);
     if (don) {
       don.unitStatus = req.isPassedForRelease ? 'RELEASED_USABLE' : 'DISCARDED_BIOHAZARD';
+      saveStored('docsearch_blood_donations', this.donations);
     }
     this.addTrace(req.pathologistSignOffName, 'PATHOLOGIST', 'SIGN_OFF_BLOOD_TEST', 'BLOOD_TEST', newTest.testCode, `Release Passed: ${req.isPassedForRelease}`);
     return newTest;
@@ -396,12 +499,27 @@ export class MockBloodBankManagementService implements IBloodBankManagementServi
 
     comp.status = 'RELEASED_USABLE';
     comp.releasedByPathologist = req.releasedByPathologist;
+    saveStored('docsearch_blood_components', this.components);
 
     this.addTrace(req.releasedByPathologist, 'PATHOLOGIST', 'RELEASE_BLOOD_UNIT', 'BLOOD_COMPONENT', comp.componentCode, req.verificationNotes);
     return comp;
   }
 
   async createComponent(req: CreateComponentRequest): Promise<BloodComponentDto> {
+    try {
+      const res = await apiRequest<BloodComponentDto>('/api/v1/partner/blood-bank/components/separate', {
+        method: 'POST',
+        body: JSON.stringify(req)
+      });
+      if (res.success && res.data) {
+        this.components.unshift(res.data);
+        saveStored('docsearch_blood_components', this.components);
+        return res.data;
+      }
+    } catch {
+      // Fallback
+    }
+
     const exp = new Date();
     if (req.componentType === 'PACKED_RED_BLOOD_CELLS_PRBC' || req.componentType === 'LEUKOREDUCED_PRBC') exp.setDate(exp.getDate() + 42);
     else if (req.componentType === 'RANDOM_DONOR_PLATELETS_RDP' || req.componentType === 'SINGLE_DONOR_PLATELETS_SDP') exp.setDate(exp.getDate() + 5);
@@ -427,6 +545,7 @@ export class MockBloodBankManagementService implements IBloodBankManagementServi
       createdAt: new Date().toISOString()
     };
     this.components.unshift(newComp);
+    saveStored('docsearch_blood_components', this.components);
     this.addTrace(req.preparedByTechnician, 'BLOOD_BANK_TECHNOLOGIST', 'SEPARATE_COMPONENT', 'BLOOD_COMPONENT', newComp.componentCode, `Prepared ${req.componentType} (${req.volumeMl}ml)`);
     return newComp;
   }
@@ -438,6 +557,8 @@ export class MockBloodBankManagementService implements IBloodBankManagementServi
         body: JSON.stringify(req)
       });
       if (res.success && res.data) {
+        this.requests.unshift(res.data);
+        saveStored('docsearch_blood_requests', this.requests);
         return res.data;
       }
     } catch {
@@ -466,6 +587,7 @@ export class MockBloodBankManagementService implements IBloodBankManagementServi
       requestedAt: new Date().toISOString()
     };
     this.requests.unshift(newReq);
+    saveStored('docsearch_blood_requests', this.requests);
     this.addTrace(req.orderingPhysicianName, 'ORDERING_PHYSICIAN', 'ORDER_BLOOD', 'BLOOD_REQUEST', newReq.requestCode, req.clinicalIndication);
     return newReq;
   }
@@ -477,6 +599,8 @@ export class MockBloodBankManagementService implements IBloodBankManagementServi
         body: JSON.stringify(req)
       });
       if (res.success && res.data) {
+        this.crossmatches.unshift(res.data);
+        saveStored('docsearch_blood_crossmatches', this.crossmatches);
         return res.data;
       }
     } catch {
@@ -508,12 +632,19 @@ export class MockBloodBankManagementService implements IBloodBankManagementServi
       expiresAt: exp.toISOString()
     };
     this.crossmatches.unshift(newXm);
+    saveStored('docsearch_blood_crossmatches', this.crossmatches);
 
     if (req.overallResult === 'COMPATIBLE') {
       const comp = this.components.find((c) => c.id === req.componentId);
-      if (comp) comp.status = 'RESERVED_FOR_PATIENT';
+      if (comp) {
+        comp.status = 'RESERVED_FOR_PATIENT';
+        saveStored('docsearch_blood_components', this.components);
+      }
       const r = this.requests.find((reqItem) => reqItem.id === req.requestId);
-      if (r) r.status = 'RESERVED';
+      if (r) {
+        r.status = 'RESERVED';
+        saveStored('docsearch_blood_requests', this.requests);
+      }
     }
     this.addTrace(req.verifiedByPathologist, 'PATHOLOGIST', 'VERIFY_CROSSMATCH', 'CROSSMATCH', newXm.crossmatchCode, `Result: ${req.overallResult}`);
     return newXm;
@@ -524,9 +655,13 @@ export class MockBloodBankManagementService implements IBloodBankManagementServi
     if (!r) throw new Error('Blood request not found');
 
     const comp = this.components.find((c) => c.id === req.componentId);
-    if (comp) comp.status = 'RESERVED_FOR_PATIENT';
+    if (comp) {
+      comp.status = 'RESERVED_FOR_PATIENT';
+      saveStored('docsearch_blood_components', this.components);
+    }
 
     r.status = 'RESERVED';
+    saveStored('docsearch_blood_requests', this.requests);
     this.addTrace(req.reservedByStaff, 'BLOOD_BANK_TECHNOLOGIST', 'RESERVE_BLOOD_UNIT', 'BLOOD_RESERVATION', r.requestCode, `Reserved unit for ${r.patientName}`);
     return r;
   }
@@ -538,6 +673,8 @@ export class MockBloodBankManagementService implements IBloodBankManagementServi
         body: JSON.stringify(req)
       });
       if (res.success && res.data) {
+        this.issues.unshift(res.data);
+        saveStored('docsearch_blood_issues', this.issues);
         return res.data;
       }
     } catch {
@@ -562,12 +699,19 @@ export class MockBloodBankManagementService implements IBloodBankManagementServi
       issuedAt: new Date().toISOString()
     };
     this.issues.unshift(newIssue);
+    saveStored('docsearch_blood_issues', this.issues);
 
     const comp = this.components.find((c) => c.id === req.componentId);
-    if (comp) comp.status = 'ISSUED_TO_DEPARTMENT';
+    if (comp) {
+      comp.status = 'ISSUED_TO_DEPARTMENT';
+      saveStored('docsearch_blood_components', this.components);
+    }
 
     const r = this.requests.find((reqItem) => reqItem.id === req.requestId);
-    if (r) r.status = 'COMPLETED';
+    if (r) {
+      r.status = 'COMPLETED';
+      saveStored('docsearch_blood_requests', this.requests);
+    }
 
     this.addTrace(req.issuingTechnicianName, 'BLOOD_BANK_TECHNOLOGIST', 'ISSUE_BLOOD_UNIT', 'BLOOD_ISSUE', newIssue.issueCode, `Issued to ${req.destinationDepartment} received by ${req.receivingNurseName}`);
     return newIssue;
@@ -580,6 +724,8 @@ export class MockBloodBankManagementService implements IBloodBankManagementServi
         body: JSON.stringify(req)
       });
       if (res.success && res.data) {
+        this.transfusions.unshift(res.data);
+        saveStored('docsearch_blood_transfusions', this.transfusions);
         return res.data;
       }
     } catch {
@@ -608,6 +754,7 @@ export class MockBloodBankManagementService implements IBloodBankManagementServi
       status: 'IN_PROGRESS'
     };
     this.transfusions.unshift(newTx);
+    saveStored('docsearch_blood_transfusions', this.transfusions);
     this.addTrace(req.administeredByNurse, 'TRANSFUSION_NURSE', 'START_TRANSFUSION', 'TRANSFUSION_RECORD', newTx.transfusionCode, `Administering ${req.componentType} to ${req.patientName}`);
     return newTx;
   }
@@ -623,6 +770,7 @@ export class MockBloodBankManagementService implements IBloodBankManagementServi
     tx.adverseReactionNoted = req.adverseReactionNoted;
     tx.status = req.status;
     tx.outcomeNotes = req.outcomeNotes;
+    saveStored('docsearch_blood_transfusions', this.transfusions);
 
     this.addTrace(tx.administeredByNurse, 'TRANSFUSION_NURSE', 'COMPLETE_TRANSFUSION_OBSERVATION', 'TRANSFUSION_RECORD', tx.transfusionCode, req.outcomeNotes || 'Transfusion completed');
     return tx;
@@ -649,11 +797,13 @@ export class MockBloodBankManagementService implements IBloodBankManagementServi
       reportedAt: new Date().toISOString()
     };
     this.reactions.unshift(newRxn);
+    saveStored('docsearch_blood_reactions', this.reactions);
 
     const tx = this.transfusions.find((t) => t.id === req.transfusionId);
     if (tx) {
       tx.adverseReactionNoted = true;
       tx.status = 'HALTED_DUE_TO_REACTION';
+      saveStored('docsearch_blood_transfusions', this.transfusions);
     }
     this.addTrace(req.notifiedPhysicianName, 'ATTENDING_PHYSICIAN', 'REPORT_TRANSFUSION_REACTION', 'TRANSFUSION_REACTION', newRxn.reactionReportCode, req.symptomsObserved);
     return newRxn;
@@ -663,6 +813,7 @@ export class MockBloodBankManagementService implements IBloodBankManagementServi
     const comp = this.components.find((c) => c.id === req.componentId);
     if (comp) {
       comp.status = req.reEntryApproved ? 'RELEASED_USABLE' : 'DISCARDED_BIOHAZARD';
+      saveStored('docsearch_blood_components', this.components);
     }
     this.addTrace(req.evaluatingOfficer, 'BLOOD_BANK_OFFICER', 'PROCESS_BLOOD_RETURN', 'BLOOD_COMPONENT', req.componentId, `Re-entry Approved: ${req.reEntryApproved}`);
   }
@@ -684,9 +835,13 @@ export class MockBloodBankManagementService implements IBloodBankManagementServi
       discardedAt: new Date().toISOString()
     };
     this.discards.unshift(newDiscard);
+    saveStored('docsearch_blood_discards', this.discards);
 
     const comp = this.components.find((c) => c.componentCode === req.componentCode);
-    if (comp) comp.status = 'DISCARDED_BIOHAZARD';
+    if (comp) {
+      comp.status = 'DISCARDED_BIOHAZARD';
+      saveStored('docsearch_blood_components', this.components);
+    }
 
     this.addTrace(req.authorizedByPathologist, 'PATHOLOGIST', 'DISCARD_BLOOD_UNIT', 'BLOOD_DISCARD', newDiscard.discardCode, `Reason: ${req.reason}`);
     return newDiscard;
@@ -710,6 +865,7 @@ export class MockBloodBankManagementService implements IBloodBankManagementServi
       checkedAt: new Date().toISOString()
     };
     this.qualityChecks.unshift(newQC);
+    saveStored('docsearch_blood_quality_checks', this.qualityChecks);
     this.addTrace(req.technicianName, 'QC_TECHNOLOGIST', 'PERFORM_QC_CHECK', 'QUALITY_CHECK', newQC.qcCode, `Passed: ${req.isPassed}`);
     return newQC;
   }
@@ -731,6 +887,7 @@ export class MockBloodBankManagementService implements IBloodBankManagementServi
       recordedAt: new Date().toISOString()
     };
     this.temperatureLogs.unshift(newLog);
+    saveStored('docsearch_blood_temperature_logs', this.temperatureLogs);
     if (isExcursion) {
       this.addTrace('SYSTEM_TEMPERATURE_PROBE', 'AUTOMATED_PROBE', 'TEMPERATURE_EXCURSION_ALERT', 'STORAGE_MONITOR', req.unitLocation, `Temperature ${req.recordedTemperatureC}°C outside range [${req.targetMinC}°C, ${req.targetMaxC}°C]`);
     }
@@ -739,7 +896,10 @@ export class MockBloodBankManagementService implements IBloodBankManagementServi
 
   async resolveStorageExcursion(req: ResolveStorageExcursionRequest): Promise<void> {
     const log = this.temperatureLogs.find((l) => l.id === req.logId);
-    if (log) log.isExcursion = false;
+    if (log) {
+      log.isExcursion = false;
+      saveStored('docsearch_blood_temperature_logs', this.temperatureLogs);
+    }
     this.addTrace(req.resolvedByOfficer, 'STORAGE_OFFICER', 'RESOLVE_STORAGE_EXCURSION', 'STORAGE_LOG', req.logId, req.correctiveActionTaken);
   }
 }

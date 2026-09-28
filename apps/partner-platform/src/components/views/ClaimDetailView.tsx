@@ -71,7 +71,7 @@ export const ClaimDetailView: React.FC<ClaimDetailViewProps> = ({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <Button variant="outline" size="sm" onClick={onBackToDirectory}>
-            ← Back
+            ← Back to Claims
           </Button>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>

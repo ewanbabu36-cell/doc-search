@@ -39,9 +39,9 @@ export const BillingChargeDirectoryView: React.FC<BillingChargeDirectoryViewProp
     if (domainFilter !== 'ALL' && c.sourceDomain !== domainFilter) return false;
     if (searchTerm.trim()) {
       const lower = searchTerm.toLowerCase();
-      const matchNumber = c.chargeNumber.toLowerCase().includes(lower);
-      const matchPatient = c.patientName.toLowerCase().includes(lower) || c.patientMrn.toLowerCase().includes(lower);
-      const matchItem = c.items.some((it) => it.description.toLowerCase().includes(lower));
+      const matchNumber = (c.chargeNumber || '').toLowerCase().includes(lower);
+      const matchPatient = (c.patientName || '').toLowerCase().includes(lower) || (c.patientMrn || '').toLowerCase().includes(lower);
+      const matchItem = (c.items || []).some((it) => (it.description || '').toLowerCase().includes(lower));
       if (!matchNumber && !matchPatient && !matchItem) return false;
     }
     return true;
@@ -182,7 +182,7 @@ export const BillingChargeDirectoryView: React.FC<BillingChargeDirectoryViewProp
                       </div>
                     </TableCell>
                     <TableCell style={{ fontWeight: 700, color: '#0f172a' }}>
-                      ${ch.grandTotal.toFixed(2)}
+                      ₹{ch.grandTotal.toFixed(2)}
                     </TableCell>
                     <TableCell>{getStatusBadge(ch.status)}</TableCell>
                     <TableCell style={{ fontSize: '0.8rem', color: '#64748b' }}>
@@ -195,8 +195,12 @@ export const BillingChargeDirectoryView: React.FC<BillingChargeDirectoryViewProp
                           Invoice Charge
                         </Button>
                       ) : (
-                        <Button variant="outline" disabled>
-                          Invoiced
+                        <Button
+                          variant="outline"
+                          disabled
+                          title={`Charge ${ch.id} has already been invoiced into patient billing ledger.`}
+                        >
+                          ✓ Invoiced
                         </Button>
                       )}
                     </TableCell>

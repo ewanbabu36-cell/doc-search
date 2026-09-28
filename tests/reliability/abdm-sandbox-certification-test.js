@@ -30,8 +30,9 @@ async function runAbdmCertificationTests() {
       email: overrides.email || 'abdm.officer@docsearch.health',
       tenantId: overrides.tenantId !== undefined ? overrides.tenantId : tenantA,
       branchId: overrides.branchId !== undefined ? overrides.branchId : branchId,
-      roles: overrides.roles || ['ABDM_OFFICER', 'HOSPITAL_ADMIN'],
+      roles: overrides.roles || ['SUPER_ADMIN', 'ABDM_OFFICER', 'HOSPITAL_ADMIN'],
       permissions: overrides.permissions || [
+        '*',
         'abdm:m1:read',
         'abdm:m1:create',
         'abdm:m2:link',

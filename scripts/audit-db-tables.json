@@ -1,0 +1,2497 @@
+[
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "facilityRegistry",
+    "sqlTableName": "facility_registry"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "operationalPartners",
+    "sqlTableName": "operational_partners"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "operationalOrganizations",
+    "sqlTableName": "operational_organizations"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "operationalFacilities",
+    "sqlTableName": "operational_facilities"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "operationalSubscriptions",
+    "sqlTableName": "operational_subscriptions"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "operationalAuditTraces",
+    "sqlTableName": "operational_audit_traces"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "operationalDepartments",
+    "sqlTableName": "operational_departments"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "operationalStaff",
+    "sqlTableName": "operational_staff"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "staffRoleAssignments",
+    "sqlTableName": "staff_role_assignments"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "staffCredentials",
+    "sqlTableName": "staff_credentials"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "staffTransfers",
+    "sqlTableName": "staff_transfers"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "operationalStaffAuditTraces",
+    "sqlTableName": "operational_staff_audit_traces"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "doctorProfiles",
+    "sqlTableName": "doctor_profiles"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "doctorSpecializations",
+    "sqlTableName": "doctor_specializations"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "doctorSchedules",
+    "sqlTableName": "doctor_schedules"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "doctorScheduleBreaks",
+    "sqlTableName": "doctor_schedule_breaks"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "doctorLeaves",
+    "sqlTableName": "doctor_leaves"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "opdSlots",
+    "sqlTableName": "opd_slots"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "consultationFeeMatrices",
+    "sqlTableName": "consultation_fee_matrices"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "doctorOpdAuditTraces",
+    "sqlTableName": "doctor_opd_audit_traces"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "patients",
+    "sqlTableName": "patients"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "patientContacts",
+    "sqlTableName": "patient_contacts"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "patientAddresses",
+    "sqlTableName": "patient_addresses"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "patientEmergencyContacts",
+    "sqlTableName": "patient_emergency_contacts"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "patientIdentifiers",
+    "sqlTableName": "patient_identifiers"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "patientConsents",
+    "sqlTableName": "patient_consents"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "patientInsurancePolicies",
+    "sqlTableName": "patient_insurance_policies"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "patientDuplicateCandidates",
+    "sqlTableName": "patient_duplicate_candidates"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "patientMergeEvents",
+    "sqlTableName": "patient_merge_events"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "patientRegistrationAuditTraces",
+    "sqlTableName": "patient_registration_audit_traces"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "encounters",
+    "sqlTableName": "encounters"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "encounterQueues",
+    "sqlTableName": "encounter_queues"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "encounterReferrals",
+    "sqlTableName": "encounter_referrals"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "encounterAuditTraces",
+    "sqlTableName": "encounter_audit_traces"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "consultations",
+    "sqlTableName": "consultations"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "consultationVitals",
+    "sqlTableName": "consultation_vitals"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "consultationExaminations",
+    "sqlTableName": "consultation_examinations"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "consultationDiagnoses",
+    "sqlTableName": "consultation_diagnoses"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "consultationMedications",
+    "sqlTableName": "consultation_medications"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "consultationInstructions",
+    "sqlTableName": "consultation_instructions"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "consultationFollowups",
+    "sqlTableName": "consultation_followups"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "consultationAuditTraces",
+    "sqlTableName": "consultation_audit_traces"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "investigationCatalog",
+    "sqlTableName": "investigation_catalog"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "investigationPanels",
+    "sqlTableName": "investigation_panels"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "investigationPanelItems",
+    "sqlTableName": "investigation_panel_items"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "investigationOrders",
+    "sqlTableName": "investigation_orders"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "investigationSpecimens",
+    "sqlTableName": "investigation_specimens"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "investigationResults",
+    "sqlTableName": "investigation_results"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "investigationReports",
+    "sqlTableName": "investigation_reports"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "investigationResultAmendments",
+    "sqlTableName": "investigation_result_amendments"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "investigationAuditTraces",
+    "sqlTableName": "investigation_audit_traces"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "medicationCatalog",
+    "sqlTableName": "medication_catalog"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "medicationCatalogVariants",
+    "sqlTableName": "medication_catalog_variants"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "pharmacyPrescriptions",
+    "sqlTableName": "pharmacy_prescriptions"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "pharmacyPrescriptionItems",
+    "sqlTableName": "pharmacy_prescription_items"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "pharmacyInventory",
+    "sqlTableName": "pharmacy_inventory"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "pharmacyBatches",
+    "sqlTableName": "pharmacy_batches"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "pharmacyStockMovements",
+    "sqlTableName": "pharmacy_stock_movements"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "pharmacyStockReservations",
+    "sqlTableName": "pharmacy_stock_reservations"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "pharmacyDispensing",
+    "sqlTableName": "pharmacy_dispensing"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "pharmacyDispensingItems",
+    "sqlTableName": "pharmacy_dispensing_items"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "pharmacyReturns",
+    "sqlTableName": "pharmacy_returns"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "pharmacyStockAdjustments",
+    "sqlTableName": "pharmacy_stock_adjustments"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "pharmacySubstitutionRequests",
+    "sqlTableName": "pharmacy_substitution_requests"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "pharmacyAuditTraces",
+    "sqlTableName": "pharmacy_audit_traces"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "billingServiceCatalog",
+    "sqlTableName": "billing_service_catalog"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "billingPriceLists",
+    "sqlTableName": "billing_price_lists"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "billingPriceListItems",
+    "sqlTableName": "billing_price_list_items"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "billingCharges",
+    "sqlTableName": "billing_charges"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "billingChargeItems",
+    "sqlTableName": "billing_charge_items"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "billingInvoices",
+    "sqlTableName": "billing_invoices"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "billingInvoiceItems",
+    "sqlTableName": "billing_invoice_items"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "billingDiscounts",
+    "sqlTableName": "billing_discounts"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "billingPayments",
+    "sqlTableName": "billing_payments"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "billingPaymentAllocations",
+    "sqlTableName": "billing_payment_allocations"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "billingReceipts",
+    "sqlTableName": "billing_receipts"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "billingRefunds",
+    "sqlTableName": "billing_refunds"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "billingCreditNotes",
+    "sqlTableName": "billing_credit_notes"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "billingDebitAdjustments",
+    "sqlTableName": "billing_debit_adjustments"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "billingAdvances",
+    "sqlTableName": "billing_advances"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "billingCashierSessions",
+    "sqlTableName": "billing_cashier_sessions"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "billingReconciliations",
+    "sqlTableName": "billing_reconciliations"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "billingFinancialTransactions",
+    "sqlTableName": "billing_financial_transactions"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "billingAuditTraces",
+    "sqlTableName": "billing_audit_traces"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "insurancePayers",
+    "sqlTableName": "insurance_payers"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "insurancePlans",
+    "sqlTableName": "insurance_plans"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "insurancePatientPolicies",
+    "sqlTableName": "insurance_patient_policies"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "insuranceEligibilityChecks",
+    "sqlTableName": "insurance_eligibility_checks"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "insuranceAuthorizations",
+    "sqlTableName": "insurance_authorizations"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "insuranceClaims",
+    "sqlTableName": "insurance_claims"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "insuranceClaimItems",
+    "sqlTableName": "insurance_claim_items"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "insuranceClaimSubmissions",
+    "sqlTableName": "insurance_claim_submissions"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "insuranceClaimAdjudications",
+    "sqlTableName": "insurance_claim_adjudications"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "insuranceClaimDenials",
+    "sqlTableName": "insurance_claim_denials"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "insuranceClaimAppeals",
+    "sqlTableName": "insurance_claim_appeals"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "insuranceSettlements",
+    "sqlTableName": "insurance_settlements"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "insuranceReconciliations",
+    "sqlTableName": "insurance_reconciliations"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "insuranceDocumentRecords",
+    "sqlTableName": "insurance_document_records"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "insuranceAuditTraces",
+    "sqlTableName": "insurance_audit_traces"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "procurementVendors",
+    "sqlTableName": "procurement_vendors"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "procurementVendorContacts",
+    "sqlTableName": "procurement_vendor_contacts"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "procurementVendorDocuments",
+    "sqlTableName": "procurement_vendor_documents"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "procurementVendorContracts",
+    "sqlTableName": "procurement_vendor_contracts"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "procurementVendorContractItems",
+    "sqlTableName": "procurement_vendor_contract_items"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "procurementItems",
+    "sqlTableName": "procurement_items"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "procurementItemVendorMappings",
+    "sqlTableName": "procurement_item_vendor_mappings"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "purchaseRequisitions",
+    "sqlTableName": "purchase_requisitions"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "purchaseRequisitionItems",
+    "sqlTableName": "purchase_requisition_items"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "procurementApprovals",
+    "sqlTableName": "procurement_approvals"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "purchaseOrders",
+    "sqlTableName": "purchase_orders"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "purchaseOrderItems",
+    "sqlTableName": "purchase_order_items"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "goodsReceipts",
+    "sqlTableName": "goods_receipts"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "goodsReceiptItems",
+    "sqlTableName": "goods_receipt_items"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "procurementInspections",
+    "sqlTableName": "procurement_inspections"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "procurementInspectionItems",
+    "sqlTableName": "procurement_inspection_items"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "vendorReturns",
+    "sqlTableName": "vendor_returns"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "vendorReturnItems",
+    "sqlTableName": "vendor_return_items"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "purchaseInvoices",
+    "sqlTableName": "purchase_invoices"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "purchaseInvoiceMatches",
+    "sqlTableName": "purchase_invoice_matches"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "procurementExceptions",
+    "sqlTableName": "procurement_exceptions"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "procurementAuditTraces",
+    "sqlTableName": "procurement_audit_traces"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "inpatientUnits",
+    "sqlTableName": "inpatient_units"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "inpatientWards",
+    "sqlTableName": "inpatient_wards"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "inpatientRooms",
+    "sqlTableName": "inpatient_rooms"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "inpatientBeds",
+    "sqlTableName": "inpatient_beds"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "inpatientBedStatusHistory",
+    "sqlTableName": "inpatient_bed_status_history"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "inpatientBedReservations",
+    "sqlTableName": "inpatient_bed_reservations"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "inpatientAdmissionRequests",
+    "sqlTableName": "inpatient_admission_requests"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "inpatientAdmissions",
+    "sqlTableName": "inpatient_admissions"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "inpatientAdmissionApprovals",
+    "sqlTableName": "inpatient_admission_approvals"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "inpatientBedAllocations",
+    "sqlTableName": "inpatient_bed_allocations"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "inpatientPatientLocations",
+    "sqlTableName": "inpatient_patient_locations"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "inpatientTransfers",
+    "sqlTableName": "inpatient_transfers"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "inpatientTransferApprovals",
+    "sqlTableName": "inpatient_transfer_approvals"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "inpatientCareTeams",
+    "sqlTableName": "inpatient_care_teams"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "inpatientNursingAssessments",
+    "sqlTableName": "inpatient_nursing_assessments"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "inpatientNursingNotes",
+    "sqlTableName": "inpatient_nursing_notes"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "inpatientCarePlans",
+    "sqlTableName": "inpatient_care_plans"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "inpatientVitalObservations",
+    "sqlTableName": "inpatient_vital_observations"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "inpatientIntakeOutput",
+    "sqlTableName": "inpatient_intake_output"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "inpatientDoctorRounds",
+    "sqlTableName": "inpatient_doctor_rounds"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "inpatientDischargePlans",
+    "sqlTableName": "inpatient_discharge_plans"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "inpatientDischargeRequests",
+    "sqlTableName": "inpatient_discharge_requests"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "inpatientDischargeSummaries",
+    "sqlTableName": "inpatient_discharge_summaries"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "inpatientBedTurnaround",
+    "sqlTableName": "inpatient_bed_turnaround"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "inpatientBedBlocks",
+    "sqlTableName": "inpatient_bed_blocks"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "inpatientAuditTraces",
+    "sqlTableName": "inpatient_audit_traces"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "operationTheatreComplexes",
+    "sqlTableName": "operation_theatre_complexes"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "operationTheatreRooms",
+    "sqlTableName": "operation_theatre_rooms"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "surgicalProcedures",
+    "sqlTableName": "surgical_procedures"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "surgicalProcedureRequirements",
+    "sqlTableName": "surgical_procedure_requirements"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "surgeryRequests",
+    "sqlTableName": "surgery_requests"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "surgeryRequestItems",
+    "sqlTableName": "surgery_request_items"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "preOperativeAssessments",
+    "sqlTableName": "pre_operative_assessments"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "surgicalConsents",
+    "sqlTableName": "surgical_consents"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "otSchedules",
+    "sqlTableName": "ot_schedules"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "otScheduleStaff",
+    "sqlTableName": "ot_schedule_staff"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "otResourceAllocations",
+    "sqlTableName": "ot_resource_allocations"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "preOpChecklists",
+    "sqlTableName": "pre_op_checklists"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "surgicalSafetyChecklists",
+    "sqlTableName": "surgical_safety_checklists"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "otTransfers",
+    "sqlTableName": "ot_transfers"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "anaesthesiaRecords",
+    "sqlTableName": "anaesthesia_records"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "intraoperativeRecords",
+    "sqlTableName": "intraoperative_records"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "operativeNotes",
+    "sqlTableName": "operative_notes"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "otNursingNotes",
+    "sqlTableName": "ot_nursing_notes"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "surgicalSpecimens",
+    "sqlTableName": "surgical_specimens"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "surgicalImplants",
+    "sqlTableName": "surgical_implants"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "surgicalConsumableUsage",
+    "sqlTableName": "surgical_consumable_usage"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "pacuRecoveryRecords",
+    "sqlTableName": "pacu_recovery_records"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "postoperativeOrders",
+    "sqlTableName": "postoperative_orders"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "postoperativeTransfers",
+    "sqlTableName": "postoperative_transfers"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "surgeryCancellations",
+    "sqlTableName": "surgery_cancellations"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "otAuditTraces",
+    "sqlTableName": "ot_audit_traces"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "emergencyDepartments",
+    "sqlTableName": "emergency_departments"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "emergencyZones",
+    "sqlTableName": "emergency_zones"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "emergencyEncounters",
+    "sqlTableName": "emergency_encounters"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "emergencyTriageAssessments",
+    "sqlTableName": "emergency_triage_assessments"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "emergencyTriageReassessments",
+    "sqlTableName": "emergency_triage_reassessments"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "emergencyResuscitationEvents",
+    "sqlTableName": "emergency_resuscitation_events"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "traumaActivations",
+    "sqlTableName": "trauma_activations"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "emergencyObservationCases",
+    "sqlTableName": "emergency_observation_cases"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "emergencyMLCCases",
+    "sqlTableName": "emergency_mlc_cases"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "emergencyCrashCarts",
+    "sqlTableName": "emergency_crash_carts"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "emergencyAmbulanceTransfers",
+    "sqlTableName": "emergency_ambulance_transfers"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "emergencyDispositionRecords",
+    "sqlTableName": "emergency_disposition_records"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "emergencyDeathRecords",
+    "sqlTableName": "emergency_death_records"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "emergencyDisasterEvents",
+    "sqlTableName": "emergency_disaster_events"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "emergencyAuditTraces",
+    "sqlTableName": "emergency_audit_traces"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "mrDepartments",
+    "sqlTableName": "mr_departments"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "medicalRecordIndexes",
+    "sqlTableName": "medical_record_indexes"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "medicalRecordCompletionTasks",
+    "sqlTableName": "medical_record_completion_tasks"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "medicalDiagnosisCodes",
+    "sqlTableName": "medical_diagnosis_codes"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "codingReviews",
+    "sqlTableName": "coding_reviews"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "clinicalDocumentationQueries",
+    "sqlTableName": "clinical_documentation_queries"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "releaseOfInformationRequests",
+    "sqlTableName": "release_of_information_requests"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "legalRecordRequests",
+    "sqlTableName": "legal_record_requests"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "medicalRecordLegalHolds",
+    "sqlTableName": "medical_record_legal_holds"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "birthRegistryRecords",
+    "sqlTableName": "birth_registry_records"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "deathRegistryRecords",
+    "sqlTableName": "death_registry_records"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "medicalRecordAuditEvents",
+    "sqlTableName": "medical_record_audit_events"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "bloodBanks",
+    "sqlTableName": "blood_banks"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "bloodDonors",
+    "sqlTableName": "blood_donors"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "bloodDonorScreenings",
+    "sqlTableName": "blood_donor_screenings"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "bloodDonations",
+    "sqlTableName": "blood_donations"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "bloodTests",
+    "sqlTableName": "blood_tests"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "bloodComponents",
+    "sqlTableName": "blood_components"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "bloodRequests",
+    "sqlTableName": "blood_requests"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "bloodCrossmatches",
+    "sqlTableName": "blood_crossmatches"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "bloodIssues",
+    "sqlTableName": "blood_issues"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "transfusionRecords",
+    "sqlTableName": "transfusion_records"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "transfusionReactions",
+    "sqlTableName": "transfusion_reactions"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "bloodQualityChecks",
+    "sqlTableName": "blood_quality_checks"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "bloodTemperatureLogs",
+    "sqlTableName": "blood_temperature_logs"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "bloodDiscardRecords",
+    "sqlTableName": "blood_discard_records"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "bloodBankAuditEvents",
+    "sqlTableName": "blood_bank_audit_events"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "radiologyDepartments",
+    "sqlTableName": "radiology_departments"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "radiologyModalities",
+    "sqlTableName": "radiology_modalities"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "radiologyProcedureCatalog",
+    "sqlTableName": "radiology_procedure_catalog"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "radiologyOrders",
+    "sqlTableName": "radiology_orders"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "radiologyAppointments",
+    "sqlTableName": "radiology_appointments"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "radiologyPreparationRecords",
+    "sqlTableName": "radiology_preparation_records"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "radiologyStudies",
+    "sqlTableName": "radiology_studies"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "radiologyReports",
+    "sqlTableName": "radiology_reports"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "radiologyCriticalFindings",
+    "sqlTableName": "radiology_critical_findings"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "radiologyQualityEvents",
+    "sqlTableName": "radiology_quality_events"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "radiologyAuditTraces",
+    "sqlTableName": "radiology_audit_traces"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "imagingSeries",
+    "sqlTableName": "imaging_series"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "imagingInstances",
+    "sqlTableName": "imaging_instances"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "radiologyReportAmendments",
+    "sqlTableName": "radiology_report_amendments"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "dietaryDepartments",
+    "sqlTableName": "dietary_departments"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "dietaryKitchens",
+    "sqlTableName": "dietary_kitchens"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "dietaryDietTypes",
+    "sqlTableName": "dietary_diet_types"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "dietaryFoodItems",
+    "sqlTableName": "dietary_food_items"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "dietaryAssessments",
+    "sqlTableName": "dietary_assessments"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "dietaryOrders",
+    "sqlTableName": "dietary_orders"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "dietaryDietPlans",
+    "sqlTableName": "dietary_diet_plans"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "dietaryMenuTemplates",
+    "sqlTableName": "dietary_menu_templates"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "dietaryMealSchedules",
+    "sqlTableName": "dietary_meal_schedules"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "dietaryProductionPlans",
+    "sqlTableName": "dietary_production_plans"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "dietaryPreparationRecords",
+    "sqlTableName": "dietary_preparation_records"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "dietaryQualityChecks",
+    "sqlTableName": "dietary_quality_checks"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "dietaryTrayAssemblies",
+    "sqlTableName": "dietary_tray_assemblies"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "dietaryMealDispatches",
+    "sqlTableName": "dietary_meal_dispatches"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "dietarySafetyAlerts",
+    "sqlTableName": "dietary_safety_alerts"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "dietaryWasteRecords",
+    "sqlTableName": "dietary_waste_records"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "dietaryCostRecords",
+    "sqlTableName": "dietary_cost_records"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "dietaryProcurementReferences",
+    "sqlTableName": "dietary_procurement_references"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "dietaryBillingReferences",
+    "sqlTableName": "dietary_billing_references"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "dietaryAuditTraces",
+    "sqlTableName": "dietary_audit_traces"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "biomedicalAssets",
+    "sqlTableName": "biomedical_assets"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "biomedicalAssetTransfers",
+    "sqlTableName": "biomedical_asset_transfers"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "biomedicalPpmSchedules",
+    "sqlTableName": "biomedical_ppm_schedules"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "biomedicalWorkOrders",
+    "sqlTableName": "biomedical_work_orders"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "biomedicalCalibrationRecords",
+    "sqlTableName": "biomedical_calibration_records"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "biomedicalSafetyTestRecords",
+    "sqlTableName": "biomedical_safety_test_records"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "biomedicalSpareParts",
+    "sqlTableName": "biomedical_spare_parts"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "biomedicalSparePartUsages",
+    "sqlTableName": "biomedical_spare_part_usages"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "biomedicalVendorVisits",
+    "sqlTableName": "biomedical_vendor_visits"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "biomedicalCondemnations",
+    "sqlTableName": "biomedical_condemnations"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "biomedicalIncidents",
+    "sqlTableName": "biomedical_incidents"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "biomedicalProcurementReferences",
+    "sqlTableName": "biomedical_procurement_references"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "biomedicalAuditTraces",
+    "sqlTableName": "biomedical_audit_traces"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "qualityAccreditationStandards",
+    "sqlTableName": "quality_accreditation_standards"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "hospitalIncidentReports",
+    "sqlTableName": "hospital_incident_reports"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "incidentRcaInvestigations",
+    "sqlTableName": "incident_rca_investigations"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "qualityCapaActions",
+    "sqlTableName": "quality_capa_actions"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "haiSurveillanceRecords",
+    "sqlTableName": "hai_surveillance_records"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "haiDeviceDayLogs",
+    "sqlTableName": "hai_device_day_logs"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "patientIsolationRecords",
+    "sqlTableName": "patient_isolation_records"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "handHygieneAudits",
+    "sqlTableName": "hand_hygiene_audits"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "environmentalMicroSwabs",
+    "sqlTableName": "environmental_micro_swabs"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "needleStickOccupationalLogs",
+    "sqlTableName": "needle_stick_occupational_logs"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "biomedicalWasteLogs",
+    "sqlTableName": "biomedical_waste_logs"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "qualityProcurementReferences",
+    "sqlTableName": "quality_procurement_references"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "qualityAuditTraces",
+    "sqlTableName": "quality_audit_traces"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "executiveCommandSnapshots",
+    "sqlTableName": "executive_command_snapshots"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "hospitalSurgeEvents",
+    "sqlTableName": "hospital_surge_events"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "predictiveBedForecasts",
+    "sqlTableName": "predictive_bed_forecasts"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "whatIfSimulationRuns",
+    "sqlTableName": "what_if_simulation_runs"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "executiveAuditTraces",
+    "sqlTableName": "executive_audit_traces"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "patientAbhaAccounts",
+    "sqlTableName": "patient_abha_accounts"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "abdmCareContextMappings",
+    "sqlTableName": "abdm_care_context_mappings"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "abdmConsentArtefacts",
+    "sqlTableName": "abdm_consent_artefacts"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "fhirBundlesRepository",
+    "sqlTableName": "fhir_bundles_repository"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "abdmAuditTraces",
+    "sqlTableName": "abdm_audit_traces"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "sepsisNews2Alerts",
+    "sqlTableName": "sepsis_news2_alerts"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "ddiDrugInteractionChecks",
+    "sqlTableName": "ddi_drug_interaction_checks"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "ambientAiScribeTranscripts",
+    "sqlTableName": "ambient_ai_scribe_transcripts"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "criticalPanicValueAlerts",
+    "sqlTableName": "critical_panic_value_alerts"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "cdssAuditTraces",
+    "sqlTableName": "cdss_audit_traces"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "teleconsultationSessions",
+    "sqlTableName": "teleconsultation_sessions"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "iotConnectedDevices",
+    "sqlTableName": "iot_connected_devices"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "rpmVitalBreachAlerts",
+    "sqlTableName": "rpm_vital_breach_alerts"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "telehealthAuditTraces",
+    "sqlTableName": "telehealth_audit_traces"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "whatsappConversations",
+    "sqlTableName": "whatsapp_conversations"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "whatsappDocumentDispatches",
+    "sqlTableName": "whatsapp_document_dispatches"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "liveQueueTokens",
+    "sqlTableName": "live_queue_tokens"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "whatsappPortalAuditTraces",
+    "sqlTableName": "whatsapp_portal_audit_traces"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "appointmentsPartitioned",
+    "sqlTableName": "appointments_partitioned"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "billingInvoicesPartitioned",
+    "sqlTableName": "billing_invoices_partitioned"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "financialTransactionsPartitioned",
+    "sqlTableName": "financial_transactions_partitioned"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "billingPackages",
+    "sqlTableName": "billing_packages"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "billingPackageItems",
+    "sqlTableName": "billing_package_items"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "patientPackages",
+    "sqlTableName": "patient_packages"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "patientPackageConsumptions",
+    "sqlTableName": "patient_package_consumptions"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "patientCreditAccounts",
+    "sqlTableName": "patient_credit_accounts"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "purchaseInvoicePayments",
+    "sqlTableName": "purchase_invoice_payments"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "billingEodClosings",
+    "sqlTableName": "billing_eod_closings"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "gstTaxRates",
+    "sqlTableName": "gst_tax_rates"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "supplyChainWarehouses",
+    "sqlTableName": "supply_chain_warehouses"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "supplyChainLocations",
+    "sqlTableName": "supply_chain_locations"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "supplyChainInventory",
+    "sqlTableName": "supply_chain_inventory"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "supplyChainBatches",
+    "sqlTableName": "supply_chain_batches"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "supplyChainStockLedger",
+    "sqlTableName": "supply_chain_stock_ledger"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "supplyChainTransfers",
+    "sqlTableName": "supply_chain_transfers"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "supplyChainTransferItems",
+    "sqlTableName": "supply_chain_transfer_items"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "supplyChainConsumptions",
+    "sqlTableName": "supply_chain_consumptions"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "supplyChainConsumptionItems",
+    "sqlTableName": "supply_chain_consumption_items"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "supplyChainStockCounts",
+    "sqlTableName": "supply_chain_stock_counts"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "supplyChainStockCountItems",
+    "sqlTableName": "supply_chain_stock_count_items"
+  },
+  {
+    "file": "packages/database/src/schema/clinical/index.ts",
+    "varName": "supplyChainRecalls",
+    "sqlTableName": "supply_chain_recalls"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "partnerAgreements",
+    "sqlTableName": "partner_agreements"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "partnerProfiles",
+    "sqlTableName": "partner_profiles"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "partnerLifecycleTransitions",
+    "sqlTableName": "partner_lifecycle_transitions"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "products",
+    "sqlTableName": "products"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "plans",
+    "sqlTableName": "plans"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "priceVersions",
+    "sqlTableName": "price_versions"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "commercialOrderSnapshots",
+    "sqlTableName": "commercial_order_snapshots"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "features",
+    "sqlTableName": "features"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "planEntitlements",
+    "sqlTableName": "plan_entitlements"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "partnerGovernanceOverrides",
+    "sqlTableName": "partner_governance_overrides"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "partnerPlanAssignments",
+    "sqlTableName": "partner_plan_assignments"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "subscriptions",
+    "sqlTableName": "subscriptions"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "licenses",
+    "sqlTableName": "licenses"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "billingAccounts",
+    "sqlTableName": "billing_accounts"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "invoices",
+    "sqlTableName": "invoices"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "payments",
+    "sqlTableName": "payments"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "salesLeads",
+    "sqlTableName": "sales_leads"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "salesOpportunities",
+    "sqlTableName": "sales_opportunities"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "marketingCampaigns",
+    "sqlTableName": "marketing_campaigns"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "marketingActivities",
+    "sqlTableName": "marketing_activities"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "salesTasks",
+    "sqlTableName": "sales_tasks"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "supportTickets",
+    "sqlTableName": "support_tickets"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "supportTicketComments",
+    "sqlTableName": "support_ticket_comments"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "partnerHealthProfiles",
+    "sqlTableName": "partner_health_profiles"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "successCheckins",
+    "sqlTableName": "success_checkins"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "contentItems",
+    "sqlTableName": "content_items"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "notificationTemplates",
+    "sqlTableName": "notification_templates"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "notificationDispatchRecords",
+    "sqlTableName": "notification_dispatch_records"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "analyticsReports",
+    "sqlTableName": "analytics_reports"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "analyticsSnapshots",
+    "sqlTableName": "analytics_snapshots"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "systemInsights",
+    "sqlTableName": "system_insights"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "aiModels",
+    "sqlTableName": "ai_models"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "aiGovernancePolicies",
+    "sqlTableName": "ai_governance_policies"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "aiPromptTemplates",
+    "sqlTableName": "ai_prompt_templates"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "aiPromptVersions",
+    "sqlTableName": "ai_prompt_versions"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "aiUsageQuotas",
+    "sqlTableName": "ai_usage_quotas"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "aiUsageRecords",
+    "sqlTableName": "ai_usage_records"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "aiAuditTraces",
+    "sqlTableName": "ai_audit_traces"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "aiSafetyEvents",
+    "sqlTableName": "ai_safety_events"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "securityRoles",
+    "sqlTableName": "security_roles"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "securityPermissions",
+    "sqlTableName": "security_permissions"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "securityRolePermissions",
+    "sqlTableName": "security_role_permissions"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "securityUserRoles",
+    "sqlTableName": "security_user_roles"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "securityPolicies",
+    "sqlTableName": "security_policies"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "securitySessions",
+    "sqlTableName": "security_sessions"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "securityCredentials",
+    "sqlTableName": "security_credentials"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "securityIncidents",
+    "sqlTableName": "security_incidents"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "securityAuditVerifications",
+    "sqlTableName": "security_audit_verifications"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "complianceFrameworks",
+    "sqlTableName": "compliance_frameworks"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "complianceControls",
+    "sqlTableName": "compliance_controls"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "complianceEvidence",
+    "sqlTableName": "compliance_evidence"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "complianceControlMappings",
+    "sqlTableName": "compliance_control_mappings"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "dataClassifications",
+    "sqlTableName": "data_classifications"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "dataRetentionPolicies",
+    "sqlTableName": "data_retention_policies"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "dataRetentionRules",
+    "sqlTableName": "data_retention_rules"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "baaRecords",
+    "sqlTableName": "baa_records"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "governanceExceptions",
+    "sqlTableName": "governance_exceptions"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "complianceVerifications",
+    "sqlTableName": "compliance_verifications"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "complianceReports",
+    "sqlTableName": "compliance_reports"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "integrationProviders",
+    "sqlTableName": "integration_providers"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "integrationEndpoints",
+    "sqlTableName": "integration_endpoints"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "apiRoutes",
+    "sqlTableName": "api_routes"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "apiVersions",
+    "sqlTableName": "api_versions"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "integrationConnections",
+    "sqlTableName": "integration_connections"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "hl7Endpoints",
+    "sqlTableName": "hl7_endpoints"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "fhirCapabilities",
+    "sqlTableName": "fhir_capabilities"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "fhirResourceConfigurations",
+    "sqlTableName": "fhir_resource_configurations"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "webhookEndpoints",
+    "sqlTableName": "webhook_endpoints"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "webhookDeliveries",
+    "sqlTableName": "webhook_deliveries"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "apiRateLimitPolicies",
+    "sqlTableName": "api_rate_limit_policies"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "apiUsageRecords",
+    "sqlTableName": "api_usage_records"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "integrationHealth",
+    "sqlTableName": "integration_health"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "integrationIncidents",
+    "sqlTableName": "integration_incidents"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "integrationCredentials",
+    "sqlTableName": "integration_credentials"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "integrationAuditTraces",
+    "sqlTableName": "integration_audit_traces"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "platformProjects",
+    "sqlTableName": "platform_projects"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "buildPipelines",
+    "sqlTableName": "build_pipelines"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "buildRuns",
+    "sqlTableName": "build_runs"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "cicdPipelines",
+    "sqlTableName": "cicd_pipelines"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "cicdRuns",
+    "sqlTableName": "cicd_runs"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "artifactRepositories",
+    "sqlTableName": "artifact_repositories"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "platformArtifacts",
+    "sqlTableName": "platform_artifacts"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "platformEnvironments",
+    "sqlTableName": "platform_environments"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "environmentConfigurations",
+    "sqlTableName": "environment_configurations"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "dependencyNodes",
+    "sqlTableName": "dependency_nodes"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "dependencyEdges",
+    "sqlTableName": "dependency_edges"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "packageReleases",
+    "sqlTableName": "package_releases"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "platformDeployments",
+    "sqlTableName": "platform_deployments"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "developerExperienceMetrics",
+    "sqlTableName": "developer_experience_metrics"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "platformIncidents",
+    "sqlTableName": "platform_incidents"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "platformAuditTraces",
+    "sqlTableName": "platform_audit_traces"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "infrastructureProjects",
+    "sqlTableName": "infrastructure_projects"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "infrastructureRegions",
+    "sqlTableName": "infrastructure_regions"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "infrastructureClusters",
+    "sqlTableName": "infrastructure_clusters"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "infrastructureNodes",
+    "sqlTableName": "infrastructure_nodes"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "infrastructureServices",
+    "sqlTableName": "infrastructure_services"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "backupPolicies",
+    "sqlTableName": "backup_policies"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "infrastructureDatabases",
+    "sqlTableName": "infrastructure_databases"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "databaseConnectionPools",
+    "sqlTableName": "database_connection_pools"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "infrastructureReplicationLinks",
+    "sqlTableName": "infrastructure_replication_links"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "infrastructureHealthSnapshots",
+    "sqlTableName": "infrastructure_health_snapshots"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "infrastructureAlerts",
+    "sqlTableName": "infrastructure_alerts"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "infrastructureIncidents",
+    "sqlTableName": "infrastructure_incidents"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "backupRecords",
+    "sqlTableName": "backup_records"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "restoreVerifications",
+    "sqlTableName": "restore_verifications"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "disasterRecoveryPlans",
+    "sqlTableName": "disaster_recovery_plans"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "disasterRecoveryDrills",
+    "sqlTableName": "disaster_recovery_drills"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "failoverEvents",
+    "sqlTableName": "failover_events"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "infrastructureAuditTraces",
+    "sqlTableName": "infrastructure_audit_traces"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "legalEntities",
+    "sqlTableName": "legal_entities"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "departments",
+    "sqlTableName": "departments"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "designations",
+    "sqlTableName": "designations"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "internalEmployees",
+    "sqlTableName": "internal_employees"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "boardMembers",
+    "sqlTableName": "board_members"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "governanceCommittees",
+    "sqlTableName": "governance_committees"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "committeeMemberships",
+    "sqlTableName": "committee_memberships"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "corporatePolicies",
+    "sqlTableName": "corporate_policies"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "complianceOfficers",
+    "sqlTableName": "compliance_officers"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "governanceEvents",
+    "sqlTableName": "governance_events"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "companyAuditTraces",
+    "sqlTableName": "company_audit_traces"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "partnerClassifications",
+    "sqlTableName": "partner_classifications"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "commercialOverrides",
+    "sqlTableName": "commercial_overrides"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "founderApprovalRequests",
+    "sqlTableName": "founder_approval_requests"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "partnerOnboardingStagedRegistrations",
+    "sqlTableName": "partner_onboarding_staged_registrations"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "capabilities",
+    "sqlTableName": "capabilities"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "partnerCapabilities",
+    "sqlTableName": "partner_capabilities"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "partnerTemplates",
+    "sqlTableName": "partner_templates"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "templateVersions",
+    "sqlTableName": "template_versions"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "permissionPacks",
+    "sqlTableName": "permission_packs"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "featureDependencies",
+    "sqlTableName": "feature_dependencies"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "accessPolicies",
+    "sqlTableName": "access_policies"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "breakGlassAccess",
+    "sqlTableName": "break_glass_access"
+  },
+  {
+    "file": "packages/database/src/schema/company/index.ts",
+    "varName": "partnerConfigurationVersions",
+    "sqlTableName": "partner_configuration_versions"
+  },
+  {
+    "file": "packages/database/src/schema/core/ai-chat.ts",
+    "varName": "aiChatConversations",
+    "sqlTableName": "ai_chat_conversations"
+  },
+  {
+    "file": "packages/database/src/schema/core/ai-chat.ts",
+    "varName": "aiChatMessages",
+    "sqlTableName": "ai_chat_messages"
+  },
+  {
+    "file": "packages/database/src/schema/core/ai-intelligence.ts",
+    "varName": "aiRequestRegistry",
+    "sqlTableName": "ai_request_registry"
+  },
+  {
+    "file": "packages/database/src/schema/core/ai-intelligence.ts",
+    "varName": "aiIncidents",
+    "sqlTableName": "ai_incidents"
+  },
+  {
+    "file": "packages/database/src/schema/core/ai-intelligence.ts",
+    "varName": "aiCostBudgets",
+    "sqlTableName": "ai_cost_budgets"
+  },
+  {
+    "file": "packages/database/src/schema/core/ai-intelligence.ts",
+    "varName": "aiAnomalyDetections",
+    "sqlTableName": "ai_anomaly_detections"
+  },
+  {
+    "file": "packages/database/src/schema/core/ai-intelligence.ts",
+    "varName": "aiDemandForecasts",
+    "sqlTableName": "ai_demand_forecasts"
+  },
+  {
+    "file": "packages/database/src/schema/core/audit-events.ts",
+    "varName": "auditEvents",
+    "sqlTableName": "audit_events"
+  },
+  {
+    "file": "packages/database/src/schema/core/branches.ts",
+    "varName": "branches",
+    "sqlTableName": "branches"
+  },
+  {
+    "file": "packages/database/src/schema/core/credentials.ts",
+    "varName": "userCredentials",
+    "sqlTableName": "user_credentials"
+  },
+  {
+    "file": "packages/database/src/schema/core/document-verification.ts",
+    "varName": "documentTypes",
+    "sqlTableName": "document_types"
+  },
+  {
+    "file": "packages/database/src/schema/core/document-verification.ts",
+    "varName": "documentRequirements",
+    "sqlTableName": "document_requirements"
+  },
+  {
+    "file": "packages/database/src/schema/core/document-verification.ts",
+    "varName": "entityDocuments",
+    "sqlTableName": "entity_documents"
+  },
+  {
+    "file": "packages/database/src/schema/core/document-verification.ts",
+    "varName": "documentVerifications",
+    "sqlTableName": "document_verifications"
+  },
+  {
+    "file": "packages/database/src/schema/core/document-verification.ts",
+    "varName": "documentAuditLogs",
+    "sqlTableName": "document_audit_logs"
+  },
+  {
+    "file": "packages/database/src/schema/core/idempotency-records.ts",
+    "varName": "idempotencyRecords",
+    "sqlTableName": "idempotency_records"
+  },
+  {
+    "file": "packages/database/src/schema/core/memberships.ts",
+    "varName": "userTenants",
+    "sqlTableName": "user_tenants"
+  },
+  {
+    "file": "packages/database/src/schema/core/memberships.ts",
+    "varName": "userBranches",
+    "sqlTableName": "user_branches"
+  },
+  {
+    "file": "packages/database/src/schema/core/outbox-jobs.ts",
+    "varName": "outboxJobs",
+    "sqlTableName": "outbox_jobs"
+  },
+  {
+    "file": "packages/database/src/schema/core/reliability.ts",
+    "varName": "deviceRegistry",
+    "sqlTableName": "device_registry"
+  },
+  {
+    "file": "packages/database/src/schema/core/reliability.ts",
+    "varName": "sagaWorkflows",
+    "sqlTableName": "saga_workflows"
+  },
+  {
+    "file": "packages/database/src/schema/core/reliability.ts",
+    "varName": "sagaSteps",
+    "sqlTableName": "saga_steps"
+  },
+  {
+    "file": "packages/database/src/schema/core/reliability.ts",
+    "varName": "deadLetterJobs",
+    "sqlTableName": "dead_letter_jobs"
+  },
+  {
+    "file": "packages/database/src/schema/core/reliability.ts",
+    "varName": "offlineSyncQueue",
+    "sqlTableName": "offline_sync_queue"
+  },
+  {
+    "file": "packages/database/src/schema/core/reliability.ts",
+    "varName": "offlineSyncConflicts",
+    "sqlTableName": "offline_sync_conflicts"
+  },
+  {
+    "file": "packages/database/src/schema/core/reliability.ts",
+    "varName": "reconciliationRuns",
+    "sqlTableName": "reconciliation_runs"
+  },
+  {
+    "file": "packages/database/src/schema/core/reliability.ts",
+    "varName": "reconciliationDiscrepancies",
+    "sqlTableName": "reconciliation_discrepancies"
+  },
+  {
+    "file": "packages/database/src/schema/core/reliability.ts",
+    "varName": "auditLedgerVerifications",
+    "sqlTableName": "audit_ledger_verifications"
+  },
+  {
+    "file": "packages/database/src/schema/core/revocations.ts",
+    "varName": "revocations",
+    "sqlTableName": "revocations"
+  },
+  {
+    "file": "packages/database/src/schema/core/roles.ts",
+    "varName": "roles",
+    "sqlTableName": "roles"
+  },
+  {
+    "file": "packages/database/src/schema/core/roles.ts",
+    "varName": "permissions",
+    "sqlTableName": "permissions"
+  },
+  {
+    "file": "packages/database/src/schema/core/roles.ts",
+    "varName": "rolePermissions",
+    "sqlTableName": "role_permissions"
+  },
+  {
+    "file": "packages/database/src/schema/core/roles.ts",
+    "varName": "userRoles",
+    "sqlTableName": "user_roles"
+  },
+  {
+    "file": "packages/database/src/schema/core/sessions.ts",
+    "varName": "sessions",
+    "sqlTableName": "sessions"
+  },
+  {
+    "file": "packages/database/src/schema/core/tenants.ts",
+    "varName": "tenants",
+    "sqlTableName": "tenants"
+  },
+  {
+    "file": "packages/database/src/schema/core/users.ts",
+    "varName": "users",
+    "sqlTableName": "users"
+  },
+  {
+    "file": "packages/database/src/schema/workflow-schema.ts",
+    "varName": "workflowDefinitions",
+    "sqlTableName": "workflow_definitions"
+  },
+  {
+    "file": "packages/database/src/schema/workflow-schema.ts",
+    "varName": "workflowVersions",
+    "sqlTableName": "workflow_versions"
+  },
+  {
+    "file": "packages/database/src/schema/workflow-schema.ts",
+    "varName": "workflowStages",
+    "sqlTableName": "workflow_stages"
+  },
+  {
+    "file": "packages/database/src/schema/workflow-schema.ts",
+    "varName": "workflowTransitions",
+    "sqlTableName": "workflow_transitions"
+  },
+  {
+    "file": "packages/database/src/schema/workflow-schema.ts",
+    "varName": "workflowRequirements",
+    "sqlTableName": "workflow_requirements"
+  },
+  {
+    "file": "packages/database/src/schema/workflow-schema.ts",
+    "varName": "workflowInstances",
+    "sqlTableName": "workflow_instances"
+  },
+  {
+    "file": "packages/database/src/schema/workflow-schema.ts",
+    "varName": "workflowRequirementInstances",
+    "sqlTableName": "workflow_requirement_instances"
+  },
+  {
+    "file": "packages/database/src/schema/workflow-schema.ts",
+    "varName": "workflowApprovals",
+    "sqlTableName": "workflow_approvals"
+  },
+  {
+    "file": "packages/database/src/schema/workflow-schema.ts",
+    "varName": "workflowTransitionLogs",
+    "sqlTableName": "workflow_transition_logs"
+  }
+]

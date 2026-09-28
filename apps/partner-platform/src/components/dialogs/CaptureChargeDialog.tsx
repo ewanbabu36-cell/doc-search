@@ -11,6 +11,8 @@ import type {
   ChargeSourceDomain,
   BillingServiceCatalogDto
 } from '@docsearch/api-contracts';
+import { getUnifiedPartnerProfile } from '../../utils/roleProfileResolver.js';
+import { AuditJustificationField } from '../common/AuditJustificationField.js';
 
 export interface CaptureChargeDialogProps {
   isOpen: boolean;
@@ -34,9 +36,9 @@ export const CaptureChargeDialog: React.FC<CaptureChargeDialogProps> = ({
   branchId
 }) => {
   const [sourceDomain, setSourceDomain] = useState<ChargeSourceDomain>('CLINICAL_CONSULTATION');
-  const [patientId] = useState('55555555-5555-4555-8555-555555555501');
-  const [patientName, setPatientName] = useState('Eleanor Vance');
-  const [patientMrn, setPatientMrn] = useState('MRN-2026-00891');
+  const [patientId] = useState(() => `pat-${Date.now().toString(36)}`);
+  const [patientName, setPatientName] = useState('');
+  const [patientMrn, setPatientMrn] = useState('');
   const [selectedServiceId, setSelectedServiceId] = useState(services[0]?.id || '');
   const [quantity, setQuantity] = useState(1);
   const [unitPrice, setUnitPrice] = useState('75.00');
@@ -89,8 +91,8 @@ export const CaptureChargeDialog: React.FC<CaptureChargeDialogProps> = ({
             taxAmount: 0
           }
         ],
-        actorId: 'Dr. Sarah Jenkins',
-        actorRole: 'Attending Physician',
+        actorId: getUnifiedPartnerProfile().supportEmail || getUnifiedPartnerProfile().doctorName || 'Authorized Clinician',
+        actorRole: 'Attending Practitioner',
         justification: justification.trim()
       });
       onClose();
@@ -145,7 +147,7 @@ export const CaptureChargeDialog: React.FC<CaptureChargeDialogProps> = ({
             <Input
               value={patientName}
               onChange={(e) => setPatientName(e.target.value)}
-              placeholder="Eleanor Vance"
+              placeholder="e.g. Eleanor Vance or Rajesh Kumar"
               required
             />
           </div>
@@ -156,7 +158,7 @@ export const CaptureChargeDialog: React.FC<CaptureChargeDialogProps> = ({
             <Input
               value={patientMrn}
               onChange={(e) => setPatientMrn(e.target.value)}
-              placeholder="MRN-2026-00891"
+              placeholder="e.g. MRN-2026-00891"
               required
             />
           </div>
@@ -207,17 +209,12 @@ export const CaptureChargeDialog: React.FC<CaptureChargeDialogProps> = ({
           </div>
         </div>
 
-        <div>
-          <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.25rem' }}>
-            Audit Justification *
-          </label>
-          <Input
-            value={justification}
-            onChange={(e) => setJustification(e.target.value)}
-            placeholder="Clinical reason for charge entry"
-            required
-          />
-        </div>
+        <AuditJustificationField
+          value={justification}
+          onChange={setJustification}
+          defaultJustification="Standard clinical charge capture per hospital fee schedule"
+          placeholder="Clinical reason for charge entry..."
+        />
       </form>
     </Dialog>
   );

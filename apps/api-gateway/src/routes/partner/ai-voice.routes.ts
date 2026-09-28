@@ -5,6 +5,7 @@ import {
   aiVoiceService,
   type ProcessVoiceInteractionInput
 } from '../../services/partner/AiVoiceService.js';
+import { aiScribeExtractionService } from '../../services/partner/AiScribeExtractionService.js';
 import type { ActionSafetyCategory } from '../../ai/voice/tts-provider.js';
 import { AppError } from '@docsearch/shared-core';
 
@@ -129,4 +130,34 @@ export const aiVoiceRoutes: FastifyPluginAsync = async (app) => {
       });
     }
   );
+
+  /**
+   * 4. Extract structured clinical SOAP notes, diagnoses, medications, and lab tests from speech transcripts
+   */
+  app.post(
+    '/api/v1/partner/ai/voice/extract-soap',
+    { preHandler: [authenticate, requireActiveCommercialAccess] },
+    async (request, reply) => {
+      const body = (request.body || {}) as {
+        transcript?: string;
+        patientContext?: any;
+        doctorSpecialty?: string;
+      };
+
+      if (!body.transcript || !body.transcript.trim()) {
+        throw AppError.badRequest("Field 'transcript' is required for clinical SOAP extraction");
+      }
+
+      const result = await aiScribeExtractionService.extractSoapFromTranscript(
+        request.session,
+        body as any
+      );
+
+      return reply.send({
+        success: true,
+        data: result
+      });
+    }
+  );
 };
+

@@ -44,8 +44,22 @@ export const SendMedicationReminderDialog: React.FC<Props> = ({ isOpen, onClose,
               <Input value={patientMrn} onChange={(e) => setPatientMrn(e.target.value)} required />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">WhatsApp Mobile</label>
-              <Input value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} required />
+              <label className="block text-xs font-semibold text-gray-700 mb-1">WhatsApp Mobile (10-Digit)</label>
+              <div className="flex items-center">
+                <span className="px-2 py-2 bg-gray-100 border border-r-0 border-gray-300 rounded-l text-xs font-bold text-gray-700">+91</span>
+                <input
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, '');
+                    setPhoneNumber(digits.slice(0, 10));
+                  }}
+                  maxLength={10}
+                  placeholder="98765 43210"
+                  className="w-full rounded-r-md border border-gray-300 px-3 py-2 text-sm focus:outline-none"
+                  required
+                />
+              </div>
             </div>
           </div>
           <div>

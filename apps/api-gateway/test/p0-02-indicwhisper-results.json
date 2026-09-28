@@ -1,0 +1,233 @@
+{
+  "modelIdentity": {
+    "name": "vasista22/whisper-hindi-small",
+    "source": "HuggingFace",
+    "license": "Apache-2.0",
+    "parameters": 241734912,
+    "baseArchitecture": "Whisper Small (241M)",
+    "runtime": "PyTorch 2.14.0 + Transformers 5.17.0 (CPU)"
+  },
+  "sampleCount": 8,
+  "timeoutCount": 8,
+  "timeoutRate": 1.0,
+  "avgLatencyMs": 42020,
+  "avgLatencySec": 42.02,
+  "initialRamMb": 355.89,
+  "postLoadRamMb": 391.25,
+  "peakRamMb": 1338.33,
+  "hindiMetrics": {
+    "wer": 1.0,
+    "cer": 1.0
+  },
+  "hinglishMetrics": {
+    "wer": 1.0,
+    "cer": 1.0
+  },
+  "clinicalMetrics": {
+    "medicineAccuracy": 0.875,
+    "numericAccuracy": 0.375,
+    "clinicalTermAccuracy": 0.0
+  },
+  "results": [
+    {
+      "id": "CORPUS-HINDI-023",
+      "language": "HINDI",
+      "category": "PATIENT_HISTORY",
+      "groundTruth": "Marij ko pichhle teen din se tez bukhar aur badan dard hai",
+      "rawHypothesis": "<|startoftranscript|><|hi|><|transcribe|><|notimestamps|>मैरिज के पिका हाई",
+      "cleanedHypothesis": "मैरिज के पिका हाई",
+      "outputFormat": "DEVANAGARI",
+      "latencyMs": 37450,
+      "latencySec": 37.45,
+      "timeoutBreach": true,
+      "wer": 1.0,
+      "cer": 1.0,
+      "medAcc": 1.0,
+      "numAcc": 0.0,
+      "termAcc": 0.0,
+      "expectedMedicines": [],
+      "expectedNumerics": [
+        "3"
+      ],
+      "criticalTerms": [
+        "teen din",
+        "tez bukhar",
+        "badan dard"
+      ]
+    },
+    {
+      "id": "CORPUS-HINDI-024",
+      "language": "HINDI",
+      "category": "PATIENT_HISTORY",
+      "groundTruth": "Chhati me tez jalan aur khana khane ke baad uljhan ho rahi hai",
+      "rawHypothesis": "<|startoftranscript|><|hi|><|transcribe|><|notimestamps|>जानकारी हाँ",
+      "cleanedHypothesis": "जानकारी हाँ",
+      "outputFormat": "DEVANAGARI",
+      "latencyMs": 28929,
+      "latencySec": 28.93,
+      "timeoutBreach": true,
+      "wer": 1.0,
+      "cer": 1.0,
+      "medAcc": 1.0,
+      "numAcc": 1.0,
+      "termAcc": 0.0,
+      "expectedMedicines": [],
+      "expectedNumerics": [],
+      "criticalTerms": [
+        "chhati me tez jalan",
+        "khana khane ke baad"
+      ]
+    },
+    {
+      "id": "CORPUS-HINDI-025",
+      "language": "HINDI",
+      "category": "PATIENT_HISTORY",
+      "groundTruth": "Doctor sahab saans phool rahi hai aur chalne me pareshani hoti hai",
+      "rawHypothesis": "<|startoftranscript|><|hi|><|transcribe|><|notimestamps|>डॉक्टर साहब साहज",
+      "cleanedHypothesis": "डॉक्टर साहब साहज",
+      "outputFormat": "DEVANAGARI",
+      "latencyMs": 37327,
+      "latencySec": 37.33,
+      "timeoutBreach": true,
+      "wer": 1.0,
+      "cer": 1.0,
+      "medAcc": 1.0,
+      "numAcc": 1.0,
+      "termAcc": 0.0,
+      "expectedMedicines": [],
+      "expectedNumerics": [],
+      "criticalTerms": [
+        "saans phool rahi hai",
+        "chalne me pareshani"
+      ]
+    },
+    {
+      "id": "CORPUS-HINGLISH-001",
+      "language": "HINGLISH",
+      "category": "PATIENT_HISTORY",
+      "groundTruth": "Patient ko teen din se bukhar hai aur gale me dard hai",
+      "rawHypothesis": "<|startoftranscript|><|hi|><|transcribe|><|notimestamps|>पेशेंट के बुखार हाई और गेल हाई",
+      "cleanedHypothesis": "पेशेंट के बुखार हाई और गेल हाई",
+      "outputFormat": "DEVANAGARI",
+      "latencyMs": 57185,
+      "latencySec": 57.19,
+      "timeoutBreach": true,
+      "wer": 1.0,
+      "cer": 1.0,
+      "medAcc": 1.0,
+      "numAcc": 0.0,
+      "termAcc": 0.0,
+      "expectedMedicines": [],
+      "expectedNumerics": [
+        "3"
+      ],
+      "criticalTerms": [
+        "teen din",
+        "bukhar",
+        "gale me dard"
+      ]
+    },
+    {
+      "id": "CORPUS-HINGLISH-002",
+      "language": "HINGLISH",
+      "category": "PATIENT_HISTORY",
+      "groundTruth": "Patient ko kal raat se severe chest pain aur sweating ho rahi hai",
+      "rawHypothesis": "<|startoftranscript|><|hi|><|transcribe|><|notimestamps|>पेशेंट के पेटिंग हाई",
+      "cleanedHypothesis": "पेशेंट के पेटिंग हाई",
+      "outputFormat": "DEVANAGARI",
+      "latencyMs": 43182,
+      "latencySec": 43.18,
+      "timeoutBreach": true,
+      "wer": 1.0,
+      "cer": 1.0,
+      "medAcc": 1.0,
+      "numAcc": 1.0,
+      "termAcc": 0.0,
+      "expectedMedicines": [],
+      "expectedNumerics": [],
+      "criticalTerms": [
+        "kal raat",
+        "severe chest pain",
+        "sweating"
+      ]
+    },
+    {
+      "id": "CORPUS-HINGLISH-003",
+      "language": "HINGLISH",
+      "category": "PATIENT_HISTORY",
+      "groundTruth": "Patient ko saans lene mein dikkat hai aur do din se khansi ho rahi hai",
+      "rawHypothesis": "<|startoftranscript|><|hi|><|transcribe|><|notimestamps|>पेशेंट के लीन में डिकेट हाई",
+      "cleanedHypothesis": "पेशेंट के लीन में डिकेट हाई",
+      "outputFormat": "DEVANAGARI",
+      "latencyMs": 51317,
+      "latencySec": 51.32,
+      "timeoutBreach": true,
+      "wer": 1.0,
+      "cer": 1.0,
+      "medAcc": 1.0,
+      "numAcc": 0.0,
+      "termAcc": 0.0,
+      "expectedMedicines": [],
+      "expectedNumerics": [
+        "2"
+      ],
+      "criticalTerms": [
+        "saans lene mein dikkat",
+        "do din",
+        "khansi"
+      ]
+    },
+    {
+      "id": "CORPUS-HINGLISH-012",
+      "language": "HINGLISH",
+      "category": "PRESCRIPTION",
+      "groundTruth": "Telmisartan 40 mg subah nashte ke baad daily lena hai",
+      "rawHypothesis": "<|startoftranscript|><|hi|><|transcribe|><|notimestamps|>मिस्र मिलीग्राम",
+      "cleanedHypothesis": "मिस्र मिलीग्राम",
+      "outputFormat": "DEVANAGARI",
+      "latencyMs": 31834,
+      "latencySec": 31.83,
+      "timeoutBreach": true,
+      "wer": 1.0,
+      "cer": 1.0,
+      "medAcc": 0.0,
+      "numAcc": 0.0,
+      "termAcc": 0.0,
+      "expectedMedicines": [
+        "Telmisartan"
+      ],
+      "expectedNumerics": [
+        "40"
+      ],
+      "criticalTerms": [
+        "Telmisartan",
+        "40 mg",
+        "nashte ke baad"
+      ]
+    },
+    {
+      "id": "CORPUS-ANCHOR-030",
+      "language": "HINGLISH",
+      "category": "SAFETY_ANCHOR",
+      "groundTruth": "Doctor reports patient SpO2 296 percent in room air",
+      "rawHypothesis": "<|startoftranscript|><|hi|><|transcribe|><|notimestamps|>डॉक्टर रिपोर्ट पेशेंट",
+      "cleanedHypothesis": "डॉक्टर रिपोर्ट पेशेंट",
+      "outputFormat": "DEVANAGARI",
+      "latencyMs": 48941,
+      "latencySec": 48.94,
+      "timeoutBreach": true,
+      "wer": 1.0,
+      "cer": 1.0,
+      "medAcc": 1.0,
+      "numAcc": 0.0,
+      "termAcc": 0.0,
+      "expectedMedicines": [],
+      "expectedNumerics": [
+        "296"
+      ],
+      "criticalTerms": [
+        "SpO2 296 percent"
+      ]
+    }
+  ]
+}

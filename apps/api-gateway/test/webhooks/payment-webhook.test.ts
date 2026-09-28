@@ -251,6 +251,11 @@ describe('Razorpay Payment Webhook Settlement Integration Suite', () => {
               selectedTable = tbl;
               return queryChain;
             },
+            leftJoin: () => queryChain,
+            innerJoin: () => queryChain,
+            rightJoin: () => queryChain,
+            limit: () => queryChain,
+            offset: () => queryChain,
             where: (whereClause: any) => {
               currentWhere = whereClause;
               return queryChain;
@@ -277,15 +282,22 @@ describe('Razorpay Payment Webhook Settlement Integration Suite', () => {
               }
 
               if (tableName === 'billing_invoices') {
+                const mapInvoice = (inv: any) => ({
+                  ...inv,
+                  invoice: inv,
+                  patientFirstName: 'Test',
+                  patientLastName: 'Patient',
+                  patientMrn: 'MRN-001'
+                });
                 if (params.length >= 2) {
                   const idOrNum = params[params.length - 1];
-                  const matched = Array.from(inMemoryInvoices.values()).filter(
-                    (inv) => inv.id === idOrNum || inv.invoiceNumber === idOrNum
-                  );
+                  const matched = Array.from(inMemoryInvoices.values())
+                    .filter((inv) => inv.id === idOrNum || inv.invoiceNumber === idOrNum)
+                    .map(mapInvoice);
                   return resolve(matched);
                 }
                 // Return all invoices for tenant
-                return resolve(Array.from(inMemoryInvoices.values()));
+                return resolve(Array.from(inMemoryInvoices.values()).map(mapInvoice));
               }
 
               if (tableName === 'billing_invoice_items') {
@@ -309,6 +321,10 @@ describe('Razorpay Payment Webhook Settlement Integration Suite', () => {
                 return resolve(Array.from(inMemoryInvestigationOrders.values()));
               }
 
+              if (tableName === 'tenants' || tableName === 'operational_partners' || tableName === 'partner_profiles') {
+                return resolve([{ id: TENANT_ID, name: 'Test Tenant' }]);
+              }
+
               return resolve([]);
             }
           };
@@ -327,11 +343,14 @@ describe('Razorpay Payment Webhook Settlement Integration Suite', () => {
               if (tableName === 'billing_invoices') {
                 const targetId = params[params.length - 1];
                 for (const inv of inMemoryInvoices.values()) {
-                  if (!targetId || inv.id === targetId) {
-                    if ('paidAmount' in updateData) inv.paidAmount = updateData.paidAmount;
-                    if ('balanceDue' in updateData) inv.balanceDue = updateData.balanceDue;
-                    if ('dueAmount' in updateData) inv.dueAmount = updateData.dueAmount;
-                    if ('outstandingBalance' in updateData) inv.balanceDue = updateData.outstandingBalance;
+                  if (!targetId || inv.id === targetId || params.includes(inv.id)) {
+                    if ('paidAmount' in updateData) inv.paidAmount = Number(updateData.paidAmount);
+                    if ('dueAmount' in updateData) {
+                      inv.dueAmount = Number(updateData.dueAmount);
+                      inv.balanceDue = Number(updateData.dueAmount);
+                    }
+                    if ('balanceDue' in updateData) inv.balanceDue = Number(updateData.balanceDue);
+                    if ('outstandingBalance' in updateData) inv.balanceDue = Number(updateData.outstandingBalance);
                     if ('status' in updateData) inv.status = updateData.status;
                     inv.updatedAt = updateData.updatedAt || new Date();
                   }
@@ -352,7 +371,7 @@ describe('Razorpay Payment Webhook Settlement Integration Suite', () => {
           })
         }),
         insert: (tbl: any) => ({
-          values: async (data: any) => {
+          values: (data: any) => {
             const tableName =
               tbl?.[Symbol.for('drizzle:Name')] ||
               tbl?.[Symbol.for('drizzle:OriginalName')] ||
@@ -363,7 +382,12 @@ describe('Razorpay Payment Webhook Settlement Integration Suite', () => {
             } else if (tableName === 'billing_receipts') {
               inMemoryReceipts.push({ ...data });
             }
-            return [{ id: data.id || crypto.randomUUID(), ...data }];
+            const record = [{ id: data.id || crypto.randomUUID(), ...data }];
+            const chain: any = {
+              returning: () => Promise.resolve(record),
+              then: (resolve: any, reject?: any) => Promise.resolve(record).then(resolve, reject)
+            };
+            return chain;
           }
         }),
         execute: async () => ({ rows: [] })

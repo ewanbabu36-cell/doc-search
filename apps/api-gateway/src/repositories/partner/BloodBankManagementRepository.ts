@@ -13,6 +13,11 @@ import {
   desc
 } from '@docsearch/database';
 import { AppError, ErrorCode, createLogger } from '@docsearch/shared-core';
+import type {
+  BloodBankOverviewMetricsDto,
+  BloodCrossmatchDto,
+  BloodIssueDto
+} from '@docsearch/api-contracts';
 
 const logger = createLogger('partner-blood-bank-repository');
 
@@ -291,12 +296,12 @@ export class BloodBankManagementRepository {
       tenantId: input.tenantId,
       partnerId: input.partnerId || '00000000-0000-4000-8000-000000000001',
       organizationId: input.organizationId || '00000000-0000-4000-8000-000000000002',
-      branchId: input.branchId || '00000000-0000-4000-8000-000000000003',
+      branchId: input.branchId || 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
       donorNumber,
       fullName: input.fullName,
       gender: input.gender,
       dateOfBirth: input.dateOfBirth,
-      mobileNumber: input.mobileNumber,
+      mobileNumber: input.mobileNumber || (input as any).contactNumber || '+91-9999999999',
       bloodGroup: input.bloodGroup,
       donorType: input.donorType || 'VOLUNTARY',
       screeningPassed: input.screeningPassed,
@@ -318,7 +323,7 @@ export class BloodBankManagementRepository {
           fullName: record.fullName,
           gender: record.gender,
           dateOfBirth: new Date(record.dateOfBirth),
-          contactNumber: record.mobileNumber,
+          contactNumber: record.mobileNumber || (input as any).contactNumber || '+91-9999999999',
           bloodGroup: record.bloodGroup,
           donorType: record.donorType,
           eligibilityStatus: record.screeningPassed ? 'ELIGIBLE_FOR_DONATION' : 'TEMPORARILY_DEFERRED',
@@ -1111,6 +1116,172 @@ export class BloodBankManagementRepository {
       if (err instanceof AppError) throw err;
       throw new AppError({
         message: 'Database query failed. Patient transfusion history lookup unavailable.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
+    }
+  }
+
+  async getOverviewMetrics(
+    tenantId: string,
+    dbClient = getDatabase()
+  ): Promise<BloodBankOverviewMetricsDto> {
+    const db = requireDb(dbClient);
+    try {
+      const components = await db
+        .select()
+        .from(bloodComponents)
+        .where(eq(bloodComponents.tenantId, tenantId));
+
+      const requests = await db
+        .select()
+        .from(bloodRequests)
+        .where(eq(bloodRequests.tenantId, tenantId));
+
+      const crossmatches = await db
+        .select()
+        .from(bloodCrossmatches)
+        .where(eq(bloodCrossmatches.tenantId, tenantId));
+
+      const transfusions = await db
+        .select()
+        .from(transfusionRecords)
+        .where(eq(transfusionRecords.tenantId, tenantId));
+
+      const available = components.filter(
+        (c) => c.status === 'AVAILABLE' || (c.status as string) === 'RELEASED_USABLE'
+      );
+      const quarantine = components.filter(
+        (c) => c.status === 'TESTING_PENDING' || (c.status as string) === 'QUARANTINED'
+      );
+      const prbc = available.filter(
+        (c) => c.componentType === 'PRBC' || (c.componentType as string) === 'PACKED_RED_BLOOD_CELLS_PRBC'
+      ).length;
+      const plt = available.filter(
+        (c) =>
+          c.componentType === 'PLATELETS' ||
+          (c.componentType as string) === 'RANDOM_DONOR_PLATELETS_RDP' ||
+          (c.componentType as string) === 'SINGLE_DONOR_PLATELETS_SDP'
+      ).length;
+      const ffp = available.filter(
+        (c) => c.componentType === 'FFP' || (c.componentType as string) === 'FRESH_FROZEN_PLASMA_FFP'
+      ).length;
+      const pendingReqs = requests.filter(
+        (r) => r.status === 'REQUESTED' || (r.status as string) === 'PENDING_CROSSMATCH'
+      ).length;
+      const activeXM = crossmatches.filter(
+        (x) => x.overallResult === 'COMPATIBLE'
+      ).length;
+
+      const bloodGroups = ['A_POSITIVE', 'A_NEGATIVE', 'B_POSITIVE', 'B_NEGATIVE', 'AB_POSITIVE', 'AB_NEGATIVE', 'O_POSITIVE', 'O_NEGATIVE'];
+      const criticalLowBloodGroups = bloodGroups.filter((bg) => {
+        const count = available.filter((c) => c.bloodGroup === bg).length;
+        return count < 2;
+      });
+
+      return {
+        totalAvailableUnits: available.length,
+        quarantineUnitsCount: quarantine.length,
+        prbcStockCount: prbc,
+        plateletStockCount: plt,
+        ffpStockCount: ffp,
+        pendingRequestsCount: pendingReqs,
+        activeCrossmatchesCount: activeXM,
+        todaysTransfusionsCount: transfusions.length,
+        reactionCasesUnderReview: 0,
+        criticalLowBloodGroups
+      };
+    } catch (err) {
+      logger.error('Failed to query blood bank overview metrics', err);
+      if (err instanceof AppError) throw err;
+      throw new AppError({
+        message: 'Database query failed. Blood bank metrics lookup unavailable.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
+    }
+  }
+
+  async getCrossmatches(
+    tenantId: string,
+    dbClient = getDatabase()
+  ): Promise<BloodCrossmatchDto[]> {
+    const db = requireDb(dbClient);
+    try {
+      const rows = await db
+        .select()
+        .from(bloodCrossmatches)
+        .where(eq(bloodCrossmatches.tenantId, tenantId))
+        .orderBy(desc(bloodCrossmatches.crossmatchedAt));
+
+      return rows.map((r) => ({
+        id: r.id,
+        tenantId: r.tenantId,
+        partnerId: r.partnerId,
+        organizationId: r.organizationId,
+        branchId: r.branchId,
+        crossmatchCode: r.crossmatchCode,
+        requestId: r.requestId,
+        componentId: r.componentId,
+        componentCode: r.componentCode,
+        patientName: r.patientName,
+        patientBloodGroup: r.patientBloodGroup as any,
+        donorBloodGroup: r.donorBloodGroup as any,
+        majorCrossmatchResult: (r.majorCrossmatchResult as any) || 'COMPATIBLE',
+        minorCrossmatchResult: (r.minorCrossmatchResult as any) || 'COMPATIBLE',
+        coombsTestResult: (r.coombsTestResult as any) || 'NEGATIVE',
+        overallResult: (r.overallResult as any) || 'COMPATIBLE',
+        testingTechnicianName: r.testingTechnicianName,
+        verifiedByPathologist: r.verifiedByPathologist,
+        crossmatchedAt: r.crossmatchedAt instanceof Date ? r.crossmatchedAt.toISOString() : String(r.crossmatchedAt),
+        expiresAt: r.expiresAt instanceof Date ? r.expiresAt.toISOString() : String(r.expiresAt)
+      }));
+    } catch (err) {
+      logger.error('Failed to query blood crossmatches from database', err);
+      if (err instanceof AppError) throw err;
+      throw new AppError({
+        message: 'Database query failed. Blood crossmatches lookup unavailable.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
+    }
+  }
+
+  async getIssues(
+    tenantId: string,
+    dbClient = getDatabase()
+  ): Promise<BloodIssueDto[]> {
+    const db = requireDb(dbClient);
+    try {
+      const rows = await db
+        .select()
+        .from(bloodIssues)
+        .where(eq(bloodIssues.tenantId, tenantId))
+        .orderBy(desc(bloodIssues.issuedAt));
+
+      return rows.map((r) => ({
+        id: r.id,
+        tenantId: r.tenantId,
+        partnerId: r.partnerId,
+        organizationId: r.organizationId,
+        branchId: r.branchId,
+        issueCode: r.issueCode,
+        requestId: r.requestId,
+        componentId: r.componentId,
+        componentCode: r.componentCode,
+        patientName: r.patientName,
+        patientMrn: r.patientMrn,
+        destinationDepartment: r.destinationDepartment,
+        issuingTechnicianName: r.issuingTechnicianName,
+        receivingNurseName: r.receivingNurseName,
+        transportBoxTemperatureC: r.transportBoxTemperatureC,
+        issuedAt: r.issuedAt instanceof Date ? r.issuedAt.toISOString() : String(r.issuedAt)
+      }));
+    } catch (err) {
+      logger.error('Failed to query blood issues from database', err);
+      if (err instanceof AppError) throw err;
+      throw new AppError({
+        message: 'Database query failed. Blood issues lookup unavailable.',
         code: ErrorCode.SERVICE_UNAVAILABLE,
         statusCode: 503
       });

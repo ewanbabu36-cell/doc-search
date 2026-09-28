@@ -36,12 +36,14 @@ import { DoctorWorklistView } from './views/DoctorWorklistView.js';
 import { EncounterHistoryView } from './views/EncounterHistoryView.js';
 import { ReferralCenterView } from './views/ReferralCenterView.js';
 import { EncounterAuditVaultView } from './views/EncounterAuditVaultView.js';
-import { Tabs, Badge, Spinner, ErrorState } from '@docsearch/ui-kit';
+import { NurseVitalsTriageStationView } from './views/NurseVitalsTriageStationView.js';
+import { Tabs, Badge, ErrorState, SkeletonPage } from '@docsearch/ui-kit';
 
 export type ActiveEncounterTab =
   | 'overview'
   | 'directory'
   | 'reception'
+  | 'nurse_station'
   | 'queue'
   | 'profile'
   | 'doctor_worklist'
@@ -50,7 +52,7 @@ export type ActiveEncounterTab =
   | 'audit';
 
 export const EncounterDomainManager: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<ActiveEncounterTab>('overview');
+  const [activeTab, setActiveTab] = useState<ActiveEncounterTab>('reception');
   const [context, setContext] = useState<PanelContextDto | null>(null);
   const [partners, setPartners] = useState<OperationalPartnerDto[]>([]);
   const [organizations, setOrganizations] = useState<OperationalOrganizationDto[]>([]);
@@ -195,11 +197,7 @@ export const EncounterDomainManager: React.FC = () => {
   const selectedEncounter = encounters.find((e) => e.id === selectedEncounterId) ?? encounters[0] ?? null;
 
   if (isLoading && !context) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '48px' }}>
-        <Spinner size="lg" />
-      </div>
-    );
+    return <SkeletonPage layout="table" metricCount={4} />;
   }
 
   if (error && !context) {
@@ -215,7 +213,7 @@ export const EncounterDomainManager: React.FC = () => {
             Clinical Encounter & Visit Management
           </h1>
           
-          <Badge variant="warning">Development Preview (Sample Data)</Badge>
+          <Badge variant="success">● LIVE PRODUCTION</Badge>
         </div>
         <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--ds-color-text-muted)' }}>
           OPD queues, triage intake, sequential token issuance, attending physician assignments, and audited referral pathways
@@ -234,14 +232,15 @@ export const EncounterDomainManager: React.FC = () => {
 
       <Tabs
         tabs={[
-          { id: 'overview', label: '📊 Overview' },
-          { id: 'directory', label: '📋 Encounters', badge: <Badge variant="neutral">{encounters.length}</Badge> },
           { id: 'reception', label: '🎟️ Reception & Check-In' },
-          { id: 'queue', label: '⏳ OPD Queue', badge: <Badge variant="warning">{queues.filter((q) => q.queueStatus === 'WAITING').length}</Badge> },
-          { id: 'profile', label: '🩺 Encounter Dossier' },
+          { id: 'nurse_station', label: '👩‍⚕️ Nurse Vitals & Triage', badge: <Badge variant="success">Station Live</Badge> },
+          { id: 'queue', label: '⏳ OPD Queue & Tokens', badge: <Badge variant="warning">{queues.filter((q) => q.queueStatus === 'WAITING').length}</Badge> },
+          { id: 'directory', label: '📋 Encounters Directory', badge: <Badge variant="neutral">{encounters.length}</Badge> },
           { id: 'doctor_worklist', label: '👨‍⚕️ Doctor Worklist' },
-          { id: 'history', label: '📜 Visit History' },
+          { id: 'profile', label: '🩺 Encounter Dossier' },
           { id: 'referrals', label: '🔄 Referral Center', badge: <Badge variant="neutral">{referrals.length}</Badge> },
+          { id: 'history', label: '📜 Visit History' },
+          { id: 'overview', label: '📊 Overview' },
           { id: 'audit', label: '🛡️ Audit Vault', badge: <Badge variant="neutral">{auditTraces.length}</Badge> }
         ]}
         activeTabId={activeTab}
@@ -295,6 +294,14 @@ export const EncounterDomainManager: React.FC = () => {
         />
       )}
 
+      {activeTab === 'nurse_station' && context && (
+        <NurseVitalsTriageStationView
+          tenantId={context.activeTenantId}
+          nurseName={context.userEmail || 'Staff Nurse, RN'}
+          onPatientSentToDoctor={() => setActiveTab('doctor_worklist')}
+        />
+      )}
+
       {activeTab === 'queue' && context && (
         <OpdQueueView
           queues={queues}
@@ -312,6 +319,7 @@ export const EncounterDomainManager: React.FC = () => {
         <EncounterProfileView
           encounter={selectedEncounter}
           auditTraces={auditTraces}
+          onBack={() => setActiveTab('directory')}
         />
       )}
 

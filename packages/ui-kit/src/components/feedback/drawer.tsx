@@ -49,13 +49,15 @@ export const Drawer: React.FC<DrawerProps> = ({
       <div
         style={{
           position: 'fixed',
-          backgroundColor: 'var(--ds-color-surface)',
-          borderLeft: isBottom ? 'none' : '1px solid var(--ds-color-border)',
-          borderTop: isBottom ? '1px solid var(--ds-color-border)' : 'none',
-          boxShadow: 'var(--ds-shadow-xl)',
+          backgroundColor: 'var(--ds-surface-glass-elevated, var(--ds-color-surface))',
+          backdropFilter: 'blur(28px) saturate(190%)',
+          WebkitBackdropFilter: 'blur(28px) saturate(190%)',
+          borderLeft: isBottom ? 'none' : '1px solid var(--ds-color-border-strong, var(--ds-color-border))',
+          borderTop: isBottom ? '1px solid var(--ds-color-border-strong, var(--ds-color-border))' : 'none',
+          boxShadow: 'var(--ds-depth-high, var(--ds-shadow-xl)), var(--ds-specular-edge, inset 0 1px 0 0 rgba(255, 255, 255, 0.12))',
           display: 'flex',
           flexDirection: 'column',
-          zIndex: 60,
+          zIndex: 'var(--ds-z-drawer, 70)' as any,
           ...(isBottom
             ? { bottom: 0, left: 0, right: 0, maxHeight: '80vh' }
             : { top: 0, right: 0, bottom: 0, width, maxWidth: '100vw' })

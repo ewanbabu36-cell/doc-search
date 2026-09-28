@@ -6,19 +6,25 @@ export interface TransferManagementViewProps {
   transfers: InpatientTransferDto[];
   onOpenApproveTransfer: (trf: InpatientTransferDto) => void;
   onOpenCompleteTransfer: (trf: InpatientTransferDto) => void;
+  onSelectTransfer?: (trf: InpatientTransferDto) => void;
 }
 
 export const TransferManagementView: React.FC<TransferManagementViewProps> = ({
-  transfers,
+  transfers = [],
   onOpenApproveTransfer,
-  onOpenCompleteTransfer
+  onOpenCompleteTransfer,
+  onSelectTransfer
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const safeTransfers = Array.isArray(transfers) ? transfers : [];
 
-  const filtered = transfers.filter((t) =>
-    t.transferNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    t.patientName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filtered = safeTransfers.filter((t) => {
+    if (!t) return false;
+    const term = (searchTerm || '').toLowerCase();
+    const num = (t.transferNumber || '').toLowerCase();
+    const name = (t.patientName || '').toLowerCase();
+    return num.includes(term) || name.includes(term);
+  });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -45,7 +51,20 @@ export const TransferManagementView: React.FC<TransferManagementViewProps> = ({
           <tbody>
             {filtered.map((t) => (
               <tr key={t.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#2563eb' }}>{t.transferNumber}</td>
+                <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#2563eb' }}>
+                  {onSelectTransfer ? (
+                    <button
+                      type="button"
+                      onClick={() => onSelectTransfer(t)}
+                      style={{ background: 'none', border: 'none', padding: 0, color: '#2563eb', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}
+                      title="View transfer details"
+                    >
+                      {t.transferNumber}
+                    </button>
+                  ) : (
+                    t.transferNumber
+                  )}
+                </td>
                 <td style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>{t.patientName}</td>
                 <td style={{ padding: '0.75rem 1rem' }}>{t.sourceWardName} ({t.sourceBedCode})</td>
                 <td style={{ padding: '0.75rem 1rem' }}>{t.destinationWardName} {t.destinationBedCode ? `(${t.destinationBedCode})` : ''}</td>
@@ -53,12 +72,15 @@ export const TransferManagementView: React.FC<TransferManagementViewProps> = ({
                 <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
                   <Badge variant={t.status === 'COMPLETED' ? 'success' : t.status === 'APPROVED' ? 'warning' : 'neutral'}>{t.status}</Badge>
                 </td>
-                <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
+                <td style={{ padding: '0.75rem 1rem', textAlign: 'center', display: 'flex', gap: '6px', justifyContent: 'center' }}>
                   {t.status === 'REQUESTED' && (
                     <Button variant="primary" size="sm" onClick={() => onOpenApproveTransfer(t)}>Approve Bed</Button>
                   )}
                   {t.status === 'APPROVED' && (
                     <Button variant="primary" size="sm" onClick={() => onOpenCompleteTransfer(t)}>Complete Handoff</Button>
+                  )}
+                  {onSelectTransfer && (
+                    <Button variant="outline" size="sm" onClick={() => onSelectTransfer(t)}>View</Button>
                   )}
                 </td>
               </tr>

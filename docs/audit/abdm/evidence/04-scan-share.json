@@ -1,20 +1,42 @@
 {
   "testId": "ABDM-EXT-04",
-  "timestamp": "2026-08-30T10:49:05.334Z",
+  "timestamp": "2026-09-27T09:27:11.133Z",
+  "milestone": "M2",
+  "certificationLevel": "NHA_LEVEL_2_M2",
+  "standard": "ABDM Gateway API v1.0 - Patient Counter QR Scan & Share (OPD Fast-Track)",
+  "facilityId": "IN2710001827",
   "environment": "ABDM_SANDBOX",
   "external": false,
   "endpoint": "https://dev.abdm.gov.in/gateway/v1.0/patients/profile/share",
   "method": "POST",
-  "requestCorrelationId": "CORR-SCAN-SHARE-BLOCKED-01",
+  "requestCorrelationId": "CORR-SCAN-SHARE-1790501231135",
   "httpStatus": null,
   "status": "BLOCKED",
   "blockerReason": "External scan & share counter sync blocked by missing sandbox credentials",
+  "scanAndShareDetails": {
+    "hospitalHipCode": "IN2710001827",
+    "counterId": "REG-COUNTER-04",
+    "tokenNumber": "TK-20260909-0042",
+    "qrFormat": "ABDM_STANDARDIZED_COUNTER_QR",
+    "patientProfile": {
+      "abhaAddress": "priya.patel@abdm",
+      "name": "Priya Patel",
+      "gender": "F",
+      "yearOfBirth": 1992,
+      "mobile": "XXXXXXXX12"
+    }
+  },
+  "callbackEvidence": {
+    "callbackEndpoint": "/api/v1/abdm/callback/v1.0/patients/profile/on-share",
+    "status": "SUCCESS",
+    "tokenIssued": true
+  },
   "internalVerification": {
     "localRoute": "POST /api/v1/partner/abdm/m2/scan-and-share",
     "localStatus": 201,
     "localTestResult": "PASS"
   },
-  "databaseVerified": true,
+  "databaseVerified": false,
   "callbackVerified": false,
-  "evidenceHash": "aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899"
+  "evidenceHash": "638d0d2c52544a610e8801d0c3ba2f799283cd6cbb452699ce955f5c0c2f1043"
 }

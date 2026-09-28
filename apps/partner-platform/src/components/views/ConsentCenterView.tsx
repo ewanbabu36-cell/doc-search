@@ -16,11 +16,13 @@ import {
 export interface ConsentCenterViewProps {
   patients: PatientDto[];
   onSelectPatient: (patientId: string) => void;
+  onOpenDpdpHub?: () => void;
 }
 
 export const ConsentCenterView: React.FC<ConsentCenterViewProps> = ({
   patients,
-  onSelectPatient
+  onSelectPatient,
+  onOpenDpdpHub
 }) => {
   const allConsents = patients.flatMap((p) =>
     p.consents.map((c) => ({
@@ -32,13 +34,37 @@ export const ConsentCenterView: React.FC<ConsentCenterViewProps> = ({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      <div>
-        <h2 style={{ margin: 0, fontSize: '1.125rem', fontWeight: '700', color: 'var(--ds-color-text-primary)' }}>
-          Patient Consent Directives & Authorizations
-        </h2>
-        <span style={{ fontSize: '0.75rem', color: 'var(--ds-color-text-muted)' }}>
-          Legally binding patient consents for treatment, communications, telehealth encounters, and health data sharing
-        </span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: '1.125rem', fontWeight: '700', color: 'var(--ds-color-text-primary)' }}>
+            Patient Consent Directives & Authorizations
+          </h2>
+          <span style={{ fontSize: '0.75rem', color: 'var(--ds-color-text-muted)' }}>
+            Legally binding patient consents for treatment, communications, telehealth encounters, and health data sharing
+          </span>
+        </div>
+        {onOpenDpdpHub && (
+          <button
+            type="button"
+            onClick={onOpenDpdpHub}
+            style={{
+              padding: '6px 14px',
+              backgroundColor: '#4F46E5',
+              color: '#FFFFFF',
+              border: 'none',
+              borderRadius: '8px',
+              fontWeight: '700',
+              fontSize: '0.75rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <span>🛡️</span>
+            <span>Launch Granular DPDP Consent Hub</span>
+          </button>
+        )}
       </div>
 
       <Alert type="info" title="Audited Consent Directives">

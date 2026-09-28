@@ -236,49 +236,18 @@ export const mockSecurityRolePermissions: SecurityRolePermissionDto[] = [
 export const mockSecurityUserRoles: SecurityUserRoleDto[] = [
   {
     id: 'sur-001',
-    userId: '11111111-1111-4111-a111-111111111111',
-    userEmail: 'executive.lead@docsearch.internal',
-    userName: 'Executive Lead',
+    userId: 'aaaa1111-8492-4aaa-8aaa-849208492000',
+    userEmail: 'founder@docsearch.health',
+    userName: 'MERAJ SHARIF',
     roleId: 'sec-role-001',
     roleCode: 'SUPER_ADMIN',
-    roleName: 'Platform Super Administrator',
+    roleName: 'Founder & SuperAdmin (Root Authority)',
     scopeType: 'PLATFORM',
     scopeReference: 'GLOBAL-PLATFORM-HQ',
     assignedByEmail: 'system.bootstrap@docsearch.internal',
     assignedAt: '2026-01-01T00:00:00.000Z',
     status: 'ACTIVE',
     isHighRisk: true
-  },
-  {
-    id: 'sur-002',
-    userId: '22222222-2222-4222-a222-222222222222',
-    userEmail: 'cmo.safety@docsearch.internal',
-    userName: 'Chief Medical Safety Officer',
-    roleId: 'sec-role-003',
-    roleCode: 'CLINICAL_SAFETY_OFFICER',
-    roleName: 'Clinical AI Safety & Governance Lead',
-    scopeType: 'COMPANY',
-    scopeReference: 'DOC-SEARCH-HQ',
-    assignedByEmail: 'executive.lead@docsearch.internal',
-    assignedAt: '2026-04-15T00:00:00.000Z',
-    status: 'ACTIVE',
-    isHighRisk: false
-  },
-  {
-    id: 'sur-003',
-    userId: '33333333-3333-4333-a333-333333333333',
-    userEmail: 'auditor.lead@external-soc2.org',
-    userName: 'External SOC2 Lead Auditor',
-    roleId: 'sec-role-004',
-    roleCode: 'SECURITY_AUDITOR',
-    roleName: 'Compliance & Security Auditor',
-    scopeType: 'COMPANY',
-    scopeReference: 'DOC-SEARCH-HQ',
-    assignedByEmail: 'executive.lead@docsearch.internal',
-    assignedAt: '2026-08-01T00:00:00.000Z',
-    expiresAt: '2026-11-01T00:00:00.000Z',
-    status: 'ACTIVE',
-    isHighRisk: false
   }
 ];
 

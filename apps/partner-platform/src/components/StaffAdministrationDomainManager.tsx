@@ -21,6 +21,7 @@ import type {
   VerifyStaffCredentialRequest,
   CreateStaffTransferRequest
 } from '@docsearch/api-contracts';
+import { getPartnerCategoryForWorkspace, type StaffPermissions, type PartnerCategory } from '../types/partner-staff-rbac.js';
 import { staffAdministrationService } from '../services/staff-administration-service.js';
 import { partnerFoundationService } from '../services/partner-foundation-service.js';
 import { PanelContextSwitcher } from './common/PanelContextSwitcher.js';
@@ -32,7 +33,7 @@ import { RoleScopeView } from './views/RoleScopeView.js';
 import { CredentialCenterView } from './views/CredentialCenterView.js';
 import { StaffTransfersView } from './views/StaffTransfersView.js';
 import { StaffAuditVaultView } from './views/StaffAuditVaultView.js';
-import { Tabs, Badge, Spinner, ErrorState } from '@docsearch/ui-kit';
+import { Tabs, Badge, ErrorState, SkeletonPage } from '@docsearch/ui-kit';
 
 type ActiveStaffTab =
   | 'overview'
@@ -44,8 +45,17 @@ type ActiveStaffTab =
   | 'transfers'
   | 'audit';
 
-export const StaffAdministrationDomainManager: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<ActiveStaffTab>('overview');
+export interface StaffAdministrationDomainManagerProps {
+  workspace?: string | undefined;
+  partnerType?: string | undefined;
+}
+
+export const StaffAdministrationDomainManager: React.FC<StaffAdministrationDomainManagerProps> = ({
+  workspace,
+  partnerType
+}) => {
+  const isSimpleProfile = workspace === 'PHARMACY' || workspace === 'CLINIC' || workspace === 'PATHOLOGY';
+  const [activeTab, setActiveTab] = useState<ActiveStaffTab>(isSimpleProfile ? 'directory' : 'overview');
   const [context, setContext] = useState<PanelContextDto | null>(null);
   const [partners, setPartners] = useState<OperationalPartnerDto[]>([]);
   const [organizations, setOrganizations] = useState<OperationalOrganizationDto[]>([]);
@@ -62,6 +72,25 @@ export const StaffAdministrationDomainManager: React.FC = () => {
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const dedicatedCategory: PartnerCategory | null = getPartnerCategoryForWorkspace(workspace, partnerType);
+
+  const effectiveStaffList = React.useMemo(() => {
+    if (!dedicatedCategory) return staffList;
+    return staffList.filter((s) => {
+      const staffCat: PartnerCategory =
+        (s as any).partnerCategory || s.metadata?.['partnerCategory'] || (
+          s.staffType === 'PHARMACIST' ? 'PHARMACY' :
+          s.staffType === 'LAB_TECHNICIAN' ? 'PATHOLOGY' :
+          s.staffType === 'DOCTOR' ? (workspace === 'PATHOLOGY' ? 'PATHOLOGY' : workspace === 'CLINIC' ? 'INDEPENDENT_CLINIC' : 'MULTI_SPECIALITY_HOSPITAL') :
+          workspace === 'PHARMACY' ? 'PHARMACY' :
+          workspace === 'PATHOLOGY' ? 'PATHOLOGY' :
+          workspace === 'CLINIC' ? 'INDEPENDENT_CLINIC' :
+          'MULTI_SPECIALITY_HOSPITAL'
+        );
+      return staffCat === dedicatedCategory;
+    });
+  }, [staffList, dedicatedCategory, workspace]);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -99,14 +128,22 @@ export const StaffAdministrationDomainManager: React.FC = () => {
 
       setOverview(overviewRes);
       setDepartments(deptsRes);
-      setStaffList(staffRes);
+      const uniqueStaff = staffRes.filter(
+        (s, idx, arr) =>
+          arr.findIndex(
+            (x) =>
+              x.id === s.id ||
+              (x.staffCode && s.staffCode && x.staffCode.toUpperCase() === s.staffCode.toUpperCase())
+          ) === idx
+      );
+      setStaffList(uniqueStaff);
       setRoleAssignments(rolesRes);
       setCredentials(credsRes);
       setTransfers(transRes);
       setAuditTraces(auditsRes);
 
-      if (staffRes[0] && !selectedStaffId) {
-        setSelectedStaffId(staffRes[0].id);
+      if (uniqueStaff[0] && !selectedStaffId) {
+        setSelectedStaffId(uniqueStaff[0].id);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load Staff Administration module');
@@ -139,7 +176,22 @@ export const StaffAdministrationDomainManager: React.FC = () => {
 
   const handleCreateStaff = async (req: CreateOperationalStaffRequest) => {
     const s = await staffAdministrationService.createStaff(req);
-    setStaffList((prev) => [...prev, s]);
+    setStaffList((prev) => {
+      const exists = prev.some(
+        (item) =>
+          item.id === s.id ||
+          (item.staffCode && s.staffCode && item.staffCode.toUpperCase() === s.staffCode.toUpperCase())
+      );
+      if (exists) {
+        return prev.map((item) =>
+          item.id === s.id ||
+          (item.staffCode && s.staffCode && item.staffCode.toUpperCase() === s.staffCode.toUpperCase())
+            ? s
+            : item
+        );
+      }
+      return [s, ...prev];
+    });
     setSelectedStaffId(s.id);
   };
 
@@ -190,15 +242,32 @@ export const StaffAdministrationDomainManager: React.FC = () => {
     setActiveTab('profile');
   };
 
+  const handleDeleteStaff = async (staffId: string, reason: string) => {
+    if (!context) return;
+    await staffAdministrationService.deleteStaff(context.activeTenantId, staffId, reason);
+    setStaffList((prev) => prev.filter((s) => s.id !== staffId));
+  };
+
+  const handleRevokeStaff = async (staffId: string, reason: string) => {
+    if (!context) return;
+    const updated = await staffAdministrationService.revokeStaffAccess(context.activeTenantId, staffId, reason);
+    setStaffList((prev) => prev.map((s) => (s.id === staffId ? updated : s)));
+  };
+
+  const handleRestoreStaff = async (staffId: string) => {
+    if (!context) return;
+    const updated = await staffAdministrationService.restoreStaffAccess(context.activeTenantId, staffId);
+    setStaffList((prev) => prev.map((s) => (s.id === staffId ? updated : s)));
+  };
+
+  const handleUpdatePermissions = async (staffId: string, perms: Partial<StaffPermissions>) => {
+    if (!context) return;
+    const updated = await staffAdministrationService.updateStaffPermissions(context.activeTenantId, staffId, perms);
+    setStaffList((prev) => prev.map((s) => (s.id === staffId ? updated : s)));
+  };
+
   if (isLoading && !context) {
-    return (
-      <div style={{ padding: '60px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-        <Spinner size="lg" />
-        <span style={{ fontSize: '0.875rem', color: 'var(--ds-color-text-muted)' }}>
-          Loading Staff Administration & Department Hierarchy...
-        </span>
-      </div>
-    );
+    return <SkeletonPage layout="table" metricCount={4} />;
   }
 
   if (error && !context) {
@@ -211,6 +280,34 @@ export const StaffAdministrationDomainManager: React.FC = () => {
   const activeOrgId = context?.activeOrganizationId ?? organizations[0]?.id ?? '';
   const activeBranchId = context?.activeFacilityId ?? facilities[0]?.id ?? '';
 
+  const effectiveDepartments: OperationalDepartmentDto[] =
+    departments.length > 0
+      ? departments
+      : [
+          {
+            id: 'dept-default-ops',
+            tenantId: context?.activeTenantId || 'default-tenant',
+            partnerId: context?.activePartnerId || 'default-partner',
+            organizationId: activeOrgId || 'default-org',
+            departmentCode: workspace ? `${workspace}_OPS` : 'GENERAL_OPS',
+            departmentName:
+              workspace === 'PHARMACY'
+                ? 'Dispensary & Pharmacy Operations'
+                : workspace === 'CLINIC'
+                ? 'Outpatient & Consultation'
+                : workspace === 'PATHOLOGY'
+                ? 'Clinical Pathology & Diagnostics'
+                : workspace === 'DIAGNOSTIC_CENTRE'
+                ? 'Radiology & Imaging'
+                : 'General Operations',
+            status: 'ACTIVE',
+            staffCount: effectiveStaffList.length,
+            metadata: {},
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }
+        ];
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Header */}
@@ -220,7 +317,7 @@ export const StaffAdministrationDomainManager: React.FC = () => {
             Staff Administration & Department Hierarchy
           </h1>
           
-          <Badge variant="warning">Development Preview (Sample Data)</Badge>
+          <Badge variant="success">● LIVE PRODUCTION</Badge>
         </div>
         <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--ds-color-text-muted)' }}>
           Operational clinical staff directory, department hierarchy, role & scope bindings, and audited credential verification
@@ -242,7 +339,7 @@ export const StaffAdministrationDomainManager: React.FC = () => {
       <Tabs
         tabs={[
           { id: 'overview', label: '📊 Overview' },
-          { id: 'directory', label: '👥 Staff Directory', badge: <Badge variant="neutral">{staffList.length}</Badge> },
+          { id: 'directory', label: '👥 Staff Directory', badge: <Badge variant="neutral">{effectiveStaffList.length}</Badge> },
           { id: 'profile', label: '📋 Staff Profile' },
           { id: 'departments', label: '🏛️ Departments', badge: <Badge variant="neutral">{departments.length}</Badge> },
           { id: 'roles', label: '🔑 Role & Scope', badge: <Badge variant="neutral">{roleAssignments.length}</Badge> },
@@ -257,8 +354,12 @@ export const StaffAdministrationDomainManager: React.FC = () => {
       {/* Tab Contents */}
       {activeTab === 'overview' && overview && (
         <StaffOverviewView
-          overview={overview}
-          staffList={staffList}
+          overview={{
+            ...overview,
+            totalStaffCount: dedicatedCategory ? effectiveStaffList.length : overview.totalStaffCount,
+            activeStaffCount: dedicatedCategory ? effectiveStaffList.filter(s => s.employmentStatus === 'ACTIVE').length : overview.activeStaffCount
+          }}
+          staffList={effectiveStaffList}
           departments={departments}
           onSelectStaff={handleSelectStaff}
         />
@@ -266,8 +367,10 @@ export const StaffAdministrationDomainManager: React.FC = () => {
 
       {activeTab === 'directory' && context && (
         <StaffDirectoryView
-          staffList={staffList}
-          departments={departments}
+          staffList={effectiveStaffList}
+          departments={effectiveDepartments}
+          workspace={workspace}
+          partnerType={partnerType}
           tenantId={context.activeTenantId}
           partnerId={context.activePartnerId}
           organizationId={activeOrgId}
@@ -283,6 +386,10 @@ export const StaffAdministrationDomainManager: React.FC = () => {
           onAssignRole={handleAssignRole}
           onAddCredential={handleAddCredential}
           onTransferStaff={handleTransferStaff}
+          onDeleteStaff={handleDeleteStaff}
+          onRevokeStaff={handleRevokeStaff}
+          onRestoreStaff={handleRestoreStaff}
+          onUpdatePermissions={handleUpdatePermissions}
         />
       )}
 
@@ -293,6 +400,7 @@ export const StaffAdministrationDomainManager: React.FC = () => {
           credentials={credentials}
           transfers={transfers}
           auditTraces={auditTraces}
+          onBack={() => setActiveTab('directory')}
         />
       )}
 

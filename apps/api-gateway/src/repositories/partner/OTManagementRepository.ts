@@ -2,15 +2,18 @@ import {
   getDatabase,
   operationTheatreRooms,
   operationTheatreComplexes,
+  surgicalProcedures,
   surgeryRequests,
   otSchedules,
   preOperativeAssessments,
   operativeNotes,
   pacuRecoveryRecords,
   postoperativeTransfers,
+  operationalDepartments,
   encounters,
   eq,
   and,
+  or,
   desc
 } from '@docsearch/database';
 import { AppError, ErrorCode, createLogger } from '@docsearch/shared-core';
@@ -128,6 +131,7 @@ export interface StoredSurgerySchedule {
   organizationId: string;
   branchId: string;
   scheduleNumber: string;
+  surgeryRequestId?: string;
   patientId: string;
   canonicalEncounterId: string;
   otRoomId: string;
@@ -327,7 +331,15 @@ export class OTManagementRepository {
           const pacRows = await db
             .select()
             .from(preOperativeAssessments)
-            .where(and(eq(preOperativeAssessments.tenantId, tenantId), eq(preOperativeAssessments.surgeryRequestId, s.id)));
+            .where(
+              and(
+                eq(preOperativeAssessments.tenantId, tenantId),
+                or(
+                  eq(preOperativeAssessments.surgeryRequestId, s.surgeryRequestId || s.id),
+                  eq(preOperativeAssessments.surgeryRequestId, s.id)
+                )
+              )
+            );
           if (pacRows && pacRows.length > 0) {
             const p: any = pacRows[0];
             pacAssessment = {
@@ -426,6 +438,7 @@ export class OTManagementRepository {
           organizationId: s.organizationId,
           branchId: s.branchId,
           scheduleNumber: s.scheduleNumber,
+          surgeryRequestId: s.surgeryRequestId,
           patientId: s.patientId,
           canonicalEncounterId: s.canonicalEncounterId || s.encounterId || crypto.randomUUID(),
           otRoomId: s.roomId || s.otRoomId,
@@ -500,13 +513,30 @@ export class OTManagementRepository {
       const urgencyLevel = input.urgencyLevel || 'ELECTIVE';
       const preOpDiagnosis = input.preOpDiagnosis || 'Pre-operative evaluation';
 
-      // 2. Create canonical encounter
+      // 2. Resolve Department and Create canonical encounter
+      let departmentId: string = 'd0000000-0000-4000-8000-000000000001';
+      try {
+        const deptRows = await tx
+          .select({ id: operationalDepartments.id })
+          .from(operationalDepartments)
+          .where(eq(operationalDepartments.tenantId, input.tenantId))
+          .limit(1);
+        if (deptRows.length > 0 && deptRows[0]?.id) {
+          departmentId = deptRows[0].id;
+        }
+      } catch {
+        // Fallback to default
+      }
+
+      const encounterNumber = `ENC-SURG-${Math.floor(100000 + Math.random() * 900000)}`;
       await tx.insert(encounters).values({
         id: canonicalEncounterId,
         tenantId: input.tenantId,
         partnerId,
         organizationId,
         branchId,
+        departmentId,
+        encounterNumber,
         patientId: input.patientId,
         doctorId: input.leadSurgeonId,
         encounterType: 'SURGERY',
@@ -515,32 +545,68 @@ export class OTManagementRepository {
         checkedInAt: now
       } as unknown as typeof encounters.$inferInsert);
 
-      // 3. Create Surgery Request
+      // 3. Resolve or insert Surgical Procedure
+      let procedureId = crypto.randomUUID();
+      const procCode = input.procedureCode || 'SURG-PROC-01';
       try {
-        await tx.insert(surgeryRequests).values({
-          id: surgeryRequestId,
-          tenantId: input.tenantId,
-          partnerId,
-          organizationId,
-          branchId,
-          requestNumber: `SR-${Math.floor(100000 + Math.random() * 900000)}`,
-          patientId: input.patientId,
-          patientName: 'Surgical Patient',
-          patientMrn: 'MRN-AUTO',
-          encounterId: canonicalEncounterId,
-          requestingDoctorName: leadSurgeonName,
-          primarySurgeonName: leadSurgeonName,
-          specialty: 'GENERAL_SURGERY',
-          procedureName: input.procedureName,
-          preOperativeDiagnosis: preOpDiagnosis,
-          clinicalIndication: input.procedureName,
-          proposedSurgeryDate: scheduledDateParsed
-        } as unknown as typeof surgeryRequests.$inferInsert);
-      } catch {
-        // Proceed if surgeryRequests table mocked or optional
+        const existingProcs = await tx
+          .select({ id: surgicalProcedures.id })
+          .from(surgicalProcedures)
+          .where(and(eq(surgicalProcedures.tenantId, input.tenantId), eq(surgicalProcedures.procedureCode, procCode)))
+          .limit(1);
+
+        if (existingProcs.length > 0 && existingProcs[0]?.id) {
+          procedureId = existingProcs[0].id;
+        } else {
+          await tx.insert(surgicalProcedures).values({
+            id: procedureId,
+            tenantId: input.tenantId,
+            partnerId,
+            organizationId,
+            branchId,
+            procedureCode: procCode,
+            procedureName: input.procedureName,
+            specialty: 'GENERAL_SURGERY',
+            category: urgencyLevel === 'EMERGENCY' ? 'EMERGENCY_PROCEDURE' : 'MAJOR_PROCEDURE',
+            defaultDurationMinutes: estimatedDurationMinutes
+          } as unknown as typeof surgicalProcedures.$inferInsert);
+        }
+      } catch (procErr) {
+        logger.warn('Could not query/insert surgicalProcedures', { error: String(procErr) });
       }
 
-      // 4. Create OT Schedule
+      // 4. Create Surgery Request
+      await tx.insert(surgeryRequests).values({
+        id: surgeryRequestId,
+        tenantId: input.tenantId,
+        partnerId,
+        organizationId,
+        branchId,
+        requestNumber: `SR-${Math.floor(100000 + Math.random() * 900000)}`,
+        patientId: input.patientId,
+        patientName: 'Surgical Patient',
+        patientMrn: 'MRN-AUTO',
+        patientAge: 35,
+        patientGender: 'M',
+        encounterId: canonicalEncounterId,
+        requestingDoctorName: leadSurgeonName,
+        primarySurgeonName: leadSurgeonName,
+        specialty: 'GENERAL_SURGERY',
+        procedureId,
+        procedureName: input.procedureName,
+        preOperativeDiagnosis: preOpDiagnosis,
+        clinicalIndication: input.procedureName,
+        proposedSurgeryDate: scheduledDateParsed,
+        estimatedDurationMinutes,
+        category: urgencyLevel === 'EMERGENCY' ? 'EMERGENCY' : 'ELECTIVE',
+        priority: urgencyLevel === 'EMERGENCY' ? 'STAT' : 'ROUTINE',
+        isEmergency: urgencyLevel === 'EMERGENCY',
+        requiredAnaesthesia: 'GENERAL_ANAESTHESIA',
+        pacClearanceStatus: 'PENDING',
+        status: 'CONFIRMED'
+      } as unknown as typeof surgeryRequests.$inferInsert);
+
+      // 5. Create OT Schedule
       await tx.insert(otSchedules).values({
         id,
         tenantId: input.tenantId,
@@ -573,6 +639,7 @@ export class OTManagementRepository {
         organizationId,
         branchId,
         scheduleNumber,
+        surgeryRequestId,
         patientId: input.patientId,
         canonicalEncounterId,
         otRoomId: input.otRoomId,
@@ -625,13 +692,27 @@ export class OTManagementRepository {
       fitnessStatus === 'FIT_FOR_SURGERY' || fitnessStatus === 'HIGH_RISK_CLEARANCE' ? 'PAC_CLEARED' : 'SCHEDULED';
 
     const executeInTx = async (tx: any) => {
+      let surgeryReqId: string = item.surgeryRequestId || item.id;
+      try {
+        const [schedRow] = await tx
+          .select({ surgeryRequestId: otSchedules.surgeryRequestId })
+          .from(otSchedules)
+          .where(and(eq(otSchedules.tenantId, input.tenantId), eq(otSchedules.id, input.scheduleId)))
+          .limit(1);
+        if (schedRow?.surgeryRequestId) {
+          surgeryReqId = schedRow.surgeryRequestId;
+        }
+      } catch {
+        // Fallback to existing
+      }
+
       await tx.insert(preOperativeAssessments).values({
         id: crypto.randomUUID(),
         tenantId: input.tenantId,
         partnerId: item.partnerId,
         organizationId: item.organizationId,
         branchId: item.branchId,
-        surgeryRequestId: item.id,
+        surgeryRequestId: surgeryReqId,
         patientId: item.patientId,
         patientName: 'Surgical Patient',
         assessedByAnaesthetist: input.anaesthetistName || 'Anaesthetist',

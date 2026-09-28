@@ -68,16 +68,6 @@ export const PermissionMatrixView: React.FC<PermissionMatrixViewProps> = ({
           <button
             type="button"
             onClick={onOpenCreateRole}
-            style={{
-              backgroundColor: '#06B6D4',
-              color: '#070C16',
-              border: 'none',
-              borderRadius: '8px',
-              fontWeight: 800,
-              padding: '8px 18px',
-              fontSize: '0.8125rem',
-              cursor: 'pointer'
-            }}
           >
             ➕ Create Custom Role & Permissions
           </button>

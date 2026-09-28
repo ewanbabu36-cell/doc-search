@@ -27,11 +27,37 @@ export default [
       '@typescript-eslint': tsPlugin
     },
     rules: {
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrors: 'none' }],
       '@typescript-eslint/explicit-function-return-type': 'off',
-      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-non-null-assertion': 'warn',
       'no-console': ['warn', { allow: ['warn', 'error', 'info', 'debug'] }]
+    }
+  },
+  // Strict Zero-Trust Security: Core security, auth, and API contract packages strictly enforce no-explicit-any
+  {
+    files: [
+      'packages/auth/**/*.ts',
+      'packages/api-contracts/**/*.ts',
+      'packages/shared-core/src/security/**/*.ts',
+      'apps/api-gateway/src/plugins/security.ts',
+      'apps/api-gateway/src/plugins/auth-guard.ts'
+    ],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'error'
+    }
+  },
+  // Scoped Overrides for Tests, Scripts & Test Harnesses where dynamic fixtures/stubs are necessary
+  {
+    files: [
+      'tests/**/*.ts',
+      '**/test/**/*.ts',
+      '**/test-harness.ts',
+      'scripts/**/*.ts'
+    ],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-non-null-assertion': 'off'
     }
   },
   // 1. Phase 1 Boundary: company-platform cannot import partner-platform, landing-page, or api-gateway

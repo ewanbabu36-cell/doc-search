@@ -24,10 +24,39 @@ export const InvoiceListView: React.FC<InvoiceListViewProps> = ({
   invoices,
   onSelectInvoice
 }) => {
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const partnerFilter = localStorage.getItem('docsearch_finance_partner_filter');
+      if (partnerFilter) {
+        localStorage.removeItem('docsearch_finance_partner_filter');
+        return partnerFilter;
+      }
+    }
+    return '';
+  });
   const [statusFilter, setStatusFilter] = useState<InvoiceStatus | 'ALL'>('ALL');
+  const [localInvoices] = useState<InvoiceDto[]>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('docsearch_partner_invoices');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const ids = new Set(parsed.map((p: any) => p.id));
+            const extra = (invoices || []).filter((i) => !ids.has(i.id));
+            return [...parsed, ...extra];
+          }
+        } catch {
+          // fallback
+        }
+      }
+    }
+    return invoices;
+  });
 
-  const filtered = invoices.filter((i) => {
+  const activeInvoices = localInvoices.length > 0 ? localInvoices : invoices;
+
+  const filtered = activeInvoices.filter((i) => {
     if (search.trim()) {
       const q = search.toLowerCase();
       if (!i.invoiceNumber.toLowerCase().includes(q) && !i.partnerTradeName.toLowerCase().includes(q)) {

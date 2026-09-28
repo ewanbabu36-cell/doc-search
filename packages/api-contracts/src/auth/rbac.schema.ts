@@ -24,7 +24,31 @@ export const RoleTypeSchema = z.enum([
 
 export type RoleType = z.infer<typeof RoleTypeSchema>;
 
-export const PermissionActionSchema = z.enum(['create', 'read', 'update', 'delete', 'manage', 'execute', 'audit']);
+export const PermissionActionSchema = z.enum([
+  'view',
+  'read',
+  'create',
+  'save',
+  'edit',
+  'update',
+  'remove',
+  'delete',
+  'restore',
+  'share',
+  'print',
+  'export',
+  'download',
+  'submit',
+  'approve',
+  'reject',
+  'validate',
+  'cancel',
+  'archive',
+  'refund',
+  'manage',
+  'execute',
+  'audit'
+]);
 export type PermissionAction = z.infer<typeof PermissionActionSchema>;
 
 export const PermissionScopeSchema = z.enum(['global', 'tenant', 'branch', 'department', 'own']);

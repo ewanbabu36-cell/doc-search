@@ -203,7 +203,7 @@ export const TpaClaimPredictorStudio: React.FC = () => {
                 size="sm"
                 disabled={isAuditing}
                 onClick={handleFixAndScrub}
-                style={{ backgroundColor: '#06B6D4', borderColor: '#06B6D4', color: '#070C16', fontWeight: 800 }}
+                
               >
                 {isAuditing ? '⚡ Auto-Scrubbing Claim...' : '🛠️ Auto-Fix & Attach Missing Records'}
               </Button>

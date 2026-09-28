@@ -1,3 +1,4 @@
+import { apiRequest, isMockFallbackAllowed } from './api-client.js';
 import type {
   DietaryDepartmentDto,
   DietaryKitchenDto,
@@ -155,12 +156,13 @@ class DietaryManagementService implements IDietaryManagementService {
     entityCode: string,
     justification: string,
     actorRole = 'DIETARY_OFFICER',
-    actorName = 'Authorized Dietary Staff'
+    actorName = 'Authorized Dietary Staff',
+    tenantId = '11111111-1111-4111-8111-111111111111'
   ) {
     const traceNumber = `TRACE-DIET-${Math.floor(10000000 + Math.random() * 90000000)}`;
     const trace: DietaryAuditTraceDto = {
       id: crypto.randomUUID(),
-      tenantId: '11111111-1111-4111-8111-111111111111',
+      tenantId,
       partnerId: '22222222-2222-4222-8222-222222222222',
       organizationId: '33333333-3333-4333-8333-333333333333',
       branchId: '44444444-4444-4444-8444-444444444444',
@@ -180,6 +182,15 @@ class DietaryManagementService implements IDietaryManagementService {
   }
 
   async getOverviewMetrics(_tenantId: string): Promise<DietaryOverviewMetricsDto> {
+    try {
+      const res = await apiRequest<DietaryOverviewMetricsDto>('/api/v1/partner/dietary/overview');
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     return {
       ...mockDietaryOverviewMetrics,
       totalActiveDietOrders: this.orders.filter((o) => o.status === 'ACTIVE').length,
@@ -189,6 +200,14 @@ class DietaryManagementService implements IDietaryManagementService {
   }
 
   async getAnalytics(_tenantId: string): Promise<DietaryAnalyticsDto> {
+    try {
+      const res = await apiRequest<DietaryAnalyticsDto>('/api/v1/partner/dietary/analytics');
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
     return { ...mockDietaryAnalytics };
   }
 
@@ -197,10 +216,31 @@ class DietaryManagementService implements IDietaryManagementService {
   }
 
   async getKitchens(_tenantId: string): Promise<DietaryKitchenDto[]> {
+    try {
+      const res = await apiRequest<DietaryKitchenDto[]>('/api/v1/partner/dietary/kitchens');
+      if (res.success && Array.isArray(res.data)) {
+        this.kitchens = res.data;
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
     return [...this.kitchens];
   }
 
   async createKitchen(tenantId: string, payload: CreateKitchenRequest): Promise<DietaryKitchenDto> {
+    try {
+      const res = await apiRequest<DietaryKitchenDto>('/api/v1/partner/dietary/kitchens', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const kitchen: DietaryKitchenDto = {
       id: crypto.randomUUID(),
       tenantId,
@@ -224,7 +264,7 @@ class DietaryManagementService implements IDietaryManagementService {
     return kitchen;
   }
 
-    async updateKitchen(_tenantId: string, id: string, payload: UpdateKitchenRequest): Promise<DietaryKitchenDto> {
+  async updateKitchen(_tenantId: string, id: string, payload: UpdateKitchenRequest): Promise<DietaryKitchenDto> {
     const idx = this.kitchens.findIndex((k) => k.id === id);
     if (idx === -1) throw new Error('Kitchen not found');
     const existing = this.kitchens[idx];
@@ -253,10 +293,31 @@ class DietaryManagementService implements IDietaryManagementService {
   }
 
   async getDietTypes(_tenantId: string): Promise<DietaryDietTypeDto[]> {
+    try {
+      const res = await apiRequest<DietaryDietTypeDto[]>('/api/v1/partner/dietary/diet-types');
+      if (res.success && Array.isArray(res.data)) {
+        this.dietTypes = res.data;
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
     return [...this.dietTypes];
   }
 
   async createDietType(tenantId: string, payload: CreateDietTypeRequest): Promise<DietaryDietTypeDto> {
+    try {
+      const res = await apiRequest<DietaryDietTypeDto>('/api/v1/partner/dietary/diet-types', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const dt: DietaryDietTypeDto = {
       id: crypto.randomUUID(),
       tenantId,
@@ -317,10 +378,31 @@ class DietaryManagementService implements IDietaryManagementService {
   }
 
   async getAssessments(_tenantId: string): Promise<DietaryAssessmentDto[]> {
+    try {
+      const res = await apiRequest<DietaryAssessmentDto[]>('/api/v1/partner/dietary/assessments');
+      if (res.success && Array.isArray(res.data)) {
+        this.assessments = res.data;
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
     return [...this.assessments];
   }
 
   async createAssessment(tenantId: string, payload: CreateDietAssessmentRequest): Promise<DietaryAssessmentDto> {
+    try {
+      const res = await apiRequest<DietaryAssessmentDto>('/api/v1/partner/dietary/assessments', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const heightM = payload.heightCm / 100;
     const bmi = Number((payload.weightKg / (heightM * heightM)).toFixed(2));
     const da: DietaryAssessmentDto = {
@@ -359,10 +441,31 @@ class DietaryManagementService implements IDietaryManagementService {
   }
 
   async getOrders(_tenantId: string): Promise<DietaryOrderDto[]> {
+    try {
+      const res = await apiRequest<DietaryOrderDto[]>('/api/v1/partner/dietary/orders');
+      if (res.success && Array.isArray(res.data)) {
+        this.orders = res.data;
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
     return [...this.orders];
   }
 
   async createOrder(tenantId: string, payload: CreateDietOrderRequest): Promise<DietaryOrderDto> {
+    try {
+      const res = await apiRequest<DietaryOrderDto>('/api/v1/partner/dietary/orders', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const order: DietaryOrderDto = {
       id: crypto.randomUUID(),
       tenantId,
@@ -398,6 +501,18 @@ class DietaryManagementService implements IDietaryManagementService {
   }
 
   async approveOrder(_tenantId: string, orderId: string, payload: ApproveDietOrderRequest): Promise<DietaryOrderDto> {
+    try {
+      const res = await apiRequest<DietaryOrderDto>(`/api/v1/partner/dietary/orders/${orderId}/approve`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const idx = this.orders.findIndex((o) => o.id === orderId);
     if (idx === -1) throw new Error('Order not found');
     const existing = this.orders[idx];
@@ -541,6 +656,18 @@ class DietaryManagementService implements IDietaryManagementService {
   }
 
   async createProductionPlan(tenantId: string, payload: CreateProductionPlanRequest): Promise<DietaryProductionPlanDto> {
+    try {
+      const res = await apiRequest<DietaryProductionPlanDto>('/api/v1/partner/dietary/production-plans', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const kitchen = this.kitchens.find((k) => k.id === payload.kitchenId);
     const plan: DietaryProductionPlanDto = {
       id: crypto.randomUUID(),
@@ -567,6 +694,18 @@ class DietaryManagementService implements IDietaryManagementService {
   }
 
   async releaseProductionPlan(_tenantId: string, planId: string, payload: ReleaseProductionPlanRequest): Promise<DietaryProductionPlanDto> {
+    try {
+      const res = await apiRequest<DietaryProductionPlanDto>(`/api/v1/partner/dietary/production-plans/${planId}/release`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const idx = this.productionPlans.findIndex((p) => p.id === planId);
     if (idx === -1) throw new Error('Production plan not found');
     const existing = this.productionPlans[idx];
@@ -616,6 +755,18 @@ class DietaryManagementService implements IDietaryManagementService {
   }
 
   async recordQualityCheck(tenantId: string, payload: RecordQualityCheckRequest): Promise<DietaryQualityCheckDto> {
+    try {
+      const res = await apiRequest<DietaryQualityCheckDto>('/api/v1/partner/dietary/quality-checks', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const check: DietaryQualityCheckDto = {
       id: crypto.randomUUID(),
       tenantId,
@@ -646,6 +797,18 @@ class DietaryManagementService implements IDietaryManagementService {
   }
 
   async createTrayAssembly(tenantId: string, payload: CreateTrayAssemblyRequest): Promise<DietaryTrayAssemblyDto> {
+    try {
+      const res = await apiRequest<DietaryTrayAssemblyDto>('/api/v1/partner/dietary/tray-assemblies', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const order = this.orders.find((o) => o.id === payload.orderId);
     const tray: DietaryTrayAssemblyDto = {
       id: crypto.randomUUID(),
@@ -679,6 +842,18 @@ class DietaryManagementService implements IDietaryManagementService {
   }
 
   async dispatchMeal(tenantId: string, payload: DispatchMealRequest): Promise<DietaryMealDispatchDto> {
+    try {
+      const res = await apiRequest<DietaryMealDispatchDto>('/api/v1/partner/dietary/dispatches', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const tray = this.trayAssemblies.find((t) => t.trayBarcode === payload.trayBarcode);
     const dispatch: DietaryMealDispatchDto = {
       id: crypto.randomUUID(),
@@ -705,6 +880,18 @@ class DietaryManagementService implements IDietaryManagementService {
   }
 
   async confirmMealDelivery(_tenantId: string, dispatchId: string, payload: ConfirmMealDeliveryRequest): Promise<DietaryMealDispatchDto> {
+    try {
+      const res = await apiRequest<DietaryMealDispatchDto>(`/api/v1/partner/dietary/dispatches/${dispatchId}/deliver`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const idx = this.mealDispatches.findIndex((d) => d.id === dispatchId);
     if (idx === -1) throw new Error('Dispatch record not found');
     const existing = this.mealDispatches[idx];
@@ -721,6 +908,18 @@ class DietaryManagementService implements IDietaryManagementService {
   }
 
   async refuseMeal(_tenantId: string, dispatchId: string, payload: RefuseMealRequest): Promise<DietaryMealDispatchDto> {
+    try {
+      const res = await apiRequest<DietaryMealDispatchDto>(`/api/v1/partner/dietary/dispatches/${dispatchId}/refuse`, {
+        method: 'PATCH',
+        body: JSON.stringify({ reason: payload.reasonDescription })
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const idx = this.mealDispatches.findIndex((d) => d.id === dispatchId);
     if (idx === -1) throw new Error('Dispatch record not found');
     const existing = this.mealDispatches[idx];
@@ -884,6 +1083,18 @@ class DietaryManagementService implements IDietaryManagementService {
   }
 
   async createProcurementRef(tenantId: string, payload: CreateDietaryProcurementReferenceRequest): Promise<DietaryProcurementRefDto> {
+    try {
+      const res = await apiRequest<DietaryProcurementRefDto>('/api/v1/partner/dietary/procurement-references', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const ref: DietaryProcurementRefDto = {
       id: crypto.randomUUID(),
       tenantId,
@@ -910,6 +1121,18 @@ class DietaryManagementService implements IDietaryManagementService {
   }
 
   async createBillingRef(tenantId: string, payload: CreateDietaryBillingReferenceRequest): Promise<DietaryBillingRefDto> {
+    try {
+      const res = await apiRequest<DietaryBillingRefDto>('/api/v1/partner/dietary/billing-references', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const ref: DietaryBillingRefDto = {
       id: crypto.randomUUID(),
       tenantId,

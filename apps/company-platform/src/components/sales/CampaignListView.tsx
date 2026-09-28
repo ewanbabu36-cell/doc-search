@@ -57,7 +57,6 @@ export const CampaignListView: React.FC<CampaignListViewProps> = ({
             setEditingCamp(null);
             setIsModalOpen(true);
           }}
-          style={{ backgroundColor: '#06B6D4', color: '#070C16', fontWeight: 800 }}
         >
           🚀 Launch New Marketing Campaign
         </Button>

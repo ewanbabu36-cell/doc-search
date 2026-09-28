@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { authenticate } from '../../plugins/auth-guard.js';
+import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 import {
   whatsAppEngagementService,
   type SendWhatsAppMessageDto,
@@ -11,6 +12,11 @@ import { AppError } from '@docsearch/shared-core';
 
 export const whatsappEngagementRoutes: FastifyPluginAsync = async (app) => {
   const service = whatsAppEngagementService;
+
+  app.addHook('preHandler', async (request, reply) => {
+    if (request.url.includes('/whatsapp/webhook')) return;
+    await requireModuleCommercialAccess('WHATSAPP_AUTOMATION')(request, reply);
+  });
 
   // 1. Overview Metrics
   app.get(

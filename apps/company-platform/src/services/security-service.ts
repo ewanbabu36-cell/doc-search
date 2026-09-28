@@ -32,6 +32,7 @@ import {
   mockSecurityAuditVerifications,
   mockSecurityOverview
 } from './mock-security-data.js';
+import { apiCall, isMockFallbackAllowed } from './api-client.js';
 
 export interface ISecurityService {
   getSecurityOverview(): Promise<SecurityOverviewDto>;
@@ -93,30 +94,37 @@ export class SecurityService implements ISecurityService {
   }
 
   async getRoles(): Promise<SecurityRoleDto[]> {
-    if (this.apiUrl) {
-      const res = await fetch(`${this.apiUrl}/api/v1/company/security/roles`);
-      if (!res.ok) throw new Error(`Failed to fetch roles: ${res.statusText}`);
-      return (await res.json()) as SecurityRoleDto[];
+    try {
+      const data = await apiCall<SecurityRoleDto[]>('/api/v1/company/security/roles');
+      if (Array.isArray(data) && data.length > 0) {
+        this.roles = data;
+        return [...this.roles];
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
     }
     return [...this.roles];
   }
 
   async getRoleById(id: string): Promise<SecurityRoleDto | null> {
-    if (this.apiUrl) {
-      const res = await fetch(`${this.apiUrl}/api/v1/company/security/roles/${id}`);
-      if (res.status === 404) return null;
-      if (!res.ok) throw new Error(`Failed to fetch role: ${res.statusText}`);
-      return (await res.json()) as SecurityRoleDto;
+    try {
+      return await apiCall<SecurityRoleDto>(`/api/v1/company/security/roles/${id}`);
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+      const r = this.roles.find((item) => item.id === id);
+      return r ? { ...r } : null;
     }
-    const r = this.roles.find((item) => item.id === id);
-    return r ? { ...r } : null;
   }
 
   async getPermissions(): Promise<SecurityPermissionDto[]> {
-    if (this.apiUrl) {
-      const res = await fetch(`${this.apiUrl}/api/v1/company/security/permissions`);
-      if (!res.ok) throw new Error(`Failed to fetch permissions: ${res.statusText}`);
-      return (await res.json()) as SecurityPermissionDto[];
+    try {
+      const data = await apiCall<SecurityPermissionDto[]>('/api/v1/company/security/permissions');
+      if (Array.isArray(data) && data.length > 0) {
+        this.permissions = data;
+        return [...this.permissions];
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
     }
     return [...this.permissions];
   }
@@ -234,23 +242,26 @@ export class SecurityService implements ISecurityService {
   }
 
   async getSecurityPolicies(): Promise<SecurityPolicyDto[]> {
-    if (this.apiUrl) {
-      const res = await fetch(`${this.apiUrl}/api/v1/company/security/policies`);
-      if (!res.ok) throw new Error(`Failed to fetch security policies: ${res.statusText}`);
-      return (await res.json()) as SecurityPolicyDto[];
+    try {
+      const data = await apiCall<SecurityPolicyDto[]>('/api/v1/company/security/policies');
+      if (Array.isArray(data) && data.length > 0) {
+        this.policies = data;
+        return [...this.policies];
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
     }
     return [...this.policies];
   }
 
   async getSecurityPolicyById(id: string): Promise<SecurityPolicyDto | null> {
-    if (this.apiUrl) {
-      const res = await fetch(`${this.apiUrl}/api/v1/company/security/policies/${id}`);
-      if (res.status === 404) return null;
-      if (!res.ok) throw new Error(`Failed to fetch security policy: ${res.statusText}`);
-      return (await res.json()) as SecurityPolicyDto;
+    try {
+      return await apiCall<SecurityPolicyDto>(`/api/v1/company/security/policies/${id}`);
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+      const p = this.policies.find((item) => item.id === id);
+      return p ? { ...p } : null;
     }
-    const p = this.policies.find((item) => item.id === id);
-    return p ? { ...p } : null;
   }
 
   async transitionSecurityPolicy(

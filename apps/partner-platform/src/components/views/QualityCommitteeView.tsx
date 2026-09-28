@@ -1,7 +1,14 @@
-import React from 'react';
-import { Card, Button } from '@docsearch/ui-kit';
+import React, { useState } from 'react';
+import { Card, Button, Alert } from '@docsearch/ui-kit';
 
 export const QualityCommitteeView: React.FC = () => {
+  const [meetingNotice, setMeetingNotice] = useState<string | null>(null);
+
+  const handleLogMeeting = () => {
+    setMeetingNotice(`New Committee Meeting initialized for current month (${new Date().toISOString().slice(0, 7)}). Minutes ledger updated.`);
+    setTimeout(() => setMeetingNotice(null), 5000);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -9,8 +16,14 @@ export const QualityCommitteeView: React.FC = () => {
           <h2 className="text-lg font-bold text-gray-900">Patient Safety & Quality Steering Committee Meetings</h2>
           <p className="text-xs text-gray-500">Monthly committee minutes, sentinel event reviews, and strategic action plans</p>
         </div>
-        <Button variant="primary">+ Log Committee Meeting</Button>
+        <Button variant="primary" onClick={handleLogMeeting}>+ Log Committee Meeting</Button>
       </div>
+
+      {meetingNotice && (
+        <Alert type="success" title="Committee Log Updated">
+          {meetingNotice}
+        </Alert>
+      )}
 
       <Card className="p-4 space-y-3">
         <div className="border-b pb-2 flex justify-between">

@@ -25,6 +25,7 @@ export const ClaimDirectoryView: React.FC<ClaimDirectoryViewProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [submittingClaimId, setSubmittingClaimId] = useState<string | null>(null);
 
   const filtered = claims.filter((c) => {
     const matchesSearch =
@@ -147,7 +148,17 @@ export const ClaimDirectoryView: React.FC<ClaimDirectoryViewProps> = ({
                         Inspect
                       </Button>
                       {claim.status === 'READY_FOR_SUBMISSION' && (
-                        <Button variant="primary" size="sm" onClick={() => onOpenSubmitClaim(claim)}>
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          disabled={submittingClaimId === claim.id}
+                          isLoading={submittingClaimId === claim.id}
+                          onClick={() => {
+                            setSubmittingClaimId(claim.id);
+                            onOpenSubmitClaim(claim);
+                            setTimeout(() => setSubmittingClaimId(null), 1000);
+                          }}
+                        >
                           Submit
                         </Button>
                       )}

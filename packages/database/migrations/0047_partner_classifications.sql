@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS "company"."partner_classifications" (
 	"default_plan_code" varchar(50),
 	"status" varchar(20) DEFAULT 'ACTIVE' NOT NULL,
 	"sort_order" integer DEFAULT 0 NOT NULL,
+	"metadata" jsonb DEFAULT '{}'::jsonb,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );

@@ -53,7 +53,6 @@ export const PlanListView: React.FC<PlanListViewProps> = ({
             setEditingPlan(null);
             setIsModalOpen(true);
           }}
-          style={{ backgroundColor: '#06B6D4', color: '#070C16', fontWeight: 800 }}
         >
           ➕ Create New Custom Plan / Tier
         </Button>

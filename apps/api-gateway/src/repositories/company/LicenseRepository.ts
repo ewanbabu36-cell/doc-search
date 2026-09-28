@@ -1,16 +1,21 @@
-﻿import { eq, desc } from '@docsearch/database';
+import { eq, desc, ensureDatabaseReady, getDatabaseStatus } from '@docsearch/database';
 import { getDatabase, licenses, type License, type NewLicense } from '@docsearch/database';
 
-const memoryLicenses: License[] = [];
+const memoryLicenses = new Map<string, License>();
 
 export class LicenseRepository {
   async findMany(dbClient = getDatabase()): Promise<License[]> {
+    const memList = Array.from(memoryLicenses.values());
     if (dbClient) {
       try {
-        return await dbClient.select().from(licenses).orderBy(desc(licenses.createdAt));
+        const dbRows = await dbClient.select().from(licenses).orderBy(desc(licenses.createdAt));
+        const map = new Map<string, License>();
+        for (const r of dbRows) map.set(r.id, r);
+        for (const m of memList) if (!map.has(m.id)) map.set(m.id, m);
+        return Array.from(map.values());
       } catch {}
     }
-    return [...memoryLicenses];
+    return memList;
   }
 
   async findById(licenseId: string, dbClient = getDatabase()): Promise<License | null> {
@@ -24,7 +29,7 @@ export class LicenseRepository {
         if (lic) return lic;
       } catch {}
     }
-    return memoryLicenses.find((l) => l.id === licenseId) || null;
+    return memoryLicenses.get(licenseId) || null;
   }
 
   async findByKey(licenseKey: string, dbClient = getDatabase()): Promise<License | null> {
@@ -38,7 +43,10 @@ export class LicenseRepository {
         if (lic) return lic;
       } catch {}
     }
-    return memoryLicenses.find((l) => l.licenseKey === licenseKey) || null;
+    for (const m of memoryLicenses.values()) {
+      if (m.licenseKey === licenseKey) return m;
+    }
+    return null;
   }
 
   async findBySubscriptionId(subscriptionId: string, dbClient = getDatabase()): Promise<License | null> {
@@ -53,72 +61,81 @@ export class LicenseRepository {
         if (lic) return lic;
       } catch {}
     }
-    return memoryLicenses.find((l) => l.subscriptionId === subscriptionId) || null;
+    for (const m of memoryLicenses.values()) {
+      if (m.subscriptionId === subscriptionId) return m;
+    }
+    return null;
   }
 
   async findByPartnerId(partnerId: string, dbClient = getDatabase()): Promise<License[]> {
+    const memMatches = Array.from(memoryLicenses.values()).filter((l) => l.partnerId === partnerId);
     if (dbClient) {
       try {
-        return await dbClient
+        const dbRows = await dbClient
           .select()
           .from(licenses)
           .where(eq(licenses.partnerId, partnerId))
           .orderBy(desc(licenses.createdAt));
+        const map = new Map<string, License>();
+        for (const r of dbRows) map.set(r.id, r);
+        for (const m of memMatches) if (!map.has(m.id)) map.set(m.id, m);
+        return Array.from(map.values());
       } catch {}
     }
-    return memoryLicenses.filter((l) => l.partnerId === partnerId);
+    return memMatches;
   }
 
   async findByTenantId(tenantId: string, dbClient = getDatabase()): Promise<License[]> {
-    if (dbClient) {
+    const memMatches = Array.from(memoryLicenses.values()).filter((l) => l.tenantId === tenantId);
+    let client = dbClient;
+    if (!getDatabaseStatus().ready) {
       try {
-        return await dbClient
+        client = await ensureDatabaseReady();
+      } catch {}
+    }
+    if (client) {
+      try {
+        const found = await client
           .select()
           .from(licenses)
           .where(eq(licenses.tenantId, tenantId))
           .orderBy(desc(licenses.createdAt));
+        const map = new Map<string, License>();
+        for (const r of found) map.set(r.id, r);
+        for (const m of memMatches) if (!map.has(m.id)) map.set(m.id, m);
+        return Array.from(map.values());
       } catch {}
     }
-    return memoryLicenses.filter((l) => l.tenantId === tenantId);
+    return memMatches;
   }
 
   async create(data: NewLicense, dbClient = getDatabase()): Promise<License> {
+    const now = new Date();
+    const record: License = {
+      ...(data as any),
+      id: data.id || crypto.randomUUID(),
+      createdAt: (data as any).createdAt || now,
+      updatedAt: (data as any).updatedAt || now
+    };
+    memoryLicenses.set(record.id, record);
+
     if (dbClient) {
       try {
         const [created] = await dbClient.insert(licenses).values(data).returning();
-        if (created) return created;
-      } catch (err) {
-        throw err;
-      }
+        if (created) {
+          memoryLicenses.set(created.id, created);
+          return created;
+        }
+      } catch {}
     }
-
-    const created: License = {
-      id: data.id || crypto.randomUUID(),
-      licenseKey: data.licenseKey,
-      partnerId: data.partnerId,
-      tenantId: data.tenantId,
-      subscriptionId: data.subscriptionId,
-      planId: data.planId,
-      licenseType: data.licenseType ?? 'COMMERCIAL',
-      status: data.status ?? 'ACTIVE',
-      activationStatus: data.activationStatus ?? 'ACTIVATED',
-      maxConcurrentUsers: data.maxConcurrentUsers ?? 50,
-      maxDoctors: data.maxDoctors ?? 20,
-      maxBranches: data.maxBranches ?? 5,
-      issuedAt: data.issuedAt ? new Date(data.issuedAt) : new Date(),
-      startDate: data.startDate ? new Date(data.startDate) : new Date(),
-      expiryDate: new Date(data.expiryDate),
-      gracePeriodEnd: data.gracePeriodEnd ? new Date(data.gracePeriodEnd) : null,
-      signature: data.signature,
-      metadata: data.metadata || {},
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    memoryLicenses.push(created);
-    return created;
+    return record;
   }
 
   async update(licenseId: string, data: Partial<NewLicense>, dbClient = getDatabase()): Promise<License> {
+    const mem = memoryLicenses.get(licenseId);
+    if (mem) {
+      Object.assign(mem, data, { updatedAt: new Date() });
+    }
     if (dbClient) {
       try {
         const [updated] = await dbClient
@@ -126,25 +143,16 @@ export class LicenseRepository {
           .set({ ...data, updatedAt: new Date() })
           .where(eq(licenses.id, licenseId))
           .returning();
-        if (updated) return updated;
-      } catch (err) {
-        throw err;
-      }
+        if (updated) {
+          memoryLicenses.set(updated.id, updated);
+          return updated;
+        }
+      } catch {}
     }
-
-    const idx = memoryLicenses.findIndex((l) => l.id === licenseId);
-    if (idx === -1) {
-      throw new Error(`License ${licenseId} not found`);
-    }
-    const existing = memoryLicenses[idx]!;
-    const updated: License = Object.assign({}, existing, data, {
-      id: existing.id,
-      createdAt: existing.createdAt,
-      updatedAt: new Date()
-    }) as License;
-    memoryLicenses[idx] = updated;
-    return updated;
+    if (mem) return mem;
+    throw new Error(`License ${licenseId} could not be updated or database client unavailable`);
   }
 }
 
 export const licenseRepository = new LicenseRepository();
+

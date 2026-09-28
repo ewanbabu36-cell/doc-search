@@ -10,12 +10,13 @@ export interface DischargeWorkbenchViewProps {
 }
 
 export const DischargeWorkbenchView: React.FC<DischargeWorkbenchViewProps> = ({
-  admissions,
+  admissions = [],
   onOpenApproveDischarge,
   onOpenCompleteDischarge,
   onOpenFinalizeSummary
 }) => {
-  const planned = admissions.filter((a) => a.status === 'DISCHARGE_PLANNED');
+  const safeAdmissions = Array.isArray(admissions) ? admissions : [];
+  const planned = safeAdmissions.filter((a) => a?.status === 'DISCHARGE_PLANNED');
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -35,7 +36,12 @@ export const DischargeWorkbenchView: React.FC<DischargeWorkbenchViewProps> = ({
             </tr>
           </thead>
           <tbody>
-            {planned.map((adm) => (
+            {planned.length === 0 ? (
+              <tr>
+                <td colSpan={5} style={{ padding: '1.5rem', textAlign: 'center', color: '#64748b' }}>No pending planned discharges found.</td>
+              </tr>
+            ) : (
+              planned.map((adm) => (
               <tr key={adm.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                 <td style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>{adm.patientName} ({adm.patientMrn})</td>
                 <td style={{ padding: '0.75rem 1rem' }}>{adm.wardName} (Bed {adm.bedCode})</td>
@@ -57,8 +63,9 @@ export const DischargeWorkbenchView: React.FC<DischargeWorkbenchViewProps> = ({
                   </div>
                 </td>
               </tr>
-            ))}
-          </tbody>
+            ))
+          )}
+        </tbody>
         </table>
       </Card>
     </div>

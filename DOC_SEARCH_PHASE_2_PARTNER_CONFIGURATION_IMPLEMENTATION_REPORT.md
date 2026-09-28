@@ -1,0 +1,23 @@
+# DOC SEARCH — PHASE 2: PARTNER CONFIGURATION ENGINE
+## Implementation Report (Steps 5–12)
+
+---
+
+## 1. EXECUTIVE SUMMARY
+
+Phase 2 (**Partner Configuration Engine**) has been implemented on top of **Phase 1 (Master Foundation)** with zero mock/demo/seed staff or services, 100% idempotent initialization, strict cross-tenant isolation, commercial plan & cryptographic license enforcement, and a 14-Domain Configuration Validation Engine.
+
+---
+
+## 2. FILES CREATED & MODIFIED
+
+| File Path | Role in Phase 2 | Status |
+| :--- | :--- | :--- |
+| [`PartnerConfigurationEngineService.ts`](file:///c:/Users/alamr/OneDrive/Desktop/DOC%20SEARCH/apps/api-gateway/src/services/partner/PartnerConfigurationEngineService.ts) | Core Phase 2 Partner Configuration Engine: deterministic classification resolution (`resolvePartnerClassificationContext`), 100% idempotent initialization (`initializePartnerConfiguration`), Locations CRUD (`getLocations`, `createLocation`, `updateLocation`), Applicable Departments CRUD (`getDepartments`, `createDepartment`, `updateDepartment`), Applicable Services Catalog with genuine zero-state (`getServices`, `createService`, `updateService`), Standard Staff Role Templates (`getStaffTemplates`), Cross-Tenant & Quota-Protected Staff/Role Assignment (`createPartnerStaff`, `assignPartnerStaffRole`), Dynamic Workspace Resolver (`resolveWorkspaceModules`), and 14-Domain Configuration Validation Engine (`validatePartnerConfiguration`). | **CREATED & VERIFIED** |
+| [`partner-configuration.routes.ts`](file:///c:/Users/alamr/OneDrive/Desktop/DOC%20SEARCH/apps/api-gateway/src/routes/partner/partner-configuration.routes.ts) | Unified Fastify route plugin exposing all Phase 2 Partner Configuration endpoints with Zod payload validation, strict RBAC (`ADMIN_CONFIG_ROLE_SET`), and anti-spoofing tenant isolation (`enforceTenantAndRole`). | **CREATED & VERIFIED** |
+| [`StaffAdministrationRepository.ts`](file:///c:/Users/alamr/OneDrive/Desktop/DOC%20SEARCH/apps/api-gateway/src/repositories/partner/StaffAdministrationRepository.ts) | Remediated `ensureDefaults` to derive tenant-isolated deterministic UUIDs (`detHash('op-partner:' + tenantId)`, `detHash('op-org:' + tenantId)`, `detHash('op-facility:' + tenantId + ':main')`) and real partner industry/facility types from `partnerProfiles`, eliminating shared fallback UUIDs and hardcoded `HOSPITAL_SYSTEM`. Also fixed `doctor_profiles` `doctorCode` propagation. | **MODIFIED & VERIFIED** |
+| [`PartnerSyncService.ts`](file:///c:/Users/alamr/OneDrive/Desktop/DOC%20SEARCH/apps/api-gateway/src/services/company/PartnerSyncService.ts) | Wired automatic idempotent `partnerConfigurationEngineService.initializePartnerConfiguration` execution upon HQ Partner Approval / database synchronization. | **MODIFIED & VERIFIED** |
+| [`account.routes.ts`](file:///c:/Users/alamr/OneDrive/Desktop/DOC%20SEARCH/apps/api-gateway/src/routes/partner/account.routes.ts) | Added `PATCH /api/v1/partner/profile` and `PATCH /api/v1/partner/account/profile` alongside `PUT` and `GET`. | **MODIFIED & VERIFIED** |
+| [`commercial-guard.ts`](file:///c:/Users/alamr/OneDrive/Desktop/DOC%20SEARCH/apps/api-gateway/src/plugins/commercial-guard.ts) & [`app.ts`](file:///c:/Users/alamr/OneDrive/Desktop/DOC%20SEARCH/apps/api-gateway/src/app.ts) | Registered `partnerConfigurationRoutes` and guaranteed that `GET /api/v1/partner/profile`, `PATCH/PUT /api/v1/partner/profile`, `GET /api/v1/partner/account/plan-and-features`, `GET /api/v1/partner/configuration`, and `GET /api/v1/partner/configuration/validation` remain accessible even when a partner's commercial license is `SUSPENDED` or `EXPIRED`. | **MODIFIED & VERIFIED** |
+| [`partner-account-service.ts`](file:///c:/Users/alamr/OneDrive/Desktop/DOC%20SEARCH/apps/partner-platform/src/services/partner-account-service.ts) & [`PartnerAccountPlanView.tsx`](file:///c:/Users/alamr/OneDrive/Desktop/DOC%20SEARCH/apps/partner-platform/src/components/views/PartnerAccountPlanView.tsx) | Integrated Phase 2 Partner Configuration Engine API client helpers and rendered the 14-Domain Operational Validation Matrix & Reconcile trigger in the Partner Configuration Workspace UI. | **MODIFIED & VERIFIED** |
+| [`phase2-partner-configuration-engine.test.mjs`](file:///c:/Users/alamr/OneDrive/Desktop/DOC%20SEARCH/apps/api-gateway/test/phase2-partner-configuration-engine.test.mjs) | Comprehensive end-to-end integration and adversarial security test suite covering 10x idempotency, multi-industry department/workspace derivation, genuine zero-state services, staff & role assignment, 14-domain validation, and cross-tenant/license/RBAC adversarial attacks. | **CREATED & VERIFIED** |

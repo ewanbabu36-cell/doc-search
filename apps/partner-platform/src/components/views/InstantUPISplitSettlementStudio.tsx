@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Button, Badge, Input, Select } from '@docsearch/ui-kit';
+import { getUnifiedPartnerProfile } from '../../utils/roleProfileResolver.js';
 
 export interface SplitTransaction {
   id: string;
@@ -20,9 +21,13 @@ export interface SplitTransaction {
 }
 
 export const InstantUPISplitSettlementStudio: React.FC = () => {
+  const profile = getUnifiedPartnerProfile();
+  const primaryDoctorLabel = profile.doctorName ? `${profile.doctorName} (${profile.doctorSpecialty || 'Clinical Care'} - 70% Share)` : 'Lead Attending Doctor (70% Share)';
+  const primaryDoctorValue = profile.doctorName ? `${profile.doctorName} (${profile.doctorSpecialty || 'Clinical Care'})` : 'Lead Attending Doctor';
+
   const [billAmount, setBillAmount] = useState<number>(1000);
   const [patientName, setPatientName] = useState('Rahul Verma (MRN-84920)');
-  const [doctorName, setDoctorName] = useState('Dr. Vikram Malhotra (Cardiology)');
+  const [doctorName, setDoctorName] = useState(primaryDoctorValue);
   const [doctorSplitPct, setDoctorSplitPct] = useState<number>(70);
   const [hospitalSplitPct, setHospitalSplitPct] = useState<number>(25);
   const [platformFeePct, setPlatformFeePct] = useState<number>(5);
@@ -148,9 +153,9 @@ export const InstantUPISplitSettlementStudio: React.FC = () => {
             <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>CONSULTING DOCTOR</label>
             <Select
               options={[
+                { label: primaryDoctorLabel, value: primaryDoctorValue },
                 { label: 'Dr. Vikram Malhotra (Cardiology - 70% Share)', value: 'Dr. Vikram Malhotra (Cardiology)' },
-                { label: 'Dr. Ananya Roy (Pediatrics - 75% Share)', value: 'Dr. Ananya Roy (Pediatrics)' },
-                { label: 'Dr. Rajesh Sharma (Orthopedics - 65% Share)', value: 'Dr. Rajesh Sharma (Orthopedics)' }
+                { label: 'Dr. Ananya Roy (Pediatrics - 75% Share)', value: 'Dr. Ananya Roy (Pediatrics)' }
               ]}
               value={doctorName}
               onChange={(e) => setDoctorName(e.target.value)}
@@ -179,13 +184,12 @@ export const InstantUPISplitSettlementStudio: React.FC = () => {
             </div>
           </div>
 
-          <Button
-            type="button"
-            variant="primary"
+          <Button type="button"
+            variant="success"
             size="md"
             disabled={isSimulating}
             onClick={handleSimulatePayment}
-            style={{ backgroundColor: '#10B981', borderColor: '#10B981', color: '#070C16', fontWeight: 900 }}
+            
           >
             {isSimulating ? '⚡ Executing Multi-Party IMPS Settlement...' : '⚡ Simulate Patient Scan & Instant UPI Split'}
           </Button>

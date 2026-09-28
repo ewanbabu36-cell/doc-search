@@ -23,7 +23,6 @@ import { partnerFoundationService } from '../services/partner-foundation-service
 import { PanelContextSwitcher } from './common/PanelContextSwitcher.js';
 import { PatientOverviewView } from './views/PatientOverviewView.js';
 import { PatientDirectoryView } from './views/PatientDirectoryView.js';
-import { PatientSearchView } from './views/PatientSearchView.js';
 import { PatientProfileView } from './views/PatientProfileView.js';
 import { PatientIdentifierCenterView } from './views/PatientIdentifierCenterView.js';
 import { EmergencyContactCenterView } from './views/EmergencyContactCenterView.js';
@@ -32,9 +31,12 @@ import { InsuranceCenterView } from './views/InsuranceCenterView.js';
 import { DuplicateReviewCenterView } from './views/DuplicateReviewCenterView.js';
 import { PatientMergeHistoryView } from './views/PatientMergeHistoryView.js';
 import { PatientAuditVaultView } from './views/PatientAuditVaultView.js';
-import { Tabs, Badge, Spinner, ErrorState } from '@docsearch/ui-kit';
+import { DpdpPrivacyConsentHubView } from './views/DpdpPrivacyConsentHubView.js';
+import { FrontDeskMobileWorkstationView } from './views/FrontDeskMobileWorkstationView.js';
+import { Tabs, Badge, Button, ErrorState, DocSearchSpatialCore3D, SkeletonPage } from '@docsearch/ui-kit';
 
-type ActivePatientTab =
+export type ActivePatientTab =
+  | 'counter-workstation'
   | 'overview'
   | 'directory'
   | 'search'
@@ -42,13 +44,20 @@ type ActivePatientTab =
   | 'identifiers'
   | 'emergency'
   | 'consents'
+  | 'privacy-dpdp'
   | 'insurance'
   | 'duplicate-review'
   | 'merge-history'
   | 'audit';
 
-export const PatientRegistrationDomainManager: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<ActivePatientTab>('overview');
+export interface PatientRegistrationDomainManagerProps {
+  initialTab?: ActivePatientTab;
+}
+
+export const PatientRegistrationDomainManager: React.FC<PatientRegistrationDomainManagerProps> = ({
+  initialTab = 'directory'
+}) => {
+  const [activeTab, setActiveTab] = useState<ActivePatientTab>(initialTab);
   const [context, setContext] = useState<PanelContextDto | null>(null);
   const [partners, setPartners] = useState<OperationalPartnerDto[]>([]);
   const [organizations, setOrganizations] = useState<OperationalOrganizationDto[]>([]);
@@ -69,6 +78,17 @@ export const PatientRegistrationDomainManager: React.FC = () => {
     setError(null);
     try {
       const ctx = await partnerFoundationService.getPanelContext();
+      try {
+        const storedAuth = typeof window !== 'undefined' ? localStorage.getItem('docsearch_partner_staff_auth') : null;
+        if (storedAuth) {
+          const u = JSON.parse(storedAuth);
+          if (u?.email) {
+            ctx.userEmail = u.email;
+            ctx.userRole = u.role || 'HOSPITAL_DIRECTOR';
+            if (u.tenantName) ctx.activeTenantName = u.tenantName;
+          }
+        }
+      } catch {}
       setContext(ctx);
 
       const [partnersRes, orgsRes, facsRes] = await Promise.all([
@@ -223,15 +243,23 @@ export const PatientRegistrationDomainManager: React.FC = () => {
     setActiveTab('profile');
   };
 
+  const [isMobileDesk, setIsMobileDesk] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const storedAuth = localStorage.getItem('docsearch_partner_staff_auth');
+      if (storedAuth) {
+        const u = JSON.parse(storedAuth);
+        const r = String(u.role || '').toUpperCase();
+        if (r.includes('RECEPTIONIST') || r.includes('FRONT') || r.includes('TOKEN')) {
+          return true;
+        }
+      }
+    } catch {}
+    return window.innerWidth < 800;
+  });
+
   if (isLoading && !context) {
-    return (
-      <div style={{ padding: '60px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-        <Spinner size="lg" />
-        <span style={{ fontSize: '0.875rem', color: 'var(--ds-color-text-muted)' }}>
-          Loading Patient Registration & Master Patient Index...
-        </span>
-      </div>
-    );
+    return <SkeletonPage layout="table" metricCount={4} />;
   }
 
   if (error && !context) {
@@ -244,20 +272,68 @@ export const PatientRegistrationDomainManager: React.FC = () => {
   const activeOrgId = context?.activeOrganizationId ?? organizations[0]?.id ?? '';
   const activeBranchId = context?.activeFacilityId ?? facilities[0]?.id ?? '';
 
+  if (isMobileDesk) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <FrontDeskMobileWorkstationView
+          tenantId={context?.activeTenantId || 'default'}
+          partnerId={context?.activePartnerId}
+          organizationId={activeOrgId}
+          branchId={activeBranchId}
+          staffName={context?.userRole || 'Front Desk Lead'}
+          onSwitchToFullDesktop={() => setIsMobileDesk(false)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {/* 3D Spatial Feature Core: Patient 360 & Registry */}
+      <DocSearchSpatialCore3D
+        preset="patient-registration"
+        height={360}
+        interactive={true}
+        onNodeClick={(id) => {
+          if (id === 'abha-kyc' || id === 'consent-biometrics') {
+            setActiveTab('privacy-dpdp');
+          } else if (id === 'demographics') {
+            setActiveTab('directory');
+          } else if (id === 'emergency-contacts') {
+            setActiveTab('emergency');
+          } else if (id === 'triage-vitals') {
+            setActiveTab('overview');
+          } else if (id === 'insurance-tpa') {
+            setActiveTab('insurance');
+          } else if (id === 'token-queue') {
+            setActiveTab('directory');
+          }
+        }}
+      />
+
       {/* Header */}
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-          <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700', color: 'var(--ds-color-text-primary)' }}>
-            Patient Registration & Master Patient Index (MPI)
-          </h1>
-          
-          <Badge variant="warning">Development Preview (Sample Data)</Badge>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+            <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700', color: 'var(--ds-color-text-primary)' }}>
+              Patient Registration & Master Patient Index (MPI)
+            </h1>
+            <Badge variant="success">● LIVE PRODUCTION</Badge>
+          </div>
+          <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--ds-color-text-muted)' }}>
+            Canonical patient identities, deterministic MRN issuance, demographic registries, duplicate match adjudication, and consent directives
+          </p>
         </div>
-        <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--ds-color-text-muted)' }}>
-          Canonical patient identities, deterministic MRN issuance, demographic registries, duplicate match adjudication, and consent directives
-        </p>
+
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={() => setIsMobileDesk(true)}
+          style={{ backgroundColor: '#0d9488', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+        >
+          <span>📱</span>
+          <span>Switch to Front Desk Mobile Desk</span>
+        </Button>
       </div>
 
       {/* Panel Context Switcher */}
@@ -274,14 +350,14 @@ export const PatientRegistrationDomainManager: React.FC = () => {
       {/* Navigation Tabs */}
       <Tabs
         tabs={[
-          { id: 'overview', label: '📊 Overview' },
-          { id: 'directory', label: '👥 Patient Index', badge: <Badge variant="neutral">{patients.length}</Badge> },
-          { id: 'search', label: '🔍 Fast Search' },
+          { id: 'counter-workstation', label: '⚡ Fast Counter Workstation' },
+          { id: 'directory', label: '👥 Patient Index & Search', badge: <Badge variant="neutral">{patients.length}</Badge> },
           { id: 'profile', label: '📋 Patient Profile' },
           { id: 'identifiers', label: '🪪 Identifiers' },
+          { id: 'insurance', label: '🛡️ Insurance / TPA' },
           { id: 'emergency', label: '🚨 Emergency Contacts' },
           { id: 'consents', label: '📝 Consents' },
-          { id: 'insurance', label: '🛡️ Insurance / TPA' },
+          { id: 'privacy-dpdp', label: '🛡️ DPDP Privacy & Consent Hub' },
           {
             id: 'duplicate-review',
             label: '⚠️ Duplicate Review',
@@ -289,6 +365,7 @@ export const PatientRegistrationDomainManager: React.FC = () => {
               <Badge variant="warning">{duplicateCandidates.filter((c) => c.reviewStatus === 'PENDING_REVIEW').length}</Badge>
             ) : undefined
           },
+          { id: 'overview', label: '📊 Overview' },
           { id: 'merge-history', label: '🔀 Merge Ledger', badge: <Badge variant="neutral">{mergeEvents.length}</Badge> },
           { id: 'audit', label: '🔒 Audit Vault', badge: <Badge variant="neutral">{auditTraces.length}</Badge> }
         ]}
@@ -297,6 +374,17 @@ export const PatientRegistrationDomainManager: React.FC = () => {
       />
 
       {/* Tab Contents */}
+      {activeTab === 'counter-workstation' && context && (
+        <FrontDeskMobileWorkstationView
+          tenantId={context.activeTenantId || 'default'}
+          partnerId={context.activePartnerId}
+          organizationId={activeOrgId}
+          branchId={activeBranchId}
+          staffName={context.userRole || 'Front Desk Lead'}
+          onSwitchToFullDesktop={() => setActiveTab('directory')}
+        />
+      )}
+
       {activeTab === 'overview' && overview && (
         <PatientOverviewView
           overview={overview}
@@ -305,7 +393,7 @@ export const PatientRegistrationDomainManager: React.FC = () => {
         />
       )}
 
-      {activeTab === 'directory' && context && (
+      {(activeTab === 'directory' || activeTab === 'search') && context && (
         <PatientDirectoryView
           patients={patients}
           tenantId={context.activeTenantId}
@@ -321,21 +409,16 @@ export const PatientRegistrationDomainManager: React.FC = () => {
           onAddEmergencyContact={handleAddEmergencyContact}
           onAddConsent={handleAddConsent}
           onAddInsurance={handleAddInsurance}
-        />
-      )}
-
-      {activeTab === 'search' && context && (
-        <PatientSearchView
-          tenantId={context.activeTenantId}
-          partnerId={context.activePartnerId}
-          organizationId={activeOrgId}
           onSearchPatients={(req) => patientRegistrationService.searchPatients(req)}
-          onSelectPatient={handleSelectPatient}
         />
       )}
 
       {activeTab === 'profile' && (
-        <PatientProfileView patient={selectedPatient} auditTraces={auditTraces} />
+        <PatientProfileView
+          patient={selectedPatient}
+          auditTraces={auditTraces}
+          onBack={() => setActiveTab('directory')}
+        />
       )}
 
       {activeTab === 'identifiers' && (
@@ -347,8 +430,14 @@ export const PatientRegistrationDomainManager: React.FC = () => {
       )}
 
       {activeTab === 'consents' && (
-        <ConsentCenterView patients={patients} onSelectPatient={handleSelectPatient} />
+        <ConsentCenterView
+          patients={patients}
+          onSelectPatient={handleSelectPatient}
+          onOpenDpdpHub={() => setActiveTab('privacy-dpdp')}
+        />
       )}
+
+      {activeTab === 'privacy-dpdp' && <DpdpPrivacyConsentHubView />}
 
       {activeTab === 'insurance' && (
         <InsuranceCenterView patients={patients} onSelectPatient={handleSelectPatient} />

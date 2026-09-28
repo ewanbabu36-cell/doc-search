@@ -160,6 +160,30 @@ export function getCategoryMenuBookItems(classification: string): Array<{ label:
         { label: 'WhatsApp Daily Exercise Check-in:', val: 'Patient Video Exercise Links & Pain Diary' },
         { label: 'Sports Injury RTP Protocol:', val: 'Return-to-Play Functional Milestone Certification' }
       ];
+    case 'COMBO_CLINIC_PATHOLOGY':
+      return [
+        { label: 'OPD Consult + Lab Capacity:', val: 'Combined 200 OPD Consults + 400 Lab Tests / Day' },
+        { label: 'Ambient AI Voice Scribe:', val: 'Active (Converts Doctor-Patient Speech into EMR)' },
+        { label: 'Direct EMR Lab Order Queue:', val: 'Instant Digital Order from Doctor Pad to Phlebotomy' },
+        { label: 'Bi-Directional Lab Analyzer Bridge:', val: 'Enabled (ASTM / HL7 Automated Machine Interface)' },
+        { label: 'Phlebotomy Sample Barcoding:', val: 'Active (Code 128 / Dynamic QR Sample Tracking)' },
+        { label: 'WhatsApp Patient Rx & Lab Reports:', val: 'High-Res PDF Rx + NABL Report Direct to WhatsApp' },
+        { label: 'Doctor-Lab Referral Settlement:', val: 'Automated Commission Splits & Cashier Ledger' },
+        { label: 'Universal Staff Directory & RBAC:', val: 'Unified Access for Doctors, Technicians & Front-Desk' },
+        { label: 'ABDM 2.0 Ayushman Bharat Linkage:', val: 'QR Scan Check-in + Unified Patient ABHA Records' }
+      ];
+    case 'COMBO_CLINIC_PHARMACY':
+      return [
+        { label: 'OPD Consult + Chemist POS:', val: 'Combined 200 OPD Consults + Unlimited POS Counter Invoices' },
+        { label: 'Ambient AI Voice Scribe:', val: 'Active (Speech-to-EMR Digital Prescription)' },
+        { label: 'Instant e-Prescription Dispense:', val: 'Zero-Lag Routing from Doctor Desk to Pharmacy Counter' },
+        { label: 'Barcode Dispensing & Thermal POS:', val: 'High-Speed POS Counter Billing & Thermal Print' },
+        { label: 'Automated Batch & Expiry Radar:', val: '30/60/90 Days Color-Coded Near-Expiry Radar' },
+        { label: 'Schedule H / H1 Narcotics Register:', val: 'Cryptographic Digital Compliance Log' },
+        { label: 'Jan Aushadhi Generic Alternate:', val: 'Enabled (Automated High-Margin Generic Switches)' },
+        { label: 'Universal Staff Directory & RBAC:', val: 'Unified Access for Doctors, Pharmacists & Cashiers' },
+        { label: 'WhatsApp Rx & Invoice Dispatch:', val: 'Patient Prescription + Pharmacy Tax Invoice on WhatsApp' }
+      ];
     case 'PATHOLOGY':
     default:
       return [

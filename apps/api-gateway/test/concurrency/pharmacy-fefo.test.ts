@@ -4,7 +4,6 @@ import crypto from 'node:crypto';
 import { buildApp } from '../../dist/app.js';
 import { signJwt } from '@docsearch/auth';
 import { setTestTransactionRunner } from '@docsearch/database';
-import { AppError, ErrorCode } from '@docsearch/shared-core';
 
 /**
  * High-Concurrency Integration Test: Pharmacy FEFO & Stock Integrity
@@ -148,6 +147,7 @@ describe('High-Concurrency Pharmacy FEFO & Stock Integrity Integration Suite', (
             from: () => queryChain,
             where: () => queryChain,
             orderBy: () => queryChain,
+            limit: () => queryChain,
             for: (lockMode: string) => {
               if (lockMode === 'update') isForUpdate = true;
               return queryChain;
@@ -186,14 +186,18 @@ describe('High-Concurrency Pharmacy FEFO & Stock Integrity Integration Suite', (
             }
           })
         }),
-        insert: (table: any) => ({
-          values: async (data: any) => {
+        insert: (_table: any) => ({
+          values: (data: any) => {
             if (data.dispensingNumber) {
               inMemoryDispensations.push({ ...data, createdAt: new Date() });
             } else if (data.movementType) {
               inMemoryMovements.push({ ...data, occurredAt: new Date() });
             }
-            return [{ id: data.id || crypto.randomUUID(), ...data }];
+            const row = [{ id: data.id || crypto.randomUUID(), ...data }];
+            return {
+              returning: async () => row,
+              then: (resolve: any, reject: any) => Promise.resolve(row).then(resolve, reject)
+            };
           }
         }),
         execute: async () => ({ rows: [] })

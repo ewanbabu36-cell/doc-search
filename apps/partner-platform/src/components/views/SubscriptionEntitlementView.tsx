@@ -1,19 +1,28 @@
 import React from 'react';
 import type { OperationalSubscriptionDto } from '@docsearch/api-contracts';
-import { Card, Badge, Alert, TableContainer, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@docsearch/ui-kit';
+import { Card, Badge, Alert, TableContainer, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Button } from '@docsearch/ui-kit';
 
 export interface SubscriptionEntitlementViewProps {
   subscriptions: OperationalSubscriptionDto[];
+  onNavigateToAccount?: () => void;
 }
 
 export const SubscriptionEntitlementView: React.FC<SubscriptionEntitlementViewProps> = ({
-  subscriptions
+  subscriptions,
+  onNavigateToAccount
 }) => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      <Alert type="info" title="Operational Entitlement Bridge">
-        Operational subscriptions connect healthcare organizations to subscribed platform plans and govern module permissions (OPD, EMR, e-Rx, LIS, Pharmacy, Billing).
-      </Alert>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+        <Alert type="info" title="Operational Entitlement Bridge">
+          Operational subscriptions connect healthcare organizations to subscribed platform plans and govern module permissions (OPD, EMR, e-Rx, LIS, Pharmacy, Billing).
+        </Alert>
+        {onNavigateToAccount && (
+          <Button variant="primary" size="sm" onClick={onNavigateToAccount}>
+            💳 Open Full Plan & Features Breakdown
+          </Button>
+        )}
+      </div>
 
       <Card
         title="Organization Subscription & Module Entitlements"

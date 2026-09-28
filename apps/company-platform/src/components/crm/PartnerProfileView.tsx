@@ -7,6 +7,7 @@ import type {
 import { Card, Button, Badge } from '@docsearch/ui-kit';
 import { PartnerActivityTimeline } from './PartnerActivityTimeline.js';
 import { PartnerLifecycleTransitionDialog } from './PartnerLifecycleTransitionDialog.js';
+import { PartnerAccessGovernanceCockpit } from './PartnerAccessGovernanceCockpit.js';
 
 export interface PartnerProfileViewProps {
   partner: PartnerProfileDto;
@@ -33,7 +34,16 @@ export const PartnerProfileView: React.FC<PartnerProfileViewProps> = ({
 }) => {
   const [isTransitionDialogOpen, setIsTransitionDialogOpen] = useState(false);
   const [isEntitlementsModalOpen, setIsEntitlementsModalOpen] = useState(false);
+  const [isGovernanceCockpitOpen, setIsGovernanceCockpitOpen] = useState(false);
   const [successBanner, setSuccessBanner] = useState<string | null>(null);
+
+  const kycDossier = (partner.metadata as any)?.kycDossier;
+  const permittedActions = (partner.metadata as any)?.permittedActions;
+  const commercial = (partner.metadata as any)?.commercial;
+  const leadInfo = (partner.metadata as any)?.leadInfo;
+  const tasks = (partner.metadata as any)?.tasks || [];
+  const communication = (partner.metadata as any)?.communication || [];
+  const duplicateRisk = (partner.metadata as any)?.duplicateRisk;
 
   // Entitlements state
   const [currentTier, setCurrentTier] = useState<'STARTER' | 'PROFESSIONAL' | 'ENTERPRISE'>('PROFESSIONAL');
@@ -113,6 +123,29 @@ export const PartnerProfileView: React.FC<PartnerProfileViewProps> = ({
           >
             ✕
           </button>
+        </div>
+      )}
+
+      {/* Duplicate Registration Risk Alert */}
+      {duplicateRisk?.hasRisk && (
+        <div style={{
+          backgroundColor: 'rgba(239, 68, 68, 0.15)',
+          border: '1px solid #EF4444',
+          borderRadius: '10px',
+          padding: '12px 18px',
+          color: '#FECACA',
+          fontSize: '0.875rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px'
+        }}>
+          <span style={{ fontSize: '1.25rem' }}>⚠️</span>
+          <div>
+            <strong>Potential Duplicate Registration Flagged:</strong>
+            <span style={{ marginLeft: '6px' }}>
+              Detected duplicate criteria ({duplicateRisk.signals?.join(', ')}). Potential matching profile: {duplicateRisk.potentialMatchPartnerId || 'Existing Profile'}.
+            </span>
+          </div>
         </div>
       )}
 
@@ -354,10 +387,24 @@ export const PartnerProfileView: React.FC<PartnerProfileViewProps> = ({
         {/* Administrative Actions */}
         <Card title="Enterprise Operations & Controls" padding="md">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setIsGovernanceCockpitOpen(true)}
+              style={{
+                backgroundColor: '#6366F1',
+                color: '#FFFFFF',
+                fontWeight: 800,
+                border: 'none',
+                boxShadow: '0 4px 14px rgba(99, 102, 241, 0.45)'
+              }}
+            >
+              🛡️ Access, Entitlements & Staff Governance Cockpit
+            </Button>
             <Button variant="outline" size="sm" onClick={() => setIsTransitionDialogOpen(true)}>
               🔄 Change Lifecycle Status
             </Button>
-            <Button variant="primary" size="sm" onClick={() => setIsEntitlementsModalOpen(true)} style={{ backgroundColor: '#06B6D4', color: '#070C16', fontWeight: 800 }}>
+            <Button variant="primary" size="sm" onClick={() => setIsEntitlementsModalOpen(true)}>
               💳 Manage Entitlements & Subscription Tiers
             </Button>
             <Button variant="outline" size="sm" onClick={handleResendCredentials}>
@@ -366,9 +413,244 @@ export const PartnerProfileView: React.FC<PartnerProfileViewProps> = ({
             <Button variant="subtle" size="sm" onClick={handleExportAuditLog}>
               📑 Export Partner Security Audit Log (JSON)
             </Button>
+            {permittedActions && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '6px', borderTop: '1px solid #1E293B', fontSize: '0.6875rem', color: '#94A3B8' }}>
+                <span>Action Permissions:</span>
+                <span style={{ color: permittedActions.canApprove ? '#10B981' : '#F59E0B', fontWeight: 700 }}>
+                  {permittedActions.canApprove ? 'Full KYC & Lifecycle Authority' : 'Restricted Reviewer'}
+                </span>
+              </div>
+            )}
+            {commercial && (commercial.plan || commercial.license) && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.6875rem', color: '#38BDF8' }}>
+                <span>Commercial Tier:</span>
+                <span style={{ fontWeight: 800 }}>
+                  {commercial.plan?.name || commercial.license?.planCode || 'Active Plan'}
+                </span>
+              </div>
+            )}
           </div>
         </Card>
       </div>
+
+      {/* Partner 360: KYC Regulatory Dossier & Cryptographic Verification */}
+      {kycDossier && (
+        <Card title="Partner 360: KYC Regulatory Dossier & Legal Attestation" padding="md">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px', backgroundColor: '#0F172A', padding: '14px', borderRadius: '10px', border: '1px solid #1E293B' }}>
+              <div>
+                <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase' }}>KYC CASE STATUS</span>
+                <div style={{ marginTop: '4px' }}>
+                  <Badge
+                    variant={
+                      kycDossier.status === 'APPROVED'
+                        ? 'success'
+                        : kycDossier.status === 'REJECTED'
+                        ? 'danger'
+                        : 'warning'
+                    }
+                  >
+                    {kycDossier.status}
+                  </Badge>
+                </div>
+              </div>
+
+              <div>
+                <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase' }}>REGISTERED BY (APPLICANT)</span>
+                <div style={{ marginTop: '2px', fontSize: '0.875rem', color: '#F8FAFC', fontWeight: 700 }}>
+                  {kycDossier.registeredBy?.name || partner.primaryContact.name}
+                </div>
+                <span style={{ fontSize: '0.6875rem', color: '#38BDF8' }}>
+                  {kycDossier.registeredBy?.email || partner.primaryContact.email} · {kycDossier.registeredBy?.source || 'Direct Portal'}
+                </span>
+              </div>
+
+              <div>
+                <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase' }}>ASSIGNED COMPLIANCE REVIEWER</span>
+                <div style={{ marginTop: '2px', fontSize: '0.875rem', color: '#F8FAFC', fontWeight: 700 }}>
+                  {kycDossier.assignedReviewer?.name || 'Unassigned'}
+                </div>
+                <span style={{ fontSize: '0.6875rem', color: '#94A3B8' }}>
+                  {kycDossier.assignedReviewer?.email || 'Awaiting assignment'}
+                </span>
+              </div>
+
+              <div>
+                <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase' }}>SUBMISSION DATE</span>
+                <div style={{ marginTop: '2px', fontSize: '0.875rem', color: '#F8FAFC', fontWeight: 700 }}>
+                  {kycDossier.submittedAt ? new Date(kycDossier.submittedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+                </div>
+              </div>
+            </div>
+
+            {kycDossier.requestedInfoReason && (
+              <div style={{ backgroundColor: 'rgba(245, 158, 11, 0.15)', border: '1px solid #F59E0B', borderRadius: '8px', padding: '12px 16px', color: '#FDE68A', fontSize: '0.8125rem' }}>
+                <strong>⚠️ Clarification Requested from Partner:</strong> {kycDossier.requestedInfoReason}
+              </div>
+            )}
+
+            {kycDossier.rejectionReason && (
+              <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', border: '1px solid #EF4444', borderRadius: '8px', padding: '12px 16px', color: '#FECACA', fontSize: '0.8125rem' }}>
+                <strong>✕ Rejection Reason:</strong> {kycDossier.rejectionReason}
+              </div>
+            )}
+
+            {/* Document Evidence Table */}
+            <div>
+              <h4 style={{ margin: '0 0 8px 0', fontSize: '0.875rem', color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase' }}>
+                Attached Regulatory Compliance Documents
+              </h4>
+              {kycDossier.documents && kycDossier.documents.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {kycDossier.documents.map((doc: any) => (
+                    <div
+                      key={doc.documentId || doc.sha256Hash}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '6px',
+                        backgroundColor: '#0F172A',
+                        padding: '12px 14px',
+                        borderRadius: '8px',
+                        border: '1px solid #334155'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{ fontSize: '1.25rem' }}>📄</span>
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <strong style={{ color: '#F8FAFC', fontSize: '0.875rem' }}>{doc.documentName}</strong>
+                              <span style={{ backgroundColor: '#1E293B', color: '#38BDF8', fontSize: '0.625rem', fontWeight: 800, padding: '1px 6px', borderRadius: '4px' }}>
+                                v{doc.version || 1}
+                              </span>
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '2px', flexWrap: 'wrap' }}>
+                              <span style={{ fontSize: '0.6875rem', color: '#94A3B8' }}>{doc.documentType}</span>
+                              <span style={{ fontSize: '0.625rem', fontFamily: 'monospace', color: '#10B981', backgroundColor: 'rgba(16, 185, 129, 0.15)', padding: '1px 6px', borderRadius: '4px' }}>
+                                🔒 SHA-256: {doc.sha256Hash ? `${doc.sha256Hash.slice(0, 16)}...` : 'VERIFIED'}
+                              </span>
+                              {doc.uploadedAt && (
+                                <span style={{ fontSize: '0.625rem', color: '#64748B' }}>
+                                  Uploaded: {new Date(doc.uploadedAt).toLocaleDateString('en-IN')}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <span style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#10B981', backgroundColor: 'rgba(16, 185, 129, 0.15)', padding: '4px 10px', borderRadius: '4px' }}>
+                          VERIFIED SEAL
+                        </span>
+                      </div>
+
+                      {/* Prior Version Lineage */}
+                      {doc.previousVersions && doc.previousVersions.length > 0 && (
+                        <div style={{ marginTop: '6px', paddingTop: '6px', borderTop: '1px solid #1E293B', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <span style={{ fontSize: '0.625rem', color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase' }}>
+                            Previous Version Lineage ({doc.previousVersions.length} prior submission{doc.previousVersions.length > 1 ? 's' : ''}):
+                          </span>
+                          {doc.previousVersions.map((pv: any, pidx: number) => (
+                            <div key={pidx} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.6875rem', color: '#64748B', paddingLeft: '12px', borderLeft: '2px solid #334155' }}>
+                              <span>↳ v{pv.version}: <strong>{pv.documentName}</strong></span>
+                              <span style={{ fontFamily: 'monospace', fontSize: '0.625rem', color: '#94A3B8' }}>SHA-256: {pv.sha256Hash?.slice(0, 10)}...</span>
+                              {pv.replacedAt && <span>Replaced: {new Date(pv.replacedAt).toLocaleDateString('en-IN')}</span>}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ fontSize: '0.8125rem', color: '#94A3B8', fontStyle: 'italic', padding: '8px 0' }}>
+                  No regulatory documents uploaded yet.
+                </div>
+              )}
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Sales Lead Attribution Card */}
+      {leadInfo && (
+        <Card title="Sales Pipeline Origin & Attribution" padding="md">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px', fontSize: '0.8125rem' }}>
+            <div>
+              <span style={{ color: '#94A3B8', display: 'block', fontSize: '0.6875rem', fontWeight: 700 }}>ORIGINAL LEAD ID</span>
+              <span style={{ fontFamily: 'monospace', color: '#38BDF8' }}>{leadInfo.leadId}</span>
+            </div>
+            <div>
+              <span style={{ color: '#94A3B8', display: 'block', fontSize: '0.6875rem', fontWeight: 700 }}>SOURCE</span>
+              <strong style={{ color: '#F8FAFC' }}>{leadInfo.source || 'Direct Outreach'}</strong>
+            </div>
+            <div>
+              <span style={{ color: '#94A3B8', display: 'block', fontSize: '0.6875rem', fontWeight: 700 }}>LEAD STATUS</span>
+              <Badge variant="success">{leadInfo.status || 'CONVERTED'}</Badge>
+            </div>
+            <div>
+              <span style={{ color: '#94A3B8', display: 'block', fontSize: '0.6875rem', fontWeight: 700 }}>CONVERTED DATE</span>
+              <span style={{ color: '#F8FAFC' }}>
+                {leadInfo.convertedAt ? new Date(leadInfo.convertedAt).toLocaleDateString('en-IN') : 'N/A'}
+              </span>
+            </div>
+            {leadInfo.notes && (
+              <div style={{ gridColumn: '1 / -1', backgroundColor: '#0F172A', padding: '10px 14px', borderRadius: '8px', border: '1px solid #1E293B' }}>
+                <span style={{ color: '#94A3B8', display: 'block', fontSize: '0.6875rem', fontWeight: 700, marginBottom: '2px' }}>CONVERSION NOTES:</span>
+                <span style={{ color: '#E2E8F0' }}>{leadInfo.notes}</span>
+              </div>
+            )}
+          </div>
+        </Card>
+      )}
+
+      {/* CRM & Onboarding Tasks */}
+      {tasks && tasks.length > 0 && (
+        <Card title={`CRM & Onboarding Tasks (${tasks.length})`} padding="md">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {tasks.map((t: any) => (
+              <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#0F172A', padding: '10px 14px', borderRadius: '8px', border: '1px solid #1E293B', fontSize: '0.8125rem' }}>
+                <div>
+                  <strong style={{ color: '#F8FAFC' }}>{t.title}</strong>
+                  <div style={{ color: '#94A3B8', fontSize: '0.6875rem', marginTop: '2px' }}>
+                    Assigned: {t.assignedUserEmail} · Due: {new Date(t.dueDate).toLocaleDateString('en-IN')}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <Badge variant={t.priority === 'HIGH' || t.priority === 'URGENT' ? 'danger' : 'neutral'}>{t.priority}</Badge>
+                  <Badge variant={t.status === 'COMPLETED' ? 'success' : 'warning'}>{t.status}</Badge>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Communication & Outbound Dispatch History */}
+      {communication && communication.length > 0 && (
+        <Card title={`Communication & Dispatch History (${communication.length})`} padding="md">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {communication.map((c: any) => (
+              <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#0F172A', padding: '10px 14px', borderRadius: '8px', border: '1px solid #1E293B', fontSize: '0.8125rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>{c.channel === 'SMS' ? '📱' : c.channel === 'WEBHOOK' ? '🔗' : '📧'}</span>
+                  <div>
+                    <span style={{ color: '#F8FAFC', fontWeight: 600 }}>{c.channel}</span>
+                    <span style={{ color: '#94A3B8', marginLeft: '6px' }}>to {c.recipientEmail}</span>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <Badge variant={c.deliveryStatus === 'DELIVERED' ? 'success' : c.deliveryStatus === 'FAILED' ? 'danger' : 'neutral'}>
+                    {c.deliveryStatus}
+                  </Badge>
+                  <span style={{ color: '#64748B', fontSize: '0.6875rem' }}>
+                    {c.dispatchedAt ? new Date(c.dispatchedAt).toLocaleDateString('en-IN', { hour: '2-digit', minute: '2-digit' }) : ''}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {/* Partner Activity & Lifecycle Transition History */}
       <PartnerActivityTimeline history={history} />
@@ -487,7 +769,6 @@ export const PartnerProfileView: React.FC<PartnerProfileViewProps> = ({
                 </button>
                 <button
                   type="submit"
-                  style={{ backgroundColor: '#06B6D4', color: '#070C16', border: 'none', borderRadius: '6px', padding: '8px 18px', fontWeight: 800, cursor: 'pointer' }}
                 >
                   💾 Save & Update Entitlements
                 </button>
@@ -495,6 +776,14 @@ export const PartnerProfileView: React.FC<PartnerProfileViewProps> = ({
             </form>
           </div>
         </div>
+      )}
+
+      {isGovernanceCockpitOpen && (
+        <PartnerAccessGovernanceCockpit
+          partnerId={partner.id}
+          facilityName={partner.tradeName || partner.legalName}
+          onClose={() => setIsGovernanceCockpitOpen(false)}
+        />
       )}
     </div>
   );

@@ -15,92 +15,80 @@ export interface B2BContract {
   signedByCompany: string;
 }
 
-const INITIAL_CONTRACTS: B2BContract[] = [
-  {
-    id: 'CTR-2026-001',
-    partnerName: 'Apex Multi-Specialty Hospital',
-    partnerType: 'HOSPITAL_NETWORK',
-    contractType: 'MASTER_SERVICE_AGREEMENT',
-    slaTier: 'PLATINUM_99_99',
-    effectiveDate: '2026-01-01',
-    expiryDate: '2026-12-31',
-    status: 'ACTIVE',
-    annualContractValue: 599880,
-    signedByPartner: 'Dr. Suresh Mehta (Medical Director)',
-    signedByCompany: 'DocSearch Legal Counsel'
-  },
-  {
-    id: 'CTR-2026-002',
-    partnerName: 'Metropolis Bio-Pathology Diagnostics',
-    partnerType: 'DIAGNOSTIC_LAB',
-    contractType: 'SERVICE_LEVEL_AGREEMENT',
-    slaTier: 'GOLD_99_95',
-    effectiveDate: '2026-02-15',
-    expiryDate: '2027-02-14',
-    status: 'ACTIVE',
-    annualContractValue: 179988,
-    signedByPartner: 'Dr. Neha Verma (Head Pathologist)',
-    signedByCompany: 'DocSearch Legal Counsel'
-  },
-  {
-    id: 'CTR-2026-003',
-    partnerName: 'CarePlus Daycare & Surgery Center',
-    partnerType: 'SURGICAL_CENTER',
-    contractType: 'DATA_PROCESSING_ADDENDUM',
-    slaTier: 'GOLD_99_95',
-    effectiveDate: '2026-03-01',
-    expiryDate: '2027-02-28',
-    status: 'PENDING_SIGNATURE',
-    annualContractValue: 240000,
-    signedByPartner: 'Pending Signatory',
-    signedByCompany: 'DocSearch Legal Counsel'
-  },
-  {
-    id: 'CTR-2026-004',
-    partnerName: 'Apollo Cradle Maternal Health',
-    partnerType: 'CLINIC_GROUP',
-    contractType: 'BUSINESS_ASSOCIATE_AGREEMENT',
-    slaTier: 'PLATINUM_99_99',
-    effectiveDate: '2025-09-01',
-    expiryDate: '2026-08-31',
-    status: 'RENEWAL_DUE',
-    annualContractValue: 359880,
-    signedByPartner: 'Rajiv Singhania (COO)',
-    signedByCompany: 'DocSearch Legal Counsel'
+const loadDynamicContracts = (): B2BContract[] => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const saved = localStorage.getItem('docsearch_b2b_contracts');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+    // Auto-derive legal agreements from live registered partners
+    const regPartners = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');
+    if (Array.isArray(regPartners) && regPartners.length > 0) {
+      return regPartners.map((p: any, idx: number) => ({
+        id: `CTR-2026-${String(idx + 1).padStart(3, '0')}`,
+        partnerName: p.facilityName || p.name || 'Healthcare Facility',
+        partnerType: p.facilityType === 'PATHOLOGY' ? 'DIAGNOSTIC_LAB' : p.facilityType === 'CLINIC' ? 'CLINIC_GROUP' : p.facilityType === 'PHARMACY' ? 'PHARMACY' : 'HOSPITAL_NETWORK',
+        contractType: 'MASTER_SERVICE_AGREEMENT',
+        slaTier: 'PLATINUM_99_99',
+        effectiveDate: new Date().toISOString().slice(0, 10),
+        expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+        status: p.kycStatus === 'KYC_VERIFIED' ? 'ACTIVE' : 'PENDING_SIGNATURE',
+        annualContractValue: 0, // Pioneer Complimentary Plan
+        signedByPartner: p.name || 'Facility Administrator',
+        signedByCompany: 'DocSearch Legal Counsel'
+      }));
+    }
+    return [];
+  } catch {
+    return [];
   }
-];
+};
 
 export const PartnerContractsVaultView: React.FC = () => {
-  const [contracts, setContracts] = useState<B2BContract[]>(INITIAL_CONTRACTS);
+  const [contracts, setContracts] = useState<B2BContract[]>(loadDynamicContracts);
   const [selectedContract, setSelectedContract] = useState<B2BContract | null>(null);
   const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // New contract generator state
-  const [newPartnerName, setNewPartnerName] = useState('Fortis Memorial Research Institute');
+  const [newPartnerName, setNewPartnerName] = useState('');
   const [newPartnerType, setNewPartnerType] = useState('HOSPITAL_NETWORK');
   const [newContractType, setNewContractType] = useState<B2BContract['contractType']>('MASTER_SERVICE_AGREEMENT');
   const [newSlaTier, setNewSlaTier] = useState<B2BContract['slaTier']>('PLATINUM_99_99');
-  const [newAcv, setNewAcv] = useState('599880');
+  const [newAcv, setNewAcv] = useState('0');
+
+  const saveContracts = (updated: B2BContract[]) => {
+    setContracts(updated);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('docsearch_b2b_contracts', JSON.stringify(updated));
+      } catch {}
+    }
+  };
 
   const handleCreateContract = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!newPartnerName.trim()) return;
+
     const created: B2BContract = {
       id: `CTR-2026-${String(contracts.length + 1).padStart(3, '0')}`,
-      partnerName: newPartnerName,
+      partnerName: newPartnerName.trim(),
       partnerType: newPartnerType,
       contractType: newContractType,
       slaTier: newSlaTier,
       effectiveDate: new Date().toISOString().slice(0, 10),
       expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
       status: 'ACTIVE',
-      annualContractValue: parseFloat(newAcv) || 179988,
+      annualContractValue: parseFloat(newAcv) || 0,
       signedByPartner: 'Authorized Signatory',
       signedByCompany: 'DocSearch Legal Counsel & CEO'
     };
 
-    setContracts([created, ...contracts]);
+    saveContracts([created, ...contracts]);
     setIsGeneratorOpen(false);
+    setNewPartnerName('');
     setSuccessMessage(`Contract ${created.id} generated for "${created.partnerName}" successfully!`);
     setTimeout(() => setSuccessMessage(null), 4000);
   };
@@ -126,7 +114,7 @@ export const PartnerContractsVaultView: React.FC = () => {
           </p>
         </div>
 
-        <Button variant="primary" size="sm" onClick={() => setIsGeneratorOpen(true)} style={{ backgroundColor: '#06B6D4', color: '#070C16', fontWeight: 800 }}>
+        <Button variant="primary" size="sm" onClick={() => setIsGeneratorOpen(true)}>
           + Draft New B2B Contract
         </Button>
       </div>
@@ -181,9 +169,20 @@ export const PartnerContractsVaultView: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {contracts.map((c) => (
-                <TableRow key={c.id}>
-                  <TableCell>
+              {contracts.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} style={{ textAlign: 'center', padding: '36px 20px', color: 'var(--ds-color-text-muted)' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '2rem' }}>📜</span>
+                      <span style={{ fontWeight: 700, color: '#F8FAFC' }}>No B2B Contracts in Vault</span>
+                      <span style={{ fontSize: '0.8125rem' }}>Registered partners or newly drafted contracts will appear here dynamically.</span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                contracts.map((c) => (
+                  <TableRow key={c.id}>
+                    <TableCell>
                     <strong style={{ fontFamily: 'monospace', color: '#38BDF8' }}>{c.id}</strong>
                   </TableCell>
                   <TableCell>
@@ -233,8 +232,9 @@ export const PartnerContractsVaultView: React.FC = () => {
                       </Button>
                     </div>
                   </TableCell>
-                </TableRow>
-              ))}
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>
@@ -324,7 +324,6 @@ export const PartnerContractsVaultView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleDownloadContractPdf(selectedContract)}
-                style={{ backgroundColor: '#06B6D4', color: '#070C16', border: 'none', borderRadius: '6px', padding: '8px 20px', fontWeight: 800, cursor: 'pointer' }}
               >
                 🖨️ Print / Download Official PDF
               </button>
@@ -447,7 +446,6 @@ export const PartnerContractsVaultView: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  style={{ backgroundColor: '#06B6D4', color: '#070C16', border: 'none', borderRadius: '6px', padding: '8px 18px', fontWeight: 800, cursor: 'pointer' }}
                 >
                   📑 Generate & Issue Contract
                 </button>

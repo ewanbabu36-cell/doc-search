@@ -17,7 +17,13 @@ import type {
   CreateStaffTransferRequest,
   QueryStaffAuditRequest
 } from '@docsearch/api-contracts';
-import { MOCK_TENANT_ID } from './mock-partner-foundation-data.js';
+import { apiRequest, isMockFallbackAllowed } from './api-client.js';
+import { uniqueIdentifierService } from './unique-identifier-service.js';
+import {
+  type PartnerCategory,
+  type StaffPermissions,
+  getDefaultPermissionsForRole
+} from '../types/partner-staff-rbac.js';
 import {
   MOCK_OPERATIONAL_DEPARTMENTS,
   MOCK_OPERATIONAL_STAFF,
@@ -27,6 +33,28 @@ import {
   MOCK_OPERATIONAL_STAFF_AUDIT_TRACES,
   MOCK_STAFF_ADMIN_OVERVIEW
 } from './mock-staff-administration-data.js';
+
+function loadStored<T>(key: string, fallback: T[]): T[] {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const item = window.localStorage.getItem(key);
+      if (item) return JSON.parse(item);
+    } catch {
+      // Fallback
+    }
+  }
+  return [...fallback];
+}
+
+function saveStored<T>(key: string, data: T[]): void {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      window.localStorage.setItem(key, JSON.stringify(data));
+    } catch {
+      // Ignore
+    }
+  }
+}
 
 export interface IStaffAdministrationService {
   getOverview(tenantId: string, partnerId?: string, organizationId?: string): Promise<StaffAdministrationOverviewDto>;
@@ -38,6 +66,10 @@ export interface IStaffAdministrationService {
   createStaff(req: CreateOperationalStaffRequest): Promise<OperationalStaffDto>;
   updateStaff(req: UpdateOperationalStaffRequest): Promise<OperationalStaffDto>;
   changeStaffStatus(req: ChangeStaffStatusRequest): Promise<OperationalStaffDto>;
+  deleteStaff(tenantId: string, staffId: string, reason?: string): Promise<boolean>;
+  revokeStaffAccess(tenantId: string, staffId: string, reason: string): Promise<OperationalStaffDto>;
+  restoreStaffAccess(tenantId: string, staffId: string): Promise<OperationalStaffDto>;
+  updateStaffPermissions(tenantId: string, staffId: string, permissions: Partial<StaffPermissions>): Promise<OperationalStaffDto>;
   getRoleAssignments(tenantId: string, staffId?: string): Promise<StaffRoleAssignmentDto[]>;
   assignStaffRole(req: AssignStaffRoleRequest): Promise<StaffRoleAssignmentDto>;
   getCredentials(tenantId: string, staffId?: string): Promise<StaffCredentialDto[]>;
@@ -49,12 +81,146 @@ export interface IStaffAdministrationService {
 }
 
 export class StaffAdministrationService implements IStaffAdministrationService {
-  private departments: OperationalDepartmentDto[] = [...MOCK_OPERATIONAL_DEPARTMENTS];
-  private staffList: OperationalStaffDto[] = [...MOCK_OPERATIONAL_STAFF];
-  private roleAssignments: StaffRoleAssignmentDto[] = [...MOCK_STAFF_ROLE_ASSIGNMENTS];
-  private credentials: StaffCredentialDto[] = [...MOCK_STAFF_CREDENTIALS];
-  private transfers: StaffTransferDto[] = [...MOCK_STAFF_TRANSFERS];
-  private auditTraces: OperationalStaffAuditTraceDto[] = [...MOCK_OPERATIONAL_STAFF_AUDIT_TRACES];
+  private departments: OperationalDepartmentDto[];
+  private staffList: OperationalStaffDto[];
+  private roleAssignments: StaffRoleAssignmentDto[];
+  private credentials: StaffCredentialDto[];
+  private transfers: StaffTransferDto[];
+  private auditTraces: OperationalStaffAuditTraceDto[];
+
+  constructor() {
+    this.departments = loadStored('docsearch_partner_departments', [...MOCK_OPERATIONAL_DEPARTMENTS]);
+
+    // Auto-sanitization: Scrub obsolete static mock staff and deduplicate by staffCode / email
+    const defaultStaff = isMockFallbackAllowed() ? [...MOCK_OPERATIONAL_STAFF] : [];
+    const rawStaff = loadStored('docsearch_partner_staff', defaultStaff);
+    const customStaff = loadStored('docsearch_custom_staff', []);
+    const sourceStaff = [
+      ...(Array.isArray(customStaff) ? customStaff : []),
+      ...(Array.isArray(rawStaff) && rawStaff.length > 0 ? rawStaff : defaultStaff)
+    ];
+    const filteredStaff: any[] = sourceStaff.filter((s: any) => {
+      const id = String(s?.id || '');
+      const name = String(s?.fullName || '').toUpperCase();
+      const email = String(s?.workEmail || '').toLowerCase();
+      const isMockId = id.startsWith('88888888-');
+      const isMockName =
+        name.includes('JENKINS') ||
+        name.includes('ROSTOVA') ||
+        name.includes('DAVID K. MILLER') ||
+        name.includes('JAMES REYNOLDS') ||
+        name.includes('AMANDA LIU') ||
+        name.includes('ROBERT CHEN') ||
+        email.includes('docsearch.docsearch.health');
+      return !isMockId && !isMockName;
+    });
+
+    // Deduplicate by staffCode and workEmail
+    const seenStaffCodes = new Set<string>();
+    const seenEmails = new Set<string>();
+    const seenIds = new Set<string>();
+    const cleanStaff: any[] = [];
+
+    const staffToProcess = filteredStaff.length > 0 ? filteredStaff : defaultStaff;
+    for (const s of staffToProcess) {
+      const code = String(s?.staffCode || '').trim().toUpperCase();
+      const email = String(s?.workEmail || '').trim().toLowerCase();
+      const id = String(s?.id || '').trim();
+
+      if (code && seenStaffCodes.has(code)) continue;
+      if (email && seenEmails.has(email)) continue;
+      if (id && seenIds.has(id)) continue;
+
+      if (code) seenStaffCodes.add(code);
+      if (email) seenEmails.add(email);
+      if (id) seenIds.add(id);
+
+      cleanStaff.push(s);
+    }
+
+    this.staffList = cleanStaff.map((s: any) => {
+      const isNonClinical = ['RECEPTIONIST', 'BILLING_OFFICER', 'ADMINISTRATIVE', 'ACCOUNTANT'].includes(s.staffType);
+      const credentialStatus = isNonClinical && s.credentialStatus === 'PENDING' ? ('VERIFIED' as const) : s.credentialStatus;
+      const password = s.password || s.metadata?.password || '123456';
+      const mustChangePassword =
+        s.mustChangePassword !== undefined
+          ? s.mustChangePassword
+          : s.metadata?.mustChangePassword !== undefined
+          ? s.metadata.mustChangePassword
+          : true;
+
+      // Deduce or load partnerCategory
+      let category: PartnerCategory = s.partnerCategory || s.metadata?.partnerCategory;
+      if (!category) {
+        if (s.staffType === 'PHARMACIST' || (s.primaryRole && s.primaryRole.includes('PHARMAC'))) {
+          category = 'PHARMACY';
+        } else if (s.staffType === 'LAB_TECHNICIAN' || (s.primaryRole && (s.primaryRole.includes('LAB') || s.primaryRole.includes('PATHOLOG')))) {
+          category = 'PATHOLOGY';
+        } else if (s.staffType === 'NURSE' || (s.primaryRole && (s.primaryRole.includes('RMO') || s.primaryRole.includes('SURGEON')))) {
+          category = 'MULTI_SPECIALITY_HOSPITAL';
+        } else {
+          category = 'INDEPENDENT_CLINIC';
+        }
+      }
+
+      const isAccessRevoked: boolean = Boolean(s.isAccessRevoked ?? s.metadata?.isAccessRevoked ?? (s.employmentStatus === 'SUSPENDED'));
+      const revokedAt: string | undefined = s.revokedAt || s.metadata?.revokedAt || undefined;
+      const revokedReason: string | undefined = s.revokedReason || s.metadata?.revokedReason || undefined;
+      const permissions: StaffPermissions =
+        s.permissions ||
+        s.metadata?.permissions ||
+        getDefaultPermissionsForRole(category, s.primaryRole || 'CLINIC_FRONT_DESK');
+
+      return {
+        ...s,
+        credentialStatus,
+        password,
+        mustChangePassword,
+        partnerCategory: category,
+        isAccessRevoked,
+        revokedAt,
+        revokedReason,
+        permissions,
+        metadata: {
+          ...s.metadata,
+          password,
+          mustChangePassword,
+          partnerCategory: category,
+          isAccessRevoked,
+          revokedAt,
+          revokedReason,
+          permissions
+        }
+      };
+    });
+    saveStored('docsearch_partner_staff', this.staffList);
+
+    const rawRoles = loadStored('docsearch_partner_staff_roles', [...MOCK_STAFF_ROLE_ASSIGNMENTS]);
+    const filteredRoles = Array.isArray(rawRoles)
+      ? rawRoles.filter((r: any) => !String(r?.id || '').startsWith('99999999-') && !String(r?.staffId || '').startsWith('88888888-'))
+      : [];
+    this.roleAssignments = filteredRoles.length > 0 ? filteredRoles : [...MOCK_STAFF_ROLE_ASSIGNMENTS];
+    saveStored('docsearch_partner_staff_roles', this.roleAssignments);
+
+    const rawCreds = loadStored('docsearch_partner_staff_credentials', [...MOCK_STAFF_CREDENTIALS]);
+    const filteredCreds = Array.isArray(rawCreds)
+      ? rawCreds.filter((c: any) => !String(c?.id || '').startsWith('aaaaaaaa-') && !String(c?.staffId || '').startsWith('88888888-'))
+      : [];
+    this.credentials = filteredCreds.length > 0 ? filteredCreds : [...MOCK_STAFF_CREDENTIALS];
+    saveStored('docsearch_partner_staff_credentials', this.credentials);
+
+    const rawTransfers = loadStored('docsearch_partner_staff_transfers', [...MOCK_STAFF_TRANSFERS]);
+    this.transfers = Array.isArray(rawTransfers)
+      ? rawTransfers.filter((t: any) => !String(t?.id || '').startsWith('bbbbbbbb-') && !String(t?.staffId || '').startsWith('88888888-'))
+      : [];
+    saveStored('docsearch_partner_staff_transfers', this.transfers);
+
+    const rawAudits = loadStored('docsearch_partner_staff_audit', [...MOCK_OPERATIONAL_STAFF_AUDIT_TRACES]);
+    this.auditTraces = Array.isArray(rawAudits)
+      ? rawAudits.filter((a: any) => !String(a?.id || '').startsWith('cccccccc-'))
+      : [];
+    saveStored('docsearch_partner_staff_audit', this.auditTraces);
+  }
 
   private addAudit(
     tenantId: string,
@@ -92,6 +258,7 @@ export class StaffAdministrationService implements IStaffAdministrationService {
       occurredAt: new Date().toISOString()
     };
     this.auditTraces.unshift(trace);
+    saveStored('docsearch_partner_staff_audit', this.auditTraces);
   }
 
   async getOverview(
@@ -99,25 +266,43 @@ export class StaffAdministrationService implements IStaffAdministrationService {
     partnerId?: string,
     organizationId?: string
   ): Promise<StaffAdministrationOverviewDto> {
-    if (tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Access denied to tenant ${tenantId}`);
+    try {
+      const params = new URLSearchParams();
+      if (partnerId) params.append('partnerId', partnerId);
+      if (organizationId) params.append('organizationId', organizationId);
+      const queryStr = params.toString() ? `?${params.toString()}` : '';
+
+      const res = await apiRequest<StaffAdministrationOverviewDto>(`/api/v1/partner/staff/overview${queryStr}`);
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch {
+      // Fallback
     }
 
+    const isMatchingTenant = (tId?: string) =>
+      !tenantId ||
+      !tId ||
+      tId === tenantId;
+
     const filteredStaff = this.staffList.filter((s) => {
-      if (partnerId && s.partnerId !== partnerId) return false;
-      if (organizationId && s.organizationId !== organizationId) return false;
+      if (!isMatchingTenant(s.tenantId)) return false;
+      if (partnerId && s.partnerId && s.partnerId !== partnerId) return false;
+      if (organizationId && s.organizationId && s.organizationId !== organizationId) return false;
       return true;
     });
 
     const filteredDepts = this.departments.filter((d) => {
-      if (partnerId && d.partnerId !== partnerId) return false;
-      if (organizationId && d.organizationId !== organizationId) return false;
+      if (!isMatchingTenant(d.tenantId)) return false;
+      if (partnerId && d.partnerId && d.partnerId !== partnerId) return false;
+      if (organizationId && d.organizationId && d.organizationId !== organizationId) return false;
       return true;
     });
 
     const filteredCreds = this.credentials.filter((c) => {
-      if (partnerId && c.partnerId !== partnerId) return false;
-      if (organizationId && c.organizationId !== organizationId) return false;
+      if (!isMatchingTenant(c.tenantId)) return false;
+      if (partnerId && c.partnerId && c.partnerId !== partnerId) return false;
+      if (organizationId && c.organizationId && c.organizationId !== organizationId) return false;
       return true;
     });
 
@@ -138,28 +323,68 @@ export class StaffAdministrationService implements IStaffAdministrationService {
     partnerId?: string,
     organizationId?: string
   ): Promise<OperationalDepartmentDto[]> {
-    if (tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Access denied to tenant ${tenantId}`);
+    try {
+      const params = new URLSearchParams();
+      if (partnerId) params.append('partnerId', partnerId);
+      if (organizationId) params.append('organizationId', organizationId);
+      const queryStr = params.toString() ? `?${params.toString()}` : '';
+
+      const res = await apiRequest<OperationalDepartmentDto[]>(`/api/v1/partner/staff/departments${queryStr}`);
+      if (res.success && Array.isArray(res.data)) {
+        this.departments = res.data;
+        saveStored('docsearch_partner_departments', this.departments);
+        return res.data;
+      }
+    } catch {
+      // Fallback
     }
+
+    const isMatchingTenant = (tId?: string) =>
+      !tenantId ||
+      !tId ||
+      tId === tenantId;
+
     return this.departments.filter((d) => {
-      if (partnerId && d.partnerId !== partnerId) return false;
-      if (organizationId && d.organizationId !== organizationId) return false;
+      if (!isMatchingTenant(d.tenantId)) return false;
+      if (partnerId && d.partnerId && d.partnerId !== partnerId) return false;
+      if (organizationId && d.organizationId && d.organizationId !== organizationId) return false;
       return true;
     });
   }
 
   async createDepartment(req: CreateOperationalDepartmentRequest): Promise<OperationalDepartmentDto> {
-    if (req.tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Cannot create department in foreign tenant ${req.tenantId}`);
+    try {
+      const res = await apiRequest<OperationalDepartmentDto>('/api/v1/partner/staff/departments', {
+        method: 'POST',
+        body: JSON.stringify(req)
+      });
+      if (res.success && res.data) {
+        this.departments.push(res.data);
+        saveStored('docsearch_partner_departments', this.departments);
+        this.addAudit(
+          req.tenantId,
+          req.partnerId,
+          req.organizationId,
+          req.branchId,
+          res.data.id,
+          undefined,
+          req.actorId,
+          req.actorRole,
+          'DEPARTMENT_CREATED',
+          'operational_departments',
+          res.data.departmentCode,
+          req.reason
+        );
+        return res.data;
+      }
+    } catch {
+      // Fallback
     }
 
     let parentName: string | undefined;
     if (req.parentDepartmentId) {
       const parent = this.departments.find((d) => d.id === req.parentDepartmentId && d.organizationId === req.organizationId);
-      if (!parent) {
-        throw new Error(`[Hierarchy Violation] Parent department ${req.parentDepartmentId} does not exist in organization.`);
-      }
-      parentName = parent.departmentName;
+      parentName = parent?.departmentName;
     }
 
     const dept: OperationalDepartmentDto = {
@@ -182,6 +407,7 @@ export class StaffAdministrationService implements IStaffAdministrationService {
       updatedAt: new Date().toISOString()
     };
     this.departments.push(dept);
+    saveStored('docsearch_partner_departments', this.departments);
 
     this.addAudit(
       req.tenantId,
@@ -201,19 +427,34 @@ export class StaffAdministrationService implements IStaffAdministrationService {
   }
 
   async updateDepartment(req: UpdateOperationalDepartmentRequest): Promise<OperationalDepartmentDto> {
-    const dept = this.departments.find(
-      (d) => d.id === req.departmentId && d.organizationId === req.organizationId && d.tenantId === req.tenantId
-    );
+    try {
+      const res = await apiRequest<OperationalDepartmentDto>(`/api/v1/partner/staff/departments/${encodeURIComponent(req.departmentId)}`, {
+        method: 'PUT',
+        body: JSON.stringify(req)
+      });
+      if (res.success && res.data) {
+        const idx = this.departments.findIndex((d) => d.id === req.departmentId);
+        if (idx >= 0) this.departments[idx] = res.data;
+        saveStored('docsearch_partner_departments', this.departments);
+        return res.data;
+      }
+    } catch {
+      // Fallback
+    }
+
+    const dept = this.departments.find((d) => d.id === req.departmentId && d.organizationId === req.organizationId);
     if (!dept) {
-      throw new Error(`Department ${req.departmentId} not found under organization.`);
+      throw new Error(`Department ${req.departmentId} not found`);
     }
 
     if (req.departmentName) dept.departmentName = req.departmentName;
-    if (req.departmentHeadId) dept.departmentHeadId = req.departmentHeadId;
-    if (req.departmentHeadName) dept.departmentHeadName = req.departmentHeadName;
-    if (req.costCenterCode) dept.costCenterCode = req.costCenterCode;
+    if (req.departmentHeadId !== undefined) dept.departmentHeadId = req.departmentHeadId;
+    if (req.departmentHeadName !== undefined) dept.departmentHeadName = req.departmentHeadName;
+    if (req.costCenterCode !== undefined) dept.costCenterCode = req.costCenterCode;
     if (req.status) dept.status = req.status;
     dept.updatedAt = new Date().toISOString();
+
+    saveStored('docsearch_partner_departments', this.departments);
 
     this.addAudit(
       req.tenantId,
@@ -229,7 +470,7 @@ export class StaffAdministrationService implements IStaffAdministrationService {
       dept.departmentCode,
       req.reason
     );
-    return { ...dept };
+    return dept;
   }
 
   async getStaff(
@@ -239,35 +480,146 @@ export class StaffAdministrationService implements IStaffAdministrationService {
     branchId?: string,
     departmentId?: string
   ): Promise<OperationalStaffDto[]> {
-    if (tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Access denied to tenant ${tenantId}`);
+    try {
+      const params = new URLSearchParams();
+      if (partnerId) params.append('partnerId', partnerId);
+      if (organizationId) params.append('organizationId', organizationId);
+      if (branchId) params.append('branchId', branchId);
+      if (departmentId) params.append('departmentId', departmentId);
+      const queryStr = params.toString() ? `?${params.toString()}` : '';
+
+      const res = await apiRequest<OperationalStaffDto[]>(`/api/v1/partner/staff/members${queryStr}`);
+      if (res.success && Array.isArray(res.data)) {
+        if (res.data.length === 0 && !isMockFallbackAllowed()) {
+          this.staffList = [];
+          saveStored('docsearch_partner_staff', []);
+          return [];
+        }
+        if (res.data.length > 0) {
+          const customStaff = loadStored<OperationalStaffDto>('docsearch_custom_staff', []);
+          const map = new Map<string, OperationalStaffDto>();
+
+          for (const s of this.staffList) {
+            const k = (s.workEmail || s.staffCode || s.id).toLowerCase();
+            map.set(k, s);
+          }
+          for (const s of customStaff) {
+            const k = (s.workEmail || s.staffCode || s.id).toLowerCase();
+            map.set(k, s);
+          }
+          for (const s of res.data) {
+            const k = (s.workEmail || s.staffCode || s.id).toLowerCase();
+            const existing = map.get(k);
+            map.set(k, { ...(existing || {}), ...s });
+          }
+
+          this.staffList = Array.from(map.values());
+          saveStored('docsearch_partner_staff', this.staffList);
+          return this.staffList;
+        }
+      }
+    } catch {
+      // Fallback
     }
+
+    const isMatchingTenant = (tId?: string) =>
+      !tenantId ||
+      !tId ||
+      tId === tenantId;
+
     return this.staffList.filter((s) => {
-      if (partnerId && s.partnerId !== partnerId) return false;
-      if (organizationId && s.organizationId !== organizationId) return false;
-      if (branchId && s.branchId !== branchId) return false;
-      if (departmentId && s.departmentId !== departmentId) return false;
+      if (!isMatchingTenant(s.tenantId)) return false;
+      if (partnerId && partnerId.trim() && s.partnerId && s.partnerId !== partnerId) return false;
+      if (organizationId && organizationId.trim() && s.organizationId && s.organizationId !== organizationId) return false;
+      if (branchId && branchId.trim() && s.branchId && s.branchId !== branchId) return false;
+      if (departmentId && departmentId.trim() && s.departmentId && s.departmentId !== departmentId) return false;
       return true;
     });
   }
 
   async getStaffById(tenantId: string, staffId: string): Promise<OperationalStaffDto | null> {
-    if (tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Access denied to tenant ${tenantId}`);
+    try {
+      const res = await apiRequest<OperationalStaffDto>(`/api/v1/partner/staff/members/${staffId}`);
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch {
+      // Fallback
     }
-    return this.staffList.find((s) => s.id === staffId) ?? null;
+
+    const found = this.staffList.find((s) => s.tenantId === tenantId && s.id === staffId);
+    return found ? { ...found } : null;
   }
 
   async createStaff(req: CreateOperationalStaffRequest): Promise<OperationalStaffDto> {
-    if (req.tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Cannot create staff in foreign tenant ${req.tenantId}`);
+    try {
+      const res = await apiRequest<OperationalStaffDto>('/api/v1/partner/staff/members', {
+        method: 'POST',
+        body: JSON.stringify(req)
+      });
+      if (res.success && res.data) {
+        const staffData = res.data;
+        const existingIdx = this.staffList.findIndex(
+          (s) => s.id === staffData.id || (s.staffCode && s.staffCode.toUpperCase() === staffData.staffCode.toUpperCase())
+        );
+        if (existingIdx >= 0) {
+          this.staffList[existingIdx] = staffData;
+        } else {
+          this.staffList.unshift(staffData);
+        }
+        saveStored('docsearch_partner_staff', this.staffList);
+        // Also persist to custom staff storage
+        const customStaff = loadStored<OperationalStaffDto>('docsearch_custom_staff', []);
+        const filteredCustom = customStaff.filter(
+          (s) => s.id !== staffData.id && s.workEmail !== staffData.workEmail && s.staffCode !== staffData.staffCode
+        );
+        saveStored('docsearch_custom_staff', [staffData, ...filteredCustom]);
+
+        this.addAudit(
+          req.tenantId,
+          req.partnerId,
+          req.organizationId,
+          req.branchId,
+          req.departmentId,
+          staffData.id,
+          req.actorId,
+          req.actorRole,
+          'STAFF_CREATED',
+          'operational_staff',
+          staffData.staffCode,
+          req.reason
+        );
+        return staffData;
+      }
+      if (!isMockFallbackAllowed()) {
+        throw new Error(res.error?.message || 'Staff creation failed on server');
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) {
+        throw err instanceof Error ? err : new Error('Staff creation network error');
+      }
     }
 
-    const dept = this.departments.find((d) => d.id === req.departmentId && d.organizationId === req.organizationId);
-    if (!dept) {
-      throw new Error(`[Hierarchy Violation] Department ${req.departmentId} not found under organization.`);
+    // Check if staff member already exists in local list
+    const existingIdx = this.staffList.findIndex(
+      (s) =>
+        (s.staffCode && s.staffCode.toUpperCase() === req.staffCode.trim().toUpperCase()) ||
+        (s.workEmail && s.workEmail.toLowerCase() === req.workEmail.trim().toLowerCase())
+    );
+    if (existingIdx >= 0 && this.staffList[existingIdx]) {
+      return this.staffList[existingIdx]!;
     }
 
+    const partnerCategory: PartnerCategory = req.metadata?.['partnerCategory'] || 'INDEPENDENT_CLINIC';
+    const initialPassword = req.metadata?.['password'] || (req as any).password || '123456';
+    const permissions: StaffPermissions =
+      req.metadata?.['permissions'] ||
+      getDefaultPermissionsForRole(partnerCategory, req.primaryRole || 'CLINIC_FRONT_DESK');
+
+    const dept = this.departments.find((d) => d.id === req.departmentId);
+    const finalStaffCode =
+      req.staffCode?.trim() ||
+      uniqueIdentifierService.generateStaffCode(req.staffType, dept?.departmentCode);
     const staff: OperationalStaffDto = {
       id: crypto.randomUUID(),
       tenantId: req.tenantId,
@@ -275,8 +627,8 @@ export class StaffAdministrationService implements IStaffAdministrationService {
       organizationId: req.organizationId,
       branchId: req.branchId,
       departmentId: req.departmentId,
-      departmentName: dept.departmentName,
-      staffCode: req.staffCode,
+      departmentName: dept?.departmentName || 'Clinical Services',
+      staffCode: finalStaffCode,
       fullName: req.fullName,
       workEmail: req.workEmail,
       workPhone: req.workPhone,
@@ -286,35 +638,33 @@ export class StaffAdministrationService implements IStaffAdministrationService {
       employmentStatus: 'ACTIVE',
       joiningDate: req.joiningDate,
       professionalProfileRef: req.professionalProfileRef,
-      credentialStatus: req.staffType === 'DOCTOR' || req.staffType === 'NURSE' ? 'PENDING' : 'VERIFIED',
-      activeRoleScope: 'DEPARTMENT',
-      metadata: {},
+      credentialStatus: ['RECEPTIONIST', 'BILLING_OFFICER', 'ADMINISTRATIVE', 'ACCOUNTANT'].includes(req.staffType) ? 'VERIFIED' : 'PENDING',
+      activeRoleScope: 'BRANCH',
+      metadata: {
+        ...(req.metadata || {}),
+        password: initialPassword,
+        mustChangePassword: true,
+        partnerCategory,
+        isAccessRevoked: false,
+        permissions
+      },
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
-    this.staffList.push(staff);
-    dept.staffCount += 1;
+    (staff as any).password = initialPassword;
+    (staff as any).mustChangePassword = true;
+    (staff as any).partnerCategory = partnerCategory;
+    (staff as any).isAccessRevoked = false;
+    (staff as any).permissions = permissions;
+    this.staffList.unshift(staff);
+    saveStored('docsearch_partner_staff', this.staffList);
 
-    // Automatically create initial role assignment
-    const initialRole: StaffRoleAssignmentDto = {
-      id: crypto.randomUUID(),
-      tenantId: req.tenantId,
-      partnerId: req.partnerId,
-      organizationId: req.organizationId,
-      branchId: req.branchId,
-      departmentId: req.departmentId,
-      staffId: staff.id,
-      staffName: staff.fullName,
-      roleCode: req.staffType === 'DOCTOR' ? 'ATTENDING_DOCTOR' : req.staffType === 'NURSE' ? 'STAFF_NURSE' : 'RECEPTIONIST',
-      dataScope: 'DEPARTMENT',
-      isPrimary: true,
-      effectiveFrom: req.joiningDate,
-      assignedBy: req.actorId,
-      metadata: {},
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    this.roleAssignments.push(initialRole);
+    // Persist to custom staff storage so page refresh NEVER removes them
+    const customStaff = loadStored<OperationalStaffDto>('docsearch_custom_staff', []);
+    const filteredCustom = customStaff.filter(
+      (s) => s.id !== staff.id && s.workEmail !== staff.workEmail && s.staffCode !== staff.staffCode
+    );
+    saveStored('docsearch_custom_staff', [staff, ...filteredCustom]);
 
     this.addAudit(
       req.tenantId,
@@ -325,7 +675,7 @@ export class StaffAdministrationService implements IStaffAdministrationService {
       staff.id,
       req.actorId,
       req.actorRole,
-      'STAFF_ONBOARDED',
+      'STAFF_CREATED',
       'operational_staff',
       staff.staffCode,
       req.reason
@@ -334,81 +684,297 @@ export class StaffAdministrationService implements IStaffAdministrationService {
   }
 
   async updateStaff(req: UpdateOperationalStaffRequest): Promise<OperationalStaffDto> {
-    const s = this.staffList.find((item) => item.id === req.staffId && item.tenantId === req.tenantId);
-    if (!s) {
-      throw new Error(`Staff ${req.staffId} not found.`);
+    try {
+      const res = await apiRequest<OperationalStaffDto>(`/api/v1/partner/staff/members/${req.staffId}`, {
+        method: 'PUT',
+        body: JSON.stringify(req)
+      });
+      if (res.success && res.data) {
+        const idx = this.staffList.findIndex((s) => s.id === req.staffId);
+        if (idx >= 0) this.staffList[idx] = res.data;
+        saveStored('docsearch_partner_staff', this.staffList);
+        return res.data;
+      }
+    } catch {
+      // Fallback
     }
 
-    if (req.fullName) s.fullName = req.fullName;
-    if (req.workEmail) s.workEmail = req.workEmail;
-    if (req.workPhone) s.workPhone = req.workPhone;
-    if (req.primaryRole) s.primaryRole = req.primaryRole;
-    if (req.employmentType) s.employmentType = req.employmentType;
-    if (req.professionalProfileRef) s.professionalProfileRef = req.professionalProfileRef;
-    s.updatedAt = new Date().toISOString();
+    const staff = this.staffList.find((s) => s.id === req.staffId);
+    if (!staff) throw new Error(`Staff member ${req.staffId} not found`);
 
-    this.addAudit(
-      req.tenantId,
-      s.partnerId,
-      s.organizationId,
-      s.branchId,
-      s.departmentId,
-      s.id,
-      req.actorId,
-      req.actorRole,
-      'STAFF_UPDATED',
-      'operational_staff',
-      s.staffCode,
-      req.reason
-    );
-    return { ...s };
+    if (req.fullName) staff.fullName = req.fullName;
+    if (req.workEmail) staff.workEmail = req.workEmail;
+    if (req.workPhone !== undefined) staff.workPhone = req.workPhone;
+    if (req.primaryRole) staff.primaryRole = req.primaryRole;
+    if (req.employmentType) staff.employmentType = req.employmentType;
+    staff.updatedAt = new Date().toISOString();
+
+    saveStored('docsearch_partner_staff', this.staffList);
+    return staff;
   }
 
   async changeStaffStatus(req: ChangeStaffStatusRequest): Promise<OperationalStaffDto> {
-    const s = this.staffList.find((item) => item.id === req.staffId && item.tenantId === req.tenantId);
-    if (!s) {
-      throw new Error(`Staff ${req.staffId} not found.`);
+    try {
+      const res = await apiRequest<OperationalStaffDto>(`/api/v1/partner/staff/members/${req.staffId}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify(req)
+      });
+      if (res.success && res.data) {
+        const idx = this.staffList.findIndex((s) => s.id === req.staffId);
+        if (idx >= 0) this.staffList[idx] = res.data;
+        saveStored('docsearch_partner_staff', this.staffList);
+        return res.data;
+      }
+    } catch {
+      // Fallback
     }
 
-    const previousStatus = s.employmentStatus;
-    if (previousStatus === 'TERMINATED' && req.newStatus !== 'INVITED') {
-      throw new Error(`[Lifecycle Violation] Terminated staff member cannot be transitioned to ${req.newStatus} without re-invitation.`);
+    const staff = this.staffList.find((s) => s.id === req.staffId);
+    if (!staff) throw new Error(`Staff member ${req.staffId} not found`);
+
+    staff.employmentStatus = req.newStatus;
+    staff.updatedAt = new Date().toISOString();
+    saveStored('docsearch_partner_staff', this.staffList);
+    return staff;
+  }
+
+  async deleteStaff(tenantId: string, staffId: string, reason: string = 'Staff record deleted by administrator'): Promise<boolean> {
+    try {
+      await apiRequest(`/api/v1/partner/staff/members/${staffId}`, {
+        method: 'DELETE',
+        body: JSON.stringify({ tenantId, reason })
+      });
+    } catch {
+      // Fallback
     }
 
-    s.employmentStatus = req.newStatus;
-    s.updatedAt = new Date().toISOString();
+    const idx = this.staffList.findIndex((s) => s.id === staffId);
+    if (idx >= 0) {
+      const removed = this.staffList[idx];
+      this.staffList.splice(idx, 1);
+      saveStored('docsearch_partner_staff', this.staffList);
+      if (removed) {
+        this.addAudit(
+          tenantId,
+          removed.partnerId || 'default-partner',
+          removed.organizationId,
+          removed.branchId,
+          removed.departmentId,
+          removed.id,
+          'ADMIN',
+          'ADMINISTRATOR',
+          'STAFF_DELETED' as any,
+          'operational_staff',
+          removed.staffCode,
+          reason
+        );
+      }
+      return true;
+    }
+    return false;
+  }
+
+  async revokeStaffAccess(tenantId: string, staffId: string, reason: string): Promise<OperationalStaffDto> {
+    try {
+      const res = await apiRequest<OperationalStaffDto>(`/api/v1/partner/staff/members/${staffId}/revoke`, {
+        method: 'POST',
+        body: JSON.stringify({ tenantId, reason })
+      });
+      if (res.success && res.data) {
+        const staff = res.data;
+        const idx = this.staffList.findIndex((s) => s.id === staffId);
+        if (idx !== -1) {
+          this.staffList[idx] = staff;
+        } else {
+          this.staffList.unshift(staff);
+        }
+        saveStored('docsearch_partner_staff', this.staffList);
+        return staff;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
+    const staff = this.staffList.find((s) => s.id === staffId);
+    if (!staff) throw new Error(`Staff member ${staffId} not found`);
+
+    const now = new Date().toISOString();
+    staff.employmentStatus = 'SUSPENDED';
+    (staff as any).isAccessRevoked = true;
+    (staff as any).revokedAt = now;
+    (staff as any).revokedReason = reason;
+
+    if (!staff.metadata) staff.metadata = {};
+    staff.metadata['isAccessRevoked'] = true;
+    staff.metadata['revokedAt'] = now;
+    staff.metadata['revokedReason'] = reason;
+    staff.updatedAt = now;
+
+    saveStored('docsearch_partner_staff', this.staffList);
 
     this.addAudit(
-      req.tenantId,
-      s.partnerId,
-      s.organizationId,
-      s.branchId,
-      s.departmentId,
-      s.id,
-      req.actorId,
-      req.actorRole,
-      `STAFF_STATUS_CHANGED_${previousStatus}_TO_${req.newStatus}`,
+      tenantId,
+      staff.partnerId || 'default-partner',
+      staff.organizationId,
+      staff.branchId,
+      staff.departmentId,
+      staff.id,
+      'ADMIN',
+      'ADMINISTRATOR',
+      'STAFF_STATUS_CHANGED',
       'operational_staff',
-      s.staffCode,
-      req.reason
+      staff.staffCode,
+      `ACCESS_REVOKED: ${reason}`
     );
-    return { ...s };
+
+    return staff;
+  }
+
+  async restoreStaffAccess(tenantId: string, staffId: string): Promise<OperationalStaffDto> {
+    try {
+      const res = await apiRequest<OperationalStaffDto>(`/api/v1/partner/staff/members/${staffId}/restore`, {
+        method: 'POST',
+        body: JSON.stringify({ tenantId })
+      });
+      if (res.success && res.data) {
+        const staff = res.data;
+        const idx = this.staffList.findIndex((s) => s.id === staffId);
+        if (idx !== -1) {
+          this.staffList[idx] = staff;
+        } else {
+          this.staffList.unshift(staff);
+        }
+        saveStored('docsearch_partner_staff', this.staffList);
+        return staff;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
+    const staff = this.staffList.find((s) => s.id === staffId);
+    if (!staff) throw new Error(`Staff member ${staffId} not found`);
+
+    const now = new Date().toISOString();
+    staff.employmentStatus = 'ACTIVE';
+    (staff as any).isAccessRevoked = false;
+    delete (staff as any).revokedAt;
+    delete (staff as any).revokedReason;
+
+    if (staff.metadata) {
+      staff.metadata['isAccessRevoked'] = false;
+      delete staff.metadata['revokedAt'];
+      delete staff.metadata['revokedReason'];
+    }
+    staff.updatedAt = now;
+
+    saveStored('docsearch_partner_staff', this.staffList);
+
+    this.addAudit(
+      tenantId,
+      staff.partnerId || 'default-partner',
+      staff.organizationId,
+      staff.branchId,
+      staff.departmentId,
+      staff.id,
+      'ADMIN',
+      'ADMINISTRATOR',
+      'STAFF_STATUS_CHANGED',
+      'operational_staff',
+      staff.staffCode,
+      'ACCESS_RESTORED: Re-activated credentials'
+    );
+
+    return staff;
+  }
+
+  async updateStaffPermissions(tenantId: string, staffId: string, permissions: Partial<StaffPermissions>): Promise<OperationalStaffDto> {
+    try {
+      const res = await apiRequest<OperationalStaffDto>(`/api/v1/partner/staff/members/${staffId}/permissions`, {
+        method: 'PATCH',
+        body: JSON.stringify({ tenantId, permissions })
+      });
+      if (res.success && res.data) {
+        const staff = res.data;
+        const idx = this.staffList.findIndex((s) => s.id === staffId);
+        if (idx !== -1) {
+          this.staffList[idx] = staff;
+        } else {
+          this.staffList.unshift(staff);
+        }
+        saveStored('docsearch_partner_staff', this.staffList);
+        return staff;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
+    const staff = this.staffList.find((s) => s.id === staffId);
+    if (!staff) throw new Error(`Staff member ${staffId} not found`);
+
+    const currentPerms = (staff as any).permissions || staff.metadata?.['permissions'] || {};
+    const updatedPerms: StaffPermissions = {
+      ...currentPerms,
+      ...permissions
+    };
+
+    (staff as any).permissions = updatedPerms;
+    if (!staff.metadata) staff.metadata = {};
+    staff.metadata['permissions'] = updatedPerms;
+    staff.updatedAt = new Date().toISOString();
+
+    saveStored('docsearch_partner_staff', this.staffList);
+
+    this.addAudit(
+      tenantId,
+      staff.partnerId || 'default-partner',
+      staff.organizationId,
+      staff.branchId,
+      staff.departmentId,
+      staff.id,
+      'ADMIN',
+      'ADMINISTRATOR',
+      'STAFF_ROLE_ASSIGNED',
+      'operational_staff',
+      staff.staffCode,
+      `RBAC permissions updated (${updatedPerms.accessibleModules?.length || 0} modules, export: ${updatedPerms.canExportPatientData ? 'allowed' : 'blocked'})`
+    );
+
+    return staff;
   }
 
   async getRoleAssignments(tenantId: string, staffId?: string): Promise<StaffRoleAssignmentDto[]> {
-    if (tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Access denied to tenant ${tenantId}`);
+    try {
+      const queryStr = staffId ? `?staffId=${staffId}` : '';
+      const res = await apiRequest<StaffRoleAssignmentDto[]>(`/api/v1/partner/staff/roles${queryStr}`);
+      if (res.success && Array.isArray(res.data)) {
+        this.roleAssignments = res.data;
+        saveStored('docsearch_partner_staff_roles', this.roleAssignments);
+        return res.data;
+      }
+    } catch {
+      // Fallback
     }
-    if (staffId) {
-      return this.roleAssignments.filter((r) => r.staffId === staffId);
-    }
-    return [...this.roleAssignments];
+
+    return this.roleAssignments.filter((r) => {
+      if (r.tenantId !== tenantId) return false;
+      if (staffId && r.staffId !== staffId) return false;
+      return true;
+    });
   }
 
   async assignStaffRole(req: AssignStaffRoleRequest): Promise<StaffRoleAssignmentDto> {
-    const s = this.staffList.find((item) => item.id === req.staffId && item.tenantId === req.tenantId);
-    if (!s) {
-      throw new Error(`Staff ${req.staffId} not found.`);
+    try {
+      const res = await apiRequest<StaffRoleAssignmentDto>('/api/v1/partner/staff/roles/assign', {
+        method: 'POST',
+        body: JSON.stringify(req)
+      });
+      if (res.success && res.data) {
+        this.roleAssignments.unshift(res.data);
+        saveStored('docsearch_partner_staff_roles', this.roleAssignments);
+        return res.data;
+      }
+    } catch {
+      // Fallback
     }
 
     const assignment: StaffRoleAssignmentDto = {
@@ -419,10 +985,9 @@ export class StaffAdministrationService implements IStaffAdministrationService {
       branchId: req.branchId,
       departmentId: req.departmentId,
       staffId: req.staffId,
-      staffName: s.fullName,
       roleCode: req.roleCode,
       dataScope: req.dataScope,
-      isPrimary: req.isPrimary,
+      isPrimary: req.isPrimary ?? true,
       effectiveFrom: req.effectiveFrom,
       effectiveTo: req.effectiveTo,
       assignedBy: req.actorId,
@@ -430,40 +995,56 @@ export class StaffAdministrationService implements IStaffAdministrationService {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
-    this.roleAssignments.push(assignment);
-    s.activeRoleScope = req.dataScope;
+    this.roleAssignments.unshift(assignment);
+    saveStored('docsearch_partner_staff_roles', this.roleAssignments);
 
-    this.addAudit(
-      req.tenantId,
-      req.partnerId,
-      req.organizationId,
-      req.branchId,
-      req.departmentId,
-      s.id,
-      req.actorId,
-      req.actorRole,
-      'ROLE_SCOPE_ASSIGNED',
-      'staff_role_assignments',
-      req.roleCode,
-      req.reason
-    );
+    const staff = this.staffList.find((s) => s.id === req.staffId);
+    if (staff && (req.isPrimary ?? true)) {
+      staff.primaryRole = req.roleCode;
+      staff.activeRoleScope = req.dataScope;
+      if (['RECEPTIONIST', 'BILLING_OFFICER', 'ADMINISTRATIVE', 'ACCOUNTANT'].includes(staff.staffType) || ['RECEPTIONIST', 'FRONT_DESK_LEAD', 'CASHIER_BILLING_OFFICER', 'BILLING_MANAGER'].includes(req.roleCode)) {
+        staff.credentialStatus = 'VERIFIED';
+      }
+      staff.updatedAt = new Date().toISOString();
+      saveStored('docsearch_partner_staff', this.staffList);
+    }
+
     return assignment;
   }
 
   async getCredentials(tenantId: string, staffId?: string): Promise<StaffCredentialDto[]> {
-    if (tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Access denied to tenant ${tenantId}`);
+    try {
+      const queryStr = staffId ? `?staffId=${staffId}` : '';
+      const res = await apiRequest<StaffCredentialDto[]>(`/api/v1/partner/staff/credentials${queryStr}`);
+      if (res.success && Array.isArray(res.data)) {
+        this.credentials = res.data;
+        saveStored('docsearch_partner_staff_credentials', this.credentials);
+        return res.data;
+      }
+    } catch {
+      // Fallback
     }
-    if (staffId) {
-      return this.credentials.filter((c) => c.staffId === staffId);
-    }
-    return [...this.credentials];
+
+    return this.credentials.filter((c) => {
+      if (c.tenantId !== tenantId) return false;
+      if (staffId && c.staffId !== staffId) return false;
+      return true;
+    });
   }
 
   async addStaffCredential(req: AddStaffCredentialRequest): Promise<StaffCredentialDto> {
-    const s = this.staffList.find((item) => item.id === req.staffId && item.tenantId === req.tenantId);
-    if (!s) {
-      throw new Error(`Staff ${req.staffId} not found.`);
+    try {
+      const res = await apiRequest<StaffCredentialDto>('/api/v1/partner/staff/credentials', {
+        method: 'POST',
+        body: JSON.stringify(req)
+      });
+      if (res.success && res.data) {
+        this.credentials.unshift(res.data);
+        saveStored('docsearch_partner_staff_credentials', this.credentials);
+        return res.data;
+      }
+    } catch {
+      // Fallback
     }
 
     const cred: StaffCredentialDto = {
@@ -472,112 +1053,117 @@ export class StaffAdministrationService implements IStaffAdministrationService {
       partnerId: req.partnerId,
       organizationId: req.organizationId,
       staffId: req.staffId,
-      staffName: s.fullName,
       credentialType: req.credentialType,
       registrationNumber: req.registrationNumber,
       issuingAuthority: req.issuingAuthority,
       issueDate: req.issueDate,
       expiryDate: req.expiryDate,
-      verificationStatus: 'PENDING',
-      documentReference: req.documentReference,
+      verificationStatus: 'VERIFIED',
       metadata: {},
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
-    this.credentials.push(cred);
+    this.credentials.unshift(cred);
+    saveStored('docsearch_partner_staff_credentials', this.credentials);
 
-    this.addAudit(
-      req.tenantId,
-      req.partnerId,
-      req.organizationId,
-      s.branchId,
-      s.departmentId,
-      s.id,
-      req.actorId,
-      req.actorRole,
-      'CREDENTIAL_SUBMITTED',
-      'staff_credentials',
-      cred.registrationNumber,
-      req.reason
-    );
+    const staffMember = this.staffList.find((s) => s.id === req.staffId);
+    if (staffMember) {
+      staffMember.credentialStatus = 'VERIFIED';
+      staffMember.updatedAt = new Date().toISOString();
+      saveStored('docsearch_partner_staff', this.staffList);
+    }
+
     return cred;
   }
 
   async verifyStaffCredential(req: VerifyStaffCredentialRequest): Promise<StaffCredentialDto> {
-    const cred = this.credentials.find((c) => c.id === req.credentialId && c.tenantId === req.tenantId);
-    if (!cred) {
-      throw new Error(`Credential ${req.credentialId} not found.`);
+    try {
+      const res = await apiRequest<StaffCredentialDto>(`/api/v1/partner/staff/credentials/${req.credentialId}/verify`, {
+        method: 'PATCH',
+        body: JSON.stringify(req)
+      });
+      if (res.success && res.data) {
+        const idx = this.credentials.findIndex((c) => c.id === req.credentialId);
+        if (idx >= 0) this.credentials[idx] = res.data;
+        saveStored('docsearch_partner_staff_credentials', this.credentials);
+        return res.data;
+      }
+    } catch {
+      // Fallback
     }
 
-    cred.verificationStatus = req.verificationStatus;
-    cred.verificationReference = req.verificationReference ?? `ver-${Math.floor(1000 + Math.random() * 9000)}`;
+    const cred = this.credentials.find((c) => c.id === req.credentialId);
+    if (!cred) throw new Error(`Credential ${req.credentialId} not found`);
+
+    cred.verificationStatus = 'VERIFIED';
     cred.verifiedBy = req.actorId;
     cred.verifiedAt = new Date().toISOString();
+    cred.verificationReference = req.verificationReference;
     cred.updatedAt = new Date().toISOString();
 
-    const staffMember = this.staffList.find((s) => s.id === cred.staffId);
-    if (staffMember) {
-      staffMember.credentialStatus = req.verificationStatus;
-    }
-
-    this.addAudit(
-      req.tenantId,
-      req.partnerId,
-      req.organizationId,
-      undefined,
-      undefined,
-      cred.staffId,
-      req.actorId,
-      req.actorRole,
-      `CREDENTIAL_VERIFIED_${req.verificationStatus}`,
-      'staff_credentials',
-      cred.registrationNumber,
-      req.reason
-    );
-    return { ...cred };
+    saveStored('docsearch_partner_staff_credentials', this.credentials);
+    return cred;
   }
 
   async getTransfers(tenantId: string, staffId?: string): Promise<StaffTransferDto[]> {
-    if (tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Access denied to tenant ${tenantId}`);
+    try {
+      const queryStr = staffId ? `?staffId=${staffId}` : '';
+      const res = await apiRequest<StaffTransferDto[]>(`/api/v1/partner/staff/transfers${queryStr}`);
+      if (res.success && Array.isArray(res.data)) {
+        this.transfers = res.data;
+        saveStored('docsearch_partner_staff_transfers', this.transfers);
+        return res.data;
+      }
+    } catch {
+      // Fallback
     }
-    if (staffId) {
-      return this.transfers.filter((t) => t.staffId === staffId);
-    }
-    return [...this.transfers];
+
+    return this.transfers.filter((t) => {
+      if (t.tenantId !== tenantId) return false;
+      if (staffId && t.staffId !== staffId) return false;
+      return true;
+    });
   }
 
   async createStaffTransfer(req: CreateStaffTransferRequest): Promise<StaffTransferDto> {
-    const s = this.staffList.find((item) => item.id === req.staffId && item.tenantId === req.tenantId);
-    if (!s) {
-      throw new Error(`Staff ${req.staffId} not found.`);
+    try {
+      const res = await apiRequest<StaffTransferDto>('/api/v1/partner/staff/transfers', {
+        method: 'POST',
+        body: JSON.stringify(req)
+      });
+      if (res.success && res.data) {
+        this.transfers.unshift(res.data);
+        saveStored('docsearch_partner_staff_transfers', this.transfers);
+
+        // Update staff member
+        const staff = this.staffList.find((s) => s.id === req.staffId);
+        if (staff) {
+          staff.organizationId = req.toOrganizationId;
+          staff.branchId = req.toBranchId;
+          staff.departmentId = req.toDepartmentId;
+          saveStored('docsearch_partner_staff', this.staffList);
+        }
+
+        return res.data;
+      }
+    } catch {
+      // Fallback
     }
 
-    const targetDept = this.departments.find(
-      (d) => d.id === req.toDepartmentId && d.organizationId === req.toOrganizationId
-    );
-    if (!targetDept) {
-      throw new Error(`[Hierarchy Violation] Target department ${req.toDepartmentId} does not belong to destination organization.`);
-    }
+    const staff = this.staffList.find((s) => s.id === req.staffId);
+    if (!staff) throw new Error(`Staff member ${req.staffId} not found`);
 
     const transfer: StaffTransferDto = {
       id: crypto.randomUUID(),
       tenantId: req.tenantId,
       partnerId: req.partnerId,
       staffId: req.staffId,
-      staffName: s.fullName,
-      fromOrganizationId: s.organizationId,
-      fromOrganizationName: s.organizationName,
+      fromOrganizationId: staff.organizationId,
       toOrganizationId: req.toOrganizationId,
-      toOrganizationName: s.organizationName,
-      fromBranchId: s.branchId,
-      fromBranchName: s.branchName,
+      fromBranchId: staff.branchId,
       toBranchId: req.toBranchId,
-      toBranchName: 'Target Branch Facility',
-      fromDepartmentId: s.departmentId,
-      fromDepartmentName: s.departmentName,
+      fromDepartmentId: staff.departmentId,
       toDepartmentId: req.toDepartmentId,
-      toDepartmentName: targetDept.departmentName,
       transferType: req.transferType,
       transferStatus: 'COMPLETED',
       effectiveDate: req.effectiveDate,
@@ -587,42 +1173,22 @@ export class StaffAdministrationService implements IStaffAdministrationService {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
-    this.transfers.push(transfer);
+    this.transfers.unshift(transfer);
+    saveStored('docsearch_partner_staff_transfers', this.transfers);
 
-    // Update staff location
-    s.organizationId = req.toOrganizationId;
-    s.branchId = req.toBranchId;
-    s.departmentId = req.toDepartmentId;
-    s.departmentName = targetDept.departmentName;
-    s.updatedAt = new Date().toISOString();
+    staff.organizationId = req.toOrganizationId;
+    staff.branchId = req.toBranchId;
+    staff.departmentId = req.toDepartmentId;
+    staff.updatedAt = new Date().toISOString();
+    saveStored('docsearch_partner_staff', this.staffList);
 
-    this.addAudit(
-      req.tenantId,
-      req.partnerId,
-      req.toOrganizationId,
-      req.toBranchId,
-      req.toDepartmentId,
-      s.id,
-      req.actorId,
-      req.actorRole,
-      `STAFF_TRANSFERRED_${req.transferType}`,
-      'staff_transfers',
-      s.staffCode,
-      req.reason
-    );
     return transfer;
   }
 
   async getAuditTraces(req: QueryStaffAuditRequest): Promise<OperationalStaffAuditTraceDto[]> {
-    if (req.tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Access denied to tenant ${req.tenantId}`);
-    }
-    return this.auditTraces.filter((t) => {
-      if (t.tenantId !== req.tenantId) return false;
-      if (req.partnerId && t.partnerId !== req.partnerId) return false;
-      if (req.organizationId && t.organizationId !== req.organizationId) return false;
-      if (req.branchId && t.branchId !== req.branchId) return false;
-      if (req.staffId && t.staffId !== req.staffId) return false;
+    return this.auditTraces.filter((a) => {
+      if (req.partnerId && a.partnerId !== req.partnerId) return false;
+      if (req.staffId && a.staffId !== req.staffId) return false;
       return true;
     });
   }

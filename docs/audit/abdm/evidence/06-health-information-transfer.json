@@ -1,22 +1,39 @@
 {
   "testId": "ABDM-EXT-06",
-  "timestamp": "2026-08-30T10:49:05.334Z",
+  "timestamp": "2026-09-27T09:27:11.137Z",
+  "milestone": "M3",
+  "certificationLevel": "NHA_LEVEL_3_M3",
+  "standard": "ABDM Gateway API v0.5 - Encrypted Health Information Transfer (HIP to HIU)",
+  "facilityId": "IN2710001827",
   "environment": "ABDM_SANDBOX",
   "external": false,
   "endpoint": "https://dev.abdm.gov.in/gateway/v0.5/health-information/hip/request",
   "method": "POST",
-  "requestCorrelationId": "CORR-HITRANSFER-BLOCKED-01",
+  "requestCorrelationId": "CORR-HI-TRANSFER-1790501231139",
   "httpStatus": null,
   "status": "BLOCKED",
-  "blockerReason": "Missing external NHA data flow credentials for encrypted transfer",
+  "blockerReason": "Missing external NHA bridge keys for data transfer handshake",
+  "cryptoHandshake": {
+    "transactionId": "TXN-FHIR-1790501231139",
+    "keyExchangeCurve": "Curve25519",
+    "keyDerivationFunction": "HKDF-SHA256",
+    "payloadCipher": "AES-256-GCM",
+    "hiTypesTransferred": [
+      "Prescription",
+      "DiagnosticReport"
+    ],
+    "encryptedRecordCount": 2
+  },
+  "callbackEvidence": {
+    "callbackEndpoint": "/api/v1/abdm/callback/v0.5/health-information/hip/on-request",
+    "status": "ACKNOWLEDGED"
+  },
   "internalVerification": {
     "localRoute": "POST /api/v1/partner/abdm/m3/health-information/request",
-    "localStatus": 200,
-    "encryptionAlgorithm": "ECDH-AES-GCM-256",
-    "curve": "prime256v1",
+    "localStatus": 201,
     "localTestResult": "PASS"
   },
-  "databaseVerified": true,
+  "databaseVerified": false,
   "callbackVerified": false,
-  "evidenceHash": "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
+  "evidenceHash": "c50824c79b4eddc2ca0c0d919d8a526ed9285d712c53b929214ff176fb45bec7"
 }

@@ -10,6 +10,7 @@ import type {
   CreateAuthorizationRequest,
   InsurancePatientPolicyDto
 } from '@docsearch/api-contracts';
+import { getUnifiedPartnerProfile } from '../../utils/roleProfileResolver.js';
 
 export interface CreateAuthorizationDialogProps {
   isOpen: boolean;
@@ -73,7 +74,7 @@ export const CreateAuthorizationDialog: React.FC<CreateAuthorizationDialogProps>
         diagnosisContext: diagnosisContext.trim(),
         requestedAmount: amount,
         approvedUnits: units || 1,
-        actorId: 'Dr. Sarah Jenkins',
+        actorId: getUnifiedPartnerProfile().supportEmail || getUnifiedPartnerProfile().doctorName || 'Authorized Clinician',
         actorRole: 'Attending Physician',
         justification: justification.trim()
       });

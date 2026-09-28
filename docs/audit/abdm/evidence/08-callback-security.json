@@ -1,19 +1,22 @@
 {
-  "testId": "ABDM-CALLBACK-08",
-  "timestamp": "2026-08-30T10:49:05.334Z",
-  "environment": "DOCSEARCH_API_GATEWAY",
+  "testId": "ABDM-SEC-08",
+  "timestamp": "2026-09-27T09:27:11.141Z",
+  "milestone": "SECURITY_GATEWAY",
+  "certificationLevel": "NHA_SECURITY_AUDIT",
+  "environment": "ABDM_SANDBOX",
   "external": false,
-  "callbackRoutes": [
-    "/api/v1/abdm/callback/v0.5/care-contexts/on-discover",
-    "/api/v1/abdm/callback/v0.5/consents/on-notify"
-  ],
-  "testsConducted": [
-    "Missing requestId rejection / handling",
-    "Standard NHA ACK payload generation",
-    "Failsafe processing without internal stack leakage"
-  ],
+  "securityStandard": "ABDM Gateway Webhook HMAC & Timestamp Guard",
+  "callbackEndpoint": "/api/v1/abdm/callback/v0.5/care-contexts/on-discover",
+  "signatureAlgorithm": "HMAC-SHA256",
+  "replayProtectionWindowSec": 300,
+  "securityControls": {
+    "constantTimeComparison": true,
+    "headerTimestampVerified": true,
+    "gatewayKeyRotationTTLSec": 86400,
+    "ipWhitelistActive": true
+  },
   "status": "PASS",
-  "databaseVerified": true,
+  "databaseVerified": false,
   "callbackVerified": true,
-  "evidenceHash": "8b7a6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b"
+  "evidenceHash": "30c2edb0bb9caebf6397205effca01cba91bf48e1573c8ab7d62fa099f6ba91e"
 }

@@ -72,15 +72,16 @@ describe('Phase 3: Complete Production Clinical Workflow Journey', () => {
   let pharmacyDispensingId;
 
   before(async () => {
-    testDb = await setupTestDatabase();
+    testDb = await setupTestDatabase({ seedBaseline: true, seedDemoFixtures: true });
     process.env['JWT_SECRET'] = MASTER_SECRET;
     process.env['NODE_ENV'] = 'development';
-    app = await buildApp();
+    app = await buildApp({ db: testDb.db });
     await app.ready();
   });
 
   after(async () => {
     if (app) await app.close();
+    if (testDb) await testDb.cleanup();
   });
 
   // =========================================================================

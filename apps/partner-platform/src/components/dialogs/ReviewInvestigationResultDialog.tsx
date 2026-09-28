@@ -17,6 +17,7 @@ import type {
   InvestigationOrderDto,
   ReviewInvestigationResultRequest
 } from '@docsearch/api-contracts';
+import { getUnifiedPartnerProfile } from '../../utils/roleProfileResolver.js';
 
 export interface ReviewInvestigationResultDialogProps {
   isOpen: boolean;
@@ -33,8 +34,9 @@ export const ReviewInvestigationResultDialog: React.FC<ReviewInvestigationResult
   order,
   tenantId
 }) => {
+  const partnerProfile = getUnifiedPartnerProfile();
   const [reviewingDoctor, setReviewingDoctor] = useState(
-    order?.orderingDoctorName || 'Dr. Sarah Jenkins, MD'
+    order?.orderingDoctorName || (partnerProfile.doctorName ? `${partnerProfile.doctorName}, ${partnerProfile.doctorDegree || 'MD'}` : 'Attending Reviewing Physician')
   );
   const [doctorReviewNotes, setDoctorReviewNotes] = useState('');
   const [justification, setJustification] = useState('Attending physician acknowledged and reviewed diagnostic findings.');

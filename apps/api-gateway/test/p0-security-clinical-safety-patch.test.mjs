@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { buildApp } from '../dist/app.js';
 import { signJwt } from '@docsearch/auth';
 import { setupTestDatabase, TEST_SEEDS } from '@docsearch/database';
+import { clearIdempotencyStore } from '../dist/plugins/idempotency.js';
 
 describe('P0 SECURITY + CLINICAL SAFETY PATCH TEST SUITE', () => {
   let app;
@@ -389,6 +390,10 @@ describe('P0 SECURITY + CLINICAL SAFETY PATCH TEST SUITE', () => {
   // P0-001: IDEMPOTENCY ISOLATION
   // ===========================================================================
   describe('P0-001: Idempotency Isolation', () => {
+    before(() => {
+      clearIdempotencyStore();
+    });
+
     const sharedIdempotencyKey = 'idemp-p0-test-shared-key-12345';
     const ddiPayload = {
       patientMrn: 'MRN-P0-001',

@@ -41,6 +41,36 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     }
   }, [theme, storageKey]);
 
+  // Universal Click Ripple Engine
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handlePointerDown = (e: MouseEvent) => {
+      const target = (e.target as HTMLElement)?.closest(
+        '.ds-spotlight-card, .ds-card, [class*="Card"], [data-card="true"], .ds-interactive, button'
+      ) as HTMLElement | null;
+
+      if (target) {
+        const rect = target.getBoundingClientRect();
+        const ripple = document.createElement('span');
+        ripple.className = 'ds-click-ripple';
+        ripple.style.left = `${e.clientX - rect.left}px`;
+        ripple.style.top = `${e.clientY - rect.top}px`;
+        target.appendChild(ripple);
+
+        setTimeout(() => {
+          ripple.remove();
+        }, 650);
+      }
+    };
+
+    window.addEventListener('pointerdown', handlePointerDown, { passive: true });
+
+    return () => {
+      window.removeEventListener('pointerdown', handlePointerDown);
+    };
+  }, []);
+
   const setTheme = (newTheme: ThemeMode) => {
     setThemeState(newTheme);
   };
@@ -49,12 +79,19 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     setThemeState((prev) => {
       const themeList: ThemeMode[] = [
         themes.ADVANCE_PRO,
+        themes.OBSIDIAN_TITANIUM,
+        themes.IMPERIAL_GOLD,
+        themes.QUANTUM_BIOLUM,
+        themes.TOKYO_CYBERPUNK,
+        themes.SOLAR_AMBER,
+        themes.SWISS_CLINICAL,
         themes.AURORA_GLOW,
         themes.NORDIC_PURE,
         themes.OCEANIC_NAVY,
         themes.AYUR_WELLNESS,
         themes.CYBER_SURGEON,
         themes.ROSE_CARE,
+        themes.HEALTHCARE_LIGHT,
         themes.BLACK_WHITE
       ];
       const currentIndex = themeList.indexOf(prev);

@@ -251,13 +251,12 @@ export const EnterpriseSecurityAuditStudio: React.FC = () => {
               </div>
             </div>
 
-            <Button
-              type="button"
-              variant="primary"
+            <Button type="button"
+              variant="danger"
               size="md"
               disabled={isExecutingOverride}
               onClick={handleExecuteBreakGlass}
-              style={{ backgroundColor: '#EF4444', borderColor: '#EF4444', color: '#FFF', fontWeight: 900 }}
+              
             >
               {isExecutingOverride ? '⚡ Authorizing Cryptographic Break-Glass Override...' : '🚨 Authorize Immediate Emergency Break-Glass Access'}
             </Button>
@@ -321,7 +320,7 @@ export const EnterpriseSecurityAuditStudio: React.FC = () => {
                     {t.actionTaken}
                   </span>
                   {!t.quarantined && (
-                    <Button type="button" variant="primary" size="sm" onClick={() => handleQuarantineThreat(t.id)} style={{ backgroundColor: '#EF4444', borderColor: '#EF4444', color: '#FFF', fontWeight: 800 }}>
+                    <Button type="button" variant="danger" size="sm" onClick={() => handleQuarantineThreat(t.id)}>
                       ⚡ Quarantine Session
                     </Button>
                   )}
@@ -361,8 +360,31 @@ export const EnterpriseSecurityAuditStudio: React.FC = () => {
                     <td style={{ padding: '8px 10px', color: '#F8FAFC', fontWeight: 700 }}>{b.eventType}</td>
                     <td style={{ padding: '8px 10px', color: '#94A3B8' }}>{b.actor}</td>
                     <td style={{ padding: '8px 10px', color: '#CBD5E1' }}>{b.resource}</td>
-                    <td style={{ padding: '8px 10px', fontFamily: 'monospace', color: '#A78BFA', fontSize: '0.6875rem' }}>
-                      {b.currentHash.substring(0, 18)}...{b.currentHash.substring(56)}
+                    <td style={{ padding: '8px 10px', whiteSpace: 'nowrap' }}>
+                      <span
+                        title={`Click to copy SHA-256: ${b.currentHash}`}
+                        onClick={() => {
+                          if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                            navigator.clipboard.writeText(b.currentHash);
+                          }
+                        }}
+                        style={{
+                          fontFamily: 'monospace',
+                          color: '#A78BFA',
+                          fontSize: '0.6875rem',
+                          backgroundColor: 'rgba(167, 139, 250, 0.12)',
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          border: '1px solid rgba(167, 139, 250, 0.25)',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        <span>{b.currentHash.substring(0, 8)}...{b.currentHash.substring(58)}</span>
+                        <span style={{ fontSize: '0.625rem', opacity: 0.7 }}>📋</span>
+                      </span>
                     </td>
                     <td style={{ padding: '8px 10px' }}>
                       <span style={{ color: '#10B981', fontWeight: 800 }}>✓ VALID</span>

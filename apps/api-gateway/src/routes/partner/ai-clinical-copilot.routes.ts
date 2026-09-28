@@ -9,13 +9,31 @@ const service = new AiClinicalCopilotService();
 
 const CLINICIAN_ROLES = [
   'DOCTOR',
+  'CLINIC_DOCTOR',
   'ATTENDING_PHYSICIAN',
+  'ATTENDING_DOCTOR',
   'PHYSICIAN',
   'CONSULTANT',
+  'CONSULTANT_PHYSICIAN',
+  'SURGEON',
   'CARDIOLOGIST',
   'CARDIOLOGY_HOD',
-  'SURGEON',
+  'PEDIATRICIAN',
+  'GYNECOLOGIST',
+  'ORTHOPEDIC_SURGEON',
+  'NEPHROLOGIST',
+  'ONCOLOGIST',
+  'NEUROLOGIST',
+  'OPHTHALMOLOGIST',
+  'DENTIST',
+  'AYURVEDIC_VAIDYA',
+  'PULMONOLOGIST',
+  'PSYCHIATRIST',
+  'DERMATOLOGIST',
+  'EMERGENCY_PHYSICIAN',
   'CHIEF_MEDICAL_OFFICER',
+  'CLINICAL_DIRECTOR',
+  'HOSPITAL_DIRECTOR',
   'SUPER_ADMIN'
 ];
 
@@ -53,10 +71,10 @@ export const aiClinicalCopilotRoutes: FastifyPluginAsync = async (app) => {
     }
   );
 
-  // 2. Ambient AI Scribe & SOAP Generation
+  // 2. Ambient AI Scribe & SOAP Generation (Strict Clinician Role Enforced)
   app.post(
     '/api/v1/partner/ai-copilot/ambient-scribe/soap',
-    { preHandler: copilotGuard },
+    { preHandler: [...copilotGuard, requireClinicianOrPermission('ai_copilot:soap:generate')] },
     async (request, reply) => {
       const payload = (request.body || {}) as Record<string, unknown>;
       const data = await service.generateSoapNoteFromTranscript(request.session, payload);
@@ -66,7 +84,7 @@ export const aiClinicalCopilotRoutes: FastifyPluginAsync = async (app) => {
 
   app.get(
     '/api/v1/partner/ai-copilot/ambient-scribe/soap',
-    { preHandler: copilotGuard },
+    { preHandler: [...copilotGuard, requireClinicianOrPermission('ai_copilot:soap:read')] },
     async (request, reply) => {
       const data = await service.getSoapNotes(request.session);
       return reply.send({ success: true, data });
@@ -183,6 +201,51 @@ export const aiClinicalCopilotRoutes: FastifyPluginAsync = async (app) => {
     async (request, reply) => {
       const data = await service.getAuditTraces(request.session);
       return reply.send({ success: true, data });
+    }
+  );
+
+  // 7. Route Aliases & Resilience for Partner Platform
+  app.get(
+    '/api/v1/partner/ai-copilot/ambient/transcripts',
+    { preHandler: copilotGuard },
+    async (request, reply) => {
+      const data = await service.getSoapNotes(request.session);
+      return reply.send({ success: true, data });
+    }
+  );
+
+  app.get(
+    '/api/v1/partner/ai-copilot/ddi/assessments',
+    { preHandler: copilotGuard },
+    async (request, reply) => {
+      const data = await service.getDdiChecks(request.session);
+      return reply.send({ success: true, data });
+    }
+  );
+
+  app.get(
+    '/api/v1/partner/ai-copilot/panic/alerts',
+    { preHandler: copilotGuard },
+    async (request, reply) => {
+      const data = await service.getPanicAlerts(request.session);
+      return reply.send({ success: true, data });
+    }
+  );
+
+  app.get(
+    '/api/v1/partner/ai-copilot/audit/traces',
+    { preHandler: copilotGuard },
+    async (request, reply) => {
+      const data = await service.getAuditTraces(request.session);
+      return reply.send({ success: true, data });
+    }
+  );
+
+  app.get(
+    '/api/v1/partner/ai-copilot/renal/adjustments',
+    { preHandler: copilotGuard },
+    async (_request, reply) => {
+      return reply.send({ success: true, data: [] });
     }
   );
 };

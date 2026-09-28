@@ -1,3 +1,4 @@
+import { isMockFallbackAllowed } from './api-client.js';
 import type {
   InsurancePayerDto,
   InsurancePlanDto,
@@ -112,20 +113,20 @@ export interface IInsuranceClaimsManagementService {
 }
 
 export class InsuranceClaimsManagementService implements IInsuranceClaimsManagementService {
-  private payers: InsurancePayerDto[] = [...MOCK_INSURANCE_PAYERS];
-  private plans: InsurancePlanDto[] = [...MOCK_INSURANCE_PLANS];
-  private policies: InsurancePatientPolicyDto[] = [...MOCK_PATIENT_POLICIES];
-  private eligibilityChecks: InsuranceEligibilityCheckDto[] = [...MOCK_ELIGIBILITY_CHECKS];
-  private authorizations: InsuranceAuthorizationDto[] = [...MOCK_AUTHORIZATIONS];
-  private claims: InsuranceClaimDto[] = [...MOCK_CLAIMS];
-  private submissions: InsuranceClaimSubmissionDto[] = [...MOCK_CLAIM_SUBMISSIONS];
-  private adjudications: InsuranceClaimAdjudicationDto[] = [...MOCK_CLAIM_ADJUDICATIONS];
-  private denials: InsuranceClaimDenialDto[] = [...MOCK_CLAIM_DENIALS];
-  private appeals: InsuranceClaimAppealDto[] = [...MOCK_CLAIM_APPEALS];
-  private settlements: InsuranceSettlementDto[] = [...MOCK_SETTLEMENTS];
-  private reconciliations: InsuranceReconciliationDto[] = [...MOCK_RECONCILIATIONS];
-  private documents: InsuranceDocumentRecordDto[] = [...MOCK_INSURANCE_DOCUMENTS];
-  private auditTraces: InsuranceAuditTraceDto[] = [...MOCK_INSURANCE_AUDIT_TRACES];
+  private payers: InsurancePayerDto[] = isMockFallbackAllowed() ? [...MOCK_INSURANCE_PAYERS] : [];
+  private plans: InsurancePlanDto[] = isMockFallbackAllowed() ? [...MOCK_INSURANCE_PLANS] : [];
+  private policies: InsurancePatientPolicyDto[] = isMockFallbackAllowed() ? [...MOCK_PATIENT_POLICIES] : [];
+  private eligibilityChecks: InsuranceEligibilityCheckDto[] = isMockFallbackAllowed() ? [...MOCK_ELIGIBILITY_CHECKS] : [];
+  private authorizations: InsuranceAuthorizationDto[] = isMockFallbackAllowed() ? [...MOCK_AUTHORIZATIONS] : [];
+  private claims: InsuranceClaimDto[] = isMockFallbackAllowed() ? [...MOCK_CLAIMS] : [];
+  private submissions: InsuranceClaimSubmissionDto[] = isMockFallbackAllowed() ? [...MOCK_CLAIM_SUBMISSIONS] : [];
+  private adjudications: InsuranceClaimAdjudicationDto[] = isMockFallbackAllowed() ? [...MOCK_CLAIM_ADJUDICATIONS] : [];
+  private denials: InsuranceClaimDenialDto[] = isMockFallbackAllowed() ? [...MOCK_CLAIM_DENIALS] : [];
+  private appeals: InsuranceClaimAppealDto[] = isMockFallbackAllowed() ? [...MOCK_CLAIM_APPEALS] : [];
+  private settlements: InsuranceSettlementDto[] = isMockFallbackAllowed() ? [...MOCK_SETTLEMENTS] : [];
+  private reconciliations: InsuranceReconciliationDto[] = isMockFallbackAllowed() ? [...MOCK_RECONCILIATIONS] : [];
+  private documents: InsuranceDocumentRecordDto[] = isMockFallbackAllowed() ? [...MOCK_INSURANCE_DOCUMENTS] : [];
+  private auditTraces: InsuranceAuditTraceDto[] = isMockFallbackAllowed() ? [...MOCK_INSURANCE_AUDIT_TRACES] : [];
 
   private recordAudit(
     tenantId: string,
@@ -1157,6 +1158,27 @@ export class InsuranceClaimsManagementService implements IInsuranceClaimsManagem
     const outstandingReceivables = claims.filter((c) => c.status === 'APPROVED').reduce((sum, c) => sum + c.approvedAmount, 0);
     const totalVolume = claims.reduce((sum, c) => sum + c.totalClaimAmount, 0);
 
+    if (!isMockFallbackAllowed()) {
+      return {
+        activeInsuredPatients: activePatients,
+        eligibilityChecksToday: checksToday,
+        authorizationsPending: pendingAuths,
+        claimsReadyForSubmission: readyClaims,
+        claimsSubmitted: submittedClaims,
+        claimsInAdjudication: inAdjudication,
+        claimsApproved: approvedClaims,
+        claimsDenied: deniedClaims,
+        activeAppealsCount: activeAppeals,
+        outstandingPayerReceivables: outstandingReceivables,
+        settlementPendingAmount: 0.00,
+        reconciliationVarianceAmount: 0.00,
+        denialRatePercentage: claims.length > 0 ? parseFloat(((deniedClaims / claims.length) * 100).toFixed(1)) : 0.0,
+        approvalRatePercentage: claims.length > 0 ? parseFloat(((approvedClaims / claims.length) * 100).toFixed(1)) : 0.0,
+        avgAdjudicationDays: 0.0,
+        totalPayerVolumeUSD: totalVolume
+      };
+    }
+
     return {
       activeInsuredPatients: activePatients || MOCK_INSURANCE_OVERVIEW_METRICS.activeInsuredPatients,
       eligibilityChecksToday: checksToday || MOCK_INSURANCE_OVERVIEW_METRICS.eligibilityChecksToday,
@@ -1178,8 +1200,10 @@ export class InsuranceClaimsManagementService implements IInsuranceClaimsManagem
   }
 
   async getPatientInsuranceHistory(tenantId: string, patientId: string): Promise<PatientInsuranceHistoryDto | null> {
-    const history = MOCK_PATIENT_INSURANCE_HISTORIES[patientId];
-    if (history) return history;
+    if (isMockFallbackAllowed()) {
+      const history = MOCK_PATIENT_INSURANCE_HISTORIES[patientId];
+      if (history) return history;
+    }
 
     const patientPolicies = this.policies.filter((p) => p.tenantId === tenantId && p.patientId === patientId);
     const patientChecks = this.eligibilityChecks.filter((e) => e.tenantId === tenantId && e.patientId === patientId);
@@ -1196,7 +1220,7 @@ export class InsuranceClaimsManagementService implements IInsuranceClaimsManagem
     return {
       patientId,
       patientName: patientPolicies[0]?.patientName || 'Patient',
-      patientMrn: patientPolicies[0]?.patientMrn || 'MRN-SAMPLE',
+      patientMrn: patientPolicies[0]?.patientMrn || 'MRN-2026-00001',
       activePolicies: patientPolicies,
       eligibilityChecks: patientChecks,
       authorizations: patientAuths,
@@ -1209,6 +1233,14 @@ export class InsuranceClaimsManagementService implements IInsuranceClaimsManagem
   }
 
   async getReports(_tenantId: string): Promise<InsuranceReportsDto> {
+    if (!isMockFallbackAllowed()) {
+      return {
+        dailySubmissionVolume: [],
+        payerPerformanceSummary: [],
+        denialReasonDistribution: [],
+        agingSummary: { current: 0, days31To60: 0, days61To90: 0, days90Plus: 0 }
+      } as any;
+    }
     return MOCK_INSURANCE_REPORTS;
   }
 

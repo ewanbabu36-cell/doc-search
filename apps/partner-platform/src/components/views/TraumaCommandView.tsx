@@ -7,9 +7,10 @@ interface Props {
   encounters: EmergencyEncounterDto[];
   onActivateTrauma: (enc: EmergencyEncounterDto) => void;
   onRecordSecondary: (trauma: TraumaActivationDto) => void;
+  onSelectTrauma?: (trauma: TraumaActivationDto) => void;
 }
 
-export const TraumaCommandView: React.FC<Props> = ({ traumas, encounters, onActivateTrauma, onRecordSecondary }) => {
+export const TraumaCommandView: React.FC<Props> = ({ traumas, encounters, onActivateTrauma, onRecordSecondary, onSelectTrauma }) => {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-red-900 text-white p-6 rounded-xl">
@@ -51,7 +52,20 @@ export const TraumaCommandView: React.FC<Props> = ({ traumas, encounters, onActi
           <tbody className="divide-y text-sm">
             {traumas.map(t => (
               <tr key={t.id}>
-                <td className="py-2 font-bold text-red-700">{t.activationNumber}</td>
+                <td className="py-2 font-bold text-red-700">
+                  {onSelectTrauma ? (
+                    <button
+                      type="button"
+                      onClick={() => onSelectTrauma(t)}
+                      className="text-red-700 hover:text-red-900 underline font-bold"
+                      title="Open Trauma Patient Resuscitation Dossier"
+                    >
+                      {t.activationNumber}
+                    </button>
+                  ) : (
+                    t.activationNumber
+                  )}
+                </td>
                 <td className="py-2">{t.patientName}</td>
                 <td className="py-2"><Badge variant="danger">{t.activationLevel}</Badge></td>
                 <td className="py-2 text-xs text-gray-600 truncate max-w-[200px]">{t.mechanismOfInjury}</td>
@@ -60,8 +74,11 @@ export const TraumaCommandView: React.FC<Props> = ({ traumas, encounters, onActi
                   {t.massiveTransfusionActivated && <Badge variant="danger">MTP</Badge>}
                   {t.fastScanPositive && <Badge variant="warning">FAST+</Badge>}
                 </td>
-                <td className="py-2 text-right">
+                <td className="py-2 text-right space-x-1">
                   <Button variant="outline" onClick={() => onRecordSecondary(t)}>Secondary Survey</Button>
+                  {onSelectTrauma && (
+                    <Button variant="outline" onClick={() => onSelectTrauma(t)}>View</Button>
+                  )}
                 </td>
               </tr>
             ))}

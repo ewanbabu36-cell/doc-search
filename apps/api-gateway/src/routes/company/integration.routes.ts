@@ -119,6 +119,8 @@ export const integrationRoutes: FastifyPluginAsync = async (fastify) => {
           deliveryState,
           latencyMs,
           hmacSignature: `sha256=${hmacSignature}`,
+          computedSignature: `sha256=${hmacSignature}`,
+          signature: `sha256=${hmacSignature}`,
           dispatchedPayload: payload,
           dispatchedAt: new Date().toISOString(),
           responseSnippet: responseBody.substring(0, 200)

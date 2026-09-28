@@ -45,7 +45,7 @@ export type PartnerOnboardingStep = z.infer<typeof PartnerOnboardingStepSchema>;
 export const PartnerContactSchema = z.object({
   name: z.string().min(1),
   email: z.string().email(),
-  phone: z.string().optional(),
+  phone: z.string().regex(/^(\+91[\-\s]?)?[6-9]\d{9}$/, 'Must be a valid 10-digit Indian mobile number').optional(),
   roleTitle: z.string().optional()
 });
 

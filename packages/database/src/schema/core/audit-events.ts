@@ -1,15 +1,13 @@
 import { uuid, varchar, timestamp, jsonb, index } from 'drizzle-orm/pg-core';
 import { coreSchema, tenants } from './tenants.js';
-import { branches } from './branches.js';
-import { users } from './users.js';
 
 export const auditEvents = coreSchema.table(
   'audit_events',
   {
     id: uuid('id').primaryKey().defaultRandom(),
     tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'set null' }),
-    branchId: uuid('branch_id').references(() => branches.id, { onDelete: 'set null' }),
-    actorId: uuid('actor_id').references(() => users.id, { onDelete: 'set null' }),
+    branchId: uuid('branch_id'),
+    actorId: uuid('actor_id'),
     eventType: varchar('event_type', { length: 100 }).notNull(),
     resourceType: varchar('resource_type', { length: 100 }).notNull(),
     resourceId: varchar('resource_id', { length: 255 }),

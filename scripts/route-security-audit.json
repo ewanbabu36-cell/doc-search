@@ -1,0 +1,3386 @@
+{
+  "totalRoutes": 665,
+  "publicRoutes": [
+    {
+      "method": "POST",
+      "url": "/api/v1/auth/login",
+      "file": "auth.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/auth/quick-session",
+      "file": "auth.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/auth/refresh",
+      "file": "auth.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/auth/partner-status",
+      "file": "auth.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/auth/register-partner-user",
+      "file": "auth.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/auth/registration-form-config",
+      "file": "auth.routes.ts"
+    },
+    {
+      "method": "PUT",
+      "url": "/api/v1/auth/registration-form-config",
+      "file": "auth.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/auth/launch-offer",
+      "file": "auth.routes.ts"
+    },
+    {
+      "method": "PUT",
+      "url": "/api/v1/auth/launch-offer",
+      "file": "auth.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/integration/webhooks/dispatch-test",
+      "file": "company/integration.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/license/machine-fingerprint",
+      "file": "company/license-governance.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/partners/reset-password",
+      "file": "company/partner.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/billing/webhooks/razorpay",
+      "file": "partner/billing-webhook.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/billing/webhooks/payu",
+      "file": "partner/billing-webhook.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/lab/verify-report/:token",
+      "file": "partner/lab-diagnostics.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/security/scope/register-patient",
+      "file": "security/identity-security-foundation.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/security/scope/register-encounter",
+      "file": "security/identity-security-foundation.routes.ts"
+    }
+  ],
+  "authenticatedWithRbac": [
+    {
+      "method": "POST",
+      "url": "/api/v1/auth/logout",
+      "file": "auth.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/auth/me",
+      "file": "auth.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/auth/upgrade-plan",
+      "file": "auth.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/auth/registration-form-config/reset",
+      "file": "auth.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/auth/launch-offer/reset",
+      "file": "auth.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/auth/self-registered-partners",
+      "file": "auth.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/auth/verification-queue",
+      "file": "auth.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/auth/verification-queue/:id",
+      "file": "auth.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/auth/verification-queue/:id/timeline",
+      "file": "auth.routes.ts"
+    },
+    {
+      "method": "DELETE",
+      "url": "/api/v1/auth/verification-queue/:id",
+      "file": "auth.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/auth/verification-queue/:id/assign",
+      "file": "auth.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/auth/verification-queue/:id/request-information",
+      "file": "auth.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/auth/verification-queue/:id/resubmit",
+      "file": "auth.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/auth/verification-queue/:id/approve",
+      "file": "auth.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/auth/verification-queue/:id/reject",
+      "file": "auth.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/auth/verification-queue/approve",
+      "file": "auth.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/auth/verification-queue/reject",
+      "file": "auth.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/auth/verification-queue/:id/refund",
+      "file": "auth.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/auth/staged-amendments",
+      "file": "auth.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/auth/demo-request",
+      "file": "auth.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/auth/demo-requests",
+      "file": "auth.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/ai/models",
+      "file": "company/ai-governance.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/ai/models/:id",
+      "file": "company/ai-governance.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/company/ai/models/:id",
+      "file": "company/ai-governance.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/ai/policies",
+      "file": "company/ai-governance.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/ai/policies/:id",
+      "file": "company/ai-governance.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/ai/policies/:id/transition",
+      "file": "company/ai-governance.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/ai/prompts",
+      "file": "company/ai-governance.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/ai/prompts/:id",
+      "file": "company/ai-governance.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/ai/prompts/:id/versions",
+      "file": "company/ai-governance.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/ai/prompts/versions/approve",
+      "file": "company/ai-governance.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/ai/quotas",
+      "file": "company/ai-governance.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/ai/usage-records",
+      "file": "company/ai-governance.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/ai/audit",
+      "file": "company/ai-governance.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/ai/safety-events",
+      "file": "company/ai-governance.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/ai/safety-events/acknowledge",
+      "file": "company/ai-governance.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/ai/safety-events/resolve",
+      "file": "company/ai-governance.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/analytics/reports",
+      "file": "company/analytics.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/analytics/saved-reports",
+      "file": "company/analytics.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/analytics/insights",
+      "file": "company/analytics.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/analytics/usage-metrics",
+      "file": "company/analytics.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/analytics/cross-tenant-aggregates",
+      "file": "company/analytics.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/analytics/api-telemetry",
+      "file": "company/analytics.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/commercial/calculate-order",
+      "file": "company/commercial.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/commercial/create-checkout-order",
+      "file": "company/commercial.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/commercial/hq/partner/:id",
+      "file": "company/commercial.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/communication/content",
+      "file": "company/communication.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/communication/items",
+      "file": "company/communication.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/communication/templates",
+      "file": "company/communication.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/communication/items/:id",
+      "file": "company/communication.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/communication/items/:id/transition",
+      "file": "company/communication.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/communication/dispatches",
+      "file": "company/communication.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/communication/dispatch",
+      "file": "company/communication.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/admin/internal-employees",
+      "file": "company/company-admin.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/admin/internal-employees",
+      "file": "company/company-admin.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/company/admin/internal-employees/:id/status",
+      "file": "company/company-admin.routes.ts"
+    },
+    {
+      "method": "DELETE",
+      "url": "/api/v1/company/admin/internal-employees/:id",
+      "file": "company/company-admin.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/admin/legal-entities",
+      "file": "company/company-admin.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/admin/legal-entities",
+      "file": "company/company-admin.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/admin/departments",
+      "file": "company/company-admin.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/admin/departments",
+      "file": "company/company-admin.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/admin/designations",
+      "file": "company/company-admin.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/admin/designations",
+      "file": "company/company-admin.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/admin/policies",
+      "file": "company/company-admin.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/admin/compliance-officers",
+      "file": "company/company-admin.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/admin/board-members",
+      "file": "company/company-admin.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/admin/governance-events",
+      "file": "company/company-admin.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/admin/audit-traces",
+      "file": "company/company-admin.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/compliance/frameworks",
+      "file": "company/compliance.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/compliance/controls",
+      "file": "company/compliance.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/executive/overview",
+      "file": "company/executive.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/executive/operations",
+      "file": "company/executive.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/executive/operations/acknowledge-emergency",
+      "file": "company/executive.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/executive/operations/verify-doctor",
+      "file": "company/executive.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/executive/operations/process-payouts",
+      "file": "company/executive.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/infrastructure/clusters",
+      "file": "company/infrastructure.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/infrastructure/databases",
+      "file": "company/infrastructure.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/infrastructure/dr",
+      "file": "company/infrastructure.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/integration/providers",
+      "file": "company/integration.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/integration/endpoints",
+      "file": "company/integration.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/integration/webhooks",
+      "file": "company/integration.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/license/activate",
+      "file": "company/license-governance.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/license/generate",
+      "file": "company/license-governance.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/master-foundation/catalog",
+      "file": "company/partner-access-control.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/master-foundation/effective-context",
+      "file": "company/partner-access-control.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/partners/:partnerId/master-foundation/configure",
+      "file": "company/partner-access-control.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/partners/:partnerId/configuration/versions/:versionNumber/publish",
+      "file": "company/partner-access-control.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/templates",
+      "file": "company/partner-access-control.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/templates/:templateId",
+      "file": "company/partner-access-control.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/templates/:templateId/versions",
+      "file": "company/partner-access-control.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/templates/:templateId/apply/:partnerId",
+      "file": "company/partner-access-control.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/partners/:partnerId/save-as-template",
+      "file": "company/partner-access-control.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/capabilities",
+      "file": "company/partner-access-control.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/partners/:partnerId/capabilities",
+      "file": "company/partner-access-control.routes.ts"
+    },
+    {
+      "method": "PUT",
+      "url": "/api/v1/company/partners/:partnerId/capabilities",
+      "file": "company/partner-access-control.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/partners/:partnerId/capabilities",
+      "file": "company/partner-access-control.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/partners/:partnerId/roles",
+      "file": "company/partner-access-control.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/partners/:partnerId/policies",
+      "file": "company/partner-access-control.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/partners/:partnerId/policies",
+      "file": "company/partner-access-control.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/partners/:partnerId/effective-access",
+      "file": "company/partner-access-control.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/access/simulate",
+      "file": "company/partner-access-control.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/partners/:partnerId/configuration/history",
+      "file": "company/partner-access-control.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/partners/:partnerId/configuration/diff",
+      "file": "company/partner-access-control.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/partners/:partnerId/configuration/rollback",
+      "file": "company/partner-access-control.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/break-glass",
+      "file": "company/partner-access-control.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/partners",
+      "file": "company/partner.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/partners/directory-intelligence",
+      "file": "company/partner.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/partners/analytics",
+      "file": "company/partner.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/partners/directory",
+      "file": "company/partner.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/partners/:partnerId/360",
+      "file": "company/partner.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/partners/:partnerId",
+      "file": "company/partner.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/partners/:partnerId/commercial",
+      "file": "company/partner.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/partners",
+      "file": "company/partner.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/company/partners/:partnerId",
+      "file": "company/partner.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/company/partners/:partnerId/status",
+      "file": "company/partner.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/partners/:partnerId/entitlements",
+      "file": "company/partner.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/partners/:partnerId/branches",
+      "file": "company/partner.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/partners/:partnerId/branches",
+      "file": "company/partner.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/company/partners/:partnerId/branches/:branchId",
+      "file": "company/partner.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/partners/:partnerId/doctors",
+      "file": "company/partner.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/partners/:partnerId/staff",
+      "file": "company/partner.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/partners/:partnerId/staff",
+      "file": "company/partner.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/company/partners/:partnerId/staff/:staffId/status",
+      "file": "company/partner.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/partner-classifications",
+      "file": "company/partner.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/partner-classifications",
+      "file": "company/partner.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/partners/complete-onboarding-activation",
+      "file": "company/partner.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/partners/live-directory",
+      "file": "company/partner.routes.ts"
+    },
+    {
+      "method": "DELETE",
+      "url": "/api/v1/company/partners/:partnerId",
+      "file": "company/partner.routes.ts"
+    },
+    {
+      "method": "DELETE",
+      "url": "/api/v1/company/partners/staged/:partnerId",
+      "file": "company/partner.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/partners/reset-directory",
+      "file": "company/partner.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/partners/clear-tombstones",
+      "file": "company/partner.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/partners/:partnerId/governance",
+      "file": "company/partner.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/company/partners/:partnerId/governance/modules",
+      "file": "company/partner.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/company/partners/:partnerId/governance/staff/:userId",
+      "file": "company/partner.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/partners/:partnerId/governance/kill-switch",
+      "file": "company/partner.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/company/partners/:partnerId/governance/quotas",
+      "file": "company/partner.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/partners/:partnerId/departments",
+      "file": "company/partner.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/partners/:partnerId/departments",
+      "file": "company/partner.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/company/partners/:partnerId/departments/:departmentId",
+      "file": "company/partner.routes.ts"
+    },
+    {
+      "method": "DELETE",
+      "url": "/api/v1/company/partners/:partnerId/departments/:departmentId",
+      "file": "company/partner.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/platform/projects",
+      "file": "company/platform-engineering.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/platform/environments",
+      "file": "company/platform-engineering.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/platform/deployments",
+      "file": "company/platform-engineering.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/products",
+      "file": "company/product.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/products/:productId",
+      "file": "company/product.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/products",
+      "file": "company/product.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/plans",
+      "file": "company/product.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/plans/:planId",
+      "file": "company/product.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/plans",
+      "file": "company/product.routes.ts"
+    },
+    {
+      "method": "PUT",
+      "url": "/api/v1/company/plans/:planId",
+      "file": "company/product.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/company/plans/:planId/status",
+      "file": "company/product.routes.ts"
+    },
+    {
+      "method": "DELETE",
+      "url": "/api/v1/company/plans/:planId",
+      "file": "company/product.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/plans/:planId/entitlements",
+      "file": "company/product.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/plans/:planId/entitlements",
+      "file": "company/product.routes.ts"
+    },
+    {
+      "method": "DELETE",
+      "url": "/api/v1/company/plans/:planId/entitlements/:featureId",
+      "file": "company/product.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/features",
+      "file": "company/product.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/partner-assignments",
+      "file": "company/product.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/features",
+      "file": "company/product.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/sales/leads",
+      "file": "company/sales-marketing.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/sales/opportunities",
+      "file": "company/sales-marketing.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/sales/leads",
+      "file": "company/sales-marketing.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/company/sales/leads/:id/stage",
+      "file": "company/sales-marketing.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/sales/leads/:id/check-duplicate",
+      "file": "company/sales-marketing.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/sales/leads/:id/convert",
+      "file": "company/sales-marketing.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/marketing/campaigns",
+      "file": "company/sales-marketing.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/security/roles",
+      "file": "company/security-admin.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/security/permissions",
+      "file": "company/security-admin.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/security/policies",
+      "file": "company/security-admin.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/subscriptions/tenure-options",
+      "file": "company/subscription.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/subscriptions/negotiate-deal",
+      "file": "company/subscription.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/subscriptions",
+      "file": "company/subscription.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/subscriptions/:id",
+      "file": "company/subscription.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/subscriptions/:id/renew",
+      "file": "company/subscription.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/subscriptions/:id/change-plan",
+      "file": "company/subscription.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/subscriptions/:id/cancel",
+      "file": "company/subscription.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/subscriptions/reconcile-expiries",
+      "file": "company/subscription.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/licenses",
+      "file": "company/subscription.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/licenses/:id",
+      "file": "company/subscription.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/licenses/:id/verify",
+      "file": "company/subscription.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/subscriptions/:id/suspend",
+      "file": "company/subscription.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/subscriptions/:id/reactivate",
+      "file": "company/subscription.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/licenses/:id/revoke",
+      "file": "company/subscription.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/licenses/:id/reactivate",
+      "file": "company/subscription.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/licenses/:id/renew",
+      "file": "company/subscription.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/company/licenses/:id/limits",
+      "file": "company/subscription.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/treasury/fx-rates",
+      "file": "company/subscription.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/support/tickets",
+      "file": "company/support.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/support/tickets/:id",
+      "file": "company/support.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/support/health",
+      "file": "company/support.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/support/partner-health",
+      "file": "company/support.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/requirements",
+      "file": "compliance/document-verification.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/upload",
+      "file": "compliance/document-verification.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/:id/verify",
+      "file": "compliance/document-verification.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/verification-queue",
+      "file": "compliance/document-verification.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/:id",
+      "file": "compliance/document-verification.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/:id/download",
+      "file": "compliance/document-verification.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/:id/revoke",
+      "file": "compliance/document-verification.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/billing/invoices",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/billing/unbilled-charges",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/billing/invoices/:id",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/billing/invoices",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/billing/invoices/:id/pre-auth",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/billing/invoices/:id/payments",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/billing/invoices/:id/void",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/billing/invoices/:id/refund",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/billing/dashboard/overview",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/billing/tax-rates",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/billing/tax-rates",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/billing/tax-rates/calculate",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/billing/packages",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/billing/packages",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/billing/patient-packages/purchase",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/billing/patient-packages/consume",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/billing/patients/:patientId/packages",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/billing/credit-accounts/:patientId",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/billing/credit-accounts",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/billing/receivables/ageing",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/billing/payables",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/billing/payables/summary",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/billing/payables/:id",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/billing/payables",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/billing/payables/:id/payments",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/billing/payables/:id/approve",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/billing/shifts/open",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/billing/shifts/current",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/billing/shifts/:id/close",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/billing/shifts",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/billing/eod-closings/close",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/billing/eod-closings/:id/reopen",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/billing/eod-closings",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/billing/eod-closings/:id",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/billing/reconciliations",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/billing/reconciliations/:id",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/billing/reconciliations",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/billing/reconciliations/:id/resolve",
+      "file": "partner/billing-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/blood-bank/overview",
+      "file": "partner/blood-bank-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/blood-bank/inventory",
+      "file": "partner/blood-bank-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/blood-bank/donors",
+      "file": "partner/blood-bank-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/blood-bank/donations",
+      "file": "partner/blood-bank-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/blood-bank/components/separate",
+      "file": "partner/blood-bank-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/blood-bank/tests",
+      "file": "partner/blood-bank-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/blood-bank/requests",
+      "file": "partner/blood-bank-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/blood-bank/crossmatch",
+      "file": "partner/blood-bank-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/blood-bank/crossmatches",
+      "file": "partner/blood-bank-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/blood-bank/issue",
+      "file": "partner/blood-bank-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/blood-bank/issues",
+      "file": "partner/blood-bank-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/blood-bank/transfusions",
+      "file": "partner/blood-bank-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/patients/:id/transfusion-history",
+      "file": "partner/blood-bank-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/patients",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/clinical/patients",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/patients",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/clinical/patients",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/patients/:id",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/clinical/patients/:id",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/partner/patients/:id",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/partner/clinical/patients/:id",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/clinical/patients/export",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/clinical/encounters",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/encounters",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/clinical/encounters/check-in",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/clinical/encounters",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/encounters/:id",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/clinical/encounters/:id",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/partner/encounters/:id/status",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/partner/clinical/encounters/:id/status",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/clinical/queues/tokens",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/partner/clinical/queues/:id/call",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/partner/clinical/encounters/:id/call",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/partner/clinical/queues/:id/start",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/partner/clinical/queues/:id/complete",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/clinical/icd10",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/clinical/medications/generic-alternatives",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/consultations",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/clinical/consultations",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/consultations/overview",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/clinical/consultations/overview",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/consultations/encounter/:encounterId",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/clinical/consultations/encounter/:encounterId",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/consultations/:id",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/clinical/consultations/:id",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/consultations",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/clinical/consultations",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/partner/consultations/:id/finalize",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/partner/clinical/consultations/:id/finalize",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/consultations/:id/complete",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/clinical/consultations/:id/complete",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/consultations/:id/retry-orders",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/clinical/consultations/:id/retry-orders",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/clinical/encounters/:id/orders",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/prescriptions",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/clinical/prescriptions",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/clinical/prescriptions/:id/pdf",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/clinical/consultations/:id/pdf",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/patients/:id/history",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/clinical/patients/:id/history",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/clinical/exit-hub/patients",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/clinical/encounters/:id/checkout",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/clinical/appointments",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/clinical/appointments",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/clinical/appointments/:id",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "PUT",
+      "url": "/api/v1/partner/clinical/appointments/:id/reschedule",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "PUT",
+      "url": "/api/v1/partner/clinical/appointments/:id/cancel",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/clinical/appointments/:id/check-in",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/clinical/encounters/:id/vitals",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/clinical/encounters/:id/vitals",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/clinical/encounters/:id/payments",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/clinical/invoices/:id",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/clinical/referrals",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/clinical/referrals",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "PUT",
+      "url": "/api/v1/partner/clinical/referrals/:id/status",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/clinical/alerts",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/clinical/patients/:patientMrn/alerts",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "PUT",
+      "url": "/api/v1/partner/clinical/alerts/:id/acknowledge",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/clinical/patients/:id/allergies",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/clinical/patients/:id/allergies",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/partner/clinical/patients/:id/allergies/:allergyId",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/clinical/follow-ups",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/clinical/follow-ups/:id/convert-to-appointment",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/clinical/prescriptions/:id/finalize",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/clinical/doctor-workspace",
+      "file": "partner/clinical-workflow.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/dietary/overview",
+      "file": "partner/dietary.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/dietary/analytics",
+      "file": "partner/dietary.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/dietary/kitchens",
+      "file": "partner/dietary.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/dietary/kitchens",
+      "file": "partner/dietary.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/dietary/diet-types",
+      "file": "partner/dietary.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/dietary/diet-types",
+      "file": "partner/dietary.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/dietary/assessments",
+      "file": "partner/dietary.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/dietary/assessments",
+      "file": "partner/dietary.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/partner/dietary/assessments/:id/finalize",
+      "file": "partner/dietary.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/dietary/orders",
+      "file": "partner/dietary.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/dietary/orders/:id",
+      "file": "partner/dietary.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/dietary/orders",
+      "file": "partner/dietary.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/partner/dietary/orders/:id/approve",
+      "file": "partner/dietary.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/dietary/production-plans",
+      "file": "partner/dietary.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/partner/dietary/production-plans/:id/release",
+      "file": "partner/dietary.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/dietary/quality-checks",
+      "file": "partner/dietary.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/dietary/tray-assemblies",
+      "file": "partner/dietary.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/dietary/dispatches",
+      "file": "partner/dietary.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/partner/dietary/dispatches/:id/deliver",
+      "file": "partner/dietary.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/partner/dietary/dispatches/:id/refuse",
+      "file": "partner/dietary.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/dietary/billing-references",
+      "file": "partner/dietary.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/dietary/procurement-references",
+      "file": "partner/dietary.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/emergency/queue",
+      "file": "partner/emergency-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/emergency/registrations",
+      "file": "partner/emergency-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/emergency/encounters/:id/triage",
+      "file": "partner/emergency-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/emergency/encounters/:id/treatments",
+      "file": "partner/emergency-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/emergency/encounters/:id/disposition",
+      "file": "partner/emergency-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/patients/:id/emergency-history",
+      "file": "partner/emergency-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/foundation/overview",
+      "file": "partner/foundation.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/foundation/partners",
+      "file": "partner/foundation.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/foundation/partners",
+      "file": "partner/foundation.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/inpatient/wards",
+      "file": "partner/inpatient-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/inpatient/wards",
+      "file": "partner/inpatient-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/inpatient/beds",
+      "file": "partner/inpatient-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/inpatient/beds",
+      "file": "partner/inpatient-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/inpatient/admission-requests",
+      "file": "partner/inpatient-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/inpatient/admission-requests",
+      "file": "partner/inpatient-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/inpatient/admissions",
+      "file": "partner/inpatient-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/inpatient/admissions",
+      "file": "partner/inpatient-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/inpatient/transfers",
+      "file": "partner/inpatient-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/inpatient/nursing-notes",
+      "file": "partner/inpatient-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/inpatient/nursing-notes",
+      "file": "partner/inpatient-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/inpatient/admissions/:id/discharge",
+      "file": "partner/inpatient-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/patients/:id/inpatient-history",
+      "file": "partner/inpatient-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/inpatient/rounds",
+      "file": "partner/inpatient-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/inpatient/rounds",
+      "file": "partner/inpatient-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/inpatient/vitals",
+      "file": "partner/inpatient-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/inpatient/vitals",
+      "file": "partner/inpatient-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/inpatient/admissions/:id/discharge-summary",
+      "file": "partner/inpatient-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/inpatient/admissions/:id/billing-summary",
+      "file": "partner/inpatient-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/inpatient/admissions/:id/generate-bill",
+      "file": "partner/inpatient-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/lab/orders",
+      "file": "partner/lab-diagnostics.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/lab/orders",
+      "file": "partner/lab-diagnostics.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/lab/orders/:id",
+      "file": "partner/lab-diagnostics.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/lab/orders/:id/collect-sample",
+      "file": "partner/lab-diagnostics.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/lab/orders/:id/accession",
+      "file": "partner/lab-diagnostics.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/lab/orders/:id/process",
+      "file": "partner/lab-diagnostics.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/lab/orders/:id/reject",
+      "file": "partner/lab-diagnostics.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/lab/orders/:id/recollect",
+      "file": "partner/lab-diagnostics.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/lab/orders/:id/results",
+      "file": "partner/lab-diagnostics.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/partner/lab/orders/:id/results",
+      "file": "partner/lab-diagnostics.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/partner/lab/orders/:id/verify",
+      "file": "partner/lab-diagnostics.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/lab/orders/:id/pathologist-validate",
+      "file": "partner/lab-diagnostics.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/lab/orders/:id/deliver",
+      "file": "partner/lab-diagnostics.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/lab/orders/:id/report",
+      "file": "partner/lab-diagnostics.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/lab/barcodes/:barcode",
+      "file": "partner/lab-diagnostics.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/partner/lab/orders/:id/review",
+      "file": "partner/lab-diagnostics.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/lab/orders/:id/cancel",
+      "file": "partner/lab-diagnostics.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/lab/catalog",
+      "file": "partner/lab-diagnostics.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/lab/catalog",
+      "file": "partner/lab-diagnostics.routes.ts"
+    },
+    {
+      "method": "PUT",
+      "url": "/api/v1/partner/lab/catalog/:id",
+      "file": "partner/lab-diagnostics.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/lab/panels",
+      "file": "partner/lab-diagnostics.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/lab/panels",
+      "file": "partner/lab-diagnostics.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/lab/qc/evaluate",
+      "file": "partner/lab-diagnostics.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/lab/orders/:id/pdf",
+      "file": "partner/lab-diagnostics.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/patients/:id/lab-history",
+      "file": "partner/lab-diagnostics.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/lab/orders/:id/panic-intimation",
+      "file": "partner/lab-diagnostics.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/mrd/icd10/search",
+      "file": "partner/mrd-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/mrd/records",
+      "file": "partner/mrd-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/mrd/records",
+      "file": "partner/mrd-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/mrd/records/:id/diagnoses",
+      "file": "partner/mrd-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/mrd/records/:id/reviews",
+      "file": "partner/mrd-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/mrd/records/:id/finalize",
+      "file": "partner/mrd-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/mrd/records/:id/amend",
+      "file": "partner/mrd-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/patients/:id/mrd-history",
+      "file": "partner/mrd-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/ot/rooms",
+      "file": "partner/ot-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/ot/rooms",
+      "file": "partner/ot-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/ot/schedules",
+      "file": "partner/ot-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/ot/schedules",
+      "file": "partner/ot-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/ot/schedules/:id/pac",
+      "file": "partner/ot-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/ot/schedules/:id/operative-notes",
+      "file": "partner/ot-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/ot/schedules/:id/pacu",
+      "file": "partner/ot-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/ot/schedules/:id/transfer-postop",
+      "file": "partner/ot-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/patients/:id/surgical-history",
+      "file": "partner/ot-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/pharmacy/overview",
+      "file": "partner/pharmacy-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/pharmacy/medications",
+      "file": "partner/pharmacy-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/pharmacy/medications",
+      "file": "partner/pharmacy-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/pharmacy/prescriptions",
+      "file": "partner/pharmacy-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/pharmacy/prescriptions/:id",
+      "file": "partner/pharmacy-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/pharmacy/batches",
+      "file": "partner/pharmacy-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/pharmacy/inventory",
+      "file": "partner/pharmacy-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/pharmacy/batches/receive-stock",
+      "file": "partner/pharmacy-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/pharmacy/dispense",
+      "file": "partner/pharmacy-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/pharmacy/stock-movements",
+      "file": "partner/pharmacy-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/patients/:id/medication-history",
+      "file": "partner/pharmacy-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/pharmacy/invoices/ingest-wholesale",
+      "file": "partner/pharmacy-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/pharmacy/wholesale/b2b-dispatch",
+      "file": "partner/pharmacy-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/pharmacy/invoices/generate-dynamic-sample",
+      "file": "partner/pharmacy-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/pharmacy/invoices/sample-marg-erp",
+      "file": "partner/pharmacy-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/pharmacy/inventory-snapshot",
+      "file": "partner/pharmacy-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/pharmacy/sync-offline-invoices",
+      "file": "partner/pharmacy-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/pharmacy/dev/seed-mock-stock",
+      "file": "partner/pharmacy-management.routes.ts"
+    },
+    {
+      "method": "DELETE",
+      "url": "/api/v1/partner/pharmacy/dev/cleanup-mock-stock",
+      "file": "partner/pharmacy-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/pharmacy/returns",
+      "file": "partner/pharmacy-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/pharmacy/returns",
+      "file": "partner/pharmacy-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/pharmacy/adjustments",
+      "file": "partner/pharmacy-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/pharmacy/adjustments",
+      "file": "partner/pharmacy-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/pharmacy/recalls",
+      "file": "partner/pharmacy-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/pharmacy/batches/:id/block",
+      "file": "partner/pharmacy-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/pharmacy/batches/:id/unblock",
+      "file": "partner/pharmacy-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/pharmacy/wholesale/customers",
+      "file": "partner/pharmacy-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/pharmacy/wholesale/customers",
+      "file": "partner/pharmacy-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/pharmacy/wholesale/orders",
+      "file": "partner/pharmacy-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/pharmacy/wholesale/orders",
+      "file": "partner/pharmacy-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/pharmacy/wholesale/orders/:id",
+      "file": "partner/pharmacy-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/pharmacy/wholesale/orders/:id/allocate",
+      "file": "partner/pharmacy-management.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/pharmacy/wholesale/orders/:id/dispatch",
+      "file": "partner/pharmacy-management.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/radiology/overview",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/radiology/analytics",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/radiology/department",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/radiology/department",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/radiology/modalities",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/radiology/modalities",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/radiology/procedures",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/radiology/procedures",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/radiology/orders",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/radiology/orders/:id",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/radiology/orders",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/partner/radiology/orders/:id/status",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/radiology/appointments",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/radiology/appointments",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/partner/radiology/appointments/:id/reschedule",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/partner/radiology/appointments/:id/cancel",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/radiology/preparation-records",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/radiology/preparation-records",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/radiology/studies",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/radiology/studies/:id",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/radiology/studies",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/radiology/studies/:studyId/series",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/radiology/series",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/radiology/series/:seriesId/instances",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/radiology/instances",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/radiology/reports",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/radiology/reports/:id",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/radiology/reports/:id/amendments",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/radiology/reports",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/radiology/reports/:id/finalize",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/radiology/reports/:id/amend",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/radiology/reports/:id/review",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/radiology/orders/:id/bill",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/radiology/orders/:id/invoice",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/radiology/critical-findings",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/radiology/critical-findings",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/partner/radiology/critical-findings/:id/acknowledge",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/radiology/quality-events",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/radiology/quality-events",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/radiology/audit-traces",
+      "file": "partner/radiology.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/roster/schedules",
+      "file": "partner/roster.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/roster/schedules",
+      "file": "partner/roster.routes.ts"
+    },
+    {
+      "method": "PUT",
+      "url": "/api/v1/partner/roster/schedules/:id",
+      "file": "partner/roster.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/roster/leaves",
+      "file": "partner/roster.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/roster/leaves",
+      "file": "partner/roster.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/partner/roster/leaves/:id/approve",
+      "file": "partner/roster.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/roster/slots",
+      "file": "partner/roster.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/partner/roster/slots/:id/block",
+      "file": "partner/roster.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/partner/roster/slots/:id/unblock",
+      "file": "partner/roster.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/roster/fees",
+      "file": "partner/roster.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/roster/fees",
+      "file": "partner/roster.routes.ts"
+    },
+    {
+      "method": "PUT",
+      "url": "/api/v1/partner/roster/fees/:id",
+      "file": "partner/roster.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/staff/overview",
+      "file": "partner/staff-administration.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/staff/departments",
+      "file": "partner/staff-administration.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/staff/departments",
+      "file": "partner/staff-administration.routes.ts"
+    },
+    {
+      "method": "PUT",
+      "url": "/api/v1/partner/staff/departments/:id",
+      "file": "partner/staff-administration.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/staff/members",
+      "file": "partner/staff-administration.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/staff/members/:id",
+      "file": "partner/staff-administration.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/staff/members",
+      "file": "partner/staff-administration.routes.ts"
+    },
+    {
+      "method": "PUT",
+      "url": "/api/v1/partner/staff/members/:id",
+      "file": "partner/staff-administration.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/partner/staff/members/:id/status",
+      "file": "partner/staff-administration.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/staff/members/:id/revoke",
+      "file": "partner/staff-administration.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/staff/members/:id/restore",
+      "file": "partner/staff-administration.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/partner/staff/members/:id/permissions",
+      "file": "partner/staff-administration.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/staff/roles",
+      "file": "partner/staff-administration.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/staff/roles/assign",
+      "file": "partner/staff-administration.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/staff/credentials",
+      "file": "partner/staff-administration.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/staff/credentials",
+      "file": "partner/staff-administration.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/partner/staff/credentials/:id/verify",
+      "file": "partner/staff-administration.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/staff/transfers",
+      "file": "partner/staff-administration.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/staff/transfers",
+      "file": "partner/staff-administration.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/security/maker-checker/:requestId/decide",
+      "file": "security/identity-security-foundation.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/partner/security/staff/:staffId/runtime-state",
+      "file": "security/identity-security-foundation.routes.ts"
+    }
+  ],
+  "authenticatedNoRbac": [
+    {
+      "method": "GET",
+      "url": "/api/v1/auth/live-partners",
+      "file": "auth.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/hq/ai/incidents",
+      "file": "company/ai-intelligence-hq.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/hq/ai/budget/set-limit",
+      "file": "company/ai-intelligence-hq.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/hq/ai/budget/:tenantId",
+      "file": "company/ai-intelligence-hq.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/hq/ai/requests/:tenantId",
+      "file": "company/ai-intelligence-hq.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/hq/ai/kill-switch",
+      "file": "company/ai-intelligence-hq.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/hq/ai/kill-switch",
+      "file": "company/ai-intelligence-hq.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/commercial/hq/pipeline",
+      "file": "company/commercial.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/commercial/hq/plans",
+      "file": "company/commercial.routes.ts"
+    },
+    {
+      "method": "PUT",
+      "url": "/api/v1/commercial/hq/plans/:id",
+      "file": "company/commercial.routes.ts"
+    },
+    {
+      "method": "DELETE",
+      "url": "/api/v1/commercial/hq/plans/:id",
+      "file": "company/commercial.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/commercial/hq/extend-grace",
+      "file": "company/commercial.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/commercial/hq/record-offline-payment",
+      "file": "company/commercial.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/commercial/hq/partner-types",
+      "file": "company/commercial.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/commercial/hq/partner-types",
+      "file": "company/commercial.routes.ts"
+    },
+    {
+      "method": "PUT",
+      "url": "/api/v1/commercial/hq/partner-types/:id",
+      "file": "company/commercial.routes.ts"
+    },
+    {
+      "method": "DELETE",
+      "url": "/api/v1/commercial/hq/partner-types/:id",
+      "file": "company/commercial.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/commercial/hq/overrides",
+      "file": "company/commercial.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/commercial/hq/overrides",
+      "file": "company/commercial.routes.ts"
+    },
+    {
+      "method": "DELETE",
+      "url": "/api/v1/commercial/hq/overrides/:id",
+      "file": "company/commercial.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/commercial/hq/pricing",
+      "file": "company/commercial.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/commercial/hq/pricing",
+      "file": "company/commercial.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/commercial/hq/invoices/generate",
+      "file": "company/commercial.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/commercial/hq/invoices/:id/payments",
+      "file": "company/commercial.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/commercial/hq/dashboard/revenue",
+      "file": "company/commercial.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/license/status",
+      "file": "company/license-governance.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/license/import-file",
+      "file": "company/license-governance.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/licenses/:id/export-file",
+      "file": "company/license-governance.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/licenses/:id/nodes/bind",
+      "file": "company/license-governance.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/licenses/:id/nodes/unbind",
+      "file": "company/license-governance.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/licenses/:id/nodes/:nodeId/revoke",
+      "file": "company/license-governance.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/hq/reliability/metrics",
+      "file": "company/reliability-hq.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/hq/reliability/audit/verify-ledger",
+      "file": "company/reliability-hq.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/hq/reliability/dlq",
+      "file": "company/reliability-hq.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/storage/*",
+      "file": "compliance/document-verification.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/ewan/context",
+      "file": "ewan.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/ewan/ask",
+      "file": "ewan.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/ewan/customer-success",
+      "file": "ewan.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/ewan/renewal/initiate-order",
+      "file": "ewan.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/ewan/renewal/verify-payment",
+      "file": "ewan.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/ewan/sales-overview",
+      "file": "ewan.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/ewan/customer-success/:tenantId",
+      "file": "ewan.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/ewan/finance-overview",
+      "file": "ewan.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/company/ewan/ask",
+      "file": "ewan.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/account/plan-and-features",
+      "file": "partner/account.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/account/profile",
+      "file": "partner/account.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/profile",
+      "file": "partner/account.routes.ts"
+    },
+    {
+      "method": "PUT",
+      "url": "/api/v1/partner/account/profile",
+      "file": "partner/account.routes.ts"
+    },
+    {
+      "method": "PUT",
+      "url": "/api/v1/partner/profile",
+      "file": "partner/account.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/partner/account/profile",
+      "file": "partner/account.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/partner/profile",
+      "file": "partner/account.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/account/renewal-status",
+      "file": "partner/account.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/account/renewal/initiate-order",
+      "file": "partner/account.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/account/renewal/verify-payment",
+      "file": "partner/account.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/ai/gateway/execute",
+      "file": "partner/ai-intelligence.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/ai/gateway/history",
+      "file": "partner/ai-intelligence.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/ai/trainer/guidance",
+      "file": "partner/ai-intelligence.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/ai/trainer/workflows",
+      "file": "partner/ai-intelligence.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/ai/operations/summary",
+      "file": "partner/ai-intelligence.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/ai/operations/query",
+      "file": "partner/ai-intelligence.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/ai/anomalies/detect",
+      "file": "partner/ai-intelligence.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/ai/anomalies/lab-delta-check",
+      "file": "partner/ai-intelligence.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/ai/anomalies/pharmacy-leakage",
+      "file": "partner/ai-intelligence.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/ai/anomalies",
+      "file": "partner/ai-intelligence.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/partner/ai/anomalies/:id/review",
+      "file": "partner/ai-intelligence.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/ai/forecasts/generate",
+      "file": "partner/ai-intelligence.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/ai/forecasts",
+      "file": "partner/ai-intelligence.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/ai/budget/status",
+      "file": "partner/ai-intelligence.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/ai/incidents",
+      "file": "partner/ai-intelligence.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/ai/incidents",
+      "file": "partner/ai-intelligence.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/partner/ai/incidents/:id/rca",
+      "file": "partner/ai-intelligence.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/partner/ai/incidents/:id/capa",
+      "file": "partner/ai-intelligence.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/partner/ai/incidents/:id/close",
+      "file": "partner/ai-intelligence.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/business-history/:entityType/:entityId",
+      "file": "partner/business-history.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/clinical/history/:entityType/:entityId",
+      "file": "partner/business-history.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/reliability/audit/verify",
+      "file": "partner/reliability.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/reliability/audit/export",
+      "file": "partner/reliability.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/reliability/audit/verifications",
+      "file": "partner/reliability.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/reliability/lineage/:entityType/:entityId",
+      "file": "partner/reliability.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/reliability/reconciliation/run",
+      "file": "partner/reliability.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/reliability/reconciliation/runs",
+      "file": "partner/reliability.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/reliability/reconciliation/runs/:id/discrepancies",
+      "file": "partner/reliability.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/reliability/reconciliation/discrepancies/:id/resolve",
+      "file": "partner/reliability.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/reliability/idempotency/stats",
+      "file": "partner/reliability.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/reliability/idempotency/keys/:key",
+      "file": "partner/reliability.routes.ts"
+    },
+    {
+      "method": "DELETE",
+      "url": "/api/v1/partner/reliability/idempotency/keys/:key",
+      "file": "partner/reliability.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/reliability/sagas",
+      "file": "partner/reliability.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/reliability/sagas/:id",
+      "file": "partner/reliability.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/reliability/devices/enroll",
+      "file": "partner/reliability.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/reliability/devices/heartbeat",
+      "file": "partner/reliability.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/reliability/devices/:id/revoke",
+      "file": "partner/reliability.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/reliability/devices",
+      "file": "partner/reliability.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/reliability/offline-sync/batch",
+      "file": "partner/reliability.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/reliability/offline-sync/conflicts",
+      "file": "partner/reliability.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/reliability/offline-sync/conflicts/:id/resolve",
+      "file": "partner/reliability.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/reliability/incidents",
+      "file": "partner/reliability.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/reliability/incidents",
+      "file": "partner/reliability.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/reliability/incidents/:id",
+      "file": "partner/reliability.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/reliability/incidents/:id/rca",
+      "file": "partner/reliability.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/reliability/incidents/:id/capa",
+      "file": "partner/reliability.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/reliability/incidents/capa/:id/verify",
+      "file": "partner/reliability.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/security/identity",
+      "file": "security/identity-security-foundation.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/security/permissions/registry",
+      "file": "security/identity-security-foundation.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/security/roles",
+      "file": "security/identity-security-foundation.routes.ts"
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/v1/partner/security/roles/:roleCode",
+      "file": "security/identity-security-foundation.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/security/authorize",
+      "file": "security/identity-security-foundation.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/security/break-glass",
+      "file": "security/identity-security-foundation.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/security/break-glass/:id/expire",
+      "file": "security/identity-security-foundation.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/partner/security/maker-checker/submit",
+      "file": "security/identity-security-foundation.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/partner/security/audit-events",
+      "file": "security/identity-security-foundation.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/definitions",
+      "file": "workflow.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/definitions/:code",
+      "file": "workflow.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/definitions",
+      "file": "workflow.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/definitions/:code/version",
+      "file": "workflow.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/instances",
+      "file": "workflow.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/instances/:id",
+      "file": "workflow.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/instances",
+      "file": "workflow.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/instances/:id/transition",
+      "file": "workflow.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/instances/:id/requirements/:requirementCode/fulfill",
+      "file": "workflow.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/offers",
+      "file": "workflow.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/offers",
+      "file": "workflow.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/licences",
+      "file": "workflow.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/pricing/calculate",
+      "file": "workflow.routes.ts"
+    }
+  ],
+  "trulyUnguarded": [
+    {
+      "method": "POST",
+      "url": "/api/v1/auth/change-password",
+      "file": "auth.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/auth/self-register",
+      "file": "auth.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/commercial/plans",
+      "file": "company/commercial.routes.ts"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/license/heartbeat",
+      "file": "company/license-governance.routes.ts"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/permission-packs",
+      "file": "company/partner-access-control.routes.ts"
+    }
+  ],
+  "tenantIdParameterChecks": [
+    {
+      "method": "GET",
+      "url": "/api/v1/hq/ai/incidents",
+      "file": "company/ai-intelligence-hq.routes.ts",
+      "detail": "Accepts external tenantId without validating session.tenantId or requiring admin RBAC"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/hq/ai/budget/set-limit",
+      "file": "company/ai-intelligence-hq.routes.ts",
+      "detail": "Accepts external tenantId without validating session.tenantId or requiring admin RBAC"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/hq/ai/budget/:tenantId",
+      "file": "company/ai-intelligence-hq.routes.ts",
+      "detail": "Accepts external tenantId without validating session.tenantId or requiring admin RBAC"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/hq/ai/requests/:tenantId",
+      "file": "company/ai-intelligence-hq.routes.ts",
+      "detail": "Accepts external tenantId without validating session.tenantId or requiring admin RBAC"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/hq/reliability/metrics",
+      "file": "company/reliability-hq.routes.ts",
+      "detail": "Accepts external tenantId without validating session.tenantId or requiring admin RBAC"
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/hq/reliability/audit/verify-ledger",
+      "file": "company/reliability-hq.routes.ts",
+      "detail": "Accepts external tenantId without validating session.tenantId or requiring admin RBAC"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/ewan/sales-overview",
+      "file": "ewan.routes.ts",
+      "detail": "Accepts external tenantId without validating session.tenantId or requiring admin RBAC"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/company/ewan/customer-success/:tenantId",
+      "file": "ewan.routes.ts",
+      "detail": "Accepts external tenantId without validating session.tenantId or requiring admin RBAC"
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Alert } from '@docsearch/ui-kit';
+import { Alert, DocSearchSpatialCore3D } from '@docsearch/ui-kit';
 import type {
   InpatientOverviewMetricsDto,
   InpatientAnalyticsDto,
@@ -47,10 +47,10 @@ import type {
 } from '@docsearch/api-contracts';
 
 import { inpatientManagementService } from '../services/inpatient-management-service.js';
+import { hospitalEventBus, type ActivePatientSummary, type HospitalEventPayload } from '../services/hospital-event-bus.js';
 
 // Views
 import { InpatientOverviewView } from './views/InpatientOverviewView.js';
-import { ADTControlCenterView } from './views/ADTControlCenterView.js';
 import { AdmissionRequestView } from './views/AdmissionRequestView.js';
 import { AdmissionDetailView } from './views/AdmissionDetailView.js';
 import { BedManagementView } from './views/BedManagementView.js';
@@ -76,6 +76,9 @@ import { IPDAnalyticsView } from './views/IPDAnalyticsView.js';
 import { IPDReportsView } from './views/IPDReportsView.js';
 import { IPDAuditVaultView } from './views/IPDAuditVaultView.js';
 import { BedOccupancyAnalyticsView } from './views/BedOccupancyAnalyticsView.js';
+import { InstantNhcxAutoAdjudicationView } from './views/InstantNhcxAutoAdjudicationView.js';
+import { SmartHospitalIotBedOrchestrationView } from './views/SmartHospitalIotBedOrchestrationView.js';
+import { TabOverflowMenu } from './common/TabOverflowMenu.js';
 
 // Dialogs
 import { CreateWardDialog } from './dialogs/CreateWardDialog.js';
@@ -105,18 +108,19 @@ import { CompleteDischargeDialog } from './dialogs/CompleteDischargeDialog.js';
 import { FinalizeDischargeSummaryDialog } from './dialogs/FinalizeDischargeSummaryDialog.js';
 import { ReleaseBedDialog } from './dialogs/ReleaseBedDialog.js';
 import { CompleteCleaningDialog } from './dialogs/CompleteCleaningDialog.js';
+import { DirectAdmitBedDialog } from './dialogs/DirectAdmitBedDialog.js';
 
 export interface InpatientDomainManagerProps {
   tenantId?: string;
   partnerId?: string;
   organizationId?: string;
   branchId?: string | null;
+  initialTab?: InpatientTab;
 }
 
 export type InpatientTab =
   | 'overview'
   | 'icu-telemetry'
-  | 'control-center'
   | 'admissions'
   | 'admission-detail'
   | 'bed-board'
@@ -134,8 +138,10 @@ export type InpatientTab =
   | 'rounds'
   | 'discharge-planning'
   | 'discharge-workbench'
+  | 'nhcx-auto-discharge'
   | 'discharge-summaries'
   | 'bed-turnaround'
+  | 'smart-hospital-iot'
   | 'bed-blocks'
   | 'analytics'
   | 'reports'
@@ -146,9 +152,25 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
   tenantId = '11111111-1111-4111-8111-111111111111',
   partnerId = '22222222-2222-4222-8222-222222222222',
   organizationId = '33333333-3333-4333-8333-333333333333',
-  branchId = '44444444-4444-4444-8444-444444444444'
+  branchId = '44444444-4444-4444-8444-444444444444',
+  initialTab
 }) => {
-  const [activeTab, setActiveTab] = useState<InpatientTab>('overview');
+  const [activeTab, setActiveTab] = useState<InpatientTab>(initialTab || 'bed-board');
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
+
+  // Listen for Universal Command Palette "Bed 204" trigger
+  useEffect(() => {
+    const handleOpenBed = () => {
+      setActiveTab('icu-telemetry');
+    };
+    window.addEventListener('docsearch:open_bed_monitor', handleOpenBed);
+    return () => window.removeEventListener('docsearch:open_bed_monitor', handleOpenBed);
+  }, []);
   const [metrics, setMetrics] = useState<InpatientOverviewMetricsDto | null>(null);
   const [analytics, setAnalytics] = useState<InpatientAnalyticsDto | null>(null);
   const [units, setUnits] = useState<InpatientUnitDto[]>([]);
@@ -171,6 +193,7 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
   const [selectedTurnaround, setSelectedTurnaround] = useState<InpatientBedTurnaroundDto | null>(null);
   const [bedBlocks, setBedBlocks] = useState<InpatientBedBlockDto[]>([]);
   const [auditTraces, setAuditTraces] = useState<InpatientAuditTraceDto[]>([]);
+  const [activePatient, setActivePatient] = useState<ActivePatientSummary | null>(() => hospitalEventBus.getActivePatient());
 
   // Dialog open states
   const [isCreateWardOpen, setIsCreateWardOpen] = useState(false);
@@ -200,6 +223,7 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
   const [isFinalizeSummaryOpen, setIsFinalizeSummaryOpen] = useState(false);
   const [isReleaseBedOpen, setIsReleaseBedOpen] = useState(false);
   const [isCompleteCleaningOpen, setIsCompleteCleaningOpen] = useState(false);
+  const [isDirectAdmitOpen, setIsDirectAdmitOpen] = useState(false);
 
   const [notification, setNotification] = useState<{ message: string; variant: 'success' | 'danger' } | null>(null);
 
@@ -250,7 +274,18 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
       setUnits(uList);
       setWards(wList);
       setBeds(bList);
-      setRequests(reqList);
+      let mergedRequests = reqList;
+      try {
+        const storedAdms = typeof window !== 'undefined' ? localStorage.getItem('docsearch_admission_requests') : null;
+        if (storedAdms) {
+          const parsedAdms = JSON.parse(storedAdms);
+          if (Array.isArray(parsedAdms) && parsedAdms.length > 0) {
+            const extra = parsedAdms.filter((pa: any) => !reqList.some((r) => r.id === pa.id));
+            mergedRequests = [...extra, ...reqList];
+          }
+        }
+      } catch {}
+      setRequests(mergedRequests);
       setAdmissions(admList);
       setTransfers(trfList);
       setNursingAssessments(naList);
@@ -268,6 +303,29 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
 
   useEffect(() => {
     loadData();
+
+    const unsubscribe = hospitalEventBus.subscribe('PATIENT_SELECTED', (payload: HospitalEventPayload) => {
+      const selected = payload.data as ActivePatientSummary;
+      if (selected && (selected.id || selected.uhid)) {
+        setActivePatient(selected);
+      }
+    });
+
+    const unsubscribeClear = hospitalEventBus.subscribe('PATIENT_CLEARED', () => {
+      setActivePatient(null);
+    });
+
+    const unsubscribeAdmission = hospitalEventBus.subscribe('IPD_ADMISSION_REQUESTED', (payload: HospitalEventPayload) => {
+      const d = payload.data || {};
+      showNotification(`⚡ New Inpatient Admission Requested from OPD: ${d.patientName || 'Patient'}`);
+      void loadData();
+    });
+
+    return () => {
+      unsubscribe();
+      unsubscribeClear();
+      unsubscribeAdmission();
+    };
   }, [loadData]);
 
   // Handlers
@@ -441,30 +499,126 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
     showNotification('Bed sanitization certified. Bed is now AVAILABLE.');
   };
 
-  const tabs: { id: InpatientTab; label: string; icon: string }[] = [
-    { id: 'overview', label: 'Command Center', icon: '📊' },
-    { id: 'admissions', label: 'Admission Requests', icon: '📝' },
-    { id: 'bed-board', label: 'Bed Master Board', icon: '🛏️' },
-    { id: 'nursing-station', label: 'Nursing Station', icon: '🩺' },
-    { id: 'patient-census', label: 'Daily Census', icon: '📋' },
+  const handleQuickCompleteCleaning = async (bed: InpatientBedDto) => {
+    await inpatientManagementService.completeCleaning({
+      turnaroundId: '',
+      bedId: bed.id,
+      inspectedBy: 'Nursing Supervisor',
+      passed: true,
+      tenantId,
+      notes: 'Bed sanitized and ready for new patient admission'
+    });
+    await loadData();
+    showNotification(`✅ Bed ${bed.bedCode} sanitized and ready for new patient admission.`);
+  };
+
+  const handleDirectAdmit = async (data: {
+    patientName: string;
+    patientMrn: string;
+    patientAge: number;
+    patientGender: 'M' | 'F' | 'OTHER';
+    bedId: string;
+    wardId: string;
+    admittingDoctorName: string;
+    department: string;
+    provisionalDiagnosis: string;
+    admissionType: 'EMERGENCY' | 'ELECTIVE';
+    expectedLengthOfStayDays: number;
+  }) => {
+    await inpatientManagementService.directAdmitPatient({
+      tenantId,
+      partnerId,
+      organizationId,
+      branchId: branchId || '44444444-4444-4444-8444-444444444444',
+      patientName: data.patientName,
+      patientMrn: data.patientMrn,
+      patientAge: data.patientAge,
+      patientGender: data.patientGender,
+      bedId: data.bedId,
+      wardId: data.wardId,
+      admittingDoctorName: data.admittingDoctorName,
+      department: data.department,
+      provisionalDiagnosis: data.provisionalDiagnosis,
+      admissionType: data.admissionType,
+      expectedLengthOfStayDays: data.expectedLengthOfStayDays
+    });
+    await loadData();
+    showNotification(`✅ Patient ${data.patientName} admitted to bed successfully.`);
+  };
+
+  const safeBeds = Array.isArray(beds) ? beds : [];
+  const safeAdmissions = Array.isArray(admissions) ? admissions : [];
+  const safeRequests = Array.isArray(requests) ? requests : [];
+
+  const totalBedsCount = safeBeds.length;
+  const occupiedBedsCount = safeBeds.filter((b) => b?.status === 'OCCUPIED').length;
+  const availableBedsCount = safeBeds.filter((b) => b?.status === 'AVAILABLE').length;
+  const cleaningBedsCount = safeBeds.filter((b) => b?.status === 'CLEANING').length;
+  const icuBedsOccupied = safeBeds.filter((b) => b?.status === 'OCCUPIED' && ((b?.wardName || '').toLowerCase().includes('icu') || (b?.bedCode || '').includes('ICU'))).length;
+  const plannedDischargesCount = safeAdmissions.filter((a) => a?.status === 'DISCHARGE_PLANNED').length;
+  const activeInpatientsCount = safeAdmissions.filter((a) => a?.status === 'ADMITTED' || a?.status === 'DISCHARGE_PLANNED').length;
+
+  const primaryDailyTabs: { id: InpatientTab; label: string; icon: string; count?: number }[] = [
+    { id: 'bed-board', label: '1. Bed Master Board', icon: '🛏️', count: availableBedsCount },
+    { id: 'nursing-station', label: '2. Nursing Station', icon: '🩺', count: activeInpatientsCount },
+    { id: 'patient-census', label: '3. Daily Patient Census', icon: '📋', count: activeInpatientsCount },
+    { id: 'rounds', label: '4. Doctor Daily Rounds', icon: '👨‍⚕️' },
+    { id: 'admissions', label: '5. Admission Requests', icon: '📝', count: safeRequests.filter((r) => r?.status === 'SUBMITTED').length },
+    { id: 'discharge-workbench', label: '6. Discharge & Clearances', icon: '🚪', count: plannedDischargesCount }
+  ];
+
+  const secondaryFacilityTabs: { id: InpatientTab; label: string; icon: string }[] = [
+    { id: 'overview', label: 'ADT Command Desk & Census', icon: '🎛️' },
+    { id: 'icu-telemetry', label: 'Live ICU Telemetry & Code Blue', icon: '🚨' },
+    { id: 'bed-availability', label: 'Bed Availability Matrix', icon: '🟢' },
+    { id: 'patient-locations', label: 'Patient Locations Directory', icon: '📍' },
     { id: 'transfers', label: 'Transfers (ADT)', icon: '⇄' },
-    { id: 'discharge-workbench', label: 'Discharge Workbench', icon: '🚪' },
-    { id: 'discharge-summaries', label: 'Discharge Summaries', icon: '📜' },
+    { id: 'nursing-care', label: 'Nursing Assessments & Care Plans', icon: '📑' },
+    { id: 'vitals', label: 'Inpatient Vitals Flowsheet', icon: '💓' },
+    { id: 'discharge-planning', label: 'Discharge Anticipation & Planning', icon: '🗓️' },
+    { id: 'occupancy-analytics', label: 'Bed Occupancy Analytics', icon: '📊' },
     { id: 'bed-turnaround', label: 'Housekeeping Turnaround', icon: '🧹' },
     { id: 'wards', label: 'Ward Directory', icon: '🏢' },
     { id: 'bed-blocks', label: 'Maintenance Blocks', icon: '⚠️' },
+    { id: 'nhcx-auto-discharge', label: '⚡ Zero-Wait NHCX Discharge', icon: '⚡' },
+    { id: 'smart-hospital-iot', label: '📡 Smart IoT Bed Orchestrator', icon: '📡' },
+    { id: 'discharge-summaries', label: 'Discharge Summaries Archive', icon: '📜' },
     { id: 'analytics', label: 'IPD Analytics', icon: '📈' },
     { id: 'reports', label: 'Regulatory Reports', icon: '📑' },
     { id: 'audit', label: 'Audit Vault', icon: '🔒' }
   ];
 
   return (
-    <div style={{ padding: '1.5rem', maxWidth: '1600px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-        <span style={{ fontSize: '0.75rem', backgroundColor: '#e2e8f0', color: '#475569', padding: '0.2rem 0.6rem', borderRadius: '4px', fontWeight: 600 }}>
-          Operational Live Telemetry
+    <div style={{ padding: '1.5rem', maxWidth: '1600px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.25rem', boxSizing: 'border-box', overflowX: 'hidden' }}>
+      {/* 3D Spatial Feature Core: Inpatient IPD */}
+      <DocSearchSpatialCore3D
+        preset="inpatient"
+        height={360}
+        interactive={true}
+        onNodeClick={(id) => {
+          if (id === 'bed-board') {
+            setActiveTab('bed-board');
+          } else if (id === 'nursing-desk') {
+            setActiveTab('nursing-station');
+          } else if (id === 'ot-surgery') {
+            setActiveTab('rounds');
+          } else if (id === 'sbar-handover') {
+            setActiveTab('patient-census');
+          } else if (id === 'diet-kitchen') {
+            setActiveTab('overview');
+          } else if (id === 'icu-telemetry') {
+            setActiveTab('smart-hospital-iot');
+          } else if (id === 'discharge-clearance') {
+            setActiveTab('discharge-workbench');
+          }
+        }}
+      />
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '8px' }}>
+        <span style={{ fontSize: '0.75rem', backgroundColor: 'var(--ds-color-primary)', color: 'var(--ds-color-primary-foreground, white)', padding: '0.25rem 0.75rem', borderRadius: '6px', fontWeight: 800 }}>
+          🏥 HOSPITAL IPD OPERATIONAL MATRIX
         </span>
-        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+        <span style={{ fontSize: '0.8rem', color: 'var(--ds-color-text-muted)' }}>
           Tenant: {tenantId.slice(0, 8)}... | Branch: {branchId ? branchId.slice(0, 8) : 'All'}...
         </span>
       </div>
@@ -475,33 +629,319 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
         </div>
       )}
 
-      {/* Navigation tabs */}
-      <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1.5rem' }}>
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            style={{
-              padding: '0.5rem 0.875rem',
-              borderRadius: '6px',
-              border: 'none',
-              backgroundColor: activeTab === tab.id ? '#2563eb' : '#f1f5f9',
-              color: activeTab === tab.id ? '#fff' : '#475569',
-              fontWeight: 600,
-              fontSize: '0.875rem',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              transition: 'all 0.15s ease'
-            }}
-          >
-            <span>{tab.icon}</span>
-            <span>{tab.label}</span>
-          </button>
-        ))}
+      {/* Real-World Hospital Live Shift Handover & Census Ribbon */}
+      <div style={{
+        backgroundColor: 'var(--ds-color-surface)',
+        border: '1.5px solid var(--ds-color-border)',
+        borderRadius: '12px',
+        padding: '12px 18px',
+        marginBottom: '1.25rem',
+        boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '12px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ fontSize: '1.5rem' }}>🏥</div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <strong style={{ color: 'var(--ds-color-text-primary)', fontSize: '0.95rem' }}>
+                Live Hospital Census & Shift Handover
+              </strong>
+              <span style={{ backgroundColor: 'var(--ds-color-success)', color: 'var(--ds-color-success-foreground, white)', fontSize: '0.68rem', fontWeight: 800, padding: '2px 8px', borderRadius: '4px' }}>
+                LIVE TELEMETRY
+              </span>
+            </div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--ds-color-text-muted)' }}>
+              Real-time occupancy and operational telemetry across all inpatient wards, ICUs, and nursing stations
+            </div>
+          </div>
+        </div>
+
+        {/* Dynamic Metric Badges */}
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <div style={{ backgroundColor: 'var(--ds-color-primary-subtle, rgba(2, 132, 199, 0.15))', border: '1px solid var(--ds-color-primary)', borderRadius: '8px', padding: '6px 12px', textAlign: 'center' }}>
+            <div style={{ fontSize: '0.7rem', color: 'var(--ds-color-accent)', fontWeight: 700 }}>Total Inpatients</div>
+            <div style={{ fontSize: '1.1rem', color: 'var(--ds-color-primary)', fontWeight: 900 }}>{activeInpatientsCount}</div>
+          </div>
+          <div style={{ backgroundColor: 'var(--ds-color-success-subtle, rgba(16, 185, 129, 0.15))', border: '1px solid var(--ds-color-success)', borderRadius: '8px', padding: '6px 12px', textAlign: 'center' }}>
+            <div style={{ fontSize: '0.7rem', color: 'var(--ds-color-success)', fontWeight: 700 }}>Available Beds</div>
+            <div style={{ fontSize: '1.1rem', color: 'var(--ds-color-success)', fontWeight: 900 }}>{availableBedsCount} <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>/ {totalBedsCount}</span></div>
+          </div>
+          <div style={{ backgroundColor: 'var(--ds-color-danger-subtle, rgba(239, 68, 68, 0.15))', border: '1px solid var(--ds-color-danger)', borderRadius: '8px', padding: '6px 12px', textAlign: 'center' }}>
+            <div style={{ fontSize: '0.7rem', color: 'var(--ds-color-danger)', fontWeight: 700 }}>Occupied Beds</div>
+            <div style={{ fontSize: '1.1rem', color: 'var(--ds-color-danger)', fontWeight: 900 }}>{occupiedBedsCount}</div>
+          </div>
+          <div style={{ backgroundColor: 'var(--ds-color-primary-subtle, rgba(14, 165, 233, 0.15))', border: '1px solid var(--ds-color-accent)', borderRadius: '8px', padding: '6px 12px', textAlign: 'center' }}>
+            <div style={{ fontSize: '0.7rem', color: 'var(--ds-color-accent)', fontWeight: 700 }}>ICU Patients</div>
+            <div style={{ fontSize: '1.1rem', color: 'var(--ds-color-accent)', fontWeight: 900 }}>{icuBedsOccupied}</div>
+          </div>
+          <div style={{ backgroundColor: 'var(--ds-color-warning-subtle, rgba(245, 158, 11, 0.15))', border: '1px solid var(--ds-color-warning)', borderRadius: '8px', padding: '6px 12px', textAlign: 'center' }}>
+            <div style={{ fontSize: '0.7rem', color: 'var(--ds-color-warning)', fontWeight: 700 }}>Cleaning</div>
+            <div style={{ fontSize: '1.1rem', color: 'var(--ds-color-warning)', fontWeight: 900 }}>{cleaningBedsCount}</div>
+          </div>
+          <div style={{ backgroundColor: 'var(--ds-color-primary-subtle, rgba(14, 165, 233, 0.15))', border: '1px solid var(--ds-color-primary)', borderRadius: '8px', padding: '6px 12px', textAlign: 'center' }}>
+            <div style={{ fontSize: '0.7rem', color: 'var(--ds-color-accent)', fontWeight: 700 }}>Pending Discharge</div>
+            <div style={{ fontSize: '1.1rem', color: 'var(--ds-color-accent)', fontWeight: 900 }}>{plannedDischargesCount}</div>
+          </div>
+        </div>
       </div>
+
+      {/* Inpatient Sub-Pages & Operational Action Toolbar (No duplicate menu cards, zero horizontal scrollbar) */}
+      <div
+        style={{
+          backgroundColor: 'var(--ds-color-surface)',
+          border: '1px solid var(--ds-color-border)',
+          borderRadius: '12px',
+          padding: '12px 16px',
+          marginBottom: '1.25rem',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.1)'
+        }}
+      >
+        {/* Top Row: Page Sub-Desk Context & Action Buttons */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '10px'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '1.2rem' }}>🛏️</span>
+            <div>
+              <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--ds-color-text-primary)' }}>
+                Inpatient Operations Desk (IPD)
+              </div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--ds-color-text-muted)' }}>
+                Manage live wards, nursing station, doctor rounds, census, and rapid bed admissions
+              </div>
+            </div>
+          </div>
+
+          {/* Operational Action Buttons Right on the Page */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={() => setIsDirectAdmitOpen(true)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '7px 14px',
+                borderRadius: '8px',
+                backgroundColor: 'var(--ds-color-success)',
+                border: '1px solid var(--ds-color-success)',
+                color: 'var(--ds-color-success-foreground, white)',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                minHeight: '34px',
+                cursor: 'pointer',
+                boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)',
+                transition: 'all 0.15s ease'
+              }}
+              title="Directly admit a patient to an available bed"
+            >
+              <span>+ Direct Admit Bed</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsCreateRequestOpen(true)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '7px 14px',
+                borderRadius: '8px',
+                backgroundColor: 'var(--ds-color-primary)',
+                border: '1px solid var(--ds-color-primary)',
+                color: 'var(--ds-color-primary-foreground, white)',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                minHeight: '34px',
+                cursor: 'pointer',
+                boxShadow: '0 2px 8px rgba(2, 132, 199, 0.3)',
+                transition: 'all 0.15s ease'
+              }}
+              title="Create a new admission requisition"
+            >
+              <span>+ New Admission Req</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsCreateBedOpen(true)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '7px 12px',
+                borderRadius: '8px',
+                backgroundColor: 'var(--ds-color-surface-subtle, rgba(255,255,255,0.05))',
+                border: '1px solid var(--ds-color-border)',
+                color: 'var(--ds-color-text-secondary)',
+                fontSize: '0.78rem',
+                fontWeight: 600,
+                minHeight: '34px',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              title="Add a new physical bed or ICU station"
+            >
+              <span>+ Register Bed</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Sub-Pages Navigation Buttons (Clean single row, zero horizontal scrollbar) */}
+        <div
+          style={{
+            position: 'relative',
+            zIndex: 40,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            flexWrap: 'wrap',
+            paddingTop: '8px',
+            borderTop: '1px solid var(--ds-color-border)'
+          }}
+        >
+          {primaryDailyTabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '5px 11px',
+                  borderRadius: '7px',
+                  border: isActive ? '1.5px solid var(--ds-color-primary)' : '1px solid var(--ds-color-border)',
+                  backgroundColor: isActive ? 'var(--ds-color-primary-subtle, rgba(2, 132, 199, 0.15))' : 'var(--ds-color-surface-subtle, transparent)',
+                  color: isActive ? 'var(--ds-color-primary)' : 'var(--ds-color-text-muted)',
+                  fontSize: '0.78rem',
+                  fontWeight: isActive ? 700 : 500,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <span>{tab.icon}</span>
+                <span>{(tab.label.split('(')[0] ?? tab.label).trim()}</span>
+                {typeof tab.count === 'number' && (
+                  <span
+                    style={{
+                      backgroundColor: isActive ? 'var(--ds-color-primary)' : 'var(--ds-color-surface-hover)',
+                      color: 'white',
+                      fontSize: '0.65rem',
+                      fontWeight: 800,
+                      padding: '1px 6px',
+                      borderRadius: '999px'
+                    }}
+                  >
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+
+          {/* Secondary Inpatient Modules Dropdown */}
+          <TabOverflowMenu
+            label="More Inpatient Modules"
+            options={secondaryFacilityTabs.map((sec) => ({
+              id: sec.id,
+              label: `${sec.icon} ${sec.label}`
+            }))}
+            activeId={activeTab}
+            onSelect={(id) => setActiveTab(id as InpatientTab)}
+            onReset={() => setActiveTab('overview')}
+            accentColor="var(--ds-color-primary)"
+            activeBorderColor="var(--ds-color-accent)"
+          />
+        </div>
+      </div>
+
+      {/* Active Cross-Department Patient Context Banner */}
+      {activePatient && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          backgroundColor: 'rgba(56, 189, 248, 0.12)',
+          border: '1px solid rgba(56, 189, 248, 0.35)',
+          borderRadius: '10px',
+          padding: '10px 16px',
+          marginBottom: '8px',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.2)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '1.25rem' }}>👤</span>
+            <span style={{ fontSize: '0.8125rem', color: '#94A3B8' }}>Active Inpatient Context:</span>
+            <strong style={{ color: '#38BDF8', fontSize: '0.94rem', fontWeight: 800 }}>{activePatient.name}</strong>
+            <span style={{ fontSize: '0.75rem', color: '#CBD5E1', backgroundColor: 'rgba(255,255,255,0.08)', padding: '2px 8px', borderRadius: '4px' }}>
+              UHID: {activePatient.uhid || activePatient.id}
+            </span>
+            {activePatient.age && (
+              <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
+                • {activePatient.age}y / {activePatient.gender || 'M'}
+              </span>
+            )}
+            <span style={{ fontSize: '0.75rem', color: '#34D399', fontWeight: 700 }}>
+              ✓ Auto-linked from Reception / OPD Desk
+            </span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              type="button"
+              onClick={() => setIsCreateRequestOpen(true)}
+              style={{
+                backgroundColor: 'var(--ds-color-primary)',
+                border: '1px solid var(--ds-color-primary)',
+                borderRadius: '6px',
+                color: '#FFFFFF',
+                cursor: 'pointer',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                padding: '4px 10px',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              + Create Requisition
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActivePatient(null);
+                hospitalEventBus.clearActivePatient('InpatientDomainManager');
+              }}
+              style={{
+                backgroundColor: 'transparent',
+                border: '1px solid rgba(255,255,255,0.15)',
+                borderRadius: '6px',
+                color: '#94A3B8',
+                cursor: 'pointer',
+                fontSize: '0.75rem',
+                padding: '4px 10px',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#F1F5F9')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = '#94A3B8')}
+            >
+              Clear Patient ✕
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* View router */}
       {activeTab === 'overview' && metrics && (
@@ -513,18 +953,10 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
           onOpenBedBoard={() => setActiveTab('bed-board')}
           onOpenNursingStation={() => setActiveTab('nursing-station')}
           onSelectAdmission={(id) => {
-            const adm = admissions.find((a) => a.id === id) || null;
+            const adm = (admissions || []).find((a) => a?.id === id) || null;
             setSelectedAdmission(adm);
             setActiveTab('admission-detail');
           }}
-        />
-      )}
-
-      {activeTab === 'control-center' && metrics && (
-        <ADTControlCenterView
-          metrics={metrics}
-          onOpenCreateRequest={() => setIsCreateRequestOpen(true)}
-          onOpenBedBoard={() => setActiveTab('bed-board')}
         />
       )}
 
@@ -586,6 +1018,15 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
             setSelectedBed(b);
             setIsReleaseBedOpen(true);
           }}
+          onOpenQuickAdmit={(b) => {
+            setSelectedBed(b);
+            setIsDirectAdmitOpen(true);
+          }}
+          onCompleteCleaning={(b) => handleQuickCompleteCleaning(b)}
+          onSelectBed={(b) => {
+            setSelectedBed(b);
+            setActiveTab('bed-detail');
+          }}
         />
       )}
 
@@ -614,7 +1055,7 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
             setIsRecordVitalOpen(true);
           }}
           onSelectAdmission={(id) => {
-            const adm = admissions.find((a) => a.id === id) || null;
+            const adm = (admissions || []).find((a) => a?.id === id) || null;
             setSelectedAdmission(adm);
             setActiveTab('admission-detail');
           }}
@@ -640,6 +1081,10 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
             setSelectedTransfer(trf);
             setIsCompleteTransferOpen(true);
           }}
+          onSelectTransfer={(trf) => {
+            setSelectedTransfer(trf);
+            setActiveTab('transfer-detail');
+          }}
         />
       )}
 
@@ -659,7 +1104,14 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
       )}
 
       {activeTab === 'rounds' && (
-        <DoctorRoundsView rounds={rounds} />
+        <DoctorRoundsView
+          rounds={rounds}
+          admissions={admissions}
+          onOpenDoctorRound={(adm) => {
+            setSelectedAdmission(adm);
+            setIsDoctorRoundOpen(true);
+          }}
+        />
       )}
 
       {activeTab === 'discharge-planning' && (
@@ -691,6 +1143,10 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
         />
       )}
 
+      {activeTab === 'nhcx-auto-discharge' && (
+        <InstantNhcxAutoAdjudicationView />
+      )}
+
       {activeTab === 'discharge-summaries' && (
         <DischargeSummaryView summaries={dischargeSummaries} />
       )}
@@ -703,6 +1159,10 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
             setIsCompleteCleaningOpen(true);
           }}
         />
+      )}
+
+      {activeTab === 'smart-hospital-iot' && (
+        <SmartHospitalIotBedOrchestrationView />
       )}
 
       {activeTab === 'wards' && (
@@ -1018,6 +1478,16 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
         onSubmit={handleCompleteCleaning}
         turnaround={selectedTurnaround}
         tenantId={tenantId}
+      />
+
+      <DirectAdmitBedDialog
+        isOpen={isDirectAdmitOpen}
+        onClose={() => setIsDirectAdmitOpen(false)}
+        onSubmit={handleDirectAdmit}
+        bed={selectedBed}
+        wards={wards}
+        tenantId={tenantId}
+        partnerId={partnerId}
       />
     </div>
   );

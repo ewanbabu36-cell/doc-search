@@ -30,8 +30,8 @@ export interface PaymentCollectionViewProps {
 }
 
 export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
-  payments,
-  receipts,
+  payments = [],
+  receipts = [],
   onOpenRecordPayment,
   onOpenIssueReceipt,
   onOpenRefundRequest
@@ -40,7 +40,11 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
   const [methodFilter, setMethodFilter] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
 
-  const filteredPayments = payments.filter((p) => {
+  const safePayments = Array.isArray(payments) ? payments : [];
+  const safeReceipts = Array.isArray(receipts) ? receipts : [];
+
+  const filteredPayments = safePayments.filter((p) => {
+    if (!p) return false;
     if (methodFilter !== 'ALL' && p.paymentMethod !== methodFilter) return false;
     if (statusFilter !== 'ALL' && p.status !== statusFilter) return false;
     if (searchTerm.trim()) {
@@ -81,7 +85,7 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
             Cashier POS & Collection Workbench
           </h2>
           <p style={{ margin: '0.25rem 0 0 0', color: '#64748b', fontSize: '0.875rem' }}>
-            Real-time cashier settlement, multi-channel payment capture, receipt dispatch ({receipts.length} issued), and refund requests
+            Real-time cashier settlement, multi-channel payment capture, receipt dispatch ({safeReceipts.length} issued), and refund requests
           </p>
         </div>
         <Button variant="primary" onClick={onOpenRecordPayment}>

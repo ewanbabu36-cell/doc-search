@@ -44,3 +44,15 @@ pnpm-debug.log*
 .DS_Store
 Thumbs.db
 .neon
+
+# Local Database & Browser Profiles
+data/chrome-profile-*
+data/db/
+data/db-native-utf8/
+packages/database/.data/
+
+# Temporary Audit Dumps & Scratch
+filtered_mocks.txt
+frontend_audit.txt
+mock_search_results.txt
+scratch_inventory.json

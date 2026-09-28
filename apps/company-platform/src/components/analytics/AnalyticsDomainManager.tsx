@@ -18,7 +18,7 @@ import { PredictivePatientBedForecastView } from './PredictivePatientBedForecast
 import { LivePlatformEventStreamerView } from './LivePlatformEventStreamerView.js';
 import { NaturalLanguageBiQueryModal } from './NaturalLanguageBiQueryModal.js';
 import { ExecutiveBiReportExportModal } from './ExecutiveBiReportExportModal.js';
-import { Tabs, Badge, Button, Spinner, ErrorState } from '@docsearch/ui-kit';
+import { Tabs, Badge, Button, Spinner, ErrorState, DocSearchSpatialCore3D } from '@docsearch/ui-kit';
 
 type ActiveTab =
   | 'overview'
@@ -104,6 +104,28 @@ export const AnalyticsDomainManager: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {/* 3D Spatial Feature Core: Executive Platform Analytics & BI */}
+      <DocSearchSpatialCore3D
+        preset="analytics"
+        height={360}
+        interactive={true}
+        onNodeClick={(id) => {
+          if (id === 'revenue-mrr' || id === 'los-benchmark') {
+            setActiveTab('overview');
+          } else if (id === 'bed-occupancy') {
+            setActiveTab('predictive');
+          } else if (id === 'clinical-outcomes') {
+            setActiveTab('heatmap');
+          } else if (id === 'cohort-churn') {
+            setActiveTab('segmentation');
+          } else if (id === 'api-throughput') {
+            setActiveTab('telemetry');
+          } else if (id === 'audit-trail') {
+            setActiveTab('reports');
+          }
+        }}
+      />
+
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', backgroundColor: '#0F172A', border: '1.5px solid rgba(6, 182, 212, 0.4)', borderRadius: '14px', padding: '16px 20px' }}>
         <div>

@@ -6,6 +6,7 @@ import type {
   MedicationFoodRelation
 } from '@docsearch/api-contracts';
 import { Dialog, Button, Input, Select, Alert } from '@docsearch/ui-kit';
+import { AuditJustificationField } from '../common/AuditJustificationField.js';
 
 export interface AddMedicationDialogProps {
   isOpen: boolean;
@@ -240,12 +241,12 @@ export const AddMedicationDialog: React.FC<AddMedicationDialogProps> = ({
           </div>
         </div>
 
-        <div>
-          <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '4px' }}>
-            Audit Justification *
-          </label>
-          <Input value={justification} onChange={(e) => setJustification(e.target.value)} required />
-        </div>
+        <AuditJustificationField
+          value={justification}
+          onChange={setJustification}
+          defaultJustification="Prescribed clinical medication per OPD consultation"
+          placeholder="Prescription justification..."
+        />
       </form>
     </Dialog>
   );

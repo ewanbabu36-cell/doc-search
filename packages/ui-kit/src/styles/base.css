@@ -22,28 +22,182 @@ body {
   
   /* Scroll Rule 1: Page-level vertical scrolling ONLY */
   overflow-x: hidden;
-  overflow-y: auto;
+  overflow-y: auto !important;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 /* ==========================================================================
-   ✨ UNIVERSAL MOUSE HOVER HIGHLIGHT SYSTEM
+   🌟 APPLE-INSPIRED SLEEK MINIMAL FLOATING SCROLLBAR SYSTEM
+   ========================================================================== */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.32);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: var(--ds-color-primary, #0284C7);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* ==========================================================================
+   ✨ UNIVERSAL MOUSE HOVER, SPOTLIGHT & MICRO-ANIMATION SYSTEM
    ========================================================================== */
 
-/* 1. Global Interactive Controls */
+/* Keyframe Animations */
+@keyframes ds-breathe-glow {
+  0% {
+    box-shadow: 0 4px 16px -2px rgba(2, 132, 199, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  50% {
+    box-shadow: 0 8px 28px -4px rgba(2, 132, 199, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    border-color: rgba(2, 132, 199, 0.35);
+  }
+  100% {
+    box-shadow: 0 4px 16px -2px rgba(2, 132, 199, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
+@keyframes ds-pulse-dot {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+    filter: drop-shadow(0 0 4px currentColor);
+  }
+  50% {
+    transform: scale(1.35);
+    opacity: 0.75;
+    filter: drop-shadow(0 0 10px currentColor);
+  }
+}
+
+@keyframes dsPillSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes dsDrawerSlideIn {
+  from {
+    opacity: 0.6;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes ds-shimmer-sweep {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Photon Laser Rotating Conic Border Beam */
+@keyframes ds-beam-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Holographic Specular Sheen Sweep */
+@keyframes ds-holo-sweep {
+  0% {
+    transform: translateX(-200%) skewX(-25deg);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.45;
+  }
+  100% {
+    transform: translateX(300%) skewX(-25deg);
+    opacity: 0;
+  }
+}
+
+/* Tactile Click Shockwave / Water Ripple */
+@keyframes ds-ripple-expand {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0.7;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(4);
+    opacity: 0;
+  }
+}
+
+/* Live Healthcare Telemetry ECG Draw Animation */
+@keyframes ds-ecg-draw {
+  0% {
+    stroke-dashoffset: 600;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Live Telemetry Equalizer Undulation */
+@keyframes ds-audio-wave {
+  0%, 100% {
+    height: 4px;
+  }
+  50% {
+    height: 20px;
+  }
+}
+
+/* 1. Global Interactive Controls & Futuristic Luminous Focus */
 .ds-interactive,
 button,
 a,
 input,
 select,
 textarea {
-  transition: background-color 180ms cubic-bezier(0.4, 0, 0.2, 1),
-              border-color 180ms cubic-bezier(0.4, 0, 0.2, 1),
-              color 180ms cubic-bezier(0.4, 0, 0.2, 1),
-              box-shadow 180ms cubic-bezier(0.4, 0, 0.2, 1),
-              transform 180ms cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 180ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
+              color 180ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1),
+              transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
+              filter 180ms cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 180ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .ds-interactive:focus-visible,
@@ -51,27 +205,400 @@ button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid var(--ds-color-focus-ring);
-  outline-offset: 2px;
+  outline: none !important;
+  border-color: var(--ds-color-primary, #0284C7) !important;
+  box-shadow: 0 0 0 3px var(--ds-color-focus-ring, rgba(14, 165, 233, 0.45)) !important;
 }
 
-/* 2. Card & Dashboard Panel Hover Glow */
+/* Universal Tactile Press & Active Feedback */
+.ds-spring-press:active:not(:disabled),
+button:active:not(:disabled),
+.ds-interactive:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-spring-press:active,
+  button:active,
+  .ds-interactive:active {
+    transform: none !important;
+  }
+}
+
+
+/* 🏛️ 5-LEVEL SURFACE & FROSTED GLASS HIERARCHY (APPLE-INSPIRED SPATIAL OS) */
+/* Level 1: Main Application Background Foundation */
+.ds-surface-l1,
+.ds-app-shell {
+  background-color: var(--ds-surface-l1, var(--ds-color-bg)) !important;
+}
+
+/* Level 2: Primary Operational Workspace Surface */
+.ds-surface-l2,
+.ds-content-area,
+.ds-sidebar {
+  background-color: var(--ds-surface-l2, var(--ds-color-surface-subtle));
+}
+
+/* Level 3: Translucent Frosted Glass Cards with Refined Specular Edge */
+.ds-surface-l3,
+.ds-glass-card,
+.ds-card {
+  background-color: var(--ds-surface-l3, var(--ds-color-surface));
+  backdrop-filter: var(--ds-glass-blur, blur(24px) saturate(180%));
+  -webkit-backdrop-filter: var(--ds-glass-blur, blur(24px) saturate(180%));
+  box-shadow: var(--ds-specular-edge, inset 0 1px 0 0 rgba(255, 255, 255, 0.12)), var(--ds-shadow-base);
+  border: 1px solid var(--ds-color-border);
+  border-radius: 16px;
+}
+
+/* Level 4: Elevated Modals, Dialogs & Drawers */
+.ds-surface-l4,
+.ds-dialog-elevated {
+  background-color: var(--ds-surface-l4, rgba(18, 24, 38, 0.94)) !important;
+  backdrop-filter: blur(32px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(190%) !important;
+  box-shadow: var(--ds-specular-edge, inset 0 1px 0 0 rgba(255, 255, 255, 0.15)),
+              0 24px 60px -12px rgba(0, 0, 0, 0.65),
+              0 8px 24px -4px rgba(0, 0, 0, 0.35) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 20px !important;
+}
+
+/* Level 5: Critical / High-Priority Clinical Alert Overlays */
+.ds-surface-l5,
+.ds-alert-critical {
+  background-color: rgba(239, 68, 68, 0.12) !important;
+  border: 1px solid rgba(239, 68, 68, 0.4) !important;
+  box-shadow: 0 4px 20px -2px rgba(239, 68, 68, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  border-radius: 16px !important;
+}
+
+/* Universal Loading Skeleton System */
+.ds-skeleton {
+  background-color: var(--ds-color-surface-subtle, rgba(255, 255, 255, 0.08));
+  user-select: none;
+  pointer-events: none;
+}
+
+.ds-skeleton-wave {
+  background-image: linear-gradient(
+    90deg,
+    var(--ds-color-surface-subtle, rgba(255, 255, 255, 0.05)) 0%,
+    var(--ds-color-surface-hover, rgba(255, 255, 255, 0.12)) 50%,
+    var(--ds-color-surface-subtle, rgba(255, 255, 255, 0.05)) 100%
+  );
+  background-size: 200% 100%;
+  animation: ds-shimmer-sweep 1.5s infinite ease-in-out;
+}
+
+.ds-skeleton-pulse {
+  animation: ds-pulse-skeleton 1.5s ease-in-out 0.5s infinite;
+}
+
+@keyframes ds-pulse-skeleton {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-skeleton-wave,
+  .ds-skeleton-pulse {
+    animation: none !important;
+  }
+}
+
+
+/* Data-Dense Table Highlighting */
+.ds-table tbody tr {
+  transition: background-color 140ms ease, box-shadow 140ms ease;
+}
+
+.ds-table tbody tr:hover {
+  background-color: rgba(56, 189, 248, 0.06) !important;
+  box-shadow: inset 2px 0 0 0 var(--ds-color-primary, #06B6D4);
+}
+
+.ds-table th {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.ds-table td {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 2. Universal Spotlight & 3D Magnetic Parallax Engine */
+.ds-spotlight-card,
 .ds-card,
 [class*="Card"],
-[class*="card"] {
-  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1),
-              border-color 200ms cubic-bezier(0.4, 0, 0.2, 1),
-              box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1);
+[data-card="true"] {
+  position: relative;
+  isolation: isolate;
+  transform: none !important;
+  perspective: none !important;
+  transition: border-color 220ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Universal Card Hover: Crisp, Clean Enterprise Surface (Zero Fog/Haze) */
+.ds-spotlight-card::before,
+.ds-card::before {
+  display: none !important;
+}
+
+/* 3. Universal Card Hover: Stable, Crisp Border Highlight & Depth Shadow */
+.ds-spotlight-card:hover,
 .ds-card:hover,
 [class*="Card"]:hover {
-  border-color: rgba(6, 182, 212, 0.5) !important;
-  box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.6), 0 0 22px rgba(6, 182, 212, 0.2) !important;
-  transform: translateY(-2px);
+  border-color: var(--ds-color-border-strong, rgba(255, 255, 255, 0.2)) !important;
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.35) !important;
+  transform: none !important;
 }
 
-/* 3. Table Rows Hover Highlight */
+/* Active Click Feedback */
+.ds-spotlight-card:active,
+.ds-card:active,
+[class*="Card"]:active {
+  transform: none !important;
+}
+
+/* Table Containers must remain strictly flat and non-interactive to tilting */
+.ds-table-container,
+.ds-table,
+.ds-card:has(table),
+[class*="Card"]:has(table),
+[class*="Card"]:has(.ds-table-container) {
+  transform: none !important;
+  perspective: none !important;
+  cursor: default !important;
+}
+
+/* 4. Conic Rotating Border Beam Container */
+.ds-border-beam-container {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  box-sizing: border-box;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: xor;
+}
+
+.ds-border-beam {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 280deg,
+    var(--spotlight-border, #06B6D4) 340deg,
+    #FFFFFF 355deg,
+    transparent 360deg
+  );
+  animation: ds-beam-spin 3.5s linear infinite;
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+
+.ds-spotlight-card:hover .ds-border-beam,
+.ds-active-card .ds-border-beam,
+.ds-beam-always .ds-border-beam {
+  opacity: 1;
+}
+
+/* 5. Holographic Specular Sheen Sweep */
+.ds-holo-sheen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 70%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.02) 20%,
+    rgba(255, 255, 255, 0.16) 50%,
+    var(--spotlight-color, rgba(6, 182, 212, 0.18)) 70%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 3;
+  opacity: 0;
+}
+
+.ds-spotlight-card:hover .ds-holo-sheen {
+  animation: ds-holo-sweep 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 6. Click Ripple Shockwave */
+.ds-click-ripple {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--spotlight-glow, rgba(6, 182, 212, 0.5)) 0%, transparent 70%);
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0);
+  animation: ds-ripple-expand 600ms cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+  z-index: 15;
+}
+
+/* 7. Live Healthcare Telemetry Background Waveforms */
+.ds-telemetry-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  opacity: 0.10;
+  transition: opacity 300ms ease;
+  z-index: 0;
+}
+
+.ds-spotlight-card:hover .ds-telemetry-bg,
+.ds-active-card .ds-telemetry-bg {
+  opacity: 0.28;
+}
+
+.ds-telemetry-ecg-line {
+  stroke-dasharray: 600;
+  animation: ds-ecg-draw 2.8s linear infinite;
+}
+
+.ds-telemetry-equalizer {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 22px;
+}
+
+.ds-audio-bar {
+  width: 3px;
+  border-radius: 2px;
+  background-color: var(--spotlight-border, #8B5CF6);
+  animation: ds-audio-wave 1s ease-in-out infinite alternate;
+}
+
+/* 8. Icon Micro-Interactions on Card Hover */
+.ds-spotlight-card .ds-card-icon,
+.ds-card .ds-card-icon,
+[class*="Card"] [data-card-icon] {
+  transition: transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1), filter 260ms ease;
+  will-change: transform;
+}
+
+.ds-spotlight-card:hover .ds-card-icon,
+.ds-card:hover .ds-card-icon,
+[class*="Card"]:hover [data-card-icon] {
+  transform: scale(1.16) rotate(-3deg);
+  filter: drop-shadow(0 4px 12px var(--spotlight-glow, rgba(6, 182, 212, 0.4)));
+}
+
+/* 9. Active Card State with Breathing Neon Pulse */
+.ds-active-card,
+[data-active="true"] {
+  border-color: var(--spotlight-border, #06B6D4) !important;
+  background-color: var(--active-bg, rgba(6, 182, 212, 0.12)) !important;
+  animation: ds-breathe-glow 2.8s ease-in-out infinite alternate !important;
+}
+
+.ds-active-card .ds-pulse-indicator,
+[data-active="true"] .ds-pulse-indicator {
+  animation: ds-pulse-dot 1.8s ease-in-out infinite !important;
+}
+
+/* Reduced Motion Graceful Accessibility Fallback */
+@media (prefers-reduced-motion: reduce) {
+  .ds-spotlight-card,
+  .ds-card,
+  [class*="Card"],
+  [data-card="true"] {
+    transform: none !important;
+    transition: none !important;
+  }
+  .ds-border-beam,
+  .ds-holo-sheen,
+  .ds-click-ripple,
+  .ds-telemetry-ecg-line,
+  .ds-audio-bar {
+    animation: none !important;
+  }
+}
+
+/* 6. Thematic Color Presets for Spotlight & Hover */
+.spotlight-cyan {
+  --spotlight-color: rgba(6, 182, 212, 0.22);
+  --spotlight-border: #06B6D4;
+  --spotlight-glow: rgba(6, 182, 212, 0.35);
+  --active-bg: rgba(6, 182, 212, 0.15);
+}
+
+.spotlight-red {
+  --spotlight-color: rgba(239, 68, 68, 0.22);
+  --spotlight-border: #EF4444;
+  --spotlight-glow: rgba(239, 68, 68, 0.35);
+  --active-bg: rgba(239, 68, 68, 0.15);
+}
+
+.spotlight-amber {
+  --spotlight-color: rgba(245, 158, 11, 0.22);
+  --spotlight-border: #F59E0B;
+  --spotlight-glow: rgba(245, 158, 11, 0.35);
+  --active-bg: rgba(245, 158, 11, 0.15);
+}
+
+.spotlight-green {
+  --spotlight-color: rgba(16, 185, 129, 0.22);
+  --spotlight-border: #10B981;
+  --spotlight-glow: rgba(16, 185, 129, 0.35);
+  --active-bg: rgba(16, 185, 129, 0.15);
+}
+
+.spotlight-blue {
+  --spotlight-color: rgba(37, 99, 235, 0.22);
+  --spotlight-border: #3B82F6;
+  --spotlight-glow: rgba(37, 99, 235, 0.35);
+  --active-bg: rgba(37, 99, 235, 0.15);
+}
+
+.spotlight-purple {
+  --spotlight-color: rgba(139, 92, 246, 0.22);
+  --spotlight-border: #8B5CF6;
+  --spotlight-glow: rgba(139, 92, 246, 0.35);
+  --active-bg: rgba(139, 92, 246, 0.15);
+}
+
+.spotlight-teal {
+  --spotlight-color: rgba(20, 184, 166, 0.22);
+  --spotlight-border: #14B8A6;
+  --spotlight-glow: rgba(20, 184, 166, 0.35);
+  --active-bg: rgba(20, 184, 166, 0.15);
+}
+
+.spotlight-indigo {
+  --spotlight-color: rgba(99, 102, 241, 0.22);
+  --spotlight-border: #6366F1;
+  --spotlight-glow: rgba(99, 102, 241, 0.35);
+  --active-bg: rgba(99, 102, 241, 0.15);
+}
+
+.spotlight-rose {
+  --spotlight-color: rgba(225, 29, 72, 0.22);
+  --spotlight-border: #F43F5E;
+  --spotlight-glow: rgba(225, 29, 72, 0.35);
+  --active-bg: rgba(225, 29, 72, 0.15);
+}
+
+/* 7. Table Rows Hover Highlight */
 table tbody tr {
   transition: background-color 150ms ease, box-shadow 150ms ease;
 }
@@ -82,10 +609,10 @@ table tbody tr:hover {
   cursor: pointer;
 }
 
-/* 4. Button Hover Highlight */
+/* 8. Button Hover Highlight */
 button:not(:disabled):hover {
   filter: brightness(1.12);
-  box-shadow: 0 4px 16px rgba(6, 182, 212, 0.3);
+  box-shadow: 0 4px 16px rgba(6, 182, 212, 0.35);
   transform: translateY(-1px);
 }
 
@@ -93,7 +620,7 @@ button:not(:disabled):active {
   transform: translateY(0);
 }
 
-/* 5. Sidebar Nav Item Hover Highlight */
+/* 9. Sidebar Nav Item Hover Highlight */
 .ds-sidebar button:hover {
   background-color: var(--ds-color-surface-hover) !important;
   border-color: rgba(6, 182, 212, 0.35) !important;
@@ -102,7 +629,7 @@ button:not(:disabled):active {
   box-shadow: 0 2px 8px rgba(6, 182, 212, 0.15) !important;
 }
 
-/* 6. Form Inputs Hover Highlight */
+/* 10. Form Inputs Hover Highlight */
 input:not([type="checkbox"]):not([type="radio"]):hover,
 select:hover,
 textarea:hover {
@@ -110,7 +637,7 @@ textarea:hover {
   box-shadow: 0 0 0 1px var(--ds-color-primary), 0 0 12px rgba(6, 182, 212, 0.18) !important;
 }
 
-/* 7. Badge & Pill Hover Highlight */
+/* 11. Badge & Pill Hover Highlight */
 .ds-badge,
 [class*="Badge"],
 [class*="badge"] {
@@ -121,7 +648,7 @@ textarea:hover {
 [class*="Badge"]:hover {
   filter: brightness(1.18);
   box-shadow: 0 0 10px rgba(6, 182, 212, 0.25);
-  transform: scale(1.03);
+  transform: scale(1.04);
 }
 
 /* ==========================================================================
@@ -151,12 +678,13 @@ textarea:hover {
 .ds-backdrop {
   position: fixed;
   inset: 0;
-  background-color: var(--ds-color-backdrop);
-  z-index: 50;
+  background-color: var(--ds-surface-overlay, var(--ds-color-backdrop, rgba(11, 15, 23, 0.75)));
+  z-index: var(--ds-z-modal, 1050);
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
 }
 
 /* Responsive Grid & Flexbox Utilities */
@@ -235,3 +763,586 @@ textarea:hover {
     scroll-behavior: auto !important;
   }
 }
+
+/* ==========================================================================
+   UNIVERSAL INTERACTION & POSITIONING UTILITIES
+   ========================================================================== */
+.pointer-events-none,
+[data-pointer-events="none"] {
+  pointer-events: none !important;
+}
+
+.pointer-events-auto,
+[data-pointer-events="auto"] {
+  pointer-events: auto !important;
+}
+
+.select-none {
+  user-select: none !important;
+}
+
+.fixed {
+  position: fixed !important;
+}
+
+.absolute {
+  position: absolute !important;
+}
+
+.relative {
+  position: relative !important;
+}
+
+.inset-0 {
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
+}
+
+.z-50 {
+  z-index: 1050 !important;
+}
+
+.z-40 {
+  z-index: 1040 !important;
+}
+
+.z-30 {
+  z-index: 1030 !important;
+}
+
+.flex {
+  display: flex !important;
+}
+
+.inline-flex {
+  display: inline-flex !important;
+}
+
+.items-center {
+  align-items: center !important;
+}
+
+.items-start {
+  align-items: flex-start !important;
+}
+
+.justify-center {
+  justify-content: center !important;
+}
+
+.justify-between {
+  justify-content: space-between !important;
+}
+
+.justify-end {
+  justify-content: flex-end !important;
+}
+
+.bg-black\/50,
+.bg-black\/60,
+.bg-black\/70,
+.bg-black\/80 {
+  background-color: rgba(3, 7, 18, 0.88) !important;
+}
+
+.backdrop-blur-md,
+.backdrop-blur-sm {
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+}
+
+.p-4 {
+  padding: 1rem !important;
+}
+
+.p-6 {
+  padding: 1.5rem !important;
+}
+
+.p-7 {
+  padding: 1.75rem !important;
+}
+
+.w-full {
+  width: 100% !important;
+}
+
+.max-w-md {
+  max-width: 28rem !important;
+}
+
+.max-w-lg {
+  max-width: 32rem !important;
+}
+
+.max-w-xl {
+  max-width: 36rem !important;
+}
+
+.max-w-2xl {
+  max-width: 42rem !important;
+}
+
+.max-w-3xl {
+  max-width: 48rem !important;
+}
+
+.max-h-\[90vh\] {
+  max-height: 90vh !important;
+}
+
+.overflow-y-auto {
+  overflow-y: auto !important;
+}
+
+.rounded-lg {
+  border-radius: 0.5rem !important;
+}
+
+.rounded-xl {
+  border-radius: 0.75rem !important;
+}
+
+.rounded-2xl {
+  border-radius: 1rem !important;
+}
+
+.rounded-3xl {
+  border-radius: 1.5rem !important;
+}
+
+.shadow-2xl {
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.95), 0 0 35px rgba(0, 0, 0, 0.6) !important;
+}
+
+.bg-slate-900 {
+  background-color: var(--ds-color-surface, #0F172A) !important;
+  color: var(--ds-color-text-primary, #F8FAFC) !important;
+}
+
+.bg-slate-800 {
+  background-color: var(--ds-color-surface-subtle, #1E293B) !important;
+  color: var(--ds-color-text-primary, #F8FAFC) !important;
+}
+
+.text-slate-100,
+.text-white {
+  color: var(--ds-color-text-primary, #F8FAFC) !important;
+}
+
+.text-slate-300 {
+  color: var(--ds-color-text-secondary, #CBD5E1) !important;
+}
+
+.text-slate-400 {
+  color: var(--ds-color-text-muted, #94A3B8) !important;
+}
+
+.border-red-600 {
+  border-color: #EF4444 !important;
+}
+
+.border-red-800\/80 {
+  border-color: rgba(153, 27, 27, 0.8) !important;
+}
+
+.border-sky-500\/40 {
+  border-color: rgba(56, 189, 248, 0.4) !important;
+}
+
+.space-y-4 > * + * {
+  margin-top: 1rem !important;
+}
+
+.space-y-5 > * + * {
+  margin-top: 1.25rem !important;
+}
+
+/* ==========================================================================
+   ⚡ ADVANCED SCI-FI HEALTHCARE OS VISUAL EFFECTS SUITE
+   ========================================================================== */
+
+/* 1. Imperceptible Slow Background Gradient Movement */
+@keyframes ds-bg-drift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.ds-animated-gradient-bg {
+  background: radial-gradient(ellipse at 50% 0%, rgba(14, 165, 233, 0.07) 0%, transparent 60%),
+              radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.05) 0%, transparent 50%),
+              var(--ds-surface-l1, #040711);
+  background-size: 200% 200%;
+  animation: ds-bg-drift 45s ease infinite alternate;
+}
+
+/* 2. Laser Scanning Beam Keyframes */
+@keyframes ds-scan-horizontal {
+  0% {
+    left: -80px;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+@keyframes ds-scan-vertical {
+  0% {
+    top: -80px;
+  }
+  100% {
+    top: 100%;
+  }
+}
+
+/* 3. Light Sweep Triggered Sheen */
+.ds-sweep-on-hover:hover .ds-light-sweep-bar,
+.ds-light-sweep-bar.ds-sweeping {
+  transform: rotate(25deg) translateX(800px);
+}
+
+/* 4. Minimalist Calm Surface & Utility Classes */
+.ds-hud-bracket {
+  display: none !important;
+}
+
+.ds-frosted-surface {
+  background: var(--ds-surface-l3, rgba(18, 24, 38, 0.78)) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  border: 1px solid var(--ds-color-border, rgba(255, 255, 255, 0.08)) !important;
+  box-shadow: var(--ds-specular-edge, inset 0 1px 0 0 rgba(255, 255, 255, 0.12)), var(--ds-shadow-base) !important;
+  border-radius: 16px;
+}
+
+.ds-segmented-control {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(18, 24, 38, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  padding: 3px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 2px;
+}
+
+.ds-pill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  background: rgba(2, 132, 199, 0.12);
+  border: 1px solid rgba(2, 132, 199, 0.3);
+  color: #38BDF8;
+}
+
+.ds-spring-press {
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ds-spring-press:active {
+  transform: scale(0.982);
+}
+
+/* ==========================================================================
+   🏢 ADVANCED ENTERPRISE HEALTHCARE WORKSTATION STYLES (WINDOWS PRODUCTIVITY)
+   ========================================================================== */
+
+/* Snappy 120ms Functional Transitions */
+:root {
+  --ds-motion-fast: 120ms cubic-bezier(0.1, 0.9, 0.2, 1);
+  --ds-motion-normal: 160ms cubic-bezier(0.1, 0.9, 0.2, 1);
+  --ds-color-surface-selected: rgba(0, 120, 212, 0.12);
+  --ds-color-surface-selected-hover: rgba(0, 120, 212, 0.18);
+  --ds-color-surface-hover: rgba(255, 255, 255, 0.04);
+}
+
+/* Enterprise Data Tables */
+.ds-table-container {
+  scrollbar-width: thin;
+}
+
+.ds-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ds-table-row {
+  transition: background-color var(--ds-motion-fast), border-color var(--ds-motion-fast);
+}
+
+.ds-table-row-clickable:hover {
+  background-color: var(--ds-color-surface-hover, rgba(255, 255, 255, 0.04)) !important;
+}
+
+.ds-table-row-selected {
+  background-color: var(--ds-color-surface-selected, rgba(0, 120, 212, 0.12)) !important;
+}
+
+.ds-table-row-selected:hover {
+  background-color: var(--ds-color-surface-selected-hover, rgba(0, 120, 212, 0.18)) !important;
+}
+
+.ds-table-striped tbody tr:nth-child(even):not(.ds-table-row-selected) {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.ds-table-sticky-header {
+  box-shadow: 0 1px 0 var(--ds-color-border, rgba(255, 255, 255, 0.1));
+}
+
+/* Workstation Command Bar */
+.ds-command-bar {
+  transition: background-color var(--ds-motion-fast);
+}
+
+.ds-command-bar button {
+  transition: all var(--ds-motion-fast);
+}
+
+/* Master/Detail Split View */
+.ds-split-view {
+  transition: all var(--ds-motion-fast);
+}
+
+@media (max-width: 900px) {
+  .ds-split-view {
+    flex-direction: column !important;
+  }
+  .ds-split-master {
+    width: 100% !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--ds-color-border, rgba(255, 255, 255, 0.1)) !important;
+    max-height: 380px !important;
+  }
+  .ds-inspector-pane {
+    width: 100% !important;
+    border-left: none !important;
+    border-top: 1px solid var(--ds-color-border, rgba(255, 255, 255, 0.1)) !important;
+  }
+}
+
+/* Workstation Panels */
+.ds-workstation-panel {
+  transition: box-shadow var(--ds-motion-fast), border-color var(--ds-motion-fast);
+}
+
+.ds-workstation-panel:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+/* ==========================================================================
+   📱 MODERN ADAPTIVE HEALTHCARE PLATFORM (ANDROID & MATERIAL PRINCIPLES)
+   ========================================================================== */
+
+/* Touch Target Minimum (48px) for accessibility & one-hand interaction */
+.ds-touch-target {
+  min-height: 48px;
+  min-width: 48px;
+  box-sizing: border-box;
+}
+
+/* Material State Layers (Hover, Focus, Press) */
+.ds-state-layer {
+  position: relative;
+  outline: none;
+  transition: background-color var(--ds-motion-standard, 300ms cubic-bezier(0.2, 0, 0, 1)),
+              transform var(--ds-motion-accelerate, 200ms cubic-bezier(0.3, 0, 1, 1));
+}
+
+.ds-state-layer:focus-visible {
+  outline: 2px solid var(--ds-color-primary, #0284C7);
+  outline-offset: 2px;
+}
+
+.ds-state-layer:active {
+  transform: scale(0.97);
+}
+
+/* Adaptive Display Utilities */
+@media (max-width: 768px) {
+  .ds-hide-on-mobile {
+    display: none !important;
+  }
+  .ds-show-on-mobile {
+    display: block !important;
+  }
+  .ds-mobile-full-width {
+    width: 100% !important;
+  }
+  .ds-adaptive-bottom-nav {
+    display: flex !important;
+  }
+  /* Ensure page content is not obscured by bottom navigation */
+  .ds-app-shell {
+    padding-bottom: 72px;
+  }
+}
+
+@media (min-width: 769px) {
+  .ds-hide-on-mobile {
+    display: inherit;
+  }
+  .ds-show-on-mobile {
+    display: none !important;
+  }
+  .ds-adaptive-bottom-nav {
+    display: none !important;
+  }
+}
+
+/* Compact Laptop & Tablet Landscape Adaptation (<= 1366px) */
+@media (max-width: 1366px) {
+  .ds-hide-on-compact {
+    display: none !important;
+  }
+}
+
+/* Material 3 Floating Action Button Elevation */
+.ds-adaptive-fab-wrapper button {
+  transition: transform var(--ds-motion-standard, 300ms cubic-bezier(0.2, 0, 0, 1)),
+              box-shadow var(--ds-motion-standard, 300ms cubic-bezier(0.2, 0, 0, 1)),
+              background-color var(--ds-motion-standard, 300ms cubic-bezier(0.2, 0, 0, 1));
+}
+
+.ds-adaptive-fab-wrapper button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--ds-elevation-4, 0 6px 16px rgba(0, 0, 0, 0.35));
+}
+
+.ds-adaptive-fab-wrapper button:active {
+  transform: scale(0.96);
+  box-shadow: var(--ds-elevation-5, 0 8px 24px rgba(0, 0, 0, 0.45));
+}
+
+/* 5. Strict Accessibility & Reduced Motion Overrides */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001s !important;
+  }
+
+  .ds-floating-card {
+    transform: none !important;
+  }
+
+  .ds-particle-network,
+  .ds-scan-container,
+  .ds-light-sweep-container {
+    display: none !important;
+  }
+
+  .ds-animated-gradient-bg {
+    animation: none !important;
+  }
+}
+
+/* ==========================================================================
+   UNIVERSAL FUTURISTIC EFFECT SYSTEM — GLOBAL STACKING & GLASS UTILITIES
+   ========================================================================== */
+
+/* 1. Global Stacking Order Architecture (Z-Index Hierarchy) */
+.ds-z-background { z-index: var(--ds-z-background, -1) !important; }
+.ds-z-ambient { z-index: var(--ds-z-ambient, 0) !important; }
+.ds-z-shell { z-index: var(--ds-z-shell, 10) !important; }
+.ds-z-content { z-index: var(--ds-z-content, 20) !important; }
+.ds-z-dropdown { z-index: var(--ds-z-dropdown, 50) !important; }
+.ds-z-popover { z-index: var(--ds-z-popover, 55) !important; }
+.ds-z-fab { z-index: var(--ds-z-fab, 60) !important; }
+.ds-z-drawer { z-index: var(--ds-z-drawer, 70) !important; }
+.ds-z-modal { z-index: var(--ds-z-modal, 80) !important; }
+.ds-z-critical-overlay { z-index: var(--ds-z-critical-overlay, 100) !important; }
+
+/* 2. Universal Glass Surfaces */
+.ds-glass-subtle {
+  background-color: var(--ds-surface-glass, rgba(18, 24, 38, 0.75));
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid var(--ds-color-border, rgba(255, 255, 255, 0.08));
+  box-shadow: var(--ds-depth-subtle, 0 1px 3px rgba(0, 0, 0, 0.15)), var(--ds-specular-edge-subtle, inset 0 0.5px 0 0 rgba(255, 255, 255, 0.08));
+}
+
+.ds-glass-panel {
+  background-color: var(--ds-surface-glass, rgba(18, 24, 38, 0.75));
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--ds-color-border, rgba(255, 255, 255, 0.08));
+  box-shadow: var(--ds-depth-medium, 0 4px 12px rgba(0, 0, 0, 0.25)), var(--ds-specular-edge, inset 0 1px 0 0 rgba(255, 255, 255, 0.12));
+}
+
+.ds-glass-elevated {
+  background-color: var(--ds-surface-glass-elevated, rgba(24, 34, 52, 0.92));
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  border: 1px solid var(--ds-color-border-strong, rgba(255, 255, 255, 0.14));
+  box-shadow: var(--ds-depth-high, 0 12px 32px rgba(0, 0, 0, 0.4)), var(--ds-specular-edge, inset 0 1px 0 0 rgba(255, 255, 255, 0.15));
+}
+
+/* 3. Universal Specular & Glow Utility Classes */
+.ds-specular {
+  box-shadow: var(--ds-specular-edge, inset 0 1px 0 0 rgba(255, 255, 255, 0.12));
+}
+
+.ds-specular-subtle {
+  box-shadow: var(--ds-specular-edge-subtle, inset 0 0.5px 0 0 rgba(255, 255, 255, 0.08));
+}
+
+.ds-glow-subtle {
+  box-shadow: var(--ds-glow-subtle, 0 0 12px rgba(2, 132, 199, 0.2));
+}
+
+.ds-glow-active {
+  box-shadow: var(--ds-glow-active, 0 0 20px rgba(2, 132, 199, 0.4));
+}
+
+.ds-glow-critical {
+  box-shadow: var(--ds-glow-critical, 0 0 20px rgba(239, 68, 68, 0.5));
+}
+
+/* 4. Form Inputs Focus Glow & Glass */
+.ds-input,
+input.ds-interactive,
+select.ds-interactive,
+textarea.ds-interactive {
+  transition: border-color var(--ds-motion-fast, 120ms cubic-bezier(0.1, 0.9, 0.2, 1)),
+              box-shadow var(--ds-motion-fast, 120ms cubic-bezier(0.1, 0.9, 0.2, 1)),
+              background-color var(--ds-motion-fast, 120ms cubic-bezier(0.1, 0.9, 0.2, 1));
+}
+
+.ds-input:focus,
+.ds-input:focus-visible,
+input.ds-interactive:focus,
+input.ds-interactive:focus-visible,
+select.ds-interactive:focus,
+select.ds-interactive:focus-visible,
+textarea.ds-interactive:focus,
+textarea.ds-interactive:focus-visible {
+  border-color: var(--ds-color-primary, #0284C7) !important;
+  box-shadow: var(--ds-glow-focus, 0 0 0 2px rgba(14, 165, 233, 0.45)), var(--ds-specular-edge-subtle) !important;
+  outline: none !important;
+}
+
+/* 5. Universal Overflow & Stacking Isolation Guard */
+.ds-stack-isolated {
+  isolation: isolate;
+}
+
+.ds-overflow-visible {
+  overflow: visible !important;
+}
+

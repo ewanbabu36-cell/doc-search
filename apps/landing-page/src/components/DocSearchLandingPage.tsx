@@ -1,25 +1,150 @@
-import { AIReceptionistWidget } from './AIReceptionistWidget.js';
-import React, { useState, useEffect } from 'react';
-import { Badge, useTheme, themes } from '@docsearch/ui-kit';
+import React, { useState, useEffect, useRef } from 'react';
+import { Badge, useTheme, themes, DocSearchLogo } from '@docsearch/ui-kit';
 
-interface ModuleCard {
-  id: string;
-  title: string;
-  category: string;
-  icon: string;
-  badge: string;
-  accentColor: string;
-  description: string;
-  keyMetrics: string;
-  features: string[];
-}
+// Lazy-loaded heavy modals and full-page views to drastically reduce landing page bundle size
+const UnifiedHealthcareLoginModal = React.lazy(() => import('./UnifiedHealthcareLoginModal.js').then(m => ({ default: m.UnifiedHealthcareLoginModal })));
+const FullPageRegistrationView = React.lazy(() => import('./FullPageRegistrationView.js').then(m => ({ default: m.FullPageRegistrationView })));
+const LaunchOfferFlashTakeoverModal = React.lazy(() => import('./LaunchOfferFlashTakeoverModal.js').then(m => ({ default: m.LaunchOfferFlashTakeoverModal })));
+const LiveEmergencyBedRadarWidget = React.lazy(() => import('./LiveEmergencyBedRadarWidget.js').then(m => ({ default: m.LiveEmergencyBedRadarWidget })));
+const AIReceptionistWidget = React.lazy(() => import('./AIReceptionistWidget.js').then(m => ({ default: m.AIReceptionistWidget })));
+import { InteractiveClinicSandbox } from './InteractiveClinicSandbox.js';
+import { AdaptiveRoiCalculator } from './AdaptiveRoiCalculator.js';
+import {
+  getPromotionalCampaign,
+  fetchPromotionalCampaignRemote,
+  calculateCampaignMetrics,
+  PROMOTIONAL_CAMPAIGN_EVENT,
+  type PromotionalCampaignConfig,
+  type CampaignCalculatedMetrics
+} from '@docsearch/shared-core';
 
 export const DocSearchLandingPage: React.FC = () => {
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
   const [showDemoModal, setShowDemoModal] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginModalInitialTab, setLoginModalInitialTab] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
+  const [isOmniCapsuleOpen, setIsOmniCapsuleOpen] = useState(false);
+  const [isAiReceptionistOpen, setIsAiReceptionistOpen] = useState(false);
+  const omniCapsuleRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (omniCapsuleRef.current && !omniCapsuleRef.current.contains(e.target as Node)) {
+        setIsOmniCapsuleOpen(false);
+      }
+    };
+    if (isOmniCapsuleOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOmniCapsuleOpen]);
+
+  // Dynamic Launch Offer Campaign & Urgency Engine (HQ Controlled)
+  const [campaign, setCampaign] = useState<PromotionalCampaignConfig>(getPromotionalCampaign());
+  const [campaignMetrics, setCampaignMetrics] = useState<CampaignCalculatedMetrics>(calculateCampaignMetrics(campaign));
+
+  // Dedicated Full-Page View Mode ('LANDING' vs 'REGISTRATION')
+  const [currentView, setCurrentView] = useState<'LANDING' | 'REGISTRATION'>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('view') === 'register' || params.get('register') === 'true') {
+        return 'REGISTRATION';
+      }
+    }
+    return 'LANDING';
+  });
+
+  // Welcome Flash Offer Takeover Modal State
+  const [showFlashTakeover, setShowFlashTakeover] = useState(false);
+
+  // Auto-flash offer takeover on first visit if offer is active
+  useEffect(() => {
+    try {
+      const dismissed = sessionStorage.getItem('docsearch_flash_offer_dismissed');
+      if (!dismissed && campaign.status === 'ACTIVE') {
+        setShowFlashTakeover(true);
+      }
+    } catch {}
+  }, [campaign.status]);
+
+  const handleCloseFlashTakeover = () => {
+    setShowFlashTakeover(false);
+    try {
+      sessionStorage.setItem('docsearch_flash_offer_dismissed', 'true');
+    } catch {}
+  };
+
+  const handleClaimFlashOffer = () => {
+    setShowFlashTakeover(false);
+    try {
+      sessionStorage.setItem('docsearch_flash_offer_dismissed', 'true');
+    } catch {}
+    setCurrentView('REGISTRATION');
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const openRegisterModal = () => {
+    setCurrentView('REGISTRATION');
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const openLoginModal = () => {
+    setLoginModalInitialTab('LOGIN');
+    setShowLoginModal(true);
+  };
+
+  useEffect(() => {
+    let mounted = true;
+    const updateCampaignState = async () => {
+      try {
+        const remote = await fetchPromotionalCampaignRemote();
+        if (mounted) {
+          setCampaign(remote);
+          setCampaignMetrics(calculateCampaignMetrics(remote));
+        }
+      } catch {
+        if (mounted) {
+          const current = getPromotionalCampaign();
+          setCampaign(current);
+          setCampaignMetrics(calculateCampaignMetrics(current));
+        }
+      }
+    };
+
+    updateCampaignState();
+    const timer = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        updateCampaignState();
+      }
+    }, 60000);
+    if (typeof window !== 'undefined') {
+      window.addEventListener(PROMOTIONAL_CAMPAIGN_EVENT, updateCampaignState);
+    }
+
+    return () => {
+      mounted = false;
+      clearInterval(timer);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener(PROMOTIONAL_CAMPAIGN_EVENT, updateCampaignState);
+      }
+    };
+  }, []);
+
   const [demoSubmitted, setDemoSubmitted] = useState(false);
   const [activeTab, setActiveTab] = useState<'clinical' | 'ai_cdss' | 'abdm' | 'operations' | 'security'>('clinical');
-  const [activeModuleIndex, setActiveModuleIndex] = useState(0);
+  
+  // Advancement States: Scroll, Navigation, FAQ, Pipeline & Demo Token
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+  const [selectedPipelineStep, setSelectedPipelineStep] = useState<number>(0);
+  const [generatedDemoToken, setGeneratedDemoToken] = useState<string>('VIP-HOSP-2026');
 
   // Interactive Body Symptom Explorer State
   const [selectedOrgan, setSelectedOrgan] = useState<'HEART' | 'BRAIN' | 'BONES' | 'PEDIATRICS' | 'EYES' | 'PATHOLOGY'>('HEART');
@@ -37,6 +162,36 @@ export const DocSearchLandingPage: React.FC = () => {
     avatar: string;
   } | null>(null);
 
+  // Scroll listener for sticky dock & glass navbar
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 400);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Hash listener for navbar navigation and automated tab switching
+  useEffect(() => {
+    const handleHash = () => {
+      const h = window.location.hash.toLowerCase();
+      if (h === '#ai-cdss') {
+        setActiveTab('ai_cdss');
+        document.getElementById('command-center')?.scrollIntoView({ behavior: 'smooth' });
+      } else if (h === '#abdm') {
+        setActiveTab('abdm');
+        document.getElementById('command-center')?.scrollIntoView({ behavior: 'smooth' });
+      } else if (h === '#architecture') {
+        document.getElementById('architecture')?.scrollIntoView({ behavior: 'smooth' });
+      } else if (h === '#faq') {
+        document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth' });
+      }
+    };
+    handleHash();
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, []);
+
   // Listen for Cmd+K / Ctrl+K
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -50,17 +205,7 @@ export const DocSearchLandingPage: React.FC = () => {
   }, []);
 
   // ROI Calculator State
-  const [bedCount, setBedCount] = useState<number>(250);
-  const [dailyOpdCount, setDailyOpdCount] = useState<number>(450);
-
-  // Live Simulation Ticker
-  const [liveClock, setLiveClock] = useState<string>('');
-  useEffect(() => {
-    const updateTime = () => setLiveClock(new Date().toLocaleTimeString('en-US', { hour12: false }));
-    updateTime();
-    const interval = setInterval(updateTime, 1000);
-    return () => clearInterval(interval);
-  }, []);
+    
 
   const [demoForm, setDemoForm] = useState({
     hospitalName: '',
@@ -71,153 +216,77 @@ export const DocSearchLandingPage: React.FC = () => {
     notes: ''
   });
 
-  const handleDemoSubmit = (e: React.FormEvent) => {
+  const handleDemoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!demoForm.hospitalName || !demoForm.phone) return;
+    if (demoForm.phone.length !== 10 || !/^[6-9]/.test(demoForm.phone)) {
+      alert('Kripya valid 10-digit Indian mobile number enter karein (starts with 6, 7, 8, or 9).');
+      return;
+    }
+
+    const token = 'VIP-HOSP-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+    setGeneratedDemoToken(token);
+
+    const demoPayload = {
+      id: 'demo-' + Date.now(),
+      demoToken: token,
+      ...demoForm,
+      status: 'PENDING_DEMO',
+      submittedAt: new Date().toISOString()
+    };
+
+    // 1. LocalStorage persistence
+    try {
+      const existing = JSON.parse(localStorage.getItem('docsearch_demo_requests') || '[]');
+      existing.unshift(demoPayload);
+      localStorage.setItem('docsearch_demo_requests', JSON.stringify(existing));
+    } catch {
+      // ignore
+    }
+
+    // 2. API Gateway sync to Fastify backend
+    try {
+      await fetch('/api/v1/auth/demo-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(demoPayload)
+      });
+    } catch {
+      // fallback
+    }
+
     setDemoSubmitted(true);
   };
 
-  const partnerPortalUrl = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' ? '/partner' : 'http://localhost:5173';
-  const companyPortalUrl = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' ? '/hq' : 'http://localhost:5174';
-
-  const modulesList: ModuleCard[] = [
-    {
-      id: 'opd-ehr',
-      title: 'OPD & Longitudinal EHR',
-      category: 'Clinical Suite',
-      icon: '🩺',
-      badge: 'Zero-Latency',
-      accentColor: '#06B6D4',
-      description: 'Streamlined doctor consultation desk with smart Chief Complaints, ICD-10 dual-coder assist, and instant digital Rx generation with contraindication alerts.',
-      keyMetrics: 'Avg Consult: 3.8 mins • 100% Paperless',
-      features: ['Smart SOAP Templates', 'Rx Drug-Safety Checks', 'Token & Queue Triage', 'Historical Vitals Radar']
-    },
-    {
-      id: 'ai-scribe',
-      title: 'Ambient AI Voice Scribe & CDSS',
-      category: 'AI & Safety',
-      icon: '🎙️',
-      badge: 'Real-Time Voice',
-      accentColor: '#8B5CF6',
-      description: 'Live acoustic consultation dialogue transcription into structured SOAP notes, automated ICD-10 coding, Sepsis NEWS2 calculation, and lethal DDI blocking.',
-      keyMetrics: '97.6% NLP Accuracy • Mandatory Doctor Approval',
-      features: ['Acoustic Speech-to-SOAP', 'Clinical Negation Safety', 'NEWS2 Sepsis 6 Trigger', 'Warfarin-DDI Safety Gate']
-    },
-    {
-      id: 'abdm-gateway',
-      title: 'ABDM National Health Gateway',
-      category: 'India Digital Stack',
-      icon: '🇮🇳',
-      badge: 'M1 + M2 + M3',
-      accentColor: '#F59E0B',
-      description: '14-digit ABHA ID creation via Aadhaar e-KYC, HIP Care Context linking, Counter Scan & Share token intake, and NRCES compliant FHIR R4 encrypted transfer.',
-      keyMetrics: 'Full NHA Sandbox Spec • ECDH Encrypted',
-      features: ['14-Digit ABHA & PHR M1', 'Scan & Share Counter M2', 'Electronic Consents M3', 'NRCES FHIR R4 Signed']
-    },
-    {
-      id: 'ipd-adt',
-      title: 'IPD & ADT Bed Matrix',
-      category: 'Inpatient Care',
-      icon: '🛏️',
-      badge: 'Live Census',
-      accentColor: '#3B82F6',
-      description: 'Interactive visual bed matrix across General, Semi-Special, Deluxe & ICU wards. Daily nursing charts, vitals trending, and automated discharge summaries.',
-      keyMetrics: '94.2% Bed Utilization Rate',
-      features: ['Real-Time Bed Map', 'Nursing Flowsheets', 'Inter-Ward Transfers', 'Discharge Clearance Gate']
-    },
-    {
-      id: 'er-trauma',
-      title: 'Emergency Room & Triage (ER)',
-      category: 'Critical Care',
-      icon: '🚨',
-      badge: 'ESI 1-5 Triage',
-      accentColor: '#EF4444',
-      description: 'Emergency Severity Index triage prioritization, fast-track stat orders, trauma resuscitation bay workflows, and rapid code blue response dispatch.',
-      keyMetrics: '< 45s Triage Intake',
-      features: ['Red/Yellow/Green Bays', 'Crash Cart Telemetry', 'Stat Lab/Imaging Sync', 'Rapid Admission Protocol']
-    },
-    {
-      id: 'ot-surgery',
-      title: 'Operation Theatre & PAC',
-      category: 'Surgical Suite',
-      icon: '🔪',
-      badge: 'WHO Enforced',
-      accentColor: '#10B981',
-      description: 'OT table booking, surgical team allocation, Pre-Anaesthesia Clearance (PAC), intra-operative implant tracking, and PACU Aldrete recovery score validation.',
-      keyMetrics: '100% WHO Checklist Compliance',
-      features: ['PAC Sign-Off Gate', 'Intra-Op Implant Log', 'PACU Aldrete Scoring', 'Post-Op Transfer Audit']
-    },
-    {
-      id: 'lims-lab',
-      title: 'LIMS & Diagnostic Pathology',
-      category: 'Diagnostics',
-      icon: '🧪',
-      badge: 'Analyzer Synced',
-      accentColor: '#EC4899',
-      description: 'Barcode-scanned vacutainer sample collection, bidirectional clinical chemistry analyzer interfacing, multi-level pathologist sign-off, and panic alerts.',
-      keyMetrics: '100% Sample Traceability',
-      features: ['Tube Cap Color Coding', 'Automated Reference Ranges', 'Critical Panic Dispatch', 'Digital Stamp Sign-Off']
-    },
-    {
-      id: 'radiology-pacs',
-      title: 'Radiology / RIS & Web PACS',
-      category: 'Medical Imaging',
-      icon: '🩻',
-      badge: 'DICOM Ready',
-      accentColor: '#6366F1',
-      description: 'Modality worklists for X-Ray, CT, MRI, and USG. Zero-footprint web DICOM viewer, radiologist reporting workbench, and finalization locking.',
-      keyMetrics: 'Instant Web DICOM Streaming',
-      features: ['RAD-ACC Accessioning', 'Multi-Frame DICOM Viewer', 'Structured Reporting', 'Tamper-Proof Audit']
-    },
-    {
-      id: 'pharmacy-fefo',
-      title: 'Pharmacy & FEFO Dispensing',
-      category: 'Supply & Dispense',
-      icon: '💊',
-      badge: 'FEFO Managed',
-      accentColor: '#14B8A6',
-      description: 'Doctor digital prescription queue integration, automated First-Expired-First-Out batch allocation, Schedule H register logging, and POS billing.',
-      keyMetrics: 'Zero Expiry Wastage',
-      features: ['Auto FEFO Allocation', 'Schedule H Tracking', 'Unit-Dose Sachet Barcode', 'Stock Ledger Sync']
-    },
-    {
-      id: 'blood-bank',
-      title: 'Blood Bank & Transfusion',
-      category: 'Transfusion Medicine',
-      icon: '🩸',
-      badge: 'ISBT-128 Ready',
-      accentColor: '#E11D48',
-      description: 'Voluntary donor registration, PRBC/FFP/Platelet component separation, mandatory TTI serology screening gates, and crossmatch validation.',
-      keyMetrics: 'Strict 2-6°C Cold Chain Tracking',
-      features: ['Donor Screening Protocol', 'Component Separation', 'TTI Serology Gate', 'Crossmatch Verification']
-    },
-    {
-      id: 'billing-tpa',
-      title: 'Billing & TPA Claims Engine',
-      category: 'Revenue Cycle',
-      icon: '💳',
-      badge: 'PM-JAY Cashless',
-      accentColor: '#F97316',
-      description: 'Universal charge aggregation across consultations, beds, surgeries, medications, and labs. Cashless insurance pre-auth, claim submission, and tariff management.',
-      keyMetrics: 'Sub-24h Claim Turnaround',
-      features: ['Dual Cash/TPA Mode', 'Automated Charge Sheet', 'PM-JAY Pre-Auth Workflow', 'Instant Invoicing']
-    },
-    {
-      id: 'hardware-bridge',
-      title: 'Barcode / RFID Hardware Bridge',
-      category: 'IoT & Peripherals',
-      icon: '🏷️',
-      badge: 'WebUSB & WebSerial',
-      accentColor: '#0284C7',
-      description: 'Direct browser driver bindings for handheld Zebra 2D scanners, UHF RFID portal antennas, and Zebra direct thermal ZPL II label printers.',
-      keyMetrics: '< 45ms Scan-to-DB Latency',
-      features: ['WebUSB / Serial Drivers', 'GS1 DataMatrix Decoders', 'UHF RFID EPC Gen2', 'ZPL II Label Generator']
-    }
-  ];
+  const partnerPortalUrl = ((import.meta as any)?.env?.VITE_PARTNER_URL as string) || (typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 'http://localhost:5173' : '/partner/');
+  const companyPortalUrl = ((import.meta as any)?.env?.VITE_COMPANY_URL as string) || (typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 'http://localhost:5174' : '/hq/');
 
   // Calculated ROI Metrics
-  const calculatedMonthlyRevenue = (bedCount * 4200 * 30 * 0.85 + dailyOpdCount * 650 * 26).toLocaleString('en-IN');
-  const savedDoctorHoursPerMonth = Math.round(dailyOpdCount * 26 * 0.08);
-  const preventedBillingLeakagePct = '99.4%';
+      
+  // Render Full-Page Dedicated Registration View
+  if (currentView === 'REGISTRATION') {
+    return (
+      <React.Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#090D16', color: '#06B6D4' }}>Loading Registration Suite...</div>}>
+        <FullPageRegistrationView
+          onBackToHome={() => {
+            setCurrentView('LANDING');
+            if (typeof window !== 'undefined') {
+              const url = new URL(window.location.href);
+              url.searchParams.delete('view');
+              url.searchParams.delete('register');
+              window.history.replaceState({}, document.title, url.pathname);
+            }
+          }}
+          onOpenLogin={() => {
+            setCurrentView('LANDING');
+            openLoginModal();
+          }}
+          partnerPortalUrl={partnerPortalUrl}
+          companyPortalUrl={companyPortalUrl}
+        />
+      </React.Suspense>
+    );
+  }
 
   return (
     <div style={{
@@ -252,192 +321,569 @@ export const DocSearchLandingPage: React.FC = () => {
         zIndex: 0
       }} />
 
-      {/* 1. TOP LIVE NOTIFICATION BANNER */}
-      <div style={{
-        background: 'linear-gradient(90deg, rgba(6, 182, 212, 0.25) 0%, rgba(59, 130, 246, 0.25) 50%, rgba(139, 92, 246, 0.25) 100%)',
-        borderBottom: '1px solid rgba(56, 189, 248, 0.2)',
-        padding: '8px 20px',
-        fontSize: '0.8125rem',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '12px',
-        position: 'relative',
-        zIndex: 60
-      }}>
-        <span style={{
-          backgroundColor: '#06B6D4',
-          color: '#070B14',
-          padding: '2px 8px',
-          borderRadius: '9999px',
-          fontWeight: 700,
-          fontSize: '0.6875rem',
-          letterSpacing: '0.05em',
-          textTransform: 'uppercase'
+      {/* 1. TOP LIVE NOTIFICATION BANNER / DYNAMIC LAUNCH PROMO MARQUEE */}
+      {campaign.status === 'ACTIVE' && !campaignMetrics.isExpired && !campaignMetrics.isLocked ? (
+        <div style={{
+          background: 'linear-gradient(90deg, #1E1B4B 0%, #0F172A 30%, #1E1B4B 70%, #064E3B 100%)',
+          borderBottom: '1px solid rgba(56, 189, 248, 0.3)',
+          padding: '8px 20px',
+          fontSize: '0.8125rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '14px',
+          flexWrap: 'wrap',
+          position: 'relative',
+          zIndex: 60,
+          boxShadow: '0 2px 14px rgba(0, 0, 0, 0.4)'
         }}>
-          NEW RELEASE
-        </span>
-        <span style={{ color: '#E0F2FE', fontWeight: 500 }}>
-          ✨ ABDM M1/M2/M3 National Health Gateway, Ambient Voice Scribe 3.0 & Hardware Bridge now live.
-        </span>
-        <a href="#modules" style={{ color: '#38BDF8', fontWeight: 600, textDecoration: 'none' }}>
-          Explore Capabilities →
-        </a>
-      </div>
+          {/* Pulsing Live Badge */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              backgroundColor: '#10B981',
+              boxShadow: '0 0 10px #10B981'
+            }} />
+            <span style={{
+              backgroundColor: 'rgba(16, 185, 129, 0.2)',
+              color: '#34D399',
+              border: '1px solid rgba(16, 185, 129, 0.4)',
+              padding: '2px 8px',
+              borderRadius: '9999px',
+              fontWeight: 800,
+              fontSize: '0.6875rem',
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase'
+            }}>
+              {campaign.badgeText}
+            </span>
+          </div>
 
-      {/* 2. GLASSMORPHIC TOP NAVBAR */}
-      <header style={{
+          {/* Offer Headline & Benefits */}
+          <span style={{ color: '#F8FAFC', fontWeight: 600 }}>
+            🎉 <strong>{campaign.title}:</strong> 100% Free {campaign.durationMonths}-Month {campaign.planName} Access (Worth ₹{campaign.originalPriceInr.toLocaleString('en-IN')})
+          </span>
+
+          {/* Seats Counter Badge */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            backgroundColor: 'rgba(245, 158, 11, 0.15)',
+            border: '1px solid rgba(245, 158, 11, 0.35)',
+            padding: '2px 10px',
+            borderRadius: '9999px',
+            color: '#FCD34D',
+            fontSize: '0.75rem',
+            fontWeight: 800
+          }}>
+            <span>🎯</span>
+            <span>{campaignMetrics.claimedCount} / {campaign.targetSeats} Seats Claimed</span>
+            <span style={{ color: '#F87171' }}>• Only {campaignMetrics.remainingSeats} Left!</span>
+          </div>
+
+          {/* Countdown Clock */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            backgroundColor: 'rgba(15, 23, 42, 0.8)',
+            border: '1px solid rgba(56, 189, 248, 0.3)',
+            padding: '2px 10px',
+            borderRadius: '6px',
+            color: '#38BDF8',
+            fontSize: '0.75rem',
+            fontWeight: 800,
+            fontFamily: 'monospace'
+          }}>
+            <span>⏳ Closes In:</span>
+            <span>{campaignMetrics.formattedTimeLeft}</span>
+          </div>
+
+          {/* Direct CTA */}
+          <button
+            type="button"
+            onClick={openRegisterModal}
+            style={{
+              backgroundColor: '#10B981',
+              color: '#070B14',
+              border: 'none',
+              padding: '4px 12px',
+              borderRadius: '9999px',
+              fontWeight: 800,
+              fontSize: '0.75rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              boxShadow: '0 0 12px rgba(16, 185, 129, 0.4)',
+              transition: 'transform 0.15s ease'
+            }}
+          >
+            <span>Claim Free Seat</span>
+            <span>➔</span>
+          </button>
+        </div>
+      ) : (
+        <div style={{
+          background: 'linear-gradient(90deg, rgba(6, 182, 212, 0.25) 0%, rgba(59, 130, 246, 0.25) 50%, rgba(139, 92, 246, 0.25) 100%)',
+          borderBottom: '1px solid rgba(56, 189, 248, 0.2)',
+          padding: '8px 20px',
+          fontSize: '0.8125rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '12px',
+          position: 'relative',
+          zIndex: 60
+        }}>
+          <span style={{
+            backgroundColor: '#06B6D4',
+            color: '#070B14',
+            padding: '2px 8px',
+            borderRadius: '9999px',
+            fontWeight: 700,
+            fontSize: '0.6875rem',
+            letterSpacing: '0.05em',
+            textTransform: 'uppercase'
+          }}>
+            NEW RELEASE
+          </span>
+          <span style={{ color: '#E0F2FE', fontWeight: 500 }}>
+            ✨ ABDM M1/M2/M3 National Health Gateway, Ambient Voice Scribe 3.0 & Hardware Bridge now live.
+          </span>
+          <a href="#simulator" style={{ color: '#38BDF8', fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+            <span>🎮 Try 10-Sec Live Demo →</span>
+          </a>
+        </div>
+      )}
+
+      {/* 2. GLASSMORPHIC TOP NAVBAR & RESPONSIVE LOGO ARCHITECTURE */}
+      <style>{`
+        /* ============================================================ */
+        /* 🩺 DOC SEARCH - ADVANCED RESPONSIVE LOGO & NAVBAR RULES       */
+        /* ============================================================ */
+
+        .docsearch-header {
+          padding: 14px 32px;
+        }
+
+        /* Brand Logo Interactive Link Container */
+        .docsearch-brand-logo {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          cursor: pointer;
+          flex-shrink: 0;
+          text-decoration: none;
+          transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+        .docsearch-brand-logo:hover {
+          transform: translateY(-1px);
+          opacity: 0.95;
+        }
+
+        /* Logo Glowing Hex/Rounded Icon */
+        .docsearch-logo-icon {
+          width: 42px;
+          height: 42px;
+          border-radius: 12px;
+          background: linear-gradient(135deg, #06B6D4 0%, #3B82F6 50%, #8B5CF6 100%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.35rem;
+          box-shadow: 0 0 22px rgba(6, 182, 212, 0.45);
+          border: 1px solid rgba(255, 255, 255, 0.25);
+          flex-shrink: 0;
+          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Logo Typography & Badge Layout */
+        .docsearch-logo-text-group {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          min-width: 0;
+        }
+        .docsearch-logo-row {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-wrap: nowrap;
+        }
+        .docsearch-logo-title {
+          font-size: 1.25rem;
+          font-weight: 900;
+          letter-spacing: -0.03em;
+          background: linear-gradient(90deg, #FFFFFF 0%, #E2E8F0 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          white-space: nowrap;
+          line-height: 1.2;
+          transition: font-size 0.2s ease;
+        }
+        .docsearch-logo-badge {
+          background-color: rgba(6, 182, 212, 0.15);
+          color: #38BDF8;
+          border: 1px solid rgba(56, 189, 248, 0.3);
+          padding: 2px 8px;
+          border-radius: 6px;
+          font-size: 0.6875rem;
+          font-weight: 700;
+          letter-spacing: 0.04em;
+          white-space: nowrap;
+          display: inline-block;
+          transition: all 0.2s ease;
+        }
+        .docsearch-logo-subtitle {
+          font-size: 0.75rem;
+          color: #94A3B8;
+          white-space: nowrap;
+          line-height: 1.3;
+          margin-top: 2px;
+          transition: all 0.2s ease;
+        }
+
+        /* Desktop Navigation vs Mobile Drawers */
+        .docsearch-desktop-nav {
+          display: flex;
+          align-items: center;
+          gap: 20px;
+          flex-wrap: wrap;
+        }
+        .docsearch-mobile-toggle {
+          display: none !important;
+        }
+        .docsearch-clock-badge {
+          display: flex;
+        }
+        .docsearch-login-full {
+          display: inline;
+        }
+        .docsearch-login-compact {
+          display: none;
+        }
+        .docsearch-theme-label {
+          display: inline;
+        }
+
+        /* 💻 Screen <= 1180px: Hide subtitle to protect logo from colliding with desktop nav */
+        @media (max-width: 1180px) {
+          .docsearch-logo-subtitle {
+            display: none !important;
+          }
+        }
+
+        /* 📱 Tablet Screen <= 1024px: Hide desktop nav links, reveal mobile toggle */
+        @media (max-width: 1024px) {
+          .docsearch-header {
+            padding: 12px 20px !important;
+          }
+          .docsearch-desktop-nav {
+            display: none !important;
+          }
+          .docsearch-mobile-toggle {
+            display: flex !important;
+          }
+          .docsearch-logo-subtitle {
+            display: none !important;
+          }
+        }
+
+        /* 📱 Mobile Screen <= 768px: Proportional logo scale & clean layout */
+        @media (max-width: 768px) {
+          .docsearch-header {
+            padding: 10px 16px !important;
+          }
+          .docsearch-brand-logo {
+            gap: 10px !important;
+          }
+          .docsearch-logo-icon {
+            width: 36px !important;
+            height: 36px !important;
+            font-size: 1.15rem !important;
+            border-radius: 9px !important;
+          }
+          .docsearch-logo-title {
+            font-size: 1.125rem !important;
+          }
+          .docsearch-logo-badge {
+            font-size: 0.625rem !important;
+            padding: 1px 6px !important;
+          }
+          .docsearch-clock-badge {
+            display: none !important;
+          }
+          .docsearch-theme-label {
+            display: none !important;
+          }
+        }
+
+        /* 📲 Ultra-Compact Mobile <= 480px: Minimal single-row header */
+        @media (max-width: 480px) {
+          .docsearch-header {
+            padding: 8px 12px !important;
+          }
+          .docsearch-brand-logo {
+            gap: 8px !important;
+          }
+          .docsearch-logo-icon {
+            width: 32px !important;
+            height: 32px !important;
+            font-size: 1rem !important;
+            border-radius: 8px !important;
+          }
+          .docsearch-logo-title {
+            font-size: 1.05rem !important;
+            letter-spacing: -0.02em !important;
+          }
+          .docsearch-logo-badge {
+            display: none !important;
+          }
+          .docsearch-login-full {
+            display: none !important;
+          }
+          .docsearch-login-compact {
+            display: inline !important;
+          }
+        }
+
+        /* 📲 Mini Phone <= 360px */
+        @media (max-width: 360px) {
+          .docsearch-header {
+            padding: 8px 8px !important;
+          }
+          .docsearch-brand-logo {
+            gap: 6px !important;
+          }
+          .docsearch-logo-title {
+            font-size: 0.95rem !important;
+          }
+        }
+
+        /* ✦ Unified Omni-Action Capsule Responsive Styling */
+        .docsearch-omni-capsule {
+          position: fixed;
+          bottom: 24px;
+          right: 24px;
+          z-index: 9999;
+          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .docsearch-omni-menu {
+          position: absolute;
+          bottom: calc(100% + 10px);
+          right: 0;
+          width: 300px;
+          max-width: calc(100vw - 32px);
+          background-color: rgba(15, 23, 42, 0.97);
+          backdrop-filter: blur(24px);
+          -webkit-backdrop-filter: blur(24px);
+          border: 1.5px solid rgba(56, 189, 248, 0.4);
+          border-radius: 18px;
+          box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85), 0 0 35px rgba(6, 182, 212, 0.25);
+          padding: 10px;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          animation: omniFadeInUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes omniFadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(8px) scale(0.97);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+
+        /* 📱 Screen <= 768px: Mobile Ergonomic Capsule Positioning */
+        @media (max-width: 768px) {
+          .docsearch-omni-capsule {
+            bottom: 16px !important;
+            right: 16px !important;
+          }
+          .docsearch-omni-menu {
+            right: 0 !important;
+            width: calc(100vw - 32px) !important;
+          }
+        }
+
+        /* 📲 Screen <= 480px: Compact Viewport */
+        @media (max-width: 480px) {
+          .docsearch-omni-capsule {
+            bottom: 12px !important;
+            right: 12px !important;
+          }
+          .docsearch-omni-menu {
+            width: calc(100vw - 24px) !important;
+          }
+        }
+      `}</style>
+
+      <header className="docsearch-header" style={{
         position: 'sticky',
         top: 0,
         zIndex: 50,
         backdropFilter: 'blur(20px)',
         backgroundColor: 'rgba(7, 11, 20, 0.85)',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-        padding: '14px 32px',
+        borderBottom: scrolled ? '1px solid rgba(56, 189, 248, 0.25)' : '1px solid rgba(255, 255, 255, 0.08)',
+        boxShadow: scrolled ? '0 10px 30px rgba(0, 0, 0, 0.5)' : 'none',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         transition: 'all 0.3s ease'
       }}>
-        {/* Brand Logo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '10px',
-            background: 'linear-gradient(135deg, #06B6D4 0%, #3B82F6 50%, #8B5CF6 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '1.25rem',
-            boxShadow: '0 0 20px rgba(6, 182, 212, 0.5)',
-            border: '1px solid rgba(255, 255, 255, 0.2)'
-          }}>
-            🩺
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{
-                fontSize: '1.25rem',
-                fontWeight: 900,
-                letterSpacing: '-0.03em',
-                background: 'linear-gradient(90deg, #FFFFFF 0%, #E2E8F0 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent'
-              }}>
-                DOC SEARCH
-              </span>
-              <span style={{
-                backgroundColor: 'rgba(6, 182, 212, 0.15)',
-                color: '#38BDF8',
-                border: '1px solid rgba(56, 189, 248, 0.3)',
-                padding: '2px 8px',
-                borderRadius: '6px',
-                fontSize: '0.6875rem',
-                fontWeight: 700,
-                letterSpacing: '0.04em'
-              }}>
-                ENTERPRISE OS
-              </span>
-            </div>
-            <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
-              Integrated Hospital & Clinical Intelligence System
-            </div>
-          </div>
-        </div>
+        {/* Brand Logo - Universal Futuristic DocSearch Logo with Home Redirection */}
+        <DocSearchLogo
+          variant="full"
+          size="md"
+          badgeText="ENTERPRISE OS"
+          redirectUrl="/"
+          onClick={(e) => {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        />
 
-        {/* Center Nav Links */}
-        <nav style={{ display: 'flex', alignItems: 'center', gap: '28px' }}>
-          <a href="#overview" style={{ color: '#E2E8F0', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 500, transition: 'color 0.2s' }}>Overview</a>
-          <a href="#modules" style={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 500, transition: 'color 0.2s' }}>15 Clinical Modules</a>
-          <a href="#ai-cdss" style={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 500, transition: 'color 0.2s' }}>AI Scribe & CDSS</a>
-          <a href="#abdm" style={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 500, transition: 'color 0.2s' }}>ABDM Gateway</a>
-          <a href="#calculator" style={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 500, transition: 'color 0.2s' }}>ROI Calculator</a>
-          <a href="#security" style={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 500, transition: 'color 0.2s' }}>Security & Audit</a>
+        {/* Center Nav Links (Desktop Only - Clean Linear Style) */}
+        <nav className="docsearch-desktop-nav" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <a href="#overview" style={{ color: '#E2E8F0', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 600, transition: 'color 0.2s' }}>Overview</a>
+          <a href="#simulator" style={{ color: '#38BDF8', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 800, transition: 'color 0.2s', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#10B981', boxShadow: '0 0 8px #10B981' }} />
+            🎮 10-Sec Live Demo
+          </a>
+          <a href="#emergency" style={{ color: '#F87171', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 800, transition: 'color 0.2s', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>🚨 ICU Bed Radar</a>
+          <a href="#architecture" style={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 600, transition: 'color 0.2s' }}>Architecture</a>
+          <a href="#security" style={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 600, transition: 'color 0.2s' }}>Security</a>
         </nav>
 
-        {/* Right CTA Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-            border: '1px solid rgba(16, 185, 129, 0.25)',
-            padding: '4px 10px',
-            borderRadius: '9999px',
-            fontSize: '0.75rem',
-            color: '#34D399',
-            fontWeight: 600
-          }}>
-            <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#10B981', boxShadow: '0 0 8px #10B981' }} />
-            {liveClock} UTC
-          </div>
-
-          {/* Theme Switcher Button */}
+        {/* Right CTA Actions - Clean Linear/Apple-Style (Demo CTA + Sign In) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+          {/* Live Product Demo CTA */}
           <button
             type="button"
-            onClick={toggleTheme}
+            onClick={() => setShowDemoModal(true)}
             style={{
-              backgroundColor: theme === themes.AURORA_GLOW ? 'rgba(16, 185, 129, 0.2)' : 'rgba(30, 41, 59, 0.8)',
-              border: theme === themes.AURORA_GLOW ? '1.5px solid #10B981' : '1px solid rgba(255, 255, 255, 0.15)',
-              color: theme === themes.AURORA_GLOW ? '#6EE7B7' : '#E2E8F0',
-              padding: '8px 14px',
-              borderRadius: '8px',
-              fontWeight: 800,
-              fontSize: '0.8125rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              boxShadow: theme === themes.AURORA_GLOW ? '0 0 15px rgba(16, 185, 129, 0.4)' : 'none'
-            }}
-          >
-            {theme === themes.AURORA_GLOW ? '🌈 Aurora Glow' : '🎨 Switch Theme'}
-          </button>
-
-          <a
-            href={partnerPortalUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              textDecoration: 'none',
-              background: 'linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%)',
+              background: 'linear-gradient(135deg, #0284C7 0%, #2563EB 100%)',
               color: '#FFFFFF',
               padding: '8px 18px',
               borderRadius: '8px',
               fontWeight: 700,
               fontSize: '0.875rem',
-              boxShadow: '0 4px 14px rgba(6, 182, 212, 0.35)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              boxShadow: '0 4px 14px rgba(2, 132, 199, 0.35)',
+              cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              cursor: 'pointer'
+              transition: 'all 0.2s ease',
+              whiteSpace: 'nowrap'
             }}
           >
-            🏥 Hospital Portal (5173)
-          </a>
+            <span>⚡</span>
+            <span>Live Product Demo</span>
+          </button>
 
-          <a
-            href={companyPortalUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+          {/* Clean Sign In Button */}
+          <button
+            type="button"
+            onClick={openLoginModal}
             style={{
-              textDecoration: 'none',
-              backgroundColor: 'rgba(30, 41, 59, 0.8)',
-              color: '#E2E8F0',
+              backgroundColor: 'rgba(30, 41, 59, 0.7)',
+              color: '#F8FAFC',
               padding: '8px 16px',
               borderRadius: '8px',
-              fontWeight: 600,
+              fontWeight: 700,
               fontSize: '0.875rem',
               border: '1px solid rgba(255, 255, 255, 0.15)',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              transition: 'all 0.2s ease',
+              whiteSpace: 'nowrap'
             }}
           >
-            🏢 SaaS HQ (5174)
-          </a>
+            <span>Sign In ➔</span>
+          </button>
+
+          {/* Mobile Menu Toggle Button */}
+          <button
+            type="button"
+            className="docsearch-mobile-toggle"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            style={{
+              backgroundColor: 'rgba(30, 41, 59, 0.8)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              color: '#F8FAFC',
+              borderRadius: '8px',
+              padding: '7px 10px',
+              cursor: 'pointer',
+              fontSize: '1.125rem',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+            title="Toggle navigation"
+          >
+            {mobileMenuOpen ? '✕' : '☰'}
+          </button>
         </div>
+
+        {/* Mobile Dropdown Menu Drawer */}
+        {mobileMenuOpen && (
+          <div style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            backgroundColor: 'rgba(7, 11, 20, 0.96)',
+            backdropFilter: 'blur(20px)',
+            borderBottom: '1px solid rgba(56, 189, 248, 0.3)',
+            padding: '20px 32px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '14px',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.8)'
+          }}>
+            {[
+              { label: '🎮 10-Sec Live Software Demo', href: '#simulator' },
+              { label: 'Overview', href: '#overview' },
+              { label: '🚨 ICU Bed Radar', href: '#emergency' },
+              { label: 'Event Bus Pipeline', href: '#architecture' },
+              { label: 'Ambient AI Scribe', href: '#ai-cdss', action: () => setActiveTab('ai_cdss') },
+              { label: 'ABDM Health Gateway', href: '#abdm', action: () => setActiveTab('abdm') },
+              { label: 'Hospital ROI Estimator', href: '#calculator' },
+              { label: 'Executive FAQs', href: '#faq' },
+              { label: 'Zero-Trust Security', href: '#security' }
+            ].map((item, idx) => (
+              <a
+                key={idx}
+                href={item.href}
+                onClick={() => {
+                  if (item.action) item.action();
+                  setMobileMenuOpen(false);
+                }}
+                style={{
+                  color: '#E2E8F0',
+                  textDecoration: 'none',
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  padding: '8px 0',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.05)'
+                }}
+              >
+                {item.label}
+              </a>
+            ))}
+          </div>
+        )}
       </header>
 
       {/* 3. HERO SECTION WITH VIBRANT MEDICAL HUD */}
@@ -510,18 +956,41 @@ export const DocSearchLandingPage: React.FC = () => {
           </p>
 
           {/* Primary Buttons */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '14px', flexWrap: 'wrap' }}>
+            <a
+              href="#simulator"
+              style={{
+                background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                color: '#FFFFFF',
+                padding: '14px 28px',
+                borderRadius: '10px',
+                fontWeight: 900,
+                fontSize: '1rem',
+                textDecoration: 'none',
+                border: '1px solid rgba(255, 255, 255, 0.25)',
+                boxShadow: '0 0 25px rgba(16, 185, 129, 0.45)',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              <span>🎮 Try 10-Sec Live Demo</span>
+              <span>➔</span>
+            </a>
+
             <button
               onClick={() => setShowDemoModal(true)}
               style={{
-                background: 'linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%)',
+                background: 'linear-gradient(135deg, #0284C7 0%, #2563EB 100%)',
                 color: '#FFFFFF',
-                padding: '14px 32px',
+                padding: '14px 28px',
                 borderRadius: '10px',
                 fontWeight: 800,
                 fontSize: '1rem',
                 border: '1px solid rgba(255, 255, 255, 0.2)',
-                boxShadow: '0 0 25px rgba(6, 182, 212, 0.45)',
+                boxShadow: '0 0 25px rgba(2, 132, 199, 0.45)',
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
                 display: 'flex',
@@ -529,35 +998,296 @@ export const DocSearchLandingPage: React.FC = () => {
                 gap: '10px'
               }}
             >
-              <span>🚀 Schedule VIP Sandbox Demo</span>
+              <span>🚀 VIP Walkthrough</span>
             </button>
 
-            <a
-              href={partnerPortalUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={openLoginModal}
               style={{
-                textDecoration: 'none',
                 backgroundColor: 'rgba(30, 41, 59, 0.7)',
                 color: '#F8FAFC',
-                padding: '14px 28px',
+                padding: '14px 24px',
                 borderRadius: '10px',
                 fontWeight: 700,
                 fontSize: '1rem',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
+                border: '1.5px solid rgba(56, 189, 248, 0.35)',
                 backdropFilter: 'blur(12px)',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px'
+                gap: '8px',
+                boxShadow: '0 4px 14px rgba(0, 0, 0, 0.3)'
               }}
             >
-              <span>⚡ Open Live Partner Portal</span>
-            </a>
+              <span>🔐 Doctor Portal</span>
+            </button>
           </div>
+
+          {/* ========================================================================= */}
+          {/* 🎯 DYNAMIC HERO LAUNCH OFFER & SCARCITY QUOTA CARD (HQ CONTROLLED)         */}
+          {/* ========================================================================= */}
+          {campaign.status === 'ACTIVE' && (
+            <div
+              style={{
+                marginTop: '28px',
+                width: '100%',
+                background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 27, 75, 0.9) 100%)',
+                border: '1.5px solid rgba(56, 189, 248, 0.4)',
+                borderRadius: '16px',
+                padding: '20px 24px',
+                backdropFilter: 'blur(16px)',
+                boxShadow: '0 12px 36px rgba(0, 0, 0, 0.5), 0 0 24px rgba(56, 189, 248, 0.15)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '14px',
+                textAlign: 'left'
+              }}
+            >
+              {/* Top Row: Title, Badge & Countdown */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #10B981 0%, #0284C7 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1.5rem',
+                    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+                  }}>
+                    🎁
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '1.0625rem', fontWeight: 900, color: '#FFFFFF' }}>
+                        {campaign.title}
+                      </span>
+                      <span style={{
+                        backgroundColor: campaignMetrics.isLocked || campaignMetrics.isExpired ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)',
+                        color: campaignMetrics.isLocked || campaignMetrics.isExpired ? '#F87171' : '#34D399',
+                        border: campaignMetrics.isLocked || campaignMetrics.isExpired ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(16, 185, 129, 0.4)',
+                        fontSize: '0.6875rem',
+                        fontWeight: 800,
+                        padding: '2px 8px',
+                        borderRadius: '9999px',
+                        textTransform: 'uppercase'
+                      }}>
+                        {campaignMetrics.isLocked ? 'QUOTA FULFILLED' : campaignMetrics.isExpired ? 'OFFER EXPIRED' : campaign.badgeText}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '0.8125rem', color: '#94A3B8', marginTop: '2px' }}>
+                      {campaign.subtitle}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Countdown pill */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  backgroundColor: 'rgba(15, 23, 42, 0.85)',
+                  border: '1px solid rgba(56, 189, 248, 0.35)',
+                  padding: '6px 14px',
+                  borderRadius: '10px'
+                }}>
+                  <span style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 600 }}>⏰ Closing In:</span>
+                  <span style={{ fontSize: '0.875rem', fontWeight: 900, color: '#38BDF8', fontFamily: 'monospace' }}>
+                    {campaignMetrics.formattedTimeLeft}
+                  </span>
+                </div>
+              </div>
+
+              {/* Progress Bar Container */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', fontSize: '0.8125rem' }}>
+                  <span style={{ fontWeight: 700, color: '#CBD5E1' }}>
+                    🔥 Partner Adoption Quota: <strong style={{ color: '#38BDF8' }}>{campaignMetrics.claimedCount}</strong> of <strong style={{ color: '#FFFFFF' }}>{campaign.targetSeats}</strong> Seats Claimed
+                  </span>
+                  <span style={{ fontWeight: 800, color: campaignMetrics.percentageClaimed > 85 ? '#F87171' : '#34D399' }}>
+                    {campaignMetrics.percentageClaimed}% Claimed • {campaignMetrics.remainingSeats} Free Slots Left!
+                  </span>
+                </div>
+
+                {/* Visual Bar */}
+                <div style={{
+                  width: '100%',
+                  height: '10px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                  borderRadius: '9999px',
+                  overflow: 'hidden'
+                }}>
+                  <div style={{
+                    width: `${Math.min(100, Math.max(5, campaignMetrics.percentageClaimed))}%`,
+                    height: '100%',
+                    background: 'linear-gradient(90deg, #0284C7 0%, #06B6D4 50%, #10B981 100%)',
+                    borderRadius: '9999px',
+                    transition: 'width 0.5s ease',
+                    boxShadow: '0 0 12px rgba(16, 185, 129, 0.6)'
+                  }} />
+                </div>
+              </div>
+
+              {/* Bottom perks & CTA */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '12px',
+                paddingTop: '6px',
+                borderTop: '1px solid rgba(255, 255, 255, 0.08)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', fontSize: '0.75rem', color: '#94A3B8', flexWrap: 'wrap' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ color: '#10B981' }}>✓</span> ₹0 for {campaign.durationMonths} Months (Save ₹{campaign.originalPriceInr.toLocaleString('en-IN')})
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ color: '#10B981' }}>✓</span> Zero Credit Card Required
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ color: '#10B981' }}>✓</span> Instant Sandbox Provisioning
+                  </span>
+                </div>
+
+                {campaignMetrics.isLocked || campaignMetrics.isExpired ? (
+                  <button
+                    type="button"
+                    onClick={openLoginModal}
+                    style={{
+                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                      color: '#94A3B8',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      fontSize: '0.8125rem',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    View Standard Pricing & Onboarding →
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={openRegisterModal}
+                    style={{
+                      background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      padding: '8px 18px',
+                      borderRadius: '8px',
+                      fontSize: '0.8125rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      boxShadow: '0 4px 16px rgba(16, 185, 129, 0.4)',
+                      transition: 'transform 0.15s ease'
+                    }}
+                  >
+                    <span>⚡ Claim My Free Partner Seat ({campaignMetrics.remainingSeats} Left)</span>
+                    <span>➔</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ========================================================================= */}
+        {/* 🎮 ELEVATED 10-SEC LIVE CLINIC SIMULATOR (RANK #3 NEXT-GEN ADVANCEMENT)    */}
+        {/* ========================================================================= */}
+        <div id="simulator" style={{ margin: '48px 0 32px 0', width: '100%', scrollMarginTop: '90px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+            <Badge variant="primary">🎮 10-SECOND LIVE CLINIC SIMULATOR</Badge>
+            <h2 style={{ fontSize: 'clamp(1.8rem, 3.8vw, 2.6rem)', fontWeight: 900, letterSpacing: '-0.025em', margin: '14px 0 10px 0' }}>
+              38 Text Cards Ke Badle — Homepage Par Hi Live Interactive Software Demo
+            </h2>
+            <p style={{ color: '#94A3B8', fontSize: '1.0625rem', maxWidth: '780px', margin: '0 auto', lineHeight: 1.6 }}>
+              Experience why <strong style={{ color: '#F8FAFC' }}>14,000+ Indian Doctors & Hospital Directors</strong> switched from legacy slow software.
+              Test real OPD tokens, 1-click pediatric kits, 50-bed ward matrices, blister cuts, and ASTM analyzers in 10 seconds.
+            </p>
+          </div>
+
+          <InteractiveClinicSandbox
+            onOpenDemoModal={() => setShowDemoModal(true)}
+            onOpenRegisterModal={openRegisterModal}
+            partnerPortalUrl={partnerPortalUrl}
+          />
+        </div>
+
+        {/* ========================================================================= */}
+        {/* 🚨 24x7 LIVE EMERGENCY ICU & OXYGEN BED RADAR WIDGET                      */}
+        {/* ========================================================================= */}
+        <div id="emergency" style={{ margin: '36px 0 20px 0', width: '100%' }}>
+          <React.Suspense fallback={<div style={{ minHeight: '120px', borderRadius: '16px', background: 'rgba(255,255,255,0.03)' }} />}>
+            <LiveEmergencyBedRadarWidget />
+          </React.Suspense>
+        </div>
+
+        {/* ========================================================================= */}
+        {/* 🏆 NATIONAL HEALTHCARE ACCREDITATIONS & COMPLIANCE TRUST BAR */}
+        {/* ========================================================================= */}
+        <div style={{
+          margin: '36px 0 32px 0',
+          padding: '20px 24px',
+          backgroundColor: 'rgba(15, 23, 42, 0.7)',
+          backdropFilter: 'blur(16px)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          borderRadius: '16px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '14px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#10B981', boxShadow: '0 0 8px #10B981' }} />
+            VERIFIED HEALTHCARE INTEROPERABILITY & NATIONAL REGULATORY STANDARDS
+          </div>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: '14px',
+            flexWrap: 'wrap',
+            width: '100%'
+          }}>
+            {[
+              { label: 'NHA ABDM Certified', sub: 'M1 • M2 • M3 Gateway', icon: '🇮🇳', color: '#F59E0B' },
+              { label: 'NABH Digital Standards', sub: 'Clinical Care Ready', icon: '🏥', color: '#10B981' },
+              { label: 'NABL ISO 15189', sub: 'Bidirectional Analyzers', icon: '🧪', color: '#EC4899' },
+              { label: 'HIPAA & GDPR Compliant', sub: 'Zero-Trust PHI Cryptography', icon: '🔒', color: '#38BDF8' },
+              { label: 'ISO/IEC 27001 Certified', sub: 'Multi-Tenant RLS Vault', icon: '🛡️', color: '#8B5CF6' },
+              { label: 'HL7 FHIR R4 & DICOM 3.0', sub: 'NRCES Signed Bundles', icon: '⚡', color: '#06B6D4' }
+            ].map((badge, bidx) => (
+              <div
+                key={bidx}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  backgroundColor: 'rgba(30, 41, 59, 0.6)',
+                  border: `1px solid ${badge.color}30`,
+                  padding: '8px 16px',
+                  borderRadius: '12px',
+                  transition: 'transform 0.2s',
+                  minWidth: '180px'
+                }}
+              >
+                <span style={{ fontSize: '1.5rem' }}>{badge.icon}</span>
+                <div>
+                  <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#F8FAFC' }}>{badge.label}</div>
+                  <div style={{ fontSize: '0.6875rem', color: badge.color, fontWeight: 600 }}>{badge.sub}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
         {/* ✨ INTERACTIVE 3D BODY SYMPTOM EXPLORER & INSTANT DOCTOR SPOTLIGHT */}
         {/* ========================================================================= */}
         <div style={{
@@ -1171,7 +1901,9 @@ export const DocSearchLandingPage: React.FC = () => {
         </div>
 
         {/* 4. LIVE INTERACTIVE COMMAND CENTER HUD PREVIEW */}
-        <div style={{
+        <div id="ai-cdss" style={{ position: 'relative', top: '-120px', visibility: 'hidden' }} />
+        <div id="abdm" style={{ position: 'relative', top: '-120px', visibility: 'hidden' }} />
+        <div id="command-center" style={{
           backgroundColor: 'rgba(15, 23, 42, 0.75)',
           backdropFilter: 'blur(24px)',
           border: '1px solid rgba(56, 189, 248, 0.25)',
@@ -1459,225 +2191,507 @@ export const DocSearchLandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 5. 15 FULL CLINICAL & OPERATIONAL MODULES (INTERACTIVE 3D GLASS CARDS) */}
-      <section id="modules" style={{ padding: '80px 32px', maxWidth: '1360px', margin: '0 auto', position: 'relative', zIndex: 10 }}>
-        <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-          <Badge variant="primary">COMPLETE CLINICAL SUITE</Badge>
-          <h2 style={{ fontSize: '2.5rem', fontWeight: 800, letterSpacing: '-0.02em', margin: '16px 0 12px 0' }}>
-            15 Specialized Hospital Operating Domains
-          </h2>
-          <p style={{ color: '#94A3B8', fontSize: '1.0625rem', maxWidth: '640px', margin: '0 auto' }}>
-            Every department in your hospital operates on synchronized, real-time workflows with zero data silos.
-          </p>
-        </div>
-
+      {/* 5. 38-MODULE ENTERPRISE ECOSYSTEM DIRECTORY */}
+      <section id="modules" style={{ padding: '60px 32px 80px 32px', maxWidth: '1360px', margin: '0 auto', position: 'relative', zIndex: 10 }}>
         <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: '24px'
+          backgroundColor: 'rgba(15, 23, 42, 0.75)',
+          border: '1.5px solid rgba(56, 189, 248, 0.3)',
+          borderRadius: '20px',
+          padding: '36px 40px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '24px',
+          background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.85) 100%)',
+          boxShadow: '0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(56, 189, 248, 0.1)'
         }}>
-          {modulesList.map((m, idx) => (
-            <div
-              key={m.id}
-              onClick={() => setActiveModuleIndex(idx)}
-              style={{
-                backgroundColor: activeModuleIndex === idx ? 'rgba(30, 41, 59, 0.85)' : 'rgba(15, 23, 42, 0.65)',
-                backdropFilter: 'blur(16px)',
-                border: activeModuleIndex === idx ? `1px solid ${m.accentColor}` : '1px solid rgba(255, 255, 255, 0.08)',
-                borderRadius: '16px',
-                padding: '24px',
-                transition: 'all 0.25s ease',
-                cursor: 'pointer',
-                boxShadow: activeModuleIndex === idx ? `0 10px 30px -5px ${m.accentColor}33` : '0 4px 20px rgba(0, 0, 0, 0.4)',
-                transform: activeModuleIndex === idx ? 'translateY(-2px)' : 'none'
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                <span style={{ fontSize: '2rem' }}>{m.icon}</span>
-                <span style={{
-                  backgroundColor: `${m.accentColor}20`,
-                  color: m.accentColor,
-                  border: `1px solid ${m.accentColor}40`,
-                  padding: '3px 10px',
-                  borderRadius: '9999px',
-                  fontSize: '0.6875rem',
-                  fontWeight: 700,
-                  letterSpacing: '0.04em'
-                }}>
-                  {m.badge}
-                </span>
-              </div>
-
-              <div style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', marginBottom: '4px' }}>
-                {m.category}
-              </div>
-
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#F8FAFC', margin: '0 0 10px 0' }}>
-                {m.title}
-              </h3>
-
-              <p style={{ fontSize: '0.875rem', color: '#94A3B8', lineHeight: 1.5, margin: '0 0 16px 0', minHeight: '60px' }}>
-                {m.description}
-              </p>
-
-              <div style={{
-                backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                borderRadius: '8px',
-                padding: '8px 12px',
-                fontSize: '0.75rem',
-                color: '#38BDF8',
-                fontWeight: 600,
-                marginBottom: '14px'
-              }}>
-                📈 {m.keyMetrics}
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
-                {m.features.map((feat, fidx) => (
-                  <div key={fidx} style={{ fontSize: '0.75rem', color: '#CBD5E1', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <span style={{ color: m.accentColor }}>✓</span> {feat}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* 6. INTERACTIVE ROI & HOSPITAL CAPACITY CALCULATOR */}
-      <section id="calculator" style={{
-        padding: '80px 32px',
-        backgroundColor: 'rgba(15, 23, 42, 0.5)',
-        borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-        position: 'relative',
-        zIndex: 10
-      }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-            <Badge variant="primary">FINANCIAL & EFFICIENCY MODEL</Badge>
-            <h2 style={{ fontSize: '2.25rem', fontWeight: 800, margin: '14px 0 8px 0' }}>
-              Interactive Hospital Capacity & ROI Estimator
+          <div>
+            <Badge variant="primary">COMPLETE 38-MODULE HOSPITAL SUITE</Badge>
+            <h2 style={{ fontSize: 'clamp(1.5rem, 2.5vw, 2.25rem)', fontWeight: 800, letterSpacing: '-0.02em', margin: '14px 0 8px 0' }}>
+              Tested the 10-Second Demo? Explore All 38 Modules
             </h2>
-            <p style={{ color: '#94A3B8', fontSize: '1rem' }}>
-              See how DocSearch accelerates your revenue cycle, cuts clinician documentation time, and eliminates revenue leakages.
+            <p style={{ color: '#94A3B8', fontSize: '1rem', maxWidth: '720px', margin: 0, lineHeight: 1.5 }}>
+              From Emergency Resuscitation and OT Anesthesia Scheduling to Blood Bank Cross-Match, DICOM PACS Web Viewer, Central FEFO Pharmacy, and ABDM M1–M3 Gateways — experience the complete enterprise platform.
             </p>
           </div>
 
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-            gap: '32px',
-            backgroundColor: 'rgba(30, 41, 59, 0.7)',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(56, 189, 248, 0.25)',
-            borderRadius: '20px',
-            padding: '36px'
-          }}>
-            {/* Sliders Side */}
-            <div>
-              <div style={{ marginBottom: '28px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <label style={{ fontWeight: 600, fontSize: '0.9375rem', color: '#E2E8F0' }}>Hospital Bed Capacity:</label>
-                  <span style={{ fontWeight: 800, color: '#38BDF8', fontSize: '1.125rem' }}>{bedCount} Beds</span>
-                </div>
-                <input
-                  type="range"
-                  min={50}
-                  max={1200}
-                  step={25}
-                  value={bedCount}
-                  onChange={(e) => setBedCount(Number(e.target.value))}
-                  style={{ width: '100%', accentColor: '#06B6D4', cursor: 'pointer' }}
-                />
-              </div>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+            <a
+              href="#simulator"
+              style={{
+                padding: '12px 22px',
+                borderRadius: '8px',
+                backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                border: '1px solid #38BDF8',
+                color: '#38BDF8',
+                fontSize: '0.875rem',
+                fontWeight: 800,
+                textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <span>🎮 Re-test 10-Sec Simulator</span>
+            </a>
 
-              <div style={{ marginBottom: '28px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <label style={{ fontWeight: 600, fontSize: '0.9375rem', color: '#E2E8F0' }}>Daily OPD Consultations:</label>
-                  <span style={{ fontWeight: 800, color: '#A855F7', fontSize: '1.125rem' }}>{dailyOpdCount} Patients / Day</span>
-                </div>
-                <input
-                  type="range"
-                  min={100}
-                  max={2500}
-                  step={50}
-                  value={dailyOpdCount}
-                  onChange={(e) => setDailyOpdCount(Number(e.target.value))}
-                  style={{ width: '100%', accentColor: '#8B5CF6', cursor: 'pointer' }}
-                />
-              </div>
-
-              <div style={{
-                backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                padding: '16px',
-                borderRadius: '10px',
-                border: '1px solid rgba(255, 255, 255, 0.06)'
-              }}>
-                <div style={{ fontSize: '0.8125rem', color: '#10B981', fontWeight: 700, marginBottom: '4px' }}>
-                  ⚡ IMMEDIATE BENEFITS ON DAY 1
-                </div>
-                <ul style={{ margin: 0, paddingLeft: '18px', color: '#CBD5E1', fontSize: '0.8125rem', lineHeight: 1.6 }}>
-                  <li>Zero paper chart chasing across nursing stations</li>
-                  <li>Automated ABDM M2 Scan & Share token intake</li>
-                  <li>100% FEFO batch tracking eliminating expired medicine loss</li>
-                </ul>
-              </div>
-            </div>
-
-            {/* Calculated Output Display */}
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              backgroundColor: 'rgba(15, 23, 42, 0.8)',
-              borderRadius: '16px',
-              padding: '24px',
-              border: '1px solid rgba(255, 255, 255, 0.08)'
-            }}>
-              <div style={{ marginBottom: '20px' }}>
-                <div style={{ fontSize: '0.8125rem', color: '#94A3B8', textTransform: 'uppercase', fontWeight: 600 }}>Estimated Monthly Clinical Revenue Tracked</div>
-                <div style={{ fontSize: '2rem', fontWeight: 900, color: '#38BDF8', marginTop: '4px' }}>
-                  ₹ {calculatedMonthlyRevenue}
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
-                <div>
-                  <div style={{ fontSize: '0.75rem', color: '#94A3B8', textTransform: 'uppercase', fontWeight: 600 }}>Doctor Hours Saved / Month</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#10B981', marginTop: '4px' }}>
-                    ~{savedDoctorHoursPerMonth} hrs
-                  </div>
-                </div>
-
-                <div>
-                  <div style={{ fontSize: '0.75rem', color: '#94A3B8', textTransform: 'uppercase', fontWeight: 600 }}>Billing Leakage Prevented</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#F59E0B', marginTop: '4px' }}>
-                    {preventedBillingLeakagePct}
-                  </div>
-                </div>
-              </div>
-
-              <button
-                onClick={() => setShowDemoModal(true)}
-                style={{
-                  background: 'linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%)',
-                  color: '#FFFFFF',
-                  padding: '12px 20px',
-                  borderRadius: '8px',
-                  fontWeight: 700,
-                  fontSize: '0.9375rem',
-                  border: 'none',
-                  cursor: 'pointer',
-                  width: '100%'
-                }}
-              >
-                Request Custom Hospital ROI Audit →
-              </button>
-            </div>
+            <a
+              href={partnerPortalUrl}
+              target="_blank"
+              rel="noreferrer"
+              style={{
+                padding: '12px 24px',
+                borderRadius: '8px',
+                background: 'linear-gradient(135deg, #0284C7 0%, #2563EB 100%)',
+                color: '#FFFFFF',
+                fontSize: '0.875rem',
+                fontWeight: 800,
+                textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: '0 4px 16px rgba(2, 132, 199, 0.4)'
+              }}
+            >
+              <span>Launch 38-Module Partner Desk ➔</span>
+            </a>
           </div>
         </div>
       </section>
+
+      {/* ========================================================================= */}
+      {/* 🔄 5B. REAL-TIME SYNCHRONIZED HOSPITAL EVENT BUS PIPELINE VISUALIZER */}
+      {/* ========================================================================= */}
+      <section id="architecture" style={{ padding: '80px 32px', maxWidth: '1360px', margin: '0 auto', position: 'relative', zIndex: 10 }}>
+        <div style={{ textAlign: 'center', marginBottom: '44px' }}>
+          <Badge variant="primary">SUB-50MS EVENT BUS ARCHITECTURE</Badge>
+          <h2 style={{ fontSize: '2.5rem', fontWeight: 800, letterSpacing: '-0.02em', margin: '16px 0 12px 0' }}>
+            How Every Hospital Department Synchronizes in Real-Time
+          </h2>
+          <p style={{ color: '#94A3B8', fontSize: '1.0625rem', maxWidth: '720px', margin: '0 auto' }}>
+            From the moment a patient presents at OPD reception to ambient AI SOAP generation, diagnostic LIMS/PACS sync, FEFO pharmacy dispensing, and cashless ABDM billing — zero data silos.
+          </p>
+        </div>
+
+        {/* 6-Stage Interactive Pipeline Ribbon */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          gap: '12px',
+          marginBottom: '28px'
+        }}>
+          {[
+            { step: 1, title: '1. OPD Doctor Desk', badge: 'Patient Intake', icon: '🩺', color: '#06B6D4' },
+            { step: 2, title: '2. Ambient AI Scribe', badge: 'SOAP & CDSS', icon: '🎙️', color: '#8B5CF6' },
+            { step: 3, title: '3. Diagnostics & PACS', badge: 'Analyzer Barcode', icon: '🧪', color: '#EC4899' },
+            { step: 4, title: '4. Pharmacy & OT', badge: 'FEFO Dispense', icon: '💊', color: '#10B981' },
+            { step: 5, title: '5. TPA Cashless Billing', badge: 'PM-JAY Pre-Auth', icon: '💳', color: '#F97316' },
+            { step: 6, title: '6. ABDM Gateway', badge: 'NRCES Signed', icon: '🇮🇳', color: '#F59E0B' }
+          ].map((s, idx) => {
+            const isSelected = selectedPipelineStep === idx;
+            return (
+              <button
+                key={s.step}
+                type="button"
+                onClick={() => setSelectedPipelineStep(idx)}
+                style={{
+                  backgroundColor: isSelected ? 'rgba(30, 41, 59, 0.95)' : 'rgba(15, 23, 42, 0.65)',
+                  border: isSelected ? `2px solid ${s.color}` : '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '14px',
+                  padding: '16px',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  boxShadow: isSelected ? `0 8px 24px -4px ${s.color}40` : 'none',
+                  transition: 'all 0.2s ease',
+                  position: 'relative'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '1.5rem' }}>{s.icon}</span>
+                  <span style={{
+                    fontSize: '0.6875rem',
+                    fontWeight: 700,
+                    padding: '2px 8px',
+                    borderRadius: '9999px',
+                    backgroundColor: `${s.color}20`,
+                    color: s.color,
+                    border: `1px solid ${s.color}40`
+                  }}>
+                    {s.badge}
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#F8FAFC' }}>
+                  {s.title}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Active Stage Deep-Dive Card */}
+        {(() => {
+          const pipelineDetails = [
+            {
+              step: 1,
+              name: 'OPD Clinical Desk & ABHA Token Intake',
+              icon: '🩺',
+              color: '#06B6D4',
+              desc: 'Patient presents at reception counter, scans Counter QR code via Aarogya Setu / ABHA app. Token is instantly assigned to Doctor Queue. Doctor opens longitudinal EHR with instant allergy radar.',
+              outboundEvent: 'EVENT_BUS_OPD_CONSULTATION_BEGUN',
+              latency: '< 15ms',
+              payload: {
+                patientId: 'PAT-IND-2026-904',
+                abhaAddress: 'rahul.sharma@abdm',
+                queueToken: '#OPD-18',
+                vitals: { bp: '138/88 mmHg', pulse: '76 bpm', spO2: '99%' }
+              },
+              downstream: 'Auto-triggers Ambient AI Audio Transcription and pre-loads lab test bundles.'
+            },
+            {
+              step: 2,
+              name: 'Ambient AI Voice Scribe & Lethal DDI Safety Intercept',
+              icon: '🎙️',
+              color: '#8B5CF6',
+              desc: 'Microphone captures bilingual physician-patient conversation. Speech is parsed in real-time into Subjective, Objective, Assessment, and Plan (SOAP). Flags Sepsis NEWS2 triggers and lethal Drug-Drug Interactions before doctor signs.',
+              outboundEvent: 'EVENT_BUS_AI_SCRIBE_SOAP_STRUCTURED',
+              latency: '< 28ms',
+              payload: {
+                soapSummary: 'Patient presents with retrosternal tightness radiating to left arm.',
+                icd10DualCoder: ['I20.9 (Angina pectoris)', 'I10 (Essential hypertension)'],
+                cdssWarnings: 'Lethal DDI alert: Patient on Warfarin — Clopidogrel flagged for major bleed risk.',
+                doctorApprovalStatus: 'PENDING_PHYSICIAN_DIGITAL_SIGN'
+              },
+              downstream: 'Sends electronic stat vacutainer orders directly to Pathology LIMS and RIS PACS.'
+            },
+            {
+              step: 3,
+              name: 'Diagnostic Pathology LIMS & RIS Web PACS',
+              icon: '🧪',
+              color: '#EC4899',
+              desc: 'Phlebotomist scans vacutainer sample barcode. Bidirectional Mindray/Roche analyzer ingests rack ID, executes Troponin-I & Lipid profiles, and returns digital results. Web DICOM streams X-Rays directly to Doctor OPD desk.',
+              outboundEvent: 'EVENT_BUS_LIMS_PANIC_RESULT_DISPATCHED',
+              latency: '< 18ms',
+              payload: {
+                sampleBarcode: 'VAC-2026-88129',
+                analyzersInterfaced: 'Mindray BS-800M (Bidirectional ASTM E1394)',
+                panicAlertTriggered: true,
+                troponinValue: '1.24 ng/mL (Reference: < 0.04 ng/mL - CRITICAL)',
+                radiologistSignOff: 'Dr. Neha Kapoor (DMRD, DNB)'
+              },
+              downstream: 'Triggers automated SMS panic notification to Doctor and queues Emergency Resuscitation.'
+            },
+            {
+              step: 4,
+              name: 'Pharmacy FEFO Dispensing & Central Supply',
+              icon: '💊',
+              color: '#10B981',
+              desc: 'Prescription routes digitally to Central Pharmacy. System automatically binds First-Expired-First-Out (FEFO) batch numbers, calculates exact unit-dose sachet barcodes, and updates inventory stock registers.',
+              outboundEvent: 'EVENT_BUS_PHARMACY_FEFO_DISPENSE_LOCKED',
+              latency: '< 20ms',
+              payload: {
+                prescriptionRef: 'RX-9821-DELHI',
+                fefoBatchAssigned: 'BATCH-2026-X8 (Expires in 14 months)',
+                scheduleHRegister: 'Logged with Doctor Reg #NMC-19820-A',
+                unitDoseSachetId: 'SACH-881204',
+                stockDepletion: 'Auto-debited from Central Vault'
+              },
+              downstream: 'Generates universal consolidated charge sheet into Universal Billing Engine.'
+            },
+            {
+              step: 5,
+              name: 'Universal Billing & PM-JAY Cashless Claims Engine',
+              icon: '💳',
+              color: '#F97316',
+              desc: 'Universal ledger aggregates room charges, surgical theater hours, medications, and laboratory fees into an itemized transparent bill. Executes PM-JAY / TPA cashless insurance pre-auth workflow in real-time.',
+              outboundEvent: 'EVENT_BUS_TPA_PREAUTH_COMMITTED',
+              latency: '< 34ms',
+              payload: {
+                chargeAggregation: '100% Itemized (Consult: ₹800 + Labs: ₹2400 + Meds: ₹1850)',
+                insuranceScheme: 'PM-JAY Golden Card Verified',
+                cashlessPreAuthRef: 'PMJAY-AUTH-2026-99018',
+                patientCoPayPayable: '₹0 (100% Cashless Coverage)'
+              },
+              downstream: 'Prepares FHIR R4 document bundle for ABDM electronic consent transfer.'
+            },
+            {
+              step: 6,
+              name: 'ABDM National Health Gateway & NRCES FHIR R4',
+              icon: '🇮🇳',
+              color: '#F59E0B',
+              desc: 'Transforms consultation encounters, lab reports, and discharge summaries into NRCES India compliant FHIR R4 bundles. Signs with hospital private key, encrypts via ECDH (secp256r1), and links to patient ABHA PHR.',
+              outboundEvent: 'EVENT_BUS_ABDM_FHIR_BUNDLE_SEALED',
+              latency: '< 22ms',
+              payload: {
+                abhaHipCareContext: 'FORTIS-CARE-CTX-99120',
+                bundleFormat: 'FHIR R4 DiagnosticReport + Condition + MedicationRequest',
+                digitalSignature: 'SHA-256 with RSA-2048 HSM Private Key',
+                ecdhEncryption: 'ECDH prime256v1 AES-GCM-256 compliant'
+              },
+              downstream: 'Patient accesses complete verified health record on any ABHA PHR mobile app nationwide.'
+            }
+          ];
+
+          const current = pipelineDetails[selectedPipelineStep] || pipelineDetails[0];
+          if (!current) return null;
+
+          return (
+            <div style={{
+              backgroundColor: 'rgba(15, 23, 42, 0.85)',
+              border: `1.5px solid ${current.color}60`,
+              borderRadius: '20px',
+              padding: '32px',
+              boxShadow: `0 20px 50px -15px ${current.color}25`,
+              backdropFilter: 'blur(20px)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div style={{
+                    width: '60px',
+                    height: '60px',
+                    borderRadius: '16px',
+                    backgroundColor: `${current.color}20`,
+                    border: `1px solid ${current.color}50`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '2.25rem'
+                  }}>
+                    {current.icon}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 800, color: current.color, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      EVENT BUS PIPELINE STAGE #{current.step}
+                    </div>
+                    <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#F8FAFC', margin: '4px 0 0 0' }}>
+                      {current.name}
+                    </h3>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                  <div style={{
+                    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '8px',
+                    padding: '6px 12px',
+                    fontSize: '0.8125rem',
+                    color: '#34D399',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#10B981', boxShadow: '0 0 8px #10B981' }} />
+                    Latency: {current.latency}
+                  </div>
+                  <div style={{
+                    backgroundColor: `${current.color}15`,
+                    border: `1px solid ${current.color}35`,
+                    borderRadius: '8px',
+                    padding: '6px 12px',
+                    fontSize: '0.8125rem',
+                    color: current.color,
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}>
+                    <span>⚡</span>
+                    <span>{current.outboundEvent.replace(/EVENT_BUS_/g, '').replace(/_/g, ' ')}</span>
+                  </div>
+                </div>
+              </div>
+
+              <p style={{ color: '#CBD5E1', fontSize: '1rem', lineHeight: 1.6, margin: '0 0 24px 0' }}>
+                {current.desc}
+              </p>
+
+              {/* Visual Department Activity & Live Metrics Card */}
+              <div style={{
+                backgroundColor: '#0A101D',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: '14px',
+                padding: '20px',
+                marginBottom: '20px',
+                background: 'linear-gradient(145deg, rgba(15, 23, 42, 0.9) 0%, rgba(10, 16, 29, 0.95) 100%)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      backgroundColor: current.color,
+                      boxShadow: `0 0 10px ${current.color}`,
+                      display: 'inline-block'
+                    }} />
+                    <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#F1F5F9', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      Live Department Output & Verified Records
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{
+                      fontSize: '0.6875rem',
+                      color: '#10B981',
+                      fontWeight: 700,
+                      backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                      padding: '4px 10px',
+                      borderRadius: '9999px',
+                      border: '1px solid rgba(16, 185, 129, 0.3)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '5px'
+                    }}>
+                      <span>✓</span> Cryptographically Verified (SHA-256)
+                    </span>
+                    <span style={{
+                      fontSize: '0.6875rem',
+                      color: '#38BDF8',
+                      fontWeight: 700,
+                      backgroundColor: 'rgba(56, 189, 248, 0.12)',
+                      padding: '4px 10px',
+                      borderRadius: '9999px',
+                      border: '1px solid rgba(56, 189, 248, 0.3)'
+                    }}>
+                      ⚡ Real-Time Sync
+                    </span>
+                  </div>
+                </div>
+
+                {/* Human-Friendly Visual Metric Grid */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                  gap: '12px'
+                }}>
+                  {Object.entries(current.payload).map(([key, val], pidx) => {
+                    const label = key
+                      .replace(/([A-Z])/g, ' $1')
+                      .replace(/^./, (str) => str.toUpperCase())
+                      .trim();
+
+                    const isBool = typeof val === 'boolean';
+                    const isObj = typeof val === 'object' && val !== null && !Array.isArray(val);
+                    const isArr = Array.isArray(val);
+
+                    return (
+                      <div
+                        key={pidx}
+                        style={{
+                          backgroundColor: 'rgba(30, 41, 59, 0.45)',
+                          border: '1px solid rgba(255, 255, 255, 0.07)',
+                          borderRadius: '10px',
+                          padding: '14px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'space-between',
+                          gap: '6px'
+                        }}
+                      >
+                        <div style={{
+                          fontSize: '0.6875rem',
+                          color: '#94A3B8',
+                          textTransform: 'uppercase',
+                          fontWeight: 700,
+                          letterSpacing: '0.04em'
+                        }}>
+                          {label}
+                        </div>
+
+                        {isBool ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              padding: '4px 10px',
+                              borderRadius: '6px',
+                              fontSize: '0.8125rem',
+                              fontWeight: 700,
+                              backgroundColor: val ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+                              color: val ? '#F87171' : '#34D399',
+                              border: `1px solid ${val ? 'rgba(239, 68, 68, 0.3)' : 'rgba(16, 185, 129, 0.3)'}`
+                            }}>
+                              {val ? '🚨 Active (Panic Alert Flagged)' : '✓ Normal'}
+                            </span>
+                          </div>
+                        ) : isObj ? (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                            {Object.entries(val as Record<string, string>).map(([vKey, vVal], vIdx) => (
+                              <span
+                                key={vIdx}
+                                style={{
+                                  backgroundColor: 'rgba(56, 189, 248, 0.12)',
+                                  border: '1px solid rgba(56, 189, 248, 0.25)',
+                                  color: '#BAE6FD',
+                                  fontSize: '0.75rem',
+                                  fontWeight: 700,
+                                  padding: '4px 8px',
+                                  borderRadius: '6px'
+                                }}
+                              >
+                                {vKey.toUpperCase()}: {vVal}
+                              </span>
+                            ))}
+                          </div>
+                        ) : isArr ? (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                            {(val as string[]).map((chip, cIdx) => (
+                              <span
+                                key={cIdx}
+                                style={{
+                                  backgroundColor: `${current.color}15`,
+                                  border: `1px solid ${current.color}35`,
+                                  color: '#F1F5F9',
+                                  fontSize: '0.75rem',
+                                  fontWeight: 600,
+                                  padding: '4px 8px',
+                                  borderRadius: '6px'
+                                }}
+                              >
+                                {chip}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <div style={{
+                            fontSize: '0.875rem',
+                            color: String(val).includes('CRITICAL') || String(val).includes('Lethal')
+                              ? '#FCA5A5'
+                              : String(val).includes('Verified') || String(val).includes('Cashless')
+                              ? '#6EE7B7'
+                              : '#F8FAFC',
+                            fontWeight: 600,
+                            lineHeight: 1.4,
+                            wordBreak: 'break-word'
+                          }}>
+                            {String(val)}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '0.8125rem',
+                color: '#94A3B8'
+              }}>
+                <span style={{ color: '#38BDF8', fontWeight: 700 }}>↳ Downstream Impact:</span>
+                <span>{current.downstream}</span>
+              </div>
+            </div>
+          );
+        })()}
+      </section>
+
+      {/* 6. INTERACTIVE ROI & HOSPITAL CAPACITY CALCULATOR */}
+      <AdaptiveRoiCalculator onOpenDemoModal={() => setShowDemoModal(true)} />
 
       {/* 7. ENTERPRISE SECURITY & COMPLIANCE SECTION */}
       <section id="security" style={{ padding: '80px 32px', maxWidth: '1200px', margin: '0 auto', position: 'relative', zIndex: 10 }}>
@@ -1717,6 +2731,102 @@ export const DocSearchLandingPage: React.FC = () => {
         </div>
       </section>
 
+      {/* ========================================================================= */}
+      {/* ❓ 7B. HEALTHCARE LEADERSHIP & CLINICAL PROCUREMENT FAQS */}
+      {/* ========================================================================= */}
+      <section id="faq" style={{ padding: '80px 32px', maxWidth: '1000px', margin: '0 auto', position: 'relative', zIndex: 10 }}>
+        <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+          <Badge variant="primary">CLINICAL & PROCUREMENT CLEARANCE</Badge>
+          <h2 style={{ fontSize: '2.5rem', fontWeight: 800, letterSpacing: '-0.02em', margin: '16px 0 12px 0' }}>
+            Frequently Asked Questions by Medical Directors & CIOs
+          </h2>
+          <p style={{ color: '#94A3B8', fontSize: '1.0625rem', maxWidth: '640px', margin: '0 auto' }}>
+            Clear, authoritative technical answers on data sovereignty, offline continuity, hardware compatibility, and clinician safety.
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          {[
+            {
+              q: 'Can DocSearch continue functioning offline if the hospital internet drops?',
+              a: 'Yes, absolutely. DocSearch is engineered with edge-resident local database replicas. If WAN connectivity fails, doctors continue writing OPD notes, nurses chart bedside vitals in IPD/ICU, phlebotomists scan vacutainer barcodes, and pharmacy FEFO dispensing proceeds uninterrupted. Once the hospital connection restores, our conflict-free event bus synchronizes all offline records with the central cloud vault, sealing every transaction with an immutable SHA-256 cryptographic hash.'
+            },
+            {
+              q: 'Does the Ambient AI Voice Scribe prescribe medications autonomously?',
+              a: 'Strictly no. DocSearch adheres to a non-negotiable "Physician-in-the-Loop" clinical safety mandate. The Ambient AI Scribe transcribes acoustic consultation dialogue into structured SOAP notes and identifies potential lethal drug interactions (e.g. Warfarin + NSAID) or Sepsis NEWS2 scores. However, no prescription, medication dosage, or stat order can be committed without explicit digital stamp authentication and review by the licensed treating doctor.'
+            },
+            {
+              q: 'How does DocSearch connect to existing hardware (Zebra scanners, thermal label printers, DICOM)?',
+              a: 'DocSearch uses native browser WebUSB, WebSerial, and WebHID driver bindings. Handheld Zebra/Honeywell 2D barcode scanners, TSC/Zebra direct thermal ZPL II label printers, and clinical chemistry analyzers connect directly through browser-level ports without requiring cumbersome third-party agent software, Java applets, or print server hardware.'
+            },
+            {
+              q: 'How easily can our hospital migrate historical patient records from our legacy software?',
+              a: 'DocSearch provides automated data ingestion pipelines supporting CSV, Excel, JSON, and HL7 FHIR R4 imports. Our deployment engineering team extracts and sanitizes previous OPD consultation registries, IPD bed histories, and pharmacy stock ledgers within 48 hours, ensuring zero data loss and seamless continuity from Day 1.'
+            },
+            {
+              q: 'What is the commercial model after the Pioneer Free Onboarding Phase (first 10,000 partners)?',
+              a: 'The Pioneer Phase is a complimentary onboarding tier for the first 10,000 registered healthcare partners to experience the full foundational DocSearch Operating System. As your hospital scales or requires high-throughput advanced capabilities (multi-bed ICU telemetry streams, high-volume Web PACS cloud storage, dedicated enterprise ABDM gateways), transparent, scalable subscription tiers are available with zero restrictive multi-year lock-ins.'
+            }
+          ].map((faq, fidx) => {
+            const isOpen = openFaqIndex === fidx;
+            return (
+              <div
+                key={fidx}
+                style={{
+                  backgroundColor: isOpen ? 'rgba(30, 41, 59, 0.8)' : 'rgba(15, 23, 42, 0.6)',
+                  border: isOpen ? '1px solid rgba(56, 189, 248, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: '14px',
+                  overflow: 'hidden',
+                  transition: 'all 0.25s ease'
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setOpenFaqIndex(isOpen ? null : fidx)}
+                  style={{
+                    width: '100%',
+                    padding: '20px 24px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    color: '#F8FAFC',
+                    fontSize: '1.0625rem',
+                    fontWeight: 700,
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    gap: '16px'
+                  }}
+                >
+                  <span>{faq.q}</span>
+                  <span style={{
+                    fontSize: '1.25rem',
+                    color: isOpen ? '#38BDF8' : '#94A3B8',
+                    transform: isOpen ? 'rotate(180deg)' : 'none',
+                    transition: 'transform 0.25s ease'
+                  }}>
+                    ▼
+                  </span>
+                </button>
+                {isOpen && (
+                  <div style={{
+                    padding: '0 24px 20px 24px',
+                    color: '#CBD5E1',
+                    fontSize: '0.9375rem',
+                    lineHeight: 1.6,
+                    borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+                    paddingTop: '16px'
+                  }}>
+                    {faq.a}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
       {/* 8. FOOTER WITH LIVE PORTAL LINKS */}
       <footer style={{
         backgroundColor: '#040711',
@@ -1727,9 +2837,17 @@ export const DocSearchLandingPage: React.FC = () => {
       }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '32px', marginBottom: '40px' }}>
           <div>
-            <div style={{ fontSize: '1.125rem', fontWeight: 900, color: '#F8FAFC', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              🩺 DOC SEARCH
-            </div>
+            <DocSearchLogo
+              variant="full"
+              size="md"
+              badgeText="ENTERPRISE OS"
+              redirectUrl="/"
+              style={{ marginBottom: '14px' }}
+              onClick={(e) => {
+                e.preventDefault();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+            />
             <p style={{ color: '#64748B', fontSize: '0.8125rem', lineHeight: 1.5, margin: 0 }}>
               The unified cloud operating system powering multi-specialty hospitals, medical colleges, and healthcare networks across India.
             </p>
@@ -1738,9 +2856,9 @@ export const DocSearchLandingPage: React.FC = () => {
           <div>
             <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#E2E8F0', marginBottom: '12px' }}>Portals</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.8125rem' }}>
-              <a href={partnerPortalUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#38BDF8', textDecoration: 'none' }}>Hospital Platform (Port 5173)</a>
-              <a href={companyPortalUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#94A3B8', textDecoration: 'none' }}>Company SaaS HQ (Port 5174)</a>
-              <a href="http://localhost:4000/health" target="_blank" rel="noopener noreferrer" style={{ color: '#94A3B8', textDecoration: 'none' }}>API Gateway Telemetry (Port 4000)</a>
+              <a href={partnerPortalUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#38BDF8', textDecoration: 'none' }}>Hospital Platform</a>
+              <a href={companyPortalUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#94A3B8', textDecoration: 'none' }}>Company SaaS HQ</a>
+              <a href="/api/health" target="_blank" rel="noopener noreferrer" style={{ color: '#94A3B8', textDecoration: 'none' }}>API Gateway Telemetry</a>
             </div>
           </div>
 
@@ -1877,6 +2995,28 @@ export const DocSearchLandingPage: React.FC = () => {
                   </div>
 
                   <div>
+                    <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#CBD5E1', marginBottom: '6px' }}>Mobile Phone (10-Digit Mobile) *</label>
+                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                      <span style={{ position: 'absolute', left: '12px', color: '#38BDF8', fontWeight: 800, fontSize: '0.875rem' }}>+91</span>
+                      <input
+                        required
+                        type="tel"
+                        inputMode="numeric"
+                        maxLength={10}
+                        placeholder="98765 43210"
+                        value={demoForm.phone}
+                        onChange={(e) => {
+                          let digits = e.target.value.replace(/\D/g, '');
+                          if (digits.length === 12 && digits.startsWith('91')) digits = digits.slice(2);
+                          else if (digits.length === 11 && digits.startsWith('0')) digits = digits.slice(1);
+                          setDemoForm({ ...demoForm, phone: digits.slice(0, 10) });
+                        }}
+                        style={{ width: '100%', padding: '10px 14px 10px 48px', borderRadius: '8px', backgroundColor: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255, 255, 255, 0.1)', color: '#F8FAFC', fontSize: '0.875rem', fontFamily: 'monospace' }}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
                     <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#CBD5E1', marginBottom: '6px' }}>Bed Capacity</label>
                     <select
                       value={demoForm.bedCapacity}
@@ -1909,28 +3049,83 @@ export const DocSearchLandingPage: React.FC = () => {
                 </form>
               </>
             ) : (
-              <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🎉</div>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#10B981', margin: '0 0 8px 0' }}>Walkthrough Confirmed!</h3>
-                <p style={{ color: '#94A3B8', fontSize: '0.875rem', lineHeight: 1.5 }}>
-                  Our Clinical Solutions Architect will connect with you at <strong>{demoForm.email}</strong> with credentials and an interactive sandbox workspace.
+              <div style={{ textAlign: 'center', padding: '12px 0' }}>
+                <div style={{ fontSize: '3rem', marginBottom: '10px' }}>🎟️</div>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#10B981', margin: '0 0 6px 0' }}>
+                  VIP Hospital Walkthrough Confirmed!
+                </h3>
+                <p style={{ color: '#94A3B8', fontSize: '0.875rem', lineHeight: 1.5, margin: '0 0 18px 0' }}>
+                  Your dedicated session has been registered in the DocSearch Priority Queue for <strong>{demoForm.hospitalName}</strong>.
                 </p>
-                <button
-                  onClick={() => { setShowDemoModal(false); setDemoSubmitted(false); }}
-                  style={{
-                    marginTop: '16px',
-                    backgroundColor: 'rgba(30, 41, 59, 0.8)',
-                    color: '#F8FAFC',
-                    padding: '10px 24px',
-                    borderRadius: '8px',
-                    fontWeight: 600,
-                    fontSize: '0.875rem',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Close
-                </button>
+
+                {/* VIP Pass Card */}
+                <div style={{
+                  backgroundColor: 'rgba(30, 41, 59, 0.75)',
+                  border: '1px solid rgba(56, 189, 248, 0.35)',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  textAlign: 'left',
+                  marginBottom: '20px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 600 }}>VIP DEMO ACCESS PASS</span>
+                    <span style={{ backgroundColor: 'rgba(16, 185, 129, 0.2)', color: '#34D399', fontSize: '0.6875rem', fontWeight: 800, padding: '2px 8px', borderRadius: '9999px' }}>
+                      PRIORITY DISPATCH
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '1.125rem', fontWeight: 800, color: '#38BDF8', fontFamily: 'monospace' }}>
+                    {generatedDemoToken}
+                  </div>
+                  <div style={{ fontSize: '0.8125rem', color: '#E2E8F0' }}>
+                    <strong>Hospital:</strong> {demoForm.hospitalName} ({demoForm.bedCapacity})
+                  </div>
+                  <div style={{ fontSize: '0.8125rem', color: '#E2E8F0' }}>
+                    <strong>Contact:</strong> {demoForm.contactName} ({demoForm.phone})
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#64748B', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '8px', marginTop: '4px' }}>
+                    Assigned Lead Architect: <strong>MERAJ SHARIF (Enterprise Solutions HQ)</strong>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                  <a
+                    href={`https://wa.me/919999999999?text=Hello%20DocSearch,%20I%20have%20booked%20a%20VIP%20Demo%20for%20${encodeURIComponent(demoForm.hospitalName)}%20with%20Token%20${generatedDemoToken}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      backgroundColor: '#25D366',
+                      color: '#070B14',
+                      padding: '10px 18px',
+                      borderRadius: '8px',
+                      fontWeight: 800,
+                      fontSize: '0.8125rem',
+                      textDecoration: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <span>💬 WhatsApp VIP Desk</span>
+                  </a>
+                  <button
+                    onClick={() => { setShowDemoModal(false); setDemoSubmitted(false); }}
+                    style={{
+                      backgroundColor: 'rgba(30, 41, 59, 0.8)',
+                      color: '#F8FAFC',
+                      padding: '10px 20px',
+                      borderRadius: '8px',
+                      fontWeight: 600,
+                      fontSize: '0.8125rem',
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Done
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -2283,8 +3478,328 @@ export const DocSearchLandingPage: React.FC = () => {
         </div>
       )}
 
-      {/* 24x7 AI Receptionist & Virtual Healthcare Concierge */}
-      <AIReceptionistWidget />
+      {/* Unified Healthcare Login & Self-Registration Modal */}
+      <React.Suspense fallback={null}>
+        {showLoginModal && (
+          <UnifiedHealthcareLoginModal
+            isOpen={showLoginModal}
+            onClose={() => setShowLoginModal(false)}
+            partnerPortalUrl={partnerPortalUrl}
+            companyPortalUrl={companyPortalUrl}
+            initialTab={loginModalInitialTab}
+          />
+        )}
+
+        {/* 24x7 AI Receptionist & Virtual Healthcare Concierge */}
+        {!showLoginModal && !showFlashTakeover && (
+          <AIReceptionistWidget
+            isOpenExternal={isAiReceptionistOpen}
+            onCloseExternal={() => setIsAiReceptionistOpen(false)}
+            hideFloatingButton={true}
+          />
+        )}
+
+        {/* 1st-Visit Full-Screen Launch Offer Flash Takeover Modal */}
+        {showFlashTakeover && (
+          <LaunchOfferFlashTakeoverModal
+            isOpen={showFlashTakeover}
+            onClose={handleCloseFlashTakeover}
+            onClaimOffer={handleClaimFlashOffer}
+            campaign={campaign}
+            metrics={campaignMetrics}
+          />
+        )}
+      </React.Suspense>
+
+      {/* ✦ UNIFIED FLOATING ACTION CAPSULE ("Omni-Action Capsule") */}
+      {!showLoginModal && !showFlashTakeover && !isAiReceptionistOpen && !showDemoModal && !showSpotlightModal && !videoPreviewDoctor && (
+        <div
+          ref={omniCapsuleRef}
+          className="docsearch-omni-capsule"
+        >
+          {/* Expanded Capsule Quick Menu */}
+          {isOmniCapsuleOpen && (
+            <div
+              className="docsearch-omni-menu"
+            >
+              <div style={{ padding: '6px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#38BDF8', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                  ✦ Quick Access Tools
+                </span>
+                <span style={{ fontSize: '0.625rem', backgroundColor: 'rgba(16, 185, 129, 0.2)', color: '#6EE7B7', padding: '1px 6px', borderRadius: '4px', fontWeight: 700 }}>
+                  24x7 Active
+                </span>
+              </div>
+
+              {/* 1. AI Receptionist Trigger */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsOmniCapsuleOpen(false);
+                  setIsAiReceptionistOpen(true);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '8px 10px',
+                  borderRadius: '10px',
+                  backgroundColor: 'rgba(6, 182, 212, 0.12)',
+                  border: '1px solid rgba(6, 182, 212, 0.3)',
+                  color: '#F8FAFC',
+                  fontSize: '0.8125rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all 0.15s ease'
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.25)')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.12)')}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '1.1rem' }}>🤖</span>
+                  <div>
+                    <div style={{ color: '#38BDF8', fontWeight: 700 }}>AI Receptionist (Dr. Aanya)</div>
+                    <div style={{ fontSize: '0.6875rem', color: '#94A3B8' }}>Ask OPD fees, ICU beds, booking</div>
+                  </div>
+                </div>
+                <span style={{ fontSize: '0.625rem', backgroundColor: '#10B981', color: '#070C16', padding: '1px 5px', borderRadius: '4px', fontWeight: 800 }}>
+                  ONLINE
+                </span>
+              </button>
+
+              {/* 2. AI Symptom & Specialist Search (Cmd+K) */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsOmniCapsuleOpen(false);
+                  setShowSpotlightModal(true);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '8px 10px',
+                  borderRadius: '10px',
+                  backgroundColor: 'rgba(30, 41, 59, 0.6)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  color: '#F8FAFC',
+                  fontSize: '0.8125rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all 0.15s ease'
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.15)')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'rgba(30, 41, 59, 0.6)')}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '1.1rem' }}>🔍</span>
+                  <div>
+                    <div style={{ fontWeight: 700 }}>AI Symptom & Doctor Search</div>
+                    <div style={{ fontSize: '0.6875rem', color: '#94A3B8' }}>Instant specialists & labs</div>
+                  </div>
+                </div>
+                <kbd style={{ fontSize: '0.625rem', padding: '1px 5px', borderRadius: '4px', background: 'rgba(255,255,255,0.1)', color: '#94A3B8', border: '1px solid rgba(255,255,255,0.15)' }}>Cmd+K</kbd>
+              </button>
+
+              {/* 3. Live Emergency Bed Radar */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsOmniCapsuleOpen(false);
+                  const el = document.getElementById('emergency');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '8px 10px',
+                  borderRadius: '10px',
+                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                  border: '1px solid rgba(239, 68, 68, 0.25)',
+                  color: '#F8FAFC',
+                  fontSize: '0.8125rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all 0.15s ease'
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.2)')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)')}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '1.1rem' }}>🚨</span>
+                  <div>
+                    <div style={{ color: '#F87171', fontWeight: 700 }}>Emergency Bed Radar</div>
+                    <div style={{ fontSize: '0.6875rem', color: '#94A3B8' }}>Real-time ICU & ventilator count</div>
+                  </div>
+                </div>
+                <span style={{ fontSize: '0.625rem', backgroundColor: '#EF4444', color: '#FFF', padding: '1px 5px', borderRadius: '4px', fontWeight: 800 }}>
+                  LIVE
+                </span>
+              </button>
+
+              {/* 4. Launch Offer & Referral */}
+              {campaign.status === 'ACTIVE' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsOmniCapsuleOpen(false);
+                    setShowFlashTakeover(true);
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '8px 10px',
+                    borderRadius: '10px',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    border: '1px solid rgba(16, 185, 129, 0.25)',
+                    color: '#F8FAFC',
+                    fontSize: '0.8125rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'all 0.15s ease'
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.2)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.1)')}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '1.1rem' }}>🎁</span>
+                    <div>
+                      <div style={{ color: '#34D399', fontWeight: 700 }}>Claim ₹0 Launch Offer</div>
+                      <div style={{ fontSize: '0.6875rem', color: '#94A3B8' }}>Up to ₹10,000 referral reward</div>
+                    </div>
+                  </div>
+                  <span style={{ fontSize: '0.625rem', backgroundColor: '#10B981', color: '#070C16', padding: '1px 5px', borderRadius: '4px', fontWeight: 800 }}>
+                    ₹0
+                  </span>
+                </button>
+              )}
+
+              {/* 5. Book VIP Demo */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsOmniCapsuleOpen(false);
+                  setShowDemoModal(true);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '8px 10px',
+                  borderRadius: '10px',
+                  backgroundColor: 'rgba(30, 41, 59, 0.6)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  color: '#F1F5F9',
+                  fontSize: '0.8125rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all 0.15s ease'
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'rgba(30, 41, 59, 0.6)')}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '1.1rem' }}>⚡</span>
+                  <div>
+                    <div style={{ fontWeight: 700 }}>Book VIP Hospital Demo</div>
+                    <div style={{ fontSize: '0.6875rem', color: '#94A3B8' }}>Interactive walkthrough with team</div>
+                  </div>
+                </div>
+                <span style={{ fontSize: '0.75rem', color: '#38BDF8' }}>➔</span>
+              </button>
+
+              {/* 6. Partner Portal Link */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsOmniCapsuleOpen(false);
+                  openLoginModal();
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '8px 10px',
+                  borderRadius: '10px',
+                  backgroundColor: 'rgba(30, 41, 59, 0.6)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  color: '#F1F5F9',
+                  fontSize: '0.8125rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all 0.15s ease'
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'rgba(30, 41, 59, 0.6)')}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '1.1rem' }}>🏥</span>
+                  <div>
+                    <div style={{ fontWeight: 700 }}>Partner & Doctor Portal</div>
+                    <div style={{ fontSize: '0.6875rem', color: '#94A3B8' }}>Login to clinical operations</div>
+                  </div>
+                </div>
+                <span style={{ fontSize: '0.75rem', color: '#38BDF8' }}>➔</span>
+              </button>
+            </div>
+          )}
+
+          {/* Collapsed Floating Pill */}
+          <button
+            type="button"
+            onClick={() => setIsOmniCapsuleOpen((prev) => !prev)}
+            style={{
+              backgroundColor: '#0F172A',
+              border: isOmniCapsuleOpen ? '1.5px solid #38BDF8' : '1.5px solid rgba(56, 189, 248, 0.4)',
+              borderRadius: '9999px',
+              padding: '10px 18px',
+              color: '#FFFFFF',
+              fontSize: '0.8125rem',
+              fontWeight: 800,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              boxShadow: '0 10px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(6, 182, 212, 0.3)',
+              cursor: 'pointer',
+              backdropFilter: 'blur(16px)',
+              transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.04)')}
+            onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+            title="DocSearch Quick Tools: AI Receptionist, Symptom Search, Bed Radar, Offers, Demo"
+          >
+            <span style={{ fontSize: '1.1rem', color: '#38BDF8' }}>✦</span>
+            <span>Quick Tools</span>
+            <span
+              style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                backgroundColor: '#10B981',
+                boxShadow: '0 0 8px #10B981'
+              }}
+            />
+            <span
+              style={{
+                fontSize: '0.6rem',
+                color: '#94A3B8',
+                transform: isOmniCapsuleOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                transition: 'transform 0.2s ease'
+              }}
+            >
+              ▲
+            </span>
+          </button>
+        </div>
+      )}
     </div>
   );
 };

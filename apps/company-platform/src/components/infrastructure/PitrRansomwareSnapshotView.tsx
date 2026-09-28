@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Badge, TableContainer, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@docsearch/ui-kit';
+import { Card, Badge, Alert, TableContainer, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@docsearch/ui-kit';
 
 interface SnapshotRecord {
   snapshotId: string;
@@ -48,16 +48,21 @@ export const PitrRansomwareSnapshotView: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {/* Simulation Notice Banner */}
+      <Alert type="warning" title="Administrative Simulation Console — Not Live Cloud Telemetry">
+        This view displays simulated target architecture fixtures for AWS S3 WORM Compliance Lock. No live cloud credentials are currently configured. Real production certification requires live AWS IAM integration.
+      </Alert>
+
       {/* Header */}
       <div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: 'var(--ds-color-text-primary)' }}>
             💾 Automated Point-in-Time Recovery (PITR) & Ransomware Immutable Vault
           </h2>
-          <Badge variant="success">● AWS S3 Object Lock (Compliance Mode WORM Active)</Badge>
+          <Badge variant="warning">● Simulation Fixture (Target: AWS S3 Object Lock)</Badge>
         </div>
         <p style={{ margin: '4px 0 0', fontSize: '0.8125rem', color: 'var(--ds-color-text-muted)' }}>
-          Cryptographically sealed immutable backups that cannot be modified or deleted by any ransomware or compromised IAM user
+          Target architecture: Cryptographically sealed immutable backups that cannot be modified or deleted by any ransomware or compromised IAM user
         </p>
       </div>
 
@@ -71,20 +76,20 @@ export const PitrRansomwareSnapshotView: React.FC = () => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
         <div style={{ backgroundColor: '#0F172A', border: '1.5px solid #10B981', borderRadius: '12px', padding: '16px' }}>
           <span style={{ fontSize: '0.6875rem', color: '#86EFAC', fontWeight: 800, textTransform: 'uppercase' }}>RANSOMWARE RESISTANCE</span>
-          <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#10B981', marginTop: '2px' }}>100% Immutable</div>
-          <span style={{ fontSize: '0.75rem', color: '#CBD5E1', marginTop: '4px', display: 'block' }}>AWS S3 WORM Compliance Lock</span>
+          <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#10B981', marginTop: '2px' }}>Target: WORM</div>
+          <span style={{ fontSize: '0.75rem', color: '#CBD5E1', marginTop: '4px', display: 'block' }}>AWS S3 Compliance Lock (Target)</span>
         </div>
 
         <div style={{ backgroundColor: '#0F172A', border: '1px solid #334155', borderRadius: '12px', padding: '16px' }}>
           <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase' }}>PITR GRANULARITY</span>
-          <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#38BDF8', marginTop: '2px' }}>Exact 1-Second</div>
-          <span style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '4px', display: 'block' }}>MongoDB Continuous Oplog</span>
+          <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#38BDF8', marginTop: '2px' }}>Continuous WAL</div>
+          <span style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '4px', display: 'block' }}>PostgreSQL Streaming WAL (Target)</span>
         </div>
 
         <div style={{ backgroundColor: '#0F172A', border: '1px solid #334155', borderRadius: '12px', padding: '16px' }}>
           <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase' }}>VERIFIED RESTORE TESTS</span>
-          <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#FCD34D', marginTop: '2px' }}>Daily 100% Pass</div>
-          <span style={{ fontSize: '0.75rem', color: '#CBD5E1', marginTop: '4px', display: 'block' }}>Automated sandbox dry-runs</span>
+          <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#FCD34D', marginTop: '2px' }}>Simulation</div>
+          <span style={{ fontSize: '0.75rem', color: '#CBD5E1', marginTop: '4px', display: 'block' }}>Sandbox dry-runs (Non-production)</span>
         </div>
       </div>
 

@@ -8,39 +8,109 @@ import {
   type ProcessRefundInput
 } from '../../repositories/partner/BillingManagementRepository.js';
 import { auditRepository } from '../../repositories/core/AuditRepository.js';
-import { type SessionContext, verifyRazorpaySignature, verifyPayUSignature } from '@docsearch/auth';
+import { type SessionContext, ScopeGuard, RBACEvaluator, verifyRazorpaySignature, verifyPayUSignature } from '@docsearch/auth';
 import type { RoleType } from '@docsearch/api-contracts';
-import { withSecurityContext, getDatabase } from '@docsearch/database';
+import {
+  withSecurityContext,
+  getDatabase,
+  commercialOrderSnapshots,
+  partnerProfiles,
+  subscriptions,
+  licenses,
+  billingAccounts,
+  invoices as companyInvoices,
+  payments as companyPayments,
+  companyAuditTraces,
+  eq
+} from '@docsearch/database';
 import { AppError, ErrorCode, createLogger } from '@docsearch/shared-core';
+import crypto from 'node:crypto';
+import { licenseService } from '../company/LicenseService.js';
+import { cashierShiftService } from './CashierShiftService.js';
 
 const logger = createLogger('billing-management-service');
 
 export class BillingManagementService {
-  async getInvoices(session: SessionContext, patientId?: string, status?: string) {
+  async getFinancialOverview(
+    session: SessionContext,
+    requestedScope?: { tenantId?: string | undefined; branchId?: string | undefined }
+  ) {
+    const scope = ScopeGuard.resolveEffectiveQueryScope(session, requestedScope);
     return withSecurityContext(getDatabase(), session, async (tx) => {
-      return billingManagementRepository.getInvoices(session.tenantId, patientId, status, tx);
+      return billingManagementRepository.getFinancialOverview(scope.tenantId, scope.branchId, tx);
     });
   }
 
-  async getInvoiceById(session: SessionContext, id: string) {
+  async getInvoices(
+    session: SessionContext,
+    patientId?: string,
+    status?: string,
+    requestedScope?: { tenantId?: string | undefined; branchId?: string | undefined; departmentId?: string | undefined }
+  ) {
+    const scope = ScopeGuard.resolveEffectiveQueryScope(session, requestedScope);
     return withSecurityContext(getDatabase(), session, async (tx) => {
-      return billingManagementRepository.getInvoiceById(session.tenantId, id, tx);
+      return billingManagementRepository.getInvoices(
+        scope.tenantId,
+        patientId,
+        status,
+        tx,
+        { branchId: scope.branchId, departmentId: scope.departmentId }
+      );
     });
   }
 
-  async createInvoice(input: Omit<CreateInvoiceInput, 'tenantId'>, session: SessionContext) {
+  async getUnbilledCharges(
+    session: SessionContext,
+    patientId?: string,
+    encounterId?: string,
+    requestedScope?: { tenantId?: string | undefined; branchId?: string | undefined; departmentId?: string | undefined }
+  ) {
+    const scope = ScopeGuard.resolveEffectiveQueryScope(session, requestedScope);
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      return billingManagementRepository.getUnbilledCharges(
+        scope.tenantId || session.tenantId || '',
+        patientId,
+        encounterId,
+        tx
+      );
+    });
+  }
+
+  async getInvoiceById(
+    session: SessionContext,
+    id: string,
+    requestedScope?: { tenantId?: string | undefined; branchId?: string | undefined; departmentId?: string | undefined }
+  ) {
+    const scope = ScopeGuard.resolveEffectiveQueryScope(session, requestedScope);
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      return billingManagementRepository.getInvoiceById(
+        scope.tenantId,
+        id,
+        tx,
+        { branchId: scope.branchId, departmentId: scope.departmentId }
+      );
+    });
+  }
+
+  async createInvoice(input: Omit<CreateInvoiceInput, 'tenantId'> & { tenantId?: string; departmentId?: string }, session: SessionContext) {
+    const scope = ScopeGuard.resolveEffectiveQueryScope(session, {
+      tenantId: input.tenantId,
+      branchId: input.branchId,
+      departmentId: input.departmentId
+    });
     return withSecurityContext(getDatabase(), session, async (tx) => {
       const invoice = await billingManagementRepository.createInvoice({
         ...input,
-        tenantId: session.tenantId
+        tenantId: scope.tenantId,
+        ...(scope.branchId ? { branchId: scope.branchId } : {})
       }, tx);
 
       await auditRepository.recordEvent({
         eventType: 'INVOICE_GENERATED',
         resourceType: 'billing_invoice',
         resourceId: invoice.id,
-        tenantId: session.tenantId,
-        branchId: session.branchId,
+        tenantId: scope.tenantId,
+        branchId: scope.branchId || session.branchId,
         metadata: { invoiceNumber: invoice.invoiceNumber, patientId: invoice.patientId, totalAmount: invoice.totalAmount }
       }, session, tx);
 
@@ -91,6 +161,12 @@ export class BillingManagementService {
           balanceRemaining: result.invoice.balanceDue
         }
       }, session, tx);
+
+      if (input.paymentMode === 'CASH') {
+        try {
+          await cashierShiftService.recordShiftMovement({ cashReceived: input.amount }, session, tx);
+        } catch {}
+      }
 
       return result;
     });
@@ -186,6 +262,30 @@ export class BillingManagementService {
     input: Omit<ProcessRefundInput, 'tenantId' | 'actorId'>,
     session: SessionContext
   ) {
+    // 1. Separation of duties: Check refund permission or supervisor override token
+    if (!session.isSuperAdmin) {
+      const canRefund = RBACEvaluator.hasPermission(session, 'billing:invoices', 'refund') ||
+                        RBACEvaluator.hasPermission(session, 'billing:refund', 'approve') ||
+                        RBACEvaluator.hasPermission(session, 'billing:invoices', 'update') ||
+                        Boolean(input.supervisorOverrideToken);
+      if (!canRefund) {
+        throw new AppError({
+          message: 'Access denied: Insufficient permissions to issue refunds on invoices. billing:invoices:refund or supervisorOverrideToken required.',
+          code: ErrorCode.INSUFFICIENT_PERMISSIONS,
+          statusCode: 403
+        });
+      }
+
+      // 2. Separation of duties: Cashier cannot be the approving supervisor for their own refund
+      if (input.supervisorUserId && input.supervisorUserId === session.userId) {
+        throw new AppError({
+          message: 'Separation of duties violation: Cashier cannot self-approve their own refund as supervisor.',
+          code: ErrorCode.FORBIDDEN,
+          statusCode: 403
+        });
+      }
+    }
+
     return withSecurityContext(getDatabase(), session, async (tx) => {
       const result = await billingManagementRepository.processRefund(
         {
@@ -219,6 +319,10 @@ export class BillingManagementService {
         tx
       );
 
+      try {
+        await cashierShiftService.recordShiftMovement({ cashRefunded: input.amount }, session, tx);
+      } catch {}
+
       return result;
     });
   }
@@ -227,8 +331,15 @@ export class BillingManagementService {
     rawBody: string | Buffer,
     signature: string,
     eventPayload: any,
-    webhookSecret = process.env['RAZORPAY_WEBHOOK_SECRET'] || 'rzp_test_secret_key_123'
+    webhookSecret = process.env['RAZORPAY_WEBHOOK_SECRET']
   ) {
+    if (!webhookSecret) {
+      throw new AppError({
+        message: 'Server missing RAZORPAY_WEBHOOK_SECRET configuration.',
+        code: ErrorCode.INTERNAL_SERVER_ERROR,
+        statusCode: 500
+      });
+    }
     const isValid = verifyRazorpaySignature(rawBody, signature, webhookSecret);
     if (!isValid) {
       logger.warn('Razorpay webhook signature mismatch');
@@ -253,7 +364,19 @@ export class BillingManagementService {
       }
 
       const notes = paymentEntity.notes || {};
-      const resolvedTenantId = notes.tenantId || '00000000-0000-4000-8000-000000000001';
+      const snapshotId = notes.orderSnapshotId || notes.snapshotId;
+      if (snapshotId) {
+        return this.processB2BCommercialWebhookPayment(paymentEntity, snapshotId);
+      }
+
+      const resolvedTenantId = notes.tenantId || notes.tenant_id;
+      if (!resolvedTenantId || typeof resolvedTenantId !== 'string' || !resolvedTenantId.trim()) {
+        throw new AppError({
+          message: 'Payment webhook rejected: Missing mandatory tenantId in payment notes.',
+          code: ErrorCode.VALIDATION_ERROR,
+          statusCode: 400
+        });
+      }
       const systemSession: SessionContext = {
         sessionId: `session_webhook_rzp_${Date.now()}`,
         userId: 'usr_sys_webhook_razorpay',
@@ -322,7 +445,14 @@ export class BillingManagementService {
     if (event === 'payment.failed') {
       const paymentEntity = eventPayload?.payload?.payment?.entity;
       const notes = paymentEntity?.notes || {};
-      const resolvedTenantId = notes.tenantId || '00000000-0000-4000-8000-000000000001';
+      const resolvedTenantId = notes.tenantId || notes.tenant_id;
+      if (!resolvedTenantId || typeof resolvedTenantId !== 'string' || !resolvedTenantId.trim()) {
+        throw new AppError({
+          message: 'Payment webhook rejected: Missing mandatory tenantId in payment notes.',
+          code: ErrorCode.VALIDATION_ERROR,
+          statusCode: 400
+        });
+      }
       return billingManagementRepository.handleWebhookPaymentFailure({
         tenantId: resolvedTenantId,
         invoiceId: notes.invoiceId,
@@ -337,7 +467,14 @@ export class BillingManagementService {
     if (event === 'refund.processed') {
       const refundEntity = eventPayload?.payload?.refund?.entity;
       const notes = refundEntity?.notes || {};
-      const resolvedTenantId = notes.tenantId || '00000000-0000-4000-8000-000000000001';
+      const resolvedTenantId = notes.tenantId || notes.tenant_id;
+      if (!resolvedTenantId || typeof resolvedTenantId !== 'string' || !resolvedTenantId.trim()) {
+        throw new AppError({
+          message: 'Payment webhook rejected: Missing mandatory tenantId in refund notes.',
+          code: ErrorCode.VALIDATION_ERROR,
+          statusCode: 400
+        });
+      }
       return billingManagementRepository.handleWebhookRefund({
         tenantId: resolvedTenantId,
         invoiceId: notes.invoiceId,
@@ -355,8 +492,15 @@ export class BillingManagementService {
 
   async processPayUWebhook(
     payload: Record<string, unknown>,
-    merchantSalt = process.env['PAYU_MERCHANT_SALT'] || 'payu_test_salt_key_123'
+    merchantSalt = process.env['PAYU_MERCHANT_SALT']
   ) {
+    if (!merchantSalt) {
+      throw new AppError({
+        message: 'Server missing PAYU_MERCHANT_SALT configuration.',
+        code: ErrorCode.INTERNAL_SERVER_ERROR,
+        statusCode: 500
+      });
+    }
     const isValid = verifyPayUSignature(payload, merchantSalt);
     if (!isValid) {
       logger.warn('PayU webhook signature mismatch');
@@ -368,7 +512,14 @@ export class BillingManagementService {
     }
 
     const status = ((payload['status'] as string) || '').toLowerCase();
-    const resolvedTenantId = (payload['udf3'] as string) || '00000000-0000-4000-8000-000000000001';
+    const resolvedTenantId = (payload['udf3'] as string) || (payload['tenantId'] as string) || (payload['tenant_id'] as string);
+    if (!resolvedTenantId || typeof resolvedTenantId !== 'string' || !resolvedTenantId.trim()) {
+      throw new AppError({
+        message: 'Payment webhook rejected: Missing mandatory tenantId in PayU payload (udf3).',
+        code: ErrorCode.VALIDATION_ERROR,
+        statusCode: 400
+      });
+    }
     const systemSession: SessionContext = {
       sessionId: `session_webhook_payu_${Date.now()}`,
       userId: 'usr_sys_webhook_payu',
@@ -430,6 +581,266 @@ export class BillingManagementService {
         errorDescription: payload['unmappedstatus'] as string
       });
     }
+  }
+
+  async processB2BCommercialWebhookPayment(paymentEntity: any, snapshotId: string) {
+    const db = getDatabase();
+    const existingSnapshots = await db
+      .select()
+      .from(commercialOrderSnapshots)
+      .where(eq(commercialOrderSnapshots.id, snapshotId))
+      .limit(1);
+
+    if (!existingSnapshots[0]) {
+      logger.warn(`B2B Webhook: Snapshot ${snapshotId} not found`);
+      throw AppError.notFound(`Commercial order snapshot ${snapshotId} not found`);
+    }
+
+    const snapshot = existingSnapshots[0];
+    if (snapshot.status === 'PAID') {
+      logger.info(`B2B Webhook: Snapshot ${snapshotId} already processed (idempotent duplicate acknowledged)`);
+      return {
+        isDuplicate: true,
+        status: 'ALREADY_PROCESSED',
+        snapshotId: snapshot.id
+      };
+    }
+
+    // 1. Expected Amount Verification (Paise)
+    const expectedAmountPaise = Math.round(snapshot.finalAmountInr * 100);
+    if (paymentEntity.amount != null && paymentEntity.amount !== expectedAmountPaise) {
+      logger.warn(`B2B Webhook: Amount mismatch for snapshot ${snapshotId}: expected ${expectedAmountPaise}, got ${paymentEntity.amount}`);
+      throw AppError.badRequest(`Payment amount mismatch: expected ₹${snapshot.finalAmountInr} (${expectedAmountPaise} paise), received ${paymentEntity.amount} paise`);
+    }
+
+    // 2. Expected Currency Verification
+    if (paymentEntity.currency && paymentEntity.currency.toUpperCase() !== snapshot.currency.toUpperCase()) {
+      logger.warn(`B2B Webhook: Currency mismatch for snapshot ${snapshotId}: expected ${snapshot.currency}, got ${paymentEntity.currency}`);
+      throw AppError.badRequest(`Payment currency mismatch: expected ${snapshot.currency}, received ${paymentEntity.currency}`);
+    }
+
+    // 3. Lookup partner profile & verify ownership
+    const partners = await db
+      .select()
+      .from(partnerProfiles)
+      .where(eq(partnerProfiles.id, snapshot.partnerId))
+      .limit(1);
+
+    const partner = partners[0];
+    if (!partner || partner.id !== snapshot.partnerId) {
+      throw AppError.notFound(`Partner ${snapshot.partnerId} not found or ownership mismatch`);
+    }
+
+    // 4. Order ID verification if snapshot has razorpayOrderId
+    const expectedOrderId = (snapshot.metadata as any)?.razorpayOrderId;
+    if (expectedOrderId && paymentEntity.order_id && paymentEntity.order_id !== expectedOrderId) {
+      logger.warn(`B2B Webhook: Order ID mismatch: expected ${expectedOrderId}, got ${paymentEntity.order_id}`);
+      throw AppError.badRequest(`Payment order ID mismatch with snapshot`);
+    }
+
+    // 5. System Session for Transaction-Safe Atomic Settlement
+    const systemSession: SessionContext = {
+      sessionId: `session_webhook_b2b_${Date.now()}`,
+      userId: 'usr_sys_webhook_commercial',
+      actorEmail: 'system.webhook@docsearch.internal',
+      roles: ['SUPER_ADMIN'] as RoleType[],
+      permissions: ['*'],
+      dataScope: 'tenant',
+      isSuperAdmin: true,
+      tenantId: partner.tenantId,
+      organizationId: partner.tenantId,
+      branchId: '00000000-0000-4000-8000-000000000003'
+    };
+
+    return withSecurityContext(db, systemSession, async (tx) => {
+      // 1. Mark snapshot as PAID
+      await tx
+        .update(commercialOrderSnapshots)
+        .set({
+          status: 'PAID',
+          metadata: {
+            ...((snapshot.metadata as any) || {}),
+            paidAt: new Date().toISOString(),
+            gatewayPaymentId: paymentEntity.id,
+            gatewayOrderId: paymentEntity.order_id
+          },
+          updatedAt: new Date()
+        })
+        .where(eq(commercialOrderSnapshots.id, snapshot.id));
+
+      // 2. Ensure Billing Account exists
+      let billingAcc = (
+        await tx
+          .select()
+          .from(billingAccounts)
+          .where(eq(billingAccounts.partnerId, snapshot.partnerId))
+          .limit(1)
+      )[0];
+
+      if (!billingAcc) {
+        const newBillingAccId = crypto.randomUUID();
+        await tx.insert(billingAccounts).values({
+          id: newBillingAccId,
+          partnerId: snapshot.partnerId,
+          billingContactName: partner?.primaryContactName || 'Finance Officer',
+          billingEmail: partner?.primaryContactEmail || paymentEntity.email || 'billing@docsearch.internal',
+          currency: 'INR',
+          billingCycle: 'ANNUAL',
+          status: 'ACTIVE'
+        });
+        billingAcc = (
+          await tx
+            .select()
+            .from(billingAccounts)
+            .where(eq(billingAccounts.id, newBillingAccId))
+            .limit(1)
+        )[0];
+      }
+
+      // 3. Lookup Partner Subscription
+      const existingSubs = await tx
+        .select()
+        .from(subscriptions)
+        .where(eq(subscriptions.partnerId, snapshot.partnerId))
+        .limit(1);
+
+      // 4. Create B2B Invoice
+      const invId = crypto.randomUUID();
+      const invNumber = `INV-DOC-${Date.now()}`;
+      await tx.insert(companyInvoices).values({
+        id: invId,
+        billingAccountId: billingAcc ? billingAcc.id : crypto.randomUUID(),
+        subscriptionId: existingSubs[0]?.id || null,
+        invoiceNumber: invNumber,
+        issueDate: new Date(),
+        dueDate: new Date(),
+        currency: 'INR',
+        subtotal: String(snapshot.taxableAmountInr),
+        taxAmount: String(snapshot.cgstAmountInr + snapshot.sgstAmountInr + snapshot.igstAmountInr),
+        totalAmount: String(snapshot.finalAmountInr),
+        status: 'PAID',
+        notes: `Subscription Renewal (${snapshot.billingDurationYears} Year) - SAC 998313`,
+        metadata: {
+          snapshotId: snapshot.id,
+          partnerId: snapshot.partnerId,
+          durationYears: snapshot.billingDurationYears,
+          cgst: snapshot.cgstAmountInr,
+          sgst: snapshot.sgstAmountInr,
+          igst: snapshot.igstAmountInr,
+          customerGstin: snapshot.customerGstin
+        }
+      });
+
+      // 5. Create B2B Payment Record
+      const payId = crypto.randomUUID();
+      await tx.insert(companyPayments).values({
+        id: payId,
+        invoiceId: invId,
+        amount: String(snapshot.finalAmountInr),
+        currency: 'INR',
+        paymentStatus: 'SUCCEEDED',
+        provider: 'RAZORPAY',
+        providerReference: paymentEntity.id,
+        paymentDate: new Date(),
+        metadata: {
+          razorpayPaymentId: paymentEntity.id,
+          razorpayOrderId: paymentEntity.order_id,
+          method: paymentEntity.method
+        }
+      });
+
+      // 6. Extend or Activate Subscription (Active Extension Invariant)
+      const now = new Date();
+      const durationDays = snapshot.billingDurationYears * 365;
+      let newEndDate: Date;
+
+      if (existingSubs[0] && existingSubs[0].endDate && new Date(existingSubs[0].endDate) > now) {
+        newEndDate = new Date(new Date(existingSubs[0].endDate).getTime() + durationDays * 24 * 60 * 60 * 1000);
+      } else {
+        newEndDate = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
+      }
+
+      if (existingSubs[0]) {
+        await tx
+          .update(subscriptions)
+          .set({
+            planId: snapshot.planId,
+            status: 'ACTIVE',
+            endDate: newEndDate,
+            renewalDate: newEndDate,
+            updatedAt: now,
+            metadata: {
+              ...((existingSubs[0].metadata as any) || {}),
+              lastRenewedAt: now.toISOString(),
+              lastPaymentId: paymentEntity.id,
+              durationYears: snapshot.billingDurationYears
+            }
+          })
+          .where(eq(subscriptions.id, existingSubs[0].id));
+      }
+
+      // 7. Extend License
+      const existingLics = await tx
+        .select()
+        .from(licenses)
+        .where(eq(licenses.partnerId, snapshot.partnerId))
+        .limit(1);
+
+      if (existingLics[0]) {
+        const newSignature = licenseService.signLicensePayload({
+          licenseKey: existingLics[0].licenseKey,
+          partnerId: existingLics[0].partnerId,
+          tenantId: existingLics[0].tenantId,
+          subscriptionId: existingLics[0].subscriptionId,
+          planId: snapshot.planId || existingLics[0].planId,
+          expiryDate: newEndDate.toISOString()
+        });
+
+        await tx
+          .update(licenses)
+          .set({
+            status: 'ACTIVE',
+            expiryDate: newEndDate,
+            gracePeriodEnd: new Date(newEndDate.getTime() + 7 * 24 * 60 * 60 * 1000),
+            signature: newSignature,
+            updatedAt: now,
+            metadata: {
+              ...((existingLics[0].metadata as any) || {}),
+              lastRenewedAt: now.toISOString(),
+              lastPaymentId: paymentEntity.id
+            }
+          })
+          .where(eq(licenses.id, existingLics[0].id));
+      }
+
+      // 8. Audit Record
+      await tx.insert(companyAuditTraces).values({
+        id: crypto.randomUUID(),
+        traceId: `trace_b2b_wh_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`,
+        actorEmail: 'system.webhook@docsearch.internal',
+        action: 'COMMERCIAL_ORDER_SETTLED',
+        entityReference: `SNAPSHOT:${snapshot.id}`,
+        operationStatus: 'SUCCESS',
+        occurredAt: new Date(),
+        reason: `B2B Webhook payment settled: ₹${snapshot.finalAmountInr} for ${snapshot.billingDurationYears} Year renewal`,
+        metadata: {
+          snapshotId: snapshot.id,
+          partnerId: snapshot.partnerId,
+          paymentId: paymentEntity.id,
+          orderId: paymentEntity.order_id,
+          newExpiryDate: newEndDate.toISOString()
+        }
+      });
+
+      logger.info(`B2B Webhook successfully extended subscription & license for partner ${snapshot.partnerId}`);
+      return {
+        success: true,
+        partnerId: snapshot.partnerId,
+        invoiceNumber: invNumber,
+        newExpiryDate: newEndDate.toISOString(),
+        durationYears: snapshot.billingDurationYears
+      };
+    });
   }
 }
 

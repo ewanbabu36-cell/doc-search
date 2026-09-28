@@ -62,6 +62,7 @@ import { ProcurementReportsView } from './views/ProcurementReportsView.js';
 import { ProcurementAuditVaultView } from './views/ProcurementAuditVaultView.js';
 import { SpendAnalyticsView } from './views/SpendAnalyticsView.js';
 import { ProcurementControlCenterView } from './views/ProcurementControlCenterView.js';
+import { TabOverflowMenu } from './common/TabOverflowMenu.js';
 
 // Dialogs
 import { CreateVendorDialog } from './dialogs/CreateVendorDialog.js';
@@ -359,28 +360,9 @@ export const ProcurementDomainManager: React.FC<ProcurementDomainManagerProps> =
     showNotification(`🚨 EMERGENCY PO ${po.poNumber} DISPATCHED.`);
   };
 
-  const tabs: { id: ProcurementTab; label: string; icon: string }[] = [
-    { id: 'overview', label: 'Command Center', icon: '📊' },
-    { id: 'vendors', label: 'Vendors', icon: '🏢' },
-    { id: 'contracts', label: 'Contracts', icon: '📜' },
-    { id: 'catalog', label: 'Item Catalog', icon: '📦' },
-    { id: 'requisitions', label: 'Requisitions', icon: '📝' },
-    { id: 'approvals', label: 'Approvals', icon: '✅' },
-    { id: 'purchase-orders', label: 'Purchase Orders', icon: '📑' },
-    { id: 'goods-receipts', label: 'Goods Receipts (GRN)', icon: '📥' },
-    { id: 'inspections', label: 'Quality Inspection', icon: '🔍' },
-    { id: 'returns', label: 'Vendor Returns (RTV)', icon: '🔄' },
-    { id: 'invoices', label: 'Invoice Matching', icon: '🧾' },
-    { id: 'exceptions', label: 'Exceptions', icon: '⚠️' },
-    { id: 'planning', label: 'Reorder Planning', icon: '📈' },
-    { id: 'performance', label: 'Vendor Scorecards', icon: '⭐' },
-    { id: 'reports', label: 'Spend Reports', icon: '📉' },
-    { id: 'audit', label: 'Audit Vault', icon: '🔒' }
-  ];
-
   return (
     <div style={{ padding: '1.5rem', maxWidth: '1600px', margin: '0 auto' }}>
-      {/* Sample Data Disclaimer Badge */}
+      {/* Live Status Bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <span style={{ fontSize: '0.75rem', backgroundColor: '#e2e8f0', color: '#475569', padding: '0.2rem 0.6rem', borderRadius: '4px', fontWeight: 600 }}>
           Operational Live Telemetry
@@ -396,41 +378,210 @@ export const ProcurementDomainManager: React.FC<ProcurementDomainManagerProps> =
         </div>
       )}
 
-      {/* Domain Navigation Tabs */}
+      {/* Procurement Sub-Pages & Operational Action Toolbar */}
       <div
         style={{
+          backgroundColor: 'var(--ds-color-surface)',
+          borderRadius: '12px',
+          border: '1px solid var(--ds-color-border)',
+          padding: '12px 16px',
+          marginBottom: '1.25rem',
           display: 'flex',
-          gap: '0.5rem',
-          overflowX: 'auto',
-          borderBottom: '2px solid #e2e8f0',
-          paddingBottom: '0.5rem',
-          marginBottom: '1.5rem'
+          flexDirection: 'column',
+          gap: '12px',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.25)'
         }}
       >
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            style={{
-              padding: '0.5rem 0.875rem',
-              borderRadius: '6px',
-              border: 'none',
-              backgroundColor: activeTab === tab.id ? '#2563eb' : '#f1f5f9',
-              color: activeTab === tab.id ? '#fff' : '#475569',
-              fontWeight: 600,
-              fontSize: '0.875rem',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              transition: 'all 0.15s ease'
-            }}
-          >
-            <span>{tab.icon}</span>
-            <span>{tab.label}</span>
-          </button>
-        ))}
+        {/* Top Row: Page Context & Direct Action Buttons */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '10px'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '1.2rem' }}>🛒</span>
+            <div>
+              <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#F8FAFC' }}>
+                Procurement & Supply Chain Desk
+              </div>
+              <div style={{ fontSize: '0.72rem', color: '#94A3B8' }}>
+                Manage requisitions, purchase orders, 3-way invoice matching, and empaneled vendors
+              </div>
+            </div>
+          </div>
+
+          {/* Operational Action Buttons Right on the Page */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={() => setIsCreatePRDialogOpen(true)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                borderRadius: '6px',
+                backgroundColor: '#059669',
+                border: '1px solid #047857',
+                color: '#ffffff',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                boxShadow: '0 1px 2px rgba(16, 185, 129, 0.2)',
+                transition: 'all 0.15s ease'
+              }}
+              title="Create a new clinical indent or departmental requisition"
+            >
+              <span>+ Create Requisition (PR)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsCreatePOOpen(true)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                borderRadius: '6px',
+                backgroundColor: '#2563eb',
+                border: '1px solid #1d4ed8',
+                color: '#ffffff',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                boxShadow: '0 1px 2px rgba(37, 99, 235, 0.2)',
+                transition: 'all 0.15s ease'
+              }}
+              title="Generate a vendor purchase order"
+            >
+              <span>+ Create PO</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsEmergencyPurchaseOpen(true)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                borderRadius: '6px',
+                backgroundColor: '#dc2626',
+                border: '1px solid #b91c1c',
+                color: '#ffffff',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                boxShadow: '0 1px 2px rgba(220, 38, 38, 0.2)',
+                transition: 'all 0.15s ease'
+              }}
+              title="Dispatch emergency life-saving purchase order"
+            >
+              <span>🚨 Emergency PO</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsCreateVendorOpen(true)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                borderRadius: '6px',
+                backgroundColor: '#1E293B',
+                border: '1px solid #334155',
+                color: '#CBD5E1',
+                fontSize: '0.78rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              title="Register a new supplier or vendor partner"
+            >
+              <span>+ Add Vendor</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Sub-Pages Navigation Buttons (Clean single row, zero horizontal scrollbar) */}
+        <div
+          style={{
+            position: 'relative',
+            zIndex: 40,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            flexWrap: 'wrap',
+            paddingTop: '8px',
+            borderTop: '1px solid #1E293B'
+          }}
+        >
+          {[
+            { id: 'overview' as ProcurementTab, label: 'Command Center', icon: '📊' },
+            { id: 'requisitions' as ProcurementTab, label: `Requisitions (${requisitions.length})`, icon: '📝' },
+            { id: 'purchase-orders' as ProcurementTab, label: `Purchase Orders (${purchaseOrders.length})`, icon: '📑' },
+            { id: 'goods-receipts' as ProcurementTab, label: `Goods Receipt (${goodsReceipts.length})`, icon: '📥' },
+            { id: 'invoices' as ProcurementTab, label: `Invoices (${purchaseInvoices.length})`, icon: '🧾' }
+          ].map((tab) => {
+            const isTabActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '5px 11px',
+                  borderRadius: '7px',
+                  border: isTabActive ? '1px solid #38BDF8' : '1px solid #1E293B',
+                  backgroundColor: isTabActive ? '#0284C7' : '#0E162B',
+                  color: isTabActive ? '#FFFFFF' : '#94A3B8',
+                  fontWeight: isTabActive ? 700 : 500,
+                  fontSize: '0.78rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <span>{tab.icon}</span>
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+
+          {/* Secondary Modules Dropdown */}
+          <TabOverflowMenu
+            label="More Procurement Tools"
+            options={[
+              { id: 'control', label: '🎛️ Procurement Control Center' },
+              { id: 'vendors', label: '🏢 Vendors & Rate Cards', count: vendors.length },
+              { id: 'approvals', label: '✅ Approvals Desk' },
+              { id: 'inspections', label: '🔍 Quality Inspection' },
+              { id: 'returns', label: '🔄 Vendor Returns' },
+              { id: 'exceptions', label: '⚠️ Exceptions', count: exceptions.length },
+              { id: 'planning', label: '📈 Reorder Planning' },
+              { id: 'performance', label: '⭐ Vendor Performance' },
+              { id: 'spend', label: '💰 Spend Analytics' },
+              { id: 'reports', label: '📑 MIS Reports' },
+              { id: 'contracts', label: '📜 Contracts' },
+              { id: 'catalog', label: '📦 Item Catalog' },
+              { id: 'audit', label: '🔒 Audit Vault' },
+              ...(activeTab === 'purchase-order-detail' ? [{ id: 'purchase-order-detail', label: '📑 PO Detail View' }] : [])
+            ]}
+            activeId={activeTab}
+            onSelect={(id) => setActiveTab(id as ProcurementTab)}
+            onReset={() => setActiveTab('overview')}
+            accentColor="#0284C7"
+            activeBorderColor="#38BDF8"
+          />
+        </div>
       </div>
 
       {/* Tab Contents */}

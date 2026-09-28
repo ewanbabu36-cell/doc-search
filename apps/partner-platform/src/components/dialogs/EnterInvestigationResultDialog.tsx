@@ -12,6 +12,7 @@ import type {
   ResultEntryItem,
   InvestigationResultFlag
 } from '@docsearch/api-contracts';
+import { AuditJustificationField } from '../common/AuditJustificationField.js';
 
 export interface EnterInvestigationResultDialogProps {
   isOpen: boolean;
@@ -21,6 +22,13 @@ export interface EnterInvestigationResultDialogProps {
   tenantId: string;
 }
 
+interface InvestigationDraft {
+  results: ResultEntryItem[];
+  justification: string;
+}
+
+const draftStore = new Map<string, InvestigationDraft>();
+
 export const EnterInvestigationResultDialog: React.FC<EnterInvestigationResultDialogProps> = ({
   isOpen,
   onClose,
@@ -28,6 +36,8 @@ export const EnterInvestigationResultDialog: React.FC<EnterInvestigationResultDi
   order,
   tenantId
 }) => {
+  const draftKey = order ? `${tenantId}:${order.id}` : '';
+  const [hasDraft, setHasDraft] = useState(false);
   const [results, setResults] = useState<ResultEntryItem[]>([
     {
       parameterCode: 'RESULT_MAIN',
@@ -43,8 +53,18 @@ export const EnterInvestigationResultDialog: React.FC<EnterInvestigationResultDi
   const [justification, setJustification] = useState('Laboratory analytical test run completed.');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Initialize or restore draft whenever order/tenant changes
   React.useEffect(() => {
-    if (order && order.results && order.results.length > 0) {
+    if (!order) return;
+    const currentKey = `${tenantId}:${order.id}`;
+    const savedDraft = draftStore.get(currentKey);
+
+    if (savedDraft) {
+      setResults(savedDraft.results);
+      setJustification(savedDraft.justification);
+      setHasDraft(true);
+    } else if (order.results && order.results.length > 0) {
       setResults(order.results.map(r => ({
         parameterCode: r.parameterCode,
         parameterName: r.parameterName,
@@ -56,36 +76,102 @@ export const EnterInvestigationResultDialog: React.FC<EnterInvestigationResultDi
         isCritical: r.isCritical,
         qualitativeInterpretation: r.qualitativeInterpretation || ''
       })));
+      setJustification('Laboratory analytical test run completed.');
+      setHasDraft(false);
+    } else {
+      setResults([
+        {
+          parameterCode: 'RESULT_MAIN',
+          parameterName: order.investigationName || 'Primary Finding',
+          resultValue: '',
+          unit: '',
+          referenceRange: '',
+          abnormalFlag: 'NORMAL',
+          isCritical: false,
+          qualitativeInterpretation: ''
+        }
+      ]);
+      setJustification('Laboratory analytical test run completed.');
+      setHasDraft(false);
     }
-  }, [order]);
+  }, [order?.id, tenantId]);
+
+  // Persist draft on state changes
+  const saveDraft = (newResults: ResultEntryItem[], newJustification: string) => {
+    if (draftKey) {
+      draftStore.set(draftKey, { results: newResults, justification: newJustification });
+      setHasDraft(true);
+    }
+  };
+
+  const handleDiscardDraft = () => {
+    if (draftKey) {
+      draftStore.delete(draftKey);
+      setHasDraft(false);
+    }
+    if (order?.results && order.results.length > 0) {
+      setResults(order.results.map(r => ({
+        parameterCode: r.parameterCode,
+        parameterName: r.parameterName,
+        resultValue: r.resultValue,
+        numericValue: r.numericValue,
+        unit: r.unit || '',
+        referenceRange: r.referenceRange || '',
+        abnormalFlag: r.abnormalFlag,
+        isCritical: r.isCritical,
+        qualitativeInterpretation: r.qualitativeInterpretation || ''
+      })));
+    } else {
+      setResults([
+        {
+          parameterCode: 'RESULT_MAIN',
+          parameterName: order?.investigationName || 'Primary Finding',
+          resultValue: '',
+          unit: '',
+          referenceRange: '',
+          abnormalFlag: 'NORMAL',
+          isCritical: false,
+          qualitativeInterpretation: ''
+        }
+      ]);
+    }
+    setJustification('Laboratory analytical test run completed.');
+    setError(null);
+  };
 
   const handleAutoFillCBC = () => {
-    setResults([
+    const cbcResults: ResultEntryItem[] = [
       { parameterCode: 'WBC', parameterName: 'White Blood Cell (WBC)', resultValue: '7.8', numericValue: 7.8, unit: 'x10^3/uL', referenceRange: '4.5 - 11.0', abnormalFlag: 'NORMAL', isCritical: false, qualitativeInterpretation: '' },
       { parameterCode: 'HGB', parameterName: 'Hemoglobin (Hb)', resultValue: '14.2', numericValue: 14.2, unit: 'g/dL', referenceRange: '13.0 - 17.0', abnormalFlag: 'NORMAL', isCritical: false, qualitativeInterpretation: '' },
       { parameterCode: 'PLT', parameterName: 'Platelet Count', resultValue: '245', numericValue: 245, unit: 'x10^3/uL', referenceRange: '150 - 450', abnormalFlag: 'NORMAL', isCritical: false, qualitativeInterpretation: '' },
       { parameterCode: 'RBC', parameterName: 'Red Blood Cell (RBC)', resultValue: '4.8', numericValue: 4.8, unit: 'million/uL', referenceRange: '4.5 - 5.5', abnormalFlag: 'NORMAL', isCritical: false, qualitativeInterpretation: '' },
       { parameterCode: 'NEUT', parameterName: 'Neutrophils', resultValue: '65', numericValue: 65, unit: '%', referenceRange: '40 - 75', abnormalFlag: 'NORMAL', isCritical: false, qualitativeInterpretation: '' },
       { parameterCode: 'LYMPH', parameterName: 'Lymphocytes', resultValue: '28', numericValue: 28, unit: '%', referenceRange: '20 - 45', abnormalFlag: 'NORMAL', isCritical: false, qualitativeInterpretation: '' }
-    ]);
+    ];
+    setResults(cbcResults);
+    saveDraft(cbcResults, justification);
   };
 
   if (!order) return null;
 
   const handleAddParam = () => {
-    setResults((prev) => [
-      ...prev,
-      {
-        parameterCode: `PARAM_${prev.length + 1}`,
-        parameterName: '',
-        resultValue: '',
-        unit: '',
-        referenceRange: '',
-        abnormalFlag: 'NORMAL',
-        isCritical: false,
-        qualitativeInterpretation: ''
-      }
-    ]);
+    setResults((prev) => {
+      const next: ResultEntryItem[] = [
+        ...prev,
+        {
+          parameterCode: `PARAM_${prev.length + 1}`,
+          parameterName: '',
+          resultValue: '',
+          unit: '',
+          referenceRange: '',
+          abnormalFlag: 'NORMAL',
+          isCritical: false,
+          qualitativeInterpretation: ''
+        }
+      ];
+      saveDraft(next, justification);
+      return next;
+    });
   };
 
   const handleUpdateParam = (index: number, field: keyof ResultEntryItem, value: unknown) => {
@@ -107,13 +193,18 @@ export const EnterInvestigationResultDialog: React.FC<EnterInvestigationResultDi
         (target as Record<string, unknown>)[field] = value;
       }
       next[index] = target;
+      saveDraft(next, justification);
       return next;
     });
   };
 
   const handleRemoveParam = (index: number) => {
     if (results.length === 1) return;
-    setResults((prev) => prev.filter((_, idx) => idx !== index));
+    setResults((prev) => {
+      const next = prev.filter((_, idx) => idx !== index);
+      saveDraft(next, justification);
+      return next;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -139,6 +230,10 @@ export const EnterInvestigationResultDialog: React.FC<EnterInvestigationResultDi
         actorRole: 'LAB_TECHNICIAN',
         justification
       });
+      // Clear persisted draft on successful submission
+      if (draftKey) {
+        draftStore.delete(draftKey);
+      }
       onClose();
     } catch (err: unknown) {
       setError((err as Error).message || 'Failed to enter results.');
@@ -153,13 +248,22 @@ export const EnterInvestigationResultDialog: React.FC<EnterInvestigationResultDi
       onClose={onClose}
       title="📊 Enter Investigation Analytical Results"
       footer={
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-          <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? 'Saving Results...' : 'Submit Results for Verification'}
-          </Button>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+          <div>
+            {hasDraft && (
+              <Button variant="outline" size="sm" onClick={handleDiscardDraft} disabled={isSubmitting}>
+                🗑️ Discard Draft
+              </Button>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={handleSubmit} disabled={isSubmitting}>
+              {isSubmitting ? 'Saving Results...' : 'Submit Results for Verification'}
+            </Button>
+          </div>
         </div>
       }
     >
@@ -181,7 +285,7 @@ export const EnterInvestigationResultDialog: React.FC<EnterInvestigationResultDi
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
             <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>Measured Parameters & Clinical Findings</span>
             <div style={{ display: 'flex', gap: '8px' }}>
-              <Button type="button" size="sm" variant="primary" onClick={handleAutoFillCBC} style={{ backgroundColor: '#10B981', borderColor: '#10B981', color: '#070C16', fontWeight: 800 }}>
+              <Button type="button" size="sm" variant="success" onClick={handleAutoFillCBC} >
                 ⚡ Auto-Fetch Analyzer Machine Readings
               </Button>
               <Button type="button" size="sm" variant="outline" onClick={handleAddParam}>
@@ -257,16 +361,12 @@ export const EnterInvestigationResultDialog: React.FC<EnterInvestigationResultDi
           </div>
         </div>
 
-        <div>
-          <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '6px' }}>
-            Audit Justification *
-          </label>
-          <Input
-            value={justification}
-            onChange={(e) => setJustification(e.target.value)}
-            placeholder="Analytical bench confirmation..."
-          />
-        </div>
+        <AuditJustificationField
+          value={justification}
+          onChange={setJustification}
+          defaultJustification="Standard biochemical/hematological analyzer result entry"
+          placeholder="Analytical bench confirmation..."
+        />
       </form>
     </Dialog>
   );

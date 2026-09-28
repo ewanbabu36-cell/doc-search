@@ -1,10 +1,19 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { AbdmGatewayService } from '../../services/partner/AbdmGatewayService.js';
 import { authenticate } from '../../plugins/auth-guard.js';
+import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 
 const service = new AbdmGatewayService();
 
 export const abdmRoutes: FastifyPluginAsync = async (app) => {
+  const commercialGuard = requireModuleCommercialAccess('ABDM_GATEWAY');
+  app.addHook('preHandler', async (request, reply) => {
+    if (request.url.startsWith('/api/v1/abdm/callback/')) {
+      return;
+    }
+    return commercialGuard(request, reply);
+  });
+
   // --------------------------------------------------------------------------
   // Overview & Bridge Telemetry
   // --------------------------------------------------------------------------

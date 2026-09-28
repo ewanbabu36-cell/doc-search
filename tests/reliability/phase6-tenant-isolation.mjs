@@ -46,8 +46,8 @@ export async function runTenantIsolationAudit() {
   console.log('🔒 PHASE 6 — MULTI-TENANT ISOLATION UNDER CONCURRENCY');
   console.log('============================================================');
 
-  await setupTestDatabase({ seedBaseline: true });
-  const app = await buildApp();
+  const testDb = await setupTestDatabase({ seedBaseline: true });
+  const app = await buildApp({ db: testDb.db });
   await app.ready();
 
   const tokenA = createTenantToken(TEST_SEEDS.TENANT_A, TEST_SEEDS.DOCTOR_ID, TEST_SEEDS.BRANCH_A);
@@ -207,6 +207,7 @@ export async function runTenantIsolationAudit() {
   console.log('    ➔ Interleaved Verdict: ' + auditResults.concurrentInterleavedIsolation.verdict);
 
   await app.close();
+  if (testDb) await testDb.cleanup();
 
   fs.writeFileSync('./tests/reliability/phase6-tenant-isolation-results.json', JSON.stringify(auditResults, null, 2));
   console.log('\n[+] Results saved to ./tests/reliability/phase6-tenant-isolation-results.json');

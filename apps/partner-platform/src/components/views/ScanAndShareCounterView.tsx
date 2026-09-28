@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Card, Badge, Button } from '@docsearch/ui-kit';
 import type { AbdmScanAndShareTokenDto } from '@docsearch/api-contracts';
+import { getUnifiedPartnerProfile } from '../../utils/roleProfileResolver.js';
 
 interface Props {
   tokens: AbdmScanAndShareTokenDto[];
@@ -8,6 +9,9 @@ interface Props {
 }
 
 export const ScanAndShareCounterView: React.FC<Props> = ({ tokens: initialTokens }) => {
+  const partnerProfile = getUnifiedPartnerProfile();
+  const effectiveDoctor = partnerProfile.doctorName ? `${partnerProfile.doctorName}${partnerProfile.doctorDegree ? `, ${partnerProfile.doctorDegree}` : ''}` : 'Lead Consulting Physician';
+
   const [tokensList, setTokensList] = useState<AbdmScanAndShareTokenDto[]>(initialTokens);
   const [isScanning, setIsScanning] = useState(false);
   const [scannedPatient, setScannedPatient] = useState({
@@ -19,7 +23,7 @@ export const ScanAndShareCounterView: React.FC<Props> = ({ tokens: initialTokens
     dob: '1988-04-12 (38y)',
     mobile: '+91 98765 43210',
     address: 'Mayur Vihar Phase 1, New Delhi, 110091',
-    doctor: 'Dr. Rajesh Sharma, MD',
+    doctor: effectiveDoctor,
     chamber: 'CHAMBER 1 (General Medicine OPD)',
     waitEst: '12 mins',
     scannedAt: new Date().toLocaleTimeString()
@@ -34,9 +38,9 @@ export const ScanAndShareCounterView: React.FC<Props> = ({ tokens: initialTokens
 
   // Patient Sample Profiles for simulation
   const patientProfiles = [
-    { name: 'Rahul Verma', abha: 'rahul.verma@abdm', num: '91-8841-2904-8120', gender: 'MALE', age: '38y', mobile: '+91 98765 43210', doc: 'Dr. Rajesh Sharma, MD', room: 'Chamber 1' },
-    { name: 'Anjali Gupta', abha: 'anjali.gupta@abdm', num: '91-4421-8890-1123', gender: 'FEMALE', age: '29y', mobile: '+91 98112 33445', doc: 'Dr. Sarah Jenkins, MD', room: 'Chamber 2' },
-    { name: 'Mohd. Farooq', abha: 'farooq.health@abdm', num: '91-7712-4432-9011', gender: 'MALE', age: '46y', mobile: '+91 97123 45678', doc: 'Dr. Marcus Vance, MD', room: 'Chamber 3' }
+    { name: 'Rahul Verma', abha: 'rahul.verma@abdm', num: '91-8841-2904-8120', gender: 'MALE', age: '38y', mobile: '+91 98765 43210', doc: effectiveDoctor, room: 'Chamber 1' },
+    { name: 'Anjali Gupta', abha: 'anjali.gupta@abdm', num: '91-4421-8890-1123', gender: 'FEMALE', age: '29y', mobile: '+91 98112 33445', doc: effectiveDoctor, room: 'Chamber 2' },
+    { name: 'Mohd. Farooq', abha: 'farooq.health@abdm', num: '91-7712-4432-9011', gender: 'MALE', age: '46y', mobile: '+91 97123 45678', doc: effectiveDoctor, room: 'Chamber 3' }
   ];
 
   const handleSimulateScan = (profIndex = 0) => {
@@ -172,7 +176,7 @@ export const ScanAndShareCounterView: React.FC<Props> = ({ tokens: initialTokens
               COUNTER #01 • OPD RECEPTION
             </div>
             <div style={{ fontSize: '0.625rem', color: '#64748B' }}>
-              Facility ID: IN0710002148 (Apex Multi-Specialty)
+              Facility ID: IN-HFR-{partnerProfile.contactPhone?.slice(-5) || '07100'} ({partnerProfile.entityLegalName || 'Registered Healthcare Facility'})
             </div>
           </div>
 
@@ -181,27 +185,29 @@ export const ScanAndShareCounterView: React.FC<Props> = ({ tokens: initialTokens
             Scan with <strong>Aarogya Setu / ABHA App / Paytm / EkaCare</strong> to share demographic profile and get instant OPD token without waiting in line!
           </div>
 
-          {/* Patient Profile Simulators */}
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
-            <button
-              onClick={() => handleSimulateScan(0)}
-              style={{ padding: '6px 10px', borderRadius: '6px', backgroundColor: 'rgba(16, 185, 129, 0.2)', border: '1px solid #10B981', color: '#A7F3D0', fontSize: '0.6875rem', fontWeight: 700, cursor: 'pointer' }}
-            >
-              👤 Scan: Rahul Verma (38y/M)
-            </button>
-            <button
-              onClick={() => handleSimulateScan(1)}
-              style={{ padding: '6px 10px', borderRadius: '6px', backgroundColor: 'rgba(56, 189, 248, 0.2)', border: '1px solid #38BDF8', color: '#BAE6FD', fontSize: '0.6875rem', fontWeight: 700, cursor: 'pointer' }}
-            >
-              👤 Scan: Anjali Gupta (29y/F)
-            </button>
-            <button
-              onClick={() => handleSimulateScan(2)}
-              style={{ padding: '6px 10px', borderRadius: '6px', backgroundColor: 'rgba(245, 158, 11, 0.2)', border: '1px solid #F59E0B', color: '#FDE68A', fontSize: '0.6875rem', fontWeight: 700, cursor: 'pointer' }}
-            >
-              👤 Scan: Mohd. Farooq (46y/M)
-            </button>
-          </div>
+          {/* Patient Profile Simulators (Visible only in Dev Mode for Testing) */}
+          {(import.meta as any).env?.DEV && (
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
+              <button
+                onClick={() => handleSimulateScan(0)}
+                style={{ padding: '6px 10px', borderRadius: '6px', backgroundColor: 'rgba(16, 185, 129, 0.2)', border: '1px solid #10B981', color: '#A7F3D0', fontSize: '0.6875rem', fontWeight: 700, cursor: 'pointer' }}
+              >
+                🧪 Dev Scan: Rahul Verma (38y/M)
+              </button>
+              <button
+                onClick={() => handleSimulateScan(1)}
+                style={{ padding: '6px 10px', borderRadius: '6px', backgroundColor: 'rgba(56, 189, 248, 0.2)', border: '1px solid #38BDF8', color: '#BAE6FD', fontSize: '0.6875rem', fontWeight: 700, cursor: 'pointer' }}
+              >
+                🧪 Dev Scan: Anjali Gupta (29y/F)
+              </button>
+              <button
+                onClick={() => handleSimulateScan(2)}
+                style={{ padding: '6px 10px', borderRadius: '6px', backgroundColor: 'rgba(245, 158, 11, 0.2)', border: '1px solid #F59E0B', color: '#FDE68A', fontSize: '0.6875rem', fontWeight: 700, cursor: 'pointer' }}
+              >
+                🧪 Dev Scan: Mohd. Farooq (46y/M)
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Right: Instant 1-Second Token Slip & e-KYC Verification */}

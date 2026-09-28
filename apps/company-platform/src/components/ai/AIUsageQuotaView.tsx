@@ -21,7 +21,7 @@ export const AIUsageQuotaView: React.FC<AIUsageQuotaViewProps> = ({ quotas }) =>
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       <Alert type="info" title="AI Consumption Telemetry Notice">
-        <strong>Live AI usage telemetry is not connected (Live Telemetry — Live Telemetry).</strong> Quota thresholds defined below represent configured rate-limiting and token governance parameters enforced at the Fastify gateway layer.
+        <strong>Live AI token governance active.</strong> Quota thresholds defined below represent configured rate-limiting and token governance parameters enforced at the Fastify gateway layer.
       </Alert>
 
       <Card

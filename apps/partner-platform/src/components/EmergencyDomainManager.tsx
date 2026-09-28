@@ -58,6 +58,9 @@ import { EmergencyStaffView } from './views/EmergencyStaffView.js';
 import { EmergencyAnalyticsView } from './views/EmergencyAnalyticsView.js';
 import { EmergencyAuditVaultView } from './views/EmergencyAuditVaultView.js';
 import { EmergencyControlCenterView } from './views/EmergencyControlCenterView.js';
+import { OfflineMeshDisasterSyncView } from './views/OfflineMeshDisasterSyncView.js';
+import { TabOverflowMenu } from './common/TabOverflowMenu.js';
+import { DocSearchSpatialCore3D, SkeletonPage } from '@docsearch/ui-kit';
 
 // Dialogs
 import { RegisterEmergencyPatientDialog } from './dialogs/RegisterEmergencyPatientDialog.js';
@@ -77,6 +80,7 @@ import { CreateEmergencyDeathDialog } from './dialogs/CreateEmergencyDeathDialog
 import { ActivateDisasterModeDialog } from './dialogs/ActivateDisasterModeDialog.js';
 import { RegisterDisasterPatientDialog } from './dialogs/RegisterDisasterPatientDialog.js';
 import { CheckCrashCartDialog } from './dialogs/CheckCrashCartDialog.js';
+import { BreakGlassEmergencyModal } from './security/BreakGlassEmergencyModal.js';
 
 export type EmergencyTab =
   | 'command-center'
@@ -95,6 +99,7 @@ export type EmergencyTab =
   | 'disposition'
   | 'death'
   | 'disaster'
+  | 'mesh-network'
   | 'staff'
   | 'analytics'
   | 'audit-vault'
@@ -158,6 +163,7 @@ export const EmergencyDomainManager: React.FC<Props> = ({
   const [isDisasterOpen, setIsDisasterOpen] = useState(false);
   const [isDisasterPatientOpen, setIsDisasterPatientOpen] = useState(false);
   const [isCartCheckOpen, setIsCartCheckOpen] = useState(false);
+  const [isBreakGlassOpen, setIsBreakGlassOpen] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -224,38 +230,120 @@ export const EmergencyDomainManager: React.FC<Props> = ({
   }, [loadData]);
 
   if (loading || !metrics || !analytics || !department) {
-    return (
-      <div className="flex h-96 items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-red-600 border-t-transparent" />
-          <p className="text-sm font-semibold text-gray-700">Connecting to Emergency & Trauma Center...</p>
-        </div>
-      </div>
-    );
+    return <SkeletonPage layout="cards" metricCount={4} />;
   }
 
   return (
     <div className="space-y-6">
+      {/* 3D Spatial Feature Core: Emergency & Trauma */}
+      <DocSearchSpatialCore3D
+        preset="emergency"
+        height={360}
+        interactive={true}
+        onNodeClick={(id) => {
+          if (id === 'esi-triage') {
+            setActiveTab('triage');
+          } else if (id === 'crash-cart') {
+            setActiveTab('crash-cart');
+          } else if (id === 'stat-bed') {
+            setActiveTab('queue');
+          } else if (id === 'blood-bank') {
+            setActiveTab('resuscitation');
+          } else if (id === 'trauma-call') {
+            setActiveTab('trauma');
+          } else if (id === 'mlc-registry') {
+            setActiveTab('mlc');
+          } else if (id === 'ambulance-gps') {
+            setActiveTab('ambulance');
+          }
+        }}
+      />
+
       {/* Tab Navigation */}
-      <div className="flex overflow-x-auto border-b border-gray-200 bg-white px-4 py-2 gap-2 text-xs font-semibold scrollbar-none">
-        <button onClick={() => setActiveTab('command-center')} className={`px-3 py-2 rounded-lg whitespace-nowrap ${activeTab === 'command-center' ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>🚨 Command Center</button>
-        <button onClick={() => setActiveTab('dashboard')} className={`px-3 py-2 rounded-lg whitespace-nowrap ${activeTab === 'dashboard' ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>📊 ED Dashboard</button>
-        <button onClick={() => setActiveTab('queue')} className={`px-3 py-2 rounded-lg whitespace-nowrap ${activeTab === 'queue' ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>📋 Priority Queue</button>
-        <button onClick={() => setActiveTab('triage')} className={`px-3 py-2 rounded-lg whitespace-nowrap ${activeTab === 'triage' ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>🩺 Triage Desk</button>
-        <button onClick={() => setActiveTab('resuscitation')} className={`px-3 py-2 rounded-lg whitespace-nowrap ${activeTab === 'resuscitation' ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>⚡ Resuscitation / Code Blue</button>
-        <button onClick={() => setActiveTab('trauma')} className={`px-3 py-2 rounded-lg whitespace-nowrap ${activeTab === 'trauma' ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>🩸 Trauma Command</button>
-        <button onClick={() => setActiveTab('observation')} className={`px-3 py-2 rounded-lg whitespace-nowrap ${activeTab === 'observation' ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>🛏 Observation Unit</button>
-        <button onClick={() => setActiveTab('procedure')} className={`px-3 py-2 rounded-lg whitespace-nowrap ${activeTab === 'procedure' ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>💉 ED Procedures</button>
-        <button onClick={() => setActiveTab('mlc')} className={`px-3 py-2 rounded-lg whitespace-nowrap ${activeTab === 'mlc' ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>⚖ Medico-Legal (MLC)</button>
-        <button onClick={() => setActiveTab('ambulance')} className={`px-3 py-2 rounded-lg whitespace-nowrap ${activeTab === 'ambulance' ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>🚑 Ambulance Transit</button>
-        <button onClick={() => setActiveTab('crash-cart')} className={`px-3 py-2 rounded-lg whitespace-nowrap ${activeTab === 'crash-cart' ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>🛒 Crash Cart</button>
-        <button onClick={() => setActiveTab('disposition')} className={`px-3 py-2 rounded-lg whitespace-nowrap ${activeTab === 'disposition' ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>🚪 Dispositions</button>
-        <button onClick={() => setActiveTab('death')} className={`px-3 py-2 rounded-lg whitespace-nowrap ${activeTab === 'death' ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>⚰ Death Registry</button>
-        <button onClick={() => setActiveTab('disaster')} className={`px-3 py-2 rounded-lg whitespace-nowrap ${activeTab === 'disaster' ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>☢ Disaster / MCI</button>
-        <button onClick={() => setActiveTab('staff')} className={`px-3 py-2 rounded-lg whitespace-nowrap ${activeTab === 'staff' ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>👨‍⚕ ED Staff</button>
-        <button onClick={() => setActiveTab('analytics')} className={`px-3 py-2 rounded-lg whitespace-nowrap ${activeTab === 'analytics' ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>📈 ED Analytics</button>
-        <button onClick={() => setActiveTab('audit-vault')} className={`px-3 py-2 rounded-lg whitespace-nowrap ${activeTab === 'audit-vault' ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>🔒 Audit Vault</button>
-        <button onClick={() => setActiveTab('control-center')} className={`px-3 py-2 rounded-lg whitespace-nowrap ${activeTab === 'control-center' ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>⚙ SOP Protocols</button>
+      <div
+        style={{
+          position: 'relative',
+          zIndex: 40,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          flexWrap: 'wrap',
+          backgroundColor: 'var(--ds-color-surface)',
+          border: '1px solid var(--ds-color-border)',
+          borderRadius: '10px',
+          padding: '6px 8px'
+        }}
+      >
+        {[
+          { id: 'command-center', label: '🚨 Command Center' },
+          { id: 'triage', label: '🩺 Triage Desk' },
+          { id: 'queue', label: '📋 Priority Queue' },
+          { id: 'resuscitation', label: '⚡ Code Blue / Resus' },
+          { id: 'trauma', label: '🩸 Trauma Command' }
+        ].map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id as EmergencyTab)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                fontSize: '0.78rem',
+                fontWeight: isActive ? 700 : 500,
+                color: isActive ? '#FFFFFF' : 'var(--ds-color-text-muted)',
+                backgroundColor: isActive ? 'var(--ds-color-danger, #DC2626)' : 'transparent',
+                borderRadius: '6px',
+                border: isActive ? '1px solid var(--ds-color-danger, #EF4444)' : '1px solid transparent',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = 'var(--ds-color-surface-hover)';
+                  e.currentTarget.style.color = 'var(--ds-color-text-primary)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = 'var(--ds-color-text-muted)';
+                }
+              }}
+            >
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+
+        {/* Secondary Modules Selector Dropdown */}
+        <TabOverflowMenu
+          label="More Emergency Tools"
+          options={[
+            { id: 'dashboard', label: '📊 ED Dashboard' },
+            { id: 'observation', label: '🛏 Observation Unit' },
+            { id: 'procedure', label: '💉 ED Procedures' },
+            { id: 'mlc', label: '⚖ Medico-Legal (MLC)' },
+            { id: 'ambulance', label: '🚑 Ambulance Transit' },
+            { id: 'crash-cart', label: '🛒 Crash Cart' },
+            { id: 'disposition', label: '🚪 Dispositions' },
+            { id: 'death', label: '⚰ Death Registry' },
+            { id: 'disaster', label: '☢ Disaster / MCI' },
+            { id: 'mesh-network', label: '🌐 P2P Mesh Network' },
+            { id: 'staff', label: '👨‍⚕ ED Staff' },
+            { id: 'analytics', label: '📈 ED Analytics' },
+            { id: 'audit-vault', label: '🔒 Audit Vault' },
+            { id: 'control-center', label: '⚙ SOP Protocols' }
+          ]}
+          activeId={activeTab}
+          onSelect={(id) => setActiveTab(id as EmergencyTab)}
+          onReset={() => setActiveTab('command-center')}
+          accentColor="#DC2626"
+          activeBorderColor="#EF4444"
+        />
       </div>
 
       {/* Render Active View */}
@@ -285,6 +373,7 @@ export const EmergencyDomainManager: React.FC<Props> = ({
           onReassess={(e) => { setSelectedEncounter(e); setIsReassessOpen(true); }}
           onAssign={(e) => { setSelectedEncounter(e); setIsAssignOpen(true); }}
           onDisposition={(e) => { setSelectedEncounter(e); setIsDispositionOpen(true); }}
+          onSelectPatient={(e) => { setSelectedEncounter(e); setActiveTab('patient'); }}
         />
       )}
 
@@ -320,6 +409,7 @@ export const EmergencyDomainManager: React.FC<Props> = ({
           encounters={encounters}
           onActivateTrauma={(e) => { setSelectedEncounter(e); setIsTraumaOpen(true); }}
           onRecordSecondary={(t) => { setSelectedTrauma(t); setIsTraumaSecondaryOpen(true); }}
+          onSelectTrauma={(t) => { setSelectedTrauma(t); setActiveTab('trauma-patient'); }}
         />
       )}
 
@@ -390,8 +480,11 @@ export const EmergencyDomainManager: React.FC<Props> = ({
           events={disasterEvents}
           onActivateDisaster={() => setIsDisasterOpen(true)}
           onRegisterVictim={() => setIsDisasterPatientOpen(true)}
+          onOpenMeshNetwork={() => setActiveTab('mesh-network')}
         />
       )}
+
+      {activeTab === 'mesh-network' && <OfflineMeshDisasterSyncView />}
 
       {activeTab === 'staff' && <EmergencyStaffView department={department} />}
       {activeTab === 'analytics' && <EmergencyAnalyticsView analytics={analytics} />}
@@ -621,6 +714,15 @@ export const EmergencyDomainManager: React.FC<Props> = ({
           await loadData();
         }}
         tenantId={tenantId}
+      />
+
+      <BreakGlassEmergencyModal
+        isOpen={isBreakGlassOpen}
+        onClose={() => setIsBreakGlassOpen(false)}
+        onOverrideSuccess={(res) => {
+          console.log('[BreakGlass] Override authorized:', res);
+          loadData();
+        }}
       />
     </div>
   );

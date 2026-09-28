@@ -6,7 +6,9 @@ export interface BedBlockManagementViewProps {
   blocks: InpatientBedBlockDto[];
 }
 
-export const BedBlockManagementView: React.FC<BedBlockManagementViewProps> = ({ blocks }) => {
+export const BedBlockManagementView: React.FC<BedBlockManagementViewProps> = ({ blocks = [] }) => {
+  const safeBlocks = Array.isArray(blocks) ? blocks : [];
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div>
@@ -25,15 +27,21 @@ export const BedBlockManagementView: React.FC<BedBlockManagementViewProps> = ({ 
             </tr>
           </thead>
           <tbody>
-            {blocks.map((b) => (
-              <tr key={b.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                <td style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>{b.blockNumber}</td>
-                <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#dc2626' }}>{b.bedCode}</td>
-                <td style={{ padding: '0.75rem 1rem' }}>{b.blockReason}</td>
-                <td style={{ padding: '0.75rem 1rem' }}>{b.authorizedBy}</td>
-                <td style={{ padding: '0.75rem 1rem' }}><Badge variant="danger">{b.status}</Badge></td>
+            {safeBlocks.length === 0 ? (
+              <tr>
+                <td colSpan={5} style={{ padding: '1.5rem', textAlign: 'center', color: '#64748b' }}>No beds under maintenance block.</td>
               </tr>
-            ))}
+            ) : (
+              safeBlocks.map((b) => (
+                <tr key={b.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                  <td style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>{b.blockNumber}</td>
+                  <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#dc2626' }}>{b.bedCode}</td>
+                  <td style={{ padding: '0.75rem 1rem' }}>{b.blockReason}</td>
+                  <td style={{ padding: '0.75rem 1rem' }}>{b.authorizedBy}</td>
+                  <td style={{ padding: '0.75rem 1rem' }}><Badge variant="danger">{b.status}</Badge></td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </Card>

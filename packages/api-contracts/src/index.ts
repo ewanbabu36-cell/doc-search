@@ -45,9 +45,12 @@ export * from './partner-platform/abdm-fhir-gateway.schema.js';
 export * from './partner-platform/ai-cdss.schema.js';
 export * from './partner-platform/telemedicine-rpm.schema.js';
 export * from './partner-platform/whatsapp-patient-portal.schema.js';
+export * from './partner-platform/patient-360.schema.js';
 export * from './client/api-client.js';
 
 export * from './integrations/fhir-contracts.js';
 
 export * from './partner-platform/hardware-bridge.schema.js';
 export * from './workflow/dynamic-workflow.js';
+export * from './errors/error-codes.js';
+export * from './errors/app-error.js';

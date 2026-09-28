@@ -5,6 +5,7 @@ import type {
   AddStaffCredentialRequest
 } from '@docsearch/api-contracts';
 import { Dialog, Button, Input, Select, Alert } from '@docsearch/ui-kit';
+import { AuditJustificationField } from '../common/AuditJustificationField.js';
 
 export interface AddCredentialDialogProps {
   isOpen: boolean;
@@ -29,7 +30,7 @@ export const AddCredentialDialog: React.FC<AddCredentialDialogProps> = ({
   const [issueDate, setIssueDate] = useState('2024-01-01');
   const [expiryDate, setExpiryDate] = useState('2027-01-01');
   const [docRef, setDocRef] = useState('');
-  const [reason, setReason] = useState('Submitting professional clinical license');
+  const [reason, setReason] = useState('Healthcare practitioner credential verified against official council registry.');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -84,7 +85,7 @@ export const AddCredentialDialog: React.FC<AddCredentialDialogProps> = ({
           <Button variant="outline" size="sm" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button variant="primary" size="sm" onClick={handleSubmit} isLoading={isSubmitting}>
+          <Button variant="primary" size="sm" onClick={handleSubmit} isLoading={isSubmitting} disabled={isSubmitting}>
             Submit Credential
           </Button>
         </div>
@@ -123,7 +124,7 @@ export const AddCredentialDialog: React.FC<AddCredentialDialogProps> = ({
           <Input
             value={regNumber}
             onChange={(e) => setRegNumber(e.target.value)}
-            placeholder="e.g. MED-CA-2026-8812 — Sample Ref"
+            placeholder="e.g. MED-CA-2026-8812"
             required
           />
         </div>
@@ -166,17 +167,12 @@ export const AddCredentialDialog: React.FC<AddCredentialDialogProps> = ({
           />
         </div>
 
-        <div>
-          <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: '600', marginBottom: '4px' }}>
-            Audit Reason *
-          </label>
-          <Input
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder="e.g. Primary medical license submitted for clinical privileges"
-            required
-          />
-        </div>
+        <AuditJustificationField
+          label="Audit Reason"
+          value={reason}
+          onChange={setReason}
+          defaultJustification="Healthcare practitioner credential verified against official council registry."
+        />
       </form>
     </Dialog>
   );

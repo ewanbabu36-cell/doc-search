@@ -239,7 +239,7 @@ export const GlobalCurrencyLocaleProvider: React.FC<{ children: React.ReactNode 
 
   const refreshLiveFxRates = useCallback(async () => {
     try {
-      const res = await fetch('http://localhost:4000/api/v1/company/treasury/fx-rates');
+      const res = await fetch('/api/v1/company/treasury/fx-rates');
       if (res.ok) {
         const json = await res.json();
         if (json.data && json.data.rates) {
@@ -255,7 +255,10 @@ export const GlobalCurrencyLocaleProvider: React.FC<{ children: React.ReactNode 
 
   useEffect(() => {
     void refreshLiveFxRates();
-    const interval = setInterval(refreshLiveFxRates, 60000);
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      void refreshLiveFxRates();
+    }, 60000);
     return () => clearInterval(interval);
   }, [refreshLiveFxRates]);
 

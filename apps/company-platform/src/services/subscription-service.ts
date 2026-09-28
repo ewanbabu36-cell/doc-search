@@ -13,6 +13,7 @@ import {
   mockInvoices,
   mockPaymentRecords
 } from './mock-subscription-data.js';
+import { apiCall, isMockFallbackAllowed } from './api-client.js';
 
 export interface SubscriptionFilters {
   partnerId?: string | undefined;
@@ -53,49 +54,50 @@ export class SubscriptionService implements ISubscriptionService {
   }
 
   async getSubscriptions(filters?: SubscriptionFilters): Promise<SubscriptionDto[]> {
-    if (this.apiUrl) {
+    try {
       const params = new URLSearchParams();
       if (filters?.partnerId) params.set('partnerId', filters.partnerId);
       if (filters?.productId) params.set('productId', filters.productId);
       if (filters?.status && filters.status !== 'ALL') params.set('status', filters.status);
       if (filters?.search) params.set('search', filters.search);
-      const res = await fetch(`${this.apiUrl}/api/v1/company/subscriptions?${params.toString()}`);
-      if (!res.ok) throw new Error(`Failed to fetch subscriptions: ${res.statusText}`);
-      return (await res.json()) as SubscriptionDto[];
-    }
+      const qs = params.toString();
+      const endpoint = `/api/v1/company/subscriptions${qs ? `?${qs}` : ''}`;
+      return await apiCall<SubscriptionDto[]>(endpoint);
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
 
-    let result = [...this.subscriptions];
-    if (filters?.partnerId) {
-      result = result.filter((s) => s.partnerId === filters.partnerId);
+      let result = [...this.subscriptions];
+      if (filters?.partnerId) {
+        result = result.filter((s) => s.partnerId === filters.partnerId);
+      }
+      if (filters?.productId) {
+        result = result.filter((s) => s.productId === filters.productId);
+      }
+      if (filters?.status && filters.status !== 'ALL') {
+        result = result.filter((s) => s.status === filters.status);
+      }
+      if (filters?.search) {
+        const q = filters.search.toLowerCase().trim();
+        result = result.filter(
+          (s) =>
+            s.partnerTradeName.toLowerCase().includes(q) ||
+            s.partnerTenantSlug.toLowerCase().includes(q) ||
+            s.productName.toLowerCase().includes(q) ||
+            s.planName.toLowerCase().includes(q)
+        );
+      }
+      return result;
     }
-    if (filters?.productId) {
-      result = result.filter((s) => s.productId === filters.productId);
-    }
-    if (filters?.status && filters.status !== 'ALL') {
-      result = result.filter((s) => s.status === filters.status);
-    }
-    if (filters?.search) {
-      const q = filters.search.toLowerCase().trim();
-      result = result.filter(
-        (s) =>
-          s.partnerTradeName.toLowerCase().includes(q) ||
-          s.partnerTenantSlug.toLowerCase().includes(q) ||
-          s.productName.toLowerCase().includes(q) ||
-          s.planName.toLowerCase().includes(q)
-      );
-    }
-    return result;
   }
 
   async getSubscriptionById(id: string): Promise<SubscriptionDto | null> {
-    if (this.apiUrl) {
-      const res = await fetch(`${this.apiUrl}/api/v1/company/subscriptions/${id}`);
-      if (res.status === 404) return null;
-      if (!res.ok) throw new Error(`Failed to fetch subscription: ${res.statusText}`);
-      return (await res.json()) as SubscriptionDto;
+    try {
+      return await apiCall<SubscriptionDto>(`/api/v1/company/subscriptions/${id}`);
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+      const sub = this.subscriptions.find((s) => s.id === id);
+      return sub ? { ...sub } : null;
     }
-    const sub = this.subscriptions.find((s) => s.id === id);
-    return sub ? { ...sub } : null;
   }
 
   async getBillingAccounts(partnerId?: string): Promise<BillingAccountDto[]> {

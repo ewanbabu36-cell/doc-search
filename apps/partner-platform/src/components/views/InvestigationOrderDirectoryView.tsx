@@ -19,16 +19,16 @@ export interface InvestigationOrderDirectoryViewProps {
   orders: InvestigationOrderDto[];
   onSelectOrder: (orderId: string) => void;
   onOpenCreateOrder: () => void;
+  onOpenWalkInTestAndPrint?: () => void;
   onCancelOrder: (order: InvestigationOrderDto) => void;
-  onOpenPrint?: (order: InvestigationOrderDto) => void;
 }
 
 export const InvestigationOrderDirectoryView: React.FC<InvestigationOrderDirectoryViewProps> = ({
   orders,
   onSelectOrder,
   onOpenCreateOrder,
-  onCancelOrder,
-  onOpenPrint
+  onOpenWalkInTestAndPrint,
+  onCancelOrder
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -65,9 +65,24 @@ export const InvestigationOrderDirectoryView: React.FC<InvestigationOrderDirecto
             Comprehensive directory of laboratory and diagnostic orders across all encounters and specialties.
           </p>
         </div>
-        <Button variant="primary" onClick={onOpenCreateOrder}>
-          ➕ Place Diagnostic Order
-        </Button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {onOpenWalkInTestAndPrint && (
+            <Button
+              variant="primary"
+              onClick={onOpenWalkInTestAndPrint}
+              style={{ backgroundColor: '#DC2626', borderColor: '#DC2626', color: '#FFFFFF', fontWeight: 800 }}
+            >
+              🩸 + Walk-In Test & Print
+            </Button>
+          )}
+          <Button
+            variant="primary"
+            onClick={onOpenCreateOrder}
+            style={{ backgroundColor: '#10B981', borderColor: '#10B981', color: '#064E3B', fontWeight: 800 }}
+          >
+            🧾 + New Walk-In & Billing
+          </Button>
+        </div>
       </div>
 
       {/* Filter Toolbar */}
@@ -185,16 +200,6 @@ export const InvestigationOrderDirectoryView: React.FC<InvestigationOrderDirecto
                         <Button size="sm" variant="primary" onClick={() => onSelectOrder(ord.id)}>
                           View
                         </Button>
-                        {onOpenPrint && (ord.results?.length > 0 || ord.status === 'VERIFIED' || ord.status === 'REVIEWED' || ord.status === 'RESULT_READY') && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => onOpenPrint(ord)}
-                            style={{ borderColor: '#06B6D4', color: '#06B6D4', fontWeight: 600 }}
-                          >
-                            🖨️ Direct Print
-                          </Button>
-                        )}
                         {ord.status !== 'REVIEWED' && ord.status !== 'CANCELLED' && ord.status !== 'VERIFIED' && (
                           <Button size="sm" variant="outline" onClick={() => onCancelOrder(ord)}>
                             Cancel

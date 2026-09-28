@@ -1,12 +1,13 @@
 import React from 'react';
 import { Card, Badge, Button } from '@docsearch/ui-kit';
-import type { BloodBankOverviewMetricsDto, BloodRequestDto, BloodCrossmatchDto, BloodStorageTemperatureLogDto } from '@docsearch/api-contracts';
+import type { BloodBankOverviewMetricsDto, BloodRequestDto, BloodCrossmatchDto, BloodStorageTemperatureLogDto, BloodBankFacilityDto } from '@docsearch/api-contracts';
 
 interface Props {
   metrics: BloodBankOverviewMetricsDto;
   requests: BloodRequestDto[];
   crossmatches: BloodCrossmatchDto[];
   temperatureLogs: BloodStorageTemperatureLogDto[];
+  facility?: BloodBankFacilityDto;
   onOpenNewRequest: () => void;
   onOpenNewDonor: () => void;
 }
@@ -16,6 +17,7 @@ export const BloodBankCommandCenterView: React.FC<Props> = ({
   requests,
   crossmatches,
   temperatureLogs,
+  facility,
   onOpenNewRequest,
   onOpenNewDonor
 }) => {
@@ -120,6 +122,53 @@ export const BloodBankCommandCenterView: React.FC<Props> = ({
           </div>
         </Card>
       </div>
+
+      {facility && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+          <Card className="p-4">
+            <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center justify-between">
+              <span>🏛️ Facility Licensing & Accreditation</span>
+              <Badge variant={facility.isActive ? 'success' : 'danger'}>
+                {facility.isActive ? 'ACTIVE & LICENSED' : 'SUSPENDED'}
+              </Badge>
+            </h3>
+            <div className="space-y-2 text-xs">
+              <div className="flex justify-between">
+                <span className="text-gray-500">Facility Name:</span>
+                <span className="font-bold text-gray-900">{facility.facilityName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Facility Code:</span>
+                <span className="font-mono font-bold text-slate-800">{facility.facilityCode}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Drug & Blood License:</span>
+                <span className="font-bold text-green-700">{facility.licenseNumber}</span>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-4">
+            <h3 className="text-sm font-bold text-gray-900 mb-3">
+              👨‍⚕️ Responsible Clinical Officers
+            </h3>
+            <div className="space-y-2 text-xs">
+              <div className="flex justify-between">
+                <span className="text-gray-500">Medical Director:</span>
+                <span className="font-bold text-gray-900">{facility.medicalDirectorName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Head Technologist:</span>
+                <span className="font-bold text-gray-900">{facility.headTechnologistName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Main Storage Vault:</span>
+                <span className="font-bold text-gray-900">{facility.storageLocationName}</span>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

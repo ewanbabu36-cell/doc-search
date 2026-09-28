@@ -12,6 +12,7 @@ import type {
   PharmacyMedicationRoute,
   MedicationCategory
 } from '@docsearch/api-contracts';
+import { AuditJustificationField } from '../common/AuditJustificationField.js';
 
 export interface CreateMedicationDialogProps {
   isOpen: boolean;
@@ -46,7 +47,7 @@ export const CreateMedicationDialog: React.FC<CreateMedicationDialogProps> = ({
   const [prescriptionRequired, setPrescriptionRequired] = useState(true);
   const [therapeuticClass, setTherapeuticClass] = useState('');
   const [storageConditions, setStorageConditions] = useState('Store below 25°C');
-  const [justification, setJustification] = useState('');
+  const [justification, setJustification] = useState('Standard formulary addition per hospital therapeutic committee approval');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -96,6 +97,8 @@ export const CreateMedicationDialog: React.FC<CreateMedicationDialogProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Register New Medication in Master Catalog"
+      isFullPage={true}
+      maxWidth="full"
       footer={
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
           <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
@@ -302,17 +305,12 @@ export const CreateMedicationDialog: React.FC<CreateMedicationDialogProps> = ({
           </label>
         </div>
 
-        <div>
-          <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.25rem' }}>
-            Audit Justification *
-          </label>
-          <Input
-            value={justification}
-            onChange={(e) => setJustification(e.target.value)}
-            placeholder="Document clinical formulary committee approval reference..."
-            required
-          />
-        </div>
+        <AuditJustificationField
+          value={justification}
+          onChange={setJustification}
+          defaultJustification="Standard formulary addition per hospital therapeutic committee approval"
+          placeholder="Document clinical formulary committee approval reference..."
+        />
       </form>
     </Dialog>
   );

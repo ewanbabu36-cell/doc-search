@@ -73,6 +73,7 @@ export const workflowRequirements = pgTable('workflow_requirements', {
 
 export const workflowInstances = pgTable('workflow_instances', {
   id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id'),
   workflowId: uuid('workflow_id').references(() => workflowDefinitions.id).notNull(),
   workflowCode: text('workflow_code').notNull(),
   workflowVersion: integer('workflow_version').notNull(),

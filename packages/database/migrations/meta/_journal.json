@@ -337,6 +337,139 @@
       "when": 1788529166654,
       "tag": "0047_partner_classifications",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1788529900000,
+      "tag": "0048_founder_approval_requests",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1788530000000,
+      "tag": "0049_universal_engine_rls",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1788531000000,
+      "tag": "0050_partner_onboarding_staged_registrations",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1788532000000,
+      "tag": "0051_kyc_workflow_enhancements",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1788533000000,
+      "tag": "0052_dynamic_workflow_engine",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1788534000000,
+      "tag": "0053_hq_master_control_plane",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1788535000000,
+      "tag": "0054_declarative_partitioning",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1788536000000,
+      "tag": "0055_p0_scalability_outbox_and_idempotency",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1788537000000,
+      "tag": "0056_partner_config_templates_and_access_policies",
+      "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1788538000000,
+      "tag": "0057_patient_uhid_unique",
+      "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1788539000000,
+      "tag": "0058_commercial_pricing_and_snapshots",
+      "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1788540000000,
+      "tag": "0059_commercial_overrides_and_classifications",
+      "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1788541000000,
+      "tag": "0060_commercial_price_version_hardening",
+      "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1788542000000,
+      "tag": "0061_architecture_p0_p1_remediation",
+      "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1788543000000,
+      "tag": "0062_phase8_radiology_series_instances_amendments",
+      "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1788544000000,
+      "tag": "0063_phase11_finance_commercial_packages_credits_eod_gst",
+      "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1788545000000,
+      "tag": "0064_phase12_supply_chain",
+      "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "7",
+      "when": 1788546000000,
+      "tag": "0065_phase14_reliability_enterprise_controls",
+      "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1788547000000,
+      "tag": "0066_phase15_ai_intelligence_governance",
+      "breakpoints": true
     }
   ]
 }

@@ -4,9 +4,7 @@
     "requestsSent": 105,
     "blockedAtRequestNumber": 101,
     "httpStatus": 429,
-    "errorCode": "RATE_LIMIT_EXCEEDED",
-    "errorMessage": "Too many requests. Rate limit quota exceeded. Retry in 1 minute. Hospital staff: contact system administrator.",
-    "retryAfterHeader": "60",
+    "retryAfterHeader": "58",
     "rateLimitLimitHeader": "100",
     "rateLimitRemainingHeader": "0",
     "verdict": "PASS — EXACT 100 REQ/MIN CEILING ENFORCED (BLOCKED AT #101)"

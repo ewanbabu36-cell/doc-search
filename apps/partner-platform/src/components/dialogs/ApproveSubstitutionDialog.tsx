@@ -9,6 +9,7 @@ import type {
   PharmacySubstitutionRequestDto,
   ApproveSubstitutionRequest
 } from '@docsearch/api-contracts';
+import { getUnifiedPartnerProfile } from '../../utils/roleProfileResolver.js';
 
 export interface ApproveSubstitutionDialogProps {
   isOpen: boolean;
@@ -25,7 +26,9 @@ export const ApproveSubstitutionDialog: React.FC<ApproveSubstitutionDialogProps>
   substitutionRequest,
   tenantId
 }) => {
-  const [doctorName, setDoctorName] = useState('Dr. Sarah Jenkins, MD');
+  const profile = getUnifiedPartnerProfile();
+  const defaultDoctor = profile.doctorName ? `${profile.doctorName}${profile.doctorDegree ? `, ${profile.doctorDegree}` : ''}` : 'Attending Prescriber';
+  const [doctorName, setDoctorName] = useState(defaultDoctor);
   const [approvalNotes, setApprovalNotes] = useState('Medication substitution clinically approved. Dosing remains equivalent.');
   const [justification, setJustification] = useState('Electronic physician sign-off on pharmacy therapeutic substitution.');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -61,6 +64,8 @@ export const ApproveSubstitutionDialog: React.FC<ApproveSubstitutionDialogProps>
       isOpen={isOpen}
       onClose={onClose}
       title={`Physician Approval — Substitution for ${substitutionRequest.prescriptionNumber}`}
+      isFullPage={true}
+      maxWidth="full"
       footer={
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
           <Button variant="outline" onClick={onClose} disabled={isSubmitting}>

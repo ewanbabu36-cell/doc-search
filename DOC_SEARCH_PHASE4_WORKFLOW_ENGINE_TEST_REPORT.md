@@ -1,0 +1,20 @@
+# DOC SEARCH — PHASE 4: UNIVERSAL HEALTHCARE WORKFLOW ENGINE TEST REPORT
+
+**Test Suite:** [`apps/api-gateway/test/phase4-universal-workflow-engine.test.mjs`](file:///c:/Users/alamr/OneDrive/Desktop/DOC%20SEARCH/apps/api-gateway/test/phase4-universal-workflow-engine.test.mjs)
+**Combined Regression Command:** `node --test test/phase1-master-foundation.test.mjs test/phase2-partner-configuration-engine.test.mjs test/phase3-identity-rbac-abac-security.test.mjs test/phase4-universal-workflow-engine.test.mjs`
+**Execution Result:** `26 / 26 PASSED (0 FAILED)`
+
+---
+
+## 1. Phase 4 Automated & Adversarial Verification Matrix
+
+| # | Test Subsuite | Scenarios Verified | Expected | Actual | Verdict |
+|---|---|---|---|---|---|
+| 1 | **Universal Engine Architecture (`10 Department Adapters`)** | Queries `GET /api/v1/partner/workflows/adapters` and verifies that ONE engine (`UNIVERSAL_HEALTHCARE_WORKFLOW_ENGINE_V1`) powers `OPD`, `LIMS`, `RADIOLOGY`, `PHARMACY`, `IPD`, `BILLING`, `BLOOD_BANK`, `DIETARY`, `MRD`, and `SUPPLY_CHAIN` | `200 OK` (`adapterCount: 10`) | `200 OK` (`adapterCount: 10`) | **PASS** |
+| 2 | **Definition Versioning & Running Instance Immutability** | Starts `OPD` instance on `v1`, publishes `v2` via `POST /api/v1/partner/workflows/definitions/publish-version`, starts second instance on `v2`, and verifies first instance stays bound to `v1` | `instV1.workflowVersion === 1` & `instV2.workflowVersion === 2` | `instV1.workflowVersion === 1` & `instV2.workflowVersion === 2` | **PASS** |
+| 3 | **Universal State Machine, Illegal Jumps, & Optimistic Concurrency** | Tests `QUEUED → IN_PROGRESS → ON_HOLD → IN_PROGRESS → COMPLETED → VERIFIED → CLOSED → REOPENED`, blocks illegal jump (`QUEUED → CLOSED` -> `409`), blocks stale `expectedVersionLock` (`409`), and enforces reason on `HOLD`/`REOPEN` (`400` without reason) | `409 Conflict` on illegal jump & stale version lock; `200 OK` on valid lifecycle | `409` & `200 OK` | **PASS** |
+| 4 | **Phase 3 Security & ABAC Enforcement on Workflows** | Blocks cross-tenant access (`403`), blocks cross-location transition (`403`), blocks assigning tasks to `SUSPENDED` staff (`403`) or `EXPIRED` credentials (`403`), and allows assignment to `ACTIVE` + `VALID` credential staff (`200`) | `403 Forbidden` on all unauthorized/ineligible paths; `200 OK` on valid assignment | `403` & `200 OK` | **PASS** |
+| 5 | **Queue Engine, Priority Override & SLA / Anti-Tamper Engine** | Verifies `CRITICAL` tasks sort ahead of `ROUTINE` tasks in `GET /api/v1/partner/workflows/queues`, elevates priority to `EMERGENCY`, rejects client-supplied SLA timestamp (`403`), and escalates to `DEPARTMENT_HEAD` on SLA breach | `CRITICAL < ROUTINE` index; `403` on clock tamper; `BREACHED` + `DEPARTMENT_HEAD` escalation | Verified | **PASS** |
+| 6 | **Exception Engine & Resolution Lifecycle** | Records `SAMPLE_REJECTED` exception (`POST /api/v1/partner/workflows/exceptions`), verifies placement in `EXCEPTION` queue, and resolves exception (`POST /api/v1/partner/workflows/exceptions/:id/resolve`) | `201 Created`, queued in `EXCEPTION`, resolved to `RESOLVED` | Verified | **PASS** |
+| 7 | **Cross-Department Handoff Continuity (`OPD → LIMS`)** | Initiates handoff from `OPD` to `LIMS` (`POST /api/v1/partner/workflows/handoffs`) and accepts in `LIMS` (`POST /api/v1/partner/workflows/handoffs/:id/respond`), verifying identical `patientId`, `encounterId`, and `orderId` on spawned `LIMS` workflow and task | Linked `LIMS` workflow & task preserve `PAT-CONTINUITY-777`, `ENC-CONTINUITY-777`, `ORD-CONTINUITY-777` | Verified | **PASS** |
+| 8 | **Idempotency Replay & Multi-Department Saga Compensation + Recovery** | Verifies `Idempotency-Key` deduplication (`POST /api/v1/partner/workflows/instances`), runs 4-step Saga (`OPD → LIMS → PHARMACY → BILLING`) with step 3 failure, verifies steps 1 & 2 auto-compensate (`COMPENSATED`), recovers saga (`RECOVERED`), and audits via `GET /api/v1/partner/workflows/audit` | `COMPENSATED` on mid-saga failure; `RECOVERED` on retry; full audit trail | Verified | **PASS** |

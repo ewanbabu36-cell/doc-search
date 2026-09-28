@@ -3,9 +3,8 @@ process.env['NODE_ENV'] = 'test';
 process.env['RAZORPAY_WEBHOOK_SECRET'] = 'test_rzp_webhook_secret_key_888';
 process.env['PAYU_MERCHANT_SALT'] = 'test_payu_merchant_salt_999';
 
-import { performance } from 'node:perf_hooks';
 import { buildApp } from '../../apps/api-gateway/dist/app.js';
-import { setTestTransactionRunner } from '../../packages/database/dist/index.js';
+import { setTestTransactionRunner, setTestDatabase } from '../../packages/database/dist/index.js';
 import {
   generateRazorpaySignature,
   generatePayUResponseHash
@@ -72,29 +71,50 @@ async function runPgWebhookTests() {
   }
 
   const createSelectChain = (tbl = null) => {
-    const getRecords = () => tbl ? Array.from(getTableRecords(tbl).values()) : Array.from(mockStore.values());
-    const p = Promise.resolve(getRecords());
-    p.from = (table) => createSelectChain(table);
-    p.where = (condition) => {
-      const conditions = extractConditions(condition);
-      let list = getRecords();
-      if (conditions.length > 0) {
-        list = list.filter((r) => {
-          if (!r) return false;
-          return conditions.every(({ colName, camelCol, val }) => {
-            const itemVal = r[camelCol] !== undefined ? r[camelCol] : r[colName];
-            return itemVal === val;
-          });
-        });
+    let currentTable = tbl;
+    let conditions = [];
+    let limitN = null;
+
+    const query = {
+      from: (table) => {
+        currentTable = table;
+        return query;
+      },
+      where: (condition) => {
+        conditions = extractConditions(condition);
+        return query;
+      },
+      leftJoin: () => query,
+      innerJoin: () => query,
+      rightJoin: () => query,
+      orderBy: () => query,
+      limit: (n) => {
+        limitN = n;
+        return query;
+      },
+      for: () => query,
+      then: (resolve, reject) => {
+        try {
+          let list = currentTable ? Array.from(getTableRecords(currentTable).values()) : Array.from(mockStore.values());
+          if (conditions.length > 0) {
+            list = list.filter((r) => {
+              if (!r) return false;
+              return conditions.every(({ colName, camelCol, val }) => {
+                const itemVal = r[camelCol] !== undefined ? r[camelCol] : r[colName];
+                return itemVal === val;
+              });
+            });
+          }
+          if (limitN !== null) {
+            list = list.slice(0, limitN);
+          }
+          resolve(list);
+        } catch (e) {
+          reject(e);
+        }
       }
-      const sub = Promise.resolve(list);
-      sub.orderBy = () => sub;
-      sub.limit = (n) => Promise.resolve(list.slice(0, n));
-      return sub;
     };
-    p.orderBy = () => p;
-    p.limit = (n) => Promise.resolve(getRecords().slice(0, n));
-    return p;
+    return query;
   };
 
   const mockTx = {
@@ -141,6 +161,7 @@ async function runPgWebhookTests() {
     select: (cols) => createSelectChain()
   };
 
+  setTestDatabase(mockTx);
   setTestTransactionRunner(async (context, cb) => {
     return await cb(mockTx);
   });
@@ -185,6 +206,19 @@ async function runPgWebhookTests() {
   };
   mockStore.set(invoiceId, sampleInvoice);
   getTableRecords('billing_invoices').set(invoiceId, sampleInvoice);
+  getTableRecords('billing_invoice_items').set('item_01', sampleInvoice.items[0]);
+  getTableRecords('patients').set('patient_01', {
+    id: 'patient_01',
+    tenantId,
+    firstName: 'Aarav',
+    lastName: 'Mehta',
+    mrn: 'MRN-2026-00891'
+  });
+  getTableRecords('encounters').set('enc_01', {
+    id: 'enc_01',
+    tenantId,
+    facilityId: 'branch_01'
+  });
 
   // --------------------------------------------------------------------------
   // Test Case 1: Valid Razorpay payment.captured Webhook

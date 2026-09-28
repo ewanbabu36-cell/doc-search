@@ -10,33 +10,43 @@ export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElemen
   options: SelectOption[];
   hasError?: boolean | undefined;
   placeholder?: string | undefined;
+  selectSize?: 'sm' | 'md' | 'lg' | undefined;
 }
 
+const selectSizeMap = {
+  sm: { height: '32px', fontSize: '0.8125rem', padding: '4px 28px 4px 8px' },
+  md: { height: '40px', fontSize: '0.875rem', padding: '8px 36px 8px 12px' },
+  lg: { height: '48px', fontSize: '1rem', padding: '12px 40px 12px 16px' }
+};
+
 export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
-  ({ options, hasError = false, placeholder, disabled, className = '', style, ...props }, ref) => {
+  ({ options, hasError = false, placeholder, selectSize = 'md', disabled, className = '', style, ...props }, ref) => {
+    const sizeConfig = selectSizeMap[selectSize];
+
     return (
       <div style={{ position: 'relative', width: '100%', display: 'flex', alignItems: 'center' }}>
         <select
           ref={ref}
           disabled={disabled}
           aria-invalid={hasError}
-          className={`ds-interactive ${className}`}
+          className={`ds-interactive ds-input ${className}`}
           style={{
             width: '100%',
-            height: '40px',
-            padding: '8px 36px 8px 12px',
-            fontSize: '0.9375rem',
+            height: sizeConfig.height,
+            padding: sizeConfig.padding,
+            fontSize: sizeConfig.fontSize,
             fontFamily: 'inherit',
             color: 'var(--ds-color-text-primary)',
-            backgroundColor: disabled ? 'var(--ds-color-surface-subtle)' : 'var(--ds-color-surface)',
+            backgroundColor: disabled ? 'var(--ds-color-surface-subtle)' : 'var(--ds-surface-glass, var(--ds-color-surface))',
             borderWidth: '1px',
             borderStyle: 'solid',
-            borderColor: hasError ? 'var(--ds-color-danger)' : 'var(--ds-color-border)',
-            borderRadius: '6px',
+            borderColor: hasError ? 'var(--ds-color-danger, #ef4444)' : 'var(--ds-color-border)',
+            borderRadius: '8px',
             appearance: 'none',
             outline: 'none',
-            boxShadow: 'var(--ds-shadow-sm)',
+            boxShadow: 'var(--ds-depth-subtle, var(--ds-shadow-sm)), var(--ds-specular-edge-subtle)',
             cursor: disabled ? 'not-allowed' : 'pointer',
+            transition: 'border-color var(--ds-motion-fast, 120ms ease), box-shadow var(--ds-motion-fast, 120ms ease)',
             ...style
           }}
           {...props}

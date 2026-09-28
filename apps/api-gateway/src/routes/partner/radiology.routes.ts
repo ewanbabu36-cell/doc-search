@@ -1,9 +1,12 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { radiologyService } from '../../services/partner/RadiologyService.js';
 import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
+import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 import type { RadiologyInputRecord } from '../../services/partner/RadiologyService.js';
 
 export const radiologyRoutes: FastifyPluginAsync = async (fastify) => {
+  fastify.addHook('preHandler', requireModuleCommercialAccess('RADIOLOGY_PACS'));
+
   // 1. Overview & Analytics
   fastify.get(
     '/api/v1/partner/radiology/overview',
@@ -11,7 +14,8 @@ export const radiologyRoutes: FastifyPluginAsync = async (fastify) => {
       preHandler: [authenticate, requirePermission('clinical:radiology', 'read')]
     },
     async (request) => {
-      return radiologyService.getOverviewMetrics(request.session);
+      const data = await radiologyService.getOverviewMetrics(request.session);
+      return { success: true, data };
     }
   );
 
@@ -21,7 +25,8 @@ export const radiologyRoutes: FastifyPluginAsync = async (fastify) => {
       preHandler: [authenticate, requirePermission('clinical:radiology', 'read')]
     },
     async (request) => {
-      return radiologyService.getAnalytics(request.session);
+      const data = await radiologyService.getAnalytics(request.session);
+      return { success: true, data };
     }
   );
 
@@ -32,7 +37,19 @@ export const radiologyRoutes: FastifyPluginAsync = async (fastify) => {
       preHandler: [authenticate, requirePermission('clinical:radiology', 'read')]
     },
     async (request) => {
-      return radiologyService.getDepartment(request.session);
+      const data = await radiologyService.getDepartment(request.session);
+      return { success: true, data };
+    }
+  );
+
+  fastify.post(
+    '/api/v1/partner/radiology/department',
+    {
+      preHandler: [authenticate, requirePermission('clinical:radiology', 'create')]
+    },
+    async (request, reply) => {
+      const dept = await radiologyService.createDepartment(request.body as RadiologyInputRecord, request.session);
+      return reply.status(201).send({ success: true, data: dept, ...dept });
     }
   );
 
@@ -42,7 +59,19 @@ export const radiologyRoutes: FastifyPluginAsync = async (fastify) => {
       preHandler: [authenticate, requirePermission('clinical:radiology', 'read')]
     },
     async (request) => {
-      return radiologyService.getModalities(request.session);
+      const data = await radiologyService.getModalities(request.session);
+      return { success: true, data };
+    }
+  );
+
+  fastify.post(
+    '/api/v1/partner/radiology/modalities',
+    {
+      preHandler: [authenticate, requirePermission('clinical:radiology', 'create')]
+    },
+    async (request, reply) => {
+      const modality = await radiologyService.createModality(request.body as RadiologyInputRecord, request.session);
+      return reply.status(201).send({ success: true, data: modality, ...modality });
     }
   );
 
@@ -52,7 +81,19 @@ export const radiologyRoutes: FastifyPluginAsync = async (fastify) => {
       preHandler: [authenticate, requirePermission('clinical:radiology', 'read')]
     },
     async (request) => {
-      return radiologyService.getProcedures(request.session);
+      const data = await radiologyService.getProcedures(request.session);
+      return { success: true, data };
+    }
+  );
+
+  fastify.post(
+    '/api/v1/partner/radiology/procedures',
+    {
+      preHandler: [authenticate, requirePermission('clinical:radiology', 'create')]
+    },
+    async (request, reply) => {
+      const proc = await radiologyService.createProcedure(request.body as RadiologyInputRecord, request.session);
+      return reply.status(201).send({ success: true, data: proc, ...proc });
     }
   );
 
@@ -113,7 +154,8 @@ export const radiologyRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request) => {
       const { branchId } = request.query as { branchId?: string };
-      return radiologyService.getAppointments(request.session, branchId);
+      const data = await radiologyService.getAppointments(request.session, branchId);
+      return { success: true, data };
     }
   );
 
@@ -159,7 +201,8 @@ export const radiologyRoutes: FastifyPluginAsync = async (fastify) => {
       preHandler: [authenticate, requirePermission('clinical:radiology', 'read')]
     },
     async (request) => {
-      return radiologyService.getPreparationRecords(request.session);
+      const data = await radiologyService.getPreparationRecords(request.session);
+      return { success: true, data };
     }
   );
 
@@ -181,7 +224,8 @@ export const radiologyRoutes: FastifyPluginAsync = async (fastify) => {
       preHandler: [authenticate, requirePermission('clinical:radiology', 'read')]
     },
     async (request) => {
-      return radiologyService.getStudies(request.session);
+      const data = await radiologyService.getStudies(request.session);
+      return { success: true, data };
     }
   );
 
@@ -208,6 +252,54 @@ export const radiologyRoutes: FastifyPluginAsync = async (fastify) => {
     }
   );
 
+  // 6.1 DICOM Series
+  fastify.get(
+    '/api/v1/partner/radiology/studies/:studyId/series',
+    {
+      preHandler: [authenticate, requirePermission('clinical:radiology', 'read')]
+    },
+    async (request) => {
+      const { studyId } = request.params as { studyId: string };
+      const data = await radiologyService.getSeriesByStudy(studyId, request.session);
+      return { success: true, data };
+    }
+  );
+
+  fastify.post(
+    '/api/v1/partner/radiology/series',
+    {
+      preHandler: [authenticate, requirePermission('clinical:radiology', 'create')]
+    },
+    async (request, reply) => {
+      const series = await radiologyService.createSeries(request.body as RadiologyInputRecord, request.session);
+      return reply.status(201).send({ success: true, data: series, ...series });
+    }
+  );
+
+  // 6.2 DICOM Instances
+  fastify.get(
+    '/api/v1/partner/radiology/series/:seriesId/instances',
+    {
+      preHandler: [authenticate, requirePermission('clinical:radiology', 'read')]
+    },
+    async (request) => {
+      const { seriesId } = request.params as { seriesId: string };
+      const data = await radiologyService.getInstancesBySeries(seriesId, request.session);
+      return { success: true, data };
+    }
+  );
+
+  fastify.post(
+    '/api/v1/partner/radiology/instances',
+    {
+      preHandler: [authenticate, requirePermission('clinical:radiology', 'create')]
+    },
+    async (request, reply) => {
+      const instance = await radiologyService.createInstance(request.body as RadiologyInputRecord, request.session);
+      return reply.status(201).send({ success: true, data: instance, ...instance });
+    }
+  );
+
   // 7. Reports
   fastify.get(
     '/api/v1/partner/radiology/reports',
@@ -216,7 +308,8 @@ export const radiologyRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request) => {
       const { studyId } = request.query as { studyId?: string };
-      return radiologyService.getReports(request.session, studyId);
+      const data = await radiologyService.getReports(request.session, studyId);
+      return { success: true, data };
     }
   );
 
@@ -229,6 +322,18 @@ export const radiologyRoutes: FastifyPluginAsync = async (fastify) => {
       const { id } = request.params as { id: string };
       const report = await radiologyService.getReportById(id, request.session);
       return reply.send({ success: true, data: report, ...report });
+    }
+  );
+
+  fastify.get(
+    '/api/v1/partner/radiology/reports/:id/amendments',
+    {
+      preHandler: [authenticate, requirePermission('clinical:radiology', 'read')]
+    },
+    async (request) => {
+      const { id } = request.params as { id: string };
+      const data = await radiologyService.getReportAmendments(id, request.session);
+      return { success: true, data };
     }
   );
 
@@ -267,6 +372,43 @@ export const radiologyRoutes: FastifyPluginAsync = async (fastify) => {
     }
   );
 
+  fastify.post(
+    '/api/v1/partner/radiology/reports/:id/review',
+    {
+      preHandler: [authenticate, requirePermission('clinical:radiology', 'update')]
+    },
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const report = await radiologyService.reviewReport(id, (request.body || {}) as RadiologyInputRecord, request.session);
+      return reply.send({ success: true, data: report, ...report });
+    }
+  );
+
+  // 7.1 Radiology Procedure Billing (P1-03)
+  fastify.post(
+    '/api/v1/partner/radiology/orders/:id/bill',
+    {
+      preHandler: [authenticate, requirePermission('clinical:radiology', 'create')]
+    },
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const billing = await radiologyService.billRadiologyOrder(id, (request.body || {}) as RadiologyInputRecord, request.session);
+      return reply.status(201).send({ success: true, data: billing, ...billing });
+    }
+  );
+
+  fastify.get(
+    '/api/v1/partner/radiology/orders/:id/invoice',
+    {
+      preHandler: [authenticate, requirePermission('clinical:radiology', 'read')]
+    },
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const billing = await radiologyService.getOrderInvoice(id, request.session);
+      return reply.send({ success: true, data: billing, ...billing });
+    }
+  );
+
   // 8. Critical Findings
   fastify.get(
     '/api/v1/partner/radiology/critical-findings',
@@ -274,7 +416,8 @@ export const radiologyRoutes: FastifyPluginAsync = async (fastify) => {
       preHandler: [authenticate, requirePermission('clinical:radiology', 'read')]
     },
     async (request) => {
-      return radiologyService.getCriticalFindings(request.session);
+      const data = await radiologyService.getCriticalFindings(request.session);
+      return { success: true, data };
     }
   );
 
@@ -308,7 +451,8 @@ export const radiologyRoutes: FastifyPluginAsync = async (fastify) => {
       preHandler: [authenticate, requirePermission('clinical:radiology', 'read')]
     },
     async (request) => {
-      return radiologyService.getQualityEvents(request.session);
+      const data = await radiologyService.getQualityEvents(request.session);
+      return { success: true, data };
     }
   );
 
@@ -329,7 +473,8 @@ export const radiologyRoutes: FastifyPluginAsync = async (fastify) => {
       preHandler: [authenticate, requirePermission('clinical:radiology', 'read')]
     },
     async (request) => {
-      return radiologyService.getAuditTraces(request.session);
+      const data = await radiologyService.getAuditTraces(request.session);
+      return { success: true, data };
     }
   );
 };

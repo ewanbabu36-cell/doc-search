@@ -166,7 +166,6 @@ export const GstEInvoicingReconcilerView: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => handleGenerateIrn(inv.invoiceNumber)}
-                        style={{ backgroundColor: '#06B6D4', color: '#070C16', border: 'none', borderRadius: '6px', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer' }}
                       >
                         ⚡ Generate IRN
                       </button>

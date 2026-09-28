@@ -643,6 +643,9 @@ export const CreateInvoiceSchema = z.object({
     })
   ).min(1),
   dueDays: z.number().int().nonnegative().default(30),
+  paymentMode: z.string().optional(),
+  paymentStatus: z.string().optional(),
+  paymentReference: z.string().optional(),
   actorId: z.string(),
   actorRole: z.string(),
   justification: z.string().min(5)

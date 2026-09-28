@@ -128,6 +128,51 @@ export const AmbientAiSoapTranscriptDtoSchema = z.object({
 });
 export type AmbientAiSoapTranscriptDto = z.infer<typeof AmbientAiSoapTranscriptDtoSchema>;
 
+export const ExtractSoapRequestSchema = z.object({
+  transcript: z.string().min(1),
+  patientContext: z.object({
+    patientName: z.string().optional(),
+    patientMrn: z.string().optional(),
+    age: z.union([z.string(), z.number()]).optional(),
+    gender: z.string().optional(),
+    knownAllergies: z.array(z.string()).optional(),
+    pastHistory: z.array(z.string()).optional()
+  }).optional(),
+  doctorSpecialty: z.string().optional()
+});
+export type ExtractSoapRequest = z.infer<typeof ExtractSoapRequestSchema>;
+
+export const ExtractedSoapClinicalDtoSchema = z.object({
+  chiefComplaint: z.string(),
+  subjective: z.string(),
+  objective: z.string(),
+  clinicalAssessment: z.string(),
+  treatmentPlan: z.string(),
+  diagnoses: z.array(z.object({
+    code: z.string(),
+    name: z.string(),
+    confidence: z.number().optional()
+  })),
+  medications: z.array(z.object({
+    id: z.string().optional(),
+    medicationName: z.string(),
+    strength: z.string().default('500mg'),
+    dosage: z.string().default('1 Tab'),
+    frequency: z.string().default('1 - 0 - 1'),
+    duration: z.number().default(5),
+    durationUnit: z.string().default('DAYS'),
+    beforeAfterFood: z.enum(['AFTER_FOOD', 'BEFORE_FOOD', 'WITH_FOOD', 'BEDTIME', 'EMPTY_STOMACH']).default('AFTER_FOOD'),
+    instructions: z.string().default('After meals with water')
+  })),
+  recommendedLabTests: z.array(z.string()).default([]),
+  recommendedRadiologyTests: z.array(z.string()).default([]),
+  lifestyleAdvice: z.array(z.string()).default([]),
+  followUpDays: z.string().default('5 Days'),
+  criticalAlerts: z.array(z.string()).default([])
+});
+export type ExtractedSoapClinicalDto = z.infer<typeof ExtractedSoapClinicalDtoSchema>;
+
+
 export const DiagnosticPanicValueAlertDtoSchema = z.object({
   id: z.string().uuid(),
   patientMrn: z.string(),

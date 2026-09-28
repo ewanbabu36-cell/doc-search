@@ -70,7 +70,7 @@ export const IpWhitelistingFirewallView: React.FC = () => {
           </p>
         </div>
 
-        <Button variant="primary" size="sm" onClick={() => setIsAddModalOpen(true)} style={{ backgroundColor: '#06B6D4', color: '#070C16', fontWeight: 800 }}>
+        <Button variant="primary" size="sm" onClick={() => setIsAddModalOpen(true)}>
           + Add Whitelist IP Rule
         </Button>
       </div>
@@ -268,7 +268,6 @@ export const IpWhitelistingFirewallView: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  style={{ backgroundColor: '#06B6D4', color: '#070C16', border: 'none', borderRadius: '6px', padding: '8px 18px', fontWeight: 800, cursor: 'pointer' }}
                 >
                   ✓ Apply Firewall Rule
                 </button>

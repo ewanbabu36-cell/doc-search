@@ -1,4 +1,5 @@
-import { AppError, ErrorCode } from '@docsearch/shared-core';
+import { AppError } from '../errors/app-error.js';
+import { ErrorCode } from '../errors/error-codes.js';
 
 export interface ApiClientConfig {
   baseUrl: string;

@@ -25,11 +25,10 @@ export const AbdmGatewayBridgeView: React.FC = () => {
           </p>
         </div>
 
-        <Button
-          variant="primary"
+        <Button variant="success"
           size="sm"
           onClick={handleTestHealthPush}
-          style={{ backgroundColor: '#10B981', color: '#070C16', fontWeight: 900 }}
+          
         >
           ⚡ Push Test ABDM Record
         </Button>
