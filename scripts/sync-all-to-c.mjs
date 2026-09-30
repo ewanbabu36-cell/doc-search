@@ -1,0 +1,47 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
+const srcDir = 'D:\\DOC SEARCH';
+const destDir = 'C:\\Users\\alamr\\OneDrive\\Desktop\\DOC SEARCH';
+
+const files = [
+  'apps/partner-platform/src/workers/catalog-search.worker.ts',
+  'apps/partner-platform/src/workers/catalog-search.worker.js',
+  'apps/partner-platform/src/workers/voice-scribe.worker.ts',
+  'apps/partner-platform/src/workers/voice-scribe.worker.js',
+  'apps/partner-platform/src/workers/ocr.worker.ts',
+  'apps/partner-platform/src/workers/ocr.worker.js',
+  'apps/partner-platform/src/workers/wholesale-inventory.worker.ts',
+  'apps/partner-platform/src/workers/wholesale-inventory.worker.js',
+  'apps/partner-platform/src/services/catalog-search-service.ts',
+  'apps/partner-platform/src/services/voice-scribe-service.ts',
+  'apps/partner-platform/src/services/local-catalog-cache.ts',
+  'apps/partner-platform/src/services/wholesale-inventory-processor.ts',
+  'apps/partner-platform/src/components/views/DoctorExpressConsultationDesk.tsx',
+  'apps/api-gateway/src/services/partner/CatalogSyncService.ts',
+  'apps/api-gateway/src/routes/partner/catalog-sync.routes.ts',
+  'apps/api-gateway/src/routes/partner/public-kiosk.routes.ts',
+  'apps/api-gateway/src/routes/partner/clinical-workflow.routes.ts',
+  'apps/api-gateway/src/services/partner/ClinicalSafetyService.ts',
+  'apps/api-gateway/src/services/partner/ClinicalWorkflowService.ts',
+  'apps/api-gateway/src/services/partner/LabDiagnosticsService.ts',
+  'apps/api-gateway/src/repositories/partner/LabDiagnosticsRepository.ts',
+  'apps/api-gateway/src/app.ts',
+  'scripts/benchmark-doctor-speed.mjs',
+  'scripts/test-clinical-safety-cdss.mjs'
+];
+
+let count = 0;
+for (const rel of files) {
+  const s = path.join(srcDir, rel);
+  const d = path.join(destDir, rel);
+  if (fs.existsSync(s)) {
+    fs.mkdirSync(path.dirname(d), { recursive: true });
+    fs.copyFileSync(s, d);
+    count++;
+    console.log('[SYNC] Copied to C:', rel);
+  } else {
+    console.log('[SYNC] Missing in D:', rel);
+  }
+}
+console.log(`Successfully mirrored ${count}/${files.length} files to C: drive.`);
