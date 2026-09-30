@@ -106,6 +106,7 @@ import { AmbientVoiceScribeCapsule } from './common/AmbientVoiceScribeCapsule.js
 import { PatientSessionTabBar } from './common/PatientSessionTabBar.js';
 import { HardwareStatusPill } from './common/HardwareStatusPill.js';
 import { BarcodeLaserSweepOverlay } from './common/BarcodeLaserSweepOverlay.js';
+import { OwnerPulseCockpit } from './common/OwnerPulseCockpit.js';
 const PartnerOffersRewardsHub = React.lazy(() => import('./offers/PartnerOffersRewardsHub.js').then(m => ({ default: m.PartnerOffersRewardsHub })));
 import type { ActivePatientSummary } from '../services/hospital-event-bus.js';
 
@@ -3645,6 +3646,13 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
     }
     >
       <ContentArea>
+        {/* MOBILE OWNER PULSE COCKPIT (Visible on smartphone screens < 768px for real-time facility metrics) */}
+        <OwnerPulseCockpit
+          currentUser={currentUser as any}
+          onNavigateModule={(modKey) => setActiveModule(modKey as PartnerModuleKey)}
+          onOpenFastRegistration={() => setIsFastOpdDrawerOpen(true)}
+        />
+
         {/* DYNAMIC CROSS-DEPARTMENT ACTIVE PATIENT CONTEXT HUD (Visible across Clinical, Pathology, Pharmacy, and Billing counters) */}
         {isClinicalModule(activeModule) && !isDoctorFocusMode && (
           <ActivePatientContextBar

@@ -44,6 +44,14 @@ export interface PartnerAccountPlanFeaturesDto {
       themePreference?: string;
       [key: string]: any;
     };
+    statutory?: Record<string, any>;
+    address?: Record<string, any>;
+    certificates?: Record<string, any>;
+    bank?: Record<string, any>;
+    clinical?: Record<string, any>;
+    branding?: Record<string, any>;
+    branches?: Array<Record<string, any>>;
+    metadata?: Record<string, any>;
   };
   currentPlan: {
     id: string;
@@ -178,6 +186,9 @@ export interface UpdatePartnerProfileInput {
   };
   certificates?: any;
   bank?: any;
+  clinical?: any;
+  branding?: any;
+  branches?: any[];
   preferences?: {
     themePreference?: string;
     [key: string]: any;
@@ -236,7 +247,15 @@ export class PartnerAccountService {
       tenantStatus: tenantRecord?.status || 'ACTIVE',
       isProfileCompleted: Boolean(partnerRecord?.metadata?.isProfileCompleted),
       profileCompletedAt: partnerRecord?.metadata?.profileCompletedAt || null,
-      preferences: (partnerRecord?.metadata as any)?.preferences || {}
+      preferences: (partnerRecord?.metadata as any)?.preferences || {},
+      statutory: (partnerRecord?.metadata as any)?.statutory || {},
+      address: (partnerRecord?.metadata as any)?.address || {},
+      certificates: (partnerRecord?.metadata as any)?.certificates || {},
+      bank: (partnerRecord?.metadata as any)?.bank || {},
+      clinical: (partnerRecord?.metadata as any)?.clinical || {},
+      branding: (partnerRecord?.metadata as any)?.branding || {},
+      branches: (partnerRecord?.metadata as any)?.branches || [],
+      metadata: partnerRecord?.metadata || {}
     };
 
     // 2. Active Commercial License & Subscription Resolution
@@ -715,6 +734,15 @@ export class PartnerAccountService {
         ...((currentMeta['bank'] as Record<string, any>) || {}),
         ...(input.bank || {})
       },
+      clinical: {
+        ...((currentMeta['clinical'] as Record<string, any>) || {}),
+        ...(input.clinical || {})
+      },
+      branding: {
+        ...((currentMeta['branding'] as Record<string, any>) || {}),
+        ...(input.branding || {})
+      },
+      branches: input.branches !== undefined ? input.branches : (currentMeta['branches'] || []),
       preferences: {
         ...((currentMeta['preferences'] as Record<string, any>) || {}),
         ...(input.preferences || {})

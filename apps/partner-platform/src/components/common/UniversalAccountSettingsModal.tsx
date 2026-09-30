@@ -23,7 +23,7 @@ export interface UniversalAccountSettingsModalProps {
     onboardingEnvironment?: string;
     mustChangePassword?: boolean;
   } | undefined;
-  initialTab?: 'KYC' | 'BANK' | 'ADDRESS' | 'CERTIFICATES' | 'SECURITY_SEAL' | 'PASSWORD' | undefined;
+  initialTab?: 'KYC' | 'BANK' | 'ADDRESS' | 'CERTIFICATES' | 'CLINICAL_BEDS' | 'PRINT_LETTERHEAD' | 'SECURITY_SEAL' | 'PASSWORD' | undefined;
   onSettingsSaved?: ((data: any) => void) | undefined;
 }
 
@@ -69,7 +69,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
   initialTab,
   onSettingsSaved
 }) => {
-  const [activeTab, setActiveTab] = useState<'KYC' | 'BANK' | 'ADDRESS' | 'CERTIFICATES' | 'SECURITY_SEAL' | 'PASSWORD'>(
+  const [activeTab, setActiveTab] = useState<'KYC' | 'BANK' | 'ADDRESS' | 'CERTIFICATES' | 'CLINICAL_BEDS' | 'PRINT_LETTERHEAD' | 'SECURITY_SEAL' | 'PASSWORD'>(
     initialTab || 'KYC'
   );
 
@@ -123,7 +123,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
     cancelledChequeFile: ''
   });
 
-  // Address Form State
+  // Address Form State (Pillar 1: Identity & Address)
   const [addressData, setAddressData] = useState({
     legalName: currentUser?.tenantName || '',
     addressLine1: '',
@@ -133,10 +133,57 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
     pincode: '',
     officialPhone: userAny?.phone || '',
     whatsappNumber: userAny?.phone || '',
+    emergencyHelpline: '',
+    panNumber: '',
+    latitude: '',
+    longitude: '',
     supportEmail: currentUser?.email || '',
     website: '',
     gstin: '',
     addressProofFile: ''
+  });
+
+  // Pillar 3: Clinical Setup & Beds State
+  const [clinicalData, setClinicalData] = useState({
+    totalLicensedBeds: 25,
+    icuBeds: 4,
+    generalWardBeds: 15,
+    deluxeBeds: 4,
+    emergencyTriageBeds: 2,
+    is24x7Emergency: true,
+    morningShiftStart: '08:00',
+    morningShiftEnd: '14:00',
+    eveningShiftStart: '16:00',
+    eveningShiftEnd: '21:00'
+  });
+
+  // Pillar 4: Print Media & Digital Letterhead Studio State
+  const [brandingData, setBrandingData] = useState({
+    logoUrl: '',
+    stampSealUrl: '',
+    signatureUrl: '',
+    letterheadMode: 'FULL_DIGITAL' as 'FULL_DIGITAL' | 'PRE_PRINTED_PAD',
+    rxHeaderNotes: 'CONSULTING PHYSICIAN & SPECIALIST CLINICAL CARE',
+    rxFooterDisclaimer: 'Digitally authenticated under IT Act 2000 & NMC Guidelines. Valid for 30 days from issue.',
+    reportFooterDisclaimer: 'This electronic laboratory report is validated against standard reference ranges and certified by authorized medical specialists.'
+  });
+
+  // Pillar 6: Multi-Branch & Satellite Topology State
+  const [branchesData, setBranchesData] = useState<Array<{ id: string; branchName: string; branchType: string; address: string; phone: string; isMainHq: boolean }>>([
+    {
+      id: 'branch-main',
+      branchName: currentUser?.tenantName ? `${currentUser.tenantName} (Main Campus)` : 'Main Healthcare Facility (HQ)',
+      branchType: 'MAIN_CAMPUS',
+      address: '',
+      phone: '',
+      isMainHq: true
+    }
+  ]);
+  const [newBranchInput, setNewBranchInput] = useState({
+    branchName: '',
+    branchType: 'SATELLITE_CLINIC',
+    address: '',
+    phone: ''
   });
 
   // Role-Specific Certificates State
@@ -162,6 +209,9 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
     bmwCertFile: '',
 
     // Hospital Fields
+    abdmFacilityId: '',
+    aerbApprovalNo: '',
+    aerbCertFile: '',
     hospitalCeaRegNo: userAny?.clinicalLicense || '',
     hospitalCeaFile: '',
     hospitalNabhGrade: '',
@@ -209,8 +259,11 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
         try {
           savedParsed = JSON.parse(saved);
           if (savedParsed.bank) setBankData(savedParsed.bank);
-          if (savedParsed.address) setAddressData(savedParsed.address);
+          if (savedParsed.address) setAddressData((prev) => ({ ...prev, ...savedParsed.address }));
           if (savedParsed.certificates) setCertData((prev) => ({ ...prev, ...savedParsed.certificates }));
+          if (savedParsed.clinical) setClinicalData((prev) => ({ ...prev, ...savedParsed.clinical }));
+          if (savedParsed.branding) setBrandingData((prev) => ({ ...prev, ...savedParsed.branding }));
+          if (savedParsed.branches && Array.isArray(savedParsed.branches)) setBranchesData(savedParsed.branches);
           if (savedParsed.bankApprovalStatus) setBankApprovalStatus(savedParsed.bankApprovalStatus);
           if (savedParsed.addressApprovalStatus) setAddressApprovalStatus(savedParsed.addressApprovalStatus);
           if (savedParsed.certApprovalStatus) setCertApprovalStatus(savedParsed.certApprovalStatus);
@@ -236,6 +289,8 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
               state: matched.state || prev.state,
               pincode: matched.pincode || prev.pincode,
               officialPhone: matched.phone || prev.officialPhone || userAny?.phone || '',
+              emergencyHelpline: matched.emergencyHelpline || prev.emergencyHelpline,
+              panNumber: matched.panNumber || prev.panNumber,
               supportEmail: matched.email || prev.supportEmail || currentUser?.email || '',
               gstin: matched.gstin || prev.gstin
             }));
@@ -243,6 +298,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
               ...prev,
               doctorRegNo: matched.clinicalLicense || prev.doctorRegNo,
               hospitalCeaRegNo: matched.clinicalLicense || prev.hospitalCeaRegNo,
+              abdmFacilityId: matched.abdmFacilityId || prev.abdmFacilityId,
               pharmacyDrugLicense20B: matched.clinicalLicense || prev.pharmacyDrugLicense20B,
               nablCertificateNo: matched.nablCertNo || prev.nablCertificateNo
             }));
@@ -268,6 +324,10 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
             state: prof.address?.state || prev.state || '',
             pincode: prof.address?.pincode || prev.pincode || '',
             officialPhone: prof.contactPhone || prev.officialPhone || '',
+            emergencyHelpline: prof.statutory?.emergencyHelpline || prev.emergencyHelpline || '',
+            panNumber: prof.statutory?.panNumber || prev.panNumber || '',
+            latitude: prof.metadata?.latitude || prev.latitude || '',
+            longitude: prof.metadata?.longitude || prev.longitude || '',
             supportEmail: prof.contactEmail || prev.supportEmail || currentUser?.email || '',
             gstin: prof.statutory?.gstin || prev.gstin || ''
           }));
@@ -276,8 +336,19 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
               ...prev,
               ...prof.certificates,
               hospitalCeaRegNo: prof.certificates.hospitalCeaRegNo || prof.statutory?.clinicalLicense || prev.hospitalCeaRegNo || '',
+              abdmFacilityId: prof.statutory?.abdmFacilityId || prof.certificates.abdmFacilityId || prev.abdmFacilityId || '',
+              aerbApprovalNo: prof.statutory?.aerbApprovalNo || prof.certificates.aerbApprovalNo || prev.aerbApprovalNo || '',
               doctorRegNo: prof.certificates.doctorRegNo || prof.statutory?.clinicalLicense || prev.doctorRegNo || ''
             }));
+          }
+          if (prof.clinical) {
+            setClinicalData((prev) => ({ ...prev, ...prof.clinical }));
+          }
+          if (prof.branding) {
+            setBrandingData((prev) => ({ ...prev, ...prof.branding }));
+          }
+          if (prof.branches && Array.isArray(prof.branches) && prof.branches.length > 0) {
+            setBranchesData(prof.branches);
           }
           if (prof.bank && prof.bank.accountNumber) {
             setBankData((prev) => ({ ...prev, ...prof.bank }));
@@ -395,15 +466,48 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
           },
           statutory: {
             hospitalCeaRegNo: updatedPayload.certificates?.hospitalCeaRegNo,
+            abdmFacilityId: updatedPayload.certificates?.abdmFacilityId,
+            aerbApprovalNo: updatedPayload.certificates?.aerbApprovalNo,
+            emergencyHelpline: updatedPayload.address?.emergencyHelpline,
+            panNumber: updatedPayload.address?.panNumber,
+            gstin: updatedPayload.address?.gstin,
             doctorRegNo: updatedPayload.certificates?.doctorRegNo,
             pharmacyCouncilRegNo: updatedPayload.certificates?.pharmacyCouncilRegNo,
             nablCertificateNo: updatedPayload.certificates?.nablCertificateNo,
             authorizedSignatory: updatedPayload.certificates?.authorizedSignatory
           },
           certificates: updatedPayload.certificates,
-          bank: updatedPayload.bank
+          bank: updatedPayload.bank,
+          clinical: updatedPayload.clinical || clinicalData,
+          branding: updatedPayload.branding || brandingData,
+          branches: updatedPayload.branches || branchesData
         })
       });
+
+      // Synchronize branding and letterhead configuration to universal print media cache
+      const effectiveBranding = updatedPayload.branding || brandingData;
+      try {
+        localStorage.setItem('docsearch_custom_rx_letterhead', JSON.stringify({
+          doctorName: updatedPayload.certificates?.doctorName || currentUser?.name || 'Authorized Consultant',
+          doctorDegree: updatedPayload.certificates?.doctorDegreeName || (roleCategory === 'DOCTOR' ? 'MBBS' : 'Chief Medical Superintendent'),
+          doctorSpecialty: updatedPayload.certificates?.doctorSpecialty || 'General Medicine & Clinical Care',
+          doctorCouncilName: updatedPayload.certificates?.doctorCouncilName || 'State Medical Council',
+          doctorRegNo: updatedPayload.certificates?.doctorRegNo || updatedPayload.certificates?.hospitalCeaRegNo || 'Reg # Verified',
+          entityLegalName: updatedPayload.address?.legalName || currentUser?.tenantName || 'Healthcare Facility',
+          officialAddress: `${updatedPayload.address?.addressLine1 || ''}${updatedPayload.address?.addressLine2 ? ', ' + updatedPayload.address.addressLine2 : ''}, ${updatedPayload.address?.city || ''}, ${updatedPayload.address?.state || ''} - ${updatedPayload.address?.pincode || ''}`.trim(),
+          contactPhone: updatedPayload.address?.officialPhone || '',
+          emergencyHelpline: updatedPayload.address?.emergencyHelpline || '',
+          supportEmail: updatedPayload.address?.supportEmail || '',
+          footerNotes: effectiveBranding?.rxFooterDisclaimer || 'Digitally Signed & Authenticated under IT Act 2000 & NMC Guidelines. Valid for 30 days.',
+          showWatermark: true,
+          themeColor: '#0284C7',
+          logoUrl: effectiveBranding?.logoUrl || '',
+          stampSealUrl: effectiveBranding?.stampSealUrl || '',
+          signatureUrl: effectiveBranding?.signatureUrl || '',
+          letterheadMode: effectiveBranding?.letterheadMode || 'FULL_DIGITAL'
+        }));
+        localStorage.setItem('docsearch_prescription_letterhead_mode', effectiveBranding?.letterheadMode === 'PRE_PRINTED_PAD' ? 'PREPRINTED_PAD' : 'PLAIN_A4');
+      } catch {}
 
       const payloadWithFlag = {
         ...updatedPayload,
@@ -538,6 +642,99 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
       );
       setTimeout(() => setSaveSuccessMessage(null), 4500);
     }
+  };
+
+  const handleSaveClinicalBeds = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage(null);
+
+    const now = new Date().toLocaleString();
+    setLastSubmittedAt(now);
+
+    const payload = {
+      bank: bankData,
+      address: addressData,
+      certificates: certData,
+      clinical: clinicalData,
+      branding: brandingData,
+      branches: branchesData,
+      bankApprovalStatus,
+      addressApprovalStatus,
+      certApprovalStatus,
+      lastSubmittedAt: now,
+      security: { twoFactorEnabled: securityData.twoFactorEnabled, autoLockMinutes: securityData.autoLockMinutes }
+    };
+
+    const ok = await saveToStorage(payload);
+    if (ok) {
+      setSaveSuccessMessage('✓ Clinical Bed Strength, Shift Timings & Multi-Branch Topology saved successfully!');
+      setTimeout(() => setSaveSuccessMessage(null), 4500);
+    }
+  };
+
+  const handleSaveBranding = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage(null);
+
+    const now = new Date().toLocaleString();
+    setLastSubmittedAt(now);
+
+    const payload = {
+      bank: bankData,
+      address: addressData,
+      certificates: certData,
+      clinical: clinicalData,
+      branding: brandingData,
+      branches: branchesData,
+      bankApprovalStatus,
+      addressApprovalStatus,
+      certApprovalStatus,
+      lastSubmittedAt: now,
+      security: { twoFactorEnabled: securityData.twoFactorEnabled, autoLockMinutes: securityData.autoLockMinutes }
+    };
+
+    const ok = await saveToStorage(payload);
+    if (ok) {
+      setSaveSuccessMessage('✓ Digital Letterhead Branding, Logo, Stamp & Disclaimers updated and synchronized across all OPD & Pathology printouts!');
+      setTimeout(() => setSaveSuccessMessage(null), 4500);
+    }
+  };
+
+  const handleImageUpload = (file: File, target: 'logo' | 'stamp' | 'signature') => {
+    if (file.size > 2 * 1024 * 1024) {
+      setErrorMessage('Image size exceeds 2MB limit. Please upload a smaller compressed image.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (uploadEvent) => {
+      const dataUrl = uploadEvent.target?.result as string;
+      if (target === 'logo') setBrandingData((prev) => ({ ...prev, logoUrl: dataUrl }));
+      if (target === 'stamp') setBrandingData((prev) => ({ ...prev, stampSealUrl: dataUrl }));
+      if (target === 'signature') setBrandingData((prev) => ({ ...prev, signatureUrl: dataUrl }));
+      simulateAiOcr(file.name);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAddBranch = () => {
+    if (!newBranchInput.branchName.trim()) {
+      setErrorMessage('Please enter a branch or satellite clinic name.');
+      return;
+    }
+    const newB = {
+      id: `branch-${Date.now()}`,
+      branchName: newBranchInput.branchName.trim(),
+      branchType: newBranchInput.branchType,
+      address: newBranchInput.address.trim(),
+      phone: newBranchInput.phone.trim(),
+      isMainHq: false
+    };
+    setBranchesData((prev) => [...prev, newB]);
+    setNewBranchInput({ branchName: '', branchType: 'SATELLITE_CLINIC', address: '', phone: '' });
+  };
+
+  const handleRemoveBranch = (id: string) => {
+    setBranchesData((prev) => prev.filter((b) => b.id !== id || b.isMainHq));
   };
 
   const handleSavePassword = async (e: React.FormEvent) => {
@@ -936,6 +1133,48 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
             }}
           >
             <span>📜</span> {getRoleTabTitle()} {certApprovalStatus === 'PENDING_APPROVAL' && '⏳'}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => { setActiveTab('CLINICAL_BEDS'); setErrorMessage(null); }}
+            style={{
+              padding: '12px 14px',
+              backgroundColor: 'transparent',
+              color: activeTab === 'CLINICAL_BEDS' ? '#38BDF8' : '#94A3B8',
+              border: 'none',
+              borderBottom: activeTab === 'CLINICAL_BEDS' ? '3px solid #06B6D4' : '3px solid transparent',
+              fontSize: '0.8125rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            <span>🏥</span> Clinical Beds & Shifts
+          </button>
+
+          <button
+            type="button"
+            onClick={() => { setActiveTab('PRINT_LETTERHEAD'); setErrorMessage(null); }}
+            style={{
+              padding: '12px 14px',
+              backgroundColor: 'transparent',
+              color: activeTab === 'PRINT_LETTERHEAD' ? '#38BDF8' : '#94A3B8',
+              border: 'none',
+              borderBottom: activeTab === 'PRINT_LETTERHEAD' ? '3px solid #06B6D4' : '3px solid transparent',
+              fontSize: '0.8125rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            <span>🖨️</span> Letterhead Studio & Preview
           </button>
 
           <button
@@ -1637,6 +1876,57 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                 </div>
               </div>
 
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '14px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#F87171', marginBottom: '4px' }}>
+                    🚨 24x7 EMERGENCY / AMBULANCE HELPLINE *
+                  </label>
+                  <input
+                    type="text"
+                    value={addressData.emergencyHelpline}
+                    onChange={(e) => setAddressData({ ...addressData, emergencyHelpline: e.target.value })}
+                    placeholder="e.g. 1800-XXX-XXXX or 0522-XXXXXXX"
+                    style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(239, 68, 68, 0.4)', color: '#FFF', fontSize: '0.875rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
+                    PAN NUMBER (ENTITY / OWNER)
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={10}
+                    value={addressData.panNumber}
+                    onChange={(e) => setAddressData({ ...addressData, panNumber: e.target.value.toUpperCase() })}
+                    placeholder="ABCDE1234F"
+                    style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.875rem', fontFamily: 'monospace' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#38BDF8', marginBottom: '4px' }}>
+                    🌐 GEO-COORDINATES (LAT, LONG)
+                  </label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                      type="text"
+                      value={addressData.latitude}
+                      onChange={(e) => setAddressData({ ...addressData, latitude: e.target.value })}
+                      placeholder="Lat (e.g. 26.8467)"
+                      style={{ width: '50%', minHeight: '42px', padding: '8px 8px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.78rem' }}
+                    />
+                    <input
+                      type="text"
+                      value={addressData.longitude}
+                      onChange={(e) => setAddressData({ ...addressData, longitude: e.target.value })}
+                      placeholder="Long (e.g. 80.9462)"
+                      style={{ width: '50%', minHeight: '42px', padding: '8px 8px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.78rem' }}
+                    />
+                  </div>
+                </div>
+              </div>
+
               {/* Upload Address Proof / Establishment Certificate */}
               <div style={{ backgroundColor: '#1E293B', border: '1px dashed rgba(59, 130, 246, 0.4)', borderRadius: '10px', padding: '14px' }}>
                 <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: '#60A5FA', marginBottom: '6px' }}>
@@ -1879,6 +2169,149 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                 </>
               )}
 
+              {/* 3. HOSPITAL & CLINICAL ESTABLISHMENT FIELDS */}
+              {(roleCategory === 'HOSPITAL' || roleCategory === 'DOCTOR' || roleCategory === 'COMPANY_HQ') && (
+                <div style={{ backgroundColor: '#1E293B', padding: '14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                    <span style={{ fontSize: '1.1rem' }}>🏥</span>
+                    <strong style={{ fontSize: '0.875rem', color: '#38BDF8' }}>Hospital Statutory Licenses & National ABDM Registry</strong>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '12px', marginBottom: '10px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
+                        CLINICAL ESTABLISHMENT ACT (CEA) REG NO. *
+                      </label>
+                      <input
+                        type="text"
+                        value={certData.hospitalCeaRegNo}
+                        onChange={(e) => setCertData({ ...certData, hospitalCeaRegNo: e.target.value })}
+                        placeholder="e.g. CEA/UP/2026/0891"
+                        style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.875rem', fontFamily: 'monospace' }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#A78BFA', marginBottom: '4px' }}>
+                        ABDM HFR FACILITY ID (MOHFW) *
+                      </label>
+                      <input
+                        type="text"
+                        value={certData.abdmFacilityId}
+                        onChange={(e) => setCertData({ ...certData, abdmFacilityId: e.target.value.toUpperCase() })}
+                        placeholder="e.g. IN-UP-100234"
+                        style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#0B132B', border: '1px solid rgba(167, 139, 250, 0.4)', color: '#FFF', fontSize: '0.875rem', fontFamily: 'monospace' }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
+                        AERB RADIATION / X-RAY SAFETY APPROVAL
+                      </label>
+                      <input
+                        type="text"
+                        value={certData.aerbApprovalNo}
+                        onChange={(e) => setCertData({ ...certData, aerbApprovalNo: e.target.value })}
+                        placeholder="e.g. AERB/MED/2026/512"
+                        style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.875rem', fontFamily: 'monospace' }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '12px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
+                        FIRE SAFETY NOC NO.
+                      </label>
+                      <input
+                        type="text"
+                        value={certData.hospitalFireNocNo}
+                        onChange={(e) => setCertData({ ...certData, hospitalFireNocNo: e.target.value })}
+                        placeholder="e.g. FIRE/FS/2026/102"
+                        style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.875rem' }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
+                        BMW POLLUTION CONTROL AUTH NO.
+                      </label>
+                      <input
+                        type="text"
+                        value={certData.bmwPollutionAuthNo}
+                        onChange={(e) => setCertData({ ...certData, bmwPollutionAuthNo: e.target.value })}
+                        placeholder="e.g. SPCB/BMW/AUTH/8812"
+                        style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.875rem' }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
+                        NABH ACCREDITATION (ENTRY / FULL)
+                      </label>
+                      <input
+                        type="text"
+                        value={certData.hospitalNabhGrade}
+                        onChange={(e) => setCertData({ ...certData, hospitalNabhGrade: e.target.value })}
+                        placeholder="e.g. NABH Entry-Level Certified"
+                        style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.875rem' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 4. PHARMACY DRUG LICENSE FIELDS */}
+              {(roleCategory === 'PHARMACY' || roleCategory === 'HOSPITAL' || roleCategory === 'COMPANY_HQ') && (
+                <div style={{ backgroundColor: '#1E293B', padding: '14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                    <span style={{ fontSize: '1.1rem' }}>💊</span>
+                    <strong style={{ fontSize: '0.875rem', color: '#34D399' }}>Pharmacy Form 20B & 21B Retail / Inpatient Drug Licenses</strong>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '12px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
+                        DRUG LICENSE 20B (ALLOPATHIC RETAIL) *
+                      </label>
+                      <input
+                        type="text"
+                        value={certData.pharmacyDrugLicense20B}
+                        onChange={(e) => setCertData({ ...certData, pharmacyDrugLicense20B: e.target.value })}
+                        placeholder="e.g. 20B/LKO/2026/4102"
+                        style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.875rem', fontFamily: 'monospace' }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
+                        DRUG LICENSE 21B (SCHEDULE C/C1)
+                      </label>
+                      <input
+                        type="text"
+                        value={certData.pharmacyDrugLicense21B}
+                        onChange={(e) => setCertData({ ...certData, pharmacyDrugLicense21B: e.target.value })}
+                        placeholder="e.g. 21B/LKO/2026/4103"
+                        style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.875rem', fontFamily: 'monospace' }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
+                        PHARMACIST COUNCIL REG NO.
+                      </label>
+                      <input
+                        type="text"
+                        value={certData.pharmacyCouncilRegNo}
+                        onChange={(e) => setCertData({ ...certData, pharmacyCouncilRegNo: e.target.value })}
+                        placeholder="e.g. UPPC-99120"
+                        style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.875rem' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Cryptographic SHA-256 Digital Watermark Fingerprint */}
               <div style={{ backgroundColor: '#070C16', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
                 <span style={{ fontSize: '0.6875rem', color: '#64748B', fontWeight: 700, display: 'block', marginBottom: '2px' }}>
@@ -1895,6 +2328,606 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                 >
                   {isCompanyAdmin ? `👑 Approve & Lock ${roleCategory} Certificates` : '📤 Submit Certificates for Admin Approval'}
                 </button>
+              </div>
+            </form>
+          )}
+
+          {/* TAB: CLINICAL SETUP, LICENSED BEDS & MULTI-BRANCH TOPOLOGY */}
+          {activeTab === 'CLINICAL_BEDS' && (
+            <form onSubmit={handleSaveClinicalBeds} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ backgroundColor: 'rgba(6, 182, 212, 0.08)', border: '1px solid rgba(6, 182, 212, 0.25)', padding: '12px 16px', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                <div>
+                  <strong style={{ fontSize: '0.875rem', color: '#38BDF8' }}>🏥 Licensed Bed Capacity, Shift Timings & Satellite Network</strong>
+                  <span style={{ fontSize: '0.75rem', color: '#94A3B8', display: 'block', marginTop: '2px' }}>
+                    Authoritative clinical bed distribution and shift schedules synchronized with OPD and Inpatient (IPD) admissions.
+                  </span>
+                </div>
+                <span style={{ fontSize: '0.75rem', backgroundColor: 'rgba(6, 182, 212, 0.15)', color: '#38BDF8', padding: '3px 8px', borderRadius: '6px', fontWeight: 800 }}>
+                  Total Licensed Beds: {Number(clinicalData.icuBeds) + Number(clinicalData.generalWardBeds) + Number(clinicalData.deluxeBeds) + Number(clinicalData.emergencyTriageBeds)}
+                </span>
+              </div>
+
+              {/* Bed Inventory Distribution */}
+              <div style={{ backgroundColor: '#1E293B', padding: '16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <h4 style={{ margin: '0 0 12px 0', fontSize: '0.8125rem', color: '#F1F5F9', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  🛏️ Licensed Bed Inventory by Department
+                </h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#F87171', marginBottom: '4px' }}>
+                      ICU / CCU BEDS *
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={clinicalData.icuBeds}
+                      onChange={(e) => setClinicalData({ ...clinicalData, icuBeds: Math.max(0, parseInt(e.target.value) || 0) })}
+                      style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#0B132B', border: '1px solid rgba(239, 68, 68, 0.4)', color: '#FFF', fontSize: '0.9rem', fontWeight: 800 }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#60A5FA', marginBottom: '4px' }}>
+                      GENERAL WARD BEDS *
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={clinicalData.generalWardBeds}
+                      onChange={(e) => setClinicalData({ ...clinicalData, generalWardBeds: Math.max(0, parseInt(e.target.value) || 0) })}
+                      style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#0B132B', border: '1px solid rgba(59, 130, 246, 0.4)', color: '#FFF', fontSize: '0.9rem', fontWeight: 800 }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#A78BFA', marginBottom: '4px' }}>
+                      DELUXE / PRIVATE ROOMS *
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={clinicalData.deluxeBeds}
+                      onChange={(e) => setClinicalData({ ...clinicalData, deluxeBeds: Math.max(0, parseInt(e.target.value) || 0) })}
+                      style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#0B132B', border: '1px solid rgba(167, 139, 250, 0.4)', color: '#FFF', fontSize: '0.9rem', fontWeight: 800 }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#FBBF24', marginBottom: '4px' }}>
+                      EMERGENCY / TRIAGE *
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={clinicalData.emergencyTriageBeds}
+                      onChange={(e) => setClinicalData({ ...clinicalData, emergencyTriageBeds: Math.max(0, parseInt(e.target.value) || 0) })}
+                      style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#0B132B', border: '1px solid rgba(245, 158, 11, 0.4)', color: '#FFF', fontSize: '0.9rem', fontWeight: 800 }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Shift Timings & Emergency Operations */}
+              <div style={{ backgroundColor: '#1E293B', padding: '16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <h4 style={{ margin: '0 0 12px 0', fontSize: '0.8125rem', color: '#F1F5F9', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  ⏰ OPD Consultation Shifts & 24x7 Emergency
+                </h4>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#0B132B', padding: '10px 14px', borderRadius: '8px', marginBottom: '14px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div>
+                    <strong style={{ fontSize: '0.8125rem', color: '#F1F5F9' }}>24x7 Emergency & Trauma Center Active</strong>
+                    <span style={{ fontSize: '0.72rem', color: '#94A3B8', display: 'block' }}>Emergency triage and night admissions enabled</span>
+                  </div>
+                  <label style={{ position: 'relative', display: 'inline-block', width: '44px', height: '24px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={clinicalData.is24x7Emergency}
+                      onChange={(e) => setClinicalData({ ...clinicalData, is24x7Emergency: e.target.checked })}
+                      style={{ opacity: 0, width: 0, height: 0 }}
+                    />
+                    <span style={{
+                      position: 'absolute',
+                      inset: 0,
+                      backgroundColor: clinicalData.is24x7Emergency ? '#10B981' : '#475569',
+                      borderRadius: '24px',
+                      transition: '0.2s'
+                    }}>
+                      <span style={{
+                        position: 'absolute',
+                        height: '18px',
+                        width: '18px',
+                        left: clinicalData.is24x7Emergency ? '22px' : '3px',
+                        bottom: '3px',
+                        backgroundColor: '#FFF',
+                        borderRadius: '50%',
+                        transition: '0.2s'
+                      }} />
+                    </span>
+                  </label>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '14px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#38BDF8', marginBottom: '4px' }}>
+                      🌅 MORNING OPD SHIFT
+                    </label>
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                      <input
+                        type="time"
+                        value={clinicalData.morningShiftStart}
+                        onChange={(e) => setClinicalData({ ...clinicalData, morningShiftStart: e.target.value })}
+                        style={{ width: '50%', minHeight: '38px', padding: '6px', borderRadius: '6px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8rem' }}
+                      />
+                      <span style={{ color: '#94A3B8', fontSize: '0.75rem' }}>to</span>
+                      <input
+                        type="time"
+                        value={clinicalData.morningShiftEnd}
+                        onChange={(e) => setClinicalData({ ...clinicalData, morningShiftEnd: e.target.value })}
+                        style={{ width: '50%', minHeight: '38px', padding: '6px', borderRadius: '6px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8rem' }}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#FBBF24', marginBottom: '4px' }}>
+                      🌇 EVENING OPD SHIFT
+                    </label>
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                      <input
+                        type="time"
+                        value={clinicalData.eveningShiftStart}
+                        onChange={(e) => setClinicalData({ ...clinicalData, eveningShiftStart: e.target.value })}
+                        style={{ width: '50%', minHeight: '38px', padding: '6px', borderRadius: '6px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8rem' }}
+                      />
+                      <span style={{ color: '#94A3B8', fontSize: '0.75rem' }}>to</span>
+                      <input
+                        type="time"
+                        value={clinicalData.eveningShiftEnd}
+                        onChange={(e) => setClinicalData({ ...clinicalData, eveningShiftEnd: e.target.value })}
+                        style={{ width: '50%', minHeight: '38px', padding: '6px', borderRadius: '6px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8rem' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Multi-Branch & Satellite Topology */}
+              <div style={{ backgroundColor: '#1E293B', padding: '16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <h4 style={{ margin: 0, fontSize: '0.8125rem', color: '#F1F5F9', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    🌐 Multi-Branch & Satellite Clinics Network
+                  </h4>
+                  <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
+                    {branchesData.length} Facility / Branch(es) Registered
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
+                  {branchesData.map((branch) => (
+                    <div key={branch.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#0B132B', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <strong style={{ fontSize: '0.8125rem', color: '#F8FAFC' }}>{branch.branchName}</strong>
+                          <span style={{ fontSize: '0.6875rem', backgroundColor: branch.isMainHq ? 'rgba(6, 182, 212, 0.2)' : 'rgba(139, 92, 246, 0.2)', color: branch.isMainHq ? '#38BDF8' : '#C4B5FD', padding: '2px 6px', borderRadius: '4px', fontWeight: 800 }}>
+                            {branch.branchType.replace('_', ' ')}
+                          </span>
+                        </div>
+                        <span style={{ fontSize: '0.75rem', color: '#94A3B8', display: 'block', marginTop: '2px' }}>
+                          {branch.address || 'Address registered on file'} • Ph: {branch.phone || addressData.officialPhone || 'Not provided'}
+                        </span>
+                      </div>
+                      {!branch.isMainHq && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveBranch(branch.id)}
+                          style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#F87171', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '0.75rem', cursor: 'pointer' }}
+                        >
+                          ✕ Remove
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Add Branch Inline Form */}
+                <div style={{ backgroundColor: 'rgba(15, 23, 42, 0.6)', padding: '12px', borderRadius: '8px', border: '1px dashed rgba(255,255,255,0.15)' }}>
+                  <span style={{ fontSize: '0.75rem', color: '#38BDF8', fontWeight: 700, display: 'block', marginBottom: '8px' }}>
+                    + Register New Satellite OPD Clinic or Sample Collection Center
+                  </span>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: '8px', marginBottom: '8px' }}>
+                    <input
+                      type="text"
+                      placeholder="Branch / Clinic Name"
+                      value={newBranchInput.branchName}
+                      onChange={(e) => setNewBranchInput({ ...newBranchInput, branchName: e.target.value })}
+                      style={{ padding: '6px 10px', borderRadius: '6px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.78rem' }}
+                    />
+                    <select
+                      value={newBranchInput.branchType}
+                      onChange={(e) => setNewBranchInput({ ...newBranchInput, branchType: e.target.value })}
+                      style={{ padding: '6px 10px', borderRadius: '6px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.78rem' }}
+                    >
+                      <option value="SATELLITE_CLINIC">Satellite OPD Clinic</option>
+                      <option value="COLLECTION_BOOTH">Sample Collection Booth</option>
+                      <option value="DAY_CARE_CENTER">Day Care Centre</option>
+                      <option value="PHARMACY_OUTLET">Satellite Pharmacy Outlet</option>
+                    </select>
+                    <input
+                      type="text"
+                      placeholder="Street Address & Area"
+                      value={newBranchInput.address}
+                      onChange={(e) => setNewBranchInput({ ...newBranchInput, address: e.target.value })}
+                      style={{ padding: '6px 10px', borderRadius: '6px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.78rem' }}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Contact Phone"
+                      value={newBranchInput.phone}
+                      onChange={(e) => setNewBranchInput({ ...newBranchInput, phone: e.target.value })}
+                      style={{ padding: '6px 10px', borderRadius: '6px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.78rem' }}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddBranch}
+                    style={{ backgroundColor: '#06B6D4', color: '#070C16', border: 'none', borderRadius: '6px', padding: '6px 14px', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer' }}
+                  >
+                    + Add Branch to Network
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button
+                  type="submit"
+                  style={{ backgroundColor: '#10B981', color: '#070C16', border: 'none', borderRadius: '8px', padding: '10px 20px', fontSize: '0.85rem', fontWeight: 800, cursor: 'pointer' }}
+                >
+                  💾 Save Clinical Setup & Bed Topology
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* TAB: DIGITAL LETTERHEAD & PRINT STUDIO (WITH LIVE A4 PREVIEW) */}
+          {activeTab === 'PRINT_LETTERHEAD' && (
+            <form onSubmit={handleSaveBranding} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ backgroundColor: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.25)', padding: '12px 16px', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                <div>
+                  <strong style={{ fontSize: '0.875rem', color: '#38BDF8' }}>🖨️ Digital Letterhead & Print Media Studio</strong>
+                  <span style={{ fontSize: '0.75rem', color: '#94A3B8', display: 'block', marginTop: '2px' }}>
+                    Configure official hospital branding, logo, round stamp, doctor signatures, and test with the Live A4 Letterhead Preview.
+                  </span>
+                </div>
+                <span style={{ fontSize: '0.75rem', backgroundColor: brandingData.letterheadMode === 'FULL_DIGITAL' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)', color: brandingData.letterheadMode === 'FULL_DIGITAL' ? '#6EE7B7' : '#FCD34D', padding: '3px 8px', borderRadius: '6px', fontWeight: 800 }}>
+                  Mode: {brandingData.letterheadMode === 'FULL_DIGITAL' ? 'FULL DIGITAL A4' : 'PRE-PRINTED PAD'}
+                </span>
+              </div>
+
+              {/* 2-Column Responsive Studio Layout: Left Controls, Right Live A4 Preview */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 360px), 1fr))', gap: '20px', alignItems: 'start' }}>
+                
+                {/* LEFT COLUMN: Controls & Uploads */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  
+                  {/* Print Mode Selector */}
+                  <div style={{ backgroundColor: '#1E293B', padding: '14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: '#F1F5F9', marginBottom: '8px' }}>
+                      LETTERHEAD PRINT MODE *
+                    </label>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setBrandingData({ ...brandingData, letterheadMode: 'FULL_DIGITAL' })}
+                        style={{
+                          padding: '12px 10px',
+                          borderRadius: '8px',
+                          border: brandingData.letterheadMode === 'FULL_DIGITAL' ? '2px solid #06B6D4' : '1px solid rgba(255,255,255,0.1)',
+                          backgroundColor: brandingData.letterheadMode === 'FULL_DIGITAL' ? 'rgba(6, 182, 212, 0.15)' : '#0B132B',
+                          color: brandingData.letterheadMode === 'FULL_DIGITAL' ? '#38BDF8' : '#94A3B8',
+                          fontSize: '0.75rem',
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                          textAlign: 'left'
+                        }}
+                      >
+                        <div style={{ fontSize: '1.2rem', marginBottom: '4px' }}>📄</div>
+                        <strong style={{ display: 'block', color: '#FFF' }}>Full Digital Mode</strong>
+                        <span style={{ fontSize: '0.6875rem', opacity: 0.8 }}>Prints logo, header, watermark on plain A4</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setBrandingData({ ...brandingData, letterheadMode: 'PRE_PRINTED_PAD' })}
+                        style={{
+                          padding: '12px 10px',
+                          borderRadius: '8px',
+                          border: brandingData.letterheadMode === 'PRE_PRINTED_PAD' ? '2px solid #F59E0B' : '1px solid rgba(255,255,255,0.1)',
+                          backgroundColor: brandingData.letterheadMode === 'PRE_PRINTED_PAD' ? 'rgba(245, 158, 11, 0.15)' : '#0B132B',
+                          color: brandingData.letterheadMode === 'PRE_PRINTED_PAD' ? '#FCD34D' : '#94A3B8',
+                          fontSize: '0.75rem',
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                          textAlign: 'left'
+                        }}
+                      >
+                        <div style={{ fontSize: '1.2rem', marginBottom: '4px' }}>📑</div>
+                        <strong style={{ display: 'block', color: '#FFF' }}>Pre-Printed Pad</strong>
+                        <span style={{ fontSize: '0.6875rem', opacity: 0.8 }}>Leaves top 60mm blank for physical doctor pad</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Brand Assets Uploads (Logo, Stamp, Signature) */}
+                  <div style={{ backgroundColor: '#1E293B', padding: '14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: '#F1F5F9', marginBottom: '10px' }}>
+                      🎨 BRAND ASSETS & OFFICIAL SEALS
+                    </label>
+
+                    {/* 1. Hospital Logo */}
+                    <div style={{ marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1' }}>Hospital Official Logo (PNG/JPG)</span>
+                        {brandingData.logoUrl && (
+                          <button
+                            type="button"
+                            onClick={() => setBrandingData({ ...brandingData, logoUrl: '' })}
+                            style={{ background: 'none', border: 'none', color: '#F87171', fontSize: '0.6875rem', cursor: 'pointer' }}
+                          >
+                            ✕ Remove Logo
+                          </button>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <input
+                          type="file"
+                          accept=".png,.jpg,.jpeg,.svg"
+                          onChange={(e) => {
+                            if (e.target.files && e.target.files[0]) handleImageUpload(e.target.files[0], 'logo');
+                          }}
+                          style={{ fontSize: '0.75rem', color: '#CBD5E1' }}
+                        />
+                        {brandingData.logoUrl && (
+                          <img src={brandingData.logoUrl} alt="Logo Preview" style={{ height: '36px', width: 'auto', maxHeight: '36px', borderRadius: '4px', objectFit: 'contain', backgroundColor: '#FFF', padding: '2px' }} />
+                        )}
+                      </div>
+                    </div>
+
+                    {/* 2. Official Hospital Seal / Round Stamp */}
+                    <div style={{ marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1' }}>Official Round Stamp / Seal (Transparent PNG)</span>
+                        {brandingData.stampSealUrl && (
+                          <button
+                            type="button"
+                            onClick={() => setBrandingData({ ...brandingData, stampSealUrl: '' })}
+                            style={{ background: 'none', border: 'none', color: '#F87171', fontSize: '0.6875rem', cursor: 'pointer' }}
+                          >
+                            ✕ Remove Stamp
+                          </button>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <input
+                          type="file"
+                          accept=".png,.jpg,.jpeg"
+                          onChange={(e) => {
+                            if (e.target.files && e.target.files[0]) handleImageUpload(e.target.files[0], 'stamp');
+                          }}
+                          style={{ fontSize: '0.75rem', color: '#CBD5E1' }}
+                        />
+                        {brandingData.stampSealUrl && (
+                          <img src={brandingData.stampSealUrl} alt="Stamp Preview" style={{ height: '36px', width: '36px', borderRadius: '50%', objectFit: 'contain', backgroundColor: '#FFF', padding: '2px' }} />
+                        )}
+                      </div>
+                    </div>
+
+                    {/* 3. Authorized Doctor Signature */}
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1' }}>Lead Doctor / Superintendent Digital Signature</span>
+                        {brandingData.signatureUrl && (
+                          <button
+                            type="button"
+                            onClick={() => setBrandingData({ ...brandingData, signatureUrl: '' })}
+                            style={{ background: 'none', border: 'none', color: '#F87171', fontSize: '0.6875rem', cursor: 'pointer' }}
+                          >
+                            ✕ Remove Signature
+                          </button>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <input
+                          type="file"
+                          accept=".png,.jpg,.jpeg"
+                          onChange={(e) => {
+                            if (e.target.files && e.target.files[0]) handleImageUpload(e.target.files[0], 'signature');
+                          }}
+                          style={{ fontSize: '0.75rem', color: '#CBD5E1' }}
+                        />
+                        {brandingData.signatureUrl && (
+                          <img src={brandingData.signatureUrl} alt="Signature Preview" style={{ height: '30px', width: 'auto', maxHeight: '30px', objectFit: 'contain', backgroundColor: '#FFF', padding: '2px', borderRadius: '2px' }} />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Disclaimers & Tagline */}
+                  <div style={{ backgroundColor: '#1E293B', padding: '14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: '#F1F5F9', marginBottom: '8px' }}>
+                      📝 PRINT TAGLINES & LEGAL DISCLAIMERS
+                    </label>
+
+                    <div style={{ marginBottom: '10px' }}>
+                      <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '3px' }}>
+                        PRESCRIPTION HEADER TAGLINE
+                      </label>
+                      <input
+                        type="text"
+                        value={brandingData.rxHeaderNotes}
+                        onChange={(e) => setBrandingData({ ...brandingData, rxHeaderNotes: e.target.value })}
+                        style={{ width: '100%', minHeight: '38px', padding: '6px 10px', borderRadius: '6px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem' }}
+                      />
+                    </div>
+
+                    <div style={{ marginBottom: '10px' }}>
+                      <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '3px' }}>
+                        DOCTOR PRESCRIPTION LEGAL DISCLAIMER (FOOTER)
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={brandingData.rxFooterDisclaimer}
+                        onChange={(e) => setBrandingData({ ...brandingData, rxFooterDisclaimer: e.target.value })}
+                        style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.75rem' }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '3px' }}>
+                        PATHOLOGY & RADIOLOGY REPORT DISCLAIMER
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={brandingData.reportFooterDisclaimer}
+                        onChange={(e) => setBrandingData({ ...brandingData, reportFooterDisclaimer: e.target.value })}
+                        style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.75rem' }}
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    style={{ backgroundColor: '#06B6D4', color: '#070C16', border: 'none', borderRadius: '8px', padding: '12px 20px', fontSize: '0.85rem', fontWeight: 800, cursor: 'pointer' }}
+                  >
+                    💾 Save Branding & Synchronize All Printouts
+                  </button>
+                </div>
+
+                {/* RIGHT COLUMN: Interactive Live A4 Letterhead Preview */}
+                <div style={{ backgroundColor: '#0B132B', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.12)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '1rem' }}>👁️</span>
+                      <strong style={{ fontSize: '0.8125rem', color: '#38BDF8' }}>LIVE A4 LETTERHEAD PREVIEW</strong>
+                    </div>
+                    <span style={{ fontSize: '0.6875rem', color: '#94A3B8', backgroundColor: 'rgba(255,255,255,0.06)', padding: '2px 6px', borderRadius: '4px' }}>
+                      WYSIWYG Real-time Simulation
+                    </span>
+                  </div>
+
+                  {/* Simulated A4 Paper */}
+                  <div style={{
+                    backgroundColor: '#FFFFFF',
+                    color: '#0F172A',
+                    borderRadius: '4px',
+                    padding: '18px 20px',
+                    boxShadow: '0 8px 30px rgba(0,0,0,0.6)',
+                    fontFamily: 'system-ui, -apple-system, sans-serif',
+                    minHeight: '440px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}>
+                    {/* Simulated Header */}
+                    {brandingData.letterheadMode === 'PRE_PRINTED_PAD' ? (
+                      <div style={{ height: '70px', border: '1.5px dashed #94A3B8', borderRadius: '4px', backgroundColor: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748B', fontSize: '0.7rem', fontWeight: 700, textAlign: 'center', padding: '10px' }}>
+                        📑 PRE-PRINTED STATIONERY MODE ACTIVE<br />
+                        <span style={{ fontSize: '0.625rem', fontWeight: 500 }}>(60mm Top Margin Reserved for Physical Hospital Header Pad)</span>
+                      </div>
+                    ) : (
+                      <div style={{ borderBottom: '2px solid #0284C7', paddingBottom: '8px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            {brandingData.logoUrl ? (
+                              <img src={brandingData.logoUrl} alt="Logo" style={{ height: '42px', width: 'auto', objectFit: 'contain' }} />
+                            ) : (
+                              <div style={{ width: '42px', height: '42px', borderRadius: '6px', backgroundColor: '#0284C7', color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', fontWeight: 900 }}>
+                                🏥
+                              </div>
+                            )}
+                            <div>
+                              <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 900, color: '#0F172A', letterSpacing: '-0.02em' }}>
+                                {addressData.legalName || 'HEALTHCARE HOSPITAL & RESEARCH CENTER'}
+                              </h3>
+                              <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#0284C7', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                {brandingData.rxHeaderNotes || 'CLINICAL EVIDENCE-BASED HEALTHCARE CONSULTATION'}
+                              </span>
+                              <span style={{ fontSize: '0.625rem', color: '#475569', display: 'block', marginTop: '2px' }}>
+                                {addressData.addressLine1 || 'Main Healthcare Road'}, {addressData.city || 'District'} {addressData.state || ''} - {addressData.pincode || '226001'}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div style={{ textAlign: 'right', fontSize: '0.625rem', color: '#334155' }}>
+                            {certData.hospitalCeaRegNo && <div>CEA Reg: <strong style={{ color: '#0F172A' }}>{certData.hospitalCeaRegNo}</strong></div>}
+                            {certData.abdmFacilityId && <div>ABDM HFR: <strong style={{ color: '#0284C7' }}>{certData.abdmFacilityId}</strong></div>}
+                            {addressData.emergencyHelpline && <div>24x7 Helpline: <strong style={{ color: '#DC2626' }}>{addressData.emergencyHelpline}</strong></div>}
+                            <div>Reception: {addressData.officialPhone || 'Not set'}</div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Simulated Rx Body */}
+                    <div style={{ padding: '12px 0', flex: 1 }}>
+                      <div style={{ backgroundColor: '#F1F5F9', padding: '6px 10px', borderRadius: '4px', display: 'flex', justifyContent: 'space-between', fontSize: '0.6875rem', marginBottom: '10px' }}>
+                        <span>Pt: <strong>Rahul Kumar (38y / M)</strong> • UHID: DS-9921</span>
+                        <span>Date: <strong>{new Date().toLocaleDateString('en-IN')}</strong> • Token: #07</span>
+                      </div>
+
+                      <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#0284C7', marginBottom: '4px' }}>℞</div>
+                      <div style={{ fontSize: '0.6875rem', color: '#334155', lineHeight: 1.4 }}>
+                        <div style={{ marginBottom: '4px' }}>1. <strong>Tab. Augmentin 625mg</strong> — 1 tablet after meals (1-0-1) x 5 days</div>
+                        <div style={{ marginBottom: '4px' }}>2. <strong>Tab. Pan-D (40mg)</strong> — 1 tablet before breakfast (1-0-0) x 5 days</div>
+                        <div>3. <strong>Syp. Grilinctus-BM</strong> — 10ml thrice daily (1-1-1) x 3 days</div>
+                      </div>
+                    </div>
+
+                    {/* Simulated Doctor Signature & Stamp Footer */}
+                    <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '8px', marginTop: 'auto' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.625rem', color: '#64748B' }}>
+                          <span style={{ fontSize: '1.2rem' }}>📱</span>
+                          <span>Scan QR on Mobile for ABDM / PHR Record Verification</span>
+                        </div>
+
+                        <div style={{ position: 'relative', textAlign: 'center', minWidth: '120px' }}>
+                          {brandingData.stampSealUrl && (
+                            <img
+                              src={brandingData.stampSealUrl}
+                              alt="Stamp"
+                              style={{
+                                position: 'absolute',
+                                right: '10px',
+                                bottom: '15px',
+                                width: '56px',
+                                height: '56px',
+                                opacity: 0.65,
+                                pointerEvents: 'none'
+                              }}
+                            />
+                          )}
+                          {brandingData.signatureUrl ? (
+                            <img src={brandingData.signatureUrl} alt="Signature" style={{ height: '32px', width: 'auto', margin: '0 auto', display: 'block' }} />
+                          ) : (
+                            <div style={{ height: '24px', fontStyle: 'italic', fontSize: '0.75rem', color: '#0284C7' }}>
+                              Dr. {currentUser?.name || 'Chief Medical Officer'}
+                            </div>
+                          )}
+                          <div style={{ fontSize: '0.625rem', fontWeight: 800, color: '#0F172A', borderTop: '1px solid #CBD5E1', paddingTop: '2px' }}>
+                            Authorized Medical Practitioner
+                          </div>
+                        </div>
+                      </div>
+
+                      <div style={{ fontSize: '0.5625rem', color: '#64748B', textAlign: 'center' }}>
+                        {brandingData.rxFooterDisclaimer}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
               </div>
             </form>
           )}

@@ -4,9 +4,33 @@ export interface VerifiedRoleProfile {
   facilityTagline: string;
   officialAddress: string;
   contactPhone: string;
+  emergencyHelpline?: string | undefined;
+  abdmFacilityId?: string | undefined;
+  aerbApprovalNo?: string | undefined;
+  panNumber?: string | undefined;
+  geoCoordinates?: { latitude?: string | undefined; longitude?: string | undefined } | undefined;
   supportEmail: string;
   website: string;
   gstin: string;
+  clinicalBedCapacity?: {
+    totalLicensedBeds?: number | undefined;
+    icuBeds?: number | undefined;
+    generalWardBeds?: number | undefined;
+    deluxeBeds?: number | undefined;
+    emergencyTriageBeds?: number | undefined;
+    is24x7Emergency?: boolean | undefined;
+    shifts?: { morning?: string | undefined; evening?: string | undefined } | undefined;
+  } | undefined;
+  branding?: {
+    logoUrl?: string | undefined;
+    stampSealUrl?: string | undefined;
+    signatureUrl?: string | undefined;
+    letterheadMode?: 'FULL_DIGITAL' | 'PRE_PRINTED_PAD' | undefined;
+    rxHeaderNotes?: string | undefined;
+    rxFooterDisclaimer?: string | undefined;
+    reportFooterDisclaimer?: string | undefined;
+  } | undefined;
+  branches?: Array<{ id: string; branchName: string; branchType: string; address: string; phone: string; isMainHq: boolean }> | undefined;
   
   // Doctor Credentials
   doctorName: string;
@@ -206,6 +230,14 @@ export const getVerifiedRoleProfile = (currentUserOverride?: any): VerifiedRoleP
       : 'CLINICAL EVIDENCE-BASED HEALTHCARE CONSULTATION',
     officialAddress,
     contactPhone,
+    emergencyHelpline: addr.emergencyHelpline || registeredPartner?.emergencyHelpline || '',
+    abdmFacilityId: cert.abdmFacilityId || registeredPartner?.abdmFacilityId || '',
+    aerbApprovalNo: cert.aerbApprovalNo || registeredPartner?.aerbApprovalNo || '',
+    panNumber: addr.panNumber || registeredPartner?.panNumber || '',
+    geoCoordinates: (addr.latitude && addr.longitude) ? { latitude: addr.latitude, longitude: addr.longitude } : undefined,
+    clinicalBedCapacity: savedSettings?.clinical,
+    branding: savedSettings?.branding,
+    branches: savedSettings?.branches,
     supportEmail,
     website,
     gstin,
