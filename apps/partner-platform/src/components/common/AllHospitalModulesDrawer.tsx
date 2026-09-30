@@ -12,6 +12,7 @@ export interface AllHospitalModulesDrawerProps {
   currentUserPermissions?: any | undefined;
   isFreeHospital?: boolean | undefined;
   currentPlanTier?: string | undefined;
+  organizationType?: string | undefined;
   onOpenUpgradeModal?: ((featureName: string) => void) | undefined;
   onTogglePersistentFullMode?: (() => void) | undefined;
 }
@@ -341,11 +342,18 @@ export const AllHospitalModulesDrawer: React.FC<AllHospitalModulesDrawerProps> =
   currentUserPermissions,
   isFreeHospital,
   currentPlanTier,
+  organizationType,
   onOpenUpgradeModal,
   onTogglePersistentFullMode
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState<string>('all');
+  const partnerVertical = (organizationType || '').toUpperCase();
+  const isLabOrPathology = partnerVertical.includes('PATHOLOGY') || partnerVertical.includes('DIAGNOSTIC') || currentUserRole === 'PATHOLOGIST' || currentUserRole === 'LAB_TECHNICIAN';
+  const isPharmacyVertical = partnerVertical.includes('PHARMACY') || currentUserRole === 'PHARMACIST';
+  const isClinicVertical = partnerVertical.includes('CLINIC') && !isLabOrPathology && !isPharmacyVertical;
+
+  const defaultCategory = isLabOrPathology ? 'diagnostics' : isPharmacyVertical ? 'pharmacy' : isClinicVertical ? 'clinical' : 'all';
+  const [activeCategory, setActiveCategory] = useState<string>(defaultCategory);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -356,10 +364,10 @@ export const AllHospitalModulesDrawer: React.FC<AllHospitalModulesDrawerProps> =
       return () => clearTimeout(timer);
     } else {
       setSearchQuery('');
-      setActiveCategory('all');
+      setActiveCategory(defaultCategory);
       return undefined;
     }
-  }, [isOpen]);
+  }, [isOpen, defaultCategory]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -484,10 +492,22 @@ export const AllHospitalModulesDrawer: React.FC<AllHospitalModulesDrawerProps> =
             </div>
             <div>
               <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: 'var(--ds-color-text-primary, #FFFFFF)' }}>
-                Hospital Master Suite
+                {isLabOrPathology
+                  ? 'Pathology & LIMS Suite'
+                  : isPharmacyVertical
+                  ? 'Pharmacy & Inventory Suite'
+                  : isClinicVertical
+                  ? 'Clinic Smart Practice Suite'
+                  : 'Hospital Master Suite'}
               </h3>
               <div style={{ fontSize: '0.75rem', color: 'var(--ds-color-text-muted, #94A3B8)' }}>
-                All 38 clinical, diagnostic & operations modules
+                {isLabOrPathology
+                  ? 'Diagnostic laboratory, analyzer, and accessioning modules'
+                  : isPharmacyVertical
+                  ? 'POS dispensing, FEFO inventory, and stock registers'
+                  : isClinicVertical
+                  ? 'OPD consultation, appointments, and patient records'
+                  : 'All 38 clinical, diagnostic & operations modules'}
               </div>
             </div>
           </div>

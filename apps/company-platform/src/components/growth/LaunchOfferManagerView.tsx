@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Badge, Button, Card } from '@docsearch/ui-kit';
+import { getAuthToken } from '../../services/api-client.js';
 import {
   type PromotionalCampaignConfig,
   getPromotionalCampaign,
@@ -140,11 +141,16 @@ export const LaunchOfferManagerView: React.FC = () => {
     const targetPolicy = customPolicy || formPolicy;
     setIsSavingPolicy(true);
     try {
+      const token = getAuthToken() || (typeof window !== 'undefined' ? (localStorage.getItem('docsearch_company_token') || localStorage.getItem('docsearch_auth_token') || '') : '');
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
       const res = await fetch('/api/v1/auth/registration-form-config', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers,
         body: JSON.stringify(targetPolicy)
       });
       if (res.ok) {
@@ -154,7 +160,9 @@ export const LaunchOfferManagerView: React.FC = () => {
         }
         triggerNotice('✅ Registration Form Policy saved! Fields, rules, and banner notice published live.');
       } else {
-        triggerNotice('⚠️ Failed to save form policy to server.');
+        const errJson = (await res.json().catch(() => null)) as any;
+        const msg = errJson?.error?.message || errJson?.message || 'Failed to save form policy to server.';
+        triggerNotice(`⚠️ ${msg}`);
       }
     } catch {
       triggerNotice('⚠️ Network error saving form policy.');

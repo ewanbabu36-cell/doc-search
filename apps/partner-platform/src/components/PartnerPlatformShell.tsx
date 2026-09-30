@@ -683,6 +683,45 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
   });
   const [isCheckingKyc, setIsCheckingKyc] = useState<boolean>(false);
 
+  // Dynamic Partner Profile & Vertical Adaptation
+  const partnerVertical = (currentUser?.organizationType || workspace || 'HOSPITAL').toUpperCase();
+  const isLabOrPathology = partnerVertical.includes('PATHOLOGY') || partnerVertical.includes('DIAGNOSTIC') || currentUser?.role === 'PATHOLOGIST' || currentUser?.role === 'LAB_TECHNICIAN';
+  const isPharmacyVertical = partnerVertical.includes('PHARMACY') || currentUser?.role === 'PHARMACIST';
+  const isClinicVertical = partnerVertical.includes('CLINIC') && !isLabOrPathology && !isPharmacyVertical;
+  const isHospital = !isLabOrPathology && !isPharmacyVertical && !isClinicVertical;
+
+  const drawerUpgradeSuiteTitle = isLabOrPathology
+    ? '⭐ Upgrade Pathology Suite (₹2,999/mo)'
+    : isPharmacyVertical
+    ? '⭐ Upgrade Pharmacy POS Suite (₹1,999/mo)'
+    : isClinicVertical
+    ? '⭐ Upgrade Clinic Pro Suite (₹2,499/mo)'
+    : '⭐ Upgrade Hospital Suite (₹4,999/mo)';
+
+  const drawerUpgradeTargetFeature = isLabOrPathology
+    ? 'Pathology & LIMS Diagnostic Enterprise Suite'
+    : isPharmacyVertical
+    ? 'Pharmacy POS & Wholesale Enterprise Suite'
+    : isClinicVertical
+    ? 'Clinic & OPD Smart Practice Suite'
+    : 'Hospital Complete Enterprise Suite';
+
+  const drawerDirectoryTitle = isLabOrPathology
+    ? 'All Pathology & LIMS Modules'
+    : isPharmacyVertical
+    ? 'All Pharmacy & POS Modules'
+    : isClinicVertical
+    ? 'All Clinic & OPD Modules'
+    : 'All 38 Hospital Modules';
+
+  const drawerDirectorySubtitle = isLabOrPathology
+    ? 'Diagnostics'
+    : isPharmacyVertical
+    ? 'Inventory'
+    : isClinicVertical
+    ? 'Clinic OPD'
+    : 'Directory';
+
   // Sync if dynamicPartner or currentUser kycStatus updates
   useEffect(() => {
     if (isFounderUser || dynamicPartner?.kycStatus === 'KYC_VERIFIED' || currentUser?.kycStatus === 'KYC_VERIFIED') {
@@ -2939,7 +2978,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                           </span>
                         </div>
 
-                        {normalizeFacilityProfile(workspace).workspace === 'HOSPITAL' && (
+                        {(isHospital || isClinicVertical || isLabOrPathology || isPharmacyVertical) && (
                           <div style={{ display: 'flex', gap: '6px', marginBottom: '8px' }}>
                             <button
                               type="button"
@@ -2998,7 +3037,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                           type="button"
                           onClick={() => {
                             setIsUserMenuOpen(false);
-                            setUpgradeModalTargetFeature('Hospital Complete Enterprise Suite');
+                            setUpgradeModalTargetFeature(drawerUpgradeTargetFeature);
                             setIsHospitalUpgradeModalOpen(true);
                           }}
                           style={{
@@ -3020,7 +3059,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                             transition: 'all 0.15s ease'
                           }}
                         >
-                          <span>⭐ Upgrade Suite (₹4,999/mo)</span>
+                          <span>{drawerUpgradeSuiteTitle}</span>
                         </button>
 
                         <button
@@ -3088,73 +3127,205 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                         }}
                       >
                         <div style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '2px' }}>
-                          Focus & Display Mode
+                          {isLabOrPathology ? 'Pathology & Lab Focus' : isPharmacyVertical ? 'Pharmacy & POS Focus' : isClinicVertical ? 'Clinic Practice Focus' : 'Focus & Display Mode'}
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsUserMenuOpen(false);
-                            toggleDoctorFocusMode();
-                          }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '6px 8px',
-                            borderRadius: '6px',
-                            background: isDoctorFocusMode ? 'rgba(2, 132, 199, 0.2)' : 'rgba(255, 255, 255, 0.03)',
-                            border: isDoctorFocusMode ? '1px solid #38BDF8' : '1px solid rgba(255, 255, 255, 0.06)',
-                            color: isDoctorFocusMode ? '#38BDF8' : '#CBD5E1',
-                            fontSize: '0.78rem',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            textAlign: 'left',
-                            transition: 'all 0.12s ease'
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-                            <span>🩺</span>
-                            <span>Solo Doctor Focus Mode</span>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <kbd style={{ fontSize: '0.6rem', color: '#64748B', fontFamily: 'monospace' }}>Alt+F</kbd>
-                            <span style={{ fontSize: '0.625rem', backgroundColor: isDoctorFocusMode ? '#0284C7' : 'rgba(255, 255, 255, 0.1)', color: '#FFF', padding: '1px 5px', borderRadius: '4px', fontWeight: 700 }}>
-                              {isDoctorFocusMode ? 'ACTIVE' : 'OFF'}
-                            </span>
-                          </div>
-                        </button>
+                        {isLabOrPathology ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsUserMenuOpen(false);
+                                setActiveModule('clinical-investigation');
+                              }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '6px 8px',
+                                borderRadius: '6px',
+                                background: activeModule === 'clinical-investigation' ? 'rgba(2, 132, 199, 0.2)' : 'rgba(255, 255, 255, 0.03)',
+                                border: activeModule === 'clinical-investigation' ? '1px solid #38BDF8' : '1px solid rgba(255, 255, 255, 0.06)',
+                                color: activeModule === 'clinical-investigation' ? '#38BDF8' : '#CBD5E1',
+                                fontSize: '0.78rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                transition: 'all 0.12s ease'
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                                <span>🔬</span>
+                                <span>Pathologist Validation Desk</span>
+                              </div>
+                              <span style={{ fontSize: '0.625rem', backgroundColor: 'rgba(56, 189, 248, 0.2)', color: '#38BDF8', padding: '1px 5px', borderRadius: '4px', fontWeight: 700 }}>
+                                VERIFY & SIGN
+                              </span>
+                            </button>
 
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsUserMenuOpen(false);
-                            setActiveModule('opd-one-flow-express');
-                          }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '6px 8px',
-                            borderRadius: '6px',
-                            background: activeModule === 'opd-one-flow-express' ? 'rgba(2, 132, 199, 0.2)' : 'rgba(255, 255, 255, 0.03)',
-                            border: activeModule === 'opd-one-flow-express' ? '1px solid #38BDF8' : '1px solid rgba(255, 255, 255, 0.06)',
-                            color: activeModule === 'opd-one-flow-express' ? '#38BDF8' : '#CBD5E1',
-                            fontSize: '0.78rem',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            textAlign: 'left',
-                            transition: 'all 0.12s ease'
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-                            <span>⚡</span>
-                            <span>OPD 1-Flow Express</span>
-                          </div>
-                          <span style={{ fontSize: '0.625rem', backgroundColor: 'rgba(56, 189, 248, 0.2)', color: '#38BDF8', padding: '1px 5px', borderRadius: '4px', fontWeight: 700 }}>
-                            0-TAB SPEED
-                          </span>
-                        </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsUserMenuOpen(false);
+                                setActiveModule('clinical-investigation');
+                              }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '6px 8px',
+                                borderRadius: '6px',
+                                background: 'rgba(255, 255, 255, 0.03)',
+                                border: '1px solid rgba(255, 255, 255, 0.06)',
+                                color: '#CBD5E1',
+                                fontSize: '0.78rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                transition: 'all 0.12s ease'
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                                <span>🧪</span>
+                                <span>Specimen Accessioning Focus</span>
+                              </div>
+                              <span style={{ fontSize: '0.625rem', backgroundColor: 'rgba(16, 185, 129, 0.2)', color: '#10B981', padding: '1px 5px', borderRadius: '4px', fontWeight: 700 }}>
+                                BARCODE INGEST
+                              </span>
+                            </button>
+                          </>
+                        ) : isPharmacyVertical ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsUserMenuOpen(false);
+                                setActiveModule('pharmacy-medication');
+                              }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '6px 8px',
+                                borderRadius: '6px',
+                                background: activeModule === 'pharmacy-medication' ? 'rgba(2, 132, 199, 0.2)' : 'rgba(255, 255, 255, 0.03)',
+                                border: activeModule === 'pharmacy-medication' ? '1px solid #38BDF8' : '1px solid rgba(255, 255, 255, 0.06)',
+                                color: activeModule === 'pharmacy-medication' ? '#38BDF8' : '#CBD5E1',
+                                fontSize: '0.78rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                transition: 'all 0.12s ease'
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                                <span>💊</span>
+                                <span>Fast POS Dispensing</span>
+                              </div>
+                              <span style={{ fontSize: '0.625rem', backgroundColor: 'rgba(56, 189, 248, 0.2)', color: '#38BDF8', padding: '1px 5px', borderRadius: '4px', fontWeight: 700 }}>
+                                1-CLICK POS
+                              </span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsUserMenuOpen(false);
+                                setActiveModule('pharmacy-medication');
+                              }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '6px 8px',
+                                borderRadius: '6px',
+                                background: 'rgba(255, 255, 255, 0.03)',
+                                border: '1px solid rgba(255, 255, 255, 0.06)',
+                                color: '#CBD5E1',
+                                fontSize: '0.78rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                transition: 'all 0.12s ease'
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                                <span>📦</span>
+                                <span>GRN Batch & Stock Entry</span>
+                              </div>
+                              <span style={{ fontSize: '0.625rem', backgroundColor: 'rgba(16, 185, 129, 0.2)', color: '#10B981', padding: '1px 5px', borderRadius: '4px', fontWeight: 700 }}>
+                                FEFO INVENTORY
+                              </span>
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsUserMenuOpen(false);
+                                toggleDoctorFocusMode();
+                              }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '6px 8px',
+                                borderRadius: '6px',
+                                background: isDoctorFocusMode ? 'rgba(2, 132, 199, 0.2)' : 'rgba(255, 255, 255, 0.03)',
+                                border: isDoctorFocusMode ? '1px solid #38BDF8' : '1px solid rgba(255, 255, 255, 0.06)',
+                                color: isDoctorFocusMode ? '#38BDF8' : '#CBD5E1',
+                                fontSize: '0.78rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                transition: 'all 0.12s ease'
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                                <span>🩺</span>
+                                <span>Solo Doctor Focus Mode</span>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <kbd style={{ fontSize: '0.6rem', color: '#64748B', fontFamily: 'monospace' }}>Alt+F</kbd>
+                                <span style={{ fontSize: '0.625rem', backgroundColor: isDoctorFocusMode ? '#0284C7' : 'rgba(255, 255, 255, 0.1)', color: '#FFF', padding: '1px 5px', borderRadius: '4px', fontWeight: 700 }}>
+                                  {isDoctorFocusMode ? 'ACTIVE' : 'OFF'}
+                                </span>
+                              </div>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsUserMenuOpen(false);
+                                setActiveModule('opd-one-flow-express');
+                              }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '6px 8px',
+                                borderRadius: '6px',
+                                background: activeModule === 'opd-one-flow-express' ? 'rgba(2, 132, 199, 0.2)' : 'rgba(255, 255, 255, 0.03)',
+                                border: activeModule === 'opd-one-flow-express' ? '1px solid #38BDF8' : '1px solid rgba(255, 255, 255, 0.06)',
+                                color: activeModule === 'opd-one-flow-express' ? '#38BDF8' : '#CBD5E1',
+                                fontSize: '0.78rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                transition: 'all 0.12s ease'
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                                <span>⚡</span>
+                                <span>OPD 1-Flow Express</span>
+                              </div>
+                              <span style={{ fontSize: '0.625rem', backgroundColor: 'rgba(56, 189, 248, 0.2)', color: '#38BDF8', padding: '1px 5px', borderRadius: '4px', fontWeight: 700 }}>
+                                0-TAB SPEED
+                              </span>
+                            </button>
+                          </>
+                        )}
 
                         <button
                           type="button"
@@ -3227,45 +3398,75 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                             </div>
                           </div>
                         ) : (
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '5px' }}>
-                            {[
-                              { id: 'AUTO', label: 'Auto', icon: '⚡' },
-                              { id: 'DOCTOR', label: 'Doctor', icon: '🩺' },
-                              { id: 'NURSE', label: 'Nurse', icon: '👩‍⚕️' },
-                              { id: 'FRONT_DESK', label: 'FrontDesk', icon: '📇' },
-                              { id: 'PHARMACY', label: 'Pharmacy', icon: '💊' },
-                              { id: 'LAB', label: 'Lab', icon: '🧪' },
-                              { id: 'BILLING', label: 'Billing', icon: '💳' },
-                              { id: 'ADMIN', label: 'Admin', icon: '👑' }
-                            ].map((r) => {
-                              const isSelected = rolePerspective === r.id;
-                              return (
-                                <button
-                                  key={r.id}
-                                  type="button"
-                                  onClick={() => handleSetRolePerspective(r.id as RolePerspective)}
-                                  style={{
-                                    padding: '6px 4px',
-                                    borderRadius: '6px',
-                                    border: isSelected ? '1.5px solid #38BDF8' : '1px solid rgba(255, 255, 255, 0.08)',
-                                    backgroundColor: isSelected ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255, 255, 255, 0.03)',
-                                    color: isSelected ? '#FFFFFF' : '#94A3B8',
-                                    fontSize: '0.6875rem',
-                                    fontWeight: isSelected ? 700 : 500,
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    gap: '2px',
-                                    transition: 'all 0.12s ease'
-                                  }}
-                                >
-                                  <span style={{ fontSize: '0.85rem' }}>{r.icon}</span>
-                                  <span>{r.label}</span>
-                                </button>
-                              );
-                            })}
-                          </div>
+                          (() => {
+                            const roleButtons = isLabOrPathology
+                              ? [
+                                  { id: 'AUTO', label: 'Auto', icon: '⚡' },
+                                  { id: 'LAB', label: 'Lab Tech', icon: '🧪' },
+                                  { id: 'DOCTOR', label: 'Pathologist', icon: '🔬' },
+                                  { id: 'FRONT_DESK', label: 'Accession', icon: '📇' },
+                                  { id: 'BILLING', label: 'Cashier', icon: '💳' },
+                                  { id: 'ADMIN', label: 'Lab Admin', icon: '👑' }
+                                ]
+                              : isPharmacyVertical
+                              ? [
+                                  { id: 'AUTO', label: 'Auto', icon: '⚡' },
+                                  { id: 'PHARMACY', label: 'Pharmacist', icon: '💊' },
+                                  { id: 'BILLING', label: 'POS Cashier', icon: '💳' },
+                                  { id: 'ADMIN', label: 'Store Admin', icon: '👑' }
+                                ]
+                              : isClinicVertical
+                              ? [
+                                  { id: 'AUTO', label: 'Auto', icon: '⚡' },
+                                  { id: 'DOCTOR', label: 'Doctor', icon: '🩺' },
+                                  { id: 'FRONT_DESK', label: 'Reception', icon: '📇' },
+                                  { id: 'BILLING', label: 'Billing', icon: '💳' },
+                                  { id: 'ADMIN', label: 'Clinic Admin', icon: '👑' }
+                                ]
+                              : [
+                                  { id: 'AUTO', label: 'Auto', icon: '⚡' },
+                                  { id: 'DOCTOR', label: 'Doctor', icon: '🩺' },
+                                  { id: 'NURSE', label: 'Nurse', icon: '👩‍⚕️' },
+                                  { id: 'FRONT_DESK', label: 'FrontDesk', icon: '📇' },
+                                  { id: 'PHARMACY', label: 'Pharmacy', icon: '💊' },
+                                  { id: 'LAB', label: 'Lab', icon: '🧪' },
+                                  { id: 'BILLING', label: 'Billing', icon: '💳' },
+                                  { id: 'ADMIN', label: 'Admin', icon: '👑' }
+                                ];
+
+                            return (
+                              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${roleButtons.length <= 4 ? roleButtons.length : 4}, 1fr)`, gap: '5px' }}>
+                                {roleButtons.map((r) => {
+                                  const isSelected = rolePerspective === r.id;
+                                  return (
+                                    <button
+                                      key={r.id}
+                                      type="button"
+                                      onClick={() => handleSetRolePerspective(r.id as RolePerspective)}
+                                      style={{
+                                        padding: '6px 4px',
+                                        borderRadius: '6px',
+                                        border: isSelected ? '1.5px solid #38BDF8' : '1px solid rgba(255, 255, 255, 0.08)',
+                                        backgroundColor: isSelected ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255, 255, 255, 0.03)',
+                                        color: isSelected ? '#FFFFFF' : '#94A3B8',
+                                        fontSize: '0.6875rem',
+                                        fontWeight: isSelected ? 700 : 500,
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        gap: '2px',
+                                        transition: 'all 0.12s ease'
+                                      }}
+                                    >
+                                      <span style={{ fontSize: '0.85rem' }}>{r.icon}</span>
+                                      <span>{r.label}</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            );
+                          })()
                         )}
                       </div>
 
@@ -3285,7 +3486,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                           Admin & Security Controls
                         </div>
 
-                        {/* 1. All 38 Hospital Modules Master Directory */}
+                        {/* 1. Master Modules Directory */}
                         <button
                           type="button"
                           onClick={() => {
@@ -3309,13 +3510,13 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                           }}
                           onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)')}
                           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                          title="Open Slide-Over Directory of all 38 Hospital & Enterprise Modules"
+                          title={`Open Slide-Over Directory of ${drawerDirectoryTitle}`}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span>📂</span>
-                            <span>All 38 Hospital Modules</span>
+                            <span>{drawerDirectoryTitle}</span>
                           </div>
-                          <span style={{ fontSize: '0.65rem', color: '#38BDF8', fontWeight: 600 }}>Directory</span>
+                          <span style={{ fontSize: '0.65rem', color: '#38BDF8', fontWeight: 600 }}>{drawerDirectorySubtitle}</span>
                         </button>
 
                         {/* Keyboard Shortcuts & Hotkeys Guide */}
@@ -3551,6 +3752,40 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                         >
                           <span>⚙️</span>
                           <span>Facility & Account Settings</span>
+                        </button>
+
+                        {/* 8. Change Password & Security Credentials */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSettingsInitialTab('PASSWORD');
+                            setIsSettingsModalOpen(true);
+                            setIsUserMenuOpen(false);
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '6px 8px',
+                            borderRadius: '6px',
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#CBD5E1',
+                            fontSize: '0.78rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.12s ease'
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                          title="Change Login Password & Security Credentials"
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>🔑</span>
+                            <span>Change Password & Security</span>
+                          </div>
+                          <span style={{ fontSize: '0.625rem', color: '#10B981', fontWeight: 600 }}>Secured</span>
                         </button>
 
                         {/* 8. Partner Rewards & Grants */}
@@ -4433,6 +4668,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
             currentUserPermissions={currentUser?.permissions}
             isFreeHospital={isFreeHospital}
             currentPlanTier={currentPlanTier || currentUser?.planTier}
+            organizationType={currentUser?.organizationType || workspace}
             onOpenUpgradeModal={(name) => {
               setUpgradeModalTargetFeature(name);
               setIsHospitalUpgradeModalOpen(true);

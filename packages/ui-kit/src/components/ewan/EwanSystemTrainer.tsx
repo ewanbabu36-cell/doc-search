@@ -974,6 +974,15 @@ Main aapko role-verified steps aur direct action button doonga!`;
       setIsOpen(false);
       return;
     }
+    if (actionKey === 'open-password-settings' || actionKey === 'open-security-settings') {
+      if (currentPlatform === 'LANDING_PAGE') {
+        window.dispatchEvent(new CustomEvent('docsearch:open_login_modal', { detail: { mode: 'FORGOT_PASSWORD' } }));
+      } else {
+        window.dispatchEvent(new CustomEvent('docsearch:open_settings', { detail: { tab: 'PASSWORD' } }));
+      }
+      setIsOpen(false);
+      return;
+    }
 
     // 3. Landing page actions
     if (actionKey === 'scroll-to-search') {

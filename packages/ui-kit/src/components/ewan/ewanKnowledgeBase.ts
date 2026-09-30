@@ -254,6 +254,52 @@ export const EWAN_KNOWLEDGE_TOPICS: EwanKnowledgeTopic[] = [
     }
   },
   {
+    id: 'account-password-reset',
+    title: '🔑 Password Kaise Change Ya Reset Karein?',
+    category: 'HOSPITAL_OPERATIONS',
+    allowedPlatforms: ['PARTNER_PLATFORM', 'COMPANY_HQ', 'LANDING_PAGE'],
+    summary: 'Universal Security: Apna login password change karein ya bhool jane par secure OTP se reset karein.',
+    keywords: [
+      'password',
+      'change password',
+      'reset password',
+      'password change',
+      'passward',
+      'pasward',
+      'pwd',
+      'login',
+      'credentials',
+      'badal',
+      'badalna',
+      'naya password',
+      'forgot password',
+      'security'
+    ],
+    steps: [
+      '1. Step 1 (Open Security Tab): Niche diye gaye "🔑 Open Password Settings" button par click karein (ya top-right profile avatar par click karke Security option chunein).',
+      '2. Step 2 (Current Password): Apna Current Password enter karein.',
+      '3. Step 3 (New Password): Naya strong password (minimum 8 characters, jisme number aur symbol ho) enter karein.',
+      '4. Step 4 (Save): "Update Password" button dabayein. Password turant update ho jayega.',
+      '5. Step 5 (Forgot Password): Agar password bhool gaye hain to login screen par "Forgot Password / OTP Login" use karein.'
+    ],
+    hinglishGuide: 'Top-right profile avatar par click karein ya niche diye gaye button se seedha Password tab kholein, purana aur naya password enter karke Save karein.',
+    nextBestStep: 'Niche button click karein aur apna naya secure password set karein.',
+    troubleshooting: [
+      {
+        commonIssue: 'Password match nahi ho raha ya weak password alert aa raha hai.',
+        solution: 'Password me kam se kam 8 characters, ek uppercase letter, ek number aur ek special symbol (@, #, $) hona zaroori hai.'
+      },
+      {
+        commonIssue: 'Purana password yaad nahi hai.',
+        solution: 'Apne facility administrator se reset karwayein ya login page par Mobile OTP reset option use karein.'
+      }
+    ],
+    technicalDetails: {
+      actionKey: 'open-password-settings',
+      routes: ['POST /api/v1/auth/change-password', 'POST /api/v1/auth/reset-password']
+    }
+  },
+  {
     id: 'partner-inpatient-ipd',
     title: '🛏️ IPD Inpatient: Bed Allocation & Discharge Kaise Karein?',
     category: 'HOSPITAL_OPERATIONS',
@@ -794,7 +840,8 @@ export function searchEwanKnowledge(
 
   // Filter out conversational Hindi/English stop-words so user queries like "broadcast kaise karu" or "task kaise hoga" isolate the core subject
   const stopWords = new Set([
-    'kaise', 'karein', 'karu', 'karna', 'karo', 'hoga', 'hai', 'h', 'kya', 'batao',
+    'kaise', 'karein', 'karu', 'karna', 'karo', 'karenge', 'karega', 'karunga', 'sakenge', 'chahiye',
+    'hoga', 'hai', 'h', 'kya', 'batao',
     'step', 'steps', 'bhul', 'gaya', 'task', 'ko', 'me', 'se', 'par', 'ki', 'ke',
     'aur', 'kaha', 'hota', 'padega', 'bhai', 'please', 'help', 'kare'
   ]);
@@ -833,19 +880,22 @@ export function searchEwanKnowledge(
       if (hinglishLower.includes(w)) score += 2;
     }
 
-    // Platform affinity bonus: prioritize topics authored for the active platform
-    if (platform !== 'UNIVERSAL' && topic.allowedPlatforms.includes(platform as EwanPlatform)) {
-      score += 15;
-    }
-
-    // Role affinity bonus & restriction check
-    if (normalizedUserRole) {
-      if (topic.targetRoles && topic.targetRoles.includes(normalizedUserRole)) {
-        score += 25;
+    // Platform affinity bonus & role affinity: ONLY apply if base query actually matched (score > 0)
+    // This strictly prevents unrelated queries from returning false positive top matches
+    if (score > 0) {
+      if (platform !== 'UNIVERSAL' && topic.allowedPlatforms.includes(platform as EwanPlatform)) {
+        score += 15;
       }
-      if (topic.restrictedRoles && topic.restrictedRoles.includes(normalizedUserRole)) {
-        // Demote topic so it doesn't mask role boundary enforcement
-        score = Math.max(0, score - 50);
+
+      // Role affinity bonus & restriction check
+      if (normalizedUserRole) {
+        if (topic.targetRoles && topic.targetRoles.includes(normalizedUserRole)) {
+          score += 25;
+        }
+        if (topic.restrictedRoles && topic.restrictedRoles.includes(normalizedUserRole)) {
+          // Demote topic so it doesn't mask role boundary enforcement
+          score = Math.max(1, score - 50);
+        }
       }
     }
 
