@@ -44,7 +44,7 @@ export interface OcrWorkerOutputMessage {
 
 export function preprocessAndExtractText(
   rawText: string,
-  docType = 'PRESCRIPTION'
+  _docType = 'PRESCRIPTION'
 ): { rawExtractedText: string; normalizedLines: OcrExtractedLine[]; detectedKeywords: string[] } {
   const lines = rawText.split('\n').map((l) => l.trim()).filter(Boolean);
   const normalizedLines: OcrExtractedLine[] = [];
@@ -55,6 +55,7 @@ export function preprocessAndExtractText(
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
+    if (!line) continue;
     const lower = line.toLowerCase();
 
     // Check keyword occurrences

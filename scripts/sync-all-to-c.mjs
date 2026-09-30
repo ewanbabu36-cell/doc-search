@@ -28,8 +28,15 @@ const files = [
   'apps/api-gateway/src/repositories/partner/LabDiagnosticsRepository.ts',
   'apps/api-gateway/src/app.ts',
   'packages/ui-kit/src/styles/base.css',
+  'packages/ui-kit/src/components/layout/app-shell.tsx',
+  'apps/partner-platform/src/components/PartnerPlatformShell.tsx',
+  'apps/partner-platform/src/components/common/HardwareStatusPill.tsx',
+  'apps/partner-platform/src/components/common/RealTimeHospitalActivityDock.tsx',
+  'apps/partner-platform/src/components/common/AmbientVoiceScribeCapsule.tsx',
   'apps/partner-platform/src/components/common/UniversalAccountSettingsModal.tsx',
   'apps/partner-platform/src/components/views/PartnerAccountPlanView.tsx',
+  'packages/ui-kit/dist/index.js',
+  'packages/ui-kit/dist/index.d.ts',
   'scripts/benchmark-doctor-speed.mjs',
   'scripts/test-clinical-safety-cdss.mjs'
 ];

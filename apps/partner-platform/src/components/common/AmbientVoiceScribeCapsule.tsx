@@ -335,8 +335,8 @@ export const AmbientVoiceScribeCapsule: React.FC = () => {
     <div
       style={{
         position: 'fixed',
-        bottom: '24px',
-        right: '24px',
+        bottom: '16px',
+        right: '16px',
         zIndex: 9990,
         display: 'flex',
         flexDirection: 'column',
@@ -349,8 +349,8 @@ export const AmbientVoiceScribeCapsule: React.FC = () => {
       {isExpanded && (
         <div
           style={{
-            width: '420px',
-            maxHeight: '560px',
+            width: 'min(420px, calc(100vw - 32px))',
+            maxHeight: 'min(560px, 80vh)',
             backgroundColor: 'var(--ds-color-surface, #0F172A)',
             border: '1.5px solid var(--ds-color-primary, #06B6D4)',
             borderRadius: '16px',
@@ -621,7 +621,7 @@ export const AmbientVoiceScribeCapsule: React.FC = () => {
         </div>
 
         {/* Status indicator */}
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <div className="ds-hide-on-mobile" style={{ display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <span
               style={{
@@ -670,6 +670,7 @@ export const AmbientVoiceScribeCapsule: React.FC = () => {
         {/* 1-Click Fast Auto-Fill Pill Button inside Capsule */}
         <button
           type="button"
+          className="ds-hide-on-mobile"
           onClick={(e) => {
             e.stopPropagation();
             triggerAutoFill();

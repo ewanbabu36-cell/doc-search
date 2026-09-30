@@ -2747,7 +2747,7 @@ export const DoctorExpressConsultationDesk: React.FC<DoctorExpressConsultationDe
             }}
           >
             <span>👥</span>
-            <span>{isQueueCollapsed ? 'Show OPD Queue' : 'Hide OPD Queue'} ({queueEncounters.length})</span>
+            <span>{isQueueCollapsed ? 'Show OPD Queue' : 'Hide OPD Queue'} ({queuePatients.length})</span>
           </button>
 
           <button

@@ -21,7 +21,7 @@ export interface VoiceScribeState {
   rawTranscript: string;
   draftData: VoiceExtractedClinicalData | null;
   statusText: string;
-  error?: string;
+  error?: string | undefined;
   isConfirmedByDoctor: boolean;
 }
 

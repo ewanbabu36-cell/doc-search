@@ -11,6 +11,8 @@ export interface AppShellProps {
   showGrid?: boolean | undefined;
   showParticles?: boolean | undefined;
   intensity?: EffectIntensityLevel | undefined;
+  isMobileDrawerOpen?: boolean | undefined;
+  onCloseMobileDrawer?: (() => void) | undefined;
 }
 
 export const AppShell: React.FC<AppShellProps> = ({
@@ -21,8 +23,22 @@ export const AppShell: React.FC<AppShellProps> = ({
   showBackground = true,
   showGrid = true,
   showParticles = true,
-  intensity
+  intensity,
+  isMobileDrawerOpen = false,
+  onCloseMobileDrawer
 }) => {
+  // Close mobile drawer on Escape key press
+  React.useEffect(() => {
+    if (!isMobileDrawerOpen || !onCloseMobileDrawer) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onCloseMobileDrawer();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isMobileDrawerOpen, onCloseMobileDrawer]);
+
   const shellContent = (
     <div
       className={`ds-app-shell ${className}`}
@@ -37,20 +53,38 @@ export const AppShell: React.FC<AppShellProps> = ({
         backgroundColor: showBackground ? 'transparent' : 'var(--ds-color-bg)'
       }}
     >
-      {/* Desktop / Tablet Sidebar */}
+      {/* 1. Desktop / Tablet Sidebar (Hidden on < 768px via responsive CSS) */}
+      {sidebar && (
+        <div className="ds-app-shell-sidebar-desktop">
+          {sidebar}
+        </div>
+      )}
+
+      {/* 2. Mobile Off-Canvas Drawer (< 768px) with Backdrop */}
       {sidebar && (
         <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            flexShrink: 0,
-            position: 'sticky',
-            top: 0,
-            height: '100vh',
-            zIndex: 30
-          }}
+          className={`ds-app-shell-sidebar-mobile ${isMobileDrawerOpen ? 'ds-mobile-drawer-open' : ''}`}
+          aria-hidden={!isMobileDrawerOpen}
         >
-          {sidebar}
+          {/* Touch-to-dismiss Backdrop */}
+          <div
+            className="ds-mobile-drawer-backdrop"
+            onClick={onCloseMobileDrawer}
+          />
+          {/* Slide-In Drawer Container */}
+          <div className="ds-mobile-drawer-content">
+            <div className="ds-mobile-drawer-close-row">
+              <button
+                type="button"
+                className="ds-mobile-drawer-close-btn"
+                onClick={onCloseMobileDrawer}
+                aria-label="Close navigation menu"
+              >
+                ✕
+              </button>
+            </div>
+            {sidebar}
+          </div>
         </div>
       )}
 

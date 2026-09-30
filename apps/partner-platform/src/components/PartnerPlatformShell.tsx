@@ -469,7 +469,13 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
     });
   };
 
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 768;
+    }
+    return false;
+  });
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [isDoctorFocusMode, setIsDoctorFocusMode] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('docsearch_doctor_focus_mode') === 'true';
@@ -1921,6 +1927,8 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
   return (
     <AdaptiveProvider>
       <AppShell
+        isMobileDrawerOpen={isMobileDrawerOpen}
+        onCloseMobileDrawer={() => setIsMobileDrawerOpen(false)}
         intensity={
           isClinicalModule(activeModule)
             ? 'operational'
@@ -2138,6 +2146,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                 )
               }
               isCollapsed={isSidebarCollapsed}
+              onItemClick={() => setIsMobileDrawerOpen(false)}
               sections={getDynamicSections()}
               footerSlot={
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
@@ -2388,7 +2397,13 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
         ) : (
           <Header
             showFullscreenToggle={false}
-            onMenuToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            onMenuToggle={() => {
+              if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                setIsMobileDrawerOpen((prev) => !prev);
+              } else {
+                setIsSidebarCollapsed((prev) => !prev);
+              }
+            }}
             onBack={handleGoBack}
             canGoBack={navHistory.length > 0}
           title={

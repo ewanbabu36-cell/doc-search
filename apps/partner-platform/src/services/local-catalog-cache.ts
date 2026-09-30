@@ -5,6 +5,8 @@
  * Covers Indian AIOCD Master Medications and NABL Diagnostic Lab Investigations.
  */
 
+import { catalogSearchService } from './catalog-search-service.js';
+
 export interface LocalMedicationCatalogItem {
   id: string;
   brandName: string;

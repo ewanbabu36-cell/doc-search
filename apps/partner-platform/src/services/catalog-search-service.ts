@@ -65,6 +65,10 @@ export class CatalogSearchService {
   private isReady = false;
   private syncMetadata: CatalogSyncMetadata | null = null;
 
+  public get isSearchReady(): boolean {
+    return this.isReady;
+  }
+
   constructor() {
     this.initWorker();
   }
@@ -171,7 +175,7 @@ export class CatalogSearchService {
 
     return {
       totalSearches: this.latencySamples.length,
-      lastDurationMs: this.latencySamples[this.latencySamples.length - 1],
+      lastDurationMs: this.latencySamples[this.latencySamples.length - 1] ?? 0,
       averageDurationMs: Number((sum / sorted.length).toFixed(2)),
       p50Ms: Number((sorted[p50Idx] || 0).toFixed(2)),
       p95Ms: Number((sorted[p95Idx] || 0).toFixed(2)),

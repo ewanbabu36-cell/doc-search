@@ -86,6 +86,7 @@ export const RealTimeHospitalActivityDock: React.FC = () => {
 
   return (
     <div
+      className="ds-hide-on-mobile"
       style={{
         position: 'fixed',
         bottom: '24px',

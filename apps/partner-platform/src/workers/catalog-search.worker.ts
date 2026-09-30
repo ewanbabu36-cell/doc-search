@@ -142,6 +142,10 @@ class OffThreadSearchEngine {
   private cancelledRequestIds: Set<string> = new Set();
   private datasetVersion = 0;
 
+  public get version(): number {
+    return this.datasetVersion;
+  }
+
   public initialize(
     meds: MedicationSearchItem[],
     labs: InvestigationSearchItem[],
@@ -206,6 +210,7 @@ class OffThreadSearchEngine {
       }
 
       const item = this.medications[i];
+      if (!item) continue;
       if (categoryFilter && item.category && item.category.toLowerCase() !== categoryFilter.toLowerCase()) {
         continue;
       }
@@ -302,6 +307,7 @@ class OffThreadSearchEngine {
       }
 
       const item = this.investigations[i];
+      if (!item) continue;
       if (categoryFilter && item.category && item.category.toLowerCase() !== categoryFilter.toLowerCase()) {
         continue;
       }

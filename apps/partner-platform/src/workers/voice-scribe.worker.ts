@@ -209,13 +209,13 @@ export function parseClinicalVoiceDictation(transcript: string): VoiceExtractedC
   if (bpMatch) vitals.bloodPressure = `${bpMatch[1]}/${bpMatch[2]} mmHg`;
 
   const pulseMatch = lower.match(/(?:pulse|heart rate)\s*(?:is|was)?\s*(\d{2,3})/);
-  if (pulseMatch) vitals.pulseRate = parseInt(pulseMatch[1], 10);
+  if (pulseMatch && pulseMatch[1]) vitals.pulseRate = parseInt(pulseMatch[1], 10);
 
   const tempMatch = lower.match(/(?:temp|temperature|fever)\s*(?:is|was)?\s*(\d{2,3}(?:\.\d)?)\s*(?:f|deg)?/);
-  if (tempMatch) vitals.temperatureF = parseFloat(tempMatch[1]);
+  if (tempMatch && tempMatch[1]) vitals.temperatureF = parseFloat(tempMatch[1]);
 
   const spo2Match = lower.match(/(?:spo2|oxygen|saturation)\s*(?:is|was)?\s*(\d{2,3})\s*%?/);
-  if (spo2Match) vitals.spO2 = parseInt(spo2Match[1], 10);
+  if (spo2Match && spo2Match[1]) vitals.spO2 = parseInt(spo2Match[1], 10);
 
   // 4. Extract Medications
   for (const mol of KNOWN_VOICE_MOLECULES) {
@@ -267,7 +267,7 @@ export function parseClinicalVoiceDictation(transcript: string): VoiceExtractedC
         // Duration extraction
         let durationDays = 3;
         const durMatch = snippetLower.match(/(\d+)\s*(?:din|days|day)/);
-        if (durMatch) {
+        if (durMatch && durMatch[1]) {
           durationDays = parseInt(durMatch[1], 10);
         } else if (snippetLower.includes('ek hafta') || snippetLower.includes('one week') || snippetLower.includes('1 week')) {
           durationDays = 7;

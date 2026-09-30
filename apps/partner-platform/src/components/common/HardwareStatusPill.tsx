@@ -43,6 +43,7 @@ export const HardwareStatusPill: React.FC = () => {
     <>
       {/* Floating Hardware Capsule Dock */}
       <div
+        className="ds-hide-on-mobile"
         style={{
           position: 'fixed',
           bottom: '16px',
