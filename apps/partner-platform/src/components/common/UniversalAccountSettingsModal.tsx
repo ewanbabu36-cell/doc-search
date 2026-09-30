@@ -703,23 +703,26 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
       justifyContent: 'flex-end',
       padding: 0
     }}>
-      <div style={{
-        width: '100%',
-        maxWidth: '860px',
-        height: '100vh',
-        maxHeight: '100vh',
-        backgroundColor: '#0F172A',
-        color: '#F8FAFC',
-        borderLeft: '1.5px solid rgba(6, 182, 212, 0.4)',
-        borderTop: 'none',
-        borderRight: 'none',
-        borderBottom: 'none',
-        borderRadius: '16px 0 0 16px',
-        boxShadow: '-12px 0 40px rgba(0,0,0,0.85)',
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column'
-      }}>
+      <div
+        className="ds-adaptive-modal-sheet"
+        style={{
+          width: '100%',
+          maxWidth: '860px',
+          height: '100vh',
+          maxHeight: '100vh',
+          backgroundColor: '#0F172A',
+          color: '#F8FAFC',
+          borderLeft: '1.5px solid rgba(6, 182, 212, 0.4)',
+          borderTop: 'none',
+          borderRight: 'none',
+          borderBottom: 'none',
+          borderRadius: '16px 0 0 16px',
+          boxShadow: '-12px 0 40px rgba(0,0,0,0.85)',
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column'
+        }}
+      >
         {/* Header */}
         <div style={{
           backgroundColor: '#0B132B',
@@ -758,6 +761,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
               <button
                 type="button"
                 onClick={handleAdminApproveAll}
+                className="ds-touch-target"
                 style={{
                   backgroundColor: '#10B981',
                   color: '#070C16',
@@ -776,15 +780,21 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
             <button
               type="button"
               onClick={onClose}
+              className="ds-touch-target"
               style={{
                 backgroundColor: 'rgba(255,255,255,0.08)',
                 color: '#CBD5E1',
                 border: 'none',
                 borderRadius: '8px',
-                padding: '6px 12px',
-                fontSize: '0.8125rem',
+                padding: '8px 14px',
+                fontSize: '0.85rem',
                 fontWeight: 700,
-                cursor: 'pointer'
+                cursor: 'pointer',
+                minHeight: '44px',
+                minWidth: '44px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center'
               }}
             >
               ✕ Close
@@ -985,7 +995,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
         )}
 
         {/* Body Container */}
-        <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
+        <div className="ds-adaptive-modal-body" style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
           
           {/* TAB 0: MANDATORY OWNER AADHAAR KYC & PROFILE LOCK */}
           {activeTab === 'KYC' && (
@@ -1062,7 +1072,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                   </span>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))', gap: '12px' }}>
                   {/* Field 1: Facility Legal Name */}
                   <div style={{ backgroundColor: '#1E293B', padding: '12px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
@@ -1156,7 +1166,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                     Your amendment request has been forwarded to Platform Admin (DocSearch Healthcare Compliance Directorate). To safeguard clinical operations, your current live system continues to issue reports and billing under existing approved details until Admin verification is complete.
                   </p>
 
-                  <div style={{ backgroundColor: '#070C16', padding: '12px', borderRadius: '8px', fontSize: '0.75rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div style={{ backgroundColor: '#070C16', padding: '12px', borderRadius: '8px', fontSize: '0.75rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
                     <div><span style={{ color: '#94A3B8' }}>Proposed Facility Name:</span> <strong style={{ color: '#38BDF8' }}>{stagedAmendment.proposedFacilityName}</strong></div>
                     <div><span style={{ color: '#94A3B8' }}>Proposed Owner Name:</span> <strong style={{ color: '#38BDF8' }}>{stagedAmendment.proposedOwnerName}</strong></div>
                     <div><span style={{ color: '#94A3B8' }}>Proposed Aadhaar:</span> <strong style={{ color: '#38BDF8' }}>XXXX XXXX {stagedAmendment.proposedAadhaarNumber.slice(-4)}</strong></div>
@@ -1228,7 +1238,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                     </button>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))', gap: '12px' }}>
                     <div>
                       <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
                         Proposed Facility Legal Name
@@ -1334,7 +1344,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                 </span>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))', gap: '14px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
                     ACCOUNT HOLDER NAME *
@@ -1344,7 +1354,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                     required
                     value={bankData.accountHolderName}
                     onChange={(e) => setBankData({ ...bankData, accountHolderName: e.target.value })}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem' }}
+                    style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.875rem' }}
                   />
                 </div>
 
@@ -1358,12 +1368,12 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                     value={bankData.bankName}
                     onChange={(e) => setBankData({ ...bankData, bankName: e.target.value })}
                     placeholder="e.g. HDFC Bank, State Bank of India, ICICI Bank"
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem' }}
+                    style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.875rem' }}
                   />
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))', gap: '14px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
                     BANK ACCOUNT NUMBER *
@@ -1371,9 +1381,10 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                   <input
                     type="text"
                     required
+                    inputMode="numeric"
                     value={bankData.accountNumber}
                     onChange={(e) => setBankData({ ...bankData, accountNumber: e.target.value })}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem', fontFamily: 'monospace' }}
+                    style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.875rem', fontFamily: 'monospace' }}
                   />
                 </div>
 
@@ -1384,14 +1395,15 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                   <input
                     type="text"
                     required
+                    inputMode="numeric"
                     value={bankData.confirmAccountNumber}
                     onChange={(e) => setBankData({ ...bankData, confirmAccountNumber: e.target.value })}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem', fontFamily: 'monospace' }}
+                    style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.875rem', fontFamily: 'monospace' }}
                   />
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '14px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
                     IFSC CODE *
@@ -1402,7 +1414,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                     value={bankData.ifscCode}
                     onChange={(e) => setBankData({ ...bankData, ifscCode: e.target.value.toUpperCase() })}
                     placeholder="HDFC0000240"
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem', fontFamily: 'monospace' }}
+                    style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.875rem', fontFamily: 'monospace' }}
                   />
                 </div>
 
@@ -1487,7 +1499,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                 </span>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))', gap: '14px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
                     LEGAL ENTITY / CLINIC / LAB NAME *
@@ -1497,7 +1509,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                     required
                     value={addressData.legalName}
                     onChange={(e) => setAddressData({ ...addressData, legalName: e.target.value })}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem' }}
+                    style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.875rem' }}
                   />
                 </div>
 
@@ -1510,7 +1522,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                     value={addressData.gstin}
                     onChange={(e) => setAddressData({ ...addressData, gstin: e.target.value.toUpperCase() })}
                     placeholder="27AAAAA0000A1Z5"
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem', fontFamily: 'monospace' }}
+                    style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.875rem', fontFamily: 'monospace' }}
                   />
                 </div>
               </div>
@@ -1525,7 +1537,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                   value={addressData.addressLine1}
                   onChange={(e) => setAddressData({ ...addressData, addressLine1: e.target.value })}
                   placeholder="e.g. Shop No. 4, Ground Floor, Civil Lines"
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem' }}
+                  style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.875rem' }}
                 />
               </div>
 
@@ -1538,11 +1550,11 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                   value={addressData.addressLine2}
                   onChange={(e) => setAddressData({ ...addressData, addressLine2: e.target.value })}
                   placeholder="Near State Bank, Opp. Medical College"
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem' }}
+                  style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.875rem' }}
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '14px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
                     CITY / DISTRICT *
@@ -1552,7 +1564,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                     required
                     value={addressData.city}
                     onChange={(e) => setAddressData({ ...addressData, city: e.target.value })}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem' }}
+                    style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.875rem' }}
                   />
                 </div>
 
@@ -1565,7 +1577,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                     required
                     value={addressData.state}
                     onChange={(e) => setAddressData({ ...addressData, state: e.target.value })}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem' }}
+                    style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.875rem' }}
                   />
                 </div>
 
@@ -1577,14 +1589,15 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                     type="text"
                     required
                     maxLength={6}
+                    inputMode="numeric"
                     value={addressData.pincode}
                     onChange={(e) => setAddressData({ ...addressData, pincode: e.target.value })}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem', fontFamily: 'monospace' }}
+                    style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.875rem', fontFamily: 'monospace' }}
                   />
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '14px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
                     OFFICIAL PHONE *
@@ -1592,9 +1605,10 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                   <input
                     type="text"
                     required
+                    inputMode="numeric"
                     value={addressData.officialPhone}
                     onChange={(e) => setAddressData({ ...addressData, officialPhone: e.target.value })}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem' }}
+                    style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.875rem' }}
                   />
                 </div>
 
@@ -1702,7 +1716,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
               {roleCategory === 'DOCTOR' && (
                 <>
                   <div style={{ backgroundColor: '#1E293B', padding: '14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '10px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))', gap: '12px', marginBottom: '10px' }}>
                       <div>
                         <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
                           MEDICAL DEGREE / SPECIALIZATION (MBBS / MD / MS) *
@@ -1713,7 +1727,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                           value={certData.doctorDegreeName}
                           onChange={(e) => setCertData({ ...certData, doctorDegreeName: e.target.value })}
                           placeholder="e.g. MBBS, MD (Internal Medicine)"
-                          style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem' }}
+                          style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.875rem' }}
                         />
                       </div>
                       <div>
@@ -1738,7 +1752,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                   </div>
 
                   <div style={{ backgroundColor: '#1E293B', padding: '14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '10px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '12px', marginBottom: '10px' }}>
                       <div>
                         <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
                           STATE MEDICAL COUNCIL *
@@ -1749,7 +1763,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                           value={certData.doctorCouncilName}
                           onChange={(e) => setCertData({ ...certData, doctorCouncilName: e.target.value })}
                           placeholder="e.g. MMC / DMC / KMC"
-                          style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem' }}
+                          style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.875rem' }}
                         />
                       </div>
                       <div>
@@ -1762,7 +1776,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                           value={certData.doctorRegNo}
                           onChange={(e) => setCertData({ ...certData, doctorRegNo: e.target.value })}
                           placeholder="MMC-78291-B"
-                          style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem', fontFamily: 'monospace' }}
+                          style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.875rem', fontFamily: 'monospace' }}
                         />
                       </div>
                       <div>
@@ -1792,7 +1806,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
               {roleCategory === 'PATHOLOGY_LAB' && (
                 <>
                   <div style={{ backgroundColor: '#1E293B', padding: '14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '10px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))', gap: '12px', marginBottom: '10px' }}>
                       <div>
                         <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
                           NABL ACCREDITATION NUMBER (ISO 15189:2022) *
@@ -1803,7 +1817,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                           value={certData.nablCertificateNo}
                           onChange={(e) => setCertData({ ...certData, nablCertificateNo: e.target.value })}
                           placeholder="MC-4892-2026"
-                          style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem', fontFamily: 'monospace' }}
+                          style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.875rem', fontFamily: 'monospace' }}
                         />
                       </div>
                       <div>
@@ -1828,7 +1842,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                   </div>
 
                   <div style={{ backgroundColor: '#1E293B', padding: '14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '10px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))', gap: '12px', marginBottom: '10px' }}>
                       <div>
                         <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
                           HEAD PATHOLOGIST MEDICAL COUNCIL REG NO. *
@@ -1839,7 +1853,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                           value={certData.doctorRegNo}
                           onChange={(e) => setCertData({ ...certData, doctorRegNo: e.target.value })}
                           placeholder="MMC-78291-B"
-                          style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem', fontFamily: 'monospace' }}
+                          style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.875rem', fontFamily: 'monospace' }}
                         />
                       </div>
                       <div>
@@ -2005,7 +2019,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))', gap: '14px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
                     NEW SECURE PASSWORD *
@@ -2017,12 +2031,12 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                       value={securityData.newPassword}
                       onChange={(e) => setSecurityData({ ...securityData, newPassword: e.target.value })}
                       placeholder="Minimum 8 characters"
-                      style={{ width: '100%', padding: '8px 12px', paddingRight: '40px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem' }}
+                      style={{ width: '100%', minHeight: '42px', padding: '8px 12px', paddingRight: '40px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.875rem' }}
                     />
                     <button
                       type="button"
                       onClick={() => setShowNewPass(!showNewPass)}
-                      style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', fontSize: '0.875rem' }}
+                      style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', fontSize: '0.875rem', minHeight: '36px', minWidth: '36px' }}
                     >
                       {showNewPass ? '👁️' : '🔒'}
                     </button>
@@ -2039,7 +2053,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                     value={securityData.confirmPassword}
                     onChange={(e) => setSecurityData({ ...securityData, confirmPassword: e.target.value })}
                     placeholder="Re-enter new password"
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem' }}
+                    style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.875rem' }}
                   />
                 </div>
               </div>

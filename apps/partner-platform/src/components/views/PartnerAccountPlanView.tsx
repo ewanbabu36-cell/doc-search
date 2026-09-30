@@ -616,7 +616,7 @@ export const PartnerAccountPlanView: React.FC<PartnerAccountPlanViewProps> = ({
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))',
                 gap: '10px',
                 padding: '12px',
                 borderRadius: '8px',
@@ -702,7 +702,7 @@ export const PartnerAccountPlanView: React.FC<PartnerAccountPlanViewProps> = ({
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(3, 1fr)',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 110px), 1fr))',
                 gap: '8px',
                 padding: '12px',
                 borderRadius: '8px',
@@ -1112,83 +1112,142 @@ export const PartnerAccountPlanView: React.FC<PartnerAccountPlanViewProps> = ({
           </div>
         </div>
 
-        {/* Feature Table */}
-        <TableContainer style={{ border: 'none', borderRadius: '0' }}>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead style={{ width: '28%' }}>Feature Name & Code</TableHead>
-                <TableHead style={{ width: '16%' }}>Domain / Category</TableHead>
-                <TableHead style={{ width: '16%' }}>Access Status</TableHead>
-                <TableHead style={{ width: '40%' }}>Details & Locked Reason</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredFeatures.length === 0 ? (
+        {/* Feature Table (Desktop & Tablet) */}
+        <div className="ds-hide-on-mobile">
+          <TableContainer style={{ border: 'none', borderRadius: '0' }}>
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={4} style={{ textAlign: 'center', padding: '36px', color: '#94A3B8' }}>
-                    {isLoading ? (
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                        <Spinner size="sm" /> Loading authoritative feature entitlement matrix...
-                      </div>
-                    ) : (
-                      'No features match the selected filter criteria.'
-                    )}
-                  </TableCell>
+                  <TableHead style={{ width: '28%' }}>Feature Name & Code</TableHead>
+                  <TableHead style={{ width: '16%' }}>Domain / Category</TableHead>
+                  <TableHead style={{ width: '16%' }}>Access Status</TableHead>
+                  <TableHead style={{ width: '40%' }}>Details & Locked Reason</TableHead>
                 </TableRow>
-              ) : (
-                filteredFeatures.map((feat) => (
-                  <TableRow key={feat.code || feat.id}>
-                    {/* Feature Name & Code */}
-                    <TableCell>
-                      <div>
-                        <strong style={{ color: feat.status === 'AVAILABLE' ? '#F8FAFC' : '#94A3B8', fontSize: '0.875rem' }}>
-                          {feat.name}
-                        </strong>
-                        <div style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: '#64748B', marginTop: '2px' }}>
-                          {feat.code}
+              </TableHeader>
+              <TableBody>
+                {filteredFeatures.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} style={{ textAlign: 'center', padding: '36px', color: '#94A3B8' }}>
+                      {isLoading ? (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                          <Spinner size="sm" /> Loading authoritative feature entitlement matrix...
                         </div>
-                      </div>
-                    </TableCell>
-
-                    {/* Category */}
-                    <TableCell>
-                      <Badge variant="neutral">{feat.category || 'General'}</Badge>
-                    </TableCell>
-
-                    {/* Status */}
-                    <TableCell>{getStatusBadge(feat.status)}</TableCell>
-
-                    {/* Details & Locked Reason */}
-                    <TableCell>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        {feat.description && (
-                          <div style={{ fontSize: '0.75rem', color: '#CBD5E1' }}>
-                            {feat.description}
-                          </div>
-                        )}
-                        {feat.status !== 'AVAILABLE' && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
-                            <span style={{ fontSize: '0.6875rem', color: '#FCA5A5', fontWeight: 600 }}>
-                              🔒 Reason: {feat.reason || 'Not included in current plan'}
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Staff Role Access Distinction */}
-                        {feat.status === 'AVAILABLE' && feat.staffPermitted === false && (
-                          <div style={{ fontSize: '0.6875rem', color: '#F59E0B', marginTop: '2px' }}>
-                            ⚠️ Organization is entitled, but current staff role ({currentUser?.role || 'Staff'}) does not have permission.
-                          </div>
-                        )}
-                      </div>
+                      ) : (
+                        'No features match the selected filter criteria.'
+                      )}
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                ) : (
+                  filteredFeatures.map((feat) => (
+                    <TableRow key={feat.code || feat.id}>
+                      {/* Feature Name & Code */}
+                      <TableCell>
+                        <div>
+                          <strong style={{ color: feat.status === 'AVAILABLE' ? '#F8FAFC' : '#94A3B8', fontSize: '0.875rem' }}>
+                            {feat.name}
+                          </strong>
+                          <div style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: '#64748B', marginTop: '2px' }}>
+                            {feat.code}
+                          </div>
+                        </div>
+                      </TableCell>
+
+                      {/* Category */}
+                      <TableCell>
+                        <Badge variant="neutral">{feat.category || 'General'}</Badge>
+                      </TableCell>
+
+                      {/* Status */}
+                      <TableCell>{getStatusBadge(feat.status)}</TableCell>
+
+                      {/* Details & Locked Reason */}
+                      <TableCell>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          {feat.description && (
+                            <div style={{ fontSize: '0.75rem', color: '#CBD5E1' }}>
+                              {feat.description}
+                            </div>
+                          )}
+                          {feat.status !== 'AVAILABLE' && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                              <span style={{ fontSize: '0.6875rem', color: '#FCA5A5', fontWeight: 600 }}>
+                                🔒 Reason: {feat.reason || 'Not included in current plan'}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Staff Role Access Distinction */}
+                          {feat.status === 'AVAILABLE' && feat.staffPermitted === false && (
+                            <div style={{ fontSize: '0.6875rem', color: '#F59E0B', marginTop: '2px' }}>
+                              ⚠️ Organization is entitled, but current staff role ({currentUser?.role || 'Staff'}) does not have permission.
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </div>
+
+        {/* Feature Cards Transformation (Mobile Smartphones <768px) */}
+        <div className="ds-show-on-mobile" style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {filteredFeatures.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '24px', color: '#94A3B8', fontSize: '0.8125rem' }}>
+              {isLoading ? 'Loading features...' : 'No features match the filter criteria.'}
+            </div>
+          ) : (
+            filteredFeatures.map((feat) => (
+              <div
+                key={`mobile-${feat.code || feat.id}`}
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: '10px',
+                  padding: '12px 14px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                  <div>
+                    <strong style={{ color: feat.status === 'AVAILABLE' ? '#F8FAFC' : '#94A3B8', fontSize: '0.875rem' }}>
+                      {feat.name}
+                    </strong>
+                    <div style={{ fontFamily: 'monospace', fontSize: '0.72rem', color: '#64748B' }}>
+                      {feat.code}
+                    </div>
+                  </div>
+                  <div>{getStatusBadge(feat.status)}</div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+                  <Badge variant="neutral">{feat.category || 'General'}</Badge>
+                </div>
+
+                {feat.description && (
+                  <div style={{ fontSize: '0.75rem', color: '#CBD5E1', marginTop: '4px' }}>
+                    {feat.description}
+                  </div>
+                )}
+
+                {feat.status !== 'AVAILABLE' && (
+                  <div style={{ fontSize: '0.72rem', color: '#FCA5A5', fontWeight: 600, marginTop: '2px' }}>
+                    🔒 Reason: {feat.reason || 'Not included in current plan'}
+                  </div>
+                )}
+                {feat.status === 'AVAILABLE' && feat.staffPermitted === false && (
+                  <div style={{ fontSize: '0.72rem', color: '#F59E0B', marginTop: '2px' }}>
+                    ⚠️ Organization is entitled, but role lacks permission.
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
 
         {/* Footer info */}
         <div

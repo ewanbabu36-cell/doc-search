@@ -773,9 +773,27 @@ export const DoctorExpressConsultationDesk: React.FC<DoctorExpressConsultationDe
   const [ipdPriority, setIpdPriority] = useState<'ROUTINE' | 'URGENT' | 'STAT'>('ROUTINE');
   const [ipdAdmissionReason, setIpdAdmissionReason] = useState<string>('');
 
+  // 📐 Universal Adaptive Device Detection (Mobile <768px, Tablet 768-1024px, Desktop >1024px)
+  const [isMobileScreen, setIsMobileScreen] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 768 : false);
+  const [isTabletScreen, setIsTabletScreen] = useState(() => typeof window !== 'undefined' ? window.innerWidth >= 768 && window.innerWidth <= 1024 : false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleResize = () => {
+      const w = window.innerWidth;
+      const mob = w < 768;
+      const tab = w >= 768 && w <= 1024;
+      setIsMobileScreen(mob);
+      setIsTabletScreen(tab);
+    };
+    window.addEventListener('resize', handleResize, { passive: true });
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // 📐 3-Column Ergonomic Layout State (Left: Queue | Center: Rx Canvas | Right: Presets)
-  const [isQueueCollapsed, setIsQueueCollapsed] = useState(false);
-  const [isPresetsCollapsed, setIsPresetsCollapsed] = useState(false);
+  // On mobile/tablet, default collapse sidebars so doctor has 100% full canvas width
+  const [isQueueCollapsed, setIsQueueCollapsed] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 1025 : false);
+  const [isPresetsCollapsed, setIsPresetsCollapsed] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 1280 : false);
   const [queueSearch, setQueueSearch] = useState('');
 
   // 🔀 Lab & Pharmacy Routing Switches
@@ -2707,6 +2725,55 @@ export const DoctorExpressConsultationDesk: React.FC<DoctorExpressConsultationDe
         </button>
       </div>
 
+      {/* Mobile-Only Quick Toggle Bar (<768px) */}
+      {isMobileScreen && (
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', overflowX: 'auto', paddingBottom: '4px' }}>
+          <button
+            type="button"
+            onClick={() => setIsQueueCollapsed(!isQueueCollapsed)}
+            className="ds-touch-target"
+            style={{
+              padding: '8px 14px',
+              borderRadius: '8px',
+              fontSize: '0.8125rem',
+              fontWeight: 700,
+              backgroundColor: !isQueueCollapsed ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255, 255, 255, 0.06)',
+              border: !isQueueCollapsed ? '1px solid #38BDF8' : '1px solid rgba(255, 255, 255, 0.12)',
+              color: !isQueueCollapsed ? '#38BDF8' : '#CBD5E1',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <span>👥</span>
+            <span>{isQueueCollapsed ? 'Show OPD Queue' : 'Hide OPD Queue'} ({queueEncounters.length})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsPresetsCollapsed(!isPresetsCollapsed)}
+            className="ds-touch-target"
+            style={{
+              padding: '8px 14px',
+              borderRadius: '8px',
+              fontSize: '0.8125rem',
+              fontWeight: 700,
+              backgroundColor: !isPresetsCollapsed ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.06)',
+              border: !isPresetsCollapsed ? '1px solid #10B981' : '1px solid rgba(255, 255, 255, 0.12)',
+              color: !isPresetsCollapsed ? '#34D399' : '#CBD5E1',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <span>⚡</span>
+            <span>{isPresetsCollapsed ? 'Show Presets' : 'Hide Presets'}</span>
+          </button>
+        </div>
+      )}
+
       {/* ========================================================================= */}
       {/* 2. 3-COLUMN ERGONOMIC WORKSPACE                                           */}
       {/* Left: Live OPD Queue | Center: Rx Canvas | Right: 1-Click Packages/Presets*/}
@@ -2714,14 +2781,17 @@ export const DoctorExpressConsultationDesk: React.FC<DoctorExpressConsultationDe
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns:
-            isQueueCollapsed && isPresetsCollapsed
-              ? '1fr'
-              : isQueueCollapsed
-              ? '1fr 310px'
-              : isPresetsCollapsed
-              ? '270px 1fr'
-              : '270px 1fr 310px',
+          gridTemplateColumns: isMobileScreen
+            ? '1fr'
+            : isTabletScreen
+            ? (isQueueCollapsed ? '1fr' : '260px 1fr')
+            : isQueueCollapsed && isPresetsCollapsed
+            ? '1fr'
+            : isQueueCollapsed
+            ? '1fr 310px'
+            : isPresetsCollapsed
+            ? '270px 1fr'
+            : '270px 1fr 310px',
           gap: '16px',
           alignItems: 'start',
           width: '100%'
@@ -4689,20 +4759,25 @@ export const DoctorExpressConsultationDesk: React.FC<DoctorExpressConsultationDe
 
       {/* 8. Sticky Action Footer Bar */}
       <div
+        className={isMobileScreen ? 'ds-sticky-bottom-bar' : ''}
         style={{
           position: 'sticky',
-          bottom: '16px',
-          zIndex: 40,
-          backgroundColor: 'var(--ds-color-surface)',
-          border: '1.5px solid var(--ds-color-border)',
-          borderRadius: '12px',
-          padding: '14px 20px',
+          bottom: isMobileScreen ? '0' : '16px',
+          left: 0,
+          right: 0,
+          zIndex: 60,
+          backgroundColor: isMobileScreen ? 'rgba(11, 19, 43, 0.96)' : 'var(--ds-color-surface)',
+          backdropFilter: isMobileScreen ? 'blur(16px)' : undefined,
+          border: isMobileScreen ? 'none' : '1.5px solid var(--ds-color-border)',
+          borderTop: '1px solid rgba(255, 255, 255, 0.12)',
+          borderRadius: isMobileScreen ? '0' : '12px',
+          padding: isMobileScreen ? '10px 14px' : '14px 20px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           flexWrap: 'wrap',
           gap: '12px',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.12)'
+          boxShadow: isMobileScreen ? '0 -8px 24px rgba(0,0,0,0.5)' : '0 8px 24px rgba(0,0,0,0.12)'
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

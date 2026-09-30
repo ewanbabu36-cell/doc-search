@@ -27,6 +27,9 @@ const files = [
   'apps/api-gateway/src/services/partner/LabDiagnosticsService.ts',
   'apps/api-gateway/src/repositories/partner/LabDiagnosticsRepository.ts',
   'apps/api-gateway/src/app.ts',
+  'packages/ui-kit/src/styles/base.css',
+  'apps/partner-platform/src/components/common/UniversalAccountSettingsModal.tsx',
+  'apps/partner-platform/src/components/views/PartnerAccountPlanView.tsx',
   'scripts/benchmark-doctor-speed.mjs',
   'scripts/test-clinical-safety-cdss.mjs'
 ];
