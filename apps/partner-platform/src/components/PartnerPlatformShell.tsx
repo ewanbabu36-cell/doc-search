@@ -2462,24 +2462,52 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
             canGoBack={navHistory.length > 0}
           title={
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-              <DocSearchResponsiveBrand
-                workspaceName={workspace.replace(/_/g, ' ')}
-                workspaceColor={currentWsp.color}
-                workspaceIcon={currentWsp.icon}
-                isCompact={!isSidebarCollapsed}
-              />
-              <span style={{ color: 'rgba(255, 255, 255, 0.2)', fontSize: '0.85rem', userSelect: 'none' }}>/</span>
+              {isSidebarCollapsed ? (
+                <>
+                  <DocSearchResponsiveBrand
+                    workspaceName={workspace.replace(/_/g, ' ')}
+                    workspaceColor={currentWsp.color}
+                    workspaceIcon={currentWsp.icon}
+                    isCompact={true}
+                  />
+                  <span style={{ color: 'rgba(255, 255, 255, 0.25)', fontSize: '0.85rem', userSelect: 'none' }}>/</span>
+                </>
+              ) : (
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    padding: '3px 8px',
+                    borderRadius: '6px',
+                    backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                    border: '1px solid rgba(56, 189, 248, 0.22)',
+                    color: '#38BDF8',
+                    fontSize: '0.75rem',
+                    fontWeight: 800,
+                    letterSpacing: '0.04em',
+                    textTransform: 'uppercase',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0
+                  }}
+                >
+                  <span style={{ fontSize: '0.85rem' }}>{currentWsp.icon}</span>
+                  <span>{workspace.replace(/_/g, ' ')}</span>
+                </span>
+              )}
+              <span style={{ color: 'rgba(255, 255, 255, 0.25)', fontSize: '0.85rem', userSelect: 'none' }}>›</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
-                <span style={{ fontSize: '0.9rem' }}>{currentModuleMeta.icon}</span>
+                <span style={{ fontSize: '0.95rem' }}>{currentModuleMeta.icon}</span>
                 <span
                   style={{
                     fontSize: '0.875rem',
                     fontWeight: 700,
-                    color: '#F1F5F9',
+                    color: '#F8FAFC',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis'
                   }}
+                  title={currentModuleMeta.title}
                 >
                   {currentModuleMeta.title}
                 </span>
@@ -2524,7 +2552,13 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                     <line x1="21" y1="21" x2="16.65" y2="16.65" />
                   </svg>
                   <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    Search patients, records, modules...
+                    {isLabOrPathology
+                      ? 'Search specimens, test orders, patients...'
+                      : isPharmacyVertical
+                      ? 'Search medicines, barcode, batch, RX...'
+                      : isClinicVertical
+                      ? 'Search patients, appointments, UHID...'
+                      : 'Search patients, records, modules...'}
                   </span>
                 </div>
                 <kbd
@@ -2540,7 +2574,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                     flexShrink: 0
                   }}
                 >
-                  Cmd+K
+                  {typeof navigator !== 'undefined' && /Mac|iPhone|iPod|iPad/.test(navigator.platform) ? 'Cmd+K' : 'Ctrl+K'}
                 </kbd>
               </button>
             </div>
@@ -2576,7 +2610,15 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                   title="Quick Add: Fast OPD Registration, 1-Flow Express, Consultation, Billing"
                 >
                   <span style={{ fontSize: '1rem', lineHeight: 1 }}>+</span>
-                  <span className="ds-hide-on-compact">Quick Add</span>
+                  <span className="ds-hide-on-compact">
+                    {isLabOrPathology
+                      ? 'New Specimen'
+                      : isPharmacyVertical
+                      ? 'New Rx Bill'
+                      : isClinicVertical
+                      ? 'New Token'
+                      : 'Quick Add'}
+                  </span>
                 </button>
 
                 {isQuickAddOpen && (

@@ -206,6 +206,30 @@ export const DocSearchLogo: React.FC<DocSearchLogoProps> = ({
           0%, 100% { opacity: 0.6; }
           50% { opacity: 1; filter: drop-shadow(0 0 14px ${primaryCyan}); }
         }
+        @keyframes dsOrbitSpin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        @keyframes dsLivingBreathing {
+          0%, 100% {
+            box-shadow: 0 4px 18px rgba(6, 182, 212, 0.28), inset 0 0 12px rgba(56, 189, 248, 0.2);
+            border-color: rgba(56, 189, 248, 0.45);
+          }
+          50% {
+            box-shadow: 0 4px 28px rgba(6, 182, 212, 0.65), inset 0 0 16px rgba(56, 189, 248, 0.45);
+            border-color: rgba(6, 182, 212, 0.85);
+          }
+        }
+        @keyframes dsEcgFlow {
+          0% { stroke-dashoffset: 140; opacity: 0.3; }
+          30% { opacity: 1; filter: drop-shadow(0 0 8px #38BDF8); }
+          60% { stroke-dashoffset: 0; opacity: 1; filter: drop-shadow(0 0 6px #10B981); }
+          100% { stroke-dashoffset: -140; opacity: 0.3; }
+        }
+        @keyframes dsCorePulse {
+          0%, 100% { transform: scale(1); filter: drop-shadow(0 0 3px ${primaryCyan}); }
+          50% { transform: scale(1.15); filter: drop-shadow(0 0 9px #38BDF8); }
+        }
       `}</style>
 
       {/* 1. Eye-Catching Futuristic Cyber-Medical Emblem with Magnetic 3D Tilt */}
@@ -230,6 +254,7 @@ export const DocSearchLogo: React.FC<DocSearchLogoProps> = ({
           position: 'relative',
           overflow: 'visible',
           flexShrink: 0,
+          animation: 'dsLivingBreathing 3.6s ease-in-out infinite',
           transform: `perspective(600px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
           transition: tilt.x === 0 && tilt.y === 0 ? 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)' : 'none'
         }}
@@ -290,7 +315,7 @@ export const DocSearchLogo: React.FC<DocSearchLogoProps> = ({
             </filter>
           </defs>
 
-          {/* Outer Cybernetic Telemetry Orbit Ring */}
+          {/* Outer Cybernetic Telemetry Orbit Ring with continuous gyroscope rotation */}
           <circle
             cx="50"
             cy="50"
@@ -299,6 +324,10 @@ export const DocSearchLogo: React.FC<DocSearchLogoProps> = ({
             strokeWidth="2"
             strokeDasharray="6 4 2 4"
             strokeOpacity="0.75"
+            style={{
+              transformOrigin: '50px 50px',
+              animation: 'dsOrbitSpin 22s linear infinite'
+            }}
           />
 
           {/* Precision Cross - Vertical Bar */}
@@ -323,7 +352,7 @@ export const DocSearchLogo: React.FC<DocSearchLogoProps> = ({
             filter="url(#dsNeonGlowAdv)"
           />
 
-          {/* Center Quantum Aperture Core */}
+          {/* Center Quantum Aperture Core with breathing heartbeat */}
           <circle
             cx="50"
             cy="50"
@@ -331,6 +360,10 @@ export const DocSearchLogo: React.FC<DocSearchLogoProps> = ({
             fill="#070D18"
             stroke={primaryCyan}
             strokeWidth="2.5"
+            style={{
+              transformOrigin: '50px 50px',
+              animation: 'dsCorePulse 2.8s ease-in-out infinite'
+            }}
           />
           <circle
             cx="50"
@@ -339,15 +372,26 @@ export const DocSearchLogo: React.FC<DocSearchLogoProps> = ({
             fill="#FFFFFF"
           />
 
-          {/* Biometric Heartbeat Waveform Axis */}
+          {/* Biometric Heartbeat Waveform Axis - Underlying Track */}
+          <path
+            d="M 22 50 L 37 50 L 43 38 L 47 62 L 53 43 L 57 54 L 63 50 L 78 50"
+            stroke="rgba(255, 255, 255, 0.35)"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+
+          {/* Biometric Heartbeat Waveform Axis - Dynamic Living Pulse Beam */}
           <path
             d="M 22 50 L 37 50 L 43 38 L 47 62 L 53 43 L 57 54 L 63 50 L 78 50"
             stroke="#FFFFFF"
-            strokeWidth="2.2"
+            strokeWidth="2.4"
             strokeLinecap="round"
             strokeLinejoin="round"
+            strokeDasharray="32 110"
             style={{
-              filter: `drop-shadow(0 0 4px ${primaryCyan})`
+              animation: 'dsEcgFlow 2.5s ease-in-out infinite',
+              filter: `drop-shadow(0 0 6px ${primaryCyan})`
             }}
           />
         </svg>
