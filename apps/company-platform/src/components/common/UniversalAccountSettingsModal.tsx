@@ -825,6 +825,25 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                 </div>
               </div>
 
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
+                  DOCSEARCH HQ CORPORATE UPI ID / VPA (SAAS REVENUE COLLECTIONS) *
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="text"
+                    required
+                    value={bankData.upiId}
+                    onChange={(e) => setBankData({ ...bankData, upiId: e.target.value.toLowerCase().trim() })}
+                    placeholder="e.g. docsearch@hdfcbank"
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem' }}
+                  />
+                </div>
+                <span style={{ fontSize: '0.7rem', color: '#38BDF8', marginTop: '4px', display: 'block' }}>
+                  ⚡ All partner hospitals, pathology labs, and clinics scanning the dynamic NPCI QR code during plan upgrade/renewal will remit directly to this Corporate UPI ID.
+                </span>
+              </div>
+
               {/* Upload Cancelled Cheque / Bank Proof Certificate with AI OCR */}
               <div style={{ backgroundColor: '#1E293B', border: '1px dashed rgba(6, 182, 212, 0.4)', borderRadius: '10px', padding: '14px' }}>
                 <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: '#38BDF8', marginBottom: '6px' }}>
