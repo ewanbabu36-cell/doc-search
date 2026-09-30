@@ -2462,40 +2462,28 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
             canGoBack={navHistory.length > 0}
           title={
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-              {isSidebarCollapsed ? (
-                <>
-                  <DocSearchResponsiveBrand
-                    workspaceName={workspace.replace(/_/g, ' ')}
-                    workspaceColor={currentWsp.color}
-                    workspaceIcon={currentWsp.icon}
-                    isCompact={true}
-                  />
-                  <span style={{ color: 'rgba(255, 255, 255, 0.25)', fontSize: '0.85rem', userSelect: 'none' }}>/</span>
-                </>
-              ) : (
-                <span
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '5px',
-                    padding: '3px 8px',
-                    borderRadius: '6px',
-                    backgroundColor: 'rgba(56, 189, 248, 0.1)',
-                    border: '1px solid rgba(56, 189, 248, 0.22)',
-                    color: '#38BDF8',
-                    fontSize: '0.75rem',
-                    fontWeight: 800,
-                    letterSpacing: '0.04em',
-                    textTransform: 'uppercase',
-                    whiteSpace: 'nowrap',
-                    flexShrink: 0
-                  }}
-                >
-                  <span style={{ fontSize: '0.85rem' }}>{currentWsp.icon}</span>
-                  <span>{workspace.replace(/_/g, ' ')}</span>
-                </span>
-              )}
-              <span style={{ color: 'rgba(255, 255, 255, 0.25)', fontSize: '0.85rem', userSelect: 'none' }}>›</span>
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '3px 9px',
+                  borderRadius: '6px',
+                  backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                  border: '1px solid rgba(56, 189, 248, 0.22)',
+                  color: '#38BDF8',
+                  fontSize: '0.75rem',
+                  fontWeight: 800,
+                  letterSpacing: '0.04em',
+                  textTransform: 'uppercase',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0
+                }}
+              >
+                <span style={{ fontSize: '0.85rem' }}>{currentWsp.icon}</span>
+                <span>{workspace.replace(/_/g, ' ')}</span>
+              </span>
+              <span style={{ color: 'rgba(255, 255, 255, 0.3)', fontSize: '0.85rem', userSelect: 'none' }}>›</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
                 <span style={{ fontSize: '0.95rem' }}>{currentModuleMeta.icon}</span>
                 <span

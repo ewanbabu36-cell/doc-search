@@ -29,7 +29,7 @@ export const DocSearchResponsiveBrand: React.FC<DocSearchResponsiveBrandProps> =
 
   return (
     <DocSearchLogo
-      variant={isCompact ? 'compact' : 'full'}
+      variant={isCompact ? 'icon-only' : 'full'}
       size="sm"
       badgeText={workspaceName.replace(/_/g, ' ').toUpperCase()}
       redirectUrl="/"
