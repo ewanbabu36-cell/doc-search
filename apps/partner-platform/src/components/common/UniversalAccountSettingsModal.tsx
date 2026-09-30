@@ -1573,9 +1573,11 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
             <form onSubmit={handleSaveBank} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ backgroundColor: 'rgba(6, 182, 212, 0.08)', border: '1px solid rgba(6, 182, 212, 0.2)', padding: '12px 16px', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                 <div>
-                  <strong style={{ fontSize: '0.875rem', color: '#38BDF8' }}>Direct B2B Bank Payout & Settlement Details</strong>
+                  <strong style={{ fontSize: '0.875rem', color: '#38BDF8' }}>
+                    🏥 Partner Facility Payout Account (Patient OPD, Lab & Pharmacy Revenue)
+                  </strong>
                   <span style={{ fontSize: '0.75rem', color: '#94A3B8', display: 'block', marginTop: '2px' }}>
-                    Updating bank account requires admin approval and verified cancelled cheque proof.
+                    This bank account and UPI ID are strictly for receiving your facility's patient fees. DocSearch SaaS software subscription fees are paid separately to DocSearch HQ corporate bank account.
                   </span>
                 </div>
                 <span style={{ fontSize: '0.75rem', backgroundColor: bankApprovalStatus === 'APPROVED' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)', color: bankApprovalStatus === 'APPROVED' ? '#6EE7B7' : '#FCD34D', padding: '3px 8px', borderRadius: '6px', fontWeight: 700 }}>

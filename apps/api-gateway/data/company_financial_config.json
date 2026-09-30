@@ -1,0 +1,39 @@
+{
+  "legalEntityName": "DOCSEARCH HEALTHCARE TECHNOLOGIES PRIVATE LIMITED",
+  "tradeName": "DocSearch Platform HQ",
+  "bankName": "HDFC Bank Ltd",
+  "branchName": "Bandra Kurla Complex, Corporate Branch",
+  "accountHolderName": "DOCSEARCH HEALTHCARE TECHNOLOGIES PRIVATE LIMITED",
+  "accountNumber": "50200084920192",
+  "ifscCode": "HDFC0000240",
+  "accountType": "CURRENT",
+  "businessUpiId": "docsearch.billing@hdfcbank",
+  "secondaryUpiId": "docsearch.saas@icici",
+  "gstin": "27AABCD1234E1Z5",
+  "pan": "AABCD1234E",
+  "cinNumber": "U72900MH2024PTC123456",
+  "billingEmail": "billing@docsearch.health",
+  "billingPhone": "+91 1800 200 4000",
+  "registeredAddress": {
+    "line1": "Unit 802, One International Center, Tower 2",
+    "line2": "Senapati Bapat Marg, Prabhadevi",
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "pincode": "400013",
+    "country": "India"
+  },
+  "supportedCurrencies": [
+    "INR"
+  ],
+  "paymentModes": {
+    "upiInstantQr": true,
+    "neftRtgsImps": true,
+    "cardNetbanking": true
+  },
+  "saasPaymentInstructions": "Authoritative Corporate Account for DocSearch SaaS Subscriptions & Plan Upgrades only. All patient OPD consultation, lab testing, and pharmacy collections remain isolated in each partner hospital/clinic account.",
+  "autoReconciliation": true,
+  "lastUpdatedAt": "2026-09-30T16:37:55.394Z",
+  "updatedBy": "00000000-0000-4000-8000-000000000099",
+  "beneficiaryName": "DOCSEARCH HEALTHCARE TECHNOLOGIES PRIVATE LIMITED",
+  "notes": "Updated corporate treasury account"
+}

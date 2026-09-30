@@ -46,9 +46,19 @@ const files = [
   'apps/api-gateway/src/config/env.ts',
   'apps/api-gateway/src/plugins/security.ts',
   'packages/ui-kit/dist/index.js',
-  'packages/ui-kit/dist/index.d.ts',
   'scripts/benchmark-doctor-speed.mjs',
-  'scripts/test-clinical-safety-cdss.mjs'
+  'scripts/test-clinical-safety-cdss.mjs',
+  'apps/api-gateway/src/services/company/CompanyFinancialService.ts',
+  'apps/api-gateway/src/routes/company/commercial.routes.ts',
+  'apps/api-gateway/data/company_financial_config.json',
+  'apps/api-gateway/data/partner_subscription_payments.json',
+  'apps/company-platform/src/components/billing/CompanyCorporateBankSettingsView.tsx',
+  'apps/company-platform/src/components/billing/FinanceDomainManager.tsx',
+  'apps/company-platform/src/components/common/UniversalAccountSettingsModal.tsx',
+  'apps/partner-platform/src/components/common/HospitalPlanUpgradeModal.tsx',
+  'apps/partner-platform/src/components/common/UniversalAccountSettingsModal.tsx',
+  'apps/partner-platform/src/components/dialogs/CommercialRenewalModal.tsx',
+  'apps/api-gateway/test/company-bank-and-revenue-separation.test.mjs'
 ];
 
 let count = 0;

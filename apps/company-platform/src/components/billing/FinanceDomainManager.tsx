@@ -26,6 +26,7 @@ import { AiRevenueLeakageRadarView } from './AiRevenueLeakageRadarView.js';
 import { MultiGatewaySmartRouterView } from './MultiGatewaySmartRouterView.js';
 import { MultiBranchInterCompanyBillingView } from './MultiBranchInterCompanyBillingView.js';
 import { PredictiveCashFlowRevenueSimulatorView } from './PredictiveCashFlowRevenueSimulatorView.js';
+import { CompanyCorporateBankSettingsView } from './CompanyCorporateBankSettingsView.js';
 
 import { Badge, Spinner, ErrorState, Button, DocSearchSpatialCore3D } from '@docsearch/ui-kit';
 
@@ -37,6 +38,7 @@ export type ActiveTab =
   | 'gateway-router'
   | 'multi-branch'
   | 'global-tax'
+  | 'corporate-bank'
   | 'gst'
   | 'tpa'
   | 'split'
@@ -89,9 +91,9 @@ const FINANCE_CATEGORIES: FinanceCategoryConfig[] = [
     id: 'TAX_INFRASTRUCTURE',
     label: 'Tax, Banking & Multi-Hub',
     icon: '🌐',
-    subtitle: 'GST E-Invoice, FX & Gateway Router',
-    defaultTab: 'gst',
-    tabIds: ['gst', 'global-tax', 'multi-branch', 'gateway-router']
+    subtitle: 'Corporate Bank, GST & Gateway Router',
+    defaultTab: 'corporate-bank',
+    tabIds: ['corporate-bank', 'gst', 'global-tax', 'multi-branch', 'gateway-router']
   }
 ];
 
@@ -469,6 +471,11 @@ export const FinanceDomainManager: React.FC = () => {
             } else {
               subTabs = [
                 {
+                  id: 'corporate-bank',
+                  label: '🏛️ Corporate Bank & UPI HQ',
+                  badge: <Badge variant="success">SaaS Collection</Badge>
+                },
+                {
                   id: 'gst',
                   label: '🇮🇳 GST E-Invoicing',
                   badge: <Badge variant="success">NIC IRP</Badge>
@@ -549,6 +556,10 @@ export const FinanceDomainManager: React.FC = () => {
 
       {activeTab === 'gateway-router' && (
         <MultiGatewaySmartRouterView />
+      )}
+
+      {activeTab === 'corporate-bank' && (
+        <CompanyCorporateBankSettingsView />
       )}
 
       {activeTab === 'multi-branch' && (

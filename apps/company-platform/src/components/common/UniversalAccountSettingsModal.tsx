@@ -183,8 +183,30 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
           if (parsed.security) setSecurityData((prev) => ({ ...prev, twoFactorEnabled: parsed.security.twoFactorEnabled, autoLockMinutes: parsed.security.autoLockMinutes }));
         } catch {}
       }
+
+      if (isCompanyAdmin || roleCategory === 'COMPANY_HQ') {
+        const token = localStorage.getItem('docsearch_company_token');
+        fetch('/api/v1/company/financial-settings', {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        })
+          .then((r) => r.json())
+          .then((json) => {
+            if (json.success && json.data) {
+              setBankData((prev) => ({
+                ...prev,
+                accountHolderName: json.data.accountHolderName || json.data.legalEntityName || prev.accountHolderName,
+                bankName: json.data.bankName || prev.bankName,
+                accountNumber: json.data.accountNumber || prev.accountNumber,
+                confirmAccountNumber: json.data.accountNumber || prev.confirmAccountNumber,
+                ifscCode: json.data.ifscCode || prev.ifscCode,
+                upiId: json.data.businessUpiId || prev.upiId
+              }));
+            }
+          })
+          .catch(() => {});
+      }
     }
-  }, [isOpen, storageKey]);
+  }, [isOpen, storageKey, isCompanyAdmin, roleCategory]);
 
   if (!isOpen) return null;
 
@@ -234,9 +256,29 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
     };
 
     saveToStorage(payload);
+
+    if (isCompanyAdmin || roleCategory === 'COMPANY_HQ') {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('docsearch_company_token') : null;
+      fetch('/api/v1/company/financial-settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          legalEntityName: bankData.accountHolderName,
+          accountHolderName: bankData.accountHolderName,
+          bankName: bankData.bankName,
+          accountNumber: bankData.accountNumber,
+          ifscCode: bankData.ifscCode.toUpperCase(),
+          businessUpiId: bankData.upiId
+        })
+      }).catch(() => {});
+    }
+
     setSaveSuccessMessage(
       isCompanyAdmin
-        ? '✓ Bank details updated and Approved directly by Admin!'
+        ? '✓ Corporate Bank & Business UPI configuration saved and activated across India!'
         : '⏳ Bank change request submitted! Sent to Company Admin for verification & approval.'
     );
     setTimeout(() => setSaveSuccessMessage(null), 4500);
@@ -662,9 +704,15 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
             <form onSubmit={handleSaveBank} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ backgroundColor: 'rgba(6, 182, 212, 0.08)', border: '1px solid rgba(6, 182, 212, 0.2)', padding: '12px 16px', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                 <div>
-                  <strong style={{ fontSize: '0.875rem', color: '#38BDF8' }}>Direct B2B Bank Payout & Settlement Details</strong>
+                  <strong style={{ fontSize: '0.875rem', color: '#38BDF8' }}>
+                    {isCompanyAdmin || roleCategory === 'COMPANY_HQ'
+                      ? '🏛️ DocSearch Corporate Bank Account & Business UPI (SaaS Subscription Collection)'
+                      : '💳 Partner Facility Bank Payout & Direct Settlement Details'}
+                  </strong>
                   <span style={{ fontSize: '0.75rem', color: '#94A3B8', display: 'block', marginTop: '2px' }}>
-                    Updating bank account requires admin approval and verified cancelled cheque proof.
+                    {isCompanyAdmin || roleCategory === 'COMPANY_HQ'
+                      ? 'Authoritative collection destination for all partner software subscription & plan upgrade fees across India. All partner patient billing (OPD, pharmacy, lab) remains isolated in each hospital’s own account.'
+                      : 'Updating bank account requires admin approval and verified cancelled cheque proof.'}
                   </span>
                 </div>
                 <span style={{ fontSize: '0.75rem', backgroundColor: bankApprovalStatus === 'APPROVED' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)', color: bankApprovalStatus === 'APPROVED' ? '#6EE7B7' : '#FCD34D', padding: '3px 8px', borderRadius: '6px', fontWeight: 700 }}>

@@ -333,16 +333,16 @@
     }
   ],
   "fieldRules": {
-    "ownerAadhaar": "MANDATORY",
-    "aadhaarDocUpload": "MANDATORY",
-    "clinicalLicense": "MANDATORY",
-    "licenseDocUpload": "MANDATORY",
+    "ownerAadhaar": "OPTIONAL",
+    "aadhaarDocUpload": "OPTIONAL",
+    "clinicalLicense": "OPTIONAL",
+    "licenseDocUpload": "OPTIONAL",
     "gstinNumber": "OPTIONAL",
     "bedCapacity": "OPTIONAL",
     "mobileWhatsapp": "MANDATORY",
     "cityState": "MANDATORY",
     "passwordCreation": "MANDATORY"
   },
-  "updatedAt": "2026-09-30T14:03:09.192Z",
-  "updatedBy": "admin@docsearch.internal"
+  "updatedAt": "2026-09-30T15:04:22.291Z",
+  "updatedBy": "founder@docsearch.health"
 }

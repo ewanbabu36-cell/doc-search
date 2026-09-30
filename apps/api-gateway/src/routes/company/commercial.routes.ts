@@ -4,6 +4,7 @@ import { subscriptionService } from '../../services/company/SubscriptionService.
 import { licenseService } from '../../services/company/LicenseService.js';
 import { commercialFinanceService } from '../../services/company/CommercialFinanceService.js';
 import { billingManagementService } from '../../services/partner/BillingManagementService.js';
+import { companyFinancialService } from '../../services/company/CompanyFinancialService.js';
 import { authenticate } from '../../plugins/auth-guard.js';
 import { AppError, ErrorCode } from '@docsearch/shared-core';
 import {
@@ -1371,6 +1372,129 @@ export const commercialRoutes: FastifyPluginAsync = async (fastify) => {
     async (request, reply) => {
       const data = await commercialFinanceService.getCommercialRevenueDashboard((request as any).session);
       return reply.status(200).send({ success: true, data });
+    }
+  );
+
+  // =========================================================================
+  // B2B SAAS CORPORATE BANK & BUSINESS UPI MANAGEMENT (INDUSTRY STANDARD)
+  // =========================================================================
+
+  // GET /api/v1/commercial/company-payment-details
+  // Authoritative verified DocSearch HQ Corporate Bank & Business UPI details for partners
+  fastify.get(
+    '/api/v1/commercial/company-payment-details',
+    async (request, reply) => {
+      const q = request.query as { amount?: string; invoiceRef?: string };
+      const amount = q?.amount ? parseFloat(q.amount) : undefined;
+      const data = companyFinancialService.getPublicPaymentDetails(amount, q?.invoiceRef);
+      return reply.status(200).send({ success: true, data });
+    }
+  );
+
+  // GET /api/v1/company/financial-settings (DocSearch HQ Admin Corporate Bank & UPI Config)
+  fastify.get(
+    '/api/v1/company/financial-settings',
+    { preHandler: [authenticate, requireHqAdmin] },
+    async (_request, reply) => {
+      const data = companyFinancialService.getConfig();
+      return reply.status(200).send({ success: true, data });
+    }
+  );
+
+  // PUT /api/v1/company/financial-settings (Update Corporate Bank Account, IFSC, Business UPI, GSTIN)
+  fastify.put(
+    '/api/v1/company/financial-settings',
+    { preHandler: [authenticate, requireHqAdmin] },
+    async (request, reply) => {
+      const body = request.body as any;
+      const data = await companyFinancialService.updateConfig(body, (request as any).session);
+      return reply.status(200).send({
+        success: true,
+        message: 'Company Corporate Bank & Business UPI configuration updated successfully',
+        data
+      });
+    }
+  );
+
+  // POST /api/v1/commercial/submit-payment-proof (Partner submits UTR after NEFT/UPI transfer)
+  fastify.post(
+    '/api/v1/commercial/submit-payment-proof',
+    { preHandler: [authenticate] },
+    async (request, reply) => {
+      const Schema = z.object({
+        partnerId: z.string().uuid(),
+        planId: z.string().uuid(),
+        planName: z.string().optional(),
+        planCode: z.string().optional(),
+        durationYears: z.number().int().positive().optional().default(1),
+        payableAmountInr: z.number().positive(),
+        paymentMethod: z.enum(['UPI', 'NEFT_RTGS_IMPS', 'CARD_ONLINE']).default('UPI'),
+        utrNumber: z.string().min(4, 'UTR / transaction reference must be at least 4 characters'),
+        payerUpiOrAccount: z.string().optional(),
+        partnerRemarks: z.string().optional(),
+        invoiceId: z.string().optional()
+      });
+
+      const body = Schema.parse(request.body);
+      const data = await companyFinancialService.submitPartnerPaymentProof(
+        {
+          partnerId: body.partnerId,
+          planId: body.planId,
+          planName: body.planName,
+          planCode: body.planCode,
+          durationYears: body.durationYears,
+          payableAmountInr: body.payableAmountInr,
+          paymentMethod: body.paymentMethod,
+          utrNumber: body.utrNumber,
+          payerUpiOrAccount: body.payerUpiOrAccount,
+          partnerRemarks: body.partnerRemarks,
+          invoiceId: body.invoiceId
+        },
+        (request as any).session
+      );
+      return reply.status(201).send({
+        success: true,
+        message: 'Subscription payment reference submitted successfully. DocSearch HQ will verify against bank records.',
+        data
+      });
+    }
+  );
+
+  // GET /api/v1/commercial/hq/pending-payments (HQ Admin lists partner UTR submissions)
+  fastify.get(
+    '/api/v1/commercial/hq/pending-payments',
+    { preHandler: [authenticate, requireHqAdmin] },
+    async (request, reply) => {
+      const data = await companyFinancialService.getPendingPaymentProofs((request as any).session);
+      return reply.status(200).send({ success: true, data });
+    }
+  );
+
+  // POST /api/v1/commercial/hq/verify-payment (HQ Admin approves or rejects partner UTR submission)
+  fastify.post(
+    '/api/v1/commercial/hq/verify-payment',
+    { preHandler: [authenticate, requireHqAdmin] },
+    async (request, reply) => {
+      const Schema = z.object({
+        proofId: z.string().min(1),
+        decision: z.enum(['APPROVED', 'REJECTED']),
+        reason: z.string().optional()
+      });
+
+      const body = Schema.parse(request.body);
+      const data = await companyFinancialService.verifyPaymentProof(
+        body.proofId,
+        body.decision,
+        body.reason,
+        (request as any).session
+      );
+      return reply.status(200).send({
+        success: true,
+        message: body.decision === 'APPROVED'
+          ? 'Partner payment verified and subscription/license extended successfully.'
+          : 'Payment submission marked as rejected.',
+        data
+      });
     }
   );
 };

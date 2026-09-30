@@ -63,6 +63,11 @@ export const CommercialRenewalModal: React.FC<CommercialRenewalModalProps> = ({
   const [isCreatingCheckout, setIsCreatingCheckout] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showCompanyPayment, setShowCompanyPayment] = useState<boolean>(false);
+  const [companyDetails, setCompanyDetails] = useState<any | null>(null);
+  const [utrNumber, setUtrNumber] = useState<string>('');
+  const [isSubmittingUtr, setIsSubmittingUtr] = useState<boolean>(false);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
 
   // Determine starting base date for extension invariant
   const existingExpiryDate = useMemo(() => {
@@ -82,6 +87,18 @@ export const CommercialRenewalModal: React.FC<CommercialRenewalModalProps> = ({
     projected.setFullYear(projected.getFullYear() + selectedDurationYears);
     return projected;
   }, [existingExpiryDate, isCurrentlyActive, selectedDurationYears]);
+
+  // Fetch Company Corporate Banking & Business UPI details
+  useEffect(() => {
+    if (!isOpen) return;
+    const amt = calculation?.finalAmountInr || 20000;
+    fetch(`/api/v1/commercial/company-payment-details?amount=${amt}&invoiceRef=RENEWAL`)
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.success && json.data) setCompanyDetails(json.data);
+      })
+      .catch(() => {});
+  }, [isOpen, calculation?.finalAmountInr]);
 
   // Recalculate order whenever duration or interstate changes
   useEffect(() => {
@@ -179,12 +196,8 @@ export const CommercialRenewalModal: React.FC<CommercialRenewalModalProps> = ({
 
       const json = await res.json();
       if (res.ok && json.success && json.data) {
-        setSuccessMessage('Commercial Order Snapshot created successfully! Order Reference: ' + json.data.razorpayOrderId);
-        
-        // Notify parent after brief delay
-        setTimeout(() => {
-          onRenewalSuccess?.();
-        }, 1500);
+        setShowCompanyPayment(true);
+        setSuccessMessage('Order generated! Please transfer funds to DocSearch Corporate Account below and submit your UTR.');
       } else {
         setErrorMessage(json.message || json.error?.message || 'Failed to initiate commercial checkout order.');
       }
@@ -192,6 +205,56 @@ export const CommercialRenewalModal: React.FC<CommercialRenewalModalProps> = ({
       setErrorMessage(err.message || 'Network error initiating renewal checkout.');
     } finally {
       setIsCreatingCheckout(false);
+    }
+  };
+
+  const handleCopy = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(label);
+    setTimeout(() => setCopiedField(null), 2000);
+  };
+
+  const handleSubmitUtr = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!utrNumber.trim() || utrNumber.trim().length < 4) {
+      setErrorMessage('Please enter a valid 12-digit UTR or transaction reference number.');
+      return;
+    }
+    const partnerId = organizationProfile?.partnerId || subscription?.partnerId;
+    if (!partnerId || !currentPlan?.id) return;
+
+    setIsSubmittingUtr(true);
+    setErrorMessage(null);
+
+    try {
+      const res = await fetch('/api/v1/commercial/submit-payment-proof', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          partnerId,
+          planId: currentPlan.id,
+          planName: currentPlan.name,
+          planCode: currentPlan.code,
+          durationYears: selectedDurationYears,
+          payableAmountInr: calculation?.finalAmountInr || 20000,
+          paymentMethod: 'UPI',
+          utrNumber: utrNumber.trim().toUpperCase()
+        })
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        setSuccessMessage('✓ Payment reference submitted! Your license extension has been verified and applied.');
+        setTimeout(() => {
+          onRenewalSuccess?.();
+          onClose();
+        }, 1500);
+      } else {
+        setErrorMessage(json.message || 'Failed to submit payment reference.');
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Network error.');
+    } finally {
+      setIsSubmittingUtr(false);
     }
   };
 
@@ -308,6 +371,26 @@ export const CommercialRenewalModal: React.FC<CommercialRenewalModalProps> = ({
                 </>
               )}
             </div>
+          </div>
+
+          {/* Strict Financial Isolation Guarantee */}
+          <div
+            style={{
+              backgroundColor: '#070C16',
+              border: '1px solid #1E293B',
+              borderRadius: '10px',
+              padding: '10px 16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              fontSize: '0.75rem',
+              color: '#CBD5E1'
+            }}
+          >
+            <span style={{ fontSize: '1.1rem' }}>⚖️</span>
+            <span>
+              <strong style={{ color: '#10B981' }}>DocSearch Corporate Revenue Isolation:</strong> SaaS renewal fees route directly to DocSearch HQ corporate bank account. All patient OPD consultation, lab, and pharmacy fees remain strictly in your own hospital account.
+            </span>
           </div>
 
           {/* Tenure Selection Grid */}
@@ -478,6 +561,177 @@ export const CommercialRenewalModal: React.FC<CommercialRenewalModalProps> = ({
             </div>
           ) : null}
 
+          {/* PAYMENT RAILS & UTR SUBMISSION (WHEN CHECKOUT ORDER INITIALIZED) */}
+          {showCompanyPayment && (
+            <div
+              style={{
+                borderRadius: '12px',
+                border: '1.5px solid #06B6D4',
+                backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                padding: '20px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1E293B', paddingBottom: '10px' }}>
+                <div>
+                  <strong style={{ fontSize: '0.9375rem', color: '#38BDF8' }}>
+                    DocSearch Official Corporate Payment Rails
+                  </strong>
+                  <span style={{ fontSize: '0.72rem', color: '#94A3B8', display: 'block', marginTop: '2px' }}>
+                    Transfer amount ₹{calculation?.finalAmountInr.toLocaleString()} via instant UPI or NEFT/RTGS to HQ corporate account
+                  </span>
+                </div>
+                <span style={{ fontSize: '0.6875rem', backgroundColor: '#10B981', color: '#070C16', padding: '2px 8px', borderRadius: '4px', fontWeight: 800 }}>
+                  DOCSEARCH HQ ACCOUNT
+                </span>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.4fr)', gap: '16px' }}>
+                {/* Rail A: UPI QR */}
+                <div style={{ backgroundColor: '#1E293B', borderRadius: '10px', padding: '14px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#38BDF8', marginBottom: '8px' }}>
+                    📱 Rail A: Scan UPI QR Code
+                  </span>
+                  <div style={{ backgroundColor: '#FFF', padding: '8px', borderRadius: '10px', display: 'inline-block' }}>
+                    <svg width="130" height="130" viewBox="0 0 100 100">
+                      <rect x="5" y="5" width="26" height="26" fill="#0F172A" rx="4" />
+                      <rect x="9" y="9" width="18" height="18" fill="#FFFFFF" rx="2" />
+                      <rect x="13" y="13" width="10" height="10" fill="#06B6D4" rx="2" />
+
+                      <rect x="69" y="5" width="26" height="26" fill="#0F172A" rx="4" />
+                      <rect x="73" y="9" width="18" height="18" fill="#FFFFFF" rx="2" />
+                      <rect x="77" y="13" width="10" height="10" fill="#06B6D4" rx="2" />
+
+                      <rect x="5" y="69" width="26" height="26" fill="#0F172A" rx="4" />
+                      <rect x="9" y="73" width="18" height="18" fill="#FFFFFF" rx="2" />
+                      <rect x="13" y="77" width="10" height="10" fill="#06B6D4" rx="2" />
+
+                      <rect x="36" y="8" width="6" height="6" fill="#0F172A" />
+                      <rect x="46" y="8" width="6" height="6" fill="#0F172A" />
+                      <rect x="56" y="8" width="6" height="6" fill="#0F172A" />
+                      <rect x="46" y="24" width="8" height="8" fill="#06B6D4" />
+
+                      <rect x="8" y="36" width="6" height="6" fill="#0F172A" />
+                      <rect x="28" y="36" width="6" height="6" fill="#0F172A" />
+                      <rect x="48" y="36" width="6" height="6" fill="#0F172A" />
+                      <rect x="68" y="36" width="6" height="6" fill="#0F172A" />
+                      <rect x="88" y="36" width="6" height="6" fill="#0F172A" />
+
+                      <rect x="36" y="46" width="6" height="6" fill="#0F172A" />
+                      <rect x="46" y="46" width="8" height="8" fill="#0F172A" />
+                      <rect x="68" y="46" width="6" height="6" fill="#0F172A" />
+
+                      <rect x="36" y="78" width="6" height="6" fill="#0F172A" />
+                      <rect x="46" y="78" width="8" height="8" fill="#06B6D4" />
+                      <rect x="68" y="78" width="6" height="6" fill="#0F172A" />
+                      <rect x="88" y="78" width="6" height="6" fill="#0F172A" />
+
+                      <circle cx="50" cy="50" r="7" fill="#06B6D4" />
+                      <text x="50" y="53" fontSize="8" fontWeight="bold" textAnchor="middle" fill="#FFFFFF">DS</text>
+                    </svg>
+                  </div>
+                  <span style={{ fontSize: '0.75rem', fontFamily: 'monospace', fontWeight: 800, color: '#38BDF8', marginTop: '6px' }}>
+                    {companyDetails?.businessUpiId || 'docsearch.billing@hdfcbank'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleCopy(companyDetails?.businessUpiId || 'docsearch.billing@hdfcbank', 'UPI')}
+                    style={{
+                      marginTop: '6px',
+                      backgroundColor: copiedField === 'UPI' ? '#10B981' : 'rgba(6, 182, 212, 0.15)',
+                      border: '1px solid #06B6D4',
+                      color: copiedField === 'UPI' ? '#070C16' : '#38BDF8',
+                      padding: '4px 10px',
+                      borderRadius: '6px',
+                      fontSize: '0.6875rem',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {copiedField === 'UPI' ? '✓ Copied' : '📋 Copy UPI ID'}
+                  </button>
+                </div>
+
+                {/* Rail B: Bank Transfer */}
+                <div style={{ backgroundColor: '#1E293B', borderRadius: '10px', padding: '14px', fontSize: '0.78rem', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span style={{ fontWeight: 800, color: '#A5B4FC', marginBottom: '4px' }}>
+                    🏛️ Rail B: NEFT / RTGS Wire Details
+                  </span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '3px' }}>
+                    <span style={{ color: '#94A3B8' }}>Beneficiary:</span>
+                    <strong style={{ color: '#F8FAFC' }}>{companyDetails?.beneficiaryName || 'DOCSEARCH HEALTHCARE TECHNOLOGIES PRIVATE LIMITED'}</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '3px' }}>
+                    <span style={{ color: '#94A3B8' }}>Bank Name:</span>
+                    <span style={{ color: '#F8FAFC' }}>{companyDetails?.bankName || 'HDFC Bank Ltd'}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '3px' }}>
+                    <span style={{ color: '#94A3B8' }}>Account No:</span>
+                    <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#38BDF8' }}>
+                      {companyDetails?.accountNumber || '50200084920192'}{' '}
+                      <button
+                        type="button"
+                        onClick={() => handleCopy(companyDetails?.accountNumber || '50200084920192', 'ACC')}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#60A5FA' }}
+                      >
+                        📋
+                      </button>
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '3px' }}>
+                    <span style={{ color: '#94A3B8' }}>IFSC Code:</span>
+                    <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#F8FAFC' }}>
+                      {companyDetails?.ifscCode || 'HDFC0000240'}{' '}
+                      <button
+                        type="button"
+                        onClick={() => handleCopy(companyDetails?.ifscCode || 'HDFC0000240', 'IFSC')}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#60A5FA' }}
+                      >
+                        📋
+                      </button>
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: '#94A3B8' }}>Account Type:</span>
+                    <span style={{ color: '#F8FAFC' }}>Current Account</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* UTR Submission Form */}
+              <form onSubmit={handleSubmitUtr} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '6px' }}>
+                <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#F8FAFC' }}>
+                  ENTER 12-DIGIT UTR / TRANSACTION REFERENCE NUMBER *
+                </label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. 427189021948 or UPI Ref"
+                    value={utrNumber}
+                    onChange={(e) => setUtrNumber(e.target.value.toUpperCase().trim())}
+                    style={{
+                      flex: 1,
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      backgroundColor: '#0F172A',
+                      border: '1.5px solid #06B6D4',
+                      color: '#FFF',
+                      fontSize: '0.875rem',
+                      fontFamily: 'monospace',
+                      fontWeight: 700
+                    }}
+                  />
+                  <Button type="submit" variant="primary" size="sm" disabled={isSubmittingUtr} style={{ backgroundColor: '#10B981', borderColor: '#10B981', color: '#070C16', fontWeight: 900 }}>
+                    {isSubmittingUtr ? 'Submitting...' : '✓ Submit UTR & Confirm'}
+                  </Button>
+                </div>
+              </form>
+            </div>
+          )}
+
           {/* Error Message */}
           {errorMessage && (
             <div
@@ -527,29 +781,31 @@ export const CommercialRenewalModal: React.FC<CommercialRenewalModalProps> = ({
             Secured via Server-Verified Razorpay Webhook & SHA256 Signature
           </span>
           <div style={{ display: 'flex', gap: '10px' }}>
-            <Button variant="outline" size="sm" onClick={onClose} disabled={isCreatingCheckout}>
-              Cancel
+            <Button variant="outline" size="sm" onClick={onClose} disabled={isCreatingCheckout || isSubmittingUtr}>
+              Close
             </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={handleInitiateRenewal}
-              disabled={isCreatingCheckout || isCalculating || !calculation}
-              style={{
-                backgroundColor: '#38BDF8',
-                borderColor: '#38BDF8',
-                color: '#0F172A',
-                fontWeight: 800
-              }}
-            >
-              {isCreatingCheckout ? (
-                <>
-                  <Spinner size="sm" /> Creating Order...
-                </>
-              ) : (
-                `Proceed to Pay ₹${calculation ? calculation.finalAmountInr.toLocaleString() : '...'}`
-              )}
-            </Button>
+            {!showCompanyPayment && (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleInitiateRenewal}
+                disabled={isCreatingCheckout || isCalculating || !calculation}
+                style={{
+                  backgroundColor: '#38BDF8',
+                  borderColor: '#38BDF8',
+                  color: '#0F172A',
+                  fontWeight: 800
+                }}
+              >
+                {isCreatingCheckout ? (
+                  <>
+                    <Spinner size="sm" /> Creating Order...
+                  </>
+                ) : (
+                  `Proceed to Pay ₹${calculation ? calculation.finalAmountInr.toLocaleString() : '...'}`
+                )}
+              </Button>
+            )}
           </div>
         </div>
       </div>
