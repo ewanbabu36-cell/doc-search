@@ -7,9 +7,7 @@ import { parseCurrentUrl, updateBrowserUrlWithoutReload } from '../utils/urlRout
 import {
   normalizeFacilityProfile,
   isHospitalFreeTier,
-  isHospitalModuleLocked,
-  HOSPITAL_FREE_TIER_NAME,
-  HOSPITAL_PRO_TIER_NAME
+  isHospitalModuleLocked
 } from '@docsearch/shared-core';
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 
@@ -582,6 +580,21 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
   const [upgradeModalTargetFeature, setUpgradeModalTargetFeature] = useState<string>('');
   const [currentPlanTier, setCurrentPlanTier] = useState<string>(currentUser?.planTier || '');
   const [licenseRevokedLockout, setLicenseRevokedLockout] = useState<string | null>(null);
+  const [partnerAccountPlan, setPartnerAccountPlan] = useState<any>(null);
+
+  useEffect(() => {
+    fetch('/api/v1/partner/account/plan-and-features')
+      .then((r) => r.json())
+      .then((json) => {
+        if (json?.success && json?.data) {
+          setPartnerAccountPlan(json.data);
+          if (json.data.currentPlan?.name) {
+            setCurrentPlanTier(json.data.currentPlan.name);
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (currentUser?.planTier) {
@@ -688,15 +701,16 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
   const isLabOrPathology = partnerVertical.includes('PATHOLOGY') || partnerVertical.includes('DIAGNOSTIC') || currentUser?.role === 'PATHOLOGIST' || currentUser?.role === 'LAB_TECHNICIAN';
   const isPharmacyVertical = partnerVertical.includes('PHARMACY') || currentUser?.role === 'PHARMACIST';
   const isClinicVertical = partnerVertical.includes('CLINIC') && !isLabOrPathology && !isPharmacyVertical;
-  const isHospital = !isLabOrPathology && !isPharmacyVertical && !isClinicVertical;
+  const resolvedVertical: 'HOSPITAL' | 'PATHOLOGY' | 'PHARMACY' | 'CLINIC' =
+    isLabOrPathology ? 'PATHOLOGY' : isPharmacyVertical ? 'PHARMACY' : isClinicVertical ? 'CLINIC' : 'HOSPITAL';
 
   const drawerUpgradeSuiteTitle = isLabOrPathology
-    ? '⭐ Upgrade Pathology Suite (₹2,999/mo)'
+    ? '⭐ Upgrade Pathology LIMS Pro (₹10,000/yr)'
     : isPharmacyVertical
-    ? '⭐ Upgrade Pharmacy POS Suite (₹1,999/mo)'
+    ? '⭐ Upgrade Pharmacy Enterprise (₹10,000/yr)'
     : isClinicVertical
-    ? '⭐ Upgrade Clinic Pro Suite (₹2,499/mo)'
-    : '⭐ Upgrade Hospital Suite (₹4,999/mo)';
+    ? '⭐ Upgrade Polyclinic Pro (₹20,000/yr)'
+    : '⭐ Upgrade Hospital Enterprise (₹30,000/yr)';
 
   const drawerUpgradeTargetFeature = isLabOrPathology
     ? 'Pathology & LIMS Diagnostic Enterprise Suite'
@@ -2959,79 +2973,64 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                           padding: '10px 12px'
                         }}
                       >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                          <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                            SaaS License Tier
-                          </span>
-                          <span
-                            style={{
-                              fontSize: '0.6875rem',
-                              fontWeight: 800,
-                              color: isFreeHospital ? '#10B981' : '#A78BFA',
-                              backgroundColor: isFreeHospital ? 'rgba(16, 185, 129, 0.15)' : 'rgba(167, 139, 250, 0.15)',
-                              border: isFreeHospital ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(167, 139, 250, 0.3)',
-                              padding: '2px 6px',
-                              borderRadius: '4px'
-                            }}
-                          >
-                            {isFreeHospital ? '🟢 Free OPD Tier' : '💎 Pro Suite'}
-                          </span>
-                        </div>
+                        {(() => {
+                          const currentPlan = partnerAccountPlan?.currentPlan;
+                          const subscription = partnerAccountPlan?.subscription;
+                          const isPaidOrPro = currentPlanTier.toLowerCase().includes('pro') || currentPlanTier.toLowerCase().includes('annual') || (subscription && subscription.status === 'ACTIVE' && !subscription.isFirstYearFree);
+                          const planDisplayName = currentPlan?.name || (isPaidOrPro ? (isLabOrPathology ? 'Pathology LIMS Enterprise Suite' : isPharmacyVertical ? 'Pharmacy Super-Billing Suite' : isClinicVertical ? 'Polyclinic Pro Suite' : 'Hospital Enterprise Pro Suite') : (isLabOrPathology ? 'Pathology Founding Partner (1st Year Free)' : isPharmacyVertical ? 'Pharmacy Founding Partner (1st Year Free)' : isClinicVertical ? 'Clinic Founding Partner (1st Year Free)' : 'Hospital Founding Partner (1st Year Free)'));
+                          const daysLeft = subscription?.daysRemaining ?? 365;
+                          const statusBadgeText = subscription?.status === 'EXPIRED' || subscription?.status === 'LOCKED'
+                            ? '🔴 Locked'
+                            : subscription?.isInGracePeriod
+                            ? '🟠 Grace Period'
+                            : subscription?.isExpiringSoon
+                            ? '🟡 Expiring Soon'
+                            : isPaidOrPro
+                            ? '💎 Pro Suite'
+                            : '🟢 1st Year Free';
 
-                        {(isHospital || isClinicVertical || isLabOrPathology || isPharmacyVertical) && (
-                          <div style={{ display: 'flex', gap: '6px', marginBottom: '8px' }}>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setCurrentPlanTier(HOSPITAL_FREE_TIER_NAME);
-                                try {
-                                  const saved = JSON.parse(localStorage.getItem('docsearch_partner_staff_auth') || '{}');
-                                  saved.planTier = HOSPITAL_FREE_TIER_NAME;
-                                  localStorage.setItem('docsearch_partner_staff_auth', JSON.stringify(saved));
-                                } catch {}
-                              }}
-                              style={{
-                                flex: 1,
-                                padding: '5px 8px',
-                                borderRadius: '6px',
-                                border: isFreeHospital ? '1px solid #10B981' : '1px solid rgba(255, 255, 255, 0.08)',
-                                fontSize: '0.72rem',
-                                fontWeight: 700,
-                                cursor: 'pointer',
-                                backgroundColor: isFreeHospital ? '#10B981' : 'rgba(255, 255, 255, 0.05)',
-                                color: isFreeHospital ? '#064E3B' : '#94A3B8',
-                                transition: 'all 0.12s ease'
-                              }}
-                            >
-                              Free Tier
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setCurrentPlanTier(HOSPITAL_PRO_TIER_NAME);
-                                try {
-                                  const saved = JSON.parse(localStorage.getItem('docsearch_partner_staff_auth') || '{}');
-                                  saved.planTier = HOSPITAL_PRO_TIER_NAME;
-                                  localStorage.setItem('docsearch_partner_staff_auth', JSON.stringify(saved));
-                                } catch {}
-                              }}
-                              style={{
-                                flex: 1,
-                                padding: '5px 8px',
-                                borderRadius: '6px',
-                                border: !isFreeHospital ? '1px solid #A78BFA' : '1px solid rgba(255, 255, 255, 0.08)',
-                                fontSize: '0.72rem',
-                                fontWeight: 700,
-                                cursor: 'pointer',
-                                backgroundColor: !isFreeHospital ? '#7C3AED' : 'rgba(255, 255, 255, 0.05)',
-                                color: !isFreeHospital ? '#FFFFFF' : '#94A3B8',
-                                transition: 'all 0.12s ease'
-                              }}
-                            >
-                              Pro Suite
-                            </button>
-                          </div>
-                        )}
+                          return (
+                            <>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                  SaaS License Tier
+                                </span>
+                                <span
+                                  style={{
+                                    fontSize: '0.6875rem',
+                                    fontWeight: 800,
+                                    color: isPaidOrPro ? '#A78BFA' : '#10B981',
+                                    backgroundColor: isPaidOrPro ? 'rgba(167, 139, 250, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+                                    border: `1px solid ${isPaidOrPro ? 'rgba(167, 139, 250, 0.3)' : 'rgba(16, 185, 129, 0.3)'}`,
+                                    padding: '2px 6px',
+                                    borderRadius: '4px'
+                                  }}
+                                >
+                                  {statusBadgeText}
+                                </span>
+                              </div>
+
+                              {/* Real Authoritative Plan & Countdown Box */}
+                              <div
+                                style={{
+                                  backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                                  borderRadius: '8px',
+                                  padding: '8px 10px',
+                                  marginBottom: '10px',
+                                  border: '1px solid rgba(255, 255, 255, 0.06)'
+                                }}
+                              >
+                                <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#F8FAFC', marginBottom: '4px', lineHeight: 1.3 }}>
+                                  {planDisplayName}
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.7rem', color: '#94A3B8' }}>
+                                  <span>⏳ {daysLeft} Days Left</span>
+                                  <span style={{ color: '#38BDF8', fontWeight: 700 }}>✓ Node-Locked</span>
+                                </div>
+                              </div>
+                            </>
+                          );
+                        })()}
 
                         <button
                           type="button"
@@ -3042,7 +3041,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                           }}
                           style={{
                             width: '100%',
-                            padding: '7px 10px',
+                            padding: '8px 12px',
                             borderRadius: '6px',
                             background: 'linear-gradient(135deg, #7C3AED 0%, #4F46E5 100%)',
                             border: '1px solid #A78BFA',
@@ -3053,7 +3052,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            gap: '5px',
+                            gap: '6px',
                             boxShadow: '0 2px 10px rgba(124, 58, 237, 0.35)',
                             marginBottom: '6px',
                             transition: 'all 0.15s ease'
@@ -4370,11 +4369,20 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
             onClose={() => setIsHospitalUpgradeModalOpen(false)}
             targetFeatureName={upgradeModalTargetFeature}
             currentUser={currentUser}
+            partnerVertical={resolvedVertical}
             onUpgradeSuccess={(newPlanTier) => {
               setCurrentPlanTier(newPlanTier);
               if (currentUser) {
                 currentUser.planTier = newPlanTier;
               }
+              fetch('/api/v1/partner/account/plan-and-features')
+                .then((r) => r.json())
+                .then((json) => {
+                  if (json?.success && json?.data) {
+                    setPartnerAccountPlan(json.data);
+                  }
+                })
+                .catch(() => {});
             }}
           />
         )}

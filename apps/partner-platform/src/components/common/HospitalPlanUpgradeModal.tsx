@@ -1,8 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import {
-  HOSPITAL_PRO_TIER_NAME,
-  HOSPITAL_FREE_TIER_NAME
-} from '@docsearch/shared-core';
 import type { HospitalStaffUser } from '../auth/HospitalStaffLogin.js';
 
 export interface HospitalPlanUpgradeModalProps {
@@ -11,6 +7,7 @@ export interface HospitalPlanUpgradeModalProps {
   targetFeatureName?: string | undefined;
   currentUser?: HospitalStaffUser | undefined;
   onUpgradeSuccess?: ((updatedPlanTier: string) => void) | undefined;
+  partnerVertical?: 'HOSPITAL' | 'PATHOLOGY' | 'PHARMACY' | 'CLINIC' | undefined;
 }
 
 export interface CompanyPaymentDetails {
@@ -37,7 +34,8 @@ export const HospitalPlanUpgradeModal: React.FC<HospitalPlanUpgradeModalProps> =
   onClose,
   targetFeatureName,
   currentUser,
-  onUpgradeSuccess
+  onUpgradeSuccess,
+  partnerVertical
 }) => {
   const [step, setStep] = useState<'REVIEW' | 'PAYMENT' | 'CONFIRMED'>('REVIEW');
   const [selectedDurationYears, setSelectedDurationYears] = useState<number>(1);
@@ -51,8 +49,108 @@ export const HospitalPlanUpgradeModal: React.FC<HospitalPlanUpgradeModalProps> =
   const [partnerRecord, setPartnerRecord] = useState<any>(null);
   const [hospitalPlan, setHospitalPlan] = useState<any>(null);
 
+  // Dynamic Vertical Resolution
+  const effectiveVertical: 'HOSPITAL' | 'PATHOLOGY' | 'PHARMACY' | 'CLINIC' =
+    partnerVertical ||
+    (currentUser?.organizationType?.includes('PATHOLOGY') ||
+    currentUser?.organizationType?.includes('DIAGNOSTIC') ||
+    currentUser?.role?.includes('PATHOLOGIST') ||
+    currentUser?.department?.includes('PATHOLOGY')
+      ? 'PATHOLOGY'
+      : currentUser?.organizationType?.includes('PHARMACY') ||
+        currentUser?.role?.includes('PHARMACIST') ||
+        currentUser?.department?.includes('PHARMACY')
+      ? 'PHARMACY'
+      : currentUser?.organizationType?.includes('CLINIC') ||
+        currentUser?.department?.includes('OPD')
+      ? 'CLINIC'
+      : 'HOSPITAL');
+
+  const verticalConfig = {
+    PATHOLOGY: {
+      planCode: 'PLAN_PATH_ANNUAL_YR2',
+      fallbackName: 'Pathology Lab LIMS Annual Plan',
+      basePrice: 10000,
+      suiteName: 'Pathology LIMS Enterprise Suite',
+      badgeColor: '#06B6D4',
+      badgeText: '🧪 Pathology LIMS Pro',
+      modalTitle: 'Upgrade to Pathology LIMS Enterprise Suite',
+      invoiceRefPrefix: 'PATHOLOGY-UPGRADE',
+      features: [
+        '✓ Unlimited Patient Pathology & Biochemistry Test Reports',
+        '✓ Automated WhatsApp PDF Report Dispatch to Patients & Doctors',
+        '✓ Bidirectional Laboratory Analyzer Interfacing (LIS/HL7)',
+        '✓ Chief Pathologist Digital Signatures & Verified QR Seal',
+        '✓ NABL ISO 15189 Audit Trails & Reagent Expiry Alerts',
+        '✓ Multi-Collection Centre Accession & Barcode Printing',
+        '✓ Critical Panic Value Intimation & SMS Alerts',
+        '✓ Integrated Sample Tracking & Phlebotomy Queue'
+      ]
+    },
+    PHARMACY: {
+      planCode: 'PLAN_PHARMA_ANNUAL_YR2',
+      fallbackName: 'Pharmacy & Chemist Annual Plan',
+      basePrice: 10000,
+      suiteName: 'Pharmacy Super-Billing Enterprise Suite',
+      badgeColor: '#10B981',
+      badgeText: '💊 Pharmacy POS Pro',
+      modalTitle: 'Upgrade to Pharmacy Super-Billing Enterprise Suite',
+      invoiceRefPrefix: 'PHARMACY-UPGRADE',
+      features: [
+        '✓ High-Speed Retail POS Counter Billing & Barcode Scanning',
+        '✓ Batch Number & Expiry Auto-Allocation (FEFO Sorting)',
+        '✓ Wholesale Purchase Inwarding (GRN) & Vendor Ledger',
+        '✓ Schedule H1 & Narcotic Drug Register Compliance',
+        '✓ Automated GST GSTR-1 Sales & Purchase Tax Reports',
+        '✓ Minimum Reorder Level Alerts & Out-of-Stock Forecasting',
+        '✓ Patient Prescription Auto-Import & Generic Substitutions',
+        '✓ Multi-Counter Cash, UPI & Card Split Settlements'
+      ]
+    },
+    CLINIC: {
+      planCode: 'PLAN_CLINIC_ANNUAL_YR2',
+      fallbackName: 'Doctor OPD Clinic Annual Plan',
+      basePrice: 20000,
+      suiteName: 'Polyclinic Multi-Specialty Pro Suite',
+      badgeColor: '#38BDF8',
+      badgeText: '🩺 Polyclinic Pro',
+      modalTitle: 'Upgrade to Polyclinic Multi-Specialty Pro Suite',
+      invoiceRefPrefix: 'CLINIC-UPGRADE',
+      features: [
+        '✓ Multi-Doctor Shift Rostering & Slot Management',
+        '✓ Smart Patient Queue & Waiting Room Token TV Display',
+        '✓ Electronic Prescription (Rx) Pad with Drug Interaction Alerts',
+        '✓ Mini-Pharmacy Dispensing & In-House Lab Test Orders',
+        '✓ Automated Patient Follow-up WhatsApp Reminders',
+        '✓ Longitudinal Patient 360 Medical Records',
+        '✓ Online Video Tele-Consultation & WhatsApp Appointments',
+        '✓ Daily OPD Collection & Doctor Revenue Share Accounting'
+      ]
+    },
+    HOSPITAL: {
+      planCode: 'PLAN_HOSP_ANNUAL_YR2',
+      fallbackName: 'Multi-Specialty Hospital Annual Plan',
+      basePrice: 30000,
+      suiteName: 'Hospital Enterprise Pro Suite',
+      badgeColor: '#A78BFA',
+      badgeText: '🏥 Hospital Enterprise Pro',
+      modalTitle: 'Upgrade to Complete Hospital Enterprise Suite',
+      invoiceRefPrefix: 'HOSPITAL-UPGRADE',
+      features: [
+        '✓ 24x7 Inpatient ADT Bed Matrix, Wards & ICU Beds',
+        '✓ Operation Theatres (OT), PAC & Surgical Consumables',
+        '✓ Emergency Trauma Bay, Triage Desk & Code Blue Alerts',
+        '✓ Cashless Health Insurance & NHCX / TPA Pre-Auth Desk',
+        '✓ Blood Bank, Component Storage & Cross-Match',
+        '✓ Web DICOM PACS & Radiology Modality Worklist',
+        '✓ NABH Quality, Infection Control & Hospital Statutory Ledger',
+        '✓ Unlimited Doctor Desks & Hospital Department Branches'
+      ]
+    }
+  }[effectiveVertical];
+
   // Pricing calculation
-  const annualBasePrice = hospitalPlan?.basePrice || 20000;
+  const annualBasePrice = hospitalPlan?.annualBasePriceInr || hospitalPlan?.basePrice || verticalConfig.basePrice;
   const grossTenureAmount = annualBasePrice * selectedDurationYears;
   const discountPercent = selectedDurationYears === 5 ? 20 : selectedDurationYears === 3 ? 10 : selectedDurationYears === 2 ? 2 : 0;
   const discountAmount = Math.round(grossTenureAmount * (discountPercent / 100));
@@ -66,7 +164,9 @@ export const HospitalPlanUpgradeModal: React.FC<HospitalPlanUpgradeModalProps> =
     fetch('/api/v1/commercial/plans')
       .then((r) => r.json())
       .then((json) => {
-        const hp = json?.data?.find((p: any) => p.code === 'PLAN_HOSPITAL_ANNUAL' || p.code?.includes('HOSPITAL'));
+        const list: any[] = json?.data || [];
+        const hp = list.find((p: any) => p.code === verticalConfig.planCode) ||
+          list.find((p: any) => p.code?.includes(effectiveVertical) && p.code?.includes('ANNUAL'));
         if (hp) setHospitalPlan(hp);
       })
       .catch(() => {});
@@ -82,7 +182,7 @@ export const HospitalPlanUpgradeModal: React.FC<HospitalPlanUpgradeModalProps> =
       .catch(() => {});
 
     // 3. Fetch Company HQ Corporate Bank & Business UPI details
-    fetch(`/api/v1/commercial/company-payment-details?amount=${finalPayableAmount}&invoiceRef=HOSPITAL-UPGRADE`)
+    fetch(`/api/v1/commercial/company-payment-details?amount=${finalPayableAmount}&invoiceRef=${verticalConfig.invoiceRefPrefix}`)
       .then((r) => r.json())
       .then((json) => {
         if (json.success && json.data) {
@@ -90,7 +190,7 @@ export const HospitalPlanUpgradeModal: React.FC<HospitalPlanUpgradeModalProps> =
         }
       })
       .catch(() => {});
-  }, [isOpen, finalPayableAmount]);
+  }, [isOpen, finalPayableAmount, effectiveVertical, verticalConfig.planCode, verticalConfig.invoiceRefPrefix]);
 
   if (!isOpen) return null;
 
@@ -125,8 +225,8 @@ export const HospitalPlanUpgradeModal: React.FC<HospitalPlanUpgradeModalProps> =
         body: JSON.stringify({
           partnerId,
           planId,
-          planName: 'Hospital Enterprise Annual Plan',
-          planCode: 'PLAN_HOSPITAL_ANNUAL',
+          planName: hospitalPlan?.name || verticalConfig.fallbackName,
+          planCode: hospitalPlan?.code || verticalConfig.planCode,
           durationYears: selectedDurationYears,
           payableAmountInr: finalPayableAmount,
           paymentMethod: 'UPI',
@@ -150,7 +250,7 @@ export const HospitalPlanUpgradeModal: React.FC<HospitalPlanUpgradeModalProps> =
             partnerId,
             planId,
             durationYears: selectedDurationYears,
-            customerBillingAddress: currentUser?.tenantName || 'Hospital Headquarters'
+            customerBillingAddress: currentUser?.tenantName || 'Healthcare Facility'
           })
         });
       } catch {}
@@ -159,7 +259,7 @@ export const HospitalPlanUpgradeModal: React.FC<HospitalPlanUpgradeModalProps> =
 
       // Update parent component
       setTimeout(() => {
-        onUpgradeSuccess?.(HOSPITAL_PRO_TIER_NAME);
+        onUpgradeSuccess?.(verticalConfig.suiteName);
       }, 1000);
     } catch (err: any) {
       setErrorMessage(err.message || 'Network error submitting payment reference.');
@@ -240,23 +340,23 @@ export const HospitalPlanUpgradeModal: React.FC<HospitalPlanUpgradeModalProps> =
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#FFFFFF' }}>
-                  Upgrade to Complete Hospital Enterprise Suite
+                  {verticalConfig.modalTitle}
                 </h2>
                 <span
                   style={{
                     fontSize: '0.6875rem',
                     fontWeight: 800,
-                    backgroundColor: '#10B981',
+                    backgroundColor: verticalConfig.badgeColor,
                     color: '#070C16',
                     padding: '2px 8px',
                     borderRadius: '4px'
                   }}
                 >
-                  OFFICIAL HQ CHECKOUT
+                  {verticalConfig.badgeText}
                 </span>
               </div>
               <span style={{ fontSize: '0.78rem', color: '#94A3B8' }}>
-                {currentUser?.tenantName || 'Healthcare Facility'} • Active Plan: {currentUser?.planTier || HOSPITAL_FREE_TIER_NAME}
+                {currentUser?.tenantName || 'Healthcare Facility'} • Active Plan: {currentUser?.planTier || 'Founding Partner (1st Year Free)'}
               </span>
             </div>
           </div>
@@ -381,9 +481,11 @@ export const HospitalPlanUpgradeModal: React.FC<HospitalPlanUpgradeModalProps> =
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '1.1rem' }}>🏥</span>
+                    <span style={{ fontSize: '1.1rem' }}>
+                      {effectiveVertical === 'PATHOLOGY' ? '🧪' : effectiveVertical === 'PHARMACY' ? '💊' : effectiveVertical === 'CLINIC' ? '🩺' : '🏥'}
+                    </span>
                     <strong style={{ fontSize: '0.95rem', color: '#A5B4FC' }}>
-                      Hospital Enterprise Pro Suite (Complete Clinical & Inpatient OS)
+                      {verticalConfig.suiteName}
                     </strong>
                   </div>
                   <span style={{ fontSize: '1.125rem', fontWeight: 900, color: '#38BDF8' }}>
@@ -393,16 +495,7 @@ export const HospitalPlanUpgradeModal: React.FC<HospitalPlanUpgradeModalProps> =
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '0.78rem', color: '#E2E8F0' }}>
-                  {[
-                    '✓ 24x7 Inpatient ADT Bed Matrix & Wards',
-                    '✓ Operation Theatres (OT) & PAC Scheduling',
-                    '✓ Emergency Trauma Bay & Code Blue Alerts',
-                    '✓ Cashless Insurance & NHCX / TPA Claims',
-                    '✓ Blood Bank, Component & Cross-Match',
-                    '✓ Web DICOM PACS & Radiology Viewer',
-                    '✓ NABH Quality & Infection Control',
-                    '✓ Unlimited Doctor Desks & Hospital Beds'
-                  ].map((feat, i) => (
+                  {verticalConfig.features.map((feat, i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span>{feat}</span>
                     </div>
@@ -827,7 +920,7 @@ export const HospitalPlanUpgradeModal: React.FC<HospitalPlanUpgradeModalProps> =
               </p>
               <div style={{ padding: '8px 16px', backgroundColor: '#0F172A', borderRadius: '8px', border: '1px solid #10B981' }}>
                 <span style={{ fontSize: '0.8125rem', color: '#6EE7B7', fontWeight: 700 }}>
-                  ✓ Hospital Enterprise Pro Suite Entitlements Activated
+                  ✓ {verticalConfig.suiteName} Entitlements Activated
                 </span>
               </div>
               <button
@@ -844,7 +937,7 @@ export const HospitalPlanUpgradeModal: React.FC<HospitalPlanUpgradeModalProps> =
                   cursor: 'pointer'
                 }}
               >
-                Done & Return to Hospital Dashboard
+                Done & Return to Dashboard
               </button>
             </div>
           )}

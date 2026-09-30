@@ -56,8 +56,11 @@ export const getRoleCategory = (user?: { role?: string; department?: string; org
   if (role.includes('DOCTOR') || role.includes('SURGEON') || role.includes('PHYSICIAN') || role.includes('RADIOLOGIST') || role.includes('PEDIATRICIAN') || role.includes('CONSULTANT')) {
     return 'DOCTOR';
   }
-  if (role.includes('HOSPITAL_ADMIN') || role.includes('DIRECTOR') || role.includes('ORGANIZATION_ADMIN') || org === 'HOSPITAL' || org === 'CLINIC') {
+  if (role.includes('HOSPITAL_ADMIN') || (role.includes('DIRECTOR') && org !== 'CLINIC') || (role.includes('ORGANIZATION_ADMIN') && org === 'HOSPITAL') || org === 'HOSPITAL') {
     return 'HOSPITAL';
+  }
+  if (org === 'CLINIC' || role.includes('CLINIC')) {
+    return 'DOCTOR';
   }
   return 'STAFF_OPERATIONS';
 };
@@ -143,14 +146,15 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
     addressProofFile: ''
   });
 
-  // Pillar 3: Clinical Setup & Beds State
+  // Pillar 3: Clinical Setup & Beds State (Only for Hospital / HQ)
+  const isHospitalRole = roleCategory === 'HOSPITAL' || roleCategory === 'COMPANY_HQ';
   const [clinicalData, setClinicalData] = useState({
-    totalLicensedBeds: 25,
-    icuBeds: 4,
-    generalWardBeds: 15,
-    deluxeBeds: 4,
-    emergencyTriageBeds: 2,
-    is24x7Emergency: true,
+    totalLicensedBeds: isHospitalRole ? 25 : 0,
+    icuBeds: isHospitalRole ? 4 : 0,
+    generalWardBeds: isHospitalRole ? 15 : 0,
+    deluxeBeds: isHospitalRole ? 4 : 0,
+    emergencyTriageBeds: isHospitalRole ? 2 : 0,
+    is24x7Emergency: isHospitalRole,
     morningShiftStart: '08:00',
     morningShiftEnd: '14:00',
     eveningShiftStart: '16:00',
@@ -360,6 +364,13 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
         .catch(() => {});
     }
   }, [isOpen, storageKey, currentUser?.email]);
+
+  // Non-hospital tab safety guard: redirect to ADDRESS if beds tab was selected
+  useEffect(() => {
+    if (roleCategory !== 'HOSPITAL' && roleCategory !== 'COMPANY_HQ' && activeTab === 'CLINICAL_BEDS') {
+      setActiveTab('ADDRESS');
+    }
+  }, [roleCategory, activeTab]);
 
   const ownerAadhaar = dynamicPartner?.ownerAadhaarNumber || currentUser?.ownerAadhaarNumber || '';
   const aadhaarDocName = dynamicPartner?.aadhaarDocFileName || currentUser?.aadhaarDocFileName || '';
@@ -1135,26 +1146,28 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
             <span>📜</span> {getRoleTabTitle()} {certApprovalStatus === 'PENDING_APPROVAL' && '⏳'}
           </button>
 
-          <button
-            type="button"
-            onClick={() => { setActiveTab('CLINICAL_BEDS'); setErrorMessage(null); }}
-            style={{
-              padding: '12px 14px',
-              backgroundColor: 'transparent',
-              color: activeTab === 'CLINICAL_BEDS' ? '#38BDF8' : '#94A3B8',
-              border: 'none',
-              borderBottom: activeTab === 'CLINICAL_BEDS' ? '3px solid #06B6D4' : '3px solid transparent',
-              fontSize: '0.8125rem',
-              fontWeight: 800,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            <span>🏥</span> Clinical Beds & Shifts
-          </button>
+          {(roleCategory === 'HOSPITAL' || roleCategory === 'COMPANY_HQ') && (
+            <button
+              type="button"
+              onClick={() => { setActiveTab('CLINICAL_BEDS'); setErrorMessage(null); }}
+              style={{
+                padding: '12px 14px',
+                backgroundColor: 'transparent',
+                color: activeTab === 'CLINICAL_BEDS' ? '#38BDF8' : '#94A3B8',
+                border: 'none',
+                borderBottom: activeTab === 'CLINICAL_BEDS' ? '3px solid #06B6D4' : '3px solid transparent',
+                fontSize: '0.8125rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              <span>🏥</span> Inpatient Beds & Hospital Shifts
+            </button>
+          )}
 
           <button
             type="button"
@@ -1855,13 +1868,20 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
 
                 <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
-                    PATIENT WHATSAPP NUMBER
+                    {roleCategory === 'PATHOLOGY_LAB'
+                      ? 'LAB WHATSAPP (REPORT DISPATCH)'
+                      : roleCategory === 'PHARMACY'
+                      ? 'PHARMACY RX & ORDER WHATSAPP'
+                      : roleCategory === 'DOCTOR'
+                      ? 'CLINIC APPOINTMENT WHATSAPP'
+                      : 'OFFICIAL PATIENT WHATSAPP'}
                   </label>
                   <input
                     type="text"
                     value={addressData.whatsappNumber}
                     onChange={(e) => setAddressData({ ...addressData, whatsappNumber: e.target.value })}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem' }}
+                    placeholder="e.g. +91 98765 43210 (For PDF reports & alerts)"
+                    style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.875rem' }}
                   />
                 </div>
 
@@ -1873,22 +1893,34 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                     type="email"
                     value={addressData.supportEmail}
                     onChange={(e) => setAddressData({ ...addressData, supportEmail: e.target.value })}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem' }}
+                    style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.875rem' }}
                   />
                 </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '14px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#F87171', marginBottom: '4px' }}>
-                    🚨 24x7 EMERGENCY / AMBULANCE HELPLINE *
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: roleCategory === 'HOSPITAL' ? '#F87171' : '#CBD5E1', marginBottom: '4px' }}>
+                    {roleCategory === 'HOSPITAL'
+                      ? '🚨 24x7 EMERGENCY / AMBULANCE HELPLINE *'
+                      : '📞 EMERGENCY / AFTER-HOURS PHONE (OPTIONAL)'}
                   </label>
                   <input
                     type="text"
+                    required={roleCategory === 'HOSPITAL'}
                     value={addressData.emergencyHelpline}
                     onChange={(e) => setAddressData({ ...addressData, emergencyHelpline: e.target.value })}
-                    placeholder="e.g. 1800-XXX-XXXX or 0522-XXXXXXX"
-                    style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(239, 68, 68, 0.4)', color: '#FFF', fontSize: '0.875rem' }}
+                    placeholder={roleCategory === 'HOSPITAL' ? 'e.g. 1800-XXX-XXXX or 0522-XXXXXXX' : 'e.g. 0522-XXXXXXX or Mobile (Optional)'}
+                    style={{
+                      width: '100%',
+                      minHeight: '42px',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      backgroundColor: '#1E293B',
+                      border: roleCategory === 'HOSPITAL' ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(255,255,255,0.15)',
+                      color: '#FFF',
+                      fontSize: '0.875rem'
+                    }}
                   />
                 </div>
 
@@ -2335,7 +2367,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
           )}
 
           {/* TAB: CLINICAL SETUP, LICENSED BEDS & MULTI-BRANCH TOPOLOGY */}
-          {activeTab === 'CLINICAL_BEDS' && (
+          {activeTab === 'CLINICAL_BEDS' && (roleCategory === 'HOSPITAL' || roleCategory === 'COMPANY_HQ') && (
             <form onSubmit={handleSaveClinicalBeds} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ backgroundColor: 'rgba(6, 182, 212, 0.08)', border: '1px solid rgba(6, 182, 212, 0.25)', padding: '12px 16px', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                 <div>

@@ -45,8 +45,11 @@ export const getRoleCategory = (user?: { role?: string; department?: string; org
   if (role.includes('DOCTOR') || role.includes('SURGEON') || role.includes('PHYSICIAN') || role.includes('RADIOLOGIST') || role.includes('PEDIATRICIAN') || role.includes('CONSULTANT')) {
     return 'DOCTOR';
   }
-  if (role.includes('HOSPITAL_ADMIN') || role.includes('DIRECTOR') || role.includes('ORGANIZATION_ADMIN') || org === 'HOSPITAL' || org === 'CLINIC') {
+  if (role.includes('HOSPITAL_ADMIN') || (role.includes('DIRECTOR') && org !== 'CLINIC') || (role.includes('ORGANIZATION_ADMIN') && org === 'HOSPITAL') || org === 'HOSPITAL') {
     return 'HOSPITAL';
+  }
+  if (org === 'CLINIC' || role.includes('CLINIC')) {
+    return 'DOCTOR';
   }
   return 'STAFF_OPERATIONS';
 };
