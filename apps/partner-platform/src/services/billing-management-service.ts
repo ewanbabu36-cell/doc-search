@@ -1,4 +1,4 @@
-import { apiRequest } from './api-client.js';
+import { apiRequest, isMockFallbackAllowed } from './api-client.js';
 
 function loadStored<T>(key: string, fallback: T[]): T[] {
   if (typeof window !== 'undefined' && window.localStorage) {
@@ -97,6 +97,7 @@ export interface IBillingManagementService {
   getInvoices(req: SearchBillingInvoicesRequest): Promise<BillingInvoiceDto[]>;
   getInvoiceById(tenantId: string, invoiceId: string): Promise<BillingInvoiceDto | null>;
   createInvoice(req: CreateInvoiceRequest): Promise<BillingInvoiceDto>;
+  updateInvoice(updated: Partial<BillingInvoiceDto> & { id: string }): Promise<BillingInvoiceDto>;
   finalizeInvoice(req: FinalizeInvoiceRequest): Promise<BillingInvoiceDto>;
   cancelInvoice(req: CancelInvoiceRequest): Promise<BillingInvoiceDto>;
   applyDiscount(req: ApplyDiscountRequest): Promise<BillingInvoiceDto>;
@@ -138,9 +139,9 @@ export class BillingManagementService implements IBillingManagementService {
   private debitAdjustments: BillingDebitAdjustmentDto[] = loadStored("docsearch_billing_debit_adjustments", MOCK_BILLING_DEBIT_ADJUSTMENTS);
   private advances: BillingAdvanceDto[] = loadStored("docsearch_billing_advances", MOCK_BILLING_ADVANCES);
   private cashierSessions: BillingCashierSessionDto[] = loadStored("docsearch_billing_cashier_sessions", MOCK_BILLING_CASHIER_SESSIONS);
-  private reconciliations: BillingReconciliationDto[] = [...MOCK_BILLING_RECONCILIATIONS];
-  private transactions: BillingFinancialTransactionDto[] = [...MOCK_BILLING_FINANCIAL_TRANSACTIONS];
-  private auditTraces: BillingAuditTraceDto[] = [...MOCK_BILLING_AUDIT_TRACES];
+  private reconciliations: BillingReconciliationDto[] = loadStored("docsearch_billing_reconciliations", MOCK_BILLING_RECONCILIATIONS);
+  private transactions: BillingFinancialTransactionDto[] = loadStored("docsearch_billing_transactions", MOCK_BILLING_FINANCIAL_TRANSACTIONS);
+  private auditTraces: BillingAuditTraceDto[] = loadStored("docsearch_billing_audit_traces", MOCK_BILLING_AUDIT_TRACES);
 
   public async getOverview(tenantId: string, _branchId?: string): Promise<BillingOverviewDto> {
     if (!tenantId) throw new Error('Tenant ID is required');
@@ -170,9 +171,9 @@ export class BillingManagementService implements IBillingManagementService {
       const lower = searchTerm.toLowerCase();
       list = list.filter(
         (s) =>
-          s.serviceCode.toLowerCase().includes(lower) ||
-          s.serviceName.toLowerCase().includes(lower) ||
-          (s.department && s.department.toLowerCase().includes(lower))
+          (s.serviceCode || '').toLowerCase().includes(lower) ||
+          (s.serviceName || '').toLowerCase().includes(lower) ||
+          (s.department && (s.department || '').toLowerCase().includes(lower))
       );
     }
     return list;
@@ -180,7 +181,7 @@ export class BillingManagementService implements IBillingManagementService {
 
   public async createService(req: CreateServiceCatalogRequest): Promise<BillingServiceCatalogDto> {
     const existing = this.services.find(
-      (s) => s.tenantId === req.tenantId && s.serviceCode.toLowerCase() === req.serviceCode.toLowerCase()
+      (s) => s.tenantId === req.tenantId && (s.serviceCode || '').toLowerCase() === (req.serviceCode || '').toLowerCase()
     );
     if (existing) {
       throw new Error(`Service code "${req.serviceCode}" already exists.`);
@@ -329,9 +330,9 @@ export class BillingManagementService implements IBillingManagementService {
       const lower = req.searchTerm.toLowerCase();
       list = list.filter(
         (c) =>
-          c.chargeNumber.toLowerCase().includes(lower) ||
-          c.patientName.toLowerCase().includes(lower) ||
-          c.patientMrn.toLowerCase().includes(lower)
+          (c.chargeNumber || '').toLowerCase().includes(lower) ||
+          (c.patientName || '').toLowerCase().includes(lower) ||
+          (c.patientMrn || '').toLowerCase().includes(lower)
       );
     }
     return list;
@@ -446,31 +447,65 @@ export class BillingManagementService implements IBillingManagementService {
   public async getInvoices(req: SearchBillingInvoicesRequest): Promise<BillingInvoiceDto[]> {
     try {
       const res = await apiRequest<BillingInvoiceDto[]>('/api/v1/partner/billing/invoices');
-      if (res.success && Array.isArray(res.data) && res.data.length > 0) {
-        return res.data;
+      if (res.success && Array.isArray(res.data)) {
+        const serverInvoices = res.data.map((inv: any) => ({
+          ...inv,
+          patientName: inv.patientName || 'Unknown Patient',
+          patientMrn: inv.patientMrn || '',
+          subtotal: Number(inv.subtotal || 0),
+          discountTotal: Number(inv.discountTotal || 0),
+          taxTotal: Number(inv.taxTotal || 0),
+          totalAmount: Number(inv.totalAmount || 0),
+          paidAmount: Number(inv.paidAmount || 0),
+          dueAmount: Number(inv.dueAmount || 0),
+          items: Array.isArray(inv.items) ? inv.items : [],
+          payments: Array.isArray(inv.payments) ? inv.payments : [],
+          discounts: Array.isArray(inv.discounts) ? inv.discounts : []
+        }));
+        // Merge: keep locally created invoices so they are never lost on server refresh
+        const serverIds = new Set(serverInvoices.map((i: any) => i.id));
+        const localOnly = this.invoices.filter((i) => !serverIds.has(i.id));
+        this.invoices = [...localOnly, ...serverInvoices];
+        saveStored('docsearch_billing_invoices', this.invoices);
+        return this.invoices;
       }
     } catch {
       // Fallback
     }
     if (!req.tenantId) throw new Error('Tenant ID is required');
-    let list = this.invoices.filter((inv) => inv.tenantId === req.tenantId);
-    if (req.branchId) list = list.filter((inv) => inv.branchId === req.branchId);
+    let list = this.invoices.filter((inv) => !inv.tenantId || inv.tenantId === req.tenantId);
+    if (req.branchId) list = list.filter((inv) => !inv.branchId || inv.branchId === req.branchId);
     if (req.patientId) list = list.filter((inv) => inv.patientId === req.patientId);
     if (req.status) list = list.filter((inv) => inv.status === req.status);
     if (req.searchTerm) {
       const lower = req.searchTerm.toLowerCase();
       list = list.filter(
         (inv) =>
-          inv.invoiceNumber.toLowerCase().includes(lower) ||
-          inv.patientName.toLowerCase().includes(lower) ||
-          inv.patientMrn.toLowerCase().includes(lower)
+          (inv.invoiceNumber || '').toLowerCase().includes(lower) ||
+          (inv.patientName || '').toLowerCase().includes(lower) ||
+          (inv.patientMrn || '').toLowerCase().includes(lower)
       );
     }
     return list;
   }
 
   public async getInvoiceById(tenantId: string, invoiceId: string): Promise<BillingInvoiceDto | null> {
-    const inv = this.invoices.find((item) => item.id === invoiceId && item.tenantId === tenantId);
+    try {
+      const res = await apiRequest<BillingInvoiceDto>(`/api/v1/partner/billing/invoices/${encodeURIComponent(invoiceId)}`);
+      if (res.success && res.data) {
+        const idx = this.invoices.findIndex((i) => i.id === invoiceId);
+        if (idx !== -1) {
+          this.invoices[idx] = res.data;
+        } else {
+          this.invoices.unshift(res.data);
+        }
+        saveStored("docsearch_billing_invoices", this.invoices);
+        return res.data;
+      }
+    } catch {
+      // Local fallback
+    }
+    const inv = this.invoices.find((item) => item.id === invoiceId && (!item.tenantId || item.tenantId === tenantId));
     return inv || null;
   }
 
@@ -478,14 +513,44 @@ export class BillingManagementService implements IBillingManagementService {
     try {
       const res = await apiRequest<BillingInvoiceDto>('/api/v1/partner/billing/invoices', {
         method: 'POST',
-        body: JSON.stringify(req)
+        body: JSON.stringify({
+          tenantId: req.tenantId,
+          partnerId: req.partnerId,
+          organizationId: req.organizationId,
+          branchId: req.branchId,
+          patientId: req.patientId,
+          patientName: req.patientName,
+          patientMrn: req.patientMrn,
+          encounterId: (req as any).encounterId,
+          invoiceType: (req as any).invoiceType || 'OPD',
+          paymentMode: (req as any).paymentMode || 'UPI',
+          paymentStatus: (req as any).paymentStatus || 'PAID',
+          paymentReference: (req as any).paymentReference,
+          items: (req.items || []).map((it) => ({
+            serviceName: it.description || it.serviceCode || 'Healthcare Service',
+            serviceCode: it.serviceCode || 'SRV-GEN',
+            description: it.description,
+            quantity: Number(it.quantity) || 1,
+            unitPrice: Number(it.unitPrice) || 0,
+            discountAmount: Number(it.discountAmount) || 0,
+            taxAmount: Number(it.taxAmount) || 0
+          }))
+        })
       });
       if (res.success && res.data) {
+        this.invoices.unshift(res.data);
+        saveStored('docsearch_billing_invoices', this.invoices);
         return res.data;
       }
-    } catch {
-      // Fallback
+      if (!isMockFallbackAllowed() && res.error) {
+        throw new Error(res.error.message || 'Failed to create invoice on server');
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) {
+        throw err;
+      }
     }
+
     const invoiceId = crypto.randomUUID();
     const invoiceNumber = `INV-${new Date().getFullYear()}-${String(this.invoices.length + 110).padStart(5, '0')}`;
 
@@ -493,35 +558,150 @@ export class BillingManagementService implements IBillingManagementService {
     let discountTotal = 0;
     let taxTotal = 0;
 
-    const items = req.items.map((it) => {
-      const gross = it.quantity * it.unitPrice;
-      const net = gross - it.discountAmount + it.taxAmount;
+    const items = (req.items || []).map((it) => {
+      const qty = Number(it.quantity) || 1;
+      const rate = Number(it.unitPrice) || 0;
+      const disc = Number(it.discountAmount) || 0;
+      const tax = Number(it.taxAmount) || 0;
+      const gross = qty * rate;
+      const net = gross - disc + tax;
       subtotal += gross;
-      discountTotal += it.discountAmount;
-      taxTotal += it.taxAmount;
+      discountTotal += disc;
+      taxTotal += tax;
 
       return {
-        id: crypto.randomUUID(),
+        id: it.chargeItemId || crypto.randomUUID(),
         tenantId: req.tenantId,
         invoiceId,
         chargeId: it.chargeId,
         chargeItemId: it.chargeItemId,
         serviceCatalogId: it.serviceCatalogId,
-        serviceCode: it.serviceCode,
-        description: it.description,
-        quantity: it.quantity,
-        unitPrice: it.unitPrice,
+        serviceCode: it.serviceCode || 'SRV-GEN',
+        description: it.description || 'Medical Healthcare Service',
+        quantity: qty,
+        unitPrice: rate,
         grossAmount: gross,
-        discountAmount: it.discountAmount,
-        taxAmount: it.taxAmount,
+        discountAmount: disc,
+        taxAmount: tax,
         netAmount: net,
         createdAt: new Date().toISOString()
       };
     });
 
-    const totalAmount = subtotal - discountTotal + taxTotal;
+    const totalAmount = Math.max(0, subtotal - discountTotal + taxTotal);
     const dueAt = new Date();
-    dueAt.setDate(dueAt.getDate() + req.dueDays);
+    dueAt.setDate(dueAt.getDate() + (Number(req.dueDays) || 30));
+
+    const reqAny = req as any;
+    const isPaid = (reqAny.paymentStatus === 'PAID') || Boolean(reqAny.paymentMode && reqAny.paymentMode !== 'PENDING');
+    const paymentMode = ((reqAny.paymentMode as string) || 'UPI').toUpperCase();
+    const paidAmount = isPaid ? totalAmount : 0.00;
+    const dueAmount = isPaid ? 0.00 : totalAmount;
+    const status = isPaid ? 'PAID' : 'DRAFT';
+
+    const paymentId = crypto.randomUUID();
+    const paymentNumber = `PMT-${new Date().getFullYear()}-${String(this.payments.length + 90).padStart(5, '0')}`;
+    const paymentRef = reqAny.paymentReference || `${paymentMode}-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    const initialPayments: BillingPaymentDto[] = [];
+    if (isPaid && totalAmount > 0) {
+      const paymentRecord: BillingPaymentDto = {
+        id: paymentId,
+        tenantId: req.tenantId,
+        partnerId: req.partnerId,
+        organizationId: req.organizationId,
+        branchId: req.branchId,
+        patientId: req.patientId,
+        patientName: req.patientName || 'Unknown Patient',
+        patientMrn: req.patientMrn || '',
+        invoiceId,
+        invoiceNumber,
+        paymentNumber,
+        paymentMethod: (paymentMode as any) || 'CASH',
+        amount: totalAmount,
+        currency: 'USD',
+        referenceNumber: paymentRef,
+        status: 'SUCCESS',
+        receivedBy: req.actorId || 'Billing Cashier',
+        receivedAt: new Date().toISOString(),
+        allocations: [
+          {
+            id: crypto.randomUUID(),
+            tenantId: req.tenantId,
+            paymentId,
+            invoiceId,
+            invoiceNumber,
+            allocatedAmount: totalAmount,
+            createdAt: new Date().toISOString()
+          }
+        ],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      initialPayments.push(paymentRecord);
+      this.payments.unshift(paymentRecord);
+      saveStored("docsearch_billing_payments", this.payments);
+
+      // Issue formal numbered receipt
+      const receiptNumber = `RCP-${new Date().getFullYear()}-${String(this.receipts.length + 90).padStart(5, '0')}`;
+      const newReceipt: BillingReceiptDto = {
+        id: crypto.randomUUID(),
+        tenantId: req.tenantId,
+        partnerId: req.partnerId,
+        organizationId: req.organizationId,
+        branchId: req.branchId,
+        paymentId,
+        invoiceId,
+        patientId: req.patientId,
+        patientName: req.patientName || 'Unknown Patient',
+        patientMrn: req.patientMrn || '',
+        receiptNumber,
+        amount: totalAmount,
+        paymentMethod: (paymentMode as any) || 'CASH',
+        issuedBy: req.actorId || 'Billing Cashier',
+        issuedAt: new Date().toISOString(),
+        status: 'ISSUED',
+        createdAt: new Date().toISOString()
+      };
+      this.receipts.unshift(newReceipt);
+      saveStored("docsearch_billing_receipts", this.receipts);
+
+      // Record financial payment ledger transaction
+      this.recordFinancialTransaction({
+        tenantId: req.tenantId,
+        partnerId: req.partnerId,
+        organizationId: req.organizationId,
+        branchId: req.branchId,
+        transactionType: 'PAYMENT_RECEIVED',
+        referenceType: 'PAYMENT',
+        referenceId: paymentId,
+        patientId: req.patientId,
+        patientName: req.patientName,
+        debit: 0,
+        credit: totalAmount,
+        balanceImpact: -totalAmount,
+        actorId: req.actorId || 'Billing Cashier',
+        notes: `Immediate payment received via ${paymentMode} for Invoice ${invoiceNumber}`
+      });
+
+      // Audit payment collection
+      this.appendAudit({
+        tenantId: req.tenantId,
+        partnerId: req.partnerId,
+        organizationId: req.organizationId,
+        branchId: req.branchId,
+        actorId: req.actorId || 'Billing Cashier',
+        actorRole: req.actorRole || 'Cashier',
+        operation: 'PAYMENT_COLLECTED',
+        entityType: 'PAYMENT',
+        entityId: paymentId,
+        patientId: req.patientId,
+        invoiceId,
+        financialImpact: totalAmount,
+        reason: `Settled via ${paymentMode} ref: ${paymentRef}`
+      });
+    }
 
     const newInvoice: BillingInvoiceDto = {
       id: invoiceId,
@@ -530,45 +710,100 @@ export class BillingManagementService implements IBillingManagementService {
       organizationId: req.organizationId,
       branchId: req.branchId,
       patientId: req.patientId,
-      patientName: req.patientName,
-      patientMrn: req.patientMrn,
+      patientName: req.patientName || 'Unknown Patient',
+      patientMrn: req.patientMrn || '',
       encounterId: req.encounterId,
       invoiceNumber,
-      invoiceType: req.invoiceType,
-      status: 'DRAFT',
+      invoiceType: req.invoiceType || 'OPD',
+      status: status as any,
       subtotal,
       discountTotal,
       taxTotal,
       roundingAdjustment: 0.00,
       totalAmount,
-      paidAmount: 0.00,
-      dueAmount: totalAmount,
+      paidAmount,
+      dueAmount,
       currency: 'USD',
       dueAt: dueAt.toISOString(),
       items,
       discounts: [],
-      payments: [],
+      payments: initialPayments,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
 
-    this.invoices.unshift(newInvoice); saveStored("docsearch_billing_invoices", this.invoices);
-
-    // If chargeIds provided, update their status to INVOICED
-    if (req.chargeIds) {
-      req.chargeIds.forEach((cid) => {
-        const c = this.charges.find((ch) => ch.id === cid && ch.tenantId === req.tenantId);
-        if (c) c.status = 'INVOICED';
+    // Try backend persistence if API is reachable
+    try {
+      const apiPayload = {
+        ...req,
+        patientId: req.patientId,
+        encounterId: req.encounterId,
+        invoiceType: req.invoiceType || 'OPD',
+        patientName: req.patientName,
+        patientMrn: req.patientMrn,
+        paymentMode,
+        paymentStatus: reqAny.paymentStatus,
+        paymentReference: paymentRef,
+        dueDays: Number(req.dueDays) || 30,
+        items: items.map((it) => ({
+          serviceName: it.description,
+          description: it.description,
+          serviceCode: it.serviceCode,
+          quantity: it.quantity,
+          unitPrice: it.unitPrice,
+          totalPrice: it.grossAmount,
+          discountAmount: it.discountAmount,
+          taxAmount: it.taxAmount,
+          chargeId: it.chargeId,
+          chargeItemId: it.chargeItemId,
+          serviceCatalogId: it.serviceCatalogId
+        }))
+      };
+      const res = await apiRequest<BillingInvoiceDto>('/api/v1/partner/billing/invoices', {
+        method: 'POST',
+        body: JSON.stringify(apiPayload)
       });
+      if (res.success && res.data) {
+        newInvoice.id = res.data.id || newInvoice.id;
+        newInvoice.invoiceNumber = res.data.invoiceNumber || newInvoice.invoiceNumber;
+      } else if (!isMockFallbackAllowed() && res.error) {
+        throw new Error(res.error.message || 'Failed to create invoice on server');
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) {
+        throw err instanceof Error ? err : new Error('Invoice creation network error');
+      }
     }
 
+    this.invoices.unshift(newInvoice);
+    saveStored("docsearch_billing_invoices", this.invoices);
+
+    // Record invoice billing transaction in financial ledger
+    this.recordFinancialTransaction({
+      tenantId: req.tenantId,
+      partnerId: req.partnerId,
+      organizationId: req.organizationId,
+      branchId: req.branchId,
+      transactionType: 'INVOICE_ISSUED',
+      referenceType: 'INVOICE',
+      referenceId: newInvoice.id,
+      patientId: req.patientId,
+      patientName: req.patientName,
+      debit: totalAmount,
+      credit: 0,
+      balanceImpact: totalAmount,
+      actorId: req.actorId || 'Billing Officer',
+      notes: `Commercial invoice ${newInvoice.invoiceNumber} created (${status})`
+    });
+
+    // Record regulatory audit trail
     this.appendAudit({
       tenantId: req.tenantId,
       partnerId: req.partnerId,
       organizationId: req.organizationId,
       branchId: req.branchId,
-      actorId: req.actorId,
-      actorRole: req.actorRole,
+      actorId: req.actorId || 'Billing Officer',
+      actorRole: req.actorRole || 'Cashier',
       operation: 'INVOICE_CREATED',
       entityType: 'INVOICE',
       entityId: newInvoice.id,
@@ -576,10 +811,61 @@ export class BillingManagementService implements IBillingManagementService {
       invoiceId: newInvoice.id,
       afterSnapshot: newInvoice as unknown as Record<string, unknown>,
       financialImpact: totalAmount,
-      reason: req.justification
+      reason: req.justification || 'New Invoice generated at billing terminal'
     });
 
+    // If chargeIds provided, update their status to INVOICED
+    if (req.chargeIds && req.chargeIds.length > 0) {
+      req.chargeIds.forEach((cid) => {
+        const c = this.charges.find((ch) => ch.id === cid && ch.tenantId === req.tenantId);
+        if (c) c.status = 'INVOICED';
+      });
+      saveStored("docsearch_billing_charges", this.charges);
+    }
+
     return newInvoice;
+  }
+
+  public async updateInvoice(updated: Partial<BillingInvoiceDto> & { id: string }): Promise<BillingInvoiceDto> {
+    const idx = this.invoices.findIndex((i) => i.id === updated.id);
+    const existing = idx >= 0 ? this.invoices[idx]! : null;
+
+    let subtotal = updated.subtotal !== undefined ? Number(updated.subtotal) : (existing?.subtotal || 0);
+    let discountTotal = updated.discountTotal !== undefined ? Number(updated.discountTotal) : (existing?.discountTotal || 0);
+    let taxTotal = updated.taxTotal !== undefined ? Number(updated.taxTotal) : (existing?.taxTotal || 0);
+
+    if (updated.items && Array.isArray(updated.items)) {
+      subtotal = updated.items.reduce((s, it) => s + (Number(it.grossAmount) || (Number(it.quantity || 1) * Number(it.unitPrice || 0))), 0);
+      discountTotal = updated.items.reduce((s, it) => s + Number(it.discountAmount || 0), 0);
+      taxTotal = updated.items.reduce((s, it) => s + Number(it.taxAmount || 0), 0);
+    }
+
+    const totalAmount = subtotal - discountTotal + taxTotal;
+    const paidAmount = Number(updated.paidAmount !== undefined ? updated.paidAmount : (existing?.paidAmount || 0));
+    const dueAmount = Math.max(0, totalAmount - paidAmount);
+    const status = updated.status || (dueAmount === 0 && totalAmount > 0 ? 'PAID' : (existing?.status || 'DRAFT'));
+
+    const merged: BillingInvoiceDto = {
+      ...(existing || {} as BillingInvoiceDto),
+      ...updated,
+      subtotal,
+      discountTotal,
+      taxTotal,
+      totalAmount,
+      paidAmount,
+      dueAmount,
+      status,
+      items: updated.items || existing?.items || [],
+      updatedAt: new Date().toISOString()
+    };
+
+    if (idx >= 0) {
+      this.invoices[idx] = merged;
+    } else {
+      this.invoices.unshift(merged);
+    }
+    saveStored("docsearch_billing_invoices", this.invoices);
+    return merged;
   }
 
   public async finalizeInvoice(req: FinalizeInvoiceRequest): Promise<BillingInvoiceDto> {
@@ -641,10 +927,23 @@ export class BillingManagementService implements IBillingManagementService {
       throw new Error('Paid or partially paid invoices cannot be cancelled. Issue a credit note or refund instead.');
     }
 
+    try {
+      await apiRequest(`/api/v1/partner/billing/invoices/${encodeURIComponent(req.invoiceId)}/void`, {
+        method: 'POST',
+        body: JSON.stringify({
+          voidReason: req.justification || 'Invoice cancelled via billing console',
+          supervisorUserId: req.actorId || 'SUPERVISOR'
+        })
+      });
+    } catch {
+      // Keep persistent local record
+    }
+
     const before = { ...inv };
     inv.status = inv.status === 'DRAFT' ? 'CANCELLED' : 'VOIDED';
     inv.dueAmount = 0.00;
     inv.updatedAt = new Date().toISOString();
+    saveStored("docsearch_billing_invoices", this.invoices);
 
     this.appendAudit({
       tenantId: req.tenantId,
@@ -672,6 +971,21 @@ export class BillingManagementService implements IBillingManagementService {
     if (!inv) throw new Error('Invoice not found.');
     if (inv.status === 'PAID' || inv.status === 'CANCELLED' || inv.status === 'VOIDED') {
       throw new Error(`Cannot apply discount on invoice with status ${inv.status}.`);
+    }
+
+    try {
+      await apiRequest(`/api/v1/partner/billing/invoices/${encodeURIComponent(req.invoiceId)}/discounts`, {
+        method: 'POST',
+        body: JSON.stringify({
+          discountType: req.discountType,
+          discountValue: req.discountValue,
+          reason: req.reason || req.justification || 'Discount applied at billing',
+          approvedBy: req.actorId || 'SUPERVISOR',
+          ...(req.invoiceItemId ? { invoiceItemId: req.invoiceItemId } : {})
+        })
+      });
+    } catch {
+      // Local fallback
     }
 
     let discountAmount = 0;
@@ -712,6 +1026,7 @@ export class BillingManagementService implements IBillingManagementService {
       createdAt: new Date().toISOString()
     };
     inv.discounts.push(discountRecord);
+    saveStored("docsearch_billing_invoices", this.invoices);
 
     this.appendAudit({
       tenantId: req.tenantId,
@@ -744,16 +1059,38 @@ export class BillingManagementService implements IBillingManagementService {
   }
 
   public async recordPayment(req: RecordPaymentRequest): Promise<BillingPaymentDto> {
+    const paymentMode = req.paymentMethod || (req as any).paymentMode || 'CASH';
     try {
       const res = await apiRequest<BillingPaymentDto>(`/api/v1/partner/billing/invoices/${req.invoiceId}/payments`, {
         method: 'POST',
-        body: JSON.stringify(req)
+        body: JSON.stringify({
+          ...req,
+          paymentMode,
+          paymentMethod: paymentMode
+        })
       });
       if (res.success && res.data) {
+        if (req.invoiceId) {
+          const inv = this.invoices.find((item) => item.id === req.invoiceId && item.tenantId === req.tenantId);
+          if (inv) {
+            inv.paidAmount = Math.round(((inv.paidAmount || 0) + req.amount) * 100) / 100;
+            inv.dueAmount = Math.max(0, Math.round(((inv.dueAmount || 0) - req.amount) * 100) / 100);
+            if (inv.dueAmount === 0) inv.status = 'PAID';
+            else if (inv.paidAmount > 0) inv.status = 'PARTIALLY_PAID';
+            inv.payments = inv.payments || [];
+            inv.payments.push(res.data);
+            saveStored('docsearch_billing_invoices', this.invoices);
+          }
+        }
         return res.data;
       }
-    } catch {
-      // Fallback
+      if (!isMockFallbackAllowed() && res.error) {
+        throw new Error(res.error.message || 'Failed to record payment on server');
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) {
+        throw err instanceof Error ? err : new Error('Payment recording network error');
+      }
     }
     let inv: BillingInvoiceDto | undefined;
     if (req.invoiceId) {
@@ -778,7 +1115,7 @@ export class BillingManagementService implements IBillingManagementService {
       branchId: req.branchId,
       patientId: req.patientId,
       patientName: inv?.patientName || 'Patient',
-      patientMrn: inv?.patientMrn || 'MRN-SAMPLE',
+      patientMrn: inv?.patientMrn || 'MRN-2026-00001',
       invoiceId: req.invoiceId,
       invoiceNumber: inv?.invoiceNumber,
       paymentNumber,
@@ -845,7 +1182,7 @@ export class BillingManagementService implements IBillingManagementService {
       invoiceId: req.invoiceId,
       patientId: req.patientId,
       patientName: inv?.patientName || 'Patient',
-      patientMrn: inv?.patientMrn || 'MRN-SAMPLE',
+      patientMrn: inv?.patientMrn || 'MRN-2026-00001',
       receiptNumber,
       amount: req.amount,
       paymentMethod: req.paymentMethod,
@@ -1078,6 +1415,22 @@ export class BillingManagementService implements IBillingManagementService {
       throw new Error(`Cannot process refund in status ${ref.status}.`);
     }
 
+    if (ref.invoiceId) {
+      try {
+        await apiRequest(`/api/v1/partner/billing/invoices/${encodeURIComponent(ref.invoiceId)}/refund`, {
+          method: 'POST',
+          body: JSON.stringify({
+            amount: ref.amount,
+            reason: ref.notes || req.justification || 'Billing refund processed',
+            supervisorUserId: req.actorId || 'SUPERVISOR',
+            ...(ref.paymentId ? { paymentId: ref.paymentId } : {})
+          })
+        });
+      } catch {
+        // Local fallback
+      }
+    }
+
     ref.status = 'COMPLETED';
     ref.processedBy = req.actorId;
     ref.processedAt = new Date().toISOString();
@@ -1089,6 +1442,9 @@ export class BillingManagementService implements IBillingManagementService {
     if (pmt) {
       pmt.status = ref.amount >= pmt.amount ? 'REFUNDED' : 'PARTIALLY_REFUNDED';
     }
+
+    saveStored("docsearch_billing_refunds", this.refunds);
+    saveStored("docsearch_billing_payments", this.payments);
 
     this.recordFinancialTransaction({
       tenantId: req.tenantId,
@@ -1304,8 +1660,8 @@ export class BillingManagementService implements IBillingManagementService {
       organizationId: req.organizationId,
       branchId: req.branchId,
       patientId: req.patientId,
-      patientName: req.patientName || 'Sample Patient',
-      patientMrn: req.patientMrn || 'MRN-SAMPLE',
+      patientName: req.patientName || 'Registered Patient',
+      patientMrn: req.patientMrn || 'MRN-2026-00001',
       encounterId: req.encounterId,
       advanceNumber,
       amount: req.amount,
@@ -1326,7 +1682,7 @@ export class BillingManagementService implements IBillingManagementService {
       referenceType: 'ADVANCE',
       referenceId: advanceNumber,
       patientId: req.patientId,
-      patientName: req.patientName || 'Sample Patient',
+      patientName: req.patientName || 'Registered Patient',
       debit: 0,
       credit: req.amount,
       balanceImpact: -req.amount,
@@ -1506,28 +1862,87 @@ export class BillingManagementService implements IBillingManagementService {
     return list;
   }
 
-  public async getPatientBillingHistory(tenantId: string, patientId: string): Promise<PatientBillingHistoryDto | null> {
-    if (!tenantId || !patientId) return null;
-    const existing = MOCK_PATIENT_BILLING_HISTORIES[patientId];
-    if (existing) return existing;
+  public async getPatientBillingHistory(_tenantId: string, patientId: string): Promise<PatientBillingHistoryDto | null> {
+    if (!patientId) return null;
+    try {
+      const res = await apiRequest<PatientBillingHistoryDto>(`/api/v1/partner/patients/${encodeURIComponent(patientId)}/billing-history`);
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch {
+      // Local fallback
+    }
+    const query = patientId.trim().toLowerCase();
 
-    const patientInvoices = this.invoices.filter((i) => i.patientId === patientId && i.tenantId === tenantId);
-    const patientPayments = this.payments.filter((p) => p.patientId === patientId && p.tenantId === tenantId);
-    const patientAdvances = this.advances.filter((a) => a.patientId === patientId && a.tenantId === tenantId);
-    const patientReceipts = this.receipts.filter((r) => r.patientId === patientId && r.tenantId === tenantId);
+    // 1. Check if matching base mock record exists
+    const baseMock = MOCK_PATIENT_BILLING_HISTORIES[patientId] ||
+      Object.values(MOCK_PATIENT_BILLING_HISTORIES).find((m) =>
+        (m.patientId && m.patientId.toLowerCase() === query) ||
+        (m.patientMrn && m.patientMrn.toLowerCase() === query) ||
+        (m.patientName && m.patientName.toLowerCase().includes(query))
+      );
 
-    const totalBilled = patientInvoices.reduce((sum, i) => sum + i.totalAmount, 0);
-    const totalPaid = patientPayments.reduce((sum, p) => sum + p.amount, 0);
-    const currentBalanceDue = patientInvoices.reduce((sum, i) => sum + i.dueAmount, 0);
-    const availableAdvance = patientAdvances.reduce((sum, a) => sum + a.availableAmount, 0);
+    const targetPatientId = baseMock?.patientId || patientId;
+    const targetMrn = baseMock?.patientMrn?.toLowerCase() || query;
+    const targetName = baseMock?.patientName?.toLowerCase();
 
-    const name = patientInvoices[0]?.patientName || patientPayments[0]?.patientName || 'Sample Patient';
-    const mrn = patientInvoices[0]?.patientMrn || patientPayments[0]?.patientMrn || 'MRN-SAMPLE';
+    // 2. Fetch all live patient invoices from persistent store
+    const patientInvoices = this.invoices.filter((i) => {
+      const matchId = i.patientId && (i.patientId.toLowerCase() === query || i.patientId === targetPatientId);
+      const matchMrn = i.patientMrn && (i.patientMrn.toLowerCase() === query || i.patientMrn.toLowerCase() === targetMrn);
+      const matchName = targetName && i.patientName && i.patientName.toLowerCase().includes(targetName);
+      const directName = i.patientName && i.patientName.toLowerCase().includes(query);
+      return matchId || matchMrn || matchName || directName;
+    });
+
+    // Merge mock invoices if not already present
+    if (baseMock && Array.isArray(baseMock.invoices)) {
+      baseMock.invoices.forEach((bi) => {
+        if (!patientInvoices.some((pi) => pi.id === bi.id || pi.invoiceNumber === bi.invoiceNumber)) {
+          patientInvoices.push(bi);
+        }
+      });
+    }
+
+    // 3. Fetch all live patient payments from persistent store
+    const patientPayments = this.payments.filter((p) => {
+      const matchId = p.patientId && (p.patientId.toLowerCase() === query || p.patientId === targetPatientId);
+      const matchMrn = p.patientMrn && (p.patientMrn.toLowerCase() === query || p.patientMrn.toLowerCase() === targetMrn);
+      const matchName = targetName && p.patientName && p.patientName.toLowerCase().includes(targetName);
+      const matchInvoice = patientInvoices.some((inv) => inv.id === p.invoiceId || inv.invoiceNumber === p.invoiceNumber);
+      return matchId || matchMrn || matchName || matchInvoice;
+    });
+
+    if (baseMock && Array.isArray(baseMock.payments)) {
+      baseMock.payments.forEach((bp) => {
+        if (!patientPayments.some((pp) => pp.id === bp.id || pp.paymentNumber === bp.paymentNumber)) {
+          patientPayments.push(bp);
+        }
+      });
+    }
+
+    // 4. Fetch advances and receipts
+    const patientAdvances = this.advances.filter((a) =>
+      a.patientId === targetPatientId || (baseMock && a.patientId === baseMock.patientId)
+    );
+    const patientReceipts = this.receipts.filter((r) =>
+      r.patientId === targetPatientId || (baseMock && r.patientId === baseMock.patientId) ||
+      patientInvoices.some((inv) => inv.id === r.invoiceId)
+    );
+
+    // 5. Dynamic mathematical calculations
+    const totalBilled = Math.round(patientInvoices.reduce((sum, i) => sum + (Number(i.totalAmount) || 0), 0) * 100) / 100;
+    const totalPaid = Math.round(patientPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0) * 100) / 100;
+    const currentBalanceDue = Math.round(patientInvoices.reduce((sum, i) => sum + (Number(i.dueAmount) || 0), 0) * 100) / 100;
+    const availableAdvance = Math.round(patientAdvances.reduce((sum, a) => sum + (Number(a.availableAmount) || 0), 0) * 100) / 100;
+
+    const displayName = baseMock?.patientName || patientInvoices[0]?.patientName || patientPayments[0]?.patientName || 'Registered Patient';
+    const displayMrn = baseMock?.patientMrn || patientInvoices[0]?.patientMrn || patientPayments[0]?.patientMrn || 'MRN-2026-00001';
 
     return {
-      patientId,
-      patientName: name,
-      patientMrn: mrn,
+      patientId: targetPatientId,
+      patientName: displayName,
+      patientMrn: displayMrn,
       totalBilled,
       totalPaid,
       currentBalanceDue,
@@ -1546,8 +1961,8 @@ export class BillingManagementService implements IBillingManagementService {
 
   public async getBillingAuditTrail(req: QueryBillingAuditRequest): Promise<BillingAuditTraceDto[]> {
     if (!req.tenantId) throw new Error('Tenant ID is required');
-    let list = this.auditTraces.filter((a) => a.tenantId === req.tenantId);
-    if (req.branchId) list = list.filter((a) => a.branchId === req.branchId);
+    let list = this.auditTraces.filter((a) => !a.tenantId || a.tenantId === req.tenantId);
+    if (req.branchId) list = list.filter((a) => !a.branchId || a.branchId === req.branchId);
     if (req.patientId) list = list.filter((a) => a.patientId === req.patientId);
     if (req.invoiceId) list = list.filter((a) => a.invoiceId === req.invoiceId);
     if (req.operation) list = list.filter((a) => a.operation === req.operation);
@@ -1593,6 +2008,7 @@ export class BillingManagementService implements IBillingManagementService {
       notes: params.notes,
       createdAt: new Date().toISOString()
     });
+    saveStored("docsearch_billing_transactions", this.transactions);
   }
 
   private appendAudit(params: {
@@ -1637,6 +2053,7 @@ export class BillingManagementService implements IBillingManagementService {
       operationStatus: 'SUCCESS',
       timestamp: new Date().toISOString()
     });
+    saveStored("docsearch_billing_audit_traces", this.auditTraces);
   }
 }
 

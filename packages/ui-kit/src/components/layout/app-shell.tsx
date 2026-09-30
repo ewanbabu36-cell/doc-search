@@ -1,28 +1,40 @@
 import React from 'react';
+import { UniversalBackground } from '../effects/UniversalBackground';
+import { EffectIntensityProvider, type EffectIntensityLevel } from '../effects/EffectIntensityContext';
 
 export interface AppShellProps {
   header?: React.ReactNode | undefined;
   sidebar?: React.ReactNode | undefined;
   children: React.ReactNode;
   className?: string | undefined;
+  showBackground?: boolean | undefined;
+  showGrid?: boolean | undefined;
+  showParticles?: boolean | undefined;
+  intensity?: EffectIntensityLevel | undefined;
 }
 
 export const AppShell: React.FC<AppShellProps> = ({
   header,
   sidebar,
   children,
-  className = ''
+  className = '',
+  showBackground = true,
+  showGrid = true,
+  showParticles = true,
+  intensity
 }) => {
-  return (
+  const shellContent = (
     <div
       className={`ds-app-shell ${className}`}
       style={{
         display: 'flex',
+        height: '100vh',
+        maxHeight: '100vh',
         minHeight: '100vh',
         width: '100%',
         maxWidth: '100vw',
-        overflowX: 'hidden',
-        backgroundColor: 'var(--ds-color-bg)'
+        overflow: 'hidden',
+        backgroundColor: showBackground ? 'transparent' : 'var(--ds-color-bg)'
       }}
     >
       {/* Desktop / Tablet Sidebar */}
@@ -49,20 +61,25 @@ export const AppShell: React.FC<AppShellProps> = ({
           flexDirection: 'column',
           flex: '1 1 0%',
           minWidth: 0,
-          minHeight: '100vh',
+          height: '100vh',
+          maxHeight: '100vh',
           width: '100%',
-          overflowX: 'hidden'
+          overflowX: 'hidden',
+          overflowY: 'auto'
         }}
       >
-        {header}
+        {header && (
+          <div style={{ flexShrink: 0, zIndex: 1000, width: '100%', position: 'sticky', top: 0 }}>
+            {header}
+          </div>
+        )}
         <div
           style={{
             flex: '1 1 auto',
             display: 'flex',
             flexDirection: 'column',
             minWidth: 0,
-            width: '100%',
-            overflowX: 'hidden'
+            width: '100%'
           }}
         >
           {children}
@@ -70,4 +87,19 @@ export const AppShell: React.FC<AppShellProps> = ({
       </div>
     </div>
   );
+
+  const wrappedWithBg = showBackground ? (
+    <UniversalBackground showGrid={showGrid} showParticles={showParticles} style={{ height: '100vh', maxHeight: '100vh', overflow: 'hidden' }}>
+      {shellContent}
+    </UniversalBackground>
+  ) : (
+    shellContent
+  );
+
+  if (intensity) {
+    return <EffectIntensityProvider initialIntensity={intensity}>{wrappedWithBg}</EffectIntensityProvider>;
+  }
+
+  return wrappedWithBg;
 };
+

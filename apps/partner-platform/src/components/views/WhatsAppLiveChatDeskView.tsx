@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Badge, Button } from '@docsearch/ui-kit';
 import type { WhatsAppConversationThreadDto, SendWhatsAppMessageRequest } from '@docsearch/api-contracts';
+import { getUnifiedPartnerProfile } from '../../utils/roleProfileResolver.js';
 
 interface Props {
   conversations: WhatsAppConversationThreadDto[];
@@ -13,15 +14,19 @@ export const WhatsAppLiveChatDeskView: React.FC<Props> = ({
   onSendMessage,
   onToggleBot
 }) => {
+  const partnerProfile = getUnifiedPartnerProfile();
+  const docName = partnerProfile.doctorName ? `${partnerProfile.doctorName}${partnerProfile.doctorDegree ? `, ${partnerProfile.doctorDegree}` : ''}` : 'Lead Consulting Physician';
+  const clinicName = partnerProfile.entityLegalName || 'Healthcare Clinic';
+
   const [selectedConvId, setSelectedConvId] = useState<string>(conversations[0]?.id || '');
   const [replyText, setReplyText] = useState('');
 
   // Interactive Virtual Patient Messages Simulation
   const [chatMessages, setChatMessages] = useState([
-    { id: '1', sender: 'PATIENT', text: 'Hi, Dr. Sharma clinic me appointment chahiye', time: '10:15 AM' },
-    { id: '2', sender: 'BOT', text: 'Namaste! Dr. Sharma Clinic automated assistant me aapka swagat hai. 🙏\n\nKripya select karein:\n1️⃣ Book OPD Token\n2️⃣ Live Queue Status\n3️⃣ Download Prescription PDF\n4️⃣ Clinic Location & Timings', time: '10:15 AM' },
+    { id: '1', sender: 'PATIENT', text: `Hi, ${clinicName} me appointment chahiye`, time: '10:15 AM' },
+    { id: '2', sender: 'BOT', text: `Namaste! ${clinicName} automated assistant me aapka swagat hai. 🙏\n\nKripya select karein:\n1️⃣ Book OPD Token\n2️⃣ Live Queue Status\n3️⃣ Download Prescription PDF\n4️⃣ Clinic Location & Timings`, time: '10:15 AM' },
     { id: '3', sender: 'PATIENT', text: '1', time: '10:16 AM' },
-    { id: '4', sender: 'BOT', text: '✅ Appointment Confirmed!\n\n🎫 Token: TKN-012\n👨‍⚕️ Doctor: Dr. Rajesh Sharma, MD\n⏰ Time: Today, 11:30 AM (Morning Session)\n📍 Chamber: Chamber 1\n\nLive queue track karne ke liye reply karein "QUEUE".', time: '10:16 AM' }
+    { id: '4', sender: 'BOT', text: `✅ Appointment Confirmed!\n\n🎫 Token: TKN-012\n👨‍⚕️ Doctor: ${docName}\n⏰ Time: Today, 11:30 AM (Morning Session)\n📍 Chamber: Chamber 1\n\nLive queue track karne ke liye reply karein "QUEUE".`, time: '10:16 AM' }
   ]);
 
   const handleQuickReply = (userText: string) => {

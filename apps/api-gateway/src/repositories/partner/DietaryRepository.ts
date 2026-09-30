@@ -1,4 +1,6 @@
-import { eq, desc } from '@docsearch/database';
+import { eq, and, desc, count } from '@docsearch/database';
+import crypto from 'node:crypto';
+import { AppError, ErrorCode } from '@docsearch/shared-core';
 import {
   getDatabase,
   dietaryKitchens,
@@ -27,42 +29,93 @@ export interface DietaryEntityData {
 
 export class DietaryRepository {
   // 1. Overview & Metrics
-  async getOverviewMetrics() {
+  async getOverviewMetrics(tenantId?: string, dbClient = getDatabase()) {
+    let activeDietOrdersCount = 0;
+    let pendingAssessmentsCount = 0;
+    let activeProductionPlansCount = 0;
+    let mealsScheduledTodayCount = 0;
+    let mealsPreparedTodayCount = 0;
+    let mealsDispatchedTodayCount = 0;
+    let mealsDeliveredTodayCount = 0;
+    let activeSafetyAlertsCount = 0;
+    let activeNpoPatientsCount = 0;
+    let qualityCheckPassRatePercent = 98.5;
+
+    if (dbClient && tenantId) {
+      try {
+        const [ord] = await dbClient.select({ val: count() }).from(dietaryOrders).where(eq(dietaryOrders.tenantId, tenantId));
+        if (ord && typeof ord.val === 'number' && ord.val > 0) activeDietOrdersCount = ord.val;
+
+        const [ass] = await dbClient.select({ val: count() }).from(dietaryAssessments).where(eq(dietaryAssessments.tenantId, tenantId));
+        if (ass && typeof ass.val === 'number' && ass.val > 0) pendingAssessmentsCount = ass.val;
+
+        const [prod] = await dbClient.select({ val: count() }).from(dietaryProductionPlans).where(eq(dietaryProductionPlans.tenantId, tenantId));
+        if (prod && typeof prod.val === 'number' && prod.val > 0) activeProductionPlansCount = prod.val;
+
+        const [sched] = await dbClient.select({ val: count() }).from(dietaryMealSchedules).where(eq(dietaryMealSchedules.tenantId, tenantId));
+        if (sched && typeof sched.val === 'number' && sched.val > 0) mealsScheduledTodayCount = sched.val;
+
+        const [prep] = await dbClient.select({ val: count() }).from(dietaryPreparationRecords).where(eq(dietaryPreparationRecords.tenantId, tenantId));
+        if (prep && typeof prep.val === 'number' && prep.val > 0) mealsPreparedTodayCount = prep.val;
+
+        const [disp] = await dbClient.select({ val: count() }).from(dietaryMealDispatches).where(eq(dietaryMealDispatches.tenantId, tenantId));
+        if (disp && typeof disp.val === 'number' && disp.val > 0) mealsDispatchedTodayCount = disp.val;
+
+        const [deliv] = await dbClient.select({ val: count() }).from(dietaryMealDispatches).where(and(eq(dietaryMealDispatches.tenantId, tenantId), eq(dietaryMealDispatches.deliveryStatus, 'DELIVERED')));
+        if (deliv && typeof deliv.val === 'number' && deliv.val > 0) mealsDeliveredTodayCount = deliv.val;
+
+        const [alert] = await dbClient.select({ val: count() }).from(dietarySafetyAlerts).where(eq(dietarySafetyAlerts.tenantId, tenantId));
+        if (alert && typeof alert.val === 'number' && alert.val > 0) activeSafetyAlertsCount = alert.val;
+
+        const [npo] = await dbClient.select({ val: count() }).from(dietaryOrders).where(and(eq(dietaryOrders.tenantId, tenantId), eq(dietaryOrders.status, 'NPO_ACTIVE')));
+        if (npo && typeof npo.val === 'number' && npo.val > 0) activeNpoPatientsCount = npo.val;
+      } catch {}
+    }
+
     return {
-      activeDietOrdersCount: 42,
-      pendingAssessmentsCount: 8,
-      activeProductionPlansCount: 3,
-      mealsScheduledTodayCount: 185,
-      mealsPreparedTodayCount: 120,
-      mealsDispatchedTodayCount: 95,
-      mealsDeliveredTodayCount: 90,
-      activeSafetyAlertsCount: 2,
-      activeNpoPatientsCount: 6,
-      qualityCheckPassRatePercent: 98.5
+      activeDietOrdersCount,
+      pendingAssessmentsCount,
+      activeProductionPlansCount,
+      mealsScheduledTodayCount,
+      mealsPreparedTodayCount,
+      mealsDispatchedTodayCount,
+      mealsDeliveredTodayCount,
+      activeSafetyAlertsCount,
+      activeNpoPatientsCount,
+      qualityCheckPassRatePercent
     };
   }
 
-  async getAnalytics() {
+  async getAnalytics(tenantId?: string, dbClient = getDatabase()) {
+    let totalMealsDeliveredThisMonth = 0;
+    let foodWasteKgsThisMonth = 0;
+    let totalDietaryCostMinorUnits = 0;
+
+    if (dbClient && tenantId) {
+      try {
+        const [deliv] = await dbClient.select({ val: count() }).from(dietaryMealDispatches).where(eq(dietaryMealDispatches.tenantId, tenantId));
+        if (deliv && typeof deliv.val === 'number') totalMealsDeliveredThisMonth = deliv.val;
+      } catch {}
+    }
+
     return {
-      totalMealsDeliveredThisMonth: 5420,
+      totalMealsDeliveredThisMonth,
       averageDeliveryTimeMinutes: 18.4,
       refusedMealRatePercent: 1.2,
-      foodWasteKgsThisMonth: 142.5,
-      totalDietaryCostMinorUnits: 4850000,
+      foodWasteKgsThisMonth,
+      totalDietaryCostMinorUnits,
       qualityComplianceRatePercent: 99.1
     };
   }
 
   // 2. Departments & Kitchens
-  async getKitchens(tenantId: string, _branchId?: string, dbClient = getDatabase()) {
+  async getKitchens(tenantId: string, _branchId?: string, dbClient = getDatabase(), limit = 25, offset = 0) {
     if (dbClient) {
       try {
-        return await dbClient.select().from(dietaryKitchens).where(eq(dietaryKitchens.tenantId, tenantId)).orderBy(desc(dietaryKitchens.createdAt));
+        return await dbClient.select().from(dietaryKitchens).where(eq(dietaryKitchens.tenantId, tenantId)).orderBy(desc(dietaryKitchens.createdAt)).limit(limit).offset(offset);
       } catch {}
     }
-    return [
-      { id: 'ktc_001', tenantId, branchId: 'branch_001', kitchenCode: 'KTC-MAIN-01', name: 'Central Hospital Production Kitchen', kitchenType: 'CENTRAL', status: 'ACTIVE', maxMealCapacityPerSlot: 400, createdAt: new Date() }
-    ];
+    return [];
   }
 
   async createKitchen(data: DietaryEntityData, dbClient = getDatabase()) {
@@ -76,17 +129,13 @@ export class DietaryRepository {
   }
 
   // 3. Diet Types & Food Items
-  async getDietTypes(tenantId: string, dbClient = getDatabase()) {
+  async getDietTypes(tenantId: string, dbClient = getDatabase(), limit = 25, offset = 0) {
     if (dbClient) {
       try {
-        return await dbClient.select().from(dietaryDietTypes).where(eq(dietaryDietTypes.tenantId, tenantId)).orderBy(desc(dietaryDietTypes.createdAt));
+        return await dbClient.select().from(dietaryDietTypes).where(eq(dietaryDietTypes.tenantId, tenantId)).orderBy(desc(dietaryDietTypes.createdAt)).limit(limit).offset(offset);
       } catch {}
     }
-    return [
-      { id: 'dt_001', tenantId, code: 'DIABETIC_LOW_SODIUM', name: 'Diabetic & Low Sodium Therapeutic Diet', category: 'DIABETIC', texture: 'REGULAR', status: 'ACTIVE', createdAt: new Date() },
-      { id: 'dt_002', tenantId, code: 'RENAL_RESTRICTED', name: 'Renal Dialysis Diet', category: 'RENAL', texture: 'REGULAR', status: 'ACTIVE', createdAt: new Date() },
-      { id: 'dt_003', tenantId, code: 'NPO', name: 'Nil Per Os (Nothing by Mouth)', category: 'NPO', texture: 'REGULAR', status: 'ACTIVE', createdAt: new Date() }
-    ];
+    return [];
   }
 
   async createDietType(data: DietaryEntityData, dbClient = getDatabase()) {
@@ -99,15 +148,13 @@ export class DietaryRepository {
     return { id: 'dt_' + Math.random().toString(36).substring(2, 9), ...data, createdAt: new Date(), updatedAt: new Date() };
   }
 
-  async getFoodItems(tenantId: string, dbClient = getDatabase()) {
+  async getFoodItems(tenantId: string, dbClient = getDatabase(), limit = 25, offset = 0) {
     if (dbClient) {
       try {
-        return await dbClient.select().from(dietaryFoodItems).where(eq(dietaryFoodItems.tenantId, tenantId)).orderBy(desc(dietaryFoodItems.createdAt));
+        return await dbClient.select().from(dietaryFoodItems).where(eq(dietaryFoodItems.tenantId, tenantId)).orderBy(desc(dietaryFoodItems.createdAt)).limit(limit).offset(offset);
       } catch {}
     }
-    return [
-      { id: 'fi_001', tenantId, itemCode: 'FI-OAT-01', name: 'Organic Rolled Oatmeal', category: 'GRAIN', caloriesKcal: 150, proteinGrams: 5, carbohydratesGrams: 27, fatGrams: 3, sodiumMg: 2, isAllergenGluten: true, status: 'ACTIVE', createdAt: new Date() }
-    ];
+    return [];
   }
 
   async createFoodItem(data: DietaryEntityData, dbClient = getDatabase()) {
@@ -121,16 +168,14 @@ export class DietaryRepository {
   }
 
   // 4. Patient Assessments
-  async getAssessments(tenantId: string, patientId?: string, dbClient = getDatabase()) {
+  async getAssessments(tenantId: string, _patientId?: string, dbClient = getDatabase(), limit = 25, offset = 0) {
     if (dbClient) {
       try {
         const q = dbClient.select().from(dietaryAssessments).where(eq(dietaryAssessments.tenantId, tenantId));
-        return await q.orderBy(desc(dietaryAssessments.createdAt));
+        return await q.orderBy(desc(dietaryAssessments.createdAt)).limit(limit).offset(offset);
       } catch {}
     }
-    return [
-      { id: 'ass_001', tenantId, patientId: patientId || 'pat_001', assessmentNumber: 'ASM-8001', bmi: 24.5, nutritionalRiskScore: 1, status: 'FINALIZED', createdAt: new Date() }
-    ];
+    return [];
   }
 
   async createAssessment(data: DietaryEntityData, dbClient = getDatabase()) {
@@ -157,55 +202,117 @@ export class DietaryRepository {
   async getOrders(tenantId: string, patientId?: string, dbClient = getDatabase()) {
     if (dbClient) {
       try {
-        const q = dbClient.select().from(dietaryOrders).where(eq(dietaryOrders.tenantId, tenantId));
+        const conditions = [eq(dietaryOrders.tenantId, tenantId)];
+        if (patientId) {
+          conditions.push(eq(dietaryOrders.patientId, patientId));
+        }
+        const q = dbClient.select().from(dietaryOrders).where(and(...conditions));
         return await q.orderBy(desc(dietaryOrders.createdAt));
       } catch {}
     }
-    return [
-      { id: 'ord_001', tenantId, orderNumber: 'DO-9001', patientId: patientId || 'pat_001', dietTypeId: 'dt_001', status: 'ORDERED', priority: 'ROUTINE', createdAt: new Date() }
-    ];
+    return [];
   }
 
-  async getOrderById(orderId: string, dbClient = getDatabase()) {
-    if (dbClient) {
-      try {
-        const [ord] = await dbClient.select().from(dietaryOrders).where(eq(dietaryOrders.id, orderId)).limit(1);
-        if (ord) return ord;
-      } catch {}
+  async getOrderById(orderId: string, tenantIdOrDb?: string | any, dbClient = getDatabase()) {
+    const isUuid = (val: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+    if (!isUuid(orderId)) return null;
+
+    const tenantId = typeof tenantIdOrDb === 'string' ? tenantIdOrDb : undefined;
+    const client = (tenantIdOrDb && typeof tenantIdOrDb !== 'string') ? tenantIdOrDb : (dbClient || getDatabase());
+    if (!client) return null;
+
+    try {
+      const whereClause = tenantId && isUuid(tenantId)
+        ? and(eq(dietaryOrders.tenantId, tenantId), eq(dietaryOrders.id, orderId))
+        : eq(dietaryOrders.id, orderId);
+      const [ord] = await client.select().from(dietaryOrders).where(whereClause).limit(1);
+      return ord || null;
+    } catch (err) {
+      if (err instanceof AppError) throw err;
+      throw new AppError({
+        message: 'Failed to retrieve dietary order from database.',
+        code: ErrorCode.DATABASE_ERROR,
+        statusCode: 500
+      });
     }
-    return { id: orderId, tenantId: '11111111-1111-4111-8111-111111111111', orderNumber: 'DO-9001', patientId: 'pat_001', dietTypeId: 'dt_001', status: 'ORDERED', priority: 'ROUTINE', createdAt: new Date() };
   }
 
   async createOrder(data: DietaryEntityData, dbClient = getDatabase()) {
-    if (dbClient) {
-      try {
-        const [inserted] = await dbClient.insert(dietaryOrders).values(data as never).returning();
-        if (inserted) return inserted;
-      } catch {}
+    const client = dbClient || getDatabase();
+    if (!client) {
+      throw new AppError({
+        message: 'Database service is unavailable for dietary order creation.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
     }
-    return { id: 'ord_' + Math.random().toString(36).substring(2, 9), ...data, status: 'ORDERED', createdAt: new Date(), updatedAt: new Date() };
+
+    const id = (typeof data['id'] === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data['id']))
+      ? data['id']
+      : crypto.randomUUID();
+
+    const payload = {
+      ...data,
+      id,
+      orderNumber: data['orderNumber'] || `DO-${Math.floor(1000 + Math.random() * 9000)}`,
+      status: data['status'] || 'ORDERED',
+      createdAt: new Date()
+    };
+
+    try {
+      const [inserted] = await client.insert(dietaryOrders).values(payload as never).returning();
+      if (!inserted) {
+        throw new Error('Database insert succeeded but returned no row');
+      }
+      return inserted;
+    } catch (err) {
+      if (err instanceof AppError) throw err;
+      throw new AppError({
+        message: `Database error creating dietary order: ${(err as any)?.message || String(err)}`,
+        code: ErrorCode.DATABASE_ERROR,
+        statusCode: 500
+      });
+    }
   }
 
-  async updateOrderStatus(orderId: string, status: string, dbClient = getDatabase()) {
-    if (dbClient) {
-      try {
-        const [updated] = await dbClient.update(dietaryOrders).set({ status }).where(eq(dietaryOrders.id, orderId)).returning();
-        if (updated) return updated;
-      } catch {}
+  async updateOrderStatus(orderId: string, status: string, tenantIdOrDb?: string | any, dbClient = getDatabase()) {
+    const isUuid = (val: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+    if (!isUuid(orderId)) return null;
+
+    const tenantId = typeof tenantIdOrDb === 'string' ? tenantIdOrDb : undefined;
+    const client = (tenantIdOrDb && typeof tenantIdOrDb !== 'string') ? tenantIdOrDb : (dbClient || getDatabase());
+    if (!client) {
+      throw new AppError({
+        message: 'Database service is unavailable for dietary order update.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
     }
-    return { id: orderId, status, updatedAt: new Date() };
+
+    try {
+      const whereClause = tenantId && isUuid(tenantId)
+        ? and(eq(dietaryOrders.tenantId, tenantId), eq(dietaryOrders.id, orderId))
+        : eq(dietaryOrders.id, orderId);
+      const [updated] = await client.update(dietaryOrders).set({ status }).where(whereClause).returning();
+      return updated || null;
+    } catch (err) {
+      if (err instanceof AppError) throw err;
+      throw new AppError({
+        message: `Database update failed for dietary order: ${(err as any)?.message || String(err)}`,
+        code: ErrorCode.DATABASE_ERROR,
+        statusCode: 500
+      });
+    }
   }
 
   // 6. Diet Plans & Menu Templates
-  async getDietPlans(tenantId: string, patientId?: string, dbClient = getDatabase()) {
+  async getDietPlans(tenantId: string, _patientId?: string, dbClient = getDatabase()) {
     if (dbClient) {
       try {
         return await dbClient.select().from(dietaryDietPlans).where(eq(dietaryDietPlans.tenantId, tenantId)).orderBy(desc(dietaryDietPlans.createdAt));
       } catch {}
     }
-    return [
-      { id: 'dp_001', tenantId, planCode: 'DP-3001', patientId: patientId || 'pat_001', dietOrderId: 'ord_001', status: 'ACTIVE', createdAt: new Date() }
-    ];
+    return [];
   }
 
   async createDietPlan(data: DietaryEntityData, dbClient = getDatabase()) {
@@ -224,9 +331,7 @@ export class DietaryRepository {
         return await dbClient.select().from(dietaryMenuTemplates).where(eq(dietaryMenuTemplates.tenantId, tenantId)).orderBy(desc(dietaryMenuTemplates.createdAt));
       } catch {}
     }
-    return [
-      { id: 'mt_001', tenantId, templateCode: 'MENU-CARDIAC-Q1', name: 'Cardiac Low-Sodium Standard Menu', status: 'ACTIVE', createdAt: new Date() }
-    ];
+    return [];
   }
 
   async createMenuTemplate(data: DietaryEntityData, dbClient = getDatabase()) {
@@ -240,15 +345,13 @@ export class DietaryRepository {
   }
 
   // 7. Meal Schedules & Production Plans
-  async getMealSchedules(tenantId: string, patientId?: string, dbClient = getDatabase()) {
+  async getMealSchedules(tenantId: string, _patientId?: string, dbClient = getDatabase()) {
     if (dbClient) {
       try {
         return await dbClient.select().from(dietaryMealSchedules).where(eq(dietaryMealSchedules.tenantId, tenantId)).orderBy(desc(dietaryMealSchedules.createdAt));
       } catch {}
     }
-    return [
-      { id: 'ms_001', tenantId, scheduleNumber: 'MS-5001', patientId: patientId || 'pat_001', mealSlot: 'LUNCH', status: 'CONFIRMED', scheduledDeliveryTime: new Date(), createdAt: new Date() }
-    ];
+    return [];
   }
 
   async createMealSchedule(data: DietaryEntityData, dbClient = getDatabase()) {
@@ -267,9 +370,7 @@ export class DietaryRepository {
         return await dbClient.select().from(dietaryProductionPlans).where(eq(dietaryProductionPlans.tenantId, tenantId)).orderBy(desc(dietaryProductionPlans.createdAt));
       } catch {}
     }
-    return [
-      { id: 'pp_001', tenantId, planNumber: 'PP-2026-LUNCH', kitchenId: 'ktc_001', mealSlot: 'LUNCH', plannedQuantity: 120, status: 'RELEASED', createdAt: new Date() }
-    ];
+    return [];
   }
 
   async createProductionPlan(data: DietaryEntityData, dbClient = getDatabase()) {
@@ -282,14 +383,26 @@ export class DietaryRepository {
     return { id: 'pp_' + Math.random().toString(36).substring(2, 9), ...data, status: 'PLANNED', createdAt: new Date(), updatedAt: new Date() };
   }
 
-  async releaseProductionPlan(id: string, _releasedBy: string, dbClient = getDatabase()) {
-    if (dbClient) {
+  async releaseProductionPlan(id: string, _releasedBy: string, tenantIdOrDb?: string | any, dbClient = getDatabase()) {
+    const tenantId = typeof tenantIdOrDb === 'string' ? tenantIdOrDb : undefined;
+    const client = (tenantIdOrDb && typeof tenantIdOrDb !== 'string') ? tenantIdOrDb : (dbClient || getDatabase());
+    if (client) {
       try {
-        const [updated] = await dbClient.update(dietaryProductionPlans).set({ status: 'RELEASED' }).where(eq(dietaryProductionPlans.id, id)).returning();
+        const whereClause = tenantId
+          ? and(eq(dietaryProductionPlans.tenantId, tenantId), eq(dietaryProductionPlans.id, id))
+          : eq(dietaryProductionPlans.id, id);
+        const [updated] = await client.update(dietaryProductionPlans).set({ status: 'RELEASED', releasedBy: _releasedBy, releasedAt: new Date().toISOString() }).where(whereClause).returning();
         if (updated) return updated;
-      } catch {}
+      } catch (err) {
+        if (err instanceof AppError) throw err;
+        throw new AppError({
+          message: 'Failed to release dietary production plan in database.',
+          code: ErrorCode.DATABASE_ERROR,
+          statusCode: 500
+        });
+      }
     }
-    return { id, status: 'RELEASED', updatedAt: new Date() };
+    return null;
   }
 
   // 8. Preparations & Quality Checks
@@ -330,9 +443,7 @@ export class DietaryRepository {
         return await dbClient.select().from(dietaryMealDispatches).where(eq(dietaryMealDispatches.tenantId, tenantId)).orderBy(desc(dietaryMealDispatches.createdAt));
       } catch {}
     }
-    return [
-      { id: 'dsp_001', tenantId, dispatchNumber: 'DSP-7001', trayAssemblyId: 'tray_001', status: 'DISPATCHED', dispatchedAt: new Date(), createdAt: new Date() }
-    ];
+    return [];
   }
 
   async dispatchMeal(data: DietaryEntityData, dbClient = getDatabase()) {
@@ -362,9 +473,7 @@ export class DietaryRepository {
         return await dbClient.select().from(dietarySafetyAlerts).where(eq(dietarySafetyAlerts.tenantId, tenantId)).orderBy(desc(dietarySafetyAlerts.createdAt));
       } catch {}
     }
-    return [
-      { id: 'alt_001', tenantId, alertCode: 'ALT-ALLERGEN-01', patientId: 'pat_001', alertType: 'ALLERGEN_CONFLICT', severity: 'CRITICAL', status: 'ACTIVE', createdAt: new Date() }
-    ];
+    return [];
   }
 
   async createSafetyAlert(data: DietaryEntityData, dbClient = getDatabase()) {
@@ -377,14 +486,26 @@ export class DietaryRepository {
     return { id: 'alt_' + Math.random().toString(36).substring(2, 9), ...data, status: 'ACTIVE', createdAt: new Date() };
   }
 
-  async resolveSafetyAlert(id: string, _resolutionNotes: string, dbClient = getDatabase()) {
-    if (dbClient) {
+  async resolveSafetyAlert(id: string, _resolutionNotes: string, tenantIdOrDb?: string | any, dbClient = getDatabase()) {
+    const tenantId = typeof tenantIdOrDb === 'string' ? tenantIdOrDb : undefined;
+    const client = (tenantIdOrDb && typeof tenantIdOrDb !== 'string') ? tenantIdOrDb : (dbClient || getDatabase());
+    if (client) {
       try {
-        const [updated] = await dbClient.update(dietarySafetyAlerts).set({ isResolved: true }).where(eq(dietarySafetyAlerts.id, id)).returning();
+        const whereClause = tenantId
+          ? and(eq(dietarySafetyAlerts.tenantId, tenantId), eq(dietarySafetyAlerts.id, id))
+          : eq(dietarySafetyAlerts.id, id);
+        const [updated] = await client.update(dietarySafetyAlerts).set({ isResolved: true, resolvedAt: new Date().toISOString(), resolvedBy: _resolutionNotes }).where(whereClause).returning();
         if (updated) return updated;
-      } catch {}
+      } catch (err) {
+        if (err instanceof AppError) throw err;
+        throw new AppError({
+          message: 'Failed to resolve dietary safety alert in database.',
+          code: ErrorCode.DATABASE_ERROR,
+          statusCode: 500
+        });
+      }
     }
-    return { id, isResolved: true, updatedAt: new Date() };
+    return null;
   }
 
   async recordFoodWaste(data: DietaryEntityData, dbClient = getDatabase()) {

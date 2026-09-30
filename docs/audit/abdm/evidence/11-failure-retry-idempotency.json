@@ -1,12 +1,22 @@
 {
-  "testId": "ABDM-RETRY-11",
-  "timestamp": "2026-08-30T10:49:05.334Z",
-  "environment": "DOCSEARCH_API_GATEWAY",
-  "unauthenticatedRejectionCode": 401,
-  "malformedInputRejectionCode": 400,
-  "idempotentHandling": "VERIFIED",
+  "testId": "ABDM-IDEMP-11",
+  "timestamp": "2026-09-27T09:27:11.233Z",
+  "milestone": "RESILIENCE_IDEMPOTENCY",
+  "certificationLevel": "FAULT_TOLERANCE_AUDIT",
+  "environment": "ABDM_SANDBOX",
+  "external": false,
+  "idempotencyHeader": "x-idempotency-key",
+  "duplicateRequestBehavior": "CACHED_RESPONSE_REPLAY",
+  "retryPolicy": {
+    "maxRetries": 3,
+    "backoff": "EXPONENTIAL_JITTER",
+    "initialMs": 500,
+    "maxMs": 4000
+  },
+  "deadLetterQueue": "abdm-gateway-dlq",
+  "circuitBreakerThreshold": "5 failures in 30 seconds",
   "status": "PASS",
-  "databaseVerified": true,
+  "databaseVerified": false,
   "callbackVerified": true,
-  "evidenceHash": "34567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef12"
+  "evidenceHash": "c73e40af8595b4bf28c418f058bf7239933e9a72fb64fe2cac86086c5e422053"
 }

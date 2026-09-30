@@ -1,0 +1,159 @@
+# ==============================================================================
+# DOC SEARCH ENTERPRISE HIGH-THROUGHPUT DEPLOYMENT STACK
+# Target Scale: 10,000,000 (1 Crore) Daily Transactions & 100k Partners
+# Components: PostgreSQL Primary + Read Replica, PgBouncer Pooler, Redis Cluster,
+#             Clustered API Gateway, and Async Worker Fleet
+# ==============================================================================
+
+version: '3.9'
+
+services:
+  # 1. Primary PostgreSQL (Write Engine with High WAL Throughput)
+  postgres-primary:
+    image: postgres:16-alpine
+    container_name: docsearch-pg-primary
+    environment:
+      POSTGRES_DB: docsearch
+      POSTGRES_USER: docsearch_admin
+      POSTGRES_PASSWORD: docsearch_secure_prod_password
+    volumes:
+      - pg-primary-data:/var/lib/postgresql/data
+      - ./packages/database/src/partitioning/declarative-partitioning.sql:/docker-entrypoint-initdb.d/01-partitioning.sql:ro
+    command: >
+      postgres
+        -c max_connections=300
+        -c shared_buffers=8GB
+        -c effective_cache_size=24GB
+        -c maintenance_work_mem=2GB
+        -c checkpoint_completion_target=0.9
+        -c wal_buffers=64MB
+        -c default_statistics_target=100
+        -c random_page_cost=1.1
+        -c effective_io_concurrency=200
+        -c work_mem=32MB
+        -c min_wal_size=2GB
+        -c max_wal_size=16GB
+        -c wal_level=replica
+        -c max_wal_senders=10
+        -c archive_mode=on
+        -c archive_command='test ! -f /var/lib/postgresql/data/archive/%f && cp %p /var/lib/postgresql/data/archive/%f'
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U docsearch_admin -d docsearch"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+  # 2. PostgreSQL Read Replica (Read Scaling for 40,000+ QPS)
+  postgres-replica:
+    image: postgres:16-alpine
+    container_name: docsearch-pg-replica
+    environment:
+      POSTGRES_DB: docsearch
+      POSTGRES_USER: docsearch_admin
+      POSTGRES_PASSWORD: docsearch_secure_prod_password
+      PGUSER: docsearch_admin
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+    command: >
+      postgres
+        -c hot_standby=on
+        -c max_connections=500
+        -c shared_buffers=8GB
+        -c work_mem=32MB
+    ports:
+      - "5433:5432"
+    restart: always
+
+  # 3. PgBouncer Connection Pooler (Multiplexes 10,000 incoming conns to 100)
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    container_name: docsearch-pgbouncer
+    environment:
+      DB_USER: docsearch_admin
+      DB_PASSWORD: docsearch_secure_prod_password
+      DB_HOST: postgres-primary
+      DB_PORT: 5432
+      DB_NAME: docsearch
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 10000
+      DEFAULT_POOL_SIZE: 100
+      MIN_POOL_SIZE: 20
+      RESERVE_POOL_SIZE: 10
+      SERVER_IDLE_TIMEOUT: 600
+    ports:
+      - "6432:5432"
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+    restart: always
+
+  # 4. Redis In-Memory L2 Cache & Distributed Slot Lock Engine
+  redis-cluster:
+    image: redis:7.2-alpine
+    container_name: docsearch-redis
+    command: >
+      redis-server
+        --maxmemory 16gb
+        --maxmemory-policy allkeys-lru
+        --appendonly yes
+        --appendfsync everysec
+        --tcp-backlog 511
+        --timeout 0
+        --tcp-keepalive 300
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: always
+
+  # 5. Clustered API Gateway (Auto-forking multi-core Fastify)
+  api-gateway:
+    build:
+      context: .
+      dockerfile: apps/api-gateway/Dockerfile
+    container_name: docsearch-gateway
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      HOST: 0.0.0.0
+      CLUSTER_WORKERS: 8
+      DATABASE_URL: postgresql://docsearch_admin:docsearch_secure_prod_password@pgbouncer:5432/docsearch
+      DATABASE_REPLICA_URL: postgresql://docsearch_admin:docsearch_secure_prod_password@postgres-replica:5432/docsearch
+      REDIS_URL: redis://redis-cluster:6379
+      RATE_LIMIT_MAX: 10000
+      RATE_LIMIT_TIME_WINDOW: 60000
+    ports:
+      - "4000:4000"
+    depends_on:
+      - pgbouncer
+      - redis-cluster
+    restart: always
+
+  # 6. Dedicated Asynchronous Background Worker Fleet
+  async-worker:
+    build:
+      context: .
+      dockerfile: apps/api-gateway/Dockerfile
+    container_name: docsearch-worker
+    environment:
+      NODE_ENV: production
+      WORKER_MODE: true
+      DATABASE_URL: postgresql://docsearch_admin:docsearch_secure_prod_password@pgbouncer:5432/docsearch
+      REDIS_URL: redis://redis-cluster:6379
+    depends_on:
+      - pgbouncer
+      - redis-cluster
+    restart: always
+
+volumes:
+  pg-primary-data:
+  redis-data:

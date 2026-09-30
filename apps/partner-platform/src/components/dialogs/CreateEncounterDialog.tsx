@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type {
   PatientDto,
   DoctorProfileDto,
@@ -22,6 +22,7 @@ export interface CreateEncounterDialogProps {
   patients: PatientDto[];
   doctors: DoctorProfileDto[];
   departments: OperationalDepartmentDto[];
+  organizationType?: string;
   initialPatientId?: string | undefined;
   onCreateEncounter: (req: CreateEncounterRequest) => Promise<void>;
 }
@@ -38,12 +39,30 @@ export const CreateEncounterDialog: React.FC<CreateEncounterDialogProps> = ({
   patients,
   doctors,
   departments,
+  organizationType,
   initialPatientId,
   onCreateEncounter
 }) => {
   const [patientId, setPatientId] = useState(initialPatientId ?? patients[0]?.id ?? '');
   const [departmentId, setDepartmentId] = useState(departments[0]?.id ?? '');
   const [doctorId, setDoctorId] = useState(doctors[0]?.id ?? '');
+
+  // Single-Doctor Clinic Auto-Detection
+  const isSingleDoctor = organizationType === 'CLINIC' || doctors.length === 1;
+  const singleDoctor = doctors.length > 0 ? doctors[0] : null;
+
+  useEffect(() => {
+    if (isSingleDoctor && singleDoctor) {
+      setDoctorId(singleDoctor.id);
+      if (singleDoctor.departmentId) {
+        setDepartmentId(singleDoctor.departmentId);
+      }
+    }
+  }, [isSingleDoctor, singleDoctor?.id]);
+
+  const filteredDoctors = departmentId
+    ? doctors.filter((d) => !d.departmentId || d.departmentId === departmentId)
+    : doctors;
   const [encounterType, setEncounterType] = useState<EncounterType>('OPD');
   const [priority, setPriority] = useState<EncounterPriority>('ROUTINE');
   const [consultationMode, setConsultationMode] = useState<EncounterConsultationMode>('IN_PERSON');
@@ -115,7 +134,7 @@ export const CreateEncounterDialog: React.FC<CreateEncounterDialogProps> = ({
           <Button variant="outline" size="sm" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button variant="primary" size="sm" onClick={handleSubmit} isLoading={isSubmitting}>
+          <Button variant="primary" size="sm" onClick={handleSubmit} isLoading={isSubmitting} disabled={isSubmitting}>
             {autoCheckIn ? 'Register & Check In to Queue' : 'Register Encounter (Pending Check-in)'}
           </Button>
         </div>
@@ -142,38 +161,97 @@ export const CreateEncounterDialog: React.FC<CreateEncounterDialogProps> = ({
           />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: '600', marginBottom: '4px' }}>
-              Clinical Department *
-            </label>
-            <Select
-              value={departmentId}
-              onChange={(e) => setDepartmentId(e.target.value)}
-              options={departments.map((d) => ({
-                value: d.id,
-                label: d.departmentName
-              }))}
-            />
+        {isSingleDoctor && singleDoctor ? (
+          <div style={{
+            backgroundColor: 'rgba(6, 182, 212, 0.1)',
+            border: '1.5px solid rgba(6, 182, 212, 0.35)',
+            borderRadius: '10px',
+            padding: '12px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '1.4rem' }}>🩺</span>
+              <div>
+                <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#F1F5F9' }}>
+                  Consulting Doctor: {singleDoctor.fullName}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
+                  Specialty: <strong style={{ color: '#67E8F9' }}>{singleDoctor.primarySpecialty}</strong>
+                  {singleDoctor.departmentName && ` • Department: ${singleDoctor.departmentName}`}
+                </div>
+              </div>
+            </div>
+            <span style={{
+              fontSize: '0.6875rem',
+              backgroundColor: 'rgba(6, 182, 212, 0.25)',
+              color: '#67E8F9',
+              padding: '4px 10px',
+              borderRadius: '6px',
+              fontWeight: 700,
+              border: '1px solid rgba(6, 182, 212, 0.4)'
+            }}>
+              ⚡ Auto-Selected (Single Doctor Clinic)
+            </span>
           </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <div>
+              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8125rem', fontWeight: '600', marginBottom: '4px' }}>
+                <span>Clinical Department *</span>
+                <span style={{ fontSize: '0.72rem', color: 'var(--ds-color-text-muted)' }}>
+                  {filteredDoctors.length} Doctors Available
+                </span>
+              </label>
+              <Select
+                value={departmentId}
+                onChange={(e) => {
+                  const newDept = e.target.value;
+                  setDepartmentId(newDept);
+                  if (doctorId) {
+                    const doc = doctors.find((d) => d.id === doctorId);
+                    if (doc && doc.departmentId && doc.departmentId !== newDept) {
+                      setDoctorId('');
+                    }
+                  }
+                }}
+                options={[
+                  { value: '', label: '— All Departments / General OPD —' },
+                  ...departments.map((d) => ({
+                    value: d.id,
+                    label: d.departmentName
+                  }))
+                ]}
+              />
+            </div>
 
-          <div>
-            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: '600', marginBottom: '4px' }}>
-              Attending / Consulting Doctor (Optional)
-            </label>
-            <Select
-              value={doctorId}
-              onChange={(e) => setDoctorId(e.target.value)}
-              options={[
-                { value: '', label: '— Unassigned / General Pool —' },
-                ...doctors.map((doc) => ({
-                  value: doc.id,
-                  label: `${doc.fullName} (${doc.primarySpecialty})`
-                }))
-              ]}
-            />
+            <div>
+              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8125rem', fontWeight: '600', marginBottom: '4px' }}>
+                <span>Attending / Consulting Doctor</span>
+                <span style={{ fontSize: '0.72rem', color: 'var(--ds-color-text-muted)' }}>(Optional)</span>
+              </label>
+              <Select
+                value={doctorId}
+                onChange={(e) => {
+                  const newDocId = e.target.value;
+                  setDoctorId(newDocId);
+                  const doc = doctors.find((d) => d.id === newDocId);
+                  if (doc && doc.departmentId) {
+                    setDepartmentId(doc.departmentId);
+                  }
+                }}
+                options={[
+                  { value: '', label: '— Unassigned / General Pool —' },
+                  ...filteredDoctors.map((doc) => ({
+                    value: doc.id,
+                    label: `${doc.fullName} (${doc.primarySpecialty})`
+                  }))
+                ]}
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
           <div>

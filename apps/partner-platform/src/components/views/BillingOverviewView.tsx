@@ -72,7 +72,7 @@ export const BillingOverviewView: React.FC<BillingOverviewViewProps> = ({
       {/* Header Quick Actions */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: '#0f172a' }}>
+          <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: 'var(--ds-color-text-primary, #f8fafc)' }}>
             Revenue Cycle & Billing Operations
           </h2>
           <p style={{ margin: '0.25rem 0 0 0', color: '#64748b', fontSize: '0.875rem' }}>
@@ -180,7 +180,7 @@ export const BillingOverviewView: React.FC<BillingOverviewViewProps> = ({
         {/* Recent Invoices Card */}
         <Card>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: '#0f172a' }}>
+            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--ds-color-text-primary, #f8fafc)' }}>
               Recent Commercial Invoices
             </h3>
             <Button variant="subtle" onClick={() => onOpenTab('invoices')}>
@@ -228,7 +228,7 @@ export const BillingOverviewView: React.FC<BillingOverviewViewProps> = ({
         {/* Recent Payments Card */}
         <Card>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: '#0f172a' }}>
+            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--ds-color-text-primary, #f8fafc)' }}>
               Recent Collections & Receipts
             </h3>
             <Button variant="subtle" onClick={() => onOpenTab('payment-collection')}>

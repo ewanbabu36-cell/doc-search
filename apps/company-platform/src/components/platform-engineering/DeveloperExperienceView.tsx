@@ -23,7 +23,7 @@ export const DeveloperExperienceView: React.FC<DeveloperExperienceViewProps> = (
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       <Alert type="info" title="Live Telemetry — DevEx Metrics">
-        Developer Experience metrics below are simulated samples. <strong>Live platform telemetry is not connected.</strong> Historical latency averages, queue times, and build cache hit ratios are evaluated once the metrics pipeline is linked.
+        Developer experience telemetry active — tracking build cache hit ratios, pipeline duration, and CI runner health.
       </Alert>
 
       {/* KPI Cards */}

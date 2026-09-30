@@ -513,17 +513,6 @@ export const CustomRolePermissionBuilderModal: React.FC<Props> = ({
             </button>
             <button
               type="submit"
-              style={{
-                backgroundColor: '#06B6D4',
-                color: '#070C16',
-                border: 'none',
-                borderRadius: '6px',
-                padding: '8px 22px',
-                fontWeight: 900,
-                fontSize: '0.875rem',
-                cursor: 'pointer',
-                boxShadow: '0 4px 14px rgba(6, 182, 212, 0.4)'
-              }}
             >
               ✓ Create & Save Custom Role
             </button>

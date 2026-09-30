@@ -3,3 +3,5 @@ export * from './tokens/typography';
 export * from './tokens/spacing';
 export * from './tokens/elevation';
 export * from './components/index';
+export * from './utils/audio-feedback';
+

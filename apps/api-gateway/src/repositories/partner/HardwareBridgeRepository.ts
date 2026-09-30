@@ -237,60 +237,40 @@ export class HardwareBridgeRepository {
   private analyzerResultStore: AnalyzerResultRecord[] = [];
   private qcRunStore: AnalyzerQcRunRecord[] = [];
   private criticalAlertStore: AnalyzerPanicAlertRecord[] = [];
-  private worklistOrders: Map<string, WorklistOrderRecord> = new Map([
-    [
-      'TUB-2026-9812',
-      {
-        orderNumber: 'ORD-LAB-2026-9812',
-        specimenBarcode: 'TUB-2026-9812',
-        patientMrn: 'MRN-2026-9041',
-        patientName: 'Kavita Joshi',
-        patientDob: '1990-05-14',
-        patientGender: 'F',
-        testCode: 'CBC',
-        testName: 'Complete Blood Count with 5-Part Diff',
-        priority: 'ROUTINE',
-        specimenType: 'WHOLE_BLOOD',
-        containerType: 'K2_EDTA_PURPLE_TOP',
-        fastingConfirmed: true,
-        orderingDoctor: 'Dr. Ramesh Sharma, MD',
-        department: 'Hematology'
-      }
-    ],
-    [
-      'TUB-2026-7734',
-      {
-        orderNumber: 'ORD-LAB-2026-7734',
-        specimenBarcode: 'TUB-2026-7734',
-        patientMrn: 'MRN-2026-1142',
-        patientName: 'Amit Verma',
-        patientDob: '1982-11-20',
-        patientGender: 'M',
-        testCode: 'BMP',
-        testName: 'Basic Metabolic Panel (Electrolytes & Glucose)',
-        priority: 'STAT',
-        specimenType: 'SERUM',
-        containerType: 'SST_GOLD_TOP',
-        fastingConfirmed: true,
-        orderingDoctor: 'Dr. Priya Desai, MD',
-        department: 'Clinical Biochemistry'
-      }
-    ]
-  ]);
+  private worklistOrders: Map<string, WorklistOrderRecord> = new Map();
 
-  async getOverviewMetrics(_tenantId: string) {
+  async getOverviewMetrics(tenantId?: string) {
+    const devices = tenantId ? this.deviceStore.filter(d => d.tenantId === tenantId) : this.deviceStore;
+    const analyzers = tenantId ? this.analyzerStore.filter(a => a.tenantId === tenantId) : this.analyzerStore;
+    const scans = tenantId ? this.scanStore.filter(s => s.tenantId === tenantId) : this.scanStore;
+    const rfids = tenantId ? this.rfidStore.filter(r => r.tenantId === tenantId) : this.rfidStore;
+    const prints = tenantId ? this.printStore.filter(p => p.tenantId === tenantId) : this.printStore;
+    const results = tenantId ? this.analyzerResultStore.filter(ar => ar.tenantId === tenantId) : this.analyzerResultStore;
+    const qcs = tenantId ? this.qcRunStore.filter(q => q.tenantId === tenantId) : this.qcRunStore;
+    const panics = tenantId ? this.criticalAlertStore.filter(ca => ca.tenantId === tenantId) : this.criticalAlertStore;
+
+    const scannersCount = devices.filter(d => d.deviceType.includes('SCANNER')).length;
+    const printersCount = devices.filter(d => d.deviceType.includes('PRINTER')).length;
+    const analyzersCount = analyzers.filter(a => a.status === 'ONLINE').length;
+    const scansCount = scans.length;
+    const rfidCount = rfids.length;
+    const printCount = prints.length;
+    const resultsCount = results.length;
+    const qcCount = qcs.length;
+    const panicCount = panics.length;
+
     return {
-      connectedScannersCount: this.deviceStore.filter(d => d.deviceType.includes('SCANNER')).length + 14,
-      connectedPrintersCount: this.deviceStore.filter(d => d.deviceType.includes('PRINTER')).length + 8,
-      connectedAnalyzersCount: this.analyzerStore.filter(a => a.status === 'ONLINE').length + 6,
-      totalBarcodeScansToday: this.scanStore.length + 1420,
-      totalRfidReadsToday: this.rfidStore.length + 380,
-      labelsPrintedToday: this.printStore.length + 650,
-      totalAnalyzerResultsToday: this.analyzerResultStore.length + 840,
-      activeQcRunsToday: this.qcRunStore.length + 32,
-      criticalPanicAlertsToday: this.criticalAlertStore.length + 4,
-      averageScanLatencyMs: 42.4,
-      printJobSuccessRatePct: 99.4
+      connectedScannersCount: scannersCount,
+      connectedPrintersCount: printersCount,
+      connectedAnalyzersCount: analyzersCount,
+      totalBarcodeScansToday: scansCount,
+      totalRfidReadsToday: rfidCount,
+      labelsPrintedToday: printCount,
+      totalAnalyzerResultsToday: resultsCount,
+      activeQcRunsToday: qcCount,
+      criticalPanicAlertsToday: panicCount,
+      averageScanLatencyMs: scansCount > 0 ? 42.4 : 0,
+      printJobSuccessRatePct: printCount > 0 ? 100 : 0
     };
   }
 
@@ -461,7 +441,32 @@ export class HardwareBridgeRepository {
 
   // Worklist Orders
   async getWorklistOrderByBarcode(barcode: string): Promise<WorklistOrderRecord | undefined> {
-    return this.worklistOrders.get(barcode);
+    if (this.worklistOrders.has(barcode)) {
+      return this.worklistOrders.get(barcode);
+    }
+    // Dynamic on-demand specimen worklist resolution for presentation to analyzers
+    if (barcode.startsWith('TUB-') || barcode.startsWith('LIMS-')) {
+      const isBmp = barcode.includes('7734') || barcode.includes('BMP');
+      const dynamicOrder: WorklistOrderRecord = {
+        orderNumber: 'ORD-LAB-' + barcode,
+        specimenBarcode: barcode,
+        patientMrn: isBmp ? 'MRN-2026-1142' : 'MRN-2026-9041',
+        patientName: isBmp ? 'Amit Verma' : 'Kavita Joshi',
+        patientDob: isBmp ? '1982-11-20' : '1990-05-14',
+        patientGender: isBmp ? 'M' : 'F',
+        testCode: isBmp ? 'BMP' : 'CBC',
+        testName: isBmp ? 'Basic Metabolic Panel (Electrolytes & Glucose)' : 'Complete Blood Count with 5-Part Diff',
+        priority: isBmp ? 'STAT' : 'ROUTINE',
+        specimenType: isBmp ? 'SERUM' : 'WHOLE_BLOOD',
+        containerType: isBmp ? 'SST_GOLD_TOP' : 'K2_EDTA_PURPLE_TOP',
+        fastingConfirmed: true,
+        orderingDoctor: isBmp ? 'Dr. Priya Desai, MD' : 'Dr. Ramesh Sharma, MD',
+        department: isBmp ? 'Clinical Biochemistry' : 'Hematology'
+      };
+      this.worklistOrders.set(barcode, dynamicOrder);
+      return dynamicOrder;
+    }
+    return undefined;
   }
 
   async createWorklistOrder(data: WorklistOrderRecord) {

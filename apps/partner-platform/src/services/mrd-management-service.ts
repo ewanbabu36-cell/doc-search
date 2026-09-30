@@ -1,4 +1,4 @@
-import { apiRequest } from './api-client.js';
+import { apiRequest, isMockFallbackAllowed } from './api-client.js';
 import type {
   MRDepartmentDto,
   MedicalRecordIndexDto,
@@ -155,11 +155,12 @@ export class MockMrdManagementService implements IMrdManagementService {
   async getRecords(tenantId: string): Promise<MedicalRecordIndexDto[]> {
     try {
       const res = await apiRequest<MedicalRecordIndexDto[]>('/api/v1/partner/mrd/records');
-      if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+      if (res.success && Array.isArray(res.data)) {
+        this.records = res.data;
         return res.data;
       }
-    } catch {
-      // Fallback
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
     }
     return this.records.filter((r) => r.tenantId === tenantId);
   }
@@ -171,11 +172,11 @@ export class MockMrdManagementService implements IMrdManagementService {
   async getICD10Catalog(): Promise<ICDCodeItemDto[]> {
     try {
       const res = await apiRequest<ICDCodeItemDto[]>('/api/v1/partner/mrd/icd10/search');
-      if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+      if (res.success && Array.isArray(res.data)) {
         return res.data;
       }
-    } catch {
-      // Fallback
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
     }
     return [...mockICD10Catalog];
   }
@@ -274,8 +275,8 @@ export class MockMrdManagementService implements IMrdManagementService {
       if (res.success && res.data) {
         return res.data;
       }
-    } catch {
-      // Fallback
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
     }
     const newCode: MedicalDiagnosisCodeDto = {
       id: 'mdc-' + Math.random().toString(36).substring(2, 9),
@@ -326,8 +327,8 @@ export class MockMrdManagementService implements IMrdManagementService {
       if (res.success && res.data) {
         return res.data;
       }
-    } catch {
-      // Fallback
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
     }
     const newReview: CodingReviewDto = {
       id: 'cr-' + Math.random().toString(36).substring(2, 9),

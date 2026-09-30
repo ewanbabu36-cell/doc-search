@@ -32,10 +32,12 @@ import { CompanyRoleAccessMatrixTemplate } from './CompanyRoleAccessMatrixTempla
 import { McaStatutoryRegisterVaultView } from './McaStatutoryRegisterVaultView.js';
 import { PoshEthicsVigilanceView } from './PoshEthicsVigilanceView.js';
 import { SubsidiaryTransferEscrowView } from './SubsidiaryTransferEscrowView.js';
+import { FounderApprovalGovernanceView } from './FounderApprovalGovernanceView.js';
 
 import { Tabs, Badge, Spinner, ErrorState } from '@docsearch/ui-kit';
 
 type ActiveTab =
+  | 'founder-approvals'
   | 'role-matrix'
   | 'overview'
   | 'mca-vault'
@@ -51,7 +53,17 @@ type ActiveTab =
   | 'calendar'
   | 'audit';
 
-export const CompanyAdminDomainManager: React.FC = () => {
+export interface CompanyAdminDomainManagerProps {
+  currentUserRole?: string | undefined;
+  currentUserName?: string | undefined;
+  currentUserEmail?: string | undefined;
+}
+
+export const CompanyAdminDomainManager: React.FC<CompanyAdminDomainManagerProps> = ({
+  currentUserRole,
+  currentUserName: _currentUserName,
+  currentUserEmail
+}) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('overview');
   const [overview, setOverview] = useState<CompanyOverviewDto | null>(null);
   const [entities, setEntities] = useState<LegalEntityDto[]>([]);
@@ -131,6 +143,47 @@ export const CompanyAdminDomainManager: React.FC = () => {
       actorEmail: 'admin.director@docsearch.internal'
     });
     setEmployees((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
+  };
+
+  const handleAddEmployee = async (newEmp: InternalEmployeeDto) => {
+    try {
+      const created = await companyAdminService.createInternalEmployee({
+        employeeCode: newEmp.employeeCode,
+        firstName: newEmp.firstName,
+        lastName: newEmp.lastName,
+        workEmail: newEmp.workEmail,
+        legalEntityId: newEmp.legalEntityId,
+        departmentId: newEmp.departmentId,
+        designationId: newEmp.designationId,
+        managerEmployeeId: newEmp.managerEmployeeId,
+        employmentType: newEmp.employmentType,
+        startDate: newEmp.startDate,
+        actorEmail: 'admin.director@docsearch.internal',
+        reason: 'New staff member onboarded via staff directory console'
+      });
+      setEmployees((prev) => [created, ...prev.filter((e) => e.id !== created.id)]);
+    } catch {
+      setEmployees((prev) => [newEmp, ...prev]);
+    }
+  };
+
+  const handleAddDepartment = async (newDept: DepartmentDto) => {
+    try {
+      const created = await companyAdminService.createDepartment({
+        departmentCode: newDept.departmentCode,
+        departmentName: newDept.departmentName,
+        description: newDept.description,
+        costCenterCode: newDept.costCenterCode,
+        legalEntityId: newDept.legalEntityId,
+        parentDepartmentId: newDept.parentDepartmentId,
+        leadEmail: newDept.leadEmail,
+        actorEmail: 'admin.director@docsearch.internal',
+        reason: 'New department added to corporate hierarchy'
+      });
+      setDepartments((prev) => [created, ...prev.filter((d) => d.id !== created.id)]);
+    } catch {
+      setDepartments((prev) => [newDept, ...prev]);
+    }
   };
 
   const handleApprovePolicy = async (policyId: string, resolutionReference: string, reason: string) => {
@@ -219,8 +272,38 @@ export const CompanyAdminDomainManager: React.FC = () => {
       <Tabs
         tabs={[
           {
+            id: 'founder-approvals',
+            label: '👑 Founder Approvals',
+            badge: <Badge variant="warning">Mandatory Sign-off</Badge>
+          },
+          {
             id: 'overview',
             label: '📊 Overview'
+          },
+          {
+            id: 'role-matrix',
+            label: '🛡️ Role Matrix Studio',
+            badge: <Badge variant="primary">7 Security Add-ons</Badge>
+          },
+          {
+            id: 'employees',
+            label: '👥 Staff Directory',
+            badge: <Badge variant="neutral">{employees.length}</Badge>
+          },
+          {
+            id: 'departments',
+            label: '🏢 Departments',
+            badge: <Badge variant="neutral">{departments.length}</Badge>
+          },
+          {
+            id: 'designations',
+            label: '🎖️ Designations',
+            badge: <Badge variant="neutral">{designations.length}</Badge>
+          },
+          {
+            id: 'entities',
+            label: '🏛️ Legal Entities',
+            badge: <Badge variant="neutral">{entities.length}</Badge>
           },
           {
             id: 'mca-vault',
@@ -236,26 +319,6 @@ export const CompanyAdminDomainManager: React.FC = () => {
             id: 'subsidiary-escrow',
             label: '🏢 Multi-Subsidiary Escrow',
             badge: <Badge variant="neutral">Sec 92C</Badge>
-          },
-          {
-            id: 'entities',
-            label: '🏛️ Legal Entities',
-            badge: <Badge variant="neutral">{entities.length}</Badge>
-          },
-          {
-            id: 'departments',
-            label: '🏢 Departments',
-            badge: <Badge variant="neutral">{departments.length}</Badge>
-          },
-          {
-            id: 'employees',
-            label: '👥 Staff Directory',
-            badge: <Badge variant="neutral">{employees.length}</Badge>
-          },
-          {
-            id: 'designations',
-            label: '🎖️ Designations',
-            badge: <Badge variant="neutral">{designations.length}</Badge>
           },
           {
             id: 'board',
@@ -288,6 +351,13 @@ export const CompanyAdminDomainManager: React.FC = () => {
       />
 
       {/* Tab Contents */}
+      {activeTab === 'founder-approvals' && (
+        <FounderApprovalGovernanceView
+          currentRoleCode={currentUserRole}
+          currentUserEmail={currentUserEmail}
+        />
+      )}
+
       {activeTab === 'overview' && overview && (
         <CompanyOverviewView
           overview={overview}
@@ -318,7 +388,7 @@ export const CompanyAdminDomainManager: React.FC = () => {
       {activeTab === 'departments' && (
         <DepartmentHierarchyView
           departments={departments}
-          onAddDepartment={(newDept) => setDepartments([newDept, ...departments])}
+          onAddDepartment={handleAddDepartment}
         />
       )}
 
@@ -330,7 +400,9 @@ export const CompanyAdminDomainManager: React.FC = () => {
         <EmployeeDirectoryView
           employees={employees}
           onUpdateStatus={handleUpdateEmployeeStatus}
-          onAddEmployee={(newEmp) => setEmployees([newEmp, ...employees])}
+          onAddEmployee={handleAddEmployee}
+          onDeleteEmployee={(id) => setEmployees((prev) => prev.filter((e) => e.id !== id))}
+          onNavigateToRoleMatrix={() => setActiveTab('role-matrix')}
         />
       )}
 

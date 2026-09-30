@@ -27,7 +27,7 @@ export const MRDCommandCenterView: React.FC<Props> = ({
             <Badge variant="primary">HIM / MRD Hub</Badge>
           </div>
           <p className="text-xs text-slate-300">
-            Director: <span className="font-semibold text-white">{department?.headOfMrdName}</span> | Lead Auditor: <span className="font-semibold text-white">{department?.leadCodingAuditorName}</span>
+            Director: <span className="font-semibold text-white">{department?.headOfMrdName}</span> | Lead Auditor: <span className="font-semibold text-white">{department?.leadCodingAuditorName}</span> | Archival Vault: <span className="font-semibold text-white">{department?.physicalVaultLocation || 'Central Archive Vault A'}</span> | Code: <span className="font-semibold text-white">{department?.departmentCode || 'HIM-01'}</span>
           </p>
         </div>
         <div className="flex items-center gap-2">

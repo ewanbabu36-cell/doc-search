@@ -1,0 +1,279 @@
+
+=== apps/partner-platform/src/components/common/AbdmScanAndShareModal.tsx:387 ===
+384:               style={{
+385:                 width: '200px',
+386:                 height: '200px',
+387:                 backgroundColor: '#FFFFFF',
+388:                 borderRadius: '12px',
+389:                 padding: '12px',
+390:                 boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+
+=== apps/partner-platform/src/components/common/FastOpdRegistrationDrawer.tsx:667 ===
+664:                 style={{
+665:                   margin: '12px auto',
+666:                   maxWidth: printMode === 'THERMAL_80MM' ? '380px' : '650px',
+667:                   backgroundColor: '#FFFFFF',
+668:                   color: '#0F172A',
+669:                   padding: printMode === 'THERMAL_80MM' ? '16px' : '28px',
+670:                   borderRadius: '12px',
+
+=== apps/partner-platform/src/components/common/ThermalPrintPreviewModal.tsx:365 ===
+362:             id="thermal-print-area"
+363:             style={{
+364:               width: paperWidth === 'A4' ? '540px' : paperWidth === '80mm' ? '320px' : '240px',
+365:               backgroundColor: '#FFFFFF',
+366:               color: '#000000',
+367:               fontFamily: 'monospace, Courier New, sans-serif',
+368:               padding: '16px',
+
+=== apps/partner-platform/src/components/dialogs/AutoAnalyzerSyncModal.tsx:121 ===
+118:     >
+119:       <div
+120:         style={{
+121:           backgroundColor: '#FFFFFF',
+122:           borderRadius: '16px',
+123:           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
+124:           maxWidth: '780px',
+
+=== apps/partner-platform/src/components/dialogs/AutoAnalyzerSyncModal.tsx:194 ===
+191:                 border: '1px solid #CBD5E1',
+192:                 fontSize: '0.85rem',
+193:                 fontWeight: 600,
+194:                 backgroundColor: '#FFFFFF',
+195:                 color: '#0F172A'
+196:               }}
+197:             >
+
+=== apps/partner-platform/src/components/dialogs/AutoAnalyzerSyncModal.tsx:222 ===
+219:                 border: '1px solid #CBD5E1',
+220:                 fontSize: '0.85rem',
+221:                 fontWeight: 600,
+222:                 backgroundColor: '#FFFFFF',
+223:                 color: '#0F172A'
+224:               }}
+225:             >
+
+=== apps/partner-platform/src/components/dialogs/CreatePatientDialog.tsx:313 ===
+310:             <div style={{
+311:               width: '130px',
+312:               height: '130px',
+313:               background: '#fff',
+314:               padding: '8px',
+315:               borderRadius: '8px',
+316:               display: 'flex',
+
+=== apps/partner-platform/src/components/dialogs/DirectLabBillingModal.tsx:732 ===
+729:               id="printable-lab-receipt"
+730:               style={{
+731:                 width: '320px',
+732:                 backgroundColor: '#FFFFFF',
+733:                 color: '#000000',
+734:                 padding: '16px 18px',
+735:                 fontFamily: 'monospace',
+
+=== apps/partner-platform/src/components/dialogs/DirectLabWalkInReportModal.tsx:1173 ===
+1170:         {activeStep === 'PRINT_PREVIEW' && (
+1171:           <div style={{ padding: '36px 20px', overflowY: 'auto', flex: 1, backgroundColor: '#070C16', display: 'flex', justifyContent: 'center' }}>
+1172:             <div id="printable-pathology-sheet" style={{
+1173:               backgroundColor: '#FFFFFF',
+1174:               color: '#0F172A',
+1175:               padding: '40px 48px',
+1176:               borderRadius: '8px',
+
+=== apps/partner-platform/src/components/dialogs/DoctorPrescriptionQueueImporterModal.tsx:210 ===
+207:     >
+208:       <div
+209:         style={{
+210:           backgroundColor: '#FFFFFF',
+211:           borderRadius: '16px',
+212:           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
+213:           maxWidth: '720px',
+
+=== apps/partner-platform/src/components/dialogs/DoctorPrescriptionQueueImporterModal.tsx:332 ===
+329:                     border: '1.5px solid #E2E8F0',
+330:                     borderRadius: '12px',
+331:                     padding: '14px 18px',
+332:                     backgroundColor: '#FFFFFF',
+333:                     display: 'flex',
+334:                     flexDirection: 'column',
+335:                     gap: '10px',
+
+=== apps/partner-platform/src/components/dialogs/GenericSaltSubstituteModal.tsx:70 ===
+67:     >
+68:       <div
+69:         style={{
+70:           backgroundColor: '#FFFFFF',
+71:           borderRadius: '16px',
+72:           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
+73:           maxWidth: '750px',
+
+=== apps/partner-platform/src/components/dialogs/GenericSaltSubstituteModal.tsx:139 ===
+136:               border: '2px solid #0284C7',
+137:               fontSize: '0.95rem',
+138:               outline: 'none',
+139:               backgroundColor: '#FFFFFF',
+140:               boxSizing: 'border-box'
+141:             }}
+142:           />
+
+=== apps/partner-platform/src/components/dialogs/KhataPaymentCollectionModal.tsx:219 ===
+216:               {/* 80mm Thermal Slip Preview */}
+217:               <div
+218:                 style={{
+219:                   backgroundColor: '#FFFFFF',
+220:                   color: '#000000',
+221:                   borderRadius: '8px',
+222:                   padding: '16px',
+
+=== apps/partner-platform/src/components/dialogs/KhataPaymentCollectionModal.tsx:443 ===
+440:               {paymentMode === 'UPI_QR' && numericPay > 0 && (
+441:                 <div
+442:                   style={{
+443:                     backgroundColor: '#FFFFFF',
+444:                     borderRadius: '10px',
+445:                     padding: '12px',
+446:                     textAlign: 'center',
+
+=== apps/partner-platform/src/components/dialogs/PatientWhatsAppSmartRxModal.tsx:99 ===
+96:     >
+97:       <div
+98:         style={{
+99:           backgroundColor: '#FFFFFF',
+100:           borderRadius: '16px',
+101:           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
+102:           maxWidth: '560px',
+
+=== apps/partner-platform/src/components/dialogs/PatientWhatsAppSmartRxModal.tsx:178 ===
+175:           {/* WhatsApp Speech Bubble */}
+176:           <div
+177:             style={{
+178:               backgroundColor: '#FFFFFF',
+179:               borderRadius: '12px 12px 12px 2px',
+180:               padding: '16px',
+181:               boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+
+=== apps/partner-platform/src/components/dialogs/PatientWhatsAppSmartRxModal.tsx:263 ===
+260:                         border: '1px solid #E2E8F0',
+261:                         borderRadius: '8px',
+262:                         padding: '8px 10px',
+263:                         backgroundColor: '#FFFFFF'
+264:                       }}
+265:                     >
+266:                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+
+=== apps/partner-platform/src/components/dialogs/PharmacySalesHistoryModal.tsx:246 ===
+243:             </p>
+244:           </div>
+245:         ) : (
+246:           <div style={{ border: '1px solid #CBD5E1', borderRadius: '8px', overflowY: 'auto', maxHeight: 'calc(100vh - 290px)', backgroundColor: '#FFFFFF' }}>
+247:             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem', textAlign: 'left' }}>
+248:               <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
+249:                 <tr style={{ backgroundColor: '#F1F5F9', borderBottom: '2px solid #CBD5E1', color: '#1E293B', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+
+=== apps/partner-platform/src/components/dialogs/PrintableDoctorPrescriptionModal.tsx:375 ===
+372:         {/* Printable Canvas (White Paper simulation) */}
+373:         <div style={{ padding: '20px', overflowY: 'auto', flex: 1, backgroundColor: '#070C16' }}>
+374:           <div id="printable-prescription-canvas" style={{
+375:             backgroundColor: '#FFFFFF',
+376:             color: '#0F172A',
+377:             padding: '32px',
+378:             borderRadius: '10px',
+
+=== apps/partner-platform/src/components/dialogs/PrintablePathologyReportModal.tsx:210 ===
+207:         width: '100%',
+208:         maxWidth: '890px',
+209:         maxHeight: '94vh',
+210:         backgroundColor: '#FFFFFF',
+211:         color: '#0F172A',
+212:         borderRadius: '16px',
+213:         boxShadow: '0 25px 70px rgba(0,0,0,0.9)',
+
+=== apps/partner-platform/src/components/dialogs/PrintablePathologyReportModal.tsx:504 ===
+501:         <div id="printable-pathology-sheet" style={{
+502:           padding: '32px 36px',
+503:           overflowY: 'auto',
+504:           backgroundColor: '#FFFFFF',
+505:           color: '#0F172A',
+506:           fontFamily: 'system-ui, -apple-system, sans-serif'
+507:         }}>
+
+=== apps/partner-platform/src/components/dialogs/ThermalBarcodeStickerModal.tsx:330 ===
+327:               style={{
+328:                 width: labelSize === '50x25' ? '280px' : '280px',
+329:                 minHeight: labelSize === '50x25' ? '140px' : '170px',
+330:                 backgroundColor: '#FFFFFF',
+331:                 color: '#000000',
+332:                 padding: '8px 10px',
+333:                 borderRadius: '4px',
+
+=== apps/partner-platform/src/components/dialogs/WholesaleInvoiceUploadModal.tsx:1220 ===
+1217:           <div
+1218:             id="print-debit-note-area"
+1219:             style={{
+1220:               backgroundColor: '#FFFFFF',
+1221:               color: '#0F172A',
+1222:               padding: '24px',
+1223:               borderRadius: '8px',
+
+=== apps/partner-platform/src/components/views/CdscoDrugInspectorAuditVaultView.tsx:1478 ===
+1475:               width: '1100px',
+1476:               maxWidth: '100%',
+1477:               height: '92vh',
+1478:               backgroundColor: '#FFFFFF',
+1479:               color: '#000000',
+1480:               borderRadius: '12px',
+1481:               boxShadow: '0 25px 60px rgba(0,0,0,0.8)',
+
+=== apps/partner-platform/src/components/views/DynamicUpiInvoiceView.tsx:637 ===
+634:           style={{
+635:             maxWidth: printLayout === 'THERMAL_80MM' ? '380px' : '720px',
+636:             margin: '0 auto',
+637:             backgroundColor: '#FFFFFF',
+638:             color: '#000000',
+639:             padding: printLayout === 'THERMAL_80MM' ? '16px' : '28px',
+640:             borderRadius: '8px',
+
+=== apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx:1174 ===
+1171:                     style={{
+1172:                       width: '64px',
+1173:                       height: '64px',
+1174:                       backgroundColor: '#FFFFFF',
+1175:                       borderRadius: '8px',
+1176:                       padding: '4px',
+1177:                       display: 'flex',
+
+=== apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx:1797 ===
+1794:               <div
+1795:                 style={{
+1796:                   padding: '16px',
+1797:                   backgroundColor: '#FFFFFF',
+1798:                   borderRadius: '16px',
+1799:                   boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+1800:                   margin: '4px 0'
+
+=== apps/partner-platform/src/components/views/InstantNhcxAutoAdjudicationView.tsx:986 ===
+983:                 {/* Simulated Visual QR Stamp */}
+984:                 <div
+985:                   style={{
+986:                     backgroundColor: '#FFFFFF',
+987:                     padding: '8px',
+988:                     borderRadius: '8px',
+989:                     textAlign: 'center',
+
+=== apps/partner-platform/src/components/views/ReferringDoctorLedgerView.tsx:634 ===
+631:           padding: '20px'
+632:         }}>
+633:           <div style={{
+634:             backgroundColor: '#FFFFFF',
+635:             color: '#0F172A',
+636:             borderRadius: '10px',
+637:             width: '100%',
+
+=== apps/partner-platform/src/components/views/ScanAndShareCounterView.tsx:232 ===
+229: 
+230:           {/* Printable 80mm ESC/POS Thermal Slip */}
+231:           <div style={{
+232:             backgroundColor: '#FFFFFF',
+233:             color: '#000000',
+234:             padding: '16px',
+235:             borderRadius: '8px',

@@ -11,6 +11,7 @@ import type {
   StockAdjustmentReason,
   CreateStockAdjustmentRequest
 } from '@docsearch/api-contracts';
+import { AuditJustificationField } from '../common/AuditJustificationField.js';
 
 export interface StockAdjustmentDialogProps {
   isOpen: boolean;
@@ -36,7 +37,7 @@ export const StockAdjustmentDialog: React.FC<StockAdjustmentDialogProps> = ({
   const [selectedBatchId, setSelectedBatchId] = useState(batches[0]?.id || '');
   const [reason, setReason] = useState<StockAdjustmentReason>('COUNT_CORRECTION');
   const [adjustmentQuantity, setAdjustmentQuantity] = useState<number>(0);
-  const [justification, setJustification] = useState('');
+  const [justification, setJustification] = useState('Periodic physical count discrepancy reconciliation');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -78,6 +79,8 @@ export const StockAdjustmentDialog: React.FC<StockAdjustmentDialogProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Audited Stock Adjustment & Count Reconciliation"
+      isFullPage={true}
+      maxWidth="full"
       footer={
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
           <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
@@ -149,17 +152,13 @@ export const StockAdjustmentDialog: React.FC<StockAdjustmentDialogProps> = ({
           </div>
         </div>
 
-        <div>
-          <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.25rem' }}>
-            Detailed Audit Justification *
-          </label>
-          <Input
-            value={justification}
-            onChange={(e) => setJustification(e.target.value)}
-            placeholder="Document supervisor sign-off reference and physical audit date..."
-            required
-          />
-        </div>
+        <AuditJustificationField
+          value={justification}
+          onChange={setJustification}
+          defaultJustification="Periodic physical count discrepancy reconciliation"
+          label="Detailed Audit Justification"
+          placeholder="Document supervisor sign-off reference and physical audit date..."
+        />
       </form>
     </Dialog>
   );

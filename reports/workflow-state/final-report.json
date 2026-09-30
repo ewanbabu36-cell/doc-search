@@ -1,0 +1,1306 @@
+{
+  "category": "CATEGORY 14 — WORKFLOW / STATE ERROR",
+  "auditDate": "2026-09-29T06:53:22.829Z",
+  "invariants": {
+    "INVALID_STATES": 0,
+    "INVALID_TRANSITIONS": 0,
+    "MISSING_REQUIRED_TRANSITIONS": 0,
+    "WRONG_TRANSITIONS": 0,
+    "STATE_REGRESSIONS": 0,
+    "STATE_STUCK_ERRORS": 0,
+    "STATE_DESYNCHRONIZATION": 0,
+    "STATE_PERSISTENCE_ERRORS": 0,
+    "UNAUTHORIZED_TRANSITIONS": 0,
+    "CROSS_TENANT_STATE_ERRORS": 0,
+    "DUPLICATE_TRANSITION_ERRORS": 0,
+    "CRITICAL_RACE_STATE_ERRORS": 0,
+    "PARTIAL_TRANSITION_ERRORS": 0,
+    "CLIENT_CONTROLLED_STATE_BYPASSES": 0,
+    "BROWSER_WORKFLOW_TRUTH": 0,
+    "FALSE_SUCCESS_WORKFLOW_ERRORS": 0
+  },
+  "metrics": {
+    "totalTests": 40,
+    "passedTests": 40,
+    "failedTests": 0,
+    "successRate": 100
+  },
+  "tests": [
+    {
+      "testId": "WS-01",
+      "name": "Initial Encounter State is REGISTERED / CHECKED_IN",
+      "passed": true,
+      "details": {
+        "status": 201,
+        "initialStatus": "CHECKED_IN"
+      }
+    },
+    {
+      "testId": "WS-02",
+      "name": "Valid Transition: CHECKED_IN -> WAITING succeeds",
+      "passed": true,
+      "details": {
+        "status": 200,
+        "body": {
+          "success": true,
+          "data": {
+            "id": "710df754-5e3d-4fcc-b751-179999d07341",
+            "tenantId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            "partnerId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            "organizationId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            "branchId": "00000000-0000-4000-8000-000000000001",
+            "departmentId": "00000000-0000-4000-8000-000000000011",
+            "patientId": "0b2786f8-8149-4604-97a4-c05d0a8cf8ef",
+            "doctorId": "00000000-0000-4000-8000-000000000031",
+            "opdSlotId": null,
+            "encounterNumber": "ENC-824063",
+            "encounterType": "OPD",
+            "status": "WAITING",
+            "priority": "ROUTINE",
+            "consultationMode": "PHYSICAL",
+            "chiefComplaint": "Category 14 State Machine Test",
+            "visitReason": null,
+            "triageNotes": null,
+            "referralSource": null,
+            "registeredAt": "2026-09-29T06:53:21.815Z",
+            "checkedInAt": null,
+            "consultationStartedAt": null,
+            "completedAt": null,
+            "cancelledAt": null,
+            "cancellationReason": null,
+            "metadata": {},
+            "createdAt": "2026-09-29T06:53:21.818Z",
+            "updatedAt": "2026-09-29T06:53:21.838Z"
+          }
+        }
+      }
+    },
+    {
+      "testId": "WS-03",
+      "name": "Valid Transition: WAITING -> IN_CONSULTATION succeeds",
+      "passed": true,
+      "details": {
+        "status": 200,
+        "body": {
+          "success": true,
+          "data": {
+            "id": "710df754-5e3d-4fcc-b751-179999d07341",
+            "tenantId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            "partnerId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            "organizationId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            "branchId": "00000000-0000-4000-8000-000000000001",
+            "departmentId": "00000000-0000-4000-8000-000000000011",
+            "patientId": "0b2786f8-8149-4604-97a4-c05d0a8cf8ef",
+            "doctorId": "00000000-0000-4000-8000-000000000031",
+            "opdSlotId": null,
+            "encounterNumber": "ENC-824063",
+            "encounterType": "OPD",
+            "status": "IN_CONSULTATION",
+            "priority": "ROUTINE",
+            "consultationMode": "PHYSICAL",
+            "chiefComplaint": "Category 14 State Machine Test",
+            "visitReason": null,
+            "triageNotes": null,
+            "referralSource": null,
+            "registeredAt": "2026-09-29T06:53:21.815Z",
+            "checkedInAt": null,
+            "consultationStartedAt": null,
+            "completedAt": null,
+            "cancelledAt": null,
+            "cancellationReason": null,
+            "metadata": {},
+            "createdAt": "2026-09-29T06:53:21.818Z",
+            "updatedAt": "2026-09-29T06:53:21.855Z"
+          }
+        }
+      }
+    },
+    {
+      "testId": "WS-04",
+      "name": "Invalid Transition: IN_CONSULTATION -> REGISTERED is REJECTED with 400",
+      "passed": true,
+      "details": {
+        "status": 400,
+        "body": {
+          "error": {
+            "code": "BAD_REQUEST",
+            "message": "Invalid state transition: Cannot transition encounter from 'IN_CONSULTATION' to 'REGISTERED'.",
+            "requestId": "e8bb1409-5cb0-4d76-98f5-96e1d59b25fd",
+            "details": []
+          }
+        }
+      }
+    },
+    {
+      "testId": "WS-05",
+      "name": "Invalid Status String: Arbitrary status is REJECTED with 400",
+      "passed": true,
+      "details": {
+        "status": 400,
+        "body": {
+          "error": {
+            "code": "VALIDATION_ERROR",
+            "message": "Invalid encounter status: 'SUPER_COMPLETED'.",
+            "requestId": "b4af1d66-9986-4ebb-a0db-f3118b5f9836",
+            "details": []
+          }
+        }
+      }
+    },
+    {
+      "testId": "WS-06",
+      "name": "Valid Transition: IN_CONSULTATION -> DISCHARGED -> COMPLETED succeeds",
+      "passed": true,
+      "details": {
+        "dischargeStatus": 200,
+        "completeStatus": 200
+      }
+    },
+    {
+      "testId": "WS-07",
+      "name": "Terminal State Protection: COMPLETED encounter cannot regress to CHECKED_IN",
+      "passed": true,
+      "details": {
+        "status": 400,
+        "body": {
+          "error": {
+            "code": "BAD_REQUEST",
+            "message": "Invalid state transition: Cannot transition encounter from 'COMPLETED' to 'CHECKED_IN'.",
+            "requestId": "d3efa08b-b3f2-40b0-afb1-940e91381918",
+            "details": []
+          }
+        }
+      }
+    },
+    {
+      "testId": "WS-08",
+      "name": "Terminal State Protection: COMPLETED encounter cannot be CANCELLED",
+      "passed": true,
+      "details": {
+        "status": 400,
+        "body": {
+          "error": {
+            "code": "BAD_REQUEST",
+            "message": "Invalid state transition: Cannot transition encounter from 'COMPLETED' to 'CANCELLED'.",
+            "requestId": "c97dbf6d-3777-49f7-a596-f1db0c3b8479",
+            "details": []
+          }
+        }
+      }
+    },
+    {
+      "testId": "WS-09",
+      "name": "Native PostgreSQL Persistence: Encounter status authoritatively remains COMPLETED",
+      "passed": true,
+      "details": {
+        "dbRow": {
+          "status": "COMPLETED"
+        }
+      }
+    },
+    {
+      "testId": "WS-10",
+      "name": "Appointment creation sets status to SCHEDULED",
+      "passed": true,
+      "details": {
+        "status": 201,
+        "body": {
+          "success": true,
+          "data": {
+            "id": "4930cc65-538e-4bfa-a30a-5cb1cbcdd4a4",
+            "tenantId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            "branchId": "00000000-0000-4000-8000-000000000001",
+            "patientId": "0b2786f8-8149-4604-97a4-c05d0a8cf8ef",
+            "doctorId": "00000000-0000-4000-8000-000000000031",
+            "department": "OPD",
+            "slotTime": "2026-09-30T06:53:22.000Z",
+            "status": "SCHEDULED",
+            "appointmentType": "CONSULTATION",
+            "queueToken": null,
+            "consultationFee": "500.00",
+            "metadata": {
+              "reason": "General Consultation",
+              "partnerId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "organizationId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+            },
+            "createdAt": "2026-09-29T06:53:22.018Z",
+            "updatedAt": "2026-09-29T06:53:22.018Z",
+            "patient": {
+              "id": "0b2786f8-8149-4604-97a4-c05d0a8cf8ef",
+              "tenantId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "partnerId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "organizationId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "branchId": "00000000-0000-4000-8000-000000000001",
+              "uhid": null,
+              "mrn": "MRN-147276",
+              "patientCode": "PAT-241925",
+              "firstName": "Workflow",
+              "middleName": null,
+              "lastName": "Subject",
+              "preferredName": null,
+              "dateOfBirth": "1985-06-15",
+              "gender": "MALE",
+              "bloodGroup": "O+",
+              "maritalStatus": null,
+              "nationality": null,
+              "preferredLanguage": "English",
+              "occupation": null,
+              "status": "ACTIVE",
+              "registrationSource": "RECEPTION_DESK",
+              "mergedIntoPatientId": null,
+              "metadata": {},
+              "createdAt": "2026-09-29T06:53:21.797Z",
+              "updatedAt": "2026-09-29T06:53:21.797Z"
+            }
+          }
+        }
+      }
+    },
+    {
+      "testId": "WS-11",
+      "name": "Valid appointment check-in creates encounter and updates appointment to CHECKED_IN",
+      "passed": true,
+      "details": {
+        "status": 200,
+        "encounterId": "d9e822a3-1bfb-40f4-bc1b-414cdf2ff3f4"
+      }
+    },
+    {
+      "testId": "WS-12",
+      "name": "Duplicate appointment check-in is idempotent (returns existing encounter, appointment points to encounter)",
+      "passed": true,
+      "details": {
+        "checkin2Status": 200,
+        "secondEncId": "d9e822a3-1bfb-40f4-bc1b-414cdf2ff3f4",
+        "expectedEncId": "d9e822a3-1bfb-40f4-bc1b-414cdf2ff3f4",
+        "aptMetadata": {
+          "reason": "General Consultation",
+          "partnerId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          "checkedInAt": "2026-09-29T06:53:22.051Z",
+          "encounterId": "d9e822a3-1bfb-40f4-bc1b-414cdf2ff3f4",
+          "organizationId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "testId": "WS-13",
+      "name": "Cancelled appointment check-in is REJECTED with 400",
+      "passed": true,
+      "details": {
+        "cancelStatus": 200,
+        "checkinCancelledStatus": 400
+      }
+    },
+    {
+      "testId": "WS-14",
+      "name": "Queue Token created with WAITING status",
+      "passed": true,
+      "details": {
+        "status": 201,
+        "queueTokenId": "fca907e0-1a44-415c-b1d5-5afc62490a1f"
+      }
+    },
+    {
+      "testId": "WS-15",
+      "name": "Queue Token progresses WAITING -> CALLED -> IN_PROGRESS -> COMPLETED",
+      "passed": true,
+      "details": {
+        "call": 200,
+        "start": 200,
+        "complete": 200
+      }
+    },
+    {
+      "testId": "WS-16",
+      "name": "Terminal Protection: Re-completing COMPLETED token is REJECTED with 400",
+      "passed": true,
+      "details": {
+        "status": 400,
+        "body": {
+          "error": {
+            "code": "BAD_REQUEST",
+            "message": "Cannot complete queue token with status 'COMPLETED'.",
+            "requestId": "63cc4318-da8b-4a0c-9f2b-2523290d0938",
+            "details": []
+          }
+        }
+      }
+    },
+    {
+      "testId": "WS-17",
+      "name": "Native PostgreSQL Persistence: Queue token status is authoritatively COMPLETED",
+      "passed": true,
+      "details": {
+        "dbRow": {
+          "queue_status": "COMPLETED"
+        }
+      }
+    },
+    {
+      "testId": "WS-18",
+      "name": "Lab Order created with ORDERED status",
+      "passed": true,
+      "details": {
+        "status": 201,
+        "labOrderId": "638d4aac-b8c5-4aa4-9c98-8ad412984072",
+        "body": {
+          "success": true,
+          "data": {
+            "id": "638d4aac-b8c5-4aa4-9c98-8ad412984072",
+            "tenantId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            "partnerId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            "organizationId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            "branchId": "00000000-0000-4000-8000-000000000001",
+            "patientId": "0b2786f8-8149-4604-97a4-c05d0a8cf8ef",
+            "patientName": "Workflow Subject",
+            "patientMrn": "MRN-147276",
+            "patientGender": "MALE",
+            "encounterId": "d9e822a3-1bfb-40f4-bc1b-414cdf2ff3f4",
+            "orderNumber": "ORD-INV-2026-802363",
+            "testCode": "CBC",
+            "testName": "Complete Blood Count",
+            "investigationCode": "CBC",
+            "investigationName": "Complete Blood Count",
+            "category": "HEMATOLOGY",
+            "investigationCategory": "HEMATOLOGY",
+            "priority": "ROUTINE",
+            "status": "ORDERED",
+            "clinicalIndication": "Category 14 State Machine Test Order",
+            "orderingDoctorId": "00000000-0000-4000-8000-000000000031",
+            "orderingDoctorName": "Dr. Rajesh Sharma, MD",
+            "orderedAt": "2026-09-29T06:53:22.221Z",
+            "updatedAt": "2026-09-29T06:53:22.221Z",
+            "specimens": [],
+            "results": []
+          }
+        }
+      }
+    },
+    {
+      "testId": "WS-19",
+      "name": "Sample collection transitions order to SAMPLE_COLLECTED",
+      "passed": true,
+      "details": {
+        "status": 200,
+        "body": {
+          "success": true,
+          "data": {
+            "id": "638d4aac-b8c5-4aa4-9c98-8ad412984072",
+            "tenantId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            "partnerId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            "organizationId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            "branchId": "00000000-0000-4000-8000-000000000001",
+            "orderNumber": "ORD-INV-2026-802363",
+            "patientId": "0b2786f8-8149-4604-97a4-c05d0a8cf8ef",
+            "encounterId": "d9e822a3-1bfb-40f4-bc1b-414cdf2ff3f4",
+            "consultationId": null,
+            "orderingDoctorId": "00000000-0000-4000-8000-000000000031",
+            "investigationId": "c3ae349d-c046-48e6-b192-d710398fee13",
+            "panelId": null,
+            "priority": "ROUTINE",
+            "clinicalIndication": "Category 14 State Machine Test Order",
+            "diagnosisContext": null,
+            "specimenType": "WHOLE_BLOOD",
+            "fastingConfirmed": false,
+            "status": "SAMPLE_COLLECTED",
+            "isAbnormal": false,
+            "isCritical": false,
+            "orderedAt": "2026-09-29T06:53:22.221Z",
+            "acknowledgedAt": null,
+            "sampleCollectedAt": null,
+            "processingStartedAt": null,
+            "resultEnteredAt": null,
+            "cancelledAt": null,
+            "cancellationReason": null,
+            "cancelledBy": null,
+            "metadata": {
+              "category": "HEMATOLOGY",
+              "testCode": "CBC",
+              "testName": "Complete Blood Count",
+              "patientMrn": "MRN-147276",
+              "patientName": "Workflow Subject",
+              "billingPolicy": "STANDARD",
+              "patientGender": "MALE",
+              "orderingDoctorName": "Dr. Rajesh Sharma, MD"
+            },
+            "createdAt": "2026-09-29T06:53:22.221Z",
+            "updatedAt": "2026-09-29T06:53:22.255Z",
+            "testName": "Complete Blood Count",
+            "testCode": "CBC",
+            "investigationName": "Complete Blood Count",
+            "investigationCode": "CBC",
+            "category": "HEMATOLOGY",
+            "investigationCategory": "HEMATOLOGY",
+            "patientName": "Workflow Subject",
+            "patientMrn": "MRN-147276",
+            "patientGender": "MALE",
+            "patientDob": "1985-06-15T00:00:00.000Z",
+            "orderingDoctorName": "Dr. Rajesh Sharma, MD",
+            "encounterNumber": "ENC-LAB-01",
+            "specimen": {
+              "id": "f6c59aca-172c-49a7-87f0-d30bdeb87cb0",
+              "tenantId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "partnerId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "organizationId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "orderId": "638d4aac-b8c5-4aa4-9c98-8ad412984072",
+              "patientId": "0b2786f8-8149-4604-97a4-c05d0a8cf8ef",
+              "accessionNumber": "ACC-2026-24246",
+              "specimenType": "WHOLE_BLOOD",
+              "containerType": "EDTA_LAVENDER",
+              "collectionSite": null,
+              "collectionStatus": "COLLECTED",
+              "collectedAt": "2026-09-29T06:53:22.255Z",
+              "collectedBy": null,
+              "receivedInLabAt": null,
+              "receivedBy": null,
+              "rejectionStatus": false,
+              "rejectionReason": null,
+              "rejectedAt": null,
+              "rejectedBy": null,
+              "collectionNotes": null,
+              "createdAt": "2026-09-29T06:53:22.255Z",
+              "updatedAt": "2026-09-29T06:53:22.255Z"
+            },
+            "specimens": [
+              {
+                "id": "f6c59aca-172c-49a7-87f0-d30bdeb87cb0",
+                "tenantId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                "partnerId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                "organizationId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                "orderId": "638d4aac-b8c5-4aa4-9c98-8ad412984072",
+                "patientId": "0b2786f8-8149-4604-97a4-c05d0a8cf8ef",
+                "accessionNumber": "ACC-2026-24246",
+                "specimenType": "WHOLE_BLOOD",
+                "containerType": "EDTA_LAVENDER",
+                "collectionSite": null,
+                "collectionStatus": "COLLECTED",
+                "collectedAt": "2026-09-29T06:53:22.255Z",
+                "collectedBy": null,
+                "receivedInLabAt": null,
+                "receivedBy": null,
+                "rejectionStatus": false,
+                "rejectionReason": null,
+                "rejectedAt": null,
+                "rejectedBy": null,
+                "collectionNotes": null,
+                "createdAt": "2026-09-29T06:53:22.255Z",
+                "updatedAt": "2026-09-29T06:53:22.255Z"
+              }
+            ],
+            "results": []
+          }
+        }
+      }
+    },
+    {
+      "testId": "WS-20",
+      "name": "Entering lab results transitions order to RESULT_ENTERED",
+      "passed": true,
+      "details": {
+        "status": 201,
+        "body": {
+          "success": true,
+          "data": {
+            "id": "638d4aac-b8c5-4aa4-9c98-8ad412984072",
+            "tenantId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            "partnerId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            "organizationId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            "branchId": "00000000-0000-4000-8000-000000000001",
+            "orderNumber": "ORD-INV-2026-802363",
+            "patientId": "0b2786f8-8149-4604-97a4-c05d0a8cf8ef",
+            "encounterId": "d9e822a3-1bfb-40f4-bc1b-414cdf2ff3f4",
+            "consultationId": null,
+            "orderingDoctorId": "00000000-0000-4000-8000-000000000031",
+            "investigationId": "c3ae349d-c046-48e6-b192-d710398fee13",
+            "panelId": null,
+            "priority": "ROUTINE",
+            "clinicalIndication": "Category 14 State Machine Test Order",
+            "diagnosisContext": null,
+            "specimenType": "WHOLE_BLOOD",
+            "fastingConfirmed": false,
+            "status": "RESULT_ENTERED",
+            "isAbnormal": false,
+            "isCritical": false,
+            "orderedAt": "2026-09-29T06:53:22.221Z",
+            "acknowledgedAt": null,
+            "sampleCollectedAt": null,
+            "processingStartedAt": null,
+            "resultEnteredAt": "2026-09-29T06:53:22.270Z",
+            "cancelledAt": null,
+            "cancellationReason": null,
+            "cancelledBy": null,
+            "metadata": {
+              "results": [
+                {
+                  "id": "c398f334-6492-4ec1-9bc9-ce37e32c5355",
+                  "unit": "g/dL",
+                  "enteredAt": "2026-09-29T06:53:22.270Z",
+                  "enteredBy": "00000000-0000-4000-8000-000000000031",
+                  "isCritical": false,
+                  "resultValue": "14.2",
+                  "abnormalFlag": "NORMAL",
+                  "numericValue": 14.2,
+                  "parameterCode": "HEMOGLOBIN",
+                  "parameterName": "Hemoglobin",
+                  "referenceRange": "13.5 - 17.5"
+                }
+              ],
+              "category": "HEMATOLOGY",
+              "testCode": "CBC",
+              "testName": "Complete Blood Count",
+              "isAbnormal": false,
+              "isCritical": false,
+              "patientMrn": "MRN-147276",
+              "patientName": "Workflow Subject",
+              "billingPolicy": "STANDARD",
+              "patientGender": "MALE",
+              "orderingDoctorName": "Dr. Rajesh Sharma, MD"
+            },
+            "createdAt": "2026-09-29T06:53:22.221Z",
+            "updatedAt": "2026-09-29T06:53:22.270Z",
+            "testName": "Complete Blood Count",
+            "testCode": "CBC",
+            "investigationName": "Complete Blood Count",
+            "investigationCode": "CBC",
+            "category": "HEMATOLOGY",
+            "investigationCategory": "HEMATOLOGY",
+            "patientName": "Workflow Subject",
+            "patientMrn": "MRN-147276",
+            "patientGender": "MALE",
+            "patientDob": "1985-06-15T00:00:00.000Z",
+            "orderingDoctorName": "Dr. Rajesh Sharma, MD",
+            "encounterNumber": "ENC-LAB-01",
+            "specimen": {
+              "id": "f6c59aca-172c-49a7-87f0-d30bdeb87cb0",
+              "tenantId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "partnerId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "organizationId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "orderId": "638d4aac-b8c5-4aa4-9c98-8ad412984072",
+              "patientId": "0b2786f8-8149-4604-97a4-c05d0a8cf8ef",
+              "accessionNumber": "ACC-2026-24246",
+              "specimenType": "WHOLE_BLOOD",
+              "containerType": "EDTA_LAVENDER",
+              "collectionSite": null,
+              "collectionStatus": "COLLECTED",
+              "collectedAt": "2026-09-29T06:53:22.255Z",
+              "collectedBy": null,
+              "receivedInLabAt": null,
+              "receivedBy": null,
+              "rejectionStatus": false,
+              "rejectionReason": null,
+              "rejectedAt": null,
+              "rejectedBy": null,
+              "collectionNotes": null,
+              "createdAt": "2026-09-29T06:53:22.255Z",
+              "updatedAt": "2026-09-29T06:53:22.255Z"
+            },
+            "specimens": [
+              {
+                "id": "f6c59aca-172c-49a7-87f0-d30bdeb87cb0",
+                "tenantId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                "partnerId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                "organizationId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                "orderId": "638d4aac-b8c5-4aa4-9c98-8ad412984072",
+                "patientId": "0b2786f8-8149-4604-97a4-c05d0a8cf8ef",
+                "accessionNumber": "ACC-2026-24246",
+                "specimenType": "WHOLE_BLOOD",
+                "containerType": "EDTA_LAVENDER",
+                "collectionSite": null,
+                "collectionStatus": "COLLECTED",
+                "collectedAt": "2026-09-29T06:53:22.255Z",
+                "collectedBy": null,
+                "receivedInLabAt": null,
+                "receivedBy": null,
+                "rejectionStatus": false,
+                "rejectionReason": null,
+                "rejectedAt": null,
+                "rejectedBy": null,
+                "collectionNotes": null,
+                "createdAt": "2026-09-29T06:53:22.255Z",
+                "updatedAt": "2026-09-29T06:53:22.255Z"
+              }
+            ],
+            "results": [
+              {
+                "id": "c398f334-6492-4ec1-9bc9-ce37e32c5355",
+                "tenantId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                "partnerId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                "organizationId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                "orderId": "638d4aac-b8c5-4aa4-9c98-8ad412984072",
+                "specimenId": "f6c59aca-172c-49a7-87f0-d30bdeb87cb0",
+                "parameterCode": "HEMOGLOBIN",
+                "parameterName": "Hemoglobin",
+                "resultValue": "14.2",
+                "numericValue": "14.2000",
+                "unit": "g/dL",
+                "referenceRange": "13.5 - 17.5",
+                "referenceMin": null,
+                "referenceMax": null,
+                "criticalMin": null,
+                "criticalMax": null,
+                "abnormalFlag": "NORMAL",
+                "isCritical": false,
+                "qualitativeInterpretation": null,
+                "resultStatus": "COMPLETED",
+                "enteredBy": "00000000-0000-4000-8000-000000000031",
+                "enteredAt": "2026-09-29T06:53:22.270Z",
+                "verifiedBy": null,
+                "verifiedAt": null,
+                "version": 1,
+                "createdAt": "2026-09-29T06:53:22.266Z",
+                "updatedAt": "2026-09-29T06:53:22.266Z"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "testId": "WS-21",
+      "name": "Pathologist validation transitions order to VERIFIED",
+      "passed": true,
+      "details": {
+        "status": 200,
+        "body": {
+          "success": true,
+          "data": {
+            "id": "638d4aac-b8c5-4aa4-9c98-8ad412984072",
+            "tenantId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            "partnerId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            "organizationId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            "branchId": "00000000-0000-4000-8000-000000000001",
+            "orderNumber": "ORD-INV-2026-802363",
+            "patientId": "0b2786f8-8149-4604-97a4-c05d0a8cf8ef",
+            "encounterId": "d9e822a3-1bfb-40f4-bc1b-414cdf2ff3f4",
+            "consultationId": null,
+            "orderingDoctorId": "00000000-0000-4000-8000-000000000031",
+            "investigationId": "c3ae349d-c046-48e6-b192-d710398fee13",
+            "panelId": null,
+            "priority": "ROUTINE",
+            "clinicalIndication": "Category 14 State Machine Test Order",
+            "diagnosisContext": null,
+            "specimenType": "WHOLE_BLOOD",
+            "fastingConfirmed": false,
+            "status": "VERIFIED",
+            "isAbnormal": false,
+            "isCritical": false,
+            "orderedAt": "2026-09-29T06:53:22.221Z",
+            "acknowledgedAt": null,
+            "sampleCollectedAt": null,
+            "processingStartedAt": null,
+            "resultEnteredAt": "2026-09-29T06:53:22.270Z",
+            "verifiedAt": "2026-09-29T06:53:22.290Z",
+            "cancelledAt": null,
+            "cancellationReason": null,
+            "cancelledBy": null,
+            "metadata": {
+              "report": {
+                "id": "5a49f665-7374-4efb-aa30-56eaa8d6ba62",
+                "orderId": "638d4aac-b8c5-4aa4-9c98-8ad412984072",
+                "metadata": {
+                  "verifiedBy": "00000000-0000-4000-8000-000000000031",
+                  "orderNumber": "ORD-INV-2026-802363"
+                },
+                "tenantId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                "partnerId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                "patientId": "0b2786f8-8149-4604-97a4-c05d0a8cf8ef",
+                "impression": "All analytes clinically validated and signed off by laboratory pathologist.",
+                "finalizedAt": "2026-09-29T06:53:22.290Z",
+                "reportTitle": "Diagnostic Report: Complete Blood Count",
+                "reportNumber": "REP-ORD-INV-2026-802363",
+                "reportStatus": "FINAL",
+                "organizationId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                "clinicalFindings": "Hemoglobin: 14.2 g/dL [NORMAL]",
+                "reportingClinician": "00000000-0000-4000-8000-000000000031",
+                "verifyingPathologist": "00000000-0000-4000-8000-000000000031"
+              },
+              "results": [
+                {
+                  "id": "c398f334-6492-4ec1-9bc9-ce37e32c5355",
+                  "unit": "g/dL",
+                  "orderId": "638d4aac-b8c5-4aa4-9c98-8ad412984072",
+                  "version": 1,
+                  "tenantId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                  "createdAt": "2026-09-29T06:53:22.266Z",
+                  "enteredAt": "2026-09-29T06:53:22.270Z",
+                  "enteredBy": "00000000-0000-4000-8000-000000000031",
+                  "partnerId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                  "updatedAt": "2026-09-29T06:53:22.266Z",
+                  "isCritical": false,
+                  "specimenId": "f6c59aca-172c-49a7-87f0-d30bdeb87cb0",
+                  "verifiedAt": "2026-09-29T06:53:22.290Z",
+                  "verifiedBy": "00000000-0000-4000-8000-000000000031",
+                  "criticalMax": null,
+                  "criticalMin": null,
+                  "resultValue": "14.2",
+                  "abnormalFlag": "NORMAL",
+                  "numericValue": "14.2000",
+                  "referenceMax": null,
+                  "referenceMin": null,
+                  "resultStatus": "COMPLETED",
+                  "parameterCode": "HEMOGLOBIN",
+                  "parameterName": "Hemoglobin",
+                  "organizationId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                  "referenceRange": "13.5 - 17.5",
+                  "qualitativeInterpretation": null
+                }
+              ],
+              "category": "HEMATOLOGY",
+              "testCode": "CBC",
+              "testName": "Complete Blood Count",
+              "isAbnormal": false,
+              "isCritical": false,
+              "patientMrn": "MRN-147276",
+              "verifiedAt": "2026-09-29T06:53:22.290Z",
+              "verifiedBy": "00000000-0000-4000-8000-000000000031",
+              "patientName": "Workflow Subject",
+              "billingPolicy": "STANDARD",
+              "patientGender": "MALE",
+              "orderingDoctorName": "Dr. Rajesh Sharma, MD"
+            },
+            "createdAt": "2026-09-29T06:53:22.221Z",
+            "updatedAt": "2026-09-29T06:53:22.290Z",
+            "testName": "Complete Blood Count",
+            "testCode": "CBC",
+            "investigationName": "Complete Blood Count",
+            "investigationCode": "CBC",
+            "category": "HEMATOLOGY",
+            "investigationCategory": "HEMATOLOGY",
+            "patientName": "Workflow Subject",
+            "patientMrn": "MRN-147276",
+            "patientGender": "MALE",
+            "patientDob": "1985-06-15T00:00:00.000Z",
+            "orderingDoctorName": "Dr. Rajesh Sharma, MD",
+            "encounterNumber": "ENC-LAB-01",
+            "specimen": {
+              "id": "f6c59aca-172c-49a7-87f0-d30bdeb87cb0",
+              "tenantId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "partnerId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "organizationId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "orderId": "638d4aac-b8c5-4aa4-9c98-8ad412984072",
+              "patientId": "0b2786f8-8149-4604-97a4-c05d0a8cf8ef",
+              "accessionNumber": "ACC-2026-24246",
+              "specimenType": "WHOLE_BLOOD",
+              "containerType": "EDTA_LAVENDER",
+              "collectionSite": null,
+              "collectionStatus": "COLLECTED",
+              "collectedAt": "2026-09-29T06:53:22.255Z",
+              "collectedBy": null,
+              "receivedInLabAt": null,
+              "receivedBy": null,
+              "rejectionStatus": false,
+              "rejectionReason": null,
+              "rejectedAt": null,
+              "rejectedBy": null,
+              "collectionNotes": null,
+              "createdAt": "2026-09-29T06:53:22.255Z",
+              "updatedAt": "2026-09-29T06:53:22.255Z"
+            },
+            "specimens": [
+              {
+                "id": "f6c59aca-172c-49a7-87f0-d30bdeb87cb0",
+                "tenantId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                "partnerId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                "organizationId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                "orderId": "638d4aac-b8c5-4aa4-9c98-8ad412984072",
+                "patientId": "0b2786f8-8149-4604-97a4-c05d0a8cf8ef",
+                "accessionNumber": "ACC-2026-24246",
+                "specimenType": "WHOLE_BLOOD",
+                "containerType": "EDTA_LAVENDER",
+                "collectionSite": null,
+                "collectionStatus": "COLLECTED",
+                "collectedAt": "2026-09-29T06:53:22.255Z",
+                "collectedBy": null,
+                "receivedInLabAt": null,
+                "receivedBy": null,
+                "rejectionStatus": false,
+                "rejectionReason": null,
+                "rejectedAt": null,
+                "rejectedBy": null,
+                "collectionNotes": null,
+                "createdAt": "2026-09-29T06:53:22.255Z",
+                "updatedAt": "2026-09-29T06:53:22.255Z"
+              }
+            ],
+            "results": [
+              {
+                "id": "c398f334-6492-4ec1-9bc9-ce37e32c5355",
+                "tenantId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                "partnerId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                "organizationId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                "orderId": "638d4aac-b8c5-4aa4-9c98-8ad412984072",
+                "specimenId": "f6c59aca-172c-49a7-87f0-d30bdeb87cb0",
+                "parameterCode": "HEMOGLOBIN",
+                "parameterName": "Hemoglobin",
+                "resultValue": "14.2",
+                "numericValue": "14.2000",
+                "unit": "g/dL",
+                "referenceRange": "13.5 - 17.5",
+                "referenceMin": null,
+                "referenceMax": null,
+                "criticalMin": null,
+                "criticalMax": null,
+                "abnormalFlag": "NORMAL",
+                "isCritical": false,
+                "qualitativeInterpretation": null,
+                "resultStatus": "COMPLETED",
+                "enteredBy": "00000000-0000-4000-8000-000000000031",
+                "enteredAt": "2026-09-29T06:53:22.270Z",
+                "verifiedBy": "00000000-0000-4000-8000-000000000031",
+                "verifiedAt": "2026-09-29T06:53:22.290Z",
+                "version": 1,
+                "createdAt": "2026-09-29T06:53:22.266Z",
+                "updatedAt": "2026-09-29T06:53:22.266Z"
+              }
+            ],
+            "report": {
+              "id": "5a49f665-7374-4efb-aa30-56eaa8d6ba62",
+              "tenantId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "partnerId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "organizationId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "orderId": "638d4aac-b8c5-4aa4-9c98-8ad412984072",
+              "patientId": "0b2786f8-8149-4604-97a4-c05d0a8cf8ef",
+              "reportNumber": "REP-ORD-INV-2026-802363",
+              "reportTitle": "Diagnostic Report: Complete Blood Count",
+              "clinicalFindings": "Hemoglobin: 14.2 g/dL [NORMAL]",
+              "impression": "All analytes clinically validated and signed off by laboratory pathologist.",
+              "reportingClinician": "00000000-0000-4000-8000-000000000031",
+              "verifyingPathologist": "00000000-0000-4000-8000-000000000031",
+              "reportStatus": "FINAL",
+              "finalizedAt": "2026-09-29T06:53:22.290Z",
+              "metadata": {
+                "verifiedBy": "00000000-0000-4000-8000-000000000031",
+                "orderNumber": "ORD-INV-2026-802363"
+              }
+            },
+            "verifiedBy": "00000000-0000-4000-8000-000000000031"
+          }
+        }
+      }
+    },
+    {
+      "testId": "WS-22",
+      "name": "State Regression Protection: Specimen collection on VERIFIED order is REJECTED with 409",
+      "passed": true,
+      "details": {
+        "status": 409,
+        "body": {
+          "error": {
+            "code": "CONFLICT",
+            "message": "Cannot collect specimen for a laboratory order in 'VERIFIED' status.",
+            "requestId": "f95fa504-d8d9-4137-8843-c3017e2364dc",
+            "details": []
+          }
+        }
+      }
+    },
+    {
+      "testId": "WS-23",
+      "name": "Terminal Protection: VERIFIED lab order cannot be CANCELLED (REJECTED with 400)",
+      "passed": true,
+      "details": {
+        "status": 400,
+        "body": {
+          "error": {
+            "code": "BAD_REQUEST",
+            "message": "Cannot cancel an investigation order that has already reached 'VERIFIED' status.",
+            "requestId": "9ceb464f-8728-4af7-b1f6-481f5b2f596e",
+            "details": []
+          }
+        }
+      }
+    },
+    {
+      "testId": "WS-24",
+      "name": "Cancelled Order Protection: Specimen collection on CANCELLED order is REJECTED with 409",
+      "passed": true,
+      "details": {
+        "status": 409,
+        "body": {
+          "error": {
+            "code": "CONFLICT",
+            "message": "Cannot collect specimen for a laboratory order in 'CANCELLED' status.",
+            "requestId": "7596e31c-2ebd-4d05-8e16-581180136bea",
+            "details": []
+          }
+        }
+      }
+    },
+    {
+      "testId": "WS-25",
+      "name": "Radiology Order created with ORDERED status",
+      "passed": true,
+      "details": {
+        "status": 201,
+        "radOrderId": "ee3bcf7b-cfea-414e-98b0-22e5b3149aa8",
+        "body": {
+          "success": true,
+          "data": {
+            "id": "ee3bcf7b-cfea-414e-98b0-22e5b3149aa8",
+            "tenantId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            "partnerId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            "organizationId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            "branchId": "00000000-0000-4000-8000-000000000001",
+            "orderNumber": "RAD-ORD-MUMBL8BL",
+            "patientId": "0b2786f8-8149-4604-97a4-c05d0a8cf8ef",
+            "patientName": "Workflow Subject",
+            "patientMrn": "MRN-MUMBL8BL",
+            "encounterId": "b5e66775-db2f-488d-8d5f-1f281c5b4ec1",
+            "orderingDoctorName": "Treating Radiologist",
+            "orderingDepartment": "Radiology Department",
+            "procedureId": "PROC-RAD-01",
+            "procedureName": "Standard Radiology Study",
+            "modalityType": "X_RAY",
+            "priority": "ROUTINE",
+            "clinicalIndication": "Clinical investigation requested",
+            "requiresContrast": false,
+            "pregnancyScreeningResult": null,
+            "renalEgfrResult": null,
+            "knownAllergies": null,
+            "status": "ORDERED",
+            "scheduledTime": null,
+            "orderedAt": "2026-09-29T06:53:22.401Z"
+          },
+          "id": "ee3bcf7b-cfea-414e-98b0-22e5b3149aa8",
+          "tenantId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          "partnerId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          "organizationId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          "branchId": "00000000-0000-4000-8000-000000000001",
+          "orderNumber": "RAD-ORD-MUMBL8BL",
+          "patientId": "0b2786f8-8149-4604-97a4-c05d0a8cf8ef",
+          "patientName": "Workflow Subject",
+          "patientMrn": "MRN-MUMBL8BL",
+          "encounterId": "b5e66775-db2f-488d-8d5f-1f281c5b4ec1",
+          "orderingDoctorName": "Treating Radiologist",
+          "orderingDepartment": "Radiology Department",
+          "procedureId": "PROC-RAD-01",
+          "procedureName": "Standard Radiology Study",
+          "modalityType": "X_RAY",
+          "priority": "ROUTINE",
+          "clinicalIndication": "Clinical investigation requested",
+          "requiresContrast": false,
+          "pregnancyScreeningResult": null,
+          "renalEgfrResult": null,
+          "knownAllergies": null,
+          "status": "ORDERED",
+          "scheduledTime": null,
+          "orderedAt": "2026-09-29T06:53:22.401Z"
+        }
+      }
+    },
+    {
+      "testId": "WS-26",
+      "name": "Radiology Order progresses ORDERED -> SCHEDULED -> IN_PROGRESS -> COMPLETED",
+      "passed": true,
+      "details": {
+        "sched": 200,
+        "inProg": 200,
+        "comp": 200
+      }
+    },
+    {
+      "testId": "WS-27",
+      "name": "Invalid Transition: COMPLETED radiology order cannot regress to ORDERED (REJECTED with 400)",
+      "passed": true,
+      "details": {
+        "status": 400,
+        "body": {
+          "error": {
+            "code": "BAD_REQUEST",
+            "message": "Invalid state transition from COMPLETED to ORDERED",
+            "requestId": "2964f7aa-c57f-45b8-8a7d-9f1dee23e3b6",
+            "details": []
+          }
+        }
+      }
+    },
+    {
+      "testId": "WS-28",
+      "name": "Authoritative Status Protection: Spoofed client fromStatus is overridden by DB truth (REJECTED with 400)",
+      "passed": true,
+      "details": {
+        "status": 400,
+        "body": {
+          "error": {
+            "code": "BAD_REQUEST",
+            "message": "Invalid state transition from COMPLETED to SCHEDULED",
+            "requestId": "6fb255a5-dd16-4abc-a612-5996e99c6c79",
+            "details": []
+          }
+        }
+      }
+    },
+    {
+      "testId": "WS-29",
+      "name": "Terminal Protection: CANCELLED radiology order cannot transition to IN_PROGRESS (REJECTED with 400)",
+      "passed": true,
+      "details": {
+        "status": 400,
+        "body": {
+          "error": {
+            "code": "BAD_REQUEST",
+            "message": "Invalid state transition from CANCELLED to IN_PROGRESS",
+            "requestId": "febfe05a-fabd-4e0a-a281-1bec9211251e",
+            "details": []
+          }
+        }
+      }
+    },
+    {
+      "testId": "WS-30",
+      "name": "Valid Pharmacy Dispense succeeds and updates prescription to DISPENSED",
+      "passed": true,
+      "details": {
+        "status": 201,
+        "body": {
+          "success": true,
+          "data": {
+            "id": "3a8fe389-155e-463d-8544-8f836000ac22",
+            "tenantId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            "partnerId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            "organizationId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            "branchId": "00000000-0000-4000-8000-000000000001",
+            "dispensingNumber": "DISP-306624",
+            "prescriptionId": "1e81ae77-8554-4f04-aaa3-aba0065f5a80",
+            "patientId": "0b2786f8-8149-4604-97a4-c05d0a8cf8ef",
+            "pharmacistId": "00000000-0000-4000-8000-000000000031",
+            "pharmacistName": "00000000-0000-4000-8000-000000000031",
+            "dispensingStatus": "DISPENSED",
+            "items": [
+              {
+                "medicationId": "00000000-0000-4000-8000-000000000041",
+                "batchNumber": "BATCH-AMOX-01",
+                "quantity": 10,
+                "unitPrice": 6.25,
+                "totalAmount": 62.5
+              }
+            ],
+            "totalBillAmount": 62.5,
+            "paymentStatus": "PAID",
+            "invoiceNumber": "INV-PHARM-200132",
+            "dispensedAt": "2026-09-29T06:53:22.574Z",
+            "createdAt": "2026-09-29T06:53:22.574Z",
+            "updatedAt": "2026-09-29T06:53:22.574Z",
+            "receiptNumber": "REC-PHARM-727064"
+          }
+        }
+      }
+    },
+    {
+      "testId": "WS-31",
+      "name": "Duplicate Dispense Prevention: Dispensing already dispensed prescription is REJECTED with 409 Conflict",
+      "passed": true,
+      "details": {
+        "status": 409,
+        "body": {
+          "error": {
+            "code": "CONFLICT",
+            "message": "Prescription 1e81ae77-8554-4f04-aaa3-aba0065f5a80 has already been fully dispensed",
+            "requestId": "c650fb8a-8a4a-45fb-8a0b-09c50be336be",
+            "details": []
+          }
+        }
+      }
+    },
+    {
+      "testId": "WS-32",
+      "name": "Terminal Protection: Dispensing a CANCELLED prescription is REJECTED with 409 Conflict",
+      "passed": true,
+      "details": {
+        "status": 409,
+        "body": {
+          "error": {
+            "code": "CONFLICT",
+            "message": "Cannot dispense cancelled prescription 4eb4b517-1b53-43f3-8df9-9924ee0bb847",
+            "requestId": "f734256d-acc8-4312-b889-bfea3ed19e5c",
+            "details": []
+          }
+        }
+      }
+    },
+    {
+      "testId": "WS-33",
+      "name": "Founder Approval Request submitted with PENDING_FOUNDER_APPROVAL status",
+      "passed": true,
+      "details": {
+        "status": 201,
+        "approvalId": "b64115fe-bf9a-4b6c-b193-185a09980333",
+        "body": {
+          "success": true,
+          "data": {
+            "id": "b64115fe-bf9a-4b6c-b193-185a09980333",
+            "requestNumber": "REQ-FND-802655-723",
+            "entityType": "PARTNER_CONFIG",
+            "taskTitle": "Category 14 State Machine Approval Test",
+            "submitterName": "usr_staff_clerk",
+            "submitterEmail": "clerk@apollo.org",
+            "submitterRole": "EMPLOYEE",
+            "payloadData": {
+              "partnerId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "requestedChange": "Activate High-Complexity Workflow"
+            },
+            "approvalStatus": "PENDING_FOUNDER_APPROVAL",
+            "taskStatus": "AWAITING_FOUNDER_APPROVAL",
+            "isImmediateCompleted": false,
+            "message": "⏳ Form submitted! Task is PENDING FOUNDER APPROVAL. Task will only complete once approved by Founder MERAJ SHARIF."
+          }
+        }
+      }
+    },
+    {
+      "testId": "WS-34",
+      "name": "Founder approval transitions request to APPROVED_BY_FOUNDER",
+      "passed": true,
+      "details": {
+        "status": 200,
+        "body": {
+          "success": true,
+          "data": {
+            "id": "b64115fe-bf9a-4b6c-b193-185a09980333",
+            "requestNumber": "REQ-FND-802655-723",
+            "entityType": "PARTNER_CONFIG",
+            "taskTitle": "Category 14 State Machine Approval Test",
+            "submitterName": "usr_staff_clerk",
+            "submitterEmail": "clerk@apollo.org",
+            "submitterRole": "EMPLOYEE",
+            "payloadData": {
+              "partnerId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "requestedChange": "Activate High-Complexity Workflow"
+            },
+            "approvalStatus": "APPROVED_BY_FOUNDER",
+            "taskStatus": "COMPLETED",
+            "founderRemarks": "Approved by Founder MERAJ SHARIF for Category 14 validation",
+            "approvedByEmail": "meraj.sharif@docsearch.internal",
+            "approvedAt": "2026-09-29T06:53:22.664Z",
+            "createdAt": "2026-09-29T06:53:22.655Z",
+            "updatedAt": "2026-09-29T06:53:22.664Z"
+          },
+          "message": "✓ Approved by Founder MERAJ SHARIF. The requested task has been COMPLETED and changes activated."
+        }
+      }
+    },
+    {
+      "testId": "WS-35",
+      "name": "Terminal Protection: Cannot reject an already APPROVED request (REJECTED with 409 Conflict)",
+      "passed": true,
+      "details": {
+        "status": 409,
+        "body": {
+          "error": {
+            "code": "CONFLICT",
+            "message": "Cannot reject request in 'APPROVED_BY_FOUNDER' status. Only pending requests can be rejected.",
+            "requestId": "c4ff5770-b18b-4534-9448-b4ba3e70b00a",
+            "details": []
+          }
+        }
+      }
+    },
+    {
+      "testId": "WS-36",
+      "name": "Founder rejection transitions request to REJECTED_BY_FOUNDER",
+      "passed": true,
+      "details": {
+        "status": 200,
+        "body": {
+          "success": true,
+          "data": {
+            "id": "33fdc066-da8b-4d9f-a6c4-d19612d7f6ee",
+            "requestNumber": "REQ-FND-802687-508",
+            "entityType": "COMMERCIAL_PLAN",
+            "taskTitle": "Plan Downgrade Test",
+            "submitterName": "usr_staff_clerk",
+            "submitterEmail": "clerk@apollo.org",
+            "submitterRole": "EMPLOYEE",
+            "payloadData": {
+              "partnerId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+            },
+            "approvalStatus": "REJECTED_BY_FOUNDER",
+            "taskStatus": "REJECTED",
+            "founderRemarks": "Rejected due to incomplete documentation",
+            "approvedByEmail": "meraj.sharif@docsearch.internal",
+            "approvedAt": "2026-09-29T06:53:22.703Z",
+            "createdAt": "2026-09-29T06:53:22.687Z",
+            "updatedAt": "2026-09-29T06:53:22.703Z"
+          },
+          "message": "❌ Request rejected by Founder. The task will NOT be executed."
+        }
+      }
+    },
+    {
+      "testId": "WS-37",
+      "name": "Terminal Protection: Cannot approve an already REJECTED request (REJECTED with 409 Conflict)",
+      "passed": true,
+      "details": {
+        "status": 409,
+        "body": {
+          "error": {
+            "code": "CONFLICT",
+            "message": "Cannot approve request in 'REJECTED_BY_FOUNDER' status. Only pending requests can be approved.",
+            "requestId": "6bd47a85-8c14-459f-b7b2-f7a27d0c7709",
+            "details": []
+          }
+        }
+      }
+    },
+    {
+      "testId": "WS-38",
+      "name": "Race Condition Safety: 5 simultaneous check-ins resolve safely without conflict or corrupt state",
+      "passed": true,
+      "details": {
+        "statuses": [
+          200,
+          200,
+          200,
+          200,
+          200
+        ],
+        "raceEncId": "d9e822a3-1bfb-40f4-bc1b-414cdf2ff3f4"
+      }
+    },
+    {
+      "testId": "WS-39",
+      "name": "Database Invariant: Zero invalid statuses across clinical.encounters table",
+      "passed": true,
+      "details": {
+        "invalidCount": 0
+      }
+    },
+    {
+      "testId": "WS-40",
+      "name": "Audit Trail Verification: Audit events committed for state transitions in core.audit_events",
+      "passed": true,
+      "details": {
+        "eventTypes": [
+          "AUTHZ_MAKER_CHECKER_REQUIRED_MAKER_REQUEST_SUBMITTED (1)",
+          "PATIENT_REGISTERED (16)",
+          "MEDICATION_DISPENSED (13)",
+          "QUEUE_TOKEN_ISSUED (32)",
+          "AUTHZ_ALLOW_ROLE_PERMISSIONS_UPDATED (4)",
+          "APPOINTMENT_SCHEDULED (32)",
+          "ENCOUNTER_CHECKIN (8)",
+          "HQ_COMMAND_CENTER_VIEW (150)",
+          "SAMPLE_COLLECTED (5)",
+          "APPOINTMENT_CANCELLED (7)",
+          "RADIOLOGY_ORDER_UPDATED (20)",
+          "LAB_ORDER_CANCELLED (5)",
+          "APPOINTMENT_CHECKED_IN (44)",
+          "AUTHZ_DENY_MAKER_SELF_APPROVAL_FORBIDDEN (1)",
+          "QUEUE_TOKEN_COMPLETED (7)",
+          "RESULT_VERIFIED (5)",
+          "LAB_ORDER_CREATED (10)",
+          "QUEUE_TOKEN_CALLED (7)",
+          "AUTHZ_ALLOW_MAKER_CHECKER_APPROVED (1)",
+          "ENCOUNTER_STATUS_UPDATED (28)",
+          "RESULT_ENTERED (5)",
+          "INVOICE_GENERATED (3)",
+          "AUTHZ_ALLOW_STAFF_RUNTIME_STATE_UPDATED (14)",
+          "PAYMENT_COLLECTED (6)",
+          "RADIOLOGY_ORDER_CREATED (10)",
+          "CONSULTATION_SAVED (1)",
+          "AUTHZ_DENY_AUDIT_TAMPER_FORBIDDEN (2)",
+          "CONSULTATION_STARTED (7)"
+        ]
+      }
+    }
+  ]
+}

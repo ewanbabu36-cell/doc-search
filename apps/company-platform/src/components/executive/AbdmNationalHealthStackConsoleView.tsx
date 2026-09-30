@@ -226,11 +226,10 @@ export const AbdmNationalHealthStackConsoleView: React.FC = () => {
                     placeholder="Aadhaar Number"
                     style={{ width: '140px', padding: '6px 10px', backgroundColor: '#1E293B', border: '1px solid #334155', borderRadius: '6px', color: '#FFF', fontFamily: 'monospace', fontSize: '0.8125rem' }}
                   />
-                  <Button
-                    variant="primary"
+                  <Button variant="success"
                     size="sm"
                     onClick={handleGenerateAbha}
-                    style={{ backgroundColor: '#10B981', color: '#070C16', fontWeight: 800 }}
+                    
                   >
                     📲 Send Aadhaar OTP
                   </Button>
@@ -244,11 +243,10 @@ export const AbdmNationalHealthStackConsoleView: React.FC = () => {
                     placeholder="Enter 6-Digit OTP"
                     style={{ width: '130px', padding: '6px 10px', backgroundColor: '#1E293B', border: '1px solid #10B981', borderRadius: '6px', color: '#86EFAC', fontWeight: 900, fontFamily: 'monospace', fontSize: '0.875rem' }}
                   />
-                  <Button
-                    variant="primary"
+                  <Button variant="success"
                     size="sm"
                     onClick={handleVerifyOtp}
-                    style={{ backgroundColor: '#10B981', color: '#070C16', fontWeight: 900 }}
+                    
                   >
                     ✓ Verify & Issue ABHA ID
                   </Button>

@@ -279,7 +279,7 @@ export const MultiBranchInterCompanyBillingView: React.FC = () => {
             🔄 Post Inter-Branch Cost Entry
           </Button>
           <Button variant="primary" onClick={handleGenerateConsolidatedInvoice}>
-            📑 1-Click Master Invoice
+            🚀 Issue Master Invoice with NIC IRN QR
           </Button>
         </div>
       </div>

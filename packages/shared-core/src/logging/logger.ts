@@ -40,7 +40,8 @@ class StructuredLogger implements Logger {
   }
 
   debug(message: string, context?: LogContext | undefined): void {
-    if (process.env['NODE_ENV'] !== 'production') {
+    const isProd = typeof process !== 'undefined' && process.env ? process.env['NODE_ENV'] === 'production' : false;
+    if (!isProd) {
       console.debug(this.format('debug', message, context));
     }
   }

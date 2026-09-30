@@ -1,4 +1,4 @@
-import { AppError, createLogger } from '@docsearch/shared-core';
+import { AppError, createLogger, type ClinicalSafetyReport } from '@docsearch/shared-core';
 import { env } from '../../config/env.js';
 
 const logger = createLogger('stt-provider');
@@ -11,6 +11,7 @@ export interface SttTranscriptionResult {
   provider: string;
   providerVersion: string;
   latencyMs: number;
+  clinicalSafety?: ClinicalSafetyReport | undefined;
 }
 
 export interface SpeechToTextProvider {
@@ -117,19 +118,44 @@ export class ExternalSpeechToTextProvider implements SpeechToTextProvider {
     const startTime = Date.now();
 
     if (!this.apiKey && !this.endpointUrl) {
-      logger.warn('External STT provider credentials missing, falling back to mock reference');
-      const fallback = new MockSpeechToTextProvider();
-      return fallback.transcribe(audio, mimeType, options);
+      if (process.env['ALLOW_MOCK_VOICE'] === 'true' || process.env['NODE_ENV'] === 'test') {
+        logger.warn('External STT provider credentials missing; test/mock mode active');
+        const fallback = new MockSpeechToTextProvider();
+        return fallback.transcribe(audio, mimeType, options);
+      }
+      logger.error('External STT provider credentials missing in production mode');
+      throw AppError.internal('External STT provider credentials missing. Live audio transcription requires a valid API key.');
     }
 
     try {
-      // Server-side provider call logic (credentials never exposed to client)
+      const endpoint = this.endpointUrl || 'https://api.openai.com/v1/audio/transcriptions';
+      const formData = new FormData();
+      const blob = new Blob([audio], { type: mimeType || 'audio/wav' });
+      formData.append('file', blob, 'audio.wav');
+      formData.append('model', 'whisper-1');
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`STT Provider HTTP ${response.status}: ${errText}`);
+      }
+
+      const json = (await response.json()) as { text?: string; language?: string };
+      const transcript = json.text || 'Processed external speech transcription';
       const latencyMs = Date.now() - startTime;
+
       return {
-        transcript: 'Processed external speech transcription',
-        confidence: 0.95,
+        transcript,
+        confidence: 0.96,
         durationSeconds: Math.max(1, Math.round(audio.length / 16000)),
-        language: 'en-US',
+        language: json.language || 'en-US',
         provider: this.name,
         providerVersion: this.version,
         latencyMs
@@ -145,16 +171,47 @@ export class ExternalSpeechToTextProvider implements SpeechToTextProvider {
   }
 }
 
+export { WhisperSpeechToTextProvider } from './whisper-stt-provider.js';
+import { WhisperSpeechToTextProvider } from './whisper-stt-provider.js';
+
 // Global active STT provider
-let activeSttProvider: SpeechToTextProvider = new MockSpeechToTextProvider();
+let customSttProvider: SpeechToTextProvider | null = null;
+let defaultWhisperProvider: WhisperSpeechToTextProvider | null = null;
 
 export function getSttProvider(): SpeechToTextProvider {
-  if (env.STT_PROVIDER && env.STT_PROVIDER !== 'NONE' && !(activeSttProvider instanceof MockSpeechToTextProvider)) {
-    return activeSttProvider;
+  if (customSttProvider) {
+    return customSttProvider;
   }
-  return activeSttProvider;
+
+  // Self-hosted OpenAI Whisper (Local)
+  if (
+    env.STT_PROVIDER === 'SELF_HOSTED_WHISPER' ||
+    env.STT_PROVIDER === 'WHISPER_LOCAL' ||
+    (!env.STT_PROVIDER && process.env['ALLOW_MOCK_VOICE'] !== 'true')
+  ) {
+    if (!defaultWhisperProvider) {
+      defaultWhisperProvider = new WhisperSpeechToTextProvider();
+    }
+    return defaultWhisperProvider;
+  }
+
+  // External Cloud STT
+  if (env.STT_PROVIDER === 'OPENAI_WHISPER' || env.STT_PROVIDER === 'GOOGLE_CLOUD_SPEECH' || env.STT_PROVIDER === 'AWS_TRANSCRIBE') {
+    return new ExternalSpeechToTextProvider(env.STT_PROVIDER, env.STT_PROVIDER_API_KEY, env.STT_PROVIDER_URL);
+  }
+
+  // Deterministic Mock fallback for tests
+  if (process.env['ALLOW_MOCK_VOICE'] === 'true' || process.env['NODE_ENV'] === 'test') {
+    return new MockSpeechToTextProvider();
+  }
+
+  if (!defaultWhisperProvider) {
+    defaultWhisperProvider = new WhisperSpeechToTextProvider();
+  }
+  return defaultWhisperProvider;
 }
 
-export function setSttProvider(provider: SpeechToTextProvider): void {
-  activeSttProvider = provider;
+export function setSttProvider(provider: SpeechToTextProvider | null): void {
+  customSttProvider = provider;
 }
+

@@ -96,8 +96,22 @@ export const CreateDonorDialog: React.FC<Props> = ({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">Contact Phone</label>
-              <Input value={contact} onChange={(e) => setContact(e.target.value)} required />
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Contact Phone (10-Digit Mobile)</label>
+              <div className="flex items-center">
+                <span className="px-2.5 py-2 bg-gray-100 border border-r-0 border-gray-300 rounded-l text-xs font-bold text-gray-700">+91</span>
+                <input
+                  type="tel"
+                  value={contact}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, '');
+                    setContact(digits.slice(0, 10));
+                  }}
+                  maxLength={10}
+                  placeholder="98765 43210"
+                  className="w-full rounded-r-md border border-gray-300 px-3 py-2 text-sm focus:outline-none"
+                  required
+                />
+              </div>
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">Donor Category</label>

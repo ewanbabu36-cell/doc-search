@@ -14,18 +14,20 @@ export interface InpatientOverviewViewProps {
 
 export const InpatientOverviewView: React.FC<InpatientOverviewViewProps> = ({
   metrics,
-  admissions,
-  requests,
+  admissions = [],
+  requests = [],
   onOpenCreateRequest,
   onOpenBedBoard,
   onOpenNursingStation,
   onSelectAdmission
 }) => {
+  const safeAdmissions = Array.isArray(admissions) ? admissions : [];
+  const safeRequests = Array.isArray(requests) ? requests : [];
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: '#0f172a' }}>
+          <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: 'var(--ds-color-text-primary, #f8fafc)' }}>
             Inpatient (IPD) & ADT Command Center
           </h2>
           <p style={{ margin: '0.25rem 0 0 0', color: '#64748b', fontSize: '0.875rem' }}>
@@ -43,7 +45,7 @@ export const InpatientOverviewView: React.FC<InpatientOverviewViewProps> = ({
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
         <Card style={{ padding: '1rem', borderLeft: '4px solid #2563eb' }}>
           <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>TOTAL ACTIVE INPATIENTS</div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: '#0f172a', margin: '0.25rem 0' }}>{metrics.totalInpatients}</div>
+          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--ds-color-text-primary, #f8fafc)', margin: '0.25rem 0' }}>{metrics.totalInpatients}</div>
           <div style={{ fontSize: '0.75rem', color: '#2563eb' }}>{metrics.admissionsToday} admitted today</div>
         </Card>
         <Card style={{ padding: '1rem', borderLeft: '4px solid #16a34a' }}>
@@ -71,8 +73,8 @@ export const InpatientOverviewView: React.FC<InpatientOverviewViewProps> = ({
       {/* Active Patients Table */}
       <Card style={{ padding: '0', overflow: 'hidden' }}>
         <div style={{ padding: '1rem', borderBottom: '1px solid #e2e8f0', fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span>Active Inpatient Admissions ({admissions.length})</span>
-          <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Pending Requests: {requests.filter((r) => r.status === 'SUBMITTED' || r.status === 'UNDER_REVIEW').length}</span>
+          <span>Active Inpatient Admissions ({safeAdmissions.length})</span>
+          <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Pending Requests: {safeRequests.filter((r) => r?.status === 'SUBMITTED' || r?.status === 'UNDER_REVIEW').length}</span>
         </div>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
@@ -88,29 +90,35 @@ export const InpatientOverviewView: React.FC<InpatientOverviewViewProps> = ({
               </tr>
             </thead>
             <tbody>
-              {admissions.map((adm) => (
-                <tr key={adm.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#2563eb' }}>{adm.admissionNumber}</td>
-                  <td style={{ padding: '0.75rem 1rem' }}>
-                    <div style={{ fontWeight: 600 }}>{adm.patientName}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{adm.patientMrn} • {adm.patientAge}y {adm.patientGender}</div>
-                  </td>
-                  <td style={{ padding: '0.75rem 1rem' }}>
-                    <div>{adm.wardName}</div>
-                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#2563eb' }}>Bed: {adm.bedCode}</div>
-                  </td>
-                  <td style={{ padding: '0.75rem 1rem', color: '#334155' }}>{adm.attendingConsultantName}</td>
-                  <td style={{ padding: '0.75rem 1rem', fontSize: '0.8rem', color: '#475569', maxWidth: '300px' }}>{adm.primaryDiagnosis}</td>
-                  <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
-                    <Badge variant={adm.status === 'ADMITTED' ? 'success' : adm.status === 'DISCHARGE_PLANNED' ? 'warning' : 'neutral'}>
-                      {adm.status}
-                    </Badge>
-                  </td>
-                  <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
-                    <Button variant="outline" size="sm" onClick={() => onSelectAdmission(adm.id)}>View Chart</Button>
-                  </td>
+              {safeAdmissions.length === 0 ? (
+                <tr>
+                  <td colSpan={7} style={{ padding: '1.5rem', textAlign: 'center', color: '#64748b' }}>No active inpatient admissions.</td>
                 </tr>
-              ))}
+              ) : (
+                safeAdmissions.map((adm) => (
+                  <tr key={adm.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                    <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#2563eb' }}>{adm.admissionNumber}</td>
+                    <td style={{ padding: '0.75rem 1rem' }}>
+                      <div style={{ fontWeight: 600 }}>{adm.patientName}</div>
+                      <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{adm.patientMrn} • {adm.patientAge}y {adm.patientGender}</div>
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem' }}>
+                      <div>{adm.wardName}</div>
+                      <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#2563eb' }}>Bed: {adm.bedCode}</div>
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem', color: 'var(--ds-color-text-secondary, #94a3b8)' }}>{adm.attendingConsultantName}</td>
+                    <td style={{ padding: '0.75rem 1rem', fontSize: '0.8rem', color: '#475569', maxWidth: '300px' }}>{adm.primaryDiagnosis}</td>
+                    <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
+                      <Badge variant={adm.status === 'ADMITTED' ? 'success' : adm.status === 'DISCHARGE_PLANNED' ? 'warning' : 'neutral'}>
+                        {adm.status}
+                      </Badge>
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
+                      <Button variant="outline" size="sm" onClick={() => onSelectAdmission(adm.id)}>View Chart</Button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

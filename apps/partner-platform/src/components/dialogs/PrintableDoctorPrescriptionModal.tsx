@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import type { ConsultationDto } from '@docsearch/api-contracts';
 import { getVerifiedRoleProfile } from '../../utils/roleProfileResolver.js';
+import { ProfileUpdateRequiredAlertModal } from '../common/ProfileUpdateRequiredAlertModal.js';
+import { checkPartnerProfileStatus, type MissingProfileField } from '../../utils/partnerProfileGuard.js';
+import { getBilingualDosingInstruction, findGenericSaltMatch } from '../views/DoctorExpressConsultationDesk.js';
 
 interface Props {
   isOpen: boolean;
@@ -42,12 +45,12 @@ export const PrintableDoctorPrescriptionModal: React.FC<Props> = ({
       }
     }
     return {
-      doctorName: profile.doctorName,
-      doctorDegree: profile.doctorDegree,
-      doctorSpecialty: profile.doctorSpecialty,
-      doctorCouncilName: profile.doctorCouncilName,
-      doctorRegNo: profile.doctorRegNo,
-      entityLegalName: profile.entityLegalName,
+      doctorName: consultation?.doctorName || profile.doctorName || 'Consulting Physician',
+      doctorDegree: profile.doctorDegree || 'MBBS',
+      doctorSpecialty: profile.doctorSpecialty || 'General Medicine',
+      doctorCouncilName: profile.doctorCouncilName || 'State Medical Council',
+      doctorRegNo: profile.doctorRegNo || 'Reg # Verification Required',
+      entityLegalName: profile.entityLegalName || 'Healthcare Clinic & Consultation',
       officialAddress: profile.officialAddress,
       contactPhone: profile.contactPhone,
       supportEmail: profile.supportEmail,
@@ -59,10 +62,33 @@ export const PrintableDoctorPrescriptionModal: React.FC<Props> = ({
 
   const [isEditing, setIsEditing] = useState(false);
   const [saveToast, setSaveToast] = useState(false);
+  const [letterheadMode, setLetterheadMode] = useState<'PLAIN_A4' | 'PREPRINTED_PAD'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('docsearch_prescription_letterhead_mode');
+      if (saved === 'PREPRINTED_PAD' || saved === 'PLAIN_A4') return saved;
+    }
+    return 'PLAIN_A4';
+  });
+
+  const handleSelectLetterheadMode = (mode: 'PLAIN_A4' | 'PREPRINTED_PAD') => {
+    setLetterheadMode(mode);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('docsearch_prescription_letterhead_mode', mode);
+    }
+  };
+
+  const [isProfileGuardAlertOpen, setIsProfileGuardAlertOpen] = useState(false);
+  const [profileMissingFields, setProfileMissingFields] = useState<MissingProfileField[]>([]);
 
   if (!isOpen || !consultation) return null;
 
   const handlePrint = () => {
+    const status = checkPartnerProfileStatus();
+    if (!status.isUpdated) {
+      setProfileMissingFields(status.missingFields);
+      setIsProfileGuardAlertOpen(true);
+      return;
+    }
     window.print();
   };
 
@@ -77,12 +103,12 @@ export const PrintableDoctorPrescriptionModal: React.FC<Props> = ({
 
   const handleResetDefaults = () => {
     const def = {
-      doctorName: profile.doctorName,
-      doctorDegree: profile.doctorDegree,
-      doctorSpecialty: profile.doctorSpecialty,
-      doctorCouncilName: profile.doctorCouncilName,
-      doctorRegNo: profile.doctorRegNo,
-      entityLegalName: profile.entityLegalName,
+      doctorName: consultation?.doctorName || profile.doctorName || 'Consulting Physician',
+      doctorDegree: profile.doctorDegree || 'MBBS',
+      doctorSpecialty: profile.doctorSpecialty || 'General Medicine',
+      doctorCouncilName: profile.doctorCouncilName || 'State Medical Council',
+      doctorRegNo: profile.doctorRegNo || 'Reg # Verification Required',
+      entityLegalName: profile.entityLegalName || 'Healthcare Clinic & Consultation',
       officialAddress: profile.officialAddress,
       contactPhone: profile.contactPhone,
       supportEmail: profile.supportEmail,
@@ -151,6 +177,61 @@ export const PrintableDoctorPrescriptionModal: React.FC<Props> = ({
               </span>
             )}
 
+            {/* Letterhead Paper vs Pre-Printed Pad Switcher */}
+            <div
+              style={{
+                display: 'inline-flex',
+                backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                borderRadius: '8px',
+                padding: '2px',
+                gap: '2px'
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => handleSelectLetterheadMode('PLAIN_A4')}
+                style={{
+                  backgroundColor: letterheadMode === 'PLAIN_A4' ? '#0284C7' : 'transparent',
+                  color: letterheadMode === 'PLAIN_A4' ? '#FFF' : '#94A3B8',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '6px 10px',
+                  fontSize: '0.75rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+                title="Print full clinic header & branding on blank A4 paper"
+              >
+                <span>📄</span>
+                <span>Plain A4 (Full Header)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSelectLetterheadMode('PREPRINTED_PAD')}
+                style={{
+                  backgroundColor: letterheadMode === 'PREPRINTED_PAD' ? '#F59E0B' : 'transparent',
+                  color: letterheadMode === 'PREPRINTED_PAD' ? '#000' : '#94A3B8',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '6px 10px',
+                  fontSize: '0.75rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+                title="Leave 65mm blank top margin for doctor's pre-printed stationery pad"
+              >
+                <span>📋</span>
+                <span>Pre-Printed Pad (65mm Top Margin)</span>
+              </button>
+            </div>
+
             <button
               type="button"
               onClick={() => setIsEditing(!isEditing)}
@@ -171,16 +252,6 @@ export const PrintableDoctorPrescriptionModal: React.FC<Props> = ({
             <button
               type="button"
               onClick={handlePrint}
-              style={{
-                backgroundColor: '#06B6D4',
-                color: '#070C16',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '8px 18px',
-                fontWeight: 900,
-                fontSize: '0.8125rem',
-                cursor: 'pointer'
-              }}
             >
               🖨️ Print Prescription
             </button>
@@ -308,38 +379,84 @@ export const PrintableDoctorPrescriptionModal: React.FC<Props> = ({
             boxShadow: '0 8px 30px rgba(0,0,0,0.5)',
             fontFamily: 'Inter, system-ui, -apple-system, sans-serif'
           }}>
-            {/* Header: Verified Doctor & Facility Credentials */}
-            <div style={{ borderBottom: `2.5px solid ${headerConfig.themeColor}`, paddingBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div>
-                <h1 style={{ margin: '0 0 4px', fontSize: '1.4rem', fontWeight: 900, color: headerConfig.themeColor }}>
-                  {headerConfig.doctorName}
-                </h1>
-                <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#334155' }}>
-                  {headerConfig.doctorDegree}
+            {/* Print Styles for Letterhead Pad Margin */}
+            <style>{`
+              @media print {
+                .preprinted-pad-spacer {
+                  border: none !important;
+                  background: transparent !important;
+                  color: transparent !important;
+                  min-height: 65mm !important;
+                  height: 65mm !important;
+                }
+                .preprinted-pad-spacer * {
+                  display: none !important;
+                  visibility: hidden !important;
+                }
+              }
+            `}</style>
+
+            {letterheadMode === 'PLAIN_A4' ? (
+              /* Header: Verified Doctor & Facility Credentials (Plain A4 Paper) */
+              <div style={{ borderBottom: `2.5px solid ${headerConfig.themeColor}`, paddingBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <h1 style={{ margin: '0 0 4px', fontSize: '1.4rem', fontWeight: 900, color: headerConfig.themeColor }}>
+                    {headerConfig.doctorName}
+                  </h1>
+                  <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#334155' }}>
+                    {headerConfig.doctorDegree}
+                  </div>
+                  <div style={{ fontSize: '0.8125rem', color: headerConfig.themeColor, fontWeight: 700 }}>
+                    {headerConfig.doctorSpecialty}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '2px' }}>
+                    <strong>State Medical Council:</strong> {headerConfig.doctorCouncilName} • <strong>Reg. No:</strong> <span style={{ fontFamily: 'monospace', fontWeight: 800 }}>{headerConfig.doctorRegNo}</span>
+                  </div>
                 </div>
-                <div style={{ fontSize: '0.8125rem', color: headerConfig.themeColor, fontWeight: 700 }}>
-                  {headerConfig.doctorSpecialty}
-                </div>
-                <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '2px' }}>
-                  <strong>State Medical Council:</strong> {headerConfig.doctorCouncilName} • <strong>Reg. No:</strong> <span style={{ fontFamily: 'monospace', fontWeight: 800 }}>{headerConfig.doctorRegNo}</span>
+
+                <div style={{ textAlign: 'right', maxWidth: '340px' }}>
+                  <h3 style={{ margin: '0 0 2px', fontSize: '1rem', fontWeight: 900, color: '#0F172A' }}>
+                    {headerConfig.entityLegalName}
+                  </h3>
+                  <p style={{ margin: 0, fontSize: '0.6875rem', color: '#64748B', lineHeight: 1.3 }}>
+                    {headerConfig.officialAddress}
+                  </p>
+                  <p style={{ margin: '2px 0 0', fontSize: '0.6875rem', color: '#64748B' }}>
+                    📞 {headerConfig.contactPhone} • ✉️ {headerConfig.supportEmail}
+                  </p>
+                  <span style={{ display: 'inline-block', backgroundColor: '#E0F2FE', color: '#0284C7', border: '1px solid #BAE6FD', padding: '2px 6px', borderRadius: '4px', fontSize: '0.625rem', fontWeight: 800, marginTop: '4px' }}>
+                    ✓ ABDM 2.0 & NMC COMPLIANT
+                  </span>
                 </div>
               </div>
-
-              <div style={{ textAlign: 'right', maxWidth: '340px' }}>
-                <h3 style={{ margin: '0 0 2px', fontSize: '1rem', fontWeight: 900, color: '#0F172A' }}>
-                  {headerConfig.entityLegalName}
-                </h3>
-                <p style={{ margin: 0, fontSize: '0.6875rem', color: '#64748B', lineHeight: 1.3 }}>
-                  {headerConfig.officialAddress}
-                </p>
-                <p style={{ margin: '2px 0 0', fontSize: '0.6875rem', color: '#64748B' }}>
-                  📞 {headerConfig.contactPhone} • ✉️ {headerConfig.supportEmail}
-                </p>
-                <span style={{ display: 'inline-block', backgroundColor: '#E0F2FE', color: '#0284C7', border: '1px solid #BAE6FD', padding: '2px 6px', borderRadius: '4px', fontSize: '0.625rem', fontWeight: 800, marginTop: '4px' }}>
-                  ✓ ABDM 2.0 & NMC COMPLIANT
+            ) : (
+              /* Pre-Printed Letterhead Mode: 65mm blank reserved top margin */
+              <div
+                className="preprinted-pad-spacer"
+                style={{
+                  minHeight: '65mm',
+                  height: '65mm',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '1.5px dashed #CBD5E1',
+                  borderRadius: '6px',
+                  backgroundColor: '#F8FAFC',
+                  color: '#94A3B8',
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  gap: '4px',
+                  marginBottom: '16px',
+                  userSelect: 'none'
+                }}
+              >
+                <span>📋 [ Pre-Printed Physical Letterhead Stationery Space - 65mm ]</span>
+                <span style={{ fontSize: '0.68rem', color: '#94A3B8' }}>
+                  (This box is automatically invisible when printed. Top margin preserved for your physical clinic letterhead pad)
                 </span>
               </div>
-            </div>
+            )}
 
             {/* Patient Demographics & Vitals Bar */}
             <div style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '10px 14px', margin: '14px 0', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: '10px', fontSize: '0.75rem' }}>
@@ -401,27 +518,41 @@ export const PrintableDoctorPrescriptionModal: React.FC<Props> = ({
                 </thead>
                 <tbody>
                   {consultation.medications && consultation.medications.length > 0 ? (
-                    consultation.medications.map((m, idx) => (
-                      <tr key={m.id || idx} style={{ borderBottom: '1px solid #E2E8F0' }}>
-                        <td style={{ padding: '8px 10px', fontWeight: 700 }}>{idx + 1}</td>
-                        <td style={{ padding: '8px 10px' }}>
-                          <strong style={{ color: '#0F172A', fontSize: '0.8125rem' }}>{m.medicationName}</strong>
-                          {m.genericName && <div style={{ color: '#64748B', fontSize: '0.6875rem' }}>Generic: {m.genericName}</div>}
-                        </td>
-                        <td style={{ padding: '8px 10px' }}>
-                          {m.dosage} · {m.route}
-                        </td>
-                        <td style={{ padding: '8px 10px', fontWeight: 600 }}>
-                          {m.frequency} ({m.beforeAfterFood.replace('_', ' ')})
-                        </td>
-                        <td style={{ padding: '8px 10px', fontWeight: 600, color: headerConfig.themeColor }}>
-                          {m.duration} {m.durationUnit.toLowerCase()}
-                        </td>
-                        <td style={{ padding: '8px 10px', color: '#475569', fontSize: '0.6875rem' }}>
-                          {m.instructions || m.indication || 'As advised'}
-                        </td>
-                      </tr>
-                    ))
+                    consultation.medications.map((m, idx) => {
+                      const saltMatch = findGenericSaltMatch(m.medicationName);
+                      const genericText = m.genericName || saltMatch?.genericSalt;
+                      const showGeneric = genericText && !m.medicationName.toUpperCase().includes(genericText.toUpperCase());
+                      const bilingual = getBilingualDosingInstruction(m.frequency, m.beforeAfterFood);
+
+                      return (
+                        <tr key={m.id || idx} style={{ borderBottom: '1px solid #E2E8F0' }}>
+                          <td style={{ padding: '8px 10px', fontWeight: 700 }}>{idx + 1}</td>
+                          <td style={{ padding: '8px 10px' }}>
+                            <strong style={{ color: '#0F172A', fontSize: '0.8125rem' }}>{m.medicationName}</strong>
+                            {showGeneric && (
+                              <div style={{ color: '#047857', fontSize: '0.6875rem', fontWeight: 700, marginTop: '2px' }}>
+                                Generic Salt: {genericText.toUpperCase()}
+                              </div>
+                            )}
+                          </td>
+                          <td style={{ padding: '8px 10px' }}>
+                            {m.dosage} · {m.route}
+                          </td>
+                          <td style={{ padding: '8px 10px', fontWeight: 600 }}>
+                            <div>{m.frequency} ({m.beforeAfterFood.replace(/_/g, ' ')})</div>
+                            <div style={{ fontSize: '0.6875rem', color: '#D97706', fontWeight: 700, marginTop: '2px' }}>
+                              🇮🇳 {bilingual.hindi}
+                            </div>
+                          </td>
+                          <td style={{ padding: '8px 10px', fontWeight: 600, color: headerConfig.themeColor }}>
+                            {m.duration} {m.durationUnit.toLowerCase()}
+                          </td>
+                          <td style={{ padding: '8px 10px', color: '#475569', fontSize: '0.6875rem' }}>
+                            {m.instructions || m.indication || 'As advised'}
+                          </td>
+                        </tr>
+                      );
+                    })
                   ) : (
                     <tr>
                       <td colSpan={6} style={{ padding: '16px', textAlign: 'center', color: '#94A3B8' }}>
@@ -473,6 +604,12 @@ export const PrintableDoctorPrescriptionModal: React.FC<Props> = ({
           </div>
         </div>
       </div>
+      <ProfileUpdateRequiredAlertModal
+        isOpen={isProfileGuardAlertOpen}
+        onClose={() => setIsProfileGuardAlertOpen(false)}
+        blockedActionName="Doctor Prescription Print"
+        missingFields={profileMissingFields}
+      />
     </div>
   );
 };

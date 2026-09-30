@@ -10,6 +10,7 @@ import type {
   MedicationCatalogDto,
   ReceiveStockRequest
 } from '@docsearch/api-contracts';
+import { AuditJustificationField } from '../common/AuditJustificationField.js';
 
 export interface ReceiveStockDialogProps {
   isOpen: boolean;
@@ -41,7 +42,7 @@ export const ReceiveStockDialog: React.FC<ReceiveStockDialogProps> = ({
   const [unitCost, setUnitCost] = useState('1.50');
   const [purchaseReference, setPurchaseReference] = useState('');
   const [supplierReference, setSupplierReference] = useState('');
-  const [justification, setJustification] = useState('');
+  const [justification, setJustification] = useState('Stock received per wholesale purchase delivery challan & pack integrity verified.');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -86,6 +87,8 @@ export const ReceiveStockDialog: React.FC<ReceiveStockDialogProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Receive Stock Batch (FEFO Inventory Intake)"
+      isFullPage={true}
+      maxWidth="full"
       footer={
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
           <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
@@ -210,17 +213,13 @@ export const ReceiveStockDialog: React.FC<ReceiveStockDialogProps> = ({
           </div>
         </div>
 
-        <div>
-          <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.25rem' }}>
-            Receiving Verification & Justification *
-          </label>
-          <Input
-            value={justification}
-            onChange={(e) => setJustification(e.target.value)}
-            placeholder="Document invoice number and physical pack integrity check..."
-            required
-          />
-        </div>
+        <AuditJustificationField
+          value={justification}
+          onChange={setJustification}
+          defaultJustification="Stock received per wholesale purchase delivery challan & pack integrity verified."
+          label="Receiving Verification & Justification"
+          placeholder="Document invoice number and physical pack integrity check..."
+        />
       </form>
     </Dialog>
   );

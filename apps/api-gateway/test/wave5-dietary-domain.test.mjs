@@ -11,7 +11,7 @@ describe('Wave 5 — Phase 2.18 Dietary & Nutrition Full Real E2E Suite', () => 
 
   const tenantA = '11111111-1111-4111-8111-111111111111';
   const tenantB = '22222222-2222-4222-8222-222222222222';
-  const branchA1 = '33333333-3333-4333-8333-333333333331';
+  const branchA1 = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 
   function createDietaryToken(overrides = {}) {
     const claims = {
@@ -57,6 +57,7 @@ describe('Wave 5 — Phase 2.18 Dietary & Nutrition Full Real E2E Suite', () => 
     process.env.NODE_ENV = 'development';
     process.env.DATABASE_URL = 'postgresql://postgres:postgres@localhost:5432/docsearch';
     app = await buildApp();
+    await app.ready();
   });
 
   after(async () => {

@@ -1,4 +1,4 @@
-import { apiRequest } from './api-client.js';
+import { apiRequest, isMockFallbackAllowed } from './api-client.js';
 import type {
   EmergencyDepartmentDto,
   EmergencyZoneDto,
@@ -84,6 +84,7 @@ export interface IEmergencyManagementService {
   createTraumaActivation(req: CreateTraumaActivationRequest): Promise<TraumaActivationDto>;
   recordTraumaAssessment(req: RecordTraumaAssessmentRequest): Promise<TraumaActivationDto>;
   createEmergencyProcedure(req: CreateEmergencyProcedureRequest): Promise<void>;
+  recordTreatment(encounterId: string, payload: { treatmentNotes: string; medicationsAdministered?: any[]; proceduresPerformed?: any[]; ordersPlaced?: any[] }): Promise<any>;
   createObservationCase(req: CreateObservationCaseRequest): Promise<EmergencyObservationCaseDto>;
   createMLCCase(req: CreateMLCCaseRequest): Promise<EmergencyMLCCaseDto>;
   createAmbulanceTransfer(req: CreateAmbulanceTransferRequest): Promise<EmergencyAmbulanceTransferDto>;
@@ -95,26 +96,33 @@ export interface IEmergencyManagementService {
 }
 
 export class MockEmergencyManagementService implements IEmergencyManagementService {
-  private department: EmergencyDepartmentDto = { ...mockEmergencyDepartment };
-  private zones: EmergencyZoneDto[] = [...mockEmergencyZones];
-  private encounters: EmergencyEncounterDto[] = [...mockEmergencyEncounters];
-  private triageAssessments: EmergencyTriageAssessmentDto[] = [...mockTriageAssessments];
-  private triageReassessments: EmergencyTriageReassessmentDto[] = [...mockTriageReassessments];
-  private resuscitationEvents: EmergencyResuscitationEventDto[] = [...mockResuscitationEvents];
-  private traumaActivations: TraumaActivationDto[] = [...mockTraumaActivations];
-  private observationCases: EmergencyObservationCaseDto[] = [...mockObservationCases];
-  private mlcCases: EmergencyMLCCaseDto[] = [...mockMLCCases];
-  private crashCarts: EmergencyCrashCartDto[] = [...mockCrashCarts];
-  private transfers: EmergencyAmbulanceTransferDto[] = [...mockAmbulanceTransfers];
-  private dispositions: EmergencyDispositionDto[] = [...mockDispositions];
-  private deathRecords: EmergencyDeathRecordDto[] = [...mockDeathRecords];
-  private disasterEvents: EmergencyDisasterEventDto[] = [...mockDisasterEvents];
-  private auditTraces: EmergencyAuditTraceDto[] = [...mockAuditTraces];
+  private department: EmergencyDepartmentDto = isMockFallbackAllowed() ? { ...mockEmergencyDepartment } : {
+    ...mockEmergencyDepartment,
+    totalBeds: 0,
+    resuscitationBeds: 0,
+    traumaBeds: 0,
+    observationBeds: 0,
+    isDisasterModeActive: false
+  };
+  private zones: EmergencyZoneDto[] = isMockFallbackAllowed() ? [...mockEmergencyZones] : [];
+  private encounters: EmergencyEncounterDto[] = isMockFallbackAllowed() ? [...mockEmergencyEncounters] : [];
+  private triageAssessments: EmergencyTriageAssessmentDto[] = isMockFallbackAllowed() ? [...mockTriageAssessments] : [];
+  private triageReassessments: EmergencyTriageReassessmentDto[] = isMockFallbackAllowed() ? [...mockTriageReassessments] : [];
+  private resuscitationEvents: EmergencyResuscitationEventDto[] = isMockFallbackAllowed() ? [...mockResuscitationEvents] : [];
+  private traumaActivations: TraumaActivationDto[] = isMockFallbackAllowed() ? [...mockTraumaActivations] : [];
+  private observationCases: EmergencyObservationCaseDto[] = isMockFallbackAllowed() ? [...mockObservationCases] : [];
+  private mlcCases: EmergencyMLCCaseDto[] = isMockFallbackAllowed() ? [...mockMLCCases] : [];
+  private crashCarts: EmergencyCrashCartDto[] = isMockFallbackAllowed() ? [...mockCrashCarts] : [];
+  private transfers: EmergencyAmbulanceTransferDto[] = isMockFallbackAllowed() ? [...mockAmbulanceTransfers] : [];
+  private dispositions: EmergencyDispositionDto[] = isMockFallbackAllowed() ? [...mockDispositions] : [];
+  private deathRecords: EmergencyDeathRecordDto[] = isMockFallbackAllowed() ? [...mockDeathRecords] : [];
+  private disasterEvents: EmergencyDisasterEventDto[] = isMockFallbackAllowed() ? [...mockDisasterEvents] : [];
+  private auditTraces: EmergencyAuditTraceDto[] = isMockFallbackAllowed() ? [...mockAuditTraces] : [];
 
-  private addTrace(actorName: string, actorRole: string, action: string, entityType: string, entityCode: string, justification: string) {
+  private addTrace(actorName: string, actorRole: string, action: string, entityType: string, entityCode: string, justification: string, tenantId = '11111111-1111-4111-8111-111111111111') {
     const trace: EmergencyAuditTraceDto = {
       id: 'eaud-' + Math.random().toString(36).substring(2, 9),
-      tenantId: '11111111-1111-4111-8111-111111111111',
+      tenantId,
       partnerId: '22222222-2222-4222-8222-222222222222',
       organizationId: '33333333-3333-4333-8333-333333333333',
       branchId: '44444444-4444-4444-8444-444444444444',
@@ -147,8 +155,27 @@ export class MockEmergencyManagementService implements IEmergencyManagementServi
     const mlcCasesToday = activeEncounters.filter((e) => e.isMLC).length;
     const observationPatientsCount = this.observationCases.filter((o) => o.tenantId === tenantId && o.status === 'ACTIVE_MONITORING').length;
 
-    return {
+    const baseMetrics = isMockFallbackAllowed() ? mockOverviewMetrics : {
       ...mockOverviewMetrics,
+      activeEDCensus: 0,
+      waitingForTriageCount: 0,
+      esi1Count: 0,
+      esi2Count: 0,
+      esi3Count: 0,
+      activeTraumaAlerts: 0,
+      activeResuscitationCount: 0,
+      mlcCasesToday: 0,
+      observationPatientsCount: 0,
+      isDisasterModeActive: false,
+      averageDoorToDoctorMinutes: 0,
+      averageDoorToTriageMinutes: 0,
+      averageLengthOfStayMinutes: 0,
+      leftWithoutBeingSeenCount: 0,
+      criticalBedOccupancyPercentage: 0
+    };
+
+    return {
+      ...baseMetrics,
       activeEDCensus: activeEncounters.length,
       waitingForTriageCount,
       esi1Count,
@@ -177,11 +204,15 @@ export class MockEmergencyManagementService implements IEmergencyManagementServi
   async getEncounters(tenantId: string): Promise<EmergencyEncounterDto[]> {
     try {
       const res = await apiRequest<EmergencyEncounterDto[]>('/api/v1/partner/emergency/queue');
-      if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+      if (res.success && Array.isArray(res.data)) {
+        this.encounters = res.data;
         return res.data;
       }
-    } catch {
-      // Fallback
+      if (!isMockFallbackAllowed() && res.error) {
+        throw new Error(res.error.message || 'Failed to fetch emergency queue from server');
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
     }
     return this.encounters.filter((e) => e.tenantId === tenantId);
   }
@@ -243,8 +274,13 @@ export class MockEmergencyManagementService implements IEmergencyManagementServi
       if (res.success && res.data) {
         return res.data;
       }
-    } catch {
-      // Fallback
+      if (!isMockFallbackAllowed()) {
+        throw new Error(res.error?.message || 'Emergency registration rejected by server');
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) {
+        throw err instanceof Error ? err : new Error('Emergency registration network error');
+      }
     }
     const enc: EmergencyEncounterDto = {
       id: 'ee-' + Math.random().toString(36).substring(2, 9),
@@ -287,8 +323,13 @@ export class MockEmergencyManagementService implements IEmergencyManagementServi
       if (res.success && res.data) {
         return res.data;
       }
-    } catch {
-      // Fallback
+      if (!isMockFallbackAllowed()) {
+        throw new Error(res.error?.message || 'Triage assessment rejected by server');
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) {
+        throw err instanceof Error ? err : new Error('Triage assessment network error');
+      }
     }
     const newTriage: EmergencyTriageAssessmentDto = {
       id: 'eta-' + Math.random().toString(36).substring(2, 9),
@@ -479,6 +520,26 @@ export class MockEmergencyManagementService implements IEmergencyManagementServi
     this.addTrace(req.performedByDoctor, 'EMERGENCY_PHYSICIAN', 'PERFORM_EMERGENCY_PROCEDURE', 'EMERGENCY_PROCEDURE', req.encounterId, `${req.procedureName}: ${req.indication}`);
   }
 
+  async recordTreatment(encounterId: string, payload: { treatmentNotes: string; medicationsAdministered?: any[]; proceduresPerformed?: any[]; ordersPlaced?: any[] }): Promise<any> {
+    try {
+      const res = await apiRequest(`/api/v1/partner/emergency/encounters/${encodeURIComponent(encounterId)}/treatments`, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+      if (!isMockFallbackAllowed()) {
+        throw new Error(res.error?.message || 'Emergency treatment rejected by server');
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) {
+        throw err instanceof Error ? err : new Error('Emergency treatment network error');
+      }
+    }
+    return { encounterId, ...payload, recordedAt: new Date().toISOString() };
+  }
+
   async createObservationCase(req: CreateObservationCaseRequest): Promise<EmergencyObservationCaseDto> {
     const newCase: EmergencyObservationCaseDto = {
       id: 'eoc-' + Math.random().toString(36).substring(2, 9),
@@ -575,8 +636,13 @@ export class MockEmergencyManagementService implements IEmergencyManagementServi
       if (res.success && res.data) {
         return res.data;
       }
-    } catch {
-      // Fallback
+      if (!isMockFallbackAllowed()) {
+        throw new Error(res.error?.message || 'Emergency disposition rejected by server');
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) {
+        throw err instanceof Error ? err : new Error('Emergency disposition network error');
+      }
     }
     const newDisp: EmergencyDispositionDto = {
       id: 'edr-' + Math.random().toString(36).substring(2, 9),

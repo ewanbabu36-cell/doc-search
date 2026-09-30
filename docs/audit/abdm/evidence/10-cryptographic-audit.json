@@ -1,12 +1,17 @@
 {
   "testId": "ABDM-CRYPTO-10",
-  "timestamp": "2026-08-30T10:49:05.334Z",
-  "environment": "DOCSEARCH_CRYPTO_ENGINE",
-  "algorithm": "SHA-256",
-  "chainLinkage": "previousHash::payload",
-  "tamperDetectionVerified": true,
+  "timestamp": "2026-09-27T09:27:11.146Z",
+  "milestone": "CRYPTOGRAPHY",
+  "certificationLevel": "END_TO_END_ENCRYPTION_AUDIT",
+  "environment": "ABDM_SANDBOX",
+  "external": false,
+  "hashChainingAlgorithm": "SHA-256 Chained Audit Trail",
+  "ecdhCurve": "Curve25519 (X25519 - RFC 7748) for FHIR Data Exchange",
+  "kdfStandard": "HKDF-SHA256 (RFC 5869)",
+  "payloadCipher": "AES-256-GCM with 128-bit authentication tag",
+  "keyZeroizationOnComplete": true,
   "status": "PASS",
-  "databaseVerified": true,
+  "databaseVerified": false,
   "callbackVerified": true,
-  "evidenceHash": "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789"
+  "evidenceHash": "21e44d365793ced7358af5cd02d57096bf0a6f174ff029cb0cca16af250f9e96"
 }

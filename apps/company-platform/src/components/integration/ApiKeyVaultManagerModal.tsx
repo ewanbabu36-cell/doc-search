@@ -154,7 +154,6 @@ export const ApiKeyVaultManagerModal: React.FC<Props> = ({
               <button
                 type="submit"
                 disabled={isIssuing}
-                style={{ backgroundColor: '#06B6D4', color: '#070C16', border: 'none', borderRadius: '6px', padding: '8px 22px', fontWeight: 900, cursor: 'pointer', boxShadow: '0 4px 14px rgba(6, 182, 212, 0.4)' }}
               >
                 {isIssuing ? '⚡ Generating Cryptographic Keys...' : '🔑 Issue API Key'}
               </button>
@@ -187,7 +186,6 @@ export const ApiKeyVaultManagerModal: React.FC<Props> = ({
               <button
                 type="button"
                 onClick={onClose}
-                style={{ backgroundColor: '#06B6D4', color: '#070C16', border: 'none', borderRadius: '6px', padding: '8px 20px', fontWeight: 900, cursor: 'pointer' }}
               >
                 Done
               </button>

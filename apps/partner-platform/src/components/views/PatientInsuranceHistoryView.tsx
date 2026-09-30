@@ -28,7 +28,7 @@ export const PatientInsuranceHistoryView: React.FC<PatientInsuranceHistoryViewPr
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div>
-        <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#0f172a' }}>
+        <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: 'var(--ds-color-text-primary, #f8fafc)' }}>
           Longitudinal Patient Insurance History & Coverage Dossier
         </h2>
         <p style={{ margin: '0.25rem 0 0 0', color: '#64748b', fontSize: '0.875rem' }}>
@@ -39,7 +39,7 @@ export const PatientInsuranceHistoryView: React.FC<PatientInsuranceHistoryViewPr
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
         <Card style={{ padding: '1rem' }}>
           <div style={{ fontSize: '0.8rem', color: '#64748b' }}>Total Billed to Insurers</div>
-          <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1e293b', marginTop: '0.2rem' }}>
+          <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--ds-color-text-primary, #f8fafc)', marginTop: '0.2rem' }}>
             ${history.totalClaimed.toFixed(2)}
           </div>
         </Card>
@@ -68,7 +68,7 @@ export const PatientInsuranceHistoryView: React.FC<PatientInsuranceHistoryViewPr
 
       {/* Patient Claims History */}
       <Card style={{ padding: '1.25rem' }}>
-        <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 600, color: '#0f172a' }}>
+        <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 600, color: 'var(--ds-color-text-primary, #f8fafc)' }}>
           Historical Insurance Claims
         </h3>
         {history.claims.length === 0 ? (

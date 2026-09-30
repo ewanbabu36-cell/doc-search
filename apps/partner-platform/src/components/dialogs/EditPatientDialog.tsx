@@ -89,7 +89,7 @@ export const EditPatientDialog: React.FC<EditPatientDialogProps> = ({
           <Button variant="outline" size="sm" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button variant="primary" size="sm" onClick={handleSubmit} isLoading={isSubmitting}>
+          <Button variant="primary" size="sm" onClick={handleSubmit} isLoading={isSubmitting} disabled={isSubmitting}>
             Save Demographics
           </Button>
         </div>

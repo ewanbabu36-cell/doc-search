@@ -38,4 +38,16 @@ export const supportRoutes: FastifyPluginAsync = async (fastify) => {
       return { success: true, data: health };
     }
   );
+
+  fastify.get(
+    '/api/v1/company/support/partner-health',
+    {
+      preHandler: [authenticate, requirePermission('support', 'read')]
+    },
+    async (request) => {
+      const query = request.query as { partnerId?: string };
+      const health = await supportService.getPartnerHealth(query.partnerId, request.session);
+      return { success: true, data: health };
+    }
+  );
 };

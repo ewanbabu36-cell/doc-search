@@ -28,8 +28,8 @@ export const DisasterRecoveryDrillView: React.FC<DisasterRecoveryDrillViewProps>
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      <Alert type="info" title="Quarterly Compliance DR Rehearsals">
-        Disaster recovery simulations test automated DNS redirection, database replica promotion, and container restart SLAs without impacting production workloads.
+      <Alert type="warning" title="Administrative Simulation Console — Tabletop Fixtures">
+        Tabletop simulation records and simulated RPO/RTO metrics below are design fixtures for administrative exercise modeling. Actual production cloud disaster recovery certification requires live AWS RDS telemetry and is tracked in docs/DISASTER_RECOVERY_RUNBOOK.md.
       </Alert>
 
       <Card
@@ -45,7 +45,7 @@ export const DisasterRecoveryDrillView: React.FC<DisasterRecoveryDrillViewProps>
                 <TableHead>Type</TableHead>
                 <TableHead>Plan Reference</TableHead>
                 <TableHead>Target RTO / RPO</TableHead>
-                <TableHead>Measured RTO / RPO (Sample)</TableHead>
+                <TableHead>Measured RTO / RPO</TableHead>
                 <TableHead>Result</TableHead>
                 <TableHead>Conducted By</TableHead>
                 <TableHead>Scheduled Date</TableHead>

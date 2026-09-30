@@ -79,7 +79,7 @@ export const MerkleAuditProofVerifierView: React.FC = () => {
         </div>
 
         <div style={{ display: 'flex', gap: '8px' }}>
-          <Button variant="primary" size="sm" onClick={handleRunFullChainVerification} disabled={isValidating} style={{ backgroundColor: '#06B6D4', color: '#070C16', fontWeight: 800 }}>
+          <Button variant="primary" size="sm" onClick={handleRunFullChainVerification} disabled={isValidating} >
             {isValidating ? '⚡ Computing Hashes...' : '🔒 Verify Full Merkle Chain'}
           </Button>
           <Button variant="outline" size="sm" onClick={handleDownloadCertificate}>

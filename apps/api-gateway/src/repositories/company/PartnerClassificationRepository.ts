@@ -18,6 +18,7 @@ export const INITIAL_PARTNER_CLASSIFICATIONS: PartnerClassification[] = [
     defaultPlanCode: 'PLAN_HOSPITAL_PRO',
     status: 'ACTIVE',
     sortOrder: 1,
+    metadata: {},
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
     updatedAt: new Date('2026-01-01T00:00:00.000Z')
   },
@@ -31,6 +32,7 @@ export const INITIAL_PARTNER_CLASSIFICATIONS: PartnerClassification[] = [
     defaultPlanCode: 'PLAN_CLINIC_STARTER',
     sortOrder: 2,
     status: 'ACTIVE',
+    metadata: {},
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
     updatedAt: new Date('2026-01-01T00:00:00.000Z')
   },
@@ -44,6 +46,7 @@ export const INITIAL_PARTNER_CLASSIFICATIONS: PartnerClassification[] = [
     defaultPlanCode: 'PLAN_CLINIC_STARTER',
     sortOrder: 3,
     status: 'ACTIVE',
+    metadata: {},
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
     updatedAt: new Date('2026-01-01T00:00:00.000Z')
   },
@@ -57,6 +60,7 @@ export const INITIAL_PARTNER_CLASSIFICATIONS: PartnerClassification[] = [
     defaultPlanCode: 'PLAN_CLINIC_STARTER',
     sortOrder: 4,
     status: 'ACTIVE',
+    metadata: {},
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
     updatedAt: new Date('2026-01-01T00:00:00.000Z')
   },
@@ -70,6 +74,7 @@ export const INITIAL_PARTNER_CLASSIFICATIONS: PartnerClassification[] = [
     defaultPlanCode: 'PLAN_CLINIC_STARTER',
     sortOrder: 5,
     status: 'ACTIVE',
+    metadata: {},
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
     updatedAt: new Date('2026-01-01T00:00:00.000Z')
   },
@@ -83,6 +88,7 @@ export const INITIAL_PARTNER_CLASSIFICATIONS: PartnerClassification[] = [
     defaultPlanCode: 'PLAN_CLINIC_STARTER',
     sortOrder: 6,
     status: 'ACTIVE',
+    metadata: {},
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
     updatedAt: new Date('2026-01-01T00:00:00.000Z')
   }
@@ -150,6 +156,7 @@ export class PartnerClassificationRepository {
       defaultPlanCode: data.defaultPlanCode ?? 'PLAN_CLINIC_STARTER',
       status: data.status ?? 'ACTIVE',
       sortOrder: data.sortOrder ?? (this.memoryClassifications.length + 1),
+      metadata: (data as any).metadata ?? {},
       createdAt: new Date(),
       updatedAt: new Date()
     };

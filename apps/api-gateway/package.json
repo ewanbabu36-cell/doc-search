@@ -8,6 +8,7 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "start": "node dist/server.js",
+    "start:cluster": "node dist/server-cluster.js",
     "dev": "node --watch src/server.ts",
     "clean": "rm -rf dist"
   },

@@ -11,6 +11,7 @@ import type {
   AmendInvestigationResultRequest,
   InvestigationResultFlag
 } from '@docsearch/api-contracts';
+import { AuditJustificationField } from '../common/AuditJustificationField.js';
 
 export interface AmendInvestigationResultDialogProps {
   isOpen: boolean;
@@ -33,7 +34,7 @@ export const AmendInvestigationResultDialog: React.FC<AmendInvestigationResultDi
   const [newValue, setNewValue] = useState('');
   const [newAbnormalFlag, setNewAbnormalFlag] = useState<InvestigationResultFlag>('NORMAL');
   const [amendmentReason, setAmendmentReason] = useState('');
-  const [justification, setJustification] = useState('');
+  const [justification, setJustification] = useState('Pathologist quality review and calibration amendment');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -176,16 +177,12 @@ export const AmendInvestigationResultDialog: React.FC<AmendInvestigationResultDi
           />
         </div>
 
-        <div>
-          <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '6px' }}>
-            Audit Justification *
-          </label>
-          <Input
-            value={justification}
-            onChange={(e) => setJustification(e.target.value)}
-            placeholder="Document supervisor approval and justification..."
-          />
-        </div>
+        <AuditJustificationField
+          value={justification}
+          onChange={setJustification}
+          defaultJustification="Pathologist quality review and calibration amendment"
+          placeholder="Document supervisor approval and justification..."
+        />
       </form>
     </Dialog>
   );

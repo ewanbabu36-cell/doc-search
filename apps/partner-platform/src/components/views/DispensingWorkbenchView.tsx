@@ -26,6 +26,7 @@ export interface DispensingWorkbenchViewProps {
   onOpenReturnDialog: (dispensing: PharmacyDispensingDto) => void;
   onOpenReverseDialog: (dispensing: PharmacyDispensingDto) => void;
   onBackToQueue: () => void;
+  onProceedToPos?: () => void;
 }
 
 export const DispensingWorkbenchView: React.FC<DispensingWorkbenchViewProps> = ({
@@ -35,7 +36,8 @@ export const DispensingWorkbenchView: React.FC<DispensingWorkbenchViewProps> = (
   onOpenPartialDispenseDialog,
   onOpenReturnDialog,
   onOpenReverseDialog,
-  onBackToQueue
+  onBackToQueue,
+  onProceedToPos
 }) => {
   if (!prescription) {
     return (
@@ -57,7 +59,7 @@ export const DispensingWorkbenchView: React.FC<DispensingWorkbenchViewProps> = (
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <Button variant="outline" onClick={onBackToQueue}>
-            ← Queue
+            ← Back to Dispensing Queue
           </Button>
           <div>
             <h2 style={{ margin: '0 0 4px', fontSize: '1.25rem', fontWeight: 700 }}>
@@ -78,6 +80,11 @@ export const DispensingWorkbenchView: React.FC<DispensingWorkbenchViewProps> = (
                 💊 Commit Full Dispense
               </Button>
             </>
+          )}
+          {prescription.status === 'COMPLETED' && onProceedToPos && (
+            <Button variant="primary" onClick={onProceedToPos} style={{ fontWeight: 700 }}>
+              ⚡ Proceed to POS Counter & Billing ➔
+            </Button>
           )}
         </div>
       </div>

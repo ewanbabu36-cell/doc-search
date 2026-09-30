@@ -51,7 +51,7 @@ export const PrescriptionVerificationView: React.FC<PrescriptionVerificationView
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <Button variant="outline" onClick={onBackToQueue}>
-            ← Queue
+            ← Back to Verification Queue
           </Button>
           <div>
             <h2 style={{ margin: '0 0 4px', fontSize: '1.25rem', fontWeight: 700 }}>

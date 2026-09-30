@@ -1,0 +1,5193 @@
+{
+  "timestamp": "2026-09-28T20:43:58.545Z",
+  "totalFrontendFiles": 1373,
+  "services": [
+    {
+      "file": "apps/partner-platform/src/services/abdm-fhir-service.ts",
+      "name": "abdm-fhir-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/ai-cdss-service.ts",
+      "name": "ai-cdss-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/ai-chat-service.ts",
+      "name": "ai-chat-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/ai-voice-service.ts",
+      "name": "ai-voice-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/api-client.ts",
+      "name": "api-client"
+    },
+    {
+      "file": "apps/partner-platform/src/services/asset-biomedical-service.ts",
+      "name": "asset-biomedical-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/billing-management-service.ts",
+      "name": "billing-management-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/blood-bank-management-service.ts",
+      "name": "blood-bank-management-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/cdsco-inspection-audit-service.ts",
+      "name": "cdsco-inspection-audit-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/clinical-consultation-service.ts",
+      "name": "clinical-consultation-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/clinical-investigation-service.ts",
+      "name": "clinical-investigation-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/clinical-test-knowledge-base.ts",
+      "name": "clinical-test-knowledge-base"
+    },
+    {
+      "file": "apps/partner-platform/src/services/clinical-test-library.ts",
+      "name": "clinical-test-library"
+    },
+    {
+      "file": "apps/partner-platform/src/services/dietary-management-service.ts",
+      "name": "dietary-management-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/doctor-roster-service.ts",
+      "name": "doctor-roster-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/emergency-management-service.ts",
+      "name": "emergency-management-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/encounter-service.ts",
+      "name": "encounter-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/executive-command-service.ts",
+      "name": "executive-command-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/fast-pharmacy-search-index.ts",
+      "name": "fast-pharmacy-search-index"
+    },
+    {
+      "file": "apps/partner-platform/src/services/founder-approval-service.ts",
+      "name": "founder-approval-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/hardware-barcode-listener.ts",
+      "name": "hardware-barcode-listener"
+    },
+    {
+      "file": "apps/partner-platform/src/services/hardware-printer-service.ts",
+      "name": "hardware-printer-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/hardware-status-service.ts",
+      "name": "hardware-status-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/hospital-event-bus.ts",
+      "name": "hospital-event-bus"
+    },
+    {
+      "file": "apps/partner-platform/src/services/indian-pharmacy-catalog.ts",
+      "name": "indian-pharmacy-catalog"
+    },
+    {
+      "file": "apps/partner-platform/src/services/inpatient-management-service.ts",
+      "name": "inpatient-management-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/insurance-claims-management-service.ts",
+      "name": "insurance-claims-management-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-abdm-fhir-data.ts",
+      "name": "mock-abdm-fhir-data"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-ai-cdss-data.ts",
+      "name": "mock-ai-cdss-data"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-asset-biomedical-data.ts",
+      "name": "mock-asset-biomedical-data"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-billing-data.ts",
+      "name": "mock-billing-data"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-blood-bank-data.ts",
+      "name": "mock-blood-bank-data"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-clinical-consultation-data.ts",
+      "name": "mock-clinical-consultation-data"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-clinical-investigation-data.ts",
+      "name": "mock-clinical-investigation-data"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-dietary-data.ts",
+      "name": "mock-dietary-data"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-doctor-roster-data.ts",
+      "name": "mock-doctor-roster-data"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-emergency-data.ts",
+      "name": "mock-emergency-data"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-encounter-data.ts",
+      "name": "mock-encounter-data"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-executive-command-data.ts",
+      "name": "mock-executive-command-data"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-inpatient-data.ts",
+      "name": "mock-inpatient-data"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-insurance-claims-data.ts",
+      "name": "mock-insurance-claims-data"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-mrd-data.ts",
+      "name": "mock-mrd-data"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-operation-theatre-data.ts",
+      "name": "mock-operation-theatre-data"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-partner-foundation-data.ts",
+      "name": "mock-partner-foundation-data"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-patient-registration-data.ts",
+      "name": "mock-patient-registration-data"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-pharmacy-data.ts",
+      "name": "mock-pharmacy-data"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-procurement-data.ts",
+      "name": "mock-procurement-data"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-quality-infection-data.ts",
+      "name": "mock-quality-infection-data"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-radiology-data.ts",
+      "name": "mock-radiology-data"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-staff-administration-data.ts",
+      "name": "mock-staff-administration-data"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-telemedicine-rpm-data.ts",
+      "name": "mock-telemedicine-rpm-data"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-whatsapp-portal-data.ts",
+      "name": "mock-whatsapp-portal-data"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mrd-management-service.ts",
+      "name": "mrd-management-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/operation-theatre-management-service.ts",
+      "name": "operation-theatre-management-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/optimistic-action-service.ts",
+      "name": "optimistic-action-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/partner-account-service.ts",
+      "name": "partner-account-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/partner-foundation-service.ts",
+      "name": "partner-foundation-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/pathology-revenue-service.ts",
+      "name": "pathology-revenue-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/patient-registration-service.ts",
+      "name": "patient-registration-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/patient-session-tab-service.ts",
+      "name": "patient-session-tab-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/pharmacy-credit-khata-service.ts",
+      "name": "pharmacy-credit-khata-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/pharmacy-management-service.ts",
+      "name": "pharmacy-management-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/pharmacy-offline-storage-service.ts",
+      "name": "pharmacy-offline-storage-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/pharmacy-revenue-galla-service.ts",
+      "name": "pharmacy-revenue-galla-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/pharmacy-stock-valuation.ts",
+      "name": "pharmacy-stock-valuation"
+    },
+    {
+      "file": "apps/partner-platform/src/services/pharmacy-sync-engine.ts",
+      "name": "pharmacy-sync-engine"
+    },
+    {
+      "file": "apps/partner-platform/src/services/prescription-vision-ocr.ts",
+      "name": "prescription-vision-ocr"
+    },
+    {
+      "file": "apps/partner-platform/src/services/procurement-management-service.ts",
+      "name": "procurement-management-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/quality-infection-service.ts",
+      "name": "quality-infection-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/radiology-management-service.ts",
+      "name": "radiology-management-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/service-worker-companion.ts",
+      "name": "service-worker-companion"
+    },
+    {
+      "file": "apps/partner-platform/src/services/staff-administration-service.ts",
+      "name": "staff-administration-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/telemedicine-rpm-service.ts",
+      "name": "telemedicine-rpm-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/unique-identifier-service.ts",
+      "name": "unique-identifier-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/whatsapp-portal-service.ts",
+      "name": "whatsapp-portal-service"
+    },
+    {
+      "file": "apps/partner-platform/src/services/wholesale-invoice-parser.ts",
+      "name": "wholesale-invoice-parser"
+    },
+    {
+      "file": "apps/company-platform/src/services/ai-service.ts",
+      "name": "ai-service"
+    },
+    {
+      "file": "apps/company-platform/src/services/analytics-service.ts",
+      "name": "analytics-service"
+    },
+    {
+      "file": "apps/company-platform/src/services/api-client.ts",
+      "name": "api-client"
+    },
+    {
+      "file": "apps/company-platform/src/services/communication-service.ts",
+      "name": "communication-service"
+    },
+    {
+      "file": "apps/company-platform/src/services/company-admin-service.ts",
+      "name": "company-admin-service"
+    },
+    {
+      "file": "apps/company-platform/src/services/compliance-service.ts",
+      "name": "compliance-service"
+    },
+    {
+      "file": "apps/company-platform/src/services/executive-service.ts",
+      "name": "executive-service"
+    },
+    {
+      "file": "apps/company-platform/src/services/founder-approval-service.ts",
+      "name": "founder-approval-service"
+    },
+    {
+      "file": "apps/company-platform/src/services/infrastructure-service.ts",
+      "name": "infrastructure-service"
+    },
+    {
+      "file": "apps/company-platform/src/services/integration-service.ts",
+      "name": "integration-service"
+    },
+    {
+      "file": "apps/company-platform/src/services/mock-ai-data.ts",
+      "name": "mock-ai-data"
+    },
+    {
+      "file": "apps/company-platform/src/services/mock-analytics-data.ts",
+      "name": "mock-analytics-data"
+    },
+    {
+      "file": "apps/company-platform/src/services/mock-communication-data.ts",
+      "name": "mock-communication-data"
+    },
+    {
+      "file": "apps/company-platform/src/services/mock-company-admin-data.ts",
+      "name": "mock-company-admin-data"
+    },
+    {
+      "file": "apps/company-platform/src/services/mock-compliance-data.ts",
+      "name": "mock-compliance-data"
+    },
+    {
+      "file": "apps/company-platform/src/services/mock-data.ts",
+      "name": "mock-data"
+    },
+    {
+      "file": "apps/company-platform/src/services/mock-infrastructure-data.ts",
+      "name": "mock-infrastructure-data"
+    },
+    {
+      "file": "apps/company-platform/src/services/mock-integration-data.ts",
+      "name": "mock-integration-data"
+    },
+    {
+      "file": "apps/company-platform/src/services/mock-partner-data.ts",
+      "name": "mock-partner-data"
+    },
+    {
+      "file": "apps/company-platform/src/services/mock-platform-engineering-data.ts",
+      "name": "mock-platform-engineering-data"
+    },
+    {
+      "file": "apps/company-platform/src/services/mock-product-data.ts",
+      "name": "mock-product-data"
+    },
+    {
+      "file": "apps/company-platform/src/services/mock-sales-marketing-data.ts",
+      "name": "mock-sales-marketing-data"
+    },
+    {
+      "file": "apps/company-platform/src/services/mock-security-data.ts",
+      "name": "mock-security-data"
+    },
+    {
+      "file": "apps/company-platform/src/services/mock-subscription-data.ts",
+      "name": "mock-subscription-data"
+    },
+    {
+      "file": "apps/company-platform/src/services/mock-support-data.ts",
+      "name": "mock-support-data"
+    },
+    {
+      "file": "apps/company-platform/src/services/partner-service.ts",
+      "name": "partner-service"
+    },
+    {
+      "file": "apps/company-platform/src/services/platform-engineering-service.ts",
+      "name": "platform-engineering-service"
+    },
+    {
+      "file": "apps/company-platform/src/services/product-service.ts",
+      "name": "product-service"
+    },
+    {
+      "file": "apps/company-platform/src/services/sales-marketing-service.ts",
+      "name": "sales-marketing-service"
+    },
+    {
+      "file": "apps/company-platform/src/services/security-service.ts",
+      "name": "security-service"
+    },
+    {
+      "file": "apps/company-platform/src/services/subscription-service.ts",
+      "name": "subscription-service"
+    },
+    {
+      "file": "apps/company-platform/src/services/support-service.ts",
+      "name": "support-service"
+    }
+  ],
+  "apiClients": [],
+  "hooks": [
+    {
+      "file": "apps/partner-platform/src/hooks/useFounderApproval.ts",
+      "name": "useFounderApproval"
+    },
+    {
+      "file": "apps/company-platform/src/hooks/useFounderApproval.ts",
+      "name": "useFounderApproval"
+    }
+  ],
+  "localStorageUsages": [
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "action": "getItem",
+      "key": "docsearch_custom_partner_users"
+    },
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "action": "removeItem",
+      "key": "docsearch_custom_partner_users"
+    },
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "action": "setItem",
+      "key": "docsearch_custom_partner_users"
+    },
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "action": "getItem",
+      "key": "docsearch_verification_queue"
+    },
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "action": "removeItem",
+      "key": "docsearch_verification_queue"
+    },
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "action": "setItem",
+      "key": "docsearch_verification_queue"
+    },
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "action": "setItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "action": "removeItem",
+      "key": "docsearch_logged_out"
+    },
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "action": "setItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "action": "removeItem",
+      "key": "docsearch_logged_out"
+    },
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "action": "getItem",
+      "key": "docsearch_partner_staff"
+    },
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "action": "getItem",
+      "key": "docsearch_custom_staff"
+    },
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "action": "setItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "action": "setItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "action": "removeItem",
+      "key": "docsearch_logged_out"
+    },
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "action": "setItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "action": "setItem",
+      "key": "docsearch_user_session"
+    },
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "action": "setItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "action": "removeItem",
+      "key": "docsearch_logged_out"
+    },
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "action": "getItem",
+      "key": "docsearch_verification_queue"
+    },
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "action": "setItem",
+      "key": "docsearch_verification_queue"
+    },
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "action": "getItem",
+      "key": "docsearch_custom_partner_users"
+    },
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "action": "setItem",
+      "key": "docsearch_custom_partner_users"
+    },
+    {
+      "file": "apps/partner-platform/src/components/ClinicalInvestigationDomainManager.tsx",
+      "action": "getItem",
+      "key": "docsearch_pending_lab_orders"
+    },
+    {
+      "file": "apps/partner-platform/src/components/ClinicalInvestigationDomainManager.tsx",
+      "action": "getItem",
+      "key": "docsearch_pending_lab_orders"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/AbdmScanAndShareModal.tsx",
+      "action": "getItem",
+      "key": "docsearch_opd_queue"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/AbdmScanAndShareModal.tsx",
+      "action": "setItem",
+      "key": "docsearch_opd_queue"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/AbdmScanAndShareModal.tsx",
+      "action": "getItem",
+      "key": "docsearch_patients"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/AbdmScanAndShareModal.tsx",
+      "action": "setItem",
+      "key": "docsearch_patients"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/ActivePatientContextBar.tsx",
+      "action": "getItem",
+      "key": "docsearch_recent_patients"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/ActivePatientContextBar.tsx",
+      "action": "setItem",
+      "key": "docsearch_recent_patients"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/ActivePatientContextBar.tsx",
+      "action": "getItem",
+      "key": "docsearch_partner_tenant"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/ActivePatientContextBar.tsx",
+      "action": "getItem",
+      "key": "docsearch_partner_tenant"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/AmbientVoiceScribeCapsule.tsx",
+      "action": "getItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/FastOpdRegistrationDrawer.tsx",
+      "action": "getItem",
+      "key": "docsearch_recent_opd_queue"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/FastOpdRegistrationDrawer.tsx",
+      "action": "setItem",
+      "key": "docsearch_recent_opd_queue"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/FastOpdRegistrationDrawer.tsx",
+      "action": "getItem",
+      "key": "docsearch_encounters"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/FastOpdRegistrationDrawer.tsx",
+      "action": "setItem",
+      "key": "docsearch_encounters"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/GlobalCommandPalette.tsx",
+      "action": "getItem",
+      "key": "docsearch_partner_tenant"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/LiveHospitalMetricsTicker.tsx",
+      "action": "getItem",
+      "key": "docsearch_inpatient_beds"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/LiveHospitalMetricsTicker.tsx",
+      "action": "getItem",
+      "key": "docsearch_opd_queue"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/LiveHospitalMetricsTicker.tsx",
+      "action": "getItem",
+      "key": "docsearch_pharmacy_dispensing"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/LiveHospitalMetricsTicker.tsx",
+      "action": "getItem",
+      "key": "docsearch_patients"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/LiveHospitalMetricsTicker.tsx",
+      "action": "getItem",
+      "key": "docsearch_hospital_metrics"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/LiveHospitalMetricsTicker.tsx",
+      "action": "setItem",
+      "key": "docsearch_hospital_metrics"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/OpdQueueTvDisplayModal.tsx",
+      "action": "getItem",
+      "key": "docsearch_opd_queue"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/OpdQueueTvDisplayModal.tsx",
+      "action": "setItem",
+      "key": "docsearch_opd_queue"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/ScheduleH1DrugRegisterModal.tsx",
+      "action": "getItem",
+      "key": "docsearch_schedule_h1_records"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/ScheduleH1DrugRegisterModal.tsx",
+      "action": "setItem",
+      "key": "docsearch_schedule_h1_records"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/UniversalAccountSettingsModal.tsx",
+      "action": "getItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/UniversalAccountSettingsModal.tsx",
+      "action": "getItem",
+      "key": "docsearch_staged_profile_amendments"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/UniversalAccountSettingsModal.tsx",
+      "action": "getItem",
+      "key": "docsearch_staged_profile_amendments"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/UniversalAccountSettingsModal.tsx",
+      "action": "setItem",
+      "key": "docsearch_staged_profile_amendments"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/UniversalAccountSettingsModal.tsx",
+      "action": "getItem",
+      "key": "docsearch_verification_queue"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/UniversalAccountSettingsModal.tsx",
+      "action": "setItem",
+      "key": "docsearch_verification_queue"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/UniversalAccountSettingsModal.tsx",
+      "action": "getItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/UniversalAccountSettingsModal.tsx",
+      "action": "setItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/UniversalAccountSettingsModal.tsx",
+      "action": "getItem",
+      "key": "docsearch_custom_partner_users"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/UniversalAccountSettingsModal.tsx",
+      "action": "setItem",
+      "key": "docsearch_custom_partner_users"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/UniversalAccountSettingsModal.tsx",
+      "action": "getItem",
+      "key": "docsearch_partner_staff"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/UniversalAccountSettingsModal.tsx",
+      "action": "setItem",
+      "key": "docsearch_partner_staff"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/UniversalAccountSettingsModal.tsx",
+      "action": "getItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/UniversalAccountSettingsModal.tsx",
+      "action": "setItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateInvestigationOrderDialog.tsx",
+      "action": "getItem",
+      "key": "docsearch_pathology_referring_doctors"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateInvestigationOrderDialog.tsx",
+      "action": "getItem",
+      "key": "docsearch_pathology_clinical_indications"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateInvestigationOrderDialog.tsx",
+      "action": "setItem",
+      "key": "docsearch_pathology_referring_doctors"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateInvestigationOrderDialog.tsx",
+      "action": "setItem",
+      "key": "docsearch_pathology_clinical_indications"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/DoctorPrescriptionQueueImporterModal.tsx",
+      "action": "getItem",
+      "key": "docsearch_pending_doctor_prescriptions"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/DoctorPrescriptionQueueImporterModal.tsx",
+      "action": "getItem",
+      "key": "docsearch_pending_doctor_prescriptions"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/DoctorPrescriptionQueueImporterModal.tsx",
+      "action": "setItem",
+      "key": "docsearch_pending_doctor_prescriptions"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/DoctorPrescriptionQueueImporterModal.tsx",
+      "action": "getItem",
+      "key": "docsearch_pending_doctor_prescriptions"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/DoctorPrescriptionQueueImporterModal.tsx",
+      "action": "setItem",
+      "key": "docsearch_pending_doctor_prescriptions"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/PrintableDoctorPrescriptionModal.tsx",
+      "action": "getItem",
+      "key": "docsearch_prescription_letterhead_mode"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/PrintableDoctorPrescriptionModal.tsx",
+      "action": "setItem",
+      "key": "docsearch_prescription_letterhead_mode"
+    },
+    {
+      "file": "apps/partner-platform/src/components/InpatientDomainManager.tsx",
+      "action": "getItem",
+      "key": "docsearch_admission_requests"
+    },
+    {
+      "file": "apps/partner-platform/src/components/PartnerPlatformShell.tsx",
+      "action": "getItem",
+      "key": "docsearch_ui_mode"
+    },
+    {
+      "file": "apps/partner-platform/src/components/PartnerPlatformShell.tsx",
+      "action": "setItem",
+      "key": "docsearch_ui_mode"
+    },
+    {
+      "file": "apps/partner-platform/src/components/PartnerPlatformShell.tsx",
+      "action": "getItem",
+      "key": "docsearch_doctor_focus_mode"
+    },
+    {
+      "file": "apps/partner-platform/src/components/PartnerPlatformShell.tsx",
+      "action": "setItem",
+      "key": "docsearch_doctor_focus_mode"
+    },
+    {
+      "file": "apps/partner-platform/src/components/PartnerPlatformShell.tsx",
+      "action": "getItem",
+      "key": "docsearch_role_perspective"
+    },
+    {
+      "file": "apps/partner-platform/src/components/PartnerPlatformShell.tsx",
+      "action": "setItem",
+      "key": "docsearch_role_perspective"
+    },
+    {
+      "file": "apps/partner-platform/src/components/PartnerPlatformShell.tsx",
+      "action": "setItem",
+      "key": "docsearch_role_perspective"
+    },
+    {
+      "file": "apps/partner-platform/src/components/PartnerPlatformShell.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/partner-platform/src/components/PartnerPlatformShell.tsx",
+      "action": "getItem",
+      "key": "docsearch_partner_token"
+    },
+    {
+      "file": "apps/partner-platform/src/components/PartnerPlatformShell.tsx",
+      "action": "getItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/partner-platform/src/components/PartnerPlatformShell.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/partner-platform/src/components/PartnerPlatformShell.tsx",
+      "action": "getItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/components/PartnerPlatformShell.tsx",
+      "action": "setItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/components/PartnerPlatformShell.tsx",
+      "action": "getItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/partner-platform/src/components/PartnerPlatformShell.tsx",
+      "action": "setItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/partner-platform/src/components/PartnerPlatformShell.tsx",
+      "action": "setItem",
+      "key": "docsearch_doctor_focus_mode"
+    },
+    {
+      "file": "apps/partner-platform/src/components/PartnerPlatformShell.tsx",
+      "action": "setItem",
+      "key": "docsearch_doctor_focus_mode"
+    },
+    {
+      "file": "apps/partner-platform/src/components/PartnerPlatformShell.tsx",
+      "action": "removeItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/components/PartnerPlatformShell.tsx",
+      "action": "removeItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/partner-platform/src/components/PartnerPlatformShell.tsx",
+      "action": "setItem",
+      "key": "docsearch_logged_out"
+    },
+    {
+      "file": "apps/partner-platform/src/components/PartnerPlatformShell.tsx",
+      "action": "getItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/components/PartnerPlatformShell.tsx",
+      "action": "setItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/components/PartnerPlatformShell.tsx",
+      "action": "getItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/components/PartnerPlatformShell.tsx",
+      "action": "setItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/components/PatientRegistrationDomainManager.tsx",
+      "action": "getItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/components/PatientRegistrationDomainManager.tsx",
+      "action": "getItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/components/RadiologyDomainManager.tsx",
+      "action": "getItem",
+      "key": "docsearch_pending_radiology_orders"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/ConsultationDoctorWorklistView.tsx",
+      "action": "getItem",
+      "key": "docsearch_nurse_vitals"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/CreateInvoiceView.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/DailyCounterCashLedgerView.tsx",
+      "action": "getItem",
+      "key": "docsearch_counter_settlements"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/DailyCounterCashLedgerView.tsx",
+      "action": "getItem",
+      "key": "docsearch_counter_settlements"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/DoctorExpressConsultationDesk.tsx",
+      "action": "getItem",
+      "key": "docsearch_nurse_vitals"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/DoctorExpressConsultationDesk.tsx",
+      "action": "getItem",
+      "key": "docsearch_patient_vitals_history"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/DoctorExpressConsultationDesk.tsx",
+      "action": "getItem",
+      "key": "docsearch_patient_vitals_history"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/DoctorExpressConsultationDesk.tsx",
+      "action": "getItem",
+      "key": "docsearch_nurse_vitals"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/DoctorExpressConsultationDesk.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/DoctorExpressConsultationDesk.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/DoctorExpressConsultationDesk.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/DpdpPrivacyConsentHubView.tsx",
+      "action": "getItem",
+      "key": "dpdp_consents_state"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/DpdpPrivacyConsentHubView.tsx",
+      "action": "setItem",
+      "key": "dpdp_consents_state"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/DpdpPrivacyConsentHubView.tsx",
+      "action": "getItem",
+      "key": "dpdp_erasure_requests"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/DpdpPrivacyConsentHubView.tsx",
+      "action": "setItem",
+      "key": "dpdp_erasure_requests"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/DpdpPrivacyConsentHubView.tsx",
+      "action": "getItem",
+      "key": "dpdp_audit_logs"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/DpdpPrivacyConsentHubView.tsx",
+      "action": "setItem",
+      "key": "dpdp_audit_logs"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FastPharmacyPosCounterView.tsx",
+      "action": "getItem",
+      "key": "docsearch_pharmacy_invoices"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FastPharmacyPosCounterView.tsx",
+      "action": "setItem",
+      "key": "docsearch_pharmacy_invoices"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FastPharmacyPosCounterView.tsx",
+      "action": "setItem",
+      "key": "docsearch_pharmacy_invoices"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FastPharmacyPosCounterView.tsx",
+      "action": "getItem",
+      "key": "docsearch_schedule_h1_records"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FastPharmacyPosCounterView.tsx",
+      "action": "setItem",
+      "key": "docsearch_schedule_h1_records"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FastPharmacyPosCounterView.tsx",
+      "action": "setItem",
+      "key": "docsearch_pharmacy_invoices"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FastPharmacyPosCounterView.tsx",
+      "action": "removeItem",
+      "key": "docsearch_pharmacy_invoices"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx",
+      "action": "getItem",
+      "key": "docsearch_recent_opd_queue"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx",
+      "action": "getItem",
+      "key": "docsearch_recent_opd_queue"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx",
+      "action": "setItem",
+      "key": "docsearch_recent_opd_queue"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx",
+      "action": "getItem",
+      "key": "docsearch_encounters"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx",
+      "action": "setItem",
+      "key": "docsearch_encounters"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx",
+      "action": "setItem",
+      "key": "docsearch_recent_opd_queue"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx",
+      "action": "setItem",
+      "key": "docsearch_recent_opd_queue"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx",
+      "action": "setItem",
+      "key": "docsearch_recent_opd_queue"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx",
+      "action": "setItem",
+      "key": "docsearch_recent_opd_queue"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/InstantBillSettlementView.tsx",
+      "action": "getItem",
+      "key": "docsearch_encounters"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/InstantBillSettlementView.tsx",
+      "action": "getItem",
+      "key": "docsearch_pending_lab_orders"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/InstantBillSettlementView.tsx",
+      "action": "getItem",
+      "key": "docsearch_pending_radiology_orders"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/InstantBillSettlementView.tsx",
+      "action": "getItem",
+      "key": "docsearch_counter_settlements"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/InstantBillSettlementView.tsx",
+      "action": "setItem",
+      "key": "docsearch_counter_settlements"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/InstantNhcxAutoAdjudicationView.tsx",
+      "action": "getItem",
+      "key": "nhcx_settled_claims"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/InstantNhcxAutoAdjudicationView.tsx",
+      "action": "setItem",
+      "key": "nhcx_settled_claims"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+      "action": "getItem",
+      "key": "docsearch_inpatient_ward_care"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+      "action": "getItem",
+      "key": "docsearch_emergency_triage_bay"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+      "action": "getItem",
+      "key": "docsearch_recent_opd_queue"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+      "action": "getItem",
+      "key": "docsearch_nurse_vitals"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+      "action": "getItem",
+      "key": "docsearch_nurse_vitals"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+      "action": "getItem",
+      "key": "docsearch_nurse_vitals"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+      "action": "setItem",
+      "key": "docsearch_nurse_vitals"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+      "action": "getItem",
+      "key": "docsearch_patient_vitals_history"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+      "action": "setItem",
+      "key": "docsearch_patient_vitals_history"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+      "action": "setItem",
+      "key": "docsearch_recent_opd_queue"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+      "action": "setItem",
+      "key": "docsearch_recent_opd_queue"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+      "action": "setItem",
+      "key": "docsearch_recent_opd_queue"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+      "action": "setItem",
+      "key": "docsearch_inpatient_ward_care"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+      "action": "setItem",
+      "key": "docsearch_inpatient_ward_care"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+      "action": "setItem",
+      "key": "docsearch_inpatient_ward_care"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+      "action": "setItem",
+      "key": "docsearch_inpatient_ward_care"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+      "action": "setItem",
+      "key": "docsearch_emergency_triage_bay"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+      "action": "getItem",
+      "key": "docsearch_nurse_vitals"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/PatientDirectoryView.tsx",
+      "action": "getItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/ReferringDoctorLedgerView.tsx",
+      "action": "getItem",
+      "key": "docsearch_referral_doctors"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/ReferringDoctorLedgerView.tsx",
+      "action": "getItem",
+      "key": "docsearch_referral_transactions"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/ReferringDoctorLedgerView.tsx",
+      "action": "setItem",
+      "key": "docsearch_referral_doctors"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/ReferringDoctorLedgerView.tsx",
+      "action": "setItem",
+      "key": "docsearch_referral_transactions"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/RoleTailoredSmartDeskView.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/SoloDoctorOpdCockpitView.tsx",
+      "action": "getItem",
+      "key": "docsearch_nurse_vitals"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/SoloDoctorOpdCockpitView.tsx",
+      "action": "getItem",
+      "key": "docsearch_nurse_vitals"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/SoloDoctorOpdCockpitView.tsx",
+      "action": "getItem",
+      "key": "docsearch_patient_vitals_history"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/SoloDoctorOpdCockpitView.tsx",
+      "action": "getItem",
+      "key": "docsearch_patient_vitals_history"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/StaffDirectoryView.tsx",
+      "action": "setItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/StaffDirectoryView.tsx",
+      "action": "removeItem",
+      "key": "docsearch_logged_out"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/StaffDirectoryView.tsx",
+      "action": "setItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/StaffDirectoryView.tsx",
+      "action": "getItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/main.tsx",
+      "action": "getItem",
+      "key": "docsearch_mock_data_purged_v2"
+    },
+    {
+      "file": "apps/partner-platform/src/main.tsx",
+      "action": "setItem",
+      "key": "docsearch_mock_data_purged_v2"
+    },
+    {
+      "file": "apps/partner-platform/src/main.tsx",
+      "action": "getItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/main.tsx",
+      "action": "removeItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/main.tsx",
+      "action": "removeItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/partner-platform/src/main.tsx",
+      "action": "getItem",
+      "key": "docsearch_logged_out"
+    },
+    {
+      "file": "apps/partner-platform/src/main.tsx",
+      "action": "setItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/partner-platform/src/main.tsx",
+      "action": "removeItem",
+      "key": "docsearch_logged_out"
+    },
+    {
+      "file": "apps/partner-platform/src/main.tsx",
+      "action": "getItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/main.tsx",
+      "action": "getItem",
+      "key": "docsearch_partner_staff"
+    },
+    {
+      "file": "apps/partner-platform/src/main.tsx",
+      "action": "removeItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/main.tsx",
+      "action": "removeItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/partner-platform/src/main.tsx",
+      "action": "setItem",
+      "key": "docsearch_logged_out"
+    },
+    {
+      "file": "apps/partner-platform/src/main.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/partner-platform/src/main.tsx",
+      "action": "removeItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/main.tsx",
+      "action": "removeItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/partner-platform/src/main.tsx",
+      "action": "setItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/main.tsx",
+      "action": "removeItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/main.tsx",
+      "action": "removeItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/partner-platform/src/main.tsx",
+      "action": "removeItem",
+      "key": "docsearch_logged_out"
+    },
+    {
+      "file": "apps/partner-platform/src/main.tsx",
+      "action": "setItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/main.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/partner-platform/src/main.tsx",
+      "action": "setItem",
+      "key": "docsearch_logged_out"
+    },
+    {
+      "file": "apps/partner-platform/src/main.tsx",
+      "action": "removeItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/main.tsx",
+      "action": "removeItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/partner-platform/src/main.tsx",
+      "action": "removeItem",
+      "key": "docsearch_user_session"
+    },
+    {
+      "file": "apps/partner-platform/src/main.tsx",
+      "action": "removeItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/main.tsx",
+      "action": "removeItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/partner-platform/src/main.tsx",
+      "action": "removeItem",
+      "key": "docsearch_user_session"
+    },
+    {
+      "file": "apps/partner-platform/src/services/cdsco-inspection-audit-service.ts",
+      "action": "getItem",
+      "key": "docsearch_pharmacy_demo_seed"
+    },
+    {
+      "file": "apps/partner-platform/src/services/cdsco-inspection-audit-service.ts",
+      "action": "setItem",
+      "key": "docsearch_pharmacy_demo_seed"
+    },
+    {
+      "file": "apps/partner-platform/src/services/cdsco-inspection-audit-service.ts",
+      "action": "removeItem",
+      "key": "docsearch_schedule_h1_records"
+    },
+    {
+      "file": "apps/partner-platform/src/services/clinical-consultation-service.ts",
+      "action": "getItem",
+      "key": "docsearch_encounters"
+    },
+    {
+      "file": "apps/partner-platform/src/services/clinical-consultation-service.ts",
+      "action": "getItem",
+      "key": "docsearch_nurse_vitals"
+    },
+    {
+      "file": "apps/partner-platform/src/services/clinical-consultation-service.ts",
+      "action": "getItem",
+      "key": "docsearch_pharmacy_prescriptions"
+    },
+    {
+      "file": "apps/partner-platform/src/services/clinical-consultation-service.ts",
+      "action": "setItem",
+      "key": "docsearch_pharmacy_prescriptions"
+    },
+    {
+      "file": "apps/partner-platform/src/services/clinical-investigation-service.ts",
+      "action": "setItem",
+      "key": "docsearch_pending_lab_orders"
+    },
+    {
+      "file": "apps/partner-platform/src/services/clinical-investigation-service.ts",
+      "action": "setItem",
+      "key": "docsearch_referral_transactions"
+    },
+    {
+      "file": "apps/partner-platform/src/services/encounter-service.ts",
+      "action": "getItem",
+      "key": "docsearch_opd_queue"
+    },
+    {
+      "file": "apps/partner-platform/src/services/hospital-event-bus.ts",
+      "action": "getItem",
+      "key": "docsearch_active_patient_context"
+    },
+    {
+      "file": "apps/partner-platform/src/services/hospital-event-bus.ts",
+      "action": "setItem",
+      "key": "docsearch_active_patient_context"
+    },
+    {
+      "file": "apps/partner-platform/src/services/hospital-event-bus.ts",
+      "action": "removeItem",
+      "key": "docsearch_active_patient_context"
+    },
+    {
+      "file": "apps/partner-platform/src/services/pathology-revenue-service.ts",
+      "action": "getItem",
+      "key": "docsearch_investigation_orders"
+    },
+    {
+      "file": "apps/partner-platform/src/services/patient-session-tab-service.ts",
+      "action": "getItem",
+      "key": "docsearch_auth_session"
+    },
+    {
+      "file": "apps/partner-platform/src/services/patient-session-tab-service.ts",
+      "action": "getItem",
+      "key": "docsearch_partner_session"
+    },
+    {
+      "file": "apps/partner-platform/src/services/patient-session-tab-service.ts",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/partner-platform/src/services/patient-session-tab-service.ts",
+      "action": "getItem",
+      "key": "auth_token"
+    },
+    {
+      "file": "apps/partner-platform/src/services/pharmacy-credit-khata-service.ts",
+      "action": "getItem",
+      "key": "docsearch_pharmacy_sales_invoices"
+    },
+    {
+      "file": "apps/partner-platform/src/services/pharmacy-offline-storage-service.ts",
+      "action": "getItem",
+      "key": "docsearch_auth_session"
+    },
+    {
+      "file": "apps/partner-platform/src/services/pharmacy-offline-storage-service.ts",
+      "action": "getItem",
+      "key": "docsearch_partner_session"
+    },
+    {
+      "file": "apps/partner-platform/src/services/pharmacy-offline-storage-service.ts",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/partner-platform/src/services/pharmacy-offline-storage-service.ts",
+      "action": "getItem",
+      "key": "auth_token"
+    },
+    {
+      "file": "apps/partner-platform/src/services/pharmacy-offline-storage-service.ts",
+      "action": "getItem",
+      "key": "docsearch_offline_invoices_backup"
+    },
+    {
+      "file": "apps/partner-platform/src/services/pharmacy-offline-storage-service.ts",
+      "action": "setItem",
+      "key": "docsearch_offline_invoices_backup"
+    },
+    {
+      "file": "apps/partner-platform/src/services/pharmacy-offline-storage-service.ts",
+      "action": "getItem",
+      "key": "docsearch_offline_invoices_backup"
+    },
+    {
+      "file": "apps/partner-platform/src/services/pharmacy-revenue-galla-service.ts",
+      "action": "getItem",
+      "key": "docsearch_pharmacy_demo_seed"
+    },
+    {
+      "file": "apps/partner-platform/src/services/pharmacy-revenue-galla-service.ts",
+      "action": "setItem",
+      "key": "docsearch_pharmacy_demo_seed"
+    },
+    {
+      "file": "apps/partner-platform/src/services/pharmacy-revenue-galla-service.ts",
+      "action": "removeItem",
+      "key": "docsearch_pharmacy_demo_seed"
+    },
+    {
+      "file": "apps/partner-platform/src/utils/partnerProfileGuard.ts",
+      "action": "getItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/utils/partnerProfileGuard.ts",
+      "action": "getItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/utils/partnerProfileGuard.ts",
+      "action": "getItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/partner-platform/src/utils/partnerRolePermissions.ts",
+      "action": "getItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/utils/partnerRolePermissions.ts",
+      "action": "getItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/utils/partnerRolePermissions.ts",
+      "action": "getItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/utils/partnerRolePermissions.ts",
+      "action": "getItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/utils/partnerRolePermissions.ts",
+      "action": "getItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/utils/roleProfileResolver.ts",
+      "action": "getItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/partner-platform/src/utils/roleProfileResolver.ts",
+      "action": "getItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/auth/FounderLogin.tsx",
+      "action": "setItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/auth/FounderLogin.tsx",
+      "action": "setItem",
+      "key": "docsearch_company_session"
+    },
+    {
+      "file": "apps/company-platform/src/components/billing/FinanceDomainManager.tsx",
+      "action": "getItem",
+      "key": "docsearch_finance_tab"
+    },
+    {
+      "file": "apps/company-platform/src/components/billing/FinanceDomainManager.tsx",
+      "action": "setItem",
+      "key": "docsearch_finance_tab"
+    },
+    {
+      "file": "apps/company-platform/src/components/billing/InvoiceListView.tsx",
+      "action": "getItem",
+      "key": "docsearch_finance_partner_filter"
+    },
+    {
+      "file": "apps/company-platform/src/components/billing/InvoiceListView.tsx",
+      "action": "removeItem",
+      "key": "docsearch_finance_partner_filter"
+    },
+    {
+      "file": "apps/company-platform/src/components/billing/InvoiceListView.tsx",
+      "action": "getItem",
+      "key": "docsearch_partner_invoices"
+    },
+    {
+      "file": "apps/company-platform/src/components/billing/SubscriptionCustomizerModal.tsx",
+      "action": "getItem",
+      "key": "docsearch_partner_invoices"
+    },
+    {
+      "file": "apps/company-platform/src/components/billing/SubscriptionCustomizerModal.tsx",
+      "action": "setItem",
+      "key": "docsearch_partner_invoices"
+    },
+    {
+      "file": "apps/company-platform/src/components/billing/SubscriptionListView.tsx",
+      "action": "getItem",
+      "key": "docsearch_partner_subscriptions"
+    },
+    {
+      "file": "apps/company-platform/src/components/billing/SubscriptionListView.tsx",
+      "action": "setItem",
+      "key": "docsearch_partner_subscriptions"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/CompanyPulseTicker.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/GlobalWhiteLabelContext.tsx",
+      "action": "getItem",
+      "key": "ds_whitelabel_config"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/GlobalWhiteLabelContext.tsx",
+      "action": "setItem",
+      "key": "ds_whitelabel_config"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+      "action": "getItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+      "action": "getItem",
+      "key": "docsearch_verification_queue"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+      "action": "getItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+      "action": "setItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+      "action": "getItem",
+      "key": "docsearch_verification_queue"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+      "action": "setItem",
+      "key": "docsearch_verification_queue"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+      "action": "getItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+      "action": "setItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+      "action": "getItem",
+      "key": "docsearch_verification_queue"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+      "action": "setItem",
+      "key": "docsearch_verification_queue"
+    },
+    {
+      "file": "apps/company-platform/src/components/CompanyShell.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/CompanyShell.tsx",
+      "action": "setItem",
+      "key": "docsearch_crm_tab"
+    },
+    {
+      "file": "apps/company-platform/src/components/CompanyShell.tsx",
+      "action": "setItem",
+      "key": "docsearch_crm_partner_id"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/AiWhatsAppEngagementBroadcasterView.tsx",
+      "action": "getItem",
+      "key": "docsearch_wa_campaigns"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/AiWhatsAppEngagementBroadcasterView.tsx",
+      "action": "getItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/AiWhatsAppEngagementBroadcasterView.tsx",
+      "action": "setItem",
+      "key": "docsearch_wa_campaigns"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/CommercialPipelineCockpitView.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/CommercialPipelineCockpitView.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/CommercialPipelineCockpitView.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/CommercialPipelineCockpitView.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/CommercialPipelineCockpitView.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/CommercialPipelineCockpitView.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/CommercialPipelineCockpitView.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/CommercialPipelineCockpitView.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/CommercialPipelineCockpitView.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/CommercialPipelineCockpitView.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/CommercialPipelineCockpitView.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/CommercialPipelineCockpitView.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/CommercialPipelineCockpitView.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/CommercialPipelineCockpitView.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/CommercialPipelineCockpitView.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/CommercialPipelineCockpitView.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/DoctorNmcCredentialingBotView.tsx",
+      "action": "getItem",
+      "key": "docsearch_nmc_credentials"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/DoctorNmcCredentialingBotView.tsx",
+      "action": "getItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/DoctorNmcCredentialingBotView.tsx",
+      "action": "setItem",
+      "key": "docsearch_nmc_credentials"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/HqLicenseGovernanceView.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/HqLicenseGovernanceView.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/HqLicenseGovernanceView.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/HqLicenseGovernanceView.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/HqLicenseGovernanceView.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/HqLicenseGovernanceView.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/HqLicenseGovernanceView.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/HqLicenseGovernanceView.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/HqLicenseGovernanceView.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/HqLicenseGovernanceView.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/HqLicenseGovernanceView.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/HqLicenseGovernanceView.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/HqLicenseGovernanceView.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/HqLicenseGovernanceView.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/HqLicenseGovernanceView.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/HqLicenseGovernanceView.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/HqLicenseGovernanceView.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/HqLicenseGovernanceView.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/HqLicenseKeyGeneratorModal.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/LeadToPartnerPipelineView.tsx",
+      "action": "getItem",
+      "key": "docsearch_pipeline_leads"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/LeadToPartnerPipelineView.tsx",
+      "action": "getItem",
+      "key": "docsearch_demo_requests"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/LeadToPartnerPipelineView.tsx",
+      "action": "getItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/LeadToPartnerPipelineView.tsx",
+      "action": "getItem",
+      "key": "docsearch_pipeline_leads"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/LeadToPartnerPipelineView.tsx",
+      "action": "setItem",
+      "key": "docsearch_pipeline_leads"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/LeadToPartnerPipelineView.tsx",
+      "action": "getItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/LeadToPartnerPipelineView.tsx",
+      "action": "setItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/LeadToPartnerPipelineView.tsx",
+      "action": "getItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/LeadToPartnerPipelineView.tsx",
+      "action": "setItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerAbdmTelemetryView.tsx",
+      "action": "getItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerAccessGovernanceCockpit.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerAccessGovernanceCockpit.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerAccessGovernanceCockpit.tsx",
+      "action": "getItem",
+      "key": "token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerAccessGovernanceCockpit.tsx",
+      "action": "setItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerContractsVaultView.tsx",
+      "action": "getItem",
+      "key": "docsearch_b2b_contracts"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerContractsVaultView.tsx",
+      "action": "getItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerContractsVaultView.tsx",
+      "action": "setItem",
+      "key": "docsearch_b2b_contracts"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerEscrowRevenueSplitView.tsx",
+      "action": "getItem",
+      "key": "docsearch_escrow_settlements"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerEscrowRevenueSplitView.tsx",
+      "action": "getItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerEscrowRevenueSplitView.tsx",
+      "action": "setItem",
+      "key": "docsearch_escrow_settlements"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerHealthChurnRadarView.tsx",
+      "action": "getItem",
+      "key": "docsearch_health_records"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerHealthChurnRadarView.tsx",
+      "action": "getItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerHealthChurnRadarView.tsx",
+      "action": "setItem",
+      "key": "docsearch_health_records"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerLifecycleManager.tsx",
+      "action": "getItem",
+      "key": "docsearch_crm_tab"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerLifecycleManager.tsx",
+      "action": "removeItem",
+      "key": "docsearch_crm_tab"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerLifecycleManager.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerLifecycleManager.tsx",
+      "action": "setItem",
+      "key": "docsearch_selected_verif_id"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerListView.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerListView.tsx",
+      "action": "getItem",
+      "key": "docsearch_live_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerListView.tsx",
+      "action": "setItem",
+      "key": "docsearch_live_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerListView.tsx",
+      "action": "getItem",
+      "key": "docsearch_live_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerListView.tsx",
+      "action": "setItem",
+      "key": "docsearch_live_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerListView.tsx",
+      "action": "getItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerListView.tsx",
+      "action": "setItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerListView.tsx",
+      "action": "getItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerListView.tsx",
+      "action": "setItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerOnboardingModal.tsx",
+      "action": "getItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerOnboardingModal.tsx",
+      "action": "setItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerOutreachHubView.tsx",
+      "action": "getItem",
+      "key": "docsearch_outreach_logs"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerOutreachHubView.tsx",
+      "action": "getItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerOutreachHubView.tsx",
+      "action": "setItem",
+      "key": "docsearch_outreach_logs"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerRevenueBillingLedgerView.tsx",
+      "action": "getItem",
+      "key": "docsearch_b2b_invoices"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerRevenueBillingLedgerView.tsx",
+      "action": "getItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerRevenueBillingLedgerView.tsx",
+      "action": "setItem",
+      "key": "docsearch_b2b_invoices"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "getItem",
+      "key": "docsearch_verification_queue"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "removeItem",
+      "key": "docsearch_verification_queue"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "setItem",
+      "key": "docsearch_verification_queue"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "getItem",
+      "key": "docsearch_selected_verif_id"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "removeItem",
+      "key": "docsearch_selected_verif_id"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "getItem",
+      "key": "docsearch_verified_originals"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "getItem",
+      "key": "docsearch_registration_form_policy"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "setItem",
+      "key": "docsearch_registration_form_policy"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "setItem",
+      "key": "docsearch_registration_form_policy"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "getItem",
+      "key": "docsearch_verification_queue"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "getItem",
+      "key": "docsearch_selected_verif_id"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "removeItem",
+      "key": "docsearch_selected_verif_id"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "setItem",
+      "key": "docsearch_verified_originals"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "getItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "setItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "getItem",
+      "key": "docsearch_staged_profile_amendments"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "setItem",
+      "key": "docsearch_staged_profile_amendments"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "getItem",
+      "key": "docsearch_verification_queue"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "setItem",
+      "key": "docsearch_verification_queue"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "getItem",
+      "key": "docsearch_live_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "setItem",
+      "key": "docsearch_live_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "getItem",
+      "key": "docsearch_verification_queue"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "setItem",
+      "key": "docsearch_verification_queue"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "getItem",
+      "key": "docsearch_live_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "setItem",
+      "key": "docsearch_live_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "getItem",
+      "key": "docsearch_verification_queue"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "action": "setItem",
+      "key": "docsearch_verification_queue"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PathologyPartnerOnboardingWizard.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PathologyPartnerOnboardingWizard.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PathologyPartnerOnboardingWizard.tsx",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PathologyPartnerOnboardingWizard.tsx",
+      "action": "getItem",
+      "key": "docsearch_live_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PathologyPartnerOnboardingWizard.tsx",
+      "action": "setItem",
+      "key": "docsearch_live_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PathologyPartnerOnboardingWizard.tsx",
+      "action": "getItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PathologyPartnerOnboardingWizard.tsx",
+      "action": "setItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PathologyPartnerOnboardingWizard.tsx",
+      "action": "getItem",
+      "key": "docsearch_custom_partner_users"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PathologyPartnerOnboardingWizard.tsx",
+      "action": "setItem",
+      "key": "docsearch_custom_partner_users"
+    },
+    {
+      "file": "apps/company-platform/src/components/growth/CompanyGrowthEngineDomainManager.tsx",
+      "action": "getItem",
+      "key": "docsearch_growth_tab"
+    },
+    {
+      "file": "apps/company-platform/src/components/growth/CompanyGrowthEngineDomainManager.tsx",
+      "action": "setItem",
+      "key": "docsearch_growth_tab"
+    },
+    {
+      "file": "apps/company-platform/src/components/growth/CompanyGrowthEngineDomainManager.tsx",
+      "action": "getItem",
+      "key": "docsearch_growth_plans"
+    },
+    {
+      "file": "apps/company-platform/src/components/growth/CompanyGrowthEngineDomainManager.tsx",
+      "action": "setItem",
+      "key": "docsearch_growth_plans"
+    },
+    {
+      "file": "apps/company-platform/src/components/growth/LaunchOfferManagerView.tsx",
+      "action": "getItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/sales/CreateLeadModal.tsx",
+      "action": "getItem",
+      "key": "docsearch_pipeline_leads"
+    },
+    {
+      "file": "apps/company-platform/src/components/sales/CreateLeadModal.tsx",
+      "action": "setItem",
+      "key": "docsearch_pipeline_leads"
+    },
+    {
+      "file": "apps/company-platform/src/components/sales/CreateLeadModal.tsx",
+      "action": "getItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/company-platform/src/components/sales/CreateLeadModal.tsx",
+      "action": "setItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/company-platform/src/main.tsx",
+      "action": "setItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/main.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_founder_auth"
+    },
+    {
+      "file": "apps/company-platform/src/main.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/main.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/main.tsx",
+      "action": "setItem",
+      "key": "docsearch_company_founder_auth"
+    },
+    {
+      "file": "apps/company-platform/src/main.tsx",
+      "action": "removeItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/main.tsx",
+      "action": "removeItem",
+      "key": "docsearch_company_founder_auth"
+    },
+    {
+      "file": "apps/company-platform/src/main.tsx",
+      "action": "removeItem",
+      "key": "docsearch_company_session"
+    },
+    {
+      "file": "apps/company-platform/src/main.tsx",
+      "action": "setItem",
+      "key": "docsearch_company_founder_auth"
+    },
+    {
+      "file": "apps/company-platform/src/main.tsx",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/main.tsx",
+      "action": "removeItem",
+      "key": "docsearch_company_founder_auth"
+    },
+    {
+      "file": "apps/company-platform/src/main.tsx",
+      "action": "removeItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/main.tsx",
+      "action": "removeItem",
+      "key": "docsearch_company_session"
+    },
+    {
+      "file": "apps/company-platform/src/navigation/rolePermissions.ts",
+      "action": "getItem",
+      "key": "docsearch_company_founder_auth"
+    },
+    {
+      "file": "apps/company-platform/src/navigation/rolePermissions.ts",
+      "action": "getItem",
+      "key": "docsearch_company_auth"
+    },
+    {
+      "file": "apps/company-platform/src/navigation/rolePermissions.ts",
+      "action": "getItem",
+      "key": "docsearch_company_session"
+    },
+    {
+      "file": "apps/company-platform/src/navigation/rolePermissions.ts",
+      "action": "getItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/company-platform/src/services/partner-service.ts",
+      "action": "getItem",
+      "key": "docsearch_company_token"
+    },
+    {
+      "file": "apps/company-platform/src/services/partner-service.ts",
+      "action": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "file": "apps/company-platform/src/services/partner-service.ts",
+      "action": "getItem",
+      "key": "token"
+    },
+    {
+      "file": "apps/company-platform/src/services/partner-service.ts",
+      "action": "getItem",
+      "key": "docsearch_purged_partners"
+    },
+    {
+      "file": "apps/company-platform/src/services/partner-service.ts",
+      "action": "getItem",
+      "key": "docsearch_live_partners"
+    },
+    {
+      "file": "apps/company-platform/src/services/partner-service.ts",
+      "action": "getItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/company-platform/src/services/partner-service.ts",
+      "action": "getItem",
+      "key": "docsearch_purged_partners"
+    },
+    {
+      "file": "apps/company-platform/src/services/partner-service.ts",
+      "action": "setItem",
+      "key": "docsearch_purged_partners"
+    },
+    {
+      "file": "apps/company-platform/src/services/partner-service.ts",
+      "action": "getItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/company-platform/src/services/partner-service.ts",
+      "action": "setItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/company-platform/src/services/partner-service.ts",
+      "action": "getItem",
+      "key": "docsearch_live_partners"
+    },
+    {
+      "file": "apps/company-platform/src/services/partner-service.ts",
+      "action": "setItem",
+      "key": "docsearch_live_partners"
+    },
+    {
+      "file": "apps/company-platform/src/services/partner-service.ts",
+      "action": "getItem",
+      "key": "docsearch_verification_queue"
+    },
+    {
+      "file": "apps/company-platform/src/services/partner-service.ts",
+      "action": "setItem",
+      "key": "docsearch_verification_queue"
+    },
+    {
+      "file": "apps/company-platform/src/utils/roleProfileResolver.ts",
+      "action": "getItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "file": "apps/landing-page/src/components/DocSearchLandingPage.tsx",
+      "action": "getItem",
+      "key": "docsearch_demo_requests"
+    },
+    {
+      "file": "apps/landing-page/src/components/DocSearchLandingPage.tsx",
+      "action": "setItem",
+      "key": "docsearch_demo_requests"
+    },
+    {
+      "file": "apps/landing-page/src/components/FullPageRegistrationView.tsx",
+      "action": "getItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/landing-page/src/components/FullPageRegistrationView.tsx",
+      "action": "setItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/landing-page/src/components/UnifiedHealthcareLoginModal.tsx",
+      "action": "getItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/landing-page/src/components/UnifiedHealthcareLoginModal.tsx",
+      "action": "setItem",
+      "key": "docsearch_registered_partners"
+    },
+    {
+      "file": "apps/landing-page/src/components/UnifiedHealthcareLoginModal.tsx",
+      "action": "getItem",
+      "key": "docsearch_verification_queue"
+    },
+    {
+      "file": "apps/landing-page/src/components/UnifiedHealthcareLoginModal.tsx",
+      "action": "setItem",
+      "key": "docsearch_verification_queue"
+    }
+  ],
+  "sessionStorageUsages": [
+    {
+      "file": "apps/landing-page/src/components/DocSearchLandingPage.tsx",
+      "action": "getItem",
+      "key": "docsearch_flash_offer_dismissed"
+    },
+    {
+      "file": "apps/landing-page/src/components/DocSearchLandingPage.tsx",
+      "action": "setItem",
+      "key": "docsearch_flash_offer_dismissed"
+    },
+    {
+      "file": "apps/landing-page/src/components/DocSearchLandingPage.tsx",
+      "action": "setItem",
+      "key": "docsearch_flash_offer_dismissed"
+    }
+  ],
+  "fetchCalls": [
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "endpoint": "/api/v1/auth/registration-form-config"
+    },
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "endpoint": "/api/v1/auth/registration-form-config"
+    },
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "endpoint": "/api/v1/auth/live-partners"
+    },
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "endpoint": "/api/v1/auth/quick-session"
+    },
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "endpoint": "/api/v1/auth/login"
+    },
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "endpoint": "/api/v1/auth/self-register"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/DynamicRoleDocumentChecklist.tsx",
+      "endpoint": "/api/v1/compliance/documents/requirements?role=${encodeURIComponent(role)}&facilityType=${encodeURIComponent(facilityType)}&tenantId=11111111-1111-4111-8111-111111111111"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/DynamicRoleDocumentChecklist.tsx",
+      "endpoint": "/api/v1/compliance/documents/upload"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/HospitalPlanUpgradeModal.tsx",
+      "endpoint": "/api/v1/commercial/plans"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/HospitalPlanUpgradeModal.tsx",
+      "endpoint": "/api/v1/partner/account/plan-and-features"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/HospitalPlanUpgradeModal.tsx",
+      "endpoint": "/api/v1/commercial/create-checkout-order"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/RealTimeHospitalActivityDock.tsx",
+      "endpoint": "/api/health"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/UniversalAccountSettingsModal.tsx",
+      "endpoint": "/api/v1/auth/change-password"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CommercialRenewalModal.tsx",
+      "endpoint": "/api/v1/commercial/calculate-order"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CommercialRenewalModal.tsx",
+      "endpoint": "/api/v1/commercial/create-checkout-order"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/OfflineLicenseActivationModal.tsx",
+      "endpoint": "/api/v1/license/machine-fingerprint"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/OfflineLicenseActivationModal.tsx",
+      "endpoint": "/api/v1/license/activate"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/OfflineLicenseActivationModal.tsx",
+      "endpoint": "/api/v1/license/import-file"
+    },
+    {
+      "file": "apps/partner-platform/src/components/PartnerPlatformShell.tsx",
+      "endpoint": "/api/v1/license/heartbeat"
+    },
+    {
+      "file": "apps/partner-platform/src/components/PartnerPlatformShell.tsx",
+      "endpoint": "/api/v1/auth/partner-status?email=${email}&facilityName=${facilityName}"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/DoctorExpressConsultationDesk.tsx",
+      "endpoint": "/api/v1/partner/lab/orders"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/DoctorExpressConsultationDesk.tsx",
+      "endpoint": "/api/v1/partner/radiology/orders"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/DoctorExpressConsultationDesk.tsx",
+      "endpoint": "/api/v1/partner/inpatient/admission-requests"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/PartnerAccountPlanView.tsx",
+      "endpoint": "/api/v1/license/machine-fingerprint"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/RoleTailoredSmartDeskView.tsx",
+      "endpoint": "/api/v1/partner/command-center/overview"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/StaffDirectoryView.tsx",
+      "endpoint": "/api/v1/auth/quick-session"
+    },
+    {
+      "file": "apps/partner-platform/src/main.tsx",
+      "endpoint": "/api/v1/auth/me"
+    },
+    {
+      "file": "apps/partner-platform/src/main.tsx",
+      "endpoint": "/api/v1/auth/logout"
+    },
+    {
+      "file": "apps/partner-platform/src/services/api-client.ts",
+      "endpoint": "${API_BASE_URL}/api/v1/auth/refresh"
+    },
+    {
+      "file": "apps/partner-platform/src/services/api-client.ts",
+      "endpoint": "${API_BASE_URL}${endpoint}"
+    },
+    {
+      "file": "apps/company-platform/src/components/auth/FounderLogin.tsx",
+      "endpoint": "/api/v1/auth/login"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/CompanyPulseTicker.tsx",
+      "endpoint": "/api/v1/company/partners/directory-intelligence"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/DynamicRoleDocumentChecklist.tsx",
+      "endpoint": "/api/v1/compliance/documents/requirements?role=${encodeURIComponent(role)}&facilityType=${encodeURIComponent(facilityType)}&tenantId=11111111-1111-4111-8111-111111111111"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/DynamicRoleDocumentChecklist.tsx",
+      "endpoint": "/api/v1/compliance/documents/upload"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/GlobalCurrencyLocaleContext.tsx",
+      "endpoint": "/api/v1/company/treasury/fx-rates"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+      "endpoint": "/api/v1/auth/verification-queue?status=PENDING_APPROVAL"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+      "endpoint": "/api/v1/auth/verification-queue"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+      "endpoint": "/api/v1/auth/verification-queue/${encodeURIComponent(partner.id)}/approve"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+      "endpoint": "/api/v1/auth/verification-queue/approve"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+      "endpoint": "/api/v1/auth/verification-queue/${encodeURIComponent(partner.id)}/approve"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+      "endpoint": "/api/v1/auth/verification-queue/${encodeURIComponent(partner.id)}/reject"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+      "endpoint": "/api/v1/auth/verification-queue/reject"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+      "endpoint": "/api/v1/auth/verification-queue/${encodeURIComponent(partner.id)}/reject"
+    },
+    {
+      "file": "apps/company-platform/src/components/CompanyShell.tsx",
+      "endpoint": "/api/v1/auth/verification-queue"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/CommercialPipelineCockpitView.tsx",
+      "endpoint": "/api/v1/commercial/hq/pipeline?${params.toString()}"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/CommercialPipelineCockpitView.tsx",
+      "endpoint": "/api/v1/commercial/hq/partner/${partnerId}"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/CommercialPipelineCockpitView.tsx",
+      "endpoint": "/api/v1/commercial/plans"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/CommercialPipelineCockpitView.tsx",
+      "endpoint": "/api/v1/commercial/hq/partner-types"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/CommercialPipelineCockpitView.tsx",
+      "endpoint": "/api/v1/commercial/hq/extend-grace"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/CommercialPipelineCockpitView.tsx",
+      "endpoint": "/api/v1/commercial/hq/record-offline-payment"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/CommercialPipelineCockpitView.tsx",
+      "endpoint": "/api/v1/commercial/hq/plans/${planId}"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/CommercialPipelineCockpitView.tsx",
+      "endpoint": "/api/v1/commercial/hq/plans/${planId}"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/CommercialPipelineCockpitView.tsx",
+      "endpoint": "/api/v1/commercial/hq/partner-types"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/HqLicenseGovernanceView.tsx",
+      "endpoint": "/api/v1/company/licenses"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/HqLicenseGovernanceView.tsx",
+      "endpoint": "/api/v1/company/licenses/${id}/renew"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/HqLicenseGovernanceView.tsx",
+      "endpoint": "/api/v1/company/licenses/${id}/revoke"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/HqLicenseGovernanceView.tsx",
+      "endpoint": "/api/v1/company/licenses/${id}/reactivate"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/HqLicenseGovernanceView.tsx",
+      "endpoint": "/api/v1/company/licenses/${id}/verify"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/HqLicenseGovernanceView.tsx",
+      "endpoint": "/api/v1/company/licenses/${lic.id}/export-file"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/HqLicenseGovernanceView.tsx",
+      "endpoint": "/api/v1/company/licenses/${selectedLicenseForSeats.id}/nodes/bind"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/HqLicenseGovernanceView.tsx",
+      "endpoint": "/api/v1/company/licenses/${selectedLicenseForSeats.id}/nodes/unbind"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/HqLicenseGovernanceView.tsx",
+      "endpoint": "/api/v1/company/licenses/${selectedLicenseForSeats.id}/nodes/${nodeId}/revoke"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/HqLicenseKeyGeneratorModal.tsx",
+      "endpoint": "/api/v1/company/license/generate"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerAccessGovernanceCockpit.tsx",
+      "endpoint": "/api/v1/company/partners/${partnerId}/governance"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerAccessGovernanceCockpit.tsx",
+      "endpoint": "/api/v1/auth/quick-session"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerAccessGovernanceCockpit.tsx",
+      "endpoint": "/api/v1/company/partners/${partnerId}/governance"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerAccessGovernanceCockpit.tsx",
+      "endpoint": "/api/v1/company/partners/${partnerId}/governance/modules"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerAccessGovernanceCockpit.tsx",
+      "endpoint": "/api/v1/company/partners/${partnerId}/governance/staff/${editingStaff.id}"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerAccessGovernanceCockpit.tsx",
+      "endpoint": "/api/v1/company/partners/${partnerId}/governance/kill-switch"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerAccessGovernanceCockpit.tsx",
+      "endpoint": "/api/v1/company/partners/${partnerId}/governance/quotas"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerAccessGovernanceCockpit.tsx",
+      "endpoint": "/api/v1/company/partners/${partnerId}/governance/staff/${u.id}"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerAccessGovernanceCockpit.tsx",
+      "endpoint": "/api/v1/company/partners/${partnerId}/governance/staff/${u.id}"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerConfigurationCockpit.tsx",
+      "endpoint": "/api/v1/company/capabilities"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerConfigurationCockpit.tsx",
+      "endpoint": "/api/v1/company/templates"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerConfigurationCockpit.tsx",
+      "endpoint": "/api/v1/company/partners/${partnerId}/configuration/history"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerConfigurationCockpit.tsx",
+      "endpoint": "/api/v1/company/partners/${partnerId}/capabilities"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerConfigurationCockpit.tsx",
+      "endpoint": "/api/v1/company/templates/${selectedBlueprintId}/apply/${partnerId}"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerConfigurationCockpit.tsx",
+      "endpoint": "/api/v1/company/partners/${partnerId}/save-as-template"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerConfigurationCockpit.tsx",
+      "endpoint": "/api/v1/company/partners/${partnerId}/configuration/diff?v1=${v1}&v2=${v2}"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerConfigurationCockpit.tsx",
+      "endpoint": "/api/v1/company/partners/${partnerId}/configuration/rollback"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerLifecycleManager.tsx",
+      "endpoint": "/api/v1/auth/verification-queue"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerListView.tsx",
+      "endpoint": "/api/v1/auth/verification-queue/approve"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerRolePolicyBuilder.tsx",
+      "endpoint": "/api/v1/company/permission-packs"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerRolePolicyBuilder.tsx",
+      "endpoint": "/api/v1/company/partners/${partnerId}/policies"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerRolePolicyBuilder.tsx",
+      "endpoint": "/api/v1/company/partners/${partnerId}/roles"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerRolePolicyBuilder.tsx",
+      "endpoint": "/api/v1/company/partners/${partnerId}/policies"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerTemplateManager.tsx",
+      "endpoint": "/api/v1/company/templates"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerTemplateManager.tsx",
+      "endpoint": "/api/v1/company/templates/${templateId}/versions"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerTemplateManager.tsx",
+      "endpoint": "/api/v1/company/templates/${selectedTemplate.id}/apply/${targetPartnerId.trim()}"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerTemplateManager.tsx",
+      "endpoint": "/api/v1/company/templates/${selectedTemplate.id}/versions"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "endpoint": "/api/v1/auth/registration-form-config"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "endpoint": "/api/v1/auth/registration-form-config"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "endpoint": "/api/v1/auth/verification-queue"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "endpoint": "/api/v1/auth/verification-queue/${selectedId}/timeline"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "endpoint": "/api/v1/auth/verification-queue/${encodeURIComponent(id)}/approve"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "endpoint": "/api/v1/auth/verification-queue/${id}/start-review"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "endpoint": "/api/v1/auth/verification-queue/${selectedItem.id}/assign"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "endpoint": "/api/v1/auth/verification-queue/${selectedItem.id}/request-information"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "endpoint": "/api/v1/auth/verification-queue/${selectedItem.id}/reject"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "endpoint": "/api/v1/company/partners/staged/${encodeURIComponent(id)}"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PathologyPartnerOnboardingWizard.tsx",
+      "endpoint": "/api/v1/company/plans"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PathologyPartnerOnboardingWizard.tsx",
+      "endpoint": "/api/v1/company/partners/complete-onboarding-activation"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/StaffAccessAndSimulatorCockpit.tsx",
+      "endpoint": "/api/v1/company/access/simulate"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/StaffAccessAndSimulatorCockpit.tsx",
+      "endpoint": "/api/v1/company/partners/${partnerId}/effective-access?role=${encodeURIComponent(liveRole)}&action=${encodeURIComponent(liveAction)}"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/StaffAccessAndSimulatorCockpit.tsx",
+      "endpoint": "/api/v1/company/break-glass"
+    },
+    {
+      "file": "apps/company-platform/src/components/growth/LaunchOfferManagerView.tsx",
+      "endpoint": "/api/v1/auth/registration-form-config"
+    },
+    {
+      "file": "apps/company-platform/src/components/growth/LaunchOfferManagerView.tsx",
+      "endpoint": "/api/v1/auth/registration-form-config"
+    },
+    {
+      "file": "apps/company-platform/src/components/integration/CustomWebhookIngressBuilderView.tsx",
+      "endpoint": "/api/v1/company/integration/webhooks/dispatch-test"
+    },
+    {
+      "file": "apps/company-platform/src/main.tsx",
+      "endpoint": "/api/v1/auth/me"
+    },
+    {
+      "file": "apps/company-platform/src/main.tsx",
+      "endpoint": "/api/v1/auth/logout"
+    },
+    {
+      "file": "apps/company-platform/src/services/api-client.ts",
+      "endpoint": "${API_BASE_URL}${endpoint}"
+    },
+    {
+      "file": "apps/company-platform/src/services/partner-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/partners/directory?${params.toString()}"
+    },
+    {
+      "file": "apps/company-platform/src/services/partner-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/partners/directory?${params.toString()}"
+    },
+    {
+      "file": "apps/company-platform/src/services/partner-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/partners/analytics"
+    },
+    {
+      "file": "apps/company-platform/src/services/partner-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/sales/leads/${leadId}/check-duplicate"
+    },
+    {
+      "file": "apps/company-platform/src/services/partner-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/partners/${partnerId}/360"
+    },
+    {
+      "file": "apps/company-platform/src/services/partner-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/partner-classifications"
+    },
+    {
+      "file": "apps/company-platform/src/services/partner-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/partner-classifications"
+    },
+    {
+      "file": "apps/company-platform/src/services/partner-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/auth/self-register"
+    },
+    {
+      "file": "apps/company-platform/src/services/partner-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/partners/${id}/status"
+    },
+    {
+      "file": "apps/company-platform/src/services/partner-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/partners"
+    },
+    {
+      "file": "apps/company-platform/src/services/partner-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/partners/${encodeURIComponent(partnerId)}"
+    },
+    {
+      "file": "apps/company-platform/src/services/partner-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/partners/${encodeURIComponent(partnerId)}${queryStr}"
+    },
+    {
+      "file": "apps/company-platform/src/services/partner-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/partners/staged/${encodeURIComponent(partnerId)}${queryStr}"
+    },
+    {
+      "file": "apps/company-platform/src/services/partner-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/partners/reset-password"
+    },
+    {
+      "file": "apps/company-platform/src/services/partner-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/partners/${partnerId}/staff"
+    },
+    {
+      "file": "apps/company-platform/src/services/partner-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/partners/${partnerId}/staff"
+    },
+    {
+      "file": "apps/company-platform/src/services/partner-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/partners/${partnerId}/staff/${staffId}/status"
+    },
+    {
+      "file": "apps/company-platform/src/services/sales-marketing-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/marketing/activities?${params.toString()}"
+    },
+    {
+      "file": "apps/company-platform/src/services/sales-marketing-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/sales/tasks?${params.toString()}"
+    },
+    {
+      "file": "apps/company-platform/src/services/sales-marketing-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/sales/tasks/${id}/complete"
+    },
+    {
+      "file": "apps/company-platform/src/services/security-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/security/overview"
+    },
+    {
+      "file": "apps/company-platform/src/services/security-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/security/role-permissions"
+    },
+    {
+      "file": "apps/company-platform/src/services/security-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/security/user-roles"
+    },
+    {
+      "file": "apps/company-platform/src/services/security-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/security/user-roles"
+    },
+    {
+      "file": "apps/company-platform/src/services/security-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/security/user-roles/${req.userRoleId}/revoke"
+    },
+    {
+      "file": "apps/company-platform/src/services/security-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/security/policies/${id}/transition"
+    },
+    {
+      "file": "apps/company-platform/src/services/security-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/security/sessions"
+    },
+    {
+      "file": "apps/company-platform/src/services/security-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/security/sessions/${req.sessionId}/terminate"
+    },
+    {
+      "file": "apps/company-platform/src/services/security-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/security/credentials"
+    },
+    {
+      "file": "apps/company-platform/src/services/security-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/security/credentials/${req.credentialCode}/rotate"
+    },
+    {
+      "file": "apps/company-platform/src/services/security-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/security/credentials/${req.credentialCode}/revoke"
+    },
+    {
+      "file": "apps/company-platform/src/services/security-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/security/incidents"
+    },
+    {
+      "file": "apps/company-platform/src/services/security-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/security/incidents/${req.incidentId}/acknowledge"
+    },
+    {
+      "file": "apps/company-platform/src/services/security-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/security/incidents/${req.incidentId}/resolve"
+    },
+    {
+      "file": "apps/company-platform/src/services/security-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/security/audit-verifications"
+    },
+    {
+      "file": "apps/company-platform/src/services/security-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/security/audit-verifications"
+    },
+    {
+      "file": "apps/company-platform/src/services/subscription-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/invoices?${params.toString()}"
+    },
+    {
+      "file": "apps/company-platform/src/services/subscription-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/invoices/${id}"
+    },
+    {
+      "file": "apps/company-platform/src/services/subscription-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/subscriptions/${id}/transition"
+    },
+    {
+      "file": "apps/company-platform/src/services/support-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/support/tickets/${ticketId}/comments"
+    },
+    {
+      "file": "apps/company-platform/src/services/support-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/support/tickets/${req.ticketId}/comments"
+    },
+    {
+      "file": "apps/company-platform/src/services/support-service.ts",
+      "endpoint": "${this.apiUrl}/api/v1/company/support/tickets/${id}/transition"
+    },
+    {
+      "file": "apps/landing-page/src/components/DocSearchLandingPage.tsx",
+      "endpoint": "/api/v1/auth/demo-request"
+    },
+    {
+      "file": "apps/landing-page/src/components/FullPageRegistrationView.tsx",
+      "endpoint": "/api/v1/auth/registration-form-config"
+    },
+    {
+      "file": "apps/landing-page/src/components/UnifiedHealthcareLoginModal.tsx",
+      "endpoint": "/api/v1/auth/registration-form-config"
+    },
+    {
+      "file": "apps/landing-page/src/components/UnifiedHealthcareLoginModal.tsx",
+      "endpoint": "/api/v1/auth/registration-form-config"
+    },
+    {
+      "file": "apps/landing-page/src/components/UnifiedHealthcareLoginModal.tsx",
+      "endpoint": "/api/v1/auth/self-registered-partners"
+    },
+    {
+      "file": "apps/landing-page/src/components/UnifiedHealthcareLoginModal.tsx",
+      "endpoint": "/api/v1/auth/login"
+    },
+    {
+      "file": "apps/landing-page/src/components/UnifiedHealthcareLoginModal.tsx",
+      "endpoint": "/api/v1/auth/self-register"
+    }
+  ],
+  "forms": [
+    {
+      "file": "apps/partner-platform/src/components/AbdmFhirDomainManager.tsx",
+      "name": "AbdmFhirDomainManager"
+    },
+    {
+      "file": "apps/partner-platform/src/components/AiCdssDomainManager.tsx",
+      "name": "AiCdssDomainManager"
+    },
+    {
+      "file": "apps/partner-platform/src/components/AssetBiomedicalDomainManager.tsx",
+      "name": "AssetBiomedicalDomainManager"
+    },
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "name": "HospitalStaffLogin"
+    },
+    {
+      "file": "apps/partner-platform/src/components/BillingDomainManager.tsx",
+      "name": "BillingDomainManager"
+    },
+    {
+      "file": "apps/partner-platform/src/components/BloodBankDomainManager.tsx",
+      "name": "BloodBankDomainManager"
+    },
+    {
+      "file": "apps/partner-platform/src/components/ClinicalInvestigationDomainManager.tsx",
+      "name": "ClinicalInvestigationDomainManager"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/DynamicRoleDocumentChecklist.tsx",
+      "name": "DynamicRoleDocumentChecklist"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/FastOpdRegistrationDrawer.tsx",
+      "name": "FastOpdRegistrationDrawer"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/UniversalAccountSettingsModal.tsx",
+      "name": "UniversalAccountSettingsModal"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/AcknowledgeCriticalFindingDialog.tsx",
+      "name": "AcknowledgeCriticalFindingDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/AcknowledgePanicValueDialog.tsx",
+      "name": "AcknowledgePanicValueDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/AcknowledgeSepsisAlertDialog.tsx",
+      "name": "AcknowledgeSepsisAlertDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/AcknowledgeVitalBreachDialog.tsx",
+      "name": "AcknowledgeVitalBreachDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ActivateDisasterModeDialog.tsx",
+      "name": "ActivateDisasterModeDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/AddConsentDialog.tsx",
+      "name": "AddConsentDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/AddCredentialDialog.tsx",
+      "name": "AddCredentialDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/AddDiagnosisDialog.tsx",
+      "name": "AddDiagnosisDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/AddDoctorLeaveDialog.tsx",
+      "name": "AddDoctorLeaveDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/AddEmergencyContactDialog.tsx",
+      "name": "AddEmergencyContactDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/AddIdentifierDialog.tsx",
+      "name": "AddIdentifierDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/AddInstructionDialog.tsx",
+      "name": "AddInstructionDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/AddInsuranceDialog.tsx",
+      "name": "AddInsuranceDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/AddMedicationDialog.tsx",
+      "name": "AddMedicationDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/AddSpecializationDialog.tsx",
+      "name": "AddSpecializationDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/AddVitalsDialog.tsx",
+      "name": "AddVitalsDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/AdjudicateClaimDialog.tsx",
+      "name": "AdjudicateClaimDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/AllocateBedDialog.tsx",
+      "name": "AllocateBedDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/AllocatePaymentDialog.tsx",
+      "name": "AllocatePaymentDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/AmendClaimDialog.tsx",
+      "name": "AmendClaimDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/AmendConsultationDialog.tsx",
+      "name": "AmendConsultationDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/AmendInvestigationResultDialog.tsx",
+      "name": "AmendInvestigationResultDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/AmendRadiologyReportDialog.tsx",
+      "name": "AmendRadiologyReportDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ApplyDiscountDialog.tsx",
+      "name": "ApplyDiscountDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ApproveAdmissionDialog.tsx",
+      "name": "ApproveAdmissionDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ApproveAuthorizationDialog.tsx",
+      "name": "ApproveAuthorizationDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ApproveCondemnationDialog.tsx",
+      "name": "ApproveCondemnationDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ApproveDietOrderDialog.tsx",
+      "name": "ApproveDietOrderDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ApproveDischargeDialog.tsx",
+      "name": "ApproveDischargeDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ApprovePurchaseOrderDialog.tsx",
+      "name": "ApprovePurchaseOrderDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ApprovePurchaseRequisitionDialog.tsx",
+      "name": "ApprovePurchaseRequisitionDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ApproveRefundDialog.tsx",
+      "name": "ApproveRefundDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ApproveROIRequestDialog.tsx",
+      "name": "ApproveROIRequestDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ApproveSubstitutionDialog.tsx",
+      "name": "ApproveSubstitutionDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ApproveSurgeryRequestDialog.tsx",
+      "name": "ApproveSurgeryRequestDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ApproveTransferDialog.tsx",
+      "name": "ApproveTransferDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ApproveVendorReturnDialog.tsx",
+      "name": "ApproveVendorReturnDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/AssignDiagnosisCodeDialog.tsx",
+      "name": "AssignDiagnosisCodeDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/AssignDoctorDialog.tsx",
+      "name": "AssignDoctorDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/AssignDoctorLocationDialog.tsx",
+      "name": "AssignDoctorLocationDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/AssignEmergencyPatientDialog.tsx",
+      "name": "AssignEmergencyPatientDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/AssignPatientIsolationDialog.tsx",
+      "name": "AssignPatientIsolationDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/AssignRoleDialog.tsx",
+      "name": "AssignRoleDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/AssignSurgicalTeamDialog.tsx",
+      "name": "AssignSurgicalTeamDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/AssignWorkOrderDialog.tsx",
+      "name": "AssignWorkOrderDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/BlockBatchDialog.tsx",
+      "name": "BlockBatchDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/BlockBedDialog.tsx",
+      "name": "BlockBedDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/BlockSlotDialog.tsx",
+      "name": "BlockSlotDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CancelAdmissionDialog.tsx",
+      "name": "CancelAdmissionDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CancelBedReservationDialog.tsx",
+      "name": "CancelBedReservationDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CancelClaimDialog.tsx",
+      "name": "CancelClaimDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CancelEncounterDialog.tsx",
+      "name": "CancelEncounterDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CancelInvestigationOrderDialog.tsx",
+      "name": "CancelInvestigationOrderDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CancelInvoiceDialog.tsx",
+      "name": "CancelInvoiceDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CancelPrescriptionDialog.tsx",
+      "name": "CancelPrescriptionDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CancelPurchaseOrderDialog.tsx",
+      "name": "CancelPurchaseOrderDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CancelRadiologyDialog.tsx",
+      "name": "CancelRadiologyDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CancelSurgeryDialog.tsx",
+      "name": "CancelSurgeryDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CaptureChargeDialog.tsx",
+      "name": "CaptureChargeDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CarePlanDialog.tsx",
+      "name": "CarePlanDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ChangeEncounterStatusDialog.tsx",
+      "name": "ChangeEncounterStatusDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ChangeStaffStatusDialog.tsx",
+      "name": "ChangeStaffStatusDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CheckCrashCartDialog.tsx",
+      "name": "CheckCrashCartDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CheckInEncounterDialog.tsx",
+      "name": "CheckInEncounterDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CloseCashierSessionDialog.tsx",
+      "name": "CloseCashierSessionDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CloseEmergencyEncounterDialog.tsx",
+      "name": "CloseEmergencyEncounterDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CollectSpecimenDialog.tsx",
+      "name": "CollectSpecimenDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CompleteCleaningDialog.tsx",
+      "name": "CompleteCleaningDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CompleteConsultationDialog.tsx",
+      "name": "CompleteConsultationDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CompleteDischargeDialog.tsx",
+      "name": "CompleteDischargeDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CompletePpmTaskDialog.tsx",
+      "name": "CompletePpmTaskDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CompletePreOpChecklistDialog.tsx",
+      "name": "CompletePreOpChecklistDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CompleteProcedureDialog.tsx",
+      "name": "CompleteProcedureDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CompleteSafetyChecklistDialog.tsx",
+      "name": "CompleteSafetyChecklistDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CompleteSurgeryDialog.tsx",
+      "name": "CompleteSurgeryDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CompleteTransferDialog.tsx",
+      "name": "CompleteTransferDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CompleteWorkOrderDialog.tsx",
+      "name": "CompleteWorkOrderDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ConfigureFeeDialog.tsx",
+      "name": "ConfigureFeeDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ConfirmMealDeliveryDialog.tsx",
+      "name": "ConfirmMealDeliveryDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ConsumeSparePartDialog.tsx",
+      "name": "ConsumeSparePartDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateAbhaNumberDialog.tsx",
+      "name": "CreateAbhaNumberDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateAdmissionRequestDialog.tsx",
+      "name": "CreateAdmissionRequestDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateAmbulanceTransferDialog.tsx",
+      "name": "CreateAmbulanceTransferDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateAnaesthesiaRecordDialog.tsx",
+      "name": "CreateAnaesthesiaRecordDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateAuthorizationDialog.tsx",
+      "name": "CreateAuthorizationDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateBedDialog.tsx",
+      "name": "CreateBedDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateBedReservationDialog.tsx",
+      "name": "CreateBedReservationDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateBillingReferenceDialog.tsx",
+      "name": "CreateBillingReferenceDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateBloodComponentDialog.tsx",
+      "name": "CreateBloodComponentDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateBloodRequestDialog.tsx",
+      "name": "CreateBloodRequestDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateCapaActionDialog.tsx",
+      "name": "CreateCapaActionDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateClaimAppealDialog.tsx",
+      "name": "CreateClaimAppealDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateClaimDialog.tsx",
+      "name": "CreateClaimDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateClinicalQueryDialog.tsx",
+      "name": "CreateClinicalQueryDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateConsentRequestDialog.tsx",
+      "name": "CreateConsentRequestDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateCreditNoteDialog.tsx",
+      "name": "CreateCreditNoteDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateCrossmatchDialog.tsx",
+      "name": "CreateCrossmatchDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateDebitAdjustmentDialog.tsx",
+      "name": "CreateDebitAdjustmentDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateDepartmentDialog.tsx",
+      "name": "CreateDepartmentDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateDietAssessmentDialog.tsx",
+      "name": "CreateDietAssessmentDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateDietChangeDialog.tsx",
+      "name": "CreateDietChangeDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateDietOrderDialog.tsx",
+      "name": "CreateDietOrderDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateDietPlanDialog.tsx",
+      "name": "CreateDietPlanDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateDietTypeDialog.tsx",
+      "name": "CreateDietTypeDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateDischargePlanDialog.tsx",
+      "name": "CreateDischargePlanDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateDispositionDialog.tsx",
+      "name": "CreateDispositionDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateDoctorProfileDialog.tsx",
+      "name": "CreateDoctorProfileDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateDonationDialog.tsx",
+      "name": "CreateDonationDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateDonorDialog.tsx",
+      "name": "CreateDonorDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateEmergencyDeathDialog.tsx",
+      "name": "CreateEmergencyDeathDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateEmergencyProcedureDialog.tsx",
+      "name": "CreateEmergencyProcedureDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateEmergencyPurchaseDialog.tsx",
+      "name": "CreateEmergencyPurchaseDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateEmergencySurgeryDialog.tsx",
+      "name": "CreateEmergencySurgeryDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateEncounterDialog.tsx",
+      "name": "CreateEncounterDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateFollowUpPlanDialog.tsx",
+      "name": "CreateFollowUpPlanDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateFoodItemDialog.tsx",
+      "name": "CreateFoodItemDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateGoodsReceiptDialog.tsx",
+      "name": "CreateGoodsReceiptDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateImplantRecordDialog.tsx",
+      "name": "CreateImplantRecordDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateInsurancePlanDialog.tsx",
+      "name": "CreateInsurancePlanDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateInvestigationOrderDialog.tsx",
+      "name": "CreateInvestigationOrderDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateInvestigationPanelDialog.tsx",
+      "name": "CreateInvestigationPanelDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateInvoiceDialog.tsx",
+      "name": "CreateInvoiceDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateKitchenDialog.tsx",
+      "name": "CreateKitchenDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateLegalHoldDialog.tsx",
+      "name": "CreateLegalHoldDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateLegalRequestDialog.tsx",
+      "name": "CreateLegalRequestDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateMealScheduleDialog.tsx",
+      "name": "CreateMealScheduleDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateMedicationDialog.tsx",
+      "name": "CreateMedicationDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateMenuTemplateDialog.tsx",
+      "name": "CreateMenuTemplateDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateMLCCaseDialog.tsx",
+      "name": "CreateMLCCaseDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateNPOOrderDialog.tsx",
+      "name": "CreateNPOOrderDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateObservationCaseDialog.tsx",
+      "name": "CreateObservationCaseDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateOperationTheatreDialog.tsx",
+      "name": "CreateOperationTheatreDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateOperativeNoteDialog.tsx",
+      "name": "CreateOperativeNoteDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateOTRoomDialog.tsx",
+      "name": "CreateOTRoomDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateOTScheduleDialog.tsx",
+      "name": "CreateOTScheduleDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateOTTransferDialog.tsx",
+      "name": "CreateOTTransferDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreatePACURecordDialog.tsx",
+      "name": "CreatePACURecordDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreatePatientDialog.tsx",
+      "name": "CreatePatientDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreatePayerDialog.tsx",
+      "name": "CreatePayerDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreatePostoperativeTransferDialog.tsx",
+      "name": "CreatePostoperativeTransferDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreatePpmScheduleDialog.tsx",
+      "name": "CreatePpmScheduleDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreatePreOperativeAssessmentDialog.tsx",
+      "name": "CreatePreOperativeAssessmentDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreatePriceListDialog.tsx",
+      "name": "CreatePriceListDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateProcurementItemDialog.tsx",
+      "name": "CreateProcurementItemDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateProcurementReferenceDialog.tsx",
+      "name": "CreateProcurementReferenceDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateProductionPlanDialog.tsx",
+      "name": "CreateProductionPlanDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreatePurchaseInvoiceDialog.tsx",
+      "name": "CreatePurchaseInvoiceDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreatePurchaseOrderDialog.tsx",
+      "name": "CreatePurchaseOrderDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreatePurchaseRequisitionDialog.tsx",
+      "name": "CreatePurchaseRequisitionDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateQualityCheckDialog.tsx",
+      "name": "CreateQualityCheckDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateRadiologyOrderDialog.tsx",
+      "name": "CreateRadiologyOrderDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateRadiologyReportDialog.tsx",
+      "name": "CreateRadiologyReportDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateRcaInvestigationDialog.tsx",
+      "name": "CreateRcaInvestigationDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateRecordCompletionDialog.tsx",
+      "name": "CreateRecordCompletionDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateResuscitationEventDialog.tsx",
+      "name": "CreateResuscitationEventDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateROIRequestDialog.tsx",
+      "name": "CreateROIRequestDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateScheduleDialog.tsx",
+      "name": "CreateScheduleDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateServiceCatalogDialog.tsx",
+      "name": "CreateServiceCatalogDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateSpecimenDialog.tsx",
+      "name": "CreateSpecimenDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateStaffDialog.tsx",
+      "name": "CreateStaffDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateSurgeryRequestDialog.tsx",
+      "name": "CreateSurgeryRequestDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateSurgicalConsentDialog.tsx",
+      "name": "CreateSurgicalConsentDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateSurgicalProcedureDialog.tsx",
+      "name": "CreateSurgicalProcedureDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateTransferDialog.tsx",
+      "name": "CreateTransferDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateTraumaActivationDialog.tsx",
+      "name": "CreateTraumaActivationDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateTrayAssemblyDialog.tsx",
+      "name": "CreateTrayAssemblyDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateTriageAssessmentDialog.tsx",
+      "name": "CreateTriageAssessmentDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateVendorContractDialog.tsx",
+      "name": "CreateVendorContractDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateVendorDialog.tsx",
+      "name": "CreateVendorDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateVendorReturnDialog.tsx",
+      "name": "CreateVendorReturnDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateWardDialog.tsx",
+      "name": "CreateWardDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CriticalFindingDialog.tsx",
+      "name": "CriticalFindingDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CriticalPanicIntimationModal.tsx",
+      "name": "CriticalPanicIntimationModal"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/DeclareSurgeEventDialog.tsx",
+      "name": "DeclareSurgeEventDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/DenyAuthorizationDialog.tsx",
+      "name": "DenyAuthorizationDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/DirectAdmitBedDialog.tsx",
+      "name": "DirectAdmitBedDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/DiscardBloodUnitDialog.tsx",
+      "name": "DiscardBloodUnitDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/DispatchHealthDocumentDialog.tsx",
+      "name": "DispatchHealthDocumentDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/DispatchMealDialog.tsx",
+      "name": "DispatchMealDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/DispenseMedicationDialog.tsx",
+      "name": "DispenseMedicationDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/DoctorRoundDialog.tsx",
+      "name": "DoctorRoundDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/DuplicateReviewDialog.tsx",
+      "name": "DuplicateReviewDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/EditAssetDialog.tsx",
+      "name": "EditAssetDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/EditBedDialog.tsx",
+      "name": "EditBedDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/EditDepartmentDialog.tsx",
+      "name": "EditDepartmentDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/EditDiagnosisCodeDialog.tsx",
+      "name": "EditDiagnosisCodeDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/EditDoctorProfileDialog.tsx",
+      "name": "EditDoctorProfileDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/EditKitchenDialog.tsx",
+      "name": "EditKitchenDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/EditMedicationDialog.tsx",
+      "name": "EditMedicationDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/EditOperationTheatreDialog.tsx",
+      "name": "EditOperationTheatreDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/EditPatientDialog.tsx",
+      "name": "EditPatientDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/EditStaffDialog.tsx",
+      "name": "EditStaffDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/EditVendorDialog.tsx",
+      "name": "EditVendorDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/EditWardDialog.tsx",
+      "name": "EditWardDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/EnrollRpmPatientDialog.tsx",
+      "name": "EnrollRpmPatientDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/EnterInvestigationResultDialog.tsx",
+      "name": "EnterInvestigationResultDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/EvaluateDdiInteractionsDialog.tsx",
+      "name": "EvaluateDdiInteractionsDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/FacilityCreateDialog.tsx",
+      "name": "FacilityCreateDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/FinalizeDischargeSummaryDialog.tsx",
+      "name": "FinalizeDischargeSummaryDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/FinalizeInvestigationReportDialog.tsx",
+      "name": "FinalizeInvestigationReportDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/FinalizeInvoiceDialog.tsx",
+      "name": "FinalizeInvoiceDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/FinalizeOperativeNoteDialog.tsx",
+      "name": "FinalizeOperativeNoteDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/FinalizeRadiologyReportDialog.tsx",
+      "name": "FinalizeRadiologyReportDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/GenerateAmbientSoapDialog.tsx",
+      "name": "GenerateAmbientSoapDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/GenerateFhirBundleDialog.tsx",
+      "name": "GenerateFhirBundleDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/HardwareDiagnosticsDrawer.tsx",
+      "name": "HardwareDiagnosticsDrawer"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/InspectGoodsReceiptDialog.tsx",
+      "name": "InspectGoodsReceiptDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/IssueBloodUnitDialog.tsx",
+      "name": "IssueBloodUnitDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/IssueReceiptDialog.tsx",
+      "name": "IssueReceiptDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/KhataPaymentCollectionModal.tsx",
+      "name": "KhataPaymentCollectionModal"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/LinkCareContextDialog.tsx",
+      "name": "LinkCareContextDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/LogHaiCaseDialog.tsx",
+      "name": "LogHaiCaseDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/LogVendorVisitDialog.tsx",
+      "name": "LogVendorVisitDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ManagePermissionsDialog.tsx",
+      "name": "ManagePermissionsDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/MandatoryPrescriberComplianceModal.tsx",
+      "name": "MandatoryPrescriberComplianceModal"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/MatchPurchaseInvoiceDialog.tsx",
+      "name": "MatchPurchaseInvoiceDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/MergePatientDialog.tsx",
+      "name": "MergePatientDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ModifyDietOrderDialog.tsx",
+      "name": "ModifyDietOrderDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/NursingAssessmentDialog.tsx",
+      "name": "NursingAssessmentDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/NursingNoteDialog.tsx",
+      "name": "NursingNoteDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/OpenCashierSessionDialog.tsx",
+      "name": "OpenCashierSessionDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/OrganizationCreateDialog.tsx",
+      "name": "OrganizationCreateDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/OverrideBedAllocationDialog.tsx",
+      "name": "OverrideBedAllocationDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/OverrideDdiWarningDialog.tsx",
+      "name": "OverrideDdiWarningDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/OverrideOTConflictDialog.tsx",
+      "name": "OverrideOTConflictDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/PacsReferenceDialog.tsx",
+      "name": "PacsReferenceDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/PartialDispenseDialog.tsx",
+      "name": "PartialDispenseDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/PartnerCreateDialog.tsx",
+      "name": "PartnerCreateDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/PartnerStatusDialog.tsx",
+      "name": "PartnerStatusDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/PreparationChecklistDialog.tsx",
+      "name": "PreparationChecklistDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/PrintablePathologyReportModal.tsx",
+      "name": "PrintablePathologyReportModal"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ProcessRefundDialog.tsx",
+      "name": "ProcessRefundDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ProcessScanAndShareDialog.tsx",
+      "name": "ProcessScanAndShareDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ProposeCondemnationDialog.tsx",
+      "name": "ProposeCondemnationDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/QualityCheckDialog.tsx",
+      "name": "QualityCheckDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ReassessTriageDialog.tsx",
+      "name": "ReassessTriageDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ReassignEncounterDialog.tsx",
+      "name": "ReassignEncounterDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ReceiveStockDialog.tsx",
+      "name": "ReceiveStockDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ReconcileCashierSessionDialog.tsx",
+      "name": "ReconcileCashierSessionDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ReconcileSettlementDialog.tsx",
+      "name": "ReconcileSettlementDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RecordBloodTestDialog.tsx",
+      "name": "RecordBloodTestDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RecordBmwLogDialog.tsx",
+      "name": "RecordBmwLogDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RecordCalibrationDialog.tsx",
+      "name": "RecordCalibrationDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RecordClaimDenialDialog.tsx",
+      "name": "RecordClaimDenialDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RecordConsumableUsageDialog.tsx",
+      "name": "RecordConsumableUsageDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RecordEnvironmentalSwabDialog.tsx",
+      "name": "RecordEnvironmentalSwabDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RecordFoodWasteDialog.tsx",
+      "name": "RecordFoodWasteDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RecordHandHygieneAuditDialog.tsx",
+      "name": "RecordHandHygieneAuditDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RecordMealPreparationDialog.tsx",
+      "name": "RecordMealPreparationDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RecordMissedMealDialog.tsx",
+      "name": "RecordMissedMealDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RecordNeedleStickLogDialog.tsx",
+      "name": "RecordNeedleStickLogDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RecordPaymentDialog.tsx",
+      "name": "RecordPaymentDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RecordResuscitationActionDialog.tsx",
+      "name": "RecordResuscitationActionDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RecordSafetyTestDialog.tsx",
+      "name": "RecordSafetyTestDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RecordSettlementDialog.tsx",
+      "name": "RecordSettlementDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RecordTemperatureDialog.tsx",
+      "name": "RecordTemperatureDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RecordTransfusionDialog.tsx",
+      "name": "RecordTransfusionDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RecordTransfusionObservationDialog.tsx",
+      "name": "RecordTransfusionObservationDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RecordTraumaAssessmentDialog.tsx",
+      "name": "RecordTraumaAssessmentDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RecordVitalDialog.tsx",
+      "name": "RecordVitalDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ReferEncounterDialog.tsx",
+      "name": "ReferEncounterDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RefuseMealDialog.tsx",
+      "name": "RefuseMealDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RegisterAssetDialog.tsx",
+      "name": "RegisterAssetDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RegisterBirthRecordDialog.tsx",
+      "name": "RegisterBirthRecordDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RegisterDeathRecordDialog.tsx",
+      "name": "RegisterDeathRecordDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RegisterDisasterPatientDialog.tsx",
+      "name": "RegisterDisasterPatientDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RegisterEmergencyPatientDialog.tsx",
+      "name": "RegisterEmergencyPatientDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RegisterIotDeviceDialog.tsx",
+      "name": "RegisterIotDeviceDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RegisterPatientPolicyDialog.tsx",
+      "name": "RegisterPatientPolicyDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RegisterSparePartDialog.tsx",
+      "name": "RegisterSparePartDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RejectAdmissionDialog.tsx",
+      "name": "RejectAdmissionDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RejectPurchaseRequisitionDialog.tsx",
+      "name": "RejectPurchaseRequisitionDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RejectSpecimenDialog.tsx",
+      "name": "RejectSpecimenDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RejectSurgeryRequestDialog.tsx",
+      "name": "RejectSurgeryRequestDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ReleaseBedDialog.tsx",
+      "name": "ReleaseBedDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ReleaseBloodUnitDialog.tsx",
+      "name": "ReleaseBloodUnitDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ReleaseMedicalRecordDialog.tsx",
+      "name": "ReleaseMedicalRecordDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ReleaseProductionPlanDialog.tsx",
+      "name": "ReleaseProductionPlanDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ReportBiomedicalIncidentDialog.tsx",
+      "name": "ReportBiomedicalIncidentDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ReportBreakdownDialog.tsx",
+      "name": "ReportBreakdownDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ReportIncidentDialog.tsx",
+      "name": "ReportIncidentDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ReportTransfusionReactionDialog.tsx",
+      "name": "ReportTransfusionReactionDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RequestDischargeDialog.tsx",
+      "name": "RequestDischargeDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RequestRefundDialog.tsx",
+      "name": "RequestRefundDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RescheduleOTDialog.tsx",
+      "name": "RescheduleOTDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RescheduleRadiologyDialog.tsx",
+      "name": "RescheduleRadiologyDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ReserveBloodUnitDialog.tsx",
+      "name": "ReserveBloodUnitDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ReserveStockDialog.tsx",
+      "name": "ReserveStockDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ResolveBiomedicalIncidentDialog.tsx",
+      "name": "ResolveBiomedicalIncidentDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ResolveClaimAppealDialog.tsx",
+      "name": "ResolveClaimAppealDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ResolveClinicalQueryDialog.tsx",
+      "name": "ResolveClinicalQueryDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ResolveDietarySafetyAlertDialog.tsx",
+      "name": "ResolveDietarySafetyAlertDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ResolveProcurementExceptionDialog.tsx",
+      "name": "ResolveProcurementExceptionDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ResolveStorageExcursionDialog.tsx",
+      "name": "ResolveStorageExcursionDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ResolveSurgeEventDialog.tsx",
+      "name": "ResolveSurgeEventDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RetrieveMedicalRecordDialog.tsx",
+      "name": "RetrieveMedicalRecordDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ReturnBloodUnitDialog.tsx",
+      "name": "ReturnBloodUnitDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ReturnMedicationDialog.tsx",
+      "name": "ReturnMedicationDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ReverseDispensingDialog.tsx",
+      "name": "ReverseDispensingDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ReviewInvestigationResultDialog.tsx",
+      "name": "ReviewInvestigationResultDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RoleTemplateModal.tsx",
+      "name": "RoleTemplateModal"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RunWhatIfSimulationDialog.tsx",
+      "name": "RunWhatIfSimulationDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/SaveConsultationDraftDialog.tsx",
+      "name": "SaveConsultationDraftDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ScheduleRadiologyDialog.tsx",
+      "name": "ScheduleRadiologyDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ScheduleTeleconsultationDialog.tsx",
+      "name": "ScheduleTeleconsultationDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ScreenDonorDialog.tsx",
+      "name": "ScreenDonorDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/SendMedicationReminderDialog.tsx",
+      "name": "SendMedicationReminderDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/SendPurchaseOrderDialog.tsx",
+      "name": "SendPurchaseOrderDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/SendWhatsAppTemplateDialog.tsx",
+      "name": "SendWhatsAppTemplateDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/StartConsultationDialog.tsx",
+      "name": "StartConsultationDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/StartProcedureDialog.tsx",
+      "name": "StartProcedureDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/StartSurgeryDialog.tsx",
+      "name": "StartSurgeryDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/StockAdjustmentDialog.tsx",
+      "name": "StockAdjustmentDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/SubmitAuthorizationDialog.tsx",
+      "name": "SubmitAuthorizationDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/SubmitClaimDialog.tsx",
+      "name": "SubmitClaimDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/SubmitCodingReviewDialog.tsx",
+      "name": "SubmitCodingReviewDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/SubstituteMedicationDialog.tsx",
+      "name": "SubstituteMedicationDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/SuspendVendorDialog.tsx",
+      "name": "SuspendVendorDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/TransferAssetDialog.tsx",
+      "name": "TransferAssetDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/TransferStaffDialog.tsx",
+      "name": "TransferStaffDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/TransferStockDialog.tsx",
+      "name": "TransferStockDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/TriageIncidentDialog.tsx",
+      "name": "TriageIncidentDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/UnblockBatchDialog.tsx",
+      "name": "UnblockBatchDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ValidateClaimDialog.tsx",
+      "name": "ValidateClaimDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/VerifyCapaActionDialog.tsx",
+      "name": "VerifyCapaActionDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/VerifyCredentialDialog.tsx",
+      "name": "VerifyCredentialDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/VerifyEligibilityDialog.tsx",
+      "name": "VerifyEligibilityDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/VerifyInvestigationResultDialog.tsx",
+      "name": "VerifyInvestigationResultDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/VerifyPrescriptionDialog.tsx",
+      "name": "VerifyPrescriptionDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/VerifyWorkOrderDialog.tsx",
+      "name": "VerifyWorkOrderDialog"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/WholesaleInvoiceUploadModal.tsx",
+      "name": "WholesaleInvoiceUploadModal"
+    },
+    {
+      "file": "apps/partner-platform/src/components/DietaryDomainManager.tsx",
+      "name": "DietaryDomainManager"
+    },
+    {
+      "file": "apps/partner-platform/src/components/EmergencyDomainManager.tsx",
+      "name": "EmergencyDomainManager"
+    },
+    {
+      "file": "apps/partner-platform/src/components/ExecutiveCommandDomainManager.tsx",
+      "name": "ExecutiveCommandDomainManager"
+    },
+    {
+      "file": "apps/partner-platform/src/components/InpatientDomainManager.tsx",
+      "name": "InpatientDomainManager"
+    },
+    {
+      "file": "apps/partner-platform/src/components/InsuranceClaimsDomainManager.tsx",
+      "name": "InsuranceClaimsDomainManager"
+    },
+    {
+      "file": "apps/partner-platform/src/components/MRDDomainManager.tsx",
+      "name": "MRDDomainManager"
+    },
+    {
+      "file": "apps/partner-platform/src/components/OTDomainManager.tsx",
+      "name": "OTDomainManager"
+    },
+    {
+      "file": "apps/partner-platform/src/components/PharmacyDomainManager.tsx",
+      "name": "PharmacyDomainManager"
+    },
+    {
+      "file": "apps/partner-platform/src/components/ProcurementDomainManager.tsx",
+      "name": "ProcurementDomainManager"
+    },
+    {
+      "file": "apps/partner-platform/src/components/QualityInfectionDomainManager.tsx",
+      "name": "QualityInfectionDomainManager"
+    },
+    {
+      "file": "apps/partner-platform/src/components/RadiologyDomainManager.tsx",
+      "name": "RadiologyDomainManager"
+    },
+    {
+      "file": "apps/partner-platform/src/components/TelemedicineRpmDomainManager.tsx",
+      "name": "TelemedicineRpmDomainManager"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/AiInsuranceDenialPredictorView.tsx",
+      "name": "AiInsuranceDenialPredictorView"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/AuthorizationWorkbenchView.tsx",
+      "name": "AuthorizationWorkbenchView"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/CdscoDrugInspectorAuditVaultView.tsx",
+      "name": "CdscoDrugInspectorAuditVaultView"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/CreateInvoiceView.tsx",
+      "name": "CreateInvoiceView"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx",
+      "name": "FrontDeskMobileWorkstationView"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/InvestigationProcessingView.tsx",
+      "name": "InvestigationProcessingView"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/InvoiceDetailView.tsx",
+      "name": "InvoiceDetailView"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+      "name": "NurseVitalsTriageStationView"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/PatientBillingHistoryView.tsx",
+      "name": "PatientBillingHistoryView"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/PharmacyCustomerKhataDeskView.tsx",
+      "name": "PharmacyCustomerKhataDeskView"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/PharmacyRevenueGallaDeskView.tsx",
+      "name": "PharmacyRevenueGallaDeskView"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/ReceptionCheckInView.tsx",
+      "name": "ReceptionCheckInView"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/ReferringDoctorLedgerView.tsx",
+      "name": "ReferringDoctorLedgerView"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/WhatsAppLiveChatDeskView.tsx",
+      "name": "WhatsAppLiveChatDeskView"
+    },
+    {
+      "file": "apps/partner-platform/src/components/WhatsAppPortalDomainManager.tsx",
+      "name": "WhatsAppPortalDomainManager"
+    },
+    {
+      "file": "apps/company-platform/src/components/ai/AiClinicalPlaygroundView.tsx",
+      "name": "AiClinicalPlaygroundView"
+    },
+    {
+      "file": "apps/company-platform/src/components/ai/AiDrugInteractionMatrixView.tsx",
+      "name": "AiDrugInteractionMatrixView"
+    },
+    {
+      "file": "apps/company-platform/src/components/ai/AiPhiRedactionGuardView.tsx",
+      "name": "AiPhiRedactionGuardView"
+    },
+    {
+      "file": "apps/company-platform/src/components/ai/PolicyTransitionDialog.tsx",
+      "name": "PolicyTransitionDialog"
+    },
+    {
+      "file": "apps/company-platform/src/components/ai/PromptApprovalDialog.tsx",
+      "name": "PromptApprovalDialog"
+    },
+    {
+      "file": "apps/company-platform/src/components/analytics/ExecutiveBiReportExportModal.tsx",
+      "name": "ExecutiveBiReportExportModal"
+    },
+    {
+      "file": "apps/company-platform/src/components/analytics/NaturalLanguageBiQueryModal.tsx",
+      "name": "NaturalLanguageBiQueryModal"
+    },
+    {
+      "file": "apps/company-platform/src/components/auth/FounderLogin.tsx",
+      "name": "FounderLogin"
+    },
+    {
+      "file": "apps/company-platform/src/components/billing/SubscriptionCustomizerModal.tsx",
+      "name": "SubscriptionCustomizerModal"
+    },
+    {
+      "file": "apps/company-platform/src/components/billing/SubscriptionTransitionDialog.tsx",
+      "name": "SubscriptionTransitionDialog"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/DynamicRoleDocumentChecklist.tsx",
+      "name": "DynamicRoleDocumentChecklist"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/UniversalAccountSettingsModal.tsx",
+      "name": "UniversalAccountSettingsModal"
+    },
+    {
+      "file": "apps/company-platform/src/components/communication/ContentTransitionDialog.tsx",
+      "name": "ContentTransitionDialog"
+    },
+    {
+      "file": "apps/company-platform/src/components/communication/EmergencyBroadcastTriggerModal.tsx",
+      "name": "EmergencyBroadcastTriggerModal"
+    },
+    {
+      "file": "apps/company-platform/src/components/communication/TestMessageSandboxView.tsx",
+      "name": "TestMessageSandboxView"
+    },
+    {
+      "file": "apps/company-platform/src/components/communication/WhatsAppCampaignBroadcaster.tsx",
+      "name": "WhatsAppCampaignBroadcaster"
+    },
+    {
+      "file": "apps/company-platform/src/components/company-admin/DepartmentHierarchyView.tsx",
+      "name": "DepartmentHierarchyView"
+    },
+    {
+      "file": "apps/company-platform/src/components/company-admin/EmployeeDirectoryView.tsx",
+      "name": "EmployeeDirectoryView"
+    },
+    {
+      "file": "apps/company-platform/src/components/company-admin/EmployeeStatusDialog.tsx",
+      "name": "EmployeeStatusDialog"
+    },
+    {
+      "file": "apps/company-platform/src/components/company-admin/GovernanceEventActionDialog.tsx",
+      "name": "GovernanceEventActionDialog"
+    },
+    {
+      "file": "apps/company-platform/src/components/company-admin/OfficerAppointDialog.tsx",
+      "name": "OfficerAppointDialog"
+    },
+    {
+      "file": "apps/company-platform/src/components/company-admin/PolicyApprovalDialog.tsx",
+      "name": "PolicyApprovalDialog"
+    },
+    {
+      "file": "apps/company-platform/src/components/compliance/ComplianceControlMappingView.tsx",
+      "name": "ComplianceControlMappingView"
+    },
+    {
+      "file": "apps/company-platform/src/components/compliance/ExceptionReviewDialog.tsx",
+      "name": "ExceptionReviewDialog"
+    },
+    {
+      "file": "apps/company-platform/src/components/compliance/RegulatoryRadarWhistleblowerModal.tsx",
+      "name": "RegulatoryRadarWhistleblowerModal"
+    },
+    {
+      "file": "apps/company-platform/src/components/compliance/SyntheticDataSanitizerModal.tsx",
+      "name": "SyntheticDataSanitizerModal"
+    },
+    {
+      "file": "apps/company-platform/src/components/compliance/VerifyControlDialog.tsx",
+      "name": "VerifyControlDialog"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/AiWhatsAppEngagementBroadcasterView.tsx",
+      "name": "AiWhatsAppEngagementBroadcasterView"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/DoctorNmcCredentialingBotView.tsx",
+      "name": "DoctorNmcCredentialingBotView"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/LeadToPartnerPipelineView.tsx",
+      "name": "LeadToPartnerPipelineView"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerContractsVaultView.tsx",
+      "name": "PartnerContractsVaultView"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerLifecycleTransitionDialog.tsx",
+      "name": "PartnerLifecycleTransitionDialog"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerListView.tsx",
+      "name": "PartnerListView"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerOutreachHubView.tsx",
+      "name": "PartnerOutreachHubView"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerProfileView.tsx",
+      "name": "PartnerProfileView"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerStaffDirectoryModal.tsx",
+      "name": "PartnerStaffDirectoryModal"
+    },
+    {
+      "file": "apps/company-platform/src/components/executive/PlatformEmergencyPanicLockModal.tsx",
+      "name": "PlatformEmergencyPanicLockModal"
+    },
+    {
+      "file": "apps/company-platform/src/components/growth/HospitalWhiteLabelStudioView.tsx",
+      "name": "HospitalWhiteLabelStudioView"
+    },
+    {
+      "file": "apps/company-platform/src/components/infrastructure/BackupTriggerDialog.tsx",
+      "name": "BackupTriggerDialog"
+    },
+    {
+      "file": "apps/company-platform/src/components/infrastructure/DrillExecuteDialog.tsx",
+      "name": "DrillExecuteDialog"
+    },
+    {
+      "file": "apps/company-platform/src/components/infrastructure/FailoverActionDialog.tsx",
+      "name": "FailoverActionDialog"
+    },
+    {
+      "file": "apps/company-platform/src/components/infrastructure/InfrastructureIncidentActionDialog.tsx",
+      "name": "InfrastructureIncidentActionDialog"
+    },
+    {
+      "file": "apps/company-platform/src/components/infrastructure/MultiRegionFailoverModal.tsx",
+      "name": "MultiRegionFailoverModal"
+    },
+    {
+      "file": "apps/company-platform/src/components/integration/ApiDeprecateDialog.tsx",
+      "name": "ApiDeprecateDialog"
+    },
+    {
+      "file": "apps/company-platform/src/components/integration/ApiKeyVaultManagerModal.tsx",
+      "name": "ApiKeyVaultManagerModal"
+    },
+    {
+      "file": "apps/company-platform/src/components/integration/ConnectionTestDialog.tsx",
+      "name": "ConnectionTestDialog"
+    },
+    {
+      "file": "apps/company-platform/src/components/integration/CredentialRotateDialog.tsx",
+      "name": "CredentialRotateDialog"
+    },
+    {
+      "file": "apps/company-platform/src/components/integration/FhirBundleValidatorModal.tsx",
+      "name": "FhirBundleValidatorModal"
+    },
+    {
+      "file": "apps/company-platform/src/components/integration/IncidentActionDialog.tsx",
+      "name": "IncidentActionDialog"
+    },
+    {
+      "file": "apps/company-platform/src/components/integration/WebhookRetryDialog.tsx",
+      "name": "WebhookRetryDialog"
+    },
+    {
+      "file": "apps/company-platform/src/components/platform-engineering/DeploymentPromotionDialog.tsx",
+      "name": "DeploymentPromotionDialog"
+    },
+    {
+      "file": "apps/company-platform/src/components/platform-engineering/DeploymentRollbackDialog.tsx",
+      "name": "DeploymentRollbackDialog"
+    },
+    {
+      "file": "apps/company-platform/src/components/platform-engineering/EphemeralSandboxSpawnerModal.tsx",
+      "name": "EphemeralSandboxSpawnerModal"
+    },
+    {
+      "file": "apps/company-platform/src/components/platform-engineering/PlatformIncidentActionDialog.tsx",
+      "name": "PlatformIncidentActionDialog"
+    },
+    {
+      "file": "apps/company-platform/src/components/platform-engineering/ReleasePromoteDialog.tsx",
+      "name": "ReleasePromoteDialog"
+    },
+    {
+      "file": "apps/company-platform/src/components/platform-engineering/RunBuildDialog.tsx",
+      "name": "RunBuildDialog"
+    },
+    {
+      "file": "apps/company-platform/src/components/product/AssignPlanDialog.tsx",
+      "name": "AssignPlanDialog"
+    },
+    {
+      "file": "apps/company-platform/src/components/product/PlanCustomizerModal.tsx",
+      "name": "PlanCustomizerModal"
+    },
+    {
+      "file": "apps/company-platform/src/components/product/ProductListView.tsx",
+      "name": "ProductListView"
+    },
+    {
+      "file": "apps/company-platform/src/components/sales/CreateLeadModal.tsx",
+      "name": "CreateLeadModal"
+    },
+    {
+      "file": "apps/company-platform/src/components/sales/LaunchCampaignModal.tsx",
+      "name": "LaunchCampaignModal"
+    },
+    {
+      "file": "apps/company-platform/src/components/sales/OpportunityTransitionDialog.tsx",
+      "name": "OpportunityTransitionDialog"
+    },
+    {
+      "file": "apps/company-platform/src/components/security/CredentialActionDialog.tsx",
+      "name": "CredentialActionDialog"
+    },
+    {
+      "file": "apps/company-platform/src/components/security/CustomRolePermissionBuilderModal.tsx",
+      "name": "CustomRolePermissionBuilderModal"
+    },
+    {
+      "file": "apps/company-platform/src/components/security/EmergencyBreakGlassProtocolView.tsx",
+      "name": "EmergencyBreakGlassProtocolView"
+    },
+    {
+      "file": "apps/company-platform/src/components/security/IpWhitelistingFirewallView.tsx",
+      "name": "IpWhitelistingFirewallView"
+    },
+    {
+      "file": "apps/company-platform/src/components/security/PolicyTransitionDialog.tsx",
+      "name": "PolicyTransitionDialog"
+    },
+    {
+      "file": "apps/company-platform/src/components/security/SessionTerminationDialog.tsx",
+      "name": "SessionTerminationDialog"
+    },
+    {
+      "file": "apps/company-platform/src/components/security/Soc2EvidenceCollectorModal.tsx",
+      "name": "Soc2EvidenceCollectorModal"
+    },
+    {
+      "file": "apps/company-platform/src/components/support/CreateTicketModal.tsx",
+      "name": "CreateTicketModal"
+    },
+    {
+      "file": "apps/company-platform/src/components/support/TicketProfileView.tsx",
+      "name": "TicketProfileView"
+    },
+    {
+      "file": "apps/company-platform/src/components/support/TicketTransitionDialog.tsx",
+      "name": "TicketTransitionDialog"
+    },
+    {
+      "file": "apps/landing-page/src/components/AIReceptionistWidget.tsx",
+      "name": "AIReceptionistWidget"
+    },
+    {
+      "file": "apps/landing-page/src/components/DocSearchLandingPage.tsx",
+      "name": "DocSearchLandingPage"
+    },
+    {
+      "file": "apps/landing-page/src/components/FullPageRegistrationView.tsx",
+      "name": "FullPageRegistrationView"
+    },
+    {
+      "file": "apps/landing-page/src/components/UnifiedHealthcareLoginModal.tsx",
+      "name": "UnifiedHealthcareLoginModal"
+    },
+    {
+      "file": "packages/ui-kit/src/components/ewan/EwanSystemTrainer.tsx",
+      "name": "EwanSystemTrainer"
+    }
+  ],
+  "stateStores": []
+}

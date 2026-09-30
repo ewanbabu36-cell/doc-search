@@ -38,7 +38,7 @@ export const PatientInsuranceView: React.FC<PatientInsuranceViewProps> = ({
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#0f172a' }}>
+          <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: 'var(--ds-color-text-primary, #f8fafc)' }}>
             Patient Insurance Policies & Cards
           </h2>
           <p style={{ margin: '0.25rem 0 0 0', color: '#64748b', fontSize: '0.875rem' }}>
@@ -79,7 +79,7 @@ export const PatientInsuranceView: React.FC<PatientInsuranceViewProps> = ({
               {filtered.map((policy) => (
                 <tr key={policy.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                   <td style={{ padding: '0.875rem 1rem' }}>
-                    <div style={{ fontWeight: 600, color: '#1e293b' }}>{policy.patientName}</div>
+                    <div style={{ fontWeight: 600, color: 'var(--ds-color-text-primary, #f8fafc)' }}>{policy.patientName}</div>
                     <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{policy.patientMrn}</div>
                   </td>
                   <td style={{ padding: '0.875rem 1rem' }}>

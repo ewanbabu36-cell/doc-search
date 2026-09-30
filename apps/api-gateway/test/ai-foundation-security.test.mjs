@@ -52,12 +52,14 @@ describe('STEP 3: Premium AI Foundation — Comprehensive Security & Boundary Te
   let noAiTenantToken;
   let expiredTenantToken;
   let poolRef;
+  let testDb;
 
   const expiredTenant = '33333333-3333-4333-8333-333333333333';
 
   before(async () => {
     // Initialize in-memory test database with enterprise seeds (licenses, plans, features)
-    const { pool } = await setupTestDatabase();
+    testDb = await setupTestDatabase();
+    const { pool } = testDb;
     poolRef = pool;
 
     const FEAT_AI_ID = '66666666-6666-4666-8666-666666666699';
@@ -74,6 +76,14 @@ describe('STEP 3: Premium AI Foundation — Comprehensive Security & Boundary Te
 
       INSERT INTO "core"."tenants" ("id", "name", "slug")
       VALUES ('${expiredTenant}', 'Expired Facility Partner', 'expired-partner')
+      ON CONFLICT DO NOTHING;
+
+      INSERT INTO "company"."partner_profiles" (
+        "id", "tenant_id", "legal_name", "trade_name", "primary_contact_name", "primary_contact_email"
+      )
+      VALUES (
+        '${TEST_SEEDS.PARTNER_ID_A}', '${expiredTenant}', 'Expired Facility Partner', 'Expired Partner', 'Admin', 'admin@expired.test'
+      )
       ON CONFLICT DO NOTHING;
 
       INSERT INTO "company"."subscriptions" (
@@ -111,7 +121,7 @@ describe('STEP 3: Premium AI Foundation — Comprehensive Security & Boundary Te
       version: '1.0.0'
     });
 
-    app = await buildApp();
+    app = await buildApp({ db: testDb });
     await app.ready();
 
     authorizedPhysicianToken = createTestToken();
@@ -993,5 +1003,10 @@ describe('STEP 3: Premium AI Foundation — Comprehensive Security & Boundary Te
     assert.ok(executedEvent.metadata.inputTokens !== undefined);
     assert.ok(executedEvent.metadata.outputTokens !== undefined);
     assert.ok(executedEvent.metadata.durationMs !== undefined);
+  });
+
+  after(async () => {
+    if (app) await app.close();
+    if (testDb) await testDb.cleanup();
   });
 });

@@ -38,7 +38,6 @@ import { assetBiomedicalService } from '../services/asset-biomedical-service.js'
 
 // Operational Views
 import { AssetOverviewView } from './views/AssetOverviewView.js';
-import { AssetControlCenterView } from './views/AssetControlCenterView.js';
 import { AssetInventoryDirectoryView } from './views/AssetInventoryDirectoryView.js';
 import { AssetDetailView } from './views/AssetDetailView.js';
 import { PpmScheduleBoardView } from './views/PpmScheduleBoardView.js';
@@ -54,6 +53,9 @@ import { AssetFinancialsView } from './views/AssetFinancialsView.js';
 import { AssetDowntimeAnalyticsView } from './views/AssetDowntimeAnalyticsView.js';
 import { AssetComplianceVaultView } from './views/AssetComplianceVaultView.js';
 import { AssetAuditVaultView } from './views/AssetAuditVaultView.js';
+import { SmartHospitalIotBedOrchestrationView } from './views/SmartHospitalIotBedOrchestrationView.js';
+import { TabOverflowMenu } from './common/TabOverflowMenu.js';
+import { SkeletonPage } from '@docsearch/ui-kit';
 
 // Action Dialogs
 import { RegisterAssetDialog } from './dialogs/RegisterAssetDialog.js';
@@ -81,6 +83,7 @@ interface Props {
 
 export type TabKey =
   | 'overview'
+  | 'ble_blueprint_map'
   | 'fleet_registry'
   | 'directory'
   | 'asset_detail'
@@ -297,45 +300,96 @@ export const AssetBiomedicalDomainManager: React.FC<Props> = ({ tenantId }) => {
   };
 
   if (loading && !metrics) {
-    return <div className="p-8 text-center text-xs text-gray-500">Loading HTM & Biomedical Asset Platform...</div>;
+    return <SkeletonPage layout="cards" metricCount={4} />;
   }
 
-  const tabs: { key: TabKey; label: string }[] = [
-    { key: 'overview', label: '📊 Command Center' },
-    { key: 'fleet_registry', label: '🏥 Asset Fleet Cards' },
-    { key: 'directory', label: '📋 Master Directory' },
-    { key: 'ppm_board', label: '🛠️ PPM Scheduler' },
-    { key: 'breakdown_work_orders', label: '🚨 Breakdown WOs' },
-    { key: 'calibration', label: '📐 Metrology & Calibration' },
-    { key: 'electrical_safety', label: '⚡ Safety Tests (IEC)' },
-    { key: 'spare_parts', label: '📦 Spare Parts Store' },
-    { key: 'vendor_oem', label: '🤝 OEM Service Visits' },
-    { key: 'condemnation', label: '♻️ Condemnation Board' },
-    { key: 'incidents', label: '⚠️ Safety Incidents & CAPA' },
-    { key: 'readiness', label: '🩺 Clinical Ward Readiness' },
-    { key: 'financials', label: '💰 Valuation & TCO' },
-    { key: 'downtime', label: '📈 MTBF / MTTR Analytics' },
-    { key: 'compliance', label: '🛡️ NABH / AERB Vault' },
-    { key: 'audit', label: '🔒 Cryptographic Trace Vault' }
-  ];
 
   return (
     <div className="space-y-6">
       {/* Top Navigation Tabs */}
-      <div className="flex items-center gap-1 overflow-x-auto pb-2 border-b bg-white p-2 rounded-xl shadow-sm">
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-colors ${
-              activeTab === tab.key
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div
+        style={{
+          position: 'relative',
+          zIndex: 40,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          flexWrap: 'wrap',
+          backgroundColor: 'var(--ds-color-surface)',
+          border: '1px solid var(--ds-color-border)',
+          borderRadius: '10px',
+          padding: '6px 8px'
+        }}
+      >
+        {[
+          { key: 'overview' as TabKey, label: '📊 Command Center' },
+          { key: 'ble_blueprint_map' as TabKey, label: '🗺️ Crash Cart & O2 BLE Blueprint' },
+          { key: 'directory' as TabKey, label: '🏥 Asset Fleet & Directory' },
+          { key: 'ppm_board' as TabKey, label: '🛠️ PPM Scheduler' },
+          { key: 'breakdown_work_orders' as TabKey, label: '🚨 Breakdown WOs' }
+        ].map((tab) => {
+          const isActive = activeTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                borderRadius: '6px',
+                border: isActive ? '1px solid var(--ds-color-accent, #38BDF8)' : '1px solid transparent',
+                backgroundColor: isActive ? 'var(--ds-color-primary, #0284C7)' : 'transparent',
+                color: isActive ? '#FFFFFF' : 'var(--ds-color-text-muted)',
+                fontWeight: isActive ? 700 : 500,
+                fontSize: '0.8rem',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = 'var(--ds-color-surface-hover)';
+                  e.currentTarget.style.color = 'var(--ds-color-text-primary)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = 'var(--ds-color-text-muted)';
+                }
+              }}
+            >
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+
+        {/* Secondary Modules Dropdown */}
+        <TabOverflowMenu
+          label="More Biomedical Modules"
+          options={[
+            { id: 'calibration', label: '📐 Metrology & Calibration' },
+            { id: 'electrical_safety', label: '⚡ Safety Tests (IEC)' },
+            { id: 'spare_parts', label: '📦 Spare Parts Store' },
+            { id: 'vendor_oem', label: '🤝 OEM Service Visits' },
+            { id: 'condemnation', label: '♻️ Condemnation Board' },
+            { id: 'incidents', label: '⚠️ Safety Incidents & CAPA' },
+            { id: 'readiness', label: '🩺 Clinical Ward Readiness' },
+            { id: 'financials', label: '💰 Valuation & TCO' },
+            { id: 'downtime', label: '📈 MTBF / MTTR Analytics' },
+            { id: 'compliance', label: '🛡️ NABH / AERB Vault' },
+            { id: 'audit', label: '🔒 Cryptographic Trace Vault' },
+            ...(activeTab === 'asset_detail' ? [{ id: 'asset_detail', label: '🔍 Asset Dossier' }] : [])
+          ]}
+          activeId={activeTab}
+          onSelect={(id) => setActiveTab(id as TabKey)}
+          onReset={() => setActiveTab('overview')}
+          accentColor="#0284C7"
+          activeBorderColor="#38BDF8"
+        />
       </div>
 
       {/* Main Tab Views */}
@@ -354,9 +408,18 @@ export const AssetBiomedicalDomainManager: React.FC<Props> = ({ tenantId }) => {
         />
       )}
 
-      {activeTab === 'fleet_registry' && (
-        <AssetControlCenterView
+      {activeTab === 'ble_blueprint_map' && (
+        <SmartHospitalIotBedOrchestrationView />
+      )}
+
+      {activeTab === 'directory' && (
+        <AssetInventoryDirectoryView
           assets={assets}
+          onSelect={(asset) => {
+            setSelectedAsset(asset);
+            setActiveTab('asset_detail');
+          }}
+          onRegister={() => setIsRegisterAssetOpen(true)}
           onTransfer={(asset) => {
             setSelectedAsset(asset);
             setIsTransferAssetOpen(true);
@@ -369,21 +432,6 @@ export const AssetBiomedicalDomainManager: React.FC<Props> = ({ tenantId }) => {
             setSelectedAsset(asset);
             setIsProposeCondemnOpen(true);
           }}
-          onSelect={(asset) => {
-            setSelectedAsset(asset);
-            setActiveTab('asset_detail');
-          }}
-        />
-      )}
-
-      {activeTab === 'directory' && (
-        <AssetInventoryDirectoryView
-          assets={assets}
-          onSelect={(asset) => {
-            setSelectedAsset(asset);
-            setActiveTab('asset_detail');
-          }}
-          onRegister={() => setIsRegisterAssetOpen(true)}
         />
       )}
 

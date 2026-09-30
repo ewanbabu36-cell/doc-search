@@ -53,9 +53,10 @@ services:
       HOST: 0.0.0.0
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres_secure_pass_2026}@postgres:5432/${POSTGRES_DB:-docsearch}
       REDIS_URL: redis://redis:6379
-      JWT_SECRET: ${JWT_SECRET:-docsearch_master_jwt_secret_dev_32char_key_only}
+      JWT_SECRET: ${JWT_SECRET:-production_super_strong_cryptographic_key_min_32_characters}
       JWT_ISSUER: docsearch-api
       JWT_AUDIENCE: docsearch-platform
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
       LOG_LEVEL: info
     ports:
       - "3000:3000"

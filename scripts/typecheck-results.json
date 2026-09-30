@@ -1,0 +1,34 @@
+{
+  "packages/api-contracts": {
+    "status": "PASSED",
+    "errorCount": 0
+  },
+  "packages/auth": {
+    "status": "PASSED",
+    "errorCount": 0
+  },
+  "packages/shared-core": {
+    "status": "PASSED",
+    "errorCount": 0
+  },
+  "packages/database": {
+    "status": "PASSED",
+    "errorCount": 0
+  },
+  "apps/api-gateway": {
+    "status": "PASSED",
+    "errorCount": 0
+  },
+  "apps/partner-platform": {
+    "status": "PASSED",
+    "errorCount": 0
+  },
+  "apps/company-platform": {
+    "status": "PASSED",
+    "errorCount": 0
+  },
+  "apps/landing-page": {
+    "status": "PASSED",
+    "errorCount": 0
+  }
+}

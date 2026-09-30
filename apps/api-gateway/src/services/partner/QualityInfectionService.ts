@@ -75,7 +75,7 @@ export class QualityInfectionService {
       investigatingQualityOfficer: payload.investigatingOfficer,
       rcaRequired: payload.rcaRequired,
       status: 'UNDER_TRIAGE'
-    });
+    }, tenantId);
 
     if (!updated) throw new AppError({ message: 'Incident not found', statusCode: 404 });
 
@@ -99,7 +99,7 @@ export class QualityInfectionService {
     const updated = await this.repo.updateIncident(incidentId, {
       status: 'CLOSED',
       closedAt: new Date()
-    });
+    }, tenantId);
 
     if (!updated) throw new AppError({ message: 'Incident not found', statusCode: 404 });
 
@@ -146,7 +146,7 @@ export class QualityInfectionService {
     });
 
     // Update incident status to RCA_IN_PROGRESS
-    await this.repo.updateIncident(incidentId, { status: 'RCA_IN_PROGRESS' });
+    await this.repo.updateIncident(incidentId, { status: 'RCA_IN_PROGRESS' }, tenantId);
 
     const hash = this.computeHash({ event: 'RCA_COMPLETED', rcaCode, incidentId });
     await this.repo.appendAuditTrace({
@@ -192,7 +192,7 @@ export class QualityInfectionService {
     });
 
     // Update incident status to CAPA_FORMULATED
-    await this.repo.updateIncident(incidentId, { status: 'CAPA_FORMULATED' });
+    await this.repo.updateIncident(incidentId, { status: 'CAPA_FORMULATED' }, tenantId);
 
     const hash = this.computeHash({ event: 'CAPA_CREATED', capaCode, incidentId });
     await this.repo.appendAuditTrace({
@@ -216,7 +216,7 @@ export class QualityInfectionService {
       verificationNotes: payload.verificationNotes,
       isEffective: payload.isEffective,
       status: payload.isEffective ? 'VERIFIED_EFFECTIVE' : 'INEFFECTIVE_REOPENED'
-    });
+    }, tenantId);
 
     if (!updated) throw new AppError({ message: 'CAPA record not found', statusCode: 404 });
 
@@ -325,7 +325,7 @@ export class QualityInfectionService {
     const updated = await this.repo.updatePatientIsolation(isolationId, {
       status: 'DISCHARGED',
       dischargedDate: new Date()
-    });
+    }, tenantId);
 
     if (!updated) throw new AppError({ message: 'Isolation record not found', statusCode: 404 });
 

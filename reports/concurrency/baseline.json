@@ -1,0 +1,96 @@
+{
+  "timestamp": "2026-09-29T06:31:17.460Z",
+  "auditCategory": "CATEGORY 18: CONCURRENCY / TRANSACTION ERROR",
+  "status": "BASELINE_VERIFIED",
+  "pgSettings": {
+    "deadlock_timeout": "1000 ms",
+    "default_transaction_isolation": "read committed",
+    "idle_in_transaction_session_timeout": "0 ms",
+    "lock_timeout": "0 ms",
+    "max_connections": "100",
+    "statement_timeout": "0 ms",
+    "transaction_isolation": "read committed"
+  },
+  "summary": {
+    "totalTests": 7,
+    "passed": 7,
+    "failed": 0,
+    "doubleBookings": 0,
+    "stockRaceErrors": 0,
+    "lostUpdates": 0,
+    "deadlocks": 0,
+    "orphanRecords": 0
+  },
+  "findings": [
+    {
+      "id": "TX-CFG-001",
+      "name": "PostgreSQL Isolation Level Confirmed",
+      "status": "PASSED",
+      "details": "Default isolation is read committed",
+      "metrics": {
+        "isolation": "read committed"
+      }
+    },
+    {
+      "id": "TX-CFG-002",
+      "name": "Database Unique Constraints Inventory",
+      "status": "PASSED",
+      "details": "121 unique constraint bindings active",
+      "metrics": {
+        "count": 121
+      }
+    },
+    {
+      "id": "TX-RACE-001",
+      "name": "Appointment Exclusive Slot Double-Booking Prevention",
+      "status": "PASSED",
+      "details": "Session A: 409, Session B: 201, DB Rows: 1",
+      "metrics": {
+        "statusA": 409,
+        "statusB": 201,
+        "dbRows": 1
+      }
+    },
+    {
+      "id": "TX-RACE-002",
+      "name": "Pharmacy Stock Race / Over-Dispensing Prevention",
+      "status": "PASSED",
+      "details": "Dispense A: 201, Dispense B: 409, Final Stock: 3 (expected: 3)",
+      "metrics": {
+        "dispStatusA": 201,
+        "dispStatusB": 409,
+        "remainingStock": 3
+      }
+    },
+    {
+      "id": "TX-RACE-003",
+      "name": "Queue Token Generation Concurrency & Non-Duplication",
+      "status": "PASSED",
+      "details": "Generated 5 unique tokens with zero duplicates (TKN-002, TKN-001, TKN-003, TKN-004, TKN-005)",
+      "metrics": {
+        "generated": 5,
+        "unique": 5
+      }
+    },
+    {
+      "id": "TX-ATOM-001",
+      "name": "Transaction Atomicity & Zero-Orphan Rollback",
+      "status": "PASSED",
+      "details": "Rollback executed on failure, zero dirty/orphan records persisted in PostgreSQL",
+      "metrics": {
+        "rolledBack": true,
+        "patientPersisted": false
+      }
+    },
+    {
+      "id": "TX-TENANT-001",
+      "name": "Cross-Tenant Concurrency & Deadlock Safety",
+      "status": "PASSED",
+      "details": "Both tenant queries completed with 200 OK without lock contention",
+      "metrics": {
+        "tenantA_Status": 200,
+        "tenantB_Status": 200
+      }
+    }
+  ]
+}

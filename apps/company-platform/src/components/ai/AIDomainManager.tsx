@@ -25,7 +25,7 @@ import { AiPhiRedactionGuardView } from './AiPhiRedactionGuardView.js';
 import { AiDrugInteractionMatrixView } from './AiDrugInteractionMatrixView.js';
 import { AiModelRouterLatencyView } from './AiModelRouterLatencyView.js';
 import { AiHallucinationBenchmarkView } from './AiHallucinationBenchmarkView.js';
-import { Tabs, Badge, Button, Spinner, ErrorState } from '@docsearch/ui-kit';
+import { Tabs, Badge, Button, Spinner, ErrorState, DocSearchSpatialCore3D } from '@docsearch/ui-kit';
 
 type ActiveTab =
   | 'overview'
@@ -61,7 +61,7 @@ export const AIDomainManager: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const [modelsRes, policiesRes, promptsRes, quotasRes, tracesRes, safetyRes] = await Promise.all([
+      const [modelsRes, policiesRes, promptsRes, quotasRes, tracesRes, safetyRes] = await Promise.allSettled([
         aiService.getModels(),
         aiService.getGovernancePolicies(),
         aiService.getPromptTemplates(),
@@ -69,12 +69,16 @@ export const AIDomainManager: React.FC = () => {
         aiService.getAuditTraces(),
         aiService.getSafetyEvents()
       ]);
-      setModels(modelsRes);
-      setPolicies(policiesRes);
-      setPromptTemplates(promptsRes);
-      setQuotas(quotasRes);
-      setTraces(tracesRes);
-      setSafetyEvents(safetyRes);
+      if (modelsRes.status === 'fulfilled') setModels(modelsRes.value);
+      if (policiesRes.status === 'fulfilled') setPolicies(policiesRes.value);
+      if (promptsRes.status === 'fulfilled') setPromptTemplates(promptsRes.value);
+      if (quotasRes.status === 'fulfilled') setQuotas(quotasRes.value);
+      if (tracesRes.status === 'fulfilled') setTraces(tracesRes.value);
+      if (safetyRes.status === 'fulfilled') setSafetyEvents(safetyRes.value);
+
+      if (modelsRes.status === 'rejected' && policiesRes.status === 'rejected') {
+        throw new Error((modelsRes as PromiseRejectedResult).reason?.message || 'Failed to load AI control plane');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load AI governance data');
     } finally {
@@ -175,6 +179,30 @@ export const AIDomainManager: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {/* 3D Spatial Feature Core: Clinical AI & Safety Governance */}
+      <DocSearchSpatialCore3D
+        preset="ai-governance"
+        height={360}
+        interactive={true}
+        onNodeClick={(id) => {
+          if (id === 'medical-scribe') {
+            setActiveTab('playground');
+          } else if (id === 'cdss-engine') {
+            setActiveTab('drug-matrix');
+          } else if (id === 'phi-redactor') {
+            setActiveTab('phi-guard');
+          } else if (id === 'guardrails') {
+            setActiveTab('governance');
+          } else if (id === 'token-quotas') {
+            setActiveTab('quotas');
+          } else if (id === 'doctor-review') {
+            setActiveTab('hallucination');
+          } else if (id === 'adverse-radar') {
+            setActiveTab('safety');
+          }
+        }}
+      />
+
       {/* Header with Quick Action Buttons */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', backgroundColor: '#0F172A', border: '1.5px solid rgba(6, 182, 212, 0.4)', borderRadius: '14px', padding: '16px 20px' }}>
         <div>

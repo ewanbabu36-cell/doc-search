@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
-import { getVerifiedRoleProfile } from '../../utils/roleProfileResolver.js';
+import React from 'react';
+import {
+  UnifiedDocumentPrintModal,
+  type UnifiedInvoiceData
+} from '../common/UnifiedDocumentPrintModal.js';
 
 export interface PrintableInvoiceBillItem {
   id: string;
@@ -33,520 +36,57 @@ export interface PrintableInvoiceBillProps {
   isOpen: boolean;
   onClose: () => void;
   invoiceData?: {
-    invoiceNumber?: string;
-    invoiceDate?: string;
-    patientName?: string;
-    patientMrn?: string;
-    patientPhone?: string;
-    doctorOrRefName?: string;
-    items?: PrintableInvoiceBillItem[];
-    paymentMode?: string;
-    paymentStatus?: 'PAID' | 'PENDING' | 'PARTIAL';
-  };
+    invoiceNumber?: string | undefined;
+    invoiceDate?: string | undefined;
+    patientName?: string | undefined;
+    patientMrn?: string | undefined;
+    patientPhone?: string | undefined;
+    doctorOrRefName?: string | undefined;
+    items?: PrintableInvoiceBillItem[] | undefined;
+    paymentMode?: string | undefined;
+    paymentStatus?: ('PAID' | 'PENDING' | 'PARTIAL') | undefined;
+    transactionReference?: string | undefined;
+  } | undefined;
 }
 
-const INVOICE_STORAGE_KEY = 'docsearch_custom_invoice_settings';
-
+/**
+ * Unified Laser & Thermal Invoice Bill Modal
+ * Re-routes bill printing through the unified print engine with live Laser (A4) / Thermal (80mm) toggle.
+ */
 export const PrintableInvoiceBillModal: React.FC<PrintableInvoiceBillProps> = ({
   isOpen,
   onClose,
   invoiceData
 }) => {
-  const profile = getVerifiedRoleProfile();
-
-  const [invoiceConfig, setInvoiceConfig] = useState<CustomInvoiceSettings>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(INVOICE_STORAGE_KEY);
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch {}
-      }
-    }
-    return {
-      entityLegalName: profile.entityLegalName,
-      facilityTagline: profile.facilityTagline,
-      officialAddress: profile.officialAddress,
-      contactPhone: profile.contactPhone,
-      supportEmail: profile.supportEmail,
-      website: profile.website,
-      gstin: profile.gstin,
-      licenseNo: profile.roleCategory === 'PATHOLOGY_LAB' ? profile.nablCertificateNo : profile.roleCategory === 'HOSPITAL' ? profile.hospitalCeaRegNo : profile.pharmacyDrugLicense20B,
-      bankName: profile.bankName,
-      accountHolder: profile.accountHolder,
-      accountNumber: profile.accountNumber,
-      ifscCode: profile.ifscCode,
-      upiId: profile.upiId,
-      jurisdictionCity: 'Mumbai / Delhi',
-      headerThemeColor: '#0F172A'
-    };
-  });
-
-  const [isEditing, setIsEditing] = useState(false);
-  const [saveToast, setSaveToast] = useState(false);
-
   if (!isOpen) return null;
 
-  const invoiceNumber = invoiceData?.invoiceNumber || `INV-2026-${Math.floor(10000 + Math.random() * 90000)}`;
-  const invoiceDate = invoiceData?.invoiceDate || new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-  const patientName = invoiceData?.patientName || 'Rajesh Sharma';
-  const patientMrn = invoiceData?.patientMrn || 'MRN-2026-9812';
-  const patientPhone = invoiceData?.patientPhone || '+91 98765 43210';
-  const doctorName = invoiceData?.doctorOrRefName || profile.doctorName;
-  const paymentStatus = invoiceData?.paymentStatus || 'PAID';
-  const paymentMode = invoiceData?.paymentMode || 'UPI / ONLINE TRANSFER';
-
-  const defaultItems: PrintableInvoiceBillItem[] =
-    profile.roleCategory === 'PATHOLOGY_LAB'
-      ? [
-          { id: '1', description: 'Complete Blood Count (CBC with 5-Part Diff)', sacHsnCode: '999312', quantity: 1, rate: 450, discount: 0, taxRatePercent: 0 },
-          { id: '2', description: 'Lipid Profile Comprehensive (Cholesterol, HDL, LDL, VLDL)', sacHsnCode: '999312', quantity: 1, rate: 850, discount: 50, taxRatePercent: 0 },
-          { id: '3', description: 'HbA1c Glycated Hemoglobin (HPLC Gold Standard)', sacHsnCode: '999312', quantity: 1, rate: 600, discount: 0, taxRatePercent: 0 }
-        ]
-      : profile.roleCategory === 'PHARMACY'
-      ? [
-          { id: '1', description: 'Tab. Augmentin 625 Duo (Amoxycillin + Clavulanic Acid)', sacHsnCode: '3004', quantity: 2, rate: 210, discount: 20, taxRatePercent: 12 },
-          { id: '2', description: 'Tab. Pan-D (Pantoprazole + Domperidone SR)', sacHsnCode: '3004', quantity: 1, rate: 165, discount: 15, taxRatePercent: 12 },
-          { id: '3', description: 'Syp. Ascoril-D Plus Cough Relief 100ml', sacHsnCode: '3004', quantity: 1, rate: 120, discount: 10, taxRatePercent: 12 }
-        ]
-      : [
-          { id: '1', description: 'Senior Consultant Specialist Consultation (OPD)', sacHsnCode: '999311', quantity: 1, rate: 1200, discount: 0, taxRatePercent: 0 },
-          { id: '2', description: 'Clinical Vitals & 12-Lead Electrocardiogram (ECG)', sacHsnCode: '999312', quantity: 1, rate: 600, discount: 100, taxRatePercent: 0 },
-          { id: '3', description: 'Hospital Administrative & Nursing Care Fee', sacHsnCode: '999311', quantity: 1, rate: 300, discount: 0, taxRatePercent: 0 }
-        ];
-
-  const items = invoiceData?.items && invoiceData.items.length > 0 ? invoiceData.items : defaultItems;
-
-  const grossTotal = items.reduce((acc, item) => acc + item.rate * item.quantity, 0);
-  const totalDiscount = items.reduce((acc, item) => acc + item.discount, 0);
-  const taxableAmount = grossTotal - totalDiscount;
-  const totalTax = items.reduce((acc, item) => acc + ((item.rate * item.quantity - item.discount) * item.taxRatePercent) / 100, 0);
-  const netPayable = taxableAmount + totalTax;
-
-  const handlePrint = () => {
-    window.print();
-  };
-
-  const handleSaveConfig = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(INVOICE_STORAGE_KEY, JSON.stringify(invoiceConfig));
-    }
-    setSaveToast(true);
-    setTimeout(() => setSaveToast(false), 2500);
-    setIsEditing(false);
-  };
-
-  const handleResetDefaults = () => {
-    const def = {
-      entityLegalName: profile.entityLegalName,
-      facilityTagline: profile.facilityTagline,
-      officialAddress: profile.officialAddress,
-      contactPhone: profile.contactPhone,
-      supportEmail: profile.supportEmail,
-      website: profile.website,
-      gstin: profile.gstin,
-      licenseNo: profile.roleCategory === 'PATHOLOGY_LAB' ? profile.nablCertificateNo : profile.roleCategory === 'HOSPITAL' ? profile.hospitalCeaRegNo : profile.pharmacyDrugLicense20B,
-      bankName: profile.bankName,
-      accountHolder: profile.accountHolder,
-      accountNumber: profile.accountNumber,
-      ifscCode: profile.ifscCode,
-      upiId: profile.upiId,
-      jurisdictionCity: 'Mumbai / Delhi',
-      headerThemeColor: '#0F172A'
-    };
-    setInvoiceConfig(def);
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem(INVOICE_STORAGE_KEY);
-    }
+  const unifiedData: UnifiedInvoiceData = {
+    invoiceNumber: invoiceData?.invoiceNumber,
+    invoiceDate: invoiceData?.invoiceDate,
+    patientName: invoiceData?.patientName,
+    patientMrn: invoiceData?.patientMrn,
+    patientPhone: invoiceData?.patientPhone,
+    doctorOrRefName: invoiceData?.doctorOrRefName,
+    paymentMode: invoiceData?.paymentMode,
+    paymentStatus: invoiceData?.paymentStatus,
+    transactionReference: invoiceData?.transactionReference,
+    items: invoiceData?.items?.map((it) => ({
+      id: it.id,
+      name: it.description,
+      hsnCode: it.sacHsnCode,
+      quantity: it.quantity,
+      rate: it.rate,
+      discount: it.discount,
+      gstRate: it.taxRatePercent
+    }))
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      backgroundColor: 'rgba(7, 12, 22, 0.85)',
-      backdropFilter: 'blur(8px)',
-      zIndex: 11000,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '16px'
-    }}>
-      <div style={{
-        backgroundColor: '#0F172A',
-        color: '#F8FAFC',
-        border: '1.5px solid rgba(6, 182, 212, 0.4)',
-        borderRadius: '16px',
-        width: '100%',
-        maxWidth: '920px',
-        maxHeight: '95vh',
-        display: 'flex',
-        flexDirection: 'column',
-        boxShadow: '0 25px 70px rgba(0,0,0,0.95)',
-        overflow: 'hidden'
-      }}>
-        {/* Top Control Bar */}
-        <div style={{
-          backgroundColor: '#0B132B',
-          padding: '14px 20px',
-          borderBottom: '1px solid rgba(255,255,255,0.1)',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '10px'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '1.25rem' }}>💳</span>
-            <div>
-              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: '#F8FAFC' }}>
-                GST Tax Invoice & Payout Bill Customizer
-              </h3>
-              <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
-                №: <strong style={{ color: '#38BDF8' }}>{invoiceNumber}</strong> • Role: <strong style={{ color: '#34D399' }}>{profile.roleCategory}</strong>
-              </span>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-            {saveToast && (
-              <span style={{ fontSize: '0.75rem', backgroundColor: '#10B981', color: '#FFF', padding: '4px 10px', borderRadius: '6px', fontWeight: 700 }}>
-                ✓ Invoice Template Saved!
-              </span>
-            )}
-
-            <button
-              type="button"
-              onClick={() => setIsEditing(!isEditing)}
-              style={{
-                backgroundColor: isEditing ? '#F59E0B' : 'rgba(255,255,255,0.1)',
-                color: isEditing ? '#000' : '#E2E8F0',
-                border: '1px solid rgba(255,255,255,0.2)',
-                borderRadius: '8px',
-                padding: '8px 14px',
-                fontWeight: 700,
-                fontSize: '0.8125rem',
-                cursor: 'pointer'
-              }}
-            >
-              {isEditing ? '👁️ Preview Invoice' : '✏️ Customize Invoice & Bank'}
-            </button>
-
-            <button
-              type="button"
-              onClick={handlePrint}
-              style={{
-                backgroundColor: '#06B6D4',
-                color: '#070C16',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '8px 18px',
-                fontWeight: 900,
-                fontSize: '0.8125rem',
-                cursor: 'pointer'
-              }}
-            >
-              🖨️ Print Tax Invoice
-            </button>
-
-            <button
-              type="button"
-              onClick={onClose}
-              style={{
-                backgroundColor: 'rgba(255,255,255,0.08)',
-                color: '#CBD5E1',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '8px 14px',
-                fontWeight: 700,
-                fontSize: '0.8125rem',
-                cursor: 'pointer'
-              }}
-            >
-              ✕ Close
-            </button>
-          </div>
-        </div>
-
-        {/* Customizer Drawer */}
-        {isEditing && (
-          <div style={{
-            backgroundColor: '#1E293B',
-            padding: '16px 20px',
-            borderBottom: '1.5px solid #06B6D4',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '12px',
-            fontSize: '0.75rem'
-          }}>
-            <div>
-              <label style={{ display: 'block', color: '#94A3B8', fontWeight: 600, marginBottom: '4px' }}>Legal Entity Name:</label>
-              <input
-                type="text"
-                value={invoiceConfig.entityLegalName}
-                onChange={(e) => setInvoiceConfig({ ...invoiceConfig, entityLegalName: e.target.value })}
-                style={{ width: '100%', backgroundColor: '#0F172A', border: '1px solid #475569', borderRadius: '6px', padding: '6px 10px', color: '#FFF' }}
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', color: '#94A3B8', fontWeight: 600, marginBottom: '4px' }}>Facility Tagline:</label>
-              <input
-                type="text"
-                value={invoiceConfig.facilityTagline}
-                onChange={(e) => setInvoiceConfig({ ...invoiceConfig, facilityTagline: e.target.value })}
-                style={{ width: '100%', backgroundColor: '#0F172A', border: '1px solid #475569', borderRadius: '6px', padding: '6px 10px', color: '#FFF' }}
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', color: '#94A3B8', fontWeight: 600, marginBottom: '4px' }}>GSTIN & Regulatory License:</label>
-              <div style={{ display: 'flex', gap: '4px' }}>
-                <input
-                  type="text"
-                  placeholder="GSTIN"
-                  value={invoiceConfig.gstin}
-                  onChange={(e) => setInvoiceConfig({ ...invoiceConfig, gstin: e.target.value })}
-                  style={{ width: '50%', backgroundColor: '#0F172A', border: '1px solid #475569', borderRadius: '6px', padding: '6px 8px', color: '#FFF' }}
-                />
-                <input
-                  type="text"
-                  placeholder="License No"
-                  value={invoiceConfig.licenseNo}
-                  onChange={(e) => setInvoiceConfig({ ...invoiceConfig, licenseNo: e.target.value })}
-                  style={{ width: '50%', backgroundColor: '#0F172A', border: '1px solid #475569', borderRadius: '6px', padding: '6px 8px', color: '#FFF' }}
-                />
-              </div>
-            </div>
-            <div>
-              <label style={{ display: 'block', color: '#94A3B8', fontWeight: 600, marginBottom: '4px' }}>Bank Name & Account No:</label>
-              <div style={{ display: 'flex', gap: '4px' }}>
-                <input
-                  type="text"
-                  placeholder="Bank Name"
-                  value={invoiceConfig.bankName}
-                  onChange={(e) => setInvoiceConfig({ ...invoiceConfig, bankName: e.target.value })}
-                  style={{ width: '50%', backgroundColor: '#0F172A', border: '1px solid #475569', borderRadius: '6px', padding: '6px 8px', color: '#FFF' }}
-                />
-                <input
-                  type="text"
-                  placeholder="Account No"
-                  value={invoiceConfig.accountNumber}
-                  onChange={(e) => setInvoiceConfig({ ...invoiceConfig, accountNumber: e.target.value })}
-                  style={{ width: '50%', backgroundColor: '#0F172A', border: '1px solid #475569', borderRadius: '6px', padding: '6px 8px', color: '#FFF' }}
-                />
-              </div>
-            </div>
-            <div>
-              <label style={{ display: 'block', color: '#94A3B8', fontWeight: 600, marginBottom: '4px' }}>IFSC Code & UPI ID:</label>
-              <div style={{ display: 'flex', gap: '4px' }}>
-                <input
-                  type="text"
-                  placeholder="IFSC"
-                  value={invoiceConfig.ifscCode}
-                  onChange={(e) => setInvoiceConfig({ ...invoiceConfig, ifscCode: e.target.value })}
-                  style={{ width: '50%', backgroundColor: '#0F172A', border: '1px solid #475569', borderRadius: '6px', padding: '6px 8px', color: '#FFF' }}
-                />
-                <input
-                  type="text"
-                  placeholder="UPI ID"
-                  value={invoiceConfig.upiId}
-                  onChange={(e) => setInvoiceConfig({ ...invoiceConfig, upiId: e.target.value })}
-                  style={{ width: '50%', backgroundColor: '#0F172A', border: '1px solid #475569', borderRadius: '6px', padding: '6px 8px', color: '#FFF' }}
-                />
-              </div>
-            </div>
-            <div>
-              <label style={{ display: 'block', color: '#94A3B8', fontWeight: 600, marginBottom: '4px' }}>Legal Address:</label>
-              <input
-                type="text"
-                value={invoiceConfig.officialAddress}
-                onChange={(e) => setInvoiceConfig({ ...invoiceConfig, officialAddress: e.target.value })}
-                style={{ width: '100%', backgroundColor: '#0F172A', border: '1px solid #475569', borderRadius: '6px', padding: '6px 10px', color: '#FFF' }}
-              />
-            </div>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
-              <button
-                type="button"
-                onClick={handleSaveConfig}
-                style={{ flex: 1, backgroundColor: '#10B981', color: '#FFF', border: 'none', borderRadius: '6px', padding: '8px 12px', fontWeight: 800, cursor: 'pointer' }}
-              >
-                💾 Save Custom Invoice
-              </button>
-              <button
-                type="button"
-                onClick={handleResetDefaults}
-                style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: '#CBD5E1', border: 'none', borderRadius: '6px', padding: '8px 10px', fontWeight: 600, cursor: 'pointer' }}
-              >
-                ↺ Reset
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Printable Canvas */}
-        <div style={{ padding: '20px', overflowY: 'auto', flex: 1, backgroundColor: '#070C16' }}>
-          <div id="printable-tax-invoice-canvas" style={{
-            backgroundColor: '#FFFFFF',
-            color: '#0F172A',
-            padding: '32px',
-            borderRadius: '10px',
-            boxShadow: '0 8px 30px rgba(0,0,0,0.5)',
-            fontFamily: 'Inter, system-ui, -apple-system, sans-serif'
-          }}>
-            {/* Header: Facility Credentials */}
-            <div style={{ borderBottom: '2.5px solid #0F172A', paddingBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div>
-                <h1 style={{ margin: '0 0 4px', fontSize: '1.35rem', fontWeight: 900, color: '#0F172A', textTransform: 'uppercase' }}>
-                  {invoiceConfig.entityLegalName}
-                </h1>
-                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0284C7' }}>
-                  {invoiceConfig.facilityTagline}
-                </div>
-                <div style={{ fontSize: '0.75rem', color: '#475569', marginTop: '4px', lineHeight: 1.4 }}>
-                  {invoiceConfig.officialAddress}
-                </div>
-                <div style={{ fontSize: '0.75rem', color: '#475569' }}>
-                  📞 {invoiceConfig.contactPhone} • ✉️ {invoiceConfig.supportEmail} • 🌐 {invoiceConfig.website}
-                </div>
-              </div>
-
-              <div style={{ textAlign: 'right', minWidth: '260px' }}>
-                <div style={{ backgroundColor: '#0F172A', color: '#FFF', padding: '4px 10px', borderRadius: '4px', fontSize: '0.8125rem', fontWeight: 900, display: 'inline-block' }}>
-                  TAX INVOICE / CASH MEMO
-                </div>
-                <div style={{ fontSize: '0.75rem', marginTop: '6px', color: '#334155' }}>
-                  <strong>Invoice No:</strong> <span style={{ fontFamily: 'monospace', fontWeight: 800 }}>{invoiceNumber}</span>
-                </div>
-                <div style={{ fontSize: '0.75rem', color: '#334155' }}>
-                  <strong>Invoice Date:</strong> {invoiceDate}
-                </div>
-                <div style={{ fontSize: '0.75rem', color: '#334155', marginTop: '4px' }}>
-                  <strong>GSTIN:</strong> <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{invoiceConfig.gstin}</span>
-                </div>
-                <div style={{ fontSize: '0.6875rem', color: '#0369A1', fontWeight: 700, marginTop: '2px' }}>
-                  License: {invoiceConfig.licenseNo}
-                </div>
-              </div>
-            </div>
-
-            {/* Billed To Box */}
-            <div style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '12px 16px', margin: '14px 0', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '12px', fontSize: '0.75rem' }}>
-              <div>
-                <span style={{ color: '#64748B', display: 'block', fontSize: '0.6875rem', textTransform: 'uppercase', fontWeight: 700 }}>BILLED TO PATIENT:</span>
-                <strong style={{ fontSize: '0.875rem', color: '#0F172A' }}>{patientName}</strong>
-                <div style={{ color: '#64748B' }}>Phone: {patientPhone}</div>
-              </div>
-              <div>
-                <span style={{ color: '#64748B', display: 'block', fontSize: '0.6875rem', textTransform: 'uppercase', fontWeight: 700 }}>PATIENT UHID / MRN:</span>
-                <strong style={{ fontFamily: 'monospace', fontSize: '0.8125rem', color: '#0F172A' }}>{patientMrn}</strong>
-                <div style={{ color: '#64748B' }}>Ref Doctor: {doctorName}</div>
-              </div>
-              <div>
-                <span style={{ color: '#64748B', display: 'block', fontSize: '0.6875rem', textTransform: 'uppercase', fontWeight: 700 }}>PAYMENT STATUS:</span>
-                <span style={{ backgroundColor: paymentStatus === 'PAID' ? '#DCFCE7' : '#FEF3C7', color: paymentStatus === 'PAID' ? '#166534' : '#92400E', padding: '2px 8px', borderRadius: '4px', fontWeight: 900, fontSize: '0.75rem', display: 'inline-block' }}>
-                  ✓ {paymentStatus} ({paymentMode})
-                </span>
-              </div>
-            </div>
-
-            {/* Itemized Table */}
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem', border: '1px solid #CBD5E1', margin: '16px 0' }}>
-              <thead>
-                <tr style={{ backgroundColor: '#F1F5F9', borderBottom: '1.5px solid #94A3B8', textAlign: 'left' }}>
-                  <th style={{ padding: '8px 10px' }}>#</th>
-                  <th style={{ padding: '8px 10px' }}>DESCRIPTION OF SERVICES / MEDICINES / TESTS</th>
-                  <th style={{ padding: '8px 10px' }}>SAC/HSN</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'center' }}>QTY</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>RATE (₹)</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>DISC (₹)</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>TAX</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>TOTAL (₹)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item, idx) => {
-                  const lineTotal = item.rate * item.quantity - item.discount;
-                  return (
-                    <tr key={item.id || idx} style={{ borderBottom: '1px solid #E2E8F0' }}>
-                      <td style={{ padding: '8px 10px', fontWeight: 700 }}>{idx + 1}</td>
-                      <td style={{ padding: '8px 10px' }}>
-                        <strong style={{ color: '#0F172A' }}>{item.description}</strong>
-                      </td>
-                      <td style={{ padding: '8px 10px', fontFamily: 'monospace', color: '#64748B' }}>{item.sacHsnCode}</td>
-                      <td style={{ padding: '8px 10px', textAlign: 'center' }}>{item.quantity}</td>
-                      <td style={{ padding: '8px 10px', textAlign: 'right' }}>{item.rate.toFixed(2)}</td>
-                      <td style={{ padding: '8px 10px', textAlign: 'right', color: '#DC2626' }}>{item.discount > 0 ? `-${item.discount.toFixed(2)}` : '0.00'}</td>
-                      <td style={{ padding: '8px 10px', textAlign: 'right', color: '#64748B' }}>{item.taxRatePercent}%</td>
-                      <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700 }}>{lineTotal.toFixed(2)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-
-            {/* Financial Summary & Bank Payout Box */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px', alignItems: 'flex-start', margin: '14px 0' }}>
-              <div style={{ backgroundColor: '#F8FAFC', border: '1px dashed #94A3B8', borderRadius: '8px', padding: '12px 16px', fontSize: '0.75rem' }}>
-                <strong style={{ color: '#0369A1', fontSize: '0.8125rem', display: 'block', marginBottom: '4px' }}>
-                  🏦 OFFICIAL BANK & UPI PAYMENT SETTLEMENT:
-                </strong>
-                <div style={{ color: '#334155', lineHeight: 1.5 }}>
-                  <div><strong>Account Holder:</strong> {invoiceConfig.accountHolder}</div>
-                  <div><strong>Bank Name:</strong> {invoiceConfig.bankName}</div>
-                  <div><strong>Account No:</strong> <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{invoiceConfig.accountNumber}</span></div>
-                  <div><strong>IFSC Code:</strong> <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{invoiceConfig.ifscCode}</span></div>
-                  <div><strong>UPI ID:</strong> <span style={{ fontFamily: 'monospace', color: '#0284C7', fontWeight: 700 }}>{invoiceConfig.upiId}</span></div>
-                </div>
-              </div>
-
-              <div style={{ backgroundColor: '#F1F5F9', border: '1px solid #CBD5E1', borderRadius: '8px', padding: '12px 16px', fontSize: '0.75rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <span style={{ color: '#64748B' }}>Gross Total:</span>
-                  <span style={{ fontWeight: 600 }}>₹{grossTotal.toFixed(2)}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', color: '#DC2626' }}>
-                  <span>Total Discount:</span>
-                  <span>-₹{totalDiscount.toFixed(2)}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <span style={{ color: '#64748B' }}>Taxable Amount:</span>
-                  <span style={{ fontWeight: 600 }}>₹{taxableAmount.toFixed(2)}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                  <span style={{ color: '#64748B' }}>GST Tax:</span>
-                  <span style={{ fontWeight: 600 }}>₹{totalTax.toFixed(2)}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '2px solid #0F172A', paddingTop: '6px', fontSize: '0.9375rem', fontWeight: 900, color: '#0F172A' }}>
-                  <span>Net Amount Paid:</span>
-                  <span style={{ color: '#0284C7' }}>₹{netPayable.toFixed(2)}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div style={{ marginTop: '24px', borderTop: '1px solid #E2E8F0', paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-              <div>
-                <span style={{ display: 'block', fontSize: '0.6875rem', color: '#64748B' }}>
-                  Terms: Computer generated invoice. Subject to {invoiceConfig.jurisdictionCity} Jurisdiction.
-                </span>
-                <span style={{ display: 'block', fontSize: '0.6875rem', color: '#16A34A', fontWeight: 700, marginTop: '2px' }}>
-                  ✓ Digitally Authenticated & Encrypted Invoice (SHA-256 Vault Verified)
-                </span>
-              </div>
-
-              <div style={{ textAlign: 'center', minWidth: '180px' }}>
-                <div style={{ fontFamily: 'cursive', fontSize: '1.25rem', color: '#0369A1', marginBottom: '2px' }}>
-                  Accounts Officer
-                </div>
-                <div style={{ borderTop: '1px solid #0F172A', paddingTop: '2px' }}>
-                  <strong style={{ fontSize: '0.75rem', color: '#0F172A', display: 'block' }}>For {invoiceConfig.entityLegalName}</strong>
-                  <span style={{ fontSize: '0.6875rem', color: '#64748B' }}>Authorized Signatory</span>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </div>
-    </div>
+    <UnifiedDocumentPrintModal
+      isOpen={isOpen}
+      onClose={onClose}
+      invoiceData={unifiedData}
+      defaultLayout="LASER_A4"
+    />
   );
 };

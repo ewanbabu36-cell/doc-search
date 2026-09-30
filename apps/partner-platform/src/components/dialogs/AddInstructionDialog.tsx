@@ -5,6 +5,7 @@ import type {
   InstructionPriority
 } from '@docsearch/api-contracts';
 import { Dialog, Button, Input, Select, Alert } from '@docsearch/ui-kit';
+import { AuditJustificationField } from '../common/AuditJustificationField.js';
 
 export interface AddInstructionDialogProps {
   isOpen: boolean;
@@ -142,12 +143,12 @@ export const AddInstructionDialog: React.FC<AddInstructionDialogProps> = ({
           <Input value={followUpInst} onChange={(e) => setFollowUpInst(e.target.value)} placeholder="Follow-up instructions" />
         </div>
 
-        <div>
-          <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '4px' }}>
-            Audit Justification *
-          </label>
-          <Input value={justification} onChange={(e) => setJustification(e.target.value)} required />
-        </div>
+        <AuditJustificationField
+          value={justification}
+          onChange={setJustification}
+          defaultJustification="Documented comprehensive patient clinical instructions & lifestyle advice"
+          placeholder="Instruction justification..."
+        />
       </form>
     </Dialog>
   );

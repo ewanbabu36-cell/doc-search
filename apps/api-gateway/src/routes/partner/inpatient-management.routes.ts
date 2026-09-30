@@ -1,16 +1,21 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { inpatientManagementService } from '../../services/partner/InpatientManagementService.js';
 import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
+import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 import {
   type CreateWardInput,
   type CreateBedInput,
   type CreateAdmissionInput,
   type TransferBedInput,
   type NursingNoteInput,
-  type DischargeInput
+  type DischargeInput,
+  type CreateDoctorRoundInput,
+  type RecordVitalObservationInput
 } from '../../repositories/partner/InpatientManagementRepository.js';
 
 export const inpatientManagementRoutes: FastifyPluginAsync = async (fastify) => {
+  fastify.addHook('preHandler', requireModuleCommercialAccess('INPATIENT_IPD'));
+
   // 1. Wards
   fastify.get(
     '/api/v1/partner/inpatient/wards',
@@ -154,6 +159,97 @@ export const inpatientManagementRoutes: FastifyPluginAsync = async (fastify) => 
     async (request) => {
       const { id } = request.params as { id: string };
       const data = await inpatientManagementService.getAdmissions(request.session, undefined, id);
+      return { success: true, data };
+    }
+  );
+
+  // 8. Doctor Daily Rounds
+  fastify.post(
+    '/api/v1/partner/inpatient/rounds',
+    {
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'create')]
+    },
+    async (request, reply) => {
+      const payload = request.body as Omit<CreateDoctorRoundInput, 'tenantId'>;
+      const data = await inpatientManagementService.createDoctorRound(payload, request.session);
+      reply.status(201);
+      return { success: true, data };
+    }
+  );
+
+  fastify.get(
+    '/api/v1/partner/inpatient/rounds',
+    {
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'read')]
+    },
+    async (request) => {
+      const query = request.query as { admissionId?: string; patientId?: string };
+      const data = await inpatientManagementService.getDoctorRounds(request.session, query?.admissionId, query?.patientId);
+      return { success: true, data };
+    }
+  );
+
+  // 9. Inpatient Vitals & Observations
+  fastify.post(
+    '/api/v1/partner/inpatient/vitals',
+    {
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'create')]
+    },
+    async (request, reply) => {
+      const payload = request.body as Omit<RecordVitalObservationInput, 'tenantId' | 'recordedBy'>;
+      const data = await inpatientManagementService.recordVitalObservation(payload, request.session);
+      reply.status(201);
+      return { success: true, data };
+    }
+  );
+
+  fastify.get(
+    '/api/v1/partner/inpatient/vitals',
+    {
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'read')]
+    },
+    async (request) => {
+      const query = request.query as { admissionId?: string; patientId?: string };
+      const data = await inpatientManagementService.getVitalObservations(request.session, query?.admissionId, query?.patientId);
+      return { success: true, data };
+    }
+  );
+
+  // 10. Discharge Summary Document
+  fastify.get(
+    '/api/v1/partner/inpatient/admissions/:id/discharge-summary',
+    {
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'read')]
+    },
+    async (request) => {
+      const { id } = request.params as { id: string };
+      const data = await inpatientManagementService.getDischargeSummary(request.session, id);
+      return { success: true, data };
+    }
+  );
+
+  // 11. Consolidated IPD Billing
+  fastify.get(
+    '/api/v1/partner/inpatient/admissions/:id/billing-summary',
+    {
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'read')]
+    },
+    async (request) => {
+      const { id } = request.params as { id: string };
+      const data = await inpatientManagementService.getIpdBillingSummary(request.session, id);
+      return { success: true, data };
+    }
+  );
+
+  fastify.post(
+    '/api/v1/partner/inpatient/admissions/:id/generate-bill',
+    {
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'create')]
+    },
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const data = await inpatientManagementService.generateConsolidatedIpdBill(request.session, id);
+      reply.status(201);
       return { success: true, data };
     }
   );

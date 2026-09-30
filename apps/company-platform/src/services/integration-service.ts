@@ -58,6 +58,7 @@ import {
   mockIntegrationCredentials,
   mockIntegrationAuditTraces
 } from './mock-integration-data.js';
+import { apiCall, isMockFallbackAllowed } from './api-client.js';
 
 export interface IIntegrationService {
   getIntegrationOverview(): Promise<IntegrationOverviewDto>;
@@ -137,10 +138,28 @@ export class IntegrationService implements IIntegrationService {
   }
 
   async getProviders(): Promise<IntegrationProviderDto[]> {
+    try {
+      const data = await apiCall<IntegrationProviderDto[]>('/api/v1/company/integration/providers');
+      if (Array.isArray(data) && data.length > 0) {
+        this.providers = data;
+        return [...this.providers];
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
     return [...this.providers];
   }
 
   async getEndpoints(): Promise<IntegrationEndpointDto[]> {
+    try {
+      const data = await apiCall<IntegrationEndpointDto[]>('/api/v1/company/integration/endpoints');
+      if (Array.isArray(data) && data.length > 0) {
+        this.endpoints = data;
+        return [...this.endpoints];
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
     return [...this.endpoints];
   }
 
@@ -169,6 +188,15 @@ export class IntegrationService implements IIntegrationService {
   }
 
   async getWebhookEndpoints(): Promise<WebhookEndpointDto[]> {
+    try {
+      const data = await apiCall<WebhookEndpointDto[]>('/api/v1/company/integration/webhooks');
+      if (Array.isArray(data) && data.length > 0) {
+        this.webhookEndpoints = data;
+        return [...this.webhookEndpoints];
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
     return [...this.webhookEndpoints];
   }
 

@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import { AiClinicalCopilotService } from '../../services/partner/AiClinicalCopilotService.js';
+import { clinicalSafetyService } from '../../services/partner/ClinicalSafetyService.js';
 import { authenticate } from '../../plugins/auth-guard.js';
 import { requireFeatureEntitlement } from '../../plugins/commercial-guard.js';
 import { RBACEvaluator } from '@docsearch/auth';
@@ -9,13 +10,31 @@ const service = new AiClinicalCopilotService();
 
 const CLINICIAN_ROLES = [
   'DOCTOR',
+  'CLINIC_DOCTOR',
   'ATTENDING_PHYSICIAN',
+  'ATTENDING_DOCTOR',
   'PHYSICIAN',
   'CONSULTANT',
+  'CONSULTANT_PHYSICIAN',
+  'SURGEON',
   'CARDIOLOGIST',
   'CARDIOLOGY_HOD',
-  'SURGEON',
+  'PEDIATRICIAN',
+  'GYNECOLOGIST',
+  'ORTHOPEDIC_SURGEON',
+  'NEPHROLOGIST',
+  'ONCOLOGIST',
+  'NEUROLOGIST',
+  'OPHTHALMOLOGIST',
+  'DENTIST',
+  'AYURVEDIC_VAIDYA',
+  'PULMONOLOGIST',
+  'PSYCHIATRIST',
+  'DERMATOLOGIST',
+  'EMERGENCY_PHYSICIAN',
   'CHIEF_MEDICAL_OFFICER',
+  'CLINICAL_DIRECTOR',
+  'HOSPITAL_DIRECTOR',
   'SUPER_ADMIN'
 ];
 
@@ -53,10 +72,10 @@ export const aiClinicalCopilotRoutes: FastifyPluginAsync = async (app) => {
     }
   );
 
-  // 2. Ambient AI Scribe & SOAP Generation
+  // 2. Ambient AI Scribe & SOAP Generation (Strict Clinician Role Enforced)
   app.post(
     '/api/v1/partner/ai-copilot/ambient-scribe/soap',
-    { preHandler: copilotGuard },
+    { preHandler: [...copilotGuard, requireClinicianOrPermission('ai_copilot:soap:generate')] },
     async (request, reply) => {
       const payload = (request.body || {}) as Record<string, unknown>;
       const data = await service.generateSoapNoteFromTranscript(request.session, payload);
@@ -66,7 +85,7 @@ export const aiClinicalCopilotRoutes: FastifyPluginAsync = async (app) => {
 
   app.get(
     '/api/v1/partner/ai-copilot/ambient-scribe/soap',
-    { preHandler: copilotGuard },
+    { preHandler: [...copilotGuard, requireClinicianOrPermission('ai_copilot:soap:read')] },
     async (request, reply) => {
       const data = await service.getSoapNotes(request.session);
       return reply.send({ success: true, data });
@@ -114,13 +133,61 @@ export const aiClinicalCopilotRoutes: FastifyPluginAsync = async (app) => {
     }
   );
 
-  // 4. Drug-Drug Interaction (DDI) Evaluator
+  // 4. Drug-Drug Interaction (DDI) & CDSS Evaluator
   app.post(
     '/api/v1/partner/ai-copilot/ddi/evaluate',
     { preHandler: copilotGuard },
     async (request, reply) => {
       const payload = (request.body || {}) as Record<string, unknown>;
-      const data = await service.evaluateDdi(request.session, payload);
+      const meds: Array<{ medicationName: string; dosage?: string; frequency?: string; strength?: string }> = Array.isArray(payload['medications'])
+        ? (payload['medications'] as any[])
+        : payload['newMedicationToPrescribe']
+        ? [{ medicationName: String(payload['newMedicationToPrescribe']) }]
+        : [];
+
+      const activeMeds: string[] = Array.isArray(payload['activeMedications'])
+        ? (payload['activeMedications'] as string[])
+        : [];
+
+      const comprehensiveResult = await clinicalSafetyService.evaluatePrescriptionSafety(request.session, {
+        patientId: String(payload['patientId'] || ''),
+        patientMrn: payload['patientMrn'] ? String(payload['patientMrn']) : undefined,
+        patientWeightKg: typeof payload['patientWeightKg'] === 'number' ? payload['patientWeightKg'] : undefined,
+        medications: meds,
+        activeMedications: activeMeds,
+        activeDiagnoses: Array.isArray(payload['activeDiagnoses']) ? (payload['activeDiagnoses'] as string[]) : undefined,
+        activeAllergies: Array.isArray(payload['activeAllergies']) ? (payload['activeAllergies'] as string[]) : undefined,
+        overrides: Array.isArray(payload['overrides']) ? (payload['overrides'] as any[]) : undefined
+      });
+
+      const legacyData = await service.evaluateDdi(request.session, payload);
+      return reply.status(200).send({
+        success: true,
+        data: {
+          ...legacyData,
+          clinicalSafety: comprehensiveResult
+        }
+      });
+    }
+  );
+
+  // 4b. Dedicated Clinical Decision Support System (CDSS) Prescribing Safety Engine
+  app.post(
+    '/api/v1/partner/clinical-safety/evaluate',
+    { preHandler: copilotGuard },
+    async (request, reply) => {
+      const payload = (request.body || {}) as any;
+      const data = await clinicalSafetyService.evaluatePrescriptionSafety(request.session, payload);
+      return reply.status(200).send({ success: true, data });
+    }
+  );
+
+  app.post(
+    '/api/v1/partner/clinical-safety/override',
+    { preHandler: [...copilotGuard, requireClinicianOrPermission('ai_copilot:ddi:override')] },
+    async (request, reply) => {
+      const payload = (request.body || {}) as any;
+      const data = await clinicalSafetyService.recordDoctorOverride(request.session, payload);
       return reply.status(200).send({ success: true, data });
     }
   );
@@ -183,6 +250,59 @@ export const aiClinicalCopilotRoutes: FastifyPluginAsync = async (app) => {
     async (request, reply) => {
       const data = await service.getAuditTraces(request.session);
       return reply.send({ success: true, data });
+    }
+  );
+
+  // 7. Route Aliases & Resilience for Partner Platform
+  app.get(
+    '/api/v1/partner/ai-copilot/ambient/transcripts',
+    { preHandler: copilotGuard },
+    async (request, reply) => {
+      const data = await service.getSoapNotes(request.session);
+      return reply.send({ success: true, data });
+    }
+  );
+
+  app.get(
+    '/api/v1/partner/ai-copilot/ddi/assessments',
+    { preHandler: copilotGuard },
+    async (request, reply) => {
+      const data = await service.getDdiChecks(request.session);
+      return reply.send({ success: true, data });
+    }
+  );
+
+  app.get(
+    '/api/v1/partner/ai-copilot/panic/alerts',
+    { preHandler: copilotGuard },
+    async (request, reply) => {
+      const data = await service.getPanicAlerts(request.session);
+      return reply.send({ success: true, data });
+    }
+  );
+
+  app.get(
+    '/api/v1/partner/ai-copilot/audit/traces',
+    { preHandler: copilotGuard },
+    async (request, reply) => {
+      const data = await service.getAuditTraces(request.session);
+      return reply.send({ success: true, data });
+    }
+  );
+
+  app.get(
+    '/api/v1/partner/ai-copilot/renal/adjustments',
+    { preHandler: copilotGuard },
+    async (request, reply) => {
+      const query = (request.query || {}) as { patientId?: string; drugName?: string };
+      const patientId = query.patientId || '';
+      const drugs = query.drugName ? [query.drugName] : ['Metformin 500mg', 'Ciprofloxacin 500mg', 'Enoxaparin 40mg', 'Gabapentin 300mg'];
+      const adjustments = [];
+      for (const drug of drugs) {
+        const res = await clinicalSafetyService.evaluateRenalDose(request.session.tenantId, patientId, drug);
+        adjustments.push(res);
+      }
+      return reply.send({ success: true, data: adjustments });
     }
   );
 };

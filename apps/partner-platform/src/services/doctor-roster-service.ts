@@ -1,3 +1,4 @@
+import { apiRequest, isMockFallbackAllowed } from './api-client.js';
 import type {
   DoctorProfileDto,
   DoctorSpecializationDto,
@@ -21,7 +22,6 @@ import type {
   AssignDoctorLocationRequest,
   QueryDoctorAuditRequest
 } from '@docsearch/api-contracts';
-import { MOCK_TENANT_ID } from './mock-partner-foundation-data.js';
 import {
   MOCK_DOCTOR_PROFILES,
   MOCK_DOCTOR_SPECIALIZATIONS,
@@ -57,14 +57,42 @@ export interface IDoctorRosterService {
   getAuditTraces(req: QueryDoctorAuditRequest): Promise<DoctorOpdAuditTraceDto[]>;
 }
 
+function loadStored<T>(key: string, fallback: T[]): T[] {
+  if (!isMockFallbackAllowed()) {
+    return [];
+  }
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const item = window.localStorage.getItem(key);
+      if (item) return JSON.parse(item);
+    } catch {
+      // Fallback
+    }
+  }
+  return [...fallback];
+}
+
+function saveStored<T>(key: string, data: T[]): void {
+  if (!isMockFallbackAllowed()) {
+    return;
+  }
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      window.localStorage.setItem(key, JSON.stringify(data));
+    } catch {
+      // Ignore
+    }
+  }
+}
+
 export class DoctorRosterService implements IDoctorRosterService {
-  private doctors: DoctorProfileDto[] = [...MOCK_DOCTOR_PROFILES];
-  private specializations: DoctorSpecializationDto[] = [...MOCK_DOCTOR_SPECIALIZATIONS];
-  private schedules: DoctorScheduleDto[] = [...MOCK_DOCTOR_SCHEDULES];
-  private leaves: DoctorLeaveDto[] = [...MOCK_DOCTOR_LEAVES];
-  private slots: OpdSlotDto[] = [...MOCK_OPD_SLOTS];
-  private fees: ConsultationFeeMatrixDto[] = [...MOCK_CONSULTATION_FEES];
-  private auditTraces: DoctorOpdAuditTraceDto[] = [...MOCK_DOCTOR_OPD_AUDIT_TRACES];
+  private doctors: DoctorProfileDto[] = loadStored('docsearch_doctor_profiles', MOCK_DOCTOR_PROFILES);
+  private specializations: DoctorSpecializationDto[] = loadStored('docsearch_doctor_specializations', MOCK_DOCTOR_SPECIALIZATIONS);
+  private schedules: DoctorScheduleDto[] = loadStored('docsearch_doctor_schedules', MOCK_DOCTOR_SCHEDULES);
+  private leaves: DoctorLeaveDto[] = loadStored('docsearch_doctor_leaves', MOCK_DOCTOR_LEAVES);
+  private slots: OpdSlotDto[] = loadStored('docsearch_opd_slots', MOCK_OPD_SLOTS);
+  private fees: ConsultationFeeMatrixDto[] = loadStored('docsearch_consultation_fees', MOCK_CONSULTATION_FEES);
+  private auditTraces: DoctorOpdAuditTraceDto[] = isMockFallbackAllowed() ? [...MOCK_DOCTOR_OPD_AUDIT_TRACES] : [];
 
   private addAudit(
     tenantId: string,
@@ -103,15 +131,11 @@ export class DoctorRosterService implements IDoctorRosterService {
   }
 
   async getOverview(
-    tenantId: string,
+    _tenantId: string,
     partnerId?: string,
     organizationId?: string,
     branchId?: string
   ): Promise<DoctorRosterOverviewDto> {
-    if (tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Access denied to tenant ${tenantId}`);
-    }
-
     const filteredDocs = this.doctors.filter((d) => {
       if (partnerId && d.partnerId !== partnerId) return false;
       if (organizationId && d.organizationId !== organizationId) return false;
@@ -148,8 +172,55 @@ export class DoctorRosterService implements IDoctorRosterService {
     branchId?: string,
     departmentId?: string
   ): Promise<DoctorProfileDto[]> {
-    if (tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Access denied to tenant ${tenantId}`);
+    try {
+      const params = new URLSearchParams();
+      if (partnerId) params.append('partnerId', partnerId);
+      if (organizationId) params.append('organizationId', organizationId);
+      if (branchId) params.append('branchId', branchId);
+      if (departmentId) params.append('departmentId', departmentId);
+      params.append('staffType', 'DOCTOR');
+      const res = await apiRequest<any[]>(`/api/v1/partner/staff/members?${params.toString()}`);
+      if (res.success && Array.isArray(res.data)) {
+        return res.data.map((s) => {
+          const existing = this.doctors.find((d) => d.staffId === s.id || d.id === s.id);
+          if (existing) return existing;
+          return {
+            id: s.id,
+            tenantId: s.tenantId || tenantId,
+            partnerId: s.partnerId || partnerId || '22222222-2222-4222-8222-222222222201',
+            organizationId: s.organizationId || organizationId || '44444444-4444-4444-8444-444444444401',
+            branchId: s.branchId || branchId || '88888888-1111-4888-8888-111111111101',
+            departmentId: s.departmentId || departmentId || '71111111-1111-4111-8111-111111111101',
+            staffId: s.id,
+            fullName: s.fullName || `${s.firstName || ''} ${s.lastName || ''}`.trim() || 'Dr. Physician',
+            workEmail: s.workEmail || `${s.staffCode || s.id}@docsearch.health`,
+            doctorCode: s.staffCode || 'DOC-001',
+            medicalLicenseNumber: s.medicalLicenseNumber || 'MCI-DEFAULT',
+            qualification: s.qualification || 'MBBS, MD',
+            experienceYears: 10,
+            primarySpecialty: s.specialty || 'General Medicine',
+            subSpecialties: [],
+            consultationModes: ['IN_PERSON', 'TELEHEALTH'],
+            telehealthEligible: true,
+            bioSummary: 'Consultant Doctor',
+            availabilityStatus: 'AVAILABLE',
+            status: 'ACTIVE',
+            metadata: {},
+            createdAt: s.createdAt || new Date().toISOString(),
+            updatedAt: s.updatedAt || new Date().toISOString()
+          };
+        });
+      }
+      if (!isMockFallbackAllowed()) {
+        return [];
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) {
+        throw error;
+      }
+    }
+    if (!isMockFallbackAllowed()) {
+      return [];
     }
     return this.doctors.filter((d) => {
       if (partnerId && d.partnerId !== partnerId) return false;
@@ -160,17 +231,11 @@ export class DoctorRosterService implements IDoctorRosterService {
     });
   }
 
-  async getDoctorById(tenantId: string, doctorId: string): Promise<DoctorProfileDto | null> {
-    if (tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Access denied to tenant ${tenantId}`);
-    }
+  async getDoctorById(_tenantId: string, doctorId: string): Promise<DoctorProfileDto | null> {
     return this.doctors.find((d) => d.id === doctorId) ?? null;
   }
 
   async createDoctorProfile(req: CreateDoctorProfileRequest): Promise<DoctorProfileDto> {
-    if (req.tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Cannot create doctor in foreign tenant ${req.tenantId}`);
-    }
 
     const existingDoctor = this.doctors.find((d) => d.staffId === req.staffId);
     if (existingDoctor) {
@@ -253,10 +318,7 @@ export class DoctorRosterService implements IDoctorRosterService {
     return { ...doc };
   }
 
-  async getSpecializations(tenantId: string, organizationId?: string): Promise<DoctorSpecializationDto[]> {
-    if (tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Access denied to tenant ${tenantId}`);
-    }
+  async getSpecializations(_tenantId: string, organizationId?: string): Promise<DoctorSpecializationDto[]> {
     return this.specializations.filter((s) => {
       if (organizationId && s.organizationId !== organizationId) return false;
       return true;
@@ -264,10 +326,6 @@ export class DoctorRosterService implements IDoctorRosterService {
   }
 
   async createSpecialization(req: CreateDoctorSpecializationRequest): Promise<DoctorSpecializationDto> {
-    if (req.tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Cannot create specialization in foreign tenant ${req.tenantId}`);
-    }
-
     const spec: DoctorSpecializationDto = {
       id: crypto.randomUUID(),
       tenantId: req.tenantId,
@@ -305,14 +363,30 @@ export class DoctorRosterService implements IDoctorRosterService {
   }
 
   async getSchedules(
-    tenantId: string,
+    _tenantId: string,
     doctorId?: string,
     branchId?: string,
     dayOfWeek?: string
   ): Promise<DoctorScheduleDto[]> {
-    if (tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Access denied to tenant ${tenantId}`);
+    try {
+      const params = new URLSearchParams();
+      if (doctorId) params.set('doctorId', doctorId);
+      if (branchId) params.set('branchId', branchId);
+      if (dayOfWeek) params.set('dayOfWeek', dayOfWeek);
+      const res = await apiRequest<DoctorScheduleDto[]>(`/api/v1/partner/roster/schedules?${params.toString()}`);
+      if (res.success && Array.isArray(res.data)) {
+        for (const remote of res.data) {
+          const idx = this.schedules.findIndex((s) => s.id === remote.id);
+          if (idx >= 0) this.schedules[idx] = remote;
+          else this.schedules.push(remote);
+        }
+        saveStored('docsearch_doctor_schedules', this.schedules);
+        return res.data;
+      }
+    } catch {
+      // Fallback
     }
+
     return this.schedules.filter((s) => {
       if (doctorId && s.doctorId !== doctorId) return false;
       if (branchId && s.branchId !== branchId) return false;
@@ -322,8 +396,18 @@ export class DoctorRosterService implements IDoctorRosterService {
   }
 
   async createSchedule(req: CreateDoctorScheduleRequest): Promise<DoctorScheduleDto> {
-    if (req.tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Cannot create schedule in foreign tenant ${req.tenantId}`);
+    try {
+      const res = await apiRequest<DoctorScheduleDto>('/api/v1/partner/roster/schedules', {
+        method: 'POST',
+        body: JSON.stringify(req)
+      });
+      if (res.success && res.data) {
+        this.schedules.unshift(res.data);
+        saveStored('docsearch_doctor_schedules', this.schedules);
+        return res.data;
+      }
+    } catch {
+      // Fallback
     }
 
     const doc = this.doctors.find((d) => d.id === req.doctorId);
@@ -356,6 +440,7 @@ export class DoctorRosterService implements IDoctorRosterService {
       updatedAt: new Date().toISOString()
     };
     this.schedules.push(sched);
+    saveStored('docsearch_doctor_schedules', this.schedules);
 
     // Auto-generate next session slots for demonstration
     const slot: OpdSlotDto = {
@@ -378,6 +463,7 @@ export class DoctorRosterService implements IDoctorRosterService {
       updatedAt: new Date().toISOString()
     };
     this.slots.push(slot);
+    saveStored('docsearch_opd_slots', this.slots);
 
     this.addAudit(
       req.tenantId,
@@ -396,6 +482,21 @@ export class DoctorRosterService implements IDoctorRosterService {
   }
 
   async updateSchedule(req: UpdateDoctorScheduleRequest): Promise<DoctorScheduleDto> {
+    try {
+      const res = await apiRequest<DoctorScheduleDto>(`/api/v1/partner/roster/schedules/${encodeURIComponent(req.scheduleId)}`, {
+        method: 'PUT',
+        body: JSON.stringify(req)
+      });
+      if (res.success && res.data) {
+        const idx = this.schedules.findIndex((s) => s.id === req.scheduleId);
+        if (idx >= 0) this.schedules[idx] = res.data;
+        saveStored('docsearch_doctor_schedules', this.schedules);
+        return res.data;
+      }
+    } catch {
+      // Fallback
+    }
+
     const s = this.schedules.find((item) => item.id === req.scheduleId && item.tenantId === req.tenantId);
     if (!s) {
       throw new Error(`Schedule ${req.scheduleId} not found.`);
@@ -408,6 +509,7 @@ export class DoctorRosterService implements IDoctorRosterService {
     if (req.roomNumber !== undefined) s.roomNumber = req.roomNumber;
     if (req.isActive !== undefined) s.isActive = req.isActive;
     s.updatedAt = new Date().toISOString();
+    saveStored('docsearch_doctor_schedules', this.schedules);
 
     this.addAudit(
       req.tenantId,
@@ -425,10 +527,24 @@ export class DoctorRosterService implements IDoctorRosterService {
     return { ...s };
   }
 
-  async getLeaves(tenantId: string, doctorId?: string): Promise<DoctorLeaveDto[]> {
-    if (tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Access denied to tenant ${tenantId}`);
+  async getLeaves(_tenantId: string, doctorId?: string): Promise<DoctorLeaveDto[]> {
+    try {
+      const params = new URLSearchParams();
+      if (doctorId) params.set('doctorId', doctorId);
+      const res = await apiRequest<DoctorLeaveDto[]>(`/api/v1/partner/roster/leaves?${params.toString()}`);
+      if (res.success && Array.isArray(res.data)) {
+        for (const remote of res.data) {
+          const idx = this.leaves.findIndex((l) => l.id === remote.id);
+          if (idx >= 0) this.leaves[idx] = remote;
+          else this.leaves.push(remote);
+        }
+        saveStored('docsearch_doctor_leaves', this.leaves);
+        return res.data;
+      }
+    } catch {
+      // Fallback
     }
+
     if (doctorId) {
       return this.leaves.filter((l) => l.doctorId === doctorId);
     }
@@ -436,6 +552,20 @@ export class DoctorRosterService implements IDoctorRosterService {
   }
 
   async addLeave(req: AddDoctorLeaveRequest): Promise<DoctorLeaveDto> {
+    try {
+      const res = await apiRequest<DoctorLeaveDto>('/api/v1/partner/roster/leaves', {
+        method: 'POST',
+        body: JSON.stringify(req)
+      });
+      if (res.success && res.data) {
+        this.leaves.unshift(res.data);
+        saveStored('docsearch_doctor_leaves', this.leaves);
+        return res.data;
+      }
+    } catch {
+      // Fallback
+    }
+
     const doc = this.doctors.find((d) => d.id === req.doctorId && d.tenantId === req.tenantId);
     if (!doc) {
       throw new Error(`Doctor ${req.doctorId} not found.`);
@@ -465,6 +595,7 @@ export class DoctorRosterService implements IDoctorRosterService {
       updatedAt: new Date().toISOString()
     };
     this.leaves.push(leave);
+    saveStored('docsearch_doctor_leaves', this.leaves);
     doc.availabilityStatus = 'ON_LEAVE';
 
     // Mark affected slots with leave conflict
@@ -474,6 +605,7 @@ export class DoctorRosterService implements IDoctorRosterService {
         s.blockReason = `Doctor on approved leave: ${req.reason}`;
       }
     });
+    saveStored('docsearch_opd_slots', this.slots);
 
     this.addAudit(
       req.tenantId,
@@ -492,6 +624,21 @@ export class DoctorRosterService implements IDoctorRosterService {
   }
 
   async approveLeave(req: ApproveDoctorLeaveRequest): Promise<DoctorLeaveDto> {
+    try {
+      const res = await apiRequest<DoctorLeaveDto>(`/api/v1/partner/roster/leaves/${encodeURIComponent(req.leaveId)}/approve`, {
+        method: 'PATCH',
+        body: JSON.stringify(req)
+      });
+      if (res.success && res.data) {
+        const idx = this.leaves.findIndex((l) => l.id === req.leaveId);
+        if (idx >= 0) this.leaves[idx] = res.data;
+        saveStored('docsearch_doctor_leaves', this.leaves);
+        return res.data;
+      }
+    } catch {
+      // Fallback
+    }
+
     const leave = this.leaves.find((l) => l.id === req.leaveId && l.tenantId === req.tenantId);
     if (!leave) {
       throw new Error(`Leave record ${req.leaveId} not found.`);
@@ -500,6 +647,7 @@ export class DoctorRosterService implements IDoctorRosterService {
     leave.approvalStatus = req.approvalStatus;
     leave.approvedBy = req.actorId;
     leave.updatedAt = new Date().toISOString();
+    saveStored('docsearch_doctor_leaves', this.leaves);
 
     const doc = this.doctors.find((d) => d.id === leave.doctorId);
     if (doc && req.approvalStatus === 'APPROVED') {
@@ -523,14 +671,30 @@ export class DoctorRosterService implements IDoctorRosterService {
   }
 
   async getOpdSlots(
-    tenantId: string,
+    _tenantId: string,
     doctorId?: string,
     branchId?: string,
     slotDate?: string
   ): Promise<OpdSlotDto[]> {
-    if (tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Access denied to tenant ${tenantId}`);
+    try {
+      const params = new URLSearchParams();
+      if (doctorId) params.set('doctorId', doctorId);
+      if (branchId) params.set('branchId', branchId);
+      if (slotDate) params.set('slotDate', slotDate);
+      const res = await apiRequest<OpdSlotDto[]>(`/api/v1/partner/roster/slots?${params.toString()}`);
+      if (res.success && Array.isArray(res.data)) {
+        for (const remote of res.data) {
+          const idx = this.slots.findIndex((s) => s.id === remote.id);
+          if (idx >= 0) this.slots[idx] = remote;
+          else this.slots.push(remote);
+        }
+        saveStored('docsearch_opd_slots', this.slots);
+        return res.data;
+      }
+    } catch {
+      // Fallback
     }
+
     return this.slots.filter((s) => {
       if (doctorId && s.doctorId !== doctorId) return false;
       if (branchId && s.branchId !== branchId) return false;
@@ -540,6 +704,21 @@ export class DoctorRosterService implements IDoctorRosterService {
   }
 
   async blockOpdSlot(req: BlockOpdSlotRequest): Promise<OpdSlotDto> {
+    try {
+      const res = await apiRequest<OpdSlotDto>(`/api/v1/partner/roster/slots/${encodeURIComponent(req.slotId)}/block`, {
+        method: 'PATCH',
+        body: JSON.stringify(req)
+      });
+      if (res.success && res.data) {
+        const idx = this.slots.findIndex((s) => s.id === req.slotId);
+        if (idx >= 0) this.slots[idx] = res.data;
+        saveStored('docsearch_opd_slots', this.slots);
+        return res.data;
+      }
+    } catch {
+      // Fallback
+    }
+
     const slot = this.slots.find((s) => s.id === req.slotId && s.tenantId === req.tenantId);
     if (!slot) {
       throw new Error(`OPD slot ${req.slotId} not found.`);
@@ -548,6 +727,7 @@ export class DoctorRosterService implements IDoctorRosterService {
     slot.bookingStatus = 'BLOCKED';
     slot.blockReason = req.blockReason;
     slot.updatedAt = new Date().toISOString();
+    saveStored('docsearch_opd_slots', this.slots);
 
     this.addAudit(
       req.tenantId,
@@ -566,6 +746,21 @@ export class DoctorRosterService implements IDoctorRosterService {
   }
 
   async unblockOpdSlot(req: UnblockOpdSlotRequest): Promise<OpdSlotDto> {
+    try {
+      const res = await apiRequest<OpdSlotDto>(`/api/v1/partner/roster/slots/${encodeURIComponent(req.slotId)}/unblock`, {
+        method: 'PATCH',
+        body: JSON.stringify(req)
+      });
+      if (res.success && res.data) {
+        const idx = this.slots.findIndex((s) => s.id === req.slotId);
+        if (idx >= 0) this.slots[idx] = res.data;
+        saveStored('docsearch_opd_slots', this.slots);
+        return res.data;
+      }
+    } catch {
+      // Fallback
+    }
+
     const slot = this.slots.find((s) => s.id === req.slotId && s.tenantId === req.tenantId);
     if (!slot) {
       throw new Error(`OPD slot ${req.slotId} not found.`);
@@ -574,6 +769,7 @@ export class DoctorRosterService implements IDoctorRosterService {
     slot.bookingStatus = 'AVAILABLE';
     delete slot.blockReason;
     slot.updatedAt = new Date().toISOString();
+    saveStored('docsearch_opd_slots', this.slots);
 
     this.addAudit(
       req.tenantId,
@@ -592,15 +788,32 @@ export class DoctorRosterService implements IDoctorRosterService {
   }
 
   async getConsultationFees(
-    tenantId: string,
+    _tenantId: string,
     organizationId?: string,
     branchId?: string,
     specialtyCode?: string,
     doctorId?: string
   ): Promise<ConsultationFeeMatrixDto[]> {
-    if (tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Access denied to tenant ${tenantId}`);
+    try {
+      const params = new URLSearchParams();
+      if (organizationId) params.set('organizationId', organizationId);
+      if (branchId) params.set('branchId', branchId);
+      if (specialtyCode) params.set('specialtyCode', specialtyCode);
+      if (doctorId) params.set('doctorId', doctorId);
+      const res = await apiRequest<ConsultationFeeMatrixDto[]>(`/api/v1/partner/roster/fees?${params.toString()}`);
+      if (res.success && Array.isArray(res.data)) {
+        for (const remote of res.data) {
+          const idx = this.fees.findIndex((f) => f.id === remote.id);
+          if (idx >= 0) this.fees[idx] = remote;
+          else this.fees.push(remote);
+        }
+        saveStored('docsearch_consultation_fees', this.fees);
+        return res.data;
+      }
+    } catch {
+      // Fallback
     }
+
     return this.fees.filter((f) => {
       if (organizationId && f.organizationId !== organizationId) return false;
       if (branchId && f.branchId && f.branchId !== branchId) return false;
@@ -611,8 +824,18 @@ export class DoctorRosterService implements IDoctorRosterService {
   }
 
   async createConsultationFee(req: CreateConsultationFeeRequest): Promise<ConsultationFeeMatrixDto> {
-    if (req.tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Cannot create fee matrix in foreign tenant ${req.tenantId}`);
+    try {
+      const res = await apiRequest<ConsultationFeeMatrixDto>('/api/v1/partner/roster/fees', {
+        method: 'POST',
+        body: JSON.stringify(req)
+      });
+      if (res.success && res.data) {
+        this.fees.unshift(res.data);
+        saveStored('docsearch_consultation_fees', this.fees);
+        return res.data;
+      }
+    } catch {
+      // Fallback
     }
 
     const fee: ConsultationFeeMatrixDto = {
@@ -635,6 +858,7 @@ export class DoctorRosterService implements IDoctorRosterService {
       updatedAt: new Date().toISOString()
     };
     this.fees.push(fee);
+    saveStored('docsearch_consultation_fees', this.fees);
 
     this.addAudit(
       req.tenantId,
@@ -653,6 +877,21 @@ export class DoctorRosterService implements IDoctorRosterService {
   }
 
   async updateConsultationFee(req: UpdateConsultationFeeRequest): Promise<ConsultationFeeMatrixDto> {
+    try {
+      const res = await apiRequest<ConsultationFeeMatrixDto>(`/api/v1/partner/roster/fees/${encodeURIComponent(req.feeId)}`, {
+        method: 'PUT',
+        body: JSON.stringify(req)
+      });
+      if (res.success && res.data) {
+        const idx = this.fees.findIndex((f) => f.id === req.feeId);
+        if (idx >= 0) this.fees[idx] = res.data;
+        saveStored('docsearch_consultation_fees', this.fees);
+        return res.data;
+      }
+    } catch {
+      // Fallback
+    }
+
     const fee = this.fees.find((f) => f.id === req.feeId && f.tenantId === req.tenantId);
     if (!fee) {
       throw new Error(`Consultation fee record ${req.feeId} not found.`);
@@ -662,6 +901,7 @@ export class DoctorRosterService implements IDoctorRosterService {
     if (req.followUpValidityDays !== undefined) fee.followUpValidityDays = req.followUpValidityDays;
     if (req.status) fee.status = req.status;
     fee.updatedAt = new Date().toISOString();
+    saveStored('docsearch_consultation_fees', this.fees);
 
     this.addAudit(
       req.tenantId,
@@ -707,9 +947,6 @@ export class DoctorRosterService implements IDoctorRosterService {
   }
 
   async getAuditTraces(req: QueryDoctorAuditRequest): Promise<DoctorOpdAuditTraceDto[]> {
-    if (req.tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Access denied to tenant ${req.tenantId}`);
-    }
     return this.auditTraces.filter((t) => {
       if (t.tenantId !== req.tenantId) return false;
       if (req.partnerId && t.partnerId !== req.partnerId) return false;

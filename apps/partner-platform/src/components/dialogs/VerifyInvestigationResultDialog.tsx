@@ -17,6 +17,7 @@ import type {
   InvestigationOrderDto,
   VerifyInvestigationResultRequest
 } from '@docsearch/api-contracts';
+import { getVerifiedRoleProfile } from '../../utils/roleProfileResolver.js';
 
 export interface VerifyInvestigationResultDialogProps {
   isOpen: boolean;
@@ -33,7 +34,12 @@ export const VerifyInvestigationResultDialog: React.FC<VerifyInvestigationResult
   order,
   tenantId
 }) => {
-  const [verifyingPathologist, setVerifyingPathologist] = useState('Dr. Marcus Vance, MD (Clinical Pathologist)');
+  const profile = getVerifiedRoleProfile();
+  const defaultPathologist = profile.pathologistName
+    ? `${profile.pathologistName}, ${profile.pathologistDegree || 'MD (Clinical Pathologist)'}`
+    : (profile.doctorName ? `${profile.doctorName}, ${profile.doctorDegree || 'MD'}` : 'Authorized Clinical Pathologist');
+
+  const [verifyingPathologist, setVerifyingPathologist] = useState(defaultPathologist);
   const [clinicalImpression, setClinicalImpression] = useState('');
   const [recommendations, setRecommendations] = useState('');
   const [justification, setJustification] = useState('Pathologist diagnostic review and electronic verification.');

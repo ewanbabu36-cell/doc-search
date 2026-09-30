@@ -1,0 +1,102 @@
+{
+  "timestamp": "2026-09-29T06:44:17.174Z",
+  "auditCategory": "CATEGORY 19: CONFIGURATION / ENVIRONMENT ERROR",
+  "status": "ALL_CONFIGS_HEALTHY",
+  "summary": {
+    "totalChecks": 9,
+    "passed": 9,
+    "failed": 0,
+    "defectCount": 0
+  },
+  "findings": [
+    {
+      "id": "CFG-DISC-001",
+      "name": "Environment Files & Templates Inventory",
+      "status": "PASSED",
+      "details": "Found all required .env and template files in repository",
+      "metrics": {
+        "Root .env": "EXISTS",
+        "Root .env_size": 610,
+        "Root .env.example": "EXISTS",
+        "Root .env.example_size": 728,
+        "Root .env.docker.example": "EXISTS",
+        "Root .env.docker.example_size": 575,
+        "API Gateway .env": "EXISTS",
+        "API Gateway .env_size": 610
+      }
+    },
+    {
+      "id": "CFG-DISC-002",
+      "name": "API Gateway Config Schema Completeness",
+      "status": "PASSED",
+      "details": "All 14 core environment variables defined in Zod schema",
+      "metrics": {
+        "requiredCount": 14,
+        "missingCount": 0
+      }
+    },
+    {
+      "id": "CFG-SEC-001",
+      "name": "Production Fail-Closed Boot Policy Defined in env.ts",
+      "status": "PASSED",
+      "details": "Strict fail-closed boot checks reject dev default JWT secret, weak keys, and localhost DB in production",
+      "metrics": {
+        "hasFailClosedBlock": true
+      }
+    },
+    {
+      "id": "CFG-SEC-002",
+      "name": "Database Fail-Closed Policy (Zero pg-mem Fallback in Production)",
+      "status": "PASSED",
+      "details": "Database client throws FATAL_DATABASE_ERROR if PostgreSQL is unreachable in production or staging",
+      "metrics": {
+        "hasDbFailClosedPolicy": true
+      }
+    },
+    {
+      "id": "CFG-SEC-003",
+      "name": "CORS Localhost Origin Restriction in Production Mode",
+      "status": "PASSED",
+      "details": "CORS plugin restricts localhost to non-production environments",
+      "metrics": {
+        "unconditionedLocalhostCors": false
+      }
+    },
+    {
+      "id": "CFG-FE-001",
+      "name": "Partner Platform Dynamic API URL Support",
+      "status": "PASSED",
+      "details": "Partner platform reads import.meta.env.VITE_API_URL",
+      "metrics": {
+        "partnerUsesEnvUrl": true
+      }
+    },
+    {
+      "id": "CFG-FE-002",
+      "name": "Company Platform Dynamic API URL Support",
+      "status": "PASSED",
+      "details": "Company platform reads import.meta.env.VITE_API_URL",
+      "metrics": {
+        "companyUsesEnvUrl": true
+      }
+    },
+    {
+      "id": "CFG-DEP-001",
+      "name": "Deployment Nginx Reverse Proxy Path & Upstream Target",
+      "status": "PASSED",
+      "details": "deployment/nginx.conf correctly proxies /api to docsearch-api:4000 without path stripping",
+      "metrics": {
+        "nginxHasDefect": false
+      }
+    },
+    {
+      "id": "CFG-DEP-002",
+      "name": "Docker Compose Production Cryptographic Environment Completeness",
+      "status": "PASSED",
+      "details": "docker-compose.yml supplies required cryptographic environment variables",
+      "metrics": {
+        "hasEncryptionKey": true
+      }
+    }
+  ]
+}

@@ -46,6 +46,7 @@ describe('Phase 4: Production Revenue Protection & Accounting Integrity Journey'
         'billing:invoices:create',
         'billing:invoices:read',
         'billing:invoices:update',
+        'billing:invoices:cancel',
         'billing:payments:create',
         'billing:payments:read',
         'pharmacy:medications:create',

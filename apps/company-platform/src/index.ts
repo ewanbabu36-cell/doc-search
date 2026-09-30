@@ -49,6 +49,7 @@ export * from './services/mock-platform-engineering-data.js';
 export * from './navigation/phase1-nav.js';
 export * from './components/CompanyShell.js';
 export * from './components/executive/ExecutiveCommandCenter.js';
+export * from './components/executive/MediSphereCommandCenterDashboard.js';
 export * from './components/executive/ExecutiveOverview.js';
 export * from './components/executive/KpiSummary.js';
 export * from './components/executive/BusinessPerformance.js';

@@ -11,59 +11,197 @@
  */
 
 /* ==========================================================================
-   1. ADVANCE PRO (CYBER-MEDICAL DARK) - DEFAULT
+   1. ADVANCE PRO (APPLE-INSPIRED SPATIAL HEALTHCARE DARK) - DEFAULT
    ========================================================================== */
 :root,
 .theme-advance-pro {
-  --ds-color-bg: #090e17;
-  --ds-color-surface: #101726;
-  --ds-color-surface-subtle: #182235;
-  --ds-color-surface-hover: #1f2d47;
-  --ds-color-surface-selected: #1e3a5f;
+  --ds-color-bg: #0b0f17;
+  --ds-color-surface: #121826;
+  --ds-color-surface-subtle: #182234;
+  --ds-color-surface-hover: #1f2d44;
+  --ds-color-surface-selected: rgba(2, 132, 199, 0.16);
 
-  --ds-color-border: #1e2c45;
-  --ds-color-border-subtle: #162238;
-  --ds-color-border-strong: #334b75;
+  --ds-color-border: rgba(255, 255, 255, 0.08);
+  --ds-color-border-subtle: rgba(255, 255, 255, 0.05);
+  --ds-color-border-strong: rgba(255, 255, 255, 0.16);
 
   --ds-color-text-primary: #f8fafc;
   --ds-color-text-secondary: #cbd5e1;
-  --ds-color-text-muted: #8da2c0;
-  --ds-color-text-inverse: #090e17;
+  --ds-color-text-muted: #94a3b8;
+  --ds-color-text-inverse: #0b0f17;
 
-  --ds-color-primary: #06b6d4;
-  --ds-color-primary-hover: #22d3ee;
-  --ds-color-primary-subtle: #083344;
-  --ds-color-primary-foreground: #090e17;
+  /* Restrained Healthcare Accent: Serene Cerulean Blue */
+  --ds-color-primary: #0284c7;
+  --ds-color-primary-hover: #0369a1;
+  --ds-color-primary-subtle: rgba(2, 132, 199, 0.15);
+  --ds-color-primary-foreground: #ffffff;
 
-  --ds-color-secondary: #8b5cf6;
-  --ds-color-secondary-hover: #a855f7;
-  --ds-color-secondary-subtle: #2e1065;
+  --ds-color-secondary: #475569;
+  --ds-color-secondary-hover: #64748b;
+  --ds-color-secondary-subtle: rgba(71, 85, 105, 0.2);
   --ds-color-secondary-foreground: #ffffff;
 
-  --ds-color-accent: #3b82f6;
-  --ds-color-accent-hover: #60a5fa;
+  --ds-color-accent: #0ea5e9;
+  --ds-color-accent-hover: #38bdf8;
   --ds-color-accent-foreground: #ffffff;
 
   --ds-color-success: #10b981;
-  --ds-color-success-subtle: #064e3b;
+  --ds-color-success-subtle: rgba(16, 185, 129, 0.14);
   --ds-color-success-foreground: #ffffff;
 
   --ds-color-warning: #f59e0b;
-  --ds-color-warning-subtle: #451a03;
+  --ds-color-warning-subtle: rgba(245, 158, 11, 0.14);
   --ds-color-warning-foreground: #ffffff;
 
-  --ds-color-danger: #f43f5e;
-  --ds-color-danger-subtle: #4c0519;
+  --ds-color-danger: #ef4444;
+  --ds-color-danger-subtle: rgba(239, 68, 68, 0.14);
   --ds-color-danger-foreground: #ffffff;
 
-  --ds-color-focus-ring: #06b6d4;
-  --ds-color-backdrop: rgba(4, 7, 13, 0.85);
+  --ds-color-focus-ring: rgba(14, 165, 233, 0.45);
+  --ds-color-backdrop: rgba(11, 15, 23, 0.75);
 
-  --ds-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4);
-  --ds-shadow-base: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
-  --ds-shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.6);
-  --ds-shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.7), 0 0 20px rgba(6, 182, 212, 0.2);
-  --ds-shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 35px rgba(6, 182, 212, 0.3);
+  /* Universal Semantic Healthcare Status Tokens */
+  --ds-status-active: #0284c7;
+  --ds-status-active-subtle: rgba(2, 132, 199, 0.15);
+  --ds-status-inactive: #64748b;
+  --ds-status-inactive-subtle: rgba(100, 116, 139, 0.15);
+  --ds-status-pending: #f59e0b;
+  --ds-status-pending-subtle: rgba(245, 158, 11, 0.15);
+  --ds-status-approved: #10b981;
+  --ds-status-approved-subtle: rgba(16, 185, 129, 0.15);
+  --ds-status-rejected: #ef4444;
+  --ds-status-rejected-subtle: rgba(239, 68, 68, 0.15);
+  --ds-status-draft: #94a3b8;
+  --ds-status-draft-subtle: rgba(148, 163, 184, 0.15);
+  --ds-status-processing: #0ea5e9;
+  --ds-status-processing-subtle: rgba(14, 165, 233, 0.15);
+  --ds-status-completed: #10b981;
+  --ds-status-completed-subtle: rgba(16, 185, 129, 0.15);
+  --ds-status-failed: #ef4444;
+  --ds-status-failed-subtle: rgba(239, 68, 68, 0.15);
+  --ds-status-expired: #64748b;
+  --ds-status-expired-subtle: rgba(100, 116, 139, 0.15);
+  --ds-status-warning: #f59e0b;
+  --ds-status-warning-subtle: rgba(245, 158, 11, 0.15);
+  --ds-status-critical: #dc2626;
+  --ds-status-critical-subtle: rgba(220, 38, 38, 0.15);
+  --ds-status-info: #0ea5e9;
+  --ds-status-info-subtle: rgba(14, 165, 233, 0.15);
+
+  /* 5-Level Surface & Spatial Depth Hierarchy (Universal Theme-Adaptive Tokens) */
+  --ds-surface-l1: var(--ds-color-bg, #0b0f17);
+  --ds-surface-l2: var(--ds-color-surface-subtle, var(--ds-color-surface, #121826));
+  --ds-surface-l3: var(--ds-color-surface, rgba(18, 24, 38, 0.78));
+  --ds-surface-l4: var(--ds-color-surface-hover, var(--ds-color-surface, rgba(24, 34, 52, 0.88)));
+  --ds-surface-l5: rgba(239, 68, 68, 0.12);
+
+  /* Apple-inspired Frosted Materials & Specular Edge */
+  --ds-specular-edge: inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
+  --ds-specular-edge-subtle: inset 0 0.5px 0 0 rgba(255, 255, 255, 0.08);
+  --ds-glass-blur: blur(24px) saturate(180%);
+  --ds-glow-halo: 0 4px 24px -2px rgba(2, 132, 199, 0.2);
+
+  /* Multi-Layer Diffused Soft Ambient Shadows (No harsh neon) */
+  --ds-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.15), 0 1px 2px -1px rgba(0, 0, 0, 0.15);
+  --ds-shadow-base: 0 4px 12px -2px rgba(0, 0, 0, 0.25), 0 2px 6px -1px rgba(0, 0, 0, 0.15);
+  --ds-shadow-md: 0 10px 24px -4px rgba(0, 0, 0, 0.35), 0 4px 10px -2px rgba(0, 0, 0, 0.2);
+  --ds-shadow-lg: 0 20px 40px -8px rgba(0, 0, 0, 0.45), 0 8px 16px -4px rgba(0, 0, 0, 0.25);
+  --ds-shadow-xl: 0 32px 64px -12px rgba(0, 0, 0, 0.55), 0 12px 24px -6px rgba(0, 0, 0, 0.3);
+
+  /* Material 3-Inspired Tonal Surface Containers (Dark theme) */
+  --ds-surface-container-lowest: #0e121c;
+  --ds-surface-container-low: #121826;
+  --ds-surface-container: #162032;
+  --ds-surface-container-high: #1c283e;
+  --ds-surface-container-highest: #243450;
+
+  /* Material 3-Inspired 5-Level Elevation Shadows */
+  --ds-elevation-0: none;
+  --ds-elevation-1: 0 1px 3px 1px rgba(0, 0, 0, 0.15), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+  --ds-elevation-2: 0 2px 6px 2px rgba(0, 0, 0, 0.18), 0 1px 2px 0 rgba(0, 0, 0, 0.25);
+  --ds-elevation-3: 0 4px 12px 3px rgba(0, 0, 0, 0.22), 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+  --ds-elevation-4: 0 6px 16px 4px rgba(0, 0, 0, 0.25), 0 2px 4px 0 rgba(0, 0, 0, 0.35);
+  --ds-elevation-5: 0 8px 24px 6px rgba(0, 0, 0, 0.28), 0 4px 8px 0 rgba(0, 0, 0, 0.4);
+
+  /* Material Motion Curves */
+  --ds-motion-emphasized: 400ms cubic-bezier(0.2, 0, 0, 1);
+  --ds-motion-standard: 300ms cubic-bezier(0.2, 0, 0, 1);
+  --ds-motion-decelerate: 250ms cubic-bezier(0, 0, 0.2, 1);
+  --ds-motion-accelerate: 200ms cubic-bezier(0.3, 0, 1, 1);
+
+  /* ==========================================================================
+     UNIVERSAL FUTURISTIC EFFECT SYSTEM — DESIGN TOKENS
+     ========================================================================== */
+  /* Universal Surfaces (Theme-Adaptive Fallbacks) */
+  --ds-surface-base: var(--ds-color-bg, #0b0f17);
+  --ds-surface-elevated: var(--ds-color-surface, rgba(22, 30, 46, 0.88));
+  --ds-surface-glass: var(--ds-color-surface, rgba(18, 24, 38, 0.75));
+  --ds-surface-glass-elevated: var(--ds-color-surface-hover, var(--ds-color-surface, rgba(24, 34, 52, 0.92)));
+  --ds-surface-overlay: var(--ds-color-backdrop, rgba(11, 15, 23, 0.75));
+  --ds-ambient-opacity: 0.6;
+  --ds-technical-grid-color: rgba(255, 255, 255, 0.018);
+
+  /* Universal Depth Hierarchy */
+  --ds-depth-subtle: 0 1px 3px rgba(0, 0, 0, 0.15);
+  --ds-depth-medium: 0 4px 12px rgba(0, 0, 0, 0.25);
+  --ds-depth-high: 0 12px 32px rgba(0, 0, 0, 0.4);
+
+  /* Universal Glow Levels */
+  --ds-glow-none: none;
+  --ds-glow-subtle: 0 0 12px rgba(2, 132, 199, 0.2);
+  --ds-glow-active: 0 0 20px rgba(2, 132, 199, 0.4);
+  --ds-glow-focus: 0 0 0 2px rgba(14, 165, 233, 0.45);
+  --ds-glow-critical: 0 0 20px rgba(239, 68, 68, 0.5);
+
+  /* Universal Motion System */
+  --ds-motion-instant: 0.001s;
+  --ds-motion-fast: 120ms cubic-bezier(0.1, 0.9, 0.2, 1);
+  --ds-motion-normal: 250ms cubic-bezier(0.2, 0, 0, 1);
+  --ds-motion-spatial: 350ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Global Stacking Order (Z-Index Architecture) */
+  --ds-z-background: -1;
+  --ds-z-ambient: 0;
+  --ds-z-shell: 10;
+  --ds-z-content: 20;
+  --ds-z-dropdown: 50;
+  --ds-z-popover: 55;
+  --ds-z-fab: 60;
+  --ds-z-drawer: 70;
+  --ds-z-modal: 80;
+  --ds-z-critical-overlay: 100;
+
+  /* Universal Status Indicators */
+  --ds-status-success: #10b981;
+  --ds-status-warning: #f59e0b;
+  --ds-status-error: #ef4444;
+  --ds-status-critical: #dc2626;
+  --ds-status-info: #0ea5e9;
+  --ds-status-active: #0284c7;
+  --ds-status-inactive: #64748b;
+  --ds-status-pending: #fbbf24;
+  --ds-status-processing: #8b5cf6;
+  --ds-status-completed: #059669;
+  --ds-status-disabled: #475569;
+
+  /* Canonical Typography Tokens */
+  --ds-font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --ds-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  /* Universal Semantic Token Aliases & Fallbacks */
+  --ds-color-bg-subtle: var(--ds-color-surface-subtle);
+  --ds-color-bg-surface: var(--ds-color-surface);
+  --ds-color-bg-card: var(--ds-color-surface);
+  --ds-color-bg-secondary: var(--ds-color-surface-subtle);
+  --ds-surface-subtle: var(--ds-color-surface-subtle);
+  --ds-color-text: var(--ds-color-text-primary);
+  --ds-color-primary-text: var(--ds-color-accent);
+  --ds-color-warning-text: var(--ds-color-warning);
+  --ds-color-success-text: var(--ds-color-success);
+  --ds-color-success-hover: #059669;
+  --ds-color-danger-hover: #dc2626;
+  --ds-color-warning-hover: #d97706;
+  --ds-color-primary-light: var(--ds-color-primary-subtle);
 }
 
 /* ==========================================================================
@@ -76,13 +214,13 @@
   --ds-color-surface-hover: #e2e8f0;
   --ds-color-surface-selected: #e0f2fe;
 
-  --ds-color-border: #e2e8f0;
-  --ds-color-border-subtle: #f1f5f9;
-  --ds-color-border-strong: #cbd5e1;
+  --ds-color-border: #cbd5e1;
+  --ds-color-border-subtle: #e2e8f0;
+  --ds-color-border-strong: #94a3b8;
 
-  --ds-color-text-primary: #0f172a;
-  --ds-color-text-secondary: #334155;
-  --ds-color-text-muted: #64748b;
+  --ds-color-text-primary: #020617;
+  --ds-color-text-secondary: #0f172a;
+  --ds-color-text-muted: #334155;
   --ds-color-text-inverse: #ffffff;
 
   --ds-color-primary: #0284c7;
@@ -112,13 +250,40 @@
   --ds-color-danger-foreground: #991b1b;
 
   --ds-color-focus-ring: #0284c7;
-  --ds-color-backdrop: rgba(15, 23, 42, 0.4);
+  --ds-color-backdrop: rgba(15, 23, 42, 0.25);
 
-  --ds-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --ds-shadow-base: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
-  --ds-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-  --ds-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
-  --ds-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  /* 5-Level Surface & Spatial Depth Hierarchy (Apple Minimalist Light) */
+  --ds-surface-l1: #f8fafc;
+  --ds-surface-l2: #ffffff;
+  --ds-surface-l3: rgba(255, 255, 255, 0.85);
+  --ds-surface-l4: rgba(248, 250, 252, 0.92);
+  --ds-surface-l5: rgba(239, 68, 68, 0.08);
+
+  /* Apple-inspired Light Frosted Materials & Specular Edge */
+  --ds-specular-edge: inset 0 1px 0 0 rgba(255, 255, 255, 0.8);
+  --ds-specular-edge-subtle: inset 0 0.5px 0 0 rgba(255, 255, 255, 0.5);
+  --ds-glass-blur: blur(24px) saturate(180%);
+  --ds-glow-halo: 0 4px 20px -2px rgba(2, 132, 199, 0.12);
+
+  --ds-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+  --ds-shadow-base: 0 3px 8px -1px rgba(0, 0, 0, 0.06), 0 1px 3px -1px rgba(0, 0, 0, 0.04);
+  --ds-shadow-md: 0 8px 18px -2px rgba(0, 0, 0, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+  --ds-shadow-lg: 0 16px 32px -4px rgba(0, 0, 0, 0.1), 0 4px 12px -2px rgba(0, 0, 0, 0.05);
+  --ds-shadow-xl: 0 24px 48px -8px rgba(0, 0, 0, 0.12), 0 8px 16px -4px rgba(0, 0, 0, 0.06);
+
+  /* Material 3-Inspired Tonal Surface Containers (Light theme) */
+  --ds-surface-container-lowest: #ffffff;
+  --ds-surface-container-low: #f8fafc;
+  --ds-surface-container: #f1f5f9;
+  --ds-surface-container-high: #e2e8f0;
+  --ds-surface-container-highest: #cbd5e1;
+
+  --ds-elevation-0: none;
+  --ds-elevation-1: 0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px -1px rgba(0, 0, 0, 0.08);
+  --ds-elevation-2: 0 3px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+  --ds-elevation-3: 0 6px 14px -2px rgba(0, 0, 0, 0.12), 0 3px 6px -3px rgba(0, 0, 0, 0.08);
+  --ds-elevation-4: 0 10px 20px -3px rgba(0, 0, 0, 0.14), 0 4px 8px -4px rgba(0, 0, 0, 0.1);
+  --ds-elevation-5: 0 14px 28px -4px rgba(0, 0, 0, 0.16), 0 6px 12px -5px rgba(0, 0, 0, 0.12);
 }
 
 /* ==========================================================================
@@ -351,13 +516,13 @@
   --ds-color-surface-hover: #e2e8f0;
   --ds-color-surface-selected: #e0f2fe;
 
-  --ds-color-border: #cbd5e1;
-  --ds-color-border-subtle: #e2e8f0;
-  --ds-color-border-strong: #94a3b8;
+  --ds-color-border: #94a3b8;
+  --ds-color-border-subtle: #cbd5e1;
+  --ds-color-border-strong: #64748b;
 
-  --ds-color-text-primary: #0f172a;
-  --ds-color-text-secondary: #334155;
-  --ds-color-text-muted: #64748b;
+  --ds-color-text-primary: #020617;
+  --ds-color-text-secondary: #0f172a;
+  --ds-color-text-muted: #334155;
   --ds-color-text-inverse: #ffffff;
 
   --ds-color-primary: #0284c7;
@@ -388,6 +553,33 @@
 
   --ds-color-focus-ring: #0284c7;
   --ds-color-backdrop: rgba(15, 23, 42, 0.4);
+
+  /* 5-Level Surface & Spatial Depth Hierarchy (Classic Hospital Light) */
+  --ds-surface-l1: #f8fafc;
+  --ds-surface-l2: #ffffff;
+  --ds-surface-l3: #ffffff;
+  --ds-surface-l4: #f1f5f9;
+  --ds-surface-l5: rgba(239, 68, 68, 0.08);
+
+  /* Universal Surfaces */
+  --ds-surface-base: #f8fafc;
+  --ds-surface-elevated: #ffffff;
+  --ds-surface-glass: rgba(255, 255, 255, 0.94);
+  --ds-surface-glass-elevated: rgba(255, 255, 255, 0.98);
+  --ds-surface-overlay: rgba(15, 23, 42, 0.35);
+  --ds-ambient-opacity: 0.15;
+  --ds-technical-grid-color: rgba(2, 132, 199, 0.03);
+
+  --ds-specular-edge: inset 0 1px 0 0 rgba(255, 255, 255, 0.85);
+  --ds-specular-edge-subtle: inset 0 0.5px 0 0 rgba(255, 255, 255, 0.5);
+  --ds-glass-blur: blur(20px) saturate(180%);
+  --ds-glow-halo: 0 4px 20px -2px rgba(2, 132, 199, 0.12);
+
+  --ds-surface-container-lowest: #ffffff;
+  --ds-surface-container-low: #f8fafc;
+  --ds-surface-container: #f1f5f9;
+  --ds-surface-container-high: #e2e8f0;
+  --ds-surface-container-highest: #cbd5e1;
 
   --ds-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --ds-shadow-base: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
@@ -504,5 +696,396 @@
   --ds-shadow-md: 0 10px 25px -3px rgba(6, 182, 212, 0.25), 0 0 15px rgba(16, 185, 129, 0.15);
   --ds-shadow-lg: 0 20px 35px -5px rgba(6, 182, 212, 0.35), 0 0 30px rgba(16, 185, 129, 0.25);
   --ds-shadow-xl: 0 25px 60px -10px rgba(6, 182, 212, 0.45), 0 0 45px rgba(16, 185, 129, 0.35);
+}
+
+/* ==========================================================================
+   10. OBSIDIAN TITANIUM (APPLE VISIONOS / LINEAR STEALTH PRO)
+   ========================================================================== */
+.theme-obsidian-titanium {
+  --ds-color-bg: #030712;
+  --ds-color-surface: rgba(17, 24, 39, 0.75);
+  --ds-color-surface-subtle: #111827;
+  --ds-color-surface-hover: #1f2937;
+  --ds-color-surface-selected: #1e3a5f;
+
+  --ds-color-border: #1f2937;
+  --ds-color-border-subtle: #111827;
+  --ds-color-border-strong: #38bdf8;
+
+  --ds-color-text-primary: #f9fafb;
+  --ds-color-text-secondary: #d1d5db;
+  --ds-color-text-muted: #9ca3af;
+  --ds-color-text-inverse: #030712;
+
+  --ds-color-primary: #38bdf8;
+  --ds-color-primary-hover: #0ea5e9;
+  --ds-color-primary-subtle: rgba(56, 189, 248, 0.15);
+  --ds-color-primary-foreground: #030712;
+
+  --ds-color-secondary: #94a3b8;
+  --ds-color-secondary-hover: #cbd5e1;
+  --ds-color-secondary-subtle: rgba(148, 163, 184, 0.15);
+  --ds-color-secondary-foreground: #ffffff;
+
+  --ds-color-accent: #38bdf8;
+  --ds-color-accent-hover: #7dd3fc;
+  --ds-color-accent-foreground: #030712;
+
+  --ds-color-success: #10b981;
+  --ds-color-success-subtle: #064e3b;
+  --ds-color-success-foreground: #ffffff;
+
+  --ds-color-warning: #f59e0b;
+  --ds-color-warning-subtle: #451a03;
+  --ds-color-warning-foreground: #ffffff;
+
+  --ds-color-danger: #f43f5e;
+  --ds-color-danger-subtle: #4c0519;
+  --ds-color-danger-foreground: #ffffff;
+
+  --ds-color-focus-ring: #38bdf8;
+  --ds-color-backdrop: rgba(3, 7, 18, 0.85);
+
+  --spotlight-color: rgba(56, 189, 248, 0.18);
+  --spotlight-border: #38bdf8;
+  --spotlight-glow: rgba(56, 189, 248, 0.35);
+  --active-bg: rgba(56, 189, 248, 0.12);
+
+  --ds-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.6);
+  --ds-shadow-base: 0 4px 6px -1px rgba(0, 0, 0, 0.7);
+  --ds-shadow-md: 0 10px 20px -3px rgba(0, 0, 0, 0.8);
+  --ds-shadow-lg: 0 20px 30px -5px rgba(0, 0, 0, 0.85), 0 0 25px rgba(56, 189, 248, 0.2);
+  --ds-shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 35px rgba(56, 189, 248, 0.3);
+}
+
+/* ==========================================================================
+   11. IMPERIAL GOLD (SWISS PRIVATE HOSPITAL / 24K SOVEREIGN)
+   ========================================================================== */
+.theme-imperial-gold {
+  --ds-color-bg: #08080a;
+  --ds-color-surface: rgba(22, 18, 12, 0.8);
+  --ds-color-surface-subtle: #18140c;
+  --ds-color-surface-hover: #261f14;
+  --ds-color-surface-selected: rgba(234, 179, 8, 0.2);
+
+  --ds-color-border: rgba(234, 179, 8, 0.25);
+  --ds-color-border-subtle: rgba(234, 179, 8, 0.1);
+  --ds-color-border-strong: #eab308;
+
+  --ds-color-text-primary: #fefce8;
+  --ds-color-text-secondary: #fef08a;
+  --ds-color-text-muted: #ca8a04;
+  --ds-color-text-inverse: #08080a;
+
+  --ds-color-primary: #eab308;
+  --ds-color-primary-hover: #facc15;
+  --ds-color-primary-subtle: rgba(234, 179, 8, 0.18);
+  --ds-color-primary-foreground: #08080a;
+
+  --ds-color-secondary: #d97706;
+  --ds-color-secondary-hover: #b45309;
+  --ds-color-secondary-subtle: rgba(217, 119, 6, 0.18);
+  --ds-color-secondary-foreground: #ffffff;
+
+  --ds-color-accent: #fef08a;
+  --ds-color-accent-hover: #fde047;
+  --ds-color-accent-foreground: #08080a;
+
+  --ds-color-success: #10b981;
+  --ds-color-success-subtle: rgba(16, 185, 129, 0.15);
+  --ds-color-success-foreground: #ffffff;
+
+  --ds-color-warning: #f59e0b;
+  --ds-color-warning-subtle: rgba(245, 158, 11, 0.2);
+  --ds-color-warning-foreground: #08080a;
+
+  --ds-color-danger: #ef4444;
+  --ds-color-danger-subtle: rgba(239, 68, 68, 0.2);
+  --ds-color-danger-foreground: #ffffff;
+
+  --ds-color-focus-ring: #eab308;
+  --ds-color-backdrop: rgba(8, 8, 10, 0.88);
+
+  --spotlight-color: rgba(234, 179, 8, 0.22);
+  --spotlight-border: #eab308;
+  --spotlight-glow: rgba(234, 179, 8, 0.4);
+  --active-bg: rgba(234, 179, 8, 0.14);
+
+  --ds-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.7);
+  --ds-shadow-base: 0 4px 10px -1px rgba(0, 0, 0, 0.8);
+  --ds-shadow-md: 0 10px 20px -3px rgba(234, 179, 8, 0.15);
+  --ds-shadow-lg: 0 20px 30px -5px rgba(0, 0, 0, 0.9), 0 0 25px rgba(234, 179, 8, 0.3);
+  --ds-shadow-xl: 0 25px 60px -12px rgba(0, 0, 0, 0.95), 0 0 40px rgba(234, 179, 8, 0.4);
+}
+
+/* ==========================================================================
+   12. QUANTUM BIOLUM (MIT GENOMIC BIOTECH & DEEP OCEANIC)
+   ========================================================================== */
+.theme-quantum-biolum {
+  --ds-color-bg: #020b14;
+  --ds-color-surface: rgba(4, 26, 47, 0.7);
+  --ds-color-surface-subtle: #051a2d;
+  --ds-color-surface-hover: #0a2d4d;
+  --ds-color-surface-selected: rgba(0, 255, 135, 0.2);
+
+  --ds-color-border: rgba(0, 240, 255, 0.25);
+  --ds-color-border-subtle: rgba(0, 240, 255, 0.1);
+  --ds-color-border-strong: #00f0ff;
+
+  --ds-color-text-primary: #f0fdf4;
+  --ds-color-text-secondary: #a7f3d0;
+  --ds-color-text-muted: #34d399;
+  --ds-color-text-inverse: #020b14;
+
+  --ds-color-primary: #00ff87;
+  --ds-color-primary-hover: #34d399;
+  --ds-color-primary-subtle: rgba(0, 255, 135, 0.18);
+  --ds-color-primary-foreground: #020b14;
+
+  --ds-color-secondary: #00f0ff;
+  --ds-color-secondary-hover: #38bdf8;
+  --ds-color-secondary-subtle: rgba(0, 240, 255, 0.18);
+  --ds-color-secondary-foreground: #020b14;
+
+  --ds-color-accent: #00f0ff;
+  --ds-color-accent-hover: #67e8f9;
+  --ds-color-accent-foreground: #020b14;
+
+  --ds-color-success: #00ff87;
+  --ds-color-success-subtle: rgba(0, 255, 135, 0.2);
+  --ds-color-success-foreground: #020b14;
+
+  --ds-color-warning: #facc15;
+  --ds-color-warning-subtle: rgba(250, 204, 21, 0.2);
+  --ds-color-warning-foreground: #020b14;
+
+  --ds-color-danger: #ff007f;
+  --ds-color-danger-subtle: rgba(255, 0, 127, 0.2);
+  --ds-color-danger-foreground: #ffffff;
+
+  --ds-color-focus-ring: #00ff87;
+  --ds-color-backdrop: rgba(2, 11, 20, 0.9);
+
+  --spotlight-color: rgba(0, 255, 135, 0.22);
+  --spotlight-border: #00ff87;
+  --spotlight-glow: rgba(0, 255, 135, 0.4);
+  --active-bg: rgba(0, 255, 135, 0.14);
+
+  --ds-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.7);
+  --ds-shadow-base: 0 4px 12px -1px rgba(0, 255, 135, 0.15);
+  --ds-shadow-md: 0 10px 25px -3px rgba(0, 240, 255, 0.2);
+  --ds-shadow-lg: 0 20px 35px -5px rgba(0, 0, 0, 0.9), 0 0 28px rgba(0, 255, 135, 0.3);
+  --ds-shadow-xl: 0 25px 60px -12px rgba(0, 0, 0, 0.95), 0 0 45px rgba(0, 240, 255, 0.35);
+}
+
+/* ==========================================================================
+   13. TOKYO CYBERPUNK (NEUROMANCER VIOLET & LASER MAGENTA)
+   ========================================================================== */
+.theme-tokyo-cyberpunk {
+  --ds-color-bg: #070414;
+  --ds-color-surface: rgba(26, 12, 51, 0.75);
+  --ds-color-surface-subtle: #160b2e;
+  --ds-color-surface-hover: #29124f;
+  --ds-color-surface-selected: rgba(168, 85, 247, 0.25);
+
+  --ds-color-border: rgba(168, 85, 247, 0.3);
+  --ds-color-border-subtle: rgba(168, 85, 247, 0.12);
+  --ds-color-border-strong: #d946ef;
+
+  --ds-color-text-primary: #faf5ff;
+  --ds-color-text-secondary: #f0abfc;
+  --ds-color-text-muted: #c084fc;
+  --ds-color-text-inverse: #070414;
+
+  --ds-color-primary: #d946ef;
+  --ds-color-primary-hover: #e879f9;
+  --ds-color-primary-subtle: rgba(217, 70, 239, 0.2);
+  --ds-color-primary-foreground: #ffffff;
+
+  --ds-color-secondary: #8b5cf6;
+  --ds-color-secondary-hover: #a78bfa;
+  --ds-color-secondary-subtle: rgba(139, 92, 246, 0.2);
+  --ds-color-secondary-foreground: #ffffff;
+
+  --ds-color-accent: #06b6d4;
+  --ds-color-accent-hover: #22d3ee;
+  --ds-color-accent-foreground: #070414;
+
+  --ds-color-success: #10b981;
+  --ds-color-success-subtle: rgba(16, 185, 129, 0.2);
+  --ds-color-success-foreground: #ffffff;
+
+  --ds-color-warning: #f59e0b;
+  --ds-color-warning-subtle: rgba(245, 158, 11, 0.2);
+  --ds-color-warning-foreground: #ffffff;
+
+  --ds-color-danger: #f43f5e;
+  --ds-color-danger-subtle: rgba(244, 63, 94, 0.2);
+  --ds-color-danger-foreground: #ffffff;
+
+  --ds-color-focus-ring: #d946ef;
+  --ds-color-backdrop: rgba(7, 4, 20, 0.9);
+
+  --spotlight-color: rgba(217, 70, 239, 0.22);
+  --spotlight-border: #d946ef;
+  --spotlight-glow: rgba(217, 70, 239, 0.4);
+  --active-bg: rgba(217, 70, 239, 0.15);
+
+  --ds-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.7);
+  --ds-shadow-base: 0 4px 12px -1px rgba(217, 70, 239, 0.2);
+  --ds-shadow-md: 0 10px 25px -3px rgba(139, 92, 246, 0.25);
+  --ds-shadow-lg: 0 20px 35px -5px rgba(0, 0, 0, 0.9), 0 0 30px rgba(217, 70, 239, 0.35);
+  --ds-shadow-xl: 0 25px 60px -12px rgba(0, 0, 0, 0.95), 0 0 45px rgba(139, 92, 246, 0.4);
+}
+
+/* ==========================================================================
+   14. SOLAR AMBER (BLOOMBERG TERMINAL & SOLAR FLARE COCKPIT)
+   ========================================================================== */
+.theme-solar-amber {
+  --ds-color-bg: #0a0b0e;
+  --ds-color-surface: rgba(26, 20, 14, 0.8);
+  --ds-color-surface-subtle: #19140e;
+  --ds-color-surface-hover: #291d12;
+  --ds-color-surface-selected: rgba(249, 115, 22, 0.25);
+
+  --ds-color-border: rgba(249, 115, 22, 0.3);
+  --ds-color-border-subtle: rgba(249, 115, 22, 0.12);
+  --ds-color-border-strong: #f97316;
+
+  --ds-color-text-primary: #fff7ed;
+  --ds-color-text-secondary: #fed7aa;
+  --ds-color-text-muted: #ea580c;
+  --ds-color-text-inverse: #0a0b0e;
+
+  --ds-color-primary: #f97316;
+  --ds-color-primary-hover: #fb923c;
+  --ds-color-primary-subtle: rgba(249, 115, 22, 0.2);
+  --ds-color-primary-foreground: #0a0b0e;
+
+  --ds-color-secondary: #f59e0b;
+  --ds-color-secondary-hover: #fbbf24;
+  --ds-color-secondary-subtle: rgba(245, 158, 11, 0.2);
+  --ds-color-secondary-foreground: #0a0b0e;
+
+  --ds-color-accent: #e11d48;
+  --ds-color-accent-hover: #f43f5e;
+  --ds-color-accent-foreground: #ffffff;
+
+  --ds-color-success: #10b981;
+  --ds-color-success-subtle: rgba(16, 185, 129, 0.2);
+  --ds-color-success-foreground: #ffffff;
+
+  --ds-color-warning: #f59e0b;
+  --ds-color-warning-subtle: rgba(245, 158, 11, 0.25);
+  --ds-color-warning-foreground: #0a0b0e;
+
+  --ds-color-danger: #ef4444;
+  --ds-color-danger-subtle: rgba(239, 68, 68, 0.25);
+  --ds-color-danger-foreground: #ffffff;
+
+  --ds-color-focus-ring: #f97316;
+  --ds-color-backdrop: rgba(10, 11, 14, 0.9);
+
+  --spotlight-color: rgba(249, 115, 22, 0.22);
+  --spotlight-border: #f97316;
+  --spotlight-glow: rgba(249, 115, 22, 0.4);
+  --active-bg: rgba(249, 115, 22, 0.15);
+
+  --ds-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.7);
+  --ds-shadow-base: 0 4px 12px -1px rgba(249, 115, 22, 0.2);
+  --ds-shadow-md: 0 10px 25px -3px rgba(249, 115, 22, 0.25);
+  --ds-shadow-lg: 0 20px 35px -5px rgba(0, 0, 0, 0.9), 0 0 30px rgba(249, 115, 22, 0.35);
+  --ds-shadow-xl: 0 25px 60px -12px rgba(0, 0, 0, 0.95), 0 0 45px rgba(249, 115, 22, 0.45);
+}
+
+/* ==========================================================================
+   15. SWISS CLINICAL & DAYLIGHT CLINIC (DIETER RAMS / SAPPHIRE PRECISION LIGHT)
+   Bright sunlight OPD mode with WCAG 2.2 AAA text legibility & crisp borders
+   ========================================================================== */
+.theme-swiss-clinical,
+.theme-daylight-clinic {
+  --ds-color-bg: #f8fafc;
+  --ds-color-surface: #ffffff;
+  --ds-color-surface-subtle: #f1f5f9;
+  --ds-color-surface-hover: #e2e8f0;
+  --ds-color-surface-selected: #dbeafe;
+
+  --ds-color-border: #cbd5e1;
+  --ds-color-border-subtle: #e2e8f0;
+  --ds-color-border-strong: #0052ff;
+
+  --ds-color-text-primary: #000000;
+  --ds-color-text-secondary: #0f172a;
+  --ds-color-text-muted: #334155;
+  --ds-color-text-inverse: #ffffff;
+
+  --ds-color-primary: #0052ff;
+  --ds-color-primary-hover: #0040cc;
+  --ds-color-primary-subtle: #eff4ff;
+  --ds-color-primary-foreground: #ffffff;
+
+  --ds-color-secondary: #0ea5e9;
+  --ds-color-secondary-hover: #0284c7;
+  --ds-color-secondary-subtle: #f0f9ff;
+  --ds-color-secondary-foreground: #ffffff;
+
+  --ds-color-accent: #0052ff;
+  --ds-color-accent-hover: #0040cc;
+  --ds-color-accent-foreground: #ffffff;
+
+  --ds-color-success: #10b981;
+  --ds-color-success-subtle: #d1fae5;
+  --ds-color-success-foreground: #065f46;
+
+  --ds-color-warning: #f59e0b;
+  --ds-color-warning-subtle: #fef3c7;
+  --ds-color-warning-foreground: #92400e;
+
+  --ds-color-danger: #ef4444;
+  --ds-color-danger-subtle: #fee2e2;
+  --ds-color-danger-foreground: #991b1b;
+
+  --ds-color-focus-ring: #0052ff;
+  --ds-color-backdrop: rgba(15, 23, 42, 0.45);
+
+  --spotlight-color: rgba(0, 82, 255, 0.12);
+  --spotlight-border: #0052ff;
+  --spotlight-glow: rgba(0, 82, 255, 0.25);
+  --active-bg: rgba(0, 82, 255, 0.08);
+
+  /* 5-Level Surface & Spatial Depth Hierarchy (Clean Alabaster / Swiss Clinical) */
+  --ds-surface-l1: #f8fafc;
+  --ds-surface-l2: #ffffff;
+  --ds-surface-l3: #ffffff;
+  --ds-surface-l4: #f1f5f9;
+  --ds-surface-l5: rgba(239, 68, 68, 0.08);
+
+  /* Universal Surfaces */
+  --ds-surface-base: #f8fafc;
+  --ds-surface-elevated: #ffffff;
+  --ds-surface-glass: rgba(255, 255, 255, 0.94);
+  --ds-surface-glass-elevated: rgba(255, 255, 255, 0.98);
+  --ds-surface-overlay: rgba(15, 23, 42, 0.35);
+  --ds-ambient-opacity: 0.12;
+  --ds-technical-grid-color: rgba(0, 82, 255, 0.03);
+
+  /* Specular Edge & Materials */
+  --ds-specular-edge: inset 0 1px 0 0 rgba(255, 255, 255, 0.9);
+  --ds-specular-edge-subtle: inset 0 0.5px 0 0 rgba(255, 255, 255, 0.6);
+  --ds-glass-blur: blur(20px) saturate(180%);
+  --ds-glow-halo: 0 4px 20px -2px rgba(0, 82, 255, 0.12);
+
+  /* Material 3-Inspired Tonal Surface Containers */
+  --ds-surface-container-lowest: #ffffff;
+  --ds-surface-container-low: #f8fafc;
+  --ds-surface-container: #f1f5f9;
+  --ds-surface-container-high: #e2e8f0;
+  --ds-surface-container-highest: #cbd5e1;
+
+  --ds-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --ds-shadow-base: 0 2px 4px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --ds-shadow-md: 0 6px 16px -2px rgba(0, 82, 255, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --ds-shadow-lg: 0 12px 24px -4px rgba(0, 82, 255, 0.12), 0 8px 10px -4px rgba(0, 0, 0, 0.04);
+  --ds-shadow-xl: 0 20px 32px -6px rgba(0, 82, 255, 0.15), 0 12px 16px -4px rgba(0, 0, 0, 0.04);
 }
 

@@ -47,6 +47,7 @@ import { QualityCommitteeView } from './views/QualityCommitteeView.js';
 import { BiomedicalWasteView } from './views/BiomedicalWasteView.js';
 import { NabhChapterComplianceView } from './views/NabhChapterComplianceView.js';
 import { QualityAuditVaultView } from './views/QualityAuditVaultView.js';
+import { TabOverflowMenu } from './common/TabOverflowMenu.js';
 
 // Dialogs
 import { ReportIncidentDialog } from './dialogs/ReportIncidentDialog.js';
@@ -245,109 +246,88 @@ export const QualityInfectionDomainManager: React.FC<Props> = ({ tenantId }) => 
   return (
     <div className="space-y-4">
       {/* Domain Navigation Tabs */}
-      <div className="flex items-center gap-1 border-b pb-2 overflow-x-auto text-xs font-semibold">
-        <button
-          onClick={() => setActiveTab('OVERVIEW')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'OVERVIEW' ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          📊 Quality Overview
-        </button>
-        <button
-          onClick={() => setActiveTab('NABH_STANDARDS')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'NABH_STANDARDS' ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          📘 Standards Master
-        </button>
-        <button
-          onClick={() => setActiveTab('INCIDENTS')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'INCIDENTS' || activeTab === 'INCIDENT_DETAIL' ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          🚨 Incident Register ({incidents.filter((i) => i.status !== 'CLOSED').length})
-        </button>
-        <button
-          onClick={() => setActiveTab('RCA_FISHBONE')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'RCA_FISHBONE' ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          🔍 RCA & 5-Whys ({rcas.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('CAPA_ENGINE')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'CAPA_ENGINE' ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          🎯 CAPA Engine ({capas.filter((c) => c.status !== 'VERIFIED_EFFECTIVE').length})
-        </button>
-        <button
-          onClick={() => setActiveTab('HAI_SURVEILLANCE')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'HAI_SURVEILLANCE' ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          🦠 HAI Surveillance ({hais.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('PATIENT_ISOLATION')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'PATIENT_ISOLATION' ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          🛡️ Isolation ({isolations.filter((iso) => iso.isActive).length})
-        </button>
-        <button
-          onClick={() => setActiveTab('HAND_HYGIENE')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'HAND_HYGIENE' ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          🧼 Hand Hygiene ({metrics.handHygieneCompliancePct}%)
-        </button>
-        <button
-          onClick={() => setActiveTab('ENVIRONMENTAL_MICRO')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'ENVIRONMENTAL_MICRO' ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          🧫 Micro Swabs ({swabs.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('NEEDLE_STICK_PEP')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'NEEDLE_STICK_PEP' ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          💉 Needle Stick PEP
-        </button>
-        <button
-          onClick={() => setActiveTab('CORE_INDICATORS')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'CORE_INDICATORS' ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          📈 KPIs & Indicators
-        </button>
-        <button
-          onClick={() => setActiveTab('INTERNAL_AUDITS')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'INTERNAL_AUDITS' ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          📋 Mock Audits
-        </button>
-        <button
-          onClick={() => setActiveTab('CLINICAL_PATHWAYS')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'CLINICAL_PATHWAYS' ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          ⏱️ Clinical Pathways
-        </button>
-        <button
-          onClick={() => setActiveTab('COMMITTEE')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'COMMITTEE' ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          👥 Quality Committee
-        </button>
-        <button
-          onClick={() => setActiveTab('BIOMEDICAL_WASTE')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'BIOMEDICAL_WASTE' ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          ☣️ BMW Manifests
-        </button>
-        <button
-          onClick={() => setActiveTab('CHAPTER_RADAR')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'CHAPTER_RADAR' ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          🏆 NABH 10 Chapters
-        </button>
-        <button
-          onClick={() => setActiveTab('AUDIT_VAULT')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'AUDIT_VAULT' ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          🔐 Cryptographic Vault
-        </button>
+      <div
+        style={{
+          position: 'relative',
+          zIndex: 40,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          flexWrap: 'wrap',
+          backgroundColor: '#0F172A',
+          border: '1px solid #1E293B',
+          borderRadius: '10px',
+          padding: '6px 8px'
+        }}
+      >
+        {[
+          { id: 'OVERVIEW' as QualityTab, label: '📊 Quality Overview' },
+          { id: 'INCIDENTS' as QualityTab, label: `🚨 Incidents (${incidents.filter((i) => i.status !== 'CLOSED').length})` },
+          { id: 'CAPA_ENGINE' as QualityTab, label: `🎯 CAPA Engine (${capas.filter((c) => c.status !== 'VERIFIED_EFFECTIVE').length})` },
+          { id: 'HAI_SURVEILLANCE' as QualityTab, label: `🦠 HAI Surveillance (${hais.length})` },
+          { id: 'NABH_STANDARDS' as QualityTab, label: '📘 NABH Standards' }
+        ].map((tab) => {
+          const isActive = activeTab === tab.id || (tab.id === 'INCIDENTS' && activeTab === 'INCIDENT_DETAIL');
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                fontSize: '0.78rem',
+                fontWeight: isActive ? 700 : 500,
+                color: isActive ? '#FFFFFF' : '#94A3B8',
+                backgroundColor: isActive ? '#DC2626' : 'transparent',
+                borderRadius: '6px',
+                border: isActive ? '1px solid #EF4444' : '1px solid transparent',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = '#1E293B';
+                  e.currentTarget.style.color = '#F8FAFC';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = '#94A3B8';
+                }
+              }}
+            >
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+
+        {/* Secondary Modules Selector Dropdown */}
+        <TabOverflowMenu
+          label="More Quality & NABH Tools"
+          options={[
+            { id: 'RCA_FISHBONE', label: '🔍 RCA & 5-Whys', count: rcas.length },
+            { id: 'PATIENT_ISOLATION', label: '🛡️ Isolation', count: isolations.filter((iso) => iso.isActive).length },
+            { id: 'HAND_HYGIENE', label: '🧼 Hand Hygiene Compliance' },
+            { id: 'ENVIRONMENTAL_MICRO', label: '🧫 Micro Swabs', count: swabs.length },
+            { id: 'NEEDLE_STICK_PEP', label: '💉 Needle Stick PEP' },
+            { id: 'CORE_INDICATORS', label: '📈 KPIs & Core Indicators' },
+            { id: 'INTERNAL_AUDITS', label: '📋 Mock Audits' },
+            { id: 'CLINICAL_PATHWAYS', label: '⏱️ Clinical Pathways' },
+            { id: 'COMMITTEE', label: '👥 Quality Committee' },
+            { id: 'BIOMEDICAL_WASTE', label: '☣️ BMW Manifests' },
+            { id: 'CHAPTER_RADAR', label: '🏆 NABH 10 Chapters' },
+            { id: 'AUDIT_VAULT', label: '🔐 Cryptographic Vault' }
+          ]}
+          activeId={activeTab}
+          onSelect={(id) => setActiveTab(id as QualityTab)}
+          onReset={() => setActiveTab('OVERVIEW')}
+          accentColor="#DC2626"
+          activeBorderColor="#EF4444"
+        />
       </div>
 
       {/* Tab Renderers */}

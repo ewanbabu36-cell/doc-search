@@ -10,16 +10,17 @@ export interface WardDetailViewProps {
   onOpenCreateBed: () => void;
 }
 
-export const WardDetailView: React.FC<WardDetailViewProps> = ({ ward, beds, onBack, onOpenEditWard, onOpenCreateBed }) => {
+export const WardDetailView: React.FC<WardDetailViewProps> = ({ ward, beds = [], onBack, onOpenEditWard, onOpenCreateBed }) => {
   if (!ward) return null;
-  const wardBeds = beds.filter((b) => b.wardId === ward.id);
+  const safeBeds = Array.isArray(beds) ? beds : [];
+  const wardBeds = safeBeds.filter((b) => b && b.wardId === ward.id);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <Button variant="outline" size="sm" onClick={onBack}>← Back to Wards</Button>
-          <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#0f172a' }}>{ward.wardName} ({ward.wardCode})</h2>
+          <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: 'var(--ds-color-text-primary, #f8fafc)' }}>{ward.wardName} ({ward.wardCode})</h2>
           <Badge variant={ward.isActive ? 'success' : 'danger'}>{ward.isActive ? 'Active' : 'Inactive'}</Badge>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -58,7 +59,18 @@ export const WardDetailView: React.FC<WardDetailViewProps> = ({ ward, beds, onBa
                 <td style={{ padding: '0.75rem 1rem' }}>
                   <Badge variant={b.status === 'AVAILABLE' ? 'success' : b.status === 'OCCUPIED' ? 'neutral' : 'warning'}>{b.status}</Badge>
                 </td>
-                <td style={{ padding: '0.75rem 1rem' }}>{b.currentPatientName || '—'}</td>
+                <td
+                  style={{
+                    padding: '0.75rem 1rem',
+                    maxWidth: '180px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}
+                  title={b.currentPatientName || undefined}
+                >
+                  {b.currentPatientName || '—'}
+                </td>
               </tr>
             ))}
           </tbody>

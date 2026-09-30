@@ -3,7 +3,9 @@ import {
   getDatabase,
   salesLeads,
   salesOpportunities,
-  marketingCampaigns
+  marketingCampaigns,
+  partnerProfiles,
+  partnerOnboardingStagedRegistrations
 } from '@docsearch/database';
 
 export class SalesMarketingRepository {
@@ -14,9 +16,7 @@ export class SalesMarketingRepository {
         return status ? await q.where(eq(salesLeads.status, status)).orderBy(desc(salesLeads.createdAt)) : await q.orderBy(desc(salesLeads.createdAt));
       } catch {}
     }
-    return [
-      { id: 'lead_001', leadNumber: 'LD-1001', leadName: 'Metro Health Alliance', contactEmail: 'mha@metrohealth.org', status: status || 'NEW', score: 85, createdAt: new Date() }
-    ];
+    return [];
   }
 
   async getLeadById(leadId: string, dbClient = getDatabase()) {
@@ -49,6 +49,7 @@ export class SalesMarketingRepository {
       const [inserted] = await dbClient
         .insert(salesLeads)
         .values({
+          id: crypto.randomUUID(),
           organizationName: leadData.organizationName,
           contactName: leadData.contactName,
           contactEmail: leadData.contactEmail,
@@ -100,9 +101,7 @@ export class SalesMarketingRepository {
         return stage ? await q.where(eq(salesOpportunities.stage, stage)).orderBy(desc(salesOpportunities.createdAt)) : await q.orderBy(desc(salesOpportunities.createdAt));
       } catch {}
     }
-    return [
-      { id: 'opp_001', opportunityNumber: 'OP-2001', opportunityName: 'Northwest Regional Expansion', estimatedValueCents: 15000000, stage: stage || 'PROPOSAL', probabilityPercent: 70, createdAt: new Date() }
-    ];
+    return [];
   }
 
   async getCampaigns(status?: string, dbClient = getDatabase()) {
@@ -112,9 +111,52 @@ export class SalesMarketingRepository {
         return status ? await q.where(eq(marketingCampaigns.status, status)).orderBy(desc(marketingCampaigns.createdAt)) : await q.orderBy(desc(marketingCampaigns.createdAt));
       } catch {}
     }
-    return [
-      { id: 'cmp_001', campaignCode: 'CMP-2026-Q1', name: 'AI Radiology Launch', status: status || 'ACTIVE', budgetCents: 5000000, createdAt: new Date() }
-    ];
+    return [];
+  }
+
+  async checkDuplicates(
+    params: { email?: string | undefined; phone?: string | undefined; organizationName?: string | undefined; leadId?: string | undefined },
+    dbClient = getDatabase()
+  ) {
+    const duplicates: Array<{ id: string; source: 'PARTNER' | 'STAGED_REGISTRATION' | 'LEAD'; name: string; email: string; phone?: string | undefined; matchReason: string }> = [];
+    if (!dbClient) return { hasDuplicate: false, duplicates: [] };
+
+    const emailNorm = params.email?.trim().toLowerCase();
+    const phoneNorm = params.phone?.replace(/[^0-9]/g, '');
+    const orgNameNorm = params.organizationName?.trim().toLowerCase();
+
+    // 1. Check partner_profiles
+    try {
+      const allPartners = await dbClient.select().from(partnerProfiles).limit(100);
+      for (const p of allPartners) {
+        if (emailNorm && p.primaryContactEmail?.toLowerCase() === emailNorm) {
+          duplicates.push({ id: p.id, source: 'PARTNER', name: p.tradeName, email: p.primaryContactEmail, phone: p.primaryContactPhone || undefined, matchReason: 'Matching contact email with existing Partner' });
+        } else if (phoneNorm && p.primaryContactPhone && p.primaryContactPhone.replace(/[^0-9]/g, '').slice(-10) === phoneNorm.slice(-10)) {
+          duplicates.push({ id: p.id, source: 'PARTNER', name: p.tradeName, email: p.primaryContactEmail, phone: p.primaryContactPhone || undefined, matchReason: 'Matching contact phone with existing Partner' });
+        } else if (orgNameNorm && (p.tradeName.toLowerCase() === orgNameNorm || p.legalName.toLowerCase() === orgNameNorm)) {
+          duplicates.push({ id: p.id, source: 'PARTNER', name: p.tradeName, email: p.primaryContactEmail, phone: p.primaryContactPhone || undefined, matchReason: 'Matching organization name with existing Partner' });
+        }
+      }
+    } catch {}
+
+    // 2. Check partner_onboarding_staged_registrations
+    try {
+      const allStaged = await dbClient.select().from(partnerOnboardingStagedRegistrations).limit(100);
+      for (const s of allStaged) {
+        if (emailNorm && s.contactEmail?.toLowerCase() === emailNorm) {
+          duplicates.push({ id: s.id, source: 'STAGED_REGISTRATION', name: s.organizationName, email: s.contactEmail, phone: s.contactPhone || undefined, matchReason: 'Matching contact email in KYC verification queue' });
+        } else if (phoneNorm && s.contactPhone && s.contactPhone.replace(/[^0-9]/g, '').slice(-10) === phoneNorm.slice(-10)) {
+          duplicates.push({ id: s.id, source: 'STAGED_REGISTRATION', name: s.organizationName, email: s.contactEmail, phone: s.contactPhone || undefined, matchReason: 'Matching contact phone in KYC verification queue' });
+        } else if (orgNameNorm && s.organizationName.toLowerCase() === orgNameNorm) {
+          duplicates.push({ id: s.id, source: 'STAGED_REGISTRATION', name: s.organizationName, email: s.contactEmail, phone: s.contactPhone || undefined, matchReason: 'Matching organization name in KYC verification queue' });
+        }
+      }
+    } catch {}
+
+    return {
+      hasDuplicate: duplicates.length > 0,
+      duplicates
+    };
   }
 }
 

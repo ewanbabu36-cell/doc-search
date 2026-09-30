@@ -27,6 +27,43 @@ export const PharmacyReportsView: React.FC<PharmacyReportsViewProps> = ({
   const controlledSubstances = inventory.filter((i) => i.controlledMedication);
   const completedOrders = prescriptions.filter((p) => p.status === 'COMPLETED' || p.status === 'DISPENSED').length;
 
+  const handleExportAuditReport = () => {
+    const headers = [
+      'Batch Number',
+      'Medication Name',
+      'Manufacturer',
+      'Available Quantity',
+      'Unit Cost (INR)',
+      'Total Valuation (INR)',
+      'Expiry Date',
+      'Days to Expiry',
+      'Status'
+    ];
+
+    const rows = batches.map((b) => [
+      `"${b.batchNumber}"`,
+      `"${b.medicationName.replace(/"/g, '""')}"`,
+      `"${b.manufacturer.replace(/"/g, '""')}"`,
+      b.availableQuantity,
+      Number(b.unitCost || 0).toFixed(2),
+      (b.availableQuantity * Number(b.unitCost || 0)).toFixed(2),
+      `"${b.expiryDate}"`,
+      b.daysToExpiry,
+      `"${b.status}"`
+    ]);
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Pharmacy_FEFO_Valuation_Report_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -38,7 +75,7 @@ export const PharmacyReportsView: React.FC<PharmacyReportsViewProps> = ({
             Dispensing throughput velocity, FEFO valuation reports, and regulatory DEA/CDSCO compliance metrics.
           </p>
         </div>
-        <Button variant="outline" onClick={() => alert('Exporting Official Pharmacy Regulatory Ledger PDF...')}>
+        <Button variant="outline" onClick={handleExportAuditReport}>
           📥 Export Audit Report
         </Button>
       </div>
@@ -49,7 +86,7 @@ export const PharmacyReportsView: React.FC<PharmacyReportsViewProps> = ({
           <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
             Total Inventory Units
           </div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: '#0f172a', marginTop: '4px' }}>
+          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--ds-color-text-primary, #f8fafc)', marginTop: '4px' }}>
             {totalStockUnits.toLocaleString()}
           </div>
           <div style={{ fontSize: '0.75rem', color: '#16a34a', marginTop: '4px' }}>

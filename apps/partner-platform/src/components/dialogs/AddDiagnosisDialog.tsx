@@ -7,6 +7,7 @@ import type {
   DiagnosisCertainty
 } from '@docsearch/api-contracts';
 import { Dialog, Button, Input, Select, Alert } from '@docsearch/ui-kit';
+import { AuditJustificationField } from '../common/AuditJustificationField.js';
 
 export interface AddDiagnosisDialogProps {
   isOpen: boolean;
@@ -165,12 +166,12 @@ export const AddDiagnosisDialog: React.FC<AddDiagnosisDialogProps> = ({
           <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Supporting diagnostic reasoning" />
         </div>
 
-        <div>
-          <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '4px' }}>
-            Audit Justification *
-          </label>
-          <Input value={justification} onChange={(e) => setJustification(e.target.value)} required />
-        </div>
+        <AuditJustificationField
+          value={justification}
+          onChange={setJustification}
+          defaultJustification="Documented clinical diagnosis to patient dossier"
+          placeholder="Diagnostic audit justification..."
+        />
       </form>
     </Dialog>
   );

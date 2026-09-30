@@ -50,6 +50,7 @@ import {
   MOCK_PLATFORM_INCIDENTS,
   MOCK_PLATFORM_AUDIT_TRACES
 } from './mock-platform-engineering-data.js';
+import { apiCall, isMockFallbackAllowed } from './api-client.js';
 
 export interface IPlatformEngineeringService {
   getPlatformOverview(): Promise<PlatformOverviewDto>;
@@ -118,6 +119,15 @@ export class PlatformEngineeringService implements IPlatformEngineeringService {
   }
 
   async getProjects(): Promise<PlatformProjectDto[]> {
+    try {
+      const data = await apiCall<PlatformProjectDto[]>('/api/v1/company/platform/projects');
+      if (Array.isArray(data) && data.length > 0) {
+        this.projects = data;
+        return [...this.projects];
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
     return [...this.projects];
   }
 
@@ -254,6 +264,15 @@ export class PlatformEngineeringService implements IPlatformEngineeringService {
   }
 
   async getEnvironments(): Promise<EnvironmentDto[]> {
+    try {
+      const data = await apiCall<EnvironmentDto[]>('/api/v1/company/platform/environments');
+      if (Array.isArray(data) && data.length > 0) {
+        this.environments = data;
+        return [...this.environments];
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
     return [...this.environments];
   }
 
@@ -369,6 +388,15 @@ export class PlatformEngineeringService implements IPlatformEngineeringService {
   }
 
   async getDeployments(): Promise<DeploymentDto[]> {
+    try {
+      const data = await apiCall<DeploymentDto[]>('/api/v1/company/platform/deployments');
+      if (Array.isArray(data) && data.length > 0) {
+        this.deployments = data;
+        return [...this.deployments];
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
     return [...this.deployments];
   }
 

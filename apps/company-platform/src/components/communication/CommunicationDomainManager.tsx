@@ -51,14 +51,18 @@ export const CommunicationDomainManager: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const [itemsRes, templatesRes, dispatchesRes] = await Promise.all([
+      const [itemsRes, templatesRes, dispatchesRes] = await Promise.allSettled([
         communicationService.getContentItems(),
         communicationService.getNotificationTemplates(),
         communicationService.getDispatchRecords()
       ]);
-      setContentItems(itemsRes);
-      setTemplates(templatesRes);
-      setDispatches(dispatchesRes);
+      if (itemsRes.status === 'fulfilled') setContentItems(itemsRes.value);
+      if (templatesRes.status === 'fulfilled') setTemplates(templatesRes.value);
+      if (dispatchesRes.status === 'fulfilled') setDispatches(dispatchesRes.value);
+
+      if (itemsRes.status === 'rejected' && templatesRes.status === 'rejected' && dispatchesRes.status === 'rejected') {
+        throw new Error((itemsRes as PromiseRejectedResult).reason?.message || 'Failed to load Communication data');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load Communication & Content data');
     } finally {

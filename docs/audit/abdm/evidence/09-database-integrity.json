@@ -1,17 +1,24 @@
 {
   "testId": "ABDM-DB-09",
-  "timestamp": "2026-08-30T10:49:05.334Z",
-  "environment": "DOCSEARCH_POSTGRESQL_16",
-  "tablesVerified": [
-    "patient_abha_accounts",
-    "abdm_care_context_mappings",
-    "abdm_consent_artefacts",
-    "fhir_bundles_repository",
-    "abdm_audit_traces"
+  "timestamp": "2026-09-27T09:27:11.144Z",
+  "milestone": "RELATIONAL_LEDGER",
+  "certificationLevel": "DATA_INTEGRITY_AUDIT",
+  "environment": "ABDM_SANDBOX",
+  "external": false,
+  "databaseType": "PostgreSQL Relational Schema with Drizzle ORM",
+  "tablesAudited": [
+    "abdmAuditTraces",
+    "abdmCareContexts",
+    "abdmConsentArtefacts",
+    "pharmacyBatches",
+    "pharmacyStockMovements",
+    "medicationCatalog"
   ],
-  "multiTenantScoping": "STRICT_TENANT_ID",
-  "status": "PASS",
-  "databaseVerified": true,
+  "multiTenantRlsActive": true,
+  "referentialIntegrity": "STRICT_FOREIGN_KEYS_CASCADE",
+  "migrationLedgerVersion": "0049_complete_docsearch_schema",
+  "status": "BLOCKED",
+  "databaseVerified": false,
   "callbackVerified": true,
-  "evidenceHash": "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+  "evidenceHash": "41af341e0f50586df70236ae4792068e3e915210d690da750e647b40b4d1c7d4"
 }

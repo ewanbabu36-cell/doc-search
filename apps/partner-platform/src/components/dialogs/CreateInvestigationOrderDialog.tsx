@@ -11,6 +11,7 @@ import type {
   InvestigationPanelDto,
   CreateInvestigationOrderRequest
 } from '@docsearch/api-contracts';
+import { getUnifiedPartnerProfile } from '../../utils/roleProfileResolver.js';
 
 export interface CreateInvestigationOrderDialogProps {
   isOpen: boolean;
@@ -29,9 +30,8 @@ export interface CreateInvestigationOrderDialogProps {
 }
 
 const DEFAULT_INDICATION_LIBRARY = [
-  'Fever evaluation / Pyrexia of Unknown Origin (PUO)',
-  'Routine Health Screening / Annual Wellness CBC',
-  'Suspected Anemia / Fatigue & Weakness',
+  'Routine Executive Health Checkup / Screening',
+  'Fever of Unknown Origin (FUO) / Infection Evaluation',
   'Pre-Operative Fitness / Anesthesia PAC Clearance',
   'Suspected Viral Infection / Dengue / Typhoid Workup',
   'Acute Abdominal Pain / Gastric Distress',
@@ -42,14 +42,19 @@ const DEFAULT_INDICATION_LIBRARY = [
   'Post-Treatment Follow-up & Recovery Assessment'
 ];
 
-const DEFAULT_DOCTOR_LIBRARY = [
-  'Dr. Rajesh Sharma, MD (Consultant Physician)',
-  'Dr. Priya Nair, MS (General Surgeon)',
-  'Dr. Vikram Malhotra, MD (Cardiologist)',
-  'Dr. Sneha Verma, DGO (Gynecologist)',
-  'Dr. Arvind Mehta, DMRD (Radiologist)',
-  'Self / Walk-in Patient (Direct)'
-];
+const getDefaultDoctorLibrary = (): string[] => {
+  const profile = getUnifiedPartnerProfile();
+  const list: string[] = [];
+  if (profile.doctorName) {
+    list.push(`${profile.doctorName}, ${profile.doctorDegree || 'MD'} (In-House Clinician)`);
+  }
+  list.push(
+    'Self / Walk-in Patient (Direct)',
+    'Consulting Physician / External Referral',
+    'Emergency Department Triage'
+  );
+  return list;
+};
 
 export const CreateInvestigationOrderDialog: React.FC<CreateInvestigationOrderDialogProps> = ({
   isOpen,
@@ -73,19 +78,9 @@ export const CreateInvestigationOrderDialog: React.FC<CreateInvestigationOrderDi
   const [patientPhone, setPatientPhone] = useState<string>('9876543210');
 
   // Referring Doctor Library state
-  const [doctorList, setDoctorList] = useState<string[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('docsearch_pathology_referring_doctors');
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch (e) {}
-      }
-    }
-    return DEFAULT_DOCTOR_LIBRARY;
-  });
+  const [doctorList, setDoctorList] = useState<string[]>(getDefaultDoctorLibrary);
 
-  const [referringDoctor, setReferringDoctor] = useState<string>(doctorList[0] || DEFAULT_DOCTOR_LIBRARY[0] || '');
+  const [referringDoctor, setReferringDoctor] = useState<string>(() => doctorList[0] || getDefaultDoctorLibrary()[0] || 'Self / Walk-in Patient (Direct)');
   const [isAddingDoctor, setIsAddingDoctor] = useState(false);
   const [newDoctorName, setNewDoctorName] = useState('');
   const [newDoctorClinic, setNewDoctorClinic] = useState('');
@@ -94,18 +89,8 @@ export const CreateInvestigationOrderDialog: React.FC<CreateInvestigationOrderDi
   const [selectedInvestigationId, setSelectedInvestigationId] = useState<string>(catalog[0]?.id || '');
   const [selectedPanelId, setSelectedPanelId] = useState<string>('');
   const [priority, setPriority] = useState<'ROUTINE' | 'URGENT' | 'STAT' | 'EMERGENCY'>('ROUTINE');
-    // Clinical Indication Library state
-  const [indicationList, setIndicationList] = useState<string[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('docsearch_pathology_clinical_indications');
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch (e) {}
-      }
-    }
-    return DEFAULT_INDICATION_LIBRARY;
-  });
+  // Clinical Indication Library state
+  const [indicationList, setIndicationList] = useState<string[]>(DEFAULT_INDICATION_LIBRARY);
 
   const [clinicalIndication, setClinicalIndication] = useState<string>(indicationList[0] || DEFAULT_INDICATION_LIBRARY[0] || 'fever');
   const [diagnosisContext, setDiagnosisContext] = useState<string>('');
@@ -133,9 +118,6 @@ export const CreateInvestigationOrderDialog: React.FC<CreateInvestigationOrderDi
       const updated = [formatted, ...doctorList];
       setDoctorList(updated);
       setReferringDoctor(formatted);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('docsearch_pathology_referring_doctors', JSON.stringify(updated));
-      }
     } else {
       setReferringDoctor(formatted);
     }
@@ -165,13 +147,10 @@ export const CreateInvestigationOrderDialog: React.FC<CreateInvestigationOrderDi
       return;
     }
 
-        // Auto-save new clinical indication into lab library
+    // Auto-save new clinical indication into lab library
     if (clinicalIndication.trim() && !indicationList.includes(clinicalIndication.trim())) {
       const updatedIndications = [clinicalIndication.trim(), ...indicationList];
       setIndicationList(updatedIndications);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('docsearch_pathology_clinical_indications', JSON.stringify(updatedIndications));
-      }
     }
 
     try {
@@ -226,7 +205,7 @@ export const CreateInvestigationOrderDialog: React.FC<CreateInvestigationOrderDi
             variant="primary"
             onClick={handleSubmit}
             disabled={isSubmitting}
-            style={{ backgroundColor: '#06B6D4', borderColor: '#06B6D4', color: '#070C16', fontWeight: 900 }}
+            
           >
             {isSubmitting ? 'Placing Order...' : 'Submit Order'}
           </Button>
@@ -292,11 +271,42 @@ export const CreateInvestigationOrderDialog: React.FC<CreateInvestigationOrderDi
               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
                 MOBILE NUMBER (FOR WHATSAPP PDF)
               </label>
-              <Input
-                value={patientPhone}
-                onChange={(e) => setPatientPhone(e.target.value)}
-                placeholder="9876543210"
-              />
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <span
+                  style={{
+                    padding: '8px 10px',
+                    backgroundColor: 'rgba(30, 41, 59, 0.9)',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    borderRight: 'none',
+                    borderRadius: '6px 0 0 6px',
+                    color: '#38BDF8',
+                    fontSize: '0.8125rem',
+                    fontWeight: 700
+                  }}
+                >
+                  +91
+                </span>
+                <input
+                  type="tel"
+                  value={patientPhone}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, '');
+                    setPatientPhone(digits.slice(0, 10));
+                  }}
+                  maxLength={10}
+                  placeholder="98765 43210"
+                  style={{
+                    flex: 1,
+                    padding: '8px 12px',
+                    borderRadius: '0 6px 6px 0',
+                    backgroundColor: 'rgba(15, 23, 42, 0.8)',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    color: '#FFF',
+                    fontSize: '0.8125rem',
+                    outline: 'none'
+                  }}
+                />
+              </div>
             </div>
 
             {/* Referring Doctor Dropdown + Add Doctor to Library */}
@@ -345,12 +355,11 @@ export const CreateInvestigationOrderDialog: React.FC<CreateInvestigationOrderDi
                       placeholder="Specialty / Clinic Name"
                     />
                   </div>
-                  <Button
-                    type="button"
-                    variant="primary"
+                  <Button type="button"
+                    variant="success"
                     size="sm"
                     onClick={handleSaveNewDoctor}
-                    style={{ backgroundColor: '#10B981', borderColor: '#10B981', color: '#070C16', fontWeight: 800 }}
+                    
                   >
                     💾 Save to Lab Doctor Library
                   </Button>

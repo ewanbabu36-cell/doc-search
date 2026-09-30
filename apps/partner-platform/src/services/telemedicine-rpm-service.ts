@@ -57,12 +57,13 @@ export class TelemedicineRpmService implements ITelemedicineRpmService {
     entityCode: string,
     justification: string,
     actorName = 'Dr. Sanjay Gupta (Consultant)',
-    actorRole = 'TELEHEALTH_PHYSICIAN'
+    actorRole = 'TELEHEALTH_PHYSICIAN',
+    tenantId = '11111111-1111-4111-8111-111111111111'
   ) {
     const traceNumber = `TRACE-TELE-${Math.floor(10000 + Math.random() * 90000)}`;
     const trace: TelehealthAuditTraceDto = {
       id: crypto.randomUUID(),
-      tenantId: '11111111-1111-4111-8111-111111111111',
+      tenantId,
       traceNumber,
       action,
       entityType,
@@ -81,17 +82,17 @@ export class TelemedicineRpmService implements ITelemedicineRpmService {
     return { ...this.metrics };
   }
 
-  async getSessions(_tenantId: string): Promise<TeleconsultationSessionDto[]> {
-    return [...this.sessions];
+  async getSessions(tenantId: string): Promise<TeleconsultationSessionDto[]> {
+    return this.sessions.filter((s) => !tenantId || s.tenantId === tenantId || s.tenantId === '11111111-1111-4111-8111-111111111111');
   }
 
-  async scheduleSession(_tenantId: string, payload: ScheduleTeleconsultationRequest): Promise<TeleconsultationSessionDto> {
+  async scheduleSession(tenantId: string, payload: ScheduleTeleconsultationRequest): Promise<TeleconsultationSessionDto> {
     const apptNum = `TELE-2026-08-${Math.floor(100 + Math.random() * 900)}`;
     const roomId = `ROOM-WEBRTC-${Math.floor(1000 + Math.random() * 9000)}`;
 
     const newSession: TeleconsultationSessionDto = {
       id: crypto.randomUUID(),
-      tenantId: '11111111-1111-4111-8111-111111111111',
+      tenantId: tenantId || '11111111-1111-4111-8111-111111111111',
       appointmentNumber: apptNum,
       patientMrn: payload.patientMrn,
       patientName: payload.patientName,
@@ -112,7 +113,7 @@ export class TelemedicineRpmService implements ITelemedicineRpmService {
 
     this.sessions.unshift(newSession);
     this.metrics.activeTeleconsultationsToday += 1;
-    this.appendAudit('SCHEDULE_TELECONSULTATION', 'TELEHEALTH_SESSION', newSession.id, apptNum, `Scheduled virtual session for ${payload.patientName} with ${payload.doctorName}`);
+    this.appendAudit('SCHEDULE_TELECONSULTATION', 'TELEHEALTH_SESSION', newSession.id, apptNum, `Scheduled virtual session for ${payload.patientName} with ${payload.doctorName}`, undefined, undefined, tenantId);
     return newSession;
   }
 
@@ -120,7 +121,7 @@ export class TelemedicineRpmService implements ITelemedicineRpmService {
     return [...this.waitingQueue];
   }
 
-  async admitPatientFromWaitingRoom(_tenantId: string, queueItemId: string): Promise<TeleconsultationSessionDto> {
+  async admitPatientFromWaitingRoom(tenantId: string, queueItemId: string): Promise<TeleconsultationSessionDto> {
     const queueIdx = this.waitingQueue.findIndex((q) => q.id === queueItemId);
     const item = this.waitingQueue[queueIdx];
     if (!item) throw new Error('Queue item not found');
@@ -134,7 +135,7 @@ export class TelemedicineRpmService implements ITelemedicineRpmService {
     session.status = 'CALL_IN_PROGRESS';
     session.actualStartTime = new Date().toISOString();
 
-    this.appendAudit('ADMIT_PATIENT_FROM_WAITING_ROOM', 'TELEHEALTH_SESSION', session.id, session.appointmentNumber, `Admitted ${item.patientName} to WebRTC Room ${session.webrtcRoomId}`);
+    this.appendAudit('ADMIT_PATIENT_FROM_WAITING_ROOM', 'TELEHEALTH_SESSION', session.id, session.appointmentNumber, `Admitted ${item.patientName} to WebRTC Room ${session.webrtcRoomId}`, undefined, undefined, tenantId);
     return session;
   }
 
@@ -142,7 +143,7 @@ export class TelemedicineRpmService implements ITelemedicineRpmService {
     return [...this.devices];
   }
 
-  async registerIotDevice(_tenantId: string, payload: RegisterIotDeviceRequest): Promise<IotConnectedDeviceDto> {
+  async registerIotDevice(tenantId: string, payload: RegisterIotDeviceRequest): Promise<IotConnectedDeviceDto> {
     const newDevice: IotConnectedDeviceDto = {
       id: crypto.randomUUID(),
       deviceSerial: payload.deviceSerial,
@@ -158,7 +159,7 @@ export class TelemedicineRpmService implements ITelemedicineRpmService {
 
     this.devices.unshift(newDevice);
     this.metrics.connectedIotDevicesCount += 1;
-    this.appendAudit('REGISTER_IOT_DEVICE', 'IOT_DEVICE', newDevice.id, payload.deviceSerial, `Paired ${payload.deviceModel} for patient ${payload.patientName}`);
+    this.appendAudit('REGISTER_IOT_DEVICE', 'IOT_DEVICE', newDevice.id, payload.deviceSerial, `Paired ${payload.deviceModel} for patient ${payload.patientName}`, undefined, undefined, tenantId);
     return newDevice;
   }
 
@@ -170,24 +171,24 @@ export class TelemedicineRpmService implements ITelemedicineRpmService {
     return [...this.breachAlerts];
   }
 
-  async acknowledgeVitalBreach(_tenantId: string, payload: AcknowledgeVitalBreachRequest): Promise<RpmVitalBreachAlertDto> {
+  async acknowledgeVitalBreach(tenantId: string, payload: AcknowledgeVitalBreachRequest): Promise<RpmVitalBreachAlertDto> {
     const breach = this.breachAlerts.find((b) => b.id === payload.alertId);
     if (!breach) throw new Error('Vital breach not found');
 
     breach.status = payload.escalateToVideoCall ? 'ESCALATED_CONSULTANT_CALL' : 'RESOLVED';
     breach.resolutionNotes = payload.clinicalActionTaken;
 
-    this.appendAudit('ACKNOWLEDGE_VITAL_BREACH', 'VITAL_BREACH', breach.id, breach.vitalParameter, payload.clinicalActionTaken, payload.acknowledgedBy);
+    this.appendAudit('ACKNOWLEDGE_VITAL_BREACH', 'VITAL_BREACH', breach.id, breach.vitalParameter, payload.clinicalActionTaken, payload.acknowledgedBy, undefined, tenantId);
     return { ...breach };
   }
 
-  async enrollRpmPatient(_tenantId: string, payload: EnrollRpmPatientRequest): Promise<void> {
+  async enrollRpmPatient(tenantId: string, payload: EnrollRpmPatientRequest): Promise<void> {
     this.metrics.activeEnrolledRpmPatients += 1;
-    this.appendAudit('ENROLL_RPM_PATIENT', 'RPM_ENROLLMENT', crypto.randomUUID(), payload.careProgram, `Enrolled ${payload.patientName} into ${payload.careProgram} cohort`, payload.attendingPhysician);
+    this.appendAudit('ENROLL_RPM_PATIENT', 'RPM_ENROLLMENT', crypto.randomUUID(), payload.careProgram, `Enrolled ${payload.patientName} into ${payload.careProgram} cohort`, payload.attendingPhysician, undefined, tenantId);
   }
 
-  async getAuditTraces(_tenantId: string): Promise<TelehealthAuditTraceDto[]> {
-    return [...this.auditTraces];
+  async getAuditTraces(tenantId: string): Promise<TelehealthAuditTraceDto[]> {
+    return this.auditTraces.filter((t) => !tenantId || t.tenantId === tenantId || t.tenantId === '11111111-1111-4111-8111-111111111111');
   }
 }
 

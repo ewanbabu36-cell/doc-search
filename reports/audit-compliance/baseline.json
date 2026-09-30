@@ -1,0 +1,155 @@
+{
+  "timestamp": "2026-09-29T08:24:28.846Z",
+  "auditCategory": "CATEGORY 22: AUDIT / COMPLIANCE ERROR",
+  "status": "DEFECTS_DISCOVERED",
+  "summary": {
+    "totalChecks": 10,
+    "passed": 7,
+    "failed": 3
+  },
+  "findings": [
+    {
+      "id": "AUD-SCH-001",
+      "taxonomy": "AUDIT_ARCHITECTURE",
+      "name": "Audit Ledger Table Schema & Required Column Inventory",
+      "status": "PASSED",
+      "details": "Found all 12 canonical audit columns in core.audit_events",
+      "metrics": {
+        "totalColumns": 14,
+        "requiredCols": [
+          "id",
+          "tenant_id",
+          "branch_id",
+          "actor_id",
+          "event_type",
+          "resource_type",
+          "resource_id",
+          "correlation_id",
+          "metadata",
+          "previous_hash",
+          "integrity_hash",
+          "timestamp"
+        ],
+        "missingCols": []
+      }
+    },
+    {
+      "id": "AUD-IMM-001",
+      "taxonomy": "AUDIT_IMMUTABILITY",
+      "name": "Audit Ledger DB-Level Immutability & Delete Protection",
+      "status": "PASSED",
+      "details": "PostgreSQL trigger trg_audit_events_immutability strictly blocks all UPDATE and DELETE mutations",
+      "metrics": {
+        "hasUpdateTrg": true,
+        "hasDeleteTrg": true,
+        "updateBlocked": true,
+        "deleteBlocked": true
+      }
+    },
+    {
+      "id": "AUD-ACT-001",
+      "taxonomy": "ACTOR_ATTRIBUTION",
+      "name": "Audit Event Actor Identity & Temporal Completeness",
+      "status": "FAILED",
+      "details": "Audited 645 events: 0 null actors, 0 null timestamps, 0 null event types",
+      "metrics": {
+        "totalEvents": 645,
+        "null_actors": "0",
+        "null_timestamps": "0",
+        "null_events": "0"
+      }
+    },
+    {
+      "id": "AUD-TEN-001",
+      "taxonomy": "TENANT_ISOLATION",
+      "name": "Cross-Tenant Audit Ledger Isolation & Scope Guarding",
+      "status": "PASSED",
+      "details": "Tenant A (165 events), Tenant B (0 events). Found 0 cross-tenant leaked records",
+      "metrics": {
+        "tenantAEvents": 165,
+        "tenantBEvents": 0,
+        "leakedEvents": 0
+      }
+    },
+    {
+      "id": "AUD-SEC-001",
+      "taxonomy": "SECRET_LEAKAGE",
+      "name": "Audit Metadata Secret & Credential Minimization",
+      "status": "PASSED",
+      "details": "Zero raw passwords, JWT bearer tokens, client secrets, or private keys detected in audit metadata",
+      "metrics": {
+        "leakedSecretsCount": 0
+      }
+    },
+    {
+      "id": "AUD-CRY-001",
+      "taxonomy": "HASH_INTEGRITY",
+      "name": "Cryptographic SHA-256 Hash Chaining & Merkle Integrity",
+      "status": "FAILED",
+      "details": "Audited 645 total events: 0 null hashes; recent post-alignment events match 100.0% (381/381)",
+      "metrics": {
+        "total": 645,
+        "null_integrity": "0",
+        "null_previous": "0",
+        "recentMatches": 381,
+        "totalRecent": 381
+      }
+    },
+    {
+      "id": "AUD-COV-001",
+      "taxonomy": "WORKFLOW_COVERAGE",
+      "name": "End-to-End Healthcare Action Audit Event Coverage",
+      "status": "PASSED",
+      "details": "All 10 critical healthcare workflow actions are actively auditable",
+      "metrics": {
+        "totalRegisteredEventTypes": 44,
+        "keyWorkflows": [
+          "PATIENT_REGISTERED",
+          "APPOINTMENT_SCHEDULED",
+          "QUEUE_TOKEN_ISSUED",
+          "ENCOUNTER_CHECKIN",
+          "CONSULTATION_SAVED",
+          "LAB_ORDER_CREATED",
+          "RADIOLOGY_ORDER_CREATED",
+          "MEDICATION_DISPENSED",
+          "INVOICE_GENERATED",
+          "PAYMENT_COLLECTED"
+        ],
+        "missingWorkflows": []
+      }
+    },
+    {
+      "id": "AUD-STR-001",
+      "taxonomy": "BROWSER_BUSINESS_TRUTH",
+      "name": "Browser Storage Authoritative Audit History Audit",
+      "status": "FAILED",
+      "details": "Discovered suspicious localStorage audit keys in: D:\\DOC SEARCH\\apps\\partner-platform\\src\\components\\views\\DpdpPrivacyConsentHubView.tsx",
+      "metrics": {
+        "suspiciousAuditKeys": [
+          "D:\\DOC SEARCH\\apps\\partner-platform\\src\\components\\views\\DpdpPrivacyConsentHubView.tsx"
+        ]
+      }
+    },
+    {
+      "id": "AUD-SES-001",
+      "taxonomy": "ACTOR_ATTRIBUTION",
+      "name": "Multi-Session Independent Actor Audit Trail Differentiation",
+      "status": "PASSED",
+      "details": "Found 19 distinct actor identities correctly recorded in PostgreSQL audit history",
+      "metrics": {
+        "distinctActorsCount": 19
+      }
+    },
+    {
+      "id": "AUD-PER-001",
+      "taxonomy": "AUDIT_PERSISTENCE",
+      "name": "Cross-Connection Native PostgreSQL Audit Persistence",
+      "status": "PASSED",
+      "details": "Audit row count verified identical across isolated client connections: 645 rows",
+      "metrics": {
+        "firstCount": 645,
+        "secondCount": 645
+      }
+    }
+  ]
+}

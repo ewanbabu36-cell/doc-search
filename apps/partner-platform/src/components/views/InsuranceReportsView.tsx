@@ -16,23 +16,23 @@ export const InsuranceReportsView: React.FC<InsuranceReportsViewProps> = ({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div>
-        <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#0f172a' }}>
+        <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: 'var(--ds-color-text-primary)' }}>
           Payer Analytics & Revenue Recovery Intelligence
         </h2>
-        <p style={{ margin: '0.25rem 0 0 0', color: '#64748b', fontSize: '0.875rem' }}>
+        <p style={{ margin: '0.25rem 0 0 0', color: 'var(--ds-color-text-secondary, #94a3b8)', fontSize: '0.875rem' }}>
           Payer scorecards, denial category distributions, and monthly claim settlement velocity.
         </p>
       </div>
 
       {/* Payer Performance Scorecards */}
       <Card style={{ padding: '1.25rem' }}>
-        <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.05rem', fontWeight: 600, color: '#0f172a' }}>
+        <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.05rem', fontWeight: 600, color: 'var(--ds-color-text-primary)' }}>
           Payer Performance & Turnaround Scorecards
         </h3>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid #e2e8f0', color: '#64748b', textAlign: 'left', backgroundColor: '#f8fafc' }}>
+              <tr style={{ borderBottom: '1px solid var(--ds-color-border, #1e293b)', color: 'var(--ds-color-text-secondary, #94a3b8)', textAlign: 'left', backgroundColor: 'var(--ds-color-surface-subtle, #1a2234)' }}>
                 <th style={{ padding: '0.75rem 1rem' }}>Payer Entity</th>
                 <th style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>Total Claims</th>
                 <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Billed Amount</th>
@@ -43,8 +43,8 @@ export const InsuranceReportsView: React.FC<InsuranceReportsViewProps> = ({
             </thead>
             <tbody>
               {reports.payerPerformance.map((p, idx) => (
-                <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#1e293b' }}>
+                <tr key={idx} style={{ borderBottom: '1px solid var(--ds-color-border-subtle, #1a2234)' }}>
+                  <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: 'var(--ds-color-text-primary)' }}>
                     {p.payerName}
                   </td>
                   <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>{p.claimsCount}</td>
@@ -70,7 +70,7 @@ export const InsuranceReportsView: React.FC<InsuranceReportsViewProps> = ({
       {/* Two-Column: Denial Breakdown & Trend */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
         <Card style={{ padding: '1.25rem' }}>
-          <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 600, color: '#0f172a' }}>
+          <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 600, color: 'var(--ds-color-text-primary)' }}>
             Root Cause Denial Distribution
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -80,7 +80,7 @@ export const InsuranceReportsView: React.FC<InsuranceReportsViewProps> = ({
                   <span style={{ fontWeight: 500 }}>{cat.category.replace(/_/g, ' ')}</span>
                   <span>${cat.totalDeniedAmount.toFixed(2)} ({cat.percentage}%)</span>
                 </div>
-                <div style={{ width: '100%', height: '8px', backgroundColor: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
+                <div style={{ width: '100%', height: '8px', backgroundColor: 'var(--ds-color-surface-subtle, #1a2234)', borderRadius: '4px', overflow: 'hidden' }}>
                   <div
                     style={{
                       width: `${cat.percentage}%`,
@@ -96,7 +96,7 @@ export const InsuranceReportsView: React.FC<InsuranceReportsViewProps> = ({
         </Card>
 
         <Card style={{ padding: '1.25rem' }}>
-          <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 600, color: '#0f172a' }}>
+          <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 600, color: 'var(--ds-color-text-primary)' }}>
             Monthly Claims & Settlement Trajectory
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.85rem' }}>
@@ -105,9 +105,9 @@ export const InsuranceReportsView: React.FC<InsuranceReportsViewProps> = ({
                 key={idx}
                 style={{
                   padding: '0.75rem',
-                  backgroundColor: '#f8fafc',
+                  backgroundColor: 'var(--ds-color-surface-subtle, #1a2234)',
                   borderRadius: '6px',
-                  border: '1px solid #e2e8f0',
+                  border: '1px solid var(--ds-color-border, #334155)',
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center'

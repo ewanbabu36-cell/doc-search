@@ -15,6 +15,7 @@ import {
   mockPartnerHealth,
   mockSuccessCheckins
 } from './mock-support-data.js';
+import { apiCall, isMockFallbackAllowed } from './api-client.js';
 
 export interface TicketFilters {
   status?: TicketStatus | 'ALL' | undefined;
@@ -54,53 +55,54 @@ export class SupportService implements ISupportService {
   }
 
   async getTickets(filters?: TicketFilters): Promise<SupportTicketDto[]> {
-    if (this.apiUrl) {
+    try {
       const params = new URLSearchParams();
       if (filters?.status && filters.status !== 'ALL') params.set('status', filters.status);
       if (filters?.priority && filters.priority !== 'ALL') params.set('priority', filters.priority);
       if (filters?.category && filters.category !== 'ALL') params.set('category', filters.category);
       if (filters?.partnerId) params.set('partnerId', filters.partnerId);
       if (filters?.search) params.set('search', filters.search);
-      const res = await fetch(`${this.apiUrl}/api/v1/company/support/tickets?${params.toString()}`);
-      if (!res.ok) throw new Error(`Failed to fetch support tickets: ${res.statusText}`);
-      return (await res.json()) as SupportTicketDto[];
-    }
+      const qs = params.toString();
+      const endpoint = `/api/v1/company/support/tickets${qs ? `?${qs}` : ''}`;
+      return await apiCall<SupportTicketDto[]>(endpoint);
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
 
-    let result = [...this.tickets];
-    if (filters?.status && filters.status !== 'ALL') {
-      result = result.filter((t) => t.status === filters.status);
+      let result = [...this.tickets];
+      if (filters?.status && filters.status !== 'ALL') {
+        result = result.filter((t) => t.status === filters.status);
+      }
+      if (filters?.priority && filters.priority !== 'ALL') {
+        result = result.filter((t) => t.priority === filters.priority);
+      }
+      if (filters?.category && filters.category !== 'ALL') {
+        result = result.filter((t) => t.category === filters.category);
+      }
+      if (filters?.partnerId) {
+        result = result.filter((t) => t.partnerId === filters.partnerId);
+      }
+      if (filters?.search) {
+        const q = filters.search.toLowerCase().trim();
+        result = result.filter(
+          (t) =>
+            t.ticketNumber.toLowerCase().includes(q) ||
+            t.title.toLowerCase().includes(q) ||
+            t.partnerTradeName.toLowerCase().includes(q) ||
+            t.description.toLowerCase().includes(q)
+        );
+      }
+      return result;
     }
-    if (filters?.priority && filters.priority !== 'ALL') {
-      result = result.filter((t) => t.priority === filters.priority);
-    }
-    if (filters?.category && filters.category !== 'ALL') {
-      result = result.filter((t) => t.category === filters.category);
-    }
-    if (filters?.partnerId) {
-      result = result.filter((t) => t.partnerId === filters.partnerId);
-    }
-    if (filters?.search) {
-      const q = filters.search.toLowerCase().trim();
-      result = result.filter(
-        (t) =>
-          t.ticketNumber.toLowerCase().includes(q) ||
-          t.title.toLowerCase().includes(q) ||
-          t.partnerTradeName.toLowerCase().includes(q) ||
-          t.description.toLowerCase().includes(q)
-      );
-    }
-    return result;
   }
 
   async getTicketById(id: string): Promise<SupportTicketDto | null> {
-    if (this.apiUrl) {
-      const res = await fetch(`${this.apiUrl}/api/v1/company/support/tickets/${id}`);
-      if (res.status === 404) return null;
-      if (!res.ok) throw new Error(`Failed to fetch ticket: ${res.statusText}`);
-      return (await res.json()) as SupportTicketDto;
+    try {
+      return await apiCall<SupportTicketDto>(`/api/v1/company/support/tickets/${id}`);
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+      const ticket = this.tickets.find((t) => t.id === id);
+      return ticket ? { ...ticket } : null;
     }
-    const ticket = this.tickets.find((t) => t.id === id);
-    return ticket ? { ...ticket } : null;
   }
 
   async getTicketComments(ticketId: string): Promise<TicketCommentDto[]> {
@@ -171,19 +173,19 @@ export class SupportService implements ISupportService {
   }
 
   async getPartnerHealth(partnerId?: string): Promise<PartnerHealthDto[]> {
-    if (this.apiUrl) {
+    try {
       const url = partnerId
-        ? `${this.apiUrl}/api/v1/company/support/partner-health?partnerId=${partnerId}`
-        : `${this.apiUrl}/api/v1/company/support/partner-health`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`Failed to fetch partner health: ${res.statusText}`);
-      return (await res.json()) as PartnerHealthDto[];
-    }
+        ? `/api/v1/company/support/partner-health?partnerId=${partnerId}`
+        : '/api/v1/company/support/partner-health';
+      return await apiCall<PartnerHealthDto[]>(url);
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
 
-    if (partnerId) {
-      return this.healthProfiles.filter((h) => h.partnerId === partnerId);
+      if (partnerId) {
+        return this.healthProfiles.filter((h) => h.partnerId === partnerId);
+      }
+      return [...this.healthProfiles];
     }
-    return [...this.healthProfiles];
   }
 
   async getSuccessCheckins(partnerId?: string): Promise<SuccessCheckinDto[]> {

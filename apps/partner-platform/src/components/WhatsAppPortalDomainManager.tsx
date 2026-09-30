@@ -22,6 +22,8 @@ import { LiveQueueTokenTrackerView } from './views/LiveQueueTokenTrackerView.js'
 import { WhatsAppAuditVaultView } from './views/WhatsAppAuditVaultView.js';
 import { WaitingRoomTvDisplayView } from './views/WaitingRoomTvDisplayView.js';
 import { PatientGrowthLoyaltyHubView } from './views/PatientGrowthLoyaltyHubView.js';
+import { AutonomousPostCareAgentView } from './views/AutonomousPostCareAgentView.js';
+import { TabOverflowMenu } from './common/TabOverflowMenu.js';
 
 // Dialogs
 import { SendWhatsAppTemplateDialog } from './dialogs/SendWhatsAppTemplateDialog.js';
@@ -31,6 +33,7 @@ import { SendMedicationReminderDialog } from './dialogs/SendMedicationReminderDi
 type WhatsAppTab =
   | 'OVERVIEW'
   | 'LIVE_CHAT_DESK'
+  | 'POST_CARE_AGENT'
   | 'PATIENT_GROWTH_LOYALTY'
   | 'SMART_TV_DISPLAY'
   | 'AAROGYA_PORTAL'
@@ -118,55 +121,81 @@ export const WhatsAppPortalDomainManager: React.FC<Props> = ({ tenantId }) => {
   return (
     <div className="space-y-4">
       {/* Domain Navigation Tabs */}
-      <div className="flex items-center gap-1 border-b pb-2 overflow-x-auto text-xs font-semibold">
-        <button
-          onClick={() => setActiveTab('OVERVIEW')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'OVERVIEW' ? 'bg-slate-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          💬 WhatsApp Overview
-        </button>
-        <button
-          onClick={() => setActiveTab('LIVE_CHAT_DESK')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'LIVE_CHAT_DESK' ? 'bg-slate-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          🧑‍💼 Live Chat Desk ({conversations.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('SMART_TV_DISPLAY')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'SMART_TV_DISPLAY' ? 'bg-cyan-700 text-white font-bold' : 'text-cyan-400 hover:bg-cyan-950/40'}`}
-        >
-          📺 Smart TV Waiting Room HUD (Voice Call)
-        </button>
-        <button
-          onClick={() => setActiveTab('PATIENT_GROWTH_LOYALTY')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'PATIENT_GROWTH_LOYALTY' ? 'bg-amber-600 text-white font-bold' : 'text-amber-500 hover:bg-amber-500/10'}`}
-        >
-          👑 Patient Care Pass & Growth Hub
-        </button>
-        <button
-          onClick={() => setActiveTab('AAROGYA_PORTAL')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'AAROGYA_PORTAL' ? 'bg-slate-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          📱 Aarogya 360 Portal
-        </button>
-        <button
-          onClick={() => setActiveTab('DOCUMENT_DELIVERY')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'DOCUMENT_DELIVERY' ? 'bg-slate-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          📄 PDF Health Dispatch ({dispatches.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('QUEUE_TOKENS')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'QUEUE_TOKENS' ? 'bg-slate-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          🎫 Live OPD Tokens ({queueTokens.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('AUDIT_VAULT')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'AUDIT_VAULT' ? 'bg-slate-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          🔐 Audit Vault
-        </button>
+      <div
+        style={{
+          position: 'relative',
+          zIndex: 40,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          flexWrap: 'wrap',
+          backgroundColor: '#0F172A',
+          border: '1px solid #1E293B',
+          borderRadius: '10px',
+          padding: '6px 8px'
+        }}
+      >
+        {[
+          { key: 'OVERVIEW', label: '💬 WhatsApp Overview' },
+          { key: 'LIVE_CHAT_DESK', label: `🧑‍💼 Live Chat (${conversations.length})` },
+          { key: 'POST_CARE_AGENT', label: '🤖 Post-Care AI & SOS' },
+          { key: 'SMART_TV_DISPLAY', label: '📺 Smart TV HUD' },
+          { key: 'PATIENT_GROWTH_LOYALTY', label: '👑 Patient Care Pass' }
+        ].map((tab) => {
+          const isActive = activeTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key as WhatsAppTab)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                borderRadius: '6px',
+                border: isActive ? '1px solid #38BDF8' : '1px solid transparent',
+                backgroundColor: isActive ? '#0284C7' : 'transparent',
+                color: isActive ? '#FFFFFF' : '#94A3B8',
+                fontWeight: isActive ? 700 : 500,
+                fontSize: '0.8rem',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = '#1E293B';
+                  e.currentTarget.style.color = '#F8FAFC';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = '#94A3B8';
+                }
+              }}
+            >
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+
+        {/* Secondary Modules Dropdown */}
+        <TabOverflowMenu
+          label="More WhatsApp Tools"
+          options={[
+            { id: 'AAROGYA_PORTAL', label: '📱 Aarogya 360 Portal' },
+            { id: 'DOCUMENT_DELIVERY', label: '📄 PDF Health Dispatch', count: dispatches.length },
+            { id: 'QUEUE_TOKENS', label: '🎫 Live OPD Tokens', count: queueTokens.length },
+            { id: 'AUDIT_VAULT', label: '🔐 Audit Vault' }
+          ]}
+          activeId={activeTab}
+          onSelect={(id) => setActiveTab(id as WhatsAppTab)}
+          onReset={() => setActiveTab('OVERVIEW')}
+          accentColor="#0284C7"
+          activeBorderColor="#38BDF8"
+        />
       </div>
 
       {/* Tab Renderers */}
@@ -188,6 +217,10 @@ export const WhatsAppPortalDomainManager: React.FC<Props> = ({ tenantId }) => {
           onSendMessage={handleSendMessage}
           onToggleBot={handleToggleBot}
         />
+      )}
+
+      {activeTab === 'POST_CARE_AGENT' && (
+        <AutonomousPostCareAgentView />
       )}
 
       {activeTab === 'SMART_TV_DISPLAY' && (

@@ -16,8 +16,8 @@ export type RuleOperator =
 export interface RuleCondition {
   field: string;
   operator: RuleOperator;
-  value?: any;
-  secondValue?: any; // For BETWEEN
+  value?: unknown;
+  secondValue?: unknown; // For BETWEEN
 }
 
 export interface RuleExpression {
@@ -75,7 +75,7 @@ export interface ActionDefinitionDto {
   id: string;
   actionType: ActionType;
   name: string;
-  configuration: Record<string, any>;
+  configuration: Record<string, unknown>;
   executionOrder: number;
   continueOnError?: boolean;
 }
@@ -87,7 +87,7 @@ export interface StageRequirementDto {
   name: string;
   description?: string;
   requirementType: WorkflowRequirementType;
-  configuration: Record<string, any>;
+  configuration: Record<string, unknown>;
   isRequired: boolean;
   validationRule?: RuleExpression;
   order: number;
@@ -121,7 +121,7 @@ export interface WorkflowStageDto {
   isInitial: boolean;
   isTerminal: boolean;
   status: 'ACTIVE' | 'INACTIVE';
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   requirements: StageRequirementDto[];
 }
 
@@ -167,7 +167,7 @@ export interface RequirementInstanceDto {
   isFulfilled: boolean;
   fulfilledAt?: string;
   fulfilledBy?: string;
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
   evaluationResult?: {
     passed: boolean;
     reason?: string;
@@ -199,7 +199,7 @@ export interface WorkflowTransitionLogDto {
   rulesEvaluated: {
     ruleDescription?: string;
     passed: boolean;
-    details?: any;
+    details?: unknown;
   }[];
   requirementsEvaluated: {
     requirementCode: string;
@@ -219,7 +219,7 @@ export interface BlockingReasonDto {
   code: string;
   category: 'REQUIREMENT' | 'RULE' | 'APPROVAL' | 'PERMISSION';
   message: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
 }
 
 export interface AllowedTransitionDto {
@@ -241,7 +241,7 @@ export interface WorkflowInstanceDto {
   currentStageCode: string;
   currentStageName: string;
   status: 'IN_PROGRESS' | 'COMPLETED' | 'BLOCKED' | 'CANCELLED';
-  contextData: Record<string, any>;
+  contextData: Record<string, unknown>;
   requirements: RequirementInstanceDto[];
   pendingApprovals: WorkflowApprovalDto[];
   allowedTransitions: AllowedTransitionDto[];
@@ -283,7 +283,7 @@ export interface DynamicPricingRequestDto {
   billingFrequency: 'MONTHLY' | 'ANNUAL';
   selectedAddonCodes?: string[];
   couponOfferCode?: string;
-  customerContext: Record<string, any>;
+  customerContext: Record<string, unknown>;
 }
 
 export interface PricingLineItemDto {

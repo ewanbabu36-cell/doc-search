@@ -128,7 +128,7 @@ export const CreateTicketModal: React.FC<CreateTicketModalProps> = ({ isOpen, on
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '14px' }}>
             <Button type="button" variant="outline" size="md" onClick={onClose}>Cancel</Button>
-            <Button type="submit" variant="primary" size="md" disabled={isSubmitting} style={{ backgroundColor: '#38BDF8', borderColor: '#38BDF8', color: '#070C16', fontWeight: 800 }}>
+            <Button type="submit" variant="primary" size="md" disabled={isSubmitting} >
               {isSubmitting ? 'Opening Ticket...' : '🚀 Open Support Ticket'}
             </Button>
           </div>

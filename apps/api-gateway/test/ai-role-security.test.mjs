@@ -9,6 +9,7 @@ import { z } from 'zod';
 
 describe('STEP 4: Role AI Implementation — Multi-Role Security & Boundary Test Suite', () => {
   let app;
+  let testDb;
 
   const MASTER_SECRET = 'docsearch_master_jwt_secret_dev_32char_key_only';
   const ISSUER = 'docsearch-api';
@@ -53,7 +54,8 @@ describe('STEP 4: Role AI Implementation — Multi-Role Security & Boundary Test
 
   before(async () => {
     // 1. Initialize in-memory test database with enterprise seeds (licenses, plans, features)
-    const { pool } = await setupTestDatabase();
+    testDb = await setupTestDatabase();
+    const { pool } = testDb;
 
     const FEAT_AI_ID = '66666666-6666-4666-8666-666666666699';
     await pool.query(`
@@ -68,7 +70,7 @@ describe('STEP 4: Role AI Implementation — Multi-Role Security & Boundary Test
       ON CONFLICT DO NOTHING;
     `);
 
-    app = await buildApp();
+    app = await buildApp({ db: testDb });
     await app.ready();
 
     // 1. OWNER
@@ -177,7 +179,8 @@ describe('STEP 4: Role AI Implementation — Multi-Role Security & Boundary Test
   });
 
   after(async () => {
-    await app.close();
+    if (app) await app.close();
+    if (testDb) await testDb.cleanup();
   });
 
   // ===========================================================================

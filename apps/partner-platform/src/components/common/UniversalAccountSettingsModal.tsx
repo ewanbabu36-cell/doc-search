@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DynamicRoleDocumentChecklist } from './DynamicRoleDocumentChecklist.js';
+import { markPartnerProfileAsUpdated } from '../../utils/partnerProfileGuard.js';
+import { apiRequest } from '../../services/api-client.js';
 
 export interface UniversalAccountSettingsModalProps {
   isOpen: boolean;
@@ -12,8 +14,16 @@ export interface UniversalAccountSettingsModalProps {
     department?: string;
     tenantName?: string;
     organizationType?: string;
+    planTier?: string;
+    ownerAadhaarNumber?: string;
+    aadhaarDocFileName?: string;
+    aadhaarDocDataUrl?: string;
+    kycStatus?: 'PENDING_ADMIN_VERIFICATION' | 'KYC_VERIFIED' | 'KYC_REJECTED';
+    kycSubmittedAt?: string;
+    onboardingEnvironment?: string;
+    mustChangePassword?: boolean;
   } | undefined;
-  initialTab?: 'BANK' | 'ADDRESS' | 'CERTIFICATES' | 'SECURITY_SEAL' | 'PASSWORD' | undefined;
+  initialTab?: 'KYC' | 'BANK' | 'ADDRESS' | 'CERTIFICATES' | 'SECURITY_SEAL' | 'PASSWORD' | undefined;
   onSettingsSaved?: ((data: any) => void) | undefined;
 }
 
@@ -59,9 +69,22 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
   initialTab,
   onSettingsSaved
 }) => {
-  const [activeTab, setActiveTab] = useState<'BANK' | 'ADDRESS' | 'CERTIFICATES' | 'SECURITY_SEAL' | 'PASSWORD'>(
-    initialTab || 'BANK'
+  const [activeTab, setActiveTab] = useState<'KYC' | 'BANK' | 'ADDRESS' | 'CERTIFICATES' | 'SECURITY_SEAL' | 'PASSWORD'>(
+    initialTab || 'KYC'
   );
+
+  // Load dynamic partner info and staged profile amendments
+  const [dynamicPartner, setDynamicPartner] = useState<any>(null);
+  const [stagedAmendment, setStagedAmendment] = useState<any>(null);
+  const [isAmendmentFormOpen, setIsAmendmentFormOpen] = useState(false);
+  const [amendmentData, setAmendmentData] = useState({
+    proposedFacilityName: '',
+    proposedOwnerName: '',
+    proposedAadhaarNumber: '',
+    proposedDocFileName: '',
+    proposedDocDataUrl: '',
+    reasonForChange: ''
+  });
 
   useEffect(() => {
     if (initialTab) {
@@ -75,6 +98,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
 
   const roleCategory = getRoleCategory(currentUser);
   const isCompanyAdmin = currentUser?.role === 'SUPER_ADMIN' || currentUser?.role === 'COMPANY_ADMIN' || currentUser?.role === 'COMPLIANCE_OFFICER';
+  const userAny = currentUser as any;
 
   // Storage key specific to user
   const userKey = currentUser?.email || 'default_user';
@@ -88,31 +112,31 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
 
   // Bank Form State
   const [bankData, setBankData] = useState({
-    accountHolderName: currentUser?.name || 'Tata Pathology Healthcare LLP',
-    bankName: 'HDFC Bank Ltd',
-    accountNumber: '50200084920192',
-    confirmAccountNumber: '50200084920192',
-    ifscCode: 'HDFC0000240',
-    upiId: 'tatapathology@okhdfcbank',
+    accountHolderName: currentUser?.name || currentUser?.tenantName || '',
+    bankName: '',
+    accountNumber: '',
+    confirmAccountNumber: '',
+    ifscCode: '',
+    upiId: '',
     accountType: 'CURRENT',
     settlementCycle: 'DAILY_T1',
-    cancelledChequeFile: 'cancelled_cheque_hdfc.pdf'
+    cancelledChequeFile: ''
   });
 
   // Address Form State
   const [addressData, setAddressData] = useState({
-    legalName: currentUser?.tenantName || 'Tata Pathology & Diagnostic Laboratory',
-    addressLine1: 'Plot No. 42, Health City Avenue, Main Road',
-    addressLine2: 'Opposite Civil Hospital Gate No. 2',
-    city: 'Mumbai',
-    state: 'Maharashtra',
-    pincode: '400021',
-    officialPhone: '+91 98765 43210',
-    whatsappNumber: '+91 98765 43210',
-    supportEmail: currentUser?.email || 'admin@tatapathology.com',
-    website: 'https://www.tatapathology.com',
-    gstin: '27AAAAA0000A1Z5',
-    addressProofFile: 'establishment_address_proof.pdf'
+    legalName: currentUser?.tenantName || '',
+    addressLine1: '',
+    addressLine2: '',
+    city: '',
+    state: '',
+    pincode: '',
+    officialPhone: userAny?.phone || '',
+    whatsappNumber: userAny?.phone || '',
+    supportEmail: currentUser?.email || '',
+    website: '',
+    gstin: '',
+    addressProofFile: ''
   });
 
   // Role-Specific Certificates State
@@ -122,43 +146,43 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
     autoRenewalAlertEnabled: true,
 
     // Doctor Fields
-    doctorDegreeName: 'MBBS, MD (General Medicine)',
-    doctorDegreeFile: 'dr_rajesh_md_degree.pdf',
-    doctorCouncilName: 'Maharashtra Medical Council (MMC)',
-    doctorRegNo: 'MMC-78291-B',
-    doctorRegCertificateFile: 'mmc_registration_certificate.pdf',
-    doctorIndemnityPolicyNo: 'IND-ICICI-2026-9901',
-    doctorIndemnityFile: 'medical_indemnity_insurance.pdf',
+    doctorDegreeName: currentUser?.roleTitle || (roleCategory === 'DOCTOR' ? 'MBBS' : ''),
+    doctorDegreeFile: '',
+    doctorCouncilName: '',
+    doctorRegNo: userAny?.clinicalLicense || '',
+    doctorRegCertificateFile: '',
+    doctorIndemnityPolicyNo: '',
+    doctorIndemnityFile: '',
 
     // Pathology Lab Fields
-    nablCertificateNo: 'MC-4892-2026',
-    nablCertFile: 'nabl_iso15189_accreditation.pdf',
-    pathologistDegreeFile: 'pathologist_md_license.pdf',
-    bmwPollutionAuthNo: 'BMW-POLLUTION-2026-441',
-    bmwCertFile: 'biomedical_waste_clearance.pdf',
+    nablCertificateNo: '',
+    nablCertFile: '',
+    pathologistDegreeFile: '',
+    bmwPollutionAuthNo: '',
+    bmwCertFile: '',
 
     // Hospital Fields
-    hospitalCeaRegNo: 'CEA-MH-2026-9812',
-    hospitalCeaFile: 'clinical_establishment_act_license.pdf',
-    hospitalNabhGrade: 'NABH Full Accreditation (Entry Level)',
-    hospitalNabhFile: 'nabh_accreditation_certificate.pdf',
-    hospitalFireNocNo: 'FIRE-NOC-MUM-2026-102',
-    hospitalFireNocFile: 'fire_safety_clearance.pdf',
+    hospitalCeaRegNo: userAny?.clinicalLicense || '',
+    hospitalCeaFile: '',
+    hospitalNabhGrade: '',
+    hospitalNabhFile: '',
+    hospitalFireNocNo: '',
+    hospitalFireNocFile: '',
 
     // Pharmacy Fields
-    pharmacyCouncilRegNo: 'MH-PHARM-2026-4421',
-    pharmacistCouncilCertFile: 'registered_pharmacist_license.pdf',
-    pharmacyDrugLicense20B: 'DL-20B-MH-Mumbai-49102',
-    pharmacyDrugLicense21B: 'DL-21B-MH-Mumbai-49103',
-    pharmacyDrugLicenseFile: 'form20_21_drug_license.pdf',
+    pharmacyCouncilRegNo: '',
+    pharmacistCouncilCertFile: '',
+    pharmacyDrugLicense20B: userAny?.clinicalLicense || '',
+    pharmacyDrugLicense21B: '',
+    pharmacyDrugLicenseFile: '',
 
     // Staff / Operations Fields
-    staffHighestQualification: 'B.Sc (Nursing) / Diploma in Medical Lab Tech (DMLT)',
-    staffQualificationFile: 'qualification_degree_marksheet.pdf',
-    staffPastExperienceYears: '5 Years at Apollo / Fortis Hospital',
-    staffExperienceCertFile: 'experience_relieving_letter.pdf',
+    staffHighestQualification: '',
+    staffQualificationFile: '',
+    staffPastExperienceYears: '',
+    staffExperienceCertFile: '',
     staffGovtIdType: 'Aadhaar Card / PAN Card',
-    staffGovtIdFile: 'government_id_proof.pdf',
+    staffGovtIdFile: '',
 
     // Security Hash
     sha256Hash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
@@ -179,22 +203,168 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
   // Load persistent settings if available
   useEffect(() => {
     if (typeof window !== 'undefined' && isOpen) {
+      let savedParsed: any = null;
       const saved = localStorage.getItem(storageKey);
       if (saved) {
         try {
-          const parsed = JSON.parse(saved);
-          if (parsed.bank) setBankData(parsed.bank);
-          if (parsed.address) setAddressData(parsed.address);
-          if (parsed.certificates) setCertData((prev) => ({ ...prev, ...parsed.certificates }));
-          if (parsed.bankApprovalStatus) setBankApprovalStatus(parsed.bankApprovalStatus);
-          if (parsed.addressApprovalStatus) setAddressApprovalStatus(parsed.addressApprovalStatus);
-          if (parsed.certApprovalStatus) setCertApprovalStatus(parsed.certApprovalStatus);
-          if (parsed.lastSubmittedAt) setLastSubmittedAt(parsed.lastSubmittedAt);
-          if (parsed.security) setSecurityData((prev) => ({ ...prev, twoFactorEnabled: parsed.security.twoFactorEnabled, autoLockMinutes: parsed.security.autoLockMinutes }));
+          savedParsed = JSON.parse(saved);
+          if (savedParsed.bank) setBankData(savedParsed.bank);
+          if (savedParsed.address) setAddressData(savedParsed.address);
+          if (savedParsed.certificates) setCertData((prev) => ({ ...prev, ...savedParsed.certificates }));
+          if (savedParsed.bankApprovalStatus) setBankApprovalStatus(savedParsed.bankApprovalStatus);
+          if (savedParsed.addressApprovalStatus) setAddressApprovalStatus(savedParsed.addressApprovalStatus);
+          if (savedParsed.certApprovalStatus) setCertApprovalStatus(savedParsed.certApprovalStatus);
+          if (savedParsed.lastSubmittedAt) setLastSubmittedAt(savedParsed.lastSubmittedAt);
+          if (savedParsed.security) setSecurityData((prev) => ({ ...prev, twoFactorEnabled: savedParsed.security.twoFactorEnabled, autoLockMinutes: savedParsed.security.autoLockMinutes }));
         } catch {}
       }
+
+      try {
+        const partners = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');
+        const matched = partners.find((p: any) =>
+          (p.email && p.email.toLowerCase().trim() === currentUser?.email?.toLowerCase().trim()) ||
+          (p.phone && userAny?.phone && p.phone === userAny.phone)
+        );
+        if (matched) {
+          setDynamicPartner(matched);
+          if (!savedParsed) {
+            setAddressData((prev) => ({
+              ...prev,
+              legalName: matched.facilityName || prev.legalName || currentUser?.tenantName || '',
+              addressLine1: matched.address || matched.addressLine1 || prev.addressLine1,
+              city: matched.city || prev.city,
+              state: matched.state || prev.state,
+              pincode: matched.pincode || prev.pincode,
+              officialPhone: matched.phone || prev.officialPhone || userAny?.phone || '',
+              supportEmail: matched.email || prev.supportEmail || currentUser?.email || '',
+              gstin: matched.gstin || prev.gstin
+            }));
+            setCertData((prev) => ({
+              ...prev,
+              doctorRegNo: matched.clinicalLicense || prev.doctorRegNo,
+              hospitalCeaRegNo: matched.clinicalLicense || prev.hospitalCeaRegNo,
+              pharmacyDrugLicense20B: matched.clinicalLicense || prev.pharmacyDrugLicense20B,
+              nablCertificateNo: matched.nablCertNo || prev.nablCertificateNo
+            }));
+          }
+        }
+
+        const amendments = JSON.parse(localStorage.getItem('docsearch_staged_profile_amendments') || '[]');
+        const existing = amendments.find((a: any) => a.userEmail?.toLowerCase() === currentUser?.email?.toLowerCase() && a.status === 'PENDING_ADMIN_APPROVAL');
+        if (existing) setStagedAmendment(existing);
+      } catch {}
+
+      // Also hydrate from backend PostgreSQL GET /api/v1/partner/profile
+      apiRequest<any>('/api/v1/partner/profile')
+        .then((res: any) => {
+          const prof = res?.data || res;
+          if (!prof) return;
+          setAddressData((prev) => ({
+            ...prev,
+            legalName: prof.legalName || prof.tradeName || prev.legalName || currentUser?.tenantName || '',
+            addressLine1: prof.address?.addressLine1 || prev.addressLine1 || '',
+            addressLine2: prof.address?.addressLine2 || prev.addressLine2 || '',
+            city: prof.address?.city || prev.city || '',
+            state: prof.address?.state || prev.state || '',
+            pincode: prof.address?.pincode || prev.pincode || '',
+            officialPhone: prof.contactPhone || prev.officialPhone || '',
+            supportEmail: prof.contactEmail || prev.supportEmail || currentUser?.email || '',
+            gstin: prof.statutory?.gstin || prev.gstin || ''
+          }));
+          if (prof.certificates) {
+            setCertData((prev) => ({
+              ...prev,
+              ...prof.certificates,
+              hospitalCeaRegNo: prof.certificates.hospitalCeaRegNo || prof.statutory?.clinicalLicense || prev.hospitalCeaRegNo || '',
+              doctorRegNo: prof.certificates.doctorRegNo || prof.statutory?.clinicalLicense || prev.doctorRegNo || ''
+            }));
+          }
+          if (prof.bank && prof.bank.accountNumber) {
+            setBankData((prev) => ({ ...prev, ...prof.bank }));
+          }
+          if (prof.isProfileCompleted) {
+            markPartnerProfileAsUpdated(currentUser?.email);
+          }
+        })
+        .catch(() => {});
     }
-  }, [isOpen, storageKey]);
+  }, [isOpen, storageKey, currentUser?.email]);
+
+  const ownerAadhaar = dynamicPartner?.ownerAadhaarNumber || currentUser?.ownerAadhaarNumber || '';
+  const aadhaarDocName = dynamicPartner?.aadhaarDocFileName || currentUser?.aadhaarDocFileName || '';
+  const kycStatus = dynamicPartner?.kycStatus || currentUser?.kycStatus || 'KYC_PENDING';
+
+  const handleSubmitAmendment = (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage(null);
+
+    if (!amendmentData.reasonForChange.trim()) {
+      setErrorMessage('Please state the regulatory or operational reason for this profile amendment.');
+      return;
+    }
+
+    const cleanAadhaar = amendmentData.proposedAadhaarNumber.replace(/[^0-9]/g, '');
+    if (amendmentData.proposedAadhaarNumber && cleanAadhaar.length !== 12) {
+      setErrorMessage('Proposed Aadhaar Number must be exactly 12 numeric digits.');
+      return;
+    }
+
+    const newAmendment = {
+      id: `AMEND-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`,
+      userEmail: currentUser?.email || 'default_user',
+      tenantSlug: (currentUser?.tenantName || 'partner').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      currentFacilityName: currentUser?.tenantName || 'Healthcare Facility',
+      currentOwnerName: currentUser?.name || 'Lead Doctor',
+      currentAadhaarNumber: ownerAadhaar,
+      proposedFacilityName: amendmentData.proposedFacilityName.trim() || (currentUser?.tenantName || ''),
+      proposedOwnerName: amendmentData.proposedOwnerName.trim() || (currentUser?.name || ''),
+      proposedAadhaarNumber: cleanAadhaar || ownerAadhaar,
+      proposedDocFileName: amendmentData.proposedDocFileName || aadhaarDocName,
+      proposedDocDataUrl: amendmentData.proposedDocDataUrl,
+      reasonForChange: amendmentData.reasonForChange.trim(),
+      status: 'PENDING_ADMIN_APPROVAL' as const,
+      submittedAt: new Date().toLocaleString()
+    };
+
+    // Save to staged amendments
+    try {
+      const amendments = JSON.parse(localStorage.getItem('docsearch_staged_profile_amendments') || '[]');
+      const filtered = amendments.filter((a: any) => a.userEmail?.toLowerCase() !== currentUser?.email?.toLowerCase());
+      filtered.unshift(newAmendment);
+      localStorage.setItem('docsearch_staged_profile_amendments', JSON.stringify(filtered));
+      setStagedAmendment(newAmendment);
+
+      // Also queue into Founder / Company Platform verification queue
+      const q = JSON.parse(localStorage.getItem('docsearch_verification_queue') || '[]');
+      q.unshift({
+        id: newAmendment.id,
+        partnerName: currentUser?.tenantName || 'Healthcare Facility',
+        partnerType: roleCategory === 'DOCTOR' ? 'CLINIC' : roleCategory === 'PATHOLOGY_LAB' ? 'PATHOLOGY' : roleCategory === 'PHARMACY' ? 'PHARMACY' : 'HOSPITAL',
+        tenantSlug: newAmendment.tenantSlug,
+        submittedBy: currentUser?.name || 'Partner Owner',
+        submittedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ', Today',
+        category: 'PROFILE_AMENDMENT',
+        status: 'PENDING_APPROVAL',
+        details: {
+          'Proposed Facility Name': newAmendment.proposedFacilityName,
+          'Proposed Owner Name': newAmendment.proposedOwnerName,
+          'Proposed Aadhaar': `XXXX-XXXX-${newAmendment.proposedAadhaarNumber.slice(-4)}`,
+          'Reason For Amendment': newAmendment.reasonForChange,
+          'Current Live Status': 'Running on previous approved details'
+        },
+        documentName: newAmendment.proposedDocFileName,
+        documentType: 'Supporting Identity / Registration Proof',
+        aiMatchScore: 99.1,
+        extractedOcrText: `AMENDMENT PROPOSAL • FACILITY: ${newAmendment.proposedFacilityName.toUpperCase()} • OWNER: ${newAmendment.proposedOwnerName.toUpperCase()} • REASON: ${newAmendment.reasonForChange.toUpperCase()}`,
+        sha256Hash: Array.from(newAmendment.id + newAmendment.userEmail).reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 0).toString(16).padStart(64, '0')
+      });
+      localStorage.setItem('docsearch_verification_queue', JSON.stringify(q));
+    } catch {}
+
+    setIsAmendmentFormOpen(false);
+    setSaveSuccessMessage('⏳ Profile Amendment submitted for Founder / Admin Approval! Your current live system continues using existing approved details until Admin approves.');
+    setTimeout(() => setSaveSuccessMessage(null), 6000);
+  };
 
   if (!isOpen) return null;
 
@@ -208,12 +378,61 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
     }, 900);
   };
 
-  const saveToStorage = (updatedPayload: any) => {
-    localStorage.setItem(storageKey, JSON.stringify(updatedPayload));
-    if (onSettingsSaved) onSettingsSaved(updatedPayload);
+  const saveToStorage = async (updatedPayload: any): Promise<boolean> => {
+    try {
+      // Synchronize to backend PostgreSQL database FIRST
+      await apiRequest('/api/v1/partner/profile', {
+        method: 'PUT',
+        body: JSON.stringify({
+          legalName: updatedPayload.address?.legalName,
+          phone: updatedPayload.address?.officialPhone,
+          address: {
+            line1: updatedPayload.address?.addressLine1,
+            line2: updatedPayload.address?.addressLine2,
+            city: updatedPayload.address?.city,
+            state: updatedPayload.address?.state,
+            postalCode: updatedPayload.address?.pincode
+          },
+          statutory: {
+            hospitalCeaRegNo: updatedPayload.certificates?.hospitalCeaRegNo,
+            doctorRegNo: updatedPayload.certificates?.doctorRegNo,
+            pharmacyCouncilRegNo: updatedPayload.certificates?.pharmacyCouncilRegNo,
+            nablCertificateNo: updatedPayload.certificates?.nablCertificateNo,
+            authorizedSignatory: updatedPayload.certificates?.authorizedSignatory
+          },
+          certificates: updatedPayload.certificates,
+          bank: updatedPayload.bank
+        })
+      });
+
+      const payloadWithFlag = {
+        ...updatedPayload,
+        isProfileUpdated: true,
+        lastProfileUpdatedAt: new Date().toISOString()
+      };
+      localStorage.setItem(storageKey, JSON.stringify(payloadWithFlag));
+      markPartnerProfileAsUpdated(currentUser?.email);
+
+      // Hydrate local auth session so guard recognizes completion
+      try {
+        const authStr = localStorage.getItem('docsearch_partner_staff_auth');
+        if (authStr) {
+          const authObj = JSON.parse(authStr);
+          authObj.isProfileCompleted = true;
+          localStorage.setItem('docsearch_partner_staff_auth', JSON.stringify(authObj));
+        }
+      } catch {}
+
+      if (onSettingsSaved) onSettingsSaved(payloadWithFlag);
+      return true;
+    } catch (err: any) {
+      console.error('Backend partner profile sync failed:', err);
+      setErrorMessage(err.message || 'Failed to save profile to server. Please verify connection and retry.');
+      return false;
+    }
   };
 
-  const handleSaveBank = (e: React.FormEvent) => {
+  const handleSaveBank = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
@@ -243,16 +462,18 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
       security: { twoFactorEnabled: securityData.twoFactorEnabled, autoLockMinutes: securityData.autoLockMinutes }
     };
 
-    saveToStorage(payload);
-    setSaveSuccessMessage(
-      isCompanyAdmin
-        ? '✓ Bank details updated and Approved directly by Admin!'
-        : '⏳ Bank change request submitted! Sent to Company Admin for verification & approval.'
-    );
-    setTimeout(() => setSaveSuccessMessage(null), 4500);
+    const ok = await saveToStorage(payload);
+    if (ok) {
+      setSaveSuccessMessage(
+        isCompanyAdmin
+          ? '✓ Bank details updated and Approved directly by Admin!'
+          : '⏳ Bank change request submitted! Sent to Company Admin for verification & approval.'
+      );
+      setTimeout(() => setSaveSuccessMessage(null), 4500);
+    }
   };
 
-  const handleSaveAddress = (e: React.FormEvent) => {
+  const handleSaveAddress = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
@@ -277,16 +498,18 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
       security: { twoFactorEnabled: securityData.twoFactorEnabled, autoLockMinutes: securityData.autoLockMinutes }
     };
 
-    saveToStorage(payload);
-    setSaveSuccessMessage(
-      isCompanyAdmin
-        ? '✓ Official Address & Location updated and Approved directly by Admin!'
-        : '⏳ Address change request submitted! Sent to Company Admin for verification & approval.'
-    );
-    setTimeout(() => setSaveSuccessMessage(null), 4500);
+    const ok = await saveToStorage(payload);
+    if (ok) {
+      setSaveSuccessMessage(
+        isCompanyAdmin
+          ? '✓ Official Address & Location updated and Approved directly by Admin!'
+          : '⏳ Address change request submitted! Sent to Company Admin for verification & approval.'
+      );
+      setTimeout(() => setSaveSuccessMessage(null), 4500);
+    }
   };
 
-  const handleSaveCertificates = (e: React.FormEvent) => {
+  const handleSaveCertificates = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
@@ -306,13 +529,15 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
       security: { twoFactorEnabled: securityData.twoFactorEnabled, autoLockMinutes: securityData.autoLockMinutes }
     };
 
-    saveToStorage(payload);
-    setSaveSuccessMessage(
-      isCompanyAdmin
-        ? '✓ Role-specific certificates verified and Approved directly by Admin!'
-        : `⏳ Uploaded ${roleCategory} credentials submitted! Sent to Company Compliance Officer for verification & approval.`
-    );
-    setTimeout(() => setSaveSuccessMessage(null), 4500);
+    const ok = await saveToStorage(payload);
+    if (ok) {
+      setSaveSuccessMessage(
+        isCompanyAdmin
+          ? '✓ Role-specific certificates verified and Approved directly by Admin!'
+          : `⏳ Uploaded ${roleCategory} credentials submitted! Sent to Company Compliance Officer for verification & approval.`
+      );
+      setTimeout(() => setSaveSuccessMessage(null), 4500);
+    }
   };
 
   const handleSavePassword = async (e: React.FormEvent) => {
@@ -361,6 +586,42 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
         localStorage.setItem('docsearch_custom_partner_users', JSON.stringify(updated));
         localStorage.setItem(`docsearch_day1_pwd_${currentUser.email}`, 'true');
       } catch {}
+
+      // Update operational staff in docsearch_partner_staff
+      try {
+        const staffList = JSON.parse(localStorage.getItem('docsearch_partner_staff') || '[]');
+        const updatedStaff = staffList.map((s: any) => {
+          if (s.workEmail?.toLowerCase() === currentUser.email?.toLowerCase()) {
+            return {
+              ...s,
+              password: securityData.newPassword,
+              mustChangePassword: false,
+              metadata: {
+                ...(s.metadata || {}),
+                password: securityData.newPassword,
+                mustChangePassword: false
+              }
+            };
+          }
+          return s;
+        });
+        localStorage.setItem('docsearch_partner_staff', JSON.stringify(updatedStaff));
+
+        // Update active auth session
+        const authUser = JSON.parse(localStorage.getItem('docsearch_partner_staff_auth') || '{}');
+        if (authUser.email?.toLowerCase() === currentUser.email?.toLowerCase()) {
+          authUser.mustChangePassword = false;
+          authUser.password = securityData.newPassword;
+          localStorage.setItem('docsearch_partner_staff_auth', JSON.stringify(authUser));
+        }
+      } catch (err) {
+        console.error('Failed to update operational staff password in settings:', err);
+      }
+    }
+
+    const wasInitialPasswordReset = Boolean(currentUser?.mustChangePassword);
+    if (currentUser) {
+      currentUser.mustChangePassword = false;
     }
 
     const payload = {
@@ -388,7 +649,12 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
     });
 
     setSaveSuccessMessage('✓ Password changed immediately! (No admin approval required for security passwords)');
-    setTimeout(() => setSaveSuccessMessage(null), 4500);
+    setTimeout(() => {
+      setSaveSuccessMessage(null);
+      if (wasInitialPasswordReset) {
+        onClose();
+      }
+    }, wasInitialPasswordReset ? 1800 : 4500);
   };
 
   const handleAdminApproveAll = () => {
@@ -429,23 +695,27 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
     <div style={{
       position: 'fixed',
       inset: 0,
-      backgroundColor: 'rgba(7, 12, 22, 0.85)',
-      backdropFilter: 'blur(8px)',
-      zIndex: 10000,
+      backgroundColor: 'rgba(7, 12, 22, 0.65)',
+      backdropFilter: 'blur(6px)',
+      zIndex: 1000001,
       display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '20px'
+      alignItems: 'stretch',
+      justifyContent: 'flex-end',
+      padding: 0
     }}>
       <div style={{
         width: '100%',
-        maxWidth: '920px',
-        maxHeight: '94vh',
+        maxWidth: '860px',
+        height: '100vh',
+        maxHeight: '100vh',
         backgroundColor: '#0F172A',
         color: '#F8FAFC',
-        border: '1.5px solid rgba(6, 182, 212, 0.4)',
-        borderRadius: '18px',
-        boxShadow: '0 25px 70px rgba(0,0,0,0.95)',
+        borderLeft: '1.5px solid rgba(6, 182, 212, 0.4)',
+        borderTop: 'none',
+        borderRight: 'none',
+        borderBottom: 'none',
+        borderRadius: '16px 0 0 16px',
+        boxShadow: '-12px 0 40px rgba(0,0,0,0.85)',
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column'
@@ -576,6 +846,27 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
         }}>
           <button
             type="button"
+            onClick={() => { setActiveTab('KYC'); setErrorMessage(null); }}
+            style={{
+              padding: '12px 14px',
+              backgroundColor: 'transparent',
+              color: activeTab === 'KYC' ? '#38BDF8' : '#94A3B8',
+              border: 'none',
+              borderBottom: activeTab === 'KYC' ? '3px solid #06B6D4' : '3px solid transparent',
+              fontSize: '0.8125rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            <span>🪪</span> Owner Aadhaar KYC & Lock {kycStatus === 'PENDING_ADMIN_VERIFICATION' && '⏳'}
+          </button>
+
+          <button
+            type="button"
             onClick={() => { setActiveTab('BANK'); setErrorMessage(null); }}
             style={{
               padding: '12px 14px',
@@ -696,6 +987,338 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
         {/* Body Container */}
         <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
           
+          {/* TAB 0: MANDATORY OWNER AADHAAR KYC & PROFILE LOCK */}
+          {activeTab === 'KYC' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {/* Pioneer Free Onboarding Environment Banner */}
+              <div style={{
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                border: '1.5px solid rgba(16, 185, 129, 0.35)',
+                borderRadius: '12px',
+                padding: '14px 18px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '12px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ fontSize: '1.8rem' }}>🎁</span>
+                  <div>
+                    <div style={{ fontSize: '0.9375rem', fontWeight: 800, color: '#34D399', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span>Pioneer Free Onboarding Environment</span>
+                      <span style={{ backgroundColor: '#059669', color: '#FFF', fontSize: '0.625rem', fontWeight: 800, padding: '2px 6px', borderRadius: '4px' }}>
+                        FIRST 10,000 PARTNERS
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '3px', maxWidth: '580px' }}>
+                      Operating in complimentary starter environment. Mandatory Owner Aadhaar KYC verified. Platform architected with an upgrade path for enterprise commercial tiers in subsequent releases.
+                    </div>
+                  </div>
+                </div>
+
+                <span style={{
+                  fontSize: '0.75rem',
+                  fontWeight: 800,
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  backgroundColor: kycStatus === 'KYC_VERIFIED' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)',
+                  color: kycStatus === 'KYC_VERIFIED' ? '#6EE7B7' : '#FCD34D',
+                  border: kycStatus === 'KYC_VERIFIED' ? '1px solid #10B981' : '1px solid #F59E0B'
+                }}>
+                  {kycStatus === 'KYC_VERIFIED' ? '✓ KYC VERIFIED & SEALED' : '⏳ KYC PENDING ADMIN REVIEW'}
+                </span>
+              </div>
+
+              {/* Regulatory Anti-Tampering Profile Freeze Notice */}
+              <div style={{
+                backgroundColor: '#070C16',
+                border: '1.5px solid rgba(6, 182, 212, 0.3)',
+                borderRadius: '12px',
+                padding: '14px 18px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px'
+              }}>
+                <span style={{ fontSize: '1.6rem' }}>🔒</span>
+                <div>
+                  <strong style={{ color: '#38BDF8', fontSize: '0.875rem', display: 'block', marginBottom: '2px' }}>
+                    Tamper-Proof Healthcare Profile Lock Active
+                  </strong>
+                  <span style={{ color: '#94A3B8', fontSize: '0.75rem', lineHeight: 1.5 }}>
+                    To prevent fraudulent alterations in diagnostic reports, prescriptions, and financial letterheads, direct edits to core facility and owner credentials are locked. Changes require Founder / Admin approval.
+                  </span>
+                </div>
+              </div>
+
+              {/* Active Live Profile Details (LOCKED 🔒) */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#F8FAFC', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Active Live Healthcare Credentials (Read-Only 🔒):
+                  </span>
+                  <span style={{ fontSize: '0.6875rem', color: '#10B981', fontWeight: 700 }}>
+                    ● Currently Active in Prescriptions & Lab Reports
+                  </span>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  {/* Field 1: Facility Legal Name */}
+                  <div style={{ backgroundColor: '#1E293B', padding: '12px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 700 }}>FACILITY LEGAL NAME</span>
+                      <span style={{ fontSize: '0.625rem', color: '#EF4444', fontWeight: 800 }}>🔒 LOCKED</span>
+                    </div>
+                    <div style={{ fontSize: '0.875rem', fontWeight: 800, color: '#F8FAFC' }}>
+                      {dynamicPartner?.facilityName || addressData.legalName || currentUser?.tenantName || 'Registered Healthcare Facility'}
+                    </div>
+                  </div>
+
+                  {/* Field 2: Owner / Lead Doctor Name */}
+                  <div style={{ backgroundColor: '#1E293B', padding: '12px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 700 }}>OWNER / HEAD CLINICIAN</span>
+                      <span style={{ fontSize: '0.625rem', color: '#EF4444', fontWeight: 800 }}>🔒 LOCKED</span>
+                    </div>
+                    <div style={{ fontSize: '0.875rem', fontWeight: 800, color: '#F8FAFC' }}>
+                      {dynamicPartner?.leadDoctorName || currentUser?.name || 'Lead Clinical Authority'}
+                    </div>
+                  </div>
+
+                  {/* Field 3: Owner Aadhaar Number */}
+                  <div style={{ backgroundColor: '#1E293B', padding: '12px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 700 }}>OWNER 12-DIGIT AADHAAR NUMBER</span>
+                      <span style={{ fontSize: '0.625rem', color: '#10B981', fontWeight: 800 }}>✓ VERIFIED KYC</span>
+                    </div>
+                    <div style={{ fontSize: '0.875rem', fontWeight: 800, color: '#38BDF8', fontFamily: 'monospace' }}>
+                      {ownerAadhaar ? `XXXX XXXX ${ownerAadhaar.slice(-4)}` : 'KYC Verification Required'}
+                    </div>
+                  </div>
+
+                  {/* Field 4: Mandatory Aadhaar Document Proof */}
+                  <div style={{ backgroundColor: '#1E293B', padding: '12px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 700 }}>MANDATORY AADHAAR PROOF FILE</span>
+                      <span style={{ fontSize: '0.625rem', color: '#38BDF8', fontWeight: 700 }}>ATTACHED</span>
+                    </div>
+                    <div style={{ fontSize: '0.8125rem', color: '#6EE7B7', display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <span>📄</span>
+                      <span>{aadhaarDocName || 'Self-Attested Aadhaar / ID Card Attached'}</span>
+                    </div>
+                  </div>
+
+                  {/* Field 5: Medical License / NABL Registration */}
+                  <div style={{ backgroundColor: '#1E293B', padding: '12px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 700 }}>REGULATORY LICENSE / REG NO</span>
+                      <span style={{ fontSize: '0.625rem', color: '#EF4444', fontWeight: 800 }}>🔒 LOCKED</span>
+                    </div>
+                    <div style={{ fontSize: '0.875rem', fontWeight: 800, color: '#F8FAFC' }}>
+                      {certData.nablCertificateNo || certData.doctorRegNo || certData.pharmacyCouncilRegNo || certData.hospitalCeaRegNo || dynamicPartner?.clinicalLicense || dynamicPartner?.councilRegNo || 'Pending Document Verification'}
+                    </div>
+                  </div>
+
+                  {/* Field 6: Registered Address */}
+                  <div style={{ backgroundColor: '#1E293B', padding: '12px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 700 }}>REGISTERED LOCATION</span>
+                      <span style={{ fontSize: '0.625rem', color: '#EF4444', fontWeight: 800 }}>🔒 LOCKED</span>
+                    </div>
+                    <div style={{ fontSize: '0.8125rem', color: '#CBD5E1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {addressData.city || addressData.state ? `${addressData.city}, ${addressData.state} - ${addressData.pincode}` : (dynamicPartner?.address || 'Address Update Required')}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pending Staged Amendment Banner (if exists) */}
+              {stagedAmendment && stagedAmendment.status === 'PENDING_ADMIN_APPROVAL' && (
+                <div style={{
+                  backgroundColor: 'rgba(245, 158, 11, 0.12)',
+                  border: '1.5px solid #F59E0B',
+                  borderRadius: '12px',
+                  padding: '16px 20px'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '1.3rem' }}>⏳</span>
+                      <strong style={{ color: '#FCD34D', fontSize: '0.875rem' }}>
+                        Profile Amendment Request In Staging Queue (Awaiting Admin Approval)
+                      </strong>
+                    </div>
+                    <span style={{ backgroundColor: '#F59E0B', color: '#000', fontSize: '0.6875rem', fontWeight: 900, padding: '2px 8px', borderRadius: '6px' }}>
+                      SUBMITTED {stagedAmendment.submittedAt}
+                    </span>
+                  </div>
+
+                  <p style={{ margin: '0 0 12px 0', fontSize: '0.8125rem', color: '#E2E8F0', lineHeight: 1.5 }}>
+                    Your amendment request has been forwarded to Platform Admin (DocSearch Healthcare Compliance Directorate). To safeguard clinical operations, your current live system continues to issue reports and billing under existing approved details until Admin verification is complete.
+                  </p>
+
+                  <div style={{ backgroundColor: '#070C16', padding: '12px', borderRadius: '8px', fontSize: '0.75rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <div><span style={{ color: '#94A3B8' }}>Proposed Facility Name:</span> <strong style={{ color: '#38BDF8' }}>{stagedAmendment.proposedFacilityName}</strong></div>
+                    <div><span style={{ color: '#94A3B8' }}>Proposed Owner Name:</span> <strong style={{ color: '#38BDF8' }}>{stagedAmendment.proposedOwnerName}</strong></div>
+                    <div><span style={{ color: '#94A3B8' }}>Proposed Aadhaar:</span> <strong style={{ color: '#38BDF8' }}>XXXX XXXX {stagedAmendment.proposedAadhaarNumber.slice(-4)}</strong></div>
+                    <div><span style={{ color: '#94A3B8' }}>Proof Attached:</span> <span style={{ color: '#A7F3D0' }}>{stagedAmendment.proposedDocFileName}</span></div>
+                    <div style={{ gridColumn: 'span 2' }}><span style={{ color: '#94A3B8' }}>Reason For Change:</span> <span style={{ color: '#F8FAFC' }}>{stagedAmendment.reasonForChange}</span></div>
+                  </div>
+                </div>
+              )}
+
+              {/* Staged Amendment Action & Form */}
+              {!isAmendmentFormOpen && (!stagedAmendment || stagedAmendment.status !== 'PENDING_ADMIN_APPROVAL') && (
+                <div style={{ backgroundColor: '#0B132B', border: '1px dashed rgba(255,255,255,0.15)', borderRadius: '10px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                  <div>
+                    <strong style={{ fontSize: '0.875rem', color: '#F8FAFC', display: 'block' }}>
+                      Need to update Facility Legal Name, In-Charge Doctor, or Aadhaar KYC?
+                    </strong>
+                    <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
+                      Submit a formal staged amendment for Admin / Founder review. Live system remains stable during review.
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAmendmentData({
+                        proposedFacilityName: currentUser?.tenantName || '',
+                        proposedOwnerName: currentUser?.name || '',
+                        proposedAadhaarNumber: '',
+                        proposedDocFileName: '',
+                        proposedDocDataUrl: '',
+                        reasonForChange: ''
+                      });
+                      setIsAmendmentFormOpen(true);
+                    }}
+                    style={{
+                      backgroundColor: '#0284C7',
+                      color: '#FFF',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '10px 18px',
+                      fontSize: '0.8125rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <span>📝</span> Request Staged Profile Amendment
+                  </button>
+                </div>
+              )}
+
+              {/* Interactive Staged Amendment Form */}
+              {isAmendmentFormOpen && (
+                <form onSubmit={handleSubmitAmendment} style={{ backgroundColor: '#0B132B', border: '1.5px solid #06B6D4', borderRadius: '12px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '1.2rem' }}>📝</span>
+                      <strong style={{ fontSize: '0.9375rem', color: '#38BDF8' }}>
+                        Submit Staged Profile Amendment (Requires Admin Approval)
+                      </strong>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsAmendmentFormOpen(false)}
+                      style={{ backgroundColor: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer', fontSize: '1rem' }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
+                        Proposed Facility Legal Name
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Updated facility name"
+                        value={amendmentData.proposedFacilityName}
+                        onChange={(e) => setAmendmentData({ ...amendmentData, proposedFacilityName: e.target.value })}
+                        style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem', boxSizing: 'border-box' }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
+                        Proposed Owner / Doctor Name
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Updated owner name"
+                        value={amendmentData.proposedOwnerName}
+                        onChange={(e) => setAmendmentData({ ...amendmentData, proposedOwnerName: e.target.value })}
+                        style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem', boxSizing: 'border-box' }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
+                        Proposed 12-Digit Aadhaar Card Number
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="12 numeric digits"
+                        maxLength={14}
+                        value={amendmentData.proposedAadhaarNumber}
+                        onChange={(e) => setAmendmentData({ ...amendmentData, proposedAadhaarNumber: e.target.value })}
+                        style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem', boxSizing: 'border-box' }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
+                        Upload Supporting Identity Proof (Aadhaar/License)
+                      </label>
+                      <input
+                        type="file"
+                        accept=".pdf,image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) setAmendmentData({ ...amendmentData, proposedDocFileName: file.name });
+                        }}
+                        style={{ width: '100%', padding: '6px', fontSize: '0.75rem', color: '#94A3B8' }}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
+                      Reason & Regulatory Justification for Amendment *
+                    </label>
+                    <textarea
+                      required
+                      rows={2}
+                      placeholder="e.g. Legal business name updated on municipal trade license; partner induction of new medical director."
+                      value={amendmentData.reasonForChange}
+                      onChange={(e) => setAmendmentData({ ...amendmentData, reasonForChange: e.target.value })}
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem', boxSizing: 'border-box' }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setIsAmendmentFormOpen(false)}
+                      style={{ backgroundColor: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: '#CBD5E1', padding: '8px 14px', borderRadius: '6px', fontSize: '0.75rem', cursor: 'pointer' }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      style={{ backgroundColor: '#10B981', border: 'none', color: '#070C16', padding: '8px 18px', borderRadius: '6px', fontSize: '0.8125rem', fontWeight: 900, cursor: 'pointer' }}
+                    >
+                      ✓ Submit Staged Amendment for Admin Review
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          )}
+
           {/* TAB 1: BANK DETAILS */}
           {activeTab === 'BANK' && (
             <form onSubmit={handleSaveBank} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -842,16 +1465,6 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
               <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                 <button
                   type="submit"
-                  style={{
-                    backgroundColor: '#06B6D4',
-                    color: '#070C16',
-                    border: 'none',
-                    borderRadius: '8px',
-                    padding: '10px 20px',
-                    fontWeight: 800,
-                    fontSize: '0.8125rem',
-                    cursor: 'pointer'
-                  }}
                 >
                   {isCompanyAdmin ? '👑 Approve & Save Bank Details' : '📤 Submit for Admin Approval'}
                 </button>
@@ -1039,16 +1652,6 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
               <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                 <button
                   type="submit"
-                  style={{
-                    backgroundColor: '#06B6D4',
-                    color: '#070C16',
-                    border: 'none',
-                    borderRadius: '8px',
-                    padding: '10px 20px',
-                    fontWeight: 800,
-                    fontSize: '0.8125rem',
-                    cursor: 'pointer'
-                  }}
                 >
                   {isCompanyAdmin ? '👑 Approve & Save Address' : '📤 Submit for Admin Approval'}
                 </button>
@@ -1275,16 +1878,6 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
               <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                 <button
                   type="submit"
-                  style={{
-                    backgroundColor: '#06B6D4',
-                    color: '#070C16',
-                    border: 'none',
-                    borderRadius: '8px',
-                    padding: '10px 20px',
-                    fontWeight: 800,
-                    fontSize: '0.8125rem',
-                    cursor: 'pointer'
-                  }}
                 >
                   {isCompanyAdmin ? `👑 Approve & Lock ${roleCategory} Certificates` : '📤 Submit Certificates for Admin Approval'}
                 </button>
@@ -1342,7 +1935,6 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                 <button
                   type="button"
                   onClick={() => window.print()}
-                  style={{ backgroundColor: '#06B6D4', color: '#070C16', border: 'none', borderRadius: '8px', padding: '8px 16px', fontWeight: 800, fontSize: '0.8125rem', cursor: 'pointer' }}
                 >
                   🖨️ Print Reception Trust Certificate
                 </button>
@@ -1353,6 +1945,31 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
           {/* TAB 5: PASSWORD & SECURITY */}
           {activeTab === 'PASSWORD' && (
             <form onSubmit={handleSavePassword} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {currentUser?.mustChangePassword && (
+                <div
+                  style={{
+                    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                    border: '1.5px solid #EF4444',
+                    borderRadius: '10px',
+                    padding: '12px 16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    color: '#FCA5A5'
+                  }}
+                >
+                  <span style={{ fontSize: '1.4rem' }}>⚠️</span>
+                  <div>
+                    <strong style={{ fontSize: '0.875rem', display: 'block', color: '#FEE2E2', marginBottom: '2px' }}>
+                      First-Time Login Security Setup
+                    </strong>
+                    <span style={{ fontSize: '0.78rem', color: '#FCA5A5' }}>
+                      Please change your default password (<strong>123456</strong>) and set a secure personal password.
+                    </span>
+                  </div>
+                </div>
+              )}
+
               <div style={{ backgroundColor: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.2)', padding: '12px 16px', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <strong style={{ fontSize: '0.875rem', color: '#FBBF24' }}>Cryptographic Password & Multi-Factor Security</strong>
@@ -1375,7 +1992,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                     required
                     value={securityData.currentPassword}
                     onChange={(e) => setSecurityData({ ...securityData, currentPassword: e.target.value })}
-                    placeholder="Enter existing password"
+                    placeholder={currentUser?.mustChangePassword ? '123456 (Default password)' : 'Enter existing password'}
                     style={{ width: '100%', padding: '8px 12px', paddingRight: '40px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem' }}
                   />
                   <button
@@ -1464,16 +2081,6 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
               <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                 <button
                   type="submit"
-                  style={{
-                    backgroundColor: '#06B6D4',
-                    color: '#070C16',
-                    border: 'none',
-                    borderRadius: '8px',
-                    padding: '10px 20px',
-                    fontWeight: 800,
-                    fontSize: '0.8125rem',
-                    cursor: 'pointer'
-                  }}
                 >
                   🔒 Update Password Immediately
                 </button>

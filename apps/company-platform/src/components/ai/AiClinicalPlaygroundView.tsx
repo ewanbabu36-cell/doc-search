@@ -191,7 +191,6 @@ export const AiClinicalPlaygroundView: React.FC = () => {
               variant="primary"
               size="md"
               disabled={isSimulating}
-              style={{ backgroundColor: '#06B6D4', color: '#070C16', fontWeight: 900, marginTop: '4px' }}
             >
               {isSimulating ? '⚡ Running Clinical Diagnostics Inference...' : '✨ Run AI Clinical Diagnostic Simulation'}
             </Button>

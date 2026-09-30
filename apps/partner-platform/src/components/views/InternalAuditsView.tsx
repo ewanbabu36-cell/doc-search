@@ -1,7 +1,14 @@
-import React from 'react';
-import { Card, Badge, Button } from '@docsearch/ui-kit';
+import React, { useState } from 'react';
+import { Card, Badge, Button, Alert } from '@docsearch/ui-kit';
 
 export const InternalAuditsView: React.FC = () => {
+  const [scheduleNotice, setScheduleNotice] = useState<string | null>(null);
+
+  const handleScheduleMockAudit = () => {
+    setScheduleNotice('Internal Mock Survey scheduled for upcoming Friday shift (OT & Blood Bank). Notification sent to Quality Committee.');
+    setTimeout(() => setScheduleNotice(null), 5000);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -9,8 +16,14 @@ export const InternalAuditsView: React.FC = () => {
           <h2 className="text-lg font-bold text-gray-900">Internal Quality Audits & Departmental Mock Surveys</h2>
           <p className="text-xs text-gray-500">Peer-review clinical audits, non-conformance reports (NCRs) and corrective tracking</p>
         </div>
-        <Button variant="primary">+ Schedule Mock Audit</Button>
+        <Button variant="primary" onClick={handleScheduleMockAudit}>+ Schedule Mock Audit</Button>
       </div>
+
+      {scheduleNotice && (
+        <Alert type="success" title="Mock Audit Scheduled">
+          {scheduleNotice}
+        </Alert>
+      )}
 
       <Card className="p-4 space-y-3">
         <div className="flex justify-between items-center border-b pb-2">

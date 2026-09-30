@@ -12,6 +12,7 @@ import {
   TableHead,
   TableCell
 } from '@docsearch/ui-kit';
+import { maskAadhaarNumber, maskAbhaAddress } from '@docsearch/shared-core';
 
 export interface PatientIdentifierCenterViewProps {
   patients: PatientDto[];
@@ -66,10 +67,21 @@ export const PatientIdentifierCenterView: React.FC<PatientIdentifierCenterViewPr
                   onClick={() => onSelectPatient(i.patientId)}
                 >
                   <TableCell style={{ fontWeight: '600', fontSize: '0.8125rem' }}>
-                    {i.identifierType}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>{i.identifierType}</span>
+                      {(i.identifierType.includes('AADHAAR') || i.identifierType.includes('NATIONAL_ID') || i.identifierType.includes('ABHA')) && (
+                        <span style={{ fontSize: '0.625rem', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#059669', border: '1px solid #10B981', padding: '1px 5px', borderRadius: '4px', fontWeight: '700' }}>
+                          🔒 MASKED
+                        </span>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell style={{ fontFamily: 'var(--ds-font-mono)', fontWeight: '700', fontSize: '0.8125rem' }}>
-                    {i.identifierValue}
+                    {i.identifierType.includes('AADHAAR') || i.identifierType.includes('NATIONAL_ID')
+                      ? maskAadhaarNumber(i.identifierValue)
+                      : i.identifierType.includes('ABHA')
+                      ? maskAbhaAddress(i.identifierValue)
+                      : i.identifierValue}
                   </TableCell>
                   <TableCell>
                     <strong style={{ color: 'var(--ds-color-text-primary)' }}>{i.patientName}</strong>

@@ -30,8 +30,8 @@ export interface PaymentCollectionViewProps {
 }
 
 export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
-  payments,
-  receipts,
+  payments = [],
+  receipts = [],
   onOpenRecordPayment,
   onOpenIssueReceipt,
   onOpenRefundRequest
@@ -40,7 +40,11 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
   const [methodFilter, setMethodFilter] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
 
-  const filteredPayments = payments.filter((p) => {
+  const safePayments = Array.isArray(payments) ? payments : [];
+  const safeReceipts = Array.isArray(receipts) ? receipts : [];
+
+  const filteredPayments = safePayments.filter((p) => {
+    if (!p) return false;
     if (methodFilter !== 'ALL' && p.paymentMethod !== methodFilter) return false;
     if (statusFilter !== 'ALL' && p.status !== statusFilter) return false;
     if (searchTerm.trim()) {
@@ -77,11 +81,11 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: '#0f172a' }}>
+          <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: 'var(--ds-color-text-primary, #f8fafc)' }}>
             Cashier POS & Collection Workbench
           </h2>
           <p style={{ margin: '0.25rem 0 0 0', color: '#64748b', fontSize: '0.875rem' }}>
-            Real-time cashier settlement, multi-channel payment capture, receipt dispatch ({receipts.length} issued), and refund requests
+            Real-time cashier settlement, multi-channel payment capture, receipt dispatch ({safeReceipts.length} issued), and refund requests
           </p>
         </div>
         <Button variant="primary" onClick={onOpenRecordPayment}>

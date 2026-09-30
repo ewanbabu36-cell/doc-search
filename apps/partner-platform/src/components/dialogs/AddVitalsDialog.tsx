@@ -4,6 +4,7 @@ import type {
   AddConsultationVitalsRequest
 } from '@docsearch/api-contracts';
 import { Dialog, Button, Input, Alert } from '@docsearch/ui-kit';
+import { AuditJustificationField } from '../common/AuditJustificationField.js';
 
 export interface AddVitalsDialogProps {
   isOpen: boolean;
@@ -23,8 +24,8 @@ export const AddVitalsDialog: React.FC<AddVitalsDialogProps> = ({
   onAddVitals
 }) => {
   const current = consultation.vitals;
-  const [temp, setTemp] = useState(current?.temperatureCelsius ?? '36.8');
-  const [pulse, setPulse] = useState(current?.pulseBpm?.toString() ?? '76');
+  const [temp, setTemp] = useState(current?.temperatureCelsius ?? '98.6');
+  const [pulse, setPulse] = useState(current?.pulseBpm?.toString() ?? '72');
   const [respRate, setRespRate] = useState(current?.respiratoryRateBpm?.toString() ?? '16');
   const [sysBp, setSysBp] = useState(current?.systolicBp?.toString() ?? '120');
   const [diaBp, setDiaBp] = useState(current?.diastolicBp?.toString() ?? '80');
@@ -33,7 +34,7 @@ export const AddVitalsDialog: React.FC<AddVitalsDialogProps> = ({
   const [height, setHeight] = useState(current?.heightCm ?? '170');
   const [painScore, setPainScore] = useState(current?.painScore?.toString() ?? '0');
   const [notes, setNotes] = useState(current?.clinicalNotes ?? 'Resting vitals stable');
-  const [justification, setJustification] = useState('Logged structured clinical observations & vital signs');
+  const [justification, setJustification] = useState('Routine vitals entry by Nurse');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -85,6 +86,8 @@ export const AddVitalsDialog: React.FC<AddVitalsDialogProps> = ({
     <Dialog
       isOpen={isOpen}
       onClose={onClose}
+      presentation="drawer"
+      maxWidth="md"
       title={`💓 Record Clinical Vitals: ${consultation.patientName} (${consultation.patientMrn})`}
       footer={
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
@@ -165,12 +168,12 @@ export const AddVitalsDialog: React.FC<AddVitalsDialogProps> = ({
           <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Vitals observations" />
         </div>
 
-        <div>
-          <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '4px' }}>
-            Audit Justification *
-          </label>
-          <Input value={justification} onChange={(e) => setJustification(e.target.value)} required />
-        </div>
+        <AuditJustificationField
+          value={justification}
+          onChange={setJustification}
+          defaultJustification="Routine vitals entry by Nurse"
+          placeholder="Reason for clinical vitals observation..."
+        />
       </form>
     </Dialog>
   );

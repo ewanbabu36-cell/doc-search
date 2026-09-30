@@ -36,7 +36,7 @@ export const PurchaseRequisitionView: React.FC<PurchaseRequisitionViewProps> = (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#0f172a' }}>
+          <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: 'var(--ds-color-text-primary, #f8fafc)' }}>
             Departmental Purchase Requisitions (PR)
           </h2>
           <p style={{ margin: '0.25rem 0 0 0', color: '#64748b', fontSize: '0.875rem' }}>
@@ -77,7 +77,7 @@ export const PurchaseRequisitionView: React.FC<PurchaseRequisitionViewProps> = (
                     {req.requisitionNumber}
                   </td>
                   <td style={{ padding: '0.75rem 1rem' }}>
-                    <div style={{ fontWeight: 600, color: '#0f172a' }}>{req.departmentName}</div>
+                    <div style={{ fontWeight: 600, color: 'var(--ds-color-text-primary, #f8fafc)' }}>{req.departmentName}</div>
                     <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Vault: {req.storeName}</div>
                   </td>
                   <td style={{ padding: '0.75rem 1rem', fontSize: '0.8rem', color: '#475569' }}>

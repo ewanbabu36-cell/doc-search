@@ -23,6 +23,7 @@ import { IotDeviceTelemetryView } from './views/IotDeviceTelemetryView.js';
 import { RpmCareCohortManagementView } from './views/RpmCareCohortManagementView.js';
 import { VitalBreachEscalationView } from './views/VitalBreachEscalationView.js';
 import { TelehealthAuditVaultView } from './views/TelehealthAuditVaultView.js';
+import { TabOverflowMenu } from './common/TabOverflowMenu.js';
 
 // Dialogs
 import { ScheduleTeleconsultationDialog } from './dialogs/ScheduleTeleconsultationDialog.js';
@@ -136,49 +137,78 @@ export const TelemedicineRpmDomainManager: React.FC<Props> = ({ tenantId }) => {
   return (
     <div className="space-y-4">
       {/* Domain Navigation Tabs */}
-      <div className="flex items-center gap-1 border-b pb-2 overflow-x-auto text-xs font-semibold">
-        <button
-          onClick={() => setActiveTab('OVERVIEW')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'OVERVIEW' ? 'bg-slate-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          📹 Telemedicine Overview
-        </button>
-        <button
-          onClick={() => setActiveTab('ACTIVE_VIDEO_ROOM')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'ACTIVE_VIDEO_ROOM' ? 'bg-slate-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          🔒 Encrypted Video Room
-        </button>
-        <button
-          onClick={() => setActiveTab('WAITING_ROOM_QUEUE')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'WAITING_ROOM_QUEUE' ? 'bg-slate-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          ⏳ Virtual Waiting Room ({waitingQueue.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('IOT_TELEMETRY')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'IOT_TELEMETRY' ? 'bg-slate-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          📡 Connected IoT Devices ({devices.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('CARE_COHORTS')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'CARE_COHORTS' ? 'bg-slate-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          🩺 Chronic Care Cohorts
-        </button>
-        <button
-          onClick={() => setActiveTab('VITAL_BREACHES')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'VITAL_BREACHES' ? 'bg-slate-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          🚨 Vital Threshold Breaches ({breachAlerts.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('AUDIT_VAULT')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'AUDIT_VAULT' ? 'bg-slate-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          🔐 Telehealth Audit Vault
-        </button>
+      <div
+        style={{
+          position: 'relative',
+          zIndex: 40,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          flexWrap: 'wrap',
+          backgroundColor: '#0F172A',
+          border: '1px solid #1E293B',
+          borderRadius: '10px',
+          padding: '6px 8px'
+        }}
+      >
+        {[
+          { id: 'OVERVIEW' as TelemedicineTab, label: '📹 Overview' },
+          { id: 'ACTIVE_VIDEO_ROOM' as TelemedicineTab, label: '🔒 Video Room' },
+          { id: 'WAITING_ROOM_QUEUE' as TelemedicineTab, label: `⏳ Waiting Room (${waitingQueue.length})` },
+          { id: 'IOT_TELEMETRY' as TelemedicineTab, label: `📡 IoT Devices (${devices.length})` },
+          { id: 'CARE_COHORTS' as TelemedicineTab, label: '🩺 Care Cohorts' }
+        ].map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                fontSize: '0.78rem',
+                fontWeight: isActive ? 700 : 500,
+                color: isActive ? '#FFFFFF' : '#94A3B8',
+                backgroundColor: isActive ? '#0284C7' : 'transparent',
+                borderRadius: '6px',
+                border: isActive ? '1px solid #38BDF8' : '1px solid transparent',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = '#1E293B';
+                  e.currentTarget.style.color = '#F8FAFC';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = '#94A3B8';
+                }
+              }}
+            >
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+
+        {/* Secondary Modules Selector */}
+        <TabOverflowMenu
+          label="More Telehealth Tools"
+          options={[
+            { id: 'VITAL_BREACHES', label: '🚨 Vital Breaches', count: breachAlerts.length },
+            { id: 'AUDIT_VAULT', label: '🔐 Telehealth Audit Vault' }
+          ]}
+          activeId={activeTab}
+          onSelect={(id) => setActiveTab(id as TelemedicineTab)}
+          onReset={() => setActiveTab('OVERVIEW')}
+          accentColor="#0284C7"
+          activeBorderColor="#38BDF8"
+        />
       </div>
 
       {/* Tab Renderers */}

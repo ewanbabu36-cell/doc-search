@@ -6,19 +6,23 @@ export interface PatientCensusViewProps {
   admissions: InpatientAdmissionDto[];
 }
 
-export const PatientCensusView: React.FC<PatientCensusViewProps> = ({ admissions }) => {
+export const PatientCensusView: React.FC<PatientCensusViewProps> = ({ admissions = [] }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const safeAdmissions = Array.isArray(admissions) ? admissions : [];
 
-  const filtered = admissions.filter((a) =>
-    a.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    a.patientMrn.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    a.wardName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filtered = safeAdmissions.filter((a) => {
+    if (!a) return false;
+    const term = (searchTerm || '').toLowerCase();
+    const name = (a.patientName || '').toLowerCase();
+    const mrn = (a.patientMrn || '').toLowerCase();
+    const ward = (a.wardName || '').toLowerCase();
+    return name.includes(term) || mrn.includes(term) || ward.includes(term);
+  });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div>
-        <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#0f172a' }}>Hospital Daily Patient Census</h2>
+        <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: 'var(--ds-color-text-primary, #f8fafc)' }}>Hospital Daily Patient Census</h2>
         <p style={{ margin: '0.25rem 0 0 0', color: '#64748b', fontSize: '0.875rem' }}>Official active patient roster across all medical wards.</p>
       </div>
       <Card style={{ padding: '1rem' }}>

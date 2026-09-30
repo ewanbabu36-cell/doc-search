@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, Button } from '@docsearch/ui-kit';
 
 export const EmergencyControlCenterView: React.FC = () => {
+  const [selectedProtocol, setSelectedProtocol] = useState<string | null>(null);
+
   const protocols = [
     { title: 'Mass Casualty Triage Protocol', desc: 'Pre-configured rapid disaster sorting algorithm with temporary anonymous tagging' },
     { title: 'Level 1 Trauma Alert Escalation Policy', desc: 'Automatic activation criteria for severe penetrating trauma, shock, and airway emergencies' },
@@ -24,8 +26,19 @@ export const EmergencyControlCenterView: React.FC = () => {
               <p className="text-xs text-gray-500 mt-1">{p.desc}</p>
             </div>
             <div className="flex justify-end">
-              <Button variant="outline">View SOP Guidelines</Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedProtocol(selectedProtocol === p.title ? null : p.title)}
+              >
+                {selectedProtocol === p.title ? 'Hide SOP Directives' : 'View SOP Guidelines'}
+              </Button>
             </div>
+            {selectedProtocol === p.title && (
+              <div style={{ marginTop: '8px', padding: '10px', backgroundColor: 'rgba(239, 68, 68, 0.08)', border: '1px solid #fca5a5', borderRadius: '6px', fontSize: '0.75rem', color: '#991b1b' }}>
+                <strong>Active Emergency SOP Directive:</strong> Shift-in-charge notification mandatory upon protocol trigger. Verify immediate airway, oxygenation, and crash cart readiness within 90 seconds. Document all actions in emergency clinical log.
+              </div>
+            )}
           </Card>
         ))}
       </div>

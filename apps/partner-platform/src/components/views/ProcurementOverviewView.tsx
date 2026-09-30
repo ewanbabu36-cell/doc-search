@@ -37,10 +37,10 @@ export const ProcurementOverviewView: React.FC<ProcurementOverviewViewProps> = (
       {/* Top Banner with Quick Actions */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 700, color: '#0f172a' }}>
+          <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 700, color: 'var(--ds-color-text-primary)' }}>
             Procurement & Supply Chain Command Center
           </h2>
-          <p style={{ margin: '0.25rem 0 0 0', color: '#64748b', fontSize: '0.875rem' }}>
+          <p style={{ margin: '0.25rem 0 0 0', color: 'var(--ds-color-text-muted)', fontSize: '0.875rem' }}>
             Healthcare supplier logistics, electronic 3-way invoice matching, incoming QC gate, and inventory replenishment.
           </p>
         </div>
@@ -60,10 +60,10 @@ export const ProcurementOverviewView: React.FC<ProcurementOverviewViewProps> = (
       {/* KPI Metrics Strip */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
         <Card style={{ padding: '1.25rem' }}>
-          <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>
+          <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--ds-color-text-muted)', textTransform: 'uppercase' }}>
             Procurement Spend (YTD)
           </div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: '#0f172a', margin: '0.4rem 0' }}>
+          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--ds-color-text-primary)', margin: '0.4rem 0' }}>
             ${metrics.totalSpendYtd.toLocaleString()}
           </div>
           <div style={{ fontSize: '0.8rem', color: '#16a34a' }}>
@@ -113,12 +113,12 @@ export const ProcurementOverviewView: React.FC<ProcurementOverviewViewProps> = (
         {/* Left: Requisitions Awaiting Approval */}
         <Card style={{ padding: '1.25rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: '#0f172a' }}>
+            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--ds-color-text-primary)' }}>
               Requisitions Awaiting Authorization ({pendingApprovals.length})
             </h3>
           </div>
           {pendingApprovals.length === 0 ? (
-            <p style={{ color: '#64748b', fontSize: '0.875rem' }}>All departmental requisitions have been approved or processed.</p>
+            <p style={{ color: 'var(--ds-color-text-muted)', fontSize: '0.875rem' }}>All departmental requisitions have been approved or processed.</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {pendingApprovals.map((req) => (
@@ -127,18 +127,18 @@ export const ProcurementOverviewView: React.FC<ProcurementOverviewViewProps> = (
                   style={{
                     padding: '0.875rem',
                     borderRadius: '6px',
-                    border: '1px solid #e2e8f0',
-                    backgroundColor: '#f8fafc',
+                    border: '1px solid var(--ds-color-border)',
+                    backgroundColor: 'var(--ds-color-surface-subtle)',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center'
                   }}
                 >
                   <div>
-                    <div style={{ fontWeight: 600, color: '#0f172a' }}>
+                    <div style={{ fontWeight: 600, color: 'var(--ds-color-text-primary)' }}>
                       {req.requisitionNumber} — {req.departmentName}
                     </div>
-                    <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.2rem' }}>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--ds-color-text-muted)', marginTop: '0.2rem' }}>
                       By: {req.requestedBy} • Est: ${req.totalEstimatedAmount.toFixed(2)}
                     </div>
                   </div>
@@ -154,12 +154,12 @@ export const ProcurementOverviewView: React.FC<ProcurementOverviewViewProps> = (
         {/* Right: Active Purchase Orders */}
         <Card style={{ padding: '1.25rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: '#0f172a' }}>
+            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--ds-color-text-primary)' }}>
               Recent Purchase Order Activity
             </h3>
           </div>
           {recentPOs.length === 0 ? (
-            <p style={{ color: '#64748b', fontSize: '0.875rem' }}>No purchase orders recorded.</p>
+            <p style={{ color: 'var(--ds-color-text-muted)', fontSize: '0.875rem' }}>No purchase orders recorded.</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {recentPOs.map((po) => (
@@ -169,8 +169,8 @@ export const ProcurementOverviewView: React.FC<ProcurementOverviewViewProps> = (
                   style={{
                     padding: '0.875rem',
                     borderRadius: '6px',
-                    border: '1px solid #e2e8f0',
-                    backgroundColor: '#fff',
+                    border: '1px solid var(--ds-color-border)',
+                    backgroundColor: 'var(--ds-color-surface-subtle)',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
@@ -178,10 +178,10 @@ export const ProcurementOverviewView: React.FC<ProcurementOverviewViewProps> = (
                   }}
                 >
                   <div>
-                    <div style={{ fontWeight: 600, color: '#2563eb' }}>
+                    <div style={{ fontWeight: 600, color: 'var(--ds-color-primary, #38BDF8)' }}>
                       {po.poNumber} — {po.vendorName}
                     </div>
-                    <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.2rem' }}>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--ds-color-text-muted)', marginTop: '0.2rem' }}>
                       Net: ${po.totalNetAmount.toFixed(2)} • Due: {new Date(po.expectedDeliveryDate).toLocaleDateString()}
                     </div>
                   </div>

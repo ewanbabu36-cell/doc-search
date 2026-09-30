@@ -344,12 +344,16 @@ describe('Strict Invoice Void & Discount Policy Enforcement Test Suite', () => {
               selectedTable = tbl;
               return queryChain;
             },
+            leftJoin: () => queryChain,
+            innerJoin: () => queryChain,
+            rightJoin: () => queryChain,
             where: (whereClause: any) => {
               currentWhere = whereClause;
               return queryChain;
             },
             orderBy: () => queryChain,
             limit: () => queryChain,
+            offset: () => queryChain,
             for: () => queryChain,
             then: async (resolve: any) => {
               const tableName =
@@ -365,9 +369,19 @@ describe('Strict Invoice Void & Discount Policy Enforcement Test Suite', () => {
                   const matched = Array.from(inMemoryInvoices.values()).filter(
                     (inv) => inv.id === idOrNum || inv.invoiceNumber === idOrNum
                   );
-                  return resolve(matched);
+                  return resolve(matched.map((inv) => ({
+                    invoice: inv,
+                    patientFirstName: 'Test',
+                    patientLastName: 'Patient',
+                    patientMrn: 'MRN-2026-00891'
+                  })));
                 }
-                return resolve(Array.from(inMemoryInvoices.values()));
+                return resolve(Array.from(inMemoryInvoices.values()).map((inv) => ({
+                  invoice: inv,
+                  patientFirstName: 'Test',
+                  patientLastName: 'Patient',
+                  patientMrn: 'MRN-2026-00891'
+                })));
               }
 
               if (tableName === 'billing_invoice_items') {

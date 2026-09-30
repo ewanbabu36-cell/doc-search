@@ -52,21 +52,24 @@ export const Dropdown: React.FC<DropdownProps> = ({
       {isOpen && (
         <div
           role="menu"
-          className="ds-interactive"
+          className="ds-interactive ds-glass-elevated"
           style={{
             position: 'absolute',
             top: '100%',
-            marginTop: '4px',
+            marginTop: '6px',
             [align]: 0,
-            zIndex: 50,
-            minWidth: '180px',
-            backgroundColor: 'var(--ds-color-surface)',
-            border: '1px solid var(--ds-color-border)',
-            borderRadius: '6px',
-            boxShadow: 'var(--ds-shadow-lg)',
-            padding: '4px 0',
+            zIndex: 'var(--ds-z-dropdown, 50)' as any,
+            minWidth: '190px',
+            backgroundColor: 'var(--ds-surface-glass-elevated, var(--ds-color-surface))',
+            backdropFilter: 'blur(24px) saturate(190%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(190%)',
+            border: '1px solid var(--ds-color-border-strong, var(--ds-color-border))',
+            borderRadius: '10px',
+            boxShadow: 'var(--ds-depth-high, var(--ds-shadow-lg)), var(--ds-specular-edge, inset 0 1px 0 0 rgba(255, 255, 255, 0.12))',
+            padding: '6px',
             display: 'flex',
-            flexDirection: 'column'
+            flexDirection: 'column',
+            gap: '2px'
           }}
         >
           {items.map((item, idx) => {

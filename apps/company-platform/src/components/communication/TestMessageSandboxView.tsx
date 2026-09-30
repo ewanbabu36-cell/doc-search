@@ -129,7 +129,6 @@ export const TestMessageSandboxView: React.FC = () => {
               variant="primary"
               size="md"
               disabled={isSending}
-              style={{ backgroundColor: '#06B6D4', color: '#070C16', fontWeight: 900, marginTop: '6px' }}
             >
               {isSending ? '⚡ Dispatching Test...' : '🚀 Send Live Test Message'}
             </Button>

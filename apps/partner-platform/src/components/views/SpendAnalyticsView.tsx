@@ -16,7 +16,7 @@ export const SpendAnalyticsView: React.FC<SpendAnalyticsViewProps> = ({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div>
-        <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#0f172a' }}>
+        <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: 'var(--ds-color-text-primary, #f8fafc)' }}>
           Procurement Spend Intelligence & Trends
         </h2>
         <p style={{ margin: '0.25rem 0 0 0', color: '#64748b', fontSize: '0.875rem' }}>
@@ -28,7 +28,7 @@ export const SpendAnalyticsView: React.FC<SpendAnalyticsViewProps> = ({
         {analytics.monthlySpendTrend.map((m) => (
           <Card key={m.month} style={{ padding: '1rem', border: '1px solid #e2e8f0' }}>
             <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>{m.month}</div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0f172a', margin: '0.25rem 0' }}>
+            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--ds-color-text-primary, #f8fafc)', margin: '0.25rem 0' }}>
               ${m.spend.toLocaleString()}
             </div>
             <div style={{ fontSize: '0.75rem', color: m.spend <= m.budget ? '#16a34a' : '#dc2626' }}>

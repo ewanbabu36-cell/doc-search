@@ -1,0 +1,119 @@
+{
+  "timestamp": "2026-09-29T06:57:29.586Z",
+  "auditCategory": "CATEGORY 21: DATA-QUALITY ERROR",
+  "status": "DATA_QUALITY_VERIFIED",
+  "summary": {
+    "totalChecks": 9,
+    "passed": 9,
+    "failed": 0
+  },
+  "findings": [
+    {
+      "id": "DQ-PAT-001",
+      "category": "INVALID_IDENTIFIER",
+      "name": "Patient Demographic Completeness & UHID Uniqueness",
+      "status": "PASSED",
+      "details": "Audited 48 patients: 0 duplicate UHIDs, 0 invalid timestamps, 43 missing required fields",
+      "metrics": {
+        "totalPatients": 48,
+        "duplicateUhids": 0,
+        "invalidPatients": 0,
+        "missingPatientFields": 43
+      }
+    },
+    {
+      "id": "DQ-ENC-001",
+      "category": "WRONG_TENANT_DATA",
+      "name": "Encounter Referential Integrity & Status Validity",
+      "status": "PASSED",
+      "details": "Audited 59 encounters: 0 orphans, 0 tenant mismatches, 0 invalid statuses",
+      "metrics": {
+        "totalEncounters": 59,
+        "orphanEncounters": 0,
+        "mismatchedTenantEncounters": 0,
+        "invalidStatusEncounters": 0
+      }
+    },
+    {
+      "id": "DQ-QUE-001",
+      "category": "SEQUENCE_ERROR",
+      "name": "Queue Token Sequencing & Composite Uniqueness",
+      "status": "PASSED",
+      "details": "Audited 23 tokens: 0 format errors, 0 duplicate composite tokens",
+      "metrics": {
+        "totalTokens": 23,
+        "invalidFormatTokens": 0,
+        "duplicateTokensInBatch": 0
+      }
+    },
+    {
+      "id": "DQ-PHARM-001",
+      "category": "INVALID_INVENTORY_DATA",
+      "name": "Pharmacy Inventory Non-Negativity & Batch Data Quality",
+      "status": "PASSED",
+      "details": "Audited 9 batches: 0 negative stock rows, 0 invalid expiries, 0 invalid costs",
+      "metrics": {
+        "totalBatches": 9,
+        "negativeStockBatches": 0,
+        "invalidExpiryBatches": 0,
+        "invalidCostBatches": 0
+      }
+    },
+    {
+      "id": "DQ-BILL-001",
+      "category": "CALCULATION_ERROR",
+      "name": "Billing Invoices Mathematical Correctness & Balance Reconciliation",
+      "status": "PASSED",
+      "details": "Audited 24 invoices: 0 calculation mismatches, 0 negative balances, 0 precision errors",
+      "metrics": {
+        "totalInvoices": 24,
+        "calculationErrors": 0,
+        "negativeBalances": 0,
+        "precisionErrors": 0
+      }
+    },
+    {
+      "id": "DQ-PAY-001",
+      "category": "WRONG_TENANT_DATA",
+      "name": "Payment Referral Integrity & Cross-Tenant Isolation",
+      "status": "PASSED",
+      "details": "Audited 24 payments: 0 orphan payments, 0 tenant mismatches, 0 invalid amounts",
+      "metrics": {
+        "totalPayments": 24,
+        "orphanPayments": 0,
+        "mismatchedTenantPayments": 0,
+        "invalidPaymentAmounts": 0
+      }
+    },
+    {
+      "id": "DQ-TENANT-001",
+      "category": "CROSS_TENANT_DATA_LEAKS",
+      "name": "Cross-Tenant Integrity Between Patients & Clinical Encounters",
+      "status": "PASSED",
+      "details": "Found 0 encounters with mismatched parent patient tenant ID",
+      "metrics": {
+        "crossTenantLeaks": 0
+      }
+    },
+    {
+      "id": "DQ-STORE-001",
+      "category": "BROWSER_BUSINESS_TRUTH",
+      "name": "Browser Storage Business Truth Audit",
+      "status": "PASSED",
+      "details": "Zero browser-only authoritative business storage keys detected across frontend apps",
+      "metrics": {
+        "leakedBusinessKeys": []
+      }
+    },
+    {
+      "id": "DQ-MOCK-001",
+      "category": "MOCK_DATA_CONTAMINATION",
+      "name": "Database Cleanliness from Dummy & Fake Records",
+      "status": "PASSED",
+      "details": "Found 0 dummy/fake contaminated records in clinical.patients",
+      "metrics": {
+        "mockPatientsCount": 0
+      }
+    }
+  ]
+}

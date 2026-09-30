@@ -222,23 +222,48 @@ export class ExternalTextToSpeechProvider implements TextToSpeechProvider {
     const startTime = Date.now();
 
     if (!this.apiKey && !this.endpointUrl) {
-      logger.warn('External TTS provider credentials missing, falling back to mock reference');
-      const fallback = new MockTextToSpeechProvider();
-      return fallback.synthesize(text, options);
+      if (process.env['ALLOW_MOCK_VOICE'] === 'true' || process.env['NODE_ENV'] === 'test') {
+        logger.warn('External TTS provider credentials missing; test/mock mode active');
+        const fallback = new MockTextToSpeechProvider();
+        return fallback.synthesize(text, options);
+      }
+      logger.error('External TTS provider credentials missing in production mode');
+      throw AppError.internal('External TTS provider credentials missing. Live audio synthesis requires a valid API key.');
     }
 
     try {
       const category = options.safetyCategory || 'INFORMATIONAL';
       const sanitizedText = sanitizeVoiceSpokenText(text, category);
-      const sampleCount = Math.max(800, sanitizedText.split(/\s+/).filter(Boolean).length * 800);
-      const audioBuffer = createDeterministicWavBuffer(Math.min(sampleCount, 32000));
+      const endpoint = this.endpointUrl || 'https://api.openai.com/v1/audio/speech';
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'tts-1',
+          input: sanitizedText,
+          voice: options.voice || 'alloy',
+          response_format: 'wav'
+        })
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`TTS Provider HTTP ${response.status}: ${errText}`);
+      }
+
+      const arrayBuf = await response.arrayBuffer();
+      const audioBuffer = Buffer.from(arrayBuf);
       const latencyMs = Date.now() - startTime;
 
       return {
         audioBuffer,
         mimeType: 'audio/wav',
         sizeBytes: audioBuffer.length,
-        durationSeconds: 1,
+        durationSeconds: Math.max(1, Math.round(audioBuffer.length / 32000)),
         provider: this.name,
         providerVersion: this.version,
         latencyMs,

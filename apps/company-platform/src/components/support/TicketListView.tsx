@@ -51,7 +51,7 @@ export const TicketListView: React.FC<TicketListViewProps> = ({
           <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#F8FAFC' }}>Partner Support Tickets & SLA Desk</h2>
           <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>{filtered.length} active hospital tickets logged</span>
         </div>
-        <Button variant="primary" size="sm" onClick={() => setIsCreateOpen(true)} style={{ backgroundColor: '#38BDF8', color: '#070C16', fontWeight: 800 }}>
+        <Button variant="primary" size="sm" onClick={() => setIsCreateOpen(true)}>
           ➕ Open New Support Ticket
         </Button>
       </div>

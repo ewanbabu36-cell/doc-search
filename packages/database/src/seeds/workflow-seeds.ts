@@ -1,3 +1,7 @@
+import { createHash } from 'node:crypto';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { eq, and } from 'drizzle-orm';
+import * as schema from '../schema/index.js';
 import type {
   DynamicLicenceRuleDto,
   DynamicOfferDto,
@@ -839,3 +843,110 @@ export const SEED_LICENCE_RULES: DynamicLicenceRuleDto[] = [
     status: 'ACTIVE'
   }
 ];
+
+function deterministicUuid(seed: string): string {
+  const hash = createHash('sha256').update(seed).digest('hex');
+  return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-a${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
+}
+
+/**
+ * Idempotently seeds system master workflow definitions into PostgreSQL.
+ * Protects active versions: does not overwrite existing versions or disrupt active workflow executions.
+ */
+export async function seedWorkflowDatabase(db: NodePgDatabase<typeof schema>): Promise<void> {
+  for (const def of SEED_WORKFLOW_DEFINITIONS) {
+    const defId = deterministicUuid(`WF-DEF-${def.code}`);
+    try {
+      await db
+        .insert(schema.workflowDefinitions)
+        .values({
+          id: defId,
+          code: def.code,
+          name: def.name,
+          description: def.description,
+          entityType: def.entityType,
+          organizationType: def.organizationType,
+          activeVersion: def.activeVersion,
+          status: def.status
+        })
+        .onConflictDoUpdate({
+          target: schema.workflowDefinitions.code,
+          set: {
+            name: def.name,
+            description: def.description,
+            entityType: def.entityType,
+            organizationType: def.organizationType,
+            updatedAt: new Date()
+          }
+        });
+    } catch {}
+
+    for (const ver of def.versions) {
+      const verId = deterministicUuid(`WF-VER-${def.code}-V${ver.version}`);
+      try {
+        // Version protection: check if version already exists
+        const [existingVersion] = await db
+          .select()
+          .from(schema.workflowVersions)
+          .where(and(eq(schema.workflowVersions.workflowId, defId), eq(schema.workflowVersions.version, ver.version)));
+
+        if (existingVersion) {
+          // Version is already active & locked — protect running workflows
+          continue;
+        }
+
+        await db
+          .insert(schema.workflowVersions)
+          .values({
+            id: verId,
+            workflowId: defId,
+            version: ver.version,
+            status: ver.status,
+            effectiveFrom: new Date(ver.effectiveFrom),
+            changeSummary: ver.changeSummary,
+            createdBy: ver.createdBy
+          })
+          .onConflictDoNothing();
+
+        for (const stage of ver.stages) {
+          const stageId = deterministicUuid(`WF-STG-${def.code}-V${ver.version}-${stage.code}`);
+          await db
+            .insert(schema.workflowStages)
+            .values({
+              id: stageId,
+              workflowId: defId,
+              versionId: verId,
+              code: stage.code,
+              name: stage.name,
+              description: stage.description,
+              sequence: stage.sequence,
+              stageType: stage.stageType,
+              isInitial: stage.isInitial,
+              isTerminal: stage.isTerminal,
+              status: stage.status
+            })
+            .onConflictDoNothing();
+
+          for (const req of stage.requirements) {
+            const reqId = deterministicUuid(`WF-REQ-${def.code}-V${ver.version}-${stage.code}-${req.requirementCode}`);
+            await db
+              .insert(schema.workflowRequirements)
+              .values({
+                id: reqId,
+                stageId: stageId,
+                requirementCode: req.requirementCode,
+                name: req.name,
+                requirementType: req.requirementType,
+                configuration: req.configuration,
+                isRequired: req.isRequired,
+                order: req.order,
+                status: req.status
+              })
+              .onConflictDoNothing();
+          }
+        }
+      } catch {}
+    }
+  }
+}
+

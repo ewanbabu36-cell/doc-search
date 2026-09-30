@@ -74,7 +74,7 @@ export const LeadDtoSchema = z.object({
   organizationName: z.string().min(2),
   contactName: z.string().min(2),
   contactEmail: z.string().email(),
-  contactPhone: z.string().optional(),
+  contactPhone: z.string().regex(/^(\+91[\-\s]?)?[6-9]\d{9}$/, 'Must be a valid 10-digit Indian mobile number').optional(),
   contactRoleTitle: z.string().optional(),
   source: LeadSourceSchema,
   status: LeadStatusSchema,

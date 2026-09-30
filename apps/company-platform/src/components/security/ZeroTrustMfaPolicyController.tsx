@@ -53,7 +53,7 @@ export const ZeroTrustMfaPolicyController: React.FC = () => {
           </p>
         </div>
 
-        <Button variant="primary" size="sm" onClick={handleForceGlobalMfaReset} style={{ backgroundColor: '#06B6D4', color: '#070C16', fontWeight: 800 }}>
+        <Button variant="primary" size="sm" onClick={handleForceGlobalMfaReset} >
           ⚡ Force Global MFA Policy Sync
         </Button>
       </div>

@@ -13,7 +13,7 @@ export const TransferDetailView: React.FC<TransferDetailViewProps> = ({ transfer
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-        <Button variant="outline" size="sm" onClick={onBack}>← Back</Button>
+        <Button variant="outline" size="sm" onClick={onBack}>← Back to Transfers</Button>
         <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700 }}>Transfer Record — {transfer.transferNumber}</h2>
         <Badge variant="neutral">{transfer.status}</Badge>
       </div>

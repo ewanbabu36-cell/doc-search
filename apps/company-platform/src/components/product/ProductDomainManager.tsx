@@ -54,17 +54,32 @@ export const ProductDomainManager: React.FC = () => {
     setError(null);
     try {
       const [prodRes, planRes, featRes, assignRes, partnerRes] = await Promise.all([
-        productService.getProducts(),
-        productService.getPlans(),
-        productService.getFeatures(),
-        productService.getPartnerAssignments(),
-        partnerService.getPartners()
+        productService.getProducts().catch((e) => {
+          console.warn('Could not fetch products from API, using fallback:', e);
+          return [];
+        }),
+        productService.getPlans().catch((e) => {
+          console.warn('Could not fetch plans from API, using fallback:', e);
+          return [];
+        }),
+        productService.getFeatures().catch((e) => {
+          console.warn('Could not fetch features from API, using fallback:', e);
+          return [];
+        }),
+        productService.getPartnerAssignments().catch((e) => {
+          console.warn('Could not fetch assignments from API, using fallback:', e);
+          return [];
+        }),
+        partnerService.getPartners().catch((e) => {
+          console.warn('Could not fetch partners from API, using fallback:', e);
+          return { items: [], total: 0 };
+        })
       ]);
       setProducts(prodRes);
       setPlans(planRes);
       setFeatures(featRes);
       setAssignments(assignRes);
-      setPartners(partnerRes.items);
+      setPartners(partnerRes.items || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load product domain data');
     } finally {

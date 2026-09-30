@@ -1,6 +1,7 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { emergencyManagementService } from '../../services/partner/EmergencyManagementService.js';
 import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
+import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 import {
   type EmergencyRegistrationInput,
   type EmergencyTriageInput,
@@ -9,6 +10,8 @@ import {
 } from '../../repositories/partner/EmergencyManagementRepository.js';
 
 export const emergencyManagementRoutes: FastifyPluginAsync = async (fastify) => {
+  fastify.addHook('preHandler', requireModuleCommercialAccess('EMERGENCY_ICU'));
+
   // 1. Emergency Work Queue
   fastify.get(
     '/api/v1/partner/emergency/queue',

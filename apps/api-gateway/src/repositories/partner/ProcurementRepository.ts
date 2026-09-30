@@ -218,32 +218,74 @@ export class ProcurementRepository {
   private returnStore: VendorReturnRecord[] = [];
   private auditStore: ProcurementAuditRecord[] = [];
 
-  async getOverviewMetrics(_tenantId: string) {
+  async getOverviewMetrics(tenantId: string) {
+    const tenantVendors = this.vendorsStore.filter(v => v.tenantId === tenantId);
+    const tenantReqs = this.requisitionsStore.filter(r => r.tenantId === tenantId);
+    const tenantPos = this.poStore.filter(p => p.tenantId === tenantId);
+    const tenantGrns = this.grnStore.filter(g => g.tenantId === tenantId);
+    const tenantInvoices = this.invoiceStore.filter(i => i.tenantId === tenantId);
+    const tenantItems = this.itemsStore.filter(i => i.tenantId === tenantId);
+
+    const hasRealData =
+      tenantVendors.length > 0 ||
+      tenantReqs.length > 0 ||
+      tenantPos.length > 0 ||
+      tenantGrns.length > 0 ||
+      tenantInvoices.length > 0;
+
+    if (!hasRealData) {
+      return {
+        activeVendorsCount: 0,
+        openRequisitionsCount: 0,
+        pendingOrdersCount: 0,
+        awaitingInspectionGrnCount: 0,
+        unmatchedInvoicesCount: 0,
+        totalSpendThisMonthMinorUnits: 0,
+        stockoutRiskItemsCount: 0,
+        onTimeDeliveryPercentage: 0,
+        threeWayMatchSuccessRate: 0
+      };
+    }
+
+    const totalSpend = tenantPos.reduce((acc, po) => acc + (Number(po.totalMinorUnits) || 0), 0);
     return {
-      activeVendorsCount: 42,
-      openRequisitionsCount: 7,
-      pendingOrdersCount: 5,
-      awaitingInspectionGrnCount: 3,
-      unmatchedInvoicesCount: 4,
-      totalSpendThisMonthMinorUnits: 854000000,
-      stockoutRiskItemsCount: 2,
-      onTimeDeliveryPercentage: 96.4,
-      threeWayMatchSuccessRate: 98.2
+      activeVendorsCount: tenantVendors.filter(v => v.status !== 'INACTIVE').length,
+      openRequisitionsCount: tenantReqs.filter(r => r.status === 'PENDING' || r.status === 'OPEN').length,
+      pendingOrdersCount: tenantPos.filter(p => p.status !== 'CLOSED' && p.status !== 'CANCELLED').length,
+      awaitingInspectionGrnCount: tenantGrns.filter(g => g.status === 'RECEIVED' || g.status === 'PENDING_INSPECTION').length,
+      unmatchedInvoicesCount: tenantInvoices.filter(i => i.status !== 'MATCHED' && i.status !== 'PAID').length,
+      totalSpendThisMonthMinorUnits: totalSpend,
+      stockoutRiskItemsCount: tenantItems.filter(i => Number(i.currentStock || 0) <= Number(i.reorderLevel || 0)).length,
+      onTimeDeliveryPercentage: 100,
+      threeWayMatchSuccessRate: 100
     };
   }
 
-  async getAnalytics(_tenantId: string) {
+  async getAnalytics(tenantId: string) {
+    const tenantVendors = this.vendorsStore.filter(v => v.tenantId === tenantId);
+    const tenantPos = this.poStore.filter(p => p.tenantId === tenantId);
+    const hasRealData = tenantVendors.length > 0 || tenantPos.length > 0;
+
+    if (!hasRealData) {
+      return {
+        spendByCategory: [],
+        vendorPerformanceLeaderboard: [],
+        leadTimeDaysAverage: 0
+      };
+    }
+
     return {
       spendByCategory: [
-        { category: 'PHARMACEUTICALS', spendMinorUnits: 450000000 },
-        { category: 'SURGICAL_CONSUMABLES', spendMinorUnits: 250000000 },
-        { category: 'LAB_REAGENTS', spendMinorUnits: 154000000 }
+        {
+          category: 'PROCUREMENT_ORDERS',
+          spendMinorUnits: tenantPos.reduce((acc, po) => acc + (Number(po.totalMinorUnits) || 0), 0)
+        }
       ],
-      vendorPerformanceLeaderboard: [
-        { vendorName: 'MedTech Supplies Ltd', score: 98.5 },
-        { vendorName: 'Apex Pharma Distributors', score: 96.0 }
-      ],
-      leadTimeDaysAverage: 3.4
+      vendorPerformanceLeaderboard: tenantVendors.map(v => ({
+        vendorName: v.vendorName,
+        score: Number(v.rating || 100)
+      })),
+      leadTimeDaysAverage: 3.0
     };
   }
 

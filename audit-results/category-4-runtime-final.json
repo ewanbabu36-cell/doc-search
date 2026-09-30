@@ -1,0 +1,1933 @@
+{
+  "timestamp": "2026-09-28T16:45:41.725Z",
+  "category": "CATEGORY 4 — RUNTIME EXECUTION ERRORS",
+  "mode": "FINAL_INDEPENDENT_ZERO_TRUST",
+  "services": {
+    "API Gateway /health": {
+      "status": 200,
+      "ok": true,
+      "data": {
+        "status": "healthy",
+        "service": "docsearch-api-gateway",
+        "database": {
+          "ready": true,
+          "mode": "EXTERNAL_POSTGRES",
+          "tables": 442
+        },
+        "uptime": 1619.1075657,
+        "timestamp": "2026-09-28T16:45:41.871Z"
+      }
+    },
+    "API Gateway /api/v1/health": {
+      "status": 200,
+      "ok": true,
+      "data": {
+        "status": "healthy",
+        "service": "docsearch-api-gateway",
+        "database": {
+          "ready": true,
+          "mode": "EXTERNAL_POSTGRES",
+          "tables": 442
+        },
+        "uptime": 1619.1269291,
+        "timestamp": "2026-09-28T16:45:41.891Z"
+      }
+    },
+    "Partner Platform Vite (5173)": {
+      "status": 200,
+      "ok": true,
+      "data": {
+        "bytes": 979
+      }
+    },
+    "Company Platform Vite (5174)": {
+      "status": 200,
+      "ok": true,
+      "data": {
+        "bytes": 885
+      }
+    },
+    "Landing Page Vite (5175)": {
+      "status": 200,
+      "ok": true,
+      "data": {
+        "bytes": 868
+      }
+    },
+    "Unified Gateway (3000) Health Proxy": {
+      "status": 200,
+      "ok": true,
+      "data": {
+        "status": "healthy",
+        "service": "docsearch-api-gateway",
+        "database": {
+          "ready": true,
+          "mode": "EXTERNAL_POSTGRES",
+          "tables": 442
+        },
+        "uptime": 1619.3165951,
+        "timestamp": "2026-09-28T16:45:42.080Z"
+      }
+    }
+  },
+  "databaseEngine": {
+    "engine": "PostgreSQL 18.4 on x86_64-windows, compiled by msvc-19.44.35226, 64-bit",
+    "database": "docsearch",
+    "encoding": "UTF8",
+    "tables": 496,
+    "host": "127.0.0.1:5432"
+  },
+  "apiDomainChecks": [
+    {
+      "group": "AUTH",
+      "name": "GET /api/v1/auth/registration-form-config",
+      "success": [
+        {
+          "id": "plan-hosp-free-yr1",
+          "code": "PLAN_HOSP_FREE_YR1",
+          "tier": "FOUNDING",
+          "name": "Hospital Founding Partner (1st Year Free)",
+          "price": 0,
+          "billingInterval": "ANNUAL",
+          "icon": "🏥",
+          "tag": "🎁 1st Year Free • Inpatient Beds, OT & ICU",
+          "description": "100% Free for 365 Days - Complete Multi-Specialty Hospital HIS: Inpatient ADT Bed Matrix, OT Surgical Rostering, ICU Flowsheets, TPA IRDAI NHCX Bridge & ABDM Kiosk.",
+          "features": [
+            "Universal Staff Directory & RBAC",
+            "Inpatient ADT Bed Matrix (All Wards)",
+            "OT Surgical Rostering & PAC Clearance",
+            "ICU 24-Hour Digital Flowsheet",
+            "TPA Cashless Pre-Auth & IRDAI NHCX Bridge",
+            "Emergency & Code Blue Broadcast",
+            "ABDM 2.0 Fast OPD Kiosk",
+            "MRD ICD-10 Medical Coding",
+            "Blood Bank Component Cross-Matching"
+          ],
+          "recommended": true,
+          "maxDoctors": 50,
+          "maxBeds": 200,
+          "isActive": true,
+          "applicableFacilityTypes": [
+            "HOSPITAL"
+          ]
+        },
+        {
+          "id": "plan-hosp-annual-yr2",
+          "code": "PLAN_HOSP_ANNUAL_YR2",
+          "tier": "ANNUAL",
+          "name": "Multi-Specialty Hospital Annual Plan",
+          "price": 30000,
+          "billingInterval": "ANNUAL",
+          "icon": "🏥",
+          "tag": "⭐ Year 2: ₹30,000/yr",
+          "description": "All-inclusive Multi-Specialty Hospital Enterprise HIS: Inpatient Bed Matrix, OT, ICU, Cashless TPA Claims & Complete LIMS.",
+          "features": [
+            "Universal Staff Directory & RBAC",
+            "Inpatient ADT Bed Matrix (All Wards)",
+            "OT Surgical Rostering & PAC Clearance",
+            "ICU 24-Hour Digital Flowsheet",
+            "TPA Cashless Pre-Auth & IRDAI NHCX Bridge",
+            "Emergency & Code Blue Broadcast",
+            "ABDM 2.0 Fast OPD Kiosk",
+            "MRD ICD-10 Medical Coding",
+            "Blood Bank Component Cross-Matching"
+          ],
+          "recommended": false,
+          "maxDoctors": 100,
+          "maxBeds": 500,
+          "isActive": true,
+          "applicableFacilityTypes": [
+            "HOSPITAL"
+          ]
+        },
+        {
+          "id": "plan-clinic-free-yr1",
+          "code": "PLAN_CLINIC_FREE_YR1",
+          "tier": "FOUNDING",
+          "name": "Clinic Founding Partner (1st Year Free)",
+          "price": 0,
+          "billingInterval": "ANNUAL",
+          "icon": "🩺",
+          "tag": "🎁 1st Year Free • Ambient AI Scribe & Rx",
+          "description": "100% Free for 365 Days - Ambient AI voice scribe, digital prescription pad, WhatsApp Rx & ABHA scan check-in.",
+          "features": [
+            "Universal Staff Directory & RBAC",
+            "Ambient AI Voice Scribe",
+            "Digital Prescription Pad (Rx)",
+            "WhatsApp High-Res PDF Rx Dispatch",
+            "ABHA 2.0 QR Scan Fast OPD Check-in",
+            "Real-Time Drug-Drug Interaction Shield"
+          ],
+          "recommended": true,
+          "maxDoctors": 5,
+          "maxBeds": 0,
+          "isActive": true,
+          "applicableFacilityTypes": [
+            "CLINIC"
+          ]
+        },
+        {
+          "id": "plan-clinic-annual-yr2",
+          "code": "PLAN_CLINIC_ANNUAL_YR2",
+          "tier": "ANNUAL",
+          "name": "Doctor OPD Clinic Annual Plan",
+          "price": 20000,
+          "billingInterval": "ANNUAL",
+          "icon": "👨‍⚕️",
+          "tag": "⭐ Year 2: ₹20,000/yr",
+          "description": "Full Doctor OPD Practice Suite: Ambient AI Voice Scribe, WhatsApp Rx Dispatch, Jan Aushadhi Generic Switcher & DDI Shield.",
+          "features": [
+            "Universal Staff Directory & RBAC",
+            "Ambient AI Voice Scribe",
+            "Digital Prescription Pad (Rx)",
+            "WhatsApp High-Res PDF Rx Dispatch",
+            "ABHA 2.0 QR Scan Fast OPD Check-in",
+            "Real-Time Drug-Drug Interaction Shield",
+            "Multi-Doctor Room Rostering & Central Cashier"
+          ],
+          "recommended": false,
+          "maxDoctors": 15,
+          "maxBeds": 5,
+          "isActive": true,
+          "applicableFacilityTypes": [
+            "CLINIC"
+          ]
+        },
+        {
+          "id": "plan-path-free-yr1",
+          "code": "PLAN_PATH_FREE_YR1",
+          "tier": "FOUNDING",
+          "name": "Pathology Founding Partner (1st Year Free)",
+          "price": 0,
+          "billingInterval": "ANNUAL",
+          "icon": "🧪",
+          "tag": "🎁 1st Year Free • Barcode LIMS & Analyzer Sync",
+          "description": "100% Free for 365 Days - Phlebotomy sample barcodes, bi-directional analyzer sync, WhatsApp NABL reports & doctor e-sign.",
+          "features": [
+            "Universal Staff Directory & RBAC",
+            "Phlebotomy Sample Barcode Intake & Tracking",
+            "Bi-Directional Lab Machine Analyzer Interface",
+            "WhatsApp NABL Lab Report Auto-Dispatch",
+            "Doctor Digital Signature on Lab Reports"
+          ],
+          "recommended": true,
+          "maxDoctors": 5,
+          "maxBeds": 0,
+          "isActive": true,
+          "applicableFacilityTypes": [
+            "PATHOLOGY"
+          ]
+        },
+        {
+          "id": "plan-path-annual-yr2",
+          "code": "PLAN_PATH_ANNUAL_YR2",
+          "tier": "ANNUAL",
+          "name": "Pathology Lab LIMS Annual Plan",
+          "price": 10000,
+          "billingInterval": "ANNUAL",
+          "icon": "🔬",
+          "tag": "⭐ Year 2: ₹10,000/yr",
+          "description": "Full LIMS suite: Multi-collection centers, bi-directional analyzer sync, automated WhatsApp reports, doctor referral ledger & NABL logs.",
+          "features": [
+            "Universal Staff Directory & RBAC",
+            "Phlebotomy Sample Barcode Intake & Tracking",
+            "Bi-Directional Lab Machine Analyzer Interface",
+            "WhatsApp NABL Lab Report Auto-Dispatch",
+            "Doctor Digital Signature on Lab Reports",
+            "Multi-Collection Center Branches",
+            "Doctor Referral B2B Commission Split & Ledger"
+          ],
+          "recommended": false,
+          "maxDoctors": 20,
+          "maxBeds": 0,
+          "isActive": true,
+          "applicableFacilityTypes": [
+            "PATHOLOGY"
+          ]
+        },
+        {
+          "id": "plan-pharma-free-yr1",
+          "code": "PLAN_PHARMA_FREE_YR1",
+          "tier": "FOUNDING",
+          "name": "Pharmacy Founding Partner (1st Year Free)",
+          "price": 0,
+          "billingInterval": "ANNUAL",
+          "icon": "💊",
+          "tag": "🎁 1st Year Free • Barcode POS & Expiry Radar",
+          "description": "100% Free for 365 Days - High-speed barcode POS, batch/expiry radar, Jan Aushadhi generic switcher & Schedule H1 narcotics register.",
+          "features": [
+            "Universal Staff Directory & RBAC",
+            "High-Speed Barcode POS & Thermal Print",
+            "Automated Batch & Expiry Radar",
+            "Jan Aushadhi Generic Alternate Recommender",
+            "Schedule H & H1 Narcotics Digital Register",
+            "WhatsApp Invoice PDF & Auto-Refills"
+          ],
+          "recommended": true,
+          "maxDoctors": 3,
+          "maxBeds": 0,
+          "isActive": true,
+          "applicableFacilityTypes": [
+            "PHARMACY"
+          ]
+        },
+        {
+          "id": "plan-pharma-annual-yr2",
+          "code": "PLAN_PHARMA_ANNUAL_YR2",
+          "tier": "ANNUAL",
+          "name": "Pharmacy & Chemist Annual Plan",
+          "price": 10000,
+          "billingInterval": "ANNUAL",
+          "icon": "🏪",
+          "tag": "⭐ Year 2: ₹10,000/yr",
+          "description": "Full Chemist POS suite: Automated batch/expiry radar, PMBJP generic switcher, supplier purchase inwarding, WhatsApp bills & Schedule H1 narcotics register.",
+          "features": [
+            "Universal Staff Directory & RBAC",
+            "High-Speed Barcode POS & Thermal Print",
+            "Automated Batch & Expiry Radar",
+            "Jan Aushadhi Generic Alternate Recommender",
+            "Schedule H & H1 Narcotics Digital Register",
+            "WhatsApp Invoice PDF & Auto-Refills",
+            "Central Multi-Store Warehouse & Stock Transfer",
+            "Supplier Purchase Orders & Automated GST Inwarding"
+          ],
+          "recommended": false,
+          "maxDoctors": 10,
+          "maxBeds": 0,
+          "isActive": true,
+          "applicableFacilityTypes": [
+            "PHARMACY"
+          ]
+        },
+        {
+          "id": "plan-radio-free-yr1",
+          "code": "PLAN_RADIO_FREE_YR1",
+          "tier": "FOUNDING",
+          "name": "Radiology Founding Partner (1st Year Free)",
+          "price": 0,
+          "billingInterval": "ANNUAL",
+          "icon": "🩻",
+          "tag": "🎁 1st Year Free • Web DICOM Viewer & Speech EMR",
+          "description": "100% Free for 365 Days - Zero-footprint web DICOM viewer, speech-to-text reporting & WhatsApp scan links.",
+          "features": [
+            "Universal Staff Directory & RBAC",
+            "Zero-Footprint Web DICOM Viewer",
+            "Radiologist Speech-to-Text Reporting",
+            "WhatsApp Diagnostic Scan & DICOM Links"
+          ],
+          "recommended": true,
+          "maxDoctors": 5,
+          "maxBeds": 0,
+          "isActive": true,
+          "applicableFacilityTypes": [
+            "DIAGNOSTIC_CENTRE"
+          ]
+        },
+        {
+          "id": "plan-radio-annual-yr2",
+          "code": "PLAN_RADIO_ANNUAL_YR2",
+          "tier": "ANNUAL",
+          "name": "Radiology & PACS Annual Plan",
+          "price": 20000,
+          "billingInterval": "ANNUAL",
+          "icon": "☢️",
+          "tag": "⭐ Year 2: ₹20,000/yr",
+          "description": "Complete Imaging suite: Cloud PACS, DICOM CT/MRI machine sync, speech-to-text structured reporting & WhatsApp scan links.",
+          "features": [
+            "Universal Staff Directory & RBAC",
+            "Zero-Footprint Web DICOM Viewer",
+            "Radiologist Speech-to-Text Reporting",
+            "WhatsApp Diagnostic Scan & DICOM Links",
+            "Cloud PACS & DICOM CT/MRI Machine Sync",
+            "AERB & PNDT Automated Regulatory Registers"
+          ],
+          "recommended": false,
+          "maxDoctors": 20,
+          "maxBeds": 0,
+          "isActive": true,
+          "applicableFacilityTypes": [
+            "DIAGNOSTIC_CENTRE"
+          ]
+        },
+        {
+          "id": "plan-pharma-wholesale-free-yr1",
+          "code": "PLAN_PHARMA_WHOLESALE_FREE_YR1",
+          "tier": "FOUNDING",
+          "name": "Wholesale Distributor Founding Partner (1st Year Free)",
+          "price": 0,
+          "billingInterval": "ANNUAL",
+          "icon": "📦",
+          "tag": "🎁 1st Year Free • B2B GST Distribution & Form 20B/21B",
+          "description": "100% Free for 365 Days - B2B wholesale distribution ledger, Form 20B/21B buyer Drug License validation, multi-batch GRN inwarding & cold-chain batch tracking.",
+          "features": [
+            "Universal Staff Directory & RBAC",
+            "Wholesale B2B GST Distribution & Buyer Drug License Verification",
+            "Form 20B / 21B Regulatory Compliance Register",
+            "Multi-Batch Cold-Chain & Expiry Radar",
+            "Automated Supplier GRN & Credit Note Settlement"
+          ],
+          "recommended": true,
+          "maxDoctors": 5,
+          "maxBeds": 0,
+          "isActive": true,
+          "applicableFacilityTypes": [
+            "PHARMACY_WHOLESALE"
+          ]
+        },
+        {
+          "id": "plan-pharma-wholesale-annual-yr2",
+          "code": "PLAN_PHARMA_WHOLESALE_ANNUAL_YR2",
+          "tier": "ANNUAL",
+          "name": "Wholesale Pharma Distributor Annual Plan",
+          "price": 25000,
+          "billingInterval": "ANNUAL",
+          "icon": "🏭",
+          "tag": "⭐ Year 2: ₹25,000/yr",
+          "description": "Enterprise B2B Wholesale Distribution suite: Multi-warehouse stock transfer, Form 20B/21B buyer verification, GST e-Invoice & credit limit governance.",
+          "features": [
+            "Universal Staff Directory & RBAC",
+            "Wholesale B2B GST Distribution & Buyer Drug License Verification",
+            "Form 20B / 21B Regulatory Compliance Register",
+            "Multi-Batch Cold-Chain & Expiry Radar",
+            "Automated Supplier GRN & Credit Note Settlement",
+            "Multi-Warehouse Stock Transfer & Credit Limit Governance"
+          ],
+          "recommended": false,
+          "maxDoctors": 15,
+          "maxBeds": 0,
+          "isActive": true,
+          "applicableFacilityTypes": [
+            "PHARMACY_WHOLESALE"
+          ]
+        }
+      ],
+      "details": {
+        "status": 200,
+        "json": {
+          "success": true,
+          "data": {
+            "showPlanSelection": true,
+            "showModuleSelection": true,
+            "allowAdvancePayment": true,
+            "defaultPlanTier": "FOUNDING",
+            "bannerNotice": "Universal Healthcare Partner Registration • 1st Year Free Founding Partner Offer Active",
+            "allowedFacilityTypes": [
+              "HOSPITAL",
+              "CLINIC",
+              "PATHOLOGY",
+              "PHARMACY",
+              "DIAGNOSTIC_CENTRE",
+              "PHARMACY_WHOLESALE"
+            ],
+            "availablePlans": [
+              {
+                "id": "plan-hosp-free-yr1",
+                "code": "PLAN_HOSP_FREE_YR1",
+                "tier": "FOUNDING",
+                "name": "Hospital Founding Partner (1st Year Free)",
+                "price": 0,
+                "billingInterval": "ANNUAL",
+                "icon": "🏥",
+                "tag": "🎁 1st Year Free • Inpatient Beds, OT & ICU",
+                "description": "100% Free for 365 Days - Complete Multi-Specialty Hospital HIS: Inpatient ADT Bed Matrix, OT Surgical Rostering, ICU Flowsheets, TPA IRDAI NHCX Bridge & ABDM Kiosk.",
+                "features": [
+                  "Universal Staff Directory & RBAC",
+                  "Inpatient ADT Bed Matrix (All Wards)",
+                  "OT Surgical Rostering & PAC Clearance",
+                  "ICU 24-Hour Digital Flowsheet",
+                  "TPA Cashless Pre-Auth & IRDAI NHCX Bridge",
+                  "Emergency & Code Blue Broadcast",
+                  "ABDM 2.0 Fast OPD Kiosk",
+                  "MRD ICD-10 Medical Coding",
+                  "Blood Bank Component Cross-Matching"
+                ],
+                "recommended": true,
+                "maxDoctors": 50,
+                "maxBeds": 200,
+                "isActive": true,
+                "applicableFacilityTypes": [
+                  "HOSPITAL"
+                ]
+              },
+              {
+                "id": "plan-hosp-annual-yr2",
+                "code": "PLAN_HOSP_ANNUAL_YR2",
+                "tier": "ANNUAL",
+                "name": "Multi-Specialty Hospital Annual Plan",
+                "price": 30000,
+                "billingInterval": "ANNUAL",
+                "icon": "🏥",
+                "tag": "⭐ Year 2: ₹30,000/yr",
+                "description": "All-inclusive Multi-Specialty Hospital Enterprise HIS: Inpatient Bed Matrix, OT, ICU, Cashless TPA Claims & Complete LIMS.",
+                "features": [
+                  "Universal Staff Directory & RBAC",
+                  "Inpatient ADT Bed Matrix (All Wards)",
+                  "OT Surgical Rostering & PAC Clearance",
+                  "ICU 24-Hour Digital Flowsheet",
+                  "TPA Cashless Pre-Auth & IRDAI NHCX Bridge",
+                  "Emergency & Code Blue Broadcast",
+                  "ABDM 2.0 Fast OPD Kiosk",
+                  "MRD ICD-10 Medical Coding",
+                  "Blood Bank Component Cross-Matching"
+                ],
+                "recommended": false,
+                "maxDoctors": 100,
+                "maxBeds": 500,
+                "isActive": true,
+                "applicableFacilityTypes": [
+                  "HOSPITAL"
+                ]
+              },
+              {
+                "id": "plan-clinic-free-yr1",
+                "code": "PLAN_CLINIC_FREE_YR1",
+                "tier": "FOUNDING",
+                "name": "Clinic Founding Partner (1st Year Free)",
+                "price": 0,
+                "billingInterval": "ANNUAL",
+                "icon": "🩺",
+                "tag": "🎁 1st Year Free • Ambient AI Scribe & Rx",
+                "description": "100% Free for 365 Days - Ambient AI voice scribe, digital prescription pad, WhatsApp Rx & ABHA scan check-in.",
+                "features": [
+                  "Universal Staff Directory & RBAC",
+                  "Ambient AI Voice Scribe",
+                  "Digital Prescription Pad (Rx)",
+                  "WhatsApp High-Res PDF Rx Dispatch",
+                  "ABHA 2.0 QR Scan Fast OPD Check-in",
+                  "Real-Time Drug-Drug Interaction Shield"
+                ],
+                "recommended": true,
+                "maxDoctors": 5,
+                "maxBeds": 0,
+                "isActive": true,
+                "applicableFacilityTypes": [
+                  "CLINIC"
+                ]
+              },
+              {
+                "id": "plan-clinic-annual-yr2",
+                "code": "PLAN_CLINIC_ANNUAL_YR2",
+                "tier": "ANNUAL",
+                "name": "Doctor OPD Clinic Annual Plan",
+                "price": 20000,
+                "billingInterval": "ANNUAL",
+                "icon": "👨‍⚕️",
+                "tag": "⭐ Year 2: ₹20,000/yr",
+                "description": "Full Doctor OPD Practice Suite: Ambient AI Voice Scribe, WhatsApp Rx Dispatch, Jan Aushadhi Generic Switcher & DDI Shield.",
+                "features": [
+                  "Universal Staff Directory & RBAC",
+                  "Ambient AI Voice Scribe",
+                  "Digital Prescription Pad (Rx)",
+                  "WhatsApp High-Res PDF Rx Dispatch",
+                  "ABHA 2.0 QR Scan Fast OPD Check-in",
+                  "Real-Time Drug-Drug Interaction Shield",
+                  "Multi-Doctor Room Rostering & Central Cashier"
+                ],
+                "recommended": false,
+                "maxDoctors": 15,
+                "maxBeds": 5,
+                "isActive": true,
+                "applicableFacilityTypes": [
+                  "CLINIC"
+                ]
+              },
+              {
+                "id": "plan-path-free-yr1",
+                "code": "PLAN_PATH_FREE_YR1",
+                "tier": "FOUNDING",
+                "name": "Pathology Founding Partner (1st Year Free)",
+                "price": 0,
+                "billingInterval": "ANNUAL",
+                "icon": "🧪",
+                "tag": "🎁 1st Year Free • Barcode LIMS & Analyzer Sync",
+                "description": "100% Free for 365 Days - Phlebotomy sample barcodes, bi-directional analyzer sync, WhatsApp NABL reports & doctor e-sign.",
+                "features": [
+                  "Universal Staff Directory & RBAC",
+                  "Phlebotomy Sample Barcode Intake & Tracking",
+                  "Bi-Directional Lab Machine Analyzer Interface",
+                  "WhatsApp NABL Lab Report Auto-Dispatch",
+                  "Doctor Digital Signature on Lab Reports"
+                ],
+                "recommended": true,
+                "maxDoctors": 5,
+                "maxBeds": 0,
+                "isActive": true,
+                "applicableFacilityTypes": [
+                  "PATHOLOGY"
+                ]
+              },
+              {
+                "id": "plan-path-annual-yr2",
+                "code": "PLAN_PATH_ANNUAL_YR2",
+                "tier": "ANNUAL",
+                "name": "Pathology Lab LIMS Annual Plan",
+                "price": 10000,
+                "billingInterval": "ANNUAL",
+                "icon": "🔬",
+                "tag": "⭐ Year 2: ₹10,000/yr",
+                "description": "Full LIMS suite: Multi-collection centers, bi-directional analyzer sync, automated WhatsApp reports, doctor referral ledger & NABL logs.",
+                "features": [
+                  "Universal Staff Directory & RBAC",
+                  "Phlebotomy Sample Barcode Intake & Tracking",
+                  "Bi-Directional Lab Machine Analyzer Interface",
+                  "WhatsApp NABL Lab Report Auto-Dispatch",
+                  "Doctor Digital Signature on Lab Reports",
+                  "Multi-Collection Center Branches",
+                  "Doctor Referral B2B Commission Split & Ledger"
+                ],
+                "recommended": false,
+                "maxDoctors": 20,
+                "maxBeds": 0,
+                "isActive": true,
+                "applicableFacilityTypes": [
+                  "PATHOLOGY"
+                ]
+              },
+              {
+                "id": "plan-pharma-free-yr1",
+                "code": "PLAN_PHARMA_FREE_YR1",
+                "tier": "FOUNDING",
+                "name": "Pharmacy Founding Partner (1st Year Free)",
+                "price": 0,
+                "billingInterval": "ANNUAL",
+                "icon": "💊",
+                "tag": "🎁 1st Year Free • Barcode POS & Expiry Radar",
+                "description": "100% Free for 365 Days - High-speed barcode POS, batch/expiry radar, Jan Aushadhi generic switcher & Schedule H1 narcotics register.",
+                "features": [
+                  "Universal Staff Directory & RBAC",
+                  "High-Speed Barcode POS & Thermal Print",
+                  "Automated Batch & Expiry Radar",
+                  "Jan Aushadhi Generic Alternate Recommender",
+                  "Schedule H & H1 Narcotics Digital Register",
+                  "WhatsApp Invoice PDF & Auto-Refills"
+                ],
+                "recommended": true,
+                "maxDoctors": 3,
+                "maxBeds": 0,
+                "isActive": true,
+                "applicableFacilityTypes": [
+                  "PHARMACY"
+                ]
+              },
+              {
+                "id": "plan-pharma-annual-yr2",
+                "code": "PLAN_PHARMA_ANNUAL_YR2",
+                "tier": "ANNUAL",
+                "name": "Pharmacy & Chemist Annual Plan",
+                "price": 10000,
+                "billingInterval": "ANNUAL",
+                "icon": "🏪",
+                "tag": "⭐ Year 2: ₹10,000/yr",
+                "description": "Full Chemist POS suite: Automated batch/expiry radar, PMBJP generic switcher, supplier purchase inwarding, WhatsApp bills & Schedule H1 narcotics register.",
+                "features": [
+                  "Universal Staff Directory & RBAC",
+                  "High-Speed Barcode POS & Thermal Print",
+                  "Automated Batch & Expiry Radar",
+                  "Jan Aushadhi Generic Alternate Recommender",
+                  "Schedule H & H1 Narcotics Digital Register",
+                  "WhatsApp Invoice PDF & Auto-Refills",
+                  "Central Multi-Store Warehouse & Stock Transfer",
+                  "Supplier Purchase Orders & Automated GST Inwarding"
+                ],
+                "recommended": false,
+                "maxDoctors": 10,
+                "maxBeds": 0,
+                "isActive": true,
+                "applicableFacilityTypes": [
+                  "PHARMACY"
+                ]
+              },
+              {
+                "id": "plan-radio-free-yr1",
+                "code": "PLAN_RADIO_FREE_YR1",
+                "tier": "FOUNDING",
+                "name": "Radiology Founding Partner (1st Year Free)",
+                "price": 0,
+                "billingInterval": "ANNUAL",
+                "icon": "🩻",
+                "tag": "🎁 1st Year Free • Web DICOM Viewer & Speech EMR",
+                "description": "100% Free for 365 Days - Zero-footprint web DICOM viewer, speech-to-text reporting & WhatsApp scan links.",
+                "features": [
+                  "Universal Staff Directory & RBAC",
+                  "Zero-Footprint Web DICOM Viewer",
+                  "Radiologist Speech-to-Text Reporting",
+                  "WhatsApp Diagnostic Scan & DICOM Links"
+                ],
+                "recommended": true,
+                "maxDoctors": 5,
+                "maxBeds": 0,
+                "isActive": true,
+                "applicableFacilityTypes": [
+                  "DIAGNOSTIC_CENTRE"
+                ]
+              },
+              {
+                "id": "plan-radio-annual-yr2",
+                "code": "PLAN_RADIO_ANNUAL_YR2",
+                "tier": "ANNUAL",
+                "name": "Radiology & PACS Annual Plan",
+                "price": 20000,
+                "billingInterval": "ANNUAL",
+                "icon": "☢️",
+                "tag": "⭐ Year 2: ₹20,000/yr",
+                "description": "Complete Imaging suite: Cloud PACS, DICOM CT/MRI machine sync, speech-to-text structured reporting & WhatsApp scan links.",
+                "features": [
+                  "Universal Staff Directory & RBAC",
+                  "Zero-Footprint Web DICOM Viewer",
+                  "Radiologist Speech-to-Text Reporting",
+                  "WhatsApp Diagnostic Scan & DICOM Links",
+                  "Cloud PACS & DICOM CT/MRI Machine Sync",
+                  "AERB & PNDT Automated Regulatory Registers"
+                ],
+                "recommended": false,
+                "maxDoctors": 20,
+                "maxBeds": 0,
+                "isActive": true,
+                "applicableFacilityTypes": [
+                  "DIAGNOSTIC_CENTRE"
+                ]
+              },
+              {
+                "id": "plan-pharma-wholesale-free-yr1",
+                "code": "PLAN_PHARMA_WHOLESALE_FREE_YR1",
+                "tier": "FOUNDING",
+                "name": "Wholesale Distributor Founding Partner (1st Year Free)",
+                "price": 0,
+                "billingInterval": "ANNUAL",
+                "icon": "📦",
+                "tag": "🎁 1st Year Free • B2B GST Distribution & Form 20B/21B",
+                "description": "100% Free for 365 Days - B2B wholesale distribution ledger, Form 20B/21B buyer Drug License validation, multi-batch GRN inwarding & cold-chain batch tracking.",
+                "features": [
+                  "Universal Staff Directory & RBAC",
+                  "Wholesale B2B GST Distribution & Buyer Drug License Verification",
+                  "Form 20B / 21B Regulatory Compliance Register",
+                  "Multi-Batch Cold-Chain & Expiry Radar",
+                  "Automated Supplier GRN & Credit Note Settlement"
+                ],
+                "recommended": true,
+                "maxDoctors": 5,
+                "maxBeds": 0,
+                "isActive": true,
+                "applicableFacilityTypes": [
+                  "PHARMACY_WHOLESALE"
+                ]
+              },
+              {
+                "id": "plan-pharma-wholesale-annual-yr2",
+                "code": "PLAN_PHARMA_WHOLESALE_ANNUAL_YR2",
+                "tier": "ANNUAL",
+                "name": "Wholesale Pharma Distributor Annual Plan",
+                "price": 25000,
+                "billingInterval": "ANNUAL",
+                "icon": "🏭",
+                "tag": "⭐ Year 2: ₹25,000/yr",
+                "description": "Enterprise B2B Wholesale Distribution suite: Multi-warehouse stock transfer, Form 20B/21B buyer verification, GST e-Invoice & credit limit governance.",
+                "features": [
+                  "Universal Staff Directory & RBAC",
+                  "Wholesale B2B GST Distribution & Buyer Drug License Verification",
+                  "Form 20B / 21B Regulatory Compliance Register",
+                  "Multi-Batch Cold-Chain & Expiry Radar",
+                  "Automated Supplier GRN & Credit Note Settlement",
+                  "Multi-Warehouse Stock Transfer & Credit Limit Governance"
+                ],
+                "recommended": false,
+                "maxDoctors": 15,
+                "maxBeds": 0,
+                "isActive": true,
+                "applicableFacilityTypes": [
+                  "PHARMACY_WHOLESALE"
+                ]
+              }
+            ],
+            "fieldRules": {
+              "ownerAadhaar": "MANDATORY",
+              "aadhaarDocUpload": "MANDATORY",
+              "clinicalLicense": "MANDATORY",
+              "licenseDocUpload": "MANDATORY",
+              "gstinNumber": "OPTIONAL",
+              "bedCapacity": "OPTIONAL",
+              "mobileWhatsapp": "MANDATORY",
+              "cityState": "MANDATORY",
+              "passwordCreation": "MANDATORY"
+            },
+            "updatedAt": "2026-09-24T08:39:06.481Z",
+            "updatedBy": "DocSearch Founder Command"
+          }
+        }
+      },
+      "timestamp": "2026-09-28T16:45:42.091Z"
+    },
+    {
+      "group": "AUTH",
+      "name": "GET /api/v1/auth/me (Doctor Profile Hydration)",
+      "success": "e0000000-0000-4000-8000-000000000001",
+      "details": {
+        "status": 200,
+        "json": {
+          "success": true,
+          "data": {
+            "id": "e0000000-0000-4000-8000-000000000001",
+            "email": "doctor@docsearch.health",
+            "firstName": "Dr. Alok",
+            "lastName": "Sharma, MD",
+            "roles": [
+              "DOCTOR",
+              "HOSPITAL_ADMIN",
+              "RECEPTIONIST",
+              "PHARMACIST",
+              "PATHOLOGIST",
+              "RADIOLOGIST"
+            ],
+            "permissions": [
+              "*"
+            ],
+            "tenantId": "11111111-1111-4111-8111-111111111111",
+            "organizationId": "1c14ebdd-af6d-44df-afa3-fe1e91301d15",
+            "branchId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            "tenantName": "Dr. Sharma Heart & General OPD Clinic",
+            "organizationType": "CLINIC",
+            "planTier": "Doctor OPD Clinic Pro",
+            "planExpiryDate": "365 Days Validity",
+            "accessibleFeatures": [
+              "High-Speed Doctor OPD Desk & EMR",
+              "Ambient AI Voice Consultation Scribe",
+              "1-Click Digital Rx with WhatsApp Dispatch",
+              "Direct Chemist & Pathology Network Sync",
+              "ABDM ABHA Patient Record Integration"
+            ],
+            "status": "ACTIVE",
+            "kycStatus": "KYC_VERIFIED"
+          }
+        }
+      },
+      "timestamp": "2026-09-28T16:45:42.219Z"
+    },
+    {
+      "group": "CLINICAL",
+      "name": "POST /api/v1/partner/clinical/patients (Create Patient)",
+      "success": true,
+      "details": {
+        "status": 201,
+        "json": {
+          "success": true,
+          "data": {
+            "id": "9612d2a5-4aae-4e5b-b0f2-adf608b404bb",
+            "tenantId": "11111111-1111-4111-8111-111111111111",
+            "partnerId": "1c14ebdd-af6d-44df-afa3-fe1e91301d15",
+            "organizationId": "649e0fdb-af37-43c1-acea-23f35ffe4ad5",
+            "branchId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            "uhid": null,
+            "mrn": "MRN-FIN-1790613942084",
+            "patientCode": "PAT-907854",
+            "firstName": "Ananya",
+            "middleName": null,
+            "lastName": "Deshmukh-1790613942084",
+            "preferredName": null,
+            "dateOfBirth": "1990-08-24",
+            "gender": "FEMALE",
+            "bloodGroup": "B_POSITIVE",
+            "maritalStatus": null,
+            "nationality": null,
+            "preferredLanguage": "English",
+            "occupation": null,
+            "status": "ACTIVE",
+            "registrationSource": "RECEPTION_DESK",
+            "mergedIntoPatientId": null,
+            "metadata": {},
+            "createdAt": "2026-09-28T16:45:42.359Z",
+            "updatedAt": "2026-09-28T16:45:42.359Z",
+            "mobileNumber": "+919876542084",
+            "primaryMobile": "+919876542084",
+            "contact": {
+              "id": "9ade4e1e-75a1-44ae-81ee-1319cef0dbda",
+              "tenantId": "11111111-1111-4111-8111-111111111111",
+              "partnerId": "1c14ebdd-af6d-44df-afa3-fe1e91301d15",
+              "patientId": "9612d2a5-4aae-4e5b-b0f2-adf608b404bb",
+              "primaryMobile": "+919876542084",
+              "alternateMobile": null,
+              "email": null,
+              "preferredContactMethod": "MOBILE",
+              "metadata": {},
+              "createdAt": "2026-09-28T16:45:42.379Z",
+              "updatedAt": "2026-09-28T16:45:42.379Z"
+            }
+          }
+        }
+      },
+      "timestamp": "2026-09-28T16:45:42.402Z"
+    },
+    {
+      "group": "CLINICAL",
+      "name": "GET /api/v1/partner/clinical/patients (List Patients)",
+      "success": true,
+      "details": {
+        "status": 200,
+        "json": {
+          "success": true,
+          "data": [
+            {
+              "id": "9612d2a5-4aae-4e5b-b0f2-adf608b404bb",
+              "tenantId": "11111111-1111-4111-8111-111111111111",
+              "partnerId": "1c14ebdd-af6d-44df-afa3-fe1e91301d15",
+              "organizationId": "649e0fdb-af37-43c1-acea-23f35ffe4ad5",
+              "branchId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "uhid": null,
+              "mrn": "MRN-FIN-1790613942084",
+              "patientCode": "PAT-907854",
+              "firstName": "Ananya",
+              "middleName": null,
+              "lastName": "Deshmukh-1790613942084",
+              "preferredName": null,
+              "dateOfBirth": "1990-08-24",
+              "gender": "FEMALE",
+              "bloodGroup": "B_POSITIVE",
+              "maritalStatus": null,
+              "nationality": null,
+              "preferredLanguage": "English",
+              "occupation": null,
+              "status": "ACTIVE",
+              "registrationSource": "RECEPTION_DESK",
+              "mergedIntoPatientId": null,
+              "metadata": {},
+              "createdAt": "2026-09-28T16:45:42.359Z",
+              "updatedAt": "2026-09-28T16:45:42.359Z"
+            },
+            {
+              "id": "eaa331fc-63b0-4e1b-9687-18ffb5f76d36",
+              "tenantId": "11111111-1111-4111-8111-111111111111",
+              "partnerId": "1c14ebdd-af6d-44df-afa3-fe1e91301d15",
+              "organizationId": "649e0fdb-af37-43c1-acea-23f35ffe4ad5",
+              "branchId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "uhid": null,
+              "mrn": "MRN-RT-1790613854608",
+              "patientCode": "PAT-495730",
+              "firstName": "Ananya",
+              "middleName": null,
+              "lastName": "Deshmukh-1790613854608",
+              "preferredName": null,
+              "dateOfBirth": "1990-08-24",
+              "gender": "FEMALE",
+              "bloodGroup": "B_POSITIVE",
+              "maritalStatus": null,
+              "nationality": null,
+              "preferredLanguage": "English",
+              "occupation": null,
+              "status": "ACTIVE",
+              "registrationSource": "RECEPTION_DESK",
+              "mergedIntoPatientId": null,
+              "metadata": {},
+              "createdAt": "2026-09-28T16:44:15.032Z",
+              "updatedAt": "2026-09-28T16:44:15.032Z"
+            },
+            {
+              "id": "cbe59db2-8c0d-496b-a8a0-b5741866c5da",
+              "tenantId": "11111111-1111-4111-8111-111111111111",
+              "partnerId": "1c14ebdd-af6d-44df-afa3-fe1e91301d15",
+              "organizationId": "649e0fdb-af37-43c1-acea-23f35ffe4ad5",
+              "branchId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "uhid": null,
+              "mrn": "MRN-RT-1790613649672",
+              "patientCode": "PAT-819096",
+              "firstName": "Ananya",
+              "middleName": null,
+              "lastName": "Deshmukh-1790613649672",
+              "preferredName": null,
+              "dateOfBirth": "1990-08-24",
+              "gender": "FEMALE",
+              "bloodGroup": "B_POSITIVE",
+              "maritalStatus": null,
+              "nationality": null,
+              "preferredLanguage": "English",
+              "occupation": null,
+              "status": "ACTIVE",
+              "registrationSource": "RECEPTION_DESK",
+              "mergedIntoPatientId": null,
+              "metadata": {},
+              "createdAt": "2026-09-28T16:40:49.968Z",
+              "updatedAt": "2026-09-28T16:40:49.968Z"
+            },
+            {
+              "id": "bdd73bf7-6f7a-45a6-8cac-8abeb1e27bc6",
+              "tenantId": "11111111-1111-4111-8111-111111111111",
+              "partnerId": "1c14ebdd-af6d-44df-afa3-fe1e91301d15",
+              "organizationId": "649e0fdb-af37-43c1-acea-23f35ffe4ad5",
+              "branchId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "uhid": null,
+              "mrn": "MRN-RT-1790613249592",
+              "patientCode": "PAT-980403",
+              "firstName": "Ananya",
+              "middleName": null,
+              "lastName": "Deshmukh-1790613249592",
+              "preferredName": null,
+              "dateOfBirth": "1990-08-24",
+              "gender": "FEMALE",
+              "bloodGroup": "B_POSITIVE",
+              "maritalStatus": null,
+              "nationality": null,
+              "preferredLanguage": "English",
+              "occupation": null,
+              "status": "ACTIVE",
+              "registrationSource": "RECEPTION_DESK",
+              "mergedIntoPatientId": null,
+              "metadata": {},
+              "createdAt": "2026-09-28T16:34:10.214Z",
+              "updatedAt": "2026-09-28T16:34:10.214Z"
+            },
+            {
+              "id": "cc39042b-9d52-410a-baf6-e8b6f0bb892f",
+              "tenantId": "11111111-1111-4111-8111-111111111111",
+              "partnerId": "1c14ebdd-af6d-44df-afa3-fe1e91301d15",
+              "organizationId": "649e0fdb-af37-43c1-acea-23f35ffe4ad5",
+              "branchId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "uhid": null,
+              "mrn": "MRN-381778",
+              "patientCode": "PAT-419476",
+              "firstName": "Vikramaditya",
+              "middleName": null,
+              "lastName": "Roy",
+              "preferredName": null,
+              "dateOfBirth": "1985-05-15",
+              "gender": "MALE",
+              "bloodGroup": "O_POSITIVE",
+              "maritalStatus": null,
+              "nationality": null,
+              "preferredLanguage": "English",
+              "occupation": null,
+              "status": "ACTIVE",
+              "registrationSource": "RECEPTION_DESK",
+              "mergedIntoPatientId": null,
+              "metadata": {},
+              "createdAt": "2026-09-28T09:23:47.124Z",
+              "updatedAt": "2026-09-28T09:23:47.124Z"
+            },
+            {
+              "id": "271c0140-9ed2-4f0d-9e9e-4756f8e531bf",
+              "tenantId": "11111111-1111-4111-8111-111111111111",
+              "partnerId": "1c14ebdd-af6d-44df-afa3-fe1e91301d15",
+              "organizationId": "649e0fdb-af37-43c1-acea-23f35ffe4ad5",
+              "branchId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "uhid": null,
+              "mrn": "MRN-123043",
+              "patientCode": "PAT-596652",
+              "firstName": "DirectProbe",
+              "middleName": null,
+              "lastName": "Patient",
+              "preferredName": null,
+              "dateOfBirth": "1990-01-01",
+              "gender": "MALE",
+              "bloodGroup": "B_POSITIVE",
+              "maritalStatus": null,
+              "nationality": null,
+              "preferredLanguage": "English",
+              "occupation": null,
+              "status": "ACTIVE",
+              "registrationSource": "RECEPTION_DESK",
+              "mergedIntoPatientId": null,
+              "metadata": {},
+              "createdAt": "2026-09-28T09:19:50.016Z",
+              "updatedAt": "2026-09-28T09:19:50.016Z"
+            }
+          ]
+        }
+      },
+      "timestamp": "2026-09-28T16:45:42.507Z"
+    },
+    {
+      "group": "CLINICAL",
+      "name": "GET /api/v1/partner/clinical/patients/:id (Retrieve Patient)",
+      "success": true,
+      "details": {
+        "status": 200,
+        "json": {
+          "success": true,
+          "data": {
+            "id": "9612d2a5-4aae-4e5b-b0f2-adf608b404bb",
+            "tenantId": "11111111-1111-4111-8111-111111111111",
+            "partnerId": "1c14ebdd-af6d-44df-afa3-fe1e91301d15",
+            "organizationId": "649e0fdb-af37-43c1-acea-23f35ffe4ad5",
+            "branchId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            "uhid": null,
+            "mrn": "MRN-FIN-1790613942084",
+            "patientCode": "PAT-907854",
+            "firstName": "Ananya",
+            "middleName": null,
+            "lastName": "Deshmukh-1790613942084",
+            "preferredName": null,
+            "dateOfBirth": "1990-08-24",
+            "gender": "FEMALE",
+            "bloodGroup": "B_POSITIVE",
+            "maritalStatus": null,
+            "nationality": null,
+            "preferredLanguage": "English",
+            "occupation": null,
+            "status": "ACTIVE",
+            "registrationSource": "RECEPTION_DESK",
+            "mergedIntoPatientId": null,
+            "metadata": {},
+            "createdAt": "2026-09-28T16:45:42.359Z",
+            "updatedAt": "2026-09-28T16:45:42.359Z"
+          }
+        }
+      },
+      "timestamp": "2026-09-28T16:45:42.628Z"
+    },
+    {
+      "group": "CLINICAL",
+      "name": "POST /api/v1/partner/clinical/encounters (Start Encounter)",
+      "success": "ce92cd32-f2fc-488b-bfc9-7aedab54b5c9",
+      "details": {
+        "status": 201,
+        "json": {
+          "success": true,
+          "data": {
+            "id": "ce92cd32-f2fc-488b-bfc9-7aedab54b5c9",
+            "tenantId": "11111111-1111-4111-8111-111111111111",
+            "partnerId": "1c14ebdd-af6d-44df-afa3-fe1e91301d15",
+            "organizationId": "649e0fdb-af37-43c1-acea-23f35ffe4ad5",
+            "branchId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            "departmentId": "02a194cb-f42f-4f97-876a-befe9fdfef67",
+            "patientId": "9612d2a5-4aae-4e5b-b0f2-adf608b404bb",
+            "doctorId": "dcce4591-eda7-475e-b927-e8303ff6b9d7",
+            "opdSlotId": null,
+            "encounterNumber": "ENC-351610",
+            "encounterType": "OPD_CONSULTATION",
+            "status": "IN_PROGRESS",
+            "priority": "ROUTINE",
+            "consultationMode": "PHYSICAL",
+            "chiefComplaint": "Acute seasonal allergic rhinitis and dry cough",
+            "visitReason": null,
+            "triageNotes": null,
+            "referralSource": null,
+            "registeredAt": "2026-09-28T16:45:42.731Z",
+            "checkedInAt": null,
+            "consultationStartedAt": null,
+            "completedAt": null,
+            "cancelledAt": null,
+            "cancellationReason": null,
+            "metadata": {},
+            "createdAt": "2026-09-28T16:45:42.779Z",
+            "updatedAt": "2026-09-28T16:45:42.779Z"
+          }
+        }
+      },
+      "timestamp": "2026-09-28T16:45:42.797Z"
+    },
+    {
+      "group": "PATIENT_360",
+      "name": "GET /api/v1/partner/patient-360/:id (Longitudinal Record)",
+      "success": true,
+      "details": {
+        "status": 200,
+        "json": {
+          "success": true,
+          "data": {
+            "projectionVersion": 1,
+            "generatedAt": "2026-09-28T16:45:42.933Z",
+            "zeroState": false,
+            "identity": {
+              "patientId": "9612d2a5-4aae-4e5b-b0f2-adf608b404bb",
+              "patientCode": "PAT-907854",
+              "mrn": "MRN-FIN-1790613942084",
+              "tenantId": "11111111-1111-4111-8111-111111111111",
+              "partnerId": "1c14ebdd-af6d-44df-afa3-fe1e91301d15",
+              "branchId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "legalName": "Ananya Deshmukh-1790613942084",
+              "displayName": "Ananya Deshmukh-1790613942084",
+              "firstName": "Ananya",
+              "lastName": "Deshmukh-1790613942084",
+              "dateOfBirth": "1990-08-24",
+              "sex": "FEMALE",
+              "mobileNumber": "+919876542084",
+              "email": null,
+              "address": null,
+              "emergencyContact": null,
+              "identityReferences": [],
+              "status": "ACTIVE",
+              "version": 1,
+              "mergedIntoPatientId": null,
+              "createdAt": "2026-09-28T16:45:42.359Z",
+              "updatedAt": "2026-09-28T16:45:42.359Z"
+            },
+            "demographics": {
+              "patientId": "9612d2a5-4aae-4e5b-b0f2-adf608b404bb",
+              "mrn": "MRN-FIN-1790613942084",
+              "patientCode": "PAT-907854",
+              "legalName": "Ananya Deshmukh-1790613942084",
+              "displayName": "Ananya Deshmukh-1790613942084",
+              "firstName": "Ananya",
+              "lastName": "Deshmukh-1790613942084",
+              "dateOfBirth": "1990-08-24",
+              "sex": "FEMALE",
+              "status": "ACTIVE"
+            },
+            "contact": {
+              "mobileNumber": "+919876542084",
+              "email": null,
+              "address": null,
+              "emergencyContact": null
+            },
+            "partnerLocation": {
+              "tenantId": "11111111-1111-4111-8111-111111111111",
+              "partnerId": "1c14ebdd-af6d-44df-afa3-fe1e91301d15",
+              "branchId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "locationId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+            },
+            "activeEncounters": [
+              {
+                "encounterId": "ce92cd32-f2fc-488b-bfc9-7aedab54b5c9",
+                "encounterNumber": "ENC-351610",
+                "visitId": "vst-ce92cd32-f2fc-488b-bfc9-7aedab54b5c9",
+                "visitNumber": "VST-ENC-351610",
+                "tenantId": "11111111-1111-4111-8111-111111111111",
+                "partnerId": "1c14ebdd-af6d-44df-afa3-fe1e91301d15",
+                "branchId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                "departmentId": "02a194cb-f42f-4f97-876a-befe9fdfef67",
+                "patientId": "9612d2a5-4aae-4e5b-b0f2-adf608b404bb",
+                "mrn": "MRN-FIN-1790613942084",
+                "appointmentId": null,
+                "staffId": "dcce4591-eda7-475e-b927-e8303ff6b9d7",
+                "encounterType": "OPD_CONSULTATION",
+                "visitType": "FIRST_VISIT",
+                "status": "IN_PROGRESS",
+                "chiefComplaint": "Acute seasonal allergic rhinitis and dry cough",
+                "vitals": null,
+                "consultationNotes": null,
+                "diagnoses": [],
+                "createdAt": "2026-09-28T16:45:42.779Z",
+                "updatedAt": "2026-09-28T16:45:42.779Z",
+                "closedAt": null
+              }
+            ],
+            "historicalEncounters": [],
+            "appointments": [],
+            "vitals": [],
+            "clinicalNotes": [
+              {
+                "encounterId": "ce92cd32-f2fc-488b-bfc9-7aedab54b5c9",
+                "staffId": "dcce4591-eda7-475e-b927-e8303ff6b9d7",
+                "chiefComplaint": "Acute seasonal allergic rhinitis and dry cough",
+                "notes": "",
+                "diagnoses": [],
+                "recordedAt": "2026-09-28T16:45:42.779Z"
+              }
+            ],
+            "labOrdersResults": {
+              "orders": [],
+              "results": []
+            },
+            "radiologyStudiesReports": {
+              "orders": [],
+              "reports": []
+            },
+            "prescriptions": [],
+            "pharmacyEvents": [],
+            "billingPaymentReferences": [],
+            "workflowTasks": [],
+            "currentState": {
+              "activeEncounter": {
+                "encounterId": "ce92cd32-f2fc-488b-bfc9-7aedab54b5c9",
+                "encounterNumber": "ENC-351610",
+                "visitId": "vst-ce92cd32-f2fc-488b-bfc9-7aedab54b5c9",
+                "visitNumber": "VST-ENC-351610",
+                "tenantId": "11111111-1111-4111-8111-111111111111",
+                "partnerId": "1c14ebdd-af6d-44df-afa3-fe1e91301d15",
+                "branchId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                "departmentId": "02a194cb-f42f-4f97-876a-befe9fdfef67",
+                "patientId": "9612d2a5-4aae-4e5b-b0f2-adf608b404bb",
+                "mrn": "MRN-FIN-1790613942084",
+                "appointmentId": null,
+                "staffId": "dcce4591-eda7-475e-b927-e8303ff6b9d7",
+                "encounterType": "OPD_CONSULTATION",
+                "visitType": "FIRST_VISIT",
+                "status": "IN_PROGRESS",
+                "chiefComplaint": "Acute seasonal allergic rhinitis and dry cough",
+                "vitals": null,
+                "consultationNotes": null,
+                "diagnoses": [],
+                "createdAt": "2026-09-28T16:45:42.779Z",
+                "updatedAt": "2026-09-28T16:45:42.779Z",
+                "closedAt": null
+              },
+              "currentDepartment": "02a194cb-f42f-4f97-876a-befe9fdfef67",
+              "activeTokenQueue": null,
+              "currentOrders": [],
+              "pendingTasks": [],
+              "pendingResultsCount": 0,
+              "unpaidInvoicesCount": 0
+            },
+            "clinicalHistory": {
+              "encounters": [
+                {
+                  "encounterId": "ce92cd32-f2fc-488b-bfc9-7aedab54b5c9",
+                  "encounterNumber": "ENC-351610",
+                  "visitId": "vst-ce92cd32-f2fc-488b-bfc9-7aedab54b5c9",
+                  "visitNumber": "VST-ENC-351610",
+                  "tenantId": "11111111-1111-4111-8111-111111111111",
+                  "partnerId": "1c14ebdd-af6d-44df-afa3-fe1e91301d15",
+                  "branchId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                  "departmentId": "02a194cb-f42f-4f97-876a-befe9fdfef67",
+                  "patientId": "9612d2a5-4aae-4e5b-b0f2-adf608b404bb",
+                  "mrn": "MRN-FIN-1790613942084",
+                  "appointmentId": null,
+                  "staffId": "dcce4591-eda7-475e-b927-e8303ff6b9d7",
+                  "encounterType": "OPD_CONSULTATION",
+                  "visitType": "FIRST_VISIT",
+                  "status": "IN_PROGRESS",
+                  "chiefComplaint": "Acute seasonal allergic rhinitis and dry cough",
+                  "vitals": null,
+                  "consultationNotes": null,
+                  "diagnoses": [],
+                  "createdAt": "2026-09-28T16:45:42.779Z",
+                  "updatedAt": "2026-09-28T16:45:42.779Z",
+                  "closedAt": null
+                }
+              ],
+              "diagnoses": [],
+              "labAndRadiologyResults": [],
+              "prescriptionsAndDispensings": []
+            },
+            "operations": {
+              "appointments": [],
+              "tokensAndQueues": [],
+              "departmentHandoffs": []
+            },
+            "commercial": {
+              "invoicesAndTransactions": [],
+              "totalBilledAmount": 0,
+              "totalPaidAmount": 0,
+              "outstandingAmount": 0
+            },
+            "documents": [],
+            "timeline": [
+              {
+                "eventId": "TLE-SRC-PAT-9612d2a5-4aae-4e5b-b0f2-adf608b404bb",
+                "patientId": "9612d2a5-4aae-4e5b-b0f2-adf608b404bb",
+                "mrn": "MRN-FIN-1790613942084",
+                "tenantId": "11111111-1111-4111-8111-111111111111",
+                "partnerId": "1c14ebdd-af6d-44df-afa3-fe1e91301d15",
+                "locationId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                "encounterId": null,
+                "sourceType": "PATIENT_MASTER",
+                "sourceId": "9612d2a5-4aae-4e5b-b0f2-adf608b404bb",
+                "source": "PATIENT_MASTER",
+                "entityId": "9612d2a5-4aae-4e5b-b0f2-adf608b404bb",
+                "departmentId": "REGISTRATION",
+                "department": "REGISTRATION",
+                "staffId": "system",
+                "actor": "system",
+                "timestamp": "2026-09-28T16:45:42.359Z",
+                "occurredAt": "2026-09-28T16:45:42.359Z",
+                "recordedAt": "2026-09-28T16:45:42.359Z",
+                "eventType": "patient.created",
+                "status": "ACTIVE",
+                "summary": "Patient registration: Ananya Deshmukh-1790613942084 (MRN-FIN-1790613942084)"
+              },
+              {
+                "eventId": "TLE-SRC-ENC-ce92cd32-f2fc-488b-bfc9-7aedab54b5c9",
+                "patientId": "9612d2a5-4aae-4e5b-b0f2-adf608b404bb",
+                "mrn": "MRN-FIN-1790613942084",
+                "tenantId": "11111111-1111-4111-8111-111111111111",
+                "partnerId": "1c14ebdd-af6d-44df-afa3-fe1e91301d15",
+                "locationId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                "encounterId": "ce92cd32-f2fc-488b-bfc9-7aedab54b5c9",
+                "sourceType": "ENCOUNTER",
+                "sourceId": "ce92cd32-f2fc-488b-bfc9-7aedab54b5c9",
+                "source": "ENCOUNTER",
+                "entityId": "ce92cd32-f2fc-488b-bfc9-7aedab54b5c9",
+                "departmentId": "02a194cb-f42f-4f97-876a-befe9fdfef67",
+                "department": "02a194cb-f42f-4f97-876a-befe9fdfef67",
+                "staffId": "dcce4591-eda7-475e-b927-e8303ff6b9d7",
+                "actor": "dcce4591-eda7-475e-b927-e8303ff6b9d7",
+                "timestamp": "2026-09-28T16:45:42.779Z",
+                "occurredAt": "2026-09-28T16:45:42.779Z",
+                "recordedAt": "2026-09-28T16:45:42.779Z",
+                "eventType": "encounter.created",
+                "status": "IN_PROGRESS",
+                "summary": "Encounter ENC-351610 (OPD_CONSULTATION)"
+              }
+            ],
+            "auditLineage": []
+          }
+        }
+      },
+      "timestamp": "2026-09-28T16:45:42.934Z"
+    },
+    {
+      "group": "LAB_DIAGNOSTICS",
+      "name": "GET /api/v1/partner/lab/orders (LIMS Order List)",
+      "success": true,
+      "details": {
+        "status": 200,
+        "json": {
+          "success": true,
+          "data": [
+            {
+              "id": "ada67826-21a1-4fde-a021-be876e373e10",
+              "tenantId": "11111111-1111-4111-8111-111111111111",
+              "partnerId": "1c14ebdd-af6d-44df-afa3-fe1e91301d15",
+              "organizationId": "649e0fdb-af37-43c1-acea-23f35ffe4ad5",
+              "branchId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "orderNumber": "ORD-INV-2026-159846",
+              "patientId": "cc39042b-9d52-410a-baf6-e8b6f0bb892f",
+              "encounterId": "b53ac2f7-26bf-426f-8fb0-f1f81dce86c1",
+              "consultationId": null,
+              "orderingDoctorId": "dcce4591-eda7-475e-b927-e8303ff6b9d7",
+              "investigationId": "e3d6f935-e918-4fb7-8cc6-44a00e73c32a",
+              "panelId": null,
+              "priority": "ROUTINE",
+              "clinicalIndication": "Fever evaluation",
+              "diagnosisContext": null,
+              "specimenType": "WHOLE_BLOOD",
+              "fastingConfirmed": false,
+              "status": "ORDERED",
+              "isAbnormal": false,
+              "isCritical": false,
+              "orderedAt": "2026-09-28T09:27:45.951Z",
+              "acknowledgedAt": null,
+              "sampleCollectedAt": null,
+              "processingStartedAt": null,
+              "resultEnteredAt": null,
+              "verifiedAt": null,
+              "reviewedAt": null,
+              "cancelledAt": null,
+              "cancellationReason": null,
+              "cancelledBy": null,
+              "metadata": {
+                "category": "HEMATOLOGY",
+                "testCode": "CBC",
+                "testName": "Complete Blood Count (CBC) with Differential",
+                "patientMrn": "MRN-381778",
+                "patientName": "Vikramaditya Roy",
+                "billingPolicy": "STANDARD",
+                "patientGender": "MALE",
+                "orderingDoctorName": "Dr. Rajesh Sharma, MD"
+              },
+              "createdAt": "2026-09-28T09:27:45.951Z",
+              "updatedAt": "2026-09-28T09:27:45.951Z",
+              "testName": "Complete Blood Count (CBC) with Differential",
+              "testCode": "CBC",
+              "investigationName": "Complete Blood Count (CBC) with Differential",
+              "investigationCode": "CBC",
+              "category": "HEMATOLOGY",
+              "investigationCategory": "HEMATOLOGY",
+              "patientName": "Vikramaditya Roy",
+              "patientMrn": "MRN-381778",
+              "patientGender": "MALE",
+              "patientDob": "1985-05-15T00:00:00.000Z",
+              "orderingDoctorName": "Dr. Rajesh Sharma, MD",
+              "encounterNumber": "ENC-LAB-01",
+              "specimens": [],
+              "results": []
+            },
+            {
+              "id": "62f4f2e1-d3eb-4be3-8f43-0a1ce0bd9b49",
+              "tenantId": "11111111-1111-4111-8111-111111111111",
+              "partnerId": "1c14ebdd-af6d-44df-afa3-fe1e91301d15",
+              "organizationId": "649e0fdb-af37-43c1-acea-23f35ffe4ad5",
+              "branchId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "orderNumber": "ORD-INV-2026-673659",
+              "patientId": "cc39042b-9d52-410a-baf6-e8b6f0bb892f",
+              "encounterId": "2fe17e61-2104-4361-84c1-b58b50b7254d",
+              "consultationId": null,
+              "orderingDoctorId": "dcce4591-eda7-475e-b927-e8303ff6b9d7",
+              "investigationId": "e3d6f935-e918-4fb7-8cc6-44a00e73c32a",
+              "panelId": null,
+              "priority": "ROUTINE",
+              "clinicalIndication": "Fever evaluation",
+              "diagnosisContext": null,
+              "specimenType": "WHOLE_BLOOD",
+              "fastingConfirmed": false,
+              "status": "ORDERED",
+              "isAbnormal": false,
+              "isCritical": false,
+              "orderedAt": "2026-09-28T09:23:49.610Z",
+              "acknowledgedAt": null,
+              "sampleCollectedAt": null,
+              "processingStartedAt": null,
+              "resultEnteredAt": null,
+              "verifiedAt": null,
+              "reviewedAt": null,
+              "cancelledAt": null,
+              "cancellationReason": null,
+              "cancelledBy": null,
+              "metadata": {
+                "category": "HEMATOLOGY",
+                "testCode": "CBC",
+                "testName": "Complete Blood Count (CBC) with Differential",
+                "patientMrn": "MRN-381778",
+                "patientName": "Vikramaditya Roy",
+                "billingPolicy": "STANDARD",
+                "patientGender": "MALE",
+                "orderingDoctorName": "Dr. Rajesh Sharma, MD"
+              },
+              "createdAt": "2026-09-28T09:23:49.634Z",
+              "updatedAt": "2026-09-28T09:23:49.634Z",
+              "testName": "Complete Blood Count (CBC) with Differential",
+              "testCode": "CBC",
+              "investigationName": "Complete Blood Count (CBC) with Differential",
+              "investigationCode": "CBC",
+              "category": "HEMATOLOGY",
+              "investigationCategory": "HEMATOLOGY",
+              "patientName": "Vikramaditya Roy",
+              "patientMrn": "MRN-381778",
+              "patientGender": "MALE",
+              "patientDob": "1985-05-15T00:00:00.000Z",
+              "orderingDoctorName": "Dr. Rajesh Sharma, MD",
+              "encounterNumber": "ENC-LAB-01",
+              "specimens": [],
+              "results": []
+            }
+          ]
+        }
+      },
+      "timestamp": "2026-09-28T16:45:43.059Z"
+    },
+    {
+      "group": "RADIOLOGY",
+      "name": "GET /api/v1/partner/radiology/orders (RIS Order List)",
+      "success": true,
+      "details": {
+        "status": 200,
+        "json": {
+          "success": true,
+          "data": [],
+          "items": [],
+          "total": 0
+        }
+      },
+      "timestamp": "2026-09-28T16:45:43.177Z"
+    },
+    {
+      "group": "PHARMACY",
+      "name": "GET /api/v1/partner/pharmacy/inventory (Drug Stock)",
+      "success": true,
+      "details": {
+        "status": 200,
+        "json": {
+          "success": true,
+          "data": []
+        }
+      },
+      "timestamp": "2026-09-28T16:45:43.284Z"
+    },
+    {
+      "group": "PHARMACY",
+      "name": "GET /api/v1/partner/pharmacy/prescriptions (Prescriptions Queue)",
+      "success": true,
+      "details": {
+        "status": 200,
+        "json": {
+          "success": true,
+          "data": []
+        }
+      },
+      "timestamp": "2026-09-28T16:45:43.443Z"
+    },
+    {
+      "group": "BILLING",
+      "name": "GET /api/v1/partner/billing/invoices (Invoices List)",
+      "success": true,
+      "details": {
+        "status": 200,
+        "json": {
+          "success": true,
+          "data": [
+            {
+              "id": "c1479d89-823d-4329-8bc5-1f2a4cce6ece",
+              "tenantId": "11111111-1111-4111-8111-111111111111",
+              "partnerId": "1c14ebdd-af6d-44df-afa3-fe1e91301d15",
+              "organizationId": "649e0fdb-af37-43c1-acea-23f35ffe4ad5",
+              "branchId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "patientId": "cc39042b-9d52-410a-baf6-e8b6f0bb892f",
+              "encounterId": "b53ac2f7-26bf-426f-8fb0-f1f81dce86c1",
+              "invoiceNumber": "INV-HOSP-646569",
+              "invoiceType": "OPD",
+              "status": "PENDING_PAYMENT",
+              "subtotal": "850.00",
+              "discountTotal": "0.00",
+              "taxTotal": "0.00",
+              "roundingAdjustment": "0.00",
+              "totalAmount": 850,
+              "paidAmount": 0,
+              "dueAmount": "850.00",
+              "currency": "INR",
+              "issuedAt": null,
+              "dueAt": null,
+              "finalizedAt": null,
+              "finalizedBy": null,
+              "metadata": {},
+              "createdAt": "2026-09-28T09:27:46.801Z",
+              "updatedAt": "2026-09-28T09:27:46.801Z",
+              "patientName": "Vikramaditya Roy",
+              "patientMrn": "MRN-381778",
+              "balanceDue": 850,
+              "insuranceCoveredAmount": 0,
+              "patientPayableAmount": 850,
+              "payments": []
+            },
+            {
+              "id": "aafadf1b-533d-4674-b9b5-dd6395396631",
+              "tenantId": "11111111-1111-4111-8111-111111111111",
+              "partnerId": "1c14ebdd-af6d-44df-afa3-fe1e91301d15",
+              "organizationId": "649e0fdb-af37-43c1-acea-23f35ffe4ad5",
+              "branchId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              "patientId": "cc39042b-9d52-410a-baf6-e8b6f0bb892f",
+              "encounterId": "2fe17e61-2104-4361-84c1-b58b50b7254d",
+              "invoiceNumber": "INV-HOSP-479076",
+              "invoiceType": "OPD",
+              "status": "PENDING_PAYMENT",
+              "subtotal": "850.00",
+              "discountTotal": "0.00",
+              "taxTotal": "0.00",
+              "roundingAdjustment": "0.00",
+              "totalAmount": 850,
+              "paidAmount": 0,
+              "dueAmount": "850.00",
+              "currency": "INR",
+              "issuedAt": null,
+              "dueAt": null,
+              "finalizedAt": null,
+              "finalizedBy": null,
+              "metadata": {},
+              "createdAt": "2026-09-28T09:23:50.063Z",
+              "updatedAt": "2026-09-28T09:23:50.063Z",
+              "patientName": "Vikramaditya Roy",
+              "patientMrn": "MRN-381778",
+              "balanceDue": 850,
+              "insuranceCoveredAmount": 0,
+              "patientPayableAmount": 850,
+              "payments": []
+            }
+          ]
+        }
+      },
+      "timestamp": "2026-09-28T16:45:43.513Z"
+    },
+    {
+      "group": "COMPANY_HQ",
+      "name": "GET /api/v1/auth/verification-queue (HQ Onboarding Queue)",
+      "success": true,
+      "details": {
+        "status": 200,
+        "json": {
+          "success": true,
+          "data": [
+            {
+              "id": "partner-usr-1790581040750",
+              "dbId": "40697e23-b56f-5ed1-6dd8-f8080bbc21bb",
+              "partnerName": "farhat his",
+              "partnerType": "HOSPITAL",
+              "tenantSlug": "farhat-his",
+              "submittedBy": "farhat",
+              "submittedAt": "28/9/2026, 4:38:41 pm",
+              "category": "LICENSE_CERTIFICATE",
+              "status": "PENDING_APPROVAL",
+              "kycLifecycleStatus": "PENDING",
+              "registeredBy": {
+                "userId": "partner-usr-1790581040750",
+                "name": "farhat",
+                "email": "farhat@docsearch.health",
+                "role": "HOSPITAL_DIRECTOR",
+                "source": "SELF_REGISTRATION_PORTAL"
+              },
+              "assignedReviewer": null,
+              "details": {
+                "Facility Name": "farhat his",
+                "Owner / Lead Doctor": "farhat",
+                "Registered Email": "farhat@docsearch.health",
+                "Phone / Mobile": "+91 88091 49036",
+                "City & State": "India",
+                "License / Reg No": "REG-PENDING",
+                "Owner Aadhaar Number": "XXXX",
+                "Bed Capacity": "N/A",
+                "GSTIN / Tax ID": "N/A",
+                "Onboarding Tier": "Hospital Complete Enterprise Suite"
+              },
+              "assignedPlan": null,
+              "originalRequestedPlan": {
+                "id": "plan-hosp-free-yr1",
+                "code": "PLAN_HOSP_FREE_YR1",
+                "icon": "🏥",
+                "name": "Hospital Founding Partner (1st Year Free)",
+                "tier": "FOUNDING",
+                "price": 0,
+                "isFree": true,
+                "features": [
+                  "Universal Staff Directory & RBAC",
+                  "Inpatient ADT Bed Matrix (All Wards)",
+                  "OT Surgical Rostering & PAC Clearance",
+                  "ICU 24-Hour Digital Flowsheet",
+                  "TPA Cashless Pre-Auth & IRDAI NHCX Bridge",
+                  "Emergency & Code Blue Broadcast",
+                  "ABDM 2.0 Fast OPD Kiosk",
+                  "MRD ICD-10 Medical Coding",
+                  "Blood Bank Component Cross-Matching"
+                ],
+                "planName": "Hospital Founding Partner (1st Year Free)",
+                "monthlyFee": 0,
+                "description": "100% Free for 365 Days - Complete Multi-Specialty Hospital HIS: Inpatient ADT Bed Matrix, OT Surgical Rostering, ICU Flowsheets, TPA IRDAI NHCX Bridge & ABDM Kiosk.",
+                "durationDays": 365,
+                "billingInterval": "ANNUAL"
+              },
+              "approvedPlan": null,
+              "activePlan": null,
+              "planChangeHistory": [],
+              "commercialStatus": {
+                "approvalStatus": "PENDING_HQ_REVIEW",
+                "subscriptionStatus": "NOT_ACTIVE",
+                "licenseStatus": "NOT_ACTIVE",
+                "entitlementStatus": "NOT_ACTIVE",
+                "planTermDays": 365,
+                "actualLicenseStartDate": null,
+                "actualLicenseExpiryDate": null
+              },
+              "requestedPlan": {
+                "id": "plan-hosp-free-yr1",
+                "code": "PLAN_HOSP_FREE_YR1",
+                "icon": "🏥",
+                "name": "Hospital Founding Partner (1st Year Free)",
+                "tier": "FOUNDING",
+                "price": 0,
+                "isFree": true,
+                "features": [
+                  "Universal Staff Directory & RBAC",
+                  "Inpatient ADT Bed Matrix (All Wards)",
+                  "OT Surgical Rostering & PAC Clearance",
+                  "ICU 24-Hour Digital Flowsheet",
+                  "TPA Cashless Pre-Auth & IRDAI NHCX Bridge",
+                  "Emergency & Code Blue Broadcast",
+                  "ABDM 2.0 Fast OPD Kiosk",
+                  "MRD ICD-10 Medical Coding",
+                  "Blood Bank Component Cross-Matching"
+                ],
+                "planName": "Hospital Founding Partner (1st Year Free)",
+                "monthlyFee": 0,
+                "description": "100% Free for 365 Days - Complete Multi-Specialty Hospital HIS: Inpatient ADT Bed Matrix, OT Surgical Rostering, ICU Flowsheets, TPA IRDAI NHCX Bridge & ABDM Kiosk.",
+                "durationDays": 365,
+                "billingInterval": "ANNUAL"
+              },
+              "advancePayment": null,
+              "refundStatus": null,
+              "refundId": null,
+              "planTier": "Hospital Complete Enterprise Suite",
+              "monthlyFee": 0,
+              "finalAmount": 0,
+              "invoiceNumber": null,
+              "paymentStatus": "PAID",
+              "documentName": "registration_proof.pdf",
+              "documentType": "Clinical Establishment License Proof",
+              "aiMatchScore": 98.5,
+              "extractedOcrText": "CERTIFICATE OF HEALTHCARE ESTABLISHMENT: farhat his",
+              "sha256Hash": "a7c9f8e4b2d10356e8901234abcd5678ef90123456789abcdef0123456789abc",
+              "duplicateRisk": {
+                "hasRisk": false,
+                "signals": [],
+                "isOriginalHash": true
+              },
+              "documents": [
+                {
+                  "documentId": "doc-001",
+                  "documentName": "registration_proof.pdf",
+                  "documentType": "Clinical Establishment License Proof",
+                  "sha256Hash": "a7c9f8e4b2d10356e8901234abcd5678ef90123456789abcdef0123456789abc",
+                  "fileSizeKb": 145,
+                  "uploadedAt": "2026-09-28T11:08:41.240Z",
+                  "status": "PENDING"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "timestamp": "2026-09-28T16:45:43.540Z"
+    },
+    {
+      "group": "COMPANY_HQ",
+      "name": "GET /api/v1/company/licenses (Commercial Licenses List)",
+      "success": true,
+      "details": {
+        "status": 200,
+        "json": {
+          "success": true,
+          "data": [
+            {
+              "id": "bf87e7f0-fdee-6706-6405-2b19f212fd5c",
+              "licenseKey": "LIC-2026-HOSP-BFF3FACE",
+              "partnerId": "40697e23-b56f-5ed1-6dd8-f8080bbc21bb",
+              "tenantId": "bff3face-f84b-e0d2-c929-032b88ecd010",
+              "subscriptionId": "d7c647ca-8f5d-f9a9-3f3d-aaa82b0f9aad",
+              "planId": "e9604516-3049-d6ab-799b-7c8255df12f5",
+              "licenseType": "COMMERCIAL",
+              "status": "ACTIVE",
+              "activationStatus": "ACTIVATED",
+              "maxConcurrentUsers": 100,
+              "maxDoctors": 50,
+              "maxBranches": 3,
+              "issuedAt": "2026-09-28T11:09:51.023Z",
+              "startDate": "2026-09-28T11:09:51.023Z",
+              "expiryDate": "2027-09-28T11:11:11.239Z",
+              "gracePeriodEnd": "2027-10-13T11:11:11.239Z",
+              "signature": "89893c08a3c2fbe3754a65cb71ca9d465cb6a9ec259fce91b39c9230eed97798",
+              "metadata": {
+                "planTier": "Hospital Founding Partner (1st Year Free)",
+                "partnerType": "HOSPITAL",
+                "assignedPlan": {
+                  "tier": "FOUNDING",
+                  "slaTier": "99.95% Mission-Critical SLA",
+                  "taxMode": "INCLUSIVE",
+                  "bedQuota": "50 Beds",
+                  "issuedAt": "2026-09-28T11:11:11.030Z",
+                  "planName": "Hospital Founding Partner (1st Year Free)",
+                  "setupFee": 0,
+                  "taxAmount": 0,
+                  "trialDays": 7,
+                  "expiryDate": "2027-09-28",
+                  "monthlyFee": 0,
+                  "finalAmount": 0,
+                  "paymentMode": "ONLINE_GATEWAY",
+                  "supportTier": "24/7 Dedicated Founder Concierge & Priority WhatsApp",
+                  "founderNotes": "",
+                  "storageQuota": "50 GB",
+                  "advanceCredit": 0,
+                  "invoiceNumber": "INV-871030",
+                  "paymentStatus": "TRIAL_ACTIVE",
+                  "whatsAppQuota": "5,000 / mo",
+                  "enabledModules": [
+                    "Clinical Suite & EMR",
+                    "OPD Queue & Appointments",
+                    "Inpatient IPD & Bed Management",
+                    "Operation Theatre (OT) Desk",
+                    "Emergency & ICU Critical Care",
+                    "Pharmacy POS & Inventory",
+                    "Pathology & Diagnostic LIMS",
+                    "Radiology & PACS Imaging",
+                    "ABHA / ABDM Govt Integration",
+                    "WhatsApp Automation & SMS",
+                    "TPA Insurance & Billing",
+                    "Executive Command & Audit"
+                  ],
+                  "discountPercent": 0,
+                  "staffSeatsQuota": "25 Staff",
+                  "billingFrequency": "ANNUAL",
+                  "contractDuration": "1_YEAR",
+                  "customPlanSubtitle": "100% Free for 365 Days - Complete Multi-Specialty Hospital HIS: Inpatient ADT Bed Matrix, OT Surgical Rostering, ICU Flowsheets, TPA IRDAI NHCX Bridge & ABDM Kiosk.",
+                  "advanceAmountCredited": 0
+                },
+                "autoHydrated": true,
+                "operatingMode": "SINGLE_BRANCH"
+              },
+              "createdAt": "2026-09-28T11:09:51.046Z",
+              "updatedAt": "2026-09-28T11:11:11.245Z"
+            },
+            {
+              "id": "77777777-7777-4777-8777-777777777777",
+              "licenseKey": "LIC-2026-METR-HOSP",
+              "partnerId": "55555555-5555-4555-8555-555555555555",
+              "tenantId": "11111111-1111-4111-8111-111111111111",
+              "subscriptionId": "66666666-6666-4666-8666-666666666666",
+              "planId": "e9604516-3049-d6ab-799b-7c8255df12f5",
+              "licenseType": "COMMERCIAL",
+              "status": "ACTIVE",
+              "activationStatus": "ACTIVATED",
+              "maxConcurrentUsers": 100,
+              "maxDoctors": 50,
+              "maxBranches": 10,
+              "issuedAt": "2026-09-28T09:19:29.615Z",
+              "startDate": "2026-09-28T09:19:29.615Z",
+              "expiryDate": "2027-12-31T23:59:59.000Z",
+              "gracePeriodEnd": "2028-01-31T23:59:59.000Z",
+              "signature": "26a66695479c62dd55845be87f6897c9822246bf28535050b42d9feab69f5cf3",
+              "metadata": {
+                "includedModules": [
+                  "CLINICAL",
+                  "LIMS",
+                  "PHARMACY",
+                  "BILLING",
+                  "RADIOLOGY"
+                ]
+              },
+              "createdAt": "2026-09-28T09:19:29.615Z",
+              "updatedAt": "2026-09-28T09:19:29.615Z"
+            }
+          ]
+        }
+      },
+      "timestamp": "2026-09-28T16:45:43.560Z"
+    }
+  ],
+  "databasePersistenceProof": {
+    "verified": true,
+    "patientId": "9612d2a5-4aae-4e5b-b0f2-adf608b404bb",
+    "persistedRow": {
+      "id": "9612d2a5-4aae-4e5b-b0f2-adf608b404bb",
+      "first_name": "Ananya",
+      "last_name": "Deshmukh-1790613942084",
+      "mrn": "MRN-FIN-1790613942084",
+      "tenant_id": "11111111-1111-4111-8111-111111111111",
+      "date_of_birth": "1990-08-24",
+      "gender": "FEMALE",
+      "blood_group": "B_POSITIVE"
+    }
+  },
+  "crossSessionVerification": {
+    "sessionAPatientId": "9612d2a5-4aae-4e5b-b0f2-adf608b404bb",
+    "sessionBReadStatus": 200,
+    "sessionBReceivedPatient": "9612d2a5-4aae-4e5b-b0f2-adf608b404bb",
+    "crossSessionMatch": true
+  },
+  "browserCdpChecks": [],
+  "failureHandlingChecks": [
+    {
+      "group": "FAILURE_HANDLING",
+      "name": "Reject Malformed JSON Body (HTTP 400, not 500)",
+      "success": true,
+      "details": {
+        "status": 400
+      },
+      "timestamp": "2026-09-28T16:45:58.418Z"
+    },
+    {
+      "group": "FAILURE_HANDLING",
+      "name": "Reject Missing Token on Protected Route (HTTP 401, not 500)",
+      "success": true,
+      "details": {
+        "status": 401
+      },
+      "timestamp": "2026-09-28T16:45:58.430Z"
+    },
+    {
+      "group": "FAILURE_HANDLING",
+      "name": "Reject Tampered Token Signature (HTTP 401, not 500)",
+      "success": true,
+      "details": {
+        "status": 401
+      },
+      "timestamp": "2026-09-28T16:45:58.433Z"
+    },
+    {
+      "group": "FAILURE_HANDLING",
+      "name": "Graceful 404 for Non-Existent Patient UUID (HTTP 404, not 500)",
+      "success": true,
+      "details": {
+        "status": 404
+      },
+      "timestamp": "2026-09-28T16:45:58.735Z"
+    },
+    {
+      "group": "FAILURE_HANDLING",
+      "name": "Prevent Cross-Tenant Patient Access (HTTP 403/404, not 500)",
+      "success": true,
+      "details": {
+        "status": 403
+      },
+      "timestamp": "2026-09-28T16:45:58.771Z"
+    }
+  ],
+  "summary": {
+    "totalChecks": 34,
+    "passedChecks": 34,
+    "failedChecks": 0,
+    "runtimeErrorsFound": 0
+  },
+  "durationSeconds": "17.06"
+}

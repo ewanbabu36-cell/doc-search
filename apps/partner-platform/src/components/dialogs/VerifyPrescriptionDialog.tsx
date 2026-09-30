@@ -9,6 +9,8 @@ import type {
   PharmacyPrescriptionDto,
   VerifyPrescriptionRequest
 } from '@docsearch/api-contracts';
+import { AuditJustificationField } from '../common/AuditJustificationField.js';
+import { getUnifiedPartnerProfile } from '../../utils/roleProfileResolver.js';
 
 export interface VerifyPrescriptionDialogProps {
   isOpen: boolean;
@@ -25,12 +27,16 @@ export const VerifyPrescriptionDialog: React.FC<VerifyPrescriptionDialogProps> =
   prescription,
   tenantId
 }) => {
-  const [pharmacistName, setPharmacistName] = useState('Marcus Vance, PharmD');
+  const profile = getUnifiedPartnerProfile();
+  const defaultPharmacist = profile.pharmacistName
+    ? `${profile.pharmacistName}, ${profile.pharmacistDegree || 'B.Pharm'}`
+    : 'Registered Pharmacist';
+  const [pharmacistName, setPharmacistName] = useState(defaultPharmacist);
   const [allergyCheckPassed, setAllergyCheckPassed] = useState(true);
   const [interactionCheckPassed, setInteractionCheckPassed] = useState(true);
   const [dosageCheckPassed, setDosageCheckPassed] = useState(true);
   const [verificationNotes, setVerificationNotes] = useState('Allergy profile, dosage suitability, and drug-drug interactions clinically verified.');
-  const [justification, setJustification] = useState('Electronic clinical review completed by licensed pharmacist.');
+  const [justification, setJustification] = useState('Electronic clinical review and drug-drug interaction check completed by licensed pharmacist.');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -72,6 +78,8 @@ export const VerifyPrescriptionDialog: React.FC<VerifyPrescriptionDialogProps> =
       isOpen={isOpen}
       onClose={onClose}
       title={`Pharmacist Verification — ${prescription.prescriptionNumber}`}
+      isFullPage={true}
+      maxWidth="full"
       footer={
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
           <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
@@ -162,16 +170,11 @@ export const VerifyPrescriptionDialog: React.FC<VerifyPrescriptionDialogProps> =
           />
         </div>
 
-        <div>
-          <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.25rem' }}>
-            Audit Justification *
-          </label>
-          <Input
-            value={justification}
-            onChange={(e) => setJustification(e.target.value)}
-            required
-          />
-        </div>
+        <AuditJustificationField
+          value={justification}
+          onChange={setJustification}
+          defaultJustification="Electronic clinical review and drug-drug interaction check completed by licensed pharmacist."
+        />
       </form>
     </Dialog>
   );

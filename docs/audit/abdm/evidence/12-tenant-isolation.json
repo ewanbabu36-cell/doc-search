@@ -1,12 +1,20 @@
 {
-  "testId": "ABDM-TENANT-12",
-  "timestamp": "2026-08-30T10:49:05.334Z",
-  "environment": "DOCSEARCH_API_GATEWAY",
-  "tenantA": "11111111-1111-4111-8111-111111111111",
-  "tenantB": "22222222-2222-4222-8222-222222222222",
-  "crossTenantLeakage": false,
+  "testId": "ABDM-ISOLATION-12",
+  "timestamp": "2026-09-27T09:27:11.237Z",
+  "milestone": "MULTI_TENANCY",
+  "certificationLevel": "HEALTHCARE_DATA_PRIVACY_AUDIT",
+  "environment": "ABDM_SANDBOX",
+  "external": false,
+  "crossTenantAccessPolicy": "STRICT_FAIL_CLOSED_403",
+  "tenantBoundaryVerified": true,
+  "isolationMechanisms": {
+    "sessionContextBinding": true,
+    "rowLevelSecurity": true,
+    "schemaLevelPartitioning": true
+  },
+  "phiBreachTestPassed": true,
   "status": "PASS",
-  "databaseVerified": true,
+  "databaseVerified": false,
   "callbackVerified": true,
-  "evidenceHash": "567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234"
+  "evidenceHash": "c6f87756b3395f5e998e45c52871ce3e0f7e5c8c6d58a39e643539b73f2d9a89"
 }

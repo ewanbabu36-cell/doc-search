@@ -1,5 +1,11 @@
 import crypto from 'node:crypto';
-import { AppError, ErrorCode, createLogger } from '@docsearch/shared-core';
+import {
+  AppError,
+  ErrorCode,
+  createLogger,
+  ClinicalSafetyService,
+  type ClinicalSafetyReport
+} from '@docsearch/shared-core';
 import type { SessionContext } from '@docsearch/auth';
 import { aiChatRepository } from '../../repositories/core/AiChatRepository.js';
 import { aiCore, type ExecuteCapabilityOptions } from '../../ai/ai-core.js';
@@ -51,6 +57,7 @@ export interface VoiceExecutionResponse {
   traceId: string;
   auditHash: string;
   cached?: boolean | undefined;
+  clinicalSafety?: ClinicalSafetyReport | undefined;
   usage: {
     inputTokens: number;
     outputTokens: number;
@@ -96,7 +103,15 @@ export class AiVoiceService {
 
     // 4. Invoke STT provider
     const traceId = crypto.randomUUID();
-    return await getSttProvider().transcribe(validated.buffer, validated.mimeType, { traceId });
+    const rawResult = await getSttProvider().transcribe(validated.buffer, validated.mimeType, { traceId });
+
+    // 5. P0-01: Untrusted-by-default Clinical Safety Evaluation
+    const clinicalSafety = ClinicalSafetyService.validateSpeechTranscript(rawResult.transcript);
+
+    return {
+      ...rawResult,
+      clinicalSafety
+    };
   }
 
   /**
@@ -198,6 +213,9 @@ export class AiVoiceService {
       throw AppError.badRequest('No intelligible speech could be transcribed from audio');
     }
 
+    // 4.1 P0-01: Untrusted-by-default Clinical Safety Evaluation
+    const clinicalSafety = ClinicalSafetyService.validateSpeechTranscript(untrustedTranscript);
+
     // 5. Conversation Resolution or Auto-Creation
     let conversation: AiChatConversation;
     const roleContext = resolveRoleContext(session);
@@ -261,7 +279,7 @@ export class AiVoiceService {
       });
     }
 
-    // 7. Store User Voice Message (Persist in database before AI Core)
+    // 7. Store User Voice Message (Persist in database before AI Core with clinical safety metadata)
     const userMessageRecord = await aiChatRepository.createMessage(session, {
       conversationId: conversation.id,
       senderType: 'USER',
@@ -276,11 +294,102 @@ export class AiVoiceService {
         estimatedDurationSeconds: validated.estimatedDurationSeconds,
         sttProvider: sttResult.provider,
         sttConfidence: sttResult.confidence,
-        sttLatencyMs: sttResult.latencyMs
+        sttLatencyMs: sttResult.latencyMs,
+        clinicalSafety
       }
     });
 
-    // 8. Execute Capability via AI Core Orchestrator (9-gate Firewall Enforcement)
+    // 8. Execute Capability or Enforce Clinical Safety Rejection
+    if (clinicalSafety.status === 'REJECTED') {
+      logger.warn('Clinical safety guard blocked voice execution due to rejected clinical entities', {
+        traceId,
+        flags: clinicalSafety.safetyFlags,
+        summary: clinicalSafety.summary
+      });
+
+      const rejectionMessage = clinicalSafety.summary;
+      const safetyCategory: ActionSafetyCategory = 'PROPOSED';
+
+      let ttsAudioBase64: string | undefined;
+      let ttsMimeType: string | undefined;
+      let ttsLatencyMs = 0;
+
+      if (input.synthesizeAudio !== false) {
+        try {
+          const ttsResult = await getTtsProvider().synthesize(rejectionMessage, {
+            safetyCategory,
+            traceId
+          });
+          ttsAudioBase64 = ttsResult.audioBuffer.toString('base64');
+          ttsMimeType = ttsResult.mimeType;
+          ttsLatencyMs = ttsResult.latencyMs;
+        } catch (ttsErr: any) {
+          logger.error('TTS synthesis failed during safety rejection notification', {
+            traceId,
+            error: ttsErr.message
+          });
+        }
+      }
+
+      const assistantMessageRecord = await aiChatRepository.createMessage(session, {
+        conversationId: conversation.id,
+        senderType: 'ASSISTANT',
+        content: rejectionMessage,
+        capabilityId: targetCapabilityId,
+        toolId: input.toolId,
+        toolInput: input.toolInput || null,
+        toolOutput: null,
+        inputTokens: 0,
+        outputTokens: 0,
+        latencyMs: 0,
+        traceId,
+        metadata: {
+          inputType: 'VOICE',
+          auditHash: userMessageRecord.id,
+          actionClassification: 'READ_ONLY',
+          safetyCategory,
+          hasAudio: Boolean(ttsAudioBase64),
+          ttsLatencyMs,
+          clinicalSafetyBlocked: true
+        }
+      });
+
+      const response: VoiceExecutionResponse = {
+        conversationId: conversation.id,
+        userMessageId: userMessageRecord.id,
+        assistantMessageId: assistantMessageRecord.id,
+        transcript: untrustedTranscript,
+        content: rejectionMessage,
+        safetyCategory,
+        audio: ttsAudioBase64,
+        audioMimeType: ttsMimeType,
+        capabilityId: targetCapabilityId,
+        toolId: input.toolId,
+        role: roleContext.role,
+        dataScope: roleContext.dataScope,
+        traceId,
+        auditHash: userMessageRecord.id,
+        clinicalSafety,
+        usage: {
+          inputTokens: 0,
+          outputTokens: 0,
+          latencyMs: Date.now() - overallStartTime,
+          sttLatencyMs: sttResult.latencyMs,
+          ttsLatencyMs
+        }
+      };
+
+      if (input.idempotencyKey) {
+        const cacheKey = `${session.tenantId}:${session.userId}:${input.idempotencyKey}`;
+        this.idempotencyCache.set(cacheKey, {
+          response,
+          timestamp: Date.now()
+        });
+      }
+
+      return response;
+    }
+
     try {
       const executeOptions: ExecuteCapabilityOptions = {
         prompt: untrustedTranscript,
@@ -394,6 +503,7 @@ export class AiVoiceService {
         dataScope: roleContext.dataScope,
         traceId: aiResult.audit.traceId,
         auditHash: aiResult.audit.integrityHash,
+        clinicalSafety,
         usage: {
           inputTokens: aiResult.usage.inputTokens,
           outputTokens: aiResult.usage.outputTokens,

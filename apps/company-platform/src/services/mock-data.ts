@@ -4,32 +4,32 @@ export const mockExecutiveDashboardData: ExecutiveDashboardData = {
   dataSource: 'live',
   lastUpdated: new Date().toISOString(),
   metrics: {
-    totalTenants: 3,
-    activeTenants: 3,
-    totalBranches: 4,
+    totalTenants: 0,
+    activeTenants: 0,
+    totalBranches: 0,
     targetPlatformUptimePercent: 99.99,
-    activeSubscribers: 2,
-    monthlyRecurringRevenueEst: 30000,
+    activeSubscribers: 0,
+    monthlyRecurringRevenueEst: 0,
     complianceStatus: 'Active HIPAA & SOC2 Compliant'
   },
   kpis: [
     {
       id: 'kpi-1',
       label: 'Active Healthcare Tenants',
-      value: '3 Active',
-      subtext: 'Live PostgreSQL Database Scope',
-      trend: 'up',
-      trendPercent: 12,
+      value: '0 Active',
+      subtext: 'Day-0 Ready for Onboarding',
+      trend: 'neutral',
+      trendPercent: 0,
       category: 'growth',
       isSampleData: false
     },
     {
       id: 'kpi-2',
       label: 'Facility Branches Scoped',
-      value: '4 Branches',
-      subtext: 'Real-time Branch Topology',
-      trend: 'up',
-      trendPercent: 8,
+      value: '0 Branches',
+      subtext: 'Topology Ready for Activation',
+      trend: 'neutral',
+      trendPercent: 0,
       category: 'growth',
       isSampleData: false
     },
@@ -54,22 +54,7 @@ export const mockExecutiveDashboardData: ExecutiveDashboardData = {
       isSampleData: false
     }
   ],
-  businessPerformance: [
-    {
-      id: 'perf-1',
-      tenantCategory: 'Multi-Specialty Hospital Networks',
-      partnerCount: 2,
-      utilizationRate: 94,
-      growthStatus: 'accelerating'
-    },
-    {
-      id: 'perf-2',
-      tenantCategory: 'Outpatient Surgical Centers',
-      partnerCount: 1,
-      utilizationRate: 88,
-      growthStatus: 'steady'
-    }
-  ],
+  businessPerformance: [],
   alerts: [
     {
       id: 'alert-1',
@@ -100,11 +85,7 @@ export const mockExecutiveDashboardData: ExecutiveDashboardData = {
       isAvailable: true
     }
   ],
-  trends: [
-    { period: 'Jan', activeTenants: 1, apiRequestsMillions: 0.8 },
-    { period: 'Feb', activeTenants: 2, apiRequestsMillions: 1.4 },
-    { period: 'Mar', activeTenants: 3, apiRequestsMillions: 2.5 }
-  ],
+  trends: [],
   systemHealth: {
     overallStatus: 'OPERATIONAL',
     isLiveTelemetryConnected: true,

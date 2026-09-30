@@ -1,31 +1,48 @@
 import crypto from 'node:crypto';
-import { partnerRepository, type FindPartnersParams } from '../../repositories/company/PartnerRepository.js';
+import {
+  partnerRepository,
+  type FindPartnersParams,
+  type DirectoryQueryParams,
+  type DirectoryResponse,
+  type DirectoryIntelligenceSummary,
+  type PartnerAnalyticsSummary,
+  type Partner360Profile
+} from '../../repositories/company/PartnerRepository.js';
 import { productRepository } from '../../repositories/company/ProductRepository.js';
 import { subscriptionRepository } from '../../repositories/company/SubscriptionRepository.js';
 import { licenseRepository } from '../../repositories/company/LicenseRepository.js';
 import { subscriptionService } from './SubscriptionService.js';
 import { licenseService } from './LicenseService.js';
 import { entitlementService } from './EntitlementService.js';
+import { sessionRevocationService } from '../core/SessionRevocationService.js';
 import { auditRepository } from '../../repositories/core/AuditRepository.js';
 import { type SessionContext } from '@docsearch/auth';
 import {
   withSecurityContext,
   getDatabase,
+  getReadDatabase,
   tenants,
   branches,
   operationalPartners,
   operationalOrganizations,
   operationalFacilities,
+  operationalDepartments,
+  operationalStaff,
+  doctorProfiles,
+  products,
+  plans,
   partnerPlanAssignments,
   eq,
+  and,
+  or,
+  desc,
   type PartnerProfile,
   type NewPartnerProfile,
   type Subscription,
   type License,
   type Plan
-
 } from '@docsearch/database';
-import { AppError, ErrorCode } from '@docsearch/shared-core';
+import { AppError, ErrorCode, normalizeFacilityProfile } from '@docsearch/shared-core';
 
 export interface CreatePartnerOnboardingInput {
   tenantId?: string | undefined;
@@ -69,13 +86,13 @@ export class PartnerService {
     params: FindPartnersParams,
     session: SessionContext
   ): Promise<{ items: PartnerProfile[]; total: number }> {
-    return withSecurityContext(getDatabase(), session, async (tx) => {
+    return withSecurityContext(getReadDatabase(), session, async (tx) => {
       return partnerRepository.findMany(params, tx);
     });
   }
 
   async getPartnerById(partnerId: string, session: SessionContext): Promise<PartnerProfile> {
-    return withSecurityContext(getDatabase(), session, async (tx) => {
+    return withSecurityContext(getReadDatabase(), session, async (tx) => {
       const partner = await partnerRepository.findById(partnerId, tx);
       if (!partner) {
         throw AppError.notFound(`Partner ${partnerId} not found`);
@@ -85,7 +102,37 @@ export class PartnerService {
       }
       return partner;
     });
+  }
 
+  async getDirectoryIntelligence(
+    session: SessionContext,
+    appliedFilters?: DirectoryQueryParams
+  ): Promise<DirectoryIntelligenceSummary> {
+    return withSecurityContext(getReadDatabase(), session, async (tx) => {
+      const tenantScope = session.isSuperAdmin ? undefined : session.tenantId;
+      return partnerRepository.getDirectoryIntelligence(tenantScope, tx, appliedFilters);
+    });
+  }
+
+  async getPartnerAnalytics(session: SessionContext): Promise<PartnerAnalyticsSummary> {
+    return withSecurityContext(getReadDatabase(), session, async (tx) => {
+      const tenantScope = session.isSuperAdmin ? undefined : session.tenantId;
+      return partnerRepository.getPartnerAnalytics(tenantScope, tx);
+    });
+  }
+
+  async getDirectory(params: DirectoryQueryParams, session: SessionContext): Promise<DirectoryResponse> {
+    return withSecurityContext(getReadDatabase(), session, async (tx) => {
+      const tenantScope = session.isSuperAdmin ? params.tenantId : session.tenantId;
+      return partnerRepository.getDirectory({ ...params, tenantId: tenantScope }, tx);
+    });
+  }
+
+  async getPartner360(partnerId: string, session: SessionContext): Promise<Partner360Profile> {
+    return withSecurityContext(getReadDatabase(), session, async (tx) => {
+      const tenantScope = session.isSuperAdmin ? undefined : session.tenantId;
+      return partnerRepository.getPartner360(partnerId, tenantScope, tx);
+    });
   }
 
   /**
@@ -114,14 +161,87 @@ export class PartnerService {
   }> {
     return withSecurityContext(getDatabase(), session, async (tx) => {
       // 1. Resolve Plan from authoritative database catalog
+      const normalizedProf = normalizeFacilityProfile(input.partnerType);
       let plan: Plan | null = null;
       if (input.planId) {
         plan = await productRepository.findPlanById(input.planId, tx);
+        if (!plan) {
+          throw new AppError({
+            message: `Specified commercial plan '${input.planId}' was not found.`,
+            code: ErrorCode.VALIDATION_ERROR,
+            statusCode: 400
+          });
+        }
       } else if (input.planCode) {
         plan = await productRepository.findPlanByCode(input.planCode, tx);
-      } else {
-        // Default to active Starter plan if none provided
-        plan = await productRepository.findPlanByCode('PLAN_CLINIC_STARTER', tx);
+        if (!plan) {
+          throw new AppError({
+            message: `Specified commercial plan '${input.planCode}' was not found.`,
+            code: ErrorCode.VALIDATION_ERROR,
+            statusCode: 400
+          });
+        }
+      }
+
+      if (!plan) {
+        const candidateCodes = [
+          `PLAN_${normalizedProf.workspace}_FOUNDING`,
+          `PLAN_${normalizedProf.workspace}_STARTER`,
+          'PLAN_CLINIC_STARTER'
+        ];
+        for (const code of candidateCodes) {
+          plan = await productRepository.findPlanByCode(code, tx);
+          if (plan) break;
+        }
+      }
+
+      if (!plan) {
+        const allPlans = await productRepository.findAllPlans(tx);
+        if (allPlans && allPlans.length > 0) {
+          plan = allPlans[0]!;
+        }
+      }
+
+      // If still no plan in database catalog, dynamically provision a canonical plan for this vertical
+      if (!plan) {
+        const prodId = crypto.randomUUID();
+        const planId = crypto.randomUUID();
+        try {
+          await tx
+            .insert(products)
+            .values({
+              id: prodId,
+              code: `PROD_${normalizedProf.workspace}_SUITE`,
+              name: `${normalizedProf.workspace} Clinical Suite`,
+              description: `Authoritative enterprise core suite for ${normalizedProf.workspace}`,
+              category: 'CORE_PLATFORM',
+              status: 'ACTIVE'
+            })
+            .onConflictDoNothing();
+
+          await tx
+            .insert(plans)
+            .values({
+              id: planId,
+              productId: prodId,
+              code: `PLAN_${normalizedProf.workspace}_FOUNDING`,
+              name: normalizedProf.defaultPlanTier,
+              description: `Founding partner tier with full vertical capability for ${normalizedProf.workspace}`,
+              billingInterval: 'MONTHLY',
+              basePrice: 0,
+              currency: 'INR',
+              status: 'ACTIVE',
+              metadata: {
+                maxConcurrentUsers: 50,
+                maxDoctors: 20,
+                maxBranches: 5,
+                accessibleFeatures: normalizedProf.accessibleFeatures
+              }
+            })
+            .onConflictDoNothing();
+
+          plan = await productRepository.findPlanById(planId, tx);
+        } catch {}
       }
 
       if (!plan) {
@@ -167,10 +287,10 @@ export class PartnerService {
         legalName: input.legalName,
         tradeName: input.tradeName,
         partnerType: input.partnerType ?? 'HOSPITAL_NETWORK',
-        lifecycleStatus: 'ACTIVE',
-        verificationStatus: 'VERIFIED',
-        onboardingStep: 'COMPLETE',
-        onboardingProgressPercent: 100,
+        lifecycleStatus: input.lifecycleStatus || 'LEAD',
+        verificationStatus: input.verificationStatus || 'PENDING',
+        onboardingStep: input.onboardingStep || 'ORGANIZATION_PROFILE',
+        onboardingProgressPercent: input.onboardingProgressPercent !== undefined ? input.onboardingProgressPercent : 0,
         primaryContactName: input.primaryContactName,
         primaryContactEmail: input.primaryContactEmail,
         primaryContactPhone: input.primaryContactPhone ?? null,
@@ -184,6 +304,8 @@ export class PartnerService {
       const shortHash = crypto.randomBytes(3).toString('hex').toUpperCase();
       const orgId = crypto.randomUUID();
       const facilityId = crypto.randomUUID();
+      const deptId = crypto.randomUUID();
+      const docId = crypto.randomUUID();
 
       try {
         await tx
@@ -243,6 +365,60 @@ export class PartnerService {
             tenantId,
             name: input.initialFacilityName || `${input.tradeName} Main Facility`,
             code: 'FAC-01',
+            status: 'ACTIVE'
+          })
+          .onConflictDoNothing();
+
+        await tx
+          .insert(operationalDepartments)
+          .values({
+            id: deptId,
+            tenantId,
+            partnerId,
+            organizationId: orgId,
+            branchId: facilityId,
+            departmentCode: `DEPT-OPD-${shortHash}`,
+            departmentName: 'General OPD & Primary Care',
+            status: 'ACTIVE'
+          })
+          .onConflictDoNothing();
+
+        const staffId = crypto.randomUUID();
+        await tx
+          .insert(operationalStaff)
+          .values({
+            id: staffId,
+            tenantId,
+            partnerId,
+            organizationId: orgId,
+            branchId: facilityId,
+            departmentId: deptId,
+            staffCode: `STF-${shortHash}`,
+            fullName: input.primaryContactName || 'Dr. Medical Director',
+            workEmail: input.primaryContactEmail,
+            workPhone: input.primaryContactPhone || null,
+            staffType: 'DOCTOR',
+            primaryRole: 'ATTENDING_PHYSICIAN',
+            employmentType: 'FULL_TIME',
+            employmentStatus: 'ACTIVE',
+            joiningDate: new Date()
+          })
+          .onConflictDoNothing();
+
+        await tx
+          .insert(doctorProfiles)
+          .values({
+            id: docId,
+            tenantId,
+            partnerId,
+            organizationId: orgId,
+            branchId: facilityId,
+            departmentId: deptId,
+            staffId,
+            doctorCode: `DOC-${shortHash}`,
+            medicalLicenseNumber: `MED-REG-${shortHash}`,
+            qualification: 'MBBS, MD',
+            primarySpecialty: 'General Medicine',
             status: 'ACTIVE'
           })
           .onConflictDoNothing();
@@ -379,6 +555,11 @@ export class PartnerService {
       return {
         partner,
         tenantId,
+        organizationId: orgId,
+        facilityId,
+        branchId: facilityId,
+        departmentId: deptId,
+        doctorId: docId,
         subscription: createdSub,
         license: createdLicense,
         plan,
@@ -682,6 +863,361 @@ export class PartnerService {
         specialization: doctorData.specialization || 'General Practice',
         status: 'ACTIVE'
       };
+    });
+  }
+
+  async getBranches(partnerId: string, session: SessionContext) {
+    return withSecurityContext(getReadDatabase(), session, async (tx) => {
+      const partner = await partnerRepository.findById(partnerId, tx);
+      if (!partner) {
+        throw AppError.notFound(`Partner ${partnerId} not found`);
+      }
+      return tx
+        .select()
+        .from(branches)
+        .where(eq(branches.tenantId, partner.tenantId));
+    });
+  }
+
+  async updateBranchStatus(
+    partnerId: string,
+    branchId: string,
+    status: 'ACTIVE' | 'SUSPENDED' | 'DEACTIVATED',
+    reason: string,
+    session: SessionContext
+  ) {
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      const partner = await partnerRepository.findById(partnerId, tx);
+      if (!partner) {
+        throw AppError.notFound(`Partner ${partnerId} not found`);
+      }
+
+      await tx
+        .update(branches)
+        .set({ status: status === 'ACTIVE' ? 'ACTIVE' : 'SUSPENDED', updatedAt: new Date() })
+        .where(eq(branches.id, branchId));
+
+      await tx
+        .update(operationalFacilities)
+        .set({ status: status === 'ACTIVE' ? 'ACTIVE' : 'SUSPENDED', updatedAt: new Date() })
+        .where(eq(operationalFacilities.id, branchId));
+
+      const actor = (session as any)?.email || session?.userId || 'DOC SEARCH Founder Command';
+      if (status === 'SUSPENDED' || status === 'DEACTIVATED') {
+        await sessionRevocationService.revokeBranch(branchId, reason, actor);
+      } else if (status === 'ACTIVE') {
+        await sessionRevocationService.unrevokeBranch(branchId);
+      }
+
+      await auditRepository.recordEvent(
+        {
+          eventType: 'BRANCH_STATUS_UPDATED',
+          resourceType: 'BRANCH',
+          resourceId: branchId,
+          tenantId: partner.tenantId,
+          metadata: { partnerId, branchId, status, reason }
+        },
+        session,
+        tx
+      );
+
+      return { id: branchId, partnerId, status, reason };
+    });
+  }
+
+  async getPartnerStaff(partnerId: string, session: SessionContext) {
+    return withSecurityContext(getReadDatabase(), session, async (tx) => {
+      const partner = await partnerRepository.findById(partnerId, tx);
+      if (!partner) {
+        throw AppError.notFound(`Partner ${partnerId} not found`);
+      }
+
+      const staffList = await tx
+        .select({
+          staff: operationalStaff,
+          deptName: operationalDepartments.departmentName
+        })
+        .from(operationalStaff)
+        .leftJoin(operationalDepartments, eq(operationalStaff.departmentId, operationalDepartments.id))
+        .where(or(eq(operationalStaff.partnerId, partner.id), eq(operationalStaff.tenantId, partner.tenantId)))
+        .orderBy(desc(operationalStaff.createdAt));
+
+      return staffList.map((r) => ({
+        id: r.staff.id,
+        tenantId: r.staff.tenantId,
+        partnerId: r.staff.partnerId,
+        organizationId: r.staff.organizationId,
+        branchId: r.staff.branchId,
+        departmentId: r.staff.departmentId,
+        departmentName: r.deptName || 'Primary Care Unit',
+        staffCode: r.staff.staffCode,
+        fullName: r.staff.fullName,
+        workEmail: r.staff.workEmail,
+        workPhone: r.staff.workPhone || undefined,
+        staffType: r.staff.staffType,
+        primaryRole: r.staff.primaryRole,
+        employmentType: r.staff.employmentType,
+        employmentStatus: r.staff.employmentStatus,
+        joiningDate: r.staff.joiningDate instanceof Date ? r.staff.joiningDate.toISOString() : String(r.staff.joiningDate),
+        createdAt: r.staff.createdAt instanceof Date ? r.staff.createdAt.toISOString() : String(r.staff.createdAt)
+      }));
+    });
+  }
+
+  async addPartnerStaff(
+    partnerId: string,
+    staffData: {
+      fullName: string;
+      workEmail: string;
+      workPhone?: string;
+      staffType?: string;
+      primaryRole?: string;
+      employmentType?: string;
+      departmentId?: string;
+      requestedTotalCount?: number;
+    },
+    session: SessionContext
+  ) {
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      const partner = await partnerRepository.findById(partnerId, tx);
+      if (!partner) {
+        throw AppError.notFound(`Partner ${partnerId} not found`);
+      }
+
+      try {
+        const limitCheck = await entitlementService.checkUserLimit(partner.tenantId, staffData.requestedTotalCount);
+        if (!limitCheck.allowed) {
+          throw new AppError({
+            message: `Staff/User limit of ${limitCheck.maxAllowed} reached for current subscription plan. Upgrade plan to add more staff.`,
+            code: ErrorCode.FORBIDDEN,
+            statusCode: 403
+          });
+        }
+      } catch (err) {
+        if (err instanceof AppError && err.statusCode === 403) throw err;
+      }
+
+      let opPartnerId = partner.id;
+      const [opP] = await tx
+        .select({ id: operationalPartners.id })
+        .from(operationalPartners)
+        .where(eq(operationalPartners.tenantId, partner.tenantId))
+        .limit(1);
+      if (opP?.id) {
+        opPartnerId = opP.id;
+      } else {
+        try {
+          await tx.insert(operationalPartners).values({
+            id: opPartnerId,
+            tenantId: partner.tenantId,
+            partnerCode: `PRT-${partner.tenantId.substring(0, 8).toUpperCase()}`,
+            legalBusinessName: partner.legalName || 'Partner Entity',
+            partnerType: partner.partnerType || 'HOSPITAL_SYSTEM',
+            contactEmail: partner.primaryContactEmail || 'admin@partner.local',
+            status: 'ACTIVE',
+            metadata: {}
+          });
+        } catch {}
+      }
+
+      let organizationId = '00000000-0000-4000-8000-000000000002';
+      const [opO] = await tx
+        .select({ id: operationalOrganizations.id })
+        .from(operationalOrganizations)
+        .where(eq(operationalOrganizations.tenantId, partner.tenantId))
+        .limit(1);
+      if (opO?.id) {
+        organizationId = opO.id;
+      } else {
+        try {
+          organizationId = crypto.randomUUID();
+          await tx.insert(operationalOrganizations).values({
+            id: organizationId,
+            tenantId: partner.tenantId,
+            partnerId: opPartnerId,
+            organizationCode: `ORG-${partner.tenantId.substring(0, 8).toUpperCase()}`,
+            organizationName: partner.legalName || 'Clinical Services',
+            organizationType: partner.partnerType || 'HOSPITAL',
+            contactEmail: partner.primaryContactEmail || 'admin@facility.local',
+            contactPhone: partner.primaryContactPhone || '+1-555-0100',
+            status: 'ACTIVE',
+            metadata: {}
+          } as any);
+        } catch {
+          organizationId = '00000000-0000-4000-8000-000000000002';
+        }
+      }
+
+      let branchId = '00000000-0000-4000-8000-000000000003';
+      const [opF] = await tx
+        .select({ id: operationalFacilities.id })
+        .from(operationalFacilities)
+        .where(eq(operationalFacilities.tenantId, partner.tenantId))
+        .limit(1);
+      if (opF?.id) {
+        branchId = opF.id;
+      } else {
+        try {
+          branchId = crypto.randomUUID();
+          await tx.insert(operationalFacilities).values({
+            id: branchId,
+            tenantId: partner.tenantId,
+            partnerId: opPartnerId,
+            organizationId,
+            facilityCode: `FAC-${partner.tenantId.substring(0, 8).toUpperCase()}`,
+            facilityName: 'Primary Facility',
+            facilityType: partner.partnerType || 'HOSPITAL',
+            addressStreet: '100 Medical Center Dr',
+            addressCity: 'Metro',
+            addressState: 'State',
+            addressPostalCode: '10001',
+            contactEmail: partner.primaryContactEmail || 'facility@local.health',
+            contactPhone: partner.primaryContactPhone || '+1-555-0100',
+            status: 'ACTIVE',
+            metadata: {}
+          } as any);
+        } catch {
+          branchId = '00000000-0000-4000-8000-000000000003';
+        }
+      }
+
+      let departmentId = staffData.departmentId;
+      if (!departmentId) {
+        const [opD] = await tx
+          .select({ id: operationalDepartments.id })
+          .from(operationalDepartments)
+          .where(eq(operationalDepartments.tenantId, partner.tenantId))
+          .limit(1);
+        if (opD?.id) {
+          departmentId = opD.id;
+        } else {
+          try {
+            departmentId = crypto.randomUUID();
+            await tx.insert(operationalDepartments).values({
+              id: departmentId,
+              tenantId: partner.tenantId,
+              partnerId: opPartnerId,
+              organizationId,
+              branchId,
+              departmentCode: 'GEN-OPS',
+              departmentName: 'General Operations',
+              status: 'ACTIVE',
+              metadata: {}
+            } as any);
+          } catch {
+            departmentId = '00000000-0000-4000-8000-000000000004';
+          }
+        }
+      }
+
+      const staffId = crypto.randomUUID();
+      const codeRand = Math.floor(1000 + Math.random() * 9000);
+      const staffCode = `STF-${codeRand}`;
+
+      const [createdStaff] = await tx
+        .insert(operationalStaff)
+        .values({
+          id: staffId,
+          tenantId: partner.tenantId,
+          partnerId: opPartnerId,
+          organizationId,
+          branchId,
+          departmentId,
+          staffCode,
+          fullName: staffData.fullName,
+          workEmail: staffData.workEmail,
+          workPhone: staffData.workPhone || null,
+          staffType: (staffData.staffType as any) || 'DOCTOR',
+          primaryRole: staffData.primaryRole || 'ATTENDING_PHYSICIAN',
+          employmentType: (staffData.employmentType as any) || 'FULL_TIME',
+          employmentStatus: 'ACTIVE',
+          joiningDate: new Date(),
+          metadata: {}
+        } as any)
+        .returning();
+
+      if (!createdStaff) {
+        throw new AppError({
+          message: 'Failed to insert operational staff record',
+          code: ErrorCode.DATABASE_ERROR,
+          statusCode: 500
+        });
+      }
+
+      await auditRepository.recordEvent(
+        {
+          eventType: 'HQ_STAFF_CREATED',
+          resourceType: 'operational_staff',
+          resourceId: staffId,
+          tenantId: partner.tenantId,
+          metadata: {
+            partnerId,
+            fullName: staffData.fullName,
+            email: staffData.workEmail,
+            role: staffData.primaryRole
+          }
+        },
+        session,
+        tx
+      );
+
+      return {
+        id: createdStaff.id,
+        tenantId: createdStaff.tenantId,
+        partnerId,
+        staffCode: createdStaff.staffCode,
+        fullName: createdStaff.fullName,
+        workEmail: createdStaff.workEmail,
+        workPhone: createdStaff.workPhone || undefined,
+        staffType: createdStaff.staffType,
+        primaryRole: createdStaff.primaryRole,
+        employmentType: createdStaff.employmentType,
+        employmentStatus: createdStaff.employmentStatus,
+        joiningDate: createdStaff.joiningDate instanceof Date ? createdStaff.joiningDate.toISOString() : String(createdStaff.joiningDate),
+        createdAt: createdStaff.createdAt instanceof Date ? createdStaff.createdAt.toISOString() : String(createdStaff.createdAt)
+      };
+    });
+  }
+
+  async updatePartnerStaffStatus(
+    partnerId: string,
+    staffId: string,
+    status: string,
+    reason: string,
+    session: SessionContext
+  ) {
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      const partner = await partnerRepository.findById(partnerId, tx);
+      if (!partner) {
+        throw AppError.notFound(`Partner ${partnerId} not found`);
+      }
+
+      await tx
+        .update(operationalStaff)
+        .set({
+          employmentStatus: status,
+          updatedAt: new Date()
+        })
+        .where(
+          and(
+            eq(operationalStaff.id, staffId),
+            or(eq(operationalStaff.partnerId, partner.id), eq(operationalStaff.tenantId, partner.tenantId))
+          )
+        );
+
+      await auditRepository.recordEvent(
+        {
+          eventType: 'HQ_STAFF_STATUS_UPDATED',
+          resourceType: 'operational_staff',
+          resourceId: staffId,
+          tenantId: partner.tenantId,
+          metadata: { partnerId, staffId, status, reason }
+        },
+        session,
+        tx
+      );
+
+      return { id: staffId, partnerId, status, reason };
     });
   }
 }

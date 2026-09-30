@@ -20,18 +20,18 @@ export interface InvestigationOverviewViewProps {
   overview: InvestigationOverviewDto;
   orders: InvestigationOrderDto[];
   onOpenNewOrder: () => void;
+  onOpenWalkInTestAndPrint?: () => void;
   onSelectOrder: (id: string) => void;
   onOpenTab: (tabKey: string) => void;
-  onOpenPrint?: (order: InvestigationOrderDto) => void;
 }
 
 export const InvestigationOverviewView: React.FC<InvestigationOverviewViewProps> = ({
   overview,
   orders,
   onOpenNewOrder,
+  onOpenWalkInTestAndPrint,
   onSelectOrder,
-  onOpenTab,
-  onOpenPrint
+  onOpenTab
 }) => {
   const recentOrders = orders.slice(0, 5);
 
@@ -48,26 +48,27 @@ export const InvestigationOverviewView: React.FC<InvestigationOverviewViewProps>
           </p>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
-          {onOpenPrint && orders.some((o) => o.results.length > 0 || o.status === 'VERIFIED' || o.status === 'REVIEWED') && (
-            <Button
-              variant="outline"
-              onClick={() => {
-                const verified = orders.find((o) => o.status === 'VERIFIED' || o.status === 'REVIEWED' || o.results.length > 0) || orders[0];
-                if (verified) onOpenPrint(verified);
-              }}
-              style={{ borderColor: '#06B6D4', color: '#06B6D4', fontWeight: 700 }}
-            >
-              🖨️ Direct Print Result
-            </Button>
-          )}
           <Button variant="outline" onClick={() => onOpenTab('reports')} style={{ borderColor: '#3B82F6', color: '#60A5FA', fontWeight: 700 }}>
             📄 Report History ({orders.filter(o => o.report || o.status === 'VERIFIED' || o.status === 'REVIEWED').length})
           </Button>
           <Button variant="outline" onClick={() => onOpenTab('catalog')}>
             📚 Catalog & Panels
           </Button>
-          <Button variant="primary" onClick={onOpenNewOrder}>
-            ➕ Place Diagnostic Order
+          {onOpenWalkInTestAndPrint && (
+            <Button
+              variant="primary"
+              onClick={onOpenWalkInTestAndPrint}
+              style={{ backgroundColor: '#DC2626', borderColor: '#DC2626', color: '#FFFFFF', fontWeight: 800 }}
+            >
+              🩸 + Walk-In Test & Print
+            </Button>
+          )}
+          <Button
+            variant="primary"
+            onClick={onOpenNewOrder}
+            style={{ backgroundColor: '#10B981', borderColor: '#10B981', color: '#064E3B', fontWeight: 800 }}
+          >
+            🧾 + New Walk-In & Billing
           </Button>
         </div>
       </div>
@@ -259,16 +260,6 @@ export const InvestigationOverviewView: React.FC<InvestigationOverviewViewProps>
                       <Button size="sm" variant="outline" onClick={() => onSelectOrder(ord.id)}>
                         View Record
                       </Button>
-                      {onOpenPrint && (ord.results?.length > 0 || ord.status === 'VERIFIED' || ord.status === 'REVIEWED' || ord.status === 'RESULT_READY') && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => onOpenPrint(ord)}
-                          style={{ borderColor: '#06B6D4', color: '#06B6D4', fontWeight: 600 }}
-                        >
-                          🖨️ Print Result
-                        </Button>
-                      )}
                     </div>
                   </TableCell>
                 </TableRow>

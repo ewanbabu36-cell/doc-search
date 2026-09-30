@@ -1,0 +1,2715 @@
+{
+  "total": 392,
+  "businessTruthFindings": [
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "line": 515,
+      "action": "getItem",
+      "key": "docsearch_custom_partner_users",
+      "code": "const localCustom: HospitalStaffUser[] = JSON.parse(localStorage.getItem('docsearch_custom_partner_users') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "line": 528,
+      "action": "setItem",
+      "key": "docsearch_custom_partner_users",
+      "code": "localStorage.setItem('docsearch_custom_partner_users', JSON.stringify(cleanedCustom));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "line": 534,
+      "action": "getItem",
+      "key": "docsearch_verification_queue",
+      "code": "const rawQ = localStorage.getItem('docsearch_verification_queue');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "line": 546,
+      "action": "setItem",
+      "key": "docsearch_verification_queue",
+      "code": "localStorage.setItem('docsearch_verification_queue', JSON.stringify(cleanedQ));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "line": 1297,
+      "action": "getItem",
+      "key": "docsearch_verification_queue",
+      "code": "const localQueue = JSON.parse(localStorage.getItem('docsearch_verification_queue') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "line": 1299,
+      "action": "setItem",
+      "key": "docsearch_verification_queue",
+      "code": "localStorage.setItem('docsearch_verification_queue', JSON.stringify(localQueue));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "line": 1304,
+      "action": "getItem",
+      "key": "docsearch_custom_partner_users",
+      "code": "const localCustom: HospitalStaffUser[] = JSON.parse(localStorage.getItem('docsearch_custom_partner_users') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "line": 1307,
+      "action": "setItem",
+      "key": "docsearch_custom_partner_users",
+      "code": "localStorage.setItem('docsearch_custom_partner_users', JSON.stringify(filtered));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/ClinicalInvestigationDomainManager.tsx",
+      "line": 334,
+      "action": "getItem",
+      "key": "docsearch_pending_lab_orders",
+      "code": "const stored = localStorage.getItem('docsearch_pending_lab_orders');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/ClinicalInvestigationDomainManager.tsx",
+      "line": 455,
+      "action": "getItem",
+      "key": "docsearch_pending_lab_orders",
+      "code": "const storedLab = localStorage.getItem('docsearch_pending_lab_orders');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/AbdmScanAndShareModal.tsx",
+      "line": 130,
+      "action": "getItem",
+      "key": "docsearch_opd_queue",
+      "code": "const queueRaw = localStorage.getItem('docsearch_opd_queue');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/AbdmScanAndShareModal.tsx",
+      "line": 139,
+      "action": "setItem",
+      "key": "docsearch_opd_queue",
+      "code": "localStorage.setItem('docsearch_opd_queue', JSON.stringify(queue));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/AbdmScanAndShareModal.tsx",
+      "line": 141,
+      "action": "getItem",
+      "key": "docsearch_patients",
+      "code": "const patientsRaw = localStorage.getItem('docsearch_patients');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/AbdmScanAndShareModal.tsx",
+      "line": 155,
+      "action": "setItem",
+      "key": "docsearch_patients",
+      "code": "localStorage.setItem('docsearch_patients', JSON.stringify(patients));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/ActivePatientContextBar.tsx",
+      "line": 20,
+      "action": "getItem",
+      "key": "docsearch_recent_patients",
+      "code": "const raw = localStorage.getItem('docsearch_recent_patients');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/ActivePatientContextBar.tsx",
+      "line": 32,
+      "action": "setItem",
+      "key": "docsearch_recent_patients",
+      "code": "localStorage.setItem('docsearch_recent_patients', JSON.stringify(patients.slice(0, 5)));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/FastOpdRegistrationDrawer.tsx",
+      "line": 292,
+      "action": "getItem",
+      "key": "docsearch_recent_opd_queue",
+      "code": "const existingRaw = localStorage.getItem('docsearch_recent_opd_queue');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/FastOpdRegistrationDrawer.tsx",
+      "line": 295,
+      "action": "setItem",
+      "key": "docsearch_recent_opd_queue",
+      "code": "localStorage.setItem('docsearch_recent_opd_queue', JSON.stringify(queue.slice(0, 50)));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/FastOpdRegistrationDrawer.tsx",
+      "line": 339,
+      "action": "getItem",
+      "key": "docsearch_encounters",
+      "code": "const existingEncsRaw = localStorage.getItem('docsearch_encounters');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/FastOpdRegistrationDrawer.tsx",
+      "line": 342,
+      "action": "setItem",
+      "key": "docsearch_encounters",
+      "code": "localStorage.setItem('docsearch_encounters', JSON.stringify(encs.slice(0, 100)));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/LiveHospitalMetricsTicker.tsx",
+      "line": 42,
+      "action": "getItem",
+      "key": "docsearch_inpatient_beds",
+      "code": "const storedBeds = localStorage.getItem('docsearch_inpatient_beds');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/LiveHospitalMetricsTicker.tsx",
+      "line": 51,
+      "action": "getItem",
+      "key": "docsearch_opd_queue",
+      "code": "const storedQueue = localStorage.getItem('docsearch_opd_queue');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/LiveHospitalMetricsTicker.tsx",
+      "line": 59,
+      "action": "getItem",
+      "key": "docsearch_pharmacy_dispensing",
+      "code": "const storedRx = localStorage.getItem('docsearch_pharmacy_dispensing');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/LiveHospitalMetricsTicker.tsx",
+      "line": 68,
+      "action": "getItem",
+      "key": "docsearch_patients",
+      "code": "const storedPatients = localStorage.getItem('docsearch_patients');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/OpdQueueTvDisplayModal.tsx",
+      "line": 44,
+      "action": "getItem",
+      "key": "docsearch_opd_queue",
+      "code": "const stored = localStorage.getItem('docsearch_opd_queue');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/OpdQueueTvDisplayModal.tsx",
+      "line": 83,
+      "action": "setItem",
+      "key": "docsearch_opd_queue",
+      "code": "localStorage.setItem('docsearch_opd_queue', JSON.stringify(queue));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/UniversalAccountSettingsModal.tsx",
+      "line": 223,
+      "action": "getItem",
+      "key": "docsearch_registered_partners",
+      "code": "const partners = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/UniversalAccountSettingsModal.tsx",
+      "line": 338,
+      "action": "getItem",
+      "key": "docsearch_verification_queue",
+      "code": "const q = JSON.parse(localStorage.getItem('docsearch_verification_queue') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/UniversalAccountSettingsModal.tsx",
+      "line": 361,
+      "action": "setItem",
+      "key": "docsearch_verification_queue",
+      "code": "localStorage.setItem('docsearch_verification_queue', JSON.stringify(q));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/UniversalAccountSettingsModal.tsx",
+      "line": 580,
+      "action": "getItem",
+      "key": "docsearch_custom_partner_users",
+      "code": "const customUsers = JSON.parse(localStorage.getItem('docsearch_custom_partner_users') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/UniversalAccountSettingsModal.tsx",
+      "line": 586,
+      "action": "setItem",
+      "key": "docsearch_custom_partner_users",
+      "code": "localStorage.setItem('docsearch_custom_partner_users', JSON.stringify(updated));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/DoctorPrescriptionQueueImporterModal.tsx",
+      "line": 65,
+      "action": "getItem",
+      "key": "docsearch_pending_doctor_prescriptions",
+      "code": "const stored = localStorage.getItem('docsearch_pending_doctor_prescriptions');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/DoctorPrescriptionQueueImporterModal.tsx",
+      "line": 155,
+      "action": "getItem",
+      "key": "docsearch_pending_doctor_prescriptions",
+      "code": "const existing = JSON.parse(localStorage.getItem('docsearch_pending_doctor_prescriptions') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/DoctorPrescriptionQueueImporterModal.tsx",
+      "line": 156,
+      "action": "setItem",
+      "key": "docsearch_pending_doctor_prescriptions",
+      "code": "localStorage.setItem('docsearch_pending_doctor_prescriptions', JSON.stringify([newRx, ...existing.slice(0, 19)]));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/DoctorPrescriptionQueueImporterModal.tsx",
+      "line": 230,
+      "action": "getItem",
+      "key": "docsearch_pending_doctor_prescriptions",
+      "code": "const existing = JSON.parse(localStorage.getItem('docsearch_pending_doctor_prescriptions') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/DoctorPrescriptionQueueImporterModal.tsx",
+      "line": 232,
+      "action": "setItem",
+      "key": "docsearch_pending_doctor_prescriptions",
+      "code": "localStorage.setItem('docsearch_pending_doctor_prescriptions', JSON.stringify(filtered));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/InpatientDomainManager.tsx",
+      "line": 279,
+      "action": "getItem",
+      "key": "docsearch_admission_requests",
+      "code": "const storedAdms = typeof window !== 'undefined' ? localStorage.getItem('docsearch_admission_requests') : null;",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/PartnerPlatformShell.tsx",
+      "line": 664,
+      "action": "getItem",
+      "key": "docsearch_registered_partners",
+      "code": "const list = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/PartnerPlatformShell.tsx",
+      "line": 732,
+      "action": "getItem",
+      "key": "docsearch_registered_partners",
+      "code": "const list = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/PartnerPlatformShell.tsx",
+      "line": 745,
+      "action": "setItem",
+      "key": "docsearch_registered_partners",
+      "code": "localStorage.setItem('docsearch_registered_partners', JSON.stringify(list));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/RadiologyDomainManager.tsx",
+      "line": 144,
+      "action": "getItem",
+      "key": "docsearch_pending_radiology_orders",
+      "code": "const stored = typeof window !== 'undefined' ? localStorage.getItem('docsearch_pending_radiology_orders') : null;",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/ConsultationDoctorWorklistView.tsx",
+      "line": 54,
+      "action": "getItem",
+      "key": "docsearch_nurse_vitals",
+      "code": "const stored = JSON.parse(localStorage.getItem('docsearch_nurse_vitals') || '{}');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/DoctorExpressConsultationDesk.tsx",
+      "line": 664,
+      "action": "getItem",
+      "key": "docsearch_nurse_vitals",
+      "code": "const stored = JSON.parse(localStorage.getItem('docsearch_nurse_vitals') || '{}');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/DoctorExpressConsultationDesk.tsx",
+      "line": 693,
+      "action": "getItem",
+      "key": "docsearch_patient_vitals_history",
+      "code": "const historyMap = JSON.parse(localStorage.getItem('docsearch_patient_vitals_history') || '{}');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/DoctorExpressConsultationDesk.tsx",
+      "line": 765,
+      "action": "getItem",
+      "key": "docsearch_patient_vitals_history",
+      "code": "const historyMap = JSON.parse(localStorage.getItem('docsearch_patient_vitals_history') || '{}');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/DoctorExpressConsultationDesk.tsx",
+      "line": 966,
+      "action": "getItem",
+      "key": "docsearch_nurse_vitals",
+      "code": "const stored = JSON.parse(localStorage.getItem('docsearch_nurse_vitals') || '{}');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FastPharmacyPosCounterView.tsx",
+      "line": 369,
+      "action": "getItem",
+      "key": "docsearch_pharmacy_invoices",
+      "code": "const saved = localStorage.getItem('docsearch_pharmacy_invoices');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FastPharmacyPosCounterView.tsx",
+      "line": 442,
+      "action": "setItem",
+      "key": "docsearch_pharmacy_invoices",
+      "code": "localStorage.setItem('docsearch_pharmacy_invoices', JSON.stringify(combined));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FastPharmacyPosCounterView.tsx",
+      "line": 1799,
+      "action": "setItem",
+      "key": "docsearch_pharmacy_invoices",
+      "code": "localStorage.setItem('docsearch_pharmacy_invoices', JSON.stringify(next));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FastPharmacyPosCounterView.tsx",
+      "line": 4335,
+      "action": "setItem",
+      "key": "docsearch_pharmacy_invoices",
+      "code": "localStorage.setItem('docsearch_pharmacy_invoices', JSON.stringify(filtered));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx",
+      "line": 209,
+      "action": "getItem",
+      "key": "docsearch_recent_opd_queue",
+      "code": "const stored = localStorage.getItem('docsearch_recent_opd_queue');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx",
+      "line": 320,
+      "action": "getItem",
+      "key": "docsearch_recent_opd_queue",
+      "code": "const existingQueue: OpdQueueItem[] = JSON.parse(localStorage.getItem('docsearch_recent_opd_queue') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx",
+      "line": 322,
+      "action": "setItem",
+      "key": "docsearch_recent_opd_queue",
+      "code": "localStorage.setItem('docsearch_recent_opd_queue', JSON.stringify(existingQueue));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx",
+      "line": 364,
+      "action": "getItem",
+      "key": "docsearch_encounters",
+      "code": "const existingEncsRaw = localStorage.getItem('docsearch_encounters');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx",
+      "line": 367,
+      "action": "setItem",
+      "key": "docsearch_encounters",
+      "code": "localStorage.setItem('docsearch_encounters', JSON.stringify(encs.slice(0, 100)));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx",
+      "line": 439,
+      "action": "setItem",
+      "key": "docsearch_recent_opd_queue",
+      "code": "localStorage.setItem('docsearch_recent_opd_queue', JSON.stringify(updated));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx",
+      "line": 463,
+      "action": "setItem",
+      "key": "docsearch_recent_opd_queue",
+      "code": "localStorage.setItem('docsearch_recent_opd_queue', JSON.stringify(updated));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx",
+      "line": 488,
+      "action": "setItem",
+      "key": "docsearch_recent_opd_queue",
+      "code": "localStorage.setItem('docsearch_recent_opd_queue', JSON.stringify(updated));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx",
+      "line": 505,
+      "action": "setItem",
+      "key": "docsearch_recent_opd_queue",
+      "code": "localStorage.setItem('docsearch_recent_opd_queue', JSON.stringify(updated));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/InstantBillSettlementView.tsx",
+      "line": 33,
+      "action": "getItem",
+      "key": "docsearch_encounters",
+      "code": "const encs = JSON.parse(localStorage.getItem('docsearch_encounters') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/InstantBillSettlementView.tsx",
+      "line": 58,
+      "action": "getItem",
+      "key": "docsearch_pending_lab_orders",
+      "code": "const labs = JSON.parse(localStorage.getItem('docsearch_pending_lab_orders') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/InstantBillSettlementView.tsx",
+      "line": 76,
+      "action": "getItem",
+      "key": "docsearch_pending_radiology_orders",
+      "code": "const rads = JSON.parse(localStorage.getItem('docsearch_pending_radiology_orders') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+      "line": 129,
+      "action": "getItem",
+      "key": "docsearch_inpatient_ward_care",
+      "code": "const stored = localStorage.getItem('docsearch_inpatient_ward_care');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+      "line": 208,
+      "action": "getItem",
+      "key": "docsearch_recent_opd_queue",
+      "code": "const recentRaw = localStorage.getItem('docsearch_recent_opd_queue');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+      "line": 264,
+      "action": "getItem",
+      "key": "docsearch_nurse_vitals",
+      "code": "const storedNurseVitals = JSON.parse(localStorage.getItem('docsearch_nurse_vitals') || '{}');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+      "line": 285,
+      "action": "getItem",
+      "key": "docsearch_nurse_vitals",
+      "code": "const stored = JSON.parse(localStorage.getItem('docsearch_nurse_vitals') || '{}');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+      "line": 364,
+      "action": "getItem",
+      "key": "docsearch_nurse_vitals",
+      "code": "const storedVitals = JSON.parse(localStorage.getItem('docsearch_nurse_vitals') || '{}');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+      "line": 366,
+      "action": "setItem",
+      "key": "docsearch_nurse_vitals",
+      "code": "localStorage.setItem('docsearch_nurse_vitals', JSON.stringify(storedVitals));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+      "line": 372,
+      "action": "getItem",
+      "key": "docsearch_patient_vitals_history",
+      "code": "const historyMap = JSON.parse(localStorage.getItem('docsearch_patient_vitals_history') || '{}');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+      "line": 388,
+      "action": "setItem",
+      "key": "docsearch_patient_vitals_history",
+      "code": "localStorage.setItem('docsearch_patient_vitals_history', JSON.stringify(historyMap));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+      "line": 414,
+      "action": "setItem",
+      "key": "docsearch_recent_opd_queue",
+      "code": "localStorage.setItem('docsearch_recent_opd_queue', JSON.stringify(updatedQueue));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+      "line": 446,
+      "action": "setItem",
+      "key": "docsearch_recent_opd_queue",
+      "code": "localStorage.setItem('docsearch_recent_opd_queue', JSON.stringify(previousQueueSnapshot));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+      "line": 468,
+      "action": "setItem",
+      "key": "docsearch_recent_opd_queue",
+      "code": "localStorage.setItem('docsearch_recent_opd_queue', JSON.stringify(updatedQueue));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+      "line": 511,
+      "action": "setItem",
+      "key": "docsearch_inpatient_ward_care",
+      "code": "localStorage.setItem('docsearch_inpatient_ward_care', JSON.stringify(updated));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+      "line": 528,
+      "action": "setItem",
+      "key": "docsearch_inpatient_ward_care",
+      "code": "localStorage.setItem('docsearch_inpatient_ward_care', JSON.stringify(updated));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+      "line": 547,
+      "action": "setItem",
+      "key": "docsearch_inpatient_ward_care",
+      "code": "localStorage.setItem('docsearch_inpatient_ward_care', JSON.stringify(updated));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+      "line": 564,
+      "action": "setItem",
+      "key": "docsearch_inpatient_ward_care",
+      "code": "localStorage.setItem('docsearch_inpatient_ward_care', JSON.stringify(updated));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+      "line": 1241,
+      "action": "getItem",
+      "key": "docsearch_nurse_vitals",
+      "code": "const storedVitals = JSON.parse(localStorage.getItem('docsearch_nurse_vitals') || '{}')[p.id];",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/SoloDoctorOpdCockpitView.tsx",
+      "line": 467,
+      "action": "getItem",
+      "key": "docsearch_nurse_vitals",
+      "code": "const stored = JSON.parse(localStorage.getItem('docsearch_nurse_vitals') || '{}');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/SoloDoctorOpdCockpitView.tsx",
+      "line": 725,
+      "action": "getItem",
+      "key": "docsearch_nurse_vitals",
+      "code": "const stored = JSON.parse(localStorage.getItem('docsearch_nurse_vitals') || '{}');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/SoloDoctorOpdCockpitView.tsx",
+      "line": 751,
+      "action": "getItem",
+      "key": "docsearch_patient_vitals_history",
+      "code": "const historyMap = JSON.parse(localStorage.getItem('docsearch_patient_vitals_history') || '{}');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/SoloDoctorOpdCockpitView.tsx",
+      "line": 824,
+      "action": "getItem",
+      "key": "docsearch_patient_vitals_history",
+      "code": "const historyMap = JSON.parse(localStorage.getItem('docsearch_patient_vitals_history') || '{}');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/services/cdsco-inspection-audit-service.ts",
+      "line": 316,
+      "action": "getItem",
+      "key": "docsearch_pharmacy_demo_seed",
+      "code": "const isDemoSeed = localStorage.getItem('docsearch_pharmacy_demo_seed') === 'true';",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/services/cdsco-inspection-audit-service.ts",
+      "line": 338,
+      "action": "setItem",
+      "key": "docsearch_pharmacy_demo_seed",
+      "code": "localStorage.setItem('docsearch_pharmacy_demo_seed', 'true');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/services/clinical-consultation-service.ts",
+      "line": 288,
+      "action": "getItem",
+      "key": "docsearch_encounters",
+      "code": "const storedEncs = JSON.parse(localStorage.getItem('docsearch_encounters') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/services/clinical-consultation-service.ts",
+      "line": 290,
+      "action": "getItem",
+      "key": "docsearch_nurse_vitals",
+      "code": "const storedNurseVitals = JSON.parse(localStorage.getItem('docsearch_nurse_vitals') || '{}');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/services/clinical-consultation-service.ts",
+      "line": 1167,
+      "action": "getItem",
+      "key": "docsearch_pharmacy_prescriptions",
+      "code": "const existingRxList: any[] = JSON.parse(localStorage.getItem('docsearch_pharmacy_prescriptions') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/services/clinical-consultation-service.ts",
+      "line": 1218,
+      "action": "setItem",
+      "key": "docsearch_pharmacy_prescriptions",
+      "code": "localStorage.setItem('docsearch_pharmacy_prescriptions', JSON.stringify(existingRxList));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/services/clinical-investigation-service.ts",
+      "line": 1611,
+      "action": "setItem",
+      "key": "docsearch_pending_lab_orders",
+      "code": "window.localStorage.setItem(\"docsearch_pending_lab_orders\", JSON.stringify([]));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/services/encounter-service.ts",
+      "line": 667,
+      "action": "getItem",
+      "key": "docsearch_opd_queue",
+      "code": "const stored = window.localStorage.getItem('docsearch_opd_queue');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/services/hospital-event-bus.ts",
+      "line": 67,
+      "action": "getItem",
+      "key": "docsearch_active_patient_context",
+      "code": "const cached = localStorage.getItem('docsearch_active_patient_context');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/services/hospital-event-bus.ts",
+      "line": 100,
+      "action": "setItem",
+      "key": "docsearch_active_patient_context",
+      "code": "localStorage.setItem('docsearch_active_patient_context', JSON.stringify(data));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/services/pharmacy-credit-khata-service.ts",
+      "line": 124,
+      "action": "getItem",
+      "key": "docsearch_pharmacy_sales_invoices",
+      "code": "const stored = window.localStorage.getItem('docsearch_pharmacy_sales_invoices');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/services/pharmacy-offline-storage-service.ts",
+      "line": 487,
+      "action": "getItem",
+      "key": "docsearch_offline_invoices_backup",
+      "code": "const stored = localStorage.getItem('docsearch_offline_invoices_backup');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/services/pharmacy-offline-storage-service.ts",
+      "line": 490,
+      "action": "setItem",
+      "key": "docsearch_offline_invoices_backup",
+      "code": "localStorage.setItem('docsearch_offline_invoices_backup', JSON.stringify(list));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/services/pharmacy-offline-storage-service.ts",
+      "line": 660,
+      "action": "getItem",
+      "key": "docsearch_offline_invoices_backup",
+      "code": "const stored = localStorage.getItem('docsearch_offline_invoices_backup');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/services/pharmacy-revenue-galla-service.ts",
+      "line": 187,
+      "action": "getItem",
+      "key": "docsearch_pharmacy_demo_seed",
+      "code": "window.localStorage.getItem('docsearch_pharmacy_demo_seed') === 'true';",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/services/pharmacy-revenue-galla-service.ts",
+      "line": 504,
+      "action": "setItem",
+      "key": "docsearch_pharmacy_demo_seed",
+      "code": "window.localStorage.setItem('docsearch_pharmacy_demo_seed', 'true');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/utils/partnerProfileGuard.ts",
+      "line": 74,
+      "action": "getItem",
+      "key": "docsearch_registered_partners",
+      "code": "const regList = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/utils/roleProfileResolver.ts",
+      "line": 77,
+      "action": "getItem",
+      "key": "docsearch_registered_partners",
+      "code": "const regList = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/billing/InvoiceListView.tsx",
+      "line": 40,
+      "action": "getItem",
+      "key": "docsearch_partner_invoices",
+      "code": "const stored = localStorage.getItem('docsearch_partner_invoices');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/billing/SubscriptionCustomizerModal.tsx",
+      "line": 1197,
+      "action": "getItem",
+      "key": "docsearch_partner_invoices",
+      "code": "const storedInvoices = localStorage.getItem('docsearch_partner_invoices');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/billing/SubscriptionCustomizerModal.tsx",
+      "line": 1200,
+      "action": "setItem",
+      "key": "docsearch_partner_invoices",
+      "code": "localStorage.setItem('docsearch_partner_invoices', JSON.stringify(list));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+      "line": 141,
+      "action": "getItem",
+      "key": "docsearch_registered_partners",
+      "code": "const stagedRaw = localStorage.getItem('docsearch_registered_partners');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+      "line": 170,
+      "action": "getItem",
+      "key": "docsearch_verification_queue",
+      "code": "const queueRaw = localStorage.getItem('docsearch_verification_queue');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+      "line": 301,
+      "action": "getItem",
+      "key": "docsearch_registered_partners",
+      "code": "const stagedRaw = localStorage.getItem('docsearch_registered_partners');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+      "line": 308,
+      "action": "setItem",
+      "key": "docsearch_registered_partners",
+      "code": "localStorage.setItem('docsearch_registered_partners', JSON.stringify(list));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+      "line": 315,
+      "action": "getItem",
+      "key": "docsearch_verification_queue",
+      "code": "const queueRaw = localStorage.getItem('docsearch_verification_queue');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+      "line": 319,
+      "action": "setItem",
+      "key": "docsearch_verification_queue",
+      "code": "localStorage.setItem('docsearch_verification_queue', JSON.stringify(updatedQueue));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+      "line": 385,
+      "action": "getItem",
+      "key": "docsearch_registered_partners",
+      "code": "const stagedRaw = localStorage.getItem('docsearch_registered_partners');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+      "line": 392,
+      "action": "setItem",
+      "key": "docsearch_registered_partners",
+      "code": "localStorage.setItem('docsearch_registered_partners', JSON.stringify(list));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+      "line": 398,
+      "action": "getItem",
+      "key": "docsearch_verification_queue",
+      "code": "const queueRaw = localStorage.getItem('docsearch_verification_queue');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+      "line": 402,
+      "action": "setItem",
+      "key": "docsearch_verification_queue",
+      "code": "localStorage.setItem('docsearch_verification_queue', JSON.stringify(updatedQueue));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/AiWhatsAppEngagementBroadcasterView.tsx",
+      "line": 24,
+      "action": "getItem",
+      "key": "docsearch_registered_partners",
+      "code": "const regPartners = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/DoctorNmcCredentialingBotView.tsx",
+      "line": 24,
+      "action": "getItem",
+      "key": "docsearch_registered_partners",
+      "code": "const regPartners = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/LeadToPartnerPipelineView.tsx",
+      "line": 115,
+      "action": "getItem",
+      "key": "docsearch_registered_partners",
+      "code": "const regPartners = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/LeadToPartnerPipelineView.tsx",
+      "line": 315,
+      "action": "getItem",
+      "key": "docsearch_registered_partners",
+      "code": "const reg = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/LeadToPartnerPipelineView.tsx",
+      "line": 338,
+      "action": "setItem",
+      "key": "docsearch_registered_partners",
+      "code": "localStorage.setItem('docsearch_registered_partners', JSON.stringify([newReg, ...reg.filter((p: any) => p.id !== created.id)]));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/LeadToPartnerPipelineView.tsx",
+      "line": 437,
+      "action": "getItem",
+      "key": "docsearch_registered_partners",
+      "code": "const reg = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/LeadToPartnerPipelineView.tsx",
+      "line": 460,
+      "action": "setItem",
+      "key": "docsearch_registered_partners",
+      "code": "localStorage.setItem('docsearch_registered_partners', JSON.stringify([newReg, ...reg.filter((p: any) => p.id !== ent.id)]));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerAbdmTelemetryView.tsx",
+      "line": 20,
+      "action": "getItem",
+      "key": "docsearch_registered_partners",
+      "code": "const regPartners = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerContractsVaultView.tsx",
+      "line": 27,
+      "action": "getItem",
+      "key": "docsearch_registered_partners",
+      "code": "const regPartners = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerEscrowRevenueSplitView.tsx",
+      "line": 24,
+      "action": "getItem",
+      "key": "docsearch_registered_partners",
+      "code": "const regPartners = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerHealthChurnRadarView.tsx",
+      "line": 26,
+      "action": "getItem",
+      "key": "docsearch_registered_partners",
+      "code": "const regPartners = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerListView.tsx",
+      "line": 1026,
+      "action": "getItem",
+      "key": "docsearch_registered_partners",
+      "code": "const reg = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerListView.tsx",
+      "line": 1041,
+      "action": "setItem",
+      "key": "docsearch_registered_partners",
+      "code": "localStorage.setItem('docsearch_registered_partners', JSON.stringify(updatedReg));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerListView.tsx",
+      "line": 1167,
+      "action": "getItem",
+      "key": "docsearch_registered_partners",
+      "code": "const reg = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerListView.tsx",
+      "line": 1192,
+      "action": "setItem",
+      "key": "docsearch_registered_partners",
+      "code": "localStorage.setItem('docsearch_registered_partners', JSON.stringify([newReg, ...reg.filter((p: any) => p.id !== partnerDto.id && p.email !== partnerDto.primaryContact.email)]));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerOnboardingModal.tsx",
+      "line": 114,
+      "action": "getItem",
+      "key": "docsearch_registered_partners",
+      "code": "const existing = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerOnboardingModal.tsx",
+      "line": 134,
+      "action": "setItem",
+      "key": "docsearch_registered_partners",
+      "code": "localStorage.setItem('docsearch_registered_partners', JSON.stringify(updated));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerOutreachHubView.tsx",
+      "line": 24,
+      "action": "getItem",
+      "key": "docsearch_registered_partners",
+      "code": "const regPartners = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerRevenueBillingLedgerView.tsx",
+      "line": 21,
+      "action": "getItem",
+      "key": "docsearch_b2b_invoices",
+      "code": "const saved = localStorage.getItem('docsearch_b2b_invoices');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerRevenueBillingLedgerView.tsx",
+      "line": 27,
+      "action": "getItem",
+      "key": "docsearch_registered_partners",
+      "code": "const regPartners = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerRevenueBillingLedgerView.tsx",
+      "line": 57,
+      "action": "setItem",
+      "key": "docsearch_b2b_invoices",
+      "code": "localStorage.setItem('docsearch_b2b_invoices', JSON.stringify(updated));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "line": 462,
+      "action": "getItem",
+      "key": "docsearch_verification_queue",
+      "code": "localStorage.getItem('docsearch_verification_queue') || '[]'",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "line": 473,
+      "action": "setItem",
+      "key": "docsearch_verification_queue",
+      "code": "localStorage.setItem('docsearch_verification_queue', JSON.stringify(filtered));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "line": 652,
+      "action": "getItem",
+      "key": "docsearch_verification_queue",
+      "code": "dynamicLocal = JSON.parse(localStorage.getItem('docsearch_verification_queue') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "line": 1001,
+      "action": "getItem",
+      "key": "docsearch_registered_partners",
+      "code": "const partners = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "line": 1015,
+      "action": "setItem",
+      "key": "docsearch_registered_partners",
+      "code": "localStorage.setItem('docsearch_registered_partners', JSON.stringify(updated));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "line": 1033,
+      "action": "getItem",
+      "key": "docsearch_verification_queue",
+      "code": "const q = JSON.parse(localStorage.getItem('docsearch_verification_queue') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "line": 1044,
+      "action": "setItem",
+      "key": "docsearch_verification_queue",
+      "code": "localStorage.setItem('docsearch_verification_queue', JSON.stringify(updatedQ));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "line": 1208,
+      "action": "getItem",
+      "key": "docsearch_verification_queue",
+      "code": "const q = JSON.parse(localStorage.getItem('docsearch_verification_queue') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "line": 1210,
+      "action": "setItem",
+      "key": "docsearch_verification_queue",
+      "code": "localStorage.setItem('docsearch_verification_queue', JSON.stringify(updatedQ));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "line": 1255,
+      "action": "getItem",
+      "key": "docsearch_verification_queue",
+      "code": "const q = JSON.parse(localStorage.getItem('docsearch_verification_queue') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+      "line": 1257,
+      "action": "setItem",
+      "key": "docsearch_verification_queue",
+      "code": "localStorage.setItem('docsearch_verification_queue', JSON.stringify(updatedQ));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PathologyPartnerOnboardingWizard.tsx",
+      "line": 1502,
+      "action": "getItem",
+      "key": "docsearch_registered_partners",
+      "code": "const storedRegPartners = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PathologyPartnerOnboardingWizard.tsx",
+      "line": 1536,
+      "action": "setItem",
+      "key": "docsearch_registered_partners",
+      "code": "localStorage.setItem('docsearch_registered_partners', JSON.stringify(updatedRegList));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PathologyPartnerOnboardingWizard.tsx",
+      "line": 1542,
+      "action": "getItem",
+      "key": "docsearch_custom_partner_users",
+      "code": "const customUsers = JSON.parse(localStorage.getItem('docsearch_custom_partner_users') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PathologyPartnerOnboardingWizard.tsx",
+      "line": 1628,
+      "action": "setItem",
+      "key": "docsearch_custom_partner_users",
+      "code": "localStorage.setItem('docsearch_custom_partner_users', JSON.stringify([newCustomUser, ...customUsers.filter((u: any) => u.email !== formData.email)]));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/growth/LaunchOfferManagerView.tsx",
+      "line": 98,
+      "action": "getItem",
+      "key": "docsearch_registered_partners",
+      "code": "const raw = localStorage.getItem('docsearch_registered_partners');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/sales/CreateLeadModal.tsx",
+      "line": 262,
+      "action": "getItem",
+      "key": "docsearch_registered_partners",
+      "code": "const reg = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/sales/CreateLeadModal.tsx",
+      "line": 285,
+      "action": "setItem",
+      "key": "docsearch_registered_partners",
+      "code": "localStorage.setItem('docsearch_registered_partners', JSON.stringify([newReg, ...reg.filter((p: any) => p.id !== created.id)]));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/services/partner-service.ts",
+      "line": 872,
+      "action": "getItem",
+      "key": "docsearch_registered_partners",
+      "code": "const reg = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/services/partner-service.ts",
+      "line": 1386,
+      "action": "getItem",
+      "key": "docsearch_registered_partners",
+      "code": "const reg = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/services/partner-service.ts",
+      "line": 1389,
+      "action": "setItem",
+      "key": "docsearch_registered_partners",
+      "code": "localStorage.setItem('docsearch_registered_partners', JSON.stringify(updatedReg));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/services/partner-service.ts",
+      "line": 1398,
+      "action": "getItem",
+      "key": "docsearch_verification_queue",
+      "code": "const q = JSON.parse(localStorage.getItem('docsearch_verification_queue') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/company-platform/src/services/partner-service.ts",
+      "line": 1401,
+      "action": "setItem",
+      "key": "docsearch_verification_queue",
+      "code": "localStorage.setItem('docsearch_verification_queue', JSON.stringify(updatedQ));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/landing-page/src/components/FullPageRegistrationView.tsx",
+      "line": 538,
+      "action": "getItem",
+      "key": "docsearch_registered_partners",
+      "code": "const raw = localStorage.getItem('docsearch_registered_partners');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/landing-page/src/components/FullPageRegistrationView.tsx",
+      "line": 542,
+      "action": "setItem",
+      "key": "docsearch_registered_partners",
+      "code": "localStorage.setItem('docsearch_registered_partners', JSON.stringify(list));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/landing-page/src/components/UnifiedHealthcareLoginModal.tsx",
+      "line": 690,
+      "action": "getItem",
+      "key": "docsearch_registered_partners",
+      "code": "const raw = localStorage.getItem('docsearch_registered_partners');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/landing-page/src/components/UnifiedHealthcareLoginModal.tsx",
+      "line": 705,
+      "action": "setItem",
+      "key": "docsearch_registered_partners",
+      "code": "localStorage.setItem('docsearch_registered_partners', JSON.stringify(list));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/landing-page/src/components/UnifiedHealthcareLoginModal.tsx",
+      "line": 1089,
+      "action": "getItem",
+      "key": "docsearch_verification_queue",
+      "code": "const q = JSON.parse(localStorage.getItem('docsearch_verification_queue') || '[]');",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    },
+    {
+      "file": "apps/landing-page/src/components/UnifiedHealthcareLoginModal.tsx",
+      "line": 1091,
+      "action": "setItem",
+      "key": "docsearch_verification_queue",
+      "code": "localStorage.setItem('docsearch_verification_queue', JSON.stringify(q));",
+      "classification": "BUSINESS_SOURCE_OF_TRUTH"
+    }
+  ],
+  "groupedByFile": {
+    "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx": [
+      {
+        "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+        "line": 515,
+        "action": "getItem",
+        "key": "docsearch_custom_partner_users",
+        "code": "const localCustom: HospitalStaffUser[] = JSON.parse(localStorage.getItem('docsearch_custom_partner_users') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+        "line": 528,
+        "action": "setItem",
+        "key": "docsearch_custom_partner_users",
+        "code": "localStorage.setItem('docsearch_custom_partner_users', JSON.stringify(cleanedCustom));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+        "line": 534,
+        "action": "getItem",
+        "key": "docsearch_verification_queue",
+        "code": "const rawQ = localStorage.getItem('docsearch_verification_queue');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+        "line": 546,
+        "action": "setItem",
+        "key": "docsearch_verification_queue",
+        "code": "localStorage.setItem('docsearch_verification_queue', JSON.stringify(cleanedQ));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+        "line": 1297,
+        "action": "getItem",
+        "key": "docsearch_verification_queue",
+        "code": "const localQueue = JSON.parse(localStorage.getItem('docsearch_verification_queue') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+        "line": 1299,
+        "action": "setItem",
+        "key": "docsearch_verification_queue",
+        "code": "localStorage.setItem('docsearch_verification_queue', JSON.stringify(localQueue));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+        "line": 1304,
+        "action": "getItem",
+        "key": "docsearch_custom_partner_users",
+        "code": "const localCustom: HospitalStaffUser[] = JSON.parse(localStorage.getItem('docsearch_custom_partner_users') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+        "line": 1307,
+        "action": "setItem",
+        "key": "docsearch_custom_partner_users",
+        "code": "localStorage.setItem('docsearch_custom_partner_users', JSON.stringify(filtered));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/partner-platform/src/components/ClinicalInvestigationDomainManager.tsx": [
+      {
+        "file": "apps/partner-platform/src/components/ClinicalInvestigationDomainManager.tsx",
+        "line": 334,
+        "action": "getItem",
+        "key": "docsearch_pending_lab_orders",
+        "code": "const stored = localStorage.getItem('docsearch_pending_lab_orders');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/ClinicalInvestigationDomainManager.tsx",
+        "line": 455,
+        "action": "getItem",
+        "key": "docsearch_pending_lab_orders",
+        "code": "const storedLab = localStorage.getItem('docsearch_pending_lab_orders');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/partner-platform/src/components/common/AbdmScanAndShareModal.tsx": [
+      {
+        "file": "apps/partner-platform/src/components/common/AbdmScanAndShareModal.tsx",
+        "line": 130,
+        "action": "getItem",
+        "key": "docsearch_opd_queue",
+        "code": "const queueRaw = localStorage.getItem('docsearch_opd_queue');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/common/AbdmScanAndShareModal.tsx",
+        "line": 139,
+        "action": "setItem",
+        "key": "docsearch_opd_queue",
+        "code": "localStorage.setItem('docsearch_opd_queue', JSON.stringify(queue));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/common/AbdmScanAndShareModal.tsx",
+        "line": 141,
+        "action": "getItem",
+        "key": "docsearch_patients",
+        "code": "const patientsRaw = localStorage.getItem('docsearch_patients');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/common/AbdmScanAndShareModal.tsx",
+        "line": 155,
+        "action": "setItem",
+        "key": "docsearch_patients",
+        "code": "localStorage.setItem('docsearch_patients', JSON.stringify(patients));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/partner-platform/src/components/common/ActivePatientContextBar.tsx": [
+      {
+        "file": "apps/partner-platform/src/components/common/ActivePatientContextBar.tsx",
+        "line": 20,
+        "action": "getItem",
+        "key": "docsearch_recent_patients",
+        "code": "const raw = localStorage.getItem('docsearch_recent_patients');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/common/ActivePatientContextBar.tsx",
+        "line": 32,
+        "action": "setItem",
+        "key": "docsearch_recent_patients",
+        "code": "localStorage.setItem('docsearch_recent_patients', JSON.stringify(patients.slice(0, 5)));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/partner-platform/src/components/common/FastOpdRegistrationDrawer.tsx": [
+      {
+        "file": "apps/partner-platform/src/components/common/FastOpdRegistrationDrawer.tsx",
+        "line": 292,
+        "action": "getItem",
+        "key": "docsearch_recent_opd_queue",
+        "code": "const existingRaw = localStorage.getItem('docsearch_recent_opd_queue');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/common/FastOpdRegistrationDrawer.tsx",
+        "line": 295,
+        "action": "setItem",
+        "key": "docsearch_recent_opd_queue",
+        "code": "localStorage.setItem('docsearch_recent_opd_queue', JSON.stringify(queue.slice(0, 50)));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/common/FastOpdRegistrationDrawer.tsx",
+        "line": 339,
+        "action": "getItem",
+        "key": "docsearch_encounters",
+        "code": "const existingEncsRaw = localStorage.getItem('docsearch_encounters');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/common/FastOpdRegistrationDrawer.tsx",
+        "line": 342,
+        "action": "setItem",
+        "key": "docsearch_encounters",
+        "code": "localStorage.setItem('docsearch_encounters', JSON.stringify(encs.slice(0, 100)));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/partner-platform/src/components/common/LiveHospitalMetricsTicker.tsx": [
+      {
+        "file": "apps/partner-platform/src/components/common/LiveHospitalMetricsTicker.tsx",
+        "line": 42,
+        "action": "getItem",
+        "key": "docsearch_inpatient_beds",
+        "code": "const storedBeds = localStorage.getItem('docsearch_inpatient_beds');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/common/LiveHospitalMetricsTicker.tsx",
+        "line": 51,
+        "action": "getItem",
+        "key": "docsearch_opd_queue",
+        "code": "const storedQueue = localStorage.getItem('docsearch_opd_queue');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/common/LiveHospitalMetricsTicker.tsx",
+        "line": 59,
+        "action": "getItem",
+        "key": "docsearch_pharmacy_dispensing",
+        "code": "const storedRx = localStorage.getItem('docsearch_pharmacy_dispensing');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/common/LiveHospitalMetricsTicker.tsx",
+        "line": 68,
+        "action": "getItem",
+        "key": "docsearch_patients",
+        "code": "const storedPatients = localStorage.getItem('docsearch_patients');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/partner-platform/src/components/common/OpdQueueTvDisplayModal.tsx": [
+      {
+        "file": "apps/partner-platform/src/components/common/OpdQueueTvDisplayModal.tsx",
+        "line": 44,
+        "action": "getItem",
+        "key": "docsearch_opd_queue",
+        "code": "const stored = localStorage.getItem('docsearch_opd_queue');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/common/OpdQueueTvDisplayModal.tsx",
+        "line": 83,
+        "action": "setItem",
+        "key": "docsearch_opd_queue",
+        "code": "localStorage.setItem('docsearch_opd_queue', JSON.stringify(queue));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/partner-platform/src/components/common/UniversalAccountSettingsModal.tsx": [
+      {
+        "file": "apps/partner-platform/src/components/common/UniversalAccountSettingsModal.tsx",
+        "line": 223,
+        "action": "getItem",
+        "key": "docsearch_registered_partners",
+        "code": "const partners = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/common/UniversalAccountSettingsModal.tsx",
+        "line": 338,
+        "action": "getItem",
+        "key": "docsearch_verification_queue",
+        "code": "const q = JSON.parse(localStorage.getItem('docsearch_verification_queue') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/common/UniversalAccountSettingsModal.tsx",
+        "line": 361,
+        "action": "setItem",
+        "key": "docsearch_verification_queue",
+        "code": "localStorage.setItem('docsearch_verification_queue', JSON.stringify(q));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/common/UniversalAccountSettingsModal.tsx",
+        "line": 580,
+        "action": "getItem",
+        "key": "docsearch_custom_partner_users",
+        "code": "const customUsers = JSON.parse(localStorage.getItem('docsearch_custom_partner_users') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/common/UniversalAccountSettingsModal.tsx",
+        "line": 586,
+        "action": "setItem",
+        "key": "docsearch_custom_partner_users",
+        "code": "localStorage.setItem('docsearch_custom_partner_users', JSON.stringify(updated));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/partner-platform/src/components/dialogs/DoctorPrescriptionQueueImporterModal.tsx": [
+      {
+        "file": "apps/partner-platform/src/components/dialogs/DoctorPrescriptionQueueImporterModal.tsx",
+        "line": 65,
+        "action": "getItem",
+        "key": "docsearch_pending_doctor_prescriptions",
+        "code": "const stored = localStorage.getItem('docsearch_pending_doctor_prescriptions');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/dialogs/DoctorPrescriptionQueueImporterModal.tsx",
+        "line": 155,
+        "action": "getItem",
+        "key": "docsearch_pending_doctor_prescriptions",
+        "code": "const existing = JSON.parse(localStorage.getItem('docsearch_pending_doctor_prescriptions') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/dialogs/DoctorPrescriptionQueueImporterModal.tsx",
+        "line": 156,
+        "action": "setItem",
+        "key": "docsearch_pending_doctor_prescriptions",
+        "code": "localStorage.setItem('docsearch_pending_doctor_prescriptions', JSON.stringify([newRx, ...existing.slice(0, 19)]));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/dialogs/DoctorPrescriptionQueueImporterModal.tsx",
+        "line": 230,
+        "action": "getItem",
+        "key": "docsearch_pending_doctor_prescriptions",
+        "code": "const existing = JSON.parse(localStorage.getItem('docsearch_pending_doctor_prescriptions') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/dialogs/DoctorPrescriptionQueueImporterModal.tsx",
+        "line": 232,
+        "action": "setItem",
+        "key": "docsearch_pending_doctor_prescriptions",
+        "code": "localStorage.setItem('docsearch_pending_doctor_prescriptions', JSON.stringify(filtered));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/partner-platform/src/components/InpatientDomainManager.tsx": [
+      {
+        "file": "apps/partner-platform/src/components/InpatientDomainManager.tsx",
+        "line": 279,
+        "action": "getItem",
+        "key": "docsearch_admission_requests",
+        "code": "const storedAdms = typeof window !== 'undefined' ? localStorage.getItem('docsearch_admission_requests') : null;",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/partner-platform/src/components/PartnerPlatformShell.tsx": [
+      {
+        "file": "apps/partner-platform/src/components/PartnerPlatformShell.tsx",
+        "line": 664,
+        "action": "getItem",
+        "key": "docsearch_registered_partners",
+        "code": "const list = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/PartnerPlatformShell.tsx",
+        "line": 732,
+        "action": "getItem",
+        "key": "docsearch_registered_partners",
+        "code": "const list = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/PartnerPlatformShell.tsx",
+        "line": 745,
+        "action": "setItem",
+        "key": "docsearch_registered_partners",
+        "code": "localStorage.setItem('docsearch_registered_partners', JSON.stringify(list));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/partner-platform/src/components/RadiologyDomainManager.tsx": [
+      {
+        "file": "apps/partner-platform/src/components/RadiologyDomainManager.tsx",
+        "line": 144,
+        "action": "getItem",
+        "key": "docsearch_pending_radiology_orders",
+        "code": "const stored = typeof window !== 'undefined' ? localStorage.getItem('docsearch_pending_radiology_orders') : null;",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/partner-platform/src/components/views/ConsultationDoctorWorklistView.tsx": [
+      {
+        "file": "apps/partner-platform/src/components/views/ConsultationDoctorWorklistView.tsx",
+        "line": 54,
+        "action": "getItem",
+        "key": "docsearch_nurse_vitals",
+        "code": "const stored = JSON.parse(localStorage.getItem('docsearch_nurse_vitals') || '{}');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/partner-platform/src/components/views/DoctorExpressConsultationDesk.tsx": [
+      {
+        "file": "apps/partner-platform/src/components/views/DoctorExpressConsultationDesk.tsx",
+        "line": 664,
+        "action": "getItem",
+        "key": "docsearch_nurse_vitals",
+        "code": "const stored = JSON.parse(localStorage.getItem('docsearch_nurse_vitals') || '{}');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/views/DoctorExpressConsultationDesk.tsx",
+        "line": 693,
+        "action": "getItem",
+        "key": "docsearch_patient_vitals_history",
+        "code": "const historyMap = JSON.parse(localStorage.getItem('docsearch_patient_vitals_history') || '{}');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/views/DoctorExpressConsultationDesk.tsx",
+        "line": 765,
+        "action": "getItem",
+        "key": "docsearch_patient_vitals_history",
+        "code": "const historyMap = JSON.parse(localStorage.getItem('docsearch_patient_vitals_history') || '{}');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/views/DoctorExpressConsultationDesk.tsx",
+        "line": 966,
+        "action": "getItem",
+        "key": "docsearch_nurse_vitals",
+        "code": "const stored = JSON.parse(localStorage.getItem('docsearch_nurse_vitals') || '{}');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/partner-platform/src/components/views/FastPharmacyPosCounterView.tsx": [
+      {
+        "file": "apps/partner-platform/src/components/views/FastPharmacyPosCounterView.tsx",
+        "line": 369,
+        "action": "getItem",
+        "key": "docsearch_pharmacy_invoices",
+        "code": "const saved = localStorage.getItem('docsearch_pharmacy_invoices');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/views/FastPharmacyPosCounterView.tsx",
+        "line": 442,
+        "action": "setItem",
+        "key": "docsearch_pharmacy_invoices",
+        "code": "localStorage.setItem('docsearch_pharmacy_invoices', JSON.stringify(combined));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/views/FastPharmacyPosCounterView.tsx",
+        "line": 1799,
+        "action": "setItem",
+        "key": "docsearch_pharmacy_invoices",
+        "code": "localStorage.setItem('docsearch_pharmacy_invoices', JSON.stringify(next));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/views/FastPharmacyPosCounterView.tsx",
+        "line": 4335,
+        "action": "setItem",
+        "key": "docsearch_pharmacy_invoices",
+        "code": "localStorage.setItem('docsearch_pharmacy_invoices', JSON.stringify(filtered));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx": [
+      {
+        "file": "apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx",
+        "line": 209,
+        "action": "getItem",
+        "key": "docsearch_recent_opd_queue",
+        "code": "const stored = localStorage.getItem('docsearch_recent_opd_queue');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx",
+        "line": 320,
+        "action": "getItem",
+        "key": "docsearch_recent_opd_queue",
+        "code": "const existingQueue: OpdQueueItem[] = JSON.parse(localStorage.getItem('docsearch_recent_opd_queue') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx",
+        "line": 322,
+        "action": "setItem",
+        "key": "docsearch_recent_opd_queue",
+        "code": "localStorage.setItem('docsearch_recent_opd_queue', JSON.stringify(existingQueue));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx",
+        "line": 364,
+        "action": "getItem",
+        "key": "docsearch_encounters",
+        "code": "const existingEncsRaw = localStorage.getItem('docsearch_encounters');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx",
+        "line": 367,
+        "action": "setItem",
+        "key": "docsearch_encounters",
+        "code": "localStorage.setItem('docsearch_encounters', JSON.stringify(encs.slice(0, 100)));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx",
+        "line": 439,
+        "action": "setItem",
+        "key": "docsearch_recent_opd_queue",
+        "code": "localStorage.setItem('docsearch_recent_opd_queue', JSON.stringify(updated));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx",
+        "line": 463,
+        "action": "setItem",
+        "key": "docsearch_recent_opd_queue",
+        "code": "localStorage.setItem('docsearch_recent_opd_queue', JSON.stringify(updated));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx",
+        "line": 488,
+        "action": "setItem",
+        "key": "docsearch_recent_opd_queue",
+        "code": "localStorage.setItem('docsearch_recent_opd_queue', JSON.stringify(updated));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx",
+        "line": 505,
+        "action": "setItem",
+        "key": "docsearch_recent_opd_queue",
+        "code": "localStorage.setItem('docsearch_recent_opd_queue', JSON.stringify(updated));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/partner-platform/src/components/views/InstantBillSettlementView.tsx": [
+      {
+        "file": "apps/partner-platform/src/components/views/InstantBillSettlementView.tsx",
+        "line": 33,
+        "action": "getItem",
+        "key": "docsearch_encounters",
+        "code": "const encs = JSON.parse(localStorage.getItem('docsearch_encounters') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/views/InstantBillSettlementView.tsx",
+        "line": 58,
+        "action": "getItem",
+        "key": "docsearch_pending_lab_orders",
+        "code": "const labs = JSON.parse(localStorage.getItem('docsearch_pending_lab_orders') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/views/InstantBillSettlementView.tsx",
+        "line": 76,
+        "action": "getItem",
+        "key": "docsearch_pending_radiology_orders",
+        "code": "const rads = JSON.parse(localStorage.getItem('docsearch_pending_radiology_orders') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx": [
+      {
+        "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+        "line": 129,
+        "action": "getItem",
+        "key": "docsearch_inpatient_ward_care",
+        "code": "const stored = localStorage.getItem('docsearch_inpatient_ward_care');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+        "line": 208,
+        "action": "getItem",
+        "key": "docsearch_recent_opd_queue",
+        "code": "const recentRaw = localStorage.getItem('docsearch_recent_opd_queue');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+        "line": 264,
+        "action": "getItem",
+        "key": "docsearch_nurse_vitals",
+        "code": "const storedNurseVitals = JSON.parse(localStorage.getItem('docsearch_nurse_vitals') || '{}');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+        "line": 285,
+        "action": "getItem",
+        "key": "docsearch_nurse_vitals",
+        "code": "const stored = JSON.parse(localStorage.getItem('docsearch_nurse_vitals') || '{}');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+        "line": 364,
+        "action": "getItem",
+        "key": "docsearch_nurse_vitals",
+        "code": "const storedVitals = JSON.parse(localStorage.getItem('docsearch_nurse_vitals') || '{}');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+        "line": 366,
+        "action": "setItem",
+        "key": "docsearch_nurse_vitals",
+        "code": "localStorage.setItem('docsearch_nurse_vitals', JSON.stringify(storedVitals));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+        "line": 372,
+        "action": "getItem",
+        "key": "docsearch_patient_vitals_history",
+        "code": "const historyMap = JSON.parse(localStorage.getItem('docsearch_patient_vitals_history') || '{}');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+        "line": 388,
+        "action": "setItem",
+        "key": "docsearch_patient_vitals_history",
+        "code": "localStorage.setItem('docsearch_patient_vitals_history', JSON.stringify(historyMap));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+        "line": 414,
+        "action": "setItem",
+        "key": "docsearch_recent_opd_queue",
+        "code": "localStorage.setItem('docsearch_recent_opd_queue', JSON.stringify(updatedQueue));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+        "line": 446,
+        "action": "setItem",
+        "key": "docsearch_recent_opd_queue",
+        "code": "localStorage.setItem('docsearch_recent_opd_queue', JSON.stringify(previousQueueSnapshot));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+        "line": 468,
+        "action": "setItem",
+        "key": "docsearch_recent_opd_queue",
+        "code": "localStorage.setItem('docsearch_recent_opd_queue', JSON.stringify(updatedQueue));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+        "line": 511,
+        "action": "setItem",
+        "key": "docsearch_inpatient_ward_care",
+        "code": "localStorage.setItem('docsearch_inpatient_ward_care', JSON.stringify(updated));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+        "line": 528,
+        "action": "setItem",
+        "key": "docsearch_inpatient_ward_care",
+        "code": "localStorage.setItem('docsearch_inpatient_ward_care', JSON.stringify(updated));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+        "line": 547,
+        "action": "setItem",
+        "key": "docsearch_inpatient_ward_care",
+        "code": "localStorage.setItem('docsearch_inpatient_ward_care', JSON.stringify(updated));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+        "line": 564,
+        "action": "setItem",
+        "key": "docsearch_inpatient_ward_care",
+        "code": "localStorage.setItem('docsearch_inpatient_ward_care', JSON.stringify(updated));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/views/NurseVitalsTriageStationView.tsx",
+        "line": 1241,
+        "action": "getItem",
+        "key": "docsearch_nurse_vitals",
+        "code": "const storedVitals = JSON.parse(localStorage.getItem('docsearch_nurse_vitals') || '{}')[p.id];",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/partner-platform/src/components/views/SoloDoctorOpdCockpitView.tsx": [
+      {
+        "file": "apps/partner-platform/src/components/views/SoloDoctorOpdCockpitView.tsx",
+        "line": 467,
+        "action": "getItem",
+        "key": "docsearch_nurse_vitals",
+        "code": "const stored = JSON.parse(localStorage.getItem('docsearch_nurse_vitals') || '{}');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/views/SoloDoctorOpdCockpitView.tsx",
+        "line": 725,
+        "action": "getItem",
+        "key": "docsearch_nurse_vitals",
+        "code": "const stored = JSON.parse(localStorage.getItem('docsearch_nurse_vitals') || '{}');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/views/SoloDoctorOpdCockpitView.tsx",
+        "line": 751,
+        "action": "getItem",
+        "key": "docsearch_patient_vitals_history",
+        "code": "const historyMap = JSON.parse(localStorage.getItem('docsearch_patient_vitals_history') || '{}');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/components/views/SoloDoctorOpdCockpitView.tsx",
+        "line": 824,
+        "action": "getItem",
+        "key": "docsearch_patient_vitals_history",
+        "code": "const historyMap = JSON.parse(localStorage.getItem('docsearch_patient_vitals_history') || '{}');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/partner-platform/src/services/cdsco-inspection-audit-service.ts": [
+      {
+        "file": "apps/partner-platform/src/services/cdsco-inspection-audit-service.ts",
+        "line": 316,
+        "action": "getItem",
+        "key": "docsearch_pharmacy_demo_seed",
+        "code": "const isDemoSeed = localStorage.getItem('docsearch_pharmacy_demo_seed') === 'true';",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/services/cdsco-inspection-audit-service.ts",
+        "line": 338,
+        "action": "setItem",
+        "key": "docsearch_pharmacy_demo_seed",
+        "code": "localStorage.setItem('docsearch_pharmacy_demo_seed', 'true');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/partner-platform/src/services/clinical-consultation-service.ts": [
+      {
+        "file": "apps/partner-platform/src/services/clinical-consultation-service.ts",
+        "line": 288,
+        "action": "getItem",
+        "key": "docsearch_encounters",
+        "code": "const storedEncs = JSON.parse(localStorage.getItem('docsearch_encounters') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/services/clinical-consultation-service.ts",
+        "line": 290,
+        "action": "getItem",
+        "key": "docsearch_nurse_vitals",
+        "code": "const storedNurseVitals = JSON.parse(localStorage.getItem('docsearch_nurse_vitals') || '{}');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/services/clinical-consultation-service.ts",
+        "line": 1167,
+        "action": "getItem",
+        "key": "docsearch_pharmacy_prescriptions",
+        "code": "const existingRxList: any[] = JSON.parse(localStorage.getItem('docsearch_pharmacy_prescriptions') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/services/clinical-consultation-service.ts",
+        "line": 1218,
+        "action": "setItem",
+        "key": "docsearch_pharmacy_prescriptions",
+        "code": "localStorage.setItem('docsearch_pharmacy_prescriptions', JSON.stringify(existingRxList));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/partner-platform/src/services/clinical-investigation-service.ts": [
+      {
+        "file": "apps/partner-platform/src/services/clinical-investigation-service.ts",
+        "line": 1611,
+        "action": "setItem",
+        "key": "docsearch_pending_lab_orders",
+        "code": "window.localStorage.setItem(\"docsearch_pending_lab_orders\", JSON.stringify([]));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/partner-platform/src/services/encounter-service.ts": [
+      {
+        "file": "apps/partner-platform/src/services/encounter-service.ts",
+        "line": 667,
+        "action": "getItem",
+        "key": "docsearch_opd_queue",
+        "code": "const stored = window.localStorage.getItem('docsearch_opd_queue');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/partner-platform/src/services/hospital-event-bus.ts": [
+      {
+        "file": "apps/partner-platform/src/services/hospital-event-bus.ts",
+        "line": 67,
+        "action": "getItem",
+        "key": "docsearch_active_patient_context",
+        "code": "const cached = localStorage.getItem('docsearch_active_patient_context');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/services/hospital-event-bus.ts",
+        "line": 100,
+        "action": "setItem",
+        "key": "docsearch_active_patient_context",
+        "code": "localStorage.setItem('docsearch_active_patient_context', JSON.stringify(data));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/partner-platform/src/services/pharmacy-credit-khata-service.ts": [
+      {
+        "file": "apps/partner-platform/src/services/pharmacy-credit-khata-service.ts",
+        "line": 124,
+        "action": "getItem",
+        "key": "docsearch_pharmacy_sales_invoices",
+        "code": "const stored = window.localStorage.getItem('docsearch_pharmacy_sales_invoices');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/partner-platform/src/services/pharmacy-offline-storage-service.ts": [
+      {
+        "file": "apps/partner-platform/src/services/pharmacy-offline-storage-service.ts",
+        "line": 487,
+        "action": "getItem",
+        "key": "docsearch_offline_invoices_backup",
+        "code": "const stored = localStorage.getItem('docsearch_offline_invoices_backup');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/services/pharmacy-offline-storage-service.ts",
+        "line": 490,
+        "action": "setItem",
+        "key": "docsearch_offline_invoices_backup",
+        "code": "localStorage.setItem('docsearch_offline_invoices_backup', JSON.stringify(list));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/services/pharmacy-offline-storage-service.ts",
+        "line": 660,
+        "action": "getItem",
+        "key": "docsearch_offline_invoices_backup",
+        "code": "const stored = localStorage.getItem('docsearch_offline_invoices_backup');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/partner-platform/src/services/pharmacy-revenue-galla-service.ts": [
+      {
+        "file": "apps/partner-platform/src/services/pharmacy-revenue-galla-service.ts",
+        "line": 187,
+        "action": "getItem",
+        "key": "docsearch_pharmacy_demo_seed",
+        "code": "window.localStorage.getItem('docsearch_pharmacy_demo_seed') === 'true';",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/partner-platform/src/services/pharmacy-revenue-galla-service.ts",
+        "line": 504,
+        "action": "setItem",
+        "key": "docsearch_pharmacy_demo_seed",
+        "code": "window.localStorage.setItem('docsearch_pharmacy_demo_seed', 'true');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/partner-platform/src/utils/partnerProfileGuard.ts": [
+      {
+        "file": "apps/partner-platform/src/utils/partnerProfileGuard.ts",
+        "line": 74,
+        "action": "getItem",
+        "key": "docsearch_registered_partners",
+        "code": "const regList = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/partner-platform/src/utils/roleProfileResolver.ts": [
+      {
+        "file": "apps/partner-platform/src/utils/roleProfileResolver.ts",
+        "line": 77,
+        "action": "getItem",
+        "key": "docsearch_registered_partners",
+        "code": "const regList = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/company-platform/src/components/billing/InvoiceListView.tsx": [
+      {
+        "file": "apps/company-platform/src/components/billing/InvoiceListView.tsx",
+        "line": 40,
+        "action": "getItem",
+        "key": "docsearch_partner_invoices",
+        "code": "const stored = localStorage.getItem('docsearch_partner_invoices');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/company-platform/src/components/billing/SubscriptionCustomizerModal.tsx": [
+      {
+        "file": "apps/company-platform/src/components/billing/SubscriptionCustomizerModal.tsx",
+        "line": 1197,
+        "action": "getItem",
+        "key": "docsearch_partner_invoices",
+        "code": "const storedInvoices = localStorage.getItem('docsearch_partner_invoices');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/components/billing/SubscriptionCustomizerModal.tsx",
+        "line": 1200,
+        "action": "setItem",
+        "key": "docsearch_partner_invoices",
+        "code": "localStorage.setItem('docsearch_partner_invoices', JSON.stringify(list));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/company-platform/src/components/common/HQActionInboxWidget.tsx": [
+      {
+        "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+        "line": 141,
+        "action": "getItem",
+        "key": "docsearch_registered_partners",
+        "code": "const stagedRaw = localStorage.getItem('docsearch_registered_partners');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+        "line": 170,
+        "action": "getItem",
+        "key": "docsearch_verification_queue",
+        "code": "const queueRaw = localStorage.getItem('docsearch_verification_queue');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+        "line": 301,
+        "action": "getItem",
+        "key": "docsearch_registered_partners",
+        "code": "const stagedRaw = localStorage.getItem('docsearch_registered_partners');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+        "line": 308,
+        "action": "setItem",
+        "key": "docsearch_registered_partners",
+        "code": "localStorage.setItem('docsearch_registered_partners', JSON.stringify(list));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+        "line": 315,
+        "action": "getItem",
+        "key": "docsearch_verification_queue",
+        "code": "const queueRaw = localStorage.getItem('docsearch_verification_queue');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+        "line": 319,
+        "action": "setItem",
+        "key": "docsearch_verification_queue",
+        "code": "localStorage.setItem('docsearch_verification_queue', JSON.stringify(updatedQueue));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+        "line": 385,
+        "action": "getItem",
+        "key": "docsearch_registered_partners",
+        "code": "const stagedRaw = localStorage.getItem('docsearch_registered_partners');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+        "line": 392,
+        "action": "setItem",
+        "key": "docsearch_registered_partners",
+        "code": "localStorage.setItem('docsearch_registered_partners', JSON.stringify(list));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+        "line": 398,
+        "action": "getItem",
+        "key": "docsearch_verification_queue",
+        "code": "const queueRaw = localStorage.getItem('docsearch_verification_queue');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/components/common/HQActionInboxWidget.tsx",
+        "line": 402,
+        "action": "setItem",
+        "key": "docsearch_verification_queue",
+        "code": "localStorage.setItem('docsearch_verification_queue', JSON.stringify(updatedQueue));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/company-platform/src/components/crm/AiWhatsAppEngagementBroadcasterView.tsx": [
+      {
+        "file": "apps/company-platform/src/components/crm/AiWhatsAppEngagementBroadcasterView.tsx",
+        "line": 24,
+        "action": "getItem",
+        "key": "docsearch_registered_partners",
+        "code": "const regPartners = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/company-platform/src/components/crm/DoctorNmcCredentialingBotView.tsx": [
+      {
+        "file": "apps/company-platform/src/components/crm/DoctorNmcCredentialingBotView.tsx",
+        "line": 24,
+        "action": "getItem",
+        "key": "docsearch_registered_partners",
+        "code": "const regPartners = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/company-platform/src/components/crm/LeadToPartnerPipelineView.tsx": [
+      {
+        "file": "apps/company-platform/src/components/crm/LeadToPartnerPipelineView.tsx",
+        "line": 115,
+        "action": "getItem",
+        "key": "docsearch_registered_partners",
+        "code": "const regPartners = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/components/crm/LeadToPartnerPipelineView.tsx",
+        "line": 315,
+        "action": "getItem",
+        "key": "docsearch_registered_partners",
+        "code": "const reg = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/components/crm/LeadToPartnerPipelineView.tsx",
+        "line": 338,
+        "action": "setItem",
+        "key": "docsearch_registered_partners",
+        "code": "localStorage.setItem('docsearch_registered_partners', JSON.stringify([newReg, ...reg.filter((p: any) => p.id !== created.id)]));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/components/crm/LeadToPartnerPipelineView.tsx",
+        "line": 437,
+        "action": "getItem",
+        "key": "docsearch_registered_partners",
+        "code": "const reg = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/components/crm/LeadToPartnerPipelineView.tsx",
+        "line": 460,
+        "action": "setItem",
+        "key": "docsearch_registered_partners",
+        "code": "localStorage.setItem('docsearch_registered_partners', JSON.stringify([newReg, ...reg.filter((p: any) => p.id !== ent.id)]));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/company-platform/src/components/crm/PartnerAbdmTelemetryView.tsx": [
+      {
+        "file": "apps/company-platform/src/components/crm/PartnerAbdmTelemetryView.tsx",
+        "line": 20,
+        "action": "getItem",
+        "key": "docsearch_registered_partners",
+        "code": "const regPartners = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/company-platform/src/components/crm/PartnerContractsVaultView.tsx": [
+      {
+        "file": "apps/company-platform/src/components/crm/PartnerContractsVaultView.tsx",
+        "line": 27,
+        "action": "getItem",
+        "key": "docsearch_registered_partners",
+        "code": "const regPartners = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/company-platform/src/components/crm/PartnerEscrowRevenueSplitView.tsx": [
+      {
+        "file": "apps/company-platform/src/components/crm/PartnerEscrowRevenueSplitView.tsx",
+        "line": 24,
+        "action": "getItem",
+        "key": "docsearch_registered_partners",
+        "code": "const regPartners = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/company-platform/src/components/crm/PartnerHealthChurnRadarView.tsx": [
+      {
+        "file": "apps/company-platform/src/components/crm/PartnerHealthChurnRadarView.tsx",
+        "line": 26,
+        "action": "getItem",
+        "key": "docsearch_registered_partners",
+        "code": "const regPartners = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/company-platform/src/components/crm/PartnerListView.tsx": [
+      {
+        "file": "apps/company-platform/src/components/crm/PartnerListView.tsx",
+        "line": 1026,
+        "action": "getItem",
+        "key": "docsearch_registered_partners",
+        "code": "const reg = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/components/crm/PartnerListView.tsx",
+        "line": 1041,
+        "action": "setItem",
+        "key": "docsearch_registered_partners",
+        "code": "localStorage.setItem('docsearch_registered_partners', JSON.stringify(updatedReg));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/components/crm/PartnerListView.tsx",
+        "line": 1167,
+        "action": "getItem",
+        "key": "docsearch_registered_partners",
+        "code": "const reg = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/components/crm/PartnerListView.tsx",
+        "line": 1192,
+        "action": "setItem",
+        "key": "docsearch_registered_partners",
+        "code": "localStorage.setItem('docsearch_registered_partners', JSON.stringify([newReg, ...reg.filter((p: any) => p.id !== partnerDto.id && p.email !== partnerDto.primaryContact.email)]));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/company-platform/src/components/crm/PartnerOnboardingModal.tsx": [
+      {
+        "file": "apps/company-platform/src/components/crm/PartnerOnboardingModal.tsx",
+        "line": 114,
+        "action": "getItem",
+        "key": "docsearch_registered_partners",
+        "code": "const existing = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/components/crm/PartnerOnboardingModal.tsx",
+        "line": 134,
+        "action": "setItem",
+        "key": "docsearch_registered_partners",
+        "code": "localStorage.setItem('docsearch_registered_partners', JSON.stringify(updated));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/company-platform/src/components/crm/PartnerOutreachHubView.tsx": [
+      {
+        "file": "apps/company-platform/src/components/crm/PartnerOutreachHubView.tsx",
+        "line": 24,
+        "action": "getItem",
+        "key": "docsearch_registered_partners",
+        "code": "const regPartners = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/company-platform/src/components/crm/PartnerRevenueBillingLedgerView.tsx": [
+      {
+        "file": "apps/company-platform/src/components/crm/PartnerRevenueBillingLedgerView.tsx",
+        "line": 21,
+        "action": "getItem",
+        "key": "docsearch_b2b_invoices",
+        "code": "const saved = localStorage.getItem('docsearch_b2b_invoices');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/components/crm/PartnerRevenueBillingLedgerView.tsx",
+        "line": 27,
+        "action": "getItem",
+        "key": "docsearch_registered_partners",
+        "code": "const regPartners = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/components/crm/PartnerRevenueBillingLedgerView.tsx",
+        "line": 57,
+        "action": "setItem",
+        "key": "docsearch_b2b_invoices",
+        "code": "localStorage.setItem('docsearch_b2b_invoices', JSON.stringify(updated));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx": [
+      {
+        "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+        "line": 462,
+        "action": "getItem",
+        "key": "docsearch_verification_queue",
+        "code": "localStorage.getItem('docsearch_verification_queue') || '[]'",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+        "line": 473,
+        "action": "setItem",
+        "key": "docsearch_verification_queue",
+        "code": "localStorage.setItem('docsearch_verification_queue', JSON.stringify(filtered));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+        "line": 652,
+        "action": "getItem",
+        "key": "docsearch_verification_queue",
+        "code": "dynamicLocal = JSON.parse(localStorage.getItem('docsearch_verification_queue') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+        "line": 1001,
+        "action": "getItem",
+        "key": "docsearch_registered_partners",
+        "code": "const partners = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+        "line": 1015,
+        "action": "setItem",
+        "key": "docsearch_registered_partners",
+        "code": "localStorage.setItem('docsearch_registered_partners', JSON.stringify(updated));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+        "line": 1033,
+        "action": "getItem",
+        "key": "docsearch_verification_queue",
+        "code": "const q = JSON.parse(localStorage.getItem('docsearch_verification_queue') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+        "line": 1044,
+        "action": "setItem",
+        "key": "docsearch_verification_queue",
+        "code": "localStorage.setItem('docsearch_verification_queue', JSON.stringify(updatedQ));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+        "line": 1208,
+        "action": "getItem",
+        "key": "docsearch_verification_queue",
+        "code": "const q = JSON.parse(localStorage.getItem('docsearch_verification_queue') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+        "line": 1210,
+        "action": "setItem",
+        "key": "docsearch_verification_queue",
+        "code": "localStorage.setItem('docsearch_verification_queue', JSON.stringify(updatedQ));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+        "line": 1255,
+        "action": "getItem",
+        "key": "docsearch_verification_queue",
+        "code": "const q = JSON.parse(localStorage.getItem('docsearch_verification_queue') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/components/crm/PartnerVerificationConsole.tsx",
+        "line": 1257,
+        "action": "setItem",
+        "key": "docsearch_verification_queue",
+        "code": "localStorage.setItem('docsearch_verification_queue', JSON.stringify(updatedQ));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/company-platform/src/components/crm/PathologyPartnerOnboardingWizard.tsx": [
+      {
+        "file": "apps/company-platform/src/components/crm/PathologyPartnerOnboardingWizard.tsx",
+        "line": 1502,
+        "action": "getItem",
+        "key": "docsearch_registered_partners",
+        "code": "const storedRegPartners = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/components/crm/PathologyPartnerOnboardingWizard.tsx",
+        "line": 1536,
+        "action": "setItem",
+        "key": "docsearch_registered_partners",
+        "code": "localStorage.setItem('docsearch_registered_partners', JSON.stringify(updatedRegList));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/components/crm/PathologyPartnerOnboardingWizard.tsx",
+        "line": 1542,
+        "action": "getItem",
+        "key": "docsearch_custom_partner_users",
+        "code": "const customUsers = JSON.parse(localStorage.getItem('docsearch_custom_partner_users') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/components/crm/PathologyPartnerOnboardingWizard.tsx",
+        "line": 1628,
+        "action": "setItem",
+        "key": "docsearch_custom_partner_users",
+        "code": "localStorage.setItem('docsearch_custom_partner_users', JSON.stringify([newCustomUser, ...customUsers.filter((u: any) => u.email !== formData.email)]));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/company-platform/src/components/growth/LaunchOfferManagerView.tsx": [
+      {
+        "file": "apps/company-platform/src/components/growth/LaunchOfferManagerView.tsx",
+        "line": 98,
+        "action": "getItem",
+        "key": "docsearch_registered_partners",
+        "code": "const raw = localStorage.getItem('docsearch_registered_partners');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/company-platform/src/components/sales/CreateLeadModal.tsx": [
+      {
+        "file": "apps/company-platform/src/components/sales/CreateLeadModal.tsx",
+        "line": 262,
+        "action": "getItem",
+        "key": "docsearch_registered_partners",
+        "code": "const reg = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/components/sales/CreateLeadModal.tsx",
+        "line": 285,
+        "action": "setItem",
+        "key": "docsearch_registered_partners",
+        "code": "localStorage.setItem('docsearch_registered_partners', JSON.stringify([newReg, ...reg.filter((p: any) => p.id !== created.id)]));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/company-platform/src/services/partner-service.ts": [
+      {
+        "file": "apps/company-platform/src/services/partner-service.ts",
+        "line": 872,
+        "action": "getItem",
+        "key": "docsearch_registered_partners",
+        "code": "const reg = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/services/partner-service.ts",
+        "line": 1386,
+        "action": "getItem",
+        "key": "docsearch_registered_partners",
+        "code": "const reg = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/services/partner-service.ts",
+        "line": 1389,
+        "action": "setItem",
+        "key": "docsearch_registered_partners",
+        "code": "localStorage.setItem('docsearch_registered_partners', JSON.stringify(updatedReg));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/services/partner-service.ts",
+        "line": 1398,
+        "action": "getItem",
+        "key": "docsearch_verification_queue",
+        "code": "const q = JSON.parse(localStorage.getItem('docsearch_verification_queue') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/company-platform/src/services/partner-service.ts",
+        "line": 1401,
+        "action": "setItem",
+        "key": "docsearch_verification_queue",
+        "code": "localStorage.setItem('docsearch_verification_queue', JSON.stringify(updatedQ));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/landing-page/src/components/FullPageRegistrationView.tsx": [
+      {
+        "file": "apps/landing-page/src/components/FullPageRegistrationView.tsx",
+        "line": 538,
+        "action": "getItem",
+        "key": "docsearch_registered_partners",
+        "code": "const raw = localStorage.getItem('docsearch_registered_partners');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/landing-page/src/components/FullPageRegistrationView.tsx",
+        "line": 542,
+        "action": "setItem",
+        "key": "docsearch_registered_partners",
+        "code": "localStorage.setItem('docsearch_registered_partners', JSON.stringify(list));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ],
+    "apps/landing-page/src/components/UnifiedHealthcareLoginModal.tsx": [
+      {
+        "file": "apps/landing-page/src/components/UnifiedHealthcareLoginModal.tsx",
+        "line": 690,
+        "action": "getItem",
+        "key": "docsearch_registered_partners",
+        "code": "const raw = localStorage.getItem('docsearch_registered_partners');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/landing-page/src/components/UnifiedHealthcareLoginModal.tsx",
+        "line": 705,
+        "action": "setItem",
+        "key": "docsearch_registered_partners",
+        "code": "localStorage.setItem('docsearch_registered_partners', JSON.stringify(list));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/landing-page/src/components/UnifiedHealthcareLoginModal.tsx",
+        "line": 1089,
+        "action": "getItem",
+        "key": "docsearch_verification_queue",
+        "code": "const q = JSON.parse(localStorage.getItem('docsearch_verification_queue') || '[]');",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      },
+      {
+        "file": "apps/landing-page/src/components/UnifiedHealthcareLoginModal.tsx",
+        "line": 1091,
+        "action": "setItem",
+        "key": "docsearch_verification_queue",
+        "code": "localStorage.setItem('docsearch_verification_queue', JSON.stringify(q));",
+        "classification": "BUSINESS_SOURCE_OF_TRUTH"
+      }
+    ]
+  }
+}

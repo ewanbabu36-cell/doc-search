@@ -11,6 +11,7 @@ import type {
   BillingPaymentDto,
   BillingInvoiceDto
 } from '@docsearch/api-contracts';
+import { AuditJustificationField } from '../common/AuditJustificationField.js';
 
 export interface AllocatePaymentDialogProps {
   isOpen: boolean;
@@ -129,17 +130,12 @@ export const AllocatePaymentDialog: React.FC<AllocatePaymentDialogProps> = ({
           />
         </div>
 
-        <div>
-          <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.25rem' }}>
-            Audit Justification *
-          </label>
-          <Input
-            value={justification}
-            onChange={(e) => setJustification(e.target.value)}
-            placeholder="Reason for payment allocation and ledger mapping"
-            required
-          />
-        </div>
+        <AuditJustificationField
+          value={justification}
+          onChange={setJustification}
+          defaultJustification="Advance/unallocated payment mapped against outstanding patient invoice"
+          placeholder="Reason for payment allocation and ledger mapping..."
+        />
       </form>
     </Dialog>
   );

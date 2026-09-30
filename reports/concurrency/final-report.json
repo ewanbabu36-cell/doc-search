@@ -1,0 +1,120 @@
+{
+  "timestamp": "2026-09-29T06:52:48.732Z",
+  "auditCategory": "CATEGORY 18: CONCURRENCY / TRANSACTION ERROR",
+  "status": "CERTIFIED_VERIFIED",
+  "databaseVersion": "PostgreSQL 18.4 (x86_64-pc-windows-msvc)",
+  "summary": {
+    "totalInvariants": 9,
+    "passed": 9,
+    "failed": 0,
+    "passRate": "100.0%"
+  },
+  "invariants": [
+    {
+      "id": "TX-VERIF-001",
+      "name": "PostgreSQL Live Transaction Isolation Level",
+      "status": "PASSED",
+      "details": "PostgreSQL 18.4 isolation is 'read committed', deadlock_timeout=1000 ms",
+      "metrics": {
+        "deadlock_timeout": "1000 ms",
+        "default_transaction_isolation": "read committed",
+        "lock_timeout": "0 ms",
+        "max_connections": "100",
+        "statement_timeout": "0 ms"
+      }
+    },
+    {
+      "id": "TX-VERIF-002",
+      "name": "Database Concurrency Constraints Inventory",
+      "status": "PASSED",
+      "details": "121 unique constraints active across transactional schemas",
+      "metrics": {
+        "uniqueConstraintsCount": 121
+      }
+    },
+    {
+      "id": "TX-VERIF-003",
+      "name": "Appointment Exclusive Slot Double-Booking Prevention",
+      "status": "PASSED",
+      "details": "One request succeeded (201) and concurrent request rejected with 409 Conflict. Exactly 1 row in DB.",
+      "metrics": {
+        "statusA": 201,
+        "statusB": 409,
+        "dbRows": 1
+      }
+    },
+    {
+      "id": "TX-VERIF-004",
+      "name": "Pharmacy Stock Race / Over-Dispensing Prevention",
+      "status": "PASSED",
+      "details": "Initial stock: 10, requested: 12 (6+6). Exactly 1 succeeded, 1 rejected with 409. Remaining stock: 4.",
+      "metrics": {
+        "dispStatusA": 201,
+        "dispStatusB": 409,
+        "remainingStock": 4
+      }
+    },
+    {
+      "id": "TX-VERIF-005",
+      "name": "Queue Token Generation Concurrency & Non-Duplication",
+      "status": "PASSED",
+      "details": "5 simultaneous requests generated 5 unique sequential tokens (TKN-018, TKN-019, TKN-020, TKN-022, TKN-021) with 0 duplicates",
+      "metrics": {
+        "generated": 5,
+        "unique": 5,
+        "tokens": [
+          "TKN-018",
+          "TKN-019",
+          "TKN-020",
+          "TKN-022",
+          "TKN-021"
+        ]
+      }
+    },
+    {
+      "id": "TX-VERIF-006",
+      "name": "Payment Duplicate Reference / Double-Processing Prevention",
+      "status": "PASSED",
+      "details": "Duplicate payment reference rejected with 409 Conflict. Exactly 1 payment recorded in DB.",
+      "metrics": {
+        "pStatusA": 201,
+        "pStatusB": 409,
+        "dbPaymentsCount": 1
+      }
+    },
+    {
+      "id": "TX-VERIF-007",
+      "name": "Simultaneous Payment Race & Overpayment Prevention",
+      "status": "PASSED",
+      "details": "First payment paid full remaining balance (600). Second concurrent payment rejected (409). Final paid: 1000, due: 0, status: PAID.",
+      "metrics": {
+        "bStatusA": 409,
+        "bStatusB": 201,
+        "finalPaid": 1000,
+        "finalDue": 0,
+        "finalStatus": "PAID"
+      }
+    },
+    {
+      "id": "TX-VERIF-008",
+      "name": "Transaction Atomicity & Zero Partial State Persisted",
+      "status": "PASSED",
+      "details": "Simulated failure triggered clean ROLLBACK: 0 patients and 0 encounters persisted in PostgreSQL",
+      "metrics": {
+        "rolledBackCleanly": true,
+        "patientPersisted": 0,
+        "encPersisted": 0
+      }
+    },
+    {
+      "id": "TX-VERIF-009",
+      "name": "Cross-Tenant Concurrency & Isolation",
+      "status": "PASSED",
+      "details": "Concurrent queries from Tenant A and Tenant B executed without lock contention or leakage",
+      "metrics": {
+        "tenantAStatus": 200,
+        "tenantBStatus": 200
+      }
+    }
+  ]
+}

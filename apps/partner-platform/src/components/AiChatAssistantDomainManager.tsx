@@ -2,7 +2,10 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Card,
   Badge,
-  Button
+  Button,
+  AICore,
+  type AICoreState,
+  AIOperationalPipeline
 } from '@docsearch/ui-kit';
 import {
   aiChatClientService,
@@ -333,6 +336,16 @@ export const AiChatAssistantDomainManager: React.FC<Props> = ({ tenantId, role =
     }
   };
 
+  const aiCoreState: AICoreState = errorMessage
+    ? 'ERROR'
+    : isRecording
+    ? 'LISTENING'
+    : isSending || isVoiceProcessing
+    ? 'PROCESSING'
+    : messages.length > 0 && messages[messages.length - 1]?.senderType === 'ASSISTANT'
+    ? 'COMPLETED'
+    : 'IDLE';
+
   return (
     <div style={{ display: 'flex', height: 'calc(100vh - 120px)', gap: '1rem', padding: '1rem' }}>
       {/* Sidebar: Conversations List */}
@@ -346,7 +359,7 @@ export const AiChatAssistantDomainManager: React.FC<Props> = ({ tenantId, role =
 
         <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           {conversations.length === 0 && !isLoading && (
-            <div style={{ color: '#6B7280', fontSize: '0.875rem', textAlign: 'center', marginTop: '2rem' }}>
+            <div style={{ color: 'var(--ds-color-text-muted)', fontSize: '0.875rem', textAlign: 'center', marginTop: '2rem' }}>
               No active conversations. Start one above!
             </div>
           )}
@@ -357,15 +370,15 @@ export const AiChatAssistantDomainManager: React.FC<Props> = ({ tenantId, role =
               style={{
                 padding: '0.75rem',
                 cursor: 'pointer',
-                border: activeConversationId === c.id ? '2px solid #3B82F6' : '1px solid #E5E7EB',
-                backgroundColor: activeConversationId === c.id ? '#EFF6FF' : '#FFFFFF'
+                border: activeConversationId === c.id ? '2px solid var(--ds-color-primary)' : '1px solid var(--ds-color-border)',
+                backgroundColor: activeConversationId === c.id ? 'var(--ds-color-surface-selected, rgba(2, 132, 199, 0.16))' : 'var(--ds-color-surface)'
               }}
               onClick={() => setActiveConversationId(c.id)}
             >
               <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '0.25rem' }}>
                 {c.title || 'New Session'}
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#6B7280' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--ds-color-text-muted)' }}>
                 <Badge variant="neutral">{c.role || role}</Badge>
                 <span>{new Date(c.updatedAt).toLocaleDateString()}</span>
               </div>
@@ -375,14 +388,14 @@ export const AiChatAssistantDomainManager: React.FC<Props> = ({ tenantId, role =
       </div>
 
       {/* Main Chat Interface */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E5E7EB' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', backgroundColor: 'var(--ds-color-surface)', borderRadius: '8px', border: '1px solid var(--ds-color-border)' }}>
         {/* Header */}
-        <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #E5E7EB', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ fontSize: '1.2rem' }}>🎙️</span>
+        <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--ds-color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <AICore state={aiCoreState} size={40} showStatusBadge={false} showWaveform={false} />
             <div>
               <span style={{ fontWeight: 600 }}>DOC SEARCH AI Copilot & Voice</span>
-              <span style={{ marginLeft: '0.5rem', fontSize: '0.75rem', color: '#6B7280' }}>
+              <span style={{ marginLeft: '0.5rem', fontSize: '0.75rem', color: 'var(--ds-color-text-muted)' }}>
                 Role: <strong>{role}</strong> (Permission Firewall Verified)
               </span>
             </div>
@@ -394,10 +407,10 @@ export const AiChatAssistantDomainManager: React.FC<Props> = ({ tenantId, role =
         {errorMessage && (
           <div style={{
             padding: '0.75rem 1rem',
-            backgroundColor: errorCode === '429' ? '#FEF3C7' : '#FEE2E2',
-            color: errorCode === '429' ? '#92400E' : '#B91C1C',
+            backgroundColor: errorCode === '429' ? 'var(--ds-color-warning-subtle)' : 'var(--ds-color-danger-subtle)',
+            color: errorCode === '429' ? 'var(--ds-color-warning)' : 'var(--ds-color-danger)',
             fontSize: '0.875rem',
-            borderBottom: '1px solid #FCA5A5',
+            borderBottom: '1px solid var(--ds-color-danger-subtle)',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center'
@@ -415,12 +428,15 @@ export const AiChatAssistantDomainManager: React.FC<Props> = ({ tenantId, role =
         {/* Message Log */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           {messages.length === 0 && !isLoading && (
-            <div style={{ margin: 'auto', textAlign: 'center', color: '#9CA3AF' }}>
-              <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🎙️💬</div>
-              <div style={{ fontWeight: 600 }}>Secure Role-Aware AI Assistant & Voice</div>
-              <p style={{ fontSize: '0.85rem', maxWidth: '350px' }}>
+            <div style={{ margin: 'auto', textAlign: 'center', color: 'var(--ds-color-text-muted)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+              <AICore state={aiCoreState} size={140} showStatusBadge={true} showWaveform={true} />
+              <div style={{ fontWeight: 700, color: 'var(--ds-color-text-primary)', fontSize: '1rem', marginTop: '6px' }}>Secure Role-Aware AI Assistant & Voice</div>
+              <p style={{ fontSize: '0.85rem', maxWidth: '380px', margin: 0, color: 'var(--ds-color-text-secondary)' }}>
                 Speak or type instructions, summarize clinical encounters, or query metrics. Voice requests route strictly through the 9-gate Permission Firewall.
               </p>
+              <div style={{ width: '100%', maxWidth: '520px', marginTop: '8px' }}>
+                <AIOperationalPipeline currentStage="AI_READY" userRole={role} tenantSlug={tenantId} compact />
+              </div>
             </div>
           )}
 
@@ -443,8 +459,8 @@ export const AiChatAssistantDomainManager: React.FC<Props> = ({ tenantId, role =
                     maxWidth: '75%',
                     padding: '0.75rem 1rem',
                     borderRadius: isUser ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
-                    backgroundColor: isUser ? '#2563EB' : '#F3F4F6',
-                    color: isUser ? '#FFFFFF' : '#1F2937',
+                    backgroundColor: isUser ? 'var(--ds-color-primary)' : 'var(--ds-color-surface-subtle)',
+                    color: isUser ? 'var(--ds-color-primary-foreground)' : 'var(--ds-color-text-primary)',
                     fontSize: '0.9rem',
                     lineHeight: '1.4'
                   }}
@@ -452,7 +468,7 @@ export const AiChatAssistantDomainManager: React.FC<Props> = ({ tenantId, role =
                   <div style={{ whiteSpace: 'pre-wrap' }}>{m.content}</div>
 
                   {!isUser && (
-                    <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid #E5E7EB', display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center', fontSize: '0.75rem' }}>
+                    <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid var(--ds-color-border)', display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center', fontSize: '0.75rem' }}>
                       {m.capabilityId && <Badge variant="neutral">{m.capabilityId}</Badge>}
                       {m.toolId && <Badge variant="primary">Tool: {m.toolId}</Badge>}
                       {safetyCat && (
@@ -470,11 +486,11 @@ export const AiChatAssistantDomainManager: React.FC<Props> = ({ tenantId, role =
                           🔊 Listen
                         </Button>
                       )}
-                      {m.latencyMs > 0 && <span style={{ color: '#6B7280' }}>⚡ {m.latencyMs}ms</span>}
+                      {m.latencyMs > 0 && <span style={{ color: 'var(--ds-color-text-muted)' }}>⚡ {m.latencyMs}ms</span>}
                     </div>
                   )}
                 </div>
-                <span style={{ fontSize: '0.7rem', color: '#9CA3AF', marginTop: '0.2rem' }}>
+                <span style={{ fontSize: '0.7rem', color: 'var(--ds-color-text-muted)', marginTop: '0.2rem' }}>
                   {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
@@ -482,19 +498,19 @@ export const AiChatAssistantDomainManager: React.FC<Props> = ({ tenantId, role =
           })}
 
           {isSending && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#6B7280', fontSize: '0.85rem' }}>
-              <span>🤖 Evaluating permissions and generating response...</span>
+            <div style={{ margin: '8px 0', maxWidth: '580px' }}>
+              <AIOperationalPipeline currentStage="PROCESSING" userRole={role} tenantSlug={tenantId} compact />
             </div>
           )}
 
           {isVoiceProcessing && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#2563EB', fontSize: '0.85rem' }}>
-              <span>🎙️ Ingesting voice, transcribing via STT, and enforcing firewall gates...</span>
+            <div style={{ margin: '8px 0', maxWidth: '580px' }}>
+              <AIOperationalPipeline currentStage="REQUEST_RECEIVED" userRole={role} tenantSlug={tenantId} compact />
             </div>
           )}
 
           {isRecording && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#DC2626', fontSize: '0.85rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--ds-color-danger)', fontSize: '0.85rem' }}>
               <span style={{ animation: 'pulse 1.5s infinite' }}>🔴 Recording audio... Click "Stop" when done speaking.</span>
             </div>
           )}
@@ -503,7 +519,7 @@ export const AiChatAssistantDomainManager: React.FC<Props> = ({ tenantId, role =
         </div>
 
         {/* Input Area */}
-        <div style={{ padding: '0.75rem 1rem', borderTop: '1px solid #E5E7EB', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+        <div style={{ padding: '0.75rem 1rem', borderTop: '1px solid var(--ds-color-border)', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
           <textarea
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
@@ -515,7 +531,7 @@ export const AiChatAssistantDomainManager: React.FC<Props> = ({ tenantId, role =
               flex: 1,
               padding: '0.5rem',
               borderRadius: '6px',
-              border: '1px solid #D1D5DB',
+              border: '1px solid var(--ds-color-border)',
               fontSize: '0.9rem',
               resize: 'none',
               fontFamily: 'inherit'
@@ -527,7 +543,7 @@ export const AiChatAssistantDomainManager: React.FC<Props> = ({ tenantId, role =
             <Button
               onClick={handleStopRecording}
               variant="danger"
-              style={{ height: '42px', backgroundColor: '#DC2626', color: '#FFFFFF' }}
+              style={{ height: '42px', backgroundColor: 'var(--ds-color-danger)', color: 'var(--ds-color-danger-foreground)' }}
             >
               ⏹️ Stop
             </Button>

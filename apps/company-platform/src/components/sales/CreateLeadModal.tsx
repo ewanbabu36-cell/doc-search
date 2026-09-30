@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button, Input, Badge } from '@docsearch/ui-kit';
 import type { LeadDto, LeadSource } from '@docsearch/api-contracts';
+import { salesMarketingService } from '../../services/sales-marketing-service.js';
+import { partnerService } from '../../services/partner-service.js';
 
 export interface CreateLeadModalProps {
   isOpen: boolean;
@@ -154,7 +156,7 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
       recognitionRef.current = recognition;
 
       setIsListening(true);
-      setAiNotice('🎙️ माइक चालू है... बोलिए: हॉस्पिटल, डॉक्टर का नाम, फ़ोन नंबर!');
+      setAiNotice('🎙️ Listening... Speak clearly: Hospital name, Doctor name, Phone number, City');
 
       recognition.onresult = (event: any) => {
         let transcript = '';
@@ -172,9 +174,9 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
       recognition.onerror = (event: any) => {
         setIsListening(false);
         if (event.error === 'not-allowed') {
-          setAiNotice('⚠️ माइक की परमिशन बंद है। ब्राउज़र एड्रेस बार में Microphone Allow करें।');
+          setAiNotice('⚠️ Microphone access blocked. Please allow microphone permissions in your browser address bar.');
         } else {
-          setAiNotice(`⚠️ Voice Notice: ${event.error}. आप नीचे दिए Quick Voice सैम्पल्स पर क्लिक करके भी टेस्ट कर सकते हैं।`);
+          setAiNotice(`⚠️ Voice Notice: ${event.error}. You can also click the quick sample templates below.`);
         }
       };
 
@@ -186,7 +188,7 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
     } catch (err: any) {
       console.error(err);
       setIsListening(false);
-      setAiNotice('⚠️ माइक शुरू नहीं हो सका।');
+      setAiNotice('⚠️ Unable to start microphone.');
     }
   };
 
@@ -211,13 +213,12 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    setTimeout(() => {
-      const created: LeadDto = {
-        id: '11111111-1111-4111-8111-' + Math.floor(100000000000 + Math.random() * 900000000000),
+    try {
+      const created = await salesMarketingService.createLead({
         organizationName: formData.organizationName || 'Dr. Sharma Heart Clinic',
         contactName: formData.contactName || 'Dr. Rajesh Sharma',
         contactEmail: formData.contactEmail || 'dr.rajesh@clinic.com',
@@ -225,15 +226,105 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
         source: formData.source,
         status: 'NEW',
         assignedOwnerEmail: formData.assignedOwnerEmail,
-        metadata: { aiExtracted: true, aiPromptSnippet: aiPrompt.slice(0, 100) },
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
+        metadata: { aiExtracted: true, aiPromptSnippet: aiPrompt.slice(0, 100) }
+      });
+
+      // Also ensure it is synchronized to the CRM Pipeline in Stage 1
+      if (typeof window !== 'undefined') {
+        try {
+          const currentPipeline = JSON.parse(localStorage.getItem('docsearch_pipeline_leads') || '[]');
+          const pipelineEntry = {
+            id: created.id,
+            name: created.organizationName,
+            classification: 'Independent Clinic',
+            icon: '🩺',
+            contactPerson: created.contactName,
+            phone: created.contactPhone || '+91 98000 00000',
+            currentStage: 1,
+            progressPercent: 20,
+            activeForm: 'Form 1: Lead Intake Form',
+            city: 'India',
+            lastUpdated: 'Just added'
+          };
+          localStorage.setItem('docsearch_pipeline_leads', JSON.stringify([pipelineEntry, ...currentPipeline]));
+
+          const orgLower = (created.organizationName || '').toLowerCase();
+          const orgType =
+            orgLower.includes('hospital') ? 'HOSPITAL' :
+            orgLower.includes('lab') || orgLower.includes('pathology') ? 'PATHOLOGY' :
+            orgLower.includes('pharmacy') ? 'PHARMACY' : 'CLINIC';
+
+          const partnerType =
+            orgType === 'HOSPITAL' ? 'HOSPITAL_NETWORK' :
+            orgType === 'PATHOLOGY' ? 'DIAGNOSTIC_LAB' :
+            orgType === 'PHARMACY' ? 'PHARMACY' : 'CLINIC_GROUP';
+
+          const reg = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');
+          const newReg = {
+            id: created.id,
+            facilityName: created.organizationName,
+            tradeName: created.organizationName,
+            legalName: created.organizationName,
+            name: created.contactName,
+            contactPerson: created.contactName,
+            email: created.contactEmail,
+            phone: created.contactPhone,
+            organizationType: orgType,
+            partnerType,
+            planTier: 'Enterprise Healthcare Partner',
+            monthlyFee: 0,
+            status: 'APPROVED',
+            lifecycleStatus: 'ACTIVE',
+            verificationStatus: 'VERIFIED',
+            kycStatus: 'KYC_VERIFIED',
+            onboardingStep: 'COMPLETED',
+            onboardingProgressPercent: 100,
+            city: 'India',
+            createdAt: new Date().toISOString()
+          };
+          localStorage.setItem('docsearch_registered_partners', JSON.stringify([newReg, ...reg.filter((p: any) => p.id !== created.id)]));
+
+          partnerService.addPartner({
+            id: created.id,
+            tenantId: created.id,
+            tenantSlug: created.organizationName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+            legalName: created.organizationName,
+            tradeName: created.organizationName,
+            partnerType: partnerType as any,
+            lifecycleStatus: 'ACTIVE',
+            verificationStatus: 'VERIFIED',
+            onboardingStep: 'COMPLETED',
+            onboardingProgressPercent: 100,
+            primaryContact: {
+              name: created.contactName,
+              email: created.contactEmail,
+              phone: created.contactPhone,
+              roleTitle: 'Partner Director'
+            },
+            branchCount: 1,
+            userCount: 5,
+            metadata: {
+              classification: orgType,
+              city: 'India'
+            },
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          });
+
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('docsearch:partner_registered', { detail: newReg }));
+            window.dispatchEvent(new Event('storage'));
+          }
+        } catch {}
+      }
 
       setIsSubmitting(false);
       onSuccess(created);
       onClose();
-    }, 500);
+    } catch (err) {
+      console.error('Failed to create lead:', err);
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -286,7 +377,7 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
               <Badge variant="success">🤖 AI & Voice Powered</Badge>
             </div>
             <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', color: '#94A3B8' }}>
-              माइक पर बोलकर या AI प्रॉम्प्ट से एक सेकंड में Lead भरें।
+              Dictate or type raw details to automatically generate lead profiles with AI.
             </p>
           </div>
           <button
@@ -317,9 +408,9 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
             <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: isListening ? '#F87171' : '#38BDF8' }}>
-              {isListening ? '🔴 माइक चालू है... बोलिए (Doctor Name, Hospital Name, Mobile, Email)' : '🎙️ बोलकर Lead जोड़ें (Voice AI Direct Speech)'}
+              {isListening ? '🔴 Microphone Active... Speak details (Doctor, Hospital, Phone, Email)' : '🎙️ Smart Voice Intake (Voice AI Direct Speech)'}
             </span>
-            <span style={{ fontSize: '0.6875rem', color: '#94A3B8' }}>Hindi & English Speech Supported</span>
+            <span style={{ fontSize: '0.6875rem', color: '#94A3B8' }}>Voice & Text Supported</span>
           </div>
 
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -344,12 +435,12 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
               }}
             >
               <span style={{ fontSize: '1.1rem' }}>{isListening ? '⏹️' : '🎙️'}</span>
-              <span>{isListening ? 'Stop (सुनना बंद करें)' : 'Speak (बोलकर भरें)'}</span>
+              <span>{isListening ? 'Stop Recording' : 'Voice Dictate'}</span>
             </button>
 
             <input
               type="text"
-              placeholder="या यहाँ बोलें/पेस्ट करें: Dr. A.K. Verma, Apex Heart Hospital Lucknow, 9876543210..."
+              placeholder="Or type/paste raw notes: Dr. A.K. Verma, Apex Heart Hospital Lucknow, 9876543210..."
               value={aiPrompt}
               onChange={(e) => setAiPrompt(e.target.value)}
               style={{
@@ -374,17 +465,6 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
               type="button"
               onClick={() => handleAiExtract(aiPrompt)}
               disabled={isAiProcessing || !aiPrompt.trim()}
-              style={{
-                backgroundColor: '#06B6D4',
-                color: '#070C16',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '10px 16px',
-                fontWeight: 900,
-                fontSize: '0.8125rem',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap'
-              }}
             >
               {isAiProcessing ? '⚡ Parsing...' : '⚡ AI Fill'}
             </button>
@@ -516,13 +596,23 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
                   marginBottom: '4px'
                 }}
               >
-                PHONE NUMBER *
+                PHONE NUMBER (10-DIGIT MOBILE) *
               </label>
               <Input
                 required
-                placeholder="+91 98765 43210"
+                type="tel"
+                inputMode="numeric"
+                maxLength={10}
+                placeholder="98765 43210"
                 value={formData.contactPhone}
-                onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
+                onChange={(e) => {
+                  let digits = e.target.value.replace(/\D/g, '');
+                  if (digits.length === 12 && digits.startsWith('91')) digits = digits.slice(2);
+                  else if (digits.length === 11 && digits.startsWith('0')) digits = digits.slice(1);
+                  setFormData({ ...formData, contactPhone: digits.slice(0, 10) });
+                }}
+                leftElement={<span style={{ fontWeight: 800, color: '#38BDF8', fontSize: '0.8125rem' }}>+91</span>}
+                style={{ paddingLeft: '48px' }}
               />
             </div>
           </div>
@@ -544,12 +634,7 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
               variant="primary"
               size="md"
               disabled={isSubmitting}
-              style={{
-                backgroundColor: '#06B6D4',
-                borderColor: '#06B6D4',
-                color: '#070C16',
-                fontWeight: 800
-              }}
+              
             >
               {isSubmitting ? 'Saving Lead...' : '🚀 Create Sales Lead'}
             </Button>

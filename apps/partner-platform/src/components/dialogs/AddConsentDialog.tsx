@@ -5,6 +5,7 @@ import type {
   AddPatientConsentRequest
 } from '@docsearch/api-contracts';
 import { Dialog, Button, Input, Select, Alert } from '@docsearch/ui-kit';
+import { AuditJustificationField } from '../common/AuditJustificationField.js';
 
 export interface AddConsentDialogProps {
   isOpen: boolean;
@@ -25,7 +26,7 @@ export const AddConsentDialog: React.FC<AddConsentDialogProps> = ({
 }) => {
   const [consentType, setConsentType] = useState<PatientConsentType>('GENERAL_REGISTRATION');
   const [auditRef, setAuditRef] = useState(`CNS-DOC-${Math.floor(100 + Math.random() * 900)}`);
-  const [reason, setReason] = useState('Patient signed electronic consent directive');
+  const [reason, setReason] = useState('Patient / legal guardian informed consent recorded in presence of duty clinician.');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -69,7 +70,7 @@ export const AddConsentDialog: React.FC<AddConsentDialogProps> = ({
           <Button variant="outline" size="sm" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button variant="primary" size="sm" onClick={handleSubmit} isLoading={isSubmitting}>
+          <Button variant="primary" size="sm" onClick={handleSubmit} isLoading={isSubmitting} disabled={isSubmitting}>
             Record Granted Consent
           </Button>
         </div>
@@ -106,17 +107,12 @@ export const AddConsentDialog: React.FC<AddConsentDialogProps> = ({
           <Input value={auditRef} onChange={(e) => setAuditRef(e.target.value)} required />
         </div>
 
-        <div>
-          <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: '600', marginBottom: '4px' }}>
-            Audit Reason *
-          </label>
-          <Input
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder="e.g. Patient executed signed HIPAA treatment authorization form"
-            required
-          />
-        </div>
+        <AuditJustificationField
+          label="Audit Reason"
+          value={reason}
+          onChange={setReason}
+          defaultJustification="Patient / legal guardian informed consent recorded in presence of duty clinician."
+        />
       </form>
     </Dialog>
   );

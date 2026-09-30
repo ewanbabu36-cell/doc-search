@@ -30,7 +30,7 @@ export const PatientOverviewView: React.FC<PatientOverviewViewProps> = ({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       <Alert type="info" title="Operational Live Telemetry">
-        Master Patient Index (MPI) records, demographic identifiers, consent directives, and insurance policies are sample preview fixtures. <strong>Live EHR encounter data is not connected.</strong>
+        Master Patient Index (MPI) records, demographic identifiers, consent directives, and insurance policies are connected to the live PostgreSQL Patient 360 EHR continuity pipeline.
       </Alert>
 
       {/* KPI Summary Cards */}

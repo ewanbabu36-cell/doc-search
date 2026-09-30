@@ -115,7 +115,6 @@ export const DicomPacsGatewayView: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setActiveViewerStudy(s)}
-                      style={{ backgroundColor: '#06B6D4', color: '#070C16', border: 'none', borderRadius: '6px', padding: '4px 12px', fontWeight: 800, fontSize: '0.75rem', cursor: 'pointer' }}
                     >
                       👁️ Launch Web DICOM
                     </button>

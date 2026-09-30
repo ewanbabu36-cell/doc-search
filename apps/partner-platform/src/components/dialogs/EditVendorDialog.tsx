@@ -164,9 +164,44 @@ export const EditVendorDialog: React.FC<EditVendorDialogProps> = ({
           </div>
           <div>
             <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.25rem' }}>
-              Contact Phone
+              Contact Phone (10-Digit Mobile)
             </label>
-            <Input value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} />
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <span
+                style={{
+                  padding: '8px 10px',
+                  backgroundColor: 'rgba(30, 41, 59, 0.9)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  borderRight: 'none',
+                  borderRadius: '6px 0 0 6px',
+                  color: '#38BDF8',
+                  fontSize: '0.8125rem',
+                  fontWeight: 700
+                }}
+              >
+                +91
+              </span>
+              <input
+                type="tel"
+                value={contactPhone}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, '');
+                  setContactPhone(digits.slice(0, 10));
+                }}
+                maxLength={10}
+                placeholder="98765 43210"
+                style={{
+                  flex: 1,
+                  padding: '8px 12px',
+                  borderRadius: '0 6px 6px 0',
+                  backgroundColor: 'rgba(15, 23, 42, 0.8)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  color: '#FFF',
+                  fontSize: '0.8125rem',
+                  outline: 'none'
+                }}
+              />
+            </div>
           </div>
         </div>
 

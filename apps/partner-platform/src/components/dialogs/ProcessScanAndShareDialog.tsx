@@ -9,16 +9,28 @@ interface Props {
 }
 
 export const ProcessScanAndShareDialog: React.FC<Props> = ({ isOpen, onClose, onSubmit }) => {
-  const [patientAbhaNumber, setPatientAbhaNumber] = useState('91-7721-1122-3344');
-  const [patientAbhaAddress, setPatientAbhaAddress] = useState('rajesh.patil@abdm');
-  const [patientName, setPatientName] = useState('Rajesh Patil');
+  const [patientAbhaNumber, setPatientAbhaNumber] = useState('');
+  const [patientAbhaAddress, setPatientAbhaAddress] = useState('');
+  const [patientName, setPatientName] = useState('');
   const [gender, setGender] = useState('M');
-  const [dob, setDob] = useState('1982-03-22');
-  const [mobile, setMobile] = useState('+91 9811223344');
+  const [dob, setDob] = useState('');
+  const [mobile, setMobile] = useState('');
   const [scannedCounterName, setScannedCounterName] = useState('Counter 01 (Fast-Track OPD)');
-  const [assignedOpdDepartment, setAssignedOpdDepartment] = useState('Orthopedics OPD');
-  const [assignedDoctorName, setAssignedDoctorName] = useState('Dr. Arvind Saxena');
+  const [assignedOpdDepartment, setAssignedOpdDepartment] = useState('General Medicine');
+  const [assignedDoctorName, setAssignedDoctorName] = useState('Duty Medical Officer');
   const [loading, setLoading] = useState(false);
+
+  const handleFillSample = () => {
+    setPatientAbhaNumber('91-7721-1122-3344');
+    setPatientAbhaAddress('rajesh.patil@abdm');
+    setPatientName('Rajesh Patil');
+    setGender('M');
+    setDob('1982-03-22');
+    setMobile('+91 9811223344');
+    setScannedCounterName('Counter 01 (Fast-Track OPD)');
+    setAssignedOpdDepartment('General Medicine');
+    setAssignedDoctorName('Dr. Arvind Saxena');
+  };
 
   if (!isOpen) return null;
 
@@ -46,22 +58,42 @@ export const ProcessScanAndShareDialog: React.FC<Props> = ({ isOpen, onClose, on
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 space-y-4">
-        <h2 className="text-lg font-bold text-teal-900">📲 Scan & Share Fast-Track Registration</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold text-teal-900">📲 Scan & Share Fast-Track Registration</h2>
+          <Button variant="outline" size="sm" type="button" onClick={handleFillSample} title="Fill sample patient for demo">
+            ✨ Demo
+          </Button>
+        </div>
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">Patient ABHA Number</label>
-              <Input value={patientAbhaNumber} onChange={(e) => setPatientAbhaNumber(e.target.value)} required />
+              <Input
+                value={patientAbhaNumber}
+                onChange={(e) => setPatientAbhaNumber(e.target.value)}
+                placeholder="e.g. 91-7721-1122-3344"
+                required
+              />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">ABHA Handle</label>
-              <Input value={patientAbhaAddress} onChange={(e) => setPatientAbhaAddress(e.target.value)} required />
+              <Input
+                value={patientAbhaAddress}
+                onChange={(e) => setPatientAbhaAddress(e.target.value)}
+                placeholder="e.g. rajesh.patil@abdm"
+                required
+              />
             </div>
           </div>
           <div className="grid grid-cols-3 gap-2">
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">Patient Name</label>
-              <Input value={patientName} onChange={(e) => setPatientName(e.target.value)} required />
+              <Input
+                value={patientName}
+                onChange={(e) => setPatientName(e.target.value)}
+                placeholder="e.g. Rajesh Patil"
+                required
+              />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">Gender</label>
@@ -69,13 +101,23 @@ export const ProcessScanAndShareDialog: React.FC<Props> = ({ isOpen, onClose, on
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">DOB</label>
-              <Input value={dob} onChange={(e) => setDob(e.target.value)} required />
+              <Input
+                value={dob}
+                onChange={(e) => setDob(e.target.value)}
+                placeholder="YYYY-MM-DD"
+                required
+              />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">Mobile</label>
-              <Input value={mobile} onChange={(e) => setMobile(e.target.value)} required />
+              <Input
+                value={mobile}
+                onChange={(e) => setMobile(e.target.value)}
+                placeholder="e.g. 98112 23344"
+                required
+              />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">Scanned Counter</label>

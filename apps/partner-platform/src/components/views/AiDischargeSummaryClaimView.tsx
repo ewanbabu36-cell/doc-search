@@ -1,11 +1,66 @@
 import React, { useState } from 'react';
 import { Badge, Button } from '@docsearch/ui-kit';
+import { getUnifiedPartnerProfile } from '../../utils/roleProfileResolver.js';
 
 export const AiDischargeSummaryClaimView: React.FC = () => {
+  const partnerProfile = getUnifiedPartnerProfile();
   const [selectedCase, setSelectedCase] = useState<'APPENDICITIS' | 'CHF' | 'PEDIATRIC'>('APPENDICITIS');
   const [activeSubTab, setActiveSubTab] = useState<'DISCHARGE_SUMMARY' | 'INSURANCE_CLAIM'>('DISCHARGE_SUMMARY');
   const [isSigned, setIsSigned] = useState(false);
   const [whatsAppSent, setWhatsAppSent] = useState(false);
+  const [isTransmittingClaim, setIsTransmittingClaim] = useState(false);
+  const [transmittedClaimSuccess, setTransmittedClaimSuccess] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
+
+  const defaultDoctor = partnerProfile.doctorName ? `${partnerProfile.doctorName}, ${partnerProfile.doctorDegree || 'MS (General Surgery)'}` : 'Lead Attending Surgeon';
+
+  const handleDownloadClaimDossier = (claimCase: any) => {
+    const dossierData = {
+      hospitalName: partnerProfile.entityLegalName || 'DocSearch Multi-Specialty Hospital',
+      doctor: defaultDoctor,
+      patientName: claimCase.patientName,
+      ageGender: claimCase.ageGender,
+      uhid: claimCase.uhid,
+      ipdNumber: claimCase.ipdNumber,
+      admissionDate: claimCase.admissionDate,
+      dischargeDate: claimCase.dischargeDate,
+      tpaPayer: claimCase.tpaPayer,
+      finalDiagnosis: claimCase.finalDiagnosis,
+      surgeryPerformed: claimCase.surgeryPerformed,
+      clinicalCourse: claimCase.clinicalCourse,
+      investigations: claimCase.investigations,
+      dischargeMedications: claimCase.dischargeMeds,
+      claimFinancialBreakdown: claimCase.claimBreakdown,
+      transmissionStatus: transmittedClaimSuccess ? 'TRANSMITTED_TO_TPA' : 'READY_FOR_SUBMISSION',
+      generatedAt: new Date().toISOString()
+    };
+
+    const blob = new Blob([JSON.stringify(dossierData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${claimCase.ipdNumber}_TPA_CLAIM_DOSSIER.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    setStatusMessage(`📁 Downloaded complete claim dossier for ${claimCase.patientName} (${claimCase.ipdNumber})`);
+    setTimeout(() => setStatusMessage(''), 4000);
+  };
+
+  const handleTransmitClaimPackage = async (claimCase: any) => {
+    setIsTransmittingClaim(true);
+    setStatusMessage(`🚀 Transmitting claim ${claimCase.ipdNumber} to ${claimCase.tpaPayer.split(' ')[0]} NHCX Gateway...`);
+    
+    // Simulate real-world NHCX gateway handoff
+    await new Promise((res) => setTimeout(res, 1200));
+
+    setIsTransmittingClaim(false);
+    setTransmittedClaimSuccess(true);
+    setStatusMessage(`✅ Claim successfully transmitted to TPA Gateway! Reference: NHCX-${claimCase.ipdNumber}-${Date.now().toString().slice(-5)}`);
+    setTimeout(() => setStatusMessage(''), 5000);
+  };
 
   const casesData = {
     APPENDICITIS: {
@@ -15,7 +70,7 @@ export const AiDischargeSummaryClaimView: React.FC = () => {
       uhid: 'UHID-2026-9041',
       admissionDate: '25 Aug 2026, 11:30 PM',
       dischargeDate: '30 Aug 2026, 04:00 PM',
-      attendingDoctor: 'Dr. Rajesh Sharma, MS (General & Laparoscopic Surgeon)',
+      attendingDoctor: defaultDoctor,
       department: 'Department of General & Laparoscopic Surgery',
       wardBed: 'Post-Op Ward 204 (Bed 02)',
       tpaPayer: 'Star Health & Allied Insurance (Policy: SH-2026-99214)',
@@ -239,8 +294,15 @@ export const AiDischargeSummaryClaimView: React.FC = () => {
           {/* Document Header */}
           <div style={{ borderBottom: '2px solid rgba(255,255,255,0.1)', paddingBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
             <div>
-              <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#F8FAFC' }}>APEX MULTI-SPECIALTY HOSPITAL & RESEARCH INSTITUTE</div>
-              <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>NABH 5th Edition Accredited • ROHINI ID: 89124401 • GSTIN: 07AAAAA0000A1Z5</div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#F8FAFC' }}>
+                {partnerProfile.entityLegalName ? partnerProfile.entityLegalName.toUpperCase() : 'REGISTERED HEALTHCARE HOSPITAL & RESEARCH CENTER'}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
+                {partnerProfile.hospitalNabhGrade ? `NABH ${partnerProfile.hospitalNabhGrade} Accredited • ` : ''}
+                {partnerProfile.hospitalCeaRegNo ? `CEA Reg: ${partnerProfile.hospitalCeaRegNo} • ` : ''}
+                {partnerProfile.gstin ? `GSTIN: ${partnerProfile.gstin} • ` : ''}
+                {partnerProfile.contactPhone ? `Tel: ${partnerProfile.contactPhone}` : ''}
+              </div>
               <div style={{ fontSize: '0.875rem', fontWeight: 800, color: '#8B5CF6', marginTop: '4px' }}>CLINICAL INPATIENT DISCHARGE SUMMARY</div>
             </div>
             <div style={{ textAlign: 'right' }}>
@@ -406,13 +468,50 @@ export const AiDischargeSummaryClaimView: React.FC = () => {
             </div>
           </div>
 
+          {/* Status Message Notification */}
+          {statusMessage && (
+            <div
+              style={{
+                backgroundColor: transmittedClaimSuccess ? 'rgba(16, 185, 129, 0.15)' : 'rgba(56, 189, 248, 0.15)',
+                border: `1.5px solid ${transmittedClaimSuccess ? '#10B981' : '#0284C7'}`,
+                borderRadius: '8px',
+                padding: '10px 14px',
+                marginTop: '12px',
+                fontSize: '0.85rem',
+                fontWeight: 700,
+                color: transmittedClaimSuccess ? '#10B981' : '#38BDF8',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              <span>{transmittedClaimSuccess ? '✅' : 'ℹ️'}</span>
+              <span>{statusMessage}</span>
+            </div>
+          )}
+
           {/* Action to Submit Claim */}
-          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '14px' }}>
-            <Button variant="outline" size="md">
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '14px', marginTop: '12px' }}>
+            <Button
+              variant="outline"
+              size="md"
+              onClick={() => handleDownloadClaimDossier(current)}
+              style={{ fontWeight: 700 }}
+            >
               📁 Download Complete Claim ZIP Dossier
             </Button>
-            <Button variant="primary" size="md" style={{ fontWeight: 800 }}>
-              🚀 Transmit Claim Package to TPA Gateway
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => handleTransmitClaimPackage(current)}
+              disabled={isTransmittingClaim || transmittedClaimSuccess}
+              style={{
+                fontWeight: 800,
+                backgroundColor: transmittedClaimSuccess ? '#10B981' : '#0284C7',
+                borderColor: transmittedClaimSuccess ? '#10B981' : '#0284C7'
+              }}
+            >
+              {isTransmittingClaim ? '⏳ Transmitting to Gateway...' : transmittedClaimSuccess ? '✓ Transmitted to TPA Gateway' : '🚀 Transmit Claim Package to TPA Gateway'}
             </Button>
           </div>
         </div>

@@ -128,7 +128,7 @@ export const AiDrugInteractionMatrixView: React.FC = () => {
             />
           </div>
 
-          <Button type="submit" variant="primary" size="md" style={{ backgroundColor: '#06B6D4', color: '#070C16', fontWeight: 900 }}>
+          <Button type="submit" variant="primary" size="md" >
             🔍 Check Interaction
           </Button>
         </form>

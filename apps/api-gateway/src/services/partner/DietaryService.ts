@@ -140,7 +140,7 @@ export class DietaryService {
 
   async getOrderById(orderId: string, session: SessionContext) {
     return withSecurityContext(getDatabase(), session, async (tx) => {
-      const order = await dietaryRepository.getOrderById(orderId, tx);
+      const order = await dietaryRepository.getOrderById(orderId, session.tenantId, tx);
       if (!order) {
         throw AppError.notFound('Diet order not found');
       }
@@ -182,12 +182,12 @@ export class DietaryService {
 
   async approveOrder(orderId: string, session: SessionContext) {
     return withSecurityContext(getDatabase(), session, async (tx) => {
-      const order = await dietaryRepository.getOrderById(orderId, tx);
+      const order = await dietaryRepository.getOrderById(orderId, session.tenantId, tx);
       if (!order) {
         throw AppError.notFound('Diet order not found');
       }
 
-      const updated = await dietaryRepository.updateOrderStatus(orderId, 'APPROVED', tx);
+      const updated = await dietaryRepository.updateOrderStatus(orderId, 'APPROVED', session.tenantId, tx);
 
       await auditRepository.recordEvent({
         eventType: 'DIET_ORDER_APPROVED',
@@ -215,7 +215,7 @@ export class DietaryService {
 
   async releaseProductionPlan(id: string, session: SessionContext) {
     return withSecurityContext(getDatabase(), session, async (tx) => {
-      const released = await dietaryRepository.releaseProductionPlan(id, session.userId, tx);
+      const released = await dietaryRepository.releaseProductionPlan(id, session.userId, session.tenantId, tx);
 
       await auditRepository.recordEvent({
         eventType: 'PRODUCTION_RELEASED',

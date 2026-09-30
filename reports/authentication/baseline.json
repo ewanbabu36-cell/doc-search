@@ -1,0 +1,361 @@
+{
+  "timestamp": "2026-09-29T02:11:07.818Z",
+  "loginEndpoints": [
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "file": "apps/api-gateway/src/routes/auth.routes.ts",
+      "handler": "realAuthService.authenticateUser"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/quick-session",
+      "file": "apps/api-gateway/src/routes/auth.routes.ts",
+      "handler": "sessionService.createSession (requires verified JWT header, disabled in prod)"
+    }
+  ],
+  "logoutEndpoints": [
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/logout",
+      "file": "apps/api-gateway/src/routes/auth.routes.ts",
+      "handler": "EMPTY_STUB (Does not revoke session or token!)"
+    }
+  ],
+  "refreshEndpoints": [
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/refresh",
+      "file": "apps/api-gateway/src/routes/auth.routes.ts",
+      "handler": "sessionService.rotateRefreshToken"
+    }
+  ],
+  "registrationEndpoints": [
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/register-partner-user",
+      "file": "apps/api-gateway/src/routes/auth.routes.ts",
+      "handler": "realAuthService.registerPartnerUserCredential"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/self-register",
+      "file": "apps/api-gateway/src/routes/auth.routes.ts",
+      "handler": "partnerOnboardingRepository.createStagedRegistration"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/demo-request",
+      "file": "apps/api-gateway/src/routes/auth.routes.ts",
+      "handler": "Public demo request"
+    }
+  ],
+  "passwordEndpoints": [
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/change-password",
+      "file": "apps/api-gateway/src/routes/auth.routes.ts",
+      "handler": "realAuthService.changePassword"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/company/partner-access-control/:partnerId/reset-password",
+      "file": "apps/api-gateway/src/routes/company/partner-access-control.routes.ts",
+      "handler": "realAuthService.resetPartnerPassword"
+    }
+  ],
+  "authDatabaseTables": [
+    {
+      "table": "core.users",
+      "file": "packages/database/src/schema/core/users.ts",
+      "description": "Authoritative user identities (email, name, status, metadata)"
+    },
+    {
+      "table": "core.user_credentials",
+      "file": "packages/database/src/schema/core/credentials.ts",
+      "description": "Cryptographic scrypt password hashes and failed attempt locks"
+    },
+    {
+      "table": "core.sessions",
+      "file": "packages/database/src/schema/core/sessions.ts",
+      "description": "Server-persisted session records with refresh token hashes and expiry"
+    },
+    {
+      "table": "core.revocations",
+      "file": "packages/database/src/schema/core/revocations.ts",
+      "description": "Append-only revocation ledger for users, tenants, branches, and sessions"
+    },
+    {
+      "table": "core.roles",
+      "file": "packages/database/src/schema/core/roles.ts",
+      "description": "Role definitions and permissions"
+    },
+    {
+      "table": "core.memberships",
+      "file": "packages/database/src/schema/core/memberships.ts",
+      "description": "User-tenant membership mappings and roles"
+    },
+    {
+      "table": "clinical.operational_staff",
+      "file": "packages/database/src/schema/clinical/staff.ts",
+      "description": "Staff credentials and role profiles"
+    }
+  ],
+  "counts": {
+    "hardcodedCredentialReferences": 7,
+    "suspiciousBypassReferences": 8,
+    "frontendAuthStorageReferences": 24,
+    "knownVulnerabilities": 6
+  },
+  "knownVulnerabilities": [
+    {
+      "id": "AUTH-VULN-01",
+      "taxonomy": "I. LOGOUT ERROR & J. SESSION REVOCATION ERROR",
+      "severity": "CRITICAL",
+      "title": "POST /api/v1/auth/logout does not revoke session or token",
+      "file": "apps/api-gateway/src/routes/auth.routes.ts:573",
+      "description": "The logout route returns a static HTTP 200 without reading the Authorization token, calling sessionRevocationService.revokeSession, or marking the session revoked in core.sessions/core.revocations."
+    },
+    {
+      "id": "AUTH-VULN-02",
+      "taxonomy": "E. TOKEN CREATION ERROR & J. SESSION REVOCATION ERROR",
+      "severity": "CRITICAL",
+      "title": "JWT jti claim is overwritten with random hex, disconnecting access tokens from sessionId",
+      "file": "packages/auth/src/token-service.ts:61",
+      "description": "signJwt assigns jti: randomBytes(16).toString(\"hex\") after spreading payload, overriding sessionId passed in payload.jti. Furthermore, SessionRevocationService.isRevoked checks claims.sessionId which is undefined."
+    },
+    {
+      "id": "AUTH-VULN-03",
+      "taxonomy": "H. SESSION PERSISTENCE ERROR & 13. SESSION DATABASE VERIFICATION",
+      "severity": "HIGH",
+      "title": "SessionService defaults to InMemorySessionStore; core.sessions table is never populated",
+      "file": "apps/api-gateway/src/routes/auth.routes.ts:133",
+      "description": "When REDIS_URL is not set, SessionService uses InMemorySessionStore. Sessions do not survive server restarts, and core.sessions in PostgreSQL remains with 0 rows."
+    },
+    {
+      "id": "AUTH-VULN-04",
+      "taxonomy": "B. CREDENTIAL VERIFICATION ERROR & N. MOCK AUTHENTICATION",
+      "severity": "CRITICAL",
+      "title": "HospitalStaffLogin checks localStorage for plaintext staff password before server auth",
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx:833-877",
+      "description": "HospitalStaffLogin reads docsearch_partner_staff and docsearch_custom_staff from localStorage and authenticates locally if password matches, bypassing server-side credential verification."
+    },
+    {
+      "id": "AUTH-VULN-05",
+      "taxonomy": "G. REFRESH TOKEN ERROR",
+      "severity": "HIGH",
+      "title": "Frontend login does not store refreshToken in localStorage",
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx:1030",
+      "description": "HospitalStaffLogin saves accessToken to docsearch_auth_token but fails to save refreshToken to docsearch_refresh_token, preventing ensureAuthToken() from refreshing expired sessions."
+    },
+    {
+      "id": "AUTH-VULN-06",
+      "taxonomy": "J. SESSION REVOCATION ERROR",
+      "severity": "MEDIUM",
+      "title": "Password change does not revoke existing user sessions",
+      "file": "apps/api-gateway/src/services/core/RealAuthService.ts:1091",
+      "description": "RealAuthService.changePassword updates passwordHash in memory and DB but does not call sessionRevocationService.revokeUser to invalidate existing tokens issued prior to password change."
+    }
+  ],
+  "hardcodedCredentials": [
+    {
+      "file": "apps/api-gateway/src/services/core/RealAuthService.ts",
+      "line": 277,
+      "match": "passwordHash: hashPassword('FounderPass123!')"
+    },
+    {
+      "file": "apps/api-gateway/src/services/core/RealAuthService.ts",
+      "line": 293,
+      "match": "passwordHash: hashPassword('FounderPass123!')"
+    },
+    {
+      "file": "apps/api-gateway/src/services/core/RealAuthService.ts",
+      "line": 309,
+      "match": "passwordHash: hashPassword('DoctorPass123!')"
+    },
+    {
+      "file": "apps/api-gateway/src/services/core/RealAuthService.ts",
+      "line": 347,
+      "match": "passwordHash: hashPassword('PharmaPass123!')"
+    },
+    {
+      "file": "apps/api-gateway/src/services/core/RealAuthService.ts",
+      "line": 403,
+      "match": "passwordHash: hashPassword('Hospital@2026!')"
+    },
+    {
+      "file": "apps/api-gateway/src/services/core/RealAuthService.ts",
+      "line": 462,
+      "match": "passwordHash: hashPassword('DoctorPass123!')"
+    },
+    {
+      "file": "apps/api-gateway/src/services/core/RealAuthService.ts",
+      "line": 505,
+      "match": "passwordHash: hashPassword('PathologyPass123!')"
+    }
+  ],
+  "suspiciousBypasses": [
+    {
+      "file": "apps/api-gateway/src/routes/auth.routes.ts",
+      "line": 283,
+      "match": "quick-session"
+    },
+    {
+      "file": "apps/api-gateway/src/routes/auth.routes.ts",
+      "line": 284,
+      "match": "quick-session"
+    },
+    {
+      "file": "apps/api-gateway/src/routes/auth.routes.ts",
+      "line": 291,
+      "match": "Quick-session"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/StaffDirectoryView.tsx",
+      "line": 200,
+      "match": "quick-session"
+    },
+    {
+      "file": "apps/partner-platform/src/services/insurance-claims-management-service.ts",
+      "line": 46,
+      "match": "MOCK_AUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/services/insurance-claims-management-service.ts",
+      "line": 120,
+      "match": "MOCK_AUTH"
+    },
+    {
+      "file": "apps/partner-platform/src/services/mock-insurance-claims-data.ts",
+      "line": 25,
+      "match": "MOCK_AUTH"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerAccessGovernanceCockpit.tsx",
+      "line": 201,
+      "match": "quick-session"
+    }
+  ],
+  "frontendAuthStoragePatterns": [
+    {
+      "file": "apps/partner-platform/src/components/common/AmbientVoiceScribeCapsule.tsx",
+      "line": 157,
+      "match": "localStorage.getItem('docsearch_partner_staff_auth')"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/UniversalAccountSettingsModal.tsx",
+      "line": 418,
+      "match": "localStorage.getItem('docsearch_partner_staff_auth')"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/UniversalAccountSettingsModal.tsx",
+      "line": 592,
+      "match": "localStorage.getItem('docsearch_partner_staff')"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/UniversalAccountSettingsModal.tsx",
+      "line": 611,
+      "match": "localStorage.getItem('docsearch_partner_staff_auth')"
+    },
+    {
+      "file": "apps/partner-platform/src/components/PartnerPlatformShell.tsx",
+      "line": 720,
+      "match": "localStorage.getItem('docsearch_partner_staff_auth')"
+    },
+    {
+      "file": "apps/partner-platform/src/components/PartnerPlatformShell.tsx",
+      "line": 2928,
+      "match": "localStorage.getItem('docsearch_partner_staff_auth')"
+    },
+    {
+      "file": "apps/partner-platform/src/components/PartnerPlatformShell.tsx",
+      "line": 2953,
+      "match": "localStorage.getItem('docsearch_partner_staff_auth')"
+    },
+    {
+      "file": "apps/partner-platform/src/components/PatientRegistrationDomainManager.tsx",
+      "line": 82,
+      "match": "localStorage.getItem('docsearch_partner_staff_auth')"
+    },
+    {
+      "file": "apps/partner-platform/src/components/PatientRegistrationDomainManager.tsx",
+      "line": 249,
+      "match": "localStorage.getItem('docsearch_partner_staff_auth')"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/PatientDirectoryView.tsx",
+      "line": 197,
+      "match": "localStorage.getItem('docsearch_partner_staff_auth')"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/StaffDirectoryView.tsx",
+      "line": 365,
+      "match": "localStorage.getItem('docsearch_partner_staff_auth')"
+    },
+    {
+      "file": "apps/partner-platform/src/main.tsx",
+      "line": 97,
+      "match": "localStorage.getItem('docsearch_partner_staff_auth')"
+    },
+    {
+      "file": "apps/partner-platform/src/main.tsx",
+      "line": 142,
+      "match": "localStorage.getItem('docsearch_partner_staff_auth')"
+    },
+    {
+      "file": "apps/partner-platform/src/main.tsx",
+      "line": 154,
+      "match": "localStorage.getItem('docsearch_partner_staff')"
+    },
+    {
+      "file": "apps/partner-platform/src/utils/partnerProfileGuard.ts",
+      "line": 27,
+      "match": "localStorage.getItem('docsearch_partner_staff_auth')"
+    },
+    {
+      "file": "apps/partner-platform/src/utils/partnerProfileGuard.ts",
+      "line": 68,
+      "match": "localStorage.getItem('docsearch_partner_staff_auth')"
+    },
+    {
+      "file": "apps/partner-platform/src/utils/partnerRolePermissions.ts",
+      "line": 803,
+      "match": "localStorage.getItem('docsearch_partner_staff_auth')"
+    },
+    {
+      "file": "apps/partner-platform/src/utils/partnerRolePermissions.ts",
+      "line": 851,
+      "match": "localStorage.getItem('docsearch_partner_staff_auth')"
+    },
+    {
+      "file": "apps/partner-platform/src/utils/partnerRolePermissions.ts",
+      "line": 888,
+      "match": "localStorage.getItem('docsearch_partner_staff_auth')"
+    },
+    {
+      "file": "apps/partner-platform/src/utils/partnerRolePermissions.ts",
+      "line": 907,
+      "match": "localStorage.getItem('docsearch_partner_staff_auth')"
+    },
+    {
+      "file": "apps/partner-platform/src/utils/partnerRolePermissions.ts",
+      "line": 929,
+      "match": "localStorage.getItem('docsearch_partner_staff_auth')"
+    },
+    {
+      "file": "apps/partner-platform/src/utils/roleProfileResolver.ts",
+      "line": 63,
+      "match": "localStorage.getItem('docsearch_partner_staff_auth')"
+    },
+    {
+      "file": "apps/company-platform/src/navigation/rolePermissions.ts",
+      "line": 129,
+      "match": "localStorage.getItem('docsearch_partner_staff_auth')"
+    },
+    {
+      "file": "apps/company-platform/src/utils/roleProfileResolver.ts",
+      "line": 57,
+      "match": "localStorage.getItem('docsearch_partner_staff_auth')"
+    }
+  ]
+}

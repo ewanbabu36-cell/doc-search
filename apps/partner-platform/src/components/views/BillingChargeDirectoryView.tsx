@@ -39,9 +39,9 @@ export const BillingChargeDirectoryView: React.FC<BillingChargeDirectoryViewProp
     if (domainFilter !== 'ALL' && c.sourceDomain !== domainFilter) return false;
     if (searchTerm.trim()) {
       const lower = searchTerm.toLowerCase();
-      const matchNumber = c.chargeNumber.toLowerCase().includes(lower);
-      const matchPatient = c.patientName.toLowerCase().includes(lower) || c.patientMrn.toLowerCase().includes(lower);
-      const matchItem = c.items.some((it) => it.description.toLowerCase().includes(lower));
+      const matchNumber = (c.chargeNumber || '').toLowerCase().includes(lower);
+      const matchPatient = (c.patientName || '').toLowerCase().includes(lower) || (c.patientMrn || '').toLowerCase().includes(lower);
+      const matchItem = (c.items || []).some((it) => (it.description || '').toLowerCase().includes(lower));
       if (!matchNumber && !matchPatient && !matchItem) return false;
     }
     return true;
@@ -82,7 +82,7 @@ export const BillingChargeDirectoryView: React.FC<BillingChargeDirectoryViewProp
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: '#0f172a' }}>
+          <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: 'var(--ds-color-text-primary, #f8fafc)' }}>
             Point-of-Care Charge Directory
           </h2>
           <p style={{ margin: '0.25rem 0 0 0', color: '#64748b', fontSize: '0.875rem' }}>
@@ -181,8 +181,8 @@ export const BillingChargeDirectoryView: React.FC<BillingChargeDirectoryViewProp
                         {ch.items.map((it) => `${it.description} (x${it.quantity})`).join(', ')}
                       </div>
                     </TableCell>
-                    <TableCell style={{ fontWeight: 700, color: '#0f172a' }}>
-                      ${ch.grandTotal.toFixed(2)}
+                    <TableCell style={{ fontWeight: 700, color: 'var(--ds-color-text-primary, #f8fafc)' }}>
+                      ₹{ch.grandTotal.toFixed(2)}
                     </TableCell>
                     <TableCell>{getStatusBadge(ch.status)}</TableCell>
                     <TableCell style={{ fontSize: '0.8rem', color: '#64748b' }}>
@@ -195,8 +195,12 @@ export const BillingChargeDirectoryView: React.FC<BillingChargeDirectoryViewProp
                           Invoice Charge
                         </Button>
                       ) : (
-                        <Button variant="outline" disabled>
-                          Invoiced
+                        <Button
+                          variant="outline"
+                          disabled
+                          title={`Charge ${ch.id} has already been invoiced into patient billing ledger.`}
+                        >
+                          ✓ Invoiced
                         </Button>
                       )}
                     </TableCell>

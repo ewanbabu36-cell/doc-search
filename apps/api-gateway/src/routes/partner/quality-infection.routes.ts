@@ -1,14 +1,17 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { QualityInfectionService } from '../../services/partner/QualityInfectionService.js';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
+import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 
 const service = new QualityInfectionService();
 
 export const qualityInfectionRoutes: FastifyPluginAsync = async (app) => {
+  app.addHook('preHandler', requireModuleCommercialAccess('CLINICAL_EMR'));
+
   // 1. Overview & Standards
   app.get(
     '/api/v1/partner/quality/overview',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requirePermission('quality:incident', 'read')] },
     async (request, reply) => {
       const { tenantId } = request.session;
       const data = await service.getOverviewMetrics(tenantId);
@@ -18,7 +21,7 @@ export const qualityInfectionRoutes: FastifyPluginAsync = async (app) => {
 
   app.get(
     '/api/v1/partner/quality/standards',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requirePermission('quality:standards', 'read')] },
     async (request, reply) => {
       const { tenantId } = request.session;
       const data = await service.getStandards(tenantId);
@@ -29,7 +32,7 @@ export const qualityInfectionRoutes: FastifyPluginAsync = async (app) => {
   // 2. Incidents
   app.get(
     '/api/v1/partner/quality/incidents',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requirePermission('quality:incident', 'read')] },
     async (request, reply) => {
       const { tenantId } = request.session;
       const data = await service.getIncidents(tenantId);
@@ -39,7 +42,7 @@ export const qualityInfectionRoutes: FastifyPluginAsync = async (app) => {
 
   app.post(
     '/api/v1/partner/quality/incidents',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requirePermission('quality:incident', 'create')] },
     async (request, reply) => {
       const { tenantId, branchId, userId } = request.session;
       const payload = (request.body || {}) as Record<string, unknown>;
@@ -50,7 +53,7 @@ export const qualityInfectionRoutes: FastifyPluginAsync = async (app) => {
 
   app.patch(
     '/api/v1/partner/quality/incidents/:id/triage',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requirePermission('quality:incident', 'update')] },
     async (request, reply) => {
       const { tenantId, userId } = request.session;
       const { id } = request.params as { id: string };
@@ -62,7 +65,7 @@ export const qualityInfectionRoutes: FastifyPluginAsync = async (app) => {
 
   app.patch(
     '/api/v1/partner/quality/incidents/:id/close',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requirePermission('quality:incident', 'update')] },
     async (request, reply) => {
       const { tenantId, userId } = request.session;
       const { id } = request.params as { id: string };
@@ -74,7 +77,7 @@ export const qualityInfectionRoutes: FastifyPluginAsync = async (app) => {
   // 3. RCAs
   app.get(
     '/api/v1/partner/quality/rcas',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requirePermission('quality:rca', 'read')] },
     async (request, reply) => {
       const { tenantId } = request.session;
       const data = await service.getRcas(tenantId);
@@ -84,7 +87,7 @@ export const qualityInfectionRoutes: FastifyPluginAsync = async (app) => {
 
   app.post(
     '/api/v1/partner/quality/rcas',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requirePermission('quality:rca', 'create')] },
     async (request, reply) => {
       const { tenantId, branchId, userId } = request.session;
       const payload = (request.body || {}) as Record<string, unknown>;
@@ -96,7 +99,7 @@ export const qualityInfectionRoutes: FastifyPluginAsync = async (app) => {
   // 4. CAPAs
   app.get(
     '/api/v1/partner/quality/capas',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requirePermission('quality:capa', 'read')] },
     async (request, reply) => {
       const { tenantId } = request.session;
       const data = await service.getCapas(tenantId);
@@ -106,7 +109,7 @@ export const qualityInfectionRoutes: FastifyPluginAsync = async (app) => {
 
   app.post(
     '/api/v1/partner/quality/capas',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requirePermission('quality:capa', 'create')] },
     async (request, reply) => {
       const { tenantId, branchId, userId } = request.session;
       const payload = (request.body || {}) as Record<string, unknown>;
@@ -117,7 +120,7 @@ export const qualityInfectionRoutes: FastifyPluginAsync = async (app) => {
 
   app.patch(
     '/api/v1/partner/quality/capas/:id/verify',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requirePermission('quality:capa', 'update')] },
     async (request, reply) => {
       const { tenantId, userId } = request.session;
       const { id } = request.params as { id: string };
@@ -130,7 +133,7 @@ export const qualityInfectionRoutes: FastifyPluginAsync = async (app) => {
   // 5. HAI Surveillance
   app.get(
     '/api/v1/partner/quality/hai',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requirePermission('infection:hai', 'read')] },
     async (request, reply) => {
       const { tenantId } = request.session;
       const data = await service.getHaiSurveillances(tenantId);
@@ -140,7 +143,7 @@ export const qualityInfectionRoutes: FastifyPluginAsync = async (app) => {
 
   app.post(
     '/api/v1/partner/quality/hai',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requirePermission('infection:hai', 'create')] },
     async (request, reply) => {
       const { tenantId, branchId, userId } = request.session;
       const payload = (request.body || {}) as Record<string, unknown>;
@@ -152,7 +155,7 @@ export const qualityInfectionRoutes: FastifyPluginAsync = async (app) => {
   // 6. Patient Isolations
   app.get(
     '/api/v1/partner/quality/isolations',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requirePermission('infection:isolation', 'read')] },
     async (request, reply) => {
       const { tenantId } = request.session;
       const data = await service.getPatientIsolations(tenantId);
@@ -162,7 +165,7 @@ export const qualityInfectionRoutes: FastifyPluginAsync = async (app) => {
 
   app.post(
     '/api/v1/partner/quality/isolations',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requirePermission('infection:isolation', 'create')] },
     async (request, reply) => {
       const { tenantId, branchId, userId } = request.session;
       const payload = (request.body || {}) as Record<string, unknown>;
@@ -173,7 +176,7 @@ export const qualityInfectionRoutes: FastifyPluginAsync = async (app) => {
 
   app.patch(
     '/api/v1/partner/quality/isolations/:id/discharge',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requirePermission('infection:isolation', 'update')] },
     async (request, reply) => {
       const { tenantId, userId } = request.session;
       const { id } = request.params as { id: string };
@@ -185,7 +188,7 @@ export const qualityInfectionRoutes: FastifyPluginAsync = async (app) => {
   // 7. Hand Hygiene
   app.get(
     '/api/v1/partner/quality/hand-hygiene',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requirePermission('infection:hygiene', 'read')] },
     async (request, reply) => {
       const { tenantId } = request.session;
       const data = await service.getHandHygieneAudits(tenantId);
@@ -195,7 +198,7 @@ export const qualityInfectionRoutes: FastifyPluginAsync = async (app) => {
 
   app.post(
     '/api/v1/partner/quality/hand-hygiene',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requirePermission('infection:hygiene', 'create')] },
     async (request, reply) => {
       const { tenantId, branchId, userId } = request.session;
       const payload = (request.body || {}) as Record<string, unknown>;
@@ -207,7 +210,7 @@ export const qualityInfectionRoutes: FastifyPluginAsync = async (app) => {
   // 8. Environmental Swabs
   app.get(
     '/api/v1/partner/quality/swabs',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requirePermission('infection:swab', 'read')] },
     async (request, reply) => {
       const { tenantId } = request.session;
       const data = await service.getEnvironmentalSwabs(tenantId);
@@ -217,7 +220,7 @@ export const qualityInfectionRoutes: FastifyPluginAsync = async (app) => {
 
   app.post(
     '/api/v1/partner/quality/swabs',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requirePermission('infection:swab', 'create')] },
     async (request, reply) => {
       const { tenantId, branchId, userId } = request.session;
       const payload = (request.body || {}) as Record<string, unknown>;
@@ -229,7 +232,7 @@ export const qualityInfectionRoutes: FastifyPluginAsync = async (app) => {
   // 9. Needle Stick Logs
   app.get(
     '/api/v1/partner/quality/needle-stick',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requirePermission('infection:sharps', 'read')] },
     async (request, reply) => {
       const { tenantId } = request.session;
       const data = await service.getNeedleStickLogs(tenantId);
@@ -239,7 +242,7 @@ export const qualityInfectionRoutes: FastifyPluginAsync = async (app) => {
 
   app.post(
     '/api/v1/partner/quality/needle-stick',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requirePermission('infection:sharps', 'create')] },
     async (request, reply) => {
       const { tenantId, branchId, userId } = request.session;
       const payload = (request.body || {}) as Record<string, unknown>;
@@ -251,7 +254,7 @@ export const qualityInfectionRoutes: FastifyPluginAsync = async (app) => {
   // 10. BMW Logs
   app.get(
     '/api/v1/partner/quality/bmw',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requirePermission('infection:waste', 'read')] },
     async (request, reply) => {
       const { tenantId } = request.session;
       const data = await service.getBmwLogs(tenantId);
@@ -261,7 +264,7 @@ export const qualityInfectionRoutes: FastifyPluginAsync = async (app) => {
 
   app.post(
     '/api/v1/partner/quality/bmw',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requirePermission('infection:waste', 'create')] },
     async (request, reply) => {
       const { tenantId, branchId, userId } = request.session;
       const payload = (request.body || {}) as Record<string, unknown>;
@@ -273,7 +276,7 @@ export const qualityInfectionRoutes: FastifyPluginAsync = async (app) => {
   // 11. Audit Traces
   app.get(
     '/api/v1/partner/quality/audit-traces',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requirePermission('quality:audit', 'read')] },
     async (request, reply) => {
       const { tenantId } = request.session;
       const data = await service.getAuditTraces(tenantId);

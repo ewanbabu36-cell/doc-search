@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Badge } from '@docsearch/ui-kit';
 import { radiologyManagementService } from '../services/radiology-management-service.js';
 import type {
   RadiologyOverviewMetricsDto,
@@ -43,12 +42,14 @@ import { RadiologyStudyWorklistView } from './views/RadiologyStudyWorklistView.j
 import { RadiologistWorkbenchView } from './views/RadiologistWorkbenchView.js';
 import { RadiologyReportingView } from './views/RadiologyReportingView.js';
 import { RadiologyCriticalFindingsView } from './views/RadiologyCriticalFindingsView.js';
-import { RadiologyPacsView } from './views/RadiologyPacsView.js';
 import { RadiologyProcedureCatalogView } from './views/RadiologyProcedureCatalogView.js';
 import { RadiologyQualityView } from './views/RadiologyQualityView.js';
 import { RadiologyAnalyticsView } from './views/RadiologyAnalyticsView.js';
 import { RadiologyAuditVaultView } from './views/RadiologyAuditVaultView.js';
-import { AiChestXrayTriageView } from './views/AiChestXrayTriageView.js';
+import { WebDicomAiHeatmapViewer } from './views/WebDicomAiHeatmapViewer.js';
+import { TabOverflowMenu } from './common/TabOverflowMenu.js';
+import { DocSearchSpatialCore3D, Alert, SkeletonPage } from '@docsearch/ui-kit';
+import { hospitalEventBus } from '../services/hospital-event-bus.js';
 
 // Dialogs
 import { CreateRadiologyOrderDialog } from './dialogs/CreateRadiologyOrderDialog.js';
@@ -65,8 +66,9 @@ import { CriticalFindingDialog } from './dialogs/CriticalFindingDialog.js';
 import { AcknowledgeCriticalFindingDialog } from './dialogs/AcknowledgeCriticalFindingDialog.js';
 import { PacsReferenceDialog } from './dialogs/PacsReferenceDialog.js';
 
-interface Props {
+export interface RadiologyDomainManagerProps {
   tenantId: string;
+  initialTab?: TabType;
 }
 
 type TabType =
@@ -90,8 +92,14 @@ type TabType =
 
 type TabBadgeVariant = 'neutral' | 'primary' | 'success' | 'warning' | 'danger';
 
-export const RadiologyDomainManager: React.FC<Props> = ({ tenantId }) => {
-  const [activeTab, setActiveTab] = useState<TabType>('overview');
+export const RadiologyDomainManager: React.FC<RadiologyDomainManagerProps> = ({ tenantId, initialTab }) => {
+  const [activeTab, setActiveTab] = useState<TabType>(initialTab || 'overview');
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
   const [loading, setLoading] = useState(true);
 
   // Domain State
@@ -129,6 +137,11 @@ export const RadiologyDomainManager: React.FC<Props> = ({ tenantId }) => {
   const [isCriticalFindingOpen, setIsCriticalFindingOpen] = useState(false);
   const [isAcknowledgeCriticalOpen, setIsAcknowledgeCriticalOpen] = useState(false);
   const [isPacsRefOpen, setIsPacsRefOpen] = useState(false);
+  const [radOrderAlert, setRadOrderAlert] = useState<string | null>(null);
+
+  const syncDoctorRadiologyOrders = useCallback((baseOrders: RadiologyOrderDto[]): RadiologyOrderDto[] => {
+    return baseOrders;
+  }, []);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -153,7 +166,8 @@ export const RadiologyDomainManager: React.FC<Props> = ({ tenantId }) => {
       setDepartment(d);
       setModalities(md);
       setProcedures(pr);
-      setOrders(ord);
+      const mergedOrders = syncDoctorRadiologyOrders(ord);
+      setOrders(mergedOrders);
       setAppointments(app);
       setPreparations(prep);
       setStudies(st);
@@ -164,16 +178,34 @@ export const RadiologyDomainManager: React.FC<Props> = ({ tenantId }) => {
     } finally {
       setLoading(false);
     }
-  }, [tenantId]);
+  }, [tenantId, syncDoctorRadiologyOrders]);
 
   useEffect(() => {
     loadData();
+
+    const unsub = hospitalEventBus.subscribe('RADIOLOGY_ORDER_CREATED', (payload) => {
+      const d = payload.data || {};
+      setRadOrderAlert(`⚡ New Imaging Order: ${d.patientName || 'Patient'} (${d.modalityTests?.length || 1} scan[s])`);
+      void loadData();
+      setTimeout(() => setRadOrderAlert(null), 6000);
+    });
+
+    const handleStorage = () => {
+      void loadData();
+    };
+    window.addEventListener('storage', handleStorage);
+
+    return () => {
+      unsub();
+      window.removeEventListener('storage', handleStorage);
+    };
   }, [loadData]);
 
   const pendingCriticalCount = criticalFindings.filter((c) => c.status !== 'ACKNOWLEDGED_BY_CLINICIAN').length;
 
   const tabs: { id: TabType; label: string; count?: number; badgeVariant?: TabBadgeVariant }[] = [
     { id: 'overview', label: 'Radiology Overview' },
+    { id: 'ai-chest-xray', label: '🔥 Web DICOM AI Heatmap', count: 3, badgeVariant: 'danger' },
     { id: 'orders', label: 'Imaging Orders', count: orders.length },
     { id: 'scheduling', label: 'Modality Scheduling', count: appointments.length },
     { id: 'modalities', label: 'Modality Fleet', count: modalities.length },
@@ -193,42 +225,283 @@ export const RadiologyDomainManager: React.FC<Props> = ({ tenantId }) => {
     { id: 'quality', label: 'QA & Dose Compliance', count: qualityEvents.length },
     { id: 'analytics', label: 'Analytics' },
     { id: 'audit-vault', label: 'Audit Vault', count: auditTraces.length },
-    { id: 'control-center', label: 'Control Center' }
+    { id: 'control-center', label: '🎛️ Modality Control Center' },
   ];
 
+  const primaryTabIds: TabType[] = ['overview', 'tech-worklist', 'ai-chest-xray', 'radiologist-workbench', 'scheduling', 'orders'];
+  const primaryTabs = tabs.filter((t) => primaryTabIds.includes(t.id));
+  const secondaryTabs = tabs.filter((t) => !primaryTabIds.includes(t.id));
+
   if (loading || !metrics || !analytics || !department) {
-    return (
-      <div className="p-8 text-center text-gray-500">
-        <div className="animate-spin text-3xl mb-2">🩻</div>
-        <div>Loading Radiology, Medical Imaging & PACS / RIS Domain...</div>
-      </div>
-    );
+    return <SkeletonPage layout="table" metricCount={4} />;
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex overflow-x-auto border-b border-gray-200 bg-white px-4 pt-2 gap-1 rounded-t-xl">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => {
-              setActiveTab(tab.id);
-              setSelectedOrder(null);
-            }}
-            className={`flex items-center gap-1.5 px-3.5 py-2.5 text-xs font-semibold whitespace-nowrap border-b-2 transition ${
-              activeTab === tab.id
-                ? 'border-blue-600 text-blue-700 bg-blue-50/30'
-                : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
-            }`}
-          >
-            {tab.label}
-            {tab.count !== undefined && (
-              <Badge variant={tab.badgeVariant || (activeTab === tab.id ? 'primary' : 'neutral')}>
-                {tab.count}
-              </Badge>
-            )}
-          </button>
-        ))}
+      {/* 3D Spatial Feature Core: Radiology PACS & Clinical Imaging */}
+      <DocSearchSpatialCore3D
+        preset="radiology"
+        height={360}
+        interactive={true}
+        onNodeClick={(id) => {
+          if (id === 'ct-mri') {
+            setActiveTab('studies');
+          } else if (id === 'dicom-viewer' || id === 'ai-heatmaps') {
+            setActiveTab('ai-chest-xray');
+          } else if (id === 'critical-finding') {
+            setActiveTab('critical-findings');
+          } else if (id === 'prep-checklist') {
+            setActiveTab('preparation');
+          } else if (id === 'signed-reports') {
+            setActiveTab('radiologist-workbench');
+          } else if (id === 'pacs-archive') {
+            setActiveTab('pacs');
+          }
+        }}
+      />
+
+      {radOrderAlert && (
+        <Alert
+          type="success"
+          title="⚡ New OPD Imaging Order Received"
+          onClose={() => setRadOrderAlert(null)}
+        >
+          {radOrderAlert}
+        </Alert>
+      )}
+
+      {/* Persistent Emergency AI Copilot Alert Banner */}
+      <div
+        style={{
+          backgroundColor: '#450A0A',
+          border: '1.5px solid #EF4444',
+          borderRadius: '12px',
+          padding: '12px 18px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px',
+          boxShadow: '0 4px 20px rgba(239, 68, 68, 0.25)'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span style={{ fontSize: '1.6rem' }}>🚨</span>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontWeight: 900, color: '#FCA5A5', fontSize: '0.875rem' }}>
+                AI COPILOT: STAT BRAIN HEMORRHAGE & PNEUMOTHORAX DETECTED
+              </span>
+              <span style={{ backgroundColor: '#EF4444', color: '#FFF', fontSize: '0.65rem', fontWeight: 900, padding: '1px 6px', borderRadius: '4px' }}>
+                PRIORITY #1 PINNED
+              </span>
+            </div>
+            <div style={{ color: '#FECACA', fontSize: '0.78rem', marginTop: '2px' }}>
+              Kamla Devi (71y / CT Brain: Acute SDH 14mm) & Ramesh Verma (48y / X-Ray: Tension Pneumothorax) auto-pinned to Priority #1.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 4-Pillar Quick Navigation Bar for Radiologist / Radiographer Workstation */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+        gap: '12px',
+        marginBottom: '16px'
+      }}>
+        {/* Pillar 1: 🩻 Modality Scan Queue */}
+        <div
+          onClick={() => setActiveTab('tech-worklist')}
+          style={{
+            backgroundColor: activeTab === 'tech-worklist' ? 'rgba(245, 158, 11, 0.2)' : 'var(--ds-color-surface)',
+            border: `1.5px solid ${activeTab === 'tech-worklist' ? '#F59E0B' : 'var(--ds-color-border)'}`,
+            borderRadius: '10px',
+            padding: '12px 16px',
+            cursor: 'pointer',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <div>
+            <span style={{ fontSize: '0.68rem', color: '#FCD34D', fontWeight: 700, textTransform: 'uppercase' }}>
+              🩻 1. Modality Scan Queue
+            </span>
+            <div style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--ds-color-text-primary)' }}>
+              {orders.filter((o) => o.status === 'SCHEDULED' || o.status === 'IN_PROGRESS').length} In Queue
+            </div>
+          </div>
+          <span style={{ fontSize: '1.4rem' }}>🩻</span>
+        </div>
+
+        {/* Pillar 2: 🖥️ PACS DICOM Viewer */}
+        <div
+          onClick={() => setActiveTab('ai-chest-xray')}
+          style={{
+            backgroundColor: activeTab === 'ai-chest-xray' ? 'rgba(56, 189, 248, 0.2)' : 'var(--ds-color-surface)',
+            border: `1.5px solid ${activeTab === 'ai-chest-xray' ? '#38BDF8' : 'var(--ds-color-border)'}`,
+            borderRadius: '10px',
+            padding: '12px 16px',
+            cursor: 'pointer',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <div>
+            <span style={{ fontSize: '0.68rem', color: '#7DD3FC', fontWeight: 700, textTransform: 'uppercase' }}>
+              🖥️ 2. PACS DICOM Viewer
+            </span>
+            <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#38BDF8' }}>
+              Web DICOM & AI
+            </div>
+          </div>
+          <span style={{ fontSize: '1.4rem' }}>🖥️</span>
+        </div>
+
+        {/* Pillar 3: ✍️ Sign Radiology Report */}
+        <div
+          onClick={() => setActiveTab('radiologist-workbench')}
+          style={{
+            backgroundColor: activeTab === 'radiologist-workbench' ? 'rgba(168, 85, 247, 0.2)' : 'var(--ds-color-surface)',
+            border: `1.5px solid ${activeTab === 'radiologist-workbench' ? '#A855F7' : 'var(--ds-color-border)'}`,
+            borderRadius: '10px',
+            padding: '12px 16px',
+            cursor: 'pointer',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <div>
+            <span style={{ fontSize: '0.68rem', color: '#D8B4FE', fontWeight: 700, textTransform: 'uppercase' }}>
+              ✍️ 3. Sign Radiology Report
+            </span>
+            <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#C084FC' }}>
+              {studies.filter((s) => s.status === 'ACQUIRED').length} Awaiting Sign
+            </div>
+          </div>
+          <span style={{ fontSize: '1.4rem' }}>✍️</span>
+        </div>
+
+        {/* Pillar 4: ⏱️ Modality Scheduling */}
+        <div
+          onClick={() => setActiveTab('scheduling')}
+          style={{
+            backgroundColor: activeTab === 'scheduling' ? 'rgba(16, 185, 129, 0.2)' : 'var(--ds-color-surface)',
+            border: `1.5px solid ${activeTab === 'scheduling' ? '#10B981' : 'var(--ds-color-border)'}`,
+            borderRadius: '10px',
+            padding: '12px 16px',
+            cursor: 'pointer',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <div>
+            <span style={{ fontSize: '0.68rem', color: '#6EE7B7', fontWeight: 700, textTransform: 'uppercase' }}>
+              ⏱️ 4. Modality Scheduling
+            </span>
+            <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#34D399' }}>
+              {appointments.length} Booked Slots
+            </div>
+          </div>
+          <span style={{ fontSize: '1.4rem' }}>⏱️</span>
+        </div>
+      </div>
+
+      <div
+        style={{
+          position: 'relative',
+          zIndex: 40,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          flexWrap: 'wrap',
+          backgroundColor: 'var(--ds-color-surface)',
+          border: '1px solid var(--ds-color-border)',
+          borderRadius: '10px',
+          padding: '6px 8px'
+        }}
+      >
+        {primaryTabs.map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => {
+                setActiveTab(tab.id);
+                setSelectedOrder(null);
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                fontSize: '0.78rem',
+                fontWeight: isActive ? 700 : 500,
+                color: isActive ? '#FFFFFF' : 'var(--ds-color-text-muted)',
+                backgroundColor: isActive ? 'var(--ds-color-primary, #0284C7)' : 'transparent',
+                borderRadius: '6px',
+                border: isActive ? '1px solid var(--ds-color-accent, #38BDF8)' : '1px solid transparent',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = 'var(--ds-color-surface-hover)';
+                  e.currentTarget.style.color = 'var(--ds-color-text-primary)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = 'var(--ds-color-text-muted)';
+                }
+              }}
+            >
+              <span>{tab.label}</span>
+              {tab.count !== undefined && (
+                <span
+                  style={{
+                    backgroundColor: isActive ? '#0369A1' : '#1E293B',
+                    color: isActive ? '#E0F2FE' : '#94A3B8',
+                    padding: '1px 6px',
+                    borderRadius: '10px',
+                    fontSize: '0.68rem',
+                    fontWeight: 700,
+                    border: '1px solid rgba(255, 255, 255, 0.1)'
+                  }}
+                >
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+
+        {/* Secondary Modules Selector Dropdown */}
+        <TabOverflowMenu
+          label="More Radiology Modules"
+          options={secondaryTabs}
+          activeId={activeTab}
+          onSelect={(id) => {
+            setActiveTab(id as TabType);
+            setSelectedOrder(null);
+          }}
+          onReset={() => {
+            setActiveTab('overview');
+            setSelectedOrder(null);
+          }}
+          accentColor="#0284C7"
+          activeBorderColor="#38BDF8"
+        />
       </div>
 
       <div className="p-1">
@@ -351,8 +624,8 @@ export const RadiologyDomainManager: React.FC<Props> = ({ tenantId }) => {
           />
         )}
 
-        {activeTab === 'pacs' && <RadiologyPacsView studies={studies} />}
-        {activeTab === 'ai-chest-xray' && <AiChestXrayTriageView />}
+        {activeTab === 'pacs' && <WebDicomAiHeatmapViewer />}
+        {activeTab === 'ai-chest-xray' && <WebDicomAiHeatmapViewer />}
 
         {activeTab === 'catalog' && <RadiologyProcedureCatalogView procedures={procedures} />}
 

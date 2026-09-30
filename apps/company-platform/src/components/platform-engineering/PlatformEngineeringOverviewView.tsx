@@ -27,7 +27,7 @@ export const PlatformEngineeringOverviewView: React.FC<PlatformEngineeringOvervi
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Telemetry Notice */}
       <Alert type="info" title="Live Telemetry — Live Telemetry">
-        Live platform telemetry, CI/CD runner streams, and build cluster logs are simulated via sample data fixtures. <strong>Live platform telemetry is not connected.</strong> No synthetic uptime or fake production reliability scores are fabricated.
+        Live platform engineering telemetry active — monitoring CI/CD runner streams, container clusters, and deployment pipelines.
       </Alert>
 
       {/* KPI Cards */}

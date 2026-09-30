@@ -112,7 +112,7 @@ export const AiPriceElasticityRecommenderView: React.FC = () => {
 
   // 2. Interactive Price Elasticity Curve Simulator State
   const [testPrice, setTestPrice] = useState<number>(599);
-  const baselineSubscribers = 28400;
+  const baselineSubscribers = 0;
   const priceRatio = testPrice / 799;
   const elasticityFactor = -2.1;
   const simulatedSubscribers = Math.round(baselineSubscribers * Math.pow(priceRatio, elasticityFactor));
@@ -233,26 +233,7 @@ export const AiPriceElasticityRecommenderView: React.FC = () => {
   ]);
 
   // 7. Geo A/B Testing State
-  const [abExperiments, setAbExperiments] = useState<GeoAbTestExperiment[]>([
-    {
-      testId: 'EXP-GEO-JAIPUR',
-      testCity: 'Jaipur & Jodhpur (Rajasthan Cohort)',
-      variantA: { priceInr: 599, trafficPercent: 50, conversions: 840, conversionRate: '8.4%' },
-      variantB: { priceInr: 649, trafficPercent: 50, conversions: 790, conversionRate: '7.9%' },
-      pValConfidence: 'p = 0.024 (97.6% Statistical Confidence)',
-      winnerVariant: 'VARIANT_A',
-      status: 'RUNNING'
-    },
-    {
-      testId: 'EXP-GEO-PUNE',
-      testCity: 'Pune Hinjewadi & Viman Nagar',
-      variantA: { priceInr: 799, trafficPercent: 50, conversions: 520, conversionRate: '5.2%' },
-      variantB: { priceInr: 999, trafficPercent: 50, conversions: 610, conversionRate: '6.1% (Includes Mental Health)' },
-      pValConfidence: 'p = 0.012 (98.8% Statistical Confidence)',
-      winnerVariant: 'VARIANT_B',
-      status: 'RUNNING'
-    }
-  ]);
+  const [abExperiments, setAbExperiments] = useState<GeoAbTestExperiment[]>([]);
 
   // Actions
   const handleDeployAllRecommendations = () => {
@@ -860,69 +841,79 @@ export const AiPriceElasticityRecommenderView: React.FC = () => {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            {abExperiments.map((exp) => (
-              <div
-                key={exp.testId}
-                style={{
-                  backgroundColor: 'rgba(15, 23, 42, 0.8)',
-                  border: '1px solid rgba(139, 92, 246, 0.35)',
-                  borderRadius: '14px',
-                  padding: '20px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '14px'
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '1.0625rem', fontWeight: 800, color: '#FFFFFF' }}>{exp.testCity}</span>
-                      <Badge variant="primary">{exp.testId}</Badge>
-                      <Badge variant="success">{exp.status}</Badge>
-                    </div>
-                    <div style={{ fontSize: '0.75rem', color: '#C084FC', marginTop: '2px' }}>
-                      Statistical Confidence: <strong>{exp.pValConfidence}</strong>
-                    </div>
-                  </div>
-
-                  <Badge variant="success">WINNER: {exp.winnerVariant}</Badge>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  {/* Variant A */}
-                  <div style={{ backgroundColor: 'rgba(30, 41, 59, 0.4)', padding: '12px', borderRadius: '10px', border: exp.winnerVariant === 'VARIANT_A' ? '1.5px solid #10B981' : '1px solid rgba(255,255,255,0.1)' }}>
-                    <div style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 700 }}>VARIANT A ({exp.variantA.trafficPercent}% Traffic)</div>
-                    <div style={{ fontSize: '1.375rem', fontWeight: 900, color: '#FFFFFF', marginTop: '2px' }}>₹{exp.variantA.priceInr}</div>
-                    <div style={{ fontSize: '0.8125rem', color: '#34D399', marginTop: '4px' }}>
-                      Conversions: <strong>{exp.variantA.conversions}</strong> ({exp.variantA.conversionRate})
-                    </div>
-                  </div>
-
-                  {/* Variant B */}
-                  <div style={{ backgroundColor: 'rgba(30, 41, 59, 0.4)', padding: '12px', borderRadius: '10px', border: exp.winnerVariant === 'VARIANT_B' ? '1.5px solid #10B981' : '1px solid rgba(255,255,255,0.1)' }}>
-                    <div style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 700 }}>VARIANT B ({exp.variantB.trafficPercent}% Traffic)</div>
-                    <div style={{ fontSize: '1.375rem', fontWeight: 900, color: '#FFFFFF', marginTop: '2px' }}>₹{exp.variantB.priceInr}</div>
-                    <div style={{ fontSize: '0.8125rem', color: '#38BDF8', marginTop: '4px' }}>
-                      Conversions: <strong>{exp.variantB.conversions}</strong> ({exp.variantB.conversionRate})
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                  <Button
-                    variant="primary"
-                    onClick={() => {
-                      setAbExperiments((prev) =>
-                        prev.map((e) => (e.testId === exp.testId ? { ...e, status: 'CONCLUDED' } : e))
-                      );
-                      setDeployNotice(`🏆 Locked winning price variant for ${exp.testCity} across all users! Experiment status marked CONCLUDED.`);
-                    }}
-                  >
-                    🏆 Lock & Deploy Winner ({exp.winnerVariant === 'VARIANT_A' ? `₹${exp.variantA.priceInr}` : `₹${exp.variantB.priceInr}`})
-                  </Button>
-                </div>
+            {abExperiments.length === 0 ? (
+              <div style={{ backgroundColor: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '14px', padding: '36px', textAlign: 'center' }}>
+                <div style={{ fontSize: '2rem', marginBottom: '8px' }}>🧪</div>
+                <strong style={{ fontSize: '1rem', color: '#FFFFFF', display: 'block' }}>No Geo A/B Experiments Active</strong>
+                <p style={{ fontSize: '0.8125rem', color: '#94A3B8', margin: '6px 0 0' }}>
+                  All geographic pricing split tests reset to Day-0 clean slate.
+                </p>
               </div>
-            ))}
+            ) : (
+              abExperiments.map((exp) => (
+                <div
+                  key={exp.testId}
+                  style={{
+                    backgroundColor: 'rgba(15, 23, 42, 0.8)',
+                    border: '1px solid rgba(139, 92, 246, 0.35)',
+                    borderRadius: '14px',
+                    padding: '20px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '14px'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '1.0625rem', fontWeight: 800, color: '#FFFFFF' }}>{exp.testCity}</span>
+                        <Badge variant="primary">{exp.testId}</Badge>
+                        <Badge variant="success">{exp.status}</Badge>
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: '#C084FC', marginTop: '2px' }}>
+                        Statistical Confidence: <strong>{exp.pValConfidence}</strong>
+                      </div>
+                    </div>
+
+                    <Badge variant="success">WINNER: {exp.winnerVariant}</Badge>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    {/* Variant A */}
+                    <div style={{ backgroundColor: 'rgba(30, 41, 59, 0.4)', padding: '12px', borderRadius: '10px', border: exp.winnerVariant === 'VARIANT_A' ? '1.5px solid #10B981' : '1px solid rgba(255,255,255,0.1)' }}>
+                      <div style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 700 }}>VARIANT A ({exp.variantA.trafficPercent}% Traffic)</div>
+                      <div style={{ fontSize: '1.375rem', fontWeight: 900, color: '#FFFFFF', marginTop: '2px' }}>₹{exp.variantA.priceInr}</div>
+                      <div style={{ fontSize: '0.8125rem', color: '#34D399', marginTop: '4px' }}>
+                        Conversions: <strong>{exp.variantA.conversions}</strong> ({exp.variantA.conversionRate})
+                      </div>
+                    </div>
+
+                    {/* Variant B */}
+                    <div style={{ backgroundColor: 'rgba(30, 41, 59, 0.4)', padding: '12px', borderRadius: '10px', border: exp.winnerVariant === 'VARIANT_B' ? '1.5px solid #10B981' : '1px solid rgba(255,255,255,0.1)' }}>
+                      <div style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 700 }}>VARIANT B ({exp.variantB.trafficPercent}% Traffic)</div>
+                      <div style={{ fontSize: '1.375rem', fontWeight: 900, color: '#FFFFFF', marginTop: '2px' }}>₹{exp.variantB.priceInr}</div>
+                      <div style={{ fontSize: '0.8125rem', color: '#38BDF8', marginTop: '4px' }}>
+                        Conversions: <strong>{exp.variantB.conversions}</strong> ({exp.variantB.conversionRate})
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                    <Button
+                      variant="primary"
+                      onClick={() => {
+                        setAbExperiments((prev) =>
+                          prev.map((e) => (e.testId === exp.testId ? { ...e, status: 'CONCLUDED' } : e))
+                        );
+                        setDeployNotice(`🏆 Locked winning price variant for ${exp.testCity} across all users! Experiment status marked CONCLUDED.`);
+                      }}
+                    >
+                      🏆 Lock & Deploy Winner ({exp.winnerVariant === 'VARIANT_A' ? `₹${exp.variantA.priceInr}` : `₹${exp.variantB.priceInr}`})
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}

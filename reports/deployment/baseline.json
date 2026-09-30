@@ -1,0 +1,134 @@
+{
+  "timestamp": "2026-09-29T06:49:46.746Z",
+  "auditCategory": "CATEGORY 20: DEPLOYMENT / INFRASTRUCTURE ERROR",
+  "status": "INFRASTRUCTURE_HEALTHY",
+  "summary": {
+    "totalChecks": 11,
+    "passed": 11,
+    "failed": 0
+  },
+  "findings": [
+    {
+      "id": "DEP-INV-001",
+      "category": "CONTAINER_BUILD_ERROR",
+      "name": "Core Production Dockerfile Inventory",
+      "status": "PASSED",
+      "details": "Found 3 Dockerfiles in repository including multi-stage api-gateway and web-app manifests",
+      "metrics": {
+        "dockerfilesFound": 3
+      }
+    },
+    {
+      "id": "DEP-SEC-001",
+      "category": "CONTAINER_RUNTIME_ERROR",
+      "name": "Container Security & Process Supervision",
+      "status": "PASSED",
+      "details": "API Gateway container uses unprivileged user (docsearch), dumb-init process manager, and HEALTHCHECK probe",
+      "metrics": {
+        "hasNonRoot": true,
+        "hasDumbInit": true,
+        "hasHealthcheck": true
+      }
+    },
+    {
+      "id": "DEP-INV-002",
+      "category": "DEPLOYMENT_PACKAGE_ERROR",
+      "name": "Docker Compose Manifests Inventory",
+      "status": "PASSED",
+      "details": "Found 4 orchestration compose files across root, scale, prod, and deployment directories",
+      "metrics": {
+        "composeFound": 4
+      }
+    },
+    {
+      "id": "DEP-NET-001",
+      "category": "REVERSE_PROXY_ERROR",
+      "name": "Nginx Reverse Proxy Path Preservation & Upstream Routing",
+      "status": "PASSED",
+      "details": "Nginx configuration preserves /api routing prefix, avoids path stripping, and resolves SPA client-side routing fallbacks",
+      "metrics": {
+        "hasSpaFallback": true,
+        "proxyPassCorrect": true
+      }
+    },
+    {
+      "id": "DEP-CICD-001",
+      "category": "DEPLOYMENT_BUILD_ERROR",
+      "name": "CI/CD Automated Deployment & Smoke Test Pipeline",
+      "status": "PASSED",
+      "details": "CI/CD deploy pipeline contains automated migration step, multi-architecture container build, vulnerability scanner, and smoke tests",
+      "metrics": {
+        "hasDeployWf": true,
+        "hasPublishWf": true,
+        "hasMigrationsInDeploy": true,
+        "hasSmokeTestsInDeploy": true
+      }
+    },
+    {
+      "id": "DEP-DB-001",
+      "category": "DATABASE_CONNECTIVITY_ERROR",
+      "name": "Native PostgreSQL 18.4 Infrastructure Connectivity",
+      "status": "PASSED",
+      "details": "Connected to live native PostgreSQL 18.4 on port 5432 with 500 schema tables active (zero in-memory fallback)",
+      "metrics": {
+        "pgLive": true,
+        "tableCount": 500
+      }
+    },
+    {
+      "id": "DEP-MIG-001",
+      "category": "DATABASE_MIGRATION_DEPLOYMENT_ERROR",
+      "name": "Database Migration Files Inventory & Order",
+      "status": "PASSED",
+      "details": "Found 69 versioned SQL migration scripts in packages/database/migrations",
+      "metrics": {
+        "migrationCount": 69
+      }
+    },
+    {
+      "id": "DEP-HLT-001",
+      "category": "HEALTH_CHECK_ERROR",
+      "name": "Liveness & Readiness Probes Operational Verification",
+      "status": "PASSED",
+      "details": "Liveness (/health) status=200, Readiness (/ready) status=200, mode='EXTERNAL_POSTGRES'",
+      "metrics": {
+        "livenessOk": true,
+        "readinessOk": true,
+        "databaseMode": "EXTERNAL_POSTGRES"
+      }
+    },
+    {
+      "id": "DEP-BCK-001",
+      "category": "BACKUP_ERROR",
+      "name": "Disaster Recovery & Backup Script Infrastructure",
+      "status": "PASSED",
+      "details": "tooling/dr directory and database management scripts verified",
+      "metrics": {
+        "hasDrTooling": true
+      }
+    },
+    {
+      "id": "DEP-PROC-001",
+      "category": "PROCESS_MANAGER_ERROR",
+      "name": "Graceful Termination & Signal Trapping",
+      "status": "PASSED",
+      "details": "Process manager traps SIGINT / SIGTERM signals for graceful connection pool and HTTP termination",
+      "metrics": {
+        "handlesSigterm": true,
+        "closesGracefully": true
+      }
+    },
+    {
+      "id": "DEP-PKG-001",
+      "category": "DEPLOYMENT_PACKAGE_ERROR",
+      "name": "Production Distribution Packages Compiled & Ready",
+      "status": "PASSED",
+      "details": "Core backend, authentication, and shared-core distribution bundles exist in dist directories",
+      "metrics": {
+        "apiDistExists": true,
+        "authDistExists": true,
+        "coreDistExists": true
+      }
+    }
+  ]
+}

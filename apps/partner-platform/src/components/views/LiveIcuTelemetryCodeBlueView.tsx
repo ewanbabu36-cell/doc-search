@@ -2,14 +2,45 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Badge, Button } from '@docsearch/ui-kit';
 
 export const LiveIcuTelemetryCodeBlueView: React.FC = () => {
-  const [selectedBed, setSelectedBed] = useState<'BED_01' | 'BED_04' | 'BED_07' | 'BED_09'>('BED_04');
+  const [selectedBed, setSelectedBed] = useState<'BED_01' | 'BED_04' | 'BED_07' | 'BED_09' | 'BED_204'>('BED_04');
   const [codeBlueActive, setCodeBlueActive] = useState(true);
   const [shockDelivered, setShockDelivered] = useState(false);
   const [epiGiven, setEpiGiven] = useState(false);
 
+  // Listen for Universal Command Palette "Bed 204" trigger
+  useEffect(() => {
+    const handleOpenBed = (e: Event) => {
+      const custom = e as CustomEvent<any>;
+      const d = custom.detail;
+      if (d?.bedNumber?.includes('204') || d?.bedId === 'BED_204') {
+        setSelectedBed('BED_204');
+      }
+    };
+    window.addEventListener('docsearch:open_bed_monitor', handleOpenBed);
+    return () => window.removeEventListener('docsearch:open_bed_monitor', handleOpenBed);
+  }, []);
+
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const bedsData = {
+    BED_204: {
+      bedName: 'ICU Bed 204 (Critical Care Telemetry)',
+      patientName: 'Suresh Verma',
+      ageGender: '62y / Male',
+      uhid: 'UHID-2026-0204',
+      diagnosis: 'Acute Coronary Syndrome - Monitored CCU Bed',
+      status: 'STABLE',
+      news2Score: 2,
+      hr: 74,
+      spo2: 98,
+      bp: '120/80',
+      map: 93,
+      rr: 16,
+      temp: '98.4°F',
+      rhythm: 'Normal Sinus Rhythm',
+      infusions: 'Saline 0.9% @ 40 ml/hr',
+      ventilator: 'Room Air (Spontaneous)'
+    },
     BED_01: {
       bedName: 'ICU Bed 01 (Post-Surgical CCU)',
       patientName: 'Ramesh Patel',
@@ -243,6 +274,7 @@ export const LiveIcuTelemetryCodeBlueView: React.FC = () => {
       {/* Multi-Bed Ward Selector Matrix */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px' }}>
         {[
+          { key: 'BED_204', name: 'Bed 204 (ICU CCU)', patient: 'Suresh Verma', hr: 74, spo2: 98, status: 'STABLE', bg: 'rgba(6, 182, 212, 0.15)', border: '#06B6D4' },
           { key: 'BED_01', name: 'Bed 01 (Post-CABG)', patient: 'Ramesh Patel', hr: 76, spo2: 99, status: 'STABLE', bg: 'rgba(16, 185, 129, 0.1)', border: '#10B981' },
           { key: 'BED_04', name: 'Bed 04 (Septic Shock)', patient: 'Shanti Devi', hr: codeBlueActive ? 148 : 84, spo2: codeBlueActive ? 84 : 96, status: codeBlueActive ? 'CODE BLUE' : 'STABLE', bg: codeBlueActive ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.1)', border: codeBlueActive ? '#EF4444' : '#10B981' },
           { key: 'BED_07', name: 'Bed 07 (ARDS Vent)', patient: 'Anil Kapoor', hr: 92, spo2: 94, status: 'GUARDED', bg: 'rgba(245, 158, 11, 0.1)', border: '#F59E0B' },

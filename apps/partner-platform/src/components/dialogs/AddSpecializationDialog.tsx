@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { CreateDoctorSpecializationRequest } from '@docsearch/api-contracts';
 import { Dialog, Button, Input, Select, Alert } from '@docsearch/ui-kit';
+import { AuditJustificationField } from '../common/AuditJustificationField.js';
 
 export interface AddSpecializationDialogProps {
   isOpen: boolean;
@@ -31,7 +32,7 @@ export const AddSpecializationDialog: React.FC<AddSpecializationDialogProps> = (
   const [isSurgical, setIsSurgical] = useState(false);
   const [slotDuration, setSlotDuration] = useState(15);
   const [maxPatients, setMaxPatients] = useState(30);
-  const [reason, setReason] = useState('Registering clinical medical specialization');
+  const [reason, setReason] = useState('Clinical specialization and board certification authenticated.');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -85,7 +86,7 @@ export const AddSpecializationDialog: React.FC<AddSpecializationDialogProps> = (
           <Button variant="outline" size="sm" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button variant="primary" size="sm" onClick={handleSubmit} isLoading={isSubmitting}>
+          <Button variant="primary" size="sm" onClick={handleSubmit} isLoading={isSubmitting} disabled={isSubmitting}>
             Add Specialization
           </Button>
         </div>
@@ -170,17 +171,12 @@ export const AddSpecializationDialog: React.FC<AddSpecializationDialogProps> = (
           </div>
         </div>
 
-        <div>
-          <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: '600', marginBottom: '4px' }}>
-            Audit Reason *
-          </label>
-          <Input
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder="e.g. Added sub-specialty catalog entry for pediatric cardiology services"
-            required
-          />
-        </div>
+        <AuditJustificationField
+          label="Audit Reason"
+          value={reason}
+          onChange={setReason}
+          defaultJustification="Clinical specialization and board certification authenticated."
+        />
       </form>
     </Dialog>
   );

@@ -20,8 +20,18 @@ export const EmployeeStatusDialog: React.FC<EmployeeStatusDialogProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const isFounder =
+    (employee.firstName?.toUpperCase() === 'MERAJ' && employee.lastName?.toUpperCase() === 'SHARIF') ||
+    employee.workEmail?.toLowerCase() === 'founder@docsearch.health' ||
+    employee.workEmail?.toLowerCase() === 'meraj@docsearch.health' ||
+    Boolean((employee.metadata as any)?.isProtectedFounder);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isFounder) {
+      setError('IMMUTABLE FOUNDER SHIELD ACTIVE: Meraj Sharif is the Company Founder & Root Account. This profile cannot be modified, updated, deactivated, or removed.');
+      return;
+    }
     if (!reason || reason.trim().length < 3) {
       setError('A mandatory business justification (at least 3 characters) is required for employee status changes.');
       return;
@@ -49,13 +59,18 @@ export const EmployeeStatusDialog: React.FC<EmployeeStatusDialogProps> = ({
           <Button variant="outline" size="sm" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button variant="primary" size="sm" onClick={handleSubmit} isLoading={isSubmitting}>
+          <Button variant="primary" size="sm" onClick={handleSubmit} isLoading={isSubmitting} disabled={isFounder}>
             Save Status
           </Button>
         </div>
       }
     >
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {isFounder && (
+          <Alert type="warning" title="🛡️ IMMUTABLE FOUNDER SHIELD ACTIVE">
+            <strong>MERAJ SHARIF</strong> is the corporate Founder & SuperAdmin root account. Status changes, suspensions, and terminations are strictly prohibited and locked by system governance.
+          </Alert>
+        )}
         <Alert type="info" title="Audited Corporate HR Action">
           Employee employment status transitions generate an authoritative cryptographic record in <code>core.audit_events</code>.
         </Alert>

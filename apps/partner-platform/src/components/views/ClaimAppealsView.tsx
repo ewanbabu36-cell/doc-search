@@ -31,7 +31,7 @@ export const ClaimAppealsView: React.FC<ClaimAppealsViewProps> = ({
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#0f172a' }}>
+          <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: 'var(--ds-color-text-primary, #f8fafc)' }}>
             Claim Dispute Appeals Pipeline
           </h2>
           <p style={{ margin: '0.25rem 0 0 0', color: '#64748b', fontSize: '0.875rem' }}>
@@ -72,7 +72,7 @@ export const ClaimAppealsView: React.FC<ClaimAppealsViewProps> = ({
                 </Badge>
               </div>
 
-              <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.05rem', fontWeight: 600, color: '#0f172a' }}>
+              <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.05rem', fontWeight: 600, color: 'var(--ds-color-text-primary, #f8fafc)' }}>
                 {appeal.patientName}
               </h3>
               <div style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.5rem' }}>

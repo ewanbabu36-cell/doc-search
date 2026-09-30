@@ -37,7 +37,7 @@ import { HsmKeyManagementView } from './HsmKeyManagementView.js';
 import { ForensicSessionReplayView } from './ForensicSessionReplayView.js';
 import { Soc2EvidenceCollectorModal } from './Soc2EvidenceCollectorModal.js';
 
-import { Tabs, Badge, Spinner, ErrorState, Button } from '@docsearch/ui-kit';
+import { Tabs, Badge, Spinner, ErrorState, Button, DocSearchSpatialCore3D } from '@docsearch/ui-kit';
 
 export type ActiveSecurityTab =
   | 'overview'
@@ -255,6 +255,30 @@ export const SecurityDomainManager: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {/* 3D Spatial Feature Core: Enterprise Zero-Trust Security */}
+      <DocSearchSpatialCore3D
+        preset="security"
+        height={360}
+        interactive={true}
+        onNodeClick={(id) => {
+          if (id === 'break-glass') {
+            setActiveTab('breakglass');
+          } else if (id === 'mfa-fido') {
+            setActiveTab('mfa');
+          } else if (id === 'rbac-matrix') {
+            setActiveTab('matrix');
+          } else if (id === 'ddos-shield') {
+            setActiveTab('firewall');
+          } else if (id === 'session-sentinel') {
+            setActiveTab('sessions');
+          } else if (id === 'crypto-vault') {
+            setActiveTab('hsm');
+          } else if (id === 'soc2-telemetry') {
+            setActiveTab('verifications');
+          }
+        }}
+      />
+
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', backgroundColor: '#0F172A', border: '1.5px solid rgba(6, 182, 212, 0.4)', borderRadius: '14px', padding: '16px 20px' }}>
         <div>
@@ -287,11 +311,6 @@ export const SecurityDomainManager: React.FC = () => {
             variant="primary"
             size="sm"
             onClick={() => setIsCreateRoleModalOpen(true)}
-            style={{
-              backgroundColor: '#06B6D4',
-              color: '#070C16',
-              fontWeight: 900
-            }}
           >
             + Create Custom Role & Permissions
           </Button>

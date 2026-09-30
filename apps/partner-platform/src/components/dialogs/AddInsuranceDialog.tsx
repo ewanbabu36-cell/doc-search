@@ -5,6 +5,7 @@ import type {
   AddPatientInsuranceRequest
 } from '@docsearch/api-contracts';
 import { Dialog, Button, Input, Select, Alert } from '@docsearch/ui-kit';
+import { AuditJustificationField } from '../common/AuditJustificationField.js';
 
 export interface AddInsuranceDialogProps {
   isOpen: boolean;
@@ -31,7 +32,7 @@ export const AddInsuranceDialog: React.FC<AddInsuranceDialogProps> = ({
   const [coverageType, setCoverageType] = useState<InsuranceCoverageType>('PRIMARY');
   const [startDate, setStartDate] = useState('2026-01-01');
   const [endDate, setEndDate] = useState('2026-12-31');
-  const [reason, setReason] = useState('Attaching verified patient insurance policy');
+  const [reason, setReason] = useState('Third-party insurance policy and TPA coverage verified.');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -84,7 +85,7 @@ export const AddInsuranceDialog: React.FC<AddInsuranceDialogProps> = ({
           <Button variant="outline" size="sm" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button variant="primary" size="sm" onClick={handleSubmit} isLoading={isSubmitting}>
+          <Button variant="primary" size="sm" onClick={handleSubmit} isLoading={isSubmitting} disabled={isSubmitting}>
             Attach Insurance Policy
           </Button>
         </div>
@@ -163,17 +164,12 @@ export const AddInsuranceDialog: React.FC<AddInsuranceDialogProps> = ({
           </div>
         </div>
 
-        <div>
-          <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: '600', marginBottom: '4px' }}>
-            Audit Reason *
-          </label>
-          <Input
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder="e.g. Verified active commercial insurance card with payer gateway"
-            required
-          />
-        </div>
+        <AuditJustificationField
+          label="Audit Reason"
+          value={reason}
+          onChange={setReason}
+          defaultJustification="Third-party insurance policy and TPA coverage verified."
+        />
       </form>
     </Dialog>
   );

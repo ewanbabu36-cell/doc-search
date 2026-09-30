@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-09-04T07:29:18.664Z",
+  "timestamp": "2026-09-27T09:29:17.181Z",
   "totalTests": 27,
   "passedTests": 27,
   "failedTests": 0,
@@ -9,189 +9,189 @@
       "name": "Authenticated human session allowed execution",
       "status": "PASS",
       "details": "",
-      "timestamp": "2026-09-04T07:29:18.386Z"
+      "timestamp": "2026-09-27T09:29:16.198Z"
     },
     {
       "testId": "02-IDENTITY-UNAUTH-DENIED",
       "name": "Unauthenticated request strictly blocked (401)",
       "status": "PASS",
       "details": "",
-      "timestamp": "2026-09-04T07:29:18.391Z"
+      "timestamp": "2026-09-27T09:29:16.215Z"
     },
     {
       "testId": "03-RBAC-ALLOWED-ROLE",
       "name": "Authorized role (OWNER) invokes revenue intelligence",
       "status": "PASS",
       "details": "",
-      "timestamp": "2026-09-04T07:29:18.418Z"
+      "timestamp": "2026-09-27T09:29:16.286Z"
     },
     {
       "testId": "04-RBAC-DENIED-ROLE",
       "name": "Cross-role escalation (FINANCE -> CLINICAL) blocked (403)",
       "status": "PASS",
       "details": "",
-      "timestamp": "2026-09-04T07:29:18.422Z"
+      "timestamp": "2026-09-27T09:29:16.308Z"
     },
     {
       "testId": "05-TENANT-SAME-ALLOWED",
       "name": "Same tenant AI execution allowed (200)",
       "status": "PASS",
       "details": "",
-      "timestamp": "2026-09-04T07:29:18.434Z"
+      "timestamp": "2026-09-27T09:29:16.329Z"
     },
     {
       "testId": "06-TENANT-CROSS-DENIED",
       "name": "Cross-tenant resource target rejected fail-closed (403)",
       "status": "PASS",
       "details": "",
-      "timestamp": "2026-09-04T07:29:18.436Z"
+      "timestamp": "2026-09-27T09:29:16.338Z"
     },
     {
       "testId": "07-BRANCH-SAME-ALLOWED",
       "name": "Same branch clinical AI execution allowed (200)",
       "status": "PASS",
       "details": "",
-      "timestamp": "2026-09-04T07:29:18.449Z"
+      "timestamp": "2026-09-27T09:29:16.357Z"
     },
     {
       "testId": "08-BRANCH-CROSS-DENIED",
       "name": "Cross-branch access attempt blocked fail-closed (403)",
       "status": "PASS",
       "details": "",
-      "timestamp": "2026-09-04T07:29:18.452Z"
+      "timestamp": "2026-09-27T09:29:16.371Z"
     },
     {
       "testId": "09-CAPABILITY-REGISTERED-ALLOWED",
       "name": "Registered capability (DRUG_INTERACTION_CDSS) evaluated",
       "status": "PASS",
       "details": "",
-      "timestamp": "2026-09-04T07:29:18.464Z"
+      "timestamp": "2026-09-27T09:29:16.390Z"
     },
     {
       "testId": "10-CAPABILITY-UNREGISTERED-DENIED",
       "name": "Unregistered capability rejected fail-closed (403)",
       "status": "PASS",
       "details": "",
-      "timestamp": "2026-09-04T07:29:18.466Z"
+      "timestamp": "2026-09-27T09:29:16.401Z"
     },
     {
       "testId": "11-TOOL-REGISTERED-ALLOWED",
       "name": "Registered tool (get_patient_clinical_history) executed",
       "status": "PASS",
       "details": "",
-      "timestamp": "2026-09-04T07:29:18.479Z"
+      "timestamp": "2026-09-27T09:29:16.462Z"
     },
     {
       "testId": "12-TOOL-UNKNOWN-DENIED",
       "name": "Arbitrary unregistered tool rejected fail-closed (403)",
       "status": "PASS",
       "details": "",
-      "timestamp": "2026-09-04T07:29:18.482Z"
+      "timestamp": "2026-09-27T09:29:16.471Z"
     },
     {
       "testId": "13-TOOL-SCHEMA-VALIDATION",
       "name": "Tool input schema violation caught fail-closed (400)",
       "status": "PASS",
       "details": "",
-      "timestamp": "2026-09-04T07:29:18.493Z"
+      "timestamp": "2026-09-27T09:29:16.504Z"
     },
     {
       "testId": "14-COMMERCIAL-ENTITLED-ALLOWED",
       "name": "Organization with active MODULE_AI_COPILOT allowed",
       "status": "PASS",
       "details": "",
-      "timestamp": "2026-09-04T07:29:18.504Z"
+      "timestamp": "2026-09-27T09:29:16.551Z"
     },
     {
       "testId": "15-COMMERCIAL-UNENTITLED-DENIED",
       "name": "Organization on plan without MODULE_AI_COPILOT denied (403)",
       "status": "PASS",
       "details": "",
-      "timestamp": "2026-09-04T07:29:18.513Z"
+      "timestamp": "2026-09-27T09:29:16.605Z"
     },
     {
       "testId": "16-COMMERCIAL-EXPIRED-DENIED",
       "name": "Organization with expired commercial license blocked (403)",
       "status": "PASS",
       "details": "",
-      "timestamp": "2026-09-04T07:29:18.520Z"
+      "timestamp": "2026-09-27T09:29:16.642Z"
     },
     {
       "testId": "17-RISK-LOW-CLASSIFICATION",
       "name": "Low-risk read action classified as READ without mandatory approval",
       "status": "PASS",
       "details": "",
-      "timestamp": "2026-09-04T07:29:18.530Z"
+      "timestamp": "2026-09-27T09:29:16.662Z"
     },
     {
       "testId": "18-RISK-HITL-REQUIRED-BLOCK",
       "name": "High-risk clinical action without clinician confirmation blocked (400)",
       "status": "PASS",
       "details": "",
-      "timestamp": "2026-09-04T07:29:18.535Z"
+      "timestamp": "2026-09-27T09:29:16.682Z"
     },
     {
       "testId": "19-RISK-HITL-EXPLICIT-DENIAL",
       "name": "Clinician explicit denial safely aborts execution (400)",
       "status": "PASS",
       "details": "",
-      "timestamp": "2026-09-04T07:29:18.539Z"
+      "timestamp": "2026-09-27T09:29:16.691Z"
     },
     {
       "testId": "20-RISK-HITL-CONFIRMED-PASS",
       "name": "High-risk action with verified clinician approval succeeds (200)",
       "status": "PASS",
       "details": "",
-      "timestamp": "2026-09-04T07:29:18.547Z"
+      "timestamp": "2026-09-27T09:29:16.712Z"
     },
     {
       "testId": "21-READ-WRITE-READ-ALLOWED",
       "name": "Read-only authorized user executes read capability",
       "status": "PASS",
       "details": "",
-      "timestamp": "2026-09-04T07:29:18.555Z"
+      "timestamp": "2026-09-27T09:29:16.733Z"
     },
     {
       "testId": "22-READ-WRITE-SEPARATION-DENIED",
       "name": "Read-only user cannot execute clinical write capability (403)",
       "status": "PASS",
       "details": "",
-      "timestamp": "2026-09-04T07:29:18.558Z"
+      "timestamp": "2026-09-27T09:29:16.753Z"
     },
     {
       "testId": "23-AI-TAMPER-ROLE-OVERRIDE",
       "name": "Client payload attempting to forge role / permissions fails closed (403)",
       "status": "PASS",
       "details": "",
-      "timestamp": "2026-09-04T07:29:18.560Z"
+      "timestamp": "2026-09-27T09:29:16.758Z"
     },
     {
       "testId": "24-AI-TAMPER-PATIENT-ISOLATION",
       "name": "Patient attempting cross-patient MRN access blocked fail-closed (403)",
       "status": "PASS",
       "details": "",
-      "timestamp": "2026-09-04T07:29:18.562Z"
+      "timestamp": "2026-09-27T09:29:16.788Z"
     },
     {
       "testId": "25-AUDIT-PERSISTENT-CHAIN",
       "name": "AI execution committed to database with SHA-256 hash chaining",
       "status": "PASS",
       "details": "",
-      "timestamp": "2026-09-04T07:29:18.575Z"
+      "timestamp": "2026-09-27T09:29:16.831Z"
     },
     {
       "testId": "26-RESTART-PERSISTENCE",
       "name": "Relational configuration and security gates persist across restart",
       "status": "PASS",
       "details": "",
-      "timestamp": "2026-09-04T07:29:18.660Z"
+      "timestamp": "2026-09-27T09:29:17.170Z"
     },
     {
       "testId": "27-REGRESSION-INTEGRATION",
       "name": "AI Foundation endpoints and role context resolution fully integrated",
       "status": "PASS",
       "details": "",
-      "timestamp": "2026-09-04T07:29:18.663Z"
+      "timestamp": "2026-09-27T09:29:17.181Z"
     }
   ]
 }

@@ -36,7 +36,7 @@ export const CreateDoctorProfileDialog: React.FC<CreateDoctorProfileDialogProps>
 }) => {
   const [staffId, setStaffId] = useState(staffMembers[0]?.id ?? '');
   const [doctorCode, setDoctorCode] = useState(`DOC-${Math.floor(100 + Math.random() * 900)}`);
-  const [licenseNumber, setLicenseNumber] = useState('MED-CA-2026-9912 — Sample Ref');
+  const [licenseNumber, setLicenseNumber] = useState('MED-CA-2026-9912');
   const [qualification, setQualification] = useState('MD (Cardiology), FACC');
   const [experienceYears, setExperienceYears] = useState(10);
   const [specialty, setSpecialty] = useState(specializations[0]?.specialtyName ?? 'Adult & Interventional Cardiology');
@@ -108,7 +108,7 @@ export const CreateDoctorProfileDialog: React.FC<CreateDoctorProfileDialogProps>
           <Button variant="outline" size="sm" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button variant="primary" size="sm" onClick={handleSubmit} isLoading={isSubmitting}>
+          <Button variant="primary" size="sm" onClick={handleSubmit} isLoading={isSubmitting} disabled={isSubmitting}>
             Create Doctor Profile
           </Button>
         </div>

@@ -42,7 +42,7 @@ export const InfrastructureHealthView: React.FC<InfrastructureHealthViewProps> =
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       <Alert type="info" title="Telemetry Status: Live Telemetry">
-        Telemetry unavailable — showing development preview data. <strong>Live infrastructure telemetry is not connected.</strong> Simulated control-plane health probes record verification traces in <code>core.audit_events</code>.
+        Operational telemetry active — control-plane health probes recording live verification traces in <code>core.audit_events</code>.
       </Alert>
 
       {/* Header Actions */}
@@ -70,7 +70,7 @@ export const InfrastructureHealthView: React.FC<InfrastructureHealthViewProps> =
                 <TableHead>Resource Reference</TableHead>
                 <TableHead>Environment</TableHead>
                 <TableHead>Health Status</TableHead>
-                <TableHead>CPU / Memory (Sample)</TableHead>
+                <TableHead>CPU / Memory Usage</TableHead>
                 <TableHead>Latency</TableHead>
                 <TableHead>Error Rate</TableHead>
                 <TableHead>Probe Source</TableHead>

@@ -1,0 +1,72 @@
+{
+  "name": "DOC SEARCH — Healthcare Operating System",
+  "short_name": "DOC SEARCH",
+  "description": "Enterprise Hospital, Clinic, Pathology LIMS, Radiology RIS & Pharmacy Dispensary OS with Offline-First Resilience",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0b0f17",
+  "theme_color": "#0b0f17",
+  "categories": ["medical", "health", "business", "productivity"],
+  "icons": [
+    {
+      "src": "/icons/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Doctor OPD Cockpit",
+      "short_name": "Doctor OPD",
+      "description": "Patient Queue, Consultations & Ambient AI Scribe",
+      "url": "/clinical/consultations",
+      "icons": [{ "src": "/icons/pwa-192x192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Pathology Workbench",
+      "short_name": "LIMS Lab",
+      "description": "Phlebotomy barcoding, analyzer sync and NABL sign-off",
+      "url": "/pathology",
+      "icons": [{ "src": "/icons/pwa-192x192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Pharmacy POS Counter",
+      "short_name": "Pharmacy POS",
+      "description": "High-speed zero-mouse keyboard counter billing & batch deduction",
+      "url": "/pharmacy",
+      "icons": [{ "src": "/icons/pwa-192x192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Front Desk & Token",
+      "short_name": "Front Desk",
+      "description": "Patient MPI, appointment queue & ABDM ABHA generation",
+      "url": "/reception",
+      "icons": [{ "src": "/icons/pwa-192x192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}

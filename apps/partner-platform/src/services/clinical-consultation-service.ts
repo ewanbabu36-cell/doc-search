@@ -1,4 +1,5 @@
-import { apiRequest } from './api-client.js';
+import { apiRequest, isMockFallbackAllowed } from './api-client.js';
+import { getUnifiedPartnerProfile } from '../utils/roleProfileResolver.js';
 
 function loadStored<T>(key: string, fallback: T[]): T[] {
   if (typeof window !== 'undefined' && window.localStorage) {
@@ -84,8 +85,12 @@ export interface IClinicalConsultationService {
 }
 
 class ClinicalConsultationService implements IClinicalConsultationService {
-  private consultations: ConsultationDto[] = loadStored("docsearch_consultations", MOCK_CONSULTATIONS);
-  private auditTraces: ConsultationAuditTraceDto[] = [...MOCK_CONSULTATION_AUDIT_TRACES];
+  private consultations: ConsultationDto[] = isMockFallbackAllowed() ? loadStored("docsearch_consultations", MOCK_CONSULTATIONS) : [];
+  private auditTraces: ConsultationAuditTraceDto[] = isMockFallbackAllowed() ? [...MOCK_CONSULTATION_AUDIT_TRACES] : [];
+
+  private persistConsultations(): void {
+    saveStored('docsearch_consultations', this.consultations);
+  }
 
   private generateConsultationNumber(): string {
     const seq = this.consultations.length + 1;
@@ -149,7 +154,28 @@ class ClinicalConsultationService implements IClinicalConsultationService {
     _organizationId?: string,
     _branchId?: string
   ): Promise<ConsultationOverviewDto> {
-    const filtered = this.consultations.filter((c) => c.tenantId === tenantId);
+    try {
+      const res = await apiRequest<ConsultationOverviewDto>('/api/v1/partner/consultations/overview');
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch {}
+
+    if (!isMockFallbackAllowed()) {
+      return {
+        totalConsultationsCount: 0,
+        activeConsultationsCount: 0,
+        draftConsultationsCount: 0,
+        inProgressConsultationsCount: 0,
+        completedTodayCount: 0,
+        followUpsRequiredCount: 0,
+        uncompletedNotesCount: 0,
+        amendedCount: 0
+      };
+    }
+
+    this.consultations = loadStored("docsearch_consultations", this.consultations);
+    const filtered = this.consultations.filter((c) => !tenantId || tenantId === 'default' || c.tenantId === 'default' || c.tenantId === tenantId);
     return {
       totalConsultationsCount: filtered.length,
       activeConsultationsCount: filtered.filter(
@@ -165,8 +191,26 @@ class ClinicalConsultationService implements IClinicalConsultationService {
   }
 
   public async searchConsultations(req: QueryConsultationRequest): Promise<ConsultationDto[]> {
+    try {
+      const qs = new URLSearchParams();
+      if (req.doctorId) qs.set('doctorId', req.doctorId);
+      if (req.patientId) qs.set('patientId', req.patientId);
+      if (req.encounterId) qs.set('encounterId', req.encounterId);
+      if (req.consultationStatus) qs.set('status', req.consultationStatus);
+      if (req.searchTerm) qs.set('searchTerm', req.searchTerm);
+      const res = await apiRequest<ConsultationDto[]>(`/api/v1/partner/consultations?${qs.toString()}`);
+      if (res.success && Array.isArray(res.data)) {
+        return res.data;
+      }
+    } catch {}
+
+    if (!isMockFallbackAllowed()) {
+      return [];
+    }
+
+    this.consultations = loadStored("docsearch_consultations", this.consultations);
     return this.consultations.filter((c) => {
-      if (c.tenantId !== req.tenantId) return false;
+      if (req.tenantId && req.tenantId !== 'default' && c.tenantId !== 'default' && c.tenantId !== req.tenantId) return false;
       if (req.organizationId && c.organizationId !== req.organizationId) return false;
       if (req.branchId && c.branchId !== req.branchId) return false;
       if (req.patientId && c.patientId !== req.patientId) return false;
@@ -187,11 +231,25 @@ class ClinicalConsultationService implements IClinicalConsultationService {
   }
 
   public async getConsultationById(tenantId: string, consultationId: string): Promise<ConsultationDto | null> {
+    try {
+      const res = await apiRequest<ConsultationDto>(`/api/v1/partner/consultations/${encodeURIComponent(consultationId)}`);
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch {}
+
     const found = this.consultations.find((c) => c.tenantId === tenantId && c.id === consultationId);
     return found ? { ...found } : null;
   }
 
   public async getConsultationByEncounterId(tenantId: string, encounterId: string): Promise<ConsultationDto | null> {
+    try {
+      const res = await apiRequest<ConsultationDto>(`/api/v1/partner/consultations/encounter/${encodeURIComponent(encounterId)}`);
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch {}
+
     const found = this.consultations.find((c) => c.tenantId === tenantId && c.encounterId === encounterId);
     return found ? { ...found } : null;
   }
@@ -204,10 +262,16 @@ class ClinicalConsultationService implements IClinicalConsultationService {
       });
       if (res.success && res.data) {
         this.consultations.unshift(res.data);
+        saveStored('docsearch_consultations', this.consultations);
         return res.data;
       }
-    } catch {
-      // Fallback
+      if (!isMockFallbackAllowed()) {
+        throw new Error(res.error?.message || 'Failed to create consultation on server');
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) {
+        throw err instanceof Error ? err : new Error('Consultation network error');
+      }
     }
     saveStored('docsearch_consultations', this.consultations);
     const existing = this.consultations.find(
@@ -217,32 +281,45 @@ class ClinicalConsultationService implements IClinicalConsultationService {
       return { ...existing };
     }
 
+    let encData: any = null;
+    let nurseVitals: any = null;
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        const storedEncs = JSON.parse(localStorage.getItem('docsearch_encounters') || '[]');
+        encData = storedEncs.find((e: any) => e.id === req.encounterId);
+        const storedNurseVitals = JSON.parse(localStorage.getItem('docsearch_nurse_vitals') || '{}');
+        nurseVitals = storedNurseVitals[req.encounterId] || encData?.metadata?.nurseVitals || null;
+      } catch {}
+    }
+
     const newId = this.generateId();
+    const profile = getUnifiedPartnerProfile();
     const newConsultation: ConsultationDto = {
       id: newId,
       tenantId: req.tenantId,
       partnerId: req.partnerId,
       organizationId: req.organizationId,
-      organizationName: 'Apex Multi-Specialty Clinics',
+      organizationName: encData?.organizationName || profile.entityLegalName || 'Clinical Healthcare Facility',
       branchId: req.branchId,
-      branchName: 'Apex Downtown Care Center',
+      branchName: encData?.branchName || (profile.entityLegalName ? `${profile.entityLegalName} (OPD Wing)` : 'OPD Consultation Wing'),
       patientId: req.patientId,
-      patientName: 'Eleanor Vance',
-      patientMrn: 'DS-ORG001-000001',
-      patientDob: '1984-05-12',
-      patientGender: 'FEMALE',
-      patientMobile: '+1 555-019-2831',
-      patientAllergies: ['Penicillin (Anaphylaxis)'],
+      patientName: encData?.patientName || 'Patient Record',
+      patientMrn: encData?.patientMrn || 'MRN-2026-001',
+      patientDob: encData?.patientDob || '1990-05-12',
+      patientGender: encData?.patientGender || 'FEMALE',
+      patientMobile: encData?.patientMobile || '',
+      patientAllergies: encData?.patientAllergies || [],
       encounterId: req.encounterId,
-      encounterNumber: 'ENC-ORG001-000001',
-      encounterType: 'OPD_CONSULTATION',
+      encounterNumber: encData?.encounterNumber || 'ENC-ORG001-000001',
+      encounterType: encData?.encounterType || req.consultationType || 'OPD_CONSULTATION',
+      queueToken: encData?.queueToken || encData?.tokenNumber,
       doctorId: req.doctorId,
-      doctorName: 'Dr. Sarah Jenkins, MD',
-      doctorSpecialty: 'Cardiology',
+      doctorName: encData?.doctorName || profile.doctorName || 'Consulting Physician',
+      doctorSpecialty: encData?.doctorSpecialty || profile.doctorSpecialty || 'General Medicine',
       consultationNumber: this.generateConsultationNumber(),
       consultationStatus: 'DRAFT',
       consultationType: req.consultationType,
-      chiefComplaint: req.chiefComplaint,
+      chiefComplaint: req.chiefComplaint || encData?.chiefComplaint || encData?.visitReason || 'General clinical consultation',
       historyOfPresentIllness: req.historyOfPresentIllness,
       medicalHistory: req.medicalHistory,
       surgicalHistory: req.surgicalHistory,
@@ -250,6 +327,45 @@ class ClinicalConsultationService implements IClinicalConsultationService {
       socialHistory: req.socialHistory,
       allergySummary: req.allergySummary,
       medicationHistory: req.medicationHistory,
+      vitals: nurseVitals ? {
+        id: `vit-${Date.now()}`,
+        tenantId: req.tenantId,
+        partnerId: req.partnerId,
+        organizationId: req.organizationId,
+        consultationId: newId,
+        patientId: req.patientId,
+        systolicBp: typeof nurseVitals.systolicBp === 'number' ? nurseVitals.systolicBp : 120,
+        diastolicBp: typeof nurseVitals.diastolicBp === 'number' ? nurseVitals.diastolicBp : 80,
+        pulseBpm: typeof nurseVitals.pulseBpm === 'number' ? nurseVitals.pulseBpm : 74,
+        oxygenSaturationPercent: typeof nurseVitals.spo2Percent === 'number' ? nurseVitals.spo2Percent : 98,
+        temperatureCelsius: nurseVitals.tempF ? `${Math.round(((nurseVitals.tempF - 32) * 5) / 9 * 10) / 10}°C (${nurseVitals.tempF}°F)` : '37.0°C (98.6°F)',
+        weightKg: nurseVitals.weightKg ? String(nurseVitals.weightKg) : '68',
+        heightCm: nurseVitals.heightCm ? String(nurseVitals.heightCm) : '172',
+        bmi: nurseVitals.bmi ? String(nurseVitals.bmi) : '23.0',
+        clinicalNotes: nurseVitals.chiefComplaints || encData?.triageNotes || 'Captured by Nurse Triage Desk',
+        recordedBy: nurseVitals.recordedByNurse || 'Staff Nurse, RN',
+        recordedAt: nurseVitals.recordedAt || new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      } : (encData?.triageNotes ? {
+        id: `vit-${Date.now()}`,
+        tenantId: req.tenantId,
+        partnerId: req.partnerId,
+        organizationId: req.organizationId,
+        consultationId: newId,
+        patientId: req.patientId,
+        systolicBp: 120,
+        diastolicBp: 80,
+        pulseBpm: 72,
+        oxygenSaturationPercent: 99,
+        temperatureCelsius: '37.0°C (98.6°F)',
+        weightKg: '70',
+        clinicalNotes: encData.triageNotes,
+        recordedBy: 'Nurse Triage Desk',
+        recordedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      } : undefined),
       version: 1,
       isAmended: false,
       followUpRequired: false,
@@ -263,6 +379,7 @@ class ClinicalConsultationService implements IClinicalConsultationService {
     };
 
     this.consultations.unshift(newConsultation);
+    this.persistConsultations();
 
     this.recordAudit(
       req.tenantId,
@@ -318,6 +435,7 @@ class ClinicalConsultationService implements IClinicalConsultationService {
       consultation as unknown as Record<string, unknown>
     );
 
+    this.persistConsultations();
     return { ...consultation };
   }
 
@@ -367,6 +485,26 @@ class ClinicalConsultationService implements IClinicalConsultationService {
       consultation as unknown as Record<string, unknown>
     );
 
+    try {
+      void apiRequest('/api/v1/partner/consultations', {
+        method: 'POST',
+        body: JSON.stringify({
+          encounterId: consultation.encounterId,
+          patientId: consultation.patientId,
+          doctorId: consultation.doctorId,
+          status: 'DRAFT',
+          chiefComplaint: consultation.chiefComplaint,
+          historyOfPresentIllness: consultation.historyOfPresentIllness,
+          pastMedicalHistory: consultation.medicalHistory,
+          examinationNotes: consultation.examinationSummary,
+          assessmentNotes: consultation.clinicalAssessment,
+          planNotes: consultation.treatmentPlan,
+          followUpAdvice: consultation.followUpNotes
+        })
+      });
+    } catch {}
+
+    this.persistConsultations();
     return { ...consultation };
   }
 
@@ -426,6 +564,7 @@ class ClinicalConsultationService implements IClinicalConsultationService {
       vitals as unknown as Record<string, unknown>
     );
 
+    this.persistConsultations();
     return { ...consultation };
   }
 
@@ -484,6 +623,7 @@ class ClinicalConsultationService implements IClinicalConsultationService {
       exam as unknown as Record<string, unknown>
     );
 
+    this.persistConsultations();
     return { ...consultation };
   }
 
@@ -545,6 +685,7 @@ class ClinicalConsultationService implements IClinicalConsultationService {
       diag as unknown as Record<string, unknown>
     );
 
+    this.persistConsultations();
     return { ...consultation };
   }
 
@@ -599,6 +740,7 @@ class ClinicalConsultationService implements IClinicalConsultationService {
       target as unknown as Record<string, unknown>
     );
 
+    this.persistConsultations();
     return { ...consultation };
   }
 
@@ -639,6 +781,7 @@ class ClinicalConsultationService implements IClinicalConsultationService {
       undefined
     );
 
+    this.persistConsultations();
     return { ...consultation };
   }
 
@@ -701,6 +844,7 @@ class ClinicalConsultationService implements IClinicalConsultationService {
       med as unknown as Record<string, unknown>
     );
 
+    this.persistConsultations();
     return { ...consultation };
   }
 
@@ -756,6 +900,7 @@ class ClinicalConsultationService implements IClinicalConsultationService {
       target as unknown as Record<string, unknown>
     );
 
+    this.persistConsultations();
     return { ...consultation };
   }
 
@@ -798,6 +943,7 @@ class ClinicalConsultationService implements IClinicalConsultationService {
       target as unknown as Record<string, unknown>
     );
 
+    this.persistConsultations();
     return { ...consultation };
   }
 
@@ -852,6 +998,7 @@ class ClinicalConsultationService implements IClinicalConsultationService {
       inst as unknown as Record<string, unknown>
     );
 
+    this.persistConsultations();
     return { ...consultation };
   }
 
@@ -908,6 +1055,7 @@ class ClinicalConsultationService implements IClinicalConsultationService {
       fol as unknown as Record<string, unknown>
     );
 
+    this.persistConsultations();
     return { ...consultation };
   }
 
@@ -946,55 +1094,72 @@ class ClinicalConsultationService implements IClinicalConsultationService {
       consultation as unknown as Record<string, unknown>
     );
 
-    // AUTO-SYNC DOCTOR E-PRESCRIPTION TO PHARMACY QUEUE
-    if (consultation.medications && consultation.medications.length > 0 && typeof window !== 'undefined') {
-      try {
-        const existingRxList: any[] = JSON.parse(localStorage.getItem('docsearch_pharmacy_prescriptions') || '[]');
-        const newRxNumber = `RX-OPD-2026-${Math.floor(100000 + Math.random() * 900000)}`;
-        const newRx = {
-          id: crypto.randomUUID(),
-          tenantId: req.tenantId,
-          branchId: consultation.branchId || '00000000-0000-4000-8000-000000000003',
-          prescriptionNumber: newRxNumber,
-          patientId: consultation.patientId,
-          patientName: consultation.patientName || 'Rahul Kumar',
-          patientMrn: consultation.patientMrn || 'MRN-84920',
-          doctorId: consultation.doctorId,
-          doctorName: consultation.doctorName || 'Dr. Rajesh Sharma, MD',
-          doctorSpecialty: 'Internal Medicine',
-          departmentName: 'OPD Clinical Care',
-          status: 'READY_FOR_DISPENSING',
-          prescribedAt: new Date().toISOString(),
-          items: consultation.medications.map((m) => ({
-            id: m.id || crypto.randomUUID(),
-            medicationId: 'med-01',
-            medicationName: m.medicationName,
-            genericName: m.genericName,
-            brandName: m.medicationName,
-            dosageForm: 'TABLET',
-            strength: m.strength || '500mg',
-            dose: m.dosage || '1 Tablet',
-            route: m.route || 'ORAL',
-            frequency: m.frequency || 'BID (Twice Daily)',
-            durationDays: m.duration || 5,
-            quantityPrescribed: (m.duration || 5) * 2,
-            quantityDispensed: 0,
-            unitPrice: 4.5,
-            totalPrice: ((m.duration || 5) * 2) * 4.5,
-            instructions: m.instructions || m.beforeAfterFood || 'After meals',
-            substitutionAllowed: true,
-            isGenericAccepted: true,
-            status: 'PENDING_DISPENSE'
-          })),
-          totalAmount: 180.0,
-          notes: consultation.treatmentPlan || 'Auto-generated from finalized Doctor OPD Consultation',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-        existingRxList.unshift(newRx);
-        localStorage.setItem('docsearch_pharmacy_prescriptions', JSON.stringify(existingRxList));
-      } catch {}
+    // AUTHORITATIVE BACKEND CALL: Complete consultation workflow
+    try {
+      let completeRes = await apiRequest<{
+        consultation: any;
+        encounter: any;
+        queueToken: any;
+        prescription: any;
+        pharmacyOrder: any;
+        labOrders: any[];
+      }>(`/api/v1/partner/consultations/${consultation.id}/complete`, {
+        method: 'POST',
+        body: JSON.stringify({ doctorId: req.actorId || consultation.doctorId })
+      });
+
+      // If consultation wasn't found in PostgreSQL (e.g. client draft), save it first then complete
+      if (!completeRes.success && (completeRes.error?.code === 'NOT_FOUND' || completeRes.error?.code === 'HTTP_ERROR')) {
+        const saveRes = await apiRequest<{ id: string }>('/api/v1/partner/consultations', {
+          method: 'POST',
+          body: JSON.stringify({
+            encounterId: consultation.encounterId,
+            patientId: consultation.patientId,
+            doctorId: consultation.doctorId || req.actorId,
+            status: 'IN_PROGRESS',
+            chiefComplaint: consultation.chiefComplaint || 'Consultation Completed',
+            historyOfPresentIllness: consultation.historyOfPresentIllness || '',
+            examinationNotes: consultation.examinationSummary || '',
+            assessmentNotes: req.clinicalAssessment || consultation.clinicalAssessment || '',
+            planNotes: req.treatmentPlan || consultation.treatmentPlan || '',
+            diagnoses: consultation.diagnoses?.map((d) => ({
+              code: d.diagnosisCode,
+              description: d.diagnosisName,
+              isPrimary: d.isPrimary ?? (d.diagnosisType === 'PRIMARY'),
+              type: d.diagnosisType
+            })) || [],
+            medications: consultation.medications?.map((m) => ({
+              medicationName: m.medicationName,
+              genericName: m.genericName,
+              dosage: m.dosage,
+              frequency: m.frequency,
+              duration: m.duration,
+              instructions: m.instructions
+            })) || []
+          })
+        });
+
+        if (saveRes.success && saveRes.data?.id) {
+          const dbConsId = saveRes.data.id;
+          completeRes = await apiRequest(`/api/v1/partner/consultations/${dbConsId}/complete`, {
+            method: 'POST',
+            body: JSON.stringify({ doctorId: req.actorId || consultation.doctorId })
+          });
+        } else if (!isMockFallbackAllowed() && saveRes.error) {
+          throw new Error(saveRes.error.message || 'Failed to persist consultation to server');
+        }
+      }
+
+      if (!completeRes.success && !isMockFallbackAllowed() && completeRes.error) {
+        throw new Error(completeRes.error.message || 'Failed to complete consultation on server');
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) {
+        throw err instanceof Error ? err : new Error('Failed to complete consultation on server');
+      }
     }
+
+    saveStored('docsearch_consultations', this.consultations);
 
     return { ...consultation };
   }
@@ -1040,6 +1205,7 @@ class ClinicalConsultationService implements IClinicalConsultationService {
       consultation as unknown as Record<string, unknown>
     );
 
+    this.persistConsultations();
     return { ...consultation };
   }
 

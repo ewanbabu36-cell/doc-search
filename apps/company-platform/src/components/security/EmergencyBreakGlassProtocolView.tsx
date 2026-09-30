@@ -95,7 +95,7 @@ export const EmergencyBreakGlassProtocolView: React.FC = () => {
           </p>
         </div>
 
-        <Button variant="primary" size="sm" onClick={() => setIsGrantModalOpen(true)} style={{ backgroundColor: '#EF4444', color: '#FFF', fontWeight: 800 }}>
+        <Button variant="danger" size="sm" onClick={() => setIsGrantModalOpen(true)}>
           🚨 Authorize Emergency Break-Glass
         </Button>
       </div>

@@ -6,11 +6,13 @@ export interface PatientLocationViewProps {
   admissions: InpatientAdmissionDto[];
 }
 
-export const PatientLocationView: React.FC<PatientLocationViewProps> = ({ admissions }) => {
+export const PatientLocationView: React.FC<PatientLocationViewProps> = ({ admissions = [] }) => {
+  const safeAdmissions = Array.isArray(admissions) ? admissions : [];
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div>
-        <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#0f172a' }}>Patient Location Tracker</h2>
+        <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: 'var(--ds-color-text-primary, #f8fafc)' }}>Patient Location Tracker</h2>
         <p style={{ margin: '0.25rem 0 0 0', color: '#64748b', fontSize: '0.875rem' }}>Tracking active room assignments and transfer trajectories.</p>
       </div>
       <Card style={{ padding: '0', overflow: 'hidden' }}>
@@ -24,14 +26,20 @@ export const PatientLocationView: React.FC<PatientLocationViewProps> = ({ admiss
             </tr>
           </thead>
           <tbody>
-            {admissions.map((a) => (
-              <tr key={a.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                <td style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>{a.patientName}</td>
-                <td style={{ padding: '0.75rem 1rem' }}>{a.wardName}</td>
-                <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#2563eb' }}>{a.bedCode}</td>
-                <td style={{ padding: '0.75rem 1rem' }}>{new Date(a.admissionDateTime).toLocaleDateString()}</td>
+            {safeAdmissions.length === 0 ? (
+              <tr>
+                <td colSpan={4} style={{ padding: '1.5rem', textAlign: 'center', color: '#64748b' }}>No active inpatient locations found.</td>
               </tr>
-            ))}
+            ) : (
+              safeAdmissions.map((a) => (
+                <tr key={a.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                  <td style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>{a.patientName}</td>
+                  <td style={{ padding: '0.75rem 1rem' }}>{a.wardName}</td>
+                  <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#2563eb' }}>{a.bedCode}</td>
+                  <td style={{ padding: '0.75rem 1rem' }}>{a.admissionDateTime ? new Date(a.admissionDateTime).toLocaleDateString() : 'N/A'}</td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </Card>

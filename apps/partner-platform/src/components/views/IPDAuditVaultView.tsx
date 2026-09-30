@@ -10,7 +10,7 @@ export const IPDAuditVaultView: React.FC<IPDAuditVaultViewProps> = ({ auditTrace
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div>
-        <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#0f172a' }}>Inpatient Audit Vault</h2>
+        <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: 'var(--ds-color-text-primary, #f8fafc)' }}>Inpatient Audit Vault</h2>
         <p style={{ margin: '0.25rem 0 0 0', color: '#64748b', fontSize: '0.875rem' }}>Cryptographically hash-linked audit records for all ADT and clinical documentation events.</p>
       </div>
       <Card style={{ padding: '0', overflow: 'hidden' }}>

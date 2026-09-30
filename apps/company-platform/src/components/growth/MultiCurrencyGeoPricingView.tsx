@@ -142,12 +142,6 @@ export const MultiCurrencyGeoPricingView: React.FC = () => {
           variant="primary"
           size="sm"
           onClick={handleDeployGlobalRates}
-          style={{
-            backgroundColor: '#06B6D4',
-            color: '#070C16',
-            fontWeight: 900,
-            boxShadow: '0 4px 14px rgba(6, 182, 212, 0.4)'
-          }}
         >
           ⚡ Deploy Global Rates to Edge CDN
         </Button>

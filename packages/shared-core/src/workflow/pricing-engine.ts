@@ -5,7 +5,7 @@ import type {
   PricingLineItemDto
 } from '@docsearch/api-contracts';
 import { RuleEngine } from './rule-engine.js';
-import * as crypto from 'crypto';
+import { generateSaltedHash } from '../security/privacy-masking.js';
 
 export interface PlanConfig {
   code: string;
@@ -184,7 +184,7 @@ export class PricingEngine {
       lineItems
     });
 
-    const immutableSnapshotHash = crypto.createHash('sha256').update(hashPayload).digest('hex');
+    const immutableSnapshotHash = generateSaltedHash(hashPayload, 'docsearch-pricing-snapshot');
 
     return {
       id: `PRC-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`,

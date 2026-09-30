@@ -1,0 +1,276 @@
+{
+  "timestamp": "2026-09-29T06:53:14.256Z",
+  "auditCategory": "CATEGORY 17: PERFORMANCE ERROR",
+  "status": "PASSED_CERTIFIED",
+  "summary": {
+    "totalInvariants": 18,
+    "passedInvariants": 18,
+    "failedInvariants": 0,
+    "criticalPerformanceErrors": 0,
+    "unexplainedP95Regressions": 0,
+    "nPlusOneFindings": 0,
+    "connectionLeaks": 0,
+    "unboundedMemoryGrowth": 0
+  },
+  "invariants": [
+    {
+      "id": "PERF-INV-001",
+      "name": "Clinical Patients Composite Index Present",
+      "passed": true,
+      "details": "idx_patients_tenant_created_at exists on clinical.patients(tenant_id, created_at DESC)"
+    },
+    {
+      "id": "PERF-INV-002",
+      "name": "Clinical Encounters Composite Index Present",
+      "passed": true,
+      "details": "idx_encounters_tenant_created_at exists on clinical.encounters(tenant_id, created_at DESC)"
+    },
+    {
+      "id": "PERF-INV-003",
+      "name": "Investigation Orders Composite Index Present",
+      "passed": true,
+      "details": "idx_investigation_orders_tenant_created_at exists on clinical.investigation_orders(tenant_id, created_at DESC)"
+    },
+    {
+      "id": "PERF-INV-004",
+      "name": "Radiology Orders Composite Index Present",
+      "passed": true,
+      "details": "idx_radiology_orders_tenant_ordered_at exists on clinical.radiology_orders(tenant_id, ordered_at DESC)"
+    },
+    {
+      "id": "PERF-INV-005",
+      "name": "Audit Events Composite Index Present",
+      "passed": true,
+      "details": "idx_audit_events_tenant_time exists on core.audit_events(tenant_id, timestamp DESC)"
+    },
+    {
+      "id": "PERF-INV-006",
+      "name": "Batch Procurement Item Lookup Implemented",
+      "passed": true,
+      "details": "getItemsByIds uses single inArray SQL query instead of N sequential getItemById calls"
+    },
+    {
+      "id": "PERF-INV-007",
+      "name": "Requisition Items Bulk Multi-Row Insert",
+      "passed": true,
+      "details": "createRequisition performs single bulk insert of requisition items"
+    },
+    {
+      "id": "PERF-INV-008",
+      "name": "Purchase Order Items Bulk Multi-Row Insert",
+      "passed": true,
+      "details": "createPurchaseOrder performs single bulk insert of PO items"
+    },
+    {
+      "id": "PERF-INV-009",
+      "name": "Goods Receipt Items Batch Prefetching",
+      "passed": true,
+      "details": "createGoodsReceipt batches item lookup before inventory upsert"
+    },
+    {
+      "id": "PERF-INV-010",
+      "name": "Transfer Items Bulk Multi-Row Insert",
+      "passed": true,
+      "details": "createTransfer performs single bulk insert of transfer items"
+    },
+    {
+      "id": "PERF-INV-011",
+      "name": "Stock Count Items Bulk Multi-Row Insert",
+      "passed": true,
+      "details": "initiateStockCount performs single bulk insert of stock count items"
+    },
+    {
+      "id": "PERF-INV-012",
+      "name": "Health Check Endpoint P95 Latency SLA (< 50ms)",
+      "passed": true,
+      "details": "Health Check P95 = 18.35ms (target < 50ms)"
+    },
+    {
+      "id": "PERF-INV-013",
+      "name": "Clinical Patients Endpoint P95 Latency SLA (< 100ms)",
+      "passed": true,
+      "details": "Patients List P95 = 39.31ms (target < 100ms)"
+    },
+    {
+      "id": "PERF-INV-014",
+      "name": "Clinical Encounters Endpoint P95 Latency SLA (< 100ms)",
+      "passed": true,
+      "details": "Encounters List P95 = 18.58ms (target < 100ms)"
+    },
+    {
+      "id": "PERF-INV-015",
+      "name": "Zero Concurrency Errors at 10 Concurrent Clients",
+      "passed": true,
+      "details": "Errors: 0 / 100 requests at 10 concurrent clients"
+    },
+    {
+      "id": "PERF-INV-016",
+      "name": "Sustained Concurrency Throughput (> 100 RPS)",
+      "passed": true,
+      "details": "Throughput achieved: 220.5 RPS (target > 100 RPS)"
+    },
+    {
+      "id": "PERF-INV-017",
+      "name": "Bounded Memory Footprint (< 200 MB)",
+      "passed": true,
+      "details": "Heap Used: 17.22 MB (boundary < 200 MB)"
+    },
+    {
+      "id": "PERF-INV-018",
+      "name": "Zero Connection Leaks (Pool Stable)",
+      "passed": true,
+      "details": "Active DB Connections: 1 (bounded by pool size)"
+    }
+  ],
+  "comparativeBenchmarks": [
+    {
+      "name": "Health Check",
+      "beforeP50": 15.66,
+      "afterP50": 15.83,
+      "p50DiffMs": 0.17,
+      "beforeP95": 18.64,
+      "afterP95": 18.35,
+      "p95DiffMs": -0.29,
+      "payloadBytes": 178
+    },
+    {
+      "name": "Auth Session (/me)",
+      "beforeP50": 16.19,
+      "afterP50": 16.16,
+      "p50DiffMs": -0.03,
+      "beforeP95": 20.58,
+      "afterP95": 24.71,
+      "p95DiffMs": 4.13,
+      "payloadBytes": 419
+    },
+    {
+      "name": "Patients List",
+      "beforeP50": 15.72,
+      "afterP50": 17.14,
+      "p50DiffMs": 1.42,
+      "beforeP95": 24.31,
+      "afterP95": 39.31,
+      "p95DiffMs": 15,
+      "payloadBytes": 10130
+    },
+    {
+      "name": "Patient Search",
+      "beforeP50": 16.22,
+      "afterP50": 16.05,
+      "p50DiffMs": -0.17,
+      "beforeP95": 32.28,
+      "afterP95": 23.67,
+      "p95DiffMs": -8.61,
+      "payloadBytes": 26
+    },
+    {
+      "name": "Encounters List",
+      "beforeP50": 15.32,
+      "afterP50": 16.32,
+      "p50DiffMs": 1,
+      "beforeP95": 21.87,
+      "afterP95": 18.58,
+      "p95DiffMs": -3.29,
+      "payloadBytes": 33788
+    },
+    {
+      "name": "Lab Orders List",
+      "beforeP50": 15.39,
+      "afterP50": 16.49,
+      "p50DiffMs": 1.1,
+      "beforeP95": 21.01,
+      "afterP95": 25.09,
+      "p95DiffMs": 4.08,
+      "payloadBytes": 35989
+    },
+    {
+      "name": "Radiology Orders List",
+      "beforeP50": 15.34,
+      "afterP50": 16.11,
+      "p50DiffMs": 0.77,
+      "beforeP95": 23.9,
+      "afterP95": 21.11,
+      "p95DiffMs": -2.79,
+      "payloadBytes": 14309
+    },
+    {
+      "name": "Billing Invoices List",
+      "beforeP50": 15.82,
+      "afterP50": 17.01,
+      "p50DiffMs": 1.19,
+      "beforeP95": 21.27,
+      "afterP95": 22.72,
+      "p95DiffMs": 1.45,
+      "payloadBytes": 19689
+    },
+    {
+      "name": "Pharmacy Inventory List",
+      "beforeP50": 15.51,
+      "afterP50": 16.32,
+      "p50DiffMs": 0.81,
+      "beforeP95": 21.48,
+      "afterP95": 20.18,
+      "p95DiffMs": -1.3,
+      "payloadBytes": 7730
+    },
+    {
+      "name": "HQ Command Center Overview",
+      "beforeP50": 17.07,
+      "afterP50": 18.47,
+      "p50DiffMs": 1.4,
+      "beforeP95": 76.66,
+      "afterP95": 52.4,
+      "p95DiffMs": -24.26,
+      "payloadBytes": 10207
+    }
+  ],
+  "concurrencyResults": [
+    {
+      "concurrency": 2,
+      "totalRequests": 20,
+      "totalDurationMs": 104,
+      "rps": 192.4,
+      "errors": 0,
+      "min": 4.77,
+      "p50": 8.83,
+      "p75": 10.36,
+      "p95": 17.67,
+      "p99": 17.67,
+      "max": 17.67,
+      "avg": 10.12
+    },
+    {
+      "concurrency": 5,
+      "totalRequests": 50,
+      "totalDurationMs": 189.4,
+      "rps": 264,
+      "errors": 0,
+      "min": 4.69,
+      "p50": 15.25,
+      "p75": 19.62,
+      "p95": 32.07,
+      "p99": 45.8,
+      "max": 45.8,
+      "avg": 17.47
+    },
+    {
+      "concurrency": 10,
+      "totalRequests": 100,
+      "totalDurationMs": 453.5,
+      "rps": 220.5,
+      "errors": 0,
+      "min": 7.69,
+      "p50": 34.07,
+      "p75": 42.97,
+      "p95": 92.01,
+      "p99": 213.39,
+      "max": 213.39,
+      "avg": 41.83
+    }
+  ],
+  "memoryStats": {
+    "heapUsedMb": 17.22,
+    "heapTotalMb": 26.52,
+    "rssMb": 81.23
+  }
+}

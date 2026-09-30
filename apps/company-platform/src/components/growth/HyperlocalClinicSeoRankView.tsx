@@ -12,38 +12,7 @@ interface ClinicSeoRank {
   seoHealthScore: string;
 }
 
-const INITIAL_RANKS: ClinicSeoRank[] = [
-  {
-    id: 'SEO-LOC-01',
-    clinicName: 'Max Heart & Vascular Institute',
-    cityArea: 'Saket & South Delhi',
-    targetKeywords: 'Best Cardiologist near me, ECG Saket',
-    googleMapsRank: '#1 on Google Local 3-Pack',
-    docSearchRank: '#1 Top Doctor Badge',
-    monthlyPatientImpressions: '1,42,000 Views',
-    seoHealthScore: '98.5%'
-  },
-  {
-    id: 'SEO-LOC-02',
-    clinicName: 'Apollo Children & Newborn Care Clinic',
-    cityArea: 'Indiranagar, Bengaluru',
-    targetKeywords: 'Pediatrician Indiranagar, Vaccination Clinic',
-    googleMapsRank: '#2 on Google Maps',
-    docSearchRank: '#1 Verified Specialist',
-    monthlyPatientImpressions: '98,400 Views',
-    seoHealthScore: '96.2%'
-  },
-  {
-    id: 'SEO-LOC-03',
-    clinicName: 'Manipal Orthopaedic & Spine Center',
-    cityArea: 'Banjara Hills, Hyderabad',
-    targetKeywords: 'Joint Replacement Hyderabad, Spine Doctor',
-    googleMapsRank: '#1 on Google Local 3-Pack',
-    docSearchRank: '#2 Top Hospital',
-    monthlyPatientImpressions: '1,12,000 Views',
-    seoHealthScore: '99.1%'
-  }
-];
+const INITIAL_RANKS: ClinicSeoRank[] = [];
 
 export const HyperlocalClinicSeoRankView: React.FC = () => {
   const [ranks] = useState<ClinicSeoRank[]>(INITIAL_RANKS);
@@ -79,19 +48,19 @@ export const HyperlocalClinicSeoRankView: React.FC = () => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
         <div style={{ backgroundColor: '#0F172A', border: '1.5px solid #10B981', borderRadius: '12px', padding: '16px' }}>
           <span style={{ fontSize: '0.6875rem', color: '#86EFAC', fontWeight: 800, textTransform: 'uppercase' }}>TOTAL LOCAL SEARCH REACH</span>
-          <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#10B981', marginTop: '2px' }}>3.8 Million / mo</div>
-          <span style={{ fontSize: '0.75rem', color: '#CBD5E1', marginTop: '4px', display: 'block' }}>High-intent patient searches</span>
+          <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#10B981', marginTop: '2px' }}>0 / mo</div>
+          <span style={{ fontSize: '0.75rem', color: '#CBD5E1', marginTop: '4px', display: 'block' }}>Day-0 discovery slate</span>
         </div>
 
         <div style={{ backgroundColor: '#0F172A', border: '1px solid #334155', borderRadius: '12px', padding: '16px' }}>
           <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase' }}>#1 GOOGLE 3-PACK DOMINANCE</span>
-          <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#38BDF8', marginTop: '2px' }}>84.2% Clinics</div>
-          <span style={{ fontSize: '0.75rem', color: '#CBD5E1', marginTop: '4px', display: 'block' }}>Top 3 Local Map rankings</span>
+          <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#38BDF8', marginTop: '2px' }}>0% Clinics</div>
+          <span style={{ fontSize: '0.75rem', color: '#CBD5E1', marginTop: '4px', display: 'block' }}>Local search ready</span>
         </div>
 
         <div style={{ backgroundColor: '#0F172A', border: '1px solid #334155', borderRadius: '12px', padding: '16px' }}>
           <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase' }}>ORGANIC APPOINTMENT SHARE</span>
-          <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#FCD34D', marginTop: '2px' }}>72.8% Free Traffic</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#FCD34D', marginTop: '2px' }}>0% Free Traffic</div>
           <span style={{ fontSize: '0.75rem', color: '#CBD5E1', marginTop: '4px', display: 'block' }}>Zero ad spend required</span>
         </div>
       </div>
@@ -111,35 +80,42 @@ export const HyperlocalClinicSeoRankView: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {ranks.map((r) => (
-                <TableRow key={r.id}>
-                  <TableCell>
-                    <strong style={{ color: 'var(--ds-color-text-primary)' }}>{r.clinicName}</strong>
-                    <span style={{ fontSize: '0.75rem', color: '#94A3B8', display: 'block' }}>Monthly: {r.monthlyPatientImpressions}</span>
-                  </TableCell>
-                  <TableCell style={{ fontSize: '0.8125rem' }}>
-                    {r.cityArea}
-                  </TableCell>
-                  <TableCell style={{ fontSize: '0.75rem', color: '#CBD5E1' }}>
-                    {r.targetKeywords}
-                  </TableCell>
-                  <TableCell style={{ color: '#10B981', fontWeight: 800 }}>
-                    {r.googleMapsRank}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="primary">{r.docSearchRank}</Badge>
-                  </TableCell>
-                  <TableCell style={{ textAlign: 'right' }}>
-                    <button
-                      type="button"
-                      onClick={() => handleBoostRank(r)}
-                      style={{ backgroundColor: '#06B6D4', color: '#070C16', border: 'none', borderRadius: '6px', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer' }}
-                    >
-                      🚀 AI Boost Rank
-                    </button>
+              {ranks.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} style={{ textAlign: 'center', padding: '32px', color: '#94A3B8' }}>
+                    No clinics or hospitals configured for local SEO boosting yet. Platform ready for first partner.
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                ranks.map((r) => (
+                  <TableRow key={r.id}>
+                    <TableCell>
+                      <strong style={{ color: 'var(--ds-color-text-primary)' }}>{r.clinicName}</strong>
+                      <span style={{ fontSize: '0.75rem', color: '#94A3B8', display: 'block' }}>Monthly: {r.monthlyPatientImpressions}</span>
+                    </TableCell>
+                    <TableCell style={{ fontSize: '0.8125rem' }}>
+                      {r.cityArea}
+                    </TableCell>
+                    <TableCell style={{ fontSize: '0.75rem', color: '#CBD5E1' }}>
+                      {r.targetKeywords}
+                    </TableCell>
+                    <TableCell style={{ color: '#10B981', fontWeight: 800 }}>
+                      {r.googleMapsRank}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="primary">{r.docSearchRank}</Badge>
+                    </TableCell>
+                    <TableCell style={{ textAlign: 'right' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleBoostRank(r)}
+                      >
+                        🚀 AI Boost Rank
+                      </button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>

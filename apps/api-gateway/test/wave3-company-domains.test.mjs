@@ -37,7 +37,10 @@ describe('Wave 3 — Company Platform 15-Domain Real Integration Suite', () => {
         'integrations:read',
         'platform:read',
         'infrastructure:read',
-        'admin:read'
+        'admin:read',
+        'admin:create',
+        'admin:update',
+        'admin:delete'
       ],
       dataScope: 'global',
       iat: Math.floor(Date.now() / 1000),
@@ -383,6 +386,81 @@ describe('Wave 3 — Company Platform 15-Domain Real Integration Suite', () => {
     const res = await app.inject({
       method: 'GET',
       url: '/api/v1/company/admin/departments',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    assert.strictEqual(res.statusCode, 200);
+    const body = JSON.parse(res.body);
+    assert.strictEqual(body.success, true);
+    assert.ok(Array.isArray(body.data));
+  });
+
+  it('DOMAIN 15: GET /api/v1/company/admin/internal-employees returns dynamic employees list', async () => {
+    const token = createCompanyToken();
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/v1/company/admin/internal-employees',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    assert.strictEqual(res.statusCode, 200);
+    const body = JSON.parse(res.body);
+    assert.strictEqual(body.success, true);
+    assert.ok(Array.isArray(body.data));
+    assert.ok(body.data.length >= 2);
+  });
+
+  it('DOMAIN 15: POST /api/v1/company/admin/internal-employees creates and persists new staff member', async () => {
+    const token = createCompanyToken();
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/v1/company/admin/internal-employees',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      payload: {
+        employeeCode: `EMP-TEST-${Date.now()}`,
+        firstName: 'Test',
+        lastName: 'Specialist',
+        workEmail: `test.specialist.${Date.now()}@docsearch.internal`,
+        legalEntityId: 'e1a11111-1111-4111-8111-111111111111',
+        departmentId: 'd1a22222-2222-4222-8222-222222222222',
+        designationId: 'f1a22222-2222-4222-8222-222222222222',
+        employmentType: 'FULL_TIME',
+        startDate: new Date().toISOString(),
+        actorEmail: 'admin@docsearch.internal',
+        reason: 'Integration test staff creation'
+      }
+    });
+    assert.strictEqual(res.statusCode, 200);
+    const body = JSON.parse(res.body);
+    assert.strictEqual(body.success, true);
+    assert.ok(body.data.id);
+    assert.strictEqual(body.data.firstName, 'Test');
+
+    // Test PATCH status
+    const patchRes = await app.inject({
+      method: 'PATCH',
+      url: `/api/v1/company/admin/internal-employees/${body.data.id}/status`,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      payload: {
+        status: 'ON_LEAVE',
+        reason: 'Integration test leave update'
+      }
+    });
+    assert.strictEqual(patchRes.statusCode, 200);
+    const patchBody = JSON.parse(patchRes.body);
+    assert.strictEqual(patchBody.success, true);
+    assert.strictEqual(patchBody.data.employmentStatus, 'ON_LEAVE');
+  });
+
+  it('DOMAIN 15: GET /api/v1/company/admin/compliance-officers returns appointed officers', async () => {
+    const token = createCompanyToken();
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/v1/company/admin/compliance-officers',
       headers: { Authorization: `Bearer ${token}` }
     });
     assert.strictEqual(res.statusCode, 200);

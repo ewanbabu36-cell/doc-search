@@ -1,37 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import { Badge, Button } from '@docsearch/ui-kit';
+import { getUnifiedPartnerProfile } from '../../utils/roleProfileResolver.js';
 
 export const WaitingRoomTvDisplayView: React.FC = () => {
+  const partnerProfile = getUnifiedPartnerProfile();
+  const primaryDoctor = partnerProfile.doctorName ? `${partnerProfile.doctorName}${partnerProfile.doctorDegree ? `, ${partnerProfile.doctorDegree}` : ''}` : 'Lead Consulting Physician';
+  const primarySpecialty = partnerProfile.doctorSpecialty || 'General Medicine & OPD';
+
   const [currentTime, setCurrentTime] = useState(new Date());
   const [currentChamber1Token, setCurrentChamber1Token] = useState({
     tokenNum: 9,
     patientName: 'Rahul Verma',
-    doctor: 'Dr. Rajesh Sharma, MD',
-    specialty: 'General Medicine & OPD',
+    doctor: primaryDoctor,
+    specialty: primarySpecialty,
     room: 'CHAMBER 1',
     status: 'NOW CALLING'
   });
 
   const [chambers] = useState([
-    { id: 1, room: 'CHAMBER 1', doctor: 'Dr. Rajesh Sharma, MD', dept: 'General Medicine', currentToken: 'TKN-009', status: 'IN_CONSULTATION', patient: 'Rahul Verma' },
-    { id: 2, room: 'CHAMBER 2', doctor: 'Dr. Sarah Jenkins, MD', dept: 'Cardiology Clinic', currentToken: 'TKN-004', status: 'IN_CONSULTATION', patient: 'Anjali Gupta' },
-    { id: 3, room: 'CHAMBER 3', doctor: 'Dr. Marcus Vance, MD', dept: 'Pediatrics OPD', currentToken: 'TKN-007', status: 'IN_CONSULTATION', patient: 'Master Aarav Patel' }
+    { id: 1, room: 'CHAMBER 1', doctor: primaryDoctor, dept: primarySpecialty, currentToken: 'TKN-009', status: 'IN_CONSULTATION', patient: 'Rahul Verma' },
+    { id: 2, room: 'CHAMBER 2', doctor: 'Duty Medical Officer', dept: 'Clinical Care Room', currentToken: 'TKN-004', status: 'IN_CONSULTATION', patient: 'Anjali Gupta' },
+    { id: 3, room: 'CHAMBER 3', doctor: 'Attending Clinician', dept: 'Triage & Screening', currentToken: 'TKN-007', status: 'IN_CONSULTATION', patient: 'Master Aarav Patel' }
   ]);
 
   const [upcomingQueue, setUpcomingQueue] = useState([
-    { token: 'TKN-010', name: 'Vikram Mehta', doctor: 'Dr. Rajesh Sharma', chamber: 'Chamber 1', est: '5 mins' },
-    { id: 2, token: 'TKN-011', name: 'Sunita Rao', doctor: 'Dr. Sarah Jenkins', chamber: 'Chamber 2', est: '10 mins' },
-    { id: 3, token: 'TKN-012', name: 'Kavita Joshi', doctor: 'Dr. Rajesh Sharma', chamber: 'Chamber 1', est: '15 mins' },
-    { id: 4, token: 'TKN-013', name: 'Deepak Chopra', doctor: 'Dr. Marcus Vance', chamber: 'Chamber 3', est: '20 mins' },
-    { id: 5, token: 'TKN-014', name: 'Pooja Agarwal', doctor: 'Dr. Rajesh Sharma', chamber: 'Chamber 1', est: '25 mins' }
+    { token: 'TKN-010', name: 'Vikram Mehta', doctor: primaryDoctor, chamber: 'Chamber 1', est: '5 mins' },
+    { id: 2, token: 'TKN-011', name: 'Sunita Rao', doctor: 'Duty Medical Officer', chamber: 'Chamber 2', est: '10 mins' },
+    { id: 3, token: 'TKN-012', name: 'Kavita Joshi', doctor: primaryDoctor, chamber: 'Chamber 1', est: '15 mins' },
+    { id: 4, token: 'TKN-013', name: 'Deepak Chopra', doctor: 'Attending Clinician', chamber: 'Chamber 3', est: '20 mins' },
+    { id: 5, token: 'TKN-014', name: 'Pooja Agarwal', doctor: primaryDoctor, chamber: 'Chamber 1', est: '25 mins' }
   ]);
 
-  const [voiceLanguage, setVoiceLanguage] = useState<'EN' | 'HI'>('HI');
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [voiceLang, setVoiceLang] = useState<'en-IN' | 'hi-IN'>('en-IN');
 
   // Live Clock Interval
   useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    const timer = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      setCurrentTime(new Date());
+    }, 1000);
     return () => clearInterval(timer);
   }, []);
 
@@ -58,7 +66,9 @@ export const WaitingRoomTvDisplayView: React.FC = () => {
       // Two-tone airport / hospital chime (Ding-Dong: 587Hz -> 880Hz)
       playTone(587.33, 0, 0.4);
       playTone(880, 0.25, 0.6);
-    } catch (e) {}
+    } catch {
+      // AudioContext unavailable or blocked before user interaction
+    }
   };
 
   // Web Speech API Voice Announcement
@@ -70,17 +80,13 @@ export const WaitingRoomTvDisplayView: React.FC = () => {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
 
-        let utteranceText = '';
-        if (voiceLanguage === 'HI') {
-          utteranceText = `टोकन नंबर ${tokenNum}, ${patient}, कृपया ${room} में पधारें।`;
-        } else {
-          utteranceText = `Token Number ${tokenNum}, ${patient}, please proceed to ${room}.`;
-        }
-
+        const utteranceText = voiceLang === 'hi-IN'
+          ? `टोकन नंबर ${tokenNum}, ${patient}, कृपया ${room} में पधारें।`
+          : `Token Number ${tokenNum}, ${patient}, please proceed to ${room}.`;
         const utterance = new SpeechSynthesisUtterance(utteranceText);
         utterance.rate = 0.9;
         utterance.pitch = 1.0;
-        utterance.lang = voiceLanguage === 'HI' ? 'hi-IN' : 'en-IN';
+        utterance.lang = voiceLang;
 
         utterance.onend = () => setIsSpeaking(false);
         utterance.onerror = () => setIsSpeaking(false);
@@ -99,8 +105,8 @@ export const WaitingRoomTvDisplayView: React.FC = () => {
     const updated = {
       tokenNum: nextNum,
       patientName: nextPatient.name,
-      doctor: 'Dr. Rajesh Sharma, MD',
-      specialty: 'General Medicine & OPD',
+      doctor: primaryDoctor,
+      specialty: primarySpecialty,
       room: 'CHAMBER 1',
       status: 'NOW CALLING'
     };
@@ -158,7 +164,7 @@ export const WaitingRoomTvDisplayView: React.FC = () => {
           </div>
           <div>
             <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#F8FAFC', letterSpacing: '-0.02em' }}>
-              APEX MULTI-SPECIALTY CLINIC & HOSPITAL
+              {partnerProfile.entityLegalName ? partnerProfile.entityLegalName.toUpperCase() : 'REGISTERED HEALTHCARE CLINIC & HOSPITAL'}
             </div>
             <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
               Live Smart TV OPD Token Calling Display & Voice HUD System
@@ -183,20 +189,13 @@ export const WaitingRoomTvDisplayView: React.FC = () => {
 
           <div style={{ display: 'flex', gap: '6px' }}>
             <Button
-              variant={voiceLanguage === 'HI' ? 'primary' : 'outline'}
+              variant="primary"
               size="sm"
-              onClick={() => setVoiceLanguage('HI')}
+              onClick={() => setVoiceLang((prev) => (prev === 'en-IN' ? 'hi-IN' : 'en-IN'))}
               style={{ fontSize: '0.75rem', fontWeight: 700 }}
+              title="Click to toggle announcement language between English (en-IN) and Hindi (hi-IN)"
             >
-              🇮🇳 हिन्दी Voice
-            </Button>
-            <Button
-              variant={voiceLanguage === 'EN' ? 'primary' : 'outline'}
-              size="sm"
-              onClick={() => setVoiceLanguage('EN')}
-              style={{ fontSize: '0.75rem', fontWeight: 700 }}
-            >
-              🇬🇧 English Voice
+              🔊 {voiceLang === 'en-IN' ? 'English Voice (en-IN)' : 'हिंदी आवाज़ (hi-IN)'}
             </Button>
           </div>
 
@@ -235,7 +234,7 @@ export const WaitingRoomTvDisplayView: React.FC = () => {
               boxShadow: '0 0 12px #10B981',
               animation: 'pulse 1.5s infinite'
             }} />
-            <Badge variant="success">🔔 NOW CALLING / पधारें</Badge>
+            <Badge variant="success">🔔 NOW CALLING</Badge>
             {isSpeaking && <Badge variant="warning">📢 Speaking Voice Call...</Badge>}
           </div>
 

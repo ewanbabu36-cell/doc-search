@@ -1,0 +1,1821 @@
+[
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/services/company/CapabilityAndDependencyEngine.ts",
+    "variable": "capabilitiesCache",
+    "declaration": "private capabilitiesCache = new Map<string, CapabilityDefinition>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/services/company/ConditionalPolicyEngine.ts",
+    "variable": "inMemoryPolicies",
+    "declaration": "private inMemoryPolicies = new Map<string, AccessPolicyDto>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/services/company/PartnerGovernanceService.ts",
+    "variable": "overridesStore",
+    "declaration": "private overridesStore = new Map<string, PartnerGovernanceData>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/services/company/PartnerGovernanceService.ts",
+    "variable": "partnerToTenantMap",
+    "declaration": "private partnerToTenantMap = new Map<string, string>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/services/company/PartnerGovernanceService.ts",
+    "variable": "tenantToPartnerMap",
+    "declaration": "private tenantToPartnerMap = new Map<string, string>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/services/company/PartnerSyncService.ts",
+    "variable": "credsByEmail",
+    "declaration": "const credsByEmail = new Map<string, any>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/services/company/PartnerTemplateService.ts",
+    "variable": "templatesMemory",
+    "declaration": "private templatesMemory = new Map<string, any>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/services/core/RealAuthService.ts",
+    "variable": "userCache",
+    "declaration": "private userCache = new Map<string, AuthenticatedUserRecord>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/services/core/SessionRevocationService.ts",
+    "variable": "userRevocations",
+    "declaration": "private userRevocations = new Map<string, number>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/services/core/SessionRevocationService.ts",
+    "variable": "tenantRevocations",
+    "declaration": "private tenantRevocations = new Map<string, number>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/services/core/SessionRevocationService.ts",
+    "variable": "branchRevocations",
+    "declaration": "private branchRevocations = new Map<string, number>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/services/partner/AiVoiceService.ts",
+    "variable": "idempotencyCache",
+    "declaration": "private idempotencyCache = new Map<string, CachedVoiceResult>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/services/partner/CreditReceivablesService.ts",
+    "variable": "patientMap",
+    "declaration": "const patientMap = new Map<string, PatientAgeingSummary>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/services/partner/PartnerConfigurationEngineService.ts",
+    "variable": "existingByCanonicalCode",
+    "declaration": "const existingByCanonicalCode = new Map<string, any>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/services/partner/TaxEngineService.ts",
+    "variable": "rateMap",
+    "declaration": "const rateMap = new Map<string, any>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/services/security/IdentitySecurityFoundationService.ts",
+    "variable": "staffStatusOverrides",
+    "declaration": "private staffStatusOverrides = new Map<string, StaffLifecycleStatus>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/services/security/IdentitySecurityFoundationService.ts",
+    "variable": "credentialStatusOverrides",
+    "declaration": "private credentialStatusOverrides = new Map<string, CredentialLifecycleStatus>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/services/security/IdentitySecurityFoundationService.ts",
+    "variable": "makerCheckerStore",
+    "declaration": "private makerCheckerStore = new Map<string, MakerCheckerRequestRecord>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/services/workflow/UniversalHealthcareWorkflowEngineService.ts",
+    "variable": "activeDefinitionVersion",
+    "declaration": "private activeDefinitionVersion = new Map<string, number>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/services/workflow/UniversalHealthcareWorkflowEngineService.ts",
+    "variable": "instances",
+    "declaration": "private instances = new Map<string, UniversalWorkflowInstance>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/services/workflow/UniversalHealthcareWorkflowEngineService.ts",
+    "variable": "tasks",
+    "declaration": "private tasks = new Map<string, UniversalWorkflowTask>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/services/workflow/UniversalHealthcareWorkflowEngineService.ts",
+    "variable": "exceptions",
+    "declaration": "private exceptions = new Map<string, WorkflowExceptionRecord>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/services/workflow/UniversalHealthcareWorkflowEngineService.ts",
+    "variable": "escalations",
+    "declaration": "private escalations = new Map<string, WorkflowEscalationRecord>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/services/workflow/UniversalHealthcareWorkflowEngineService.ts",
+    "variable": "handoffs",
+    "declaration": "private handoffs = new Map<string, WorkflowHandoffRecord>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/services/workflow/UniversalHealthcareWorkflowEngineService.ts",
+    "variable": "sagas",
+    "declaration": "private sagas = new Map<string, WorkflowSagaRecord>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/services/workflow/UniversalHealthcareWorkflowEngineService.ts",
+    "variable": "verMap",
+    "declaration": "const verMap = new Map<number, DepartmentWorkflowAdapterConfig>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/repositories/company/HqCommandCenterRepository.ts",
+    "variable": "partnerMap",
+    "declaration": "const partnerMap = new Map<string, any>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/repositories/company/HqCommandCenterRepository.ts",
+    "variable": "planMap",
+    "declaration": "const planMap = new Map<string, any>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/repositories/company/HqCommandCenterRepository.ts",
+    "variable": "planMap",
+    "declaration": "const planMap = new Map<string, any>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/repositories/company/LicenseRepository.ts",
+    "variable": "memoryLicenses",
+    "declaration": "const memoryLicenses = new Map<string, License>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/repositories/company/LicenseRepository.ts",
+    "variable": "map",
+    "declaration": "const map = new Map<string, License>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/repositories/company/LicenseRepository.ts",
+    "variable": "map",
+    "declaration": "const map = new Map<string, License>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/repositories/company/LicenseRepository.ts",
+    "variable": "map",
+    "declaration": "const map = new Map<string, License>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/repositories/company/PartnerRepository.ts",
+    "variable": "roleMap",
+    "declaration": "const roleMap = new Map<string, RoleKycMatrixRow>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/repositories/company/PartnerRepository.ts",
+    "variable": "reviewerMap",
+    "declaration": "const reviewerMap = new Map<string, ReviewerWorkload>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/repositories/company/PartnerRepository.ts",
+    "variable": "reviewerMap",
+    "declaration": "const reviewerMap = new Map<string, ReviewerWorkload>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/repositories/company/PartnerRepository.ts",
+    "variable": "dailyRegMap",
+    "declaration": "const dailyRegMap = new Map<string, number>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/repositories/company/PartnerRepository.ts",
+    "variable": "dailyAppMap",
+    "declaration": "const dailyAppMap = new Map<string, number>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/repositories/core/AiChatRepository.ts",
+    "variable": "memoryConversations",
+    "declaration": "const memoryConversations = new Map<string, AiChatConversation>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/repositories/partner/CommandCenterRepository.ts",
+    "variable": "deptMap",
+    "declaration": "const deptMap = new Map<string, number>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/repositories/partner/CommandCenterRepository.ts",
+    "variable": "modMap",
+    "declaration": "const modMap = new Map<string, number>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/repositories/partner/CommandCenterRepository.ts",
+    "variable": "modeMap",
+    "declaration": "const modeMap = new Map<string, number>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/repositories/partner/DietaryRepository.ts",
+    "variable": "createdOrders",
+    "declaration": "private createdOrders = new Map<string, any>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/repositories/partner/ExecutiveMisRepository.ts",
+    "variable": "runtimeSnapshots",
+    "declaration": "private runtimeSnapshots = new Map<string, ExecutiveCommandSnapshotDto>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/repositories/partner/WhatsAppEngagementRepository.ts",
+    "variable": "runtimeConversations",
+    "declaration": "private runtimeConversations = new Map<string, WhatsAppConversationThreadRecord>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/repositories/partner/WhatsAppEngagementRepository.ts",
+    "variable": "runtimeDispatches",
+    "declaration": "private runtimeDispatches = new Map<string, HealthDocumentDispatchRecord>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/repositories/partner/WhatsAppEngagementRepository.ts",
+    "variable": "runtimeQueueTokens",
+    "declaration": "private runtimeQueueTokens = new Map<string, LiveQueueTokenRecord>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/repositories/partner/WhatsAppEngagementRepository.ts",
+    "variable": "runtimeReminders",
+    "declaration": "private runtimeReminders = new Map<string, MedicationReminderRecord>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/repositories/partner/WhatsAppEngagementRepository.ts",
+    "variable": "runtimeProfiles",
+    "declaration": "private runtimeProfiles = new Map<string, AarogyaPatientProfileRecord>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "IN_MEMORY_STATE",
+    "file": "apps/api-gateway/src/repositories/partner/WhatsAppEngagementRepository.ts",
+    "variable": "runtimeAuditTraces",
+    "declaration": "private runtimeAuditTraces = new Map<string, WhatsAppAuditTraceRecord>",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/company/AIGovernanceRepository.ts",
+    "line": 376,
+    "code": "const res = await dbClient.update(aiModels).set({ ...data, updatedAt: new Date() }).where(eq(aiModels.id, id as any)).returning();",
+    "context": "        const res = await dbClient.update(aiModels).set({ ...data, updatedAt: new Date() }).where(eq(aiModels.id, id as ",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/company/AIGovernanceRepository.ts",
+    "line": 413,
+    "code": ".update(aiGovernancePolicies)",
+    "context": "          .update(aiGovernancePolicies)           .set({             status: toStatus,             approvedAt: toStatus ",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/company/AIGovernanceRepository.ts",
+    "line": 478,
+    "code": ".update(aiPromptVersions)",
+    "context": "          .update(aiPromptVersions)           .set({             approvalStatus: data.approvalStatus,             approv",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/company/AIGovernanceRepository.ts",
+    "line": 549,
+    "code": ".update(aiSafetyEvents)",
+    "context": "          .update(aiSafetyEvents)           .set({             status: 'ACKNOWLEDGED',             acknowledgedByEmail: ",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/company/AIGovernanceRepository.ts",
+    "line": 580,
+    "code": ".update(aiSafetyEvents)",
+    "context": "          .update(aiSafetyEvents)           .set({             status: resolutionStatus,             updatedAt: new Date",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/company/CommunicationRepository.ts",
+    "line": 58,
+    "code": ".update(contentItems)",
+    "context": "          .update(contentItems)           .set({ status, updatedAt: new Date() })           .where(eq(contentItems.id, i",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/company/CompanyAdminRepository.ts",
+    "line": 324,
+    "code": ".update(internalEmployees)",
+    "context": "          .update(internalEmployees)           .set({             employmentStatus: status,             updatedAt: new D",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/company/CompanyAdminRepository.ts",
+    "line": 373,
+    "code": "await dbClient.delete(internalEmployees).where(eq(internalEmployees.id, employeeId));",
+    "context": "        await dbClient.delete(internalEmployees).where(eq(internalEmployees.id, employeeId));       } catch (err) {     ",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/company/FounderApprovalRepository.ts",
+    "line": 130,
+    "code": ".update(founderApprovalRequests)",
+    "context": "      .update(founderApprovalRequests)       .set({         approvalStatus: 'APPROVED_BY_FOUNDER',         taskStatus: '",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/company/FounderApprovalRepository.ts",
+    "line": 165,
+    "code": ".update(founderApprovalRequests)",
+    "context": "      .update(founderApprovalRequests)       .set({         approvalStatus: 'REJECTED_BY_FOUNDER',         taskStatus: '",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/company/LicenseRepository.ts",
+    "line": 142,
+    "code": ".update(licenses)",
+    "context": "          .update(licenses)           .set({ ...data, updatedAt: new Date() })           .where(eq(licenses.id, licenseI",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/company/OperationsRepository.ts",
+    "line": 460,
+    "code": ".update(emergencyEncounters)",
+    "context": "      .update(emergencyEncounters)       .set({         currentStatus: 'RESOLVED',         updatedAt: new Date()       }",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/company/OperationsRepository.ts",
+    "line": 477,
+    "code": ".update(doctorProfiles)",
+    "context": "      .update(doctorProfiles)       .set({         status: dbStatus,         updatedAt: new Date()       })       .where",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/company/OperationsRepository.ts",
+    "line": 489,
+    "code": ".update(invoices)",
+    "context": "      .update(invoices)       .set({         status: 'PAID',         updatedAt: new Date()       });      return { succe",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/company/PartnerOnboardingRepository.ts",
+    "line": 32,
+    "code": ".update(rawId)",
+    "context": "    .update(rawId)     .digest('hex')     .substring(0, 32)     .replace(/^([0-9a-f]{8})([0-9a-f]{4})([0-9a-f]{4})([0-9a",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/company/PartnerOnboardingRepository.ts",
+    "line": 73,
+    "code": "? crypto.createHash('sha256').update(dataUrl).digest('hex')",
+    "context": "        ? crypto.createHash('sha256').update(dataUrl).digest('hex')         : (typeof doc.sha256Hash === 'string' ? doc.",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/company/PartnerOnboardingRepository.ts",
+    "line": 719,
+    "code": ".update(partnerOnboardingStagedRegistrations)",
+    "context": "        .update(partnerOnboardingStagedRegistrations)         .set({           status: 'APPROVED',           approvedAt:",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/company/PartnerOnboardingRepository.ts",
+    "line": 915,
+    "code": ".update(partnerOnboardingStagedRegistrations)",
+    "context": "        .update(partnerOnboardingStagedRegistrations)         .set({           status: 'REJECTED',           rejectionRe",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/company/PartnerOnboardingRepository.ts",
+    "line": 1080,
+    "code": ".update(partnerOnboardingStagedRegistrations)",
+    "context": "        .update(partnerOnboardingStagedRegistrations)         .set({           status: 'UNDER_REVIEW',           reviewS",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/company/PartnerOnboardingRepository.ts",
+    "line": 1209,
+    "code": ".update(partnerOnboardingStagedRegistrations)",
+    "context": "        .update(partnerOnboardingStagedRegistrations)         .set({           status: newStatus,           assignedRevi",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/company/PartnerOnboardingRepository.ts",
+    "line": 1344,
+    "code": ".update(partnerOnboardingStagedRegistrations)",
+    "context": "        .update(partnerOnboardingStagedRegistrations)         .set({           status: 'ADDITIONAL_INFORMATION_REQUIRED'",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/company/PartnerOnboardingRepository.ts",
+    "line": 1481,
+    "code": ".update(partnerOnboardingStagedRegistrations)",
+    "context": "        .update(partnerOnboardingStagedRegistrations)         .set({           status: 'RESUBMITTED',           registra",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/company/PartnerOnboardingRepository.ts",
+    "line": 1634,
+    "code": ".delete(partnerProfiles)",
+    "context": "          .delete(partnerProfiles)           .where(eq(partnerProfiles.id, targetId));       } catch {}        const del",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/company/PartnerOnboardingRepository.ts",
+    "line": 1639,
+    "code": ".delete(partnerOnboardingStagedRegistrations)",
+    "context": "        .delete(partnerOnboardingStagedRegistrations)         .where(eq(partnerOnboardingStagedRegistrations.id, targetI",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/company/PartnerOnboardingRepository.ts",
+    "line": 1683,
+    "code": ".update(partnerOnboardingStagedRegistrations)",
+    "context": "        .update(partnerOnboardingStagedRegistrations)         .set({           registrationPayload: payload,           u",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/company/PartnerOnboardingRepository.ts",
+    "line": 1707,
+    "code": "await tx.delete(partnerOnboardingStagedRegistrations);",
+    "context": "      await tx.delete(partnerOnboardingStagedRegistrations);       await tx.delete(partnerProfiles);       realAuthServi",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/company/PartnerOnboardingRepository.ts",
+    "line": 1708,
+    "code": "await tx.delete(partnerProfiles);",
+    "context": "      await tx.delete(partnerProfiles);       realAuthService.clearAllPartnerUserCredentials();       return { success: ",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/company/PartnerRepository.ts",
+    "line": 649,
+    "code": ".update(partnerProfiles)",
+    "context": "          .update(partnerProfiles)           .set({ lifecycleStatus: toStatus, updatedAt: new Date() })           .where",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/company/PartnerRepository.ts",
+    "line": 1924,
+    "code": "const hash = ev.integrityHash || crypto.createHash('sha256').update(ev.id + ev.eventType + ev.timestamp + rawPayload).digest('hex');",
+    "context": "          const hash = ev.integrityHash || crypto.createHash('sha256').update(ev.id + ev.eventType + ev.timestamp + rawP",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/company/ProductRepository.ts",
+    "line": 109,
+    "code": ".update(plans)",
+    "context": "        .update(plans)         .set({ ...updates, updatedAt: new Date() })         .where(eq(plans.id, planId))         ",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/company/ProductRepository.ts",
+    "line": 197,
+    "code": ".delete(planEntitlements)",
+    "context": "        .delete(planEntitlements)         .where(           or(             and(eq(planEntitlements.planId, planId), eq(",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/company/SalesMarketingRepository.ts",
+    "line": 85,
+    "code": ".update(salesLeads)",
+    "context": "        .update(salesLeads)         .set({           ...updates,           updatedAt: new Date()         })         .whe",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/company/SubscriptionRepository.ts",
+    "line": 99,
+    "code": ".update(subscriptions)",
+    "context": "          .update(subscriptions)           .set({ ...data, updatedAt: new Date() })           .where(eq(subscriptions.id",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/core/AiChatRepository.ts",
+    "line": 262,
+    "code": ".update(aiChatConversations)",
+    "context": "          .update(aiChatConversations)           .set({ updatedAt: now })           .where(eq(aiChatConversations.id, in",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/core/DocumentVerificationRepository.ts",
+    "line": 55,
+    "code": "const hash = crypto.createHash('sha256').update(`DOC_TYPE_${code}`).digest('hex');",
+    "context": "  const hash = crypto.createHash('sha256').update(`DOC_TYPE_${code}`).digest('hex');   return `${hash.slice(0, 8)}-${has",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/core/DocumentVerificationRepository.ts",
+    "line": 63,
+    "code": "const hash = crypto.createHash('sha256').update(val).digest('hex');",
+    "context": "  const hash = crypto.createHash('sha256').update(val).digest('hex');   return `${hash.slice(0, 8)}-${hash.slice(8, 12)}",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/core/DocumentVerificationRepository.ts",
+    "line": 1126,
+    "code": ".update(entityDocuments)",
+    "context": "            .update(entityDocuments)             .set({               isCurrent: false,               verificationStatus",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/core/DocumentVerificationRepository.ts",
+    "line": 1140,
+    "code": ".update(binaryBuffer)",
+    "context": "          .update(binaryBuffer)           .digest('hex');          const safeFileName = rawFileName.replace(/[^a-zA-Z0-9",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/core/DocumentVerificationRepository.ts",
+    "line": 1322,
+    "code": ".update(entityDocuments)",
+    "context": "          .update(entityDocuments)           .set({             verificationStatus: newStatus,             verifiedBy: v",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/core/DocumentVerificationRepository.ts",
+    "line": 1552,
+    "code": "const actualSha256 = crypto.createHash('sha256').update(buffer).digest('hex');",
+    "context": "      const actualSha256 = crypto.createHash('sha256').update(buffer).digest('hex');       if (row.sha256Hash && actualS",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/core/DocumentVerificationRepository.ts",
+    "line": 1611,
+    "code": ".update(entityDocuments)",
+    "context": "        .update(entityDocuments)         .set({           verificationStatus: 'REVOKED',           isCurrent: false,    ",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/AssetBiomedicalRepository.ts",
+    "line": 260,
+    "code": ".update(biomedicalAssets)",
+    "context": "          .update(biomedicalAssets)           .set({ ...updates, updatedAt: new Date() } as unknown as Partial<typeof bi",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/AssetBiomedicalRepository.ts",
+    "line": 320,
+    "code": ".update(biomedicalWorkOrders)",
+    "context": "          .update(biomedicalWorkOrders)           .set({ ...updates, updatedAt: new Date() } as unknown as Partial<typeo",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/AssetBiomedicalRepository.ts",
+    "line": 380,
+    "code": ".update(biomedicalPpmSchedules)",
+    "context": "          .update(biomedicalPpmSchedules)           .set({ ...updates, updatedAt: new Date() } as unknown as Partial<typ",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/AssetBiomedicalRepository.ts",
+    "line": 536,
+    "code": ".update(biomedicalCondemnations)",
+    "context": "          .update(biomedicalCondemnations)           .set({ ...updates, updatedAt: new Date() } as unknown as Partial<ty",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/BillingManagementRepository.ts",
+    "line": 1016,
+    "code": ".update(billingInvoices)",
+    "context": "          .update(billingInvoices)           .set({             dueAmount: invoice.balanceDue.toFixed(2),             me",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/BillingManagementRepository.ts",
+    "line": 2145,
+    "code": ".update(pharmacyBatches)",
+    "context": "                .update(pharmacyBatches)                 .set({                   blockReason: `Quarantined for audit fo",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/ClinicalWorkflowRepository.ts",
+    "line": 2127,
+    "code": ".update(consultations)",
+    "context": "          .update(consultations)           .set({             consultationStatus: input.status || existing.status,      ",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/ClinicalWorkflowRepository.ts",
+    "line": 3977,
+    "code": ".update(appointmentsPartitioned)",
+    "context": "      .update(appointmentsPartitioned)       .set({         slotTime: newDate,         status: 'RESCHEDULED',         me",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/ClinicalWorkflowRepository.ts",
+    "line": 4020,
+    "code": ".update(appointmentsPartitioned)",
+    "context": "      .update(appointmentsPartitioned)       .set({         status: 'CANCELLED',         metadata: {           ...(apt.m",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/ClinicalWorkflowRepository.ts",
+    "line": 4078,
+    "code": ".update(appointmentsPartitioned)",
+    "context": "      .update(appointmentsPartitioned)       .set({         status: 'CHECKED_IN',         metadata: {           ...(apt.",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/ClinicalWorkflowRepository.ts",
+    "line": 4226,
+    "code": ".update(encounters)",
+    "context": "      .update(encounters)       .set({         triageNotes: triageSummary,         metadata: {           ...(encounter.m",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/ClinicalWorkflowRepository.ts",
+    "line": 4427,
+    "code": ".update(encounters)",
+    "context": "      .update(encounters)       .set({         metadata: {           ...(encounter.metadata || {}),           invoiceId,",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/ClinicalWorkflowRepository.ts",
+    "line": 4589,
+    "code": ".update(encounterReferrals)",
+    "context": "      .update(encounterReferrals)       .set({         referralStatus: status.toUpperCase(),         metadata: {        ",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/DietaryRepository.ts",
+    "line": 271,
+    "code": "const [updated] = await client.update(dietaryOrders).set({ status }).where(whereClause).returning();",
+    "context": "        const [updated] = await client.update(dietaryOrders).set({ status }).where(whereClause).returning();         if ",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/DietaryRepository.ts",
+    "line": 376,
+    "code": "const [updated] = await client.update(dietaryProductionPlans).set({ status: 'RELEASED', releasedBy: _releasedBy, releasedAt: new Date().toISOString() }).where(whereClause).returning();",
+    "context": "        const [updated] = await client.update(dietaryProductionPlans).set({ status: 'RELEASED', releasedBy: _releasedBy,",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/DietaryRepository.ts",
+    "line": 479,
+    "code": "const [updated] = await client.update(dietarySafetyAlerts).set({ isResolved: true, resolvedAt: new Date().toISOString(), resolvedBy: _resolutionNotes }).where(whereClause).returning();",
+    "context": "        const [updated] = await client.update(dietarySafetyAlerts).set({ isResolved: true, resolvedAt: new Date().toISOS",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/LabDiagnosticsRepository.ts",
+    "line": 1294,
+    "code": ".update(investigationOrders)",
+    "context": "          .update(investigationOrders)           .set({             status: 'RESULT_ENTERED',             isAbnormal: ha",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/LabDiagnosticsRepository.ts",
+    "line": 1426,
+    "code": ".update(investigationOrders)",
+    "context": "          .update(investigationOrders)           .set({             status: 'VERIFIED',             verifiedAt: now,    ",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/LabDiagnosticsRepository.ts",
+    "line": 1521,
+    "code": ".update(investigationOrders)",
+    "context": "        .update(investigationOrders)         .set({           status: 'COMPLETED',           reviewedAt: now,           ",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/LabDiagnosticsRepository.ts",
+    "line": 1583,
+    "code": ".update(investigationOrders)",
+    "context": "        .update(investigationOrders)         .set({           status: 'CANCELLED',           cancelledAt: now,          ",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/LabDiagnosticsRepository.ts",
+    "line": 1886,
+    "code": ".update(investigationOrders)",
+    "context": "        .update(investigationOrders)         .set({           status: 'ACCESSIONED',           metadata: {             .",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/LabDiagnosticsRepository.ts",
+    "line": 1960,
+    "code": ".update(investigationOrders)",
+    "context": "        .update(investigationOrders)         .set({           status: 'PROCESSING',           metadata: {             ..",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/LabDiagnosticsRepository.ts",
+    "line": 2029,
+    "code": ".update(investigationOrders)",
+    "context": "        .update(investigationOrders)         .set({           status: 'SAMPLE_REJECTED',           metadata: {          ",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/LabDiagnosticsRepository.ts",
+    "line": 2113,
+    "code": ".update(investigationOrders)",
+    "context": "        .update(investigationOrders)         .set({           status: 'RECOLLECTION_REQUESTED',           metadata: {   ",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/LabDiagnosticsRepository.ts",
+    "line": 2171,
+    "code": ".update(investigationOrders)",
+    "context": "          .update(investigationOrders)           .set({             status: 'TECHNICAL_REJECTED',             metadata: ",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/LabDiagnosticsRepository.ts",
+    "line": 2198,
+    "code": ".update(investigationOrders)",
+    "context": "          .update(investigationOrders)           .set({             status: 'TECHNICAL_VALIDATED',             metadata:",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/LabDiagnosticsRepository.ts",
+    "line": 2311,
+    "code": ".update(investigationOrders)",
+    "context": "        .update(investigationOrders)         .set({           status: 'VERIFIED',           verifiedAt: now,           m",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/LabDiagnosticsRepository.ts",
+    "line": 2391,
+    "code": ".update(investigationReports)",
+    "context": "          .update(investigationReports)           .set({             updatedAt: now,             metadata: sql`jsonb_set",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/LabDiagnosticsRepository.ts",
+    "line": 2406,
+    "code": ".update(investigationOrders)",
+    "context": "        .update(investigationOrders)         .set({           status: 'DELIVERED',           metadata: {             ...",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/PharmacyManagementRepository.ts",
+    "line": 977,
+    "code": ".update(medicationCatalog)",
+    "context": "          .update(medicationCatalog)           .set({             genericName: record.genericName,             brandName",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/PharmacyManagementRepository.ts",
+    "line": 2597,
+    "code": ".update(pharmacyBatches)",
+    "context": "          .update(pharmacyBatches)           .set({             availableQuantity: item.quantity,             receivedQu",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/QualityInfectionRepository.ts",
+    "line": 367,
+    "code": ".update(hospitalIncidentReports)",
+    "context": "          .update(hospitalIncidentReports)           .set({ ...updates, updatedAt: new Date() } as unknown as Partial<ty",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/QualityInfectionRepository.ts",
+    "line": 497,
+    "code": ".update(qualityCapaActions)",
+    "context": "          .update(qualityCapaActions)           .set({ ...updates, updatedAt: new Date() } as unknown as Partial<typeof ",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/QualityInfectionRepository.ts",
+    "line": 631,
+    "code": ".update(patientIsolationRecords)",
+    "context": "          .update(patientIsolationRecords)           .set(updates as unknown as Partial<typeof patientIsolationRecords.$",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/RadiologyRepository.ts",
+    "line": 214,
+    "code": ".update(radiologyDepartments)",
+    "context": "        .update(radiologyDepartments)         .set({           departmentName: (d.departmentName as string) || existing[",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/RadiologyRepository.ts",
+    "line": 249,
+    "code": ".update(radiologyModalities)",
+    "context": "        .update(radiologyModalities)         .set({           modalityName: (d.modalityName as string) || existing[0].mo",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/RadiologyRepository.ts",
+    "line": 285,
+    "code": ".update(radiologyProcedureCatalog)",
+    "context": "        .update(radiologyProcedureCatalog)         .set({           procedureName: (d.procedureName as string) || existi",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/RadiologyRepository.ts",
+    "line": 631,
+    "code": ".update(radiologyReports)",
+    "context": "      .update(radiologyReports)       .set({         status: 'AMENDED',         version: versionTo,         amendmentRea",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/WhatsAppEngagementRepository.ts",
+    "line": 436,
+    "code": ".update(whatsappConversations)",
+    "context": "          .update(whatsappConversations)           .set({             lastMessageSnippet: conv.lastMessageSnippet,      ",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/WhatsAppEngagementRepository.ts",
+    "line": 466,
+    "code": ".update(whatsappConversations)",
+    "context": "          .update(whatsappConversations)           .set({             ...(updates.botActive !== undefined ? { botActive:",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/WhatsAppEngagementRepository.ts",
+    "line": 720,
+    "code": ".update(liveQueueTokens)",
+    "context": "            .update(liveQueueTokens)             .set({               ...(updates.queueStatus ? { queueStatus: updates.q",
+    "severity": "HIGH"
+  },
+  {
+    "type": "POTENTIAL_TENANT_LEAK_ON_WRITE",
+    "file": "apps/api-gateway/src/repositories/partner/WhatsAppEngagementRepository.ts",
+    "line": 730,
+    "code": ".update(liveQueueTokens)",
+    "context": "            .update(liveQueueTokens)             .set({               ...(updates.queueStatus ? { queueStatus: updates.q",
+    "severity": "HIGH"
+  },
+  {
+    "type": "FALSE_SUCCESS_IN_CATCH",
+    "file": "apps/api-gateway/src/routes/auth.routes.ts",
+    "line": 614,
+    "code": "return reply.status(200).send({",
+    "severity": "CRITICAL"
+  },
+  {
+    "type": "FALSE_SUCCESS_IN_CATCH",
+    "file": "apps/api-gateway/src/routes/company/partner.routes.ts",
+    "line": 580,
+    "code": "return reply.status(200).send({",
+    "severity": "CRITICAL"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/services/company/PartnerService.ts",
+    "line": 1023,
+    "code": "let organizationId = '00000000-0000-4000-8000-000000000002';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/services/company/PartnerService.ts",
+    "line": 1047,
+    "code": "organizationId = '00000000-0000-4000-8000-000000000002';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/services/company/PartnerService.ts",
+    "line": 1051,
+    "code": "let branchId = '00000000-0000-4000-8000-000000000003';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/services/company/PartnerService.ts",
+    "line": 1080,
+    "code": "branchId = '00000000-0000-4000-8000-000000000003';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/services/company/PartnerService.ts",
+    "line": 1108,
+    "code": "departmentId = '00000000-0000-4000-8000-000000000004';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/services/company/PartnerTombstoneService.ts",
+    "line": 27,
+    "code": "'00000000-0000-4000-8000-000000000000'",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/services/core/RealAuthService.ts",
+    "line": 303,
+    "code": "organizationId: '00000000-0000-4000-8000-000000000002',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/services/core/RealAuthService.ts",
+    "line": 413,
+    "code": "organizationId: '00000000-0000-4000-8000-000000000002',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/services/core/RealAuthService.ts",
+    "line": 472,
+    "code": "organizationId: '00000000-0000-4000-8000-000000000002',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/services/partner/AccountsPayableService.ts",
+    "line": 90,
+    "code": "let partnerId = '00000000-0000-4000-8000-000000000001';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/services/partner/AccountsPayableService.ts",
+    "line": 91,
+    "code": "let orgId = '00000000-0000-4000-8000-000000000002';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/services/partner/AccountsPayableService.ts",
+    "line": 92,
+    "code": "let branchId = '00000000-0000-4000-8000-000000000003';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/services/partner/BillingManagementService.ts",
+    "line": 372,
+    "code": "organizationId: '00000000-0000-4000-8000-000000000002',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/services/partner/BillingManagementService.ts",
+    "line": 373,
+    "code": "branchId: '00000000-0000-4000-8000-000000000003'",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/services/partner/BillingManagementService.ts",
+    "line": 515,
+    "code": "organizationId: '00000000-0000-4000-8000-000000000002',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/services/partner/BillingManagementService.ts",
+    "line": 516,
+    "code": "branchId: '00000000-0000-4000-8000-000000000003'",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/services/partner/BillingManagementService.ts",
+    "line": 635,
+    "code": "branchId: '00000000-0000-4000-8000-000000000003'",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/services/partner/CashierShiftService.ts",
+    "line": 52,
+    "code": "let partnerId = '00000000-0000-4000-8000-000000000001';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/services/partner/CashierShiftService.ts",
+    "line": 53,
+    "code": "let orgId = '00000000-0000-4000-8000-000000000002';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/services/partner/CashierShiftService.ts",
+    "line": 54,
+    "code": "let branchId = '00000000-0000-4000-8000-000000000003';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/services/partner/WholesaleInvoiceIngestionService.ts",
+    "line": 1042,
+    "code": "const partnerId = input.partnerId || '00000000-0000-4000-8000-000000000001';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/services/partner/WholesaleInvoiceIngestionService.ts",
+    "line": 1043,
+    "code": "const organizationId = input.organizationId || '00000000-0000-4000-8000-000000000002';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/AbdmGatewayRepository.ts",
+    "line": 252,
+    "code": "const partnerId = data.partnerId && isUuid(data.partnerId) ? data.partnerId : '00000000-0000-4000-8000-000000000001';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/AbdmGatewayRepository.ts",
+    "line": 253,
+    "code": "const organizationId = data.organizationId && isUuid(data.organizationId) ? data.organizationId : '00000000-0000-4000-8000-000000000002';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/AbdmGatewayRepository.ts",
+    "line": 254,
+    "code": "const branchId = data.branchId && isUuid(data.branchId) ? data.branchId : '00000000-0000-4000-8000-000000000003';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/AbdmGatewayRepository.ts",
+    "line": 362,
+    "code": "const partnerId = data.partnerId && isUuid(data.partnerId) ? data.partnerId : '00000000-0000-4000-8000-000000000001';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/AbdmGatewayRepository.ts",
+    "line": 363,
+    "code": "const organizationId = data.organizationId && isUuid(data.organizationId) ? data.organizationId : '00000000-0000-4000-8000-000000000002';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/AbdmGatewayRepository.ts",
+    "line": 364,
+    "code": "const branchId = data.branchId && isUuid(data.branchId) ? data.branchId : '00000000-0000-4000-8000-000000000003';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/AbdmGatewayRepository.ts",
+    "line": 487,
+    "code": "const partnerId = data.partnerId && isUuid(data.partnerId) ? data.partnerId : '00000000-0000-4000-8000-000000000001';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/AbdmGatewayRepository.ts",
+    "line": 488,
+    "code": "const organizationId = data.organizationId && isUuid(data.organizationId) ? data.organizationId : '00000000-0000-4000-8000-000000000002';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/AbdmGatewayRepository.ts",
+    "line": 489,
+    "code": "const branchId = data.branchId && isUuid(data.branchId) ? data.branchId : '00000000-0000-4000-8000-000000000003';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/AbdmGatewayRepository.ts",
+    "line": 630,
+    "code": "const partnerId = data.partnerId && isUuid(data.partnerId) ? data.partnerId : '00000000-0000-4000-8000-000000000001';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/AbdmGatewayRepository.ts",
+    "line": 631,
+    "code": "const organizationId = data.organizationId && isUuid(data.organizationId) ? data.organizationId : '00000000-0000-4000-8000-000000000002';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/AbdmGatewayRepository.ts",
+    "line": 632,
+    "code": "const branchId = data.branchId && isUuid(data.branchId) ? data.branchId : '00000000-0000-4000-8000-000000000003';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/AbdmGatewayRepository.ts",
+    "line": 708,
+    "code": "const partnerId = data.partnerId && isUuid(data.partnerId) ? data.partnerId : '00000000-0000-4000-8000-000000000001';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/AbdmGatewayRepository.ts",
+    "line": 709,
+    "code": "const organizationId = data.organizationId && isUuid(data.organizationId) ? data.organizationId : '00000000-0000-4000-8000-000000000002';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/AbdmGatewayRepository.ts",
+    "line": 710,
+    "code": "const branchId = data.branchId && isUuid(data.branchId) ? data.branchId : '00000000-0000-4000-8000-000000000003';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/AiClinicalCopilotRepository.ts",
+    "line": 154,
+    "code": "const DEFAULT_PARTNER_ID = '00000000-0000-4000-8000-000000000001';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/AiClinicalCopilotRepository.ts",
+    "line": 155,
+    "code": "const DEFAULT_ORG_ID = '00000000-0000-4000-8000-000000000002';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/BillingManagementRepository.ts",
+    "line": 632,
+    "code": "partnerId: input.partnerId || '00000000-0000-4000-8000-000000000001',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/BillingManagementRepository.ts",
+    "line": 633,
+    "code": "organizationId: input.organizationId || '00000000-0000-4000-8000-000000000002',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/BillingManagementRepository.ts",
+    "line": 634,
+    "code": "branchId: input.branchId || '00000000-0000-4000-8000-000000000003',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/BillingManagementRepository.ts",
+    "line": 2169,
+    "code": "medicationId: disp.medicationId || '00000000-0000-4000-8000-000000000000',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/BillingManagementRepository.ts",
+    "line": 2170,
+    "code": "batchId: disp.batchId || '00000000-0000-4000-8000-000000000000',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/BloodBankManagementRepository.ts",
+    "line": 292,
+    "code": "partnerId: input.partnerId || '00000000-0000-4000-8000-000000000001',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/BloodBankManagementRepository.ts",
+    "line": 293,
+    "code": "organizationId: input.organizationId || '00000000-0000-4000-8000-000000000002',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/BloodBankManagementRepository.ts",
+    "line": 359,
+    "code": "partnerId: input.partnerId || '00000000-0000-4000-8000-000000000001',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/BloodBankManagementRepository.ts",
+    "line": 360,
+    "code": "organizationId: input.organizationId || '00000000-0000-4000-8000-000000000002',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/BloodBankManagementRepository.ts",
+    "line": 361,
+    "code": "branchId: input.branchId || '00000000-0000-4000-8000-000000000003',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/BloodBankManagementRepository.ts",
+    "line": 428,
+    "code": "partnerId: '00000000-0000-4000-8000-000000000001',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/BloodBankManagementRepository.ts",
+    "line": 429,
+    "code": "organizationId: '00000000-0000-4000-8000-000000000002',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/BloodBankManagementRepository.ts",
+    "line": 430,
+    "code": "branchId: '00000000-0000-4000-8000-000000000003',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/BloodBankManagementRepository.ts",
+    "line": 449,
+    "code": "partnerId: '00000000-0000-4000-8000-000000000001',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/BloodBankManagementRepository.ts",
+    "line": 450,
+    "code": "organizationId: '00000000-0000-4000-8000-000000000002',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/BloodBankManagementRepository.ts",
+    "line": 451,
+    "code": "branchId: '00000000-0000-4000-8000-000000000003',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/BloodBankManagementRepository.ts",
+    "line": 470,
+    "code": "partnerId: '00000000-0000-4000-8000-000000000001',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/BloodBankManagementRepository.ts",
+    "line": 471,
+    "code": "organizationId: '00000000-0000-4000-8000-000000000002',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/BloodBankManagementRepository.ts",
+    "line": 472,
+    "code": "branchId: '00000000-0000-4000-8000-000000000003',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/BloodBankManagementRepository.ts",
+    "line": 554,
+    "code": "partnerId: '00000000-0000-4000-8000-000000000001',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/BloodBankManagementRepository.ts",
+    "line": 555,
+    "code": "organizationId: '00000000-0000-4000-8000-000000000002',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/BloodBankManagementRepository.ts",
+    "line": 556,
+    "code": "branchId: '00000000-0000-4000-8000-000000000003',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/BloodBankManagementRepository.ts",
+    "line": 615,
+    "code": "partnerId: input.partnerId || '00000000-0000-4000-8000-000000000001',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/BloodBankManagementRepository.ts",
+    "line": 616,
+    "code": "organizationId: input.organizationId || '00000000-0000-4000-8000-000000000002',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/BloodBankManagementRepository.ts",
+    "line": 617,
+    "code": "branchId: input.branchId || '00000000-0000-4000-8000-000000000003',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/BloodBankManagementRepository.ts",
+    "line": 726,
+    "code": "partnerId: '00000000-0000-4000-8000-000000000001',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/BloodBankManagementRepository.ts",
+    "line": 727,
+    "code": "organizationId: '00000000-0000-4000-8000-000000000002',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/BloodBankManagementRepository.ts",
+    "line": 728,
+    "code": "branchId: '00000000-0000-4000-8000-000000000003',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/BloodBankManagementRepository.ts",
+    "line": 839,
+    "code": "partnerId: '00000000-0000-4000-8000-000000000001',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/BloodBankManagementRepository.ts",
+    "line": 840,
+    "code": "organizationId: '00000000-0000-4000-8000-000000000002',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/BloodBankManagementRepository.ts",
+    "line": 841,
+    "code": "branchId: '00000000-0000-4000-8000-000000000003',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/BloodBankManagementRepository.ts",
+    "line": 937,
+    "code": "partnerId: '00000000-0000-4000-8000-000000000001',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/BloodBankManagementRepository.ts",
+    "line": 938,
+    "code": "organizationId: '00000000-0000-4000-8000-000000000002',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/BloodBankManagementRepository.ts",
+    "line": 939,
+    "code": "branchId: '00000000-0000-4000-8000-000000000003',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/ClinicalWorkflowRepository.ts",
+    "line": 2340,
+    "code": "partnerId: cons?.partnerId || '00000000-0000-4000-8000-000000000001',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/ClinicalWorkflowRepository.ts",
+    "line": 2341,
+    "code": "organizationId: cons?.organizationId || '00000000-0000-4000-8000-000000000002',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/ClinicalWorkflowRepository.ts",
+    "line": 4187,
+    "code": "doctorId: encounter.doctorId || '00000000-0000-4000-8000-000000000005',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/ClinicalWorkflowRepository.ts",
+    "line": 4879,
+    "code": "doctorId: input.doctorId || '00000000-0000-4000-8000-000000000005',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/ClinicalWorkflowRepository.ts",
+    "line": 4945,
+    "code": "const effectiveDoctorId = slotDetails.doctorId || '00000000-0000-4000-8000-000000000005';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/EmergencyManagementRepository.ts",
+    "line": 40,
+    "code": "let partnerId = providedPartnerId && providedPartnerId !== '00000000-0000-4000-8000-000000000001' ? providedPartnerId : null;",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/EmergencyManagementRepository.ts",
+    "line": 41,
+    "code": "let organizationId = providedOrgId && providedOrgId !== '00000000-0000-4000-8000-000000000002' ? providedOrgId : null;",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/EmergencyManagementRepository.ts",
+    "line": 65,
+    "code": "partnerId: partnerId || '00000000-0000-4000-8000-000000000001',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/EmergencyManagementRepository.ts",
+    "line": 66,
+    "code": "organizationId: organizationId || '00000000-0000-4000-8000-000000000002'",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/EmergencyManagementRepository.ts",
+    "line": 71,
+    "code": "if (providedBranchId && providedBranchId !== 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' && providedBranchId !== '00000000-0000-4000-8000-000000000003') {",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/EmergencyManagementRepository.ts",
+    "line": 100,
+    "code": "if (providedDeptId && providedDeptId !== '00000000-0000-4000-8000-000000000004') {",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/EmergencyManagementRepository.ts",
+    "line": 134,
+    "code": "return providedDeptId || '00000000-0000-4000-8000-000000000004';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/ExecutiveMisRepository.ts",
+    "line": 263,
+    "code": "partnerId: '00000000-0000-4000-8000-000000000001',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/ExecutiveMisRepository.ts",
+    "line": 264,
+    "code": "organizationId: '00000000-0000-4000-8000-000000000002',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/ExecutiveMisRepository.ts",
+    "line": 327,
+    "code": "partnerId: '00000000-0000-4000-8000-000000000001',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/ExecutiveMisRepository.ts",
+    "line": 328,
+    "code": "organizationId: '00000000-0000-4000-8000-000000000002',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/ExecutiveMisRepository.ts",
+    "line": 502,
+    "code": "partnerId: '00000000-0000-4000-8000-000000000001',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/ExecutiveMisRepository.ts",
+    "line": 503,
+    "code": "organizationId: '00000000-0000-4000-8000-000000000002',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/ExecutiveMisRepository.ts",
+    "line": 627,
+    "code": "partnerId: '00000000-0000-4000-8000-000000000001',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/ExecutiveMisRepository.ts",
+    "line": 628,
+    "code": "organizationId: '00000000-0000-4000-8000-000000000002',",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/MRDManagementRepository.ts",
+    "line": 421,
+    "code": "const partnerId = input.partnerId || '00000000-0000-4000-8000-000000000001';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/MRDManagementRepository.ts",
+    "line": 422,
+    "code": "const organizationId = input.organizationId || '00000000-0000-4000-8000-000000000002';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/MRDManagementRepository.ts",
+    "line": 423,
+    "code": "const branchId = input.branchId || '00000000-0000-4000-8000-000000000003';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/OTManagementRepository.ts",
+    "line": 229,
+    "code": "const partnerId = input.partnerId || '00000000-0000-4000-8000-000000000001';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/OTManagementRepository.ts",
+    "line": 230,
+    "code": "const organizationId = input.organizationId || '00000000-0000-4000-8000-000000000002';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/OTManagementRepository.ts",
+    "line": 231,
+    "code": "const branchId = input.branchId || '00000000-0000-4000-8000-000000000003';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/OTManagementRepository.ts",
+    "line": 508,
+    "code": "const partnerId = input.partnerId || '00000000-0000-4000-8000-000000000001';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/OTManagementRepository.ts",
+    "line": 509,
+    "code": "const organizationId = input.organizationId || '00000000-0000-4000-8000-000000000002';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/OTManagementRepository.ts",
+    "line": 510,
+    "code": "const branchId = input.branchId || '00000000-0000-4000-8000-000000000003';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/RadiologyRepository.ts",
+    "line": 347,
+    "code": "const partnerId = (d['partnerId'] as string) || '00000000-0000-4000-8000-000000000001';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/RadiologyRepository.ts",
+    "line": 348,
+    "code": "const organizationId = (d['organizationId'] as string) || '00000000-0000-4000-8000-000000000002';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/RadiologyRepository.ts",
+    "line": 349,
+    "code": "const branchId = (d['branchId'] as string) || '00000000-0000-4000-8000-000000000003';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/SupplyChainRepository.ts",
+    "line": 54,
+    "code": "const partnerId = partner?.id || '00000000-0000-4000-8000-000000000001';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/SupplyChainRepository.ts",
+    "line": 59,
+    "code": "const organizationId = org?.id || '00000000-0000-4000-8000-000000000002';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/WhatsAppEngagementRepository.ts",
+    "line": 354,
+    "code": "const partnerId = '00000000-0000-4000-8000-000000000001';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/WhatsAppEngagementRepository.ts",
+    "line": 355,
+    "code": "const orgId = '00000000-0000-4000-8000-000000000002';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/WhatsAppEngagementRepository.ts",
+    "line": 531,
+    "code": "const partnerId = '00000000-0000-4000-8000-000000000001';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/WhatsAppEngagementRepository.ts",
+    "line": 532,
+    "code": "const orgId = '00000000-0000-4000-8000-000000000002';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/WhatsAppEngagementRepository.ts",
+    "line": 794,
+    "code": "const partnerId = '00000000-0000-4000-8000-000000000001';",
+    "severity": "MEDIUM"
+  },
+  {
+    "type": "HARDCODED_TEST_UUID",
+    "file": "apps/api-gateway/src/repositories/partner/WhatsAppEngagementRepository.ts",
+    "line": 795,
+    "code": "const orgId = '00000000-0000-4000-8000-000000000002';",
+    "severity": "MEDIUM"
+  }
+]

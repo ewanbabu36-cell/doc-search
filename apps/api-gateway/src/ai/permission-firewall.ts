@@ -16,14 +16,51 @@ export interface FirewallEvaluationOptions {
 }
 
 export class AiPermissionFirewall {
+  private operatingMode: 'AI_ENABLED' | 'AI_RESTRICTED' | 'AI_DISABLED' = 'AI_ENABLED';
+
+  public getOperatingMode(): 'AI_ENABLED' | 'AI_RESTRICTED' | 'AI_DISABLED' {
+    return this.operatingMode;
+  }
+
+  public setOperatingMode(mode: 'AI_ENABLED' | 'AI_RESTRICTED' | 'AI_DISABLED'): void {
+    this.operatingMode = mode;
+  }
+
   /**
-   * Evaluates the 9 consecutive security gates + Role Escalation + Patient Isolation.
+   * Evaluates the 10 consecutive security gates + Role Escalation + Patient Isolation + Kill Switch.
    * Fail-Closed: returns { allowed: false, failedGate, denialReason, statusCode } immediately on any gate failure.
    */
   async evaluate(
     context: AiRequestContext,
     options: FirewallEvaluationOptions = {}
   ): Promise<PermissionFirewallResult> {
+    // GATE 0: Platform AI Kill-Switch State
+    if (this.operatingMode === 'AI_DISABLED') {
+      return {
+        allowed: false,
+        failedGate: 'KILL_SWITCH',
+        denialReason: 'AI services are temporarily disabled by the platform security kill switch. Core clinical and ERP workflows remain fully operational.',
+        statusCode: 503
+      };
+    }
+
+    if (this.operatingMode === 'AI_RESTRICTED') {
+      const capability = capabilityRegistry.getCapability(context.capabilityId);
+      if (
+        capability?.category === 'CLINICAL' ||
+        capability?.category === 'FINANCIAL' ||
+        capability?.humanApprovalRequired ||
+        options.toolId
+      ) {
+        return {
+          allowed: false,
+          failedGate: 'KILL_SWITCH',
+          denialReason: 'AI services are operating in RESTRICTED safety mode. Write mutations, tools, and clinical decisions are disabled.',
+          statusCode: 403
+        };
+      }
+    }
+
     // GATE 1: Identity Check
     if (!context.userId || !context.session || !context.session.userId) {
       return {

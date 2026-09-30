@@ -20,7 +20,9 @@ export const Aarogya360PatientPortalView: React.FC<Props> = ({ profile }) => {
           <p className="text-xs text-blue-200 mt-1">Patient: <strong>{profile.fullName}</strong> | MRN: {profile.patientMrn} | ABHA: <span className="font-mono">{profile.abhaAddress}</span></p>
         </div>
         <div className="flex gap-2">
-          <Button variant="primary" size="sm">Download Health Passport PDF</Button>
+          <Button variant="primary" size="sm" onClick={() => window.print()}>
+            🖨️ Download / Print Health Passport PDF
+          </Button>
         </div>
       </div>
 

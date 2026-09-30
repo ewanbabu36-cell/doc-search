@@ -1,4 +1,4 @@
-import { TpaClaimPredictorStudio } from './views/TpaClaimPredictorStudio.js';
+import { InstantNhcxAutoAdjudicationView } from './views/InstantNhcxAutoAdjudicationView.js';
 import React, { useState, useEffect, useCallback } from 'react';
 import type {
   PanelContextDto,
@@ -65,6 +65,7 @@ import { InsuranceReportsView } from './views/InsuranceReportsView.js';
 import { InsuranceAuditVaultView } from './views/InsuranceAuditVaultView.js';
 import { PatientInsuranceHistoryView } from './views/PatientInsuranceHistoryView.js';
 import { RevenueCycleInsuranceView } from './views/RevenueCycleInsuranceView.js';
+import { TabOverflowMenu } from './common/TabOverflowMenu.js';
 
 // Dialogs
 import { CreatePayerDialog } from './dialogs/CreatePayerDialog.js';
@@ -107,13 +108,13 @@ export const InsuranceClaimsDomainManager: React.FC<InsuranceClaimsDomainManager
       userEmail: 'insurance.admin@docsearch.docsearch.health',
       userRole: 'INSURANCE_DIRECTOR',
       activeTenantId: tenantId,
-      activeTenantName: 'Apex Healthcare System',
+      activeTenantName: 'DocSearch Healthcare Network',
       activePartnerId: '22222222-2222-4222-8222-222222222201',
       activePartnerName: 'Doc Search Healthcare Network',
       activeOrganizationId: '44444444-4444-4444-8444-444444444401',
-      activeOrganizationName: 'Apex Metropolitan Hospital',
+      activeOrganizationName: 'Healthcare Facility',
       activeFacilityId: '88888888-1111-4888-8888-111111111101',
-      activeFacilityName: 'Apex Central Hospital'
+      activeFacilityName: 'Main Facility Branch'
     }
   );
 
@@ -352,30 +353,6 @@ export const InsuranceClaimsDomainManager: React.FC<InsuranceClaimsDomainManager
     return cl;
   };
 
-  const tabs = [
-    { id: 'overview', label: '📊 Command Center' },
-    { id: 'payers', label: '🏢 Payers & TPAs' },
-    { id: 'plans', label: '📑 Benefit Plans' },
-    { id: 'policies', label: '👤 Patient Policies' },
-    { id: 'eligibility', label: '💳 270/271 Eligibility' },
-    { id: 'authorizations', label: '🔬 Pre-Authorizations' },
-    { id: 'claims', label: '📋 Claims Directory' },
-    { id: 'tpa-ai-predictor', label: '🩻 TPA AI Claim Predictor' },
-    { id: 'submissions', label: '🚀 EDI Submissions' },
-    { id: 'adjudications', label: '⚖️ ERA Adjudications' },
-    { id: 'denials', label: '⛔ Denial Registry' },
-    { id: 'appeals', label: '🛡️ Appeals Pipeline' },
-    { id: 'settlements', label: '🏦 Payer Settlements' },
-    { id: 'reconciliations', label: '🎯 Reconciliations' },
-    { id: 'analytics', label: '📈 Payer Analytics' },
-    { id: 'history', label: '👤 Patient Ledger' },
-    { id: 'rcm-bridge', label: '🔗 RCM Bridge' },
-    { id: 'audit', label: '🔒 Audit Vault' }
-  ];
-
-  if (selectedClaim && activeTab === 'claim-detail') {
-    tabs.splice(7, 0, { id: 'claim-detail', label: `Claim ${selectedClaim.claimNumber}` });
-  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', padding: '1.5rem' }}>
@@ -389,26 +366,92 @@ export const InsuranceClaimsDomainManager: React.FC<InsuranceClaimsDomainManager
       />
 
       {/* Domain Navigation Tabs */}
-      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem' }}>
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            style={{
-              padding: '0.6rem 1rem',
-              borderRadius: '6px',
-              border: 'none',
-              backgroundColor: activeTab === tab.id ? '#2563eb' : '#f1f5f9',
-              color: activeTab === tab.id ? '#ffffff' : '#334155',
-              fontWeight: 600,
-              fontSize: '0.85rem',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease'
-            }}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div
+        style={{
+          position: 'relative',
+          zIndex: 40,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          flexWrap: 'wrap',
+          backgroundColor: '#0F172A',
+          border: '1px solid #1E293B',
+          borderRadius: '10px',
+          padding: '6px 8px'
+        }}
+      >
+        {[
+          { id: 'overview', label: '📊 Command Center' },
+          { id: 'claims', label: '📋 Claims Directory' },
+          { id: 'tpa-ai-predictor', label: '⚡ NHCX Auto-Adjudication' },
+          { id: 'authorizations', label: '🔬 Pre-Authorizations' },
+          { id: 'eligibility', label: '💳 270/271 Eligibility' },
+          ...(selectedClaim && activeTab === 'claim-detail' ? [{ id: 'claim-detail', label: `Claim ${selectedClaim.claimNumber}` }] : [])
+        ].map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                borderRadius: '6px',
+                border: isActive ? '1px solid #38BDF8' : '1px solid transparent',
+                backgroundColor: isActive ? '#0284C7' : 'transparent',
+                color: isActive ? '#FFFFFF' : '#94A3B8',
+                fontWeight: isActive ? 700 : 500,
+                fontSize: '0.8rem',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = '#1E293B';
+                  e.currentTarget.style.color = '#F8FAFC';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = '#94A3B8';
+                }
+              }}
+            >
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+
+        {/* Secondary Modules Dropdown */}
+        <TabOverflowMenu
+          label="More Claims & RCM Tools"
+          options={[
+            { id: 'ai-predictor', label: '🤖 AI Denial Predictor' },
+            { id: 'payers', label: '🏢 Payers & TPAs' },
+            { id: 'plans', label: '📑 Benefit Plans' },
+            { id: 'policies', label: '👤 Patient Policies' },
+            { id: 'submissions', label: '🚀 EDI Submissions' },
+            { id: 'adjudications', label: '⚖️ ERA Adjudications' },
+            { id: 'denials', label: '⛔ Denial Registry' },
+            { id: 'appeals', label: '🛡️ Appeals Pipeline' },
+            { id: 'settlements', label: '🏦 Payer Settlements' },
+            { id: 'reconciliations', label: '🎯 Reconciliations' },
+            { id: 'analytics', label: '📈 Payer Analytics' },
+            { id: 'history', label: '👤 Patient Ledger' },
+            { id: 'rcm-bridge', label: '🔗 RCM Bridge' },
+            { id: 'audit', label: '🔒 Audit Vault' }
+          ]}
+          activeId={activeTab}
+          onSelect={(id) => setActiveTab(id)}
+          onReset={() => setActiveTab('overview')}
+          accentColor="#0284C7"
+          activeBorderColor="#38BDF8"
+        />
       </div>
 
       {/* Tab Views */}
@@ -492,7 +535,7 @@ export const InsuranceClaimsDomainManager: React.FC<InsuranceClaimsDomainManager
       )}
 
       {activeTab === 'tpa-ai-predictor' && (
-        <TpaClaimPredictorStudio />
+        <InstantNhcxAutoAdjudicationView />
       )}
 
       {activeTab === 'claims' && (

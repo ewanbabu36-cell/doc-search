@@ -803,16 +803,6 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
               <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                 <button
                   type="submit"
-                  style={{
-                    backgroundColor: '#06B6D4',
-                    color: '#070C16',
-                    border: 'none',
-                    borderRadius: '8px',
-                    padding: '10px 20px',
-                    fontWeight: 800,
-                    fontSize: '0.8125rem',
-                    cursor: 'pointer'
-                  }}
                 >
                   {isCompanyAdmin ? '👑 Approve & Save Bank Details' : '📤 Submit for Admin Approval'}
                 </button>
@@ -935,27 +925,49 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '14px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
-                    OFFICIAL PHONE *
+                    OFFICIAL PHONE (10-DIGIT MOBILE) *
                   </label>
-                  <input
-                    type="text"
-                    required
-                    value={addressData.officialPhone}
-                    onChange={(e) => setAddressData({ ...addressData, officialPhone: e.target.value })}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem' }}
-                  />
+                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <span style={{ position: 'absolute', left: '10px', color: '#38BDF8', fontWeight: 800, fontSize: '0.8125rem' }}>+91</span>
+                    <input
+                      type="tel"
+                      inputMode="numeric"
+                      maxLength={10}
+                      required
+                      placeholder="98765 43210"
+                      value={addressData.officialPhone}
+                      onChange={(e) => {
+                        let digits = e.target.value.replace(/\D/g, '');
+                        if (digits.length === 12 && digits.startsWith('91')) digits = digits.slice(2);
+                        else if (digits.length === 11 && digits.startsWith('0')) digits = digits.slice(1);
+                        setAddressData({ ...addressData, officialPhone: digits.slice(0, 10) });
+                      }}
+                      style={{ width: '100%', padding: '8px 12px 8px 44px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem', fontFamily: 'monospace' }}
+                    />
+                  </div>
                 </div>
 
                 <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
-                    PATIENT WHATSAPP NUMBER
+                    PATIENT WHATSAPP NUMBER (10-DIGIT MOBILE)
                   </label>
-                  <input
-                    type="text"
-                    value={addressData.whatsappNumber}
-                    onChange={(e) => setAddressData({ ...addressData, whatsappNumber: e.target.value })}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem' }}
-                  />
+                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <span style={{ position: 'absolute', left: '10px', color: '#38BDF8', fontWeight: 800, fontSize: '0.8125rem' }}>+91</span>
+                    <input
+                      type="tel"
+                      inputMode="numeric"
+                      maxLength={10}
+                      placeholder="98765 43210"
+                      value={addressData.whatsappNumber}
+                      onChange={(e) => {
+                        let digits = e.target.value.replace(/\D/g, '');
+                        if (digits.length === 12 && digits.startsWith('91')) digits = digits.slice(2);
+                        else if (digits.length === 11 && digits.startsWith('0')) digits = digits.slice(1);
+                        setAddressData({ ...addressData, whatsappNumber: digits.slice(0, 10) });
+                      }}
+                      style={{ width: '100%', padding: '8px 12px 8px 44px', borderRadius: '8px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem', fontFamily: 'monospace' }}
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -1000,16 +1012,6 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
               <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                 <button
                   type="submit"
-                  style={{
-                    backgroundColor: '#06B6D4',
-                    color: '#070C16',
-                    border: 'none',
-                    borderRadius: '8px',
-                    padding: '10px 20px',
-                    fontWeight: 800,
-                    fontSize: '0.8125rem',
-                    cursor: 'pointer'
-                  }}
                 >
                   {isCompanyAdmin ? '👑 Approve & Save Address' : '📤 Submit for Admin Approval'}
                 </button>
@@ -1236,16 +1238,6 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
               <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                 <button
                   type="submit"
-                  style={{
-                    backgroundColor: '#06B6D4',
-                    color: '#070C16',
-                    border: 'none',
-                    borderRadius: '8px',
-                    padding: '10px 20px',
-                    fontWeight: 800,
-                    fontSize: '0.8125rem',
-                    cursor: 'pointer'
-                  }}
                 >
                   {isCompanyAdmin ? `👑 Approve & Lock ${roleCategory} Certificates` : '📤 Submit Certificates for Admin Approval'}
                 </button>
@@ -1303,7 +1295,6 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                 <button
                   type="button"
                   onClick={() => window.print()}
-                  style={{ backgroundColor: '#06B6D4', color: '#070C16', border: 'none', borderRadius: '8px', padding: '8px 16px', fontWeight: 800, fontSize: '0.8125rem', cursor: 'pointer' }}
                 >
                   🖨️ Print Reception Trust Certificate
                 </button>
@@ -1425,16 +1416,6 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
               <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                 <button
                   type="submit"
-                  style={{
-                    backgroundColor: '#06B6D4',
-                    color: '#070C16',
-                    border: 'none',
-                    borderRadius: '8px',
-                    padding: '10px 20px',
-                    fontWeight: 800,
-                    fontSize: '0.8125rem',
-                    cursor: 'pointer'
-                  }}
                 >
                   🔒 Update Password Immediately
                 </button>

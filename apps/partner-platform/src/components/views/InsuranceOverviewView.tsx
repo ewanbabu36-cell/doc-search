@@ -44,10 +44,10 @@ export const InsuranceOverviewView: React.FC<InsuranceOverviewViewProps> = ({
       {/* Header & Quick Action Bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: '#0f172a' }}>
+          <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: 'var(--ds-color-text-primary)' }}>
             Insurance & Claims Command Center
           </h2>
-          <p style={{ margin: '0.25rem 0 0 0', color: '#64748b', fontSize: '0.875rem' }}>
+          <p style={{ margin: '0.25rem 0 0 0', color: 'var(--ds-color-text-secondary, #94a3b8)', fontSize: '0.875rem' }}>
             Third-party payer administration, real-time eligibility (270/271), pre-authorizations, EDI 837 claim scrubber & settlement reconciliations.
           </p>
         </div>
@@ -70,10 +70,10 @@ export const InsuranceOverviewView: React.FC<InsuranceOverviewViewProps> = ({
       {/* KPI Metrics Dashboard */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
         <Card style={{ padding: '1.25rem', borderLeft: '4px solid #2563eb' }}>
-          <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
+          <div style={{ fontSize: '0.8rem', color: 'var(--ds-color-text-secondary, #94a3b8)', fontWeight: 600, textTransform: 'uppercase' }}>
             Active Insured Patients
           </div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: '#1e293b', marginTop: '0.25rem' }}>
+          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--ds-color-text-primary)', marginTop: '0.25rem' }}>
             {metrics.activeInsuredPatients}
           </div>
           <div style={{ fontSize: '0.75rem', color: '#16a34a', marginTop: '0.25rem' }}>
@@ -135,7 +135,7 @@ export const InsuranceOverviewView: React.FC<InsuranceOverviewViewProps> = ({
         {/* Left Column: Recent Claims Stream */}
         <Card style={{ padding: '1.25rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: '#0f172a' }}>
+            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--ds-color-text-primary)' }}>
               Recent Insurance Claims Stream
             </h3>
             <Button variant="outline" size="sm" onClick={() => onOpenTab('claims')}>
@@ -204,7 +204,7 @@ export const InsuranceOverviewView: React.FC<InsuranceOverviewViewProps> = ({
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <Card style={{ padding: '1.25rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: '#0f172a' }}>
+              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: 'var(--ds-color-text-primary)' }}>
                 Pre-Authorizations Pending
               </h3>
               <Button variant="outline" size="sm" onClick={() => onOpenTab('authorizations')}>
@@ -213,7 +213,7 @@ export const InsuranceOverviewView: React.FC<InsuranceOverviewViewProps> = ({
             </div>
 
             {pendingAuths.length === 0 ? (
-              <div style={{ fontSize: '0.85rem', color: '#64748b', textAlign: 'center', padding: '1rem' }}>
+              <div style={{ fontSize: '0.85rem', color: 'var(--ds-color-text-secondary, #94a3b8)', textAlign: 'center', padding: '1rem' }}>
                 Zero pending pre-authorizations.
               </div>
             ) : (
@@ -223,9 +223,9 @@ export const InsuranceOverviewView: React.FC<InsuranceOverviewViewProps> = ({
                     key={auth.id}
                     style={{
                       padding: '0.75rem',
-                      backgroundColor: '#f8fafc',
+                      backgroundColor: 'var(--ds-color-surface-subtle, #1a2234)',
                       borderRadius: '6px',
-                      border: '1px solid #e2e8f0',
+                      border: '1px solid var(--ds-color-border, #334155)',
                       fontSize: '0.85rem'
                     }}
                   >
@@ -233,10 +233,10 @@ export const InsuranceOverviewView: React.FC<InsuranceOverviewViewProps> = ({
                       <span>{auth.patientName}</span>
                       <span style={{ color: '#d97706' }}>${auth.requestedAmount.toFixed(2)}</span>
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--ds-color-text-secondary, #94a3b8)', marginTop: '0.2rem' }}>
                       {auth.requestedServices}
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: '#2563eb', marginTop: '0.2rem' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#38bdf8', marginTop: '0.2rem' }}>
                       {auth.payerName} • {auth.authorizationNumber}
                     </div>
                   </div>
@@ -246,7 +246,7 @@ export const InsuranceOverviewView: React.FC<InsuranceOverviewViewProps> = ({
           </Card>
 
           <Card style={{ padding: '1.25rem' }}>
-            <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1rem', fontWeight: 600, color: '#0f172a' }}>
+            <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1rem', fontWeight: 600, color: 'var(--ds-color-text-primary)' }}>
               Recent Real-Time Eligibility Inquiries
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.85rem' }}>

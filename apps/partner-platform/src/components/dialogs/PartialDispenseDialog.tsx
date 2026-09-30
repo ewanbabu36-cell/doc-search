@@ -11,6 +11,7 @@ import type {
   PharmacyBatchDto,
   PartialDispenseMedicationRequest
 } from '@docsearch/api-contracts';
+import { getUnifiedPartnerProfile } from '../../utils/roleProfileResolver.js';
 
 export interface PartialDispenseDialogProps {
   isOpen: boolean;
@@ -35,18 +36,19 @@ export const PartialDispenseDialog: React.FC<PartialDispenseDialogProps> = ({
   organizationId,
   branchId
 }) => {
+  const profile = getUnifiedPartnerProfile();
   const [selectedItemId, setSelectedItemId] = useState(prescription?.items[0]?.id || '');
   const [selectedBatchId, setSelectedBatchId] = useState('');
-  const [partialQuantity, setPartialQuantity] = useState<number>(1);
-  const [partialReason, setPartialReason] = useState('Patient requested partial quantity / temporary stock limitation.');
-  const [counselingNotes, setCounselingNotes] = useState('Patient advised to collect remaining balance within 7 calendar days.');
+  const [partialQuantity, setPartialQuantity] = useState(1);
+  const [partialReason, setPartialReason] = useState('INSUFFICIENT_STOCK');
+  const [counselingNotes, setCounselingNotes] = useState('Patient advised that remaining balance must be collected within 7 days.');
   const [justification, setJustification] = useState('Audited partial outpatient fulfillment committed.');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   if (!prescription) return null;
 
-  const selectedItem = prescription.items.find((i) => i.id === selectedItemId) || prescription.items[0];
+  const selectedItem = prescription.items.find((i) => i.id === selectedItemId);
   const eligibleBatches = batches.filter(
     (b) => b.medicationId === selectedItem?.medicationId && b.availableQuantity > 0 && b.status !== 'BLOCKED' && b.status !== 'EXPIRED'
   );
@@ -68,8 +70,8 @@ export const PartialDispenseDialog: React.FC<PartialDispenseDialogProps> = ({
         branchId,
         prescriptionId: prescription.id,
         patientId: prescription.patientId,
-        pharmacistId: 'pharm.marcus.vance@docsearch.docsearch.health',
-        pharmacistName: 'Marcus Vance, PharmD',
+        pharmacistId: profile.supportEmail || 'dispensing.pharmacist@docsearch.health',
+        pharmacistName: profile.pharmacistName ? `${profile.pharmacistName}, ${profile.pharmacistDegree || 'B.Pharm'}` : 'Registered Pharmacist',
         dispensingMode: 'OUTPATIENT_COUNTER',
         counselingProvided: true,
         counselingNotes,
@@ -102,6 +104,8 @@ export const PartialDispenseDialog: React.FC<PartialDispenseDialogProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title={`Partial Dispense — ${prescription.prescriptionNumber}`}
+      isFullPage={true}
+      maxWidth="full"
       footer={
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
           <Button variant="outline" onClick={onClose} disabled={isSubmitting}>

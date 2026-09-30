@@ -1,0 +1,177 @@
+<USER_REQUEST>
+# DOC SEARCH — CATEGORY 15
+
+# INTEGRATION ERROR
+
+# COMPLETE PROJECT AUDIT + REMEDIATION + INDEPENDENT VERIFICATION
+
+## ROLE
+
+You are the **Integration Auditor + Remediation Engineer** for the entire DOC SEARCH repository.
+
+Your objective is to find and eliminate integration failures between:
+
+```text
+Frontend
+→ API Client
+→ Backend Route
+→ Controller
+→ Service
+→ Repository
+→ Database
+→ Internal Module
+→ Queue/Worker
+→ File Storage
+→ External Service
+→ Callback/Webhook
+→ Notification
+→ Workflow
+```
+
+An integration is considered VERIFIED only when the complete contract works at runtime.
+
+Required loop:
+
+**DISCOVER → BASELINE → TRACE → REPRODUCE → CLASSIFY → ROOT CAUSE → FIX ONE ROOT CAUSE → TARGETED TEST → END-TO-END TEST → FAILURE TEST → RETRY TEST → DB VERIFY → WORKFLOW VERIFY → INDEPENDENT RE-AUDIT → NEXT ERROR**
+
+---
+
+# 1. ABSOLUTE RULES
+
+1. Audit the entire integration surface.
+2. Do not add unrelated features.
+3. Do not develop integrations that are explicitly outside the current scope.
+4. **Razorpay is NOT to be newly developed for this audit.**
+5. **ABDM is NOT to be newly developed for this audit.**
+6. Audit existing integration references/configuration only where they affect current functionality.
+7. Do not use mock integrations as production proof.
+8. Do not replace a failed integration with fake success.
+9. Do not silently fall back to local/mock data.
+10. Do not treat HTTP 200 alone as integration success.
+11. Do not treat a frontend button click as integration proof.
+12. Do not treat source-code presence as implementation proof.
+13. Do not treat unit tests alone as end-to-end integration proof.
+14. Do not swallow integration exceptions.
+15. Do not disable validation/retries/timeouts merely to make tests pass.
+16. Do not hardcode external responses.
+17. Do not hardcode API keys/secrets.
+18. Do not log secrets/tokens.
+19. Do not delete failing integration tests.
+20. Do not wea
+<truncated 19766 bytes>
+E = VERIFIED
+WORKFLOW = VERIFIED
+FAILURE_HANDLING = VERIFIED
+RETRY = VERIFIED WHERE APPLICABLE
+IDEMPOTENCY = VERIFIED WHERE APPLICABLE
+TENANT = VERIFIED WHERE APPLICABLE
+AUTHORIZATION = VERIFIED WHERE APPLICABLE
+BROWSER_E2E = PASS WHERE APPLICABLE
+RELOAD = PASS
+SECOND_SESSION = PASS WHERE APPLICABLE
+REGRESSION = PASS
+INDEPENDENT_AUDIT = PASS
+```
+
+If required evidence is unavailable:
+
+**DO NOT CERTIFY.**
+
+Use:
+
+**CONDITIONAL — INTEGRATION RUNTIME VERIFICATION REQUIRED**
+
+or:
+
+**REMEDIATION REQUIRED**
+
+---
+
+# 42. FINAL ZERO-TRUST LOOP
+
+Do not stop because:
+
+* endpoint exists,
+* API returns 200,
+* frontend receives a response,
+* unit tests pass,
+* source code contains integration code,
+* configuration exists,
+* mock integration passes.
+
+Run:
+
+```text id="p8m3r1"
+FULL INTEGRATION SCAN
+↓
+FIND ONE REAL INTEGRATION ERROR
+↓
+REPRODUCE
+↓
+TRACE PRODUCER
+↓
+TRACE CONSUMER
+↓
+TRACE CONTRACT
+↓
+TRACE AUTH
+↓
+TRACE TENANT
+↓
+TRACE DATABASE
+↓
+TRACE WORKFLOW
+↓
+ROOT CAUSE
+↓
+FIX
+↓
+TARGETED TEST
+↓
+SUCCESS TEST
+↓
+FAILURE TEST
+↓
+RETRY TEST
+↓
+IDEMPOTENCY TEST
+↓
+DB PROOF
+↓
+RELOAD
+↓
+SECOND SESSION
+↓
+REGRESSION
+↓
+INDEPENDENT RE-AUDIT
+↓
+NEXT ERROR
+```
+
+Continue until every integration inside the frozen scope is independently verified.
+
+# FINAL PRINCIPLE
+
+Integration is NOT proven because:
+
+* code exists,
+* an endpoint exists,
+* configuration exists,
+* one request returns 200,
+* frontend displays a response,
+* mock data appears,
+* unit tests pass.
+
+Real proof is:
+
+**REAL PRODUCER → REAL CONSUMER → CORRECT CONTRACT → REAL RUNTIME → CORRECT AUTHORIZATION → CORRECT TENANT → CORRECT DATABASE STATE → CORRECT WORKFLOW STATE → FAILURE HANDLING → RETRY/IDEMPOTENCY → RELOAD → SECOND SESSION → INDEPENDENT VERIFICATION**
+
+Only then mark:
+
+**INTEGRATION = VERIFIED**
+
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-09-28T19:26:36+05:30.
+</ADDITIONAL_METADATA>

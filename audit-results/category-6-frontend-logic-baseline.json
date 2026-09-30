@@ -1,0 +1,136 @@
+{
+  "timestamp": "2026-09-28T21:07:12.225Z",
+  "totalScenarios": 10,
+  "passed": 10,
+  "failed": 0,
+  "results": [
+    {
+      "name": "SCENARIO 1: Partner Self-Registration Validation",
+      "success": true,
+      "details": {
+        "validationReady": true,
+        "storageSanitized": true
+      },
+      "consoleErrors": [],
+      "uncaughtExceptions": []
+    },
+    {
+      "name": "SCENARIO 2: Patient Registration & OPD Persistence",
+      "success": true,
+      "details": {
+        "initialLoad": {
+          "apiOk": false,
+          "patientCount": 0
+        },
+        "createPatient": {
+          "status": 201,
+          "success": true,
+          "id": "a124605b-ba96-4964-b1ca-c77b32a0d257",
+          "mrn": "MRN-905905"
+        },
+        "verifyPatient": {
+          "verifiedInPostgres": true,
+          "totalFound": 1
+        }
+      },
+      "consoleErrors": [],
+      "uncaughtExceptions": []
+    },
+    {
+      "name": "SCENARIO 3: OPD Encounter Creation & Queue Lineage",
+      "success": true,
+      "details": {
+        "patientId": "a124605b-ba96-4964-b1ca-c77b32a0d257",
+        "encounterCreated": true,
+        "encounterId": "6ee963a9-b84a-4991-a3e0-89648730f70d",
+        "verifiedInQueue": true
+      },
+      "consoleErrors": [],
+      "uncaughtExceptions": []
+    },
+    {
+      "name": "SCENARIO 4: Doctor Consultation & Lab Order Submission",
+      "success": true,
+      "details": {
+        "encounterId": "6ee963a9-b84a-4991-a3e0-89648730f70d",
+        "statusUpdated": true,
+        "labOrderCreated": true,
+        "labOrderId": "397cc3c8-72e5-4112-b441-5e6829ee7b8e"
+      },
+      "consoleErrors": [],
+      "uncaughtExceptions": []
+    },
+    {
+      "name": "SCENARIO 5: Diagnostic Lab / LIMS Worklist",
+      "success": true,
+      "details": {
+        "apiOk": true,
+        "totalLabOrders": 3,
+        "hasOrders": true
+      },
+      "consoleErrors": [],
+      "uncaughtExceptions": []
+    },
+    {
+      "name": "SCENARIO 6: Pharmacy Dispensing & Inventory",
+      "success": true,
+      "details": {
+        "medicationsOk": true,
+        "medicationsCount": 0,
+        "inventoryOk": true,
+        "inventoryCount": 0
+      },
+      "consoleErrors": [],
+      "uncaughtExceptions": []
+    },
+    {
+      "name": "SCENARIO 7: Inpatient IPD Wards & Beds",
+      "success": true,
+      "details": {
+        "wardsOk": true,
+        "wardsCount": 0,
+        "bedsOk": true,
+        "bedsCount": 0
+      },
+      "consoleErrors": [],
+      "uncaughtExceptions": []
+    },
+    {
+      "name": "SCENARIO 8: Staff Administration Status Mutation",
+      "success": true,
+      "details": {
+        "staffCount": 1,
+        "memberId": "dcce4591-eda7-475e-b927-e8303ff6b9d7",
+        "suspendOk": true,
+        "restoreOk": true
+      },
+      "consoleErrors": [],
+      "uncaughtExceptions": []
+    },
+    {
+      "name": "SCENARIO 9: Cross-Session & Multi-Tab Isolation",
+      "success": true,
+      "details": {
+        "sessionA": {
+          "id": "a61f5888-ddb3-4fed-99bc-25fd71af842e",
+          "success": true
+        },
+        "sessionB": {
+          "foundInSessionB": true,
+          "count": 1
+        }
+      }
+    },
+    {
+      "name": "SCENARIO 10: Page Reload State Persistence",
+      "success": true,
+      "details": {
+        "preReloadCount": 1,
+        "postReloadCount": 1,
+        "persisted": true
+      },
+      "consoleErrors": [],
+      "uncaughtExceptions": []
+    }
+  ]
+}

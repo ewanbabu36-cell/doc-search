@@ -1,3 +1,4 @@
+import { apiRequest, isMockFallbackAllowed } from './api-client.js';
 import type {
   BiomedicalAssetDto,
   AssetTransferDto,
@@ -118,12 +119,13 @@ export class AssetBiomedicalService implements IAssetBiomedicalService {
     entityCode: string,
     justification: string,
     actorName = 'Er. Rajesh Nair',
-    actorRole = 'BIOMEDICAL_ENGINEER'
+    actorRole = 'BIOMEDICAL_ENGINEER',
+    tenantId = '11111111-1111-4111-8111-111111111111'
   ) {
     const traceNumber = `TRACE-ASSET-${Math.floor(10000 + Math.random() * 90000)}`;
     const trace: BiomedicalAuditTraceDto = {
       id: crypto.randomUUID(),
-      tenantId: '11111111-1111-4111-8111-111111111111',
+      tenantId,
       traceNumber,
       action,
       entityType,
@@ -139,6 +141,15 @@ export class AssetBiomedicalService implements IAssetBiomedicalService {
   }
 
   async getOverviewMetrics(_tenantId: string): Promise<AssetOverviewMetricsDto> {
+    try {
+      const res = await apiRequest<AssetOverviewMetricsDto>('/api/v1/partner/biomedical/overview');
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const inService = this.assets.filter((a) => a.operationalStatus === 'IN_SERVICE').length;
     const underMaint = this.assets.filter((a) => a.operationalStatus === 'UNDER_MAINTENANCE').length;
     const breakdown = this.assets.filter((a) => a.operationalStatus === 'OUT_OF_SERVICE_BREAKDOWN').length;
@@ -161,14 +172,43 @@ export class AssetBiomedicalService implements IAssetBiomedicalService {
   }
 
   async getDowntimeAnalytics(_tenantId: string): Promise<AssetDowntimeAnalyticsDto> {
+    try {
+      const res = await apiRequest<AssetDowntimeAnalyticsDto>('/api/v1/partner/biomedical/analytics/downtime');
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
     return { ...mockDowntimeAnalytics };
   }
 
   async getAssets(_tenantId: string): Promise<BiomedicalAssetDto[]> {
+    try {
+      const res = await apiRequest<BiomedicalAssetDto[]>('/api/v1/partner/biomedical/assets');
+      if (res.success && Array.isArray(res.data)) {
+        this.assets = res.data;
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
     return [...this.assets];
   }
 
   async createAsset(tenantId: string, payload: CreateBiomedicalAssetRequest): Promise<BiomedicalAssetDto> {
+    try {
+      const res = await apiRequest<BiomedicalAssetDto>('/api/v1/partner/biomedical/assets', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const asset: BiomedicalAssetDto = {
       id: crypto.randomUUID(),
       tenantId,
@@ -210,6 +250,18 @@ export class AssetBiomedicalService implements IAssetBiomedicalService {
   }
 
   async updateAsset(_tenantId: string, id: string, payload: UpdateBiomedicalAssetRequest): Promise<BiomedicalAssetDto> {
+    try {
+      const res = await apiRequest<BiomedicalAssetDto>(`/api/v1/partner/biomedical/assets/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const idx = this.assets.findIndex((a) => a.id === id);
     if (idx === -1) throw new Error('Asset not found');
     const existing = this.assets[idx];
@@ -294,10 +346,31 @@ export class AssetBiomedicalService implements IAssetBiomedicalService {
   }
 
   async getPpmSchedules(_tenantId: string): Promise<PpmScheduleDto[]> {
+    try {
+      const res = await apiRequest<PpmScheduleDto[]>('/api/v1/partner/biomedical/ppm-schedules');
+      if (res.success && Array.isArray(res.data)) {
+        this.ppmSchedules = res.data;
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
     return [...this.ppmSchedules];
   }
 
   async createPpmSchedule(tenantId: string, payload: CreatePpmScheduleRequest): Promise<PpmScheduleDto> {
+    try {
+      const res = await apiRequest<PpmScheduleDto>('/api/v1/partner/biomedical/ppm-schedules', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const asset = this.assets.find((a) => a.id === payload.assetId);
     if (!asset) throw new Error('Asset not found');
 
@@ -322,6 +395,18 @@ export class AssetBiomedicalService implements IAssetBiomedicalService {
   }
 
   async completePpmTask(_tenantId: string, scheduleId: string, payload: CompletePpmTaskRequest): Promise<PpmScheduleDto> {
+    try {
+      const res = await apiRequest<PpmScheduleDto>(`/api/v1/partner/biomedical/ppm-schedules/${scheduleId}/complete`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const idx = this.ppmSchedules.findIndex((p) => p.id === scheduleId);
     if (idx === -1) throw new Error('PPM schedule not found');
     const existing = this.ppmSchedules[idx];
@@ -348,10 +433,31 @@ export class AssetBiomedicalService implements IAssetBiomedicalService {
   }
 
   async getWorkOrders(_tenantId: string): Promise<BreakdownWorkOrderDto[]> {
+    try {
+      const res = await apiRequest<BreakdownWorkOrderDto[]>('/api/v1/partner/biomedical/work-orders');
+      if (res.success && Array.isArray(res.data)) {
+        this.workOrders = res.data;
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
     return [...this.workOrders];
   }
 
   async createWorkOrder(tenantId: string, payload: CreateWorkOrderRequest): Promise<BreakdownWorkOrderDto> {
+    try {
+      const res = await apiRequest<BreakdownWorkOrderDto>('/api/v1/partner/biomedical/work-orders', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const asset = this.assets.find((a) => a.id === payload.assetId);
     if (!asset) throw new Error('Asset not found');
 
@@ -387,6 +493,18 @@ export class AssetBiomedicalService implements IAssetBiomedicalService {
   }
 
   async assignWorkOrder(_tenantId: string, workOrderId: string, payload: AssignWorkOrderRequest): Promise<BreakdownWorkOrderDto> {
+    try {
+      const res = await apiRequest<BreakdownWorkOrderDto>(`/api/v1/partner/biomedical/work-orders/${workOrderId}/assign`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const idx = this.workOrders.findIndex((w) => w.id === workOrderId);
     if (idx === -1) throw new Error('Work order not found');
     const existing = this.workOrders[idx];
@@ -404,6 +522,18 @@ export class AssetBiomedicalService implements IAssetBiomedicalService {
   }
 
   async completeWorkOrder(_tenantId: string, workOrderId: string, payload: CompleteWorkOrderRequest): Promise<BreakdownWorkOrderDto> {
+    try {
+      const res = await apiRequest<BreakdownWorkOrderDto>(`/api/v1/partner/biomedical/work-orders/${workOrderId}/complete`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const idx = this.workOrders.findIndex((w) => w.id === workOrderId);
     if (idx === -1) throw new Error('Work order not found');
     const existing = this.workOrders[idx];
@@ -431,6 +561,18 @@ export class AssetBiomedicalService implements IAssetBiomedicalService {
   }
 
   async verifyWorkOrder(_tenantId: string, workOrderId: string, payload: VerifyWorkOrderRequest): Promise<BreakdownWorkOrderDto> {
+    try {
+      const res = await apiRequest<BreakdownWorkOrderDto>(`/api/v1/partner/biomedical/work-orders/${workOrderId}/verify`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const idx = this.workOrders.findIndex((w) => w.id === workOrderId);
     if (idx === -1) throw new Error('Work order not found');
     const existing = this.workOrders[idx];
@@ -455,10 +597,31 @@ export class AssetBiomedicalService implements IAssetBiomedicalService {
   }
 
   async getCalibrationRecords(_tenantId: string): Promise<CalibrationRecordDto[]> {
+    try {
+      const res = await apiRequest<CalibrationRecordDto[]>('/api/v1/partner/biomedical/calibrations');
+      if (res.success && Array.isArray(res.data)) {
+        this.calibrationRecords = res.data;
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
     return [...this.calibrationRecords];
   }
 
   async createCalibrationRecord(tenantId: string, payload: CreateCalibrationRecordRequest): Promise<CalibrationRecordDto> {
+    try {
+      const res = await apiRequest<CalibrationRecordDto>('/api/v1/partner/biomedical/calibrations', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const asset = this.assets.find((a) => a.id === payload.assetId);
     if (!asset) throw new Error('Asset not found');
 
@@ -491,10 +654,31 @@ export class AssetBiomedicalService implements IAssetBiomedicalService {
   }
 
   async getSafetyTestRecords(_tenantId: string): Promise<SafetyTestRecordDto[]> {
+    try {
+      const res = await apiRequest<SafetyTestRecordDto[]>('/api/v1/partner/biomedical/safety-tests');
+      if (res.success && Array.isArray(res.data)) {
+        this.safetyTestRecords = res.data;
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
     return [...this.safetyTestRecords];
   }
 
   async createSafetyTestRecord(tenantId: string, payload: CreateSafetyTestRecordRequest): Promise<SafetyTestRecordDto> {
+    try {
+      const res = await apiRequest<SafetyTestRecordDto>('/api/v1/partner/biomedical/safety-tests', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const asset = this.assets.find((a) => a.id === payload.assetId);
     if (!asset) throw new Error('Asset not found');
 
@@ -523,10 +707,31 @@ export class AssetBiomedicalService implements IAssetBiomedicalService {
   }
 
   async getSpareParts(_tenantId: string): Promise<SparePartDto[]> {
+    try {
+      const res = await apiRequest<SparePartDto[]>('/api/v1/partner/biomedical/spare-parts');
+      if (res.success && Array.isArray(res.data)) {
+        this.spareParts = res.data;
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
     return [...this.spareParts];
   }
 
   async createSparePart(tenantId: string, payload: CreateSparePartRequest): Promise<SparePartDto> {
+    try {
+      const res = await apiRequest<SparePartDto>('/api/v1/partner/biomedical/spare-parts', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const sp: SparePartDto = {
       id: crypto.randomUUID(),
       tenantId,
@@ -552,6 +757,18 @@ export class AssetBiomedicalService implements IAssetBiomedicalService {
   }
 
   async consumeSparePart(tenantId: string, payload: ConsumeSparePartRequest): Promise<SparePartUsageDto> {
+    try {
+      const res = await apiRequest<SparePartUsageDto>('/api/v1/partner/biomedical/spare-parts/consume', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const asset = this.assets.find((a) => a.id === payload.assetId);
     if (!asset) throw new Error('Asset not found');
     const part = this.spareParts.find((p) => p.id === payload.partId);
@@ -617,10 +834,31 @@ export class AssetBiomedicalService implements IAssetBiomedicalService {
   }
 
   async getCondemnations(_tenantId: string): Promise<CondemnationRecordDto[]> {
+    try {
+      const res = await apiRequest<CondemnationRecordDto[]>('/api/v1/partner/biomedical/condemnations');
+      if (res.success && Array.isArray(res.data)) {
+        this.condemnations = res.data;
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
     return [...this.condemnations];
   }
 
   async createCondemnation(tenantId: string, payload: CreateCondemnationRequest): Promise<CondemnationRecordDto> {
+    try {
+      const res = await apiRequest<CondemnationRecordDto>('/api/v1/partner/biomedical/condemnations', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const asset = this.assets.find((a) => a.id === payload.assetId);
     if (!asset) throw new Error('Asset not found');
 
@@ -647,6 +885,18 @@ export class AssetBiomedicalService implements IAssetBiomedicalService {
   }
 
   async approveCondemnation(_tenantId: string, condemnationId: string, payload: ApproveCondemnationRequest): Promise<CondemnationRecordDto> {
+    try {
+      const res = await apiRequest<CondemnationRecordDto>(`/api/v1/partner/biomedical/condemnations/${condemnationId}/approve`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const idx = this.condemnations.findIndex((c) => c.id === condemnationId);
     if (idx === -1) throw new Error('Condemnation record not found');
     const existing = this.condemnations[idx];
@@ -720,6 +970,15 @@ export class AssetBiomedicalService implements IAssetBiomedicalService {
   }
 
   async getAuditTraces(_tenantId: string): Promise<BiomedicalAuditTraceDto[]> {
+    try {
+      const res = await apiRequest<BiomedicalAuditTraceDto[]>('/api/v1/partner/biomedical/audit-traces');
+      if (res.success && Array.isArray(res.data)) {
+        this.auditTraces = res.data;
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
     return [...this.auditTraces];
   }
 }

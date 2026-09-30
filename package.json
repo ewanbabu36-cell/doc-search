@@ -13,7 +13,11 @@
     "build": "pnpm -r build",
     "lint": "eslint .",
     "typecheck": "pnpm -r typecheck",
-    "test": "node --test packages/auth/test/*.test.mjs packages/database/test/*.test.mjs apps/api-gateway/test/*.test.mjs",
+    "test": "node --test --test-concurrency=1 packages/auth/test/*.test.mjs packages/database/test/*.test.mjs apps/api-gateway/test/*.test.mjs",
+    "test:unit": "node --test packages/auth/test/*.test.mjs",
+    "test:db": "node --test --test-concurrency=1 packages/database/test/*.test.mjs",
+    "test:integration": "node --test --test-concurrency=1 apps/api-gateway/test/*.test.mjs",
+    "test:security": "node tests/security/adversarial-security-audit.mjs && node tests/security/p0-production-security-audit.mjs",
     "test:production-certification": "node scripts/production-certification-runner.mjs",
     "format": "prettier --write \"**/*.{ts,tsx,md,json,css}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,md,json,css}\"",
@@ -28,5 +32,8 @@
     "prettier": "^3.4.2",
     "turbo": "^2.3.3",
     "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "embedded-postgres": "18.4.0-beta.17"
   }
 }

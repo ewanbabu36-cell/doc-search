@@ -327,6 +327,7 @@ export const CreateOperationalStaffRequestSchema = z.object({
   employmentType: OperationalEmploymentTypeEnum,
   joiningDate: z.string().datetime(),
   professionalProfileRef: z.string().optional(),
+  metadata: z.record(z.any()).optional(),
   reason: z.string().min(3)
 });
 export type CreateOperationalStaffRequest = z.infer<

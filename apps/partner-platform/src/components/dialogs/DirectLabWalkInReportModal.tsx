@@ -1,5 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { getVerifiedRoleProfile } from '../../utils/roleProfileResolver.js';
+import { ProfileUpdateRequiredAlertModal } from '../common/ProfileUpdateRequiredAlertModal.js';
+import { checkPartnerProfileStatus, type MissingProfileField } from '../../utils/partnerProfileGuard.js';
+import { clinicalInvestigationService, ClinicalCalculators } from '../../services/clinical-investigation-service.js';
+import {
+  MASTER_CLINICAL_TEST_LIBRARY,
+  CLINICAL_DEPARTMENTS,
+  resolveGenderSpecificParameter,
+  getMergedClinicalTestLibrary,
+  type ClinicalTestProfileDef
+} from '../../services/clinical-test-library.js';
+import { ClinicalTestLibraryDropdown } from '../common/ClinicalTestLibraryDropdown.js';
+import { ClinicalTestLibraryExplorerModal } from './ClinicalTestLibraryExplorerModal.js';
 
 export interface TestParameterItem {
   id: string;
@@ -105,42 +117,197 @@ export const DirectLabWalkInReportModal: React.FC<Props> = ({ isOpen, onClose })
   const [activeStep, setActiveStep] = useState<'INPUT' | 'PRINT_PREVIEW'>('INPUT');
 
   // Patient Demographic Form State
-  const [patientName, setPatientName] = useState('Ramesh Sharma');
-  const [patientAge, setPatientAge] = useState('38');
+  const [patientName, setPatientName] = useState('');
+  const [patientAge, setPatientAge] = useState('');
   const [patientGender, setPatientGender] = useState('Male');
-  const [patientPhone, setPatientPhone] = useState('+91 98765 43210');
-  const [patientAddress, setPatientAddress] = useState('Flat 402, Shivam Apts, MG Road, Mumbai');
-  const [referringDoctor, setReferringDoctor] = useState('Dr. Rajesh Kumar, MD (Internal Medicine)');
+  const [patientPhone, setPatientPhone] = useState('');
+  const [patientAddress, setPatientAddress] = useState('');
+  const [referringDoctor, setReferringDoctor] = useState(profile.doctorName ? `${profile.doctorName}` : 'Self / Direct Walk-In');
   const [sampleBarcode, setSampleBarcode] = useState(`SMP-${Math.floor(100000 + Math.random() * 900000)}`);
   const [patientMrn, setPatientMrn] = useState(`MRN-${Math.floor(10000 + Math.random() * 90000)}`);
+  const [orderId] = useState(() => `walkin-${Date.now()}`);
+  const [reportId] = useState(() => `rep-walkin-${Date.now()}`);
+  const [orderNumber] = useState(() => `ORD-WALK-${Date.now().toString().slice(-6)}`);
+  const [reportNumber] = useState(() => `REP-WALK-${Date.now().toString().slice(-6)}`);
 
   // Selected Test & Parameters
   const [selectedPresetKey, setSelectedPresetKey] = useState<string>('CBC');
   const [testTitle, setTestTitle] = useState(PRESET_TESTS['CBC']?.name || 'COMPLETE BLOOD COUNT');
   const [specimenType, setSpecimenType] = useState(PRESET_TESTS['CBC']?.specimen || 'EDTA Blood');
   const [departmentName, setDepartmentName] = useState(PRESET_TESTS['CBC']?.department || 'Hematology');
-  const [parameters, setParameters] = useState<TestParameterItem[]>(PRESET_TESTS['CBC']?.parameters || []);
+  const [parameters, setParameters] = useState<TestParameterItem[]>(() => {
+    const cbc = MASTER_CLINICAL_TEST_LIBRARY['CBC'];
+    if (cbc) {
+      return cbc.parameters.map((p) => {
+        const resolved = resolveGenderSpecificParameter(p, 'Male');
+        return {
+          id: p.id,
+          name: p.name,
+          value: resolved.value,
+          unit: p.unit,
+          referenceRange: resolved.referenceRange,
+          flag: resolved.flag
+        };
+      });
+    }
+    return PRESET_TESTS['CBC']?.parameters || [];
+  });
 
   // Lab Header Config
-  const labName = profile.entityLegalName.toUpperCase();
+  const labName = (profile.entityLegalName || 'DOC SEARCH CENTRAL PATHOLOGY LABORATORY').toUpperCase();
   const labTagline = profile.facilityTagline;
   const labAddress = profile.officialAddress;
   const nablCertNo = profile.nablCertificateNo;
   const pathologistName = profile.pathologistName;
   const pathologistRegNo = profile.pathologistRegNo;
-  const technicianName = 'Pooja Sharma, BMLT (Senior Technologist)';
+  const technicianName = profile.technicianName || 'Authorized Medical Lab Technologist';
+  const [isLibraryExplorerOpen, setIsLibraryExplorerOpen] = useState(false);
+  const [shortcutCategory, setShortcutCategory] = useState<string>('ALL');
+
+  const mergedLibrary = useMemo(() => getMergedClinicalTestLibrary(), [isLibraryExplorerOpen]);
+
+  const visibleShortcuts = useMemo(() => {
+    if (shortcutCategory === 'ALL') {
+      return [
+        'CBC',
+        'CBC_ESR',
+        'LIPID',
+        'GLUCOSE_PROFILE',
+        'LFT',
+        'KFT',
+        'THYROID_TOTAL',
+        'CARDIAC_MARKERS',
+        'ELECTROLYTES',
+        'VITAMIN_D_B12',
+        'IRON_PROFILE',
+        'FEVER_PANEL',
+        'DENGUE_SEROLOGY',
+        'TYPHOID_WIDAL',
+        'ARTHRITIS_PANEL',
+        'TUMOR_MALE',
+        'TUMOR_FEMALE',
+        'URINE_ROUTINE',
+        ...Object.keys(mergedLibrary).filter((k) => !MASTER_CLINICAL_TEST_LIBRARY[k])
+      ];
+    }
+    return Object.keys(mergedLibrary).filter(
+      (k) => mergedLibrary[k]?.category === shortcutCategory
+    );
+  }, [shortcutCategory, mergedLibrary]);
+
+  const [isProfileGuardAlertOpen, setIsProfileGuardAlertOpen] = useState(false);
+  const [profileMissingFields, setProfileMissingFields] = useState<MissingProfileField[]>([]);
 
   if (!isOpen) return null;
 
+  const handleSelectLibraryProfile = (profile: ClinicalTestProfileDef, currentGender?: string) => {
+    setSelectedPresetKey(profile.key);
+    setTestTitle(profile.name);
+    setSpecimenType(profile.specimen);
+    setDepartmentName(profile.department);
+    const effGender = currentGender || patientGender;
+    setParameters(profile.parameters.map((p) => {
+      const resolved = resolveGenderSpecificParameter(p, effGender);
+      return {
+        id: p.id,
+        name: p.name,
+        value: resolved.value,
+        unit: p.unit,
+        referenceRange: resolved.referenceRange,
+        flag: resolved.flag
+      };
+    }));
+  };
+
   const handleSelectPreset = (key: string) => {
     setSelectedPresetKey(key);
+    const libProfile = mergedLibrary[key];
+    if (libProfile) {
+      handleSelectLibraryProfile(libProfile, patientGender);
+      return;
+    }
     const preset = PRESET_TESTS[key];
     if (preset) {
       setTestTitle(preset.name);
       setSpecimenType(preset.specimen);
       setDepartmentName(preset.department);
-      setParameters(preset.parameters.map((p) => ({ ...p })));
+      setParameters(preset.parameters.map((p) => {
+        const mockDef = {
+          id: p.id,
+          code: p.name.slice(0, 6).toUpperCase(),
+          name: p.name,
+          unit: p.unit,
+          referenceRange: p.referenceRange,
+          defaultValue: p.value
+        };
+        const resolved = resolveGenderSpecificParameter(mockDef, patientGender);
+        return {
+          id: p.id,
+          name: p.name,
+          value: resolved.value,
+          unit: p.unit,
+          referenceRange: resolved.referenceRange,
+          flag: resolved.flag
+        };
+      }));
     }
+  };
+
+  const handleGenderChange = (newGender: string) => {
+    setPatientGender(newGender);
+    setParameters((prev) => {
+      const activeLib = MASTER_CLINICAL_TEST_LIBRARY[selectedPresetKey];
+      const updated = prev.map((param) => {
+        const libDef = activeLib?.parameters.find(
+          (lp) => lp.id === param.id || lp.name.toLowerCase() === param.name.toLowerCase() || lp.code.toLowerCase() === param.name.slice(0, 8).toLowerCase()
+        );
+        if (libDef) {
+          const resolved = resolveGenderSpecificParameter(libDef, newGender);
+          return {
+            ...param,
+            value: resolved.value,
+            referenceRange: resolved.referenceRange,
+            flag: resolved.flag
+          };
+        }
+        const mockDef = {
+          id: param.id,
+          code: param.name.slice(0, 6).toUpperCase(),
+          name: param.name,
+          unit: param.unit,
+          referenceRange: param.referenceRange,
+          defaultValue: param.value
+        };
+        const resolved = resolveGenderSpecificParameter(mockDef, newGender);
+        return {
+          ...param,
+          value: resolved.value,
+          referenceRange: resolved.referenceRange,
+          flag: resolved.flag
+        };
+      });
+
+      // Recalculate derived biomarkers if Creatinine exists
+      const creatinineParam = updated.find(p => p.name.toLowerCase().includes('creatinine'));
+      const egfrIndex = updated.findIndex(p => p.name.toLowerCase().includes('egfr'));
+      if (creatinineParam && egfrIndex >= 0) {
+        const crVal = parseFloat(creatinineParam.value);
+        const ageNum = parseInt(patientAge, 10) || 40;
+        const isFem = newGender.toLowerCase().includes('fem');
+        if (crVal > 0) {
+          const egfr = ClinicalCalculators.calculateEgfr(crVal, ageNum, isFem);
+          if (egfr && updated[egfrIndex]) {
+            updated[egfrIndex] = {
+              ...updated[egfrIndex]!,
+              value: String(egfr),
+              flag: egfr >= 90 ? 'NORMAL' : egfr >= 60 ? 'LOW' : 'CRITICAL'
+            };
+          }
+        }
+      }
+
+      return updated;
+    });
   };
 
   const handleUpdateParamValue = (index: number, val: string) => {
@@ -152,13 +319,28 @@ export const DirectLabWalkInReportModal: React.FC<Props> = ({ isOpen, onClose })
       const item: TestParameterItem = { ...target, value: val };
       const num = parseFloat(val);
       if (!isNaN(num) && item.referenceRange) {
-        const parts = item.referenceRange.split('-').map((s) => parseFloat(s.trim()));
-        const minVal = parts[0];
-        const maxVal = parts[1];
-        if (typeof minVal === 'number' && typeof maxVal === 'number' && !isNaN(minVal) && !isNaN(maxVal)) {
-          if (num < minVal) item.flag = 'LOW';
-          else if (num > maxVal) item.flag = 'HIGH';
-          else item.flag = 'NORMAL';
+        const range = item.referenceRange.trim();
+        if (range.startsWith('<')) {
+          const maxVal = parseFloat(range.replace('<', '').trim());
+          if (!isNaN(maxVal)) {
+            item.flag = num > maxVal ? 'HIGH' : 'NORMAL';
+          }
+        } else if (range.startsWith('>')) {
+          const minVal = parseFloat(range.replace('>', '').trim());
+          if (!isNaN(minVal)) {
+            item.flag = num < minVal ? 'LOW' : 'NORMAL';
+          }
+        } else {
+          const match = range.match(/([0-9.]+)\s*-\s*([0-9.]+)/);
+          if (match && match[1] && match[2]) {
+            const minVal = parseFloat(match[1]);
+            const maxVal = parseFloat(match[2]);
+            if (!isNaN(minVal) && !isNaN(maxVal)) {
+              if (num < minVal) item.flag = 'LOW';
+              else if (num > maxVal) item.flag = 'HIGH';
+              else item.flag = 'NORMAL';
+            }
+          }
         }
       }
       updated[index] = item;
@@ -178,7 +360,215 @@ export const DirectLabWalkInReportModal: React.FC<Props> = ({ isOpen, onClose })
     setParameters(parameters.filter((_, i) => i !== index));
   };
 
+  const handleAutoCalculate = () => {
+    setParameters((prev) => {
+      const updated = [...prev];
+
+      const getVal = (keyword: string): number => {
+        const found = updated.find(p => p.name.toLowerCase().includes(keyword.toLowerCase()));
+        return found ? parseFloat(found.value) || 0 : 0;
+      };
+
+      const upsertParam = (name: string, value: string, unit: string, referenceRange: string) => {
+        const idx = updated.findIndex(p => p.name.toLowerCase().includes(name.toLowerCase()));
+        if (idx >= 0 && updated[idx]) {
+          const existing = updated[idx]!;
+          const num = parseFloat(value);
+          let flag: 'NORMAL' | 'HIGH' | 'LOW' | 'CRITICAL' = 'NORMAL';
+          const match = referenceRange.match(/([0-9.]+)\s*-\s*([0-9.]+)/);
+          if (match && match[1] && match[2] && !isNaN(num)) {
+            const min = parseFloat(match[1]);
+            const max = parseFloat(match[2]);
+            if (num < min) flag = 'LOW';
+            else if (num > max) flag = 'HIGH';
+          }
+          updated[idx] = { ...existing, value, flag };
+        } else {
+          updated.push({
+            id: String(updated.length + 1),
+            name,
+            value,
+            unit,
+            referenceRange,
+            flag: 'NORMAL'
+          });
+        }
+      };
+
+      // 1. CBC Indices (MCV, MCH, MCHC)
+      const hb = getVal('Hemoglobin') || getVal('Hb');
+      const rbc = getVal('RBC') || getVal('Red Blood');
+      const pcv = getVal('PCV') || getVal('Hematocrit');
+      if (hb > 0 && rbc > 0 && pcv > 0) {
+        const cbcIndices = ClinicalCalculators.calculateCbcIndices(hb, rbc, pcv);
+        if (cbcIndices) {
+          upsertParam('MCV (Mean Corpuscular Volume)', String(cbcIndices.mcv), 'fL', '80.0 - 100.0');
+          upsertParam('MCH (Mean Corpuscular Hemoglobin)', String(cbcIndices.mch), 'pg', '27.0 - 33.0');
+          upsertParam('MCHC (Mean Corpuscular Hb Conc)', String(cbcIndices.mchc), 'g/dL', '32.0 - 36.0');
+        }
+      }
+
+      // 2. Lipid Profile Fractions (VLDL & LDL via Friedewald)
+      const totalChol = getVal('Total Cholesterol') || getVal('Cholesterol');
+      const trig = getVal('Triglycerides') || getVal('Trig');
+      const hdl = getVal('HDL');
+      if (totalChol > 0 && trig > 0 && hdl > 0) {
+        const lipidFractions = ClinicalCalculators.calculateLipidFractions(totalChol, trig, hdl);
+        if (lipidFractions) {
+          upsertParam('VLDL Cholesterol', String(lipidFractions.vldl), 'mg/dL', '< 30');
+          upsertParam('LDL Cholesterol (Calculated)', String(lipidFractions.ldl), 'mg/dL', '< 100 (Optimal)');
+        }
+      }
+
+      // 3. Diabetes: Estimated Average Glucose (eAG) from HbA1c
+      const hba1c = getVal('HbA1c') || getVal('Glycated');
+      if (hba1c > 0) {
+        const eag = ClinicalCalculators.calculateEag(hba1c);
+        if (eag) {
+          upsertParam('Estimated Average Glucose (eAG)', String(eag), 'mg/dL', '90 - 120');
+        }
+      }
+
+      // 4. Renal: eGFR from Creatinine & Age
+      const creatinine = getVal('Creatinine');
+      const ageNum = parseInt(patientAge, 10) || 40;
+      const isFemale = patientGender.toLowerCase().includes('fem');
+      if (creatinine > 0) {
+        const egfr = ClinicalCalculators.calculateEgfr(creatinine, ageNum, isFemale);
+        if (egfr) {
+          upsertParam('eGFR (CKD-EPI / Cockcroft-Gault)', String(egfr), 'mL/min/1.73m²', '> 90 (Normal)');
+        }
+      }
+
+      return updated;
+    });
+  };
+
+  const handleWhatsAppDispatch = () => {
+    persistWalkInReport();
+    const rawPhone = patientPhone.replace(/[^0-9]/g, '');
+    const phoneWithCode = rawPhone.length === 10 ? `91${rawPhone}` : rawPhone;
+    const abnormalItems = parameters.filter(p => p.flag !== 'NORMAL');
+    const abnormalSummary = abnormalItems.length > 0 
+      ? `⚠️ Clinical Findings: ${abnormalItems.map(p => `${p.name}: ${p.value} ${p.unit} (${p.flag})`).join(', ')}`
+      : '✅ All investigation parameters within normal biological reference ranges.';
+
+    const message = encodeURIComponent(
+      `*${labName} - DIAGNOSTIC REPORT ALERT*\n\n` +
+      `Dear *${patientName}*,\n` +
+      `Your lab investigation for *${testTitle}* has been verified and released.\n\n` +
+      `📋 *Report ID:* ${reportNumber}\n` +
+      `🔬 *Sample Barcode:* ${sampleBarcode}\n` +
+      `👨‍⚕️ *Consultant Pathologist:* ${pathologistName}\n` +
+      `${abnormalSummary}\n\n` +
+      `🔒 *NABL ISO 15189:2022 Digital Verification Link:*\n` +
+      `${window.location.origin}/api/v1/partner/lab/verify-report/${reportNumber}\n\n` +
+      `_This is an authentic verified laboratory document._`
+    );
+    window.open(`https://api.whatsapp.com/send?phone=${phoneWithCode}&text=${message}`, '_blank');
+  };
+
+  const persistWalkInReport = () => {
+    try {
+      const results = parameters.map((p, idx) => ({
+        id: `res-${orderId}-${idx}`,
+        tenantId: '22222222-2222-4222-8222-222222222222',
+        partnerId: '00000000-0000-0000-0000-000000000001',
+        organizationId: '00000000-0000-0000-0000-000000000001',
+        orderId,
+        patientId: patientMrn || `pat-${Date.now()}`,
+        parameterId: p.id,
+        parameterCode: p.name.slice(0, 8).toUpperCase(),
+        parameterName: p.name,
+        testCategory: departmentName || 'CLINICAL_CHEMISTRY',
+        resultValue: p.value,
+        numericValue: parseFloat(p.value) || undefined,
+        unit: p.unit,
+        referenceRange: p.referenceRange,
+        abnormalFlag: (p.flag === 'NORMAL' ? 'NORMAL' : p.flag === 'HIGH' ? 'HIGH' : p.flag === 'LOW' ? 'LOW' : 'CRITICAL') as any,
+        isCritical: p.flag === 'CRITICAL',
+        resultStatus: 'VERIFIED' as const,
+        version: 1,
+        verifiedAt: new Date().toISOString(),
+        verifiedBy: pathologistName,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }));
+
+      const report = {
+        id: reportId,
+        tenantId: '22222222-2222-4222-8222-222222222222',
+        partnerId: '00000000-0000-0000-0000-000000000001',
+        organizationId: '00000000-0000-0000-0000-000000000001',
+        orderId,
+        patientId: patientMrn || `pat-${Date.now()}`,
+        reportNumber,
+        reportTitle: `Diagnostic Report: ${testTitle}`,
+        clinicalFindings: results.map((r) => `${r.parameterName}: ${r.resultValue} ${r.unit}`).join(' | '),
+        impression: 'Diagnostic findings verified by pathologist. Correlate clinically.',
+        reportingClinician: technicianName,
+        verifyingPathologist: pathologistName,
+        reportStatus: 'FINAL' as const,
+        reportVersion: 1,
+        finalizedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      const newOrder = {
+        id: orderId,
+        tenantId: '22222222-2222-4222-8222-222222222222',
+        partnerId: '00000000-0000-0000-0000-000000000001',
+        organizationId: '00000000-0000-0000-0000-000000000001',
+        organizationName: labName,
+        orderNumber,
+        patientId: patientMrn || `pat-${Date.now()}`,
+        patientName,
+        patientMrn: patientMrn || `UHID-${Date.now().toString().slice(-6)}`,
+        patientDob: '1990-01-01',
+        patientGender: patientGender.toUpperCase() as any,
+        encounterId: '00000000-0000-0000-0000-000000000001',
+        encounterNumber: `ENC-WALK-${Date.now().toString().slice(-4)}`,
+        orderingDoctorId: '00000000-0000-0000-0000-000000000001',
+        orderingDoctorName: referringDoctor || 'Self / Direct Walk-In',
+        orderingDoctorSpecialty: 'Outpatient Diagnostic',
+        investigationId: selectedPresetKey ? `inv-${selectedPresetKey}` : 'inv-walkin',
+        investigationCode: selectedPresetKey || 'WALK-IN-TEST',
+        investigationName: testTitle,
+        investigationCategory: departmentName || 'CLINICAL_CHEMISTRY',
+        priority: 'ROUTINE' as const,
+        clinicalIndication: `Direct Lab Walk-In: ${testTitle}`,
+        specimenType: specimenType || 'WHOLE_BLOOD',
+        fastingConfirmed: true,
+        status: 'VERIFIED' as const,
+        isAbnormal: results.some((r) => r.abnormalFlag !== 'NORMAL'),
+        isCritical: results.some((r) => r.isCritical),
+        specimens: [],
+        results: results as any,
+        report,
+        orderedAt: new Date().toISOString(),
+        verifiedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        metadata: { sampleBarcode, patientPhone, patientAddress }
+      };
+
+      clinicalInvestigationService.registerDirectWalkInOrder(newOrder as any);
+    } catch (err) {
+      console.error('Failed to persist walk-in report:', err);
+    }
+  };
+
+
+
   const handlePrint = () => {
+    const status = checkPartnerProfileStatus();
+    if (!status.isUpdated) {
+      setProfileMissingFields(status.missingFields);
+      setIsProfileGuardAlertOpen(true);
+      return;
+    }
+    persistWalkInReport();
     window.print();
   };
 
@@ -186,79 +576,147 @@ export const DirectLabWalkInReportModal: React.FC<Props> = ({ isOpen, onClose })
     <div style={{
       position: 'fixed',
       inset: 0,
-      backgroundColor: 'rgba(7, 12, 22, 0.88)',
-      backdropFilter: 'blur(8px)',
+      width: '100vw',
+      height: '100vh',
+      backgroundColor: '#0A0F1D',
       zIndex: 11000,
       display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '16px'
+      flexDirection: 'column',
+      padding: 0,
+      margin: 0,
+      overflow: 'hidden',
+      fontFamily: 'Inter, system-ui, -apple-system, sans-serif'
     }}>
+      <style>{`
+        @media print {
+          body * {
+            visibility: hidden !important;
+          }
+          #printable-pathology-sheet, #printable-pathology-sheet * {
+            visibility: visible !important;
+          }
+          #printable-pathology-sheet {
+            position: fixed !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 24px !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+          }
+        }
+      `}</style>
       <div style={{
-        backgroundColor: '#0F172A',
+        backgroundColor: '#0A0F1D',
         color: '#F8FAFC',
-        border: '1.5px solid rgba(6, 182, 212, 0.4)',
-        borderRadius: '16px',
         width: '100%',
-        maxWidth: '960px',
-        maxHeight: '95vh',
+        height: '100%',
+        maxWidth: '100%',
+        maxHeight: '100%',
         display: 'flex',
         flexDirection: 'column',
-        boxShadow: '0 25px 70px rgba(0,0,0,0.95)',
+        borderRadius: 0,
+        border: 'none',
+        boxShadow: 'none',
         overflow: 'hidden'
       }}>
-        {/* Header Bar */}
+        {/* Full-Page Workstation Header Bar */}
         <div style={{
           backgroundColor: '#0B132B',
-          padding: '14px 20px',
-          borderBottom: '1px solid rgba(255,255,255,0.1)',
+          padding: '12px 24px',
+          borderBottom: '1.5px solid rgba(56, 189, 248, 0.25)',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           flexWrap: 'wrap',
-          gap: '10px'
+          gap: '12px',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.4)',
+          flexShrink: 0
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '1.4rem' }}>🩸</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div style={{
+              width: '42px',
+              height: '42px',
+              borderRadius: '10px',
+              backgroundColor: 'rgba(239, 68, 68, 0.15)',
+              border: '1.5px solid rgba(239, 68, 68, 0.4)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '1.4rem'
+            }}>
+              🩸
+            </div>
             <div>
-              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 900, color: '#F8FAFC' }}>
-                Walk-In Patient Blood Test, Result Entry & Print Desk
-              </h3>
-              <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
-                Sample Barcode: <strong style={{ color: '#38BDF8' }}>{sampleBarcode}</strong> • {activeStep === 'INPUT' ? '📝 Step 1: Enter Patient & Test Results' : '🖨️ Step 2: Print Official NABL Diagnostic Report'}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 900, color: '#F8FAFC', letterSpacing: '-0.01em' }}>
+                  Walk-In Diagnostic & Blood Test Workstation
+                </h3>
+                <span style={{
+                  fontSize: '0.7rem',
+                  fontWeight: 800,
+                  padding: '3px 8px',
+                  borderRadius: '12px',
+                  backgroundColor: activeStep === 'INPUT' ? 'rgba(56, 189, 248, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+                  color: activeStep === 'INPUT' ? '#38BDF8' : '#34D399',
+                  border: activeStep === 'INPUT' ? '1px solid rgba(56, 189, 248, 0.3)' : '1px solid rgba(16, 185, 129, 0.3)'
+                }}>
+                  {activeStep === 'INPUT' ? '📝 Step 1: Result Entry' : '🖨️ Step 2: NABL Print Preview'}
+                </span>
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '2px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <span>Sample Barcode: <strong style={{ color: '#38BDF8', fontFamily: 'monospace' }}>{sampleBarcode}</strong></span>
+                <span>•</span>
+                <span>Active Specimen: <strong style={{ color: '#E2E8F0' }}>{specimenType}</strong></span>
+                <span>•</span>
+                <span>Department: <strong style={{ color: '#A5B4FC' }}>{departmentName}</strong></span>
+              </div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
             {activeStep === 'INPUT' ? (
               <button
                 type="button"
-                onClick={() => setActiveStep('PRINT_PREVIEW')}
+                onClick={() => {
+                  persistWalkInReport();
+                  setActiveStep('PRINT_PREVIEW');
+                }}
+                className="ds-spring-press"
                 style={{
-                  backgroundColor: '#06B6D4',
-                  color: '#070C16',
+                  backgroundColor: '#0284C7',
+                  color: '#FFFFFF',
                   border: 'none',
                   borderRadius: '8px',
-                  padding: '8px 18px',
-                  fontWeight: 900,
-                  fontSize: '0.8125rem',
-                  cursor: 'pointer'
+                  padding: '9px 20px',
+                  fontWeight: 800,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  boxShadow: '0 4px 12px rgba(2, 132, 199, 0.4)',
+                  transition: 'all 0.15s ease'
                 }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#0369A1')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#0284C7')}
               >
-                👁️ Generate & Print Report →
+                <span>👁️ Generate & Print Report →</span>
               </button>
             ) : (
               <>
                 <button
                   type="button"
                   onClick={() => setActiveStep('INPUT')}
+                  className="ds-spring-press"
                   style={{
-                    backgroundColor: 'rgba(255,255,255,0.1)',
+                    backgroundColor: 'rgba(255,255,255,0.08)',
                     color: '#E2E8F0',
-                    border: '1px solid rgba(255,255,255,0.2)',
+                    border: '1px solid rgba(255,255,255,0.18)',
                     borderRadius: '8px',
-                    padding: '8px 14px',
+                    padding: '8px 16px',
                     fontWeight: 700,
                     fontSize: '0.8125rem',
                     cursor: 'pointer'
@@ -269,18 +727,45 @@ export const DirectLabWalkInReportModal: React.FC<Props> = ({ isOpen, onClose })
                 <button
                   type="button"
                   onClick={handlePrint}
+                  className="ds-spring-press"
                   style={{
                     backgroundColor: '#10B981',
                     color: '#070C16',
                     border: 'none',
                     borderRadius: '8px',
-                    padding: '8px 18px',
+                    padding: '8px 20px',
                     fontWeight: 900,
-                    fontSize: '0.8125rem',
-                    cursor: 'pointer'
+                    fontSize: '0.85rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)'
                   }}
                 >
-                  🖨️ Print Lab Report
+                  <span>🖨️ Print Lab Report</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleWhatsAppDispatch}
+                  className="ds-spring-press"
+                  style={{
+                    backgroundColor: '#25D366',
+                    color: '#070C16',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '8px 18px',
+                    fontWeight: 900,
+                    fontSize: '0.85rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: '0 4px 14px rgba(37, 211, 102, 0.4)'
+                  }}
+                  title="Share digital report & verification link directly via WhatsApp"
+                >
+                  <span>💬 WhatsApp</span>
                 </button>
               </>
             )}
@@ -288,15 +773,25 @@ export const DirectLabWalkInReportModal: React.FC<Props> = ({ isOpen, onClose })
             <button
               type="button"
               onClick={onClose}
+              className="ds-spring-press"
               style={{
-                backgroundColor: 'rgba(255,255,255,0.08)',
-                color: '#CBD5E1',
-                border: 'none',
+                backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                color: '#F87171',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
                 borderRadius: '8px',
-                padding: '8px 14px',
+                padding: '8px 16px',
                 fontWeight: 700,
                 fontSize: '0.8125rem',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.3)';
+                e.currentTarget.style.borderColor = '#EF4444';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';
+                e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)';
               }}
             >
               ✕ Close
@@ -306,32 +801,132 @@ export const DirectLabWalkInReportModal: React.FC<Props> = ({ isOpen, onClose })
 
         {/* STEP 1: PATIENT DEMOGRAPHICS & RESULT ENTRY FORM */}
         {activeStep === 'INPUT' && (
-          <div style={{ padding: '20px', overflowY: 'auto', flex: 1 }}>
-            {/* Quick Test Presets Selector */}
-            <div style={{ marginBottom: '16px', backgroundColor: '#1E293B', padding: '12px 16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#38BDF8', display: 'block', marginBottom: '8px', textTransform: 'uppercase' }}>
-                ⚡ SELECT TEST PROFILE / PANEL:
-              </span>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {Object.keys(PRESET_TESTS).map((k) => (
+          <div style={{ padding: '24px 32px', overflowY: 'auto', flex: 1, backgroundColor: '#0B1120' }}>
+            <div style={{ maxWidth: '1440px', margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {/* Quick Test Presets & Master Library Dropdown Selector */}
+            <div style={{ marginBottom: '16px', backgroundColor: '#1E293B', padding: '14px 16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#38BDF8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  ⚡ SELECT TEST INVESTIGATION FROM CLINICAL LIBRARY:
+                </span>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                   <button
-                    key={k}
                     type="button"
-                    onClick={() => handleSelectPreset(k)}
+                    onClick={() => setIsLibraryExplorerOpen(true)}
                     style={{
-                      backgroundColor: selectedPresetKey === k ? '#06B6D4' : 'rgba(255,255,255,0.06)',
-                      color: selectedPresetKey === k ? '#070C16' : '#E2E8F0',
-                      border: '1px solid rgba(255,255,255,0.15)',
+                      backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                      color: '#38BDF8',
+                      border: '1px solid #0284C7',
                       borderRadius: '6px',
-                      padding: '6px 12px',
-                      fontWeight: 700,
-                      fontSize: '0.75rem',
-                      cursor: 'pointer'
+                      padding: '5px 12px',
+                      fontSize: '0.6875rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '5px'
                     }}
+                    title="Open full repository of 55+ clinical blood tests, biological reference intervals and critical panic values"
                   >
-                    {k}
+                    📖 Browse Full Test Library & Parameters
                   </button>
-                ))}
+                  <button
+                    type="button"
+                    onClick={handleAutoCalculate}
+                    style={{
+                      backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                      color: '#22D3EE',
+                      border: '1px solid #06B6D4',
+                      borderRadius: '6px',
+                      padding: '5px 12px',
+                      fontSize: '0.6875rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                    title="Auto-calculate derived clinical parameters (MCV/MCH/MCHC for CBC, VLDL/LDL for Lipid, eAG for Diabetes, eGFR for Renal)"
+                  >
+                    ⚡ Auto-Calculate Derived Biomarkers
+                  </button>
+                </div>
+              </div>
+
+              {/* Master Categorized Dropdown Selector */}
+              <div style={{ marginBottom: '12px' }}>
+                <ClinicalTestLibraryDropdown
+                  selectedKey={selectedPresetKey}
+                  onSelectTest={handleSelectLibraryProfile}
+                />
+              </div>
+
+              {/* Category Filter Tabs */}
+              <div style={{ display: 'flex', gap: '4px', overflowX: 'auto', marginBottom: '8px', paddingBottom: '4px' }}>
+                {CLINICAL_DEPARTMENTS.map((dept) => {
+                  const isSelected = shortcutCategory === dept.id;
+                  return (
+                    <button
+                      key={dept.id}
+                      type="button"
+                      onClick={() => setShortcutCategory(dept.id)}
+                      style={{
+                        whiteSpace: 'nowrap',
+                        backgroundColor: isSelected ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255,255,255,0.04)',
+                        color: isSelected ? '#38BDF8' : '#94A3B8',
+                        border: isSelected ? '1px solid #38BDF8' : '1px solid rgba(255,255,255,0.08)',
+                        borderRadius: '20px',
+                        padding: '3px 10px',
+                        fontSize: '0.6875rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      {dept.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Quick Preset Shortcut Pills for Selected Category */}
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.6875rem', color: '#64748B', fontWeight: 700, marginRight: '2px' }}>
+                  {shortcutCategory === 'ALL' ? 'Popular Blood Tests:' : 'Category Tests:'}
+                </span>
+                {visibleShortcuts.map((k) => {
+                  const testDef = MASTER_CLINICAL_TEST_LIBRARY[k];
+                  if (!testDef) return null;
+                  const label = testDef.shortName;
+                  const tubeIcon = testDef.tubeLabel.split(' ')[0];
+                  const isCurrent = selectedPresetKey === k;
+                  return (
+                    <button
+                      key={k}
+                      type="button"
+                      onClick={() => handleSelectPreset(k)}
+                      style={{
+                        backgroundColor: isCurrent ? '#06B6D4' : 'rgba(255,255,255,0.06)',
+                        color: isCurrent ? '#070C16' : '#E2E8F0',
+                        border: isCurrent ? '1px solid #06B6D4' : '1px solid rgba(255,255,255,0.12)',
+                        borderRadius: '6px',
+                        padding: '4px 10px',
+                        fontWeight: 700,
+                        fontSize: '0.6875rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        transition: 'all 0.15s ease'
+                      }}
+                      title={`${testDef.name} (${testDef.parameters.length} Parameters) - ${testDef.specimen}`}
+                    >
+                      <span>{tubeIcon}</span>
+                      <span>{label}</span>
+                      <span style={{ fontSize: '0.6rem', opacity: 0.75 }}>({testDef.parameters.length}p)</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -348,6 +943,7 @@ export const DirectLabWalkInReportModal: React.FC<Props> = ({ isOpen, onClose })
                     type="text"
                     value={patientName}
                     onChange={(e) => setPatientName(e.target.value)}
+                    placeholder="Enter Patient Full Name (e.g. Rameshwar Kumar)"
                     style={{ width: '100%', backgroundColor: '#0F172A', border: '1px solid #475569', borderRadius: '6px', padding: '6px 10px', color: '#FFF' }}
                   />
                 </div>
@@ -356,20 +952,24 @@ export const DirectLabWalkInReportModal: React.FC<Props> = ({ isOpen, onClose })
                   <div style={{ display: 'flex', gap: '6px' }}>
                     <input
                       type="text"
-                      placeholder="Age"
+                      placeholder="Age (Yrs)"
                       value={patientAge}
                       onChange={(e) => setPatientAge(e.target.value)}
                       style={{ width: '40%', backgroundColor: '#0F172A', border: '1px solid #475569', borderRadius: '6px', padding: '6px 8px', color: '#FFF' }}
                     />
                     <select
                       value={patientGender}
-                      onChange={(e) => setPatientGender(e.target.value)}
-                      style={{ width: '60%', backgroundColor: '#0F172A', border: '1px solid #475569', borderRadius: '6px', padding: '6px 8px', color: '#FFF' }}
+                      onChange={(e) => handleGenderChange(e.target.value)}
+                      style={{ width: '60%', backgroundColor: '#0F172A', border: '1.5px solid #06B6D4', borderRadius: '6px', padding: '6px 8px', color: '#38BDF8', fontWeight: 800 }}
                     >
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                      <option value="Other">Other</option>
+                      <option value="Male">♂ Male</option>
+                      <option value="Female">♀ Female</option>
+                      <option value="Other">⚧ Other</option>
                     </select>
+                  </div>
+                  <div style={{ fontSize: '0.6875rem', color: '#38BDF8', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span>⚡</span>
+                    <span>Auto-adapts values & ranges for <strong>{patientGender}</strong></span>
                   </div>
                 </div>
                 <div>
@@ -378,6 +978,7 @@ export const DirectLabWalkInReportModal: React.FC<Props> = ({ isOpen, onClose })
                     type="text"
                     value={patientPhone}
                     onChange={(e) => setPatientPhone(e.target.value)}
+                    placeholder="+91 Mobile Number"
                     style={{ width: '100%', backgroundColor: '#0F172A', border: '1px solid #475569', borderRadius: '6px', padding: '6px 10px', color: '#FFF' }}
                   />
                 </div>
@@ -424,10 +1025,23 @@ export const DirectLabWalkInReportModal: React.FC<Props> = ({ isOpen, onClose })
 
             {/* Test Results Parameter Entry Table */}
             <div style={{ backgroundColor: '#1E293B', padding: '16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#F8FAFC' }}>
-                  🧪 Parameter Results & Biological Reference Ranges:
-                </span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#F8FAFC' }}>
+                    🧪 Parameter Results & Biological Reference Ranges:
+                  </span>
+                  <span style={{
+                    fontSize: '0.6875rem',
+                    fontWeight: 800,
+                    backgroundColor: patientGender === 'Female' ? 'rgba(236, 72, 153, 0.2)' : 'rgba(56, 189, 248, 0.2)',
+                    color: patientGender === 'Female' ? '#F472B6' : '#38BDF8',
+                    border: `1px solid ${patientGender === 'Female' ? '#EC4899' : '#0284C7'}`,
+                    borderRadius: '4px',
+                    padding: '2px 8px'
+                  }}>
+                    {patientGender === 'Female' ? '♀ FEMALE NORMS ACTIVE' : '♂ MALE NORMS ACTIVE'}
+                  </span>
+                </div>
                 <button
                   type="button"
                   onClick={handleAddCustomParam}
@@ -444,7 +1058,7 @@ export const DirectLabWalkInReportModal: React.FC<Props> = ({ isOpen, onClose })
                     <th style={{ padding: '8px', width: '35%' }}>PARAMETER NAME</th>
                     <th style={{ padding: '8px', width: '18%' }}>OBSERVED VALUE</th>
                     <th style={{ padding: '8px', width: '12%' }}>UNITS</th>
-                    <th style={{ padding: '8px', width: '23%' }}>NORMAL RANGE</th>
+                    <th style={{ padding: '8px', width: '23%' }}>NORMAL RANGE ({patientGender.toUpperCase()})</th>
                     <th style={{ padding: '8px', width: '8%' }}>FLAG</th>
                     <th style={{ padding: '8px', textAlign: 'center' }}>✕</th>
                   </tr>
@@ -547,20 +1161,25 @@ export const DirectLabWalkInReportModal: React.FC<Props> = ({ isOpen, onClose })
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           </div>
         )}
 
         {/* STEP 2: PRINTABLE OFFICIAL NABL REPORT VIEW */}
         {activeStep === 'PRINT_PREVIEW' && (
-          <div style={{ padding: '20px', overflowY: 'auto', flex: 1, backgroundColor: '#070C16' }}>
+          <div style={{ padding: '36px 20px', overflowY: 'auto', flex: 1, backgroundColor: '#070C16', display: 'flex', justifyContent: 'center' }}>
             <div id="printable-pathology-sheet" style={{
               backgroundColor: '#FFFFFF',
               color: '#0F172A',
-              padding: '36px 40px',
+              padding: '40px 48px',
               borderRadius: '8px',
-              boxShadow: '0 8px 30px rgba(0,0,0,0.5)',
-              fontFamily: 'Inter, system-ui, -apple-system, sans-serif'
+              boxShadow: '0 12px 40px rgba(0,0,0,0.65)',
+              fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+              width: '100%',
+              maxWidth: '920px',
+              minHeight: '1050px',
+              boxSizing: 'border-box'
             }}>
               {/* Lab Header & Accreditation */}
               <div style={{ borderBottom: '2.5px solid #0284C7', paddingBottom: '14px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -597,6 +1216,7 @@ export const DirectLabWalkInReportModal: React.FC<Props> = ({ isOpen, onClose })
                 </div>
 
                 <div>
+                  <div><span style={{ color: '#64748B' }}>Report ID:</span> <strong style={{ fontFamily: 'monospace', color: '#0F172A' }}>{reportNumber}</strong></div>
                   <div><span style={{ color: '#64748B' }}>Sample Barcode:</span> <strong style={{ fontFamily: 'monospace', color: '#0369A1' }}>{sampleBarcode}</strong></div>
                   <div><span style={{ color: '#64748B' }}>Referring Doctor:</span> <strong>{referringDoctor}</strong></div>
                   <div><span style={{ color: '#64748B' }}>Specimen / Matrix:</span> <strong>{specimenType}</strong></div>
@@ -626,7 +1246,7 @@ export const DirectLabWalkInReportModal: React.FC<Props> = ({ isOpen, onClose })
                     <th style={{ padding: '8px 10px' }}>TEST PARAMETER</th>
                     <th style={{ textAlign: 'center', padding: '8px 10px' }}>OBSERVED VALUE</th>
                     <th style={{ textAlign: 'center', padding: '8px 10px' }}>UNITS</th>
-                    <th style={{ textAlign: 'center', padding: '8px 10px' }}>BIOLOGICAL REFERENCE INTERVAL</th>
+                    <th style={{ textAlign: 'center', padding: '8px 10px' }}>BIOLOGICAL REFERENCE INTERVAL ({patientGender.toUpperCase()})</th>
                     <th style={{ textAlign: 'center', padding: '8px 10px' }}>FLAG</th>
                   </tr>
                 </thead>
@@ -677,6 +1297,9 @@ export const DirectLabWalkInReportModal: React.FC<Props> = ({ isOpen, onClose })
                   <div style={{ fontSize: '0.625rem', color: '#64748B' }}>
                     QR Tamper Seal (SHA-256): <span style={{ fontFamily: 'monospace' }}>{profile.sha256Hash.substring(0, 16)}...</span>
                   </div>
+                  <div style={{ fontSize: '0.625rem', color: '#0284C7', marginTop: '2px', fontWeight: 600 }}>
+                    Verify at: /verify-report/{reportNumber}
+                  </div>
                   <div style={{ fontSize: '0.625rem', color: '#16A34A', fontWeight: 700, marginTop: '2px' }}>
                     ✓ Authenticated Clinical Pathology Finding
                   </div>
@@ -698,6 +1321,22 @@ export const DirectLabWalkInReportModal: React.FC<Props> = ({ isOpen, onClose })
           </div>
         )}
       </div>
+
+      {/* Full Clinical Test Repository Explorer Modal */}
+      {isLibraryExplorerOpen && (
+        <ClinicalTestLibraryExplorerModal
+          isOpen={isLibraryExplorerOpen}
+          onClose={() => setIsLibraryExplorerOpen(false)}
+          onSelectForWalkIn={handleSelectLibraryProfile}
+        />
+      )}
+
+      <ProfileUpdateRequiredAlertModal
+        isOpen={isProfileGuardAlertOpen}
+        onClose={() => setIsProfileGuardAlertOpen(false)}
+        blockedActionName="Walk-in Diagnostic Report Print"
+        missingFields={profileMissingFields}
+      />
     </div>
   );
 };

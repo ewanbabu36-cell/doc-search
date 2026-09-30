@@ -1,0 +1,112 @@
+{
+  "timestamp": "2026-09-29T06:52:53.827Z",
+  "auditCategory": "CATEGORY 19: CONFIGURATION / ENVIRONMENT ERROR",
+  "status": "CERTIFIED_VERIFIED",
+  "summary": {
+    "totalInvariants": 9,
+    "passed": 9,
+    "failed": 0,
+    "passRate": "100.0%"
+  },
+  "invariants": [
+    {
+      "id": "ENV-VERIF-001",
+      "name": "Core Environment Variables Defined & Strongly Typed",
+      "status": "PASSED",
+      "details": "All 14 mandatory environment variables verified in Zod schema definition",
+      "metrics": {
+        "requiredKeysCount": 14
+      }
+    },
+    {
+      "id": "ENV-VERIF-002",
+      "name": "Production Fail-Closed Boot Security Enforcement",
+      "status": "PASSED",
+      "details": "Strict fail-closed boot aborts startup if weak JWT secret, dev key, or unapproved localhost DB is supplied in production",
+      "metrics": {
+        "hasSecretRejection": true,
+        "hasKeyRejection": true,
+        "hasLocalDbRejection": true
+      }
+    },
+    {
+      "id": "ENV-VERIF-003",
+      "name": "Database Fail-Closed Policy (Zero pg-mem Fallback in Production/Staging)",
+      "status": "PASSED",
+      "details": "Client explicitly throws FATAL_DATABASE_ERROR if PostgreSQL is unreachable in production or staging (silent in-memory fallback strictly blocked)",
+      "metrics": {
+        "blocksPgMemInProd": true
+      }
+    },
+    {
+      "id": "ENV-VERIF-004",
+      "name": "CORS Security & Environment Scoped Origin Verification",
+      "status": "PASSED",
+      "details": "Localhost CORS origins strictly gated by NODE_ENV !== 'production', live gateway preflight status: 204",
+      "metrics": {
+        "protectsLocalhostInProd": true,
+        "preflightStatus": 204
+      }
+    },
+    {
+      "id": "ENV-VERIF-005",
+      "name": "Frontend Dynamic API URL Support (VITE_API_URL)",
+      "status": "PASSED",
+      "details": "All 3 frontends (partner-platform, company-platform, landing-page) dynamically resolve API base URL from VITE_API_URL with safe fallback",
+      "metrics": {
+        "partnerUsesEnv": true,
+        "companyUsesEnv": true,
+        "landingUsesEnv": true
+      }
+    },
+    {
+      "id": "ENV-VERIF-006",
+      "name": "Port & Vite Dev Server Proxy Mapping Consistency",
+      "status": "PASSED",
+      "details": "Partner (5173), Company (5174), and Landing (5175) mapped consistently to API Gateway (4000)",
+      "metrics": {
+        "partnerPortOk": true,
+        "companyPortOk": true,
+        "landingPortOk": true
+      }
+    },
+    {
+      "id": "ENV-VERIF-007",
+      "name": "Nginx Reverse Proxy Upstream & Static Asset Paths Integrity",
+      "status": "PASSED",
+      "details": "deployment/nginx.conf proxies /api to docsearch-api:4000 without path stripping and resolves SPA static dist/bundle",
+      "metrics": {
+        "nginxNoTrailingSlash": true,
+        "nginxDistBundle": true
+      }
+    },
+    {
+      "id": "ENV-VERIF-008",
+      "name": "Docker Compose Production Cryptography & Health Dependencies",
+      "status": "PASSED",
+      "details": "docker-compose.yml specifies ENCRYPTION_KEY, JWT_SECRET, and healthcheck dependencies across all services",
+      "metrics": {
+        "rootComposeHasKey": true,
+        "rootComposeHasSec": true,
+        "rootComposeHealthyDeps": true
+      }
+    },
+    {
+      "id": "ENV-VERIF-009",
+      "name": "Health Probe & Database Mode Verification",
+      "status": "PASSED",
+      "details": "API Gateway health check returns 200 OK with database mode 'EXTERNAL_POSTGRES' and 442 tables ready",
+      "metrics": {
+        "status": "healthy",
+        "service": "docsearch-api-gateway",
+        "database": {
+          "ready": true,
+          "mode": "EXTERNAL_POSTGRES",
+          "tables": 442
+        },
+        "uptime": 532.8710858,
+        "timestamp": "2026-09-29T06:52:53.823Z"
+      }
+    }
+  ]
+}

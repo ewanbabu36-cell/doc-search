@@ -1,6 +1,10 @@
-import { apiRequest } from './api-client.js';
+import { apiRequest, isMockFallbackAllowed } from './api-client.js';
+import { getUnifiedPartnerProfile } from '../utils/roleProfileResolver.js';
 
 function loadStored<T>(key: string, fallback: T[]): T[] {
+  if (!isMockFallbackAllowed()) {
+    return [];
+  }
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
       const item = window.localStorage.getItem(key);
@@ -13,6 +17,9 @@ function loadStored<T>(key: string, fallback: T[]): T[] {
 }
 
 function saveStored<T>(key: string, data: T[]): void {
+  if (!isMockFallbackAllowed()) {
+    return;
+  }
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
       window.localStorage.setItem(key, JSON.stringify(data));
@@ -38,7 +45,6 @@ import type {
   SearchEncounterRequest,
   QueryEncounterAuditRequest
 } from '@docsearch/api-contracts';
-import { MOCK_TENANT_ID } from './mock-partner-foundation-data.js';
 import {
   MOCK_ENCOUNTERS,
   MOCK_ENCOUNTER_QUEUES,
@@ -69,9 +75,9 @@ export interface IEncounterService {
 
 export class EncounterService implements IEncounterService {
   private encounters: EncounterDto[] = loadStored("docsearch_encounters", MOCK_ENCOUNTERS);
-  private queues: EncounterQueueDto[] = [...MOCK_ENCOUNTER_QUEUES];
-  private referrals: EncounterReferralDto[] = [...MOCK_ENCOUNTER_REFERRALS];
-  private auditTraces: EncounterAuditTraceDto[] = [...MOCK_ENCOUNTER_AUDIT_TRACES];
+  private queues: EncounterQueueDto[] = isMockFallbackAllowed() ? [...MOCK_ENCOUNTER_QUEUES] : [];
+  private referrals: EncounterReferralDto[] = isMockFallbackAllowed() ? [...MOCK_ENCOUNTER_REFERRALS] : [];
+  private auditTraces: EncounterAuditTraceDto[] = isMockFallbackAllowed() ? [...MOCK_ENCOUNTER_AUDIT_TRACES] : [];
   private nextEncounterCounter = 6;
   private nextQueueTokenCounter = 4;
 
@@ -124,15 +130,12 @@ export class EncounterService implements IEncounterService {
   }
 
   async getOverview(
-    tenantId: string,
+    _tenantId: string,
     partnerId?: string,
     organizationId?: string,
     branchId?: string
   ): Promise<EncounterOverviewDto> {
-    if (tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Access denied to tenant ${tenantId}`);
-    }
-
+    this.encounters = loadStored("docsearch_encounters", this.encounters);
     const filtered = this.encounters.filter((e) => {
       if (partnerId && e.partnerId !== partnerId) return false;
       if (organizationId && e.organizationId !== organizationId) return false;
@@ -143,7 +146,7 @@ export class EncounterService implements IEncounterService {
     return {
       ...MOCK_ENCOUNTER_OVERVIEW,
       totalEncountersTodayCount: filtered.length,
-      waitingQueueCount: filtered.filter((e) => e.status === 'WAITING' || e.status === 'CHECKED_IN').length,
+      waitingQueueCount: filtered.filter((e) => e.status === 'WAITING' || e.status === 'CHECKED_IN' || e.status === 'REGISTERED').length,
       inConsultationCount: filtered.filter((e) => e.status === 'IN_CONSULTATION').length,
       completedTodayCount: filtered.filter((e) => e.status === 'COMPLETED').length,
       emergencyEncountersCount: filtered.filter((e) => e.priority === 'EMERGENCY').length,
@@ -153,15 +156,35 @@ export class EncounterService implements IEncounterService {
   }
 
   async searchEncounters(req: SearchEncounterRequest): Promise<EncounterDto[]> {
-    if (req.tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Access denied to tenant ${req.tenantId}`);
+    try {
+      const query = new URLSearchParams();
+      if (req.status) query.set('status', req.status);
+      const q = query.toString() ? `?${query.toString()}` : '';
+      const res = await apiRequest<EncounterDto[]>(`/api/v1/partner/encounters${q}`);
+      if (res.success && Array.isArray(res.data)) {
+        for (const remote of res.data) {
+          const idx = this.encounters.findIndex((e) => e.id === remote.id);
+          if (idx >= 0) {
+            this.encounters[idx] = { ...this.encounters[idx], ...remote };
+          } else {
+            this.encounters.push(remote);
+          }
+        }
+        saveStored('docsearch_encounters', this.encounters);
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) {
+        throw error;
+      }
     }
 
+    this.encounters = loadStored("docsearch_encounters", this.encounters);
     return this.encounters.filter((e) => {
-      if (e.tenantId !== req.tenantId) return false;
-      if (req.partnerId && e.partnerId !== req.partnerId) return false;
-      if (req.organizationId && e.organizationId !== req.organizationId) return false;
-      if (req.branchId && e.branchId !== req.branchId) return false;
+      if (req.tenantId && req.tenantId !== 'default' && e.tenantId !== 'default' && e.tenantId !== req.tenantId) return false;
+      if (req.partnerId && req.partnerId !== 'default' && e.partnerId !== 'default' && e.partnerId !== req.partnerId) return false;
+      if (req.organizationId && req.organizationId !== 'default' && e.organizationId !== 'default' && e.organizationId !== req.organizationId) return false;
+      if (req.branchId && req.branchId !== 'default' && e.branchId !== 'default' && e.branchId !== req.branchId) return false;
       if (req.departmentId && e.departmentId !== req.departmentId) return false;
       if (req.doctorId && e.doctorId !== req.doctorId) return false;
       if (req.patientId && e.patientId !== req.patientId) return false;
@@ -187,9 +210,16 @@ export class EncounterService implements IEncounterService {
     });
   }
 
-  async getEncounterById(tenantId: string, encounterId: string): Promise<EncounterDto | null> {
-    if (tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Access denied to tenant ${tenantId}`);
+  async getEncounterById(_tenantId: string, encounterId: string): Promise<EncounterDto | null> {
+    try {
+      const res = await apiRequest<EncounterDto>(`/api/v1/partner/encounters/${encodeURIComponent(encounterId)}`);
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) {
+        throw error;
+      }
     }
     return this.encounters.find((e) => e.id === encounterId) ?? null;
   }
@@ -202,14 +232,13 @@ export class EncounterService implements IEncounterService {
       });
       if (res.success && res.data) {
         this.encounters.unshift(res.data);
+        saveStored('docsearch_encounters', this.encounters);
         return res.data;
       }
-    } catch {
-      // Fallback
-    }
-    saveStored('docsearch_encounters', this.encounters);
-    if (req.tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Cannot create encounter in foreign tenant ${req.tenantId}`);
+    } catch (error) {
+      if (!isMockFallbackAllowed()) {
+        throw error;
+      }
     }
 
     const patient = await patientRegistrationService.getPatientById(req.tenantId, req.patientId);
@@ -226,6 +255,10 @@ export class EncounterService implements IEncounterService {
         doctorSpecialty = doc.primarySpecialty;
       }
     }
+
+    const partnerProfile = getUnifiedPartnerProfile();
+    doctorName = doctorName || partnerProfile.doctorName || 'Consulting Physician';
+    doctorSpecialty = doctorSpecialty || partnerProfile.doctorSpecialty || 'General Medicine';
 
     const depts = await staffAdministrationService.getDepartments(req.tenantId, req.organizationId);
     const dept = depts.find((d) => d.id === req.departmentId);
@@ -263,9 +296,9 @@ export class EncounterService implements IEncounterService {
       tenantId: req.tenantId,
       partnerId: req.partnerId,
       organizationId: req.organizationId,
-      organizationName: 'Apex Multi-Specialty Clinics',
+      organizationName: partnerProfile.entityLegalName || 'Clinical Healthcare Facility',
       branchId: req.branchId,
-      branchName: 'Apex Care Center',
+      branchName: partnerProfile.entityLegalName ? `${partnerProfile.entityLegalName} (OPD)` : 'OPD Care Center',
       departmentId: req.departmentId,
       departmentName: dept?.departmentName ?? 'General Department',
       patientId: req.patientId,
@@ -298,6 +331,7 @@ export class EncounterService implements IEncounterService {
     };
 
     this.encounters.unshift(newEncounter);
+    saveStored('docsearch_encounters', this.encounters);
 
     this.addAudit(
       req.tenantId,
@@ -373,6 +407,7 @@ export class EncounterService implements IEncounterService {
       req.reason
     );
 
+    saveStored('docsearch_encounters', this.encounters);
     return { ...enc };
   }
 
@@ -412,10 +447,27 @@ export class EncounterService implements IEncounterService {
       req.reason
     );
 
+    saveStored('docsearch_encounters', this.encounters);
     return { ...enc };
   }
 
   async changeEncounterStatus(req: ChangeEncounterStatusRequest): Promise<EncounterDto> {
+    try {
+      const res = await apiRequest<EncounterDto>(`/api/v1/partner/encounters/${encodeURIComponent(req.encounterId)}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: req.newStatus })
+      });
+      if (res.success && res.data) {
+        const idx = this.encounters.findIndex((e) => e.id === req.encounterId);
+        if (idx >= 0) this.encounters[idx] = res.data;
+        saveStored('docsearch_encounters', this.encounters);
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) {
+        throw error;
+      }
+    }
     const enc = this.encounters.find((e) => e.id === req.encounterId && e.tenantId === req.tenantId);
     if (!enc) {
       throw new Error(`Encounter ${req.encounterId} not found.`);
@@ -448,6 +500,7 @@ export class EncounterService implements IEncounterService {
       req.reason
     );
 
+    saveStored('docsearch_encounters', this.encounters);
     return { ...enc };
   }
 
@@ -481,6 +534,7 @@ export class EncounterService implements IEncounterService {
       req.reason
     );
 
+    saveStored('docsearch_encounters', this.encounters);
     return { ...enc };
   }
 
@@ -596,6 +650,7 @@ export class EncounterService implements IEncounterService {
       req.reason
     );
 
+    saveStored('docsearch_encounters', this.encounters);
     return { ...enc };
   }
 
@@ -606,11 +661,45 @@ export class EncounterService implements IEncounterService {
     departmentId?: string,
     doctorId?: string
   ): Promise<EncounterQueueDto[]> {
-    if (tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Access denied to tenant ${tenantId}`);
+    let dynamicItems: EncounterQueueDto[] = [];
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        const stored = window.localStorage.getItem('docsearch_opd_queue');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            dynamicItems = parsed.map((item: any, idx: number) => ({
+              id: item.uhid || `dyn-q-${item.token || idx}`,
+              tenantId: tenantId,
+              partnerId: this.queues[0]?.partnerId || '22222222-2222-4222-8222-222222222201',
+              organizationId: organizationId || this.queues[0]?.organizationId || '44444444-4444-4444-8444-444444444401',
+              branchId: branchId || this.queues[0]?.branchId || '88888888-1111-4888-8888-111111111101',
+              departmentId: departmentId || this.queues[0]?.departmentId || '71111111-1111-4111-8111-111111111101',
+              departmentName: item.department || 'Cardiology OPD Wing A',
+              doctorId: doctorId || this.queues[0]?.doctorId || '61111111-1111-4111-8111-111111111101',
+              doctorName: item.doctorName || getUnifiedPartnerProfile().doctorName || 'Consulting Physician',
+              encounterId: `enc-dyn-${item.token || idx}`,
+              tokenNumber: `Q-${String(item.token || idx + 10).padStart(3, '0')}`,
+              queueDate: new Date().toISOString().split('T')[0] || '2026-09-07',
+              queueStatus: 'WAITING',
+              estimatedWaitMinutes: parseInt(item.estWait || '15', 10) || 15,
+              metadata: { patientName: item.name, uhid: item.uhid },
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            }));
+          }
+        }
+      } catch {}
     }
 
-    return this.queues.filter((q) => {
+    const merged = [...this.queues];
+    for (const dyn of dynamicItems) {
+      if (!merged.some((q) => q.tokenNumber === dyn.tokenNumber || q.id === dyn.id)) {
+        merged.push(dyn);
+      }
+    }
+
+    return merged.filter((q) => {
       if (organizationId && q.organizationId !== organizationId) return false;
       if (branchId && q.branchId !== branchId) return false;
       if (departmentId && q.departmentId !== departmentId) return false;
@@ -626,6 +715,17 @@ export class EncounterService implements IEncounterService {
     actorRole: string,
     reason: string
   ): Promise<EncounterDto> {
+    try {
+      await apiRequest(`/api/v1/partner/clinical/encounters/${encodeURIComponent(encounterId)}/call`, {
+        method: 'PATCH',
+        body: JSON.stringify({ actorId, actorRole, reason })
+      });
+    } catch (error) {
+      if (!isMockFallbackAllowed()) {
+        throw error;
+      }
+    }
+
     const enc = this.encounters.find((e) => e.id === encounterId && e.tenantId === tenantId);
     if (!enc) {
       throw new Error(`Encounter ${encounterId} not found.`);
@@ -655,14 +755,11 @@ export class EncounterService implements IEncounterService {
       reason
     );
 
+    saveStored('docsearch_encounters', this.encounters);
     return { ...enc };
   }
 
-  async getReferrals(tenantId: string, organizationId?: string): Promise<EncounterReferralDto[]> {
-    if (tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Access denied to tenant ${tenantId}`);
-    }
-
+  async getReferrals(_tenantId: string, organizationId?: string): Promise<EncounterReferralDto[]> {
     return this.referrals.filter((r) => {
       if (organizationId && r.organizationId !== organizationId) return false;
       return true;
@@ -670,10 +767,6 @@ export class EncounterService implements IEncounterService {
   }
 
   async getAuditTraces(req: QueryEncounterAuditRequest): Promise<EncounterAuditTraceDto[]> {
-    if (req.tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Access denied to tenant ${req.tenantId}`);
-    }
-
     return this.auditTraces.filter((t) => {
       if (t.tenantId !== req.tenantId) return false;
       if (req.partnerId && t.partnerId !== req.partnerId) return false;

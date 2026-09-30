@@ -36,6 +36,7 @@ import {
   mockComplianceVerifications,
   mockComplianceReports
 } from './mock-compliance-data.js';
+import { apiCall, isMockFallbackAllowed } from './api-client.js';
 
 export interface IComplianceService {
   getComplianceOverview(): Promise<ComplianceOverviewDto>;
@@ -94,7 +95,16 @@ export class ComplianceService implements IComplianceService {
   }
 
   async getFrameworks(): Promise<ComplianceFrameworkDto[]> {
-    return Promise.resolve([...this.frameworks]);
+    try {
+      const data = await apiCall<ComplianceFrameworkDto[]>('/api/v1/company/compliance/frameworks');
+      if (Array.isArray(data) && data.length > 0) {
+        this.frameworks = data;
+        return [...this.frameworks];
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
+    return [...this.frameworks];
   }
 
   async getFrameworkById(frameworkId: string): Promise<ComplianceFrameworkDto | null> {
@@ -103,7 +113,16 @@ export class ComplianceService implements IComplianceService {
   }
 
   async getControls(): Promise<ComplianceControlDto[]> {
-    return Promise.resolve([...this.controls]);
+    try {
+      const data = await apiCall<ComplianceControlDto[]>('/api/v1/company/compliance/controls');
+      if (Array.isArray(data) && data.length > 0) {
+        this.controls = data;
+        return [...this.controls];
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
+    return [...this.controls];
   }
 
   async getControlsByFramework(frameworkId: string): Promise<ComplianceControlDto[]> {

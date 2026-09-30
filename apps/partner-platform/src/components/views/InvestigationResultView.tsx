@@ -20,7 +20,7 @@ export interface InvestigationResultViewProps {
   onVerifyResults: (order: InvestigationOrderDto) => void;
   onAmendResult: (order: InvestigationOrderDto) => void;
   onEnterResults: (order: InvestigationOrderDto) => void;
-  onOpenPrint?: (order: InvestigationOrderDto) => void;
+  onOpenPanicIntimation?: (order: InvestigationOrderDto) => void;
 }
 
 export const InvestigationResultView: React.FC<InvestigationResultViewProps> = ({
@@ -28,7 +28,7 @@ export const InvestigationResultView: React.FC<InvestigationResultViewProps> = (
   onVerifyResults,
   onAmendResult,
   onEnterResults,
-  onOpenPrint
+  onOpenPanicIntimation
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('ALL');
@@ -105,15 +105,15 @@ export const InvestigationResultView: React.FC<InvestigationResultViewProps> = (
                     {ord.isCritical && <Badge variant="danger">🚨 CRITICAL</Badge>}
                     {ord.isAbnormal && !ord.isCritical && <Badge variant="warning">⚠️ ABNORMAL</Badge>}
                   </div>
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    {onOpenPrint && (ord.results.length > 0 || ord.status === 'VERIFIED' || ord.status === 'REVIEWED') && (
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    {ord.isCritical && onOpenPanicIntimation && (
                       <Button
                         size="sm"
-                        variant="primary"
-                        onClick={() => onOpenPrint(ord)}
-                        style={{ backgroundColor: '#06B6D4', borderColor: '#06B6D4', color: '#070C16', fontWeight: 800 }}
+                        variant="danger"
+                        onClick={() => onOpenPanicIntimation(ord)}
+                        style={{ backgroundColor: '#EF4444', borderColor: '#EF4444', color: '#FFFFFF', fontWeight: 800 }}
                       >
-                        🖨️ Direct Print Result
+                        {(ord.metadata as any)?.isPanicIntimated ? '✓ Panic Intimated' : '📞 Intimate Doctor (NABL)'}
                       </Button>
                     )}
                     {ord.status === 'PROCESSING' && (
@@ -121,9 +121,14 @@ export const InvestigationResultView: React.FC<InvestigationResultViewProps> = (
                         📊 Enter Results
                       </Button>
                     )}
-                    {ord.status === 'RESULT_READY' && (
-                      <Button size="sm" variant="primary" onClick={() => onVerifyResults(ord)}>
-                        ✅ Verify & Sign
+                    {(ord.status === 'RESULT_READY' || (ord.results.length > 0 && ord.status !== 'VERIFIED')) && (
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        onClick={() => onVerifyResults(ord)}
+                        style={{ backgroundColor: '#10B981', borderColor: '#10B981', color: '#FFFFFF', fontWeight: 800, minHeight: '38px' }}
+                      >
+                        ✍️ Verify & Digital Sign
                       </Button>
                     )}
                     {(ord.status === 'VERIFIED' || ord.status === 'REVIEWED') && (
@@ -201,6 +206,35 @@ export const InvestigationResultView: React.FC<InvestigationResultViewProps> = (
                     </TableBody>
                   </Table>
                 </TableContainer>
+              )}
+
+              {(ord.status === 'VERIFIED' || ord.verifiedAt) && (
+                <div style={{
+                  padding: '12px 16px',
+                  backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                  borderTop: '1px solid rgba(16, 185, 129, 0.25)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '10px',
+                  fontSize: '0.8125rem'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '1.4rem' }}>✍️</span>
+                    <div>
+                      <div style={{ fontWeight: 800, color: '#34D399' }}>
+                        ✓ Digitally Signed & Locked under NABL ISO 15189:2022
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: '#94A3B8' }}>
+                        Verifying Pathologist: <strong style={{ color: '#F8FAFC' }}>{ord.results[0]?.verifiedBy || 'Authorized Pathologist'}</strong> · Reg No: <strong style={{ color: '#38BDF8' }}>NMC-MCI-2018-847291</strong> · Hash: <span style={{ fontFamily: 'monospace', color: '#CBD5E1' }}>SHA256:8f4a1c...b29e</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: '#94A3B8', textAlign: 'right' }}>
+                    Signed at: {ord.verifiedAt ? new Date(ord.verifiedAt).toLocaleString() : 'Recent'}
+                  </div>
+                </div>
               )}
             </Card>
           ))

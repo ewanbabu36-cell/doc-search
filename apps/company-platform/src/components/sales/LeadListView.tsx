@@ -77,7 +77,7 @@ export const LeadListView: React.FC<LeadListViewProps> = ({
             }}
           >
             <span>🎙️</span>
-            <span>Speak to Add Lead (बोलकर जोड़ें)</span>
+            <span>Speak to Add Lead (Voice AI)</span>
           </button>
           <Button
             variant="primary"
@@ -86,7 +86,6 @@ export const LeadListView: React.FC<LeadListViewProps> = ({
               setStartVoiceOnOpen(false);
               setIsCreateOpen(true);
             }}
-            style={{ backgroundColor: '#06B6D4', color: '#070C16', fontWeight: 800 }}
           >
             🤖 ➕ Add Lead (AI Smart Intake)
           </Button>

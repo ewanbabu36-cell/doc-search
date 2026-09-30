@@ -1,0 +1,493 @@
+{
+  "summary": {
+    "backendRoutesCount": 1402,
+    "frontendCallsCount": 381,
+    "verifiedCallsCount": 381,
+    "mismatchedCallsCount": 0,
+    "storageOpsCount": 467,
+    "drizzleTablesCount": 9,
+    "trackedTablesCount": 35
+  },
+  "mismatchedCalls": [],
+  "storageKeyCounts": {
+    "docsearch_custom_partner_users": 9,
+    "docsearch_verification_queue": 22,
+    "docsearch_partner_staff_auth": 41,
+    "docsearch_logged_out": 11,
+    "docsearch_partner_staff": 4,
+    "docsearch_custom_staff": 1,
+    "docsearch_auth_token": 53,
+    "docsearch_user_session": 3,
+    "docsearch_pending_lab_orders": 4,
+    "docsearch_opd_queue": 6,
+    "docsearch_patients": 3,
+    "docsearch_recent_patients": 2,
+    "docsearch_partner_tenant": 3,
+    "docsearch_recent_opd_queue": 13,
+    "docsearch_encounters": 6,
+    "docsearch_inpatient_beds": 1,
+    "docsearch_pharmacy_dispensing": 1,
+    "docsearch_hospital_metrics": 2,
+    "docsearch_schedule_h1_records": 5,
+    "docsearch_registered_partners": 42,
+    "docsearch_staged_profile_amendments": 5,
+    "docsearch_day1_pwd_${currentUser.email}": 1,
+    "docsearch_pathology_referring_doctors": 2,
+    "docsearch_pathology_clinical_indications": 2,
+    "docsearch_prescription_letterhead_mode": 2,
+    "docsearch_admission_requests": 1,
+    "docsearch_ui_mode": 2,
+    "docsearch_doctor_focus_mode": 4,
+    "docsearch_role_perspective": 3,
+    "docsearch_partner_token": 1,
+    "docsearch_pending_radiology_orders": 2,
+    "docsearch_nurse_vitals": 11,
+    "docsearch_counter_settlements": 4,
+    "docsearch_patient_vitals_history": 6,
+    "dpdp_consents_state": 2,
+    "dpdp_erasure_requests": 2,
+    "dpdp_audit_logs": 2,
+    "docsearch_pharmacy_invoices": 5,
+    "nhcx_settled_claims": 2,
+    "docsearch_inpatient_ward_care": 5,
+    "docsearch_emergency_triage_bay": 2,
+    "docsearch_referral_doctors": 2,
+    "docsearch_referral_transactions": 3,
+    "docsearch_mock_data_purged_v2": 2,
+    "docsearch_pharmacy_demo_seed": 5,
+    "docsearch_pharmacy_prescriptions": 2,
+    "docsearch_active_patient_context": 3,
+    "docsearch_preferred_partners_${clinicId}": 2,
+    "docsearch_clinic_invitations_${partnerType}": 5,
+    "docsearch_investigation_orders": 1,
+    "docsearch_auth_session": 2,
+    "docsearch_partner_session": 2,
+    "auth_token": 2,
+    "docsearch:${ns}:${STORAGE_KEY}": 1,
+    "docsearch:${ns}:${ACTIVE_TAB_KEY}": 1,
+    "docsearch_pharmacy_sales_invoices": 1,
+    "docsearch:${ns}:${SIM_OFFLINE_STORAGE_KEY}": 1,
+    "docsearch_offline_invoices_backup": 3,
+    "docsearch_partner_profile_updated_${email}": 1,
+    "docsearch_account_settings_${userKey}": 2,
+    "docsearch_company_token": 45,
+    "docsearch_company_session": 4,
+    "docsearch_finance_tab": 2,
+    "docsearch_finance_partner_filter": 2,
+    "docsearch_partner_invoices": 3,
+    "docsearch_partner_subscriptions": 2,
+    "ds_whitelabel_config": 2,
+    "docsearch_crm_tab": 3,
+    "docsearch_crm_partner_id": 1,
+    "docsearch_wa_campaigns": 2,
+    "docsearch_nmc_credentials": 2,
+    "docsearch_pipeline_leads": 5,
+    "docsearch_demo_requests": 3,
+    "token": 2,
+    "docsearch_b2b_contracts": 2,
+    "docsearch_escrow_settlements": 2,
+    "docsearch_health_records": 2,
+    "docsearch_selected_verif_id": 5,
+    "docsearch_live_partners": 13,
+    "docsearch_outreach_logs": 2,
+    "docsearch_b2b_invoices": 2,
+    "docsearch_verified_originals": 2,
+    "docsearch_registration_form_policy": 3,
+    "docsearch_growth_tab": 2,
+    "docsearch_growth_plans": 2,
+    "docsearch_company_founder_auth": 6,
+    "docsearch_company_auth": 1,
+    "docsearch_purged_partners": 3,
+    "docsearch_flash_offer_dismissed": 3
+  },
+  "storageOpsSample": [
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "line": 515,
+      "op": "getItem",
+      "key": "docsearch_custom_partner_users"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "line": 526,
+      "op": "removeItem",
+      "key": "docsearch_custom_partner_users"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "line": 528,
+      "op": "setItem",
+      "key": "docsearch_custom_partner_users"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "line": 534,
+      "op": "getItem",
+      "key": "docsearch_verification_queue"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "line": 544,
+      "op": "removeItem",
+      "key": "docsearch_verification_queue"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "line": 546,
+      "op": "setItem",
+      "key": "docsearch_verification_queue"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "line": 648,
+      "op": "setItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "line": 649,
+      "op": "removeItem",
+      "key": "docsearch_logged_out"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "line": 804,
+      "op": "setItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "line": 805,
+      "op": "removeItem",
+      "key": "docsearch_logged_out"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "line": 835,
+      "op": "getItem",
+      "key": "docsearch_partner_staff"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "line": 836,
+      "op": "getItem",
+      "key": "docsearch_custom_staff"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "line": 961,
+      "op": "setItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "line": 966,
+      "op": "setItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "line": 967,
+      "op": "removeItem",
+      "key": "docsearch_logged_out"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "line": 1031,
+      "op": "setItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "line": 1032,
+      "op": "setItem",
+      "key": "docsearch_user_session"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "line": 1034,
+      "op": "setItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "line": 1035,
+      "op": "removeItem",
+      "key": "docsearch_logged_out"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "line": 1297,
+      "op": "getItem",
+      "key": "docsearch_verification_queue"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "line": 1299,
+      "op": "setItem",
+      "key": "docsearch_verification_queue"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "line": 1304,
+      "op": "getItem",
+      "key": "docsearch_custom_partner_users"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+      "line": 1307,
+      "op": "setItem",
+      "key": "docsearch_custom_partner_users"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/ClinicalInvestigationDomainManager.tsx",
+      "line": 334,
+      "op": "getItem",
+      "key": "docsearch_auth_token"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/ClinicalInvestigationDomainManager.tsx",
+      "line": 359,
+      "op": "getItem",
+      "key": "docsearch_pending_lab_orders"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/ClinicalInvestigationDomainManager.tsx",
+      "line": 480,
+      "op": "getItem",
+      "key": "docsearch_pending_lab_orders"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/common/AbdmScanAndShareModal.tsx",
+      "line": 130,
+      "op": "getItem",
+      "key": "docsearch_opd_queue"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/common/AbdmScanAndShareModal.tsx",
+      "line": 139,
+      "op": "setItem",
+      "key": "docsearch_opd_queue"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/common/AbdmScanAndShareModal.tsx",
+      "line": 141,
+      "op": "getItem",
+      "key": "docsearch_patients"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/common/AbdmScanAndShareModal.tsx",
+      "line": 155,
+      "op": "setItem",
+      "key": "docsearch_patients"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/common/ActivePatientContextBar.tsx",
+      "line": 20,
+      "op": "getItem",
+      "key": "docsearch_recent_patients"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/common/ActivePatientContextBar.tsx",
+      "line": 32,
+      "op": "setItem",
+      "key": "docsearch_recent_patients"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/common/ActivePatientContextBar.tsx",
+      "line": 65,
+      "op": "getItem",
+      "key": "docsearch_partner_tenant"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/common/ActivePatientContextBar.tsx",
+      "line": 128,
+      "op": "getItem",
+      "key": "docsearch_partner_tenant"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/common/AmbientVoiceScribeCapsule.tsx",
+      "line": 157,
+      "op": "getItem",
+      "key": "docsearch_partner_staff_auth"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/common/FastOpdRegistrationDrawer.tsx",
+      "line": 292,
+      "op": "getItem",
+      "key": "docsearch_recent_opd_queue"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/common/FastOpdRegistrationDrawer.tsx",
+      "line": 295,
+      "op": "setItem",
+      "key": "docsearch_recent_opd_queue"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/common/FastOpdRegistrationDrawer.tsx",
+      "line": 339,
+      "op": "getItem",
+      "key": "docsearch_encounters"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/common/FastOpdRegistrationDrawer.tsx",
+      "line": 342,
+      "op": "setItem",
+      "key": "docsearch_encounters"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/common/GlobalCommandPalette.tsx",
+      "line": 235,
+      "op": "getItem",
+      "key": "docsearch_partner_tenant"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/common/LiveHospitalMetricsTicker.tsx",
+      "line": 42,
+      "op": "getItem",
+      "key": "docsearch_inpatient_beds"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/common/LiveHospitalMetricsTicker.tsx",
+      "line": 51,
+      "op": "getItem",
+      "key": "docsearch_opd_queue"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/common/LiveHospitalMetricsTicker.tsx",
+      "line": 59,
+      "op": "getItem",
+      "key": "docsearch_pharmacy_dispensing"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/common/LiveHospitalMetricsTicker.tsx",
+      "line": 68,
+      "op": "getItem",
+      "key": "docsearch_patients"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/common/LiveHospitalMetricsTicker.tsx",
+      "line": 77,
+      "op": "getItem",
+      "key": "docsearch_hospital_metrics"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/common/LiveHospitalMetricsTicker.tsx",
+      "line": 118,
+      "op": "setItem",
+      "key": "docsearch_hospital_metrics"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/common/OpdQueueTvDisplayModal.tsx",
+      "line": 44,
+      "op": "getItem",
+      "key": "docsearch_opd_queue"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/common/OpdQueueTvDisplayModal.tsx",
+      "line": 83,
+      "op": "setItem",
+      "key": "docsearch_opd_queue"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/common/ScheduleH1DrugRegisterModal.tsx",
+      "line": 79,
+      "op": "getItem",
+      "key": "docsearch_schedule_h1_records"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps/partner-platform/src/components/common/ScheduleH1DrugRegisterModal.tsx",
+      "line": 97,
+      "op": "setItem",
+      "key": "docsearch_schedule_h1_records"
+    }
+  ],
+  "tables": [
+    {
+      "table": "workflow_definitions",
+      "schemaFile": "workflow-schema.ts"
+    },
+    {
+      "table": "workflow_versions",
+      "schemaFile": "workflow-schema.ts"
+    },
+    {
+      "table": "workflow_stages",
+      "schemaFile": "workflow-schema.ts"
+    },
+    {
+      "table": "workflow_transitions",
+      "schemaFile": "workflow-schema.ts"
+    },
+    {
+      "table": "workflow_requirements",
+      "schemaFile": "workflow-schema.ts"
+    },
+    {
+      "table": "workflow_instances",
+      "schemaFile": "workflow-schema.ts"
+    },
+    {
+      "table": "workflow_requirement_instances",
+      "schemaFile": "workflow-schema.ts"
+    },
+    {
+      "table": "workflow_approvals",
+      "schemaFile": "workflow-schema.ts"
+    },
+    {
+      "table": "workflow_transition_logs",
+      "schemaFile": "workflow-schema.ts"
+    }
+  ]
+}

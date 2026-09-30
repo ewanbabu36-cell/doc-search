@@ -83,7 +83,7 @@ export const AiPhiRedactionGuardView: React.FC = () => {
               variant="primary"
               size="md"
               disabled={isScanning}
-              style={{ backgroundColor: '#06B6D4', color: '#070C16', fontWeight: 900 }}
+              
             >
               {isScanning ? '⚡ Redacting Protected Identifiers...' : '🛡️ Run Real-Time PHI De-Identification'}
             </Button>

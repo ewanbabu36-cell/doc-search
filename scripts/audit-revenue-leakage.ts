@@ -114,7 +114,7 @@ async function initializeDatabaseContext(): Promise<AuditDatabaseContext> {
       isLive: true,
       connectionUrl
     };
-  } catch (err: any) {
+  } catch (_err) {
     await testPool.end().catch(() => {});
 
     // Fallback: Bootstrap embedded in-memory PostgreSQL engine for reliable auditing

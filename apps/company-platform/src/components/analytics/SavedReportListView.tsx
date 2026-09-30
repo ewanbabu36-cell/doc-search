@@ -30,7 +30,7 @@ export const SavedReportListView: React.FC<SavedReportListViewProps> = ({
     setGeneratingId(id);
     setStatusNotice(null);
     try {
-      await onGenerateReport(id, 'Last 30 Days (Sample Preview Range)');
+      await onGenerateReport(id, 'Last 30 Days');
       setStatusNotice('Report snapshot compiled and stored in audit vault.');
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to generate report');

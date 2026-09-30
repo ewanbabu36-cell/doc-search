@@ -15,16 +15,16 @@ export interface WhiteLabelConfig {
 }
 
 export const DEFAULT_WHITE_LABEL: WhiteLabelConfig = {
-  hospitalName: 'Apollo Hospitals & Medical Centers',
-  brandTagline: 'Touching Lives, Transforming Healthcare',
+  hospitalName: 'DocSearch Healthcare Platform',
+  brandTagline: 'Empowering Healthcare Excellence',
   logoUrl: '',
-  primaryColorHex: '#059669',
-  accentColorHex: '#10B981',
-  customCnameDomain: 'portal.apollohospitals.com',
+  primaryColorHex: '#0284C7',
+  accentColorHex: '#38BDF8',
+  customCnameDomain: 'portal.docsearch.health',
   sslStatus: 'PROVISIONED_ACTIVE',
-  smsSenderId: 'APOLLO',
-  supportEmail: 'care@apollohospitals.com',
-  isPublished: true,
+  smsSenderId: 'DOCSRH',
+  supportEmail: 'support@docsearch.health',
+  isPublished: false,
   applyToShell: false
 };
 

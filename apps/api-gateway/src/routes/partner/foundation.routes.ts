@@ -1,9 +1,12 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { partnerFoundationService } from '../../services/partner/PartnerFoundationService.js';
 import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
+import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 import { type CreatePartnerData } from '../../repositories/partner/PartnerFoundationRepository.js';
 
 export const partnerFoundationRoutes: FastifyPluginAsync = async (fastify) => {
+  fastify.addHook('preHandler', requireModuleCommercialAccess('OPERATIONS'));
+
   fastify.get(
     '/api/v1/partner/foundation/overview',
     {

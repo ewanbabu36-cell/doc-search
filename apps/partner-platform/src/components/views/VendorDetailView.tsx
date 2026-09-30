@@ -50,12 +50,12 @@ export const VendorDetailView: React.FC<VendorDetailViewProps> = ({
           <Button variant="outline" size="sm" onClick={onBack}>← Back</Button>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 700, color: '#0f172a' }}>
+              <h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 700, color: 'var(--ds-color-text-primary, #f8fafc)' }}>
                 {vendor.legalName}
               </h2>
               <Badge variant={vendor.status === 'ACTIVE' ? 'success' : 'danger'}>{vendor.status}</Badge>
             </div>
-            <span style={{ fontSize: '0.85rem', color: '#64748b' }}>Code: {vendor.vendorCode} • {vendor.vendorCategory}</span>
+            <span style={{ fontSize: '0.85rem', color: 'var(--ds-color-text-secondary, #94a3b8)' }}>Code: {vendor.vendorCode} • {vendor.vendorCategory}</span>
           </div>
         </div>
 
@@ -70,46 +70,46 @@ export const VendorDetailView: React.FC<VendorDetailViewProps> = ({
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
         <Card style={{ padding: '1rem' }}>
-          <div style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase' }}>Vendor Classification</div>
-          <div style={{ fontSize: '1.1rem', fontWeight: 600, color: '#0f172a', marginTop: '0.25rem' }}>{vendor.vendorType}</div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--ds-color-text-secondary, #94a3b8)', textTransform: 'uppercase' }}>Vendor Classification</div>
+          <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--ds-color-text-primary, #f8fafc)', marginTop: '0.25rem' }}>{vendor.vendorType}</div>
           <div style={{ fontSize: '0.8rem', color: '#2563eb' }}>Risk: {vendor.riskClassification}</div>
         </Card>
 
         <Card style={{ padding: '1rem' }}>
-          <div style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase' }}>Performance Rating</div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--ds-color-text-secondary, #94a3b8)', textTransform: 'uppercase' }}>Performance Rating</div>
           <div style={{ fontSize: '1.1rem', fontWeight: 600, color: '#16a34a', marginTop: '0.25rem' }}>⭐ {vendor.rating.toFixed(2)} / 5.00</div>
-          <div style={{ fontSize: '0.8rem', color: '#64748b' }}>Lead Time: {vendor.leadTimeDays} days</div>
+          <div style={{ fontSize: '0.8rem', color: 'var(--ds-color-text-secondary, #94a3b8)' }}>Lead Time: {vendor.leadTimeDays} days</div>
         </Card>
 
         <Card style={{ padding: '1rem' }}>
-          <div style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase' }}>Payment Terms</div>
-          <div style={{ fontSize: '1.1rem', fontWeight: 600, color: '#0f172a', marginTop: '0.25rem' }}>NET {vendor.paymentTermsDays}</div>
-          <div style={{ fontSize: '0.8rem', color: '#64748b' }}>SLA: {vendor.deliverySlaHours} hours</div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--ds-color-text-secondary, #94a3b8)', textTransform: 'uppercase' }}>Payment Terms</div>
+          <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--ds-color-text-primary, #f8fafc)', marginTop: '0.25rem' }}>NET {vendor.paymentTermsDays}</div>
+          <div style={{ fontSize: '0.8rem', color: 'var(--ds-color-text-secondary, #94a3b8)' }}>SLA: {vendor.deliverySlaHours} hours</div>
         </Card>
 
         <Card style={{ padding: '1rem' }}>
-          <div style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase' }}>Total YTD Spend</div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--ds-color-text-secondary, #94a3b8)', textTransform: 'uppercase' }}>Total YTD Spend</div>
           <div style={{ fontSize: '1.1rem', fontWeight: 600, color: '#16a34a', marginTop: '0.25rem' }}>${vendor.totalSpendYtd.toLocaleString()}</div>
-          <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{vendorPOs.length} Total Orders</div>
+          <div style={{ fontSize: '0.8rem', color: 'var(--ds-color-text-secondary, #94a3b8)' }}>{vendorPOs.length} Total Orders</div>
         </Card>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
         <Card style={{ padding: '1.25rem' }}>
-          <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1rem', fontWeight: 600, color: '#0f172a' }}>
+          <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1rem', fontWeight: 600, color: 'var(--ds-color-text-primary, #f8fafc)' }}>
             Master Contracts ({vendorContracts.length})
           </h3>
           {vendorContracts.length === 0 ? (
-            <p style={{ color: '#64748b', fontSize: '0.875rem' }}>No active contracts on file.</p>
+            <p style={{ color: 'var(--ds-color-text-secondary, #94a3b8)', fontSize: '0.875rem' }}>No active contracts on file.</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {vendorContracts.map((c) => (
-                <div key={c.id} style={{ padding: '0.75rem', backgroundColor: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600 }}>
+                <div key={c.id} style={{ padding: '0.75rem', backgroundColor: 'var(--ds-color-surface-subtle, #1a2234)', borderRadius: '6px', border: '1px solid var(--ds-color-border, #334155)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600, color: 'var(--ds-color-text-primary, #f8fafc)' }}>
                     <span>{c.contractNumber}</span>
                     <Badge variant="success">{c.status}</Badge>
                   </div>
-                  <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.2rem' }}>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--ds-color-text-secondary, #94a3b8)', marginTop: '0.2rem' }}>
                     {c.title} • Expires: {new Date(c.expiryDate).toLocaleDateString()}
                   </div>
                 </div>
@@ -119,11 +119,11 @@ export const VendorDetailView: React.FC<VendorDetailViewProps> = ({
         </Card>
 
         <Card style={{ padding: '1.25rem' }}>
-          <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1rem', fontWeight: 600, color: '#0f172a' }}>
+          <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1rem', fontWeight: 600, color: 'var(--ds-color-text-primary, #f8fafc)' }}>
             Purchase Order History ({vendorPOs.length})
           </h3>
           {vendorPOs.length === 0 ? (
-            <p style={{ color: '#64748b', fontSize: '0.875rem' }}>No purchase orders recorded with this vendor.</p>
+            <p style={{ color: 'var(--ds-color-text-secondary, #94a3b8)', fontSize: '0.875rem' }}>No purchase orders recorded with this vendor.</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {vendorPOs.map((po) => (
@@ -132,9 +132,9 @@ export const VendorDetailView: React.FC<VendorDetailViewProps> = ({
                   onClick={() => onSelectPO(po.id)}
                   style={{
                     padding: '0.75rem',
-                    backgroundColor: '#fff',
+                    backgroundColor: 'var(--ds-color-surface-subtle, #1a2234)',
                     borderRadius: '6px',
-                    border: '1px solid #e2e8f0',
+                    border: '1px solid var(--ds-color-border, #334155)',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
@@ -143,7 +143,7 @@ export const VendorDetailView: React.FC<VendorDetailViewProps> = ({
                 >
                   <div>
                     <div style={{ fontWeight: 600, color: '#2563eb' }}>{po.poNumber}</div>
-                    <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--ds-color-text-secondary, #94a3b8)' }}>
                       ${po.totalNetAmount.toFixed(2)} • {new Date(po.expectedDeliveryDate).toLocaleDateString()}
                     </div>
                   </div>

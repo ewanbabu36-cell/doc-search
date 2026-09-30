@@ -75,7 +75,13 @@ export const PatientConsentTypeEnum = z.enum([
   'COMMUNICATION_SMS_EMAIL',
   'DATA_SHARING_HIE',
   'TREATMENT_DISCLOSURE',
-  'TELEHEALTH_CONSENT'
+  'TELEHEALTH_CONSENT',
+  'DIAGNOSTIC_LAB_REPORTS',
+  'PHARMACY_PRESCRIPTIONS',
+  'RADIOLOGY_DICOM_SCANS',
+  'OPD_CLINICAL_NOTES',
+  'PSYCHIATRIC_MENTAL_HEALTH',
+  'FERTILITY_REPRODUCTIVE_HEALTH'
 ]);
 export type PatientConsentType = z.infer<typeof PatientConsentTypeEnum>;
 
@@ -114,14 +120,17 @@ export const DuplicateReviewStatusEnum = z.enum([
 ]);
 export type DuplicateReviewStatus = z.infer<typeof DuplicateReviewStatusEnum>;
 
+// Standard 10-Digit Indian Mobile Number Schema
+export const IndianMobileSchema = z.string().regex(/^(\+91[\-\s]?)?[6-9]\d{9}$/, 'Must be a valid 10-digit Indian mobile number');
+
 // DTO Schemas
 export const PatientContactDtoSchema = z.object({
   id: z.string().uuid(),
   tenantId: z.string().uuid(),
   partnerId: z.string().uuid(),
   patientId: z.string().uuid(),
-  primaryMobile: z.string(),
-  alternateMobile: z.string().optional(),
+  primaryMobile: IndianMobileSchema,
+  alternateMobile: IndianMobileSchema.optional(),
   email: z.string().optional(),
   preferredContactMethod: ContactMethodEnum,
   metadata: z.record(z.unknown()),
@@ -360,18 +369,18 @@ export const CreatePatientSchema = z.object({
   preferredLanguage: z.string().default('English'),
   occupation: z.string().optional(),
   registrationSource: RegistrationSourceEnum.default('RECEPTION_DESK'),
-  primaryMobile: z.string().min(7),
-  alternateMobile: z.string().optional(),
+  primaryMobile: IndianMobileSchema,
+  alternateMobile: IndianMobileSchema.optional(),
   email: z.string().email().optional(),
-  addressLine1: z.string().min(3),
-  addressLine2: z.string().optional(),
-  city: z.string().min(1),
-  state: z.string().min(1),
-  country: z.string().default('USA'),
-  postalCode: z.string().min(2),
+  addressLine1: z.string().optional().default(''),
+  addressLine2: z.string().optional().default(''),
+  city: z.string().optional().default(''),
+  state: z.string().optional().default(''),
+  country: z.string().optional().default('India'),
+  postalCode: z.string().optional().default(''),
   emergencyContactName: z.string().optional(),
   emergencyRelationship: EmergencyRelationshipEnum.optional(),
-  emergencyPrimaryPhone: z.string().optional(),
+  emergencyPrimaryPhone: IndianMobileSchema.optional(),
   insurancePayerName: z.string().optional(),
   insurancePolicyNumber: z.string().optional(),
   insuranceMemberId: z.string().optional(),
@@ -424,8 +433,8 @@ export const UpdatePatientContactSchema = z.object({
   tenantId: z.string().uuid(),
   partnerId: z.string().uuid(),
   patientId: z.string().uuid(),
-  primaryMobile: z.string().min(7),
-  alternateMobile: z.string().optional(),
+  primaryMobile: IndianMobileSchema,
+  alternateMobile: IndianMobileSchema.optional(),
   email: z.string().email().optional(),
   preferredContactMethod: ContactMethodEnum.default('MOBILE'),
   reason: z.string().min(3)
@@ -439,12 +448,12 @@ export const UpdatePatientAddressSchema = z.object({
   partnerId: z.string().uuid(),
   patientId: z.string().uuid(),
   addressType: AddressTypeEnum.default('RESIDENTIAL'),
-  addressLine1: z.string().min(3),
-  addressLine2: z.string().optional(),
-  city: z.string().min(1),
-  state: z.string().min(1),
-  country: z.string().default('USA'),
-  postalCode: z.string().min(2),
+  addressLine1: z.string().optional().default(''),
+  addressLine2: z.string().optional().default(''),
+  city: z.string().optional().default(''),
+  state: z.string().optional().default(''),
+  country: z.string().default('India'),
+  postalCode: z.string().optional().default(''),
   reason: z.string().min(3)
 });
 export type UpdatePatientAddressRequest = z.infer<typeof UpdatePatientAddressSchema>;
@@ -457,8 +466,8 @@ export const AddEmergencyContactSchema = z.object({
   patientId: z.string().uuid(),
   contactName: z.string().min(1),
   relationship: EmergencyRelationshipEnum,
-  primaryPhone: z.string().min(7),
-  alternatePhone: z.string().optional(),
+  primaryPhone: IndianMobileSchema,
+  alternatePhone: IndianMobileSchema.optional(),
   address: z.string().optional(),
   isPrimary: z.boolean().default(true),
   reason: z.string().min(3)
@@ -538,7 +547,7 @@ export const CheckDuplicatePatientSchema = z.object({
   firstName: z.string(),
   lastName: z.string(),
   dateOfBirth: z.string(),
-  mobile: z.string(),
+  mobile: IndianMobileSchema,
   email: z.string().optional(),
   identifierValue: z.string().optional()
 });

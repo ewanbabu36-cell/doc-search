@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { isDomainAllowedForRole } from '../../navigation/phase1-nav.js';
 
 export interface CommandItem {
   id: string;
@@ -7,6 +8,7 @@ export interface CommandItem {
   title: string;
   subtitle: string;
   shortcut?: string;
+  domainId?: string;
   onSelect: () => void;
 }
 
@@ -14,12 +16,14 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   onNavigateDomain: (domainId: string) => void;
+  userRole?: string | undefined;
 }
 
 export const GlobalCommandPaletteModal: React.FC<Props> = ({
   isOpen,
   onClose,
-  onNavigateDomain
+  onNavigateDomain,
+  userRole
 }) => {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -38,12 +42,26 @@ export const GlobalCommandPaletteModal: React.FC<Props> = ({
   const ALL_COMMANDS: CommandItem[] = [
     // Domains
     {
+      id: 'dom-command-center',
+      category: 'DOMAINS',
+      icon: '⚡',
+      title: 'Command Center',
+      subtitle: 'Pan-India Hospital Operating System, Facility Grid & Live Telemetry',
+      shortcut: 'G C',
+      domainId: 'medisphere-command-center',
+      onSelect: () => {
+        onNavigateDomain('medisphere-command-center');
+        onClose();
+      }
+    },
+    {
       id: 'dom-exec',
       category: 'DOMAINS',
       icon: '⚡',
-      title: 'Executive & Command Center',
+      title: 'Executive Overview & KPIs',
       subtitle: 'National Healthcare War-Room, Real-time EBITDA & Panic Siren',
       shortcut: 'G E',
+      domainId: 'executive-command-center',
       onSelect: () => {
         onNavigateDomain('executive-command-center');
         onClose();
@@ -56,6 +74,7 @@ export const GlobalCommandPaletteModal: React.FC<Props> = ({
       title: 'Growth & Organic Expansion HQ',
       subtitle: 'SEO programmatic pages, doctor affiliate engine & plan studio',
       shortcut: 'G G',
+      domainId: 'growth-engine',
       onSelect: () => {
         onNavigateDomain('growth-engine');
         onClose();
@@ -68,6 +87,7 @@ export const GlobalCommandPaletteModal: React.FC<Props> = ({
       title: 'CRM & Partner Lifecycle HQ',
       subtitle: 'Doctor onboarding, NMC registry verify & WhatsApp broadcaster',
       shortcut: 'G C',
+      domainId: 'crm-partner-lifecycle',
       onSelect: () => {
         onNavigateDomain('crm-partner-lifecycle');
         onClose();
@@ -80,6 +100,7 @@ export const GlobalCommandPaletteModal: React.FC<Props> = ({
       title: 'Product, Plans & Entitlements HQ',
       subtitle: 'Feature flags canary rollout, API quotas & clinical add-ons',
       shortcut: 'G P',
+      domainId: 'product-plans-entitlements',
       onSelect: () => {
         onNavigateDomain('product-plans-entitlements');
         onClose();
@@ -92,6 +113,7 @@ export const GlobalCommandPaletteModal: React.FC<Props> = ({
       title: 'Billing, Invoicing & Global Tax HQ',
       subtitle: 'Global Tax Ledger, GST E-Invoicing, TPA claims & doctor escrow',
       shortcut: 'G B',
+      domainId: 'subscription-billing-finance',
       onSelect: () => {
         onNavigateDomain('subscription-billing-finance');
         onClose();
@@ -104,6 +126,7 @@ export const GlobalCommandPaletteModal: React.FC<Props> = ({
       title: 'Sales Pipeline & ARR Forecast HQ',
       subtitle: 'AI Lead Scorer, ARR Deal Forecast & Field BDM GPS tracker',
       shortcut: 'G S',
+      domainId: 'sales-marketing',
       onSelect: () => {
         onNavigateDomain('sales-marketing');
         onClose();
@@ -116,6 +139,7 @@ export const GlobalCommandPaletteModal: React.FC<Props> = ({
       title: 'API, Interoperability & Webhook Ingress',
       subtitle: 'Custom Webhooks, Zapier/Slack bridge, HL7 FHIR & ABDM 2.0',
       shortcut: 'G I',
+      domainId: 'api-integration-interoperability',
       onSelect: () => {
         onNavigateDomain('api-integration-interoperability');
         onClose();
@@ -128,6 +152,7 @@ export const GlobalCommandPaletteModal: React.FC<Props> = ({
       title: 'Security, CloudHSM & SOC2 Audit HQ',
       subtitle: 'SIEM threat radar, FIPS key rotation & SOC2 evidence lock',
       shortcut: 'G K',
+      domainId: 'security-rbac-policy-audit',
       onSelect: () => {
         onNavigateDomain('security-rbac-policy-audit');
         onClose();
@@ -140,6 +165,7 @@ export const GlobalCommandPaletteModal: React.FC<Props> = ({
       title: 'Company Administration & Corporate Governance',
       subtitle: 'MCA/ROC resolution vault, statutory POSH desk & subsidiary escrow',
       shortcut: 'G A',
+      domainId: 'company-admin-governance',
       onSelect: () => {
         onNavigateDomain('company-admin-governance');
         onClose();
@@ -154,6 +180,7 @@ export const GlobalCommandPaletteModal: React.FC<Props> = ({
       title: 'Trigger Pan-India Emergency Siren',
       subtitle: 'Push global high-priority banner across all Doctor & Patient apps',
       shortcut: '⇧ ⌘ P',
+      domainId: 'executive-command-center',
       onSelect: () => {
         onNavigateDomain('executive-command-center');
         onClose();
@@ -166,6 +193,7 @@ export const GlobalCommandPaletteModal: React.FC<Props> = ({
       title: 'Execute Smart Dunning Recurring Recovery',
       subtitle: 'Recover failed hospital subscription invoices via UPI auto-debit',
       shortcut: '⇧ ⌘ D',
+      domainId: 'subscription-billing-finance',
       onSelect: () => {
         onNavigateDomain('subscription-billing-finance');
         onClose();
@@ -178,6 +206,7 @@ export const GlobalCommandPaletteModal: React.FC<Props> = ({
       title: 'Verify Doctor NMC / State Council Registry',
       subtitle: 'Automated digital verification with National Medical Commission',
       shortcut: '⇧ ⌘ V',
+      domainId: 'crm-partner-lifecycle',
       onSelect: () => {
         onNavigateDomain('crm-partner-lifecycle');
         onClose();
@@ -190,6 +219,7 @@ export const GlobalCommandPaletteModal: React.FC<Props> = ({
       title: 'Dispatch Test Webhook Payload (Zapier / Slack)',
       subtitle: 'Test external health cloud event trigger integration',
       shortcut: '⇧ ⌘ W',
+      domainId: 'api-integration-interoperability',
       onSelect: () => {
         onNavigateDomain('api-integration-interoperability');
         onClose();
@@ -197,7 +227,12 @@ export const GlobalCommandPaletteModal: React.FC<Props> = ({
     }
   ];
 
-  const filteredCommands = ALL_COMMANDS.filter((cmd) =>
+  const allowedCommands = ALL_COMMANDS.filter((cmd) => {
+    if (!cmd.domainId) return true;
+    return isDomainAllowedForRole(cmd.domainId, userRole || 'SUPER_ADMIN');
+  });
+
+  const filteredCommands = allowedCommands.filter((cmd) =>
     cmd.title.toLowerCase().includes(query.toLowerCase()) ||
     cmd.subtitle.toLowerCase().includes(query.toLowerCase())
   );

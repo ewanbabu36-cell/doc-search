@@ -12,6 +12,8 @@ import type {
   DispenseMedicationRequest,
   DispensingMode
 } from '@docsearch/api-contracts';
+import { getUnifiedPartnerProfile } from '../../utils/roleProfileResolver.js';
+import { AuditJustificationField } from '../common/AuditJustificationField.js';
 
 export interface DispenseMedicationDialogProps {
   isOpen: boolean;
@@ -36,8 +38,12 @@ export const DispenseMedicationDialog: React.FC<DispenseMedicationDialogProps> =
   organizationId,
   branchId
 }) => {
+  const profile = getUnifiedPartnerProfile();
+  const defaultPharmacist = profile.pharmacistName
+    ? `${profile.pharmacistName}, ${profile.pharmacistDegree || 'B.Pharm'}`
+    : 'Registered Pharmacist';
   const [dispensingMode, setDispensingMode] = useState<DispensingMode>('OUTPATIENT_COUNTER');
-  const [pharmacistName, setPharmacistName] = useState('Marcus Vance, PharmD');
+  const [pharmacistName, setPharmacistName] = useState(defaultPharmacist);
   const [counselingProvided, setCounselingProvided] = useState(true);
   const [counselingNotes, setCounselingNotes] = useState('Patient educated on dosing schedule, potential adverse effects, and hydration.');
   const [justification, setJustification] = useState('Complete electronic outpatient fulfillment committed with barcode verification.');
@@ -91,13 +97,13 @@ export const DispenseMedicationDialog: React.FC<DispenseMedicationDialogProps> =
         branchId,
         prescriptionId: prescription.id,
         patientId: prescription.patientId,
-        pharmacistId: 'pharm.marcus.vance@docsearch.docsearch.health',
+        pharmacistId: 'pharma.suresh@docsearch.health',
         pharmacistName,
         dispensingMode,
         counselingProvided,
         counselingNotes,
         items: itemsToDispense,
-        actorId: 'pharm.marcus.vance@docsearch.docsearch.health',
+        actorId: 'pharma.suresh@docsearch.health',
         actorRole: 'PHARMACIST',
         justification
       });
@@ -114,6 +120,8 @@ export const DispenseMedicationDialog: React.FC<DispenseMedicationDialogProps> =
       isOpen={isOpen}
       onClose={onClose}
       title={`Dispense Medication — ${prescription.prescriptionNumber}`}
+      isFullPage={true}
+      maxWidth="full"
       footer={
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
           <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
@@ -240,16 +248,12 @@ export const DispenseMedicationDialog: React.FC<DispenseMedicationDialogProps> =
           />
         </div>
 
-        <div>
-          <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.25rem' }}>
-            Audit Justification *
-          </label>
-          <Input
-            value={justification}
-            onChange={(e) => setJustification(e.target.value)}
-            required
-          />
-        </div>
+        <AuditJustificationField
+          value={justification}
+          onChange={setJustification}
+          defaultJustification="Dispensed verified medication against clinical prescription"
+          placeholder="Fulfillment justification..."
+        />
       </form>
     </Dialog>
   );

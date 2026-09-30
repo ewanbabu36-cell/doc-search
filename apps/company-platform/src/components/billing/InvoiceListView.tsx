@@ -24,10 +24,20 @@ export const InvoiceListView: React.FC<InvoiceListViewProps> = ({
   invoices,
   onSelectInvoice
 }) => {
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const partnerFilter = localStorage.getItem('docsearch_finance_partner_filter');
+      if (partnerFilter) {
+        localStorage.removeItem('docsearch_finance_partner_filter');
+        return partnerFilter;
+      }
+    }
+    return '';
+  });
   const [statusFilter, setStatusFilter] = useState<InvoiceStatus | 'ALL'>('ALL');
+  const activeInvoices = invoices || [];
 
-  const filtered = invoices.filter((i) => {
+  const filtered = activeInvoices.filter((i) => {
     if (search.trim()) {
       const q = search.toLowerCase();
       if (!i.invoiceNumber.toLowerCase().includes(q) && !i.partnerTradeName.toLowerCase().includes(q)) {

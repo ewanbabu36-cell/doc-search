@@ -11,26 +11,31 @@ export interface AdmissionRequestViewProps {
 }
 
 export const AdmissionRequestView: React.FC<AdmissionRequestViewProps> = ({
-  requests,
+  requests = [],
   onOpenCreateRequest,
   onOpenApprove,
   onOpenReject,
   onOpenCancel
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeActionId, setActiveActionId] = useState<string | null>(null);
+  const safeRequests = Array.isArray(requests) ? requests : [];
 
-  const filtered = requests.filter((r) =>
-    r.requestNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    r.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    r.patientMrn.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    r.admittingDoctorName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filtered = safeRequests.filter((r) => {
+    if (!r) return false;
+    const term = (searchTerm || '').toLowerCase();
+    const reqNum = (r.requestNumber || '').toLowerCase();
+    const name = (r.patientName || '').toLowerCase();
+    const mrn = (r.patientMrn || '').toLowerCase();
+    const doc = (r.admittingDoctorName || '').toLowerCase();
+    return reqNum.includes(term) || name.includes(term) || mrn.includes(term) || doc.includes(term);
+  });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#0f172a' }}>
+          <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: 'var(--ds-color-text-primary, #f8fafc)' }}>
             Inpatient Admission Requests & Triage
           </h2>
           <p style={{ margin: '0.25rem 0 0 0', color: '#64748b', fontSize: '0.875rem' }}>
@@ -77,9 +82,43 @@ export const AdmissionRequestView: React.FC<AdmissionRequestViewProps> = ({
                   <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
                     {req.status === 'SUBMITTED' || req.status === 'UNDER_REVIEW' ? (
                       <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
-                        <Button variant="primary" size="sm" onClick={() => onOpenApprove(req)}>Approve</Button>
-                        <Button variant="outline" size="sm" onClick={() => onOpenReject(req)}>Reject</Button>
-                        <Button variant="outline" size="sm" onClick={() => onOpenCancel(req)}>Cancel</Button>
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          disabled={activeActionId === req.id}
+                          isLoading={activeActionId === req.id}
+                          onClick={() => {
+                            setActiveActionId(req.id);
+                            onOpenApprove(req);
+                            setTimeout(() => setActiveActionId(null), 1000);
+                          }}
+                        >
+                          Approve
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={activeActionId === req.id}
+                          onClick={() => {
+                            setActiveActionId(req.id);
+                            onOpenReject(req);
+                            setTimeout(() => setActiveActionId(null), 1000);
+                          }}
+                        >
+                          Reject
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={activeActionId === req.id}
+                          onClick={() => {
+                            setActiveActionId(req.id);
+                            onOpenCancel(req);
+                            setTimeout(() => setActiveActionId(null), 1000);
+                          }}
+                        >
+                          Cancel
+                        </Button>
                       </div>
                     ) : (
                       <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Processed</span>

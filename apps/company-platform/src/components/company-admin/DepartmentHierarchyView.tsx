@@ -76,13 +76,6 @@ export const DepartmentHierarchyView: React.FC<DepartmentHierarchyViewProps> = (
           variant="primary"
           size="sm"
           onClick={() => setIsAddModalOpen(true)}
-          style={{
-            backgroundColor: '#06B6D4',
-            color: '#070C16',
-            fontWeight: 800,
-            padding: '8px 20px',
-            fontSize: '0.875rem'
-          }}
         >
           ➕ Add New Department
         </Button>
@@ -286,7 +279,6 @@ export const DepartmentHierarchyView: React.FC<DepartmentHierarchyViewProps> = (
                 </button>
                 <button
                   type="submit"
-                  style={{ backgroundColor: '#06B6D4', color: '#070C16', border: 'none', borderRadius: '6px', padding: '8px 20px', fontWeight: 900, cursor: 'pointer', boxShadow: '0 4px 14px rgba(6, 182, 212, 0.4)' }}
                 >
                   ✓ Create Department
                 </button>

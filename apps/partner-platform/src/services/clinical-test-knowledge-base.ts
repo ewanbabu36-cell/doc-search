@@ -505,6 +505,13 @@ export const MULTI_TEST_KNOWLEDGE_BASE: Record<string, TestCatalogTemplate> = {
         defaultFemaleValue: '18.0'
       }
     ]
+  },
+  CULTURE: {
+    testCode: 'LAB-MIC-CULTURE',
+    testName: 'Microbiology Culture & Antibiotic Sensitivity (AST Antibiogram)',
+    category: 'MICROBIOLOGY',
+    specimenType: 'STERILE_BODY_FLUID',
+    parameters: []
   }
 };
 
@@ -533,3 +540,126 @@ export function computeAutoClinicalFlag(
   }
   return { flag: 'NORMAL', isCritical: false };
 }
+
+export interface AntibiogramDrug {
+  drugCode: string;
+  drugName: string;
+  drugClass: string;
+  susceptibility: 'S' | 'I' | 'R';
+  micOrZone?: string;
+}
+
+export interface CultureSensitivityReportData {
+  specimenSource: string;
+  incubationHours: number;
+  growthStatus: 'SIGNIFICANT_GROWTH' | 'NO_GROWTH' | 'CONTAMINANT_MIXED';
+  organismIsolated: string;
+  colonyCount: string;
+  clinicalSignificance: string;
+  antibiogram: AntibiogramDrug[];
+}
+
+export const COMMON_PATHOGENS = [
+  'Escherichia coli',
+  'Klebsiella pneumoniae',
+  'Pseudomonas aeruginosa',
+  'Staphylococcus aureus (MSSA)',
+  'Staphylococcus aureus (MRSA)',
+  'Enterococcus faecalis (VSE)',
+  'Proteus mirabilis',
+  'Acinetobacter baumannii',
+  'Streptococcus pneumoniae',
+  'No pathogenic bacteria isolated after 48 hrs incubation'
+];
+
+export const COLONY_COUNTS = [
+  '> 10^5 CFU/mL (Significant Bacteriuria)',
+  '10^4 - 10^5 CFU/mL (Moderate Growth)',
+  '10^3 - 10^4 CFU/mL (Low Colony Count)',
+  '< 10^3 CFU/mL (Not Clinically Significant)',
+  'Zero Growth / Sterile'
+];
+
+export const STANDARD_ANTIBIOTIC_PANEL: AntibiogramDrug[] = [
+  { drugCode: 'AMK', drugName: 'Amikacin', drugClass: 'Aminoglycosides', susceptibility: 'S', micOrZone: '22 mm (<= 16 ug/mL)' },
+  { drugCode: 'GEN', drugName: 'Gentamicin', drugClass: 'Aminoglycosides', susceptibility: 'S', micOrZone: '18 mm (<= 4 ug/mL)' },
+  { drugCode: 'CIP', drugName: 'Ciprofloxacin', drugClass: 'Fluoroquinolones', susceptibility: 'R', micOrZone: '12 mm (>= 4 ug/mL)' },
+  { drugCode: 'LEV', drugName: 'Levofloxacin', drugClass: 'Fluoroquinolones', susceptibility: 'R', micOrZone: '14 mm (>= 8 ug/mL)' },
+  { drugCode: 'AMC', drugName: 'Amoxicillin-Clavulanate (Augmentin)', drugClass: 'Beta-Lactams', susceptibility: 'I', micOrZone: '16 mm' },
+  { drugCode: 'CRO', drugName: 'Ceftriaxone', drugClass: '3rd Gen Cephalosporins', susceptibility: 'R', micOrZone: '11 mm (ESBL Producer)' },
+  { drugCode: 'FEP', drugName: 'Cefepime', drugClass: '4th Gen Cephalosporins', susceptibility: 'I', micOrZone: '15 mm' },
+  { drugCode: 'MEM', drugName: 'Meropenem', drugClass: 'Carbapenems', susceptibility: 'S', micOrZone: '28 mm (<= 1 ug/mL)' },
+  { drugCode: 'IPM', drugName: 'Imipenem', drugClass: 'Carbapenems', susceptibility: 'S', micOrZone: '26 mm (<= 1 ug/mL)' },
+  { drugCode: 'TZP', drugName: 'Piperacillin-Tazobactam (Zosyn)', drugClass: 'Penicillin + BLI', susceptibility: 'S', micOrZone: '24 mm' },
+  { drugCode: 'NIT', drugName: 'Nitrofurantoin', drugClass: 'Nitrofurans (Urinary)', susceptibility: 'S', micOrZone: '20 mm (<= 32 ug/mL)' },
+  { drugCode: 'FOS', drugName: 'Fosfomycin', drugClass: 'Phosphonic Acid (Urinary)', susceptibility: 'S', micOrZone: '24 mm' },
+  { drugCode: 'CST', drugName: 'Colistin', drugClass: 'Polymyxins (Reserve)', susceptibility: 'S', micOrZone: '<= 2 ug/mL' },
+  { drugCode: 'SXT', drugName: 'Trimethoprim-Sulfamethoxazole (Bactrim)', drugClass: 'Folate Antagonists', susceptibility: 'R', micOrZone: '10 mm' }
+];
+
+export interface DeltaCheckBaseline {
+  parameterCode: string;
+  parameterName: string;
+  baselineValue: number;
+  unit: string;
+  baselineDate: string;
+  thresholdPercent: number; // e.g. 25-50%
+  clinicalRule: string;
+}
+
+export interface DeltaCheckAlert {
+  parameterCode: string;
+  parameterName: string;
+  baselineValue: number;
+  currentValue: number;
+  unit: string;
+  baselineDate: string;
+  percentChange: number;
+  direction: 'SURGE' | 'DROP';
+  severity: 'WARNING' | 'CRITICAL_BREACH';
+  reason: string;
+}
+
+export const MOCK_PATIENT_HISTORICAL_BASELINES: Record<string, DeltaCheckBaseline[]> = {
+  DEFAULT: [
+    { parameterCode: 'HGB', parameterName: 'Hemoglobin (Hb)', baselineValue: 14.2, unit: 'g/dL', baselineDate: '12-Sep-2026', thresholdPercent: 25, clinicalRule: 'Acute drop > 25% indicates acute hemorrhage, hemolysis, or IV fluid hemodilution.' },
+    { parameterCode: 'PLT', parameterName: 'Platelet Count', baselineValue: 240, unit: 'x10^3/uL', baselineDate: '12-Sep-2026', thresholdPercent: 35, clinicalRule: 'Sudden drop > 35% indicates EDTA-induced pseudothrombocytopenia or acute consumption. Inspect smear!' },
+    { parameterCode: 'WBC', parameterName: 'Total Leukocyte Count (WBC)', baselineValue: 6.8, unit: 'x10^3/uL', baselineDate: '12-Sep-2026', thresholdPercent: 50, clinicalRule: 'Shift > 50% indicates acute bacterial infection or bone marrow reaction.' },
+    { parameterCode: 'CREAT', parameterName: 'Serum Creatinine', baselineValue: 0.95, unit: 'mg/dL', baselineDate: '10-Sep-2026', thresholdPercent: 35, clinicalRule: 'Surge > 35% suggests Acute Kidney Injury (KDIGO Stage 1+) or sample mislabeling.' },
+    { parameterCode: 'K', parameterName: 'Serum Potassium (K+)', baselineValue: 4.2, unit: 'mEq/L', baselineDate: '10-Sep-2026', thresholdPercent: 25, clinicalRule: 'Delta > 25% suggests in-vitro hemolysis or delayed serum centrifugation.' },
+    { parameterCode: 'TBIL', parameterName: 'Total Bilirubin', baselineValue: 0.8, unit: 'mg/dL', baselineDate: '10-Sep-2026', thresholdPercent: 50, clinicalRule: 'Rapid rise > 50% indicates acute biliary obstruction or hemolytic event.' },
+    { parameterCode: 'GLU_F', parameterName: 'Fasting Blood Glucose', baselineValue: 95, unit: 'mg/dL', baselineDate: '08-Sep-2026', thresholdPercent: 40, clinicalRule: 'Delta > 40% indicates non-fasting status or glycemic dysregulation.' }
+  ]
+};
+
+export function evaluateDeltaCheck(
+  parameterCode: string,
+  currentValue: number,
+  patientMrn?: string
+): DeltaCheckAlert | null {
+  const baselines = (patientMrn && MOCK_PATIENT_HISTORICAL_BASELINES[patientMrn]) || MOCK_PATIENT_HISTORICAL_BASELINES['DEFAULT'];
+  const match = baselines?.find((b) => b.parameterCode === parameterCode);
+  if (!match || match.baselineValue <= 0 || isNaN(currentValue)) return null;
+
+  const diff = currentValue - match.baselineValue;
+  const percentChange = Math.round((diff / match.baselineValue) * 100);
+  const absPercent = Math.abs(percentChange);
+
+  if (absPercent >= match.thresholdPercent) {
+    const isCritical = absPercent >= (match.thresholdPercent * 1.5);
+    return {
+      parameterCode: match.parameterCode,
+      parameterName: match.parameterName,
+      baselineValue: match.baselineValue,
+      currentValue,
+      unit: match.unit,
+      baselineDate: match.baselineDate,
+      percentChange,
+      direction: diff > 0 ? 'SURGE' : 'DROP',
+      severity: isCritical ? 'CRITICAL_BREACH' : 'WARNING',
+      reason: `${match.clinicalRule} Baseline was ${match.baselineValue} ${match.unit} on ${match.baselineDate}. Shift is ${percentChange > 0 ? '+' : ''}${percentChange}%.`
+    };
+  }
+  return null;
+}
+

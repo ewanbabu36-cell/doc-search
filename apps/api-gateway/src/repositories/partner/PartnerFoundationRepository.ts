@@ -105,6 +105,7 @@ export class PartnerFoundationRepository {
         legalName: 'Doc Search Healthcare Network',
         tradeName: 'Doc Search Hospital Network',
         partnerType: 'HOSPITAL_NETWORK',
+        operatingModel: null,
         lifecycleStatus: 'ACTIVE',
         verificationStatus: 'VERIFIED',
         onboardingStep: 'COMPLETED',
@@ -113,6 +114,10 @@ export class PartnerFoundationRepository {
         primaryContactEmail: 'cmo@docsearch.health',
         primaryContactPhone: '+1-800-555-0199',
         primaryContactRole: 'CMO',
+        appliedTemplateId: null,
+        appliedTemplateVersion: null,
+        configurationVersion: 1,
+        activeProfiles: [],
         metadata: {},
         createdAt: new Date(),
         updatedAt: new Date()
@@ -126,6 +131,7 @@ export class PartnerFoundationRepository {
       legalName: data.legalName,
       tradeName: data.tradeName,
       partnerType: data.partnerType || 'HOSPITAL_NETWORK',
+      operatingModel: (data as any).operatingModel || (data.metadata as any)?.operatingModel || null,
       lifecycleStatus: data.lifecycleStatus || 'ACTIVE',
       verificationStatus: data.verificationStatus || 'VERIFIED',
       onboardingStep: data.onboardingStep || 'COMPLETED',
@@ -134,6 +140,10 @@ export class PartnerFoundationRepository {
       primaryContactEmail: data.primaryContactEmail || 'admin@docsearch.health',
       primaryContactPhone: data.primaryContactPhone || null,
       primaryContactRole: data.primaryContactRole || null,
+      appliedTemplateId: null,
+      appliedTemplateVersion: null,
+      configurationVersion: 1,
+      activeProfiles: [],
       metadata: data.metadata || {}
     };
 

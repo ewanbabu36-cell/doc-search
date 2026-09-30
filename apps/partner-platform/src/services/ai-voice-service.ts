@@ -113,6 +113,26 @@ export class AiVoiceClientService {
     }
     return res.data;
   }
+
+  /**
+   * Extracts structured clinical SOAP notes, ICD-10 diagnoses, medications, and lab tests from speech transcripts.
+   */
+  async extractSoapNotes(
+    transcript: string,
+    patientContext?: any,
+    doctorSpecialty?: string
+  ): Promise<any> {
+    const res = await apiRequest<any>('/api/v1/partner/ai/voice/extract-soap', {
+      method: 'POST',
+      body: JSON.stringify({ transcript, patientContext, doctorSpecialty })
+    });
+
+    if (!res.success || !res.data) {
+      throw new Error(res.error?.message || 'Failed to extract clinical SOAP notes');
+    }
+    return res.data;
+  }
 }
 
 export const aiVoiceClientService = new AiVoiceClientService();
+export const aiVoiceService = aiVoiceClientService;

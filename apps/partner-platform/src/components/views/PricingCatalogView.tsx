@@ -50,10 +50,10 @@ export const PricingCatalogView: React.FC<PricingCatalogViewProps> = ({
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: '#0f172a' }}>
+          <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: 'var(--ds-color-text-primary, #f8fafc)' }}>
             Pricing Master & Billable Service Catalog
           </h2>
-          <p style={{ margin: '0.25rem 0 0 0', color: '#64748b', fontSize: '0.875rem' }}>
+          <p style={{ margin: '0.25rem 0 0 0', color: 'var(--ds-color-text-secondary, #94a3b8)', fontSize: '0.875rem' }}>
             Central fee master, clinical tariff schedules, institutional price overrides, and tax classification
           </p>
         </div>
@@ -103,7 +103,7 @@ export const PricingCatalogView: React.FC<PricingCatalogViewProps> = ({
 
       {/* Master Service Catalog Table */}
       <Card>
-        <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', fontWeight: 600, color: '#0f172a' }}>
+        <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', fontWeight: 600, color: 'var(--ds-color-text-primary, #f8fafc)' }}>
           Master Service Catalog ({filteredServices.length})
         </h3>
         <TableContainer>
@@ -126,14 +126,14 @@ export const PricingCatalogView: React.FC<PricingCatalogViewProps> = ({
                   <TableCell>
                     <div style={{ fontWeight: 500 }}>{s.serviceName}</div>
                     {s.description && (
-                      <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{s.description}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--ds-color-text-secondary, #94a3b8)' }}>{s.description}</div>
                     )}
                   </TableCell>
                   <TableCell>
                     <Badge variant="neutral">{s.category}</Badge>
                   </TableCell>
                   <TableCell>{s.department || 'General'}</TableCell>
-                  <TableCell style={{ fontWeight: 700, color: '#0f172a' }}>
+                  <TableCell style={{ fontWeight: 700, color: 'var(--ds-color-text-primary, #f8fafc)' }}>
                     ${s.basePrice.toFixed(2)}
                   </TableCell>
                   <TableCell>
@@ -153,7 +153,7 @@ export const PricingCatalogView: React.FC<PricingCatalogViewProps> = ({
 
       {/* Institutional Fee Schedules */}
       <Card>
-        <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', fontWeight: 600, color: '#0f172a' }}>
+        <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', fontWeight: 600, color: 'var(--ds-color-text-primary, #f8fafc)' }}>
           Configured Fee Schedules & Pricing Tiers ({priceLists.length})
         </h3>
         <TableContainer>

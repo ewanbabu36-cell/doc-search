@@ -1,10 +1,13 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { HardwareBridgeService } from '../../services/partner/HardwareBridgeService.js';
 import { authenticate } from '../../plugins/auth-guard.js';
+import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 
 const service = new HardwareBridgeService();
 
 export const hardwareBridgeRoutes: FastifyPluginAsync = async (app) => {
+  app.addHook('preHandler', requireModuleCommercialAccess('OPERATIONS'));
+
   // 1. Overview Metrics
   app.get(
     '/api/v1/partner/hardware/overview',

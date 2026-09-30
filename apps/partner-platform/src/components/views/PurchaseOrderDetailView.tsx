@@ -45,10 +45,10 @@ export const PurchaseOrderDetailView: React.FC<PurchaseOrderDetailViewProps> = (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <Button variant="outline" size="sm" onClick={onBack}>← Back</Button>
+          <Button variant="outline" size="sm" onClick={onBack}>← Back to Purchase Orders</Button>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 700, color: '#0f172a' }}>
+              <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 700, color: 'var(--ds-color-text-primary, #f8fafc)' }}>
                 Purchase Order {purchaseOrder.poNumber}
               </h2>
               <Badge variant={purchaseOrder.status === 'FULLY_RECEIVED' ? 'success' : 'primary'}>
@@ -108,7 +108,7 @@ export const PurchaseOrderDetailView: React.FC<PurchaseOrderDetailViewProps> = (
       {/* Downstream Receiving & Invoicing Trail */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
         <Card style={{ padding: '1.25rem' }}>
-          <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1rem', fontWeight: 600, color: '#0f172a' }}>
+          <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1rem', fontWeight: 600, color: 'var(--ds-color-text-primary, #f8fafc)' }}>
             Goods Receipts (GRN) History ({linkedGRNs.length})
           </h3>
           {linkedGRNs.length === 0 ? (
@@ -131,7 +131,7 @@ export const PurchaseOrderDetailView: React.FC<PurchaseOrderDetailViewProps> = (
         </Card>
 
         <Card style={{ padding: '1.25rem' }}>
-          <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1rem', fontWeight: 600, color: '#0f172a' }}>
+          <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1rem', fontWeight: 600, color: 'var(--ds-color-text-primary, #f8fafc)' }}>
             Supplier Invoices ({linkedInvoices.length})
           </h3>
           {linkedInvoices.length === 0 ? (

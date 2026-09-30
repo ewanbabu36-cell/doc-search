@@ -75,7 +75,7 @@ export const ProductListView: React.FC<ProductListViewProps> = ({
           <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#F8FAFC' }}>Healthcare Product Catalog</h2>
           <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>{filtered.length} core product lines available for subscription packaging</span>
         </div>
-        <Button variant="primary" size="sm" onClick={() => setIsModalOpen(true)} style={{ backgroundColor: '#06B6D4', color: '#070C16', fontWeight: 800 }}>
+        <Button variant="primary" size="sm" onClick={() => setIsModalOpen(true)}>
           ➕ Add New Product Line
         </Button>
       </div>
@@ -123,7 +123,7 @@ export const ProductListView: React.FC<ProductListViewProps> = ({
               </div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '12px' }}>
                 <Button type="button" variant="outline" size="md" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-                <Button type="submit" variant="primary" size="md" style={{ backgroundColor: '#06B6D4', borderColor: '#06B6D4', color: '#070C16', fontWeight: 800 }}>🚀 Create Product</Button>
+                <Button type="submit" variant="primary" size="md" >🚀 Create Product</Button>
               </div>
             </form>
           </div>

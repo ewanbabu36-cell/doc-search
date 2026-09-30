@@ -1,0 +1,116 @@
+{
+  "timestamp": "2026-09-28T15:42:55.021Z",
+  "durationSeconds": 394.98,
+  "totalTargets": 9,
+  "totalFailures": 0,
+  "results": [
+    {
+      "workspace": "@docsearch/api-contracts",
+      "directory": "packages/api-contracts",
+      "command": "tsc",
+      "status": "PASS",
+      "exitCode": 0,
+      "durationSeconds": 24.91,
+      "errorCategory": null,
+      "missingArtifacts": [],
+      "stdoutPreview": "\n> @docsearch/api-contracts@1.0.0 build D:\\DOC SEARCH\\packages\\api-contracts\n> tsc\n\n",
+      "stderrPreview": ""
+    },
+    {
+      "workspace": "@docsearch/shared-core",
+      "directory": "packages/shared-core",
+      "command": "tsc",
+      "status": "PASS",
+      "exitCode": 0,
+      "durationSeconds": 15.92,
+      "errorCategory": null,
+      "missingArtifacts": [],
+      "stdoutPreview": "\n> @docsearch/shared-core@1.0.0 build D:\\DOC SEARCH\\packages\\shared-core\n> tsc\n\n",
+      "stderrPreview": ""
+    },
+    {
+      "workspace": "@docsearch/auth",
+      "directory": "packages/auth",
+      "command": "tsc",
+      "status": "PASS",
+      "exitCode": 0,
+      "durationSeconds": 8.12,
+      "errorCategory": null,
+      "missingArtifacts": [],
+      "stdoutPreview": "\n> @docsearch/auth@1.0.0 build D:\\DOC SEARCH\\packages\\auth\n> tsc\n\n",
+      "stderrPreview": ""
+    },
+    {
+      "workspace": "@docsearch/database",
+      "directory": "packages/database",
+      "command": "tsc",
+      "status": "PASS",
+      "exitCode": 0,
+      "durationSeconds": 41.95,
+      "errorCategory": null,
+      "missingArtifacts": [],
+      "stdoutPreview": "\n> @docsearch/database@1.0.0 build D:\\DOC SEARCH\\packages\\database\n> tsc\n\n",
+      "stderrPreview": ""
+    },
+    {
+      "workspace": "@docsearch/ui-kit",
+      "directory": "packages/ui-kit",
+      "command": "tsc",
+      "status": "PASS",
+      "exitCode": 0,
+      "durationSeconds": 15.33,
+      "errorCategory": null,
+      "missingArtifacts": [],
+      "stdoutPreview": "\n> @docsearch/ui-kit@1.0.0 build D:\\DOC SEARCH\\packages\\ui-kit\n> tsc\n\n",
+      "stderrPreview": ""
+    },
+    {
+      "workspace": "@docsearch/api-gateway",
+      "directory": "apps/api-gateway",
+      "command": "tsc",
+      "status": "PASS",
+      "exitCode": 0,
+      "durationSeconds": 59.88,
+      "errorCategory": null,
+      "missingArtifacts": [],
+      "stdoutPreview": "\n> @docsearch/api-gateway@1.0.0 build D:\\DOC SEARCH\\apps\\api-gateway\n> tsc\n\n",
+      "stderrPreview": ""
+    },
+    {
+      "workspace": "@docsearch/company-platform",
+      "directory": "apps/company-platform",
+      "command": "tsc && vite build",
+      "status": "PASS",
+      "exitCode": 0,
+      "durationSeconds": 77.69,
+      "errorCategory": null,
+      "missingArtifacts": [],
+      "stdoutPreview": "\n> @docsearch/company-platform@1.0.0 build D:\\DOC SEARCH\\apps\\company-platform\n> tsc && vite build\n\n\u001b[36mvite v6.4.3 \u001b[32mbuilding for production...\u001b[36m\u001b[39m\ntransforming...\n\u001b[32m✓\u001b[39m 506 modules transformed.\nrendering chunks...\ncomputing gzip size...\n\u001b[2mdist/bundle/\u001b[22m\u001b[32mindex.html                                           \u001b[39m\u001b[1m\u001b[2m  0.89 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip:   0.46 kB\u001b[22m\n\u001b[2mdist/bundle/\u001b[22m\u001b[35massets/index-CvVacE0H.css                            \u001b[39m\u001b[1m\u001b[2m 54.44 kB\u001b",
+      "stderrPreview": ""
+    },
+    {
+      "workspace": "@docsearch/landing-page",
+      "directory": "apps/landing-page",
+      "command": "tsc && vite build",
+      "status": "PASS",
+      "exitCode": 0,
+      "durationSeconds": 17.71,
+      "errorCategory": null,
+      "missingArtifacts": [],
+      "stdoutPreview": "\n> @docsearch/landing-page@1.0.0 build D:\\DOC SEARCH\\apps\\landing-page\n> tsc && vite build\n\n\u001b[36mvite v6.4.3 \u001b[32mbuilding for production...\u001b[36m\u001b[39m\ntransforming...\n\u001b[32m✓\u001b[39m 141 modules transformed.\nrendering chunks...\ncomputing gzip size...\n\u001b[2mdist/bundle/\u001b[22m\u001b[32mindex.html                                        \u001b[39m\u001b[1m\u001b[2m  0.80 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip:  0.46 kB\u001b[22m\n\u001b[2mdist/bundle/\u001b[22m\u001b[35massets/index-CvVacE0H.css                         \u001b[39m\u001b[1m\u001b[2m 54.44 kB\u001b[22m\u001b[1m\u001b[22m\u001b[",
+      "stderrPreview": ""
+    },
+    {
+      "workspace": "@docsearch/partner-platform",
+      "directory": "apps/partner-platform",
+      "command": "tsc && vite build",
+      "status": "PASS",
+      "exitCode": 0,
+      "durationSeconds": 133.42,
+      "errorCategory": null,
+      "missingArtifacts": [],
+      "stdoutPreview": "\n> @docsearch/partner-platform@1.0.0 build D:\\DOC SEARCH\\apps\\partner-platform\n> tsc && vite build\n\n\u001b[36mvite v6.4.3 \u001b[32mbuilding for production...\u001b[36m\u001b[39m\ntransforming...\n\u001b[32m✓\u001b[39m 1018 modules transformed.\nrendering chunks...\ncomputing gzip size...\n\u001b[2mdist/bundle/\u001b[22m\u001b[32mindex.html                                               \u001b[39m\u001b[1m\u001b[2m    0.99 kB\u001b[22m\u001b[1m\u001b[22m\u001b[2m │ gzip:   0.54 kB\u001b[22m\n\u001b[2mdist/bundle/\u001b[22m\u001b[35massets/index-CvVacE0H.css                                \u001b[39m\u001b[1m\u001b[2",
+      "stderrPreview": ""
+    }
+  ]
+}

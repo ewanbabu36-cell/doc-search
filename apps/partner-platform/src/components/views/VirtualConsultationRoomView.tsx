@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Badge, Button } from '@docsearch/ui-kit';
 import type { TeleconsultationSessionDto } from '@docsearch/api-contracts';
+import { getUnifiedPartnerProfile } from '../../utils/roleProfileResolver.js';
 
 interface Props {
   session: TeleconsultationSessionDto;
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export const VirtualConsultationRoomView: React.FC<Props> = ({ session: initialSession }) => {
+  const doctorName = initialSession?.doctorName || getUnifiedPartnerProfile().doctorName || 'Consulting Physician';
   const [callActive, setCallActive] = useState(true);
   const [callSeconds, setCallSeconds] = useState(148);
   const [micMuted, setMicMuted] = useState(false);
@@ -123,7 +125,7 @@ export const VirtualConsultationRoomView: React.FC<Props> = ({ session: initialS
               </Badge>
             </div>
             <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
-              Patient: <strong style={{ color: '#38BDF8' }}>{currentPatient.name}</strong> ({currentPatient.ageGender}) • Attending: Dr. Rajesh Sharma, MD
+              Patient: <strong style={{ color: '#38BDF8' }}>{currentPatient.name}</strong> ({currentPatient.ageGender}) • Attending: {doctorName}
             </div>
           </div>
         </div>

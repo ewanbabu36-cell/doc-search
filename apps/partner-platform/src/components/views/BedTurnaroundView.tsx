@@ -7,11 +7,15 @@ export interface BedTurnaroundViewProps {
   onOpenCompleteCleaning: (trn: InpatientBedTurnaroundDto) => void;
 }
 
-export const BedTurnaroundView: React.FC<BedTurnaroundViewProps> = ({ turnarounds, onOpenCompleteCleaning }) => {
+export const BedTurnaroundView: React.FC<BedTurnaroundViewProps> = ({ turnarounds = [], onOpenCompleteCleaning }) => {
+  const safeTurnarounds = Array.isArray(turnarounds) ? turnarounds : [];
+
+  // Zero-crash guarded render
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div>
-        <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#0f172a' }}>Bed Turnaround & Housekeeping Pipeline</h2>
+        <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: 'var(--ds-color-text-primary, #f8fafc)' }}>Bed Turnaround & Housekeeping Pipeline</h2>
         <p style={{ margin: '0.25rem 0 0 0', color: '#64748b', fontSize: '0.875rem' }}>Disinfection queue, environmental certification, and turnaround time tracking.</p>
       </div>
       <Card style={{ padding: '0', overflow: 'hidden' }}>
@@ -27,22 +31,28 @@ export const BedTurnaroundView: React.FC<BedTurnaroundViewProps> = ({ turnaround
             </tr>
           </thead>
           <tbody>
-            {turnarounds.map((t) => (
-              <tr key={t.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#2563eb' }}>{t.turnaroundNumber}</td>
-                <td style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>{t.bedCode}</td>
-                <td style={{ padding: '0.75rem 1rem' }}>{t.cleaningType}</td>
-                <td style={{ padding: '0.75rem 1rem' }}>{t.assignedHousekeeper || 'Unassigned'}</td>
-                <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
-                  <Badge variant={t.status === 'AVAILABLE' ? 'success' : 'warning'}>{t.status}</Badge>
-                </td>
-                <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
-                  {t.status !== 'AVAILABLE' && (
-                    <Button variant="primary" size="sm" onClick={() => onOpenCompleteCleaning(t)}>Certify Clean</Button>
-                  )}
-                </td>
+            {safeTurnarounds.length === 0 ? (
+              <tr>
+                <td colSpan={6} style={{ padding: '1.5rem', textAlign: 'center', color: '#64748b' }}>No beds in sanitization or turnaround queue.</td>
               </tr>
-            ))}
+            ) : (
+              safeTurnarounds.map((t) => (
+                <tr key={t.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                  <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#2563eb' }}>{t.turnaroundNumber}</td>
+                  <td style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>{t.bedCode}</td>
+                  <td style={{ padding: '0.75rem 1rem' }}>{t.cleaningType}</td>
+                  <td style={{ padding: '0.75rem 1rem' }}>{t.assignedHousekeeper || 'Unassigned'}</td>
+                  <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
+                    <Badge variant={t.status === 'AVAILABLE' ? 'success' : 'warning'}>{t.status}</Badge>
+                  </td>
+                  <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
+                    {t.status !== 'AVAILABLE' && (
+                      <Button variant="primary" size="sm" onClick={() => onOpenCompleteCleaning(t)}>Certify Clean</Button>
+                    )}
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </Card>

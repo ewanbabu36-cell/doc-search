@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Card, Badge, Button } from '@docsearch/ui-kit';
 import type { LiveQueueTokenDto } from '@docsearch/api-contracts';
+import { getUnifiedPartnerProfile } from '../../utils/roleProfileResolver.js';
 
 interface Props {
   tokens: LiveQueueTokenDto[];
 }
 
 export const LiveQueueTokenTrackerView: React.FC<Props> = ({ tokens }) => {
+  const partnerProfile = getUnifiedPartnerProfile();
   const [currentServingNum, setCurrentServingNum] = useState(8);
   const [searchToken] = useState('TKN-012');
   const [alertSent, setAlertSent] = useState(false);
@@ -14,8 +16,8 @@ export const LiveQueueTokenTrackerView: React.FC<Props> = ({ tokens }) => {
   const activeToken = {
     tokenNumber: searchToken,
     patientName: 'Kavita Joshi',
-    doctorName: 'Dr. Rajesh Sharma, MD',
-    department: 'General Outpatient OPD',
+    doctorName: partnerProfile.doctorName ? `${partnerProfile.doctorName}${partnerProfile.doctorDegree ? `, ${partnerProfile.doctorDegree}` : ''}` : 'Consulting Physician',
+    department: partnerProfile.doctorSpecialty || 'General Outpatient OPD',
     chamber: 'Chamber 1',
     tokenIndex: 12,
     currentTokenServing: `TKN-00${currentServingNum}`,

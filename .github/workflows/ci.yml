@@ -14,7 +14,22 @@ jobs:
   validate:
     name: Code Quality & Security Gates
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: docsearch
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout Repository
@@ -47,6 +62,36 @@ jobs:
           JWT_SECRET: docsearch_master_jwt_secret_dev_32char_key_only
           JWT_ISSUER: docsearch-api
           JWT_AUDIENCE: docsearch-platform
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/docsearch
+
+      - name: Run Multi-Tenant Isolation Verification (BUG-001)
+        run: node tests/reliability/phase6-tenant-isolation.mjs
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/docsearch
+
+      - name: Run PostgreSQL Concurrency Certification (BUG-002)
+        run: node tests/reliability/postgres-concurrency-certification.test.mjs
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/docsearch
+
+      - name: Run Distributed Idempotency Verification (BUG-004)
+        run: node tests/reliability/idempotency-concurrency.test.mjs
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/docsearch
+
+      - name: Run Rate Limiter & Audit Verification (BUG-007)
+        run: node tests/reliability/phase6-rate-limit-audit.mjs
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/docsearch
+
+      - name: Run PHI Export Audit Verification (BUG-009)
+        run: node apps/api-gateway/test/phi-export-audit.test.mjs
+        env:
+          NODE_ENV: test
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/docsearch
 
       - name: Run Production Monorepo Build

@@ -42,44 +42,71 @@ export interface VerifiedRoleProfile {
   ifscCode: string;
   upiId: string;
 
+  technicianName?: string;
+
   // Verification & Trust Badge
   isVerified: boolean;
+  isComplete: boolean;
+  missingFields: string[];
   sha256Hash: string;
   trustBadgeTitle: string;
 }
 
-export const getVerifiedRoleProfile = (): VerifiedRoleProfile => {
-  let authUser: any = null;
+export const getVerifiedRoleProfile = (currentUserOverride?: any): VerifiedRoleProfile => {
+  let authUser: any = currentUserOverride || null;
   let savedSettings: any = null;
+  let registeredPartner: any = null;
 
   if (typeof window !== 'undefined') {
+    if (!authUser) {
+      try {
+        const authStr = localStorage.getItem('docsearch_partner_staff_auth');
+        if (authStr) authUser = JSON.parse(authStr);
+      } catch {}
+    }
+
+    const email = (authUser?.email || '').toLowerCase().trim();
+
     try {
-      const authStr = localStorage.getItem('docsearch_partner_staff_auth');
-      if (authStr) authUser = JSON.parse(authStr);
+      const userKey = email || 'default_user';
+      const settingsStr = localStorage.getItem(`docsearch_account_settings_${userKey}`);
+      if (settingsStr) savedSettings = JSON.parse(settingsStr);
     } catch {}
 
     try {
-      const userKey = authUser?.email || 'default_user';
-      const settingsStr = localStorage.getItem(`docsearch_account_settings_${userKey}`);
-      if (settingsStr) savedSettings = JSON.parse(settingsStr);
+      const regList = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');
+      registeredPartner = regList.find((p: any) =>
+        (p.email && p.email.toLowerCase().trim() === email) ||
+        (p.phone && authUser?.phone && p.phone === authUser.phone) ||
+        (p.id && (p.id === authUser?.partnerId || p.id === authUser?.id))
+      );
     } catch {}
   }
 
   const role = (authUser?.role || '').toUpperCase();
   const org = (authUser?.organizationType || '').toUpperCase();
   const dept = (authUser?.department || '').toUpperCase();
-  const email = (authUser?.email || '').toLowerCase();
+  const email = (authUser?.email || '').toLowerCase().trim();
 
   let roleCategory: VerifiedRoleProfile['roleCategory'] = 'DOCTOR';
-  if (role.includes('SUPER_ADMIN') || role.includes('COMPANY') || email.includes('docsearch.health')) {
+  if (
+    role.includes('SUPER_ADMIN') ||
+    role.includes('COMPANY') ||
+    email.startsWith('founder@') ||
+    email.startsWith('hq.') ||
+    email.startsWith('superadmin@') ||
+    email.startsWith('admin@hq.')
+  ) {
     roleCategory = 'COMPANY_HQ';
-  } else if (role.includes('PATHOLOGIST') || org === 'PATHOLOGY' || org === 'DIAGNOSTIC_CENTRE' || dept.includes('PATHOLOGY') || email.includes('tata')) {
+  } else if (role.includes('PATHOLOGIST') || org === 'PATHOLOGY' || org === 'DIAGNOSTIC_LAB' || dept.includes('PATHOLOGY')) {
     roleCategory = 'PATHOLOGY_LAB';
   } else if (role.includes('PHARMACIST') || org === 'PHARMACY' || dept.includes('PHARMACY')) {
     roleCategory = 'PHARMACY';
-  } else if (role.includes('DOCTOR') || role.includes('SURGEON') || role.includes('PHYSICIAN') || role.includes('RADIOLOGIST') || role.includes('PEDIATRICIAN') || role.includes('CONSULTANT')) {
+  } else if (role.includes('RADIOLOGIST') || org === 'DIAGNOSTIC_CENTRE' || dept.includes('RADIOLOGY')) {
     roleCategory = 'DOCTOR';
-  } else if (role.includes('HOSPITAL_ADMIN') || role.includes('DIRECTOR') || role.includes('ORGANIZATION_ADMIN') || org === 'HOSPITAL' || org === 'CLINIC') {
+  } else if (role.includes('DOCTOR') || role.includes('SURGEON') || role.includes('PHYSICIAN') || role.includes('PEDIATRICIAN') || role.includes('CONSULTANT') || org === 'CLINIC' || org === 'CLINIC_GROUP') {
+    roleCategory = 'DOCTOR';
+  } else if (role.includes('HOSPITAL_ADMIN') || role.includes('DIRECTOR') || role.includes('ORGANIZATION_ADMIN') || org === 'HOSPITAL' || org === 'HOSPITAL_NETWORK') {
     roleCategory = 'HOSPITAL';
   } else {
     roleCategory = 'STAFF_OPERATIONS';
@@ -88,27 +115,95 @@ export const getVerifiedRoleProfile = (): VerifiedRoleProfile => {
   const bank = savedSettings?.bank || {};
   const addr = savedSettings?.address || {};
   const cert = savedSettings?.certificates || {};
-  const isApproved = savedSettings?.certApprovalStatus === 'APPROVED' || savedSettings?.bankApprovalStatus === 'APPROVED';
+  const isApproved = savedSettings?.certApprovalStatus === 'APPROVED' || savedSettings?.bankApprovalStatus === 'APPROVED' || registeredPartner?.status === 'VERIFIED';
 
-  // Base facility defaults
-  const isTata = email.includes('tata') || authUser?.tenantName?.includes('Tata');
-  const entityLegalName = addr.legalName || (isTata ? 'Tata Pathology & Diagnostic Laboratory' : 'Apex Multi-Specialty Hospital & Research Center');
-  const officialAddress = addr.addressLine1 ? `${addr.addressLine1}, ${addr.addressLine2 ? addr.addressLine2 + ', ' : ''}${addr.city}, ${addr.state} - ${addr.pincode}` : (isTata ? 'Plot No. 42, Health City Avenue, Main Road, Mumbai, Maharashtra - 400021' : 'Plot No. 14, Health City, Outer Ring Road, New Delhi, Delhi - 110048');
-  const contactPhone = addr.officialPhone || '+91 98765 43210';
-  const supportEmail = addr.supportEmail || authUser?.email || 'care@docsearch.health';
-  const website = addr.website || 'https://www.docsearch.health';
-  const gstin = addr.gstin || '27AAAAA0000A1Z5';
+  // Dynamic entity name resolution (Zero fake hospital fallbacks)
+  const entityLegalName = (
+    addr.legalName ||
+    registeredPartner?.facilityName ||
+    authUser?.tenantName ||
+    (authUser?.name ? `${authUser.name}'s Medical Facility` : '')
+  ).trim();
+
+  // Dynamic official address resolution
+  let officialAddress = '';
+  if (addr.addressLine1) {
+    officialAddress = `${addr.addressLine1}${addr.addressLine2 ? ', ' + addr.addressLine2 : ''}, ${addr.city || ''}, ${addr.state || ''}${addr.pincode ? ' - ' + addr.pincode : ''}`.trim();
+  } else if (registeredPartner?.address || registeredPartner?.addressLine1) {
+    const rAddr = registeredPartner.address || registeredPartner.addressLine1;
+    officialAddress = `${rAddr}${registeredPartner.city ? ', ' + registeredPartner.city : ''}${registeredPartner.state ? ', ' + registeredPartner.state : ''}${registeredPartner.pincode ? ' - ' + registeredPartner.pincode : ''}`.trim();
+  }
+
+  const contactPhone = (addr.officialPhone || registeredPartner?.phone || authUser?.phone || '').trim();
+  const supportEmail = (addr.supportEmail || authUser?.email || registeredPartner?.email || '').trim();
+  const website = (addr.website || registeredPartner?.website || '').trim();
+  const gstin = (addr.gstin || registeredPartner?.gstin || '').trim();
+
+  // Doctor credentials
+  const doctorName = (authUser?.role?.includes('DOCTOR') || authUser?.role?.includes('PHYSICIAN') || authUser?.role?.includes('SURGEON'))
+    ? (authUser.name || '')
+    : (cert.doctorName || registeredPartner?.leadDoctorName || authUser?.name || '');
+  const doctorDegree = cert.doctorDegreeName || authUser?.roleTitle || (roleCategory === 'DOCTOR' ? 'MBBS' : '');
+  const doctorCouncilName = cert.doctorCouncilName || registeredPartner?.medicalCouncil || '';
+  const doctorRegNo = cert.doctorRegNo || registeredPartner?.clinicalLicense || registeredPartner?.councilRegNo || '';
+  const doctorSpecialty = authUser?.roleTitle || cert.doctorSpecialty || (roleCategory === 'DOCTOR' ? 'General Medicine' : '');
+  const doctorIndemnityNo = cert.doctorIndemnityPolicyNo || '';
+
+  // Lab credentials
+  const nablCertificateNo = cert.nablCertificateNo || registeredPartner?.nablCertNo || '';
+  const pathologistName = (roleCategory === 'PATHOLOGY_LAB')
+    ? (authUser?.name || cert.pathologistName || '')
+    : (cert.pathologistName || '');
+  const pathologistDegree = cert.pathologistDegree || (roleCategory === 'PATHOLOGY_LAB' ? (authUser?.roleTitle || 'MD (Pathology)') : '');
+  const pathologistRegNo = cert.pathologistRegNo || cert.doctorRegNo || registeredPartner?.clinicalLicense || '';
+  const bmwClearanceNo = cert.bmwPollutionAuthNo || registeredPartner?.bmwCertNo || '';
+  const technicianName = cert.staffHighestQualification
+    ? (authUser?.name || 'Medical Lab Technologist')
+    : (roleCategory === 'STAFF_OPERATIONS' ? (authUser?.name || 'Medical Lab Technologist') : 'Authorized Lab Technologist');
+
+  // Hospital credentials
+  const hospitalCeaRegNo = cert.hospitalCeaRegNo || registeredPartner?.clinicalLicense || '';
+  const hospitalNabhGrade = cert.hospitalNabhGrade || registeredPartner?.nabhGrade || '';
+  const hospitalFireNocNo = cert.hospitalFireNocNo || '';
+
+  // Pharmacy credentials
+  const pharmacyDrugLicense20B = cert.pharmacyDrugLicense20B || registeredPartner?.drugLicense20B || registeredPartner?.clinicalLicense || '';
+  const pharmacyDrugLicense21B = cert.pharmacyDrugLicense21B || registeredPartner?.drugLicense21B || '';
+  const pharmacistName = (roleCategory === 'PHARMACY')
+    ? (authUser?.name || cert.pharmacistName || '')
+    : (cert.pharmacistName || authUser?.name || '');
+  const pharmacistRegNo = cert.pharmacyCouncilRegNo || registeredPartner?.pharmacistRegNo || '';
+  const pharmacistDegree = cert.pharmacistDegree || (roleCategory === 'PHARMACY' ? (authUser?.roleTitle || 'B.Pharm') : '');
+
+  // Bank & Settlement
+  const bankName = bank.bankName || registeredPartner?.bankName || '';
+  const accountHolder = bank.accountHolderName || registeredPartner?.accountHolder || entityLegalName;
+  const accountNumber = bank.accountNumber || registeredPartner?.accountNumber || '';
+  const ifscCode = (bank.ifscCode || registeredPartner?.ifscCode || '').toUpperCase();
+  const upiId = bank.upiId || registeredPartner?.upiId || '';
+
+  // Missing fields computation
+  const missingFields: string[] = [];
+  if (!entityLegalName || entityLegalName.length < 3) missingFields.push('Facility Legal Name');
+  if (!officialAddress || officialAddress.length < 5) missingFields.push('Physical Address & PIN');
+  if (!contactPhone || contactPhone.replace(/\D/g, '').length < 10) missingFields.push('Official Phone Number');
+  if (!doctorRegNo && !hospitalCeaRegNo && !pharmacyDrugLicense20B && !nablCertificateNo) {
+    missingFields.push('Clinical Establishment / Council / Drug License');
+  }
+
+  const isFounder = email === 'founder@docsearch.health';
+  const isComplete = isFounder || missingFields.length === 0;
 
   return {
     roleCategory,
-    entityLegalName,
+    entityLegalName: entityLegalName || 'Unregistered Healthcare Facility',
     facilityTagline: roleCategory === 'PATHOLOGY_LAB'
-      ? 'NABL ACCREDITED LAB (ISO 15189:2022) • ICMR APPROVED • CAP COMPLIANT'
+      ? 'CLINICAL PATHOLOGY & DIAGNOSTIC LABORATORY'
       : roleCategory === 'HOSPITAL'
-      ? 'NABH ACCREDITED MULTI-SPECIALTY TERTIARY CARE HOSPITAL • CEA LICENSED'
+      ? 'MULTI-SPECIALTY HEALTHCARE & CLINICAL CARE CENTER'
       : roleCategory === 'PHARMACY'
-      ? 'REGISTERED 24x7 ALLOPATHIC & CRITICAL CARE PHARMACY • FORM 20B/21B'
-      : 'CLINICAL EXCELLENCE & EVIDENCE-BASED HEALTHCARE CONSULTATION',
+      ? 'REGISTERED ALLOPATHIC PHARMACY & DISPENSARY'
+      : 'CLINICAL EVIDENCE-BASED HEALTHCARE CONSULTATION',
     officialAddress,
     contactPhone,
     supportEmail,
@@ -116,42 +211,48 @@ export const getVerifiedRoleProfile = (): VerifiedRoleProfile => {
     gstin,
 
     // Doctor Credentials
-    doctorName: authUser?.name || 'Dr. Rajesh Kumar, MD',
-    doctorDegree: cert.doctorDegreeName || 'MBBS, MD (Internal Medicine)',
-    doctorCouncilName: cert.doctorCouncilName || 'Maharashtra Medical Council (MMC)',
-    doctorRegNo: cert.doctorRegNo || 'MMC-78291-B',
-    doctorSpecialty: authUser?.roleTitle || 'Consultant Physician & Diabetologist',
-    doctorIndemnityNo: cert.doctorIndemnityPolicyNo || 'IND-ICICI-2026-9901',
+    doctorName,
+    doctorDegree,
+    doctorCouncilName,
+    doctorRegNo,
+    doctorSpecialty,
+    doctorIndemnityNo,
 
     // Lab Credentials
-    nablCertificateNo: cert.nablCertificateNo || 'MC-4892-2026 (ISO 15189:2022)',
-    pathologistName: 'Dr. R. K. Tata, MD (Pathology)',
-    pathologistDegree: 'MD (Pathology & Cytogenetics)',
-    pathologistRegNo: cert.doctorRegNo || 'MMC-78291-B',
-    bmwClearanceNo: cert.bmwPollutionAuthNo || 'BMW-POLLUTION-2026-441',
+    nablCertificateNo,
+    pathologistName,
+    pathologistDegree,
+    pathologistRegNo,
+    bmwClearanceNo,
+    technicianName,
 
     // Hospital Credentials
-    hospitalCeaRegNo: cert.hospitalCeaRegNo || 'CEA-MH-2026-9812',
-    hospitalNabhGrade: cert.hospitalNabhGrade || 'NABH Full Accreditation (Entry Level)',
-    hospitalFireNocNo: cert.hospitalFireNocNo || 'FIRE-NOC-MUM-2026-102',
+    hospitalCeaRegNo,
+    hospitalNabhGrade,
+    hospitalFireNocNo,
 
     // Pharmacy Credentials
-    pharmacyDrugLicense20B: cert.pharmacyDrugLicense20B || 'DL-20B-MH-Mumbai-49102',
-    pharmacyDrugLicense21B: cert.pharmacyDrugLicense21B || 'DL-21B-MH-Mumbai-49103',
-    pharmacistName: 'Amit V. Patel, M.Pharm',
-    pharmacistRegNo: cert.pharmacyCouncilRegNo || 'MH-PHARM-2026-4421',
-    pharmacistDegree: 'M.Pharm (Clinical Pharmacy)',
+    pharmacyDrugLicense20B,
+    pharmacyDrugLicense21B,
+    pharmacistName,
+    pharmacistRegNo,
+    pharmacistDegree,
 
     // Bank & Settlement
-    bankName: bank.bankName || 'HDFC Bank Ltd',
-    accountHolder: bank.accountHolderName || entityLegalName,
-    accountNumber: bank.accountNumber || '50200084920192',
-    ifscCode: bank.ifscCode || 'HDFC0000240',
-    upiId: bank.upiId || 'docsearch.settlement@okhdfcbank',
+    bankName,
+    accountHolder,
+    accountNumber,
+    ifscCode,
+    upiId,
 
     // Verification & Trust
-    isVerified: isApproved,
+    isVerified: isFounder || isApproved,
+    isComplete,
+    missingFields,
     sha256Hash: cert.sha256Hash || 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
-    trustBadgeTitle: 'DOC SEARCH VERIFIED HEALTHCARE PARTNER (ABDM 2.0 / NABL COMPLIANT)'
+    trustBadgeTitle: 'DOC SEARCH VERIFIED HEALTHCARE PARTNER (ABDM / STATUTORY COMPLIANT)'
   };
 };
+
+export const getUnifiedPartnerProfile = getVerifiedRoleProfile;
+

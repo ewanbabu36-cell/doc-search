@@ -65,7 +65,7 @@ export class AssetBiomedicalService {
       throw new AppError({ message: 'Asset not found', statusCode: 404 });
     }
 
-    const updated = await this.repo.updateAsset(id, payload);
+    const updated = await this.repo.updateAsset(id, payload, tenantId);
     const hash = this.computeHash({ event: 'ASSET_UPDATED', assetId: id, updates: payload });
     await this.repo.appendAuditTrace({
       tenantId,
@@ -108,7 +108,7 @@ export class AssetBiomedicalService {
     });
 
     // Mark asset as UNDER_MAINTENANCE / BREAKDOWN
-    await this.repo.updateAsset(assetId, { status: 'BREAKDOWN' });
+    await this.repo.updateAsset(assetId, { status: 'BREAKDOWN' }, tenantId);
 
     const hash = this.computeHash({ event: 'WORK_ORDER_REPORTED', workOrderId: workOrder.id, number: workOrderNumber });
     await this.repo.appendAuditTrace({
@@ -131,7 +131,7 @@ export class AssetBiomedicalService {
       assignedTo: payload.assignedToEngineerId,
       status: 'ASSIGNED',
       assignedAt: new Date()
-    });
+    }, tenantId);
 
     if (!updated) throw new AppError({ message: 'Work order not found', statusCode: 404 });
 
@@ -158,7 +158,7 @@ export class AssetBiomedicalService {
       status: 'COMPLETED',
       completedAt: new Date(),
       downtimeMinutes: payload.downtimeMinutes || 60
-    });
+    }, tenantId);
 
     if (!updated) throw new AppError({ message: 'Work order not found', statusCode: 404 });
 
@@ -183,13 +183,13 @@ export class AssetBiomedicalService {
       verifiedBy: payload.verifiedBy,
       status: 'VERIFIED',
       verifiedAt: new Date()
-    });
+    }, tenantId);
 
     if (!updated) throw new AppError({ message: 'Work order not found', statusCode: 404 });
 
     // Restore asset status to OPERATIONAL
     if (updated.assetId) {
-      await this.repo.updateAsset(updated.assetId, { status: 'OPERATIONAL' });
+      await this.repo.updateAsset(updated.assetId, { status: 'OPERATIONAL' }, tenantId);
     }
 
     const hash = this.computeHash({ event: 'WORK_ORDER_VERIFIED', workOrderId });
@@ -245,7 +245,7 @@ export class AssetBiomedicalService {
       completedAt: new Date(),
       completedBy: payload.completedBy,
       checklistResults: payload.checklistResults
-    });
+    }, tenantId);
 
     if (!updated) throw new AppError({ message: 'PPM schedule not found', statusCode: 404 });
 
@@ -415,13 +415,13 @@ export class AssetBiomedicalService {
       approvedBy: payload.approvedBy,
       approvedAt: new Date(),
       disposalMethod: payload.disposalMethod || 'E_WASTE_RECYCLING'
-    });
+    }, tenantId);
 
     if (!updated) throw new AppError({ message: 'Condemnation record not found', statusCode: 404 });
 
     // Mark asset as CONDEMNED
     if (updated.assetId) {
-      await this.repo.updateAsset(updated.assetId, { status: 'CONDEMNED' });
+      await this.repo.updateAsset(updated.assetId, { status: 'CONDEMNED' }, tenantId);
     }
 
     const hash = this.computeHash({ event: 'CONDEMNATION_APPROVED', condemnationId });

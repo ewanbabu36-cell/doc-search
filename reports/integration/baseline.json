@@ -1,0 +1,209 @@
+{
+  "timestamp": "2026-09-29T05:15:40.950Z",
+  "totalBackendRoutes": 768,
+  "totalFrontendApiCalls": 159,
+  "totalLocalStorageHandoffs": 356,
+  "unmatchedFrontendCalls": [
+    {
+      "file": "apps/partner-platform/src/components/common/DynamicRoleDocumentChecklist.tsx",
+      "rawUrl": "/api/v1/compliance/documents/requirements?role=${encodeURIComponent(role)}&facilityType=${encodeURIComponent(facilityType)}&tenantId=11111111-1111-4111-8111-111111111111",
+      "cleanUrl": "/api/v1/compliance/documents/requirements?role=${encodeURIComponent(role)}&facilityType=${encodeURIComponent(facilityType)}&tenantId=11111111-1111-4111-8111-111111111111"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/DynamicRoleDocumentChecklist.tsx",
+      "rawUrl": "/api/v1/compliance/documents/upload",
+      "cleanUrl": "/api/v1/compliance/documents/upload"
+    },
+    {
+      "file": "apps/partner-platform/src/components/common/RealTimeHospitalActivityDock.tsx",
+      "rawUrl": "/api/health",
+      "cleanUrl": "/api/health"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/DynamicRoleDocumentChecklist.tsx",
+      "rawUrl": "/api/v1/compliance/documents/requirements?role=${encodeURIComponent(role)}&facilityType=${encodeURIComponent(facilityType)}&tenantId=11111111-1111-4111-8111-111111111111",
+      "cleanUrl": "/api/v1/compliance/documents/requirements?role=${encodeURIComponent(role)}&facilityType=${encodeURIComponent(facilityType)}&tenantId=11111111-1111-4111-8111-111111111111"
+    },
+    {
+      "file": "apps/company-platform/src/components/common/DynamicRoleDocumentChecklist.tsx",
+      "rawUrl": "/api/v1/compliance/documents/upload",
+      "cleanUrl": "/api/v1/compliance/documents/upload"
+    }
+  ],
+  "webhookDefects": [
+    {
+      "route": "/api/v1/partner/billing/webhooks/razorpay",
+      "file": "apps/api-gateway/src/routes/partner/billing-webhook.routes.ts",
+      "issue": "MISSING_WEBHOOK_IDEMPOTENCY_OR_DEDUPLICATION"
+    },
+    {
+      "route": "/api/v1/partner/billing/webhooks/payu",
+      "file": "apps/api-gateway/src/routes/partner/billing-webhook.routes.ts",
+      "issue": "MISSING_WEBHOOK_IDEMPOTENCY_OR_DEDUPLICATION"
+    },
+    {
+      "route": "/api/v1/webhooks/razorpay",
+      "file": "apps/api-gateway/src/routes/webhooks/payment-webhook.routes.ts",
+      "issue": "MISSING_WEBHOOK_IDEMPOTENCY_OR_DEDUPLICATION"
+    },
+    {
+      "route": "/api/v1/webhooks/payment/razorpay",
+      "file": "apps/api-gateway/src/routes/webhooks/payment-webhook.routes.ts",
+      "issue": "MISSING_WEBHOOK_IDEMPOTENCY_OR_DEDUPLICATION"
+    },
+    {
+      "route": "/api/v1/webhooks/razorpay/b2b-subscription",
+      "file": "apps/api-gateway/src/routes/webhooks/payment-webhook.routes.ts",
+      "issue": "MISSING_WEBHOOK_IDEMPOTENCY_OR_DEDUPLICATION"
+    }
+  ],
+  "liveDbStats": {
+    "totalTables": 500,
+    "foreignKeys": 1012,
+    "uniqueConstraints": 171
+  },
+  "externalServiceAudits": [
+    {
+      "name": "Razorpay Payment Gateway",
+      "status": "NOT IMPLEMENTED (FROZEN SCOPE PRESERVED)",
+      "notes": "Audit rule #4 applied: Razorpay is NOT to be newly developed. Stubs must remain clean and not simulate fake successful bank transfers in production."
+    },
+    {
+      "name": "ABDM (Ayushman Bharat Digital Mission)",
+      "status": "NOT IMPLEMENTED (FROZEN SCOPE PRESERVED)",
+      "notes": "Audit rule #5 applied: ABDM is NOT to be newly developed. Architecture stubs exist but must not claim real government NHA sandbox certification."
+    },
+    {
+      "name": "SMS / Email Notification Integration",
+      "status": "INTERNAL MOCK / CONSOLE PROVIDER",
+      "notes": "Notifications log to internal audit / console without throwing unhandled exceptions."
+    },
+    {
+      "name": "DICOM / PACS Radiology Server",
+      "status": "METADATA STORAGE & LOCAL PREVIEW",
+      "notes": "Radiology studies store valid DICOM metadata and accession numbers in PostgreSQL; external Orthanc PACS connector optional."
+    }
+  ],
+  "registeredRoutesSample": [
+    {
+      "method": "POST",
+      "url": "/api/v1/auth/login",
+      "file": "apps/api-gateway/src/routes/auth.routes.ts",
+      "hasAuth": true,
+      "hasIdempotency": false,
+      "hasTenantScope": true
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/auth/quick-session",
+      "file": "apps/api-gateway/src/routes/auth.routes.ts",
+      "hasAuth": true,
+      "hasIdempotency": false,
+      "hasTenantScope": true
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/auth/refresh",
+      "file": "apps/api-gateway/src/routes/auth.routes.ts",
+      "hasAuth": true,
+      "hasIdempotency": false,
+      "hasTenantScope": true
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/auth/logout",
+      "file": "apps/api-gateway/src/routes/auth.routes.ts",
+      "hasAuth": true,
+      "hasIdempotency": false,
+      "hasTenantScope": true
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/auth/me",
+      "file": "apps/api-gateway/src/routes/auth.routes.ts",
+      "hasAuth": true,
+      "hasIdempotency": false,
+      "hasTenantScope": true
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/auth/partner-status",
+      "file": "apps/api-gateway/src/routes/auth.routes.ts",
+      "hasAuth": true,
+      "hasIdempotency": false,
+      "hasTenantScope": true
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/auth/register-partner-user",
+      "file": "apps/api-gateway/src/routes/auth.routes.ts",
+      "hasAuth": true,
+      "hasIdempotency": false,
+      "hasTenantScope": true
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/auth/live-partners",
+      "file": "apps/api-gateway/src/routes/auth.routes.ts",
+      "hasAuth": true,
+      "hasIdempotency": false,
+      "hasTenantScope": true
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/auth/change-password",
+      "file": "apps/api-gateway/src/routes/auth.routes.ts",
+      "hasAuth": true,
+      "hasIdempotency": false,
+      "hasTenantScope": true
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/auth/self-register",
+      "file": "apps/api-gateway/src/routes/auth.routes.ts",
+      "hasAuth": true,
+      "hasIdempotency": false,
+      "hasTenantScope": true
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/auth/upgrade-plan",
+      "file": "apps/api-gateway/src/routes/auth.routes.ts",
+      "hasAuth": true,
+      "hasIdempotency": false,
+      "hasTenantScope": true
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/auth/registration-form-config",
+      "file": "apps/api-gateway/src/routes/auth.routes.ts",
+      "hasAuth": true,
+      "hasIdempotency": false,
+      "hasTenantScope": true
+    },
+    {
+      "method": "PUT",
+      "url": "/api/v1/auth/registration-form-config",
+      "file": "apps/api-gateway/src/routes/auth.routes.ts",
+      "hasAuth": true,
+      "hasIdempotency": false,
+      "hasTenantScope": true
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/auth/registration-form-config/reset",
+      "file": "apps/api-gateway/src/routes/auth.routes.ts",
+      "hasAuth": true,
+      "hasIdempotency": false,
+      "hasTenantScope": true
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/auth/launch-offer",
+      "file": "apps/api-gateway/src/routes/auth.routes.ts",
+      "hasAuth": true,
+      "hasIdempotency": false,
+      "hasTenantScope": true
+    }
+  ]
+}

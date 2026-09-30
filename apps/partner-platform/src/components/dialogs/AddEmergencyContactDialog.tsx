@@ -5,6 +5,7 @@ import type {
   AddEmergencyContactRequest
 } from '@docsearch/api-contracts';
 import { Dialog, Button, Input, Select, Alert } from '@docsearch/ui-kit';
+import { AuditJustificationField } from '../common/AuditJustificationField.js';
 
 export interface AddEmergencyContactDialogProps {
   isOpen: boolean;
@@ -25,10 +26,10 @@ export const AddEmergencyContactDialog: React.FC<AddEmergencyContactDialogProps>
 }) => {
   const [name, setName] = useState('');
   const [relation, setRelation] = useState<EmergencyRelationship>('SPOUSE');
-  const [phone, setPhone] = useState('+1 (555) 000-0000');
+  const [phone, setPhone] = useState('');
   const [altPhone, setAltPhone] = useState('');
   const [address, setAddress] = useState('');
-  const [reason, setReason] = useState('Added verified emergency contact point');
+  const [reason, setReason] = useState('Primary emergency contact recorded for clinical escalation.');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,8 +39,13 @@ export const AddEmergencyContactDialog: React.FC<AddEmergencyContactDialogProps>
       setError('Emergency contact name is required.');
       return;
     }
-    if (!phone || phone.trim().length < 7) {
-      setError('Primary phone number is required.');
+    const cleanPhone = phone.trim();
+    if (!cleanPhone || cleanPhone.length !== 10 || !/^[6-9]/.test(cleanPhone)) {
+      setError('A valid 10-digit Indian mobile number is required (starts with 6, 7, 8, or 9).');
+      return;
+    }
+    if (altPhone && altPhone.trim() && (altPhone.trim().length !== 10 || !/^[6-9]/.test(altPhone.trim()))) {
+      setError('Alternate phone must be a valid 10-digit Indian mobile number.');
       return;
     }
     if (!reason || reason.trim().length < 3) {
@@ -82,7 +88,7 @@ export const AddEmergencyContactDialog: React.FC<AddEmergencyContactDialogProps>
           <Button variant="outline" size="sm" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button variant="primary" size="sm" onClick={handleSubmit} isLoading={isSubmitting}>
+          <Button variant="primary" size="sm" onClick={handleSubmit} isLoading={isSubmitting} disabled={isSubmitting}>
             Save Emergency Contact
           </Button>
         </div>
@@ -123,15 +129,44 @@ export const AddEmergencyContactDialog: React.FC<AddEmergencyContactDialogProps>
           </div>
           <div>
             <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: '600', marginBottom: '4px' }}>
-              Primary Phone *
+              Primary Phone (10-Digit Mobile) *
             </label>
-            <Input value={phone} onChange={(e) => setPhone(e.target.value)} required />
+            <Input
+              type="tel"
+              inputMode="numeric"
+              maxLength={10}
+              placeholder="98765 43210"
+              value={phone}
+              onChange={(e) => {
+                let digits = e.target.value.replace(/\D/g, '');
+                if (digits.length === 12 && digits.startsWith('91')) digits = digits.slice(2);
+                else if (digits.length === 11 && digits.startsWith('0')) digits = digits.slice(1);
+                setPhone(digits.slice(0, 10));
+              }}
+              required
+              leftElement={<span style={{ fontWeight: 800, color: 'var(--ds-color-primary, #38BDF8)', fontSize: '0.75rem' }}>+91</span>}
+              style={{ paddingLeft: '44px', fontFamily: 'monospace' }}
+            />
           </div>
           <div>
             <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: '600', marginBottom: '4px' }}>
-              Alternate Phone
+              Alternate Phone (10-Digit Mobile)
             </label>
-            <Input value={altPhone} onChange={(e) => setAltPhone(e.target.value)} />
+            <Input
+              type="tel"
+              inputMode="numeric"
+              maxLength={10}
+              placeholder="98765 43210"
+              value={altPhone}
+              onChange={(e) => {
+                let digits = e.target.value.replace(/\D/g, '');
+                if (digits.length === 12 && digits.startsWith('91')) digits = digits.slice(2);
+                else if (digits.length === 11 && digits.startsWith('0')) digits = digits.slice(1);
+                setAltPhone(digits.slice(0, 10));
+              }}
+              leftElement={<span style={{ fontWeight: 800, color: 'var(--ds-color-primary, #38BDF8)', fontSize: '0.75rem' }}>+91</span>}
+              style={{ paddingLeft: '44px', fontFamily: 'monospace' }}
+            />
           </div>
         </div>
 
@@ -142,17 +177,12 @@ export const AddEmergencyContactDialog: React.FC<AddEmergencyContactDialogProps>
           <Input value={address} onChange={(e) => setAddress(e.target.value)} />
         </div>
 
-        <div>
-          <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: '600', marginBottom: '4px' }}>
-            Audit Reason *
-          </label>
-          <Input
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder="e.g. Registered primary emergency family contact"
-            required
-          />
-        </div>
+        <AuditJustificationField
+          label="Audit Reason"
+          value={reason}
+          onChange={setReason}
+          defaultJustification="Primary emergency contact recorded for clinical escalation."
+        />
       </form>
     </Dialog>
   );

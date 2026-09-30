@@ -23,7 +23,8 @@ export const BaseJwtClaimsSchema = z.object({
   nbf: z.number().int().optional(),
   iss: z.string().min(1).optional(),
   aud: z.string().min(1).optional(),
-  jti: z.string().min(1).optional()
+  jti: z.string().min(1).optional(),
+  sessionId: z.string().optional()
 });
 
 export type BaseJwtClaims = z.infer<typeof BaseJwtClaimsSchema> & {
@@ -54,11 +55,15 @@ export function signJwt<T extends Record<string, unknown> & { sub: string }>(
     typ: 'JWT'
   };
 
+  const explicitJti = ((payload as any).jti || (payload as any).sessionId || randomBytes(16).toString('hex')) as string;
+  const explicitSessionId = ((payload as any).sessionId || (payload as any).jti || explicitJti) as string;
+
   const claims = {
     ...payload,
     iat: now,
     exp: now + expiresIn,
-    jti: randomBytes(16).toString('hex'),
+    jti: explicitJti,
+    sessionId: explicitSessionId,
     ...(options.issuer ? { iss: options.issuer } : {}),
     ...(options.audience ? { aud: options.audience } : {})
   };

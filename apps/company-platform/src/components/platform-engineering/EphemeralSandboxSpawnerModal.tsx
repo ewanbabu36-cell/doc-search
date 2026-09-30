@@ -96,7 +96,7 @@ export const EphemeralSandboxSpawnerModal: React.FC<Props> = ({
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               <div>
-                <label style={{ display: 'block', color: '#94A3B8', marginBottom: '3px', fontWeight: 700 }}>SAMPLE DATASET PRESET *</label>
+                <label style={{ display: 'block', color: '#94A3B8', marginBottom: '3px', fontWeight: 700 }}>DATASET PROFILE PRESET *</label>
                 <select
                   value={datasetPreset}
                   onChange={(e) => setDatasetPreset(e.target.value)}
@@ -146,7 +146,6 @@ export const EphemeralSandboxSpawnerModal: React.FC<Props> = ({
               <button
                 type="submit"
                 disabled={isSpawning}
-                style={{ backgroundColor: '#06B6D4', color: '#070C16', border: 'none', borderRadius: '6px', padding: '8px 22px', fontWeight: 900, cursor: 'pointer', boxShadow: '0 4px 14px rgba(6, 182, 212, 0.4)' }}
               >
                 {isSpawning ? '⚡ Provisioning K8s Pods...' : '🚀 Spawn Ephemeral Environment'}
               </button>
@@ -179,7 +178,6 @@ export const EphemeralSandboxSpawnerModal: React.FC<Props> = ({
               <button
                 type="button"
                 onClick={onClose}
-                style={{ backgroundColor: '#06B6D4', color: '#070C16', border: 'none', borderRadius: '6px', padding: '8px 20px', fontWeight: 900, cursor: 'pointer' }}
               >
                 Done
               </button>

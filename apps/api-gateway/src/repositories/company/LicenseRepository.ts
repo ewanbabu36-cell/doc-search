@@ -1,149 +1,229 @@
-﻿import { eq, desc } from '@docsearch/database';
+import crypto from 'node:crypto';
+import { eq, desc, ensureDatabaseReady, getDatabaseStatus } from '@docsearch/database';
 import { getDatabase, licenses, type License, type NewLicense } from '@docsearch/database';
+import { AppError, ErrorCode, createLogger } from '@docsearch/shared-core';
 
-const memoryLicenses: License[] = [];
+const logger = createLogger('license-repository');
 
 export class LicenseRepository {
   async findMany(dbClient = getDatabase()): Promise<License[]> {
-    if (dbClient) {
-      try {
-        return await dbClient.select().from(licenses).orderBy(desc(licenses.createdAt));
-      } catch {}
+    if (!dbClient) {
+      throw new AppError({
+        code: ErrorCode.INTERNAL_SERVER_ERROR,
+        message: 'Database connection required for license querying.',
+        statusCode: 500
+      });
     }
-    return [...memoryLicenses];
+    try {
+      const dbRows = await dbClient.select().from(licenses).orderBy(desc(licenses.createdAt));
+      return dbRows;
+    } catch (err) {
+      logger.error('Failed to query licenses from PostgreSQL:', err);
+      throw new AppError({
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        message: 'Database query failed for licenses.',
+        statusCode: 503
+      });
+    }
   }
 
   async findById(licenseId: string, dbClient = getDatabase()): Promise<License | null> {
-    if (dbClient) {
-      try {
-        const [lic] = await dbClient
-          .select()
-          .from(licenses)
-          .where(eq(licenses.id, licenseId))
-          .limit(1);
-        if (lic) return lic;
-      } catch {}
+    if (!dbClient) {
+      throw new AppError({
+        code: ErrorCode.INTERNAL_SERVER_ERROR,
+        message: 'Database connection required for license lookup.',
+        statusCode: 500
+      });
     }
-    return memoryLicenses.find((l) => l.id === licenseId) || null;
+    try {
+      const [lic] = await dbClient
+        .select()
+        .from(licenses)
+        .where(eq(licenses.id, licenseId))
+        .limit(1);
+      return lic || null;
+    } catch (err) {
+      logger.error('Failed to find license by ID from PostgreSQL:', err);
+      throw new AppError({
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        message: 'Database query failed for license by ID.',
+        statusCode: 503
+      });
+    }
   }
 
   async findByKey(licenseKey: string, dbClient = getDatabase()): Promise<License | null> {
-    if (dbClient) {
-      try {
-        const [lic] = await dbClient
-          .select()
-          .from(licenses)
-          .where(eq(licenses.licenseKey, licenseKey))
-          .limit(1);
-        if (lic) return lic;
-      } catch {}
+    if (!dbClient) {
+      throw new AppError({
+        code: ErrorCode.INTERNAL_SERVER_ERROR,
+        message: 'Database connection required for license lookup.',
+        statusCode: 500
+      });
     }
-    return memoryLicenses.find((l) => l.licenseKey === licenseKey) || null;
+    try {
+      const [lic] = await dbClient
+        .select()
+        .from(licenses)
+        .where(eq(licenses.licenseKey, licenseKey))
+        .limit(1);
+      return lic || null;
+    } catch (err) {
+      logger.error('Failed to find license by key from PostgreSQL:', err);
+      throw new AppError({
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        message: 'Database query failed for license by key.',
+        statusCode: 503
+      });
+    }
   }
 
   async findBySubscriptionId(subscriptionId: string, dbClient = getDatabase()): Promise<License | null> {
-    if (dbClient) {
-      try {
-        const [lic] = await dbClient
-          .select()
-          .from(licenses)
-          .where(eq(licenses.subscriptionId, subscriptionId))
-          .orderBy(desc(licenses.createdAt))
-          .limit(1);
-        if (lic) return lic;
-      } catch {}
+    if (!dbClient) {
+      throw new AppError({
+        code: ErrorCode.INTERNAL_SERVER_ERROR,
+        message: 'Database connection required for license lookup.',
+        statusCode: 500
+      });
     }
-    return memoryLicenses.find((l) => l.subscriptionId === subscriptionId) || null;
+    try {
+      const [lic] = await dbClient
+        .select()
+        .from(licenses)
+        .where(eq(licenses.subscriptionId, subscriptionId))
+        .orderBy(desc(licenses.createdAt))
+        .limit(1);
+      return lic || null;
+    } catch (err) {
+      logger.error('Failed to find license by subscription ID from PostgreSQL:', err);
+      throw new AppError({
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        message: 'Database query failed for license by subscription ID.',
+        statusCode: 503
+      });
+    }
   }
 
   async findByPartnerId(partnerId: string, dbClient = getDatabase()): Promise<License[]> {
-    if (dbClient) {
-      try {
-        return await dbClient
-          .select()
-          .from(licenses)
-          .where(eq(licenses.partnerId, partnerId))
-          .orderBy(desc(licenses.createdAt));
-      } catch {}
+    if (!dbClient) {
+      throw new AppError({
+        code: ErrorCode.INTERNAL_SERVER_ERROR,
+        message: 'Database connection required for license lookup.',
+        statusCode: 500
+      });
     }
-    return memoryLicenses.filter((l) => l.partnerId === partnerId);
+    try {
+      return await dbClient
+        .select()
+        .from(licenses)
+        .where(eq(licenses.partnerId, partnerId))
+        .orderBy(desc(licenses.createdAt));
+    } catch (err) {
+      logger.error('Failed to find licenses by partner ID from PostgreSQL:', err);
+      throw new AppError({
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        message: 'Database query failed for licenses by partner ID.',
+        statusCode: 503
+      });
+    }
   }
 
   async findByTenantId(tenantId: string, dbClient = getDatabase()): Promise<License[]> {
-    if (dbClient) {
+    let client = dbClient;
+    if (!getDatabaseStatus().ready) {
       try {
-        return await dbClient
-          .select()
-          .from(licenses)
-          .where(eq(licenses.tenantId, tenantId))
-          .orderBy(desc(licenses.createdAt));
+        client = await ensureDatabaseReady();
       } catch {}
     }
-    return memoryLicenses.filter((l) => l.tenantId === tenantId);
+    if (!client) {
+      throw new AppError({
+        code: ErrorCode.INTERNAL_SERVER_ERROR,
+        message: 'Database client unavailable for license lookup.',
+        statusCode: 500
+      });
+    }
+    try {
+      return await client
+        .select()
+        .from(licenses)
+        .where(eq(licenses.tenantId, tenantId))
+        .orderBy(desc(licenses.createdAt));
+    } catch (err) {
+      logger.error('Failed to find licenses by tenant ID from PostgreSQL:', err);
+      throw new AppError({
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        message: 'Database query failed for licenses by tenant ID.',
+        statusCode: 503
+      });
+    }
   }
 
   async create(data: NewLicense, dbClient = getDatabase()): Promise<License> {
-    if (dbClient) {
-      try {
-        const [created] = await dbClient.insert(licenses).values(data).returning();
-        if (created) return created;
-      } catch (err) {
-        throw err;
-      }
+    if (!dbClient) {
+      throw new AppError({
+        code: ErrorCode.INTERNAL_SERVER_ERROR,
+        message: 'Database client required for license creation.',
+        statusCode: 500
+      });
     }
+    const id = data.id || crypto.randomUUID();
+    const now = new Date();
+    try {
+      const [created] = await dbClient
+        .insert(licenses)
+        .values({
+          ...data,
+          id,
+          createdAt: (data as any).createdAt || now,
+          updatedAt: (data as any).updatedAt || now
+        })
+        .returning();
 
-    const created: License = {
-      id: data.id || crypto.randomUUID(),
-      licenseKey: data.licenseKey,
-      partnerId: data.partnerId,
-      tenantId: data.tenantId,
-      subscriptionId: data.subscriptionId,
-      planId: data.planId,
-      licenseType: data.licenseType ?? 'COMMERCIAL',
-      status: data.status ?? 'ACTIVE',
-      activationStatus: data.activationStatus ?? 'ACTIVATED',
-      maxConcurrentUsers: data.maxConcurrentUsers ?? 50,
-      maxDoctors: data.maxDoctors ?? 20,
-      maxBranches: data.maxBranches ?? 5,
-      issuedAt: data.issuedAt ? new Date(data.issuedAt) : new Date(),
-      startDate: data.startDate ? new Date(data.startDate) : new Date(),
-      expiryDate: new Date(data.expiryDate),
-      gracePeriodEnd: data.gracePeriodEnd ? new Date(data.gracePeriodEnd) : null,
-      signature: data.signature,
-      metadata: data.metadata || {},
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    memoryLicenses.push(created);
-    return created;
+      if (!created) {
+        throw new Error('Insert license returned no rows');
+      }
+      return created;
+    } catch (err) {
+      logger.error('Failed to persist license in PostgreSQL:', err);
+      throw new AppError({
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        message: 'Database persistence failed. License creation aborted.',
+        statusCode: 503
+      });
+    }
   }
 
   async update(licenseId: string, data: Partial<NewLicense>, dbClient = getDatabase()): Promise<License> {
-    if (dbClient) {
-      try {
-        const [updated] = await dbClient
-          .update(licenses)
-          .set({ ...data, updatedAt: new Date() })
-          .where(eq(licenses.id, licenseId))
-          .returning();
-        if (updated) return updated;
-      } catch (err) {
-        throw err;
-      }
+    if (!dbClient) {
+      throw new AppError({
+        code: ErrorCode.INTERNAL_SERVER_ERROR,
+        message: 'Database client required for license update.',
+        statusCode: 500
+      });
     }
+    try {
+      const [updated] = await dbClient
+        .update(licenses)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(licenses.id, licenseId))
+        .returning();
 
-    const idx = memoryLicenses.findIndex((l) => l.id === licenseId);
-    if (idx === -1) {
-      throw new Error(`License ${licenseId} not found`);
+      if (!updated) {
+        throw new AppError({
+          code: ErrorCode.NOT_FOUND,
+          message: `License ${licenseId} not found for update.`,
+          statusCode: 404
+        });
+      }
+      return updated;
+    } catch (err) {
+      if (err instanceof AppError) throw err;
+      logger.error(`Failed to update license ${licenseId} in PostgreSQL:`, err);
+      throw new AppError({
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        message: `Database update failed for license ${licenseId}.`,
+        statusCode: 503
+      });
     }
-    const existing = memoryLicenses[idx]!;
-    const updated: License = Object.assign({}, existing, data, {
-      id: existing.id,
-      createdAt: existing.createdAt,
-      updatedAt: new Date()
-    }) as License;
-    memoryLicenses[idx] = updated;
-    return updated;
   }
 }
 

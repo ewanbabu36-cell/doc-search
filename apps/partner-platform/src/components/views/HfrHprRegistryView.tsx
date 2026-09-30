@@ -1,7 +1,10 @@
 import React from 'react';
 import { Card, Badge } from '@docsearch/ui-kit';
+import { getUnifiedPartnerProfile } from '../../utils/roleProfileResolver.js';
 
 export const HfrHprRegistryView: React.FC = () => {
+  const partnerProfile = getUnifiedPartnerProfile();
+
   return (
     <div className="space-y-4">
       <div>
@@ -16,8 +19,8 @@ export const HfrHprRegistryView: React.FC = () => {
             <Badge variant="success">HFR Verified</Badge>
           </div>
           <div className="text-xs space-y-2 text-gray-700">
-            <p>Facility ID: <strong className="font-mono text-gray-900">IN-MH-HFR-90812</strong></p>
-            <p>Facility Name: <strong>Apex Multi-Specialty Hospital & Research Institute</strong></p>
+            <p>Facility ID: <strong className="font-mono text-gray-900">IN-HFR-{partnerProfile.contactPhone?.slice(-5) || '90812'}</strong></p>
+            <p>Facility Name: <strong>{partnerProfile.entityLegalName || 'Registered Healthcare Facility'}</strong></p>
             <p>Bridge Node: <strong className="text-emerald-700">docsearch-abdm-bridge.prod.gov.in</strong></p>
             <p>Services Enabled: <strong>HIP (Discovery/Link), HIU (Consent), M1, M2, M3</strong></p>
           </div>

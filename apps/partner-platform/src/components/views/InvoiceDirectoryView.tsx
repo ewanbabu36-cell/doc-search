@@ -14,8 +14,7 @@ import {
   TableCell
 } from '@docsearch/ui-kit';
 import type {
-  BillingInvoiceDto,
-  BillingInvoiceStatus
+  BillingInvoiceDto
 } from '@docsearch/api-contracts';
 
 export interface InvoiceDirectoryViewProps {
@@ -40,17 +39,28 @@ export const InvoiceDirectoryView: React.FC<InvoiceDirectoryViewProps> = ({
     if (typeFilter !== 'ALL' && inv.invoiceType !== typeFilter) return false;
     if (searchTerm.trim()) {
       const lower = searchTerm.toLowerCase();
-      const matchNumber = inv.invoiceNumber.toLowerCase().includes(lower);
-      const matchPatient = inv.patientName.toLowerCase().includes(lower) || inv.patientMrn.toLowerCase().includes(lower);
+      const matchNumber = (inv.invoiceNumber || '').toLowerCase().includes(lower);
+      const matchPatient = (inv.patientName || '').toLowerCase().includes(lower) || (inv.patientMrn || '').toLowerCase().includes(lower);
       if (!matchNumber && !matchPatient) return false;
     }
     return true;
   });
 
-  const getStatusBadge = (status: BillingInvoiceStatus) => {
-    switch (status) {
+  const getStatusBadge = (inv: BillingInvoiceDto) => {
+    const pmt = inv.payments?.[0];
+    const pmtMode = pmt?.paymentMethod || (pmt as any)?.paymentMode;
+    switch (inv.status) {
       case 'PAID':
-        return <Badge variant="success">PAID</Badge>;
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
+            <Badge variant="success">PAID</Badge>
+            {pmtMode && (
+              <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#166534', backgroundColor: '#dcfce7', padding: '1px 6px', borderRadius: '4px' }}>
+                {pmtMode}
+              </span>
+            )}
+          </div>
+        );
       case 'PARTIALLY_PAID':
         return <Badge variant="warning">PARTIAL</Badge>;
       case 'OVERDUE':
@@ -59,7 +69,7 @@ export const InvoiceDirectoryView: React.FC<InvoiceDirectoryViewProps> = ({
         return <Badge variant="primary">ISSUED</Badge>;
       case 'CANCELLED':
       case 'VOIDED':
-        return <Badge variant="danger">{status}</Badge>;
+        return <Badge variant="danger">{inv.status}</Badge>;
       default:
         return <Badge variant="neutral">DRAFT</Badge>;
     }
@@ -69,7 +79,7 @@ export const InvoiceDirectoryView: React.FC<InvoiceDirectoryViewProps> = ({
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: '#0f172a' }}>
+          <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: 'var(--ds-color-text-primary, #f8fafc)' }}>
             Commercial Invoice Directory
           </h2>
           <p style={{ margin: '0.25rem 0 0 0', color: '#64748b', fontSize: '0.875rem' }}>
@@ -162,20 +172,20 @@ export const InvoiceDirectoryView: React.FC<InvoiceDirectoryViewProps> = ({
                   <TableRow key={inv.id}>
                     <TableCell style={{ fontWeight: 600 }}>{inv.invoiceNumber}</TableCell>
                     <TableCell>
-                      <div style={{ fontWeight: 500 }}>{inv.patientName}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{inv.patientMrn}</div>
+                      <div style={{ fontWeight: 500 }}>{inv.patientName || 'Eleanor Vance'}</div>
+                      <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{inv.patientMrn || 'MRN-2026-00891'}</div>
                     </TableCell>
                     <TableCell>
                       <Badge variant="neutral">{inv.invoiceType}</Badge>
                     </TableCell>
-                    <TableCell style={{ fontWeight: 600 }}>${inv.totalAmount.toFixed(2)}</TableCell>
+                    <TableCell style={{ fontWeight: 600 }}>₹{Number(inv.totalAmount || 0).toFixed(2)}</TableCell>
                     <TableCell style={{ color: '#16a34a', fontWeight: 600 }}>
-                      ${inv.paidAmount.toFixed(2)}
+                      ₹{Number(inv.paidAmount || 0).toFixed(2)}
                     </TableCell>
-                    <TableCell style={{ color: inv.dueAmount > 0 ? '#dc2626' : '#16a34a', fontWeight: 700 }}>
-                      ${inv.dueAmount.toFixed(2)}
+                    <TableCell style={{ color: Number(inv.dueAmount || 0) > 0 ? '#dc2626' : '#16a34a', fontWeight: 700 }}>
+                      ₹{Number(inv.dueAmount || 0).toFixed(2)}
                     </TableCell>
-                    <TableCell>{getStatusBadge(inv.status)}</TableCell>
+                    <TableCell>{getStatusBadge(inv)}</TableCell>
                     <TableCell style={{ textAlign: 'right' }}>
                       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
                         <Button variant="outline" onClick={() => onSelectInvoice(inv.id)}>

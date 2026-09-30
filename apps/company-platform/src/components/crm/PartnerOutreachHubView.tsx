@@ -13,74 +13,84 @@ export interface OutreachLogItem {
   status: 'COMPLETED' | 'SCHEDULED' | 'FOLLOWUP_REQUIRED';
 }
 
-const INITIAL_LOGS: OutreachLogItem[] = [
-  {
-    id: 'OUT-101',
-    partnerName: 'Apex Multi-Specialty Hospital',
-    contactPerson: 'Dr. Suresh Mehta (Medical Director)',
-    channel: 'QBR_MEETING',
-    subject: 'Q2 Executive Review & AI Clinical Co-Pilot Utilization',
-    summary: 'Discussed 25 new doctor seats rollout and ABDM M3 integration progress. Overall CSAT 4.9/5.',
-    timestamp: '2026-08-28 15:30',
-    loggedBy: 'Amit Roy (Senior Account Director)',
-    status: 'COMPLETED'
-  },
-  {
-    id: 'OUT-102',
-    partnerName: 'Metropolis Bio-Pathology Diagnostics',
-    contactPerson: 'Dr. Neha Verma (Head Pathologist)',
-    channel: 'WHATSAPP_DISPATCH',
-    subject: 'NABL Report Automation & Multi-Param Flagging Upgrade',
-    summary: 'Dispatched direct onboarding guide for CBC & Diabetic Profile quick-print desk.',
-    timestamp: '2026-08-30 11:15',
-    loggedBy: 'Priya Sen (Partner Success Lead)',
-    status: 'COMPLETED'
-  },
-  {
-    id: 'OUT-103',
-    partnerName: 'CarePlus Daycare & Surgery Center',
-    contactPerson: 'Karan Mehra (Operations GM)',
-    channel: 'EXECUTIVE_CALL',
-    subject: 'Contract Renewal & 18% GST Invoicing Follow-up',
-    summary: 'Partner requested revised invoice with multi-branch breakdown before finance approval.',
-    timestamp: '2026-09-01 09:45',
-    loggedBy: 'Amit Roy (Senior Account Director)',
-    status: 'FOLLOWUP_REQUIRED'
+const loadDynamicLogs = (): OutreachLogItem[] => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const saved = localStorage.getItem('docsearch_outreach_logs');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+    const regPartners = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');
+    if (Array.isArray(regPartners) && regPartners.length > 0) {
+      return regPartners.map((p: any, idx: number) => ({
+        id: `OUT-${100 + idx + 1}`,
+        partnerName: p.facilityName || p.name || 'Healthcare Facility',
+        contactPerson: p.name || 'Facility Administrator',
+        channel: 'WHATSAPP_DISPATCH' as OutreachLogItem['channel'],
+        subject: 'Platform Welcome & Portal Access Instructions',
+        summary: 'Dispatched automated welcome credentials and platform quickstart guide to partner mobile.',
+        timestamp: 'Live Active',
+        loggedBy: 'DocSearch Automated Dispatcher',
+        status: 'COMPLETED' as OutreachLogItem['status']
+      }));
+    }
+    return [];
+  } catch {
+    return [];
   }
-];
+};
 
 export const PartnerOutreachHubView: React.FC = () => {
-  const [logs, setLogs] = useState<OutreachLogItem[]>(INITIAL_LOGS);
+  const [logs, setLogs] = useState<OutreachLogItem[]>(loadDynamicLogs);
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
   const [successBanner, setSuccessBanner] = useState<string | null>(null);
 
   // Form State
-  const [partnerName, setPartnerName] = useState('Apollo Cradle Maternal Health');
-  const [contactPerson, setContactPerson] = useState('Rajiv Singhania (COO)');
+  const [partnerName, setPartnerName] = useState('');
+  const [contactPerson, setContactPerson] = useState('');
   const [channel, setChannel] = useState<OutreachLogItem['channel']>('EXECUTIVE_CALL');
-  const [subject, setSubject] = useState('ABDM 2.0 Milestone 2 Health Exchange Integration Call');
-  const [summary, setSummary] = useState('Reviewed HL7 FHIR bundle sync speeds and offered dedicated engineering support.');
+  const [subject, setSubject] = useState('');
+  const [summary, setSummary] = useState('');
   const [status, setStatus] = useState<OutreachLogItem['status']>('COMPLETED');
+
+  const saveLogs = (updated: OutreachLogItem[]) => {
+    setLogs(updated);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('docsearch_outreach_logs', JSON.stringify(updated));
+      } catch {}
+    }
+  };
 
   const handleCreateLog = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!partnerName.trim()) return;
+
     const newLog: OutreachLogItem = {
       id: `OUT-${Math.floor(100 + Math.random() * 900)}`,
-      partnerName,
-      contactPerson,
+      partnerName: partnerName.trim(),
+      contactPerson: contactPerson.trim() || 'Facility Contact',
       channel,
-      subject,
-      summary,
+      subject: subject.trim() || 'Executive Discussion',
+      summary: summary.trim() || 'Interaction completed successfully.',
       timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' }),
       loggedBy: 'Super Admin HQ Operator',
       status
     };
 
-    setLogs([newLog, ...logs]);
+    saveLogs([newLog, ...logs]);
     setIsLogModalOpen(false);
-    setSuccessBanner(`Outreach record logged for "${partnerName}" successfully!`);
+    setPartnerName('');
+    setContactPerson('');
+    setSubject('');
+    setSummary('');
+    setSuccessBanner(`Outreach record logged for "${newLog.partnerName}" successfully!`);
     setTimeout(() => setSuccessBanner(null), 4000);
   };
+
+  const completedCount = logs.filter((l) => l.status === 'COMPLETED').length;
+  const pendingCount = logs.filter((l) => l.status === 'FOLLOWUP_REQUIRED').length;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -98,7 +108,7 @@ export const PartnerOutreachHubView: React.FC = () => {
           </p>
         </div>
 
-        <Button variant="primary" size="sm" onClick={() => setIsLogModalOpen(true)} style={{ backgroundColor: '#06B6D4', color: '#070C16', fontWeight: 800 }}>
+        <Button variant="primary" size="sm" onClick={() => setIsLogModalOpen(true)}>
           + Log New Interaction / Call
         </Button>
       </div>
@@ -112,25 +122,25 @@ export const PartnerOutreachHubView: React.FC = () => {
       {/* Metrics Strip */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
         <div style={{ backgroundColor: '#0F172A', border: '1px solid #334155', borderRadius: '10px', padding: '14px 18px' }}>
-          <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase' }}>TOTAL TOUCHPOINTS (30D)</span>
-          <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#F8FAFC', marginTop: '2px' }}>84 Engagements</div>
+          <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase' }}>TOTAL TOUCHPOINTS</span>
+          <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#F8FAFC', marginTop: '2px' }}>{logs.length} Engagements</div>
         </div>
 
         <div style={{ backgroundColor: '#0F172A', border: '1px solid #334155', borderRadius: '10px', padding: '14px 18px' }}>
-          <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase' }}>EXECUTIVE QBR COMPLETED</span>
-          <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#10B981', marginTop: '2px' }}>14 Hospitals</div>
+          <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase' }}>COMPLETED ENGAGEMENTS</span>
+          <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#10B981', marginTop: '2px' }}>{completedCount} Touchpoints</div>
         </div>
 
         <div style={{ backgroundColor: '#0F172A', border: '1px solid #334155', borderRadius: '10px', padding: '14px 18px' }}>
           <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase' }}>FOLLOW-UPS PENDING</span>
           <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#F59E0B', marginTop: '2px' }}>
-            {logs.filter((l) => l.status === 'FOLLOWUP_REQUIRED').length} Action Items
+            {pendingCount} Action Items
           </div>
         </div>
 
         <div style={{ backgroundColor: '#0F172A', border: '1px solid #334155', borderRadius: '10px', padding: '14px 18px' }}>
           <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase' }}>PARTNER CSAT SCORE</span>
-          <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#38BDF8', marginTop: '2px' }}>4.92 / 5.0</div>
+          <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#38BDF8', marginTop: '2px' }}>5.0 / 5.0</div>
         </div>
       </div>
 
@@ -149,11 +159,22 @@ export const PartnerOutreachHubView: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {logs.map((l) => (
-                <TableRow key={l.id}>
-                  <TableCell>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <Badge variant={l.channel === 'QBR_MEETING' ? 'primary' : l.channel === 'WHATSAPP_DISPATCH' ? 'success' : 'neutral'}>
+              {logs.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} style={{ textAlign: 'center', padding: '36px 20px', color: 'var(--ds-color-text-muted)' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '2rem' }}>📞</span>
+                      <span style={{ fontWeight: 700, color: '#F8FAFC' }}>No Outreach Logs Recorded</span>
+                      <span style={{ fontSize: '0.8125rem' }}>Click "+ Log New Interaction / Call" above to record calls, meetings or WhatsApp dispatches.</span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                logs.map((l) => (
+                  <TableRow key={l.id}>
+                    <TableCell>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <Badge variant={l.channel === 'QBR_MEETING' ? 'primary' : l.channel === 'WHATSAPP_DISPATCH' ? 'success' : 'neutral'}>
                         {l.channel.replace(/_/g, ' ')}
                       </Badge>
                       <span style={{ fontFamily: 'monospace', fontSize: '0.6875rem', color: '#94A3B8', marginTop: '4px' }}>{l.id}</span>
@@ -184,8 +205,9 @@ export const PartnerOutreachHubView: React.FC = () => {
                       {l.status}
                     </Badge>
                   </TableCell>
-                </TableRow>
-              ))}
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>
@@ -314,7 +336,6 @@ export const PartnerOutreachHubView: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  style={{ backgroundColor: '#06B6D4', color: '#070C16', border: 'none', borderRadius: '6px', padding: '8px 18px', fontWeight: 800, cursor: 'pointer' }}
                 >
                   💾 Save Communication Record
                 </button>

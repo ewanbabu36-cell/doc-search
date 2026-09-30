@@ -1,8 +1,10 @@
+import crypto from 'crypto';
 import {
   getDatabase,
   medicalRecordIndexes,
   medicalDiagnosisCodes,
   codingReviews,
+  medicalRecordAuditEvents,
   eq,
   and,
   desc
@@ -235,6 +237,29 @@ export class MRDManagementRepository {
           // Empty if none found
         }
 
+        let amendments: StoredAmendment[] = [];
+        try {
+          const amendRows = await db
+            .select()
+            .from(medicalRecordAuditEvents)
+            .where(and(
+              eq(medicalRecordAuditEvents.tenantId, tenantId),
+              eq(medicalRecordAuditEvents.entityId, r.id),
+              eq(medicalRecordAuditEvents.action, 'CHART_AMENDED')
+            ))
+            .orderBy(desc(medicalRecordAuditEvents.timestamp));
+
+          amendments = amendRows.map(a => ({
+            id: a.id,
+            amendedBy: a.actorName,
+            amendmentReason: a.justification,
+            additionalNotes: ((a.newState as any)?.additionalNotes) || '',
+            amendedAt: a.timestamp ? new Date(a.timestamp) : new Date()
+          }));
+        } catch {
+          // Empty if none found
+        }
+
         records.push({
           id: r.id,
           tenantId: r.tenantId,
@@ -257,7 +282,7 @@ export class MRDManagementRepository {
           isLegalHoldActive: !!r.isLegalHoldActive,
           diagnoses,
           reviews,
-          amendments: [],
+          amendments,
           createdAt: r.createdAt ? new Date(r.createdAt) : new Date(),
           updatedAt: r.updatedAt ? new Date(r.updatedAt) : new Date()
         });
@@ -276,8 +301,116 @@ export class MRDManagementRepository {
   }
 
   async getRecordById(tenantId: string, recordId: string, dbClient = getDatabase()): Promise<StoredMedicalRecord | null> {
-    const records = await this.getMedicalRecords(tenantId, undefined, undefined, dbClient);
-    return records.find(r => r.id === recordId) || null;
+    const db = requireDb(dbClient);
+    try {
+      const [r] = await db
+        .select()
+        .from(medicalRecordIndexes)
+        .where(and(eq(medicalRecordIndexes.tenantId, tenantId), eq(medicalRecordIndexes.id, recordId)))
+        .limit(1);
+
+      if (!r) return null;
+
+      let diagnoses: StoredDiagnosisCode[] = [];
+      try {
+        const diagRows = await db
+          .select()
+          .from(medicalDiagnosisCodes)
+          .where(and(eq(medicalDiagnosisCodes.tenantId, tenantId), eq(medicalDiagnosisCodes.recordId, r.id)))
+          .orderBy(medicalDiagnosisCodes.sequencingOrder);
+
+        diagnoses = diagRows.map(d => ({
+          id: d.id,
+          recordId: d.recordId,
+          icdCode: d.icdCode,
+          icdDescription: d.icdDescription,
+          codeType: d.codeType,
+          poaIndicator: d.poaIndicator,
+          sequencingOrder: d.sequencingOrder,
+          assignedByCoder: d.assignedByCoder,
+          coderNotes: d.coderNotes || undefined,
+          createdAt: d.createdAt ? new Date(d.createdAt) : new Date()
+        }));
+      } catch {}
+
+      let reviews: StoredCodingReview[] = [];
+      try {
+        const reviewRows = await db
+          .select()
+          .from(codingReviews)
+          .where(and(eq(codingReviews.tenantId, tenantId), eq(codingReviews.recordId, r.id)))
+          .orderBy(desc(codingReviews.reviewedAt));
+
+        reviews = reviewRows.map(rw => ({
+          id: rw.id,
+          recordId: rw.recordId,
+          reviewNumber: rw.reviewNumber,
+          reviewerName: rw.reviewerName,
+          reviewerRole: rw.reviewerRole,
+          reviewLevel: rw.reviewLevel,
+          status: rw.status,
+          findingsAndErrorsNotes: rw.findingsAndErrorsNotes,
+          codingAccuracyScorePercent: rw.codingAccuracyScorePercent,
+          reviewedAt: rw.reviewedAt ? new Date(rw.reviewedAt) : new Date()
+        }));
+      } catch {}
+
+      let amendments: StoredAmendment[] = [];
+      try {
+        const amendRows = await db
+          .select()
+          .from(medicalRecordAuditEvents)
+          .where(and(
+            eq(medicalRecordAuditEvents.tenantId, tenantId),
+            eq(medicalRecordAuditEvents.entityId, r.id),
+            eq(medicalRecordAuditEvents.action, 'CHART_AMENDED')
+          ))
+          .orderBy(desc(medicalRecordAuditEvents.timestamp));
+
+        amendments = amendRows.map(a => ({
+          id: a.id,
+          amendedBy: a.actorName,
+          amendmentReason: a.justification,
+          additionalNotes: ((a.newState as any)?.additionalNotes) || '',
+          amendedAt: a.timestamp ? new Date(a.timestamp) : new Date()
+        }));
+      } catch {}
+
+      return {
+        id: r.id,
+        tenantId: r.tenantId,
+        partnerId: r.partnerId,
+        organizationId: r.organizationId,
+        branchId: r.branchId,
+        recordNumber: r.recordNumber,
+        patientId: r.patientId,
+        patientName: r.patientName,
+        patientMrn: r.patientMrn,
+        encounterId: r.encounterId,
+        encounterNumber: r.encounterNumber,
+        encounterType: r.encounterType,
+        admissionDate: r.admissionDate ? new Date(r.admissionDate) : new Date(),
+        dischargeDate: r.dischargeDate ? new Date(r.dischargeDate) : undefined,
+        primaryAttendingDoctor: r.primaryAttendingDoctor,
+        completionStatus: (r.completionStatus || 'DRAFT') as StoredMedicalRecord['completionStatus'],
+        codingStatus: (r.codingStatus || 'PENDING_INITIAL_CODE') as StoredMedicalRecord['codingStatus'],
+        storageType: r.storageType || 'DIGITAL_ONLY_EHR',
+        isLegalHoldActive: !!r.isLegalHoldActive,
+        diagnoses,
+        reviews,
+        amendments,
+        createdAt: r.createdAt ? new Date(r.createdAt) : new Date(),
+        updatedAt: r.updatedAt ? new Date(r.updatedAt) : new Date()
+      };
+    } catch (err) {
+      logger.error('Failed to query single medical record from database', err);
+      if (err instanceof AppError) throw err;
+      throw new AppError({
+        message: 'Database query failed. Medical record lookup unavailable.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
+    }
   }
 
   async createMedicalRecord(input: CreateMedicalRecordInput, dbClient = getDatabase()): Promise<StoredMedicalRecord> {
@@ -570,19 +703,54 @@ export class MRDManagementRepository {
     }
 
     const now = new Date();
+    const amendmentId = crypto.randomUUID();
     const amendment: StoredAmendment = {
-      id: crypto.randomUUID(),
+      id: amendmentId,
       amendedBy: input.amendedBy,
       amendmentReason: input.amendmentReason,
       additionalNotes: input.additionalNotes,
       amendedAt: now
     };
 
-    try {
-      await db
+    const integrityHash = crypto.createHash('sha256')
+      .update(`${record.id}::${input.amendedBy}::${input.amendmentReason}::${now.toISOString()}`)
+      .digest('hex');
+
+    const executeInTx = async (tx: any) => {
+      await tx
         .update(medicalRecordIndexes)
         .set({ completionStatus: 'AMENDED', updatedAt: now })
         .where(and(eq(medicalRecordIndexes.tenantId, input.tenantId), eq(medicalRecordIndexes.id, record.id)));
+
+      await tx.insert(medicalRecordAuditEvents).values({
+        id: amendmentId,
+        tenantId: input.tenantId,
+        partnerId: record.partnerId,
+        organizationId: record.organizationId,
+        branchId: record.branchId,
+        traceNumber: `TRACE-AMEND-${Date.now().toString().slice(-6)}`,
+        actorId: input.amendedBy,
+        actorName: input.amendedBy,
+        actorRole: 'MRD_CODER',
+        action: 'CHART_AMENDED',
+        entityType: 'MEDICAL_RECORD',
+        entityId: record.id,
+        entityCode: record.recordNumber,
+        justification: input.amendmentReason,
+        ipAddress: '127.0.0.1',
+        integrityHash,
+        previousHash: 'GENESIS',
+        newState: { amendmentReason: input.amendmentReason, additionalNotes: input.additionalNotes, amendedAt: now },
+        timestamp: now
+      });
+    };
+
+    try {
+      if (typeof (db as any).transaction === 'function') {
+        await (db as any).transaction(executeInTx);
+      } else {
+        await executeInTx(db);
+      }
 
       record.amendments.push(amendment);
       record.completionStatus = 'AMENDED';

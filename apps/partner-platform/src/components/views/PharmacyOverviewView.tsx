@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Card,
   Button,
@@ -17,6 +17,7 @@ import type {
   PharmacyInventoryDto,
   PharmacyBatchDto
 } from '@docsearch/api-contracts';
+import { calculateStockValuation } from '../../services/pharmacy-stock-valuation.js';
 
 export interface PharmacyOverviewViewProps {
   overview: PharmacyOverviewDto;
@@ -41,6 +42,11 @@ export const PharmacyOverviewView: React.FC<PharmacyOverviewViewProps> = ({
   const recentPrescriptions = prescriptions.slice(0, 5);
   const lowStockItems = inventory.filter((i) => i.availableQuantity <= i.reorderLevel);
   const expiringBatches = batches.filter((b) => b.daysToExpiry >= 0 && b.daysToExpiry <= 60);
+
+  // 📦 Consolidated Stock Valuation (Purchase PTR vs Sale MRP)
+  const stockValuation = useMemo(() => {
+    return calculateStockValuation(batches, inventory);
+  }, [batches, inventory]);
 
   const getPriorityBadgeVariant = (priority: string) => {
     switch (priority) {
@@ -97,13 +103,154 @@ export const PharmacyOverviewView: React.FC<PharmacyOverviewViewProps> = ({
         </div>
       </div>
 
+      {/* UNIFIED INVENTORY STOCK VALUATION SHOWCASE (PURCHASE VALUE & SALE VALUE IN ONE PLACE) */}
+      <Card
+        style={{
+          background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(6, 78, 59, 0.45) 50%, rgba(15, 23, 42, 0.98) 100%)',
+          border: '2px solid #10B981',
+          borderRadius: '16px',
+          padding: '20px 24px',
+          boxShadow: '0 10px 30px rgba(16, 185, 129, 0.18)'
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div
+              style={{
+                width: '44px',
+                height: '44px',
+                borderRadius: '12px',
+                backgroundColor: 'rgba(16, 185, 129, 0.22)',
+                border: '1.5px solid #10B981',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.5rem'
+              }}
+            >
+              📦
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 900, color: '#F8FAFC', letterSpacing: '-0.01em' }}>
+                  Live Inventory Stock Valuation (इन्वेंट्री कुल खरीद एवं बिक्री मूल्य)
+                </h3>
+                <Badge variant="success" style={{ fontSize: '0.72rem', fontWeight: 800, backgroundColor: '#059669', color: '#FFF' }}>
+                  ● एक ही जगह (Consolidated View)
+                </Badge>
+              </div>
+              <div style={{ fontSize: '0.8rem', color: '#94A3B8', marginTop: '3px' }}>
+                Total Purchase Cost (PTR) vs. Counter Retail Value (MRP) across all active batches & formulations
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onOpenTab('inventory')}
+              style={{ border: '1.5px solid #10B981', color: '#34D399', fontWeight: 800, fontSize: '0.8125rem' }}
+            >
+              📋 Open Stock Register ➔
+            </Button>
+          </div>
+        </div>
+
+        {/* 4 Unified Metrics */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+            gap: '16px',
+            backgroundColor: 'rgba(15, 23, 42, 0.75)',
+            border: '1px solid rgba(16, 185, 129, 0.25)',
+            borderRadius: '12px',
+            padding: '16px 20px'
+          }}
+        >
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 800, color: '#38BDF8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <span>📥</span>
+              <span>Purchase Value (खरीद मूल्य)</span>
+            </div>
+            <div style={{ fontSize: '1.85rem', fontWeight: 900, color: '#38BDF8', fontFamily: 'monospace', marginTop: '6px' }}>
+              ₹{stockValuation.totalPurchaseValue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+            <div style={{ fontSize: '0.72rem', color: '#7DD3FC', marginTop: '4px', fontWeight: 600 }}>
+              Wholesale Taxable PTR Cost
+            </div>
+          </div>
+
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 800, color: '#F8FAFC', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <span>🏷️</span>
+              <span>Sale Value (बिक्री मूल्य)</span>
+            </div>
+            <div style={{ fontSize: '1.85rem', fontWeight: 900, color: '#F8FAFC', fontFamily: 'monospace', marginTop: '6px' }}>
+              ₹{stockValuation.totalSaleValue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+            <div style={{ fontSize: '0.72rem', color: '#CBD5E1', marginTop: '4px', fontWeight: 600 }}>
+              Maximum Retail Counter Value (MRP)
+            </div>
+          </div>
+
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 800, color: '#34D399', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <span>📈</span>
+              <span>Gross Margin (अपेक्षित मुनाफ़ा)</span>
+            </div>
+            <div style={{ fontSize: '1.85rem', fontWeight: 900, color: '#34D399', fontFamily: 'monospace', marginTop: '6px' }}>
+              +₹{stockValuation.grossProfit.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{' '}
+              <span style={{ fontSize: '0.95rem', color: '#6EE7B7', fontWeight: 800 }}>
+                ({stockValuation.profitMarginPercent.toFixed(1)}%)
+              </span>
+            </div>
+            <div style={{ fontSize: '0.72rem', color: '#A7F3D0', marginTop: '4px', fontWeight: 600 }}>
+              Gross Profit Potential on Full Dispense
+            </div>
+          </div>
+
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 800, color: '#FBBF24', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <span>💊</span>
+              <span>Physical In-Stock</span>
+            </div>
+            <div style={{ fontSize: '1.85rem', fontWeight: 900, color: '#FBBF24', fontFamily: 'monospace', marginTop: '6px' }}>
+              {stockValuation.totalUnits.toLocaleString()}{' '}
+              <span style={{ fontSize: '0.85rem', color: '#FCD34D', fontWeight: 700 }}>Packs</span>
+            </div>
+            <div style={{ fontSize: '0.72rem', color: '#FDE68A', marginTop: '4px', fontWeight: 600 }}>
+              Across {stockValuation.totalBatches} Batches • {stockValuation.totalSkus} Distinct SKUs
+            </div>
+          </div>
+        </div>
+      </Card>
+
       {/* KPI Cards Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+        <Card
+          padding="md"
+          style={{ cursor: 'pointer', border: '1.5px solid rgba(56, 189, 248, 0.4)', background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.9) 100%)' }}
+          onClick={() => onOpenTab('inventory')}
+        >
+          <div style={{ fontSize: '0.8rem', color: '#38BDF8', fontWeight: 700, textTransform: 'uppercase' }}>
+            📦 Stock Purchase vs Sale
+          </div>
+          <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#F8FAFC', marginTop: '4px', fontFamily: 'monospace' }}>
+            <span style={{ color: '#38BDF8' }} title="Purchase Cost PTR">₹{stockValuation.totalPurchaseValue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
+            <span style={{ color: '#64748B', margin: '0 4px' }}>/</span>
+            <span style={{ color: '#34D399' }} title="Retail MRP Sale Value">₹{stockValuation.totalSaleValue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
+          </div>
+          <div style={{ fontSize: '0.72rem', color: '#34D399', marginTop: '4px', fontWeight: 700 }}>
+            Margin: +₹{stockValuation.grossProfit.toLocaleString('en-IN', { maximumFractionDigits: 0 })} ({stockValuation.profitMarginPercent.toFixed(1)}%) ➔
+          </div>
+        </Card>
         <Card padding="md">
           <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
             Prescriptions Today
           </div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: '#0f172a', marginTop: '4px' }}>
+          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--ds-color-text-primary, #f8fafc)', marginTop: '4px' }}>
             {overview.prescriptionsToday}
           </div>
           <div style={{ fontSize: '0.75rem', color: '#10b981', marginTop: '4px' }}>

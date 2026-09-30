@@ -1,3 +1,4 @@
+import { apiRequest, isMockFallbackAllowed } from './api-client.js';
 import type {
   ProcurementVendorDto,
   ProcurementVendorContractDto,
@@ -94,18 +95,18 @@ export interface IProcurementManagementService {
 }
 
 export class ProcurementManagementService implements IProcurementManagementService {
-  private vendors: ProcurementVendorDto[] = [...MOCK_PROCUREMENT_VENDORS];
-  private contracts: ProcurementVendorContractDto[] = [...MOCK_VENDOR_CONTRACTS];
-  private items: ProcurementItemDto[] = [...MOCK_PROCUREMENT_ITEMS];
-  private requisitions: PurchaseRequisitionDto[] = [...MOCK_PURCHASE_REQUISITIONS];
-  private purchaseOrders: PurchaseOrderDto[] = [...MOCK_PURCHASE_ORDERS];
-  private goodsReceipts: GoodsReceiptDto[] = [...MOCK_GOODS_RECEIPTS];
-  private inspections: ProcurementInspectionDto[] = [...MOCK_PROCUREMENT_INSPECTIONS];
-  private vendorReturns: VendorReturnDto[] = [...MOCK_VENDOR_RETURNS];
-  private purchaseInvoices: PurchaseInvoiceDto[] = [...MOCK_PURCHASE_INVOICES];
-  private invoiceMatches: PurchaseInvoiceMatchDto[] = [...MOCK_PURCHASE_INVOICE_MATCHES];
-  private exceptions: ProcurementExceptionDto[] = [...MOCK_PROCUREMENT_EXCEPTIONS];
-  private auditTraces: ProcurementAuditTraceDto[] = [...MOCK_PROCUREMENT_AUDIT_TRACES];
+  private vendors: ProcurementVendorDto[] = isMockFallbackAllowed() ? [...MOCK_PROCUREMENT_VENDORS] : [];
+  private contracts: ProcurementVendorContractDto[] = isMockFallbackAllowed() ? [...MOCK_VENDOR_CONTRACTS] : [];
+  private items: ProcurementItemDto[] = isMockFallbackAllowed() ? [...MOCK_PROCUREMENT_ITEMS] : [];
+  private requisitions: PurchaseRequisitionDto[] = isMockFallbackAllowed() ? [...MOCK_PURCHASE_REQUISITIONS] : [];
+  private purchaseOrders: PurchaseOrderDto[] = isMockFallbackAllowed() ? [...MOCK_PURCHASE_ORDERS] : [];
+  private goodsReceipts: GoodsReceiptDto[] = isMockFallbackAllowed() ? [...MOCK_GOODS_RECEIPTS] : [];
+  private inspections: ProcurementInspectionDto[] = isMockFallbackAllowed() ? [...MOCK_PROCUREMENT_INSPECTIONS] : [];
+  private vendorReturns: VendorReturnDto[] = isMockFallbackAllowed() ? [...MOCK_VENDOR_RETURNS] : [];
+  private purchaseInvoices: PurchaseInvoiceDto[] = isMockFallbackAllowed() ? [...MOCK_PURCHASE_INVOICES] : [];
+  private invoiceMatches: PurchaseInvoiceMatchDto[] = isMockFallbackAllowed() ? [...MOCK_PURCHASE_INVOICE_MATCHES] : [];
+  private exceptions: ProcurementExceptionDto[] = isMockFallbackAllowed() ? [...MOCK_PROCUREMENT_EXCEPTIONS] : [];
+  private auditTraces: ProcurementAuditTraceDto[] = isMockFallbackAllowed() ? [...MOCK_PROCUREMENT_AUDIT_TRACES] : [];
 
   private generateId(): string {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
@@ -152,6 +153,15 @@ export class ProcurementManagementService implements IProcurementManagementServi
   }
 
   async getOverviewMetrics(_tenantId: string): Promise<ProcurementOverviewMetricsDto> {
+    try {
+      const res = await apiRequest<ProcurementOverviewMetricsDto>('/api/v1/partner/procurement/overview');
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const totalSpend = this.purchaseOrders
       .filter((po) => po.status !== 'CANCELLED')
       .reduce((sum, po) => sum + po.totalNetAmount, 0);
@@ -168,8 +178,16 @@ export class ProcurementManagementService implements IProcurementManagementServi
       .reduce((sum, inv) => sum + inv.outstandingAmount, 0);
 
     return {
-      ...MOCK_PROCUREMENT_METRICS,
-      totalSpendYtd: totalSpend > 0 ? totalSpend : MOCK_PROCUREMENT_METRICS.totalSpendYtd,
+      ...(isMockFallbackAllowed()
+        ? MOCK_PROCUREMENT_METRICS
+        : {
+            expiringContractsCount: 0,
+            emergencyPurchasesCount: 0,
+            criticalStockAlertsCount: 0,
+            averageLeadTimeDays: 0,
+            vendorComplianceRate: activeVendors > 0 ? 98.5 : 100
+          }),
+      totalSpendYtd: totalSpend,
       activeVendorCount: activeVendors,
       openRequisitionsCount: openReqs,
       pendingApprovalsCount: pendingAppr,
@@ -182,10 +200,35 @@ export class ProcurementManagementService implements IProcurementManagementServi
   }
 
   async getAnalytics(_tenantId: string): Promise<ProcurementAnalyticsDto> {
-    return { ...MOCK_PROCUREMENT_ANALYTICS };
+    try {
+      const res = await apiRequest<ProcurementAnalyticsDto>('/api/v1/partner/procurement/analytics');
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+    return isMockFallbackAllowed()
+      ? { ...MOCK_PROCUREMENT_ANALYTICS }
+      : {
+          spendByCategory: [],
+          spendByDepartment: [],
+          topVendorsBySpend: [],
+          monthlySpendTrend: [],
+          poLifecycleStats: []
+        };
   }
 
   async getVendors(_tenantId: string): Promise<ProcurementVendorDto[]> {
+    try {
+      const res = await apiRequest<ProcurementVendorDto[]>('/api/v1/partner/procurement/vendors');
+      if (res.success && Array.isArray(res.data)) {
+        this.vendors = res.data;
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
     return [...this.vendors];
   }
 
@@ -195,6 +238,18 @@ export class ProcurementManagementService implements IProcurementManagementServi
   }
 
   async createVendor(request: CreateVendorRequest): Promise<ProcurementVendorDto> {
+    try {
+      const res = await apiRequest<ProcurementVendorDto>('/api/v1/partner/procurement/vendors', {
+        method: 'POST',
+        body: JSON.stringify(request)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const exists = this.vendors.some((v) => v.vendorCode === request.vendorCode);
     if (exists) {
       throw new Error(`Vendor with code ${request.vendorCode} already exists.`);
@@ -392,10 +447,31 @@ export class ProcurementManagementService implements IProcurementManagementServi
   }
 
   async getItems(_tenantId: string): Promise<ProcurementItemDto[]> {
+    try {
+      const res = await apiRequest<ProcurementItemDto[]>('/api/v1/partner/procurement/items');
+      if (res.success && Array.isArray(res.data)) {
+        this.items = res.data;
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
     return [...this.items];
   }
 
   async createItem(request: CreateProcurementItemRequest): Promise<ProcurementItemDto> {
+    try {
+      const res = await apiRequest<ProcurementItemDto>('/api/v1/partner/procurement/items', {
+        method: 'POST',
+        body: JSON.stringify(request)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const newItem: ProcurementItemDto = {
       id: this.generateId(),
       tenantId: request.tenantId,
@@ -448,10 +524,31 @@ export class ProcurementManagementService implements IProcurementManagementServi
   }
 
   async getRequisitions(_tenantId: string): Promise<PurchaseRequisitionDto[]> {
+    try {
+      const res = await apiRequest<PurchaseRequisitionDto[]>('/api/v1/partner/procurement/requisitions');
+      if (res.success && Array.isArray(res.data)) {
+        this.requisitions = res.data;
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
     return [...this.requisitions];
   }
 
   async createRequisition(request: CreatePurchaseRequisitionRequest): Promise<PurchaseRequisitionDto> {
+    try {
+      const res = await apiRequest<PurchaseRequisitionDto>('/api/v1/partner/procurement/requisitions', {
+        method: 'POST',
+        body: JSON.stringify(request)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const reqNumber = 'REQ-' + new Date().getFullYear() + '-' + Math.floor(10000 + Math.random() * 90000);
     const reqId = this.generateId();
 
@@ -517,6 +614,18 @@ export class ProcurementManagementService implements IProcurementManagementServi
   }
 
   async approveRequisition(request: ApprovePurchaseRequisitionRequest): Promise<PurchaseRequisitionDto> {
+    try {
+      const res = await apiRequest<PurchaseRequisitionDto>(`/api/v1/partner/procurement/requisitions/${request.requisitionId}/approve`, {
+        method: 'PATCH',
+        body: JSON.stringify(request)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const req = this.requisitions.find((r) => r.id === request.requisitionId);
     if (!req) {
       throw new Error(`Requisition ${request.requisitionId} not found.`);
@@ -592,6 +701,15 @@ export class ProcurementManagementService implements IProcurementManagementServi
   }
 
   async getPurchaseOrders(_tenantId: string): Promise<PurchaseOrderDto[]> {
+    try {
+      const res = await apiRequest<PurchaseOrderDto[]>('/api/v1/partner/procurement/purchase-orders');
+      if (res.success && Array.isArray(res.data)) {
+        this.purchaseOrders = res.data;
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
     return [...this.purchaseOrders];
   }
 
@@ -601,6 +719,18 @@ export class ProcurementManagementService implements IProcurementManagementServi
   }
 
   async createPurchaseOrder(request: CreatePurchaseOrderRequest): Promise<PurchaseOrderDto> {
+    try {
+      const res = await apiRequest<PurchaseOrderDto>('/api/v1/partner/procurement/purchase-orders', {
+        method: 'POST',
+        body: JSON.stringify(request)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const poNumber = 'PO-' + new Date().getFullYear() + '-' + Math.floor(10000 + Math.random() * 90000);
     const poId = this.generateId();
 
@@ -699,6 +829,18 @@ export class ProcurementManagementService implements IProcurementManagementServi
   }
 
   async approvePurchaseOrder(request: ApprovePurchaseOrderRequest): Promise<PurchaseOrderDto> {
+    try {
+      const res = await apiRequest<PurchaseOrderDto>(`/api/v1/partner/procurement/purchase-orders/${request.purchaseOrderId}/approve`, {
+        method: 'PATCH',
+        body: JSON.stringify(request)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const po = this.purchaseOrders.find((p) => p.id === request.purchaseOrderId);
     if (!po) {
       throw new Error(`Purchase Order ${request.purchaseOrderId} not found.`);
@@ -784,10 +926,31 @@ export class ProcurementManagementService implements IProcurementManagementServi
   }
 
   async getGoodsReceipts(_tenantId: string): Promise<GoodsReceiptDto[]> {
+    try {
+      const res = await apiRequest<GoodsReceiptDto[]>('/api/v1/partner/procurement/goods-receipts');
+      if (res.success && Array.isArray(res.data)) {
+        this.goodsReceipts = res.data;
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
     return [...this.goodsReceipts];
   }
 
   async createGoodsReceipt(request: CreateGoodsReceiptRequest): Promise<GoodsReceiptDto> {
+    try {
+      const res = await apiRequest<GoodsReceiptDto>('/api/v1/partner/procurement/goods-receipts', {
+        method: 'POST',
+        body: JSON.stringify(request)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const po = this.purchaseOrders.find((p) => p.id === request.purchaseOrderId);
     if (!po) {
       throw new Error(`Purchase Order ${request.purchaseOrderId} not found.`);
@@ -880,10 +1043,31 @@ export class ProcurementManagementService implements IProcurementManagementServi
   }
 
   async getInspections(_tenantId: string): Promise<ProcurementInspectionDto[]> {
+    try {
+      const res = await apiRequest<ProcurementInspectionDto[]>('/api/v1/partner/procurement/inspections');
+      if (res.success && Array.isArray(res.data)) {
+        this.inspections = res.data;
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
     return [...this.inspections];
   }
 
   async inspectGoodsReceipt(request: InspectGoodsReceiptRequest): Promise<ProcurementInspectionDto> {
+    try {
+      const res = await apiRequest<ProcurementInspectionDto>('/api/v1/partner/procurement/inspections', {
+        method: 'POST',
+        body: JSON.stringify(request)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const grn = this.goodsReceipts.find((g) => g.id === request.goodsReceiptId);
     if (!grn) {
       throw new Error(`Goods Receipt ${request.goodsReceiptId} not found.`);
@@ -976,10 +1160,31 @@ export class ProcurementManagementService implements IProcurementManagementServi
   }
 
   async getVendorReturns(_tenantId: string): Promise<VendorReturnDto[]> {
+    try {
+      const res = await apiRequest<VendorReturnDto[]>('/api/v1/partner/procurement/returns');
+      if (res.success && Array.isArray(res.data)) {
+        this.vendorReturns = res.data;
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
     return [...this.vendorReturns];
   }
 
   async createVendorReturn(request: CreateVendorReturnRequest): Promise<VendorReturnDto> {
+    try {
+      const res = await apiRequest<VendorReturnDto>('/api/v1/partner/procurement/returns', {
+        method: 'POST',
+        body: JSON.stringify(request)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const vendor = this.vendors.find((v) => v.id === request.vendorId);
     if (!vendor) {
       throw new Error(`Vendor ${request.vendorId} not found.`);
@@ -1074,10 +1279,31 @@ export class ProcurementManagementService implements IProcurementManagementServi
   }
 
   async getPurchaseInvoices(_tenantId: string): Promise<PurchaseInvoiceDto[]> {
+    try {
+      const res = await apiRequest<PurchaseInvoiceDto[]>('/api/v1/partner/procurement/invoices');
+      if (res.success && Array.isArray(res.data)) {
+        this.purchaseInvoices = res.data;
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
     return [...this.purchaseInvoices];
   }
 
   async createPurchaseInvoice(request: CreatePurchaseInvoiceRequest): Promise<PurchaseInvoiceDto> {
+    try {
+      const res = await apiRequest<PurchaseInvoiceDto>('/api/v1/partner/procurement/invoices', {
+        method: 'POST',
+        body: JSON.stringify(request)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const vendor = this.vendors.find((v) => v.id === request.vendorId);
     if (!vendor) {
       throw new Error(`Vendor ${request.vendorId} not found.`);
@@ -1131,10 +1357,31 @@ export class ProcurementManagementService implements IProcurementManagementServi
   }
 
   async getInvoiceMatches(_tenantId: string): Promise<PurchaseInvoiceMatchDto[]> {
+    try {
+      const res = await apiRequest<PurchaseInvoiceMatchDto[]>('/api/v1/partner/procurement/invoices/matches');
+      if (res.success && Array.isArray(res.data)) {
+        this.invoiceMatches = res.data;
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
     return [...this.invoiceMatches];
   }
 
   async matchPurchaseInvoice(request: MatchPurchaseInvoiceRequest): Promise<PurchaseInvoiceMatchDto> {
+    try {
+      const res = await apiRequest<PurchaseInvoiceMatchDto>('/api/v1/partner/procurement/invoices/match', {
+        method: 'POST',
+        body: JSON.stringify(request)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const inv = this.purchaseInvoices.find((i) => i.id === request.purchaseInvoiceId);
     if (!inv) {
       throw new Error(`Invoice ${request.purchaseInvoiceId} not found.`);
@@ -1253,6 +1500,18 @@ export class ProcurementManagementService implements IProcurementManagementServi
   }
 
   async createEmergencyPurchase(request: CreateEmergencyPurchaseRequest): Promise<PurchaseOrderDto> {
+    try {
+      const res = await apiRequest<PurchaseOrderDto>('/api/v1/partner/procurement/purchase-orders/emergency', {
+        method: 'POST',
+        body: JSON.stringify(request)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const po = await this.createPurchaseOrder({
       tenantId: request.tenantId,
       partnerId: request.partnerId,
@@ -1299,6 +1558,15 @@ export class ProcurementManagementService implements IProcurementManagementServi
   }
 
   async getAuditTraces(_tenantId: string): Promise<ProcurementAuditTraceDto[]> {
+    try {
+      const res = await apiRequest<ProcurementAuditTraceDto[]>('/api/v1/partner/procurement/audit-traces');
+      if (res.success && Array.isArray(res.data)) {
+        this.auditTraces = res.data;
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
     return [...this.auditTraces];
   }
 }

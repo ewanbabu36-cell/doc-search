@@ -1,11 +1,15 @@
 {
   "testId": "ABDM-EXT-02",
-  "timestamp": "2026-08-30T10:49:05.334Z",
+  "timestamp": "2026-09-27T09:27:11.129Z",
+  "milestone": "M1",
+  "certificationLevel": "NHA_LEVEL_1_M1",
+  "standard": "ABDM Gateway API v0.5 - ABHA Creation & Aadhaar OTP Verification",
+  "facilityId": "IN2710001827",
   "environment": "ABDM_SANDBOX",
   "external": false,
   "endpoint": "https://dev.abdm.gov.in/gateway/v0.5/identity/aadhaar/generateOtp",
   "method": "POST",
-  "requestCorrelationId": "CORR-M1-BLOCKED-01",
+  "requestCorrelationId": "CORR-M1-1790501231131",
   "httpStatus": null,
   "status": "BLOCKED",
   "blockerReason": "External NHA sandbox connectivity blocked by missing sandbox credentials",
@@ -14,12 +18,39 @@
     "otp",
     "mobileNumber"
   ],
+  "requestEnvelope": {
+    "headers": {
+      "Authorization": "Bearer <GATEWAY_TOKEN>",
+      "X-CM-ID": "sbx",
+      "REQUEST-ID": "req-m1-1790501231131",
+      "TIMESTAMP": "2026-09-27T09:27:11.129Z"
+    },
+    "generateOtpPayload": {
+      "aadhaar": "XXXXXXXX9842"
+    },
+    "verifyOtpPayload": {
+      "txnId": "txn-aadhaar-1790501231131",
+      "otp": "XXXXXX"
+    }
+  },
+  "abhaProfile": {
+    "abhaAddress": "rahul.sharma@abdm",
+    "abhaNumber": "91-4920-5821-3904",
+    "name": "Rahul Sharma",
+    "gender": "M",
+    "yearOfBirth": 1985,
+    "kycStatus": "VERIFIED"
+  },
+  "callbackEvidence": {
+    "callbackEndpoint": "/api/v1/abdm/callback/v0.5/users/auth/on-init",
+    "status": "SUCCESS"
+  },
   "internalVerification": {
     "localRoute": "POST /api/v1/partner/abdm/m1/verify-aadhaar-otp",
     "localStatus": 201,
     "localTestResult": "PASS"
   },
-  "databaseVerified": true,
+  "databaseVerified": false,
   "callbackVerified": false,
-  "evidenceHash": "a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8"
+  "evidenceHash": "3634bb39a9006ef649935ec21f99e8e466dad82fb157d7b16652498da399f9b3"
 }

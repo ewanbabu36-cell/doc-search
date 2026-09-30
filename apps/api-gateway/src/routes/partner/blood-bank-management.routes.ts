@@ -1,6 +1,7 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { bloodBankManagementService } from '../../services/partner/BloodBankManagementService.js';
 import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
+import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 import {
   type RegisterDonorInput,
   type CollectDonationInput,
@@ -13,6 +14,8 @@ import {
 } from '../../repositories/partner/BloodBankManagementRepository.js';
 
 export const bloodBankManagementRoutes: FastifyPluginAsync = async (fastify) => {
+  fastify.addHook('preHandler', requireModuleCommercialAccess('BLOOD_BANK'));
+
   // 1. Blood Inventory
   fastify.get(
     '/api/v1/partner/blood-bank/inventory',

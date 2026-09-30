@@ -11,6 +11,7 @@ import type {
   MedicationCatalogDto,
   CreateSubstitutionRequest
 } from '@docsearch/api-contracts';
+import { getUnifiedPartnerProfile } from '../../utils/roleProfileResolver.js';
 
 export interface SubstituteMedicationDialogProps {
   isOpen: boolean;
@@ -35,12 +36,13 @@ export const SubstituteMedicationDialog: React.FC<SubstituteMedicationDialogProp
   organizationId,
   branchId
 }) => {
-  const [selectedItemId, setSelectedItemId] = useState(prescription?.items[0]?.id || '');
-  const [requestedMedicationId, setRequestedMedicationId] = useState('');
-  const [reason, setReason] = useState('OUT_OF_STOCK');
-  const [justification, setJustification] = useState('');
-  const [doctorApprovalRequired, setDoctorApprovalRequired] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const profile = getUnifiedPartnerProfile();
+  const [selectedItemId, setSelectedItemId] = useState<string>('');
+  const [requestedMedicationId, setRequestedMedicationId] = useState<string>('');
+  const [reason, setReason] = useState<string>('');
+  const [doctorApprovalRequired, setDoctorApprovalRequired] = useState<boolean>(true);
+  const [justification, setJustification] = useState<string>('Clinical equivalency and bioequivalence matched.');
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   if (!prescription) return null;
@@ -49,14 +51,17 @@ export const SubstituteMedicationDialog: React.FC<SubstituteMedicationDialogProp
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedItem || !requestedMedicationId || !justification) {
-      setError('Please select a substitute medication and provide clinical justification.');
+    if (!selectedItemId || !requestedMedicationId || !reason.trim()) {
+      setError('Please select items and provide a reason.');
       return;
     }
 
+    setIsSubmitting(true);
+    setError(null);
     try {
-      setIsSubmitting(true);
-      setError(null);
+      const selectedItem = prescription.items.find((i) => i.id === selectedItemId);
+      if (!selectedItem) throw new Error('Selected prescription item not found');
+
       await onSubmit({
         tenantId,
         partnerId,
@@ -67,10 +72,10 @@ export const SubstituteMedicationDialog: React.FC<SubstituteMedicationDialogProp
         originalMedicationId: selectedItem.medicationId,
         requestedMedicationId,
         reason,
-        pharmacistId: 'pharm.marcus.vance@docsearch.docsearch.health',
-        pharmacistName: 'Marcus Vance, PharmD',
+        pharmacistId: profile.supportEmail || 'dispensing.pharmacist@docsearch.health',
+        pharmacistName: profile.pharmacistName ? `${profile.pharmacistName}, ${profile.pharmacistDegree || 'B.Pharm'}` : 'Registered Pharmacist',
         doctorApprovalRequired,
-        actorId: 'pharm.marcus.vance@docsearch.docsearch.health',
+        actorId: profile.supportEmail || 'dispensing.pharmacist@docsearch.health',
         actorRole: 'PHARMACIST',
         justification
       });
@@ -87,6 +92,8 @@ export const SubstituteMedicationDialog: React.FC<SubstituteMedicationDialogProp
       isOpen={isOpen}
       onClose={onClose}
       title={`Request Medication Substitution — ${prescription.prescriptionNumber}`}
+      isFullPage={true}
+      maxWidth="full"
       footer={
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
           <Button variant="outline" onClick={onClose} disabled={isSubmitting}>

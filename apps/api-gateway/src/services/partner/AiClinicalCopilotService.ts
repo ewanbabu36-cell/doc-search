@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import { AiClinicalCopilotRepository } from '../../repositories/partner/AiClinicalCopilotRepository.js';
+import { aiScribeExtractionService } from './AiScribeExtractionService.js';
 import { AppError } from '@docsearch/shared-core';
 import { withSecurityContext, getDatabase } from '@docsearch/database';
 import type { SessionContext } from '@docsearch/auth';
@@ -68,23 +69,30 @@ export class AiClinicalCopilotService {
       throw new AppError({ message: 'Clinical dialogue transcript is required for SOAP generation', statusCode: 400 });
     }
 
-    // Clinical NLP Entity Parser Simulation
+    // Clinical NLP Entity Parser via AiScribeExtractionService (with deterministic heuristic fallback)
+    const extracted = await aiScribeExtractionService.extractSoapFromTranscript(session, {
+      transcript
+    });
+
     const soapNote = {
-      subjective: 'Patient reports 3-week history of worsening exertional dyspnea and bilateral ankle swelling. No chest pain, syncope, or orthopnea reported.',
-      objective: 'BP: 154/92 mmHg, HR: 84 bpm regular, SpO2: 97% on room air. JVP elevated 3cm. Bilateral fine basal crackles on lung auscultation. 1+ pitting pedal edema.',
-      assessment: '1. Stage B Heart Failure with preserved ejection fraction (HFpEF) - mildly decompensated. 2. Essential Hypertension (uncontrolled).',
-      plan: '1. Initiate Oral Torsemide 10mg OD morning for 14 days. 2. Up-titrate Telmisartan to 80mg OD. 3. Order 2D Echocardiography and serum NT-proBNP. 4. Low sodium diet (<2g/day) & fluid restriction to 1.5L/day. Follow-up in 2 weeks.'
+      subjective: extracted.subjective || transcript,
+      objective: extracted.objective || 'Vitals and physical exam documented per encounter transcript.',
+      assessment: extracted.clinicalAssessment || 'Clinical impression pending attending physician verification.',
+      plan: extracted.treatmentPlan || 'Continue supportive management and review investigations.'
     };
 
-    const suggestedIcd10Codes = [
-      { code: 'I50.9', description: 'Heart failure, unspecified', confidencePct: 96.5 },
-      { code: 'I10', description: 'Essential (primary) hypertension', confidencePct: 98.2 }
-    ];
+    const suggestedIcd10Codes = (extracted.diagnoses || []).map((item) => ({
+      code: item.code,
+      description: item.name,
+      confidencePct: item.confidence || 90
+    }));
 
-    const suggestedPrescriptions = [
-      { drugName: 'Torsemide 10mg Tablet', dosage: '10mg', frequency: 'Once daily (morning)', duration: '14 days' },
-      { drugName: 'Telmisartan 80mg Tablet', dosage: '80mg', frequency: 'Once daily', duration: '30 days' }
-    ];
+    const suggestedPrescriptions = (extracted.medications || []).map((med) => ({
+      drugName: `${med.medicationName} ${med.strength}`.trim(),
+      dosage: med.dosage,
+      frequency: med.frequency,
+      duration: `${med.duration} ${med.durationUnit || 'DAYS'}`
+    }));
 
     return withSecurityContext(getDatabase(), session, async (tx) => {
       const soap = await this.repo.createSoapNote({
@@ -215,7 +223,7 @@ export class AiClinicalCopilotService {
 
     let riskGrade = 'LOW_RISK_0_4';
     if (score >= 7) riskGrade = 'HIGH_RISK_RED_ALERT_7_PLUS';
-    else if (score >= 5) score = 5;
+    else if (score >= 5) riskGrade = 'MEDIUM_RISK_AMBER_5_6';
 
     return withSecurityContext(getDatabase(), session, async (tx) => {
       const alert = await this.repo.createSepsisAlert({

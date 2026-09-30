@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Button, Badge } from '@docsearch/ui-kit';
+import { Button, DocSearchSpatialCore3D, SkeletonPage } from '@docsearch/ui-kit';
 import { bloodBankManagementService } from '../services/blood-bank-management-service.js';
 import type {
   BloodBankOverviewMetricsDto,
@@ -59,7 +59,7 @@ import { BloodQualityControlView } from './views/BloodQualityControlView.js';
 import { TemperatureMonitoringView } from './views/TemperatureMonitoringView.js';
 import { BloodBankAnalyticsView } from './views/BloodBankAnalyticsView.js';
 import { BloodBankAuditVaultView } from './views/BloodBankAuditVaultView.js';
-import { BloodBankControlCenterView } from './views/BloodBankControlCenterView.js';
+import { TabOverflowMenu } from './common/TabOverflowMenu.js';
 
 // Dialogs
 import { CreateDonorDialog } from './dialogs/CreateDonorDialog.js';
@@ -103,8 +103,7 @@ type TabType =
   | 'quality-control'
   | 'temperature'
   | 'analytics'
-  | 'audit-vault'
-  | 'control-center';
+  | 'audit-vault';
 
 type TabBadgeVariant = 'neutral' | 'primary' | 'success' | 'warning' | 'danger';
 
@@ -224,43 +223,130 @@ export const BloodBankDomainManager: React.FC<Props> = ({ tenantId }) => {
     { id: 'quality-control', label: 'QC & Calibrations', count: qualityChecks.length },
     { id: 'temperature', label: 'Cold-Chain Monitoring', count: temperatureLogs.filter((t) => t.isExcursion).length, badgeVariant: 'danger' },
     { id: 'analytics', label: 'Analytics' },
-    { id: 'audit-vault', label: 'Audit Vault', count: auditTraces.length },
-    { id: 'control-center', label: 'Control Center' }
+    { id: 'audit-vault', label: 'Audit Vault', count: auditTraces.length }
   ];
 
+  const primaryTabIds: TabType[] = ['command-center', 'donors', 'inventory', 'requests', 'crossmatch'];
+  const primaryTabs = tabs.filter((t) => primaryTabIds.includes(t.id));
+  const secondaryTabs = tabs.filter((t) => !primaryTabIds.includes(t.id));
+
   if (loading || !metrics || !analytics || !facility) {
-    return (
-      <div className="p-8 text-center text-gray-500">
-        <div className="animate-spin text-3xl mb-2">🩸</div>
-        <div>Loading Blood Bank & Transfusion Medicine Domain...</div>
-      </div>
-    );
+    return <SkeletonPage layout="cards" metricCount={4} />;
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex overflow-x-auto border-b border-gray-200 bg-white px-4 pt-2 gap-1 rounded-t-xl">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => {
-              setActiveTab(tab.id);
-              setSelectedDonor(null);
-            }}
-            className={`flex items-center gap-1.5 px-3.5 py-2.5 text-xs font-semibold whitespace-nowrap border-b-2 transition ${
-              activeTab === tab.id
-                ? 'border-red-600 text-red-700 bg-red-50/30'
-                : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
-            }`}
-          >
-            {tab.label}
-            {tab.count !== undefined && (
-              <Badge variant={tab.badgeVariant || (activeTab === tab.id ? 'danger' : 'neutral')}>
-                {tab.count}
-              </Badge>
-            )}
-          </button>
-        ))}
+      {/* 3D Spatial Feature Core: Blood Bank & Transfusion Medicine */}
+      <DocSearchSpatialCore3D
+        preset="blood-bank"
+        height={360}
+        interactive={true}
+        onNodeClick={(id) => {
+          if (id === 'donor-registry') {
+            setActiveTab('donors');
+          } else if (id === 'separation') {
+            setActiveTab('components');
+          } else if (id === 'crossmatch') {
+            setActiveTab('crossmatch');
+          } else if (id === 'cold-chain') {
+            setActiveTab('temperature');
+          } else if (id === 'stat-transfuse') {
+            setActiveTab('transfusion');
+          } else if (id === 'plasma-cryo') {
+            setActiveTab('inventory');
+          } else if (id === 'regulatory-trace') {
+            setActiveTab('audit-vault');
+          }
+        }}
+      />
+
+      <div
+        style={{
+          position: 'relative',
+          zIndex: 40,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          flexWrap: 'wrap',
+          backgroundColor: 'var(--ds-color-surface)',
+          border: '1px solid var(--ds-color-border)',
+          borderRadius: '10px',
+          padding: '6px 8px'
+        }}
+      >
+        {primaryTabs.map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => {
+                setActiveTab(tab.id);
+                setSelectedDonor(null);
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                fontSize: '0.78rem',
+                fontWeight: isActive ? 700 : 500,
+                color: isActive ? '#FFFFFF' : 'var(--ds-color-text-muted)',
+                backgroundColor: isActive ? 'var(--ds-color-danger, #DC2626)' : 'transparent',
+                borderRadius: '6px',
+                border: isActive ? '1px solid var(--ds-color-danger, #EF4444)' : '1px solid transparent',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = 'var(--ds-color-surface-hover)';
+                  e.currentTarget.style.color = 'var(--ds-color-text-primary)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = 'var(--ds-color-text-muted)';
+                }
+              }}
+            >
+              <span>{tab.label}</span>
+              {tab.count !== undefined && (
+                <span
+                  style={{
+                    backgroundColor: isActive ? '#991B1B' : '#1E293B',
+                    color: isActive ? '#FEE2E2' : '#94A3B8',
+                    padding: '1px 6px',
+                    borderRadius: '10px',
+                    fontSize: '0.68rem',
+                    fontWeight: 700,
+                    border: '1px solid rgba(255, 255, 255, 0.1)'
+                  }}
+                >
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+
+        {/* Secondary Modules Selector Dropdown */}
+        <TabOverflowMenu
+          label="More Blood Bank Modules"
+          options={secondaryTabs}
+          activeId={activeTab}
+          onSelect={(id) => {
+            setActiveTab(id as TabType);
+            setSelectedDonor(null);
+          }}
+          onReset={() => {
+            setActiveTab('command-center');
+            setSelectedDonor(null);
+          }}
+          accentColor="#DC2626"
+          activeBorderColor="#EF4444"
+        />
       </div>
 
       <div className="p-1">
@@ -270,6 +356,7 @@ export const BloodBankDomainManager: React.FC<Props> = ({ tenantId }) => {
             requests={requests}
             crossmatches={crossmatches}
             temperatureLogs={temperatureLogs}
+            facility={facility}
             onOpenNewRequest={() => setIsCreateRequestOpen(true)}
             onOpenNewDonor={() => setIsCreateDonorOpen(true)}
           />
@@ -410,10 +497,6 @@ export const BloodBankDomainManager: React.FC<Props> = ({ tenantId }) => {
         {activeTab === 'analytics' && <BloodBankAnalyticsView analytics={analytics} />}
 
         {activeTab === 'audit-vault' && <BloodBankAuditVaultView auditTraces={auditTraces} />}
-
-        {activeTab === 'control-center' && (
-          <BloodBankControlCenterView facility={facility} onRefresh={loadData} />
-        )}
       </div>
 
       {/* Dialog Modals */}

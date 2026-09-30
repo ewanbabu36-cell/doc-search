@@ -1,0 +1,15 @@
+{
+  "timestamp": "2026-09-28T14:57:07.160Z",
+  "durationSec": 59.58,
+  "filesAudited": {
+    "json": 129,
+    "js": 33,
+    "mjs": 267,
+    "cjs": 2,
+    "ts": 517,
+    "tsx": 1220,
+    "total": 2168
+  },
+  "totalFindings": 0,
+  "findings": []
+}

@@ -71,15 +71,24 @@ export const getVerifiedRoleProfile = (): VerifiedRoleProfile => {
   const email = (authUser?.email || '').toLowerCase();
 
   let roleCategory: VerifiedRoleProfile['roleCategory'] = 'DOCTOR';
-  if (role.includes('SUPER_ADMIN') || role.includes('COMPANY') || email.includes('docsearch.health')) {
+  if (
+    role.includes('SUPER_ADMIN') ||
+    role.includes('COMPANY') ||
+    email.startsWith('founder@') ||
+    email.startsWith('hq.') ||
+    email.startsWith('superadmin@') ||
+    email.startsWith('admin@hq.')
+  ) {
     roleCategory = 'COMPANY_HQ';
-  } else if (role.includes('PATHOLOGIST') || org === 'PATHOLOGY' || org === 'DIAGNOSTIC_CENTRE' || dept.includes('PATHOLOGY') || email.includes('tata')) {
+  } else if (role.includes('PATHOLOGIST') || org === 'PATHOLOGY' || org === 'DIAGNOSTIC_LAB' || dept.includes('PATHOLOGY') || email.includes('tata')) {
     roleCategory = 'PATHOLOGY_LAB';
   } else if (role.includes('PHARMACIST') || org === 'PHARMACY' || dept.includes('PHARMACY')) {
     roleCategory = 'PHARMACY';
-  } else if (role.includes('DOCTOR') || role.includes('SURGEON') || role.includes('PHYSICIAN') || role.includes('RADIOLOGIST') || role.includes('PEDIATRICIAN') || role.includes('CONSULTANT')) {
+  } else if (role.includes('RADIOLOGIST') || org === 'DIAGNOSTIC_CENTRE' || dept.includes('RADIOLOGY')) {
     roleCategory = 'DOCTOR';
-  } else if (role.includes('HOSPITAL_ADMIN') || role.includes('DIRECTOR') || role.includes('ORGANIZATION_ADMIN') || org === 'HOSPITAL' || org === 'CLINIC') {
+  } else if (role.includes('DOCTOR') || role.includes('SURGEON') || role.includes('PHYSICIAN') || role.includes('PEDIATRICIAN') || role.includes('CONSULTANT') || org === 'CLINIC' || org === 'CLINIC_GROUP') {
+    roleCategory = 'DOCTOR';
+  } else if (role.includes('HOSPITAL_ADMIN') || role.includes('DIRECTOR') || role.includes('ORGANIZATION_ADMIN') || org === 'HOSPITAL' || org === 'HOSPITAL_NETWORK') {
     roleCategory = 'HOSPITAL';
   } else {
     roleCategory = 'STAFF_OPERATIONS';

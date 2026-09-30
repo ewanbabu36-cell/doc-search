@@ -1,4 +1,4 @@
-import { apiRequest } from './api-client.js';
+import { apiRequest, isMockFallbackAllowed } from './api-client.js';
 import type {
   OperationTheatreComplexDto,
   OperationTheatreRoomDto,
@@ -216,11 +216,12 @@ export class MockOperationTheatreManagementService implements IOperationTheatreM
   async getRooms(tenantId: string): Promise<OperationTheatreRoomDto[]> {
     try {
       const res = await apiRequest<OperationTheatreRoomDto[]>('/api/v1/partner/ot/rooms');
-      if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+      if (res.success && Array.isArray(res.data)) {
+        this.rooms = res.data;
         return res.data;
       }
-    } catch {
-      // Fallback
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
     }
     return this.rooms.filter((r) => r.tenantId === tenantId);
   }
@@ -244,11 +245,12 @@ export class MockOperationTheatreManagementService implements IOperationTheatreM
   async getSchedules(tenantId: string): Promise<OTScheduleDto[]> {
     try {
       const res = await apiRequest<OTScheduleDto[]>('/api/v1/partner/ot/schedules');
-      if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+      if (res.success && Array.isArray(res.data)) {
+        this.schedules = res.data;
         return res.data;
       }
-    } catch {
-      // Fallback
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
     }
     return this.schedules.filter((s) => s.tenantId === tenantId);
   }
@@ -350,6 +352,18 @@ export class MockOperationTheatreManagementService implements IOperationTheatreM
   }
 
   async createRoom(req: CreateOTRoomRequest): Promise<OperationTheatreRoomDto> {
+    try {
+      const res = await apiRequest<OperationTheatreRoomDto>('/api/v1/partner/ot/rooms', {
+        method: 'POST',
+        body: JSON.stringify(req)
+      });
+      if (res.success && res.data) {
+        this.rooms.push(res.data);
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
     const complex = this.complexes.find((c) => c.id === req.complexId);
     const newRoom: OperationTheatreRoomDto = {
       id: 'otr-' + Math.random().toString(36).substring(2, 9),
@@ -543,6 +557,18 @@ export class MockOperationTheatreManagementService implements IOperationTheatreM
   }
 
   async createSchedule(req: CreateOTScheduleRequest): Promise<OTScheduleDto> {
+    try {
+      const res = await apiRequest<OTScheduleDto>('/api/v1/partner/ot/schedules', {
+        method: 'POST',
+        body: JSON.stringify(req)
+      });
+      if (res.success && res.data) {
+        this.schedules.push(res.data);
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
     const room = this.rooms.find((r) => r.id === req.roomId);
     if (!room) throw new Error('OT Room not found');
     if (room.status === 'OCCUPIED' && !req.isEmergency) {

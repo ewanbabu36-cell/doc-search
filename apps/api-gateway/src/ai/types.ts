@@ -90,6 +90,7 @@ export interface PermissionFirewallResult {
     | 'APPROVAL'
     | 'ROLE_ESCALATION'
     | 'PATIENT_ISOLATION'
+    | 'KILL_SWITCH'
     | undefined;
   denialReason?: string | undefined;
   statusCode?: number | undefined;

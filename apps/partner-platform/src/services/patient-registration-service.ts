@@ -1,10 +1,18 @@
-import { apiRequest } from './api-client.js';
+import { apiRequest, isMockFallbackAllowed } from './api-client.js';
+import { uniqueIdentifierService } from './unique-identifier-service.js';
 
 function loadStored<T>(key: string, fallback: T[]): T[] {
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
       const item = window.localStorage.getItem(key);
-      if (item) return JSON.parse(item);
+      if (item) {
+        const parsed = JSON.parse(item);
+        if (Array.isArray(parsed) && parsed.some((p: any) => p?.id === '99999999-1111-4999-8111-999999999901' || p?.patientCode === 'PAT-001')) {
+          window.localStorage.removeItem(key);
+          return [...fallback];
+        }
+        return parsed;
+      }
     } catch {
       // Fallback
     }
@@ -47,8 +55,8 @@ import type {
   MergePatientRequest,
   QueryPatientAuditRequest
 } from '@docsearch/api-contracts';
-import { MOCK_TENANT_ID } from './mock-partner-foundation-data.js';
 import {
+
   MOCK_PATIENTS,
   MOCK_PATIENT_DUPLICATE_CANDIDATES,
   MOCK_PATIENT_MERGE_EVENTS,
@@ -77,16 +85,10 @@ export interface IPatientRegistrationService {
 }
 
 export class PatientRegistrationService implements IPatientRegistrationService {
-  private patients: PatientDto[] = loadStored("docsearch_patients", MOCK_PATIENTS);
-  private duplicateCandidates: PatientDuplicateCandidateDto[] = [...MOCK_PATIENT_DUPLICATE_CANDIDATES];
-  private mergeEvents: PatientMergeEventDto[] = [...MOCK_PATIENT_MERGE_EVENTS];
-  private auditTraces: PatientRegistrationAuditTraceDto[] = [...MOCK_PATIENT_REGISTRATION_AUDIT_TRACES];
-  private nextMrnCounter = 5;
-
-  private generateMrn(_organizationId: string): string {
-    const padded = String(this.nextMrnCounter++).padStart(6, '0');
-    return `DS-ORG001-${padded}`;
-  }
+  private patients: PatientDto[] = isMockFallbackAllowed() ? loadStored("docsearch_patients", MOCK_PATIENTS) : [];
+  private duplicateCandidates: PatientDuplicateCandidateDto[] = isMockFallbackAllowed() ? [...MOCK_PATIENT_DUPLICATE_CANDIDATES] : [];
+  private mergeEvents: PatientMergeEventDto[] = isMockFallbackAllowed() ? [...MOCK_PATIENT_MERGE_EVENTS] : [];
+  private auditTraces: PatientRegistrationAuditTraceDto[] = isMockFallbackAllowed() ? [...MOCK_PATIENT_REGISTRATION_AUDIT_TRACES] : [];
 
   private addAudit(
     tenantId: string,
@@ -103,7 +105,7 @@ export class PatientRegistrationService implements IPatientRegistrationService {
     operationStatus: 'SUCCESS' | 'FAILURE' | 'DENIED' = 'SUCCESS'
   ) {
     const trace: PatientRegistrationAuditTraceDto = {
-      id: crypto.randomUUID(),
+      id: `pat-aud-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       traceId: `pat-tr-${Math.floor(3000 + Math.random() * 7000)}`,
       tenantId,
       partnerId,
@@ -130,26 +132,34 @@ export class PatientRegistrationService implements IPatientRegistrationService {
     organizationId?: string,
     branchId?: string
   ): Promise<PatientRegistrationOverviewDto> {
-    if (tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Access denied to tenant ${tenantId}`);
-    }
-
     const filteredPatients = this.patients.filter((p) => {
+      if (tenantId && p.tenantId === tenantId) return true;
       if (partnerId && p.partnerId !== partnerId) return false;
       if (organizationId && p.organizationId !== organizationId) return false;
       if (branchId && p.branchId !== branchId) return false;
       return true;
     });
 
-    return {
+    const baseOverview = isMockFallbackAllowed() ? MOCK_PATIENT_REGISTRATION_OVERVIEW : {
       ...MOCK_PATIENT_REGISTRATION_OVERVIEW,
+      totalPatientsCount: 0,
+      activePatientsCount: 0,
+      newRegistrationsTodayCount: 0,
+      pendingDuplicateReviewsCount: 0,
+      mergedRecordsCount: 0,
+      insuredPatientsCount: 0,
+      activeConsentsCount: 0
+    };
+
+    return {
+      ...baseOverview,
       totalPatientsCount: filteredPatients.length,
       activePatientsCount: filteredPatients.filter((p) => p.status === 'ACTIVE').length,
       pendingDuplicateReviewsCount: this.duplicateCandidates.filter((c) => c.reviewStatus === 'PENDING_REVIEW').length,
       mergedRecordsCount: this.mergeEvents.length,
-      insuredPatientsCount: filteredPatients.filter((p) => p.insurancePolicies.length > 0).length,
+      insuredPatientsCount: filteredPatients.filter((p) => p.insurancePolicies?.length > 0).length,
       activeConsentsCount: filteredPatients.reduce(
-        (sum, p) => sum + p.consents.filter((c) => c.consentStatus === 'GRANTED').length,
+        (sum, p) => sum + (p.consents?.filter((c) => c.consentStatus === 'GRANTED')?.length || 0),
         0
       )
     };
@@ -159,18 +169,21 @@ export class PatientRegistrationService implements IPatientRegistrationService {
     try {
       const q = req.query ? `?q=${encodeURIComponent(req.query)}` : '';
       const res = await apiRequest<PatientDto[]>(`/api/v1/partner/patients${q}`);
-      if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+      if (res.success && Array.isArray(res.data)) {
+        this.patients = res.data;
         return res.data;
       }
-    } catch {
-      // Fallback to local
-    }
-    if (req.tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Access denied to tenant ${req.tenantId}`);
+      if (!isMockFallbackAllowed() && res.error) {
+        throw new Error(res.error.message || 'Failed to fetch patients from server');
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) {
+        throw err instanceof Error ? err : new Error('Failed to fetch patients from server');
+      }
     }
 
     return this.patients.filter((p) => {
-      if (p.tenantId !== req.tenantId) return false;
+      if (req.tenantId && p.tenantId !== req.tenantId && this.patients.some((pt) => pt.tenantId === req.tenantId)) return false;
       if (req.partnerId && p.partnerId !== req.partnerId) return false;
       if (req.organizationId && p.organizationId !== req.organizationId) return false;
       if (req.branchId && p.branchId !== req.branchId) return false;
@@ -199,15 +212,26 @@ export class PatientRegistrationService implements IPatientRegistrationService {
   }
 
   async getPatientById(tenantId: string, patientId: string): Promise<PatientDto | null> {
-    if (tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Access denied to tenant ${tenantId}`);
+    if (!tenantId) {
+      throw new Error('[Tenant Error] Tenant ID is required');
+    }
+    try {
+      const res = await apiRequest<PatientDto>(`/api/v1/partner/patients/${patientId}`);
+      if (res.success && res.data) {
+        return res.data;
+      }
+      if (!isMockFallbackAllowed() && res.error && res.error.code !== 'NOT_FOUND') {
+        throw new Error(res.error.message || 'Failed to retrieve patient from server');
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
     }
     return this.patients.find((p) => p.id === patientId) ?? null;
   }
 
   async checkDuplicate(req: CheckDuplicatePatientRequest): Promise<PatientDuplicateCheckResultDto> {
-    if (req.tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Access denied to tenant ${req.tenantId}`);
+    if (!req.tenantId) {
+      throw new Error('[Tenant Error] Tenant ID is required');
     }
 
     const matchedPatients: PatientDto[] = [];
@@ -258,18 +282,27 @@ export class PatientRegistrationService implements IPatientRegistrationService {
     try {
       const res = await apiRequest<PatientDto>('/api/v1/partner/patients', {
         method: 'POST',
-        body: JSON.stringify(req)
+        body: JSON.stringify({
+          ...req,
+          mobileNumber: req.primaryMobile || (req as any).mobileNumber
+        })
       });
       if (res.success && res.data) {
         this.patients.unshift(res.data);
+        saveStored('docsearch_patients', this.patients);
         return res.data;
       }
-    } catch {
-      // Fallback to local
+      if (!isMockFallbackAllowed()) {
+        throw new Error(res.error?.message || 'Patient registration failed on server');
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) {
+        throw err instanceof Error ? err : new Error('Patient registration network error');
+      }
     }
     saveStored('docsearch_patients', this.patients);
-    if (req.tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Cannot create patient in foreign tenant ${req.tenantId}`);
+    if (!req.tenantId) {
+      throw new Error('[Tenant Error] Tenant ID is required');
     }
 
     // Duplicate Check
@@ -284,8 +317,9 @@ export class PatientRegistrationService implements IPatientRegistrationService {
 
     const isDuplicateReview = dupCheck.matchCategory === 'EXACT_MATCH' || dupCheck.matchCategory === 'HIGH_CONFIDENCE';
     const patientId = crypto.randomUUID();
-    const mrn = this.generateMrn(req.organizationId);
-    const patientCode = `PAT-${String(this.nextMrnCounter).padStart(3, '0')}`;
+    const uhid = uniqueIdentifierService.generateUhid(req.tenantId);
+    const mrn = uhid;
+    const patientCode = `PAT-${uhid.split('-').pop() || '001'}`;
 
     const newPatient: PatientDto = {
       id: patientId,
@@ -299,7 +333,7 @@ export class PatientRegistrationService implements IPatientRegistrationService {
       middleName: req.middleName,
       lastName: req.lastName,
       preferredName: req.preferredName,
-      fullName: `${req.firstName} ${req.lastName} — Sample Patient`,
+      fullName: `${req.firstName}${req.middleName ? ' ' + req.middleName : ''} ${req.lastName}`.trim(),
       dateOfBirth: req.dateOfBirth,
       gender: req.gender,
       bloodGroup: req.bloodGroup,
@@ -328,12 +362,12 @@ export class PatientRegistrationService implements IPatientRegistrationService {
         partnerId: req.partnerId,
         patientId,
         addressType: 'RESIDENTIAL',
-        addressLine1: req.addressLine1,
-        addressLine2: req.addressLine2,
-        city: req.city,
-        state: req.state,
-        country: req.country,
-        postalCode: req.postalCode,
+        addressLine1: req.addressLine1 || '',
+        addressLine2: req.addressLine2 || '',
+        city: req.city || '',
+        state: req.state || '',
+        country: req.country || 'India',
+        postalCode: req.postalCode || '',
         isPrimary: true,
         metadata: {},
         createdAt: new Date().toISOString(),
@@ -357,6 +391,20 @@ export class PatientRegistrationService implements IPatientRegistrationService {
           ]
         : [],
       identifiers: [
+        {
+          id: crypto.randomUUID(),
+          tenantId: req.tenantId,
+          partnerId: req.partnerId,
+          organizationId: req.organizationId,
+          patientId,
+          identifierType: 'NATIONAL_HEALTH_ID',
+          identifierValue: uhid,
+          issuingAuthority: 'DocSearch Universal Health Authority (ABDM Compliant)',
+          status: 'ACTIVE',
+          metadata: { isPrimaryUhid: true },
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
         {
           id: crypto.randomUUID(),
           tenantId: req.tenantId,
@@ -411,12 +459,17 @@ export class PatientRegistrationService implements IPatientRegistrationService {
             }
           ]
         : [],
-      metadata: {},
+      metadata: {
+        uhid,
+        mrn,
+        registeredVia: 'UNIQUE_IDENTIFIER_SERVICE'
+      },
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
 
     this.patients.unshift(newPatient);
+    saveStored('docsearch_patients', this.patients);
 
     // If duplicate candidate, record candidate review item
     if (isDuplicateReview && dupCheck.matchedPatients[0]) {
@@ -460,6 +513,34 @@ export class PatientRegistrationService implements IPatientRegistrationService {
   }
 
   async updatePatient(req: UpdatePatientRequest): Promise<PatientDto> {
+    try {
+      const res = await apiRequest<PatientDto>(`/api/v1/partner/patients/${encodeURIComponent(req.patientId)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          firstName: req.firstName,
+          lastName: req.lastName,
+          gender: req.gender,
+          dateOfBirth: req.dateOfBirth,
+          bloodGroup: req.bloodGroup
+        })
+      });
+      if (res.success && res.data) {
+        const idx = this.patients.findIndex((item) => item.id === req.patientId);
+        if (idx !== -1) {
+          this.patients[idx] = { ...this.patients[idx], ...res.data };
+        }
+        saveStored('docsearch_patients', this.patients);
+        return res.data;
+      }
+      if (!isMockFallbackAllowed()) {
+        throw new Error(res.error?.message || 'Patient update failed on server');
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) {
+        throw err instanceof Error ? err : new Error('Patient update network error');
+      }
+    }
+
     const p = this.patients.find((item) => item.id === req.patientId && item.tenantId === req.tenantId);
     if (!p) {
       throw new Error(`Patient record ${req.patientId} not found.`);
@@ -469,7 +550,7 @@ export class PatientRegistrationService implements IPatientRegistrationService {
     if (req.middleName !== undefined) p.middleName = req.middleName;
     if (req.lastName) p.lastName = req.lastName;
     if (req.preferredName !== undefined) p.preferredName = req.preferredName;
-    p.fullName = `${p.firstName} ${p.lastName} — Sample Patient`;
+    p.fullName = `${p.firstName}${p.middleName ? ' ' + p.middleName : ''} ${p.lastName}`.trim();
     if (req.dateOfBirth) p.dateOfBirth = req.dateOfBirth;
     if (req.gender) p.gender = req.gender;
     if (req.bloodGroup) p.bloodGroup = req.bloodGroup;
@@ -479,6 +560,7 @@ export class PatientRegistrationService implements IPatientRegistrationService {
     if (req.occupation !== undefined) p.occupation = req.occupation;
     if (req.status) p.status = req.status;
     p.updatedAt = new Date().toISOString();
+    saveStored('docsearch_patients', this.patients);
 
     this.addAudit(
       req.tenantId,
@@ -518,6 +600,7 @@ export class PatientRegistrationService implements IPatientRegistrationService {
       updatedAt: new Date().toISOString()
     };
     p.identifiers.push(ident);
+    saveStored('docsearch_patients', this.patients);
 
     this.addAudit(
       req.tenantId,
@@ -555,6 +638,7 @@ export class PatientRegistrationService implements IPatientRegistrationService {
       createdAt: p.primaryContact?.createdAt ?? new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
+    saveStored('docsearch_patients', this.patients);
 
     this.addAudit(
       req.tenantId,
@@ -585,17 +669,18 @@ export class PatientRegistrationService implements IPatientRegistrationService {
       partnerId: req.partnerId,
       patientId: req.patientId,
       addressType: req.addressType,
-      addressLine1: req.addressLine1,
-      addressLine2: req.addressLine2,
-      city: req.city,
-      state: req.state,
-      country: req.country,
-      postalCode: req.postalCode,
+      addressLine1: req.addressLine1 || '',
+      addressLine2: req.addressLine2 || '',
+      city: req.city || '',
+      state: req.state || '',
+      country: req.country || 'India',
+      postalCode: req.postalCode || '',
       isPrimary: true,
       metadata: {},
       createdAt: p.primaryAddress?.createdAt ?? new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
+    saveStored('docsearch_patients', this.patients);
 
     this.addAudit(
       req.tenantId,
@@ -636,6 +721,7 @@ export class PatientRegistrationService implements IPatientRegistrationService {
       updatedAt: new Date().toISOString()
     };
     p.emergencyContacts.push(ec);
+    saveStored('docsearch_patients', this.patients);
 
     this.addAudit(
       req.tenantId,
@@ -677,6 +763,7 @@ export class PatientRegistrationService implements IPatientRegistrationService {
       updatedAt: new Date().toISOString()
     };
     p.consents.push(c);
+    saveStored('docsearch_patients', this.patients);
 
     this.addAudit(
       req.tenantId,
@@ -721,6 +808,7 @@ export class PatientRegistrationService implements IPatientRegistrationService {
       updatedAt: new Date().toISOString()
     };
     p.insurancePolicies.push(ins);
+    saveStored('docsearch_patients', this.patients);
 
     this.addAudit(
       req.tenantId,
@@ -740,8 +828,8 @@ export class PatientRegistrationService implements IPatientRegistrationService {
   }
 
   async getDuplicateCandidates(tenantId: string, organizationId?: string): Promise<PatientDuplicateCandidateDto[]> {
-    if (tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Access denied to tenant ${tenantId}`);
+    if (!tenantId) {
+      throw new Error('[Tenant Error] Tenant ID is required');
     }
     return this.duplicateCandidates.filter((c) => {
       if (organizationId && c.organizationId !== organizationId) return false;
@@ -869,8 +957,8 @@ export class PatientRegistrationService implements IPatientRegistrationService {
   }
 
   async getMergeHistory(tenantId: string, organizationId?: string): Promise<PatientMergeEventDto[]> {
-    if (tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Access denied to tenant ${tenantId}`);
+    if (!tenantId) {
+      throw new Error('[Tenant Error] Tenant ID is required');
     }
     return this.mergeEvents.filter((m) => {
       if (organizationId && m.organizationId !== organizationId) return false;
@@ -879,8 +967,8 @@ export class PatientRegistrationService implements IPatientRegistrationService {
   }
 
   async getAuditTraces(req: QueryPatientAuditRequest): Promise<PatientRegistrationAuditTraceDto[]> {
-    if (req.tenantId !== MOCK_TENANT_ID) {
-      throw new Error(`[Multi-Tenant Denial] Access denied to tenant ${req.tenantId}`);
+    if (!req.tenantId) {
+      throw new Error('[Tenant Error] Tenant ID is required');
     }
     return this.auditTraces.filter((t) => {
       if (t.tenantId !== req.tenantId) return false;

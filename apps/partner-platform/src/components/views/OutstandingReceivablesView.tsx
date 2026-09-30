@@ -40,8 +40,8 @@ export const OutstandingReceivablesView: React.FC<OutstandingReceivablesViewProp
     if (agingFilter === 'OVERDUE' && inv.status !== 'OVERDUE') return false;
     if (searchTerm.trim()) {
       const lower = searchTerm.toLowerCase();
-      const matchNumber = inv.invoiceNumber.toLowerCase().includes(lower);
-      const matchPatient = inv.patientName.toLowerCase().includes(lower) || inv.patientMrn.toLowerCase().includes(lower);
+      const matchNumber = (inv.invoiceNumber || '').toLowerCase().includes(lower);
+      const matchPatient = (inv.patientName || '').toLowerCase().includes(lower) || (inv.patientMrn || '').toLowerCase().includes(lower);
       if (!matchNumber && !matchPatient) return false;
     }
     return true;
@@ -52,7 +52,7 @@ export const OutstandingReceivablesView: React.FC<OutstandingReceivablesViewProp
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div>
-        <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: '#0f172a' }}>
+        <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: 'var(--ds-color-text-primary, #f8fafc)' }}>
           Outstanding Receivables & Aging Ledger
         </h2>
         <p style={{ margin: '0.25rem 0 0 0', color: '#64748b', fontSize: '0.875rem' }}>
@@ -66,7 +66,7 @@ export const OutstandingReceivablesView: React.FC<OutstandingReceivablesViewProp
           <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
             Current (0–30 Days)
           </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#0f172a', marginTop: '0.25rem' }}>
+          <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--ds-color-text-primary, #f8fafc)', marginTop: '0.25rem' }}>
             ${analytics.agingBuckets.current.toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </div>
           <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>
@@ -144,7 +144,7 @@ export const OutstandingReceivablesView: React.FC<OutstandingReceivablesViewProp
       {/* Receivables Table */}
       <Card>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: '#0f172a' }}>
+          <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--ds-color-text-primary, #f8fafc)' }}>
             Unsettled Invoice Receivables ({filteredInvoices.length})
           </h3>
           <div style={{ fontSize: '0.9rem', color: '#64748b' }}>

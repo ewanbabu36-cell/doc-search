@@ -133,7 +133,20 @@ export const AssetOverviewView: React.FC<Props> = ({
         </div>
         <div className="divide-y">
           {assets.map((asset) => (
-            <div key={asset.id} className="py-3 flex items-center justify-between hover:bg-gray-50 px-2 rounded-lg cursor-pointer" onClick={() => onSelectAsset(asset)}>
+            <div
+              key={asset.id}
+              role="button"
+              tabIndex={0}
+              aria-label={`Select equipment asset ${asset.assetCode} ${asset.modelNumber}`}
+              className="py-3 flex items-center justify-between hover:bg-gray-50 px-2 rounded-lg cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onClick={() => onSelectAsset(asset)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onSelectAsset(asset);
+                }
+              }}
+            >
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center font-bold text-blue-700 text-xs">
                   {asset.category.substring(0, 3)}

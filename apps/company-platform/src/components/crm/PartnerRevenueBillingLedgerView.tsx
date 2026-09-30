@@ -15,67 +15,21 @@ export interface B2BInvoiceRecord {
   referralCommission: number;
 }
 
-const INITIAL_INVOICES: B2BInvoiceRecord[] = [
-  {
-    id: '1',
-    invoiceNumber: 'INV-2026-0891',
-    partnerName: 'Apex Multi-Specialty Hospital',
-    planName: 'Enterprise Multi-Hospital Tier (25 Seats)',
-    billingPeriod: 'August 2026',
-    subtotal: 49990,
-    gst18: 8998.2,
-    totalAmount: 58988.2,
-    dueDate: '2026-09-10',
-    status: 'PAID',
-    referralCommission: 4999
-  },
-  {
-    id: '2',
-    invoiceNumber: 'INV-2026-0892',
-    partnerName: 'Metropolis Bio-Pathology Diagnostics',
-    planName: 'Professional Diagnostic Tier (10 Seats)',
-    billingPeriod: 'August 2026',
-    subtotal: 14999,
-    gst18: 2699.82,
-    totalAmount: 17698.82,
-    dueDate: '2026-09-10',
-    status: 'PAID',
-    referralCommission: 1499.9
-  },
-  {
-    id: '3',
-    invoiceNumber: 'INV-2026-0893',
-    partnerName: 'CarePlus Daycare & Surgery Center',
-    planName: 'Professional Surgical Tier (15 Seats)',
-    billingPeriod: 'August 2026',
-    subtotal: 20000,
-    gst18: 3600,
-    totalAmount: 23600,
-    dueDate: '2026-09-05',
-    status: 'PENDING',
-    referralCommission: 2000
-  },
-  {
-    id: '4',
-    invoiceNumber: 'INV-2026-0894',
-    partnerName: 'Apollo Cradle Maternal Health',
-    planName: 'Enterprise Regional Hub (20 Seats)',
-    billingPeriod: 'July 2026',
-    subtotal: 29990,
-    gst18: 5398.2,
-    totalAmount: 35388.2,
-    dueDate: '2026-08-10',
-    status: 'OVERDUE',
-    referralCommission: 2999
-  }
-];
+const loadDynamicInvoices = (): B2BInvoiceRecord[] => {
+  return [];
+};
 
 export const PartnerRevenueBillingLedgerView: React.FC = () => {
-  const [invoices, setInvoices] = useState<B2BInvoiceRecord[]>(INITIAL_INVOICES);
+  const [invoices, setInvoices] = useState<B2BInvoiceRecord[]>(loadDynamicInvoices);
   const [successBanner, setSuccessBanner] = useState<string | null>(null);
 
+  const saveInvoices = (updated: B2BInvoiceRecord[]) => {
+    setInvoices(updated);
+  };
+
   const handleMarkPaid = (id: string, invNum: string) => {
-    setInvoices(invoices.map((inv) => (inv.id === id ? { ...inv, status: 'PAID' } : inv)));
+    const updated = invoices.map((inv) => (inv.id === id ? { ...inv, status: 'PAID' as const } : inv));
+    saveInvoices(updated);
     setSuccessBanner(`Invoice ${invNum} marked as PAID via Razorpay B2B NetBanking!`);
     setTimeout(() => setSuccessBanner(null), 4000);
   };
@@ -105,7 +59,7 @@ export const PartnerRevenueBillingLedgerView: React.FC = () => {
           </p>
         </div>
 
-        <Button variant="primary" size="sm" onClick={() => handleSendReminder('All Pending Partners', 'Batch August Invoices')} style={{ backgroundColor: '#06B6D4', color: '#070C16', fontWeight: 800 }}>
+        <Button variant="primary" size="sm" onClick={() => handleSendReminder('All Pending Partners', 'Batch August Invoices')}>
           📤 Dispatch Pending Invoice Reminders
         </Button>
       </div>
@@ -164,9 +118,20 @@ export const PartnerRevenueBillingLedgerView: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {invoices.map((inv) => (
-                <TableRow key={inv.id}>
-                  <TableCell>
+              {invoices.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} style={{ textAlign: 'center', padding: '36px 20px', color: 'var(--ds-color-text-muted)' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '2rem' }}>🧾</span>
+                      <span style={{ fontWeight: 700, color: '#F8FAFC' }}>No B2B Invoices Recorded</span>
+                      <span style={{ fontSize: '0.8125rem' }}>Partner subscription invoices and GST receipts will be generated here automatically.</span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                invoices.map((inv) => (
+                  <TableRow key={inv.id}>
+                    <TableCell>
                     <strong style={{ fontFamily: 'monospace', color: '#38BDF8' }}>{inv.invoiceNumber}</strong>
                   </TableCell>
                   <TableCell>
@@ -225,8 +190,9 @@ export const PartnerRevenueBillingLedgerView: React.FC = () => {
                       </Button>
                     </div>
                   </TableCell>
-                </TableRow>
-              ))}
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>

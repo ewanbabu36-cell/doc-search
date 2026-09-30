@@ -72,16 +72,10 @@ export const RealtimeEbitdaUnitEconomicsView: React.FC = () => {
           </p>
         </div>
 
-        <Button
-          variant="primary"
+        <Button variant="success"
           size="sm"
           onClick={handleExportInvestorDeck}
-          style={{
-            backgroundColor: '#10B981',
-            color: '#070C16',
-            fontWeight: 900,
-            boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)'
-          }}
+          
         >
           📥 Export Investor Financial Deck PDF
         </Button>

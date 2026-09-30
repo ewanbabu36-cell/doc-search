@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button, Input } from '@docsearch/ui-kit';
 import type { AcknowledgeSepsisAlertRequest } from '@docsearch/api-contracts';
 
@@ -23,6 +23,18 @@ export const AcknowledgeSepsisAlertDialog: React.FC<Props> = ({
   const [clinicalActionTaken, setClinicalActionTaken] = useState('Rapid Response Team mobilized; initiated 1-Hour Sepsis Bundle (Blood culture sent, IV Piperacillin-Tazobactam 4.5g started, 1000ml Ringer Lactate bolus infusing).');
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,10 +54,18 @@ export const AcknowledgeSepsisAlertDialog: React.FC<Props> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="ack-sepsis-title"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6 space-y-4">
         <div className="border-b pb-2">
-          <h2 className="text-lg font-bold text-red-700">🚨 Sepsis 1-Hour Bundle Immediate Response</h2>
+          <h2 id="ack-sepsis-title" className="text-lg font-bold text-red-700">🚨 Sepsis 1-Hour Bundle Immediate Response</h2>
           <p className="text-xs text-gray-500">Patient: <strong>{patientName}</strong> | NEWS2 Score: <span className="font-bold text-red-600">{news2Score}/20 (High Risk Red Alert)</span></p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-3">
@@ -57,12 +77,12 @@ export const AcknowledgeSepsisAlertDialog: React.FC<Props> = ({
             <p className="text-red-800">✓ Rapid administration of 30 mL/kg crystalloid for hypotension/lactate ≥ 4 mmol/L</p>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">Responding Physician / Intensivist</label>
-            <Input value={acknowledgedBy} onChange={(e) => setAcknowledgedBy(e.target.value)} required />
+            <label htmlFor="ack-sepsis-physician" className="block text-xs font-semibold text-gray-700 mb-1">Responding Physician / Intensivist</label>
+            <Input id="ack-sepsis-physician" aria-required="true" value={acknowledgedBy} onChange={(e) => setAcknowledgedBy(e.target.value)} required />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">Immediate Clinical Interventions Documented</label>
-            <Input value={clinicalActionTaken} onChange={(e) => setClinicalActionTaken(e.target.value)} required />
+            <label htmlFor="ack-sepsis-intervention" className="block text-xs font-semibold text-gray-700 mb-1">Immediate Clinical Interventions Documented</label>
+            <Input id="ack-sepsis-intervention" aria-required="true" value={clinicalActionTaken} onChange={(e) => setClinicalActionTaken(e.target.value)} required />
           </div>
           <div className="flex justify-end gap-2 pt-4 border-t">
             <Button variant="outline" type="button" onClick={onClose} disabled={loading}>Cancel</Button>

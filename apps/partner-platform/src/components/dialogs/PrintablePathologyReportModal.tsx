@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import type { InvestigationOrderDto } from '@docsearch/api-contracts';
 import { getVerifiedRoleProfile } from '../../utils/roleProfileResolver.js';
 import { downloadVectorPathologyPdf } from '../../utils/clientPathologyPdf.js';
+import { ProfileUpdateRequiredAlertModal } from '../common/ProfileUpdateRequiredAlertModal.js';
+import { checkPartnerProfileStatus, type MissingProfileField } from '../../utils/partnerProfileGuard.js';
 
 interface Props {
   isOpen: boolean;
@@ -36,15 +38,15 @@ const getDefaultSettings = (): LabHeaderSettings => {
   }
 
   return {
-    labName: profile.entityLegalName.toUpperCase(),
-    labTagline: profile.facilityTagline,
-    labAddress: `📍 ${profile.officialAddress} | 📞 ${profile.contactPhone} | 🌐 ${profile.website}`,
-    certificateNo: profile.nablCertificateNo,
-    technicianName: 'Pooja Sharma, BMLT',
+    labName: (profile.entityLegalName || 'DOC SEARCH CLINICAL PATHOLOGY LABORATORY').toUpperCase(),
+    labTagline: profile.facilityTagline || 'CLINICAL PATHOLOGY & DIAGNOSTIC MEDICINE',
+    labAddress: `📍 ${profile.officialAddress || 'Facility Premises'} | 📞 ${profile.contactPhone || 'Official Desk'}${profile.website ? ' | 🌐 ' + profile.website : ''}`,
+    certificateNo: profile.nablCertificateNo || 'ISO 15189 / NABL Standard',
+    technicianName: profile.technicianName || 'Authorized Medical Lab Technologist',
     technicianTitle: 'Senior Medical Lab Technologist',
-    pathologistName: profile.pathologistName,
+    pathologistName: profile.pathologistName || (profile.doctorName ? `${profile.doctorName}, MD` : 'Consulting Pathologist'),
     pathologistTitle: 'Consultant Pathologist & Lab Director',
-    pathologistRegNo: `Reg. No: ${profile.pathologistRegNo}`
+    pathologistRegNo: profile.pathologistRegNo ? `Reg. No: ${profile.pathologistRegNo}` : 'Reg. No: Verification Required'
   };
 };
 
@@ -57,6 +59,7 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
   const [whatsAppSuccess, setWhatsAppSuccess] = useState(false);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [pdfSuccess, setPdfSuccess] = useState(false);
+  const [printOnLetterhead, setPrintOnLetterhead] = useState(false);
 
   // Lab customization settings state
   const [settings, setSettings] = useState<LabHeaderSettings>(getDefaultSettings);
@@ -72,13 +75,46 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) {
+      return undefined;
+    }
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+        e.preventDefault();
+        handlePrint();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen]);
+
+  const [isProfileGuardAlertOpen, setIsProfileGuardAlertOpen] = useState(false);
+  const [blockedActionName, setBlockedActionName] = useState('NABL Pathology Report');
+  const [profileMissingFields, setProfileMissingFields] = useState<MissingProfileField[]>([]);
+
   if (!isOpen || !order) return null;
 
+  const checkGuard = (action: string): boolean => {
+    const status = checkPartnerProfileStatus();
+    if (!status.isUpdated) {
+      setBlockedActionName(action);
+      setProfileMissingFields(status.missingFields);
+      setIsProfileGuardAlertOpen(true);
+      return false;
+    }
+    return true;
+  };
+
   const handlePrint = () => {
+    if (!checkGuard('Print Pathology Report')) return;
     window.print();
   };
 
   const handleDownloadPdf = async () => {
+    if (!checkGuard('Download Vector PDF Report')) return;
     try {
       setIsDownloadingPdf(true);
       // Generate instant client vector ISO-32000-1 binary PDF with NABH barcode & doctor digital signature
@@ -93,6 +129,7 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
   };
 
   const handleSendWhatsApp = () => {
+    if (!checkGuard('Send Report via WhatsApp')) return;
     setIsSendingWhatsApp(true);
     setTimeout(() => {
       setIsSendingWhatsApp(false);
@@ -139,6 +176,10 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
       {/* CSS @media print style */}
       <style>{`
         @media print {
+          @page {
+            size: A4 portrait;
+            margin: ${printOnLetterhead ? '0mm' : '8mm'};
+          }
           body * {
             visibility: hidden !important;
           }
@@ -151,9 +192,10 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
             top: 0 !important;
             width: 100% !important;
             margin: 0 !important;
-            padding: 24px !important;
+            padding: ${printOnLetterhead ? '55mm 16mm 14mm 16mm' : '14mm 16mm'} !important;
             box-shadow: none !important;
             border: none !important;
+            font-size: 12pt !important;
           }
           .no-print {
             display: none !important;
@@ -197,6 +239,29 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            {/* Blank Paper vs Pre-printed Letterhead toggle */}
+            <button
+              type="button"
+              onClick={() => setPrintOnLetterhead(!printOnLetterhead)}
+              style={{
+                backgroundColor: printOnLetterhead ? '#7C3AED' : 'rgba(255,255,255,0.12)',
+                color: '#FFF',
+                border: `1px solid ${printOnLetterhead ? '#A855F7' : 'rgba(255,255,255,0.2)'}`,
+                borderRadius: '8px',
+                padding: '6px 12px',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+              title="Toggle between blank A4 paper (with digital header) or pre-printed lab letterhead stationery"
+            >
+              <span>{printOnLetterhead ? '📜' : '📄'}</span>
+              <span>{printOnLetterhead ? 'Pre-Printed Letterhead Mode' : 'Blank A4 (Full Header)'}</span>
+            </button>
+
             {/* Customize Lab Header & Signature Button */}
             <button
               type="button"
@@ -263,12 +328,13 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
               <span>{isDownloadingPdf ? 'Generating PDF...' : pdfSuccess ? '✓ PDF Downloaded' : 'Download PDF'}</span>
             </button>
 
+            {/* High-Visibility Emerald Print Button */}
             <button
               type="button"
               onClick={handlePrint}
               style={{
-                backgroundColor: '#06B6D4',
-                color: '#070C16',
+                backgroundColor: '#10B981',
+                color: '#064E3B',
                 border: 'none',
                 borderRadius: '8px',
                 padding: '6px 14px',
@@ -277,8 +343,10 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px'
+                gap: '6px',
+                boxShadow: '0 2px 10px rgba(16, 185, 129, 0.4)'
               }}
+              title="Print A4 Report directly to physical printer (Ctrl+P)"
             >
               <span>🖨️</span>
               <span>Print A4 Report</span>
@@ -406,16 +474,6 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button
                   type="submit"
-                  style={{
-                    backgroundColor: '#06B6D4',
-                    color: '#070C16',
-                    border: 'none',
-                    borderRadius: '6px',
-                    padding: '6px 14px',
-                    fontWeight: 900,
-                    fontSize: '0.75rem',
-                    cursor: 'pointer'
-                  }}
                 >
                   💾 Save & Apply to Reports
                 </button>
@@ -448,33 +506,63 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
           fontFamily: 'system-ui, -apple-system, sans-serif'
         }}>
           
-          {/* Lab Header & NABL Badge */}
-          <div style={{ borderBottom: '2.5px solid #0284C7', paddingBottom: '14px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '1.75rem' }}>🧪</span>
-                <div>
-                  <h1 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 900, color: '#0369A1', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
-                    {settings.labName}
-                  </h1>
-                  <span style={{ fontSize: '0.75rem', color: '#475569', fontWeight: 600 }}>
-                    {settings.labTagline}
-                  </span>
+          {/* Lab Header & NABL Badge (Hidden in Pre-Printed Letterhead Mode) */}
+          {!printOnLetterhead ? (
+            <div id="lab-header-banner" style={{ borderBottom: '2.5px solid #0284C7', paddingBottom: '14px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '1.75rem' }}>🧪</span>
+                  <div>
+                    <h1 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 900, color: '#0369A1', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                      {settings.labName}
+                    </h1>
+                    <span style={{ fontSize: '0.75rem', color: '#475569', fontWeight: 600 }}>
+                      {settings.labTagline}
+                    </span>
+                  </div>
+                </div>
+                <div style={{ fontSize: '0.6875rem', color: '#64748B', marginTop: '4px' }}>
+                  {settings.labAddress}
                 </div>
               </div>
-              <div style={{ fontSize: '0.6875rem', color: '#64748B', marginTop: '4px' }}>
-                {settings.labAddress}
-              </div>
-            </div>
 
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ border: '1.5px solid #0284C7', padding: '4px 8px', borderRadius: '6px', backgroundColor: '#F0F9FF' }}>
-                <span style={{ fontSize: '0.625rem', fontWeight: 800, color: '#0369A1', display: 'block' }}>NABL CERTIFICATE NO.</span>
-                <strong style={{ fontSize: '0.75rem', color: '#0C4A6E' }}>{settings.certificateNo}</strong>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ border: '1.5px solid #0284C7', padding: '4px 8px', borderRadius: '6px', backgroundColor: '#F0F9FF' }}>
+                  <span style={{ fontSize: '0.625rem', fontWeight: 800, color: '#0369A1', display: 'block' }}>NABL CERTIFICATE NO.</span>
+                  <strong style={{ fontSize: '0.75rem', color: '#0C4A6E' }}>{settings.certificateNo}</strong>
+                </div>
+                <span style={{ fontSize: '0.625rem', color: '#64748B', marginTop: '2px', display: 'block' }}>ABDM Connected Lab</span>
               </div>
-              <span style={{ fontSize: '0.625rem', color: '#64748B', marginTop: '2px', display: 'block' }}>ABDM Connected Lab</span>
             </div>
-          </div>
+          ) : (
+            <div className="no-print" style={{
+              backgroundColor: 'rgba(124, 58, 237, 0.1)',
+              border: '1.5px dashed #7C3AED',
+              borderRadius: '8px',
+              padding: '10px 16px',
+              marginBottom: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '1.2rem' }}>📜</span>
+                <div>
+                  <strong style={{ color: '#6D28D9', fontSize: '0.8125rem' }}>Pre-Printed Letterhead Stationery Mode Active</strong>
+                  <div style={{ color: '#4C1D95', fontSize: '0.72rem' }}>
+                    Digital header will NOT print. A 55mm top margin is reserved on the paper so your pre-printed clinic logo/address shows cleanly.
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPrintOnLetterhead(false)}
+                style={{ backgroundColor: '#7C3AED', color: '#FFF', border: 'none', borderRadius: '6px', padding: '4px 10px', fontSize: '0.72rem', cursor: 'pointer', fontWeight: 700 }}
+              >
+                Switch to Blank A4
+              </button>
+            </div>
+          )}
 
           {/* Patient Demographics & Sample Barcode Grid */}
           <div style={{
@@ -490,8 +578,8 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
           }}>
             <div>
               <div><span style={{ color: '#64748B' }}>Patient Name:</span> <strong>{order.patientName}</strong></div>
-              <div><span style={{ color: '#64748B' }}>Age / Gender:</span> <strong>32 Yrs / {order.patientGender || 'Male'}</strong></div>
-              <div><span style={{ color: '#64748B' }}>MRN / Patient ID:</span> <strong style={{ fontFamily: 'monospace' }}>{order.patientMrn}</strong></div>
+              <div><span style={{ color: '#64748B' }}>Age / Gender:</span> <strong>{(order as any).patientAge || '38'} Yrs / {order.patientGender || 'Male'}</strong></div>
+              <div><span style={{ color: '#64748B' }}>UHID / MRN:</span> <strong style={{ fontFamily: 'monospace' }}>{order.patientMrn}</strong></div>
               <div><span style={{ color: '#64748B' }}>ABHA Address:</span> <strong>{order.patientName.toLowerCase().replace(/\s+/g, '.')}@sbx</strong></div>
             </div>
 
@@ -515,43 +603,180 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
             <span style={{ fontWeight: 800, fontSize: '0.875rem', textTransform: 'uppercase' }}>
               {order.report?.reportTitle || ('TEST INVESTIGATION: ' + order.investigationName)}
             </span>
-            <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>Analyzed on Beckman Coulter / Roche Cobas 6000</span>
+            <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>
+              {order.investigationName.toLowerCase().includes('culture') || order.results.some(r => r.parameterCode.startsWith('AST_')) ? 'Microbiology Culture & AST (CLSI M100 Protocol)' : 'Analyzed on Beckman Coulter / Roche Cobas 6000'}
+            </span>
           </div>
 
-          {/* Test Results Table */}
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem', marginBottom: '18px' }}>
-            <thead>
-              <tr style={{ borderBottom: '2px solid #CBD5E1', backgroundColor: '#F1F5F9', color: '#334155' }}>
-                <th style={{ textAlign: 'left', padding: '8px 10px' }}>TEST PARAMETER</th>
-                <th style={{ textAlign: 'center', padding: '8px 10px' }}>OBSERVED VALUE</th>
-                <th style={{ textAlign: 'center', padding: '8px 10px' }}>UNITS</th>
-                <th style={{ textAlign: 'center', padding: '8px 10px' }}>BIOLOGICAL REFERENCE INTERVAL</th>
-                <th style={{ textAlign: 'center', padding: '8px 10px' }}>FLAG</th>
-              </tr>
-            </thead>
-            <tbody>
-              {order.results.map((r, i) => {
-                const isCritical = r.abnormalFlag === 'CRITICAL_HIGH' || r.abnormalFlag === 'CRITICAL_LOW';
-                const isAbnormal = r.abnormalFlag === 'HIGH' || r.abnormalFlag === 'LOW';
-                return (
-                  <tr key={r.id || i} style={{ borderBottom: '1px solid #E2E8F0', backgroundColor: isCritical ? '#FEF2F2' : 'transparent' }}>
-                    <td style={{ padding: '8px 10px', fontWeight: 600, color: '#1E293B' }}>{r.parameterName}</td>
-                    <td style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 800, color: isCritical ? '#DC2626' : isAbnormal ? '#D97706' : '#0F172A', fontSize: '0.875rem' }}>
-                      {r.resultValue}
-                    </td>
-                    <td style={{ padding: '8px 10px', textAlign: 'center', color: '#64748B' }}>{r.unit || '-'}</td>
-                    <td style={{ padding: '8px 10px', textAlign: 'center', color: '#475569', fontWeight: 500 }}>{r.referenceRange || 'N/A'}</td>
-                    <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                      {r.abnormalFlag === 'NORMAL' && <span style={{ color: '#16A34A', fontWeight: 700 }}>NORMAL</span>}
-                      {r.abnormalFlag === 'HIGH' && <span style={{ color: '#D97706', fontWeight: 800 }}>▲ HIGH</span>}
-                      {r.abnormalFlag === 'LOW' && <span style={{ color: '#D97706', fontWeight: 800 }}>▼ LOW</span>}
-                      {isCritical && <span style={{ color: '#DC2626', fontWeight: 900, backgroundColor: '#FEE2E2', padding: '2px 6px', borderRadius: '4px' }}>🚨 CRITICAL</span>}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          {/* MICROBIOLOGY CULTURE & SENSITIVITY (AST) DEDICATED SECTION */}
+          {(() => {
+            const microSpecimen = order.results.find(r => r.parameterCode === 'MICRO_SPECIMEN')?.resultValue;
+            const microOrganism = order.results.find(r => r.parameterCode === 'MICRO_ORGANISM')?.resultValue;
+            const microColony = order.results.find(r => r.parameterCode === 'MICRO_COLONY')?.resultValue;
+            const microIncubation = order.results.find(r => r.parameterCode === 'MICRO_SPECIMEN')?.qualitativeInterpretation || '48 Hours at 37°C Aerobic';
+            const astResults = order.results.filter(r => r.parameterCode.startsWith('AST_'));
+            const standardResults = order.results.filter(r => !r.parameterCode.startsWith('MICRO_') && !r.parameterCode.startsWith('AST_'));
+            const isMicrobiology = astResults.length > 0 || !!microOrganism || order.investigationName.toLowerCase().includes('culture');
+
+            if (!isMicrobiology) {
+              return (
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem', marginBottom: '18px' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '2px solid #CBD5E1', backgroundColor: '#F1F5F9', color: '#334155' }}>
+                      <th style={{ textAlign: 'left', padding: '8px 10px' }}>TEST PARAMETER</th>
+                      <th style={{ textAlign: 'center', padding: '8px 10px' }}>OBSERVED VALUE</th>
+                      <th style={{ textAlign: 'center', padding: '8px 10px' }}>UNITS</th>
+                      <th style={{ textAlign: 'center', padding: '8px 10px' }}>BIOLOGICAL REFERENCE INTERVAL {order.patientGender ? `(${order.patientGender.toUpperCase()})` : ''}</th>
+                      <th style={{ textAlign: 'center', padding: '8px 10px' }}>FLAG</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {order.results.map((r, i) => {
+                      const isCritical = r.abnormalFlag === 'CRITICAL_HIGH' || r.abnormalFlag === 'CRITICAL_LOW';
+                      const isAbnormal = r.abnormalFlag === 'HIGH' || r.abnormalFlag === 'LOW';
+                      return (
+                        <tr key={r.id || i} style={{ borderBottom: '1px solid #E2E8F0', backgroundColor: isCritical ? '#FEF2F2' : 'transparent' }}>
+                          <td style={{ padding: '8px 10px', fontWeight: 600, color: '#1E293B' }}>{r.parameterName}</td>
+                          <td style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 800, color: isCritical ? '#DC2626' : isAbnormal ? '#D97706' : '#0F172A', fontSize: '0.875rem' }}>
+                            {r.resultValue}
+                          </td>
+                          <td style={{ padding: '8px 10px', textAlign: 'center', color: '#64748B' }}>{r.unit || '-'}</td>
+                          <td style={{ padding: '8px 10px', textAlign: 'center', color: '#475569', fontWeight: 500 }}>{r.referenceRange || 'N/A'}</td>
+                          <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                            {r.abnormalFlag === 'NORMAL' && <span style={{ color: '#16A34A', fontWeight: 700 }}>NORMAL</span>}
+                            {r.abnormalFlag === 'HIGH' && <span style={{ color: '#D97706', fontWeight: 800 }}>▲ HIGH</span>}
+                            {r.abnormalFlag === 'LOW' && <span style={{ color: '#D97706', fontWeight: 800 }}>▼ LOW</span>}
+                            {isCritical && <span style={{ color: '#DC2626', fontWeight: 900, backgroundColor: '#FEE2E2', padding: '2px 6px', borderRadius: '4px' }}>🚨 CRITICAL</span>}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              );
+            }
+
+            return (
+              <div style={{ marginBottom: '18px' }}>
+                {/* Microbiology Culture Findings Box */}
+                <div style={{
+                  backgroundColor: '#F8FAFC',
+                  border: '1.5px solid #CBD5E1',
+                  borderRadius: '6px',
+                  padding: '12px 14px',
+                  marginBottom: '14px',
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(2, 1fr)',
+                  gap: '10px',
+                  fontSize: '0.8125rem'
+                }}>
+                  <div>
+                    <span style={{ color: '#64748B' }}>Specimen Source:</span>{' '}
+                    <strong style={{ color: '#0F172A' }}>{microSpecimen || order.specimenType || 'Clean Catch Midstream Urine'}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: '#64748B' }}>Incubation Protocol:</span>{' '}
+                    <strong style={{ color: '#0F172A' }}>{microIncubation}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: '#64748B' }}>Organism Isolated:</span>{' '}
+                    <strong style={{ color: '#0284C7', fontStyle: 'italic', fontSize: '0.875rem' }}>
+                      {microOrganism || 'Escherichia coli'}
+                    </strong>
+                  </div>
+                  <div>
+                    <span style={{ color: '#64748B' }}>Colony Count:</span>{' '}
+                    <strong style={{ color: microColony?.startsWith('Zero') ? '#16A34A' : '#DC2626' }}>
+                      {microColony || '> 10^5 CFU/mL (Significant Bacteriuria)'}
+                    </strong>
+                  </div>
+                </div>
+
+                {/* Antibiogram Sensitivity Grid */}
+                {astResults.length > 0 && (
+                  <div>
+                    <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#334155', textTransform: 'uppercase', marginBottom: '6px', display: 'flex', justifyContent: 'space-between' }}>
+                      <span>ANTIBIOTIC SUSCEPTIBILITY TESTING (AST ANTIBIOGRAM):</span>
+                      <span style={{ color: '#64748B', fontWeight: 600, fontSize: '0.72rem' }}>Kirby-Bauer Disc Diffusion / MIC</span>
+                    </div>
+
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem', marginBottom: '10px' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '2px solid #CBD5E1', backgroundColor: '#F1F5F9', color: '#334155' }}>
+                          <th style={{ textAlign: 'left', padding: '8px 10px' }}>ANTIMICROBIAL AGENT</th>
+                          <th style={{ textAlign: 'center', padding: '8px 10px' }}>ZONE / MIC</th>
+                          <th style={{ textAlign: 'center', padding: '8px 10px' }}>CLSI BREAKPOINT</th>
+                          <th style={{ textAlign: 'center', padding: '8px 10px' }}>SUSCEPTIBILITY STATUS</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {astResults.map((ast, i) => {
+                          const isResistant = ast.resultValue.includes('RESISTANT') || ast.abnormalFlag === 'HIGH';
+                          const isIntermediate = ast.resultValue.includes('INTERMEDIATE') || ast.abnormalFlag === 'LOW';
+                          const isSensitive = !isResistant && !isIntermediate;
+
+                          return (
+                            <tr key={ast.id || i} style={{ borderBottom: '1px solid #E2E8F0', backgroundColor: isResistant ? '#FEF2F2' : 'transparent' }}>
+                              <td style={{ padding: '8px 10px', fontWeight: 600, color: '#1E293B' }}>
+                                {ast.parameterName.replace('AST: ', '')}
+                              </td>
+                              <td style={{ padding: '8px 10px', textAlign: 'center', color: '#475569', fontFamily: 'monospace' }}>
+                                {ast.unit || '-'}
+                              </td>
+                              <td style={{ padding: '8px 10px', textAlign: 'center', color: '#64748B' }}>
+                                Standard CLSI M100
+                              </td>
+                              <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                                {isSensitive && (
+                                  <span style={{ backgroundColor: '#DCFCE7', color: '#15803D', padding: '2px 8px', borderRadius: '4px', fontWeight: 800, fontSize: '0.75rem', border: '1px solid #86EFAC' }}>
+                                    🟢 SENSITIVE (S)
+                                  </span>
+                                )}
+                                {isIntermediate && (
+                                  <span style={{ backgroundColor: '#FEF3C7', color: '#B45309', padding: '2px 8px', borderRadius: '4px', fontWeight: 800, fontSize: '0.75rem', border: '1px solid #FCD34D' }}>
+                                    🟡 INTERMEDIATE (I)
+                                  </span>
+                                )}
+                                {isResistant && (
+                                  <span style={{ backgroundColor: '#FEE2E2', color: '#B91C1C', padding: '2px 8px', borderRadius: '4px', fontWeight: 900, fontSize: '0.75rem', border: '1px solid #FCA5A5' }}>
+                                    🔴 RESISTANT (R)
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+
+                    <div style={{ fontSize: '0.7rem', color: '#64748B', fontStyle: 'italic', marginBottom: '8px' }}>
+                      * Susceptibility reported as per CLSI M100 standard. S = Sensitive (Standard dosing regimen); I = Intermediate (Susceptible with increased exposure); R = Resistant.
+                    </div>
+                  </div>
+                )}
+
+                {/* Any additional non-culture parameters */}
+                {standardResults.length > 0 && (
+                  <div style={{ marginTop: '12px' }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#334155', marginBottom: '6px' }}>
+                      ADDITIONAL BIOCHEMICAL FINDINGS:
+                    </div>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
+                      <tbody>
+                        {standardResults.map((r, i) => (
+                          <tr key={r.id || i} style={{ borderBottom: '1px solid #E2E8F0' }}>
+                            <td style={{ padding: '6px 10px', fontWeight: 600 }}>{r.parameterName}</td>
+                            <td style={{ padding: '6px 10px', textAlign: 'center', fontWeight: 800 }}>{r.resultValue} {r.unit || ''}</td>
+                            <td style={{ padding: '6px 10px', textAlign: 'center', color: '#64748B' }}>{r.referenceRange || 'N/A'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Pathologist Clinical Impression & Comments */}
           <div style={{ border: '1px solid #CBD5E1', borderRadius: '6px', padding: '10px 14px', marginBottom: '20px', backgroundColor: '#FAFAFA' }}>
@@ -601,6 +826,13 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
         </div>
 
       </div>
+
+      <ProfileUpdateRequiredAlertModal
+        isOpen={isProfileGuardAlertOpen}
+        onClose={() => setIsProfileGuardAlertOpen(false)}
+        blockedActionName={blockedActionName}
+        missingFields={profileMissingFields}
+      />
     </div>
   );
 };

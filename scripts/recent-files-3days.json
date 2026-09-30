@@ -1,0 +1,1092 @@
+[
+  {
+    "path": "apps/api-gateway/test/phase23-command-center-bi-reconciliation.test.mjs",
+    "mtime": "2026-09-27T13:08:09.962Z",
+    "size": 22458
+  },
+  {
+    "path": "apps/api-gateway/src/repositories/core/AuditRepository.ts",
+    "mtime": "2026-09-27T13:01:32.160Z",
+    "size": 9624
+  },
+  {
+    "path": "apps/api-gateway/test/def-p18-aud-01-reproduce.test.mjs",
+    "mtime": "2026-09-27T13:00:43.431Z",
+    "size": 3126
+  },
+  {
+    "path": "apps/api-gateway/src/routes/company/hq-command-center.routes.ts",
+    "mtime": "2026-09-27T12:30:23.046Z",
+    "size": 5571
+  },
+  {
+    "path": "apps/api-gateway/src/services/company/HqCommandCenterService.ts",
+    "mtime": "2026-09-27T12:26:09.760Z",
+    "size": 6573
+  },
+  {
+    "path": "apps/api-gateway/src/routes/partner/command-center.routes.ts",
+    "mtime": "2026-09-27T12:25:23.921Z",
+    "size": 8462
+  },
+  {
+    "path": "apps/api-gateway/src/services/partner/CommandCenterService.ts",
+    "mtime": "2026-09-27T12:24:52.121Z",
+    "size": 9588
+  },
+  {
+    "path": "apps/api-gateway/src/repositories/partner/CommandCenterRepository.ts",
+    "mtime": "2026-09-27T12:23:09.813Z",
+    "size": 42124
+  },
+  {
+    "path": "apps/api-gateway/src/repositories/partner/ExecutiveMisRepository.ts",
+    "mtime": "2026-09-27T12:22:01.831Z",
+    "size": 26648
+  },
+  {
+    "path": "apps/api-gateway/src/repositories/partner/StaffAdministrationRepository.ts",
+    "mtime": "2026-09-27T10:27:55.041Z",
+    "size": 61568
+  },
+  {
+    "path": "apps/api-gateway/src/services/partner/StaffAdministrationService.ts",
+    "mtime": "2026-09-27T09:55:43.014Z",
+    "size": 40951
+  },
+  {
+    "path": "apps/api-gateway/test/staff-onboarding-rbac-verification.test.mjs",
+    "mtime": "2026-09-27T09:54:02.693Z",
+    "size": 13632
+  },
+  {
+    "path": "apps/api-gateway/src/routes/partner/billing-management.routes.ts",
+    "mtime": "2026-09-27T09:24:31.651Z",
+    "size": 29494
+  },
+  {
+    "path": "apps/api-gateway/src/routes/company/ai-intelligence-hq.routes.ts",
+    "mtime": "2026-09-27T09:00:22.609Z",
+    "size": 4792
+  },
+  {
+    "path": "apps/api-gateway/src/ai/permission-firewall.ts",
+    "mtime": "2026-09-27T08:59:37.798Z",
+    "size": 10942
+  },
+  {
+    "path": "apps/api-gateway/src/ai/types.ts",
+    "mtime": "2026-09-27T08:59:20.591Z",
+    "size": 3385
+  },
+  {
+    "path": "apps/api-gateway/test/hq-adversarial-acceptance.test.mjs",
+    "mtime": "2026-09-27T07:59:08.442Z",
+    "size": 23637
+  },
+  {
+    "path": "apps/api-gateway/src/plugins/auth-guard.ts",
+    "mtime": "2026-09-27T07:46:17.735Z",
+    "size": 21899
+  },
+  {
+    "path": "apps/company-platform/src/services/api-client.ts",
+    "mtime": "2026-09-27T07:43:37.913Z",
+    "size": 2398
+  },
+  {
+    "path": "apps/api-gateway/test/phase8-radiology-core.test.mjs",
+    "mtime": "2026-09-27T07:01:13.156Z",
+    "size": 39674
+  },
+  {
+    "path": "apps/api-gateway/test/whatsapp-engagement-vertical-slice.test.mjs",
+    "mtime": "2026-09-27T06:38:30.405Z",
+    "size": 11682
+  },
+  {
+    "path": "packages/shared-core/src/workflow/facility-normalizer.ts",
+    "mtime": "2026-09-27T06:37:25.688Z",
+    "size": 17587
+  },
+  {
+    "path": "apps/api-gateway/test/hardware-bridge-vertical-slice.test.mjs",
+    "mtime": "2026-09-27T06:35:41.658Z",
+    "size": 12080
+  },
+  {
+    "path": "apps/api-gateway/test/webhooks/payment-webhook.test.ts",
+    "mtime": "2026-09-27T06:31:14.582Z",
+    "size": 24771
+  },
+  {
+    "path": "apps/api-gateway/test/abdm-gateway-vertical-slice.test.mjs",
+    "mtime": "2026-09-27T06:24:31.585Z",
+    "size": 13709
+  },
+  {
+    "path": "apps/api-gateway/src/routes/partner/abdm.routes.ts",
+    "mtime": "2026-09-27T06:12:25.760Z",
+    "size": 12241
+  },
+  {
+    "path": "apps/api-gateway/data/purged_partners.json",
+    "mtime": "2026-09-27T06:09:55.114Z",
+    "size": 2
+  },
+  {
+    "path": "apps/api-gateway/test/concurrency/pharmacy-fefo.test.ts",
+    "mtime": "2026-09-27T05:57:27.844Z",
+    "size": 12558
+  },
+  {
+    "path": "apps/api-gateway/test/revenue-protection-journey.test.mjs",
+    "mtime": "2026-09-27T05:46:10.707Z",
+    "size": 39557
+  },
+  {
+    "path": "apps/api-gateway/src/repositories/partner/BillingManagementRepository.ts",
+    "mtime": "2026-09-27T05:45:47.735Z",
+    "size": 96247
+  },
+  {
+    "path": "apps/api-gateway/test/wave5-dietary-domain.test.mjs",
+    "mtime": "2026-09-27T04:00:34.748Z",
+    "size": 13492
+  },
+  {
+    "path": "apps/api-gateway/src/routes/partner/mrd-management.routes.ts",
+    "mtime": "2026-09-27T03:49:35.608Z",
+    "size": 5376
+  },
+  {
+    "path": "apps/api-gateway/src/repositories/partner/QualityInfectionRepository.ts",
+    "mtime": "2026-09-27T03:42:09.070Z",
+    "size": 31975
+  },
+  {
+    "path": "apps/api-gateway/src/services/partner/ClinicalWorkflowService.ts",
+    "mtime": "2026-09-27T03:40:34.964Z",
+    "size": 45326
+  },
+  {
+    "path": "apps/api-gateway/src/repositories/partner/MRDManagementRepository.ts",
+    "mtime": "2026-09-27T03:40:18.535Z",
+    "size": 28022
+  },
+  {
+    "path": "apps/api-gateway/src/repositories/partner/DietaryRepository.ts",
+    "mtime": "2026-09-27T03:40:01.365Z",
+    "size": 19410
+  },
+  {
+    "path": "apps/api-gateway/src/repositories/partner/ClinicalWorkflowRepository.ts",
+    "mtime": "2026-09-27T03:39:35.932Z",
+    "size": 178713
+  },
+  {
+    "path": "apps/api-gateway/src/routes/partner/clinical-workflow.routes.ts",
+    "mtime": "2026-09-27T03:23:48.342Z",
+    "size": 54626
+  },
+  {
+    "path": "apps/api-gateway/src/routes/partner/quality-infection.routes.ts",
+    "mtime": "2026-09-27T03:12:50.343Z",
+    "size": 10949
+  },
+  {
+    "path": "apps/partner-platform/src/services/api-client.ts",
+    "mtime": "2026-09-27T03:10:50.232Z",
+    "size": 6422
+  },
+  {
+    "path": "apps/api-gateway/test/phase18-workflow-transaction-integrity.test.mjs",
+    "mtime": "2026-09-27T02:47:33.352Z",
+    "size": 40917
+  },
+  {
+    "path": "apps/api-gateway/src/repositories/partner/RadiologyRepository.ts",
+    "mtime": "2026-09-27T02:34:33.035Z",
+    "size": 29440
+  },
+  {
+    "path": "apps/api-gateway/src/repositories/partner/LabDiagnosticsRepository.ts",
+    "mtime": "2026-09-27T02:18:46.821Z",
+    "size": 92452
+  },
+  {
+    "path": "apps/api-gateway/src/repositories/partner/PharmacyManagementRepository.ts",
+    "mtime": "2026-09-27T01:52:57.297Z",
+    "size": 101565
+  },
+  {
+    "path": "apps/api-gateway/src/plugins/commercial-guard.ts",
+    "mtime": "2026-09-27T01:23:19.667Z",
+    "size": 13103
+  },
+  {
+    "path": "apps/api-gateway/test/phase17-control-plane-hardening.test.mjs",
+    "mtime": "2026-09-27T01:19:56.038Z",
+    "size": 14091
+  },
+  {
+    "path": "apps/api-gateway/src/routes/company/partner.routes.ts",
+    "mtime": "2026-09-27T01:09:20.692Z",
+    "size": 77341
+  },
+  {
+    "path": "apps/api-gateway/src/routes/company/subscription.routes.ts",
+    "mtime": "2026-09-27T01:02:35.280Z",
+    "size": 12296
+  },
+  {
+    "path": "apps/api-gateway/src/routes/company/executive.routes.ts",
+    "mtime": "2026-09-27T01:02:13.149Z",
+    "size": 2365
+  },
+  {
+    "path": "apps/partner-platform/src/services/procurement-management-service.ts",
+    "mtime": "2026-09-27T00:12:10.868Z",
+    "size": 54199
+  },
+  {
+    "path": "apps/partner-platform/src/services/executive-command-service.ts",
+    "mtime": "2026-09-27T00:04:31.708Z",
+    "size": 12198
+  },
+  {
+    "path": "apps/api-gateway/src/services/core/RealAuthService.ts",
+    "mtime": "2026-09-26T22:57:10.523Z",
+    "size": 37779
+  },
+  {
+    "path": "apps/api-gateway/src/routes/partner/radiology.routes.ts",
+    "mtime": "2026-09-26T22:55:29.105Z",
+    "size": 16527
+  },
+  {
+    "path": "apps/partner-platform/src/components/auth/HospitalStaffLogin.tsx",
+    "mtime": "2026-09-26T22:52:45.988Z",
+    "size": 117421
+  },
+  {
+    "path": "apps/landing-page/src/components/FullPageRegistrationView.tsx",
+    "mtime": "2026-09-26T22:43:11.322Z",
+    "size": 80666
+  },
+  {
+    "path": "apps/api-gateway/test/whole-project-redemption-e2e.test.mjs",
+    "mtime": "2026-09-26T22:41:55.856Z",
+    "size": 14093
+  },
+  {
+    "path": "apps/api-gateway/src/repositories/partner/ProcurementRepository.ts",
+    "mtime": "2026-09-26T22:21:14.665Z",
+    "size": 15132
+  },
+  {
+    "path": "apps/partner-platform/src/services/blood-bank-management-service.ts",
+    "mtime": "2026-09-26T22:19:10.986Z",
+    "size": 37292
+  },
+  {
+    "path": "apps/partner-platform/src/services/staff-administration-service.ts",
+    "mtime": "2026-09-26T22:19:02.788Z",
+    "size": 42332
+  },
+  {
+    "path": "apps/api-gateway/src/services/core/SessionRevocationService.ts",
+    "mtime": "2026-09-26T22:07:02.310Z",
+    "size": 15466
+  },
+  {
+    "path": "apps/api-gateway/src/routes/company/sales-marketing.routes.ts",
+    "mtime": "2026-09-26T22:06:30.156Z",
+    "size": 3065
+  },
+  {
+    "path": "apps/api-gateway/src/routes/company/commercial.routes.ts",
+    "mtime": "2026-09-26T22:06:19.890Z",
+    "size": 51129
+  },
+  {
+    "path": "apps/api-gateway/src/services/ai/AiCostAndBudgetController.ts",
+    "mtime": "2026-09-26T20:54:45.421Z",
+    "size": 7184
+  },
+  {
+    "path": "apps/api-gateway/src/services/ai/AiIncidentAndCapaService.ts",
+    "mtime": "2026-09-26T20:54:38.743Z",
+    "size": 9248
+  },
+  {
+    "path": "apps/api-gateway/src/services/ai/DemandForecastingService.ts",
+    "mtime": "2026-09-26T20:54:31.569Z",
+    "size": 4218
+  },
+  {
+    "path": "apps/api-gateway/src/services/ai/ExplainableAiAndAnomalyService.ts",
+    "mtime": "2026-09-26T20:54:15.708Z",
+    "size": 9325
+  },
+  {
+    "path": "apps/api-gateway/src/services/ai/AiGatewayService.ts",
+    "mtime": "2026-09-26T20:53:36.599Z",
+    "size": 13976
+  },
+  {
+    "path": "apps/api-gateway/src/ai/tool-registry.ts",
+    "mtime": "2026-09-26T20:53:18.788Z",
+    "size": 25615
+  },
+  {
+    "path": "apps/api-gateway/src/services/ai/EwanAssistantService.ts",
+    "mtime": "2026-09-26T19:33:09.254Z",
+    "size": 63121
+  },
+  {
+    "path": "apps/api-gateway/test/ewan-sales-renewal-payment-lock-e2e.test.mjs",
+    "mtime": "2026-09-26T19:32:17.060Z",
+    "size": 26294
+  },
+  {
+    "path": "apps/api-gateway/src/routes/ewan.routes.ts",
+    "mtime": "2026-09-26T19:27:13.575Z",
+    "size": 6223
+  },
+  {
+    "path": "packages/ui-kit/src/components/ewan/EwanSystemTrainer.tsx",
+    "mtime": "2026-09-26T19:27:05.573Z",
+    "size": 82422
+  },
+  {
+    "path": "apps/partner-platform/src/components/PartnerPlatformShell.tsx",
+    "mtime": "2026-09-26T19:21:16.383Z",
+    "size": 233151
+  },
+  {
+    "path": "apps/api-gateway/src/app.ts",
+    "mtime": "2026-09-26T19:19:05.008Z",
+    "size": 16369
+  },
+  {
+    "path": "apps/api-gateway/src/routes/partner/account.routes.ts",
+    "mtime": "2026-09-26T19:18:28.794Z",
+    "size": 4839
+  },
+  {
+    "path": "apps/api-gateway/src/services/company/CommercialFinanceService.ts",
+    "mtime": "2026-09-26T19:11:29.502Z",
+    "size": 16117
+  },
+  {
+    "path": "apps/api-gateway/src/services/company/SubscriptionService.ts",
+    "mtime": "2026-09-26T19:11:18.712Z",
+    "size": 29284
+  },
+  {
+    "path": "apps/api-gateway/src/services/company/LicenseService.ts",
+    "mtime": "2026-09-26T19:10:57.602Z",
+    "size": 36610
+  },
+  {
+    "path": "apps/api-gateway/test/post-rem-cap01-cap04-remediation.test.mjs",
+    "mtime": "2026-09-26T18:48:43.871Z",
+    "size": 44996
+  },
+  {
+    "path": "apps/api-gateway/src/services/partner/RadiologyService.ts",
+    "mtime": "2026-09-26T18:35:29.811Z",
+    "size": 73407
+  },
+  {
+    "path": "apps/api-gateway/test/radiology-pacs-vertical-slice.test.mjs",
+    "mtime": "2026-09-26T17:42:58.292Z",
+    "size": 16059
+  },
+  {
+    "path": "apps/api-gateway/src/services/ai/AiOperationsAssistantService.ts",
+    "mtime": "2026-09-26T17:00:33.659Z",
+    "size": 7028
+  },
+  {
+    "path": "apps/api-gateway/test/phase15-ai-intelligence-governance.test.mjs",
+    "mtime": "2026-09-26T16:45:26.276Z",
+    "size": 28556
+  },
+  {
+    "path": "apps/api-gateway/src/routes/partner/ai-intelligence.routes.ts",
+    "mtime": "2026-09-26T16:05:41.735Z",
+    "size": 8343
+  },
+  {
+    "path": "apps/api-gateway/src/services/ai/EwannameStaffTrainerService.ts",
+    "mtime": "2026-09-26T16:03:50.332Z",
+    "size": 14924
+  },
+  {
+    "path": "apps/api-gateway/src/services/partner/AiScribeExtractionService.ts",
+    "mtime": "2026-09-26T16:01:32.089Z",
+    "size": 22778
+  },
+  {
+    "path": "packages/database/migrations/meta/_journal.json",
+    "mtime": "2026-09-26T15:59:13.629Z",
+    "size": 10117
+  },
+  {
+    "path": "packages/database/migrations/0066_phase15_ai_intelligence_governance.sql",
+    "mtime": "2026-09-26T15:58:47.928Z",
+    "size": 7432
+  },
+  {
+    "path": "packages/database/src/schema/core/index.ts",
+    "mtime": "2026-09-26T15:58:37.949Z",
+    "size": 507
+  },
+  {
+    "path": "packages/database/src/schema/core/ai-intelligence.ts",
+    "mtime": "2026-09-26T15:58:26.718Z",
+    "size": 10301
+  },
+  {
+    "path": "apps/api-gateway/test/phase14-reliability-enterprise-controls.test.mjs",
+    "mtime": "2026-09-26T15:38:36.633Z",
+    "size": 32035
+  },
+  {
+    "path": "apps/api-gateway/src/services/reliability/DataLineageService.ts",
+    "mtime": "2026-09-26T15:36:38.637Z",
+    "size": 16843
+  },
+  {
+    "path": "packages/database/migrations/0065_phase14_reliability_enterprise_controls.sql",
+    "mtime": "2026-09-26T15:28:24.099Z",
+    "size": 10066
+  },
+  {
+    "path": "apps/api-gateway/src/services/reliability/SystemObservabilityService.ts",
+    "mtime": "2026-09-26T15:19:41.626Z",
+    "size": 4369
+  },
+  {
+    "path": "apps/api-gateway/src/services/reliability/OfflineSyncService.ts",
+    "mtime": "2026-09-26T15:19:27.374Z",
+    "size": 10174
+  },
+  {
+    "path": "apps/api-gateway/src/services/reliability/IncidentCapaService.ts",
+    "mtime": "2026-09-26T15:18:53.362Z",
+    "size": 13489
+  },
+  {
+    "path": "apps/api-gateway/src/services/reliability/DisasterRecoveryService.ts",
+    "mtime": "2026-09-26T15:18:33.591Z",
+    "size": 9583
+  },
+  {
+    "path": "apps/api-gateway/src/services/reliability/DeviceGovernanceService.ts",
+    "mtime": "2026-09-26T15:18:14.792Z",
+    "size": 8046
+  },
+  {
+    "path": "apps/api-gateway/src/services/reliability/RetryAndDlqService.ts",
+    "mtime": "2026-09-26T15:17:58.165Z",
+    "size": 9462
+  },
+  {
+    "path": "apps/api-gateway/src/services/reliability/SagaOrchestratorService.ts",
+    "mtime": "2026-09-26T15:17:37.935Z",
+    "size": 9663
+  },
+  {
+    "path": "apps/api-gateway/src/services/reliability/IdempotencyEngineService.ts",
+    "mtime": "2026-09-26T15:17:22.427Z",
+    "size": 7326
+  },
+  {
+    "path": "apps/api-gateway/src/services/reliability/ReconciliationEngineService.ts",
+    "mtime": "2026-09-26T15:17:00.408Z",
+    "size": 14066
+  },
+  {
+    "path": "apps/api-gateway/src/routes/company/reliability-hq.routes.ts",
+    "mtime": "2026-09-26T15:16:17.621Z",
+    "size": 7245
+  },
+  {
+    "path": "apps/api-gateway/src/services/reliability/AuditIntegrityService.ts",
+    "mtime": "2026-09-26T15:15:38.455Z",
+    "size": 10277
+  },
+  {
+    "path": "apps/api-gateway/src/routes/partner/reliability.routes.ts",
+    "mtime": "2026-09-26T15:10:48.400Z",
+    "size": 11576
+  },
+  {
+    "path": "packages/database/src/schema/core/reliability.ts",
+    "mtime": "2026-09-26T15:04:03.764Z",
+    "size": 14789
+  },
+  {
+    "path": "apps/api-gateway/test/phase13-command-center-analytics.test.mjs",
+    "mtime": "2026-09-26T14:52:28.867Z",
+    "size": 22881
+  },
+  {
+    "path": "apps/api-gateway/src/repositories/company/HqCommandCenterRepository.ts",
+    "mtime": "2026-09-26T14:47:18.070Z",
+    "size": 26871
+  },
+  {
+    "path": "packages/database/src/index.ts",
+    "mtime": "2026-09-26T14:40:48.349Z",
+    "size": 416
+  },
+  {
+    "path": "apps/api-gateway/src/repositories/company/AnalyticsRepository.ts",
+    "mtime": "2026-09-26T14:24:53.963Z",
+    "size": 2920
+  },
+  {
+    "path": "apps/api-gateway/src/repositories/partner/SupplyChainRepository.ts",
+    "mtime": "2026-09-26T14:09:55.743Z",
+    "size": 63245
+  },
+  {
+    "path": "apps/api-gateway/test/phase12-supply-chain.test.mjs",
+    "mtime": "2026-09-26T13:56:13.250Z",
+    "size": 28672
+  },
+  {
+    "path": "apps/api-gateway/src/routes/partner/supply-chain.routes.ts",
+    "mtime": "2026-09-26T13:30:59.193Z",
+    "size": 15451
+  },
+  {
+    "path": "apps/api-gateway/src/services/partner/SupplyChainService.ts",
+    "mtime": "2026-09-26T13:23:41.935Z",
+    "size": 18485
+  },
+  {
+    "path": "packages/database/migrations/0064_phase12_supply_chain.sql",
+    "mtime": "2026-09-26T13:13:20.048Z",
+    "size": 13951
+  },
+  {
+    "path": "packages/database/src/schema/clinical/index.ts",
+    "mtime": "2026-09-26T13:12:57.549Z",
+    "size": 618885
+  },
+  {
+    "path": "apps/api-gateway/src/services/partner/AccountsPayableService.ts",
+    "mtime": "2026-09-26T12:53:32.223Z",
+    "size": 13298
+  },
+  {
+    "path": "apps/api-gateway/test/phase11-finance-commercial.test.mjs",
+    "mtime": "2026-09-26T12:51:33.660Z",
+    "size": 32472
+  },
+  {
+    "path": "apps/api-gateway/src/services/partner/CashierShiftService.ts",
+    "mtime": "2026-09-26T12:51:18.400Z",
+    "size": 8702
+  },
+  {
+    "path": "apps/api-gateway/src/services/partner/BillingManagementService.ts",
+    "mtime": "2026-09-26T12:41:05.670Z",
+    "size": 30346
+  },
+  {
+    "path": "apps/api-gateway/src/services/partner/EodClosingService.ts",
+    "mtime": "2026-09-26T12:39:24.846Z",
+    "size": 11504
+  },
+  {
+    "path": "apps/api-gateway/src/services/partner/TaxEngineService.ts",
+    "mtime": "2026-09-26T12:39:12.269Z",
+    "size": 10703
+  },
+  {
+    "path": "apps/api-gateway/src/services/partner/ReconciliationService.ts",
+    "mtime": "2026-09-26T12:11:47.572Z",
+    "size": 5909
+  },
+  {
+    "path": "apps/api-gateway/src/services/partner/CreditReceivablesService.ts",
+    "mtime": "2026-09-26T12:11:02.353Z",
+    "size": 9621
+  },
+  {
+    "path": "apps/api-gateway/src/services/partner/PackageBillingService.ts",
+    "mtime": "2026-09-26T12:10:50.997Z",
+    "size": 10525
+  },
+  {
+    "path": "packages/database/src/test-harness.ts",
+    "mtime": "2026-09-26T11:22:53.235Z",
+    "size": 39081
+  },
+  {
+    "path": "packages/database/migrations/0063_phase11_finance_commercial_packages_credits_eod_gst.sql",
+    "mtime": "2026-09-26T11:19:21.257Z",
+    "size": 7165
+  },
+  {
+    "path": "packages/database/migrations/0062_phase8_radiology_series_instances_amendments.sql",
+    "mtime": "2026-09-26T10:32:21.690Z",
+    "size": 3088
+  },
+  {
+    "path": "apps/api-gateway/test/phase10-hospital-operations.test.mjs",
+    "mtime": "2026-09-26T10:11:16.848Z",
+    "size": 30416
+  },
+  {
+    "path": "apps/api-gateway/src/repositories/partner/InpatientManagementRepository.ts",
+    "mtime": "2026-09-26T10:08:55.751Z",
+    "size": 65543
+  },
+  {
+    "path": "apps/api-gateway/src/routes/partner/inpatient-management.routes.ts",
+    "mtime": "2026-09-26T09:49:14.092Z",
+    "size": 8814
+  },
+  {
+    "path": "apps/api-gateway/src/services/partner/InpatientManagementService.ts",
+    "mtime": "2026-09-26T09:48:40.383Z",
+    "size": 14867
+  },
+  {
+    "path": "apps/api-gateway/test/inpatient-adt-vertical-slice.test.mjs",
+    "mtime": "2026-09-26T09:45:13.110Z",
+    "size": 12062
+  },
+  {
+    "path": "apps/api-gateway/test/phase9-pharmacy-retail-wholesale.test.mjs",
+    "mtime": "2026-09-26T09:29:45.682Z",
+    "size": 39393
+  },
+  {
+    "path": "apps/api-gateway/src/services/partner/WholesaleInvoiceIngestionService.ts",
+    "mtime": "2026-09-26T09:24:20.100Z",
+    "size": 58187
+  },
+  {
+    "path": "apps/api-gateway/src/services/company/EntitlementService.ts",
+    "mtime": "2026-09-26T09:23:33.321Z",
+    "size": 27400
+  },
+  {
+    "path": "apps/api-gateway/src/services/partner/PharmacyManagementService.ts",
+    "mtime": "2026-09-26T09:08:33.710Z",
+    "size": 16013
+  },
+  {
+    "path": "apps/api-gateway/src/routes/partner/pharmacy-management.routes.ts",
+    "mtime": "2026-09-26T09:06:46.796Z",
+    "size": 28405
+  },
+  {
+    "path": "apps/api-gateway/test/phase7-lims-pathology.test.mjs",
+    "mtime": "2026-09-26T08:12:34.586Z",
+    "size": 29364
+  },
+  {
+    "path": "apps/api-gateway/src/routes/partner/lab-diagnostics.routes.ts",
+    "mtime": "2026-09-26T08:02:37.488Z",
+    "size": 27865
+  },
+  {
+    "path": "apps/api-gateway/src/services/partner/LabDiagnosticsService.ts",
+    "mtime": "2026-09-26T08:00:44.700Z",
+    "size": 23888
+  },
+  {
+    "path": "apps/api-gateway/test/phase6-opd-core.test.mjs",
+    "mtime": "2026-09-26T07:30:04.642Z",
+    "size": 26182
+  },
+  {
+    "path": "apps/api-gateway/test/phase5-1-remediation-gate.test.mjs",
+    "mtime": "2026-09-26T05:57:34.518Z",
+    "size": 33503
+  },
+  {
+    "path": "apps/api-gateway/src/services/partner/Patient360ContinuityService.ts",
+    "mtime": "2026-09-26T05:54:45.775Z",
+    "size": 136567
+  },
+  {
+    "path": "packages/database/src/client.ts",
+    "mtime": "2026-09-26T05:06:16.516Z",
+    "size": 12954
+  },
+  {
+    "path": "apps/partner-platform/src/components/common/Patient360ExperienceModal.tsx",
+    "mtime": "2026-09-26T03:13:45.312Z",
+    "size": 37896
+  },
+  {
+    "path": "apps/partner-platform/src/components/views/PatientOverviewView.tsx",
+    "mtime": "2026-09-26T02:49:08.357Z",
+    "size": 7020
+  },
+  {
+    "path": "packages/api-contracts/src/index.ts",
+    "mtime": "2026-09-26T02:48:54.045Z",
+    "size": 3088
+  },
+  {
+    "path": "packages/api-contracts/src/partner-platform/patient-360.schema.ts",
+    "mtime": "2026-09-26T02:48:37.555Z",
+    "size": 2997
+  },
+  {
+    "path": "packages/database/src/seeds/universal-seed.ts",
+    "mtime": "2026-09-26T02:48:22.738Z",
+    "size": 42473
+  },
+  {
+    "path": "apps/api-gateway/test/phase7-clinical-encounter-execution.test.mjs",
+    "mtime": "2026-09-26T00:20:22.886Z",
+    "size": 18146
+  },
+  {
+    "path": "apps/partner-platform/src/components/views/OpdOneFlowExpressView.tsx",
+    "mtime": "2026-09-26T00:06:27.227Z",
+    "size": 57330
+  },
+  {
+    "path": "apps/partner-platform/src/services/clinical-consultation-service.ts",
+    "mtime": "2026-09-26T00:04:43.341Z",
+    "size": 49443
+  },
+  {
+    "path": "apps/api-gateway/src/routes/partner/patient-360-continuity.routes.ts",
+    "mtime": "2026-09-25T23:40:46.936Z",
+    "size": 35650
+  },
+  {
+    "path": "apps/api-gateway/test/DOC_SEARCH_PHASE_4_COMMERCIAL_CONTROL.test.mjs",
+    "mtime": "2026-09-25T23:26:11.919Z",
+    "size": 34396
+  },
+  {
+    "path": "apps/api-gateway/src/services/company/CommercialControlService.ts",
+    "mtime": "2026-09-25T23:09:55.651Z",
+    "size": 15243
+  },
+  {
+    "path": "apps/api-gateway/src/services/security/IdentitySecurityFoundationService.ts",
+    "mtime": "2026-09-25T23:06:40.858Z",
+    "size": 83684
+  },
+  {
+    "path": "apps/api-gateway/test/phase4-patient-360-universal-id.test.mjs",
+    "mtime": "2026-09-25T22:54:15.003Z",
+    "size": 35398
+  },
+  {
+    "path": "apps/api-gateway/test/master-architecture-p0-p1-remediation.test.mjs",
+    "mtime": "2026-09-25T21:36:19.532Z",
+    "size": 25959
+  },
+  {
+    "path": "packages/auth/src/scope-guard.ts",
+    "mtime": "2026-09-25T21:32:09.867Z",
+    "size": 8457
+  },
+  {
+    "path": "packages/database/src/repositories/workflow-repository.ts",
+    "mtime": "2026-09-25T21:26:31.844Z",
+    "size": 17057
+  },
+  {
+    "path": "packages/database/migrations/0061_architecture_p0_p1_remediation.sql",
+    "mtime": "2026-09-25T21:23:03.261Z",
+    "size": 4235
+  },
+  {
+    "path": "apps/api-gateway/src/services/company/PartnerSyncService.ts",
+    "mtime": "2026-09-25T20:57:27.521Z",
+    "size": 56845
+  },
+  {
+    "path": "apps/api-gateway/src/repositories/partner/PartnerFoundationRepository.ts",
+    "mtime": "2026-09-25T20:54:17.718Z",
+    "size": 5590
+  },
+  {
+    "path": "apps/api-gateway/src/repositories/company/PartnerRepository.ts",
+    "mtime": "2026-09-25T20:54:11.566Z",
+    "size": 94440
+  },
+  {
+    "path": "apps/api-gateway/src/services/partner/PartnerConfigurationEngineService.ts",
+    "mtime": "2026-09-25T20:39:37.570Z",
+    "size": 61605
+  },
+  {
+    "path": "packages/database/src/schema/company/index.ts",
+    "mtime": "2026-09-25T20:11:14.459Z",
+    "size": 206528
+  },
+  {
+    "path": "packages/database/src/schema/core/audit-events.ts",
+    "mtime": "2026-09-25T20:10:54.662Z",
+    "size": 1595
+  },
+  {
+    "path": "apps/api-gateway/.storage/tenants/9d7a13fc-d841-5391-e5b3-c15d646b0f1f/documents/a8e6dc6d-2fd4-4c07-af06-9e0fedd5dab1_bmw_renewed_2030.pdf",
+    "mtime": "2026-09-25T19:36:07.649Z",
+    "size": 66
+  },
+  {
+    "path": "apps/api-gateway/.storage/tenants/9d7a13fc-d841-5391-e5b3-c15d646b0f1f/documents/761c31c3-6278-4fc2-b141-eded801aeaf9_cea_renewed_2030.pdf",
+    "mtime": "2026-09-25T19:36:07.632Z",
+    "size": 66
+  },
+  {
+    "path": "apps/api-gateway/.storage/tenants/9d7a13fc-d841-5391-e5b3-c15d646b0f1f/documents/d88ec888-6148-4932-887c-ae9f07b2d54f_bmw_past.pdf",
+    "mtime": "2026-09-25T19:36:07.604Z",
+    "size": 62
+  },
+  {
+    "path": "apps/api-gateway/.storage/tenants/9d7a13fc-d841-5391-e5b3-c15d646b0f1f/documents/2c2180a1-5b6c-4643-9ff2-0a1cf35b1595_cea_future.pdf",
+    "mtime": "2026-09-25T19:36:07.528Z",
+    "size": 71
+  },
+  {
+    "path": "apps/api-gateway/.storage/tenants/9d7a13fc-d841-5391-e5b3-c15d646b0f1f/documents/32baa5c8-b7d9-4089-b9cf-7111efb8acf4_real_filecontentbase64.pdf",
+    "mtime": "2026-09-25T19:36:07.061Z",
+    "size": 55
+  },
+  {
+    "path": "apps/api-gateway/.storage/tenants/9d7a13fc-d841-5391-e5b3-c15d646b0f1f/documents/f20a83f9-1ac1-4634-ba9f-ae36179b6644_real_filebase64.pdf",
+    "mtime": "2026-09-25T19:36:07.036Z",
+    "size": 48
+  },
+  {
+    "path": "apps/api-gateway/.storage/tenants/7821c4bb-2db9-ee03-a7d1-a02f9c65a535/documents/4a8671b0-1dc3-4371-afe7-46406cdd0390_pcpndt_cert.pdf",
+    "mtime": "2026-09-25T19:36:06.717Z",
+    "size": 35
+  },
+  {
+    "path": "apps/api-gateway/.storage/tenants/11111111-1111-4111-8111-111111111111/documents/dd7bedb1-2a9b-4b82-8bd9-91c9ed8ec5de_self_reject_test.pdf",
+    "mtime": "2026-09-25T19:36:06.632Z",
+    "size": 25
+  },
+  {
+    "path": "apps/api-gateway/.storage/tenants/7821c4bb-2db9-ee03-a7d1-a02f9c65a535/documents/d990c6e4-7c59-4bf4-ad4f-82a7f5ccc239_aerb_elora_license.pdf",
+    "mtime": "2026-09-25T19:36:06.469Z",
+    "size": 86
+  },
+  {
+    "path": "apps/api-gateway/.storage/tenants/11111111-1111-4111-8111-111111111111/documents/6e0c5afb-8f5a-4aff-be84-a056b7d84363_fire_noc.pdf",
+    "mtime": "2026-09-25T19:36:05.078Z",
+    "size": 24
+  },
+  {
+    "path": "apps/api-gateway/.storage/tenants/11111111-1111-4111-8111-111111111111/documents/64464cee-46ba-4756-8631-ffea4ea01bbc_bmw_auth.pdf",
+    "mtime": "2026-09-25T19:36:04.855Z",
+    "size": 40
+  },
+  {
+    "path": "apps/api-gateway/.storage/tenants/16851c19-a8c9-6f57-8c30-b543233316a6/documents/d25f39bf-52ac-47bf-abde-a1e57b1505ae_drug_license_tenant_b.pdf",
+    "mtime": "2026-09-25T19:36:04.800Z",
+    "size": 45
+  },
+  {
+    "path": "apps/api-gateway/.storage/tenants/9d7a13fc-d841-5391-e5b3-c15d646b0f1f/documents/7008d0ea-cec2-4080-9cf1-539f1d908d0a_cea_certificate_tenant_a.pdf",
+    "mtime": "2026-09-25T19:36:04.756Z",
+    "size": 55
+  },
+  {
+    "path": "apps/api-gateway/test/phase06-patient-360-verification.test.mjs",
+    "mtime": "2026-09-25T18:54:23.355Z",
+    "size": 27022
+  },
+  {
+    "path": "apps/api-gateway/test/phase5-patient360-universal-ids-continuity.test.mjs",
+    "mtime": "2026-09-25T18:25:01.624Z",
+    "size": 22068
+  },
+  {
+    "path": "apps/api-gateway/src/services/workflow/UniversalHealthcareWorkflowEngineService.ts",
+    "mtime": "2026-09-25T18:01:54.424Z",
+    "size": 70749
+  },
+  {
+    "path": "apps/api-gateway/test/phase4-universal-workflow-engine.test.mjs",
+    "mtime": "2026-09-25T17:41:41.601Z",
+    "size": 28440
+  },
+  {
+    "path": "apps/api-gateway/src/routes/partner/universal-workflow.routes.ts",
+    "mtime": "2026-09-25T17:37:25.924Z",
+    "size": 23511
+  },
+  {
+    "path": "apps/api-gateway/test/phase3-identity-rbac-abac-security.test.mjs",
+    "mtime": "2026-09-25T17:10:36.958Z",
+    "size": 30432
+  },
+  {
+    "path": "apps/api-gateway/src/routes/security/identity-security-foundation.routes.ts",
+    "mtime": "2026-09-25T17:09:53.198Z",
+    "size": 12684
+  },
+  {
+    "path": "apps/partner-platform/src/services/partner-account-service.ts",
+    "mtime": "2026-09-25T17:00:58.052Z",
+    "size": 6375
+  },
+  {
+    "path": "apps/api-gateway/test/phase2-partner-configuration-engine.test.mjs",
+    "mtime": "2026-09-25T16:29:47.244Z",
+    "size": 22436
+  },
+  {
+    "path": "apps/partner-platform/src/components/views/PartnerAccountPlanView.tsx",
+    "mtime": "2026-09-25T16:23:36.463Z",
+    "size": 52708
+  },
+  {
+    "path": "apps/api-gateway/src/routes/partner/partner-configuration.routes.ts",
+    "mtime": "2026-09-25T16:16:00.048Z",
+    "size": 16905
+  },
+  {
+    "path": "apps/api-gateway/test/phase1-master-foundation.test.mjs",
+    "mtime": "2026-09-25T14:31:27.576Z",
+    "size": 20612
+  },
+  {
+    "path": "apps/api-gateway/src/services/company/MasterFoundationService.ts",
+    "mtime": "2026-09-25T14:28:49.685Z",
+    "size": 83635
+  },
+  {
+    "path": "apps/api-gateway/src/services/company/CapabilityAndDependencyEngine.ts",
+    "mtime": "2026-09-25T14:26:46.321Z",
+    "size": 30973
+  },
+  {
+    "path": "apps/api-gateway/src/services/company/EffectiveAccessEngine.ts",
+    "mtime": "2026-09-25T14:24:54.533Z",
+    "size": 66326
+  },
+  {
+    "path": "apps/api-gateway/src/services/company/ConfigurationVersioningService.ts",
+    "mtime": "2026-09-25T14:11:22.545Z",
+    "size": 12520
+  },
+  {
+    "path": "apps/api-gateway/src/routes/company/partner-access-control.routes.ts",
+    "mtime": "2026-09-25T14:11:09.083Z",
+    "size": 41698
+  },
+  {
+    "path": "apps/api-gateway/src/services/partner/PartnerAccountService.ts",
+    "mtime": "2026-09-25T14:07:56.811Z",
+    "size": 31430
+  },
+  {
+    "path": "apps/api-gateway/test/step3-controlled-development-verification.test.mjs",
+    "mtime": "2026-09-25T13:26:16.986Z",
+    "size": 14680
+  },
+  {
+    "path": "packages/database/src/schema/workflow-schema.ts",
+    "mtime": "2026-09-25T13:18:20.202Z",
+    "size": 6377
+  },
+  {
+    "path": "apps/partner-platform/src/services/pharmacy-offline-storage-service.ts",
+    "mtime": "2026-09-25T11:50:09.489Z",
+    "size": 25258
+  },
+  {
+    "path": "apps/partner-platform/src/services/patient-session-tab-service.ts",
+    "mtime": "2026-09-25T11:49:59.710Z",
+    "size": 14321
+  },
+  {
+    "path": "packages/auth/src/session-context.ts",
+    "mtime": "2026-09-25T10:40:16.334Z",
+    "size": 2429
+  },
+  {
+    "path": "apps/api-gateway/test/cap01-cap07-remediation.test.mjs",
+    "mtime": "2026-09-25T10:37:58.547Z",
+    "size": 29013
+  },
+  {
+    "path": "apps/api-gateway/src/repositories/core/DocumentVerificationRepository.ts",
+    "mtime": "2026-09-25T10:16:13.473Z",
+    "size": 66506
+  },
+  {
+    "path": "apps/api-gateway/data/registration_form_config.json",
+    "mtime": "2026-09-25T10:08:18.782Z",
+    "size": 10371
+  },
+  {
+    "path": "apps/api-gateway/src/services/core/RegistrationFormPolicyService.ts",
+    "mtime": "2026-09-25T10:07:49.084Z",
+    "size": 20511
+  },
+  {
+    "path": "packages/auth/src/types.ts",
+    "mtime": "2026-09-25T09:51:18.966Z",
+    "size": 1237
+  },
+  {
+    "path": "apps/partner-platform/src/utils/partnerRolePermissions.ts",
+    "mtime": "2026-09-25T09:43:21.180Z",
+    "size": 39107
+  },
+  {
+    "path": "apps/api-gateway/test/p0-p1-remediation-verification.test.mjs",
+    "mtime": "2026-09-25T09:21:37.705Z",
+    "size": 115995
+  },
+  {
+    "path": "apps/api-gateway/src/routes/auth.routes.ts",
+    "mtime": "2026-09-25T03:19:47.171Z",
+    "size": 63458
+  },
+  {
+    "path": "apps/api-gateway/src/routes/compliance/document-verification.routes.ts",
+    "mtime": "2026-09-24T16:45:14.796Z",
+    "size": 10403
+  },
+  {
+    "path": "apps/api-gateway/.storage/tenants/11111111-1111-4111-8111-111111111111/documents/06895de3-d23d-41da-8a03-54deaceea154_missing_binary.pdf",
+    "mtime": "2026-09-24T16:15:39.001Z",
+    "size": 177
+  },
+  {
+    "path": "apps/company-platform/vite.config.ts",
+    "mtime": "2026-09-24T15:15:40.721Z",
+    "size": 1601
+  },
+  {
+    "path": "apps/partner-platform/vite.config.ts",
+    "mtime": "2026-09-24T15:15:17.691Z",
+    "size": 1601
+  },
+  {
+    "path": "apps/api-gateway/test/partner-onboarding-commercial-lifecycle.test.mjs",
+    "mtime": "2026-09-24T15:14:27.495Z",
+    "size": 28841
+  },
+  {
+    "path": "packages/shared-core/src/errors/error-codes.ts",
+    "mtime": "2026-09-24T15:07:31.852Z",
+    "size": 1135
+  }
+]

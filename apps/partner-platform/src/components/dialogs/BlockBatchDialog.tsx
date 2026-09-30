@@ -9,6 +9,7 @@ import type {
   PharmacyBatchDto,
   BlockBatchRequest
 } from '@docsearch/api-contracts';
+import { AuditJustificationField } from '../common/AuditJustificationField.js';
 
 export interface BlockBatchDialogProps {
   isOpen: boolean;
@@ -63,6 +64,8 @@ export const BlockBatchDialog: React.FC<BlockBatchDialogProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title={`Quarantine & Block Batch — ${batch.batchNumber}`}
+      isFullPage={true}
+      maxWidth="full"
       footer={
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
           <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
@@ -101,16 +104,12 @@ export const BlockBatchDialog: React.FC<BlockBatchDialogProps> = ({
           />
         </div>
 
-        <div>
-          <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.25rem' }}>
-            Audit Justification *
-          </label>
-          <Input
-            value={justification}
-            onChange={(e) => setJustification(e.target.value)}
-            required
-          />
-        </div>
+        <AuditJustificationField
+          value={justification}
+          onChange={setJustification}
+          defaultJustification="Immediate safety quarantine hold engaged by supervising pharmacist"
+          placeholder="Quarantine authorization note..."
+        />
       </form>
     </Dialog>
   );

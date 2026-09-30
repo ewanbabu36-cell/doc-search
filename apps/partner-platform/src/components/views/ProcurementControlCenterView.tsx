@@ -22,7 +22,7 @@ export const ProcurementControlCenterView: React.FC<ProcurementControlCenterView
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#0f172a' }}>
+          <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: 'var(--ds-color-text-primary, #f8fafc)' }}>
             Executive Procurement Control Cockpit
           </h2>
           <p style={{ margin: '0.25rem 0 0 0', color: '#64748b', fontSize: '0.875rem' }}>
@@ -41,7 +41,7 @@ export const ProcurementControlCenterView: React.FC<ProcurementControlCenterView
           <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '0 0 0.75rem 0' }}>
             Supplier compliance rate: {metrics.vendorComplianceRate}% across all product categories.
           </p>
-          <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0f172a' }}>OPTIMAL</div>
+          <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--ds-color-text-primary, #f8fafc)' }}>OPTIMAL</div>
         </Card>
 
         <Card style={{ padding: '1.25rem', borderLeft: '4px solid #dc2626' }}>
@@ -57,7 +57,7 @@ export const ProcurementControlCenterView: React.FC<ProcurementControlCenterView
           <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '0 0 0.75rem 0' }}>
             {metrics.openExceptionsCount} price/quantity variances pending resolution.
           </p>
-          <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0f172a' }}>${metrics.outstandingInvoicesAmount.toFixed(2)}</div>
+          <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--ds-color-text-primary, #f8fafc)' }}>${metrics.outstandingInvoicesAmount.toFixed(2)}</div>
         </Card>
       </div>
     </div>

@@ -35,7 +35,7 @@ export const ClaimAdjudicationView: React.FC<ClaimAdjudicationViewProps> = ({
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#0f172a' }}>
+          <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: 'var(--ds-color-text-primary, #f8fafc)' }}>
             Claim Adjudication & Explanation of Benefits (EOB)
           </h2>
           <p style={{ margin: '0.25rem 0 0 0', color: '#64748b', fontSize: '0.875rem' }}>
@@ -107,7 +107,7 @@ export const ClaimAdjudicationView: React.FC<ClaimAdjudicationViewProps> = ({
 
         {/* Right: Adjudication Advice Feed */}
         <Card style={{ padding: '1.25rem' }}>
-          <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1rem', fontWeight: 600, color: '#0f172a' }}>
+          <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1rem', fontWeight: 600, color: 'var(--ds-color-text-primary, #f8fafc)' }}>
             Processed Remittance Advice (EOBs)
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.85rem' }}>

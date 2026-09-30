@@ -6,11 +6,13 @@ export interface VitalObservationViewProps {
   vitals: InpatientVitalObservationDto[];
 }
 
-export const VitalObservationView: React.FC<VitalObservationViewProps> = ({ vitals }) => {
+export const VitalObservationView: React.FC<VitalObservationViewProps> = ({ vitals = [] }) => {
+  const safeVitals = Array.isArray(vitals) ? vitals : [];
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div>
-        <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#0f172a' }}>Inpatient Vitals & Observations Log</h2>
+        <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: 'var(--ds-color-text-primary, #f8fafc)' }}>Inpatient Vitals & Observations Log</h2>
         <p style={{ margin: '0.25rem 0 0 0', color: '#64748b', fontSize: '0.875rem' }}>Periodic telemetry charts, blood pressure, SpO2, and glucose measurements.</p>
       </div>
       <Card style={{ padding: '0', overflow: 'hidden' }}>
@@ -26,16 +28,22 @@ export const VitalObservationView: React.FC<VitalObservationViewProps> = ({ vita
             </tr>
           </thead>
           <tbody>
-            {vitals.map((v) => (
-              <tr key={v.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                <td style={{ padding: '0.75rem 1rem' }}>{new Date(v.recordedAt).toLocaleString()}</td>
-                <td style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>{v.systolicBpMmHg}/{v.diastolicBpMmHg} mmHg</td>
-                <td style={{ padding: '0.75rem 1rem' }}>{v.pulseBpm} BPM</td>
-                <td style={{ padding: '0.75rem 1rem', color: '#16a34a', fontWeight: 600 }}>{v.spo2Percentage}%</td>
-                <td style={{ padding: '0.75rem 1rem' }}>{v.temperatureCelsius}°C</td>
-                <td style={{ padding: '0.75rem 1rem', color: '#64748b' }}>{v.recordedBy}</td>
+            {safeVitals.length === 0 ? (
+              <tr>
+                <td colSpan={6} style={{ padding: '1.5rem', textAlign: 'center', color: '#64748b' }}>No vital signs recorded yet.</td>
               </tr>
-            ))}
+            ) : (
+              safeVitals.map((v) => (
+                <tr key={v.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                  <td style={{ padding: '0.75rem 1rem' }}>{v.recordedAt ? new Date(v.recordedAt).toLocaleString() : 'N/A'}</td>
+                  <td style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>{v.systolicBpMmHg}/{v.diastolicBpMmHg} mmHg</td>
+                  <td style={{ padding: '0.75rem 1rem' }}>{v.pulseBpm} BPM</td>
+                  <td style={{ padding: '0.75rem 1rem', color: '#16a34a', fontWeight: 600 }}>{v.spo2Percentage}%</td>
+                  <td style={{ padding: '0.75rem 1rem' }}>{v.temperatureCelsius}°C</td>
+                  <td style={{ padding: '0.75rem 1rem', color: '#64748b' }}>{v.recordedBy}</td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </Card>

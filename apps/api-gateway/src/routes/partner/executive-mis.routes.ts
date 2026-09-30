@@ -1,5 +1,6 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { authenticate } from '../../plugins/auth-guard.js';
+import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 import { ExecutiveMisService, executiveMisService } from '../../services/partner/ExecutiveMisService.js';
 import type {
   DeclareSurgeEventRequest,
@@ -10,6 +11,7 @@ import type {
 } from '@docsearch/api-contracts';
 
 export const executiveMisRoutes: FastifyPluginAsync = async (app) => {
+  app.addHook('preHandler', requireModuleCommercialAccess('EXECUTIVE_COMMAND'));
   const service: ExecutiveMisService = executiveMisService;
 
   // 1. Unified MIS & Revenue Leakage Dashboard Cockpit

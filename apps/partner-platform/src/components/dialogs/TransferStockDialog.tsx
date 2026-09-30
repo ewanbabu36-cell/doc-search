@@ -10,6 +10,7 @@ import type {
   PharmacyBatchDto,
   TransferStockRequest
 } from '@docsearch/api-contracts';
+import { AuditJustificationField } from '../common/AuditJustificationField.js';
 
 export interface TransferStockDialogProps {
   isOpen: boolean;
@@ -35,7 +36,7 @@ export const TransferStockDialog: React.FC<TransferStockDialogProps> = ({
   const [selectedBatchId, setSelectedBatchId] = useState(batches[0]?.id || '');
   const [destinationBranchId, setDestinationBranchId] = useState('88888888-2222-4888-8888-222222222202');
   const [quantity, setQuantity] = useState<number>(10);
-  const [justification, setJustification] = useState('Inter-facility transfer to replenish emergency buffer.');
+  const [justification, setJustification] = useState('Inter-facility transfer to replenish emergency clinical buffer.');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -77,6 +78,8 @@ export const TransferStockDialog: React.FC<TransferStockDialogProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Inter-Facility Stock Transfer"
+      isFullPage={true}
+      maxWidth="full"
       footer={
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
           <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
@@ -134,16 +137,12 @@ export const TransferStockDialog: React.FC<TransferStockDialogProps> = ({
           </div>
         </div>
 
-        <div>
-          <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.25rem' }}>
-            Transfer Request Justification *
-          </label>
-          <Input
-            value={justification}
-            onChange={(e) => setJustification(e.target.value)}
-            required
-          />
-        </div>
+        <AuditJustificationField
+          label="Transfer Request Justification"
+          value={justification}
+          onChange={setJustification}
+          defaultJustification="Inter-facility transfer to replenish emergency clinical buffer."
+        />
       </form>
     </Dialog>
   );

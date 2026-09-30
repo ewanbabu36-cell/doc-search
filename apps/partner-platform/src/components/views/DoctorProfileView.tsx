@@ -8,6 +8,7 @@ import type {
 } from '@docsearch/api-contracts';
 import {
   Card,
+  Button,
   Badge,
   TableContainer,
   Table,
@@ -24,6 +25,7 @@ export interface DoctorProfileViewProps {
   leaves: DoctorLeaveDto[];
   fees: ConsultationFeeMatrixDto[];
   auditTraces: DoctorOpdAuditTraceDto[];
+  onBack?: () => void;
 }
 
 export const DoctorProfileView: React.FC<DoctorProfileViewProps> = ({
@@ -31,7 +33,8 @@ export const DoctorProfileView: React.FC<DoctorProfileViewProps> = ({
   schedules,
   leaves,
   fees,
-  auditTraces
+  auditTraces,
+  onBack
 }) => {
   if (!doctor) {
     return (
@@ -53,11 +56,17 @@ export const DoctorProfileView: React.FC<DoctorProfileViewProps> = ({
       {/* Header Doctor Card */}
       <Card padding="md">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-              <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '700', color: 'var(--ds-color-text-primary)' }}>
-                {doctor.fullName}
-              </h2>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+            {onBack && (
+              <Button variant="outline" size="sm" onClick={onBack} style={{ marginTop: '2px' }}>
+                ← Back to Doctors
+              </Button>
+            )}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '700', color: 'var(--ds-color-text-primary)' }}>
+                  {doctor.fullName}
+                </h2>
               <Badge variant="primary">{doctor.primarySpecialty}</Badge>
               <Badge variant={doctor.availabilityStatus === 'AVAILABLE' ? 'success' : doctor.availabilityStatus === 'ON_LEAVE' ? 'primary' : 'warning'}>
                 {doctor.availabilityStatus}
@@ -70,6 +79,7 @@ export const DoctorProfileView: React.FC<DoctorProfileViewProps> = ({
               Doctor Code: <code>{doctor.doctorCode}</code> · License: <strong>{doctor.medicalLicenseNumber}</strong> · Experience: <strong>{doctor.experienceYears} Years</strong>
             </span>
           </div>
+        </div>
 
           <div style={{ textAlign: 'right' }}>
             <span style={{ fontSize: '0.6875rem', color: 'var(--ds-color-text-muted)', display: 'block' }}>

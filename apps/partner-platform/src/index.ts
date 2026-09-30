@@ -75,6 +75,8 @@ export * from './components/dialogs/CreateStaffDialog.js';
 export * from './components/dialogs/EditStaffDialog.js';
 export * from './components/dialogs/ChangeStaffStatusDialog.js';
 export * from './components/dialogs/AssignRoleDialog.js';
+export * from './components/dialogs/RoleTemplateModal.js';
+export * from './utils/partnerRoleTemplates.js';
 export * from './components/dialogs/AddCredentialDialog.js';
 export * from './components/dialogs/VerifyCredentialDialog.js';
 export * from './components/dialogs/TransferStaffDialog.js';
@@ -123,11 +125,11 @@ export * from './components/dialogs/DuplicateReviewDialog.js';
 export * from './components/dialogs/MergePatientDialog.js';
 export * from './components/views/PatientOverviewView.js';
 export * from './components/views/PatientDirectoryView.js';
-export * from './components/views/PatientSearchView.js';
 export * from './components/views/PatientProfileView.js';
 export * from './components/views/PatientIdentifierCenterView.js';
 export * from './components/views/EmergencyContactCenterView.js';
 export * from './components/views/ConsentCenterView.js';
+export * from './components/views/DpdpPrivacyConsentHubView.js';
 export * from './components/views/InsuranceCenterView.js';
 export * from './components/views/DuplicateReviewCenterView.js';
 export * from './components/views/PatientMergeHistoryView.js';
@@ -168,11 +170,8 @@ export * from './components/dialogs/CompleteConsultationDialog.js';
 export * from './components/dialogs/AmendConsultationDialog.js';
 export * from './components/views/ConsultationOverviewView.js';
 export * from './components/views/ConsultationDoctorWorklistView.js';
-export * from './components/views/ClinicalConsultationView.js';
+export * from './components/views/DoctorExpressConsultationDesk.js';
 export * from './components/views/PatientClinicalTimelineView.js';
-export * from './components/views/DiagnosisCenterView.js';
-export * from './components/views/PrescriptionCenterView.js';
-export * from './components/views/FollowUpPlanView.js';
 export * from './components/views/ConsultationAuditVaultView.js';
 export * from './components/ClinicalConsultationDomainManager.js';
 
@@ -206,8 +205,10 @@ export * from './components/ClinicalInvestigationDomainManager.js';
 // Phase 2.8: Pharmacy, Medication Dispensing & Inventory Management Exports
 export * from './services/mock-pharmacy-data.js';
 export * from './services/pharmacy-management-service.js';
+export * from './services/wholesale-invoice-parser.js';
 export * from './components/dialogs/CreateMedicationDialog.js';
 export * from './components/dialogs/ReceiveStockDialog.js';
+export * from './components/dialogs/WholesaleInvoiceUploadModal.js';
 export * from './components/dialogs/VerifyPrescriptionDialog.js';
 export * from './components/dialogs/ReserveStockDialog.js';
 export * from './components/dialogs/DispenseMedicationDialog.js';
@@ -233,6 +234,11 @@ export * from './components/views/ReturnsAndAdjustmentsView.js';
 export * from './components/views/PatientMedicationHistoryView.js';
 export * from './components/views/PharmacyReportsView.js';
 export * from './components/views/PharmacyAuditVaultView.js';
+export * from './components/views/PharmacyRevenueGallaDeskView.js';
+export * from './services/pharmacy-revenue-galla-service.js';
+export * from './services/pharmacy-credit-khata-service.js';
+export * from './components/views/PharmacyCustomerKhataDeskView.js';
+export * from './components/dialogs/KhataPaymentCollectionModal.js';
 export * from './components/PharmacyDomainManager.js';
 
 // Phase 2.9: Billing, Charges, Payments & Revenue Cycle Management (RCM) Exports
@@ -259,6 +265,7 @@ export * from './components/dialogs/CancelInvoiceDialog.js';
 export * from './components/views/BillingOverviewView.js';
 export * from './components/views/BillingChargeDirectoryView.js';
 export * from './components/views/InvoiceDirectoryView.js';
+export * from './components/views/CreateInvoiceView.js';
 export * from './components/views/InvoiceDetailView.js';
 export * from './components/views/PaymentCollectionView.js';
 export * from './components/views/OutstandingReceivablesView.js';
@@ -387,8 +394,8 @@ export * from './components/dialogs/CompleteDischargeDialog.js';
 export * from './components/dialogs/FinalizeDischargeSummaryDialog.js';
 export * from './components/dialogs/ReleaseBedDialog.js';
 export * from './components/dialogs/CompleteCleaningDialog.js';
+export * from './components/dialogs/DirectAdmitBedDialog.js';
 export * from './components/views/InpatientOverviewView.js';
-export * from './components/views/ADTControlCenterView.js';
 export * from './components/views/AdmissionRequestView.js';
 export * from './components/views/AdmissionDetailView.js';
 export * from './components/views/BedManagementView.js';
@@ -517,6 +524,7 @@ export * from './components/views/EmergencyStaffView.js';
 export * from './components/views/EmergencyAnalyticsView.js';
 export * from './components/views/EmergencyAuditVaultView.js';
 export * from './components/views/EmergencyControlCenterView.js';
+export * from './components/views/OfflineMeshDisasterSyncView.js';
 export * from './components/EmergencyDomainManager.js';
 
 // Phase 2.15: Medical Records Department (MRD), HIM & ICD-10 Coding Exports
@@ -551,7 +559,6 @@ export * from './components/views/BirthRegistryView.js';
 export * from './components/views/DeathRegistryView.js';
 export * from './components/views/MRDAnalyticsView.js';
 export * from './components/views/MRDAuditVaultView.js';
-export * from './components/views/MRDControlCenterView.js';
 export * from './components/MRDDomainManager.js';
 
 // Phase 2.16: Blood Bank & Transfusion Medicine Exports
@@ -594,7 +601,6 @@ export * from './components/views/BloodQualityControlView.js';
 export * from './components/views/TemperatureMonitoringView.js';
 export * from './components/views/BloodBankAnalyticsView.js';
 export * from './components/views/BloodBankAuditVaultView.js';
-export * from './components/views/BloodBankControlCenterView.js';
 export * from './components/BloodBankDomainManager.js';
 
 // Phase 2.17: Radiology, Imaging & PACS / RIS Exports
@@ -625,7 +631,6 @@ export * from './components/views/RadiologyStudyWorklistView.js';
 export * from './components/views/RadiologistWorkbenchView.js';
 export * from './components/views/RadiologyReportingView.js';
 export * from './components/views/RadiologyCriticalFindingsView.js';
-export * from './components/views/RadiologyPacsView.js';
 export * from './components/views/RadiologyProcedureCatalogView.js';
 export * from './components/views/RadiologyQualityView.js';
 export * from './components/views/RadiologyAnalyticsView.js';
@@ -710,12 +715,10 @@ export * from './components/dialogs/ApproveCondemnationDialog.js';
 export * from './components/dialogs/ReportBiomedicalIncidentDialog.js';
 export * from './components/dialogs/ResolveBiomedicalIncidentDialog.js';
 export * from './components/views/AssetOverviewView.js';
-export * from './components/views/AssetControlCenterView.js';
 export * from './components/views/AssetInventoryDirectoryView.js';
 export * from './components/views/AssetDetailView.js';
 export * from './components/views/PpmScheduleBoardView.js';
 export * from './components/views/BreakdownWorkOrdersView.js';
-export * from './components/views/WorkOrderDetailView.js';
 export * from './components/views/BiomedicalCalibrationView.js';
 export * from './components/views/ElectricalSafetyTestingView.js';
 export * from './components/views/SparePartsInventoryView.js';
@@ -847,3 +850,65 @@ export * from './components/views/AutomatedDocumentDeliveryView.js';
 export * from './components/views/LiveQueueTokenTrackerView.js';
 export * from './components/views/WhatsAppAuditVaultView.js';
 export * from './components/WhatsAppPortalDomainManager.js';
+
+// Phase 3.6: Computer Vision Smart Counter & Epidemic Outbreak Radar Exports
+export * from './components/dialogs/WebcamSmartCounterModal.js';
+export * from './components/views/EpidemicOutbreakRadarView.js';
+
+// Phase 3.7: Diagnostics AI Copilot (Pathology Microscope & Radiology Web DICOM Heatmap)
+export * from './components/views/WebDicomAiHeatmapViewer.js';
+export * from './components/dialogs/MicroscopeEyepieceScannerModal.js';
+
+// Phase 3.8: Patient Digital Twin, Health Chrono-Score & Autonomous Post-Care Agent
+export * from './components/views/PatientDigitalTwinLongevityView.js';
+export * from './components/views/AutonomousPostCareAgentView.js';
+
+// Phase 3.9: Instant TPA / NHCX Auto-Adjudication (Zero-Wait Discharge)
+export * from './components/views/InstantNhcxAutoAdjudicationView.js';
+
+// Phase 3.10: Smart Hospital IoT & Autonomous Bed Orchestration
+export * from './components/views/SmartHospitalIotBedOrchestrationView.js';
+
+// Phase 3.11: Regulatory & Privacy (DPDP Act 2023 & ABDM 2.0)
+export * from './components/views/DpdpPrivacyConsentHubView.js';
+
+// Phase 3.12: Anti-Leakage & Insider Threat Defense Suite
+export * from './components/security/ForensicWatermarkOverlay.js';
+export * from './components/security/IdleScreenPrivacyShield.js';
+export * from './components/security/BreakGlassEmergencyModal.js';
+export * from './components/security/ForensicLeakInvestigatorModal.js';
+
+// Sprint 8: Unified Printing Engine
+export * from './components/common/UnifiedDocumentPrintModal.js';
+export * from './components/dialogs/PharmacyInvoiceSlipModal.js';
+export * from './components/dialogs/PrintableInvoiceBillModal.js';
+
+// Phase 4.0: Partner My Account, Commercial Plans & Authoritative Entitlements
+export * from './services/partner-account-service.js';
+export * from './components/common/PartnerAccountPlanModal.js';
+export * from './components/views/PartnerAccountPlanView.js';
+
+// Phase 4.5: High-Speed Pharmacy POS, Revenue Galla & CDSCO Audit Vault
+export * from './services/fast-pharmacy-search-index.js';
+export * from './services/pharmacy-revenue-galla-service.js';
+export * from './services/cdsco-inspection-audit-service.js';
+export * from './components/dialogs/MandatoryPrescriberComplianceModal.js';
+export * from './components/views/CdscoDrugInspectorAuditVaultView.js';
+export * from './components/views/PharmacyRevenueGallaDeskView.js';
+export * from './components/views/FastPharmacyPosCounterView.js';
+
+// Phase 4.6: Offline-First PWA & Background Sync Engine
+export * from './services/pharmacy-offline-storage-service.js';
+export * from './services/service-worker-companion.js';
+export * from './services/pharmacy-sync-engine.js';
+export * from './components/dialogs/PharmacyOfflineSyncModal.js';
+
+// Phase 5.0: OPD 1-Flow Express & Central Help Desk Exit Counter
+export * from './components/views/OpdOneFlowExpressView.js';
+export * from './components/views/CentralHelpDeskExitHubView.js';
+export * from './components/views/PreferredPartnerNetworkView.js';
+export * from './components/views/HospitalInHouseClosedLoopView.js';
+export * from './services/unique-identifier-service.js';
+
+
+

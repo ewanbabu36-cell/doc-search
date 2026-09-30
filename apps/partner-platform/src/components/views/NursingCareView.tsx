@@ -6,11 +6,13 @@ export interface NursingCareViewProps {
   assessments: InpatientNursingAssessmentDto[];
 }
 
-export const NursingCareView: React.FC<NursingCareViewProps> = ({ assessments }) => {
+export const NursingCareView: React.FC<NursingCareViewProps> = ({ assessments = [] }) => {
+  const safeAssessments = Array.isArray(assessments) ? assessments : [];
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div>
-        <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#0f172a' }}>Inpatient Nursing Care Documentation</h2>
+        <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: 'var(--ds-color-text-primary, #f8fafc)' }}>Inpatient Nursing Care Documentation</h2>
         <p style={{ margin: '0.25rem 0 0 0', color: '#64748b', fontSize: '0.875rem' }}>Assessment logs, risk scale charts, and clinical summaries.</p>
       </div>
       <Card style={{ padding: '0', overflow: 'hidden' }}>
@@ -25,15 +27,21 @@ export const NursingCareView: React.FC<NursingCareViewProps> = ({ assessments })
             </tr>
           </thead>
           <tbody>
-            {assessments.map((a) => (
-              <tr key={a.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                <td style={{ padding: '0.75rem 1rem' }}>{new Date(a.createdAt).toLocaleString()} ({a.shiftType})</td>
-                <td style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>{a.assessedBy}</td>
-                <td style={{ padding: '0.75rem 1rem' }}>{a.assessmentType}</td>
-                <td style={{ padding: '0.75rem 1rem' }}>Fall: {a.fallRiskScore} • Braden: {a.pressureInjuryRiskScore}</td>
-                <td style={{ padding: '0.75rem 1rem', fontSize: '0.8rem', color: '#475569' }}>{a.nursingSummary}</td>
+            {safeAssessments.length === 0 ? (
+              <tr>
+                <td colSpan={5} style={{ padding: '1.5rem', textAlign: 'center', color: '#64748b' }}>No nursing assessments recorded.</td>
               </tr>
-            ))}
+            ) : (
+              safeAssessments.map((a) => (
+                <tr key={a.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                  <td style={{ padding: '0.75rem 1rem' }}>{a.createdAt ? new Date(a.createdAt).toLocaleString() : 'N/A'} ({a.shiftType})</td>
+                  <td style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>{a.assessedBy}</td>
+                  <td style={{ padding: '0.75rem 1rem' }}>{a.assessmentType}</td>
+                  <td style={{ padding: '0.75rem 1rem' }}>Fall: {a.fallRiskScore} • Braden: {a.pressureInjuryRiskScore}</td>
+                  <td style={{ padding: '0.75rem 1rem', fontSize: '0.8rem', color: '#475569' }}>{a.nursingSummary}</td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </Card>

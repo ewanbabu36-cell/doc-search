@@ -25,6 +25,7 @@ export const ClaimDirectoryView: React.FC<ClaimDirectoryViewProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [submittingClaimId, setSubmittingClaimId] = useState<string | null>(null);
 
   const filtered = claims.filter((c) => {
     const matchesSearch =
@@ -41,7 +42,7 @@ export const ClaimDirectoryView: React.FC<ClaimDirectoryViewProps> = ({
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#0f172a' }}>
+          <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: 'var(--ds-color-text-primary, #f8fafc)' }}>
             Insurance Claims Directory
           </h2>
           <p style={{ margin: '0.25rem 0 0 0', color: '#64748b', fontSize: '0.875rem' }}>
@@ -110,7 +111,7 @@ export const ClaimDirectoryView: React.FC<ClaimDirectoryViewProps> = ({
                     {claim.claimNumber}
                   </td>
                   <td style={{ padding: '0.875rem 1rem' }}>
-                    <div style={{ fontWeight: 600, color: '#1e293b' }}>{claim.patientName}</div>
+                    <div style={{ fontWeight: 600, color: 'var(--ds-color-text-primary, #f8fafc)' }}>{claim.patientName}</div>
                     <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{claim.patientMrn}</div>
                   </td>
                   <td style={{ padding: '0.875rem 1rem' }}>
@@ -147,7 +148,17 @@ export const ClaimDirectoryView: React.FC<ClaimDirectoryViewProps> = ({
                         Inspect
                       </Button>
                       {claim.status === 'READY_FOR_SUBMISSION' && (
-                        <Button variant="primary" size="sm" onClick={() => onOpenSubmitClaim(claim)}>
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          disabled={submittingClaimId === claim.id}
+                          isLoading={submittingClaimId === claim.id}
+                          onClick={() => {
+                            setSubmittingClaimId(claim.id);
+                            onOpenSubmitClaim(claim);
+                            setTimeout(() => setSubmittingClaimId(null), 1000);
+                          }}
+                        >
                           Submit
                         </Button>
                       )}

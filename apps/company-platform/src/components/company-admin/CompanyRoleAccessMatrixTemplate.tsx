@@ -64,12 +64,13 @@ export const CompanyRoleAccessMatrixTemplate: React.FC = () => {
     {
       id: 'ROLE-01',
       roleCode: 'SUPER_ADMIN_FOUNDER',
-      roleTitle: 'Founder & SuperAdmin (CEO / CTO)',
+      roleTitle: 'Founder & SuperAdmin (MERAJ SHARIF)',
       department: 'EXECUTIVE',
-      badge: 'Unrestricted Master Access',
+      badge: 'Supreme Master Authority',
       icon: '👑',
-      summary: 'Full global governance across SaaS pricing, financial settlements, city broadcasts, security vaults, and multi-tenant architectures.',
+      summary: 'Supreme Founder authority. Full global governance across SaaS pricing, financial settlements, city broadcasts, security vaults, and multi-tenant architectures. Mandatorily reviews and signs off on all form submissions before any task is completed.',
       accessibleModules: [
+        '👑 Founder Master Approval & Governance Center',
         '👑 Growth Engine & Plan Customizer',
         '💳 Subscription & Billing Finance',
         '💸 Doctor / Lab / Pharma Settlement Gateway',
@@ -78,10 +79,10 @@ export const CompanyRoleAccessMatrixTemplate: React.FC = () => {
         '☁️ Kubernetes Infrastructure & Clusters',
         '🔐 Security Audit Vaults & SHA-256 Trails'
       ],
-      restrictedModules: ['None (Global Master Privileges)'],
+      restrictedModules: ['None (Global Master Privileges - Final Sign-off Authority)'],
       dataScope: 'GLOBAL',
-      activeEmployeesCount: 2,
-      sampleEmployee: 'Dr. Alok Sharma (Founder & CEO)',
+      activeEmployeesCount: 1,
+      sampleEmployee: 'MERAJ SHARIF (Executive Founder & SuperAdmin)',
       addons: {
         jitAccessEnabled: false,
         jitDurationHours: 0,
@@ -102,27 +103,28 @@ export const CompanyRoleAccessMatrixTemplate: React.FC = () => {
     {
       id: 'ROLE-02',
       roleCode: 'FIELD_SALES_REP',
-      roleTitle: 'Field Sales Representative (e.g. Motu)',
+      roleTitle: 'Enterprise Growth & Field Rep',
       department: 'SALES',
-      badge: 'Mobile & Doctor Demo Mode',
+      badge: 'Field Demo & Form Submitter',
       icon: '📱',
-      summary: 'Optimized for mobile field visits. Includes Clinic Route Planner, Interactive Voice Scribe Doctor Demo Sandbox, 2-Min Doctor Onboarding, and personal commission tracking.',
+      summary: 'Field sales & clinic onboarding lead. Can create leads, plan clinic routes, run Doctor Demo Sandbox, and initiate 2-min clinic onboarding. CANNOT directly complete tasks or approve subscriptions; all submitted forms enter PENDING_FOUNDER_APPROVAL state and require Founder MERAJ SHARIF sign-off.',
       accessibleModules: [
         '📍 Today Route & Clinic Visit Planner',
         '🎬 1-Click Interactive Doctor Demo Studio',
-        '✍️ 2-Minute Instant Doctor Onboarding Form',
+        '✍️ 2-Minute Instant Doctor Onboarding Form (Submitter)',
         '💰 Doctor Income & ROI Calculator',
         '🏆 Own Earned Incentive & Target Wallet'
       ],
       restrictedModules: [
+        '👑 Direct Task Completion & Founder Approval Bypass',
         '💳 Subscription & Billing Finance',
-        '💸 Doctor / Lab / Pharma Settlement Gateway',
+        '💸 Doctor / Lab / Pharma Settlement Gateway (₹0 Payout)',
         '☁️ Kubernetes Infrastructure & Clusters',
         '🔐 Security Audit Vaults & SHA-256 Trails'
       ],
       dataScope: 'TERRITORY_OWN',
       activeEmployeesCount: 18,
-      sampleEmployee: 'Motu Sharma (South Delhi & Noida Territory)',
+      sampleEmployee: 'Rohit Verma (Enterprise Growth & Field Rep)',
       addons: {
         jitAccessEnabled: true,
         jitDurationHours: 4,
@@ -175,6 +177,82 @@ export const CompanyRoleAccessMatrixTemplate: React.FC = () => {
         biometricMfaRequired: true,
         dualAuthRequired: true,
         dualAuthThresholdInr: 50000
+      }
+    },
+    {
+      id: 'ROLE-04',
+      roleCode: 'COMPLIANCE_OFFICER',
+      roleTitle: 'Compliance Officer (Legal / DPO)',
+      department: 'SECURITY',
+      badge: 'Statutory & Audit Lock',
+      icon: '🛡️',
+      summary: 'Oversees statutory compliance, MCA ROC filings, POSH committee records, HIPAA/DPDP data privacy audits, and immutable forensic logs.',
+      accessibleModules: [
+        '🔐 Security Audit Vaults & SHA-256 Trails',
+        '🛡️ Medical Safety & Lethal DDI Policies',
+        '👥 Employee RBAC Roles & Session Revocation'
+      ],
+      restrictedModules: [
+        '👑 Growth Engine & Plan Customizer',
+        '💸 Doctor / Lab / Pharma Settlement Gateway',
+        '☁️ Kubernetes Infrastructure & Clusters'
+      ],
+      dataScope: 'LOGS_ONLY',
+      activeEmployeesCount: 2,
+      sampleEmployee: 'Adv. Meenakshi Sundaram (Principal DPO)',
+      addons: {
+        jitAccessEnabled: false,
+        jitDurationHours: 0,
+        geoFencingEnabled: true,
+        assignedTerritoryZone: 'Secured Corporate Network',
+        allowedRadiusKm: 5,
+        maxDiscountAllowedInr: 0,
+        maxPayoutApprovalLimitInr: 0,
+        shiftWindowEnabled: false,
+        allowedShiftHours: '24x7 Audit Access',
+        piiMaskingLevel: 'PARTIAL_MASKED',
+        deviceBindingRequired: true,
+        biometricMfaRequired: true,
+        dualAuthRequired: true,
+        dualAuthThresholdInr: 0
+      }
+    },
+    {
+      id: 'ROLE-05',
+      roleCode: 'DEVOPS_LEAD',
+      roleTitle: 'DevOps Lead (Platform & Cloud Infra)',
+      department: 'ENGINEERING',
+      badge: 'Cluster & Telemetry Admin',
+      icon: '⚙️',
+      summary: 'Infrastructure access for Kubernetes clusters, Fastify API gateway telemetry, Redis caching clusters, failover drills, and zero-downtime deployment pipelines.',
+      accessibleModules: [
+        '☁️ Kubernetes Infrastructure & Clusters',
+        '⚡ API Gateway Telemetry & WebSockets',
+        '🔐 Security Audit Vaults & SHA-256 Trails'
+      ],
+      restrictedModules: [
+        '💳 Subscription & Billing Finance',
+        '💸 Doctor / Lab / Pharma Settlement Gateway',
+        '👑 Growth Engine & Plan Customizer'
+      ],
+      dataScope: 'GLOBAL',
+      activeEmployeesCount: 4,
+      sampleEmployee: 'Kabir Sengupta (Principal Site Reliability Engineer)',
+      addons: {
+        jitAccessEnabled: true,
+        jitDurationHours: 2,
+        geoFencingEnabled: false,
+        assignedTerritoryZone: 'Global Engineering VPN',
+        allowedRadiusKm: 0,
+        maxDiscountAllowedInr: 0,
+        maxPayoutApprovalLimitInr: 0,
+        shiftWindowEnabled: false,
+        allowedShiftHours: '24x7 On-Call Window',
+        piiMaskingLevel: 'FULL_MASKED',
+        deviceBindingRequired: true,
+        biometricMfaRequired: true,
+        dualAuthRequired: true,
+        dualAuthThresholdInr: 0
       }
     }
   ]);
@@ -689,7 +767,7 @@ export const CompanyRoleAccessMatrixTemplate: React.FC = () => {
                 variant="primary"
                 size="md"
                 onClick={handleSaveEdit}
-                style={{ backgroundColor: '#06B6D4', borderColor: '#06B6D4', color: '#070C16', fontWeight: 800 }}
+                
               >
                 💾 Save & Apply 7 Security Add-ons
               </Button>

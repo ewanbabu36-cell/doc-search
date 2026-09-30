@@ -11,6 +11,7 @@ import type {
   CollectSpecimenRequest,
   InvestigationSpecimenType
 } from '@docsearch/api-contracts';
+import { AuditJustificationField } from '../common/AuditJustificationField.js';
 
 export interface CollectSpecimenDialogProps {
   isOpen: boolean;
@@ -153,16 +154,12 @@ export const CollectSpecimenDialog: React.FC<CollectSpecimenDialogProps> = ({
           />
         </div>
 
-        <div>
-          <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '6px' }}>
-            Audit Justification *
-          </label>
-          <Input
-            value={justification}
-            onChange={(e) => setJustification(e.target.value)}
-            placeholder="Phlebotomy verification statement..."
-          />
-        </div>
+        <AuditJustificationField
+          value={justification}
+          onChange={setJustification}
+          defaultJustification="Routine phlebotomy collection per physician clinical order."
+          placeholder="Phlebotomy verification statement..."
+        />
       </form>
     </Dialog>
   );

@@ -2,6 +2,7 @@ import React from 'react';
 import type { PatientDto, PatientRegistrationAuditTraceDto } from '@docsearch/api-contracts';
 import {
   Card,
+  Button,
   Badge,
   TableContainer,
   Table,
@@ -11,13 +12,15 @@ import {
   TableHead,
   TableCell
 } from '@docsearch/ui-kit';
+import { maskAadhaarNumber, maskAbhaAddress, maskPhoneNumber } from '@docsearch/shared-core';
 
 export interface PatientProfileViewProps {
   patient: PatientDto | null;
   auditTraces: PatientRegistrationAuditTraceDto[];
+  onBack?: () => void;
 }
 
-export const PatientProfileView: React.FC<PatientProfileViewProps> = ({ patient, auditTraces }) => {
+export const PatientProfileView: React.FC<PatientProfileViewProps> = ({ patient, auditTraces, onBack }) => {
   if (!patient) {
     return (
       <Card padding="lg">
@@ -35,11 +38,17 @@ export const PatientProfileView: React.FC<PatientProfileViewProps> = ({ patient,
       {/* Header Dossier Card */}
       <Card padding="md">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-              <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '700', color: 'var(--ds-color-text-primary)' }}>
-                {patient.fullName}
-              </h2>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+            {onBack && (
+              <Button variant="outline" size="sm" onClick={onBack} style={{ marginTop: '2px' }}>
+                ← Back to Directory
+              </Button>
+            )}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '700', color: 'var(--ds-color-text-primary)' }}>
+                  {patient.fullName}
+                </h2>
               <Badge
                 variant={
                   patient.status === 'ACTIVE'
@@ -53,12 +62,13 @@ export const PatientProfileView: React.FC<PatientProfileViewProps> = ({ patient,
               >
                 {patient.status}
               </Badge>
-              <Badge variant="primary">{patient.mrn}</Badge>
+              <Badge variant="primary">UHID: {patient.mrn}</Badge>
             </div>
             <span style={{ fontSize: '0.8125rem', color: 'var(--ds-color-text-secondary)' }}>
-              DOB: <strong>{patient.dateOfBirth}</strong> · Gender: <strong>{patient.gender}</strong> · Blood: <strong>{patient.bloodGroup ?? 'Unknown'}</strong> · Code: <code>{patient.patientCode}</code>
+              DOB: <strong>{patient.dateOfBirth}</strong> · Gender: <strong>{patient.gender}</strong> · Blood: <strong>{patient.bloodGroup ?? 'Unknown'}</strong> · Clinical MRN: <code>{patient.patientCode}</code>
             </span>
           </div>
+        </div>
 
           <div style={{ textAlign: 'right' }}>
             <span style={{ fontSize: '0.6875rem', color: 'var(--ds-color-text-muted)', display: 'block' }}>
@@ -96,8 +106,8 @@ export const PatientProfileView: React.FC<PatientProfileViewProps> = ({ patient,
         <Card title="Contact & Residential Address" padding="md">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.8125rem' }}>
             <div>
-              <span style={{ color: 'var(--ds-color-text-muted)', display: 'block', fontSize: '0.6875rem' }}>Primary Mobile Phone</span>
-              <strong>{patient.primaryContact?.primaryMobile ?? '—'}</strong>
+              <span style={{ color: 'var(--ds-color-text-muted)', display: 'block', fontSize: '0.6875rem' }}>Primary Mobile Phone (Privacy Masked)</span>
+              <strong>{maskPhoneNumber(patient.primaryContact?.primaryMobile) || '—'}</strong>
             </div>
             <div>
               <span style={{ color: 'var(--ds-color-text-muted)', display: 'block', fontSize: '0.6875rem' }}>Email Address</span>
@@ -106,8 +116,16 @@ export const PatientProfileView: React.FC<PatientProfileViewProps> = ({ patient,
             <div>
               <span style={{ color: 'var(--ds-color-text-muted)', display: 'block', fontSize: '0.6875rem' }}>Residential Address</span>
               <strong>
-                {patient.primaryAddress
-                  ? `${patient.primaryAddress.addressLine1}, ${patient.primaryAddress.city}, ${patient.primaryAddress.state} ${patient.primaryAddress.postalCode}`
+                {patient.primaryAddress && (patient.primaryAddress.addressLine1 || patient.primaryAddress.city)
+                  ? [
+                      patient.primaryAddress.addressLine1,
+                      patient.primaryAddress.city,
+                      patient.primaryAddress.state,
+                      patient.primaryAddress.postalCode
+                    ]
+                      .map((s) => (s || '').trim())
+                      .filter(Boolean)
+                      .join(', ')
                   : 'None on file'}
               </strong>
             </div>
@@ -161,8 +179,23 @@ export const PatientProfileView: React.FC<PatientProfileViewProps> = ({ patient,
               <TableBody>
                 {patient.identifiers.map((ident) => (
                   <TableRow key={ident.id}>
-                    <TableCell style={{ fontWeight: '600', fontSize: '0.8125rem' }}>{ident.identifierType}</TableCell>
-                    <TableCell style={{ fontFamily: 'var(--ds-font-mono)', fontSize: '0.8125rem' }}>{ident.identifierValue}</TableCell>
+                    <TableCell style={{ fontWeight: '600', fontSize: '0.8125rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span>{ident.identifierType}</span>
+                        {(ident.identifierType.includes('AADHAAR') || ident.identifierType.includes('NATIONAL_ID') || ident.identifierType.includes('ABHA')) && (
+                          <span style={{ fontSize: '0.625rem', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#059669', border: '1px solid #10B981', padding: '1px 5px', borderRadius: '4px', fontWeight: '700' }}>
+                            🔒 MASKED
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell style={{ fontFamily: 'var(--ds-font-mono)', fontSize: '0.8125rem' }}>
+                      {ident.identifierType.includes('AADHAAR') || ident.identifierType.includes('NATIONAL_ID')
+                        ? maskAadhaarNumber(ident.identifierValue)
+                        : ident.identifierType.includes('ABHA')
+                        ? maskAbhaAddress(ident.identifierValue)
+                        : ident.identifierValue}
+                    </TableCell>
                     <TableCell><Badge variant="success">{ident.status}</Badge></TableCell>
                   </TableRow>
                 ))}

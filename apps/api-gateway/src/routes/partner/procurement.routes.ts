@@ -1,10 +1,13 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { ProcurementService } from '../../services/partner/ProcurementService.js';
 import { authenticate } from '../../plugins/auth-guard.js';
+import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 
 const service = new ProcurementService();
 
 export const procurementRoutes: FastifyPluginAsync = async (app) => {
+  app.addHook('preHandler', requireModuleCommercialAccess('OPERATIONS'));
+
   // 1. Overview & Analytics
   app.get(
     '/api/v1/partner/procurement/overview',

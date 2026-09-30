@@ -1,0 +1,927 @@
+{
+  "total": 165,
+  "exactSameLineClashes": [
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateInvoiceDialog.tsx",
+      "line": 373,
+      "text": "backgroundColor: '#ffffff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/CentralHelpDeskExitHubView.tsx",
+      "line": 222,
+      "text": "backgroundColor: '#ffffff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/DpdpPrivacyConsentHubView.tsx",
+      "line": 434,
+      "text": "<Badge variant=\"neutral\" className=\"bg-white/10 text-white font-mono text-xs\">"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/InvoiceDetailView.tsx",
+      "line": 714,
+      "text": "backgroundColor: '#ffffff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/OfflineMeshDisasterSyncView.tsx",
+      "line": 489,
+      "text": "<Badge variant=\"neutral\" className=\"bg-white/10 text-white font-mono text-xs border border-white/20\">"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/OpdOneFlowExpressView.tsx",
+      "line": 495,
+      "text": "backgroundColor: '#ffffff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/OpdOneFlowExpressView.tsx",
+      "line": 532,
+      "text": "backgroundColor: '#ffffff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/OpdOneFlowExpressView.tsx",
+      "line": 1161,
+      "text": "backgroundColor: '#ffffff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/OpdOneFlowExpressView.tsx",
+      "line": 1226,
+      "text": "backgroundColor: '#ffffff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/OpdOneFlowExpressView.tsx",
+      "line": 1250,
+      "text": "backgroundColor: '#ffffff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/PreferredPartnerNetworkView.tsx",
+      "line": 280,
+      "text": "backgroundColor: '#ffffff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/PreferredPartnerNetworkView.tsx",
+      "line": 557,
+      "text": "<div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '24px', width: '100%', maxWidth: '520px' }}>"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/PreferredPartnerNetworkView.tsx",
+      "line": 615,
+      "text": "<div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '24px', width: '100%', maxWidth: '520px' }}>"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/PreferredPartnerNetworkView.tsx",
+      "line": 673,
+      "text": "<div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '24px', width: '100%', maxWidth: '480px', textAlign: 'center' }}>"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/ProcurementApprovalWorkbenchView.tsx",
+      "line": 81,
+      "text": "<div key={po.id} style={{ padding: '0.875rem', border: '1px solid #e2e8f0', borderRadius: '6px', backgroundColor: '#fff' }}>"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/ProcurementOverviewView.tsx",
+      "line": 173,
+      "text": "backgroundColor: '#fff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/PurchaseOrderDetailView.tsx",
+      "line": 142,
+      "text": "<div key={inv.id} style={{ padding: '0.75rem', backgroundColor: '#fff', borderRadius: '6px', border: '1px solid #e2e8f0' }}>"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/QualityInspectionView.tsx",
+      "line": 49,
+      "text": "<div key={grn.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', padding: '0.5rem 0.75rem', borderRadius: '4px' }}>"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/VendorDetailView.tsx",
+      "line": 135,
+      "text": "backgroundColor: '#fff',"
+    }
+  ],
+  "allCandidates": [
+    {
+      "file": "apps/partner-platform/src/components/dashboard/StaffOperationalRoleDashboard.tsx",
+      "line": 654,
+      "text": "color: '#ffffff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/ApproveRefundDialog.tsx",
+      "line": 73,
+      "text": "<div style={{ backgroundColor: '#fff7ed', padding: '1rem', borderRadius: '8px', border: '1px solid #fed7aa' }}>"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/AssignRoleDialog.tsx",
+      "line": 151,
+      "text": "background: isSelected ? '#eff6ff' : '#ffffff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateInvoiceDialog.tsx",
+      "line": 350,
+      "text": "color: '#ffffff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateInvoiceDialog.tsx",
+      "line": 373,
+      "text": "backgroundColor: '#ffffff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateInvoiceDialog.tsx",
+      "line": 532,
+      "text": "color: '#ffffff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateInvoiceDialog.tsx",
+      "line": 559,
+      "text": "color: '#ffffff'"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateInvoiceDialog.tsx",
+      "line": 584,
+      "text": "backgroundColor: paymentStatus === 'PAID' ? '#16a34a' : '#ffffff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateInvoiceDialog.tsx",
+      "line": 585,
+      "text": "color: paymentStatus === 'PAID' ? '#ffffff' : '#475569',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateInvoiceDialog.tsx",
+      "line": 601,
+      "text": "backgroundColor: paymentStatus === 'DRAFT' ? '#64748b' : '#ffffff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreateInvoiceDialog.tsx",
+      "line": 602,
+      "text": "color: paymentStatus === 'DRAFT' ? '#ffffff' : '#475569',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/CreatePatientDialog.tsx",
+      "line": 313,
+      "text": "background: '#fff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/PrescriptionCameraOcrModal.tsx",
+      "line": 241,
+      "text": "<h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 900, color: 'var(--ds-color-text-primary, #fff)' }}>"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/PrescriptionCameraOcrModal.tsx",
+      "line": 563,
+      "text": "<div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--ds-color-text-primary, #fff)' }}>"
+    },
+    {
+      "file": "apps/partner-platform/src/components/dialogs/RoleTemplateModal.tsx",
+      "line": 274,
+      "text": "background: icon === emoji ? '#eff6ff' : '#ffffff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/ProcurementDomainManager.tsx",
+      "line": 430,
+      "text": "color: '#ffffff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/ProcurementDomainManager.tsx",
+      "line": 453,
+      "text": "color: '#ffffff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/ProcurementDomainManager.tsx",
+      "line": 476,
+      "text": "color: '#ffffff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/BillingAuditVaultView.tsx",
+      "line": 77,
+      "text": "color: activeTab === 'AUDIT' ? '#ffffff' : '#64748b',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/BillingAuditVaultView.tsx",
+      "line": 91,
+      "text": "color: activeTab === 'LEDGER' ? '#ffffff' : '#64748b',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/CentralHelpDeskExitHubView.tsx",
+      "line": 222,
+      "text": "backgroundColor: '#ffffff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/CentralHelpDeskExitHubView.tsx",
+      "line": 272,
+      "text": "backgroundColor: isSelected ? '#f0f9ff' : '#ffffff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/CentralHelpDeskExitHubView.tsx",
+      "line": 345,
+      "text": "backgroundColor: selectedPatient.labStatus === 'VERIFIED' ? '#f0fdf4' : selectedPatient.labStatus === 'PENDING' ? '#fff7ed' : '#f8fafc'"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/ClaimDetailView.tsx",
+      "line": 303,
+      "text": "<div key={apl.id} style={{ padding: '0.75rem', backgroundColor: '#fffbeb', borderRadius: '6px', border: '1px solid #fef3c7' }}>"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/CreateInvoiceView.tsx",
+      "line": 329,
+      "text": "<h1 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.01em' }}>"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/CreateInvoiceView.tsx",
+      "line": 562,
+      "text": "color: '#ffffff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/CreateInvoiceView.tsx",
+      "line": 819,
+      "text": "backgroundColor: paymentStatus === 'PAID' ? '#16a34a' : '#ffffff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/CreateInvoiceView.tsx",
+      "line": 820,
+      "text": "color: paymentStatus === 'PAID' ? '#ffffff' : '#475569',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/CreateInvoiceView.tsx",
+      "line": 836,
+      "text": "backgroundColor: paymentStatus === 'DRAFT' ? '#64748b' : '#ffffff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/CreateInvoiceView.tsx",
+      "line": 837,
+      "text": "color: paymentStatus === 'DRAFT' ? '#ffffff' : '#475569',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/CreateInvoiceView.tsx",
+      "line": 872,
+      "text": "backgroundColor: paymentMode === mode.id ? '#0284c7' : '#ffffff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/CreateInvoiceView.tsx",
+      "line": 873,
+      "text": "color: paymentMode === mode.id ? '#ffffff' : '#334155',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/CreateInvoiceView.tsx",
+      "line": 941,
+      "text": "color: '#ffffff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/CreateInvoiceView.tsx",
+      "line": 964,
+      "text": "color: '#ffffff'"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/CriticalResultCenterView.tsx",
+      "line": 72,
+      "text": "<TableRow key={ord.id} style={{ backgroundColor: '#fff5f5' }}>"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/DpdpPrivacyConsentHubView.tsx",
+      "line": 434,
+      "text": "<Badge variant=\"neutral\" className=\"bg-white/10 text-white font-mono text-xs\">"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/DynamicUpiInvoiceView.tsx",
+      "line": 155,
+      "text": "background: #ffffff !important;"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FastPharmacyPosCounterView.tsx",
+      "line": 2344,
+      "text": "color: billingMode === 'WALK_IN' ? '#ffffff' : 'var(--ds-color-text-secondary)',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FastPharmacyPosCounterView.tsx",
+      "line": 2368,
+      "text": "color: billingMode === 'HOSPITAL_RX' ? '#ffffff' : 'var(--ds-color-text-secondary)',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx",
+      "line": 1183,
+      "text": "<rect width=\"100\" height=\"100\" fill=\"#ffffff\" />"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx",
+      "line": 1185,
+      "text": "<rect x=\"16\" y=\"16\" width=\"16\" height=\"16\" fill=\"#ffffff\" />"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx",
+      "line": 1188,
+      "text": "<rect x=\"68\" y=\"16\" width=\"16\" height=\"16\" fill=\"#ffffff\" />"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx",
+      "line": 1191,
+      "text": "<rect x=\"16\" y=\"68\" width=\"16\" height=\"16\" fill=\"#ffffff\" />"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx",
+      "line": 1804,
+      "text": "<rect width=\"100\" height=\"100\" fill=\"#ffffff\" />"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx",
+      "line": 1806,
+      "text": "<rect x=\"15\" y=\"15\" width=\"15\" height=\"15\" fill=\"#ffffff\" />"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx",
+      "line": 1809,
+      "text": "<rect x=\"70\" y=\"15\" width=\"15\" height=\"15\" fill=\"#ffffff\" />"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/FrontDeskMobileWorkstationView.tsx",
+      "line": 1812,
+      "text": "<rect x=\"15\" y=\"70\" width=\"15\" height=\"15\" fill=\"#ffffff\" />"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/InvoiceDetailView.tsx",
+      "line": 538,
+      "text": "<div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '0.75rem', backgroundColor: '#fffbeb', borderRadius: '6px', borderLeft: '4px solid #f59e0b' }}>"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/InvoiceDetailView.tsx",
+      "line": 691,
+      "text": "color: '#ffffff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/InvoiceDetailView.tsx",
+      "line": 714,
+      "text": "backgroundColor: '#ffffff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/OfflineMeshDisasterSyncView.tsx",
+      "line": 489,
+      "text": "<Badge variant=\"neutral\" className=\"bg-white/10 text-white font-mono text-xs border border-white/20\">"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/OpdOneFlowExpressView.tsx",
+      "line": 495,
+      "text": "backgroundColor: '#ffffff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/OpdOneFlowExpressView.tsx",
+      "line": 532,
+      "text": "backgroundColor: '#ffffff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/OpdOneFlowExpressView.tsx",
+      "line": 559,
+      "text": "color: isActive ? '#ffffff' : isCompleted ? '#166534' : '#64748b',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/OpdOneFlowExpressView.tsx",
+      "line": 1161,
+      "text": "backgroundColor: '#ffffff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/OpdOneFlowExpressView.tsx",
+      "line": 1226,
+      "text": "backgroundColor: '#ffffff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/OpdOneFlowExpressView.tsx",
+      "line": 1250,
+      "text": "backgroundColor: '#ffffff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/PharmacyOverviewView.tsx",
+      "line": 398,
+      "text": "<div key={batch.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 8px', backgroundColor: '#fffbeb', borderRadius: '4px', fontSize: '0.825rem' }}>"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/PreferredPartnerNetworkView.tsx",
+      "line": 280,
+      "text": "backgroundColor: '#ffffff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/PreferredPartnerNetworkView.tsx",
+      "line": 557,
+      "text": "<div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '24px', width: '100%', maxWidth: '520px' }}>"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/PreferredPartnerNetworkView.tsx",
+      "line": 615,
+      "text": "<div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '24px', width: '100%', maxWidth: '520px' }}>"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/PreferredPartnerNetworkView.tsx",
+      "line": 673,
+      "text": "<div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '24px', width: '100%', maxWidth: '480px', textAlign: 'center' }}>"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/ProcurementApprovalWorkbenchView.tsx",
+      "line": 81,
+      "text": "<div key={po.id} style={{ padding: '0.875rem', border: '1px solid #e2e8f0', borderRadius: '6px', backgroundColor: '#fff' }}>"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/ProcurementOverviewView.tsx",
+      "line": 173,
+      "text": "backgroundColor: '#fff',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/PurchaseOrderDetailView.tsx",
+      "line": 142,
+      "text": "<div key={inv.id} style={{ padding: '0.75rem', backgroundColor: '#fff', borderRadius: '6px', border: '1px solid #e2e8f0' }}>"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/QualityInspectionView.tsx",
+      "line": 43,
+      "text": "<Card style={{ padding: '1.25rem', backgroundColor: '#fffbeb', border: '1px solid #fde68a' }}>"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/QualityInspectionView.tsx",
+      "line": 49,
+      "text": "<div key={grn.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', padding: '0.5rem 0.75rem', borderRadius: '4px' }}>"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/RoleScopeView.tsx",
+      "line": 206,
+      "text": "color: selectedCategory === 'ALL' ? '#ffffff' : 'var(--ds-color-text-secondary, #cbd5e1)',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/RoleScopeView.tsx",
+      "line": 227,
+      "text": "color: isSelected ? '#ffffff' : 'var(--ds-color-text-secondary, #cbd5e1)',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/RoleTailoredSmartDeskView.tsx",
+      "line": 573,
+      "text": "color: isSelected ? 'var(--ds-color-text-primary, #ffffff)' : 'var(--ds-color-text-muted, #94a3b8)',"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/StaffDirectoryView.tsx",
+      "line": 508,
+      "text": "? 'var(--ds-color-text-inverse, #ffffff)'"
+    },
+    {
+      "file": "apps/partner-platform/src/components/views/VendorDetailView.tsx",
+      "line": 135,
+      "text": "backgroundColor: '#fff',"
+    },
+    {
+      "file": "apps/partner-platform/src/main.tsx",
+      "line": 383,
+      "text": "<h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#ffffff', margin: 0 }}>"
+    },
+    {
+      "file": "apps/partner-platform/src/main.tsx",
+      "line": 413,
+      "text": "color: '#ffffff',"
+    },
+    {
+      "file": "apps/company-platform/src/components/company-admin/EmployeeDirectoryView.tsx",
+      "line": 218,
+      "text": "background: #fff;"
+    },
+    {
+      "file": "apps/company-platform/src/components/crm/PartnerProfileView.tsx",
+      "line": 233,
+      "text": "color: isCurrent || isPassed ? '#ffffff' : 'var(--ds-color-text-muted)',"
+    },
+    {
+      "file": "apps/company-platform/src/utils/partnerWelcomeKitPdf.ts",
+      "line": 498,
+      "text": ".page { max-width: 800px; margin: 0 auto; background: #fff; padding: 36px; border: 1px solid #cbd5e1; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }"
+    },
+    {
+      "file": "apps/company-platform/src/utils/partnerWelcomeKitPdf.ts",
+      "line": 499,
+      "text": ".header { background: #0f172a; color: #fff; padding: 24px; border-radius: 8px; border-bottom: 4px solid #06b6d4; }"
+    },
+    {
+      "file": "apps/company-platform/src/utils/partnerWelcomeKitPdf.ts",
+      "line": 504,
+      "text": ".envelope { background: #fffbeb; border: 2px dashed #f59e0b; border-radius: 8px; padding: 20px; margin: 20px 0; }"
+    },
+    {
+      "file": "apps/company-platform/src/utils/partnerWelcomeKitPdf.ts",
+      "line": 510,
+      "text": "body { background: #fff; padding: 0; }"
+    },
+    {
+      "file": "packages/ui-kit/src/components/feedback/skeleton.tsx",
+      "line": 446,
+      "text": "backgroundColor: 'var(--ds-color-surface, #ffffff)',"
+    },
+    {
+      "file": "packages/ui-kit/src/components/primitives/button.tsx",
+      "line": 29,
+      "text": "color: 'var(--ds-color-primary-foreground, #ffffff)',"
+    },
+    {
+      "file": "packages/ui-kit/src/components/primitives/button.tsx",
+      "line": 34,
+      "text": "color: 'var(--ds-color-secondary-foreground, #ffffff)',"
+    },
+    {
+      "file": "packages/ui-kit/src/components/primitives/button.tsx",
+      "line": 54,
+      "text": "color: 'var(--ds-color-danger-foreground, #ffffff)',"
+    },
+    {
+      "file": "packages/ui-kit/src/components/primitives/button.tsx",
+      "line": 59,
+      "text": "color: 'var(--ds-color-success-foreground, #ffffff)',"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/base.css",
+      "line": 407,
+      "text": "mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/base.css",
+      "line": 408,
+      "text": "-webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 37,
+      "text": "--ds-color-primary-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 42,
+      "text": "--ds-color-secondary-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 46,
+      "text": "--ds-color-accent-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 50,
+      "text": "--ds-color-success-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 54,
+      "text": "--ds-color-warning-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 58,
+      "text": "--ds-color-danger-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 210,
+      "text": "--ds-color-surface: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 222,
+      "text": "--ds-color-text-inverse: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 227,
+      "text": "--ds-color-primary-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 232,
+      "text": "--ds-color-secondary-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 236,
+      "text": "--ds-color-accent-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 255,
+      "text": "--ds-surface-l2: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 273,
+      "text": "--ds-surface-container-lowest: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 314,
+      "text": "--ds-color-secondary-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 322,
+      "text": "--ds-color-success-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 326,
+      "text": "--ds-color-warning-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 330,
+      "text": "--ds-color-danger-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 369,
+      "text": "--ds-color-secondary-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 377,
+      "text": "--ds-color-success-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 381,
+      "text": "--ds-color-warning-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 385,
+      "text": "--ds-color-danger-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 419,
+      "text": "--ds-color-primary-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 428,
+      "text": "--ds-color-accent-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 432,
+      "text": "--ds-color-success-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 436,
+      "text": "--ds-color-warning-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 440,
+      "text": "--ds-color-danger-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 466,
+      "text": "--ds-color-text-primary: #fff1f2;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 474,
+      "text": "--ds-color-primary-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 479,
+      "text": "--ds-color-secondary-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 487,
+      "text": "--ds-color-success-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 491,
+      "text": "--ds-color-warning-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 495,
+      "text": "--ds-color-danger-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 512,
+      "text": "--ds-color-surface: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 524,
+      "text": "--ds-color-text-inverse: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 529,
+      "text": "--ds-color-primary-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 534,
+      "text": "--ds-color-secondary-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 538,
+      "text": "--ds-color-accent-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 542,
+      "text": "--ds-color-success-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 546,
+      "text": "--ds-color-warning-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 550,
+      "text": "--ds-color-danger-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 574,
+      "text": "--ds-color-border-strong: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 576,
+      "text": "--ds-color-text-primary: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 581,
+      "text": "--ds-color-primary: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 587,
+      "text": "--ds-color-secondary-hover: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 591,
+      "text": "--ds-color-accent: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 595,
+      "text": "--ds-color-success: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 599,
+      "text": "--ds-color-warning: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 603,
+      "text": "--ds-color-danger: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 607,
+      "text": "--ds-color-focus-ring: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 613,
+      "text": "--ds-shadow-lg: 0 0 0 2px #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 614,
+      "text": "--ds-shadow-xl: 0 0 0 3px #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 631,
+      "text": "--ds-color-text-primary: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 652,
+      "text": "--ds-color-success-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 656,
+      "text": "--ds-color-warning-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 660,
+      "text": "--ds-color-danger-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 699,
+      "text": "--ds-color-secondary-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 707,
+      "text": "--ds-color-success-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 711,
+      "text": "--ds-color-warning-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 715,
+      "text": "--ds-color-danger-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 759,
+      "text": "--ds-color-secondary-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 767,
+      "text": "--ds-color-success-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 775,
+      "text": "--ds-color-danger-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 835,
+      "text": "--ds-color-danger-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 874,
+      "text": "--ds-color-primary-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 879,
+      "text": "--ds-color-secondary-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 887,
+      "text": "--ds-color-success-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 891,
+      "text": "--ds-color-warning-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 895,
+      "text": "--ds-color-danger-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 926,
+      "text": "--ds-color-text-primary: #fff7ed;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 943,
+      "text": "--ds-color-accent-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 947,
+      "text": "--ds-color-success-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 955,
+      "text": "--ds-color-danger-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 979,
+      "text": "--ds-color-surface: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 991,
+      "text": "--ds-color-text-inverse: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 996,
+      "text": "--ds-color-primary-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 1001,
+      "text": "--ds-color-secondary-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/styles/themes.css",
+      "line": 1005,
+      "text": "--ds-color-accent-foreground: #ffffff;"
+    },
+    {
+      "file": "packages/ui-kit/src/tokens/colors.ts",
+      "line": 37,
+      "text": "textInverse: 'var(--ds-color-text-inverse, #ffffff)',"
+    }
+  ]
+}

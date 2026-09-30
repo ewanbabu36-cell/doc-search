@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { authenticate } from '../../plugins/auth-guard.js';
+import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 import {
   whatsAppEngagementService,
   type SendWhatsAppMessageDto,
@@ -11,6 +12,11 @@ import { AppError } from '@docsearch/shared-core';
 
 export const whatsappEngagementRoutes: FastifyPluginAsync = async (app) => {
   const service = whatsAppEngagementService;
+
+  app.addHook('preHandler', async (request, reply) => {
+    if (request.url.includes('/whatsapp/webhook')) return;
+    await requireModuleCommercialAccess('WHATSAPP_AUTOMATION')(request, reply);
+  });
 
   // 1. Overview Metrics
   app.get(
@@ -64,7 +70,7 @@ export const whatsappEngagementRoutes: FastifyPluginAsync = async (app) => {
         quickReplyOptions: body['quickReplyOptions'] as string[] | undefined
       };
 
-      const data = await service.sendMessage(tenantId, branchId || 'branch_default', userId, payload);
+      const data = await service.sendMessage(tenantId, branchId || tenantId, userId, payload);
       return reply.status(201).send({ success: true, data });
     }
   );
@@ -115,7 +121,7 @@ export const whatsappEngagementRoutes: FastifyPluginAsync = async (app) => {
         dispatchChannel: body['dispatchChannel'] as DispatchHealthDocumentDto['dispatchChannel']
       };
 
-      const data = await service.dispatchHealthDocument(tenantId, branchId || 'branch_default', userId, payload);
+      const data = await service.dispatchHealthDocument(tenantId, branchId || tenantId, userId, payload);
       return reply.status(201).send({ success: true, data });
     }
   );
@@ -171,7 +177,7 @@ export const whatsappEngagementRoutes: FastifyPluginAsync = async (app) => {
         scheduledTime: body['scheduledTime'] as string | undefined
       };
 
-      const data = await service.sendMedicationReminder(tenantId, branchId || 'branch_default', userId, payload);
+      const data = await service.sendMedicationReminder(tenantId, branchId || tenantId, userId, payload);
       return reply.status(201).send({ success: true, data });
     }
   );
@@ -216,7 +222,10 @@ export const whatsappEngagementRoutes: FastifyPluginAsync = async (app) => {
         }
       }
 
-      const tenantId = (request.headers['x-tenant-id'] as string) || '11111111-1111-4111-8111-111111111111';
+      const tenantId = (request.headers['x-tenant-id'] as string) || (request.query as any)?.tenantId;
+      if (!tenantId) {
+        throw new AppError({ message: 'Missing tenant identifier for webhook processing', statusCode: 400 });
+      }
       const body = (typeof request.body === 'object' && request.body !== null ? request.body : JSON.parse(rawPayload)) as Record<string, unknown>;
 
       // Standard Meta WhatsApp Webhook Payload Parsing

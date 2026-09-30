@@ -34,8 +34,9 @@ import { BirthRegistryView } from './views/BirthRegistryView.js';
 import { DeathRegistryView } from './views/DeathRegistryView.js';
 import { MRDAnalyticsView } from './views/MRDAnalyticsView.js';
 import { MRDAuditVaultView } from './views/MRDAuditVaultView.js';
-import { MRDControlCenterView } from './views/MRDControlCenterView.js';
 import { AiDischargeSummaryClaimView } from './views/AiDischargeSummaryClaimView.js';
+import { TabOverflowMenu } from './common/TabOverflowMenu.js';
+import { DocSearchSpatialCore3D, SkeletonPage } from '@docsearch/ui-kit';
 
 import { CreateRecordCompletionDialog } from './dialogs/CreateRecordCompletionDialog.js';
 import { AssignDiagnosisCodeDialog } from './dialogs/AssignDiagnosisCodeDialog.js';
@@ -152,44 +153,122 @@ export const MRDDomainManager: React.FC<Props> = ({
 
   return (
     <div className="space-y-6 p-6 max-w-7xl mx-auto">
-      <div className="flex border-b border-gray-200 overflow-x-auto gap-2 pb-2 text-xs font-bold">
+      {/* 3D Spatial Feature Core: Medical Records Department & Archives */}
+      <DocSearchSpatialCore3D
+        preset="mrd"
+        height={360}
+        interactive={true}
+        onNodeClick={(id) => {
+          if (id === 'icd-coding') {
+            setActiveTab('coding');
+          } else if (id === 'record-vault') {
+            setActiveTab('records');
+          } else if (id === 'mlc-legal') {
+            setActiveTab('legal');
+          } else if (id === 'death-audit') {
+            setActiveTab('death-registry');
+          } else if (id === 'retention-clock' || id === 'qr-dispatch') {
+            setActiveTab('archive');
+          } else if (id === 'nabh-sampling') {
+            setActiveTab('coding-review');
+          }
+        }}
+      />
+
+      <div
+        style={{
+          position: 'relative',
+          zIndex: 40,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          flexWrap: 'wrap',
+          backgroundColor: 'var(--ds-color-surface)',
+          border: '1px solid var(--ds-color-border)',
+          borderRadius: '10px',
+          padding: '6px 8px'
+        }}
+      >
         {[
           { id: 'command-center', label: 'Command Center', icon: '📁' },
-          { id: 'records', label: 'Medical Records Index', icon: '📑' },
-          { id: 'completion', label: 'Record Deficiencies', icon: '📝' },
+          { id: 'records', label: 'Medical Records', icon: '📑' },
+          { id: 'completion', label: 'Deficiencies', icon: '📝' },
           { id: 'coding', label: 'ICD-10 Coding', icon: '🏷' },
-          { id: 'coding-review', label: 'Coding Audit & Review', icon: '🔍' },
-          { id: 'cdi-queries', label: 'Clinical Queries (CDI)', icon: '💬' },
-          { id: 'archive', label: 'Archive & Vault', icon: '🏛' },
-          { id: 'retrieval', label: 'Chart Movement', icon: '📦' },
-          { id: 'roi', label: 'Release of Information', icon: '📤' },
-          { id: 'legal', label: 'Legal Holds & Subpoenas', icon: '⚖' },
-          { id: 'birth-registry', label: 'Birth Registry', icon: '👶' },
-          { id: 'death-registry', label: 'Death Registry', icon: '⚰' },
-          { id: 'analytics', label: 'Analytics', icon: '📊' },
-          { id: 'audit-vault', label: 'Audit Vault', icon: '🔒' },
-          { id: 'control-center', label: 'Control Center', icon: '⚙' }
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => {
-              setActiveTab(tab.id);
-              if (tab.id === 'records') setSelectedRecord(null);
-            }}
-            className={`px-3 py-2 rounded-lg flex items-center gap-1.5 whitespace-nowrap transition ${
-              activeTab === tab.id
-                ? 'bg-slate-900 text-white shadow'
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            <span>{tab.icon}</span>
-            <span>{tab.label}</span>
-          </button>
-        ))}
+          { id: 'archive', label: 'Archive Vault', icon: '🏛' }
+        ].map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => {
+                setActiveTab(tab.id);
+                if (tab.id === 'records') setSelectedRecord(null);
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                fontSize: '0.78rem',
+                fontWeight: isActive ? 700 : 500,
+                color: isActive ? '#FFFFFF' : 'var(--ds-color-text-muted)',
+                backgroundColor: isActive ? 'var(--ds-color-primary, #0284C7)' : 'transparent',
+                borderRadius: '6px',
+                border: isActive ? '1px solid var(--ds-color-accent, #38BDF8)' : '1px solid transparent',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = 'var(--ds-color-surface-hover)';
+                  e.currentTarget.style.color = 'var(--ds-color-text-primary)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = 'var(--ds-color-text-muted)';
+                }
+              }}
+            >
+              <span>{tab.icon}</span>
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+
+        {/* Secondary HIM / MRD Modules Dropdown */}
+        <TabOverflowMenu
+          label="More HIM & Legal Tools"
+          options={[
+            { id: 'ai-discharge-claim', label: '⚡ AI Discharge Claim Scribe' },
+            { id: 'coding-review', label: '🔍 Coding Audit & Review' },
+            { id: 'cdi-queries', label: '💬 Clinical Queries (CDI)' },
+            { id: 'retrieval', label: '📦 Chart Movement & Physical File' },
+            { id: 'roi', label: '📤 Release of Information (ROI)' },
+            { id: 'legal', label: '⚖ Legal Holds & Subpoenas' },
+            { id: 'birth-registry', label: '👶 Birth Registry' },
+            { id: 'death-registry', label: '⚰ Death Registry' },
+            { id: 'analytics', label: '📊 HIM Analytics' },
+            { id: 'audit-vault', label: '🔒 Cryptographic Audit Vault' }
+          ]}
+          activeId={activeTab}
+          onSelect={(id) => {
+            setActiveTab(id);
+            if (id === 'records') setSelectedRecord(null);
+          }}
+          onReset={() => {
+            setActiveTab('command-center');
+            setSelectedRecord(null);
+          }}
+          accentColor="#0284C7"
+          activeBorderColor="#38BDF8"
+        />
       </div>
 
       {loading ? (
-        <div className="p-12 text-center text-gray-500 text-sm">Loading Medical Records & HIM Workspace...</div>
+        <SkeletonPage layout="table" metricCount={4} />
       ) : (
         <>
           {activeTab === 'command-center' && (
@@ -344,8 +423,6 @@ export const MRDDomainManager: React.FC<Props> = ({
           {activeTab === 'analytics' && <MRDAnalyticsView analytics={analytics} />}
 
           {activeTab === 'audit-vault' && <MRDAuditVaultView traces={auditTraces} />}
-
-          {activeTab === 'control-center' && <MRDControlCenterView department={department} />}
         </>
       )}
 

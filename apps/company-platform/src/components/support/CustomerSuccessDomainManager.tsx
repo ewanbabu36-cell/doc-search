@@ -18,7 +18,7 @@ import { SuccessCheckinListView } from './SuccessCheckinListView.js';
 import { AiClinicalTriageSafetyEscalationView } from './AiClinicalTriageSafetyEscalationView.js';
 import { AutomatedPatientRefundArbiterView } from './AutomatedPatientRefundArbiterView.js';
 
-import { Tabs, Badge, Spinner, ErrorState } from '@docsearch/ui-kit';
+import { Tabs, Badge, Spinner, ErrorState, DocSearchSpatialCore3D } from '@docsearch/ui-kit';
 
 type ActiveTab =
   | 'overview'
@@ -125,6 +125,30 @@ export const CustomerSuccessDomainManager: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {/* 3D Spatial Feature Core: Customer Success & Hospital Support */}
+      <DocSearchSpatialCore3D
+        preset="support"
+        height={360}
+        interactive={true}
+        onNodeClick={(id) => {
+          if (id === 'p1-incidents') {
+            setActiveTab('triage');
+          } else if (id === 'doctor-tickets') {
+            setActiveTab('tickets');
+          } else if (id === 'whatsapp-bot') {
+            setActiveTab('overview');
+          } else if (id === 'csat-radar') {
+            setActiveTab('health');
+          } else if (id === 'on-call-rota') {
+            setActiveTab('sla');
+          } else if (id === 'knowledge-base') {
+            setActiveTab('checkins');
+          } else if (id === 'health-scorecard') {
+            setActiveTab('health');
+          }
+        }}
+      />
+
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', backgroundColor: '#0F172A', border: '1.5px solid rgba(6, 182, 212, 0.4)', borderRadius: '14px', padding: '16px 20px' }}>
         <div>

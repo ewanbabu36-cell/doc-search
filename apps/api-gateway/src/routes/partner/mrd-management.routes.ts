@@ -1,6 +1,7 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { mrdManagementService } from '../../services/partner/MRDManagementService.js';
 import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
+import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 import {
   type CreateMedicalRecordInput,
   type AssignICD10DiagnosisInput,
@@ -10,6 +11,8 @@ import {
 } from '../../repositories/partner/MRDManagementRepository.js';
 
 export const mrdManagementRoutes: FastifyPluginAsync = async (fastify) => {
+  fastify.addHook('preHandler', requireModuleCommercialAccess('CLINICAL_EMR'));
+
   // 1. ICD-10 Search
   fastify.get(
     '/api/v1/partner/mrd/icd10/search',

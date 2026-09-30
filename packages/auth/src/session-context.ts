@@ -9,11 +9,13 @@ export const VerifiedTokenClaimsSchema = z.object({
   tenantId: z.string().min(1, 'Tenant ID is mandatory'),
   organizationId: z.string().optional(),
   branchId: z.string().optional(),
+  departmentId: z.string().optional(),
   roles: z.array(z.string()).min(1, 'At least one role is mandatory'),
   permissions: z.array(z.string()).default([]),
-  scope: z.enum(['global', 'tenant', 'branch', 'own']).optional(),
-  dataScope: z.enum(['global', 'tenant', 'branch', 'own']).optional(),
+  scope: z.enum(['global', 'tenant', 'branch', 'department', 'own']).optional(),
+  dataScope: z.enum(['global', 'tenant', 'branch', 'department', 'own']).optional(),
   jti: z.string().optional(),
+  sessionId: z.string().optional(),
   tokenFamilyId: z.string().optional(),
   iat: z.number().int(),
   exp: z.number().int(),
@@ -45,6 +47,8 @@ export function buildSessionContext(rawClaims: unknown): SessionContext {
     dataScope = rawScope;
   } else if (isSuperAdmin) {
     dataScope = 'global';
+  } else if (claims.departmentId) {
+    dataScope = 'department';
   } else if (claims.branchId) {
     dataScope = 'branch';
   } else {
@@ -56,6 +60,7 @@ export function buildSessionContext(rawClaims: unknown): SessionContext {
     tenantId: claims.tenantId,
     organizationId: claims.organizationId ?? claims.tenantId,
     branchId: claims.branchId,
+    departmentId: claims.departmentId,
     actorEmail: claims.email,
     roles: claims.roles as RoleType[],
     permissions: claims.permissions,

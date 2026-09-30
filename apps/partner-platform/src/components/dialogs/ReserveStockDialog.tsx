@@ -77,6 +77,8 @@ export const ReserveStockDialog: React.FC<ReserveStockDialogProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title={`Pre-Reserve Batch Stock — ${prescription.prescriptionNumber}`}
+      isFullPage={true}
+      maxWidth="full"
       footer={
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
           <Button variant="outline" onClick={onClose} disabled={isSubmitting}>

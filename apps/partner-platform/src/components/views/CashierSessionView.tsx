@@ -49,7 +49,7 @@ export const CashierSessionView: React.FC<CashierSessionViewProps> = ({
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: '#0f172a' }}>
+          <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: 'var(--ds-color-text-primary, #f8fafc)' }}>
             Cashier Shift & Drawer Operations
           </h2>
           <p style={{ margin: '0.25rem 0 0 0', color: '#64748b', fontSize: '0.875rem' }}>
@@ -63,7 +63,7 @@ export const CashierSessionView: React.FC<CashierSessionViewProps> = ({
 
       {/* Cashier Sessions Table */}
       <Card>
-        <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', fontWeight: 600, color: '#0f172a' }}>
+        <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', fontWeight: 600, color: 'var(--ds-color-text-primary, #f8fafc)' }}>
           Workstation Shift History
         </h3>
         <TableContainer>
@@ -129,7 +129,7 @@ export const CashierSessionView: React.FC<CashierSessionViewProps> = ({
 
       {/* Treasury Reconciliations Log */}
       <Card>
-        <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', fontWeight: 600, color: '#0f172a' }}>
+        <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', fontWeight: 600, color: 'var(--ds-color-text-primary, #f8fafc)' }}>
           Treasury End-of-Day Reconciliation Log
         </h3>
         <TableContainer>

@@ -1,0 +1,6258 @@
+[
+  {
+    "method": "GET",
+    "path": "/health"
+  },
+  {
+    "method": "HEAD",
+    "path": "/health"
+  },
+  {
+    "method": "GET",
+    "path": "/api/health"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/health"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/health"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/health"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/hq/command-center/overview"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/hq/command-center/overview"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/hq/command-center/partners"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/hq/command-center/partners"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/hq/command-center/licenses"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/hq/command-center/licenses"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/hq/command-center/revenue"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/hq/command-center/revenue"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/hq/command-center/throughput"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/hq/command-center/throughput"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/hq/command-center/security"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/hq/command-center/security"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/hq/command-center/health"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/hq/command-center/health"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/hq/command-center/export"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/hq/command-center/export"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/hq/analytics/overview"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/hq/analytics/overview"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/hq/analytics/partners"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/hq/analytics/partners"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/hq/analytics/licenses"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/hq/analytics/licenses"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/hq/analytics/revenue"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/hq/analytics/revenue"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/hq/analytics/throughput"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/hq/analytics/throughput"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/hq/analytics/security"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/hq/analytics/security"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/hq/analytics/health"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/hq/analytics/health"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/hq/analytics/export"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/hq/analytics/export"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/hq/ai/incidents"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/hq/ai/incidents"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/hq/ai/budget/set-limit"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/hq/ai/budget/:tenantId"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/hq/ai/budget/:tenantId"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/hq/ai/requests/:tenantId"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/hq/ai/requests/:tenantId"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/hq/ai/kill-switch"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/hq/ai/kill-switch"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/hq/ai/kill-switch"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/hq/reliability/metrics"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/hq/reliability/metrics"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/hq/reliability/health"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/hq/reliability/health"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/hq/reliability/audit/verify-ledger"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/hq/reliability/dlq"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/hq/reliability/dlq"
+  },
+  {
+    "method": "GET",
+    "path": "/metrics"
+  },
+  {
+    "method": "HEAD",
+    "path": "/metrics"
+  },
+  {
+    "method": "POST",
+    "path": "/:id/replay"
+  },
+  {
+    "method": "POST",
+    "path": "/:id/discard"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/hq/reliability/disaster-recovery/backups"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/hq/reliability/disaster-recovery/restore-drill"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/hq/reliability/disaster-recovery/readiness"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/hq/reliability/disaster-recovery/readiness"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/login"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/logout"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/auth/live-partners"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/auth/live-partners"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/auth/launch-offer"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/auth/launch-offer"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/auth/launch-offer"
+  },
+  {
+    "method": "POST",
+    "path": "/reset"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/quick-session"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/refresh"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/register-partner-user"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/auth/registration-form-config"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/auth/registration-form-config"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/auth/registration-form-config"
+  },
+  {
+    "method": "POST",
+    "path": "/reset"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/auth/me"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/auth/me"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/auth/partner-status"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/auth/partner-status"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/change-password"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/self-register"
+  },
+  {
+    "method": "GET",
+    "path": "ed-partners"
+  },
+  {
+    "method": "HEAD",
+    "path": "ed-partners"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/staged-amendments"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/upgrade-plan"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/auth/verification-queue"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/auth/verification-queue"
+  },
+  {
+    "method": "POST",
+    "path": "/approve"
+  },
+  {
+    "method": "POST",
+    "path": "/reject"
+  },
+  {
+    "method": "GET",
+    "path": "/:id"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:id"
+  },
+  {
+    "method": "DELETE",
+    "path": "/:id"
+  },
+  {
+    "method": "GET",
+    "path": "/timeline"
+  },
+  {
+    "method": "HEAD",
+    "path": "/timeline"
+  },
+  {
+    "method": "POST",
+    "path": "/assign"
+  },
+  {
+    "method": "POST",
+    "path": "-reviewer"
+  },
+  {
+    "method": "POST",
+    "path": "/approve"
+  },
+  {
+    "method": "POST",
+    "path": "/start-review"
+  },
+  {
+    "method": "POST",
+    "path": "/request-information"
+  },
+  {
+    "method": "POST",
+    "path": "/resubmit"
+  },
+  {
+    "method": "POST",
+    "path": "/reject"
+  },
+  {
+    "method": "POST",
+    "path": "/refund"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/demo-request"
+  },
+  {
+    "method": "GET",
+    "path": "s"
+  },
+  {
+    "method": "HEAD",
+    "path": "s"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/approvals"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/approvals"
+  },
+  {
+    "method": "POST",
+    "path": "/submit"
+  },
+  {
+    "method": "POST",
+    "path": "/:id/approve"
+  },
+  {
+    "method": "POST",
+    "path": "/:id/reject"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/abdm/callback/v0.5/care-contexts/on-discover"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/abdm/callback/v0.5/consents/hip/on-notify"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/executive/overview"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/executive/overview"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/executive/operations"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/executive/operations"
+  },
+  {
+    "method": "POST",
+    "path": "/acknowledge-emergency"
+  },
+  {
+    "method": "POST",
+    "path": "/verify-doctor"
+  },
+  {
+    "method": "POST",
+    "path": "/process-payouts"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/ewan/sales-overview"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/ewan/sales-overview"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/ewan/customer-success/:tenantId"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/ewan/customer-success/:tenantId"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/ewan/finance-overview"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/ewan/finance-overview"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/company/ewan/ask"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/partners"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/partners"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/company/partners"
+  },
+  {
+    "method": "GET",
+    "path": "/directory"
+  },
+  {
+    "method": "HEAD",
+    "path": "/directory"
+  },
+  {
+    "method": "GET",
+    "path": "-intelligence"
+  },
+  {
+    "method": "HEAD",
+    "path": "-intelligence"
+  },
+  {
+    "method": "GET",
+    "path": "/analytics"
+  },
+  {
+    "method": "HEAD",
+    "path": "/analytics"
+  },
+  {
+    "method": "POST",
+    "path": "/complete-onboarding-activation"
+  },
+  {
+    "method": "POST",
+    "path": "/clear-tombstones"
+  },
+  {
+    "method": "GET",
+    "path": "/live-directory"
+  },
+  {
+    "method": "HEAD",
+    "path": "/live-directory"
+  },
+  {
+    "method": "DELETE",
+    "path": "/staged/:partnerId"
+  },
+  {
+    "method": "POST",
+    "path": "/reset-directory"
+  },
+  {
+    "method": "POST",
+    "path": "/reset-password"
+  },
+  {
+    "method": "GET",
+    "path": "/:partnerId"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:partnerId"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:partnerId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/:partnerId"
+  },
+  {
+    "method": "GET",
+    "path": "/360"
+  },
+  {
+    "method": "HEAD",
+    "path": "/360"
+  },
+  {
+    "method": "GET",
+    "path": "/commercial"
+  },
+  {
+    "method": "HEAD",
+    "path": "/commercial"
+  },
+  {
+    "method": "POST",
+    "path": "/configuration/versions/:versionNumber/publish"
+  },
+  {
+    "method": "GET",
+    "path": "/configuration/history"
+  },
+  {
+    "method": "HEAD",
+    "path": "/configuration/history"
+  },
+  {
+    "method": "GET",
+    "path": "/configuration/diff"
+  },
+  {
+    "method": "HEAD",
+    "path": "/configuration/diff"
+  },
+  {
+    "method": "POST",
+    "path": "/configuration/rollback"
+  },
+  {
+    "method": "GET",
+    "path": "/capabilities"
+  },
+  {
+    "method": "HEAD",
+    "path": "/capabilities"
+  },
+  {
+    "method": "PUT",
+    "path": "/capabilities"
+  },
+  {
+    "method": "POST",
+    "path": "/capabilities"
+  },
+  {
+    "method": "PATCH",
+    "path": "/status"
+  },
+  {
+    "method": "GET",
+    "path": "/staff"
+  },
+  {
+    "method": "HEAD",
+    "path": "/staff"
+  },
+  {
+    "method": "POST",
+    "path": "/staff"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:staffId/status"
+  },
+  {
+    "method": "POST",
+    "path": "/save-as-template"
+  },
+  {
+    "method": "GET",
+    "path": "/entitlements"
+  },
+  {
+    "method": "HEAD",
+    "path": "/entitlements"
+  },
+  {
+    "method": "GET",
+    "path": "/effective-access"
+  },
+  {
+    "method": "HEAD",
+    "path": "/effective-access"
+  },
+  {
+    "method": "GET",
+    "path": "/branches"
+  },
+  {
+    "method": "HEAD",
+    "path": "/branches"
+  },
+  {
+    "method": "POST",
+    "path": "/branches"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:branchId"
+  },
+  {
+    "method": "POST",
+    "path": "/doctors"
+  },
+  {
+    "method": "GET",
+    "path": "/departments"
+  },
+  {
+    "method": "HEAD",
+    "path": "/departments"
+  },
+  {
+    "method": "POST",
+    "path": "/departments"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:departmentId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/:departmentId"
+  },
+  {
+    "method": "GET",
+    "path": "/governance"
+  },
+  {
+    "method": "HEAD",
+    "path": "/governance"
+  },
+  {
+    "method": "PATCH",
+    "path": "/modules"
+  },
+  {
+    "method": "PATCH",
+    "path": "/staff/:userId"
+  },
+  {
+    "method": "POST",
+    "path": "/kill-switch"
+  },
+  {
+    "method": "PATCH",
+    "path": "/quotas"
+  },
+  {
+    "method": "POST",
+    "path": "/master-foundation/configure"
+  },
+  {
+    "method": "POST",
+    "path": "/roles"
+  },
+  {
+    "method": "GET",
+    "path": "/policies"
+  },
+  {
+    "method": "HEAD",
+    "path": "/policies"
+  },
+  {
+    "method": "POST",
+    "path": "/policies"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/partner-classifications"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/partner-classifications"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/company/partner-classifications"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/partner-assignments"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/partner-assignments"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/products"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/products"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/company/products"
+  },
+  {
+    "method": "GET",
+    "path": "/:productId"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:productId"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/plans"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/plans"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/company/plans"
+  },
+  {
+    "method": "GET",
+    "path": "/:planId"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:planId"
+  },
+  {
+    "method": "PUT",
+    "path": "/:planId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/:planId"
+  },
+  {
+    "method": "PATCH",
+    "path": "/status"
+  },
+  {
+    "method": "GET",
+    "path": "/entitlements"
+  },
+  {
+    "method": "HEAD",
+    "path": "/entitlements"
+  },
+  {
+    "method": "POST",
+    "path": "/entitlements"
+  },
+  {
+    "method": "DELETE",
+    "path": "/:featureId"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/platform/projects"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/platform/projects"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/platform/environments"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/platform/environments"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/platform/deployments"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/platform/deployments"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/permission-packs"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/permission-packs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/features"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/features"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/company/features"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/subscriptions"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/subscriptions"
+  },
+  {
+    "method": "GET",
+    "path": "/tenure-options"
+  },
+  {
+    "method": "HEAD",
+    "path": "/tenure-options"
+  },
+  {
+    "method": "POST",
+    "path": "/negotiate-deal"
+  },
+  {
+    "method": "POST",
+    "path": "/reconcile-expiries"
+  },
+  {
+    "method": "GET",
+    "path": "/:id"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:id"
+  },
+  {
+    "method": "POST",
+    "path": "/renew"
+  },
+  {
+    "method": "POST",
+    "path": "/reactivate"
+  },
+  {
+    "method": "POST",
+    "path": "/change-plan"
+  },
+  {
+    "method": "POST",
+    "path": "/cancel"
+  },
+  {
+    "method": "POST",
+    "path": "/suspend"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/support/tickets"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/support/tickets"
+  },
+  {
+    "method": "GET",
+    "path": "/:id"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:id"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/support/health"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/support/health"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/support/partner-health"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/support/partner-health"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/sales/leads"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/sales/leads"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/company/sales/leads"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id/stage"
+  },
+  {
+    "method": "GET",
+    "path": "/:id/check-duplicate"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:id/check-duplicate"
+  },
+  {
+    "method": "POST",
+    "path": "/:id/convert"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/sales/opportunities"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/sales/opportunities"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/security/roles"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/security/roles"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/security/permissions"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/security/permissions"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/security/policies"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/security/policies"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/company/security/authorize"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/licenses"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/licenses"
+  },
+  {
+    "method": "GET",
+    "path": "/:id"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:id"
+  },
+  {
+    "method": "POST",
+    "path": "/verify"
+  },
+  {
+    "method": "POST",
+    "path": "/revoke"
+  },
+  {
+    "method": "POST",
+    "path": "/reactivate"
+  },
+  {
+    "method": "POST",
+    "path": "/renew"
+  },
+  {
+    "method": "PATCH",
+    "path": "/limits"
+  },
+  {
+    "method": "GET",
+    "path": "/export-file"
+  },
+  {
+    "method": "HEAD",
+    "path": "/export-file"
+  },
+  {
+    "method": "POST",
+    "path": "/nodes/bind"
+  },
+  {
+    "method": "POST",
+    "path": "/nodes/unbind"
+  },
+  {
+    "method": "POST",
+    "path": "/nodes/:nodeId/revoke"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/company/license/generate"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/treasury/fx-rates"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/treasury/fx-rates"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/templates"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/templates"
+  },
+  {
+    "method": "GET",
+    "path": "/:templateId"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:templateId"
+  },
+  {
+    "method": "POST",
+    "path": "/versions"
+  },
+  {
+    "method": "POST",
+    "path": "/apply/:partnerId"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/marketing/campaigns"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/marketing/campaigns"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/master-foundation/catalog"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/master-foundation/catalog"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/communication/content"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/communication/content"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/communication/items"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/communication/items"
+  },
+  {
+    "method": "GET",
+    "path": "/:id"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:id"
+  },
+  {
+    "method": "POST",
+    "path": "/transition"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/communication/templates"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/communication/templates"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/company/communication/dispatch"
+  },
+  {
+    "method": "GET",
+    "path": "es"
+  },
+  {
+    "method": "HEAD",
+    "path": "es"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/command-center/overview"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/command-center/overview"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/command-center/partners"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/command-center/partners"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/command-center/licenses"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/command-center/licenses"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/command-center/revenue"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/command-center/revenue"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/command-center/throughput"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/command-center/throughput"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/command-center/security"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/command-center/security"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/command-center/health"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/command-center/health"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/command-center/export"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/command-center/export"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/compliance/frameworks"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/compliance/frameworks"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/compliance/controls"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/compliance/controls"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/capabilities"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/capabilities"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/analytics/reports"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/analytics/reports"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/analytics/saved-reports"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/analytics/saved-reports"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/analytics/insights"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/analytics/insights"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/analytics/usage-metrics"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/analytics/usage-metrics"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/analytics/cross-tenant-aggregates"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/analytics/cross-tenant-aggregates"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/analytics/api-telemetry"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/analytics/api-telemetry"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/ai/models"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/ai/models"
+  },
+  {
+    "method": "GET",
+    "path": "/:id"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:id"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/ai/policies"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/ai/policies"
+  },
+  {
+    "method": "GET",
+    "path": "/:id"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:id"
+  },
+  {
+    "method": "POST",
+    "path": "/transition"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/ai/prompts"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/ai/prompts"
+  },
+  {
+    "method": "POST",
+    "path": "/versions/approve"
+  },
+  {
+    "method": "GET",
+    "path": "/:id"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:id"
+  },
+  {
+    "method": "GET",
+    "path": "/versions"
+  },
+  {
+    "method": "HEAD",
+    "path": "/versions"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/ai/quotas"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/ai/quotas"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/ai/usage-records"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/ai/usage-records"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/ai/audit"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/ai/audit"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/ai/safety-events"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/ai/safety-events"
+  },
+  {
+    "method": "POST",
+    "path": "/acknowledge"
+  },
+  {
+    "method": "POST",
+    "path": "/resolve"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/admin/internal-employees"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/admin/internal-employees"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/company/admin/internal-employees"
+  },
+  {
+    "method": "DELETE",
+    "path": "/:id"
+  },
+  {
+    "method": "PATCH",
+    "path": "/status"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/admin/legal-entities"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/admin/legal-entities"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/company/admin/legal-entities"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/admin/departments"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/admin/departments"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/company/admin/departments"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/admin/designations"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/admin/designations"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/company/admin/designations"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/admin/policies"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/admin/policies"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/admin/compliance-officers"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/admin/compliance-officers"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/admin/board-members"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/admin/board-members"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/admin/governance-events"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/admin/governance-events"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/admin/audit-traces"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/admin/audit-traces"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/approvals"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/approvals"
+  },
+  {
+    "method": "POST",
+    "path": "/submit"
+  },
+  {
+    "method": "POST",
+    "path": "/:id/approve"
+  },
+  {
+    "method": "POST",
+    "path": "/:id/reject"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/company/access/simulate"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/integration/providers"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/integration/providers"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/integration/endpoints"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/integration/endpoints"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/integration/webhooks"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/integration/webhooks"
+  },
+  {
+    "method": "POST",
+    "path": "/dispatch-test"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/infrastructure/clusters"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/infrastructure/clusters"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/infrastructure/databases"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/infrastructure/databases"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/infrastructure/dr"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/infrastructure/dr"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/company/break-glass"
+  },
+  {
+    "method": "POST",
+    "path": "/:id/revoke"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/reliability/metrics"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/reliability/metrics"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/reliability/health"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/reliability/health"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/company/reliability/audit/verify-ledger"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/reliability/dlq"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/reliability/dlq"
+  },
+  {
+    "method": "GET",
+    "path": "/metrics"
+  },
+  {
+    "method": "HEAD",
+    "path": "/metrics"
+  },
+  {
+    "method": "POST",
+    "path": "/:id/replay"
+  },
+  {
+    "method": "POST",
+    "path": "/:id/discard"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/company/reliability/disaster-recovery/backups"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/company/reliability/disaster-recovery/restore-drill"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/company/reliability/disaster-recovery/readiness"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/company/reliability/disaster-recovery/readiness"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/compliance/documents/requirements"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/compliance/documents/requirements"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/compliance/documents/upload"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/compliance/documents/verification-queue"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/compliance/documents/verification-queue"
+  },
+  {
+    "method": "OPTIONS",
+    "path": "*"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/compliance/documents/:id"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/compliance/documents/:id"
+  },
+  {
+    "method": "POST",
+    "path": "/verify"
+  },
+  {
+    "method": "GET",
+    "path": "/download"
+  },
+  {
+    "method": "HEAD",
+    "path": "/download"
+  },
+  {
+    "method": "POST",
+    "path": "/revoke"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/commercial/plans"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/commercial/plans"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/commercial/calculate-order"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/commercial/create-checkout-order"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/commercial/hq/pipeline"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/commercial/hq/pipeline"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/commercial/hq/partner/:id"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/commercial/hq/partner/:id"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/commercial/hq/partner-types"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/commercial/hq/partner-types"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/commercial/hq/partner-types"
+  },
+  {
+    "method": "PUT",
+    "path": "/:id"
+  },
+  {
+    "method": "DELETE",
+    "path": "/:id"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/commercial/hq/plans"
+  },
+  {
+    "method": "PUT",
+    "path": "/:id"
+  },
+  {
+    "method": "DELETE",
+    "path": "/:id"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/commercial/hq/pricing"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/commercial/hq/pricing"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/commercial/hq/pricing"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/commercial/hq/extend-grace"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/commercial/hq/record-offline-payment"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/commercial/hq/overrides"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/commercial/hq/overrides"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/commercial/hq/overrides"
+  },
+  {
+    "method": "DELETE",
+    "path": "/:id"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/commercial/hq/invoices/generate"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/commercial/hq/invoices/:id/payments"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/commercial/hq/dashboard/revenue"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/commercial/hq/dashboard/revenue"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/foundation/overview"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/foundation/overview"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/foundation/partners"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/foundation/partners"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/foundation/partners"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/patients"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/patients"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/patients"
+  },
+  {
+    "method": "GET",
+    "path": "/export"
+  },
+  {
+    "method": "HEAD",
+    "path": "/export"
+  },
+  {
+    "method": "GET",
+    "path": "/:id"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:id"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id"
+  },
+  {
+    "method": "GET",
+    "path": "/history"
+  },
+  {
+    "method": "HEAD",
+    "path": "/history"
+  },
+  {
+    "method": "GET",
+    "path": "/allergies"
+  },
+  {
+    "method": "HEAD",
+    "path": "/allergies"
+  },
+  {
+    "method": "POST",
+    "path": "/allergies"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:allergyId"
+  },
+  {
+    "method": "GET",
+    "path": "/lab-history"
+  },
+  {
+    "method": "HEAD",
+    "path": "/lab-history"
+  },
+  {
+    "method": "GET",
+    "path": "/medication-history"
+  },
+  {
+    "method": "HEAD",
+    "path": "/medication-history"
+  },
+  {
+    "method": "GET",
+    "path": "/mrd-history"
+  },
+  {
+    "method": "HEAD",
+    "path": "/mrd-history"
+  },
+  {
+    "method": "GET",
+    "path": "/inpatient-history"
+  },
+  {
+    "method": "HEAD",
+    "path": "/inpatient-history"
+  },
+  {
+    "method": "GET",
+    "path": "/emergency-history"
+  },
+  {
+    "method": "HEAD",
+    "path": "/emergency-history"
+  },
+  {
+    "method": "GET",
+    "path": "/surgical-history"
+  },
+  {
+    "method": "HEAD",
+    "path": "/surgical-history"
+  },
+  {
+    "method": "GET",
+    "path": "/transfusion-history"
+  },
+  {
+    "method": "HEAD",
+    "path": "/transfusion-history"
+  },
+  {
+    "method": "GET",
+    "path": "/billing-history"
+  },
+  {
+    "method": "HEAD",
+    "path": "/billing-history"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/patient-360/patients"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/patient-360/patients"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/patient-360/patients"
+  },
+  {
+    "method": "GET",
+    "path": "/:patientId"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:patientId"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:patientId"
+  },
+  {
+    "method": "PUT",
+    "path": "/:patientId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/:patientId"
+  },
+  {
+    "method": "PATCH",
+    "path": "/status"
+  },
+  {
+    "method": "POST",
+    "path": "/merge"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/patient-360/appointments"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/patient-360/encounters/check-in"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/partner/patient-360/encounters/:encounterId/status"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/patient-360/encounters/:encounterId/exit"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/patient-360/tokens"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:tokenId/status"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/patient-360/transactions"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/patient-360/queue"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/patient-360/queue"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/patient-360/consultations"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/patient-360/orders"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/patient-360/results"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/patient-360/documents"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:documentId/rename"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/patient-360/:patientId"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/patient-360/:patientId"
+  },
+  {
+    "method": "GET",
+    "path": "/timeline"
+  },
+  {
+    "method": "HEAD",
+    "path": "/timeline"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/prescriptions"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/procurement/overview"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/procurement/overview"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/procurement/analytics"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/procurement/analytics"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/procurement/audit-traces"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/procurement/audit-traces"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/procurement/vendors"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/procurement/vendors"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/procurement/vendors"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/procurement/items"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/procurement/items"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/procurement/items"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/procurement/inspections"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/procurement/inspections"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/procurement/inspections"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/procurement/invoices"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/procurement/invoices"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/procurement/invoices"
+  },
+  {
+    "method": "POST",
+    "path": "/match"
+  },
+  {
+    "method": "GET",
+    "path": "es"
+  },
+  {
+    "method": "HEAD",
+    "path": "es"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/procurement/requisitions"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/procurement/requisitions"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/procurement/requisitions"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id/approve"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/procurement/returns"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/procurement/returns"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/procurement/returns"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/procurement/purchase-orders"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/procurement/purchase-orders"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/procurement/purchase-orders"
+  },
+  {
+    "method": "POST",
+    "path": "/emergency"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id/approve"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/procurement/goods-receipts"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/procurement/goods-receipts"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/procurement/goods-receipts"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/profile"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/profile"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/partner/profile"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/partner/profile"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/pharmacy/overview"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/pharmacy/overview"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/pharmacy/medications"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/pharmacy/medications"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/pharmacy/medications"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/pharmacy/prescriptions"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/pharmacy/prescriptions"
+  },
+  {
+    "method": "GET",
+    "path": "/:id"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:id"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/pharmacy/batches"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/pharmacy/batches"
+  },
+  {
+    "method": "POST",
+    "path": "/receive-stock"
+  },
+  {
+    "method": "POST",
+    "path": "/:id/block"
+  },
+  {
+    "method": "POST",
+    "path": "/:id/unblock"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/pharmacy/inventory"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/pharmacy/inventory"
+  },
+  {
+    "method": "GET",
+    "path": "-snapshot"
+  },
+  {
+    "method": "HEAD",
+    "path": "-snapshot"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/pharmacy/invoices/ingest-wholesale"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/pharmacy/invoices/generate-dynamic-sample"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/pharmacy/invoices/sample-marg-erp"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/pharmacy/invoices/sample-marg-erp"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/pharmacy/dispense"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/pharmacy/dev/seed-mock-stock"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/partner/pharmacy/dev/cleanup-mock-stock"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/pharmacy/stock-movements"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/pharmacy/stock-movements"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/pharmacy/sync-offline-invoices"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/pharmacy/wholesale/b2b-dispatch"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/pharmacy/wholesale/customers"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/pharmacy/wholesale/customers"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/pharmacy/wholesale/customers"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/pharmacy/wholesale/orders"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/pharmacy/wholesale/orders"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/pharmacy/wholesale/orders"
+  },
+  {
+    "method": "GET",
+    "path": "/:id"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:id"
+  },
+  {
+    "method": "POST",
+    "path": "/allocate"
+  },
+  {
+    "method": "POST",
+    "path": "/dispatch"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/pharmacy/returns"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/pharmacy/returns"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/pharmacy/returns"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/pharmacy/recalls"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/pharmacy/adjustments"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/pharmacy/adjustments"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/pharmacy/adjustments"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/clinical/patients"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/clinical/patients"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/clinical/patients"
+  },
+  {
+    "method": "GET",
+    "path": "/export"
+  },
+  {
+    "method": "HEAD",
+    "path": "/export"
+  },
+  {
+    "method": "GET",
+    "path": "/:id|:patientMrn"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:id|:patientMrn"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id|:patientMrn"
+  },
+  {
+    "method": "GET",
+    "path": "/history"
+  },
+  {
+    "method": "HEAD",
+    "path": "/history"
+  },
+  {
+    "method": "GET",
+    "path": "/alerts"
+  },
+  {
+    "method": "HEAD",
+    "path": "/alerts"
+  },
+  {
+    "method": "GET",
+    "path": "/allergies"
+  },
+  {
+    "method": "HEAD",
+    "path": "/allergies"
+  },
+  {
+    "method": "POST",
+    "path": "/allergies"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:allergyId"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/clinical/prescriptions"
+  },
+  {
+    "method": "GET",
+    "path": "/:id/pdf"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:id/pdf"
+  },
+  {
+    "method": "POST",
+    "path": "/:id/finalize"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/clinical/encounters"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/clinical/encounters"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/clinical/encounters"
+  },
+  {
+    "method": "POST",
+    "path": "/check-in"
+  },
+  {
+    "method": "GET",
+    "path": "/:id"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:id"
+  },
+  {
+    "method": "PATCH",
+    "path": "/status"
+  },
+  {
+    "method": "PATCH",
+    "path": "/call"
+  },
+  {
+    "method": "POST",
+    "path": "/checkout"
+  },
+  {
+    "method": "POST",
+    "path": "/orders"
+  },
+  {
+    "method": "POST",
+    "path": "/vitals"
+  },
+  {
+    "method": "GET",
+    "path": "/vitals"
+  },
+  {
+    "method": "HEAD",
+    "path": "/vitals"
+  },
+  {
+    "method": "POST",
+    "path": "/payments"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/clinical/exit-hub/patients"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/clinical/exit-hub/patients"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/clinical/queues"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/clinical/queues"
+  },
+  {
+    "method": "POST",
+    "path": "/tokens"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id/call"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id/complete"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id/start"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/clinical/queue-tokens"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/clinical/icd10"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/clinical/icd10"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/clinical/invoices/:id"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/clinical/invoices/:id"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/clinical/medications/generic-alternatives"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/clinical/medications/generic-alternatives"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/clinical/consultations"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/clinical/consultations"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/clinical/consultations"
+  },
+  {
+    "method": "GET",
+    "path": "/overview"
+  },
+  {
+    "method": "HEAD",
+    "path": "/overview"
+  },
+  {
+    "method": "GET",
+    "path": "/encounter/:encounterId"
+  },
+  {
+    "method": "HEAD",
+    "path": "/encounter/:encounterId"
+  },
+  {
+    "method": "GET",
+    "path": "/:id"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:id"
+  },
+  {
+    "method": "PATCH",
+    "path": "/finalize"
+  },
+  {
+    "method": "POST",
+    "path": "/complete"
+  },
+  {
+    "method": "POST",
+    "path": "/retry-orders"
+  },
+  {
+    "method": "GET",
+    "path": "/pdf"
+  },
+  {
+    "method": "HEAD",
+    "path": "/pdf"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/clinical/appointments"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/clinical/appointments"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/clinical/appointments"
+  },
+  {
+    "method": "GET",
+    "path": "/:id"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:id"
+  },
+  {
+    "method": "PUT",
+    "path": "/reschedule"
+  },
+  {
+    "method": "PUT",
+    "path": "/cancel"
+  },
+  {
+    "method": "POST",
+    "path": "/check-in"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/clinical/alerts"
+  },
+  {
+    "method": "PUT",
+    "path": "/:id/acknowledge"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/clinical/referrals"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/clinical/referrals"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/clinical/referrals"
+  },
+  {
+    "method": "PUT",
+    "path": "/:id/status"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/clinical/follow-ups"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/clinical/follow-ups"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/clinical/follow-ups"
+  },
+  {
+    "method": "POST",
+    "path": "/:id/convert-to-appointment"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/clinical/doctor-workspace"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/clinical/doctor-workspace"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/clinical/history/:entityType/:entityId"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/clinical/history/:entityType/:entityId"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/consultations"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/consultations"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/consultations"
+  },
+  {
+    "method": "GET",
+    "path": "/overview"
+  },
+  {
+    "method": "HEAD",
+    "path": "/overview"
+  },
+  {
+    "method": "GET",
+    "path": "/encounter/:encounterId"
+  },
+  {
+    "method": "HEAD",
+    "path": "/encounter/:encounterId"
+  },
+  {
+    "method": "GET",
+    "path": "/:id"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:id"
+  },
+  {
+    "method": "PATCH",
+    "path": "/finalize"
+  },
+  {
+    "method": "POST",
+    "path": "/complete"
+  },
+  {
+    "method": "POST",
+    "path": "/retry-orders"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/configuration"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/configuration"
+  },
+  {
+    "method": "POST",
+    "path": "/initialize"
+  },
+  {
+    "method": "GET",
+    "path": "/validation"
+  },
+  {
+    "method": "HEAD",
+    "path": "/validation"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/command-center/overview"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/command-center/overview"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/command-center/opd"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/command-center/opd"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/command-center/patients"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/command-center/patients"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/command-center/pharmacy"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/command-center/pharmacy"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/command-center/pending-queue"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/command-center/pending-queue"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/command-center/ipd"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/command-center/ipd"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/command-center/inventory"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/command-center/inventory"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/command-center/lab"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/command-center/lab"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/command-center/license"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/command-center/license"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/command-center/radiology"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/command-center/radiology"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/command-center/revenue"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/command-center/revenue"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/command-center/slas"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/command-center/slas"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/command-center/staff-workload"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/command-center/staff-workload"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/command-center/wholesale"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/command-center/wholesale"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/command-center/ai-telemetry"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/command-center/ai-telemetry"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/command-center/export"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/command-center/export"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/encounters"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/encounters"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/encounters"
+  },
+  {
+    "method": "GET",
+    "path": "/:id"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:id"
+  },
+  {
+    "method": "PATCH",
+    "path": "/status"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/emergency/queue"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/emergency/queue"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/emergency/registrations"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/emergency/encounters/:id/triage"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/emergency/encounters/:id/treatments"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/emergency/encounters/:id/disposition"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/ewan/context"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/ewan/context"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/ewan/customer-success"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/ewan/customer-success"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/ewan/ask"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/ewan/renewal/initiate-order"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/ewan/renewal/verify-payment"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/executive-mis/dashboard"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/executive-mis/dashboard"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/executive-mis/doctors/payouts"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/executive-mis/doctors/payouts"
+  },
+  {
+    "method": "POST",
+    "path": "/:doctorId/approve"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/executive-mis/billing/department-wise"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/executive-mis/billing/department-wise"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/executive-mis/billing/unbilled-encounters"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/executive-mis/billing/unbilled-encounters"
+  },
+  {
+    "method": "POST",
+    "path": "/:encounterId/resolve"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/executive-mis/insurance/claim-aging"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/executive-mis/insurance/claim-aging"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/executive-mis/inventory/shrinkage"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/executive-mis/inventory/shrinkage"
+  },
+  {
+    "method": "POST",
+    "path": "-audit"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/executive-mis/command/snapshot"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/executive-mis/command/snapshot"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/executive-mis/command/surge"
+  },
+  {
+    "method": "POST",
+    "path": "/resolve"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/executive-mis/command/bed-forecasts"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/executive-mis/command/bed-forecasts"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/executive-mis/command/bed-override"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/executive-mis/command/ed-nedocs"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/executive-mis/command/ed-nedocs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/executive-mis/command/ot-efficiencies"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/executive-mis/command/ot-efficiencies"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/executive-mis/command/patient-acuity"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/executive-mis/command/patient-acuity"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/executive-mis/command/rcm-risks"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/executive-mis/command/rcm-risks"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/executive-mis/command/consumables"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/executive-mis/command/consumables"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/executive-mis/command/what-if"
+  },
+  {
+    "method": "GET",
+    "path": "/history"
+  },
+  {
+    "method": "HEAD",
+    "path": "/history"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/executive-mis/audit-traces"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/executive-mis/audit-traces"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/lab/orders"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/lab/orders"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/lab/orders"
+  },
+  {
+    "method": "GET",
+    "path": "/:id"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:id"
+  },
+  {
+    "method": "POST",
+    "path": "/collect-sample"
+  },
+  {
+    "method": "POST",
+    "path": "/cancel"
+  },
+  {
+    "method": "POST",
+    "path": "/accession"
+  },
+  {
+    "method": "POST",
+    "path": "/process"
+  },
+  {
+    "method": "POST",
+    "path": "/pathologist-validate"
+  },
+  {
+    "method": "POST",
+    "path": "/panic-intimation"
+  },
+  {
+    "method": "GET",
+    "path": "/pdf"
+  },
+  {
+    "method": "HEAD",
+    "path": "/pdf"
+  },
+  {
+    "method": "POST",
+    "path": "/reject"
+  },
+  {
+    "method": "POST",
+    "path": "/recollect"
+  },
+  {
+    "method": "POST",
+    "path": "/results"
+  },
+  {
+    "method": "PATCH",
+    "path": "/results"
+  },
+  {
+    "method": "PATCH",
+    "path": "/verify"
+  },
+  {
+    "method": "GET",
+    "path": "/report"
+  },
+  {
+    "method": "HEAD",
+    "path": "/report"
+  },
+  {
+    "method": "PATCH",
+    "path": "/review"
+  },
+  {
+    "method": "PATCH",
+    "path": "/verify"
+  },
+  {
+    "method": "POST",
+    "path": "/technical-validate"
+  },
+  {
+    "method": "POST",
+    "path": "/deliver"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/lab/barcodes/:barcode"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/lab/barcodes/:barcode"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/lab/catalog"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/lab/catalog"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/lab/catalog"
+  },
+  {
+    "method": "PUT",
+    "path": "/:id"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/lab/panels"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/lab/panels"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/lab/panels"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/lab/qc/evaluate"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/lab/verify-report/:token"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/lab/verify-report/:token"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/locations"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/locations"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/locations"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/inpatient/wards"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/inpatient/wards"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/inpatient/wards"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/inpatient/beds"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/inpatient/beds"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/inpatient/beds"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/inpatient/admission-requests"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/inpatient/admission-requests"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/inpatient/admission-requests"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/inpatient/admissions"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/inpatient/admissions"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/inpatient/admissions"
+  },
+  {
+    "method": "POST",
+    "path": "/:id/discharge"
+  },
+  {
+    "method": "GET",
+    "path": "-summary"
+  },
+  {
+    "method": "HEAD",
+    "path": "-summary"
+  },
+  {
+    "method": "GET",
+    "path": "/:id/billing-summary"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:id/billing-summary"
+  },
+  {
+    "method": "POST",
+    "path": "/:id/generate-bill"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/inpatient/transfers"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/inpatient/nursing-notes"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/inpatient/nursing-notes"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/inpatient/nursing-notes"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/inpatient/rounds"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/inpatient/rounds"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/inpatient/rounds"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/inpatient/vitals"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/inpatient/vitals"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/inpatient/vitals"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/ot/rooms"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/ot/rooms"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/ot/rooms"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/ot/schedules"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/ot/schedules"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/ot/schedules"
+  },
+  {
+    "method": "POST",
+    "path": "/:id/pac"
+  },
+  {
+    "method": "POST",
+    "path": "u"
+  },
+  {
+    "method": "POST",
+    "path": "/:id/operative-notes"
+  },
+  {
+    "method": "POST",
+    "path": "/:id/transfer-postop"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/blood-bank/inventory"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/blood-bank/inventory"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/blood-bank/issue"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/blood-bank/donors"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/blood-bank/donations"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/blood-bank/components/separate"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/blood-bank/crossmatch"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/blood-bank/tests"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/blood-bank/transfusions"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/blood-bank/requests"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/billing/invoices"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/billing/invoices"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/billing/invoices"
+  },
+  {
+    "method": "GET",
+    "path": "/:id"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:id"
+  },
+  {
+    "method": "POST",
+    "path": "/pre-auth"
+  },
+  {
+    "method": "POST",
+    "path": "/payments"
+  },
+  {
+    "method": "POST",
+    "path": "/void"
+  },
+  {
+    "method": "POST",
+    "path": "/cancel"
+  },
+  {
+    "method": "POST",
+    "path": "/discounts"
+  },
+  {
+    "method": "POST",
+    "path": "/refund"
+  },
+  {
+    "method": "POST",
+    "path": "s"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/billing/unbilled-charges"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/billing/unbilled-charges"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/billing/dashboard/overview"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/billing/dashboard/overview"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/billing/tax-rates"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/billing/tax-rates"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/billing/tax-rates"
+  },
+  {
+    "method": "POST",
+    "path": "/calculate"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/billing/packages"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/billing/packages"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/billing/packages"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/billing/patient-packages/purchase"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/billing/patient-packages/consume"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/billing/patients/:patientId/packages"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/billing/patients/:patientId/packages"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/billing/payables"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/billing/payables"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/billing/payables"
+  },
+  {
+    "method": "GET",
+    "path": "/summary"
+  },
+  {
+    "method": "HEAD",
+    "path": "/summary"
+  },
+  {
+    "method": "GET",
+    "path": "/:id"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:id"
+  },
+  {
+    "method": "POST",
+    "path": "/payments"
+  },
+  {
+    "method": "POST",
+    "path": "/approve"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/billing/credit-accounts"
+  },
+  {
+    "method": "GET",
+    "path": "/:patientId"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:patientId"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/billing/receivables/ageing"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/billing/receivables/ageing"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/billing/reconciliations"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/billing/reconciliations"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/billing/reconciliations"
+  },
+  {
+    "method": "GET",
+    "path": "/:id"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:id"
+  },
+  {
+    "method": "POST",
+    "path": "/resolve"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/billing/shifts"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/billing/shifts"
+  },
+  {
+    "method": "POST",
+    "path": "/open"
+  },
+  {
+    "method": "GET",
+    "path": "/current"
+  },
+  {
+    "method": "HEAD",
+    "path": "/current"
+  },
+  {
+    "method": "POST",
+    "path": "/:id/close"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/billing/eod-closings"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/billing/eod-closings"
+  },
+  {
+    "method": "POST",
+    "path": "/close"
+  },
+  {
+    "method": "GET",
+    "path": "/:id"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:id"
+  },
+  {
+    "method": "POST",
+    "path": "/reopen"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/billing/webhooks/razorpay"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/billing/webhooks/payu"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/biomedical/overview"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/biomedical/overview"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/biomedical/analytics/downtime"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/biomedical/analytics/downtime"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/biomedical/assets"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/biomedical/assets"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/biomedical/assets"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/biomedical/audit-traces"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/biomedical/audit-traces"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/biomedical/work-orders"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/biomedical/work-orders"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/biomedical/work-orders"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id/assign"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id/complete"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id/verify"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/biomedical/ppm-schedules"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/biomedical/ppm-schedules"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/biomedical/ppm-schedules"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id/complete"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/biomedical/calibrations"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/biomedical/calibrations"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/biomedical/calibrations"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/biomedical/condemnations"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/biomedical/condemnations"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/biomedical/condemnations"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id/approve"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/biomedical/safety-tests"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/biomedical/safety-tests"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/biomedical/safety-tests"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/biomedical/spare-parts"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/biomedical/spare-parts"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/biomedical/spare-parts"
+  },
+  {
+    "method": "POST",
+    "path": "/consume"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/break-glass"
+  },
+  {
+    "method": "POST",
+    "path": "/:id/revoke"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/business-history/:entityType/:entityId"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/business-history/:entityType/:entityId"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/mrd/icd10/search"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/mrd/icd10/search"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/mrd/records"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/mrd/records"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/mrd/records"
+  },
+  {
+    "method": "POST",
+    "path": "/:id/diagnoses"
+  },
+  {
+    "method": "POST",
+    "path": "/:id/reviews"
+  },
+  {
+    "method": "POST",
+    "path": "/:id/finalize"
+  },
+  {
+    "method": "POST",
+    "path": "/:id/amend"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/master-foundation/effective-context"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/master-foundation/effective-context"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/approvals"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/approvals"
+  },
+  {
+    "method": "POST",
+    "path": "/submit"
+  },
+  {
+    "method": "POST",
+    "path": "/:id/approve"
+  },
+  {
+    "method": "POST",
+    "path": "/:id/reject"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/analytics/overview"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/analytics/overview"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/analytics/opd"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/analytics/opd"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/analytics/patients"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/analytics/patients"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/analytics/pharmacy"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/analytics/pharmacy"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/analytics/pending-queue"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/analytics/pending-queue"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/analytics/ipd"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/analytics/ipd"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/analytics/inventory"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/analytics/inventory"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/analytics/lab"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/analytics/lab"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/analytics/license"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/analytics/license"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/analytics/radiology"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/analytics/radiology"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/analytics/revenue"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/analytics/revenue"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/analytics/slas"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/analytics/slas"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/analytics/staff-workload"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/analytics/staff-workload"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/analytics/wholesale"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/analytics/wholesale"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/analytics/ai-telemetry"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/analytics/ai-telemetry"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/analytics/export"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/analytics/export"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/ai/gateway/execute"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/ai/gateway/history"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/ai/gateway/history"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/ai/trainer/guidance"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/ai/trainer/workflows"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/ai/trainer/workflows"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/ai/tools"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/ai/tools"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/ai/operations/summary"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/ai/operations/summary"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/ai/operations/query"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/ai/anomalies"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/ai/anomalies"
+  },
+  {
+    "method": "POST",
+    "path": "/detect"
+  },
+  {
+    "method": "POST",
+    "path": "/lab-delta-check"
+  },
+  {
+    "method": "POST",
+    "path": "/pharmacy-leakage"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id/review"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/ai/forecasts"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/ai/forecasts"
+  },
+  {
+    "method": "POST",
+    "path": "/generate"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/ai/budget/status"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/ai/budget/status"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/ai/incidents"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/ai/incidents"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/ai/incidents"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id/rca"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id/capa"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id/close"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/ai/role-context"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/ai/role-context"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/ai/capabilities"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/ai/capabilities"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/ai/chat/conversations"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/ai/chat/conversations"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/ai/chat/conversations"
+  },
+  {
+    "method": "GET",
+    "path": "/:conversationId"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:conversationId"
+  },
+  {
+    "method": "POST",
+    "path": "/messages"
+  },
+  {
+    "method": "POST",
+    "path": "/archive"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/ai/execute"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/ai/usage"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/ai/usage"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/ai/voice/transcribe"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/ai/voice/interact"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/ai/voice/synthesize"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/ai/voice/extract-soap"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/ai-copilot/overview"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/ai-copilot/overview"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/ai-copilot/ambient-scribe/soap"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/ai-copilot/ambient-scribe/soap"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/ai-copilot/ambient-scribe/soap"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id/approve"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/ai-copilot/ambient/transcripts"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/ai-copilot/ambient/transcripts"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/ai-copilot/audit-traces"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/ai-copilot/audit-traces"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/ai-copilot/audit/traces"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/ai-copilot/audit/traces"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/ai-copilot/sepsis/evaluate"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/ai-copilot/sepsis/alerts"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/ai-copilot/sepsis/alerts"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id/acknowledge"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/ai-copilot/ddi"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/ai-copilot/ddi"
+  },
+  {
+    "method": "POST",
+    "path": "/evaluate"
+  },
+  {
+    "method": "POST",
+    "path": "/override"
+  },
+  {
+    "method": "GET",
+    "path": "/assessments"
+  },
+  {
+    "method": "HEAD",
+    "path": "/assessments"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/ai-copilot/panic-values"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/ai-copilot/panic-values"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/ai-copilot/panic-values"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id/acknowledge"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/ai-copilot/panic/alerts"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/ai-copilot/panic/alerts"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/ai-copilot/renal/adjustments"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/ai-copilot/renal/adjustments"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/abdm/overview"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/abdm/overview"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/abdm/m1/generate-aadhaar-otp"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/abdm/m1/generate-mobile-otp"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/abdm/m1/verify-aadhaar-otp"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/abdm/m1/verify-mobile-otp"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/abdm/m1/verify-demographics"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/abdm/m1/search-by-health-id"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/abdm/m1/abha-accounts"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/abdm/m1/abha-accounts"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/abdm/m2/care-contexts"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/abdm/m2/care-contexts"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/abdm/m2/care-contexts"
+  },
+  {
+    "method": "POST",
+    "path": "/discover"
+  },
+  {
+    "method": "POST",
+    "path": "/link/init"
+  },
+  {
+    "method": "POST",
+    "path": "/link/confirm"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/abdm/m2/scan-and-share"
+  },
+  {
+    "method": "GET",
+    "path": "/tokens"
+  },
+  {
+    "method": "HEAD",
+    "path": "/tokens"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/abdm/m3/consent-requests"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/abdm/m3/consent-requests"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/abdm/m3/consent-requests"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/abdm/m3/consents/revoke"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/abdm/m3/fhir-bundles"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/abdm/m3/fhir-bundles"
+  },
+  {
+    "method": "POST",
+    "path": "/generate"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/abdm/m3/health-information/request"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/abdm/m3/health-information/encrypt-payload"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/abdm/m3/health-information/decrypt-payload"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/abdm/audit-traces"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/abdm/audit-traces"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/account/plan-and-features"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/account/plan-and-features"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/account/profile"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/account/profile"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/partner/account/profile"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/partner/account/profile"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/account/renewal-status"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/account/renewal-status"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/account/renewal/initiate-order"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/account/renewal/verify-payment"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/reliability/audit/verify"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/reliability/audit/verifications"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/reliability/audit/verifications"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/reliability/audit/export"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/reliability/audit/export"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/reliability/lineage/:entityType/:entityId"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/reliability/lineage/:entityType/:entityId"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/reliability/reconciliation/run"
+  },
+  {
+    "method": "GET",
+    "path": "s"
+  },
+  {
+    "method": "HEAD",
+    "path": "s"
+  },
+  {
+    "method": "GET",
+    "path": "/:id/discrepancies"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:id/discrepancies"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/reliability/reconciliation/discrepancies/:id/resolve"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/reliability/idempotency/stats"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/reliability/idempotency/stats"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/reliability/idempotency/keys/:key"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/reliability/idempotency/keys/:key"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/partner/reliability/idempotency/keys/:key"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/reliability/incidents"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/reliability/incidents"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/reliability/incidents"
+  },
+  {
+    "method": "POST",
+    "path": "/capa/:id/verify"
+  },
+  {
+    "method": "GET",
+    "path": "/:id"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:id"
+  },
+  {
+    "method": "POST",
+    "path": "/rca"
+  },
+  {
+    "method": "POST",
+    "path": "/capa"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/reliability/sagas"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/reliability/sagas"
+  },
+  {
+    "method": "GET",
+    "path": "/:id"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:id"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/reliability/devices"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/reliability/devices"
+  },
+  {
+    "method": "POST",
+    "path": "/enroll"
+  },
+  {
+    "method": "POST",
+    "path": "/heartbeat"
+  },
+  {
+    "method": "POST",
+    "path": "/:id/revoke"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/reliability/offline-sync/batch"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/reliability/offline-sync/conflicts"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/reliability/offline-sync/conflicts"
+  },
+  {
+    "method": "POST",
+    "path": "/:id/resolve"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/radiology/overview"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/radiology/overview"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/radiology/orders"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/radiology/orders"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/radiology/orders"
+  },
+  {
+    "method": "GET",
+    "path": "/:id"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:id"
+  },
+  {
+    "method": "PATCH",
+    "path": "/status"
+  },
+  {
+    "method": "POST",
+    "path": "/bill"
+  },
+  {
+    "method": "GET",
+    "path": "/invoice"
+  },
+  {
+    "method": "HEAD",
+    "path": "/invoice"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/radiology/analytics"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/radiology/analytics"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/radiology/appointments"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/radiology/appointments"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/radiology/appointments"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id/reschedule"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id/cancel"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/radiology/audit-traces"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/radiology/audit-traces"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/radiology/department"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/radiology/department"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/radiology/department"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/radiology/modalities"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/radiology/modalities"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/radiology/modalities"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/radiology/procedures"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/radiology/procedures"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/radiology/procedures"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/radiology/preparation-records"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/radiology/preparation-records"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/radiology/preparation-records"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/radiology/studies"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/radiology/studies"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/radiology/studies"
+  },
+  {
+    "method": "GET",
+    "path": "/:id|:studyId"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:id|:studyId"
+  },
+  {
+    "method": "GET",
+    "path": "/series"
+  },
+  {
+    "method": "HEAD",
+    "path": "/series"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/radiology/series"
+  },
+  {
+    "method": "GET",
+    "path": "/:seriesId/instances"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:seriesId/instances"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/radiology/instances"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/radiology/reports"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/radiology/reports"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/radiology/reports"
+  },
+  {
+    "method": "GET",
+    "path": "/:id"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:id"
+  },
+  {
+    "method": "POST",
+    "path": "/amend"
+  },
+  {
+    "method": "GET",
+    "path": "ments"
+  },
+  {
+    "method": "HEAD",
+    "path": "ments"
+  },
+  {
+    "method": "POST",
+    "path": "/finalize"
+  },
+  {
+    "method": "POST",
+    "path": "/review"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/radiology/critical-findings"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/radiology/critical-findings"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/radiology/critical-findings"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id/acknowledge"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/radiology/quality-events"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/radiology/quality-events"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/radiology/quality-events"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/roles/assign"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/roster/schedules"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/roster/schedules"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/roster/schedules"
+  },
+  {
+    "method": "PUT",
+    "path": "/:id"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/roster/slots"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/roster/slots"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id/block"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id/unblock"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/roster/leaves"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/roster/leaves"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/roster/leaves"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id/approve"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/roster/fees"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/roster/fees"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/roster/fees"
+  },
+  {
+    "method": "PUT",
+    "path": "/:id"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/dietary/overview"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/dietary/overview"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/dietary/orders"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/dietary/orders"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/dietary/orders"
+  },
+  {
+    "method": "GET",
+    "path": "/:id"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:id"
+  },
+  {
+    "method": "PATCH",
+    "path": "/approve"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/dietary/analytics"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/dietary/analytics"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/dietary/assessments"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/dietary/assessments"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/dietary/assessments"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id/finalize"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/dietary/kitchens"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/dietary/kitchens"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/dietary/kitchens"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/dietary/diet-types"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/dietary/diet-types"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/dietary/diet-types"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/dietary/dispatches"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id/deliver"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id/refuse"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/dietary/production-plans"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id/release"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/dietary/procurement-references"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/dietary/quality-checks"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/dietary/tray-assemblies"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/dietary/billing-references"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/departments"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/departments"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/departments"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/quality/overview"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/quality/overview"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/quality/standards"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/quality/standards"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/quality/swabs"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/quality/swabs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/quality/swabs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/quality/incidents"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/quality/incidents"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/quality/incidents"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id/triage"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id/close"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/quality/isolations"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/quality/isolations"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/quality/isolations"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id/discharge"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/quality/rcas"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/quality/rcas"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/quality/rcas"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/quality/capas"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/quality/capas"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/quality/capas"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id/verify"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/quality/hai"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/quality/hai"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/quality/hai"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/quality/hand-hygiene"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/quality/hand-hygiene"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/quality/hand-hygiene"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/quality/needle-stick"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/quality/needle-stick"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/quality/needle-stick"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/quality/bmw"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/quality/bmw"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/quality/bmw"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/quality/audit-traces"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/quality/audit-traces"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/quality-infection/incidents"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/quality-infection/incidents"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/quality-infection/incidents"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/supply-chain/metrics"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/supply-chain/metrics"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/supply-chain/warehouses"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/supply-chain/warehouses"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/supply-chain/warehouses"
+  },
+  {
+    "method": "GET",
+    "path": "/:id|:warehouseId"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:id|:warehouseId"
+  },
+  {
+    "method": "GET",
+    "path": "/locations"
+  },
+  {
+    "method": "HEAD",
+    "path": "/locations"
+  },
+  {
+    "method": "POST",
+    "path": "/locations"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/supply-chain/vendors"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/supply-chain/vendors"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/supply-chain/vendors"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/supply-chain/items"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/supply-chain/items"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/supply-chain/items"
+  },
+  {
+    "method": "GET",
+    "path": "/:id"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:id"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/supply-chain/inventory"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/supply-chain/inventory"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/supply-chain/requisitions"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/supply-chain/requisitions"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/supply-chain/requisitions"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id/approve"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/supply-chain/recalls"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/supply-chain/recalls"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/supply-chain/recalls"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/supply-chain/reorder-alerts"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/supply-chain/reorder-alerts"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/supply-chain/purchase-orders"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/supply-chain/purchase-orders"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/supply-chain/purchase-orders"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id/approve"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/supply-chain/goods-receipts"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/supply-chain/goods-receipts"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/supply-chain/goods-receipts"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/supply-chain/batches"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/supply-chain/batches"
+  },
+  {
+    "method": "GET",
+    "path": "/fefo"
+  },
+  {
+    "method": "HEAD",
+    "path": "/fefo"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/supply-chain/stock-ledger"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/supply-chain/stock-ledger"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/supply-chain/stock-counts"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/supply-chain/stock-counts"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/supply-chain/stock-counts"
+  },
+  {
+    "method": "POST",
+    "path": "/:id/record"
+  },
+  {
+    "method": "POST",
+    "path": "/:id/reconcile"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/supply-chain/consumptions"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/supply-chain/consumptions"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/supply-chain/consumptions"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/supply-chain/transfers"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/supply-chain/transfers"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/supply-chain/transfers"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id/approve"
+  },
+  {
+    "method": "POST",
+    "path": "/:id/dispatch"
+  },
+  {
+    "method": "POST",
+    "path": "/:id/receive"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/supply-chain/expiry-dashboard"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/supply-chain/expiry-dashboard"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/staff"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/staff"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/staff"
+  },
+  {
+    "method": "GET",
+    "path": "/overview"
+  },
+  {
+    "method": "HEAD",
+    "path": "/overview"
+  },
+  {
+    "method": "GET",
+    "path": "/departments"
+  },
+  {
+    "method": "HEAD",
+    "path": "/departments"
+  },
+  {
+    "method": "POST",
+    "path": "/departments"
+  },
+  {
+    "method": "PUT",
+    "path": "/:id"
+  },
+  {
+    "method": "GET",
+    "path": "/members"
+  },
+  {
+    "method": "HEAD",
+    "path": "/members"
+  },
+  {
+    "method": "POST",
+    "path": "/members"
+  },
+  {
+    "method": "GET",
+    "path": "/:id"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:id"
+  },
+  {
+    "method": "PUT",
+    "path": "/:id"
+  },
+  {
+    "method": "PATCH",
+    "path": "/status"
+  },
+  {
+    "method": "GET",
+    "path": "/roles"
+  },
+  {
+    "method": "HEAD",
+    "path": "/roles"
+  },
+  {
+    "method": "POST",
+    "path": "/assign"
+  },
+  {
+    "method": "GET",
+    "path": "/credentials"
+  },
+  {
+    "method": "HEAD",
+    "path": "/credentials"
+  },
+  {
+    "method": "POST",
+    "path": "/credentials"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id/verify"
+  },
+  {
+    "method": "GET",
+    "path": "/transfers"
+  },
+  {
+    "method": "HEAD",
+    "path": "/transfers"
+  },
+  {
+    "method": "POST",
+    "path": "/transfers"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id"
+  },
+  {
+    "method": "GET",
+    "path": "-templates"
+  },
+  {
+    "method": "HEAD",
+    "path": "-templates"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/services"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/services"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/services"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:id"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/security/identity"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/security/identity"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/security/permissions/registry"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/security/permissions/registry"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/security/roles"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:roleCode"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/security/authorize"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/security/audit-events"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/security/audit-events"
+  },
+  {
+    "method": "PUT",
+    "path": "/:eventId"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:eventId"
+  },
+  {
+    "method": "DELETE",
+    "path": "/:eventId"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/security/access-diagnostics"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/security/break-glass"
+  },
+  {
+    "method": "POST",
+    "path": "/:id/expire"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/security/maker-checker/submit"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/security/maker-checker/:requestId/decide"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/partner/security/staff/:staffId/runtime-state"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/security/scope/register-patient"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/security/scope/register-encounter"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/hardware/overview"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/hardware/overview"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/hardware/devices"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/hardware/devices"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/hardware/devices"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/hardware/scans"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/hardware/scans"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/hardware/scans"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/hardware/rfid-reads"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/hardware/rfid-reads"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/hardware/rfid-reads"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/hardware/print-jobs"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/hardware/print-jobs"
+  },
+  {
+    "method": "POST",
+    "path": "/generate"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/hardware/audit-traces"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/hardware/audit-traces"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/hardware/analyzers"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/hardware/analyzers"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/hardware/analyzers"
+  },
+  {
+    "method": "GET",
+    "path": "/qc-runs"
+  },
+  {
+    "method": "HEAD",
+    "path": "/qc-runs"
+  },
+  {
+    "method": "GET",
+    "path": "/critical-alerts"
+  },
+  {
+    "method": "HEAD",
+    "path": "/critical-alerts"
+  },
+  {
+    "method": "GET",
+    "path": "/results"
+  },
+  {
+    "method": "HEAD",
+    "path": "/results"
+  },
+  {
+    "method": "GET",
+    "path": "/:analyzerId"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:analyzerId"
+  },
+  {
+    "method": "POST",
+    "path": "/astm/handshake"
+  },
+  {
+    "method": "POST",
+    "path": "/astm/message"
+  },
+  {
+    "method": "POST",
+    "path": "/hl7/message"
+  },
+  {
+    "method": "POST",
+    "path": "/query-worklist"
+  },
+  {
+    "method": "POST",
+    "path": "/qc-runs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/whatsapp/overview"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/whatsapp/overview"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/whatsapp/conversations"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/whatsapp/conversations"
+  },
+  {
+    "method": "GET",
+    "path": "/:conversationId"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:conversationId"
+  },
+  {
+    "method": "POST",
+    "path": "/messages"
+  },
+  {
+    "method": "POST",
+    "path": "/toggle-bot"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/whatsapp/dispatches"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/whatsapp/dispatches"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/whatsapp/dispatches"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/whatsapp/patient-profile/:patientMrn"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/whatsapp/patient-profile/:patientMrn"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/whatsapp/queue-tokens"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/whatsapp/queue-tokens"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:tokenId"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/whatsapp/medication-reminders"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/whatsapp/audit-traces"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/whatsapp/audit-traces"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/whatsapp/webhook"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/whatsapp/webhook"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/whatsapp/webhook"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/workflows/adapters"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/workflows/adapters"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/workflows/audit"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/workflows/audit"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/workflows/definitions/publish-version"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/workflows/instances"
+  },
+  {
+    "method": "GET",
+    "path": "/:instanceId"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:instanceId"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/workflows/tasks"
+  },
+  {
+    "method": "POST",
+    "path": "/:taskId/transition"
+  },
+  {
+    "method": "POST",
+    "path": "/:taskId/assign"
+  },
+  {
+    "method": "PATCH",
+    "path": "/:taskId/priority"
+  },
+  {
+    "method": "POST",
+    "path": "/:taskId/sla-evaluate"
+  },
+  {
+    "method": "POST",
+    "path": "/:taskId/escalate"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/partner/workflows/queues"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/partner/workflows/queues"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/workflows/exceptions"
+  },
+  {
+    "method": "POST",
+    "path": "/:exceptionId/resolve"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/workflows/handoffs"
+  },
+  {
+    "method": "POST",
+    "path": "/:handoffId/respond"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/workflows/sagas/execute"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/partner/workflows/sagas/:sagaId/recover"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/webhooks/razorpay"
+  },
+  {
+    "method": "POST",
+    "path": "/b2b-subscription"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/webhooks/payment/razorpay"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/workflow/definitions"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/workflow/definitions"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/workflow/definitions"
+  },
+  {
+    "method": "GET",
+    "path": "/:code"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:code"
+  },
+  {
+    "method": "POST",
+    "path": "/version"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/workflow/instances"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/workflow/instances"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/workflow/instances"
+  },
+  {
+    "method": "GET",
+    "path": "/:id"
+  },
+  {
+    "method": "HEAD",
+    "path": "/:id"
+  },
+  {
+    "method": "POST",
+    "path": "/transition"
+  },
+  {
+    "method": "POST",
+    "path": "/requirements/:requirementCode/fulfill"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/workflow/offers"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/workflow/offers"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/workflow/offers"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/workflow/licences"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/workflow/licences"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/workflow/pricing/calculate"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/license/machine-fingerprint"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/license/machine-fingerprint"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/license/status"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/v1/license/status"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/license/activate"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/license/heartbeat"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/license/import-file"
+  },
+  {
+    "method": "GET",
+    "path": "/ready"
+  },
+  {
+    "method": "HEAD",
+    "path": "/ready"
+  }
+]

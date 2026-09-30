@@ -52,7 +52,7 @@ export const ConsultationOverviewView: React.FC<ConsultationOverviewViewProps> =
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Top Banner */}
-      <Card padding="md" style={{ background: 'linear-gradient(135deg, var(--ds-color-primary-light, #e0f2fe) 0%, #ffffff 100%)', border: '1px solid var(--ds-color-primary)' }}>
+      <Card padding="md" style={{ background: 'linear-gradient(135deg, var(--ds-color-primary-subtle, rgba(2, 132, 199, 0.15)) 0%, var(--ds-color-surface, #121826) 100%)', border: '1px solid var(--ds-color-primary)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
           <div>
             <h2 style={{ margin: '0 0 4px', fontSize: '1.25rem', fontWeight: '700', color: 'var(--ds-color-text-primary)' }}>

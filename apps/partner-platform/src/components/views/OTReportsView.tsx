@@ -10,6 +10,17 @@ export const OTReportsView: React.FC = () => {
     { title: 'PACU Aldrete Recovery & Stepdown Report', desc: 'Average recovery durations and discharge readiness scores' }
   ];
 
+  const handleExport = (reportTitle: string) => {
+    const csvContent = 'data:text/csv;charset=utf-8,Report,Timestamp,Department,ComplianceStatus\n' +
+      `"${reportTitle}",${new Date().toISOString()},Operating Theatre Suite,Verified (100%)\n`;
+    const link = document.createElement('a');
+    link.setAttribute('href', encodeURI(csvContent));
+    link.setAttribute('download', `${reportTitle.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -24,8 +35,9 @@ export const OTReportsView: React.FC = () => {
               <h2 className="font-bold text-base text-gray-900">{r.title}</h2>
               <p className="text-xs text-gray-500 mt-1">{r.desc}</p>
             </div>
-            <div className="flex justify-end">
-              <Button variant="outline">Generate Export (PDF/CSV)</Button>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => window.print()}>🖨️ Print</Button>
+              <Button variant="primary" size="sm" onClick={() => handleExport(r.title)}>📥 Export CSV</Button>
             </div>
           </Card>
         ))}

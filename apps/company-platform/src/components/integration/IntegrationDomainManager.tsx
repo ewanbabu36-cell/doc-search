@@ -304,11 +304,6 @@ export const IntegrationDomainManager: React.FC = () => {
             variant="primary"
             size="sm"
             onClick={() => setIsApiKeyModalOpen(true)}
-            style={{
-              backgroundColor: '#06B6D4',
-              color: '#070C16',
-              fontWeight: 900
-            }}
           >
             🔑 Issue API Key
           </Button>

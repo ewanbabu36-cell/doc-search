@@ -5,6 +5,7 @@ import type {
   AddPatientIdentifierRequest
 } from '@docsearch/api-contracts';
 import { Dialog, Button, Input, Select, Alert } from '@docsearch/ui-kit';
+import { AuditJustificationField } from '../common/AuditJustificationField.js';
 
 export interface AddIdentifierDialogProps {
   isOpen: boolean;
@@ -26,7 +27,7 @@ export const AddIdentifierDialog: React.FC<AddIdentifierDialogProps> = ({
   const [identType, setIdentType] = useState<PatientIdentifierType>('DRIVER_LICENSE_REF');
   const [identValue, setIdentValue] = useState('');
   const [authority, setAuthority] = useState('State DMV / Department of Transportation');
-  const [reason, setReason] = useState('Attaching verified patient identification document');
+  const [reason, setReason] = useState('Official government / institutional identity document verified.');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -74,7 +75,7 @@ export const AddIdentifierDialog: React.FC<AddIdentifierDialogProps> = ({
           <Button variant="outline" size="sm" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button variant="primary" size="sm" onClick={handleSubmit} isLoading={isSubmitting}>
+          <Button variant="primary" size="sm" onClick={handleSubmit} isLoading={isSubmitting} disabled={isSubmitting}>
             Attach Identifier
           </Button>
         </div>
@@ -123,17 +124,12 @@ export const AddIdentifierDialog: React.FC<AddIdentifierDialogProps> = ({
           <Input value={authority} onChange={(e) => setAuthority(e.target.value)} />
         </div>
 
-        <div>
-          <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: '600', marginBottom: '4px' }}>
-            Audit Reason *
-          </label>
-          <Input
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder="e.g. Scanned and verified physical government ID card"
-            required
-          />
-        </div>
+        <AuditJustificationField
+          label="Audit Reason"
+          value={reason}
+          onChange={setReason}
+          defaultJustification="Official government / institutional identity document verified."
+        />
       </form>
     </Dialog>
   );

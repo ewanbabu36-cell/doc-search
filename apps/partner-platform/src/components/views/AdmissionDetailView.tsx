@@ -16,9 +16,9 @@ export interface AdmissionDetailViewProps {
 
 export const AdmissionDetailView: React.FC<AdmissionDetailViewProps> = ({
   admission,
-  assessments,
-  vitals,
-  rounds,
+  assessments = [],
+  vitals = [],
+  rounds = [],
   onBack,
   onOpenTransfer,
   onOpenRecordVital,
@@ -27,16 +27,20 @@ export const AdmissionDetailView: React.FC<AdmissionDetailViewProps> = ({
 }) => {
   if (!admission) return null;
 
-  const patientAssessments = assessments.filter((a) => a.admissionId === admission.id);
-  const patientVitals = vitals.filter((v) => v.admissionId === admission.id);
-  const patientRounds = rounds.filter((r) => r.admissionId === admission.id);
+  const safeAssessments = Array.isArray(assessments) ? assessments : [];
+  const safeVitals = Array.isArray(vitals) ? vitals : [];
+  const safeRounds = Array.isArray(rounds) ? rounds : [];
+
+  const patientAssessments = safeAssessments.filter((a) => a && a.admissionId === admission.id);
+  const patientVitals = safeVitals.filter((v) => v && v.admissionId === admission.id);
+  const patientRounds = safeRounds.filter((r) => r && r.admissionId === admission.id);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <Button variant="outline" size="sm" onClick={onBack}>← Back to Inpatients</Button>
-          <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#0f172a' }}>
+          <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: 'var(--ds-color-text-primary, #f8fafc)' }}>
             Inpatient Electronic Record — {admission.patientName} ({admission.patientMrn})
           </h2>
           <Badge variant={admission.status === 'ADMITTED' ? 'success' : 'warning'}>{admission.status}</Badge>
@@ -104,7 +108,7 @@ export const AdmissionDetailView: React.FC<AdmissionDetailViewProps> = ({
           {patientAssessments.map((a) => (
             <div key={a.id} style={{ padding: '0.75rem', backgroundColor: '#f8fafc', borderRadius: '4px', fontSize: '0.85rem' }}>
               <div><strong>{a.assessmentType} ({a.shiftType})</strong> by {a.assessedBy}</div>
-              <div style={{ marginTop: '0.25rem', color: '#334155' }}>{a.nursingSummary}</div>
+              <div style={{ marginTop: '0.25rem', color: 'var(--ds-color-text-secondary, #94a3b8)' }}>{a.nursingSummary}</div>
               <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>Morse Fall Score: {a.fallRiskScore} ({a.fallRiskLevel}) • Braden Scale: {a.pressureInjuryRiskScore} ({a.pressureInjuryRiskLevel})</div>
             </div>
           ))}

@@ -1,0 +1,605 @@
+{
+  "navItems": [
+    {
+      "id": "opd-one-flow-express",
+      "label": "⚡ 1-Flow OPD Express"
+    },
+    {
+      "id": "clinical-consultation",
+      "label": "Doctor OPD Desk & EMR"
+    },
+    {
+      "id": "patient-registration",
+      "label": "OPD Reception & Tokens"
+    },
+    {
+      "id": "help-desk-exit-hub",
+      "label": "Help Desk Exit & Print Hub"
+    },
+    {
+      "id": "billing-revenue-cycle",
+      "label": "Cashier & Instant UPI"
+    },
+    {
+      "id": "staff-administration",
+      "label": "Clinic Staff Directory"
+    },
+    {
+      "id": "preferred-partner-network",
+      "label": "Exclusive Partner Tie-Ups"
+    },
+    {
+      "id": "exit-focus-mode",
+      "label": "Switch to Full ERP Mode ➔"
+    },
+    {
+      "id": "opd-one-flow-express",
+      "label": "1-Flow OPD Express"
+    },
+    {
+      "id": "encounters-visits",
+      "label": "Queue & Token Dispatch"
+    },
+    {
+      "id": "inpatient-management",
+      "label": "Inpatient Bed Rounds"
+    },
+    {
+      "id": "telemedicine-rpm",
+      "label": "Telehealth Video Consult"
+    },
+    {
+      "id": "nurse-triage-station",
+      "label": "Acuity Triage Station"
+    },
+    {
+      "id": "inpatient-management",
+      "label": "Ward Bed Map Board"
+    },
+    {
+      "id": "nurse-triage-station",
+      "label": "Vitals & Early Warning"
+    },
+    {
+      "id": "inpatient-management",
+      "label": "MAR Medication Care"
+    },
+    {
+      "id": "patient-registration",
+      "label": "Express OPD Reg & ABHA"
+    },
+    {
+      "id": "encounters-visits",
+      "label": "Tokens & Live Queue"
+    },
+    {
+      "id": "billing-revenue-cycle",
+      "label": "Cashier & UPI Receipt"
+    },
+    {
+      "id": "doctor-management",
+      "label": "Doctor OPD Rosters"
+    },
+    {
+      "id": "pharmacy-medication",
+      "label": "Fast POS Dispense Counter"
+    },
+    {
+      "id": "procurement-supply-chain",
+      "label": "Stock Inward & Marg CSV"
+    },
+    {
+      "id": "pharmacy-medication",
+      "label": "Expiry Radar & Loss Alert"
+    },
+    {
+      "id": "pharmacy-medication",
+      "label": "CDSCO H1 & Galla Ledger"
+    },
+    {
+      "id": "clinical-investigation",
+      "label": "Phlebotomy Queue & Barcodes"
+    },
+    {
+      "id": "clinical-investigation",
+      "label": "Analyzer Workbench"
+    },
+    {
+      "id": "clinical-investigation",
+      "label": "NABL Sign-Off & Panic Center"
+    },
+    {
+      "id": "clinical-investigation",
+      "label": "Report Dispatch & Billing"
+    },
+    {
+      "id": "billing-revenue-cycle",
+      "label": "Cashier POS & Claims"
+    },
+    {
+      "id": "pharmacy-medication",
+      "label": "Credit Khata Ledger"
+    },
+    {
+      "id": "patient-registration",
+      "label": "OPD Receipts"
+    },
+    {
+      "id": "inpatient-management",
+      "label": "IPD Discharge Settlement"
+    },
+    {
+      "id": "executive-command-center",
+      "label": "Executive Command"
+    },
+    {
+      "id": "hospital-closed-loop",
+      "label": "In-House Closed Loop"
+    },
+    {
+      "id": "staff-administration",
+      "label": "Staff & Rosters"
+    },
+    {
+      "id": "billing-revenue-cycle",
+      "label": "Billing & Cashier"
+    },
+    {
+      "id": "my-smart-desk",
+      "label": "⚡ My Smart Desk"
+    },
+    {
+      "id": "staff-administration",
+      "label": "8. Staff & Care Team"
+    },
+    {
+      "id": "my-smart-desk",
+      "label": "⚡ My Smart Desk"
+    },
+    {
+      "id": "clinic-home",
+      "label": "Home Overview"
+    },
+    {
+      "id": "patient-registration",
+      "label": "Patient Tokens & MPI"
+    },
+    {
+      "id": "nurse-triage-station",
+      "label": "Nurse Vitals Station"
+    },
+    {
+      "id": "encounters-visits",
+      "label": "OPD Queue & Appointments"
+    },
+    {
+      "id": "clinical-consultation",
+      "label": "Consultation & EMR"
+    },
+    {
+      "id": "ai-clinical-cdss",
+      "label": "AI Voice Scribe & CDSS"
+    },
+    {
+      "id": "telemedicine-rpm",
+      "label": "Telemedicine Video"
+    },
+    {
+      "id": "pharmacy-medication",
+      "label": "Clinic Dispensary POS"
+    },
+    {
+      "id": "billing-revenue-cycle",
+      "label": "Cashier & Instant UPI"
+    },
+    {
+      "id": "whatsapp-patient-portal",
+      "label": "Digital Rx & Reports"
+    },
+    {
+      "id": "abdm-fhir-gateway",
+      "label": "ABDM Scan & Share"
+    },
+    {
+      "id": "staff-administration",
+      "label": "Clinic Staff & Care Team"
+    },
+    {
+      "id": "doctor-management",
+      "label": "Doctor Timings & Roster"
+    },
+    {
+      "id": "my-smart-desk",
+      "label": "⚡ My Smart Desk"
+    },
+    {
+      "id": "pharmacy-home",
+      "label": "Home Overview"
+    },
+    {
+      "id": "staff-administration",
+      "label": "Chemist Staff & Cashiers"
+    },
+    {
+      "id": "my-smart-desk",
+      "label": "⚡ My Smart Desk"
+    },
+    {
+      "id": "pathology-home",
+      "label": "Home Overview"
+    },
+    {
+      "id": "patient-registration",
+      "label": "1. Phlebotomy & Intake"
+    },
+    {
+      "id": "clinical-investigation",
+      "label": "2. LIMS Testing Workbench"
+    },
+    {
+      "id": "billing-revenue-cycle",
+      "label": "3. Lab Cashier & Invoicing"
+    },
+    {
+      "id": "whatsapp-patient-portal",
+      "label": "4. Report Dispatch & WhatsApp"
+    },
+    {
+      "id": "staff-administration",
+      "label": "Lab Staff & Phlebotomists"
+    },
+    {
+      "id": "my-smart-desk",
+      "label": "⚡ My Smart Desk"
+    },
+    {
+      "id": "diagnostic-home",
+      "label": "Home Overview"
+    },
+    {
+      "id": "radiology-imaging",
+      "label": "Web DICOM PACS"
+    },
+    {
+      "id": "encounters-visits",
+      "label": "Modality Scheduling"
+    },
+    {
+      "id": "insurance-claims",
+      "label": "Cashless TPA Pre-Auth"
+    },
+    {
+      "id": "billing-revenue-cycle",
+      "label": "Diagnostic Billing POS"
+    },
+    {
+      "id": "staff-administration",
+      "label": "Radiology & Centre Team"
+    },
+    {
+      "id": "my-smart-desk",
+      "label": "⚡ My Smart Desk"
+    },
+    {
+      "id": "hospital-home",
+      "label": "Home Overview"
+    },
+    {
+      "id": "hospital-closed-loop",
+      "label": "In-House Closed Loop (OPD & IPD)"
+    },
+    {
+      "id": "patient-registration",
+      "label": "OPD Tokens & Registry"
+    },
+    {
+      "id": "nurse-triage-station",
+      "label": "Nurse Vitals & Triage"
+    },
+    {
+      "id": "encounters-visits",
+      "label": "OPD Queue & Triage"
+    },
+    {
+      "id": "clinical-consultation",
+      "label": "Doctor Desk & EMR"
+    },
+    {
+      "id": "ai-clinical-cdss",
+      "label": "AI Voice Scribe & CDSS"
+    },
+    {
+      "id": "telemedicine-rpm",
+      "label": "Telemedicine Video OPD"
+    },
+    {
+      "id": "clinical-investigation",
+      "label": "Pathology LIMS"
+    },
+    {
+      "id": "radiology-imaging",
+      "label": "Radiology & DICOM PACS"
+    },
+    {
+      "id": "pharmacy-medication",
+      "label": "Hospital Pharmacy POS"
+    },
+    {
+      "id": "billing-revenue-cycle",
+      "label": "Billing POS & IPD Ledger"
+    },
+    {
+      "id": "insurance-claims",
+      "label": "TPA Claims & NHCX"
+    },
+    {
+      "id": "abdm-fhir-gateway",
+      "label": "ABDM 2.0 Gateway"
+    },
+    {
+      "id": "whatsapp-patient-portal",
+      "label": "WhatsApp Patient Portal"
+    },
+    {
+      "id": "inpatient-management",
+      "label": "Inpatient ADT & Beds"
+    },
+    {
+      "id": "emergency-trauma",
+      "label": "Emergency & Triage (ER)"
+    },
+    {
+      "id": "operation-theatre-management",
+      "label": "Operation Theatres (OT)"
+    },
+    {
+      "id": "blood-bank-transfusion",
+      "label": "Blood Bank & Cross-Match"
+    },
+    {
+      "id": "executive-command-center",
+      "label": "Executive Command Center"
+    },
+    {
+      "id": "doctor-management",
+      "label": "Doctor Rosters"
+    },
+    {
+      "id": "staff-administration",
+      "label": "Staff Directory & Roles"
+    },
+    {
+      "id": "procurement-supply-chain",
+      "label": "Procurement & Supply"
+    },
+    {
+      "id": "asset-biomedical-maintenance",
+      "label": "Biomedical Maintenance"
+    },
+    {
+      "id": "quality-incident-infection-control",
+      "label": "NABH Quality & Infection"
+    },
+    {
+      "id": "dietary-kitchen-management",
+      "label": "Dietary & Kitchen"
+    },
+    {
+      "id": "medical-records",
+      "label": "MRD & ICD-10 Archive"
+    },
+    {
+      "id": "organization-foundation",
+      "label": "Organization & Branches"
+    },
+    {
+      "id": "ai-chat-assistant",
+      "label": "AI Copilot Assistant"
+    },
+    {
+      "id": "enterprise-home",
+      "label": "Home Overview"
+    },
+    {
+      "id": "patient-registration",
+      "label": "Patient Registration & MPI"
+    },
+    {
+      "id": "nurse-triage-station",
+      "label": "Nurse Vitals & Triage"
+    },
+    {
+      "id": "encounters-visits",
+      "label": "OPD Queue, Tokens & Triage"
+    },
+    {
+      "id": "clinical-consultation",
+      "label": "OPD Doctor Desk & EMR"
+    },
+    {
+      "id": "ai-clinical-cdss",
+      "label": "AI Voice Scribe & CDSS"
+    },
+    {
+      "id": "telemedicine-rpm",
+      "label": "Telemedicine Video OPD"
+    },
+    {
+      "id": "clinical-investigation",
+      "label": "Pathology Laboratory LIMS"
+    },
+    {
+      "id": "radiology-imaging",
+      "label": "Radiology & DICOM PACS"
+    },
+    {
+      "id": "pharmacy-medication",
+      "label": "Pharmacy POS & Formulary"
+    },
+    {
+      "id": "billing-revenue-cycle",
+      "label": "Billing POS & Multi-Party UPI"
+    },
+    {
+      "id": "insurance-claims",
+      "label": "TPA Cashless Claims & NHCX"
+    },
+    {
+      "id": "abdm-fhir-gateway",
+      "label": "ABDM 2.0 National Gateway"
+    },
+    {
+      "id": "whatsapp-patient-portal",
+      "label": "WhatsApp Patient Portal"
+    },
+    {
+      "id": "inpatient-management",
+      "label": "IPD Bed Matrix & Wards"
+    },
+    {
+      "id": "emergency-trauma",
+      "label": "Emergency & Triage (ER)"
+    },
+    {
+      "id": "operation-theatre-management",
+      "label": "Operation Theatres (OT)"
+    },
+    {
+      "id": "blood-bank-transfusion",
+      "label": "Blood Bank & Cross-Match"
+    },
+    {
+      "id": "executive-command-center",
+      "label": "Executive Command Center & KPI"
+    },
+    {
+      "id": "ai-chat-assistant",
+      "label": "AI Copilot & Assistant"
+    },
+    {
+      "id": "organization-foundation",
+      "label": "Organization & Branches"
+    },
+    {
+      "id": "staff-administration",
+      "label": "Staff Directory & Roles"
+    },
+    {
+      "id": "doctor-management",
+      "label": "Doctor Profiles & OPD Rosters"
+    },
+    {
+      "id": "procurement-supply-chain",
+      "label": "Procurement & Wholesale Supply"
+    },
+    {
+      "id": "asset-biomedical-maintenance",
+      "label": "Biomedical Assets Maintenance"
+    },
+    {
+      "id": "quality-incident-infection-control",
+      "label": "NABH Quality & Infection Control"
+    },
+    {
+      "id": "dietary-kitchen-management",
+      "label": "Dietary & Inpatient Kitchen"
+    },
+    {
+      "id": "medical-records",
+      "label": "MRD & ICD-10 Archive"
+    },
+    {
+      "id": "AUTO",
+      "label": "Auto"
+    },
+    {
+      "id": "DOCTOR",
+      "label": "Doctor"
+    },
+    {
+      "id": "NURSE",
+      "label": "Nurse"
+    },
+    {
+      "id": "FRONT_DESK",
+      "label": "FrontDesk"
+    },
+    {
+      "id": "PHARMACY",
+      "label": "Pharmacy"
+    },
+    {
+      "id": "LAB",
+      "label": "Lab"
+    },
+    {
+      "id": "BILLING",
+      "label": "Billing"
+    },
+    {
+      "id": "ADMIN",
+      "label": "Admin"
+    },
+    {
+      "id": "triage",
+      "label": "Triage"
+    },
+    {
+      "id": "beds",
+      "label": "IPD Beds"
+    },
+    {
+      "id": "emergency",
+      "label": "Emergency"
+    },
+    {
+      "id": "consult",
+      "label": "Doctor Desk"
+    },
+    {
+      "id": "more",
+      "label": "Modules"
+    },
+    {
+      "id": "opd",
+      "label": "Tokens / Desk"
+    },
+    {
+      "id": "queue",
+      "label": "Live Queue"
+    },
+    {
+      "id": "doctors",
+      "label": "Doctors"
+    },
+    {
+      "id": "billing",
+      "label": "Billing"
+    },
+    {
+      "id": "more",
+      "label": "Modules"
+    },
+    {
+      "id": "opd",
+      "label": "OPD / Reg"
+    },
+    {
+      "id": "clinical",
+      "label": "Consult"
+    },
+    {
+      "id": "pharmacy",
+      "label": "Pharmacy"
+    },
+    {
+      "id": "billing",
+      "label": "Billing"
+    },
+    {
+      "id": "more",
+      "label": "Modules"
+    }
+  ],
+  "cases": []
+}

@@ -7,12 +7,25 @@ import {
   inpatientNursingNotes,
   inpatientDischargeSummaries,
   inpatientUnits,
+  inpatientDoctorRounds,
+  inpatientVitalObservations,
+  billingInvoices,
+  billingInvoiceItems,
+  pharmacyDispensing,
+  investigationOrders,
+  radiologyOrders,
   encounters,
+  branches,
+  operationalDepartments,
+  operationalPartners,
+  operationalOrganizations,
+  patients,
   eq,
   and,
   desc
 } from '@docsearch/database';
 import { AppError, ErrorCode, createLogger } from '@docsearch/shared-core';
+import { entitlementService } from '../../services/company/EntitlementService.js';
 
 const logger = createLogger('partner-inpatient-repository');
 
@@ -28,73 +41,280 @@ function requireDb(dbClient = getDatabase()) {
   return dbClient;
 }
 
+async function resolveBranchId(db: any, tenantId: string, providedBranchId?: string): Promise<string> {
+  if (providedBranchId) {
+    return providedBranchId;
+  }
+  const [b] = await db
+    .select({ id: branches.id })
+    .from(branches)
+    .where(eq(branches.tenantId, tenantId))
+    .limit(1);
+  if (b?.id) return b.id;
+  throw new AppError({
+    message: 'Branch context could not be resolved for tenant. Fail-closed multi-tenant boundary.',
+    code: ErrorCode.BAD_REQUEST,
+    statusCode: 400
+  });
+}
+
+async function resolveDepartmentId(db: any, tenantId: string, providedDeptId?: string): Promise<string> {
+  if (providedDeptId) {
+    return providedDeptId;
+  }
+  const [d] = await db
+    .select({ id: operationalDepartments.id })
+    .from(operationalDepartments)
+    .where(eq(operationalDepartments.tenantId, tenantId))
+    .limit(1);
+  if (d?.id) return d.id;
+  throw new AppError({
+    message: 'Department context could not be resolved for tenant. Fail-closed multi-tenant boundary.',
+    code: ErrorCode.BAD_REQUEST,
+    statusCode: 400
+  });
+}
+
+async function resolvePartnerAndOrg(
+  db: any,
+  tenantId: string,
+  providedPartnerId?: string,
+  providedOrgId?: string
+): Promise<{ partnerId: string; organizationId: string }> {
+  let partnerId = providedPartnerId || null;
+  let organizationId = providedOrgId || null;
+
+  if (!partnerId) {
+    const [p] = await db
+      .select({ id: operationalPartners.id })
+      .from(operationalPartners)
+      .where(eq(operationalPartners.tenantId, tenantId))
+      .limit(1);
+    if (p?.id) partnerId = p.id;
+  }
+  if (!organizationId) {
+    const [o] = await db
+      .select({ id: operationalOrganizations.id })
+      .from(operationalOrganizations)
+      .where(eq(operationalOrganizations.tenantId, tenantId))
+      .limit(1);
+    if (o?.id) organizationId = o.id;
+  }
+
+  if (!partnerId || !organizationId) {
+    throw new AppError({
+      message: 'Partner and Organization context could not be resolved for tenant. Fail-closed multi-tenant boundary.',
+      code: ErrorCode.BAD_REQUEST,
+      statusCode: 400
+    });
+  }
+
+  return { partnerId, organizationId };
+}
+
 export interface CreateWardInput {
   tenantId: string;
-  partnerId?: string;
-  organizationId?: string;
-  branchId?: string;
+  partnerId?: string | undefined;
+  organizationId?: string | undefined;
+  branchId?: string | undefined;
   wardCode: string;
   name: string;
   wardType: string;
-  capacity?: number;
+  capacity?: number | undefined;
 }
 
 export interface CreateBedInput {
   tenantId: string;
-  partnerId?: string;
-  organizationId?: string;
-  branchId?: string;
+  partnerId?: string | undefined;
+  organizationId?: string | undefined;
+  branchId?: string | undefined;
   wardId: string;
   bedNumber: string;
-  bedType?: string;
+  bedType?: string | undefined;
+  bedClass?: string | undefined;
+  dailyChargeRate?: number | string | undefined;
+}
+
+export interface CreateDoctorRoundInput {
+  tenantId: string;
+  partnerId?: string | undefined;
+  organizationId?: string | undefined;
+  branchId?: string | undefined;
+  admissionId: string;
+  patientId?: string | undefined;
+  doctorName: string;
+  doctorSpecialty?: string | undefined;
+  roundType?: string | undefined;
+  subjectiveAssessment: string;
+  objectiveClinicalFindings: string;
+  clinicalImpression: string;
+  treatmentPlanUpdates: string;
+  orderedInvestigationsSummary?: string | undefined;
+  medicationAdjustments?: string | undefined;
+  dischargeReadinessScore?: number | undefined;
+}
+
+export interface StoredDoctorRound {
+  id: string;
+  tenantId: string;
+  admissionId: string;
+  patientId: string;
+  doctorName: string;
+  doctorSpecialty: string;
+  roundType: string;
+  subjectiveAssessment: string;
+  objectiveClinicalFindings: string;
+  clinicalImpression: string;
+  treatmentPlanUpdates: string;
+  orderedInvestigationsSummary?: string | null | undefined;
+  medicationAdjustments?: string | null | undefined;
+  dischargeReadinessScore: number;
+  roundTimestamp: Date;
+}
+
+export interface RecordVitalObservationInput {
+  tenantId: string;
+  partnerId?: string | undefined;
+  organizationId?: string | undefined;
+  branchId?: string | undefined;
+  admissionId: string;
+  patientId?: string | undefined;
+  recordedBy: string;
+  temperatureCelsius?: number | string | undefined;
+  pulseBpm?: number | undefined;
+  respiratoryRateBpm?: number | undefined;
+  systolicBpMmHg?: number | undefined;
+  diastolicBpMmHg?: number | undefined;
+  spo2Percentage?: number | undefined;
+  bloodGlucoseMgDl?: number | string | undefined;
+  painScaleScore?: number | undefined;
+  isAbnormal?: boolean | undefined;
+  abnormalDetails?: string | undefined;
+  notes?: string | undefined;
+}
+
+export interface StoredVitalObservation {
+  id: string;
+  tenantId: string;
+  admissionId: string;
+  patientId: string;
+  recordedBy: string;
+  temperatureCelsius?: string | null | undefined;
+  pulseBpm?: number | null | undefined;
+  respiratoryRateBpm?: number | null | undefined;
+  systolicBpMmHg?: number | null | undefined;
+  diastolicBpMmHg?: number | null | undefined;
+  spo2Percentage?: number | null | undefined;
+  bloodGlucoseMgDl?: string | null | undefined;
+  painScaleScore?: number | null | undefined;
+  isAbnormal: boolean;
+  abnormalDetails?: string | null | undefined;
+  notes?: string | null | undefined;
+  recordedAt: Date;
+}
+
+export interface IpdBillingSummary {
+  admissionId: string;
+  admissionNumber: string;
+  patientId: string;
+  patientName: string;
+  admissionDate: Date;
+  dischargeDate: Date | null;
+  totalDays: number;
+  bedCharges: {
+    days: number;
+    dailyRate: number;
+    totalBedAmount: number;
+    bedsOccupied: Array<{
+      bedId: string;
+      bedCode: string;
+      wardName: string;
+      rate: number;
+    }>;
+  };
+  doctorRoundsCharges: {
+    count: number;
+    ratePerRound: number;
+    totalRoundsAmount: number;
+  };
+  nursingCareCharges: {
+    days: number;
+    dailyRate: number;
+    totalNursingAmount: number;
+  };
+  pharmacyCharges: {
+    itemsCount: number;
+    totalPharmacyAmount: number;
+  };
+  labCharges: {
+    ordersCount: number;
+    totalLabAmount: number;
+  };
+  radiologyCharges: {
+    ordersCount: number;
+    totalRadiologyAmount: number;
+  };
+  subtotalAmount: number;
+  taxAmount: number;
+  discountAmount: number;
+  totalPayableAmount: number;
 }
 
 export interface CreateAdmissionInput {
   tenantId: string;
-  partnerId?: string;
-  organizationId?: string;
-  branchId?: string;
+  partnerId?: string | undefined;
+  organizationId?: string | undefined;
+  branchId?: string | undefined;
   patientId: string;
   doctorId: string;
-  department?: string;
+  department?: string | undefined;
   bedId: string;
   admissionReason: string;
-  encounterType?: string;
+  encounterType?: string | undefined;
 }
 
 export interface TransferBedInput {
   tenantId: string;
+  partnerId?: string | undefined;
+  organizationId?: string | undefined;
+  branchId?: string | undefined;
   admissionId: string;
-  patientId: string;
-  sourceBedId: string;
+  patientId?: string | undefined;
+  sourceBedId?: string | undefined;
   destinationBedId: string;
   transferReason: string;
-  transferredBy: string;
+  transferredBy?: string | undefined;
 }
 
 export interface NursingNoteInput {
   tenantId: string;
+  partnerId?: string | undefined;
+  organizationId?: string | undefined;
+  branchId?: string | undefined;
   patientId: string;
   admissionId: string;
   nurseId: string;
-  nurseName?: string;
-  temperature?: string;
-  bloodPressure?: string;
-  pulseRate?: string;
-  spO2?: string;
-  respiratoryRate?: string;
+  nurseName?: string | undefined;
+  temperature?: string | undefined;
+  bloodPressure?: string | undefined;
+  pulseRate?: string | undefined;
+  spO2?: string | undefined;
+  respiratoryRate?: string | undefined;
   notes: string;
-  careObservations?: string;
+  careObservations?: string | undefined;
 }
 
 export interface DischargeInput {
   tenantId: string;
+  partnerId?: string | undefined;
+  organizationId?: string | undefined;
+  branchId?: string | undefined;
   admissionId: string;
-  patientId: string;
+  patientId?: string | undefined;
   dischargingDoctorId: string;
   dischargeReason: string;
   dischargeCondition: string;
-  finalClinicalNotes?: string;
+  finalClinicalNotes?: string | undefined;
 }
 
 export interface StoredWard {
@@ -120,6 +340,8 @@ export interface StoredBed {
   wardId: string;
   bedNumber: string;
   bedType: string;
+  bedClass: string;
+  dailyChargeRate: number;
   status: 'AVAILABLE' | 'OCCUPIED' | 'RESERVED' | 'CLEANING' | 'BLOCKED';
   currentPatientId?: string | null;
   currentAdmissionId?: string | null;
@@ -216,9 +438,8 @@ export class InpatientManagementRepository {
     const db = requireDb(dbClient);
     const now = new Date();
     const wardId = crypto.randomUUID();
-    const partnerId = input.partnerId || '00000000-0000-4000-8000-000000000001';
-    const organizationId = input.organizationId || '00000000-0000-4000-8000-000000000002';
-    const branchId = input.branchId || '00000000-0000-4000-8000-000000000003';
+    const { partnerId, organizationId } = await resolvePartnerAndOrg(db, input.tenantId, input.partnerId, input.organizationId);
+    const branchId = await resolveBranchId(db, input.tenantId, input.branchId);
     const capacity = input.capacity || 20;
 
     try {
@@ -260,7 +481,7 @@ export class InpatientManagementRepository {
         branchId,
         unitId,
         wardCode: input.wardCode,
-        wardName: input.name,
+        wardName: input.name || (input as any).wardName || 'General Inpatient Ward',
         wardType: input.wardType,
         building: 'Main Hospital',
         floor: '1st Floor',
@@ -275,7 +496,7 @@ export class InpatientManagementRepository {
         organizationId,
         branchId,
         wardCode: input.wardCode,
-        name: input.name,
+        name: input.name || (input as any).wardName || 'General Inpatient Ward',
         wardType: input.wardType,
         capacity,
         createdAt: now,
@@ -310,7 +531,9 @@ export class InpatientManagementRepository {
         branchId: r.branchId,
         wardId: r.wardId,
         bedNumber: r.bedNumber || r.bedCode,
-        bedType: r.bedType || 'STANDARD',
+        bedType: r.bedType || 'STANDARD_ELECTRIC',
+        bedClass: r.bedClass || 'GENERAL',
+        dailyChargeRate: r.dailyChargeRate !== undefined && r.dailyChargeRate !== null ? Number(r.dailyChargeRate) : 150.0,
         status: (r.status || 'AVAILABLE') as StoredBed['status'],
         currentPatientId: r.currentPatientId || null,
         currentAdmissionId: r.currentAdmissionId || null,
@@ -336,10 +559,27 @@ export class InpatientManagementRepository {
     const db = requireDb(dbClient);
     const now = new Date();
     const bedId = crypto.randomUUID();
-    const partnerId = input.partnerId || '00000000-0000-4000-8000-000000000001';
-    const organizationId = input.organizationId || '00000000-0000-4000-8000-000000000002';
-    const branchId = input.branchId || '00000000-0000-4000-8000-000000000003';
-    const bedType = input.bedType || 'STANDARD';
+    const { partnerId, organizationId } = await resolvePartnerAndOrg(db, input.tenantId, input.partnerId, input.organizationId);
+    const branchId = await resolveBranchId(db, input.tenantId, input.branchId);
+    const bedType = input.bedType || 'STANDARD_ELECTRIC';
+    const bedClass = input.bedClass || 'GENERAL';
+    const dailyChargeRate = input.dailyChargeRate !== undefined ? Number(input.dailyChargeRate) : 150.0;
+
+    // Quota Enforcement: Enforce contracted inpatient bed limit server-side
+    const limitCheck = await entitlementService.checkBedLimit(input.tenantId);
+    if (!limitCheck.allowed) {
+      throw new AppError({
+        message: `Inpatient bed quota exceeded. Your contracted plan allows a maximum of ${limitCheck.maxAllowed} beds (currently using ${limitCheck.currentCount}). Please upgrade your plan in HQ.`,
+        code: ErrorCode.FORBIDDEN,
+        statusCode: 403,
+        details: [
+          {
+            field: 'beds',
+            message: `Current beds: ${limitCheck.currentCount}, Maximum allowed: ${limitCheck.maxAllowed}`
+          }
+        ]
+      });
+    }
 
     try {
       const [created] = await db.insert(inpatientBeds).values({
@@ -352,6 +592,8 @@ export class InpatientManagementRepository {
         bedCode: input.bedNumber,
         bedNumber: input.bedNumber,
         bedType,
+        bedClass,
+        dailyChargeRate: String(dailyChargeRate),
         status: 'AVAILABLE'
       } as unknown as typeof inpatientBeds.$inferInsert).returning();
 
@@ -364,6 +606,8 @@ export class InpatientManagementRepository {
         wardId: input.wardId,
         bedNumber: input.bedNumber,
         bedType,
+        bedClass,
+        dailyChargeRate,
         status: 'AVAILABLE',
         currentPatientId: null,
         currentAdmissionId: null,
@@ -460,27 +704,57 @@ export class InpatientManagementRepository {
       const admissionId = crypto.randomUUID();
       const encounterId = crypto.randomUUID();
       const admissionNumber = `ADM-${Math.floor(100000 + Math.random() * 900000)}`;
-      const partnerId = input.partnerId || '00000000-0000-4000-8000-000000000001';
-      const organizationId = input.organizationId || '00000000-0000-4000-8000-000000000002';
-      const branchId = input.branchId || '00000000-0000-4000-8000-000000000003';
+      const encounterNumber = `ENC-IPD-${Math.floor(100000 + Math.random() * 900000)}`;
+
+      const { partnerId, organizationId } = await resolvePartnerAndOrg(tx, input.tenantId, input.partnerId, input.organizationId);
+      const branchId = await resolveBranchId(tx, input.tenantId, input.branchId);
+      const departmentId = await resolveDepartmentId(tx, input.tenantId);
       const department = input.department || 'GENERAL_MEDICINE';
 
-      // 2. Insert IPD Encounter
+      // 2. Fetch patient demographics if registered
+      let patientName = 'Inpatient Record';
+      let patientMrn = 'MRN-AUTO';
+      let patientGender = 'M';
+      let patientAge = 35;
+      try {
+        const [pat] = await tx
+          .select()
+          .from(patients)
+          .where(and(eq(patients.tenantId, input.tenantId), eq(patients.id, input.patientId)))
+          .limit(1);
+        if (pat) {
+          patientName = `${pat.firstName || ''} ${pat.lastName || ''}`.trim() || patientName;
+          patientMrn = pat.patientMrn || patientMrn;
+          patientGender = pat.gender ? (String(pat.gender)[0] || 'M') : 'M';
+          if (pat.dateOfBirth) {
+            const birthYear = new Date(pat.dateOfBirth).getFullYear();
+            const currYear = new Date().getFullYear();
+            patientAge = Math.max(1, currYear - birthYear);
+          }
+        }
+      } catch {
+        // Continue with defaults if patients lookup fails
+      }
+
+      // 3. Insert IPD Encounter
       await tx.insert(encounters).values({
         id: encounterId,
         tenantId: input.tenantId,
         partnerId,
         organizationId,
         branchId,
+        departmentId,
         patientId: input.patientId,
         doctorId: input.doctorId,
+        encounterNumber,
         encounterType: 'IPD',
         status: 'ADMITTED',
         chiefComplaint: input.admissionReason,
+        registeredAt: now,
         checkedInAt: now
       } as unknown as typeof encounters.$inferInsert);
 
-      // 3. Insert Admission
+      // 4. Insert Admission
       await tx.insert(inpatientAdmissions).values({
         id: admissionId,
         tenantId: input.tenantId,
@@ -489,13 +763,13 @@ export class InpatientManagementRepository {
         branchId,
         admissionNumber,
         patientId: input.patientId,
-        patientName: 'Inpatient Record',
-        patientMrn: 'MRN-AUTO',
-        patientGender: 'M',
-        patientAge: 30,
+        patientName,
+        patientMrn,
+        patientGender,
+        patientAge,
         encounterId,
-        admittingDoctorName: input.doctorId,
-        attendingConsultantName: input.doctorId,
+        admittingDoctorName: (input as any).admittingDoctorName || (input as any).admittingDoctorId || input.doctorId || 'Admitting Consultant Physician',
+        attendingConsultantName: (input as any).attendingConsultantName || (input as any).admittingDoctorName || (input as any).admittingDoctorId || input.doctorId || 'Attending Consultant Physician',
         department,
         specialty: department,
         wardId: targetBed.wardId,
@@ -509,7 +783,7 @@ export class InpatientManagementRepository {
         admissionDateTime: now
       } as unknown as typeof inpatientAdmissions.$inferInsert);
 
-      // 4. Update Bed status in DB
+      // 5. Update Bed status in DB
       await tx
         .update(inpatientBeds)
         .set({
@@ -563,17 +837,35 @@ export class InpatientManagementRepository {
     const db = requireDb(dbClient);
 
     const executeInTx = async (tx: any): Promise<StoredTransfer> => {
-      // 1. Fetch Source Bed
+      // 1. Fetch Admission first
+      const [adm] = await tx
+        .select()
+        .from(inpatientAdmissions)
+        .where(and(eq(inpatientAdmissions.tenantId, input.tenantId), eq(inpatientAdmissions.id, input.admissionId)))
+        .limit(1);
+
+      if (!adm) {
+        throw new AppError({ message: 'Admission record not found', code: ErrorCode.NOT_FOUND, statusCode: 404 });
+      }
+
+      const sourceBedId = input.sourceBedId || adm.bedId;
+      const patientId = input.patientId || adm.patientId;
+
+      if (!sourceBedId) {
+        throw new AppError({ message: 'Source bed not found for admission', code: ErrorCode.NOT_FOUND, statusCode: 404 });
+      }
+
+      // 2. Fetch Source Bed
       const sourceBeds = await tx
         .select()
         .from(inpatientBeds)
-        .where(and(eq(inpatientBeds.tenantId, input.tenantId), eq(inpatientBeds.id, input.sourceBedId)));
+        .where(and(eq(inpatientBeds.tenantId, input.tenantId), eq(inpatientBeds.id, sourceBedId)));
       const sourceBed = sourceBeds[0];
       if (!sourceBed) {
         throw new AppError({ message: 'Source bed not found', code: ErrorCode.NOT_FOUND, statusCode: 404 });
       }
 
-      // 2. Fetch Destination Bed
+      // 3. Fetch Destination Bed
       const destBeds = await tx
         .select()
         .from(inpatientBeds)
@@ -595,33 +887,40 @@ export class InpatientManagementRepository {
       const transferId = crypto.randomUUID();
       const transferNumber = `TRF-${Math.floor(100000 + Math.random() * 900000)}`;
 
-      // 3. Insert Transfer Record
+      const { partnerId, organizationId } = await resolvePartnerAndOrg(tx, input.tenantId, input.partnerId, input.organizationId);
+      const branchId = await resolveBranchId(tx, input.tenantId, input.branchId);
+
+      // Fetch patient demographics
+      const patientName = adm.patientName || 'Transferred Patient';
+      const patientMrn = adm.patientMrn || 'MRN-AUTO';
+
+      // 4. Insert Transfer Record
       await tx.insert(inpatientTransfers).values({
         id: transferId,
         tenantId: input.tenantId,
-        partnerId: '00000000-0000-4000-8000-000000000001',
-        organizationId: '00000000-0000-4000-8000-000000000002',
-        branchId: '00000000-0000-4000-8000-000000000003',
+        partnerId,
+        organizationId,
+        branchId,
         transferNumber,
         admissionId: input.admissionId,
-        patientId: input.patientId,
-        patientName: 'Transferred Patient',
-        patientMrn: 'MRN-AUTO',
+        patientId,
+        patientName,
+        patientMrn,
         sourceWardId: sourceBed.wardId,
         sourceWardName: 'Origin Ward',
-        sourceBedId: input.sourceBedId,
-        sourceBedCode: sourceBed.bedNumber || sourceBed.bedCode || 'SRC-BED',
+        sourceBedId: sourceBed.id,
+        sourceBedCode: sourceBed.bedNumber || (sourceBed as any).bedCode || 'SRC-BED',
         destinationWardId: destBed.wardId,
         destinationWardName: 'Destination Ward',
         destinationBedId: input.destinationBedId,
-        destinationBedCode: destBed.bedNumber || destBed.bedCode || 'DEST-BED',
+        destinationBedCode: destBed.bedNumber || (destBed as any).bedCode || 'DEST-BED',
         transferReason: input.transferReason,
-        requestingDoctorName: input.transferredBy,
+        requestingDoctorName: input.transferredBy || 'Attending Physician',
         status: 'COMPLETED',
         completedAt: now
       } as unknown as typeof inpatientTransfers.$inferInsert);
 
-      // 4. Update Source Bed -> AVAILABLE
+      // 5. Update Source Bed -> AVAILABLE
       await tx
         .update(inpatientBeds)
         .set({
@@ -630,25 +929,25 @@ export class InpatientManagementRepository {
           currentAdmissionId: null,
           updatedAt: now
         })
-        .where(and(eq(inpatientBeds.tenantId, input.tenantId), eq(inpatientBeds.id, input.sourceBedId)));
+        .where(and(eq(inpatientBeds.tenantId, input.tenantId), eq(inpatientBeds.id, sourceBed.id)));
 
-      // 5. Update Destination Bed -> OCCUPIED
+      // 6. Update Destination Bed -> OCCUPIED
       await tx
         .update(inpatientBeds)
         .set({
           status: 'OCCUPIED',
-          currentPatientId: input.patientId,
+          currentPatientId: patientId,
           currentAdmissionId: input.admissionId,
           updatedAt: now
         })
         .where(and(eq(inpatientBeds.tenantId, input.tenantId), eq(inpatientBeds.id, input.destinationBedId)));
 
-      // 6. Update Admission Record
+      // 7. Update Admission Record
       await tx
         .update(inpatientAdmissions)
         .set({
           bedId: input.destinationBedId,
-          bedCode: destBed.bedNumber || destBed.bedCode || 'DEST-BED',
+          bedCode: destBed.bedNumber || (destBed as any).bedCode || 'DEST-BED',
           wardId: destBed.wardId,
           updatedAt: now
         })
@@ -658,11 +957,11 @@ export class InpatientManagementRepository {
         id: transferId,
         tenantId: input.tenantId,
         admissionId: input.admissionId,
-        patientId: input.patientId,
-        sourceBedId: input.sourceBedId,
+        patientId,
+        sourceBedId: sourceBed.id,
         destinationBedId: input.destinationBedId,
         transferReason: input.transferReason,
-        transferredBy: input.transferredBy,
+        transferredBy: input.transferredBy || 'Attending Physician',
         transferredAt: now
       };
     };
@@ -700,12 +999,15 @@ export class InpatientManagementRepository {
     const careObservations = input.careObservations || 'Routine vitals recorded and patient resting comfortably.';
 
     try {
+      const { partnerId, organizationId } = await resolvePartnerAndOrg(db, input.tenantId, input.partnerId, input.organizationId);
+      const branchId = await resolveBranchId(db, input.tenantId, input.branchId);
+
       await db.insert(inpatientNursingNotes).values({
         id,
         tenantId: input.tenantId,
-        partnerId: '00000000-0000-4000-8000-000000000001',
-        organizationId: '00000000-0000-4000-8000-000000000002',
-        branchId: '00000000-0000-4000-8000-000000000003',
+        partnerId,
+        organizationId,
+        branchId,
         admissionId: input.admissionId,
         patientId: input.patientId,
         authorName: input.nurseName || 'Staff Nurse',
@@ -826,6 +1128,8 @@ export class InpatientManagementRepository {
       }
 
       const now = new Date();
+      const { partnerId, organizationId } = await resolvePartnerAndOrg(tx, input.tenantId, input.partnerId, input.organizationId);
+      const branchId = await resolveBranchId(tx, input.tenantId, input.branchId);
 
       // 2. Update Admission status
       await tx
@@ -841,12 +1145,12 @@ export class InpatientManagementRepository {
       await tx.insert(inpatientDischargeSummaries).values({
         id: crypto.randomUUID(),
         tenantId: input.tenantId,
-        partnerId: '00000000-0000-4000-8000-000000000001',
-        organizationId: '00000000-0000-4000-8000-000000000002',
-        branchId: '00000000-0000-4000-8000-000000000003',
+        partnerId,
+        organizationId,
+        branchId,
         summaryNumber: `DIS-${Math.floor(100000 + Math.random() * 900000)}`,
         admissionId: input.admissionId,
-        patientId: input.patientId,
+        patientId: input.patientId || admission.patientId,
         patientName: admission.patientName || 'Discharged Patient',
         patientMrn: admission.patientMrn || 'MRN-AUTO',
         admissionDate: admission.admissionDateTime ? new Date(admission.admissionDateTime) : now,
@@ -910,6 +1214,647 @@ export class InpatientManagementRepository {
         code: ErrorCode.SERVICE_UNAVAILABLE,
         statusCode: 503
       });
+    }
+  }
+
+  async createDoctorRound(input: CreateDoctorRoundInput, dbClient = getDatabase()): Promise<StoredDoctorRound> {
+    const db = requireDb(dbClient);
+    const now = new Date();
+    const roundId = crypto.randomUUID();
+
+    const [adm] = await db
+      .select()
+      .from(inpatientAdmissions)
+      .where(and(eq(inpatientAdmissions.tenantId, input.tenantId), eq(inpatientAdmissions.id, input.admissionId)))
+      .limit(1);
+
+    if (!adm) {
+      throw new AppError({
+        message: 'Inpatient admission record not found.',
+        code: ErrorCode.NOT_FOUND,
+        statusCode: 404
+      });
+    }
+
+    const { partnerId, organizationId } = await resolvePartnerAndOrg(db, input.tenantId, input.partnerId, input.organizationId);
+    const branchId = await resolveBranchId(db, input.tenantId, input.branchId);
+
+    const roundType = input.roundType || 'MORNING_PRIMARY_ROUND';
+    const doctorSpecialty = input.doctorSpecialty || adm.specialty || 'General Medicine';
+    const dischargeReadinessScore = input.dischargeReadinessScore !== undefined ? Number(input.dischargeReadinessScore) : 50;
+
+    try {
+      await db.insert(inpatientDoctorRounds).values({
+        id: roundId,
+        tenantId: input.tenantId,
+        partnerId,
+        organizationId,
+        branchId,
+        admissionId: input.admissionId,
+        patientId: input.patientId || adm.patientId,
+        doctorName: input.doctorName,
+        doctorSpecialty,
+        roundType,
+        subjectiveAssessment: input.subjectiveAssessment,
+        objectiveClinicalFindings: input.objectiveClinicalFindings,
+        clinicalImpression: input.clinicalImpression,
+        treatmentPlanUpdates: input.treatmentPlanUpdates,
+        orderedInvestigationsSummary: input.orderedInvestigationsSummary || null,
+        medicationAdjustments: input.medicationAdjustments || null,
+        dischargeReadinessScore,
+        roundTimestamp: now
+      } as unknown as typeof inpatientDoctorRounds.$inferInsert);
+
+      return {
+        id: roundId,
+        tenantId: input.tenantId,
+        admissionId: input.admissionId,
+        patientId: input.patientId || adm.patientId,
+        doctorName: input.doctorName,
+        doctorSpecialty,
+        roundType,
+        subjectiveAssessment: input.subjectiveAssessment,
+        objectiveClinicalFindings: input.objectiveClinicalFindings,
+        clinicalImpression: input.clinicalImpression,
+        treatmentPlanUpdates: input.treatmentPlanUpdates,
+        orderedInvestigationsSummary: input.orderedInvestigationsSummary || null,
+        medicationAdjustments: input.medicationAdjustments || null,
+        dischargeReadinessScore,
+        roundTimestamp: now
+      };
+    } catch (err) {
+      logger.error('Failed to create doctor round in database', err);
+      if (err instanceof AppError) throw err;
+      throw new AppError({
+        message: 'Database persistence failed. Doctor round recording aborted.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
+    }
+  }
+
+  async getDoctorRounds(
+    tenantId: string,
+    admissionId?: string,
+    patientId?: string,
+    dbClient = getDatabase()
+  ): Promise<StoredDoctorRound[]> {
+    const db = requireDb(dbClient);
+    try {
+      const rows = await db
+        .select()
+        .from(inpatientDoctorRounds)
+        .where(eq(inpatientDoctorRounds.tenantId, tenantId))
+        .orderBy(desc(inpatientDoctorRounds.roundTimestamp));
+
+      let list = rows.map((r: any) => ({
+        id: r.id,
+        tenantId: r.tenantId,
+        admissionId: r.admissionId,
+        patientId: r.patientId,
+        doctorName: r.doctorName,
+        doctorSpecialty: r.doctorSpecialty,
+        roundType: r.roundType,
+        subjectiveAssessment: r.subjectiveAssessment,
+        objectiveClinicalFindings: r.objectiveClinicalFindings,
+        clinicalImpression: r.clinicalImpression,
+        treatmentPlanUpdates: r.treatmentPlanUpdates,
+        orderedInvestigationsSummary: r.orderedInvestigationsSummary,
+        medicationAdjustments: r.medicationAdjustments,
+        dischargeReadinessScore: r.dischargeReadinessScore,
+        roundTimestamp: r.roundTimestamp ? new Date(r.roundTimestamp) : new Date()
+      }));
+
+      if (admissionId) list = list.filter((r: StoredDoctorRound) => r.admissionId === admissionId);
+      if (patientId) list = list.filter((r: StoredDoctorRound) => r.patientId === patientId);
+      return list;
+    } catch (err) {
+      logger.error('Failed to query doctor rounds from database', err);
+      if (err instanceof AppError) throw err;
+      throw new AppError({
+        message: 'Database query failed. Doctor rounds lookup unavailable.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
+    }
+  }
+
+  async recordVitalObservation(input: RecordVitalObservationInput, dbClient = getDatabase()): Promise<StoredVitalObservation> {
+    const db = requireDb(dbClient);
+    const now = new Date();
+    const id = crypto.randomUUID();
+
+    const [adm] = await db
+      .select()
+      .from(inpatientAdmissions)
+      .where(and(eq(inpatientAdmissions.tenantId, input.tenantId), eq(inpatientAdmissions.id, input.admissionId)))
+      .limit(1);
+
+    if (!adm) {
+      throw new AppError({
+        message: 'Inpatient admission record not found.',
+        code: ErrorCode.NOT_FOUND,
+        statusCode: 404
+      });
+    }
+
+    const { partnerId, organizationId } = await resolvePartnerAndOrg(db, input.tenantId, input.partnerId, input.organizationId);
+    const branchId = await resolveBranchId(db, input.tenantId, input.branchId);
+
+    const isAbnormal = input.isAbnormal ?? false;
+
+    try {
+      await db.insert(inpatientVitalObservations).values({
+        id,
+        tenantId: input.tenantId,
+        partnerId,
+        organizationId,
+        branchId,
+        admissionId: input.admissionId,
+        patientId: input.patientId || adm.patientId,
+        recordedBy: input.recordedBy,
+        temperatureCelsius: input.temperatureCelsius !== undefined ? String(input.temperatureCelsius) : null,
+        pulseBpm: input.pulseBpm !== undefined ? Number(input.pulseBpm) : null,
+        respiratoryRateBpm: input.respiratoryRateBpm !== undefined ? Number(input.respiratoryRateBpm) : null,
+        systolicBpMmHg: input.systolicBpMmHg !== undefined ? Number(input.systolicBpMmHg) : null,
+        diastolicBpMmHg: input.diastolicBpMmHg !== undefined ? Number(input.diastolicBpMmHg) : null,
+        spo2Percentage: input.spo2Percentage !== undefined ? Number(input.spo2Percentage) : null,
+        bloodGlucoseMgDl: input.bloodGlucoseMgDl !== undefined ? String(input.bloodGlucoseMgDl) : null,
+        painScaleScore: input.painScaleScore !== undefined ? Number(input.painScaleScore) : null,
+        isAbnormal,
+        abnormalDetails: input.abnormalDetails || null,
+        notes: input.notes || null,
+        recordedAt: now
+      } as unknown as typeof inpatientVitalObservations.$inferInsert);
+
+      return {
+        id,
+        tenantId: input.tenantId,
+        admissionId: input.admissionId,
+        patientId: input.patientId || adm.patientId,
+        recordedBy: input.recordedBy,
+        temperatureCelsius: input.temperatureCelsius !== undefined ? String(input.temperatureCelsius) : null,
+        pulseBpm: input.pulseBpm !== undefined ? Number(input.pulseBpm) : null,
+        respiratoryRateBpm: input.respiratoryRateBpm !== undefined ? Number(input.respiratoryRateBpm) : null,
+        systolicBpMmHg: input.systolicBpMmHg !== undefined ? Number(input.systolicBpMmHg) : null,
+        diastolicBpMmHg: input.diastolicBpMmHg !== undefined ? Number(input.diastolicBpMmHg) : null,
+        spo2Percentage: input.spo2Percentage !== undefined ? Number(input.spo2Percentage) : null,
+        bloodGlucoseMgDl: input.bloodGlucoseMgDl !== undefined ? String(input.bloodGlucoseMgDl) : null,
+        painScaleScore: input.painScaleScore !== undefined ? Number(input.painScaleScore) : null,
+        isAbnormal,
+        abnormalDetails: input.abnormalDetails || null,
+        notes: input.notes || null,
+        recordedAt: now
+      };
+    } catch (err) {
+      logger.error('Failed to record vital observation in database', err);
+      if (err instanceof AppError) throw err;
+      throw new AppError({
+        message: 'Database persistence failed. Vital observation recording aborted.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
+    }
+  }
+
+  async getVitalObservations(
+    tenantId: string,
+    admissionId?: string,
+    patientId?: string,
+    dbClient = getDatabase()
+  ): Promise<StoredVitalObservation[]> {
+    const db = requireDb(dbClient);
+    try {
+      const rows = await db
+        .select()
+        .from(inpatientVitalObservations)
+        .where(eq(inpatientVitalObservations.tenantId, tenantId))
+        .orderBy(desc(inpatientVitalObservations.recordedAt));
+
+      let list = rows.map((r: any) => ({
+        id: r.id,
+        tenantId: r.tenantId,
+        admissionId: r.admissionId,
+        patientId: r.patientId,
+        recordedBy: r.recordedBy,
+        temperatureCelsius: r.temperatureCelsius ? String(r.temperatureCelsius) : null,
+        pulseBpm: r.pulseBpm !== null && r.pulseBpm !== undefined ? Number(r.pulseBpm) : null,
+        respiratoryRateBpm: r.respiratoryRateBpm !== null && r.respiratoryRateBpm !== undefined ? Number(r.respiratoryRateBpm) : null,
+        systolicBpMmHg: r.systolicBpMmHg !== null && r.systolicBpMmHg !== undefined ? Number(r.systolicBpMmHg) : null,
+        diastolicBpMmHg: r.diastolicBpMmHg !== null && r.diastolicBpMmHg !== undefined ? Number(r.diastolicBpMmHg) : null,
+        spo2Percentage: r.spo2Percentage !== null && r.spo2Percentage !== undefined ? Number(r.spo2Percentage) : null,
+        bloodGlucoseMgDl: r.bloodGlucoseMgDl ? String(r.bloodGlucoseMgDl) : null,
+        painScaleScore: r.painScaleScore !== null && r.painScaleScore !== undefined ? Number(r.painScaleScore) : null,
+        isAbnormal: Boolean(r.isAbnormal),
+        abnormalDetails: r.abnormalDetails,
+        notes: r.notes,
+        recordedAt: r.recordedAt ? new Date(r.recordedAt) : new Date()
+      }));
+
+      if (admissionId) list = list.filter((v: StoredVitalObservation) => v.admissionId === admissionId);
+      if (patientId) list = list.filter((v: StoredVitalObservation) => v.patientId === patientId);
+      return list;
+    } catch (err) {
+      logger.error('Failed to query vital observations from database', err);
+      if (err instanceof AppError) throw err;
+      throw new AppError({
+        message: 'Database query failed. Vital observations lookup unavailable.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
+    }
+  }
+
+  async getDischargeSummary(
+    tenantId: string,
+    admissionId: string,
+    dbClient = getDatabase()
+  ): Promise<any> {
+    const db = requireDb(dbClient);
+    try {
+      const [summary] = await db
+        .select()
+        .from(inpatientDischargeSummaries)
+        .where(and(eq(inpatientDischargeSummaries.tenantId, tenantId), eq(inpatientDischargeSummaries.admissionId, admissionId)))
+        .limit(1);
+
+      if (!summary) {
+        throw new AppError({
+          message: 'Discharge summary not found for this admission.',
+          code: ErrorCode.NOT_FOUND,
+          statusCode: 404
+        });
+      }
+
+      return {
+        id: summary.id,
+        tenantId: summary.tenantId,
+        summaryNumber: summary.summaryNumber,
+        admissionId: summary.admissionId,
+        patientId: summary.patientId,
+        patientName: summary.patientName,
+        patientMrn: summary.patientMrn,
+        admissionDate: summary.admissionDate ? new Date(summary.admissionDate) : new Date(),
+        dischargeDate: summary.dischargeDate ? new Date(summary.dischargeDate) : new Date(),
+        attendingConsultantName: summary.attendingConsultantName,
+        finalPrimaryDiagnosis: summary.finalPrimaryDiagnosis,
+        finalSecondaryDiagnosis: summary.finalSecondaryDiagnosis,
+        surgicalProceduresPerformed: summary.surgicalProceduresPerformed,
+        hospitalCourseSummary: summary.hospitalCourseSummary,
+        keyInvestigationFindings: summary.keyInvestigationFindings,
+        treatmentGiven: summary.treatmentGiven,
+        dischargeMedicationAdvice: summary.dischargeMedicationAdvice,
+        dietAndActivityAdvice: summary.dietAndActivityAdvice,
+        warningSignsToSeekImmediateCare: summary.warningSignsToSeekImmediateCare,
+        isFinalized: Boolean(summary.isFinalized),
+        createdAt: summary.createdAt ? new Date(summary.createdAt) : new Date()
+      };
+    } catch (err) {
+      if (err instanceof AppError) throw err;
+      throw new AppError({
+        message: 'Database query failed. Discharge summary lookup unavailable.',
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
+    }
+  }
+
+  async getIpdBillingSummary(
+    tenantId: string,
+    admissionId: string,
+    dbClient = getDatabase()
+  ): Promise<IpdBillingSummary> {
+    const db = requireDb(dbClient);
+
+    const [adm] = await db
+      .select()
+      .from(inpatientAdmissions)
+      .where(and(eq(inpatientAdmissions.tenantId, tenantId), eq(inpatientAdmissions.id, admissionId)))
+      .limit(1);
+
+    if (!adm) {
+      throw new AppError({
+        message: 'Inpatient admission record not found.',
+        code: ErrorCode.NOT_FOUND,
+        statusCode: 404
+      });
+    }
+
+    const admittedAt = adm.admissionDateTime ? new Date(adm.admissionDateTime) : ((adm as any).admittedAt ? new Date((adm as any).admittedAt) : new Date(adm.createdAt));
+    const dischargeDate = adm.actualDischargeDateTime ? new Date(adm.actualDischargeDateTime) : null;
+    const effectiveEndDate = dischargeDate || new Date();
+    const durationMs = Math.max(0, effectiveEndDate.getTime() - admittedAt.getTime());
+    const totalDays = Math.max(1, Math.ceil(durationMs / (1000 * 60 * 60 * 24)));
+
+    // Fetch beds occupied (including transfers)
+    const transfers = await db
+      .select()
+      .from(inpatientTransfers)
+      .where(and(eq(inpatientTransfers.tenantId, tenantId), eq(inpatientTransfers.admissionId, admissionId)))
+      .orderBy(inpatientTransfers.completedAt);
+
+    const bedsOccupied: Array<{ bedId: string; bedCode: string; wardName: string; rate: number }> = [];
+    const allBedIds = new Set<string>();
+    if (adm.bedId) allBedIds.add(adm.bedId);
+    for (const t of transfers) {
+      if (t.sourceBedId) allBedIds.add(t.sourceBedId);
+      if (t.destinationBedId) allBedIds.add(t.destinationBedId);
+    }
+
+    let dailyRate = 150.0;
+    for (const bid of allBedIds) {
+      const [bedRow] = await db
+        .select()
+        .from(inpatientBeds)
+        .where(and(eq(inpatientBeds.tenantId, tenantId), eq(inpatientBeds.id, bid)))
+        .limit(1);
+      if (bedRow) {
+        const rate = bedRow.dailyChargeRate ? Number(bedRow.dailyChargeRate) : 150.0;
+        dailyRate = rate;
+        bedsOccupied.push({
+          bedId: bedRow.id,
+          bedCode: bedRow.bedNumber || bedRow.bedCode,
+          wardName: 'General Inpatient Ward',
+          rate
+        });
+      }
+    }
+
+    const totalBedAmount = totalDays * dailyRate;
+
+    // Doctor Rounds
+    const rounds = await db
+      .select()
+      .from(inpatientDoctorRounds)
+      .where(and(eq(inpatientDoctorRounds.tenantId, tenantId), eq(inpatientDoctorRounds.admissionId, admissionId)));
+
+    const roundsCount = rounds.length;
+    const ratePerRound = 500.0;
+    const totalRoundsAmount = roundsCount * ratePerRound;
+
+    // Nursing Care
+    const nursingDailyRate = 300.0;
+    const totalNursingAmount = totalDays * nursingDailyRate;
+
+    // Pharmacy charges
+    let pharmacyItemsCount = 0;
+    let totalPharmacyAmount = 0.0;
+    try {
+      const pharmRows = await db
+        .select()
+        .from(pharmacyDispensing)
+        .where(and(eq(pharmacyDispensing.tenantId, tenantId), eq(pharmacyDispensing.patientId, adm.patientId)));
+      pharmacyItemsCount = pharmRows.length;
+      totalPharmacyAmount = pharmRows.reduce((acc: number, cur: any) => {
+        const meta = (cur.metadata as any) || {};
+        const val = cur.totalAmount || cur.netAmount || meta.totalAmount || meta.netAmount || 472.50;
+        return acc + Number(val);
+      }, 0);
+    } catch {
+      // Ignore lookup failure
+    }
+
+    // Lab charges
+    let labOrdersCount = 0;
+    let totalLabAmount = 0.0;
+    try {
+      const labRows = await db
+        .select()
+        .from(investigationOrders)
+        .where(and(eq(investigationOrders.tenantId, tenantId), eq(investigationOrders.patientId, adm.patientId)));
+      labOrdersCount = labRows.length;
+      totalLabAmount = labRows.reduce((acc: number, cur: any) => acc + Number(cur.metadata?.totalAmount || cur.metadata?.netAmount || cur.totalAmount || cur.netAmount || 350.0), 0);
+    } catch {
+      // Ignore lookup failure
+    }
+
+    // Radiology charges
+    let radiologyOrdersCount = 0;
+    let totalRadiologyAmount = 0.0;
+    try {
+      const radRows = await db
+        .select()
+        .from(radiologyOrders)
+        .where(and(eq(radiologyOrders.tenantId, tenantId), eq(radiologyOrders.patientId, adm.patientId)));
+      radiologyOrdersCount = radRows.length;
+      totalRadiologyAmount = radRows.reduce((acc: number, cur: any) => acc + Number(cur.metadata?.totalAmount || cur.metadata?.netAmount || cur.totalAmount || cur.netAmount || 800.0), 0);
+    } catch {
+      // Ignore lookup failure
+    }
+
+    const subtotalAmount = totalBedAmount + totalRoundsAmount + totalNursingAmount + totalPharmacyAmount + totalLabAmount + totalRadiologyAmount;
+    const taxAmount = Number((subtotalAmount * 0.05).toFixed(2));
+    const discountAmount = 0.0;
+    const totalPayableAmount = Number((subtotalAmount + taxAmount - discountAmount).toFixed(2));
+
+    return {
+      admissionId,
+      admissionNumber: adm.admissionNumber,
+      patientId: adm.patientId,
+      patientName: adm.patientName || 'Inpatient Patient',
+      admissionDate: admittedAt,
+      dischargeDate,
+      totalDays,
+      bedCharges: {
+        days: totalDays,
+        dailyRate,
+        totalBedAmount,
+        bedsOccupied
+      },
+      doctorRoundsCharges: {
+        count: roundsCount,
+        ratePerRound,
+        totalRoundsAmount
+      },
+      nursingCareCharges: {
+        days: totalDays,
+        dailyRate: nursingDailyRate,
+        totalNursingAmount
+      },
+      pharmacyCharges: {
+        itemsCount: pharmacyItemsCount,
+        totalPharmacyAmount
+      },
+      labCharges: {
+        ordersCount: labOrdersCount,
+        totalLabAmount
+      },
+      radiologyCharges: {
+        ordersCount: radiologyOrdersCount,
+        totalRadiologyAmount
+      },
+      subtotalAmount,
+      taxAmount,
+      discountAmount,
+      totalPayableAmount
+    };
+  }
+
+  async generateConsolidatedIpdBill(
+    tenantId: string,
+    admissionId: string,
+    actorUserId: string,
+    dbClient = getDatabase()
+  ): Promise<{ invoice: any; items: any[]; summary: IpdBillingSummary }> {
+    const db = requireDb(dbClient);
+
+    const executeInTx = async (tx: any) => {
+      const summary = await this.getIpdBillingSummary(tenantId, admissionId, tx);
+
+      const [adm] = await tx
+        .select()
+        .from(inpatientAdmissions)
+        .where(and(eq(inpatientAdmissions.tenantId, tenantId), eq(inpatientAdmissions.id, admissionId)))
+        .limit(1);
+
+      const { partnerId, organizationId } = await resolvePartnerAndOrg(tx, tenantId, adm.partnerId, adm.organizationId);
+      const branchId = await resolveBranchId(tx, tenantId, adm.branchId);
+
+      const now = new Date();
+      const invoiceId = crypto.randomUUID();
+      const invoiceNumber = `INV-IPD-${Math.floor(100000 + Math.random() * 900000)}`;
+
+      const [createdInvoice] = await tx.insert(billingInvoices).values({
+        id: invoiceId,
+        tenantId,
+        partnerId,
+        organizationId,
+        branchId,
+        patientId: summary.patientId,
+        encounterId: adm.encounterId,
+        invoiceNumber,
+        invoiceType: 'IPD',
+        status: 'ISSUED',
+        subtotal: String(summary.subtotalAmount),
+        taxTotal: String(summary.taxAmount),
+        discountTotal: String(summary.discountAmount),
+        totalAmount: String(summary.totalPayableAmount),
+        paidAmount: '0.00',
+        dueAmount: String(summary.totalPayableAmount),
+        currency: 'INR',
+        issuedAt: now,
+        finalizedAt: now,
+        finalizedBy: actorUserId,
+        createdAt: now,
+        updatedAt: now
+      } as unknown as typeof billingInvoices.$inferInsert).returning();
+
+      const itemsToInsert: any[] = [
+        {
+          id: crypto.randomUUID(),
+          tenantId,
+          invoiceId,
+          serviceCode: 'IPD_BED',
+          description: `Bed Occupancy Charges (${summary.bedCharges.days} days @ ₹${summary.bedCharges.dailyRate}/day)`,
+          quantity: String(summary.bedCharges.days),
+          unitPrice: String(summary.bedCharges.dailyRate),
+          grossAmount: String(summary.bedCharges.totalBedAmount),
+          discountAmount: '0.00',
+          taxAmount: '0.00',
+          netAmount: String(summary.bedCharges.totalBedAmount),
+          createdAt: now
+        },
+        {
+          id: crypto.randomUUID(),
+          tenantId,
+          invoiceId,
+          serviceCode: 'IPD_NURSING',
+          description: `Nursing & Inpatient Care Bundle (${summary.nursingCareCharges.days} days @ ₹${summary.nursingCareCharges.dailyRate}/day)`,
+          quantity: String(summary.nursingCareCharges.days),
+          unitPrice: String(summary.nursingCareCharges.dailyRate),
+          grossAmount: String(summary.nursingCareCharges.totalNursingAmount),
+          discountAmount: '0.00',
+          taxAmount: '0.00',
+          netAmount: String(summary.nursingCareCharges.totalNursingAmount),
+          createdAt: now
+        }
+      ];
+
+      if (summary.doctorRoundsCharges.count > 0) {
+        itemsToInsert.push({
+          id: crypto.randomUUID(),
+          tenantId,
+          invoiceId,
+          serviceCode: 'IPD_ROUNDS',
+          description: `Daily Doctor Rounds (${summary.doctorRoundsCharges.count} rounds @ ₹${summary.doctorRoundsCharges.ratePerRound}/round)`,
+          quantity: String(summary.doctorRoundsCharges.count),
+          unitPrice: String(summary.doctorRoundsCharges.ratePerRound),
+          grossAmount: String(summary.doctorRoundsCharges.totalRoundsAmount),
+          discountAmount: '0.00',
+          taxAmount: '0.00',
+          netAmount: String(summary.doctorRoundsCharges.totalRoundsAmount),
+          createdAt: now
+        });
+      }
+
+      if (summary.pharmacyCharges.totalPharmacyAmount > 0) {
+        itemsToInsert.push({
+          id: crypto.randomUUID(),
+          tenantId,
+          invoiceId,
+          serviceCode: 'IPD_PHARMACY',
+          description: `Inpatient Pharmacy Medications (${summary.pharmacyCharges.itemsCount} dispensations)`,
+          quantity: '1.00',
+          unitPrice: String(summary.pharmacyCharges.totalPharmacyAmount),
+          grossAmount: String(summary.pharmacyCharges.totalPharmacyAmount),
+          discountAmount: '0.00',
+          taxAmount: '0.00',
+          netAmount: String(summary.pharmacyCharges.totalPharmacyAmount),
+          createdAt: now
+        });
+      }
+
+      if (summary.labCharges.totalLabAmount > 0) {
+        itemsToInsert.push({
+          id: crypto.randomUUID(),
+          tenantId,
+          invoiceId,
+          serviceCode: 'IPD_LAB',
+          description: `Inpatient Pathology & Laboratory Investigations (${summary.labCharges.ordersCount} orders)`,
+          quantity: '1.00',
+          unitPrice: String(summary.labCharges.totalLabAmount),
+          grossAmount: String(summary.labCharges.totalLabAmount),
+          discountAmount: '0.00',
+          taxAmount: '0.00',
+          netAmount: String(summary.labCharges.totalLabAmount),
+          createdAt: now
+        });
+      }
+
+      if (summary.radiologyCharges.totalRadiologyAmount > 0) {
+        itemsToInsert.push({
+          id: crypto.randomUUID(),
+          tenantId,
+          invoiceId,
+          serviceCode: 'IPD_RADIOLOGY',
+          description: `Inpatient Radiology & Diagnostic Imaging (${summary.radiologyCharges.ordersCount} orders)`,
+          quantity: '1.00',
+          unitPrice: String(summary.radiologyCharges.totalRadiologyAmount),
+          grossAmount: String(summary.radiologyCharges.totalRadiologyAmount),
+          discountAmount: '0.00',
+          taxAmount: '0.00',
+          netAmount: String(summary.radiologyCharges.totalRadiologyAmount),
+          createdAt: now
+        });
+      }
+
+      const createdItems: any[] = [];
+      for (const item of itemsToInsert) {
+        const [inserted] = await tx.insert(billingInvoiceItems).values(item as unknown as typeof billingInvoiceItems.$inferInsert).returning();
+        createdItems.push(inserted || item);
+      }
+
+      return {
+        invoice: createdInvoice || { id: invoiceId, invoiceNumber, status: 'ISSUED', totalAmount: summary.totalPayableAmount },
+        items: createdItems,
+        summary
+      };
+    };
+
+    if (typeof (db as any).transaction === 'function') {
+      return await (db as any).transaction(executeInTx);
+    } else {
+      return await executeInTx(db);
     }
   }
 }
