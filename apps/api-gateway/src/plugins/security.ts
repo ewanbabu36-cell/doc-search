@@ -43,12 +43,26 @@ export async function registerSecurityPlugins(app: FastifyInstance): Promise<voi
       if (configuredOrigins.includes(origin)) {
         return cb(null, true);
       }
-      // In production, allow trusted domain patterns; allow localhost only in non-production environments
-      const isLocalhost = origin.startsWith('http://localhost:') || origin.startsWith('https://localhost:');
-      if (
-        origin.endsWith('.docsearch.health') ||
-        (isLocalhost && (env.NODE_ENV !== 'production' || process.env['ALLOW_LOCALHOST_CORS_IN_PROD'] === 'true'))
-      ) {
+      // Allow local development, 127.0.0.1, IPv6 [::1], and private LAN subnets (mobile/tablet testing) in non-production
+      if (env.NODE_ENV !== 'production' || process.env['ALLOW_LOCALHOST_CORS_IN_PROD'] === 'true') {
+        const isLocalOrLan =
+          origin.startsWith('http://localhost:') ||
+          origin.startsWith('https://localhost:') ||
+          origin.startsWith('http://127.0.0.1:') ||
+          origin.startsWith('https://127.0.0.1:') ||
+          origin.startsWith('http://[::1]:') ||
+          origin.startsWith('https://[::1]:') ||
+          /^https?:\/\/10\.\d{1,3}\.\d{1,3}\.\d{1,3}(:\d+)?$/.test(origin) ||
+          /^https?:\/\/192\.168\.\d{1,3}\.\d{1,3}(:\d+)?$/.test(origin) ||
+          /^https?:\/\/172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}(:\d+)?$/.test(origin);
+
+        if (isLocalOrLan) {
+          return cb(null, true);
+        }
+      }
+
+      // In production, allow trusted domain patterns
+      if (origin.endsWith('.docsearch.health')) {
         return cb(null, true);
       }
       return cb(new Error('CORS origin denied'), false);

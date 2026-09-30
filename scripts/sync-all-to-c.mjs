@@ -40,6 +40,8 @@ const files = [
   'apps/partner-platform/src/components/views/PartnerAccountPlanView.tsx',
   'apps/partner-platform/src/components/dialogs/PrintableDoctorPrescriptionModal.tsx',
   'apps/partner-platform/src/components/dialogs/PrintablePathologyReportModal.tsx',
+  'apps/api-gateway/src/config/env.ts',
+  'apps/api-gateway/src/plugins/security.ts',
   'packages/ui-kit/dist/index.js',
   'packages/ui-kit/dist/index.d.ts',
   'scripts/benchmark-doctor-speed.mjs',
