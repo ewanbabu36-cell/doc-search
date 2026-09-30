@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getVerifiedRoleProfile } from '../../utils/roleProfileResolver.js';
+import { calculateBedBreakdownMetrics } from '../../services/bed-profile-synchronizer.js';
 
 export interface OwnerPulseCockpitProps {
   currentUser?: {
@@ -55,7 +56,7 @@ export const OwnerPulseCockpit: React.FC<OwnerPulseCockpitProps> = ({
     return () => window.removeEventListener('resize', checkViewport);
   }, []);
 
-  // Hydrate metrics from persistent billing & patient queues if present
+  // Hydrate metrics from persistent billing, patient queues, and live bed board
   useEffect(() => {
     try {
       const billData = localStorage.getItem('docsearch_partner_daily_billing');
@@ -84,7 +85,47 @@ export const OwnerPulseCockpit: React.FC<OwnerPulseCockpitProps> = ({
           }));
         }
       }
+
+      // Initial Bed Metrics Hydration
+      const storedBeds = localStorage.getItem('docsearch_inpatient_beds');
+      if (storedBeds) {
+        const parsedBeds = JSON.parse(storedBeds);
+        if (Array.isArray(parsedBeds) && parsedBeds.length > 0) {
+          const bMetrics = calculateBedBreakdownMetrics(parsedBeds);
+          setMetrics((prev) => ({
+            ...prev,
+            occupiedBeds: bMetrics.occupiedBeds,
+            totalBeds: bMetrics.totalBeds,
+            icuOccupied: bMetrics.icuOccupied,
+            icuTotal: bMetrics.icuTotal,
+            wardOccupied: bMetrics.wardOccupied,
+            wardTotal: bMetrics.wardTotal,
+            deluxeOccupied: bMetrics.deluxeOccupied,
+            deluxeTotal: bMetrics.deluxeTotal
+          }));
+        }
+      }
     } catch {}
+
+    const handleBedChanged = (e: any) => {
+      const bMetrics = e.detail?.metrics || (e.detail?.beds ? calculateBedBreakdownMetrics(e.detail.beds) : null);
+      if (bMetrics) {
+        setMetrics((prev) => ({
+          ...prev,
+          occupiedBeds: bMetrics.occupiedBeds,
+          totalBeds: bMetrics.totalBeds,
+          icuOccupied: bMetrics.icuOccupied,
+          icuTotal: bMetrics.icuTotal,
+          wardOccupied: bMetrics.wardOccupied,
+          wardTotal: bMetrics.wardTotal,
+          deluxeOccupied: bMetrics.deluxeOccupied,
+          deluxeTotal: bMetrics.deluxeTotal
+        }));
+      }
+    };
+
+    window.addEventListener('docsearch_bed_state_changed', handleBedChanged);
+    return () => window.removeEventListener('docsearch_bed_state_changed', handleBedChanged);
   }, []);
 
   // Only render on mobile screens (< 768px)
@@ -484,6 +525,16 @@ export const OwnerPulseCockpit: React.FC<OwnerPulseCockpitProps> = ({
                     </div>
                     <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#A78BFA' }}>
                       {metrics.deluxeOccupied} / {metrics.deluxeTotal} Occupied ({metrics.deluxeTotal - metrics.deluxeOccupied} Vacant)
+                    </span>
+                  </div>
+
+                  <div style={{ backgroundColor: '#0B132B', padding: '10px 14px', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <div>
+                      <strong style={{ fontSize: '0.85rem', color: '#F59E0B' }}>Emergency Triage & Trauma Bays</strong>
+                      <span style={{ fontSize: '0.72rem', color: '#94A3B8', display: 'block' }}>Red Zone & Immediate Resuscitation</span>
+                    </div>
+                    <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#F59E0B' }}>
+                      {profile.clinicalBedCapacity?.emergencyTriageBeds || 2} Licensed Bays (24x7 Ready)
                     </span>
                   </div>
                 </div>

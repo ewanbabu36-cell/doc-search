@@ -1,4 +1,8 @@
 import { apiRequest, isMockFallbackAllowed } from './api-client.js';
+import {
+  synchronizeBedInventoryWithProfile,
+  broadcastBedState
+} from './bed-profile-synchronizer.js';
 
 function loadStored<T>(key: string, fallback: T[]): T[] {
   if (typeof window !== 'undefined' && window.localStorage) {
@@ -211,6 +215,7 @@ export class MockInpatientManagementService implements IInpatientManagementServi
     const bedsForTenant = this.beds.filter((b) => b.tenantId === tenantId);
     saveStored(tenantKey, bedsForTenant.length > 0 ? bedsForTenant : this.beds);
     saveStored("docsearch_inpatient_beds", this.beds);
+    broadcastBedState(this.beds);
   }
 
   private saveTenantAdmissions(tenantId: string) {
@@ -717,6 +722,13 @@ export class MockInpatientManagementService implements IInpatientManagementServi
       this.admissions.push(...starterAdmissions);
       saveStored(tenantAdmKey, starterAdmissions);
     }
+
+    // Authoritative 6-Pillar Profile Bed Reconciliation
+    const synced = synchronizeBedInventoryWithProfile(this.beds, this.wards);
+    this.beds = synced.beds;
+    this.wards = synced.wards;
+    this.saveTenantBeds(tenantId);
+    this.saveTenantWards(tenantId);
   }
 
   async getOverviewMetrics(tenantId: string): Promise<InpatientOverviewMetricsDto> {

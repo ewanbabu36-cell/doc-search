@@ -69,6 +69,83 @@ export const BedManagementView: React.FC<BedManagementViewProps> = ({
         <Button variant="primary" onClick={onOpenCreateBed}>+ Register Bed</Button>
       </div>
 
+      {/* Real-time Facility Occupancy Summary Ribbon */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+        gap: '0.75rem',
+        backgroundColor: 'var(--ds-color-surface, #0f172a)',
+        border: '1px solid var(--ds-color-border, #334155)',
+        borderRadius: '10px',
+        padding: '10px 16px'
+      }}>
+        <div>
+          <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase' }}>Total Licensed</span>
+          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--ds-color-text-primary, #f8fafc)' }}>{safeBeds.length} Beds</div>
+        </div>
+        <div>
+          <span style={{ fontSize: '0.7rem', color: '#16a34a', textTransform: 'uppercase' }}>🟢 Available</span>
+          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#16a34a' }}>{availableCount} Vacant</div>
+        </div>
+        <div>
+          <span style={{ fontSize: '0.7rem', color: '#2563eb', textTransform: 'uppercase' }}>🔴 Occupied</span>
+          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#38bdf8' }}>{occupiedCount} Patients</div>
+        </div>
+        <div>
+          <span style={{ fontSize: '0.7rem', color: '#d97706', textTransform: 'uppercase' }}>🟡 Sanitizing</span>
+          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#f59e0b' }}>{cleaningCount} Cleaning</div>
+        </div>
+        <div>
+          <span style={{ fontSize: '0.7rem', color: '#a78bfa', textTransform: 'uppercase' }}>Occupancy Rate</span>
+          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#a78bfa' }}>
+            {safeBeds.length > 0 ? Math.round((occupiedCount / safeBeds.length) * 100) : 0}%
+          </div>
+        </div>
+      </div>
+
+      {/* Ward Department Selector Tabs */}
+      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+        <button
+          type="button"
+          onClick={() => setSelectedWard('ALL')}
+          style={{
+            padding: '6px 14px',
+            borderRadius: '8px',
+            border: selectedWard === 'ALL' ? '2px solid #38bdf8' : '1px solid var(--ds-color-border, #334155)',
+            backgroundColor: selectedWard === 'ALL' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
+            color: selectedWard === 'ALL' ? '#38bdf8' : 'var(--ds-color-text-secondary, #94a3b8)',
+            fontWeight: 700,
+            fontSize: '0.8rem',
+            cursor: 'pointer'
+          }}
+        >
+          🏥 All Wards ({safeBeds.length})
+        </button>
+        {safeWards.map((w) => {
+          const wardBedCount = safeBeds.filter((b) => b.wardId === w.id).length;
+          const isSelected = selectedWard === w.id;
+          return (
+            <button
+              key={w.id}
+              type="button"
+              onClick={() => setSelectedWard(w.id)}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '8px',
+                border: isSelected ? '2px solid #38bdf8' : '1px solid var(--ds-color-border, #334155)',
+                backgroundColor: isSelected ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
+                color: isSelected ? '#38bdf8' : 'var(--ds-color-text-secondary, #94a3b8)',
+                fontWeight: 700,
+                fontSize: '0.8rem',
+                cursor: 'pointer'
+              }}
+            >
+              {w.wardName} ({wardBedCount})
+            </button>
+          );
+        })}
+      </div>
+
       {/* Quick Status Filter Tabs */}
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
         <button
