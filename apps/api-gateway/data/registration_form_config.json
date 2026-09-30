@@ -3,7 +3,7 @@
   "showModuleSelection": true,
   "allowAdvancePayment": true,
   "defaultPlanTier": "FOUNDING",
-  "bannerNotice": "Universal Healthcare Partner Registration • 1st Year Free Founding Partner Offer Active",
+  "bannerNotice": "Pioneer Free Onboarding Environment",
   "allowedFacilityTypes": [
     "HOSPITAL",
     "CLINIC",
@@ -279,6 +279,57 @@
       "applicableFacilityTypes": [
         "DIAGNOSTIC_CENTRE"
       ]
+    },
+    {
+      "id": "plan-pharma-wholesale-free-yr1",
+      "code": "PLAN_PHARMA_WHOLESALE_FREE_YR1",
+      "tier": "FOUNDING",
+      "name": "Wholesale Distributor Founding Partner (1st Year Free)",
+      "price": 0,
+      "billingInterval": "ANNUAL",
+      "icon": "📦",
+      "tag": "🎁 1st Year Free • B2B GST Distribution & Form 20B/21B",
+      "description": "100% Free for 365 Days - B2B wholesale distribution ledger, Form 20B/21B buyer Drug License validation, multi-batch GRN inwarding & cold-chain batch tracking.",
+      "features": [
+        "Universal Staff Directory & RBAC",
+        "Wholesale B2B GST Distribution & Buyer Drug License Verification",
+        "Form 20B / 21B Regulatory Compliance Register",
+        "Multi-Batch Cold-Chain & Expiry Radar",
+        "Automated Supplier GRN & Credit Note Settlement"
+      ],
+      "recommended": true,
+      "maxDoctors": 5,
+      "maxBeds": 0,
+      "isActive": true,
+      "applicableFacilityTypes": [
+        "PHARMACY_WHOLESALE"
+      ]
+    },
+    {
+      "id": "plan-pharma-wholesale-annual-yr2",
+      "code": "PLAN_PHARMA_WHOLESALE_ANNUAL_YR2",
+      "tier": "ANNUAL",
+      "name": "Wholesale Pharma Distributor Annual Plan",
+      "price": 25000,
+      "billingInterval": "ANNUAL",
+      "icon": "🏭",
+      "tag": "⭐ Year 2: ₹25,000/yr",
+      "description": "Enterprise B2B Wholesale Distribution suite: Multi-warehouse stock transfer, Form 20B/21B buyer verification, GST e-Invoice & credit limit governance.",
+      "features": [
+        "Universal Staff Directory & RBAC",
+        "Wholesale B2B GST Distribution & Buyer Drug License Verification",
+        "Form 20B / 21B Regulatory Compliance Register",
+        "Multi-Batch Cold-Chain & Expiry Radar",
+        "Automated Supplier GRN & Credit Note Settlement",
+        "Multi-Warehouse Stock Transfer & Credit Limit Governance"
+      ],
+      "recommended": false,
+      "maxDoctors": 15,
+      "maxBeds": 0,
+      "isActive": true,
+      "applicableFacilityTypes": [
+        "PHARMACY_WHOLESALE"
+      ]
     }
   ],
   "fieldRules": {
@@ -292,6 +343,6 @@
     "cityState": "MANDATORY",
     "passwordCreation": "MANDATORY"
   },
-  "updatedAt": "2026-09-24T08:39:06.481Z",
-  "updatedBy": "DocSearch Founder Command"
+  "updatedAt": "2026-09-30T14:03:09.192Z",
+  "updatedBy": "admin@docsearch.internal"
 }
