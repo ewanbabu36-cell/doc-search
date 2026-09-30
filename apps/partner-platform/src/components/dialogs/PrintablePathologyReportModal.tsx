@@ -55,6 +55,7 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
   onClose,
   order
 }) => {
+  const profile = getVerifiedRoleProfile();
   const [isSendingWhatsApp, setIsSendingWhatsApp] = useState(false);
   const [whatsAppSuccess, setWhatsAppSuccess] = useState(false);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
@@ -510,8 +511,12 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
           {!printOnLetterhead ? (
             <div id="lab-header-banner" style={{ borderBottom: '2.5px solid #0284C7', paddingBottom: '14px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '1.75rem' }}>🧪</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  {profile.branding?.logoUrl ? (
+                    <img src={profile.branding.logoUrl} alt="Logo" style={{ height: '48px', width: 'auto', maxHeight: '48px', objectFit: 'contain' }} />
+                  ) : (
+                    <span style={{ fontSize: '1.75rem' }}>🧪</span>
+                  )}
                   <div>
                     <h1 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 900, color: '#0369A1', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
                       {settings.labName}
@@ -531,7 +536,18 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
                   <span style={{ fontSize: '0.625rem', fontWeight: 800, color: '#0369A1', display: 'block' }}>NABL CERTIFICATE NO.</span>
                   <strong style={{ fontSize: '0.75rem', color: '#0C4A6E' }}>{settings.certificateNo}</strong>
                 </div>
-                <span style={{ fontSize: '0.625rem', color: '#64748B', marginTop: '2px', display: 'block' }}>ABDM Connected Lab</span>
+                {profile.abdmFacilityId ? (
+                  <span style={{ fontSize: '0.625rem', color: '#0284C7', marginTop: '2px', display: 'block', fontWeight: 700 }}>
+                    ABDM HFR: {profile.abdmFacilityId}
+                  </span>
+                ) : (
+                  <span style={{ fontSize: '0.625rem', color: '#64748B', marginTop: '2px', display: 'block' }}>ABDM Connected Lab</span>
+                )}
+                {profile.emergencyHelpline && (
+                  <span style={{ fontSize: '0.625rem', color: '#DC2626', marginTop: '1px', display: 'block', fontWeight: 700 }}>
+                    24x7 Helpline: {profile.emergencyHelpline}
+                  </span>
+                )}
               </div>
             </div>
           ) : (
@@ -813,14 +829,38 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
               </div>
             </div>
 
-            {/* Pathologist Signature */}
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontFamily: 'cursive', fontSize: '1.1rem', color: '#16A34A', marginBottom: '2px' }}>{settings.pathologistName.split(',')[0]}</div>
+            {/* Pathologist Signature & Official Stamp */}
+            <div style={{ textAlign: 'right', position: 'relative' }}>
+              {profile.branding?.stampSealUrl && (
+                <img
+                  src={profile.branding.stampSealUrl}
+                  alt="Official Seal"
+                  style={{
+                    position: 'absolute',
+                    right: '40px',
+                    bottom: '10px',
+                    width: '60px',
+                    height: '60px',
+                    opacity: 0.65,
+                    pointerEvents: 'none'
+                  }}
+                />
+              )}
+              {profile.branding?.signatureUrl ? (
+                <img src={profile.branding.signatureUrl} alt="Signature" style={{ height: '36px', width: 'auto', maxHeight: '36px', objectFit: 'contain', marginLeft: 'auto', display: 'block', marginBottom: '2px' }} />
+              ) : (
+                <div style={{ fontFamily: 'cursive', fontSize: '1.1rem', color: '#16A34A', marginBottom: '2px' }}>{settings.pathologistName.split(',')[0]}</div>
+              )}
               <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0F172A' }}>{settings.pathologistName}</div>
               <div style={{ fontSize: '0.6875rem', color: '#64748B' }}>{settings.pathologistTitle}</div>
               <div style={{ fontSize: '0.625rem', color: '#0369A1', fontWeight: 700 }}>{settings.pathologistRegNo}</div>
             </div>
 
+          </div>
+
+          {/* Statutory Legal Disclaimer */}
+          <div style={{ fontSize: '0.5625rem', color: '#64748B', textAlign: 'center', marginTop: '12px' }}>
+            {profile.branding?.reportFooterDisclaimer || 'This electronic laboratory report is validated against standard reference ranges and certified by authorized medical specialists.'}
           </div>
 
         </div>

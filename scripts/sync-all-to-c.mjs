@@ -38,6 +38,8 @@ const files = [
   'apps/partner-platform/src/utils/roleProfileResolver.ts',
   'apps/api-gateway/src/services/partner/PartnerAccountService.ts',
   'apps/partner-platform/src/components/views/PartnerAccountPlanView.tsx',
+  'apps/partner-platform/src/components/dialogs/PrintableDoctorPrescriptionModal.tsx',
+  'apps/partner-platform/src/components/dialogs/PrintablePathologyReportModal.tsx',
   'packages/ui-kit/dist/index.js',
   'packages/ui-kit/dist/index.d.ts',
   'scripts/benchmark-doctor-speed.mjs',
