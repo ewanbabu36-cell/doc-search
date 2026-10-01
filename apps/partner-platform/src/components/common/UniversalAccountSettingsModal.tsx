@@ -166,6 +166,14 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
     logoUrl: '',
     stampSealUrl: '',
     signatureUrl: '',
+    technologistSignatureUrl: '',
+    technologistName: '',
+    technologistDegree: 'B.Sc (MLT), DMLT',
+    technologistRegNo: '',
+    pathologistSignatureUrl: '',
+    pathologistName: '',
+    pathologistDegree: 'MD (Pathology), DCP',
+    pathologistRegNo: '',
     letterheadMode: 'FULL_DIGITAL' as 'FULL_DIGITAL' | 'PRE_PRINTED_PAD',
     rxHeaderNotes: 'CONSULTING PHYSICIAN & SPECIALIST CLINICAL CARE',
     rxFooterDisclaimer: 'Digitally authenticated under IT Act 2000 & NMC Guidelines. Valid for 30 days from issue.',
@@ -197,6 +205,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
     autoRenewalAlertEnabled: true,
 
     // Doctor Fields
+    doctorName: currentUser?.name || '',
     doctorDegreeName: currentUser?.roleTitle || (roleCategory === 'DOCTOR' ? 'MBBS' : ''),
     doctorDegreeFile: '',
     doctorCouncilName: '',
@@ -208,7 +217,13 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
     // Pathology Lab Fields
     nablCertificateNo: '',
     nablCertFile: '',
+    pathologistName: '',
+    pathologistDegree: 'MD (Pathology), DCP',
     pathologistDegreeFile: '',
+    technologistName: '',
+    technologistDegree: 'B.Sc (MLT), DMLT',
+    technologistRegNo: '',
+    technologistCertFile: '',
     bmwPollutionAuthNo: '',
     bmwCertFile: '',
 
@@ -485,6 +500,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
             doctorRegNo: updatedPayload.certificates?.doctorRegNo,
             pharmacyCouncilRegNo: updatedPayload.certificates?.pharmacyCouncilRegNo,
             nablCertificateNo: updatedPayload.certificates?.nablCertificateNo,
+            technologistRegNo: updatedPayload.certificates?.technologistRegNo || updatedPayload.branding?.technologistRegNo,
             authorizedSignatory: updatedPayload.certificates?.authorizedSignatory
           },
           certificates: updatedPayload.certificates,
@@ -499,11 +515,18 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
       const effectiveBranding = updatedPayload.branding || brandingData;
       try {
         localStorage.setItem('docsearch_custom_rx_letterhead', JSON.stringify({
-          doctorName: updatedPayload.certificates?.doctorName || currentUser?.name || 'Authorized Consultant',
-          doctorDegree: updatedPayload.certificates?.doctorDegreeName || (roleCategory === 'DOCTOR' ? 'MBBS' : 'Chief Medical Superintendent'),
+          doctorName: updatedPayload.certificates?.doctorName || effectiveBranding?.pathologistName || currentUser?.name || 'Authorized Consultant',
+          doctorDegree: updatedPayload.certificates?.doctorDegreeName || effectiveBranding?.pathologistDegree || (roleCategory === 'DOCTOR' ? 'MBBS' : 'Chief Medical Superintendent'),
           doctorSpecialty: updatedPayload.certificates?.doctorSpecialty || 'General Medicine & Clinical Care',
           doctorCouncilName: updatedPayload.certificates?.doctorCouncilName || 'State Medical Council',
-          doctorRegNo: updatedPayload.certificates?.doctorRegNo || updatedPayload.certificates?.hospitalCeaRegNo || 'Reg # Verified',
+          doctorRegNo: updatedPayload.certificates?.doctorRegNo || effectiveBranding?.pathologistRegNo || updatedPayload.certificates?.hospitalCeaRegNo || 'Reg # Verified',
+          technologistName: effectiveBranding?.technologistName || updatedPayload.certificates?.technologistName || 'Authorized Medical Lab Technologist',
+          technologistDegree: effectiveBranding?.technologistDegree || updatedPayload.certificates?.technologistDegree || 'B.Sc (MLT), DMLT',
+          technologistRegNo: effectiveBranding?.technologistRegNo || updatedPayload.certificates?.technologistRegNo || '',
+          technologistSignatureUrl: effectiveBranding?.technologistSignatureUrl || '',
+          pathologistName: effectiveBranding?.pathologistName || updatedPayload.certificates?.pathologistName || updatedPayload.certificates?.doctorName || currentUser?.name || '',
+          pathologistDegree: effectiveBranding?.pathologistDegree || updatedPayload.certificates?.pathologistDegree || 'MD (Pathology), DCP',
+          pathologistRegNo: effectiveBranding?.pathologistRegNo || updatedPayload.certificates?.doctorRegNo || '',
           entityLegalName: updatedPayload.address?.legalName || currentUser?.tenantName || 'Healthcare Facility',
           officialAddress: `${updatedPayload.address?.addressLine1 || ''}${updatedPayload.address?.addressLine2 ? ', ' + updatedPayload.address.addressLine2 : ''}, ${updatedPayload.address?.city || ''}, ${updatedPayload.address?.state || ''} - ${updatedPayload.address?.pincode || ''}`.trim(),
           contactPhone: updatedPayload.address?.officialPhone || '',
@@ -518,6 +541,19 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
           letterheadMode: effectiveBranding?.letterheadMode || 'FULL_DIGITAL'
         }));
         localStorage.setItem('docsearch_prescription_letterhead_mode', effectiveBranding?.letterheadMode === 'PRE_PRINTED_PAD' ? 'PREPRINTED_PAD' : 'PLAIN_A4');
+
+        // Also synchronize dedicated pathology lab header cache for PrintablePathologyReportModal
+        localStorage.setItem('docsearch_lab_header_settings', JSON.stringify({
+          labName: (updatedPayload.address?.legalName || currentUser?.tenantName || 'DOC SEARCH CLINICAL PATHOLOGY LABORATORY').toUpperCase(),
+          labTagline: 'CLINICAL PATHOLOGY & DIAGNOSTIC MEDICINE',
+          labAddress: `📍 ${updatedPayload.address?.addressLine1 || ''} | 📞 ${updatedPayload.address?.officialPhone || ''}`,
+          certificateNo: updatedPayload.certificates?.nablCertificateNo || 'ISO 15189 / NABL Standard',
+          technicianName: effectiveBranding?.technologistName || updatedPayload.certificates?.technologistName || 'Authorized Medical Lab Technologist',
+          technicianTitle: effectiveBranding?.technologistDegree || 'Senior Medical Lab Technologist',
+          pathologistName: effectiveBranding?.pathologistName || updatedPayload.certificates?.pathologistName || updatedPayload.certificates?.doctorName || (currentUser?.name ? `Dr. ${currentUser.name}, MD` : 'Consulting Pathologist'),
+          pathologistTitle: 'Consultant Pathologist & Lab Director',
+          pathologistRegNo: effectiveBranding?.pathologistRegNo || updatedPayload.certificates?.doctorRegNo ? `Reg. No: ${effectiveBranding?.pathologistRegNo || updatedPayload.certificates?.doctorRegNo}` : 'Reg. No: Verified'
+        }));
       } catch {}
 
       const payloadWithFlag = {
@@ -542,7 +578,11 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
       return true;
     } catch (err: any) {
       console.error('Backend partner profile sync failed:', err);
-      setErrorMessage(err.message || 'Failed to save profile to server. Please verify connection and retry.');
+      const isFetchErr = err?.name === 'TypeError' || err?.message?.toLowerCase().includes('failed to fetch');
+      const friendlyMsg = isFetchErr
+        ? '✕ Network connection issue or payload size limit. Please ensure the API Gateway server is running and retry.'
+        : (err.message || '✕ Failed to save profile to server. Please verify connection and retry.');
+      setErrorMessage(friendlyMsg);
       return false;
     }
   };
@@ -711,20 +751,91 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
     }
   };
 
-  const handleImageUpload = (file: File, target: 'logo' | 'stamp' | 'signature') => {
-    if (file.size > 2 * 1024 * 1024) {
-      setErrorMessage('Image size exceeds 2MB limit. Please upload a smaller compressed image.');
+  const compressImageFile = (
+    file: File,
+    maxWidth: number,
+    maxHeight: number,
+    quality: number = 0.85
+  ): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      if (file.type.includes('svg')) {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target?.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+        return;
+      }
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        let { width, height } = img;
+        if (width > maxWidth || height > maxHeight) {
+          if (width / height > maxWidth / maxHeight) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          } else {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(width, 1);
+        canvas.height = Math.max(height, 1);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          const fallbackReader = new FileReader();
+          fallbackReader.onload = (e) => resolve(e.target?.result as string);
+          fallbackReader.onerror = reject;
+          fallbackReader.readAsDataURL(file);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        // Retain PNG for transparent stamps/signatures, JPEG for general photos
+        const isTransparentFormat = file.type === 'image/png';
+        const outputFormat = isTransparentFormat ? 'image/png' : 'image/jpeg';
+        const dataUrl = canvas.toDataURL(outputFormat, quality);
+        resolve(dataUrl);
+      };
+      img.onerror = (err) => {
+        URL.revokeObjectURL(objectUrl);
+        reject(err);
+      };
+      img.src = objectUrl;
+    });
+  };
+
+  const handleImageUpload = async (
+    file: File,
+    target: 'logo' | 'stamp' | 'signature' | 'technologistSignature'
+  ) => {
+    if (file.size > 8 * 1024 * 1024) {
+      setErrorMessage('Image size exceeds 8MB limit. Please upload an image under 8MB.');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = (uploadEvent) => {
-      const dataUrl = uploadEvent.target?.result as string;
+    try {
+      const maxDim = target === 'logo' ? { w: 600, h: 350 } : target === 'stamp' ? { w: 350, h: 350 } : { w: 450, h: 180 };
+      const dataUrl = await compressImageFile(file, maxDim.w, maxDim.h, 0.85);
+
       if (target === 'logo') setBrandingData((prev) => ({ ...prev, logoUrl: dataUrl }));
       if (target === 'stamp') setBrandingData((prev) => ({ ...prev, stampSealUrl: dataUrl }));
-      if (target === 'signature') setBrandingData((prev) => ({ ...prev, signatureUrl: dataUrl }));
+      if (target === 'signature') setBrandingData((prev) => ({ ...prev, signatureUrl: dataUrl, pathologistSignatureUrl: dataUrl }));
+      if (target === 'technologistSignature') setBrandingData((prev) => ({ ...prev, technologistSignatureUrl: dataUrl }));
+
       simulateAiOcr(file.name);
-    };
-    reader.readAsDataURL(file);
+    } catch (err: any) {
+      console.warn('Canvas compression fallback to FileReader:', err);
+      const reader = new FileReader();
+      reader.onload = (uploadEvent) => {
+        const dataUrl = uploadEvent.target?.result as string;
+        if (target === 'logo') setBrandingData((prev) => ({ ...prev, logoUrl: dataUrl }));
+        if (target === 'stamp') setBrandingData((prev) => ({ ...prev, stampSealUrl: dataUrl }));
+        if (target === 'signature') setBrandingData((prev) => ({ ...prev, signatureUrl: dataUrl, pathologistSignatureUrl: dataUrl }));
+        if (target === 'technologistSignature') setBrandingData((prev) => ({ ...prev, technologistSignatureUrl: dataUrl }));
+        simulateAiOcr(file.name);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleAddBranch = () => {
@@ -2218,6 +2329,73 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                     </div>
                     {certData.pathologistDegreeFile && <span style={{ fontSize: '0.75rem', color: '#6EE7B7' }}>✓ Attached Pathologist License: {certData.pathologistDegreeFile}</span>}
                   </div>
+
+                  {/* Authorized Lab Technologist Credentials */}
+                  <div style={{ backgroundColor: '#1E293B', padding: '14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                      <span style={{ fontSize: '1rem' }}>🔬</span>
+                      <strong style={{ fontSize: '0.8125rem', color: '#38BDF8' }}>CHIEF MEDICAL LAB TECHNOLOGIST (BMLT / DMLT) CREDENTIALS</strong>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))', gap: '12px', marginBottom: '10px' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
+                          CHIEF LAB TECHNOLOGIST NAME *
+                        </label>
+                        <input
+                          type="text"
+                          value={certData.technologistName}
+                          onChange={(e) => setCertData({ ...certData, technologistName: e.target.value })}
+                          placeholder="Mr. Aniket Verma"
+                          style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.875rem' }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
+                          QUALIFICATION / DEGREE *
+                        </label>
+                        <input
+                          type="text"
+                          value={certData.technologistDegree}
+                          onChange={(e) => setCertData({ ...certData, technologistDegree: e.target.value })}
+                          placeholder="B.Sc (MLT), DMLT"
+                          style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.875rem' }}
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))', gap: '12px', marginBottom: '10px' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
+                          PARAMEDICAL COUNCIL REG NO. / STAFF ID *
+                        </label>
+                        <input
+                          type="text"
+                          value={certData.technologistRegNo}
+                          onChange={(e) => setCertData({ ...certData, technologistRegNo: e.target.value })}
+                          placeholder="MLT-WB-2024-8842 / Staff #104"
+                          style={{ width: '100%', minHeight: '42px', padding: '8px 12px', borderRadius: '8px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.875rem', fontFamily: 'monospace' }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
+                          UPLOAD TECHNOLOGIST DEGREE / CERTIFICATE
+                        </label>
+                        <input
+                          type="file"
+                          accept=".pdf,.png,.jpg,.jpeg"
+                          onChange={(e) => {
+                            if (e.target.files && e.target.files[0]) {
+                              const name = e.target.files[0].name;
+                              setCertData({ ...certData, technologistCertFile: name });
+                              simulateAiOcr(name);
+                            }
+                          }}
+                          style={{ fontSize: '0.75rem', color: '#CBD5E1' }}
+                        />
+                      </div>
+                    </div>
+                    {certData.technologistCertFile && <span style={{ fontSize: '0.75rem', color: '#6EE7B7' }}>✓ Attached Technologist Certificate: {certData.technologistCertFile}</span>}
+                  </div>
                 </>
               )}
 
@@ -2773,34 +2951,179 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                       </div>
                     </div>
 
-                    {/* 3. Authorized Doctor Signature */}
-                    <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1' }}>Lead Doctor / Superintendent Digital Signature</span>
-                        {brandingData.signatureUrl && (
-                          <button
-                            type="button"
-                            onClick={() => setBrandingData({ ...brandingData, signatureUrl: '' })}
-                            style={{ background: 'none', border: 'none', color: '#F87171', fontSize: '0.6875rem', cursor: 'pointer' }}
-                          >
-                            ✕ Remove Signature
-                          </button>
-                        )}
+                    {/* 3. Authorized Signatories (Role Adaptive) */}
+                    {roleCategory === 'PATHOLOGY_LAB' ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {/* 3A. Head Pathologist / Lab Director Signatory */}
+                        <div style={{ padding: '10px', backgroundColor: '#0B132B', borderRadius: '8px', border: '1px solid rgba(56, 189, 248, 0.25)' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#38BDF8' }}>
+                              🩺 1. Head Pathologist / Lab Director Signatory (MD / DCP)
+                            </span>
+                            {brandingData.signatureUrl && (
+                              <button
+                                type="button"
+                                onClick={() => setBrandingData({ ...brandingData, signatureUrl: '', pathologistSignatureUrl: '' })}
+                                style={{ background: 'none', border: 'none', color: '#F87171', fontSize: '0.6875rem', cursor: 'pointer' }}
+                              >
+                                ✕ Remove Signature
+                              </button>
+                            )}
+                          </div>
+
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
+                            <div>
+                              <label style={{ display: 'block', fontSize: '0.6875rem', color: '#94A3B8', marginBottom: '2px' }}>PATHOLOGIST NAME</label>
+                              <input
+                                type="text"
+                                value={brandingData.pathologistName || certData.doctorName || ''}
+                                onChange={(e) => setBrandingData({ ...brandingData, pathologistName: e.target.value })}
+                                placeholder={currentUser?.name ? `Dr. ${currentUser.name}` : 'Dr. Consultant Pathologist'}
+                                style={{ width: '100%', padding: '4px 8px', borderRadius: '4px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.1)', color: '#FFF', fontSize: '0.75rem' }}
+                              />
+                            </div>
+                            <div>
+                              <label style={{ display: 'block', fontSize: '0.6875rem', color: '#94A3B8', marginBottom: '2px' }}>QUALIFICATION</label>
+                              <input
+                                type="text"
+                                value={brandingData.pathologistDegree || 'MD (Pathology), DCP'}
+                                onChange={(e) => setBrandingData({ ...brandingData, pathologistDegree: e.target.value })}
+                                placeholder="MD (Pathology), DCP"
+                                style={{ width: '100%', padding: '4px 8px', borderRadius: '4px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.1)', color: '#FFF', fontSize: '0.75rem' }}
+                              />
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '8px', alignItems: 'center' }}>
+                            <div>
+                              <label style={{ display: 'block', fontSize: '0.6875rem', color: '#94A3B8', marginBottom: '2px' }}>COUNCIL REG NO.</label>
+                              <input
+                                type="text"
+                                value={brandingData.pathologistRegNo || certData.doctorRegNo || ''}
+                                onChange={(e) => setBrandingData({ ...brandingData, pathologistRegNo: e.target.value })}
+                                placeholder="MMC-78291-B"
+                                style={{ width: '100%', padding: '4px 8px', borderRadius: '4px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.1)', color: '#FFF', fontSize: '0.75rem', fontFamily: 'monospace' }}
+                              />
+                            </div>
+                            <div>
+                              <label style={{ display: 'block', fontSize: '0.6875rem', color: '#94A3B8', marginBottom: '2px' }}>DIGITAL SIGNATURE</label>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <input
+                                  type="file"
+                                  accept=".png,.jpg,.jpeg"
+                                  onChange={(e) => {
+                                    if (e.target.files && e.target.files[0]) handleImageUpload(e.target.files[0], 'signature');
+                                  }}
+                                  style={{ fontSize: '0.6875rem', color: '#CBD5E1', maxWidth: '140px' }}
+                                />
+                                {brandingData.signatureUrl && (
+                                  <img src={brandingData.signatureUrl} alt="Pathologist Signature" style={{ height: '24px', width: 'auto', maxHeight: '24px', objectFit: 'contain', backgroundColor: '#FFF', padding: '2px', borderRadius: '2px' }} />
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 3B. Authorized Medical Lab Technologist Signatory */}
+                        <div style={{ padding: '10px', backgroundColor: '#0B132B', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#34D399' }}>
+                              🔬 2. Authorized Medical Lab Technologist Signatory (BMLT / DMLT)
+                            </span>
+                            {brandingData.technologistSignatureUrl && (
+                              <button
+                                type="button"
+                                onClick={() => setBrandingData({ ...brandingData, technologistSignatureUrl: '' })}
+                                style={{ background: 'none', border: 'none', color: '#F87171', fontSize: '0.6875rem', cursor: 'pointer' }}
+                              >
+                                ✕ Remove Signature
+                              </button>
+                            )}
+                          </div>
+
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
+                            <div>
+                              <label style={{ display: 'block', fontSize: '0.6875rem', color: '#94A3B8', marginBottom: '2px' }}>TECHNOLOGIST NAME</label>
+                              <input
+                                type="text"
+                                value={brandingData.technologistName || certData.technologistName || ''}
+                                onChange={(e) => setBrandingData({ ...brandingData, technologistName: e.target.value })}
+                                placeholder="Mr. Aniket Verma"
+                                style={{ width: '100%', padding: '4px 8px', borderRadius: '4px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.1)', color: '#FFF', fontSize: '0.75rem' }}
+                              />
+                            </div>
+                            <div>
+                              <label style={{ display: 'block', fontSize: '0.6875rem', color: '#94A3B8', marginBottom: '2px' }}>QUALIFICATION</label>
+                              <input
+                                type="text"
+                                value={brandingData.technologistDegree || 'B.Sc (MLT), DMLT'}
+                                onChange={(e) => setBrandingData({ ...brandingData, technologistDegree: e.target.value })}
+                                placeholder="B.Sc (MLT), DMLT"
+                                style={{ width: '100%', padding: '4px 8px', borderRadius: '4px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.1)', color: '#FFF', fontSize: '0.75rem' }}
+                              />
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '8px', alignItems: 'center' }}>
+                            <div>
+                              <label style={{ display: 'block', fontSize: '0.6875rem', color: '#94A3B8', marginBottom: '2px' }}>REG NO. / STAFF ID</label>
+                              <input
+                                type="text"
+                                value={brandingData.technologistRegNo || certData.technologistRegNo || ''}
+                                onChange={(e) => setBrandingData({ ...brandingData, technologistRegNo: e.target.value })}
+                                placeholder="MLT-WB-2024-8842 / Staff #104"
+                                style={{ width: '100%', padding: '4px 8px', borderRadius: '4px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.1)', color: '#FFF', fontSize: '0.75rem', fontFamily: 'monospace' }}
+                              />
+                            </div>
+                            <div>
+                              <label style={{ display: 'block', fontSize: '0.6875rem', color: '#94A3B8', marginBottom: '2px' }}>DIGITAL SIGNATURE</label>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <input
+                                  type="file"
+                                  accept=".png,.jpg,.jpeg"
+                                  onChange={(e) => {
+                                    if (e.target.files && e.target.files[0]) handleImageUpload(e.target.files[0], 'technologistSignature');
+                                  }}
+                                  style={{ fontSize: '0.6875rem', color: '#CBD5E1', maxWidth: '140px' }}
+                                />
+                                {brandingData.technologistSignatureUrl && (
+                                  <img src={brandingData.technologistSignatureUrl} alt="Technologist Signature" style={{ height: '24px', width: 'auto', maxHeight: '24px', objectFit: 'contain', backgroundColor: '#FFF', padding: '2px', borderRadius: '2px' }} />
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <input
-                          type="file"
-                          accept=".png,.jpg,.jpeg"
-                          onChange={(e) => {
-                            if (e.target.files && e.target.files[0]) handleImageUpload(e.target.files[0], 'signature');
-                          }}
-                          style={{ fontSize: '0.75rem', color: '#CBD5E1' }}
-                        />
-                        {brandingData.signatureUrl && (
-                          <img src={brandingData.signatureUrl} alt="Signature Preview" style={{ height: '30px', width: 'auto', maxHeight: '30px', objectFit: 'contain', backgroundColor: '#FFF', padding: '2px', borderRadius: '2px' }} />
-                        )}
+                    ) : (
+                      /* Standard Lead Doctor / Superintendent Signature */
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1' }}>Lead Doctor / Superintendent Digital Signature</span>
+                          {brandingData.signatureUrl && (
+                            <button
+                              type="button"
+                              onClick={() => setBrandingData({ ...brandingData, signatureUrl: '' })}
+                              style={{ background: 'none', border: 'none', color: '#F87171', fontSize: '0.6875rem', cursor: 'pointer' }}
+                            >
+                              ✕ Remove Signature
+                            </button>
+                          )}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <input
+                            type="file"
+                            accept=".png,.jpg,.jpeg"
+                            onChange={(e) => {
+                              if (e.target.files && e.target.files[0]) handleImageUpload(e.target.files[0], 'signature');
+                            }}
+                            style={{ fontSize: '0.75rem', color: '#CBD5E1' }}
+                          />
+                          {brandingData.signatureUrl && (
+                            <img src={brandingData.signatureUrl} alt="Signature Preview" style={{ height: '30px', width: 'auto', maxHeight: '30px', objectFit: 'contain', backgroundColor: '#FFF', padding: '2px', borderRadius: '2px' }} />
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
 
                   {/* Disclaimers & Tagline */}
@@ -2895,15 +3218,15 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                               <img src={brandingData.logoUrl} alt="Logo" style={{ height: '42px', width: 'auto', objectFit: 'contain' }} />
                             ) : (
                               <div style={{ width: '42px', height: '42px', borderRadius: '6px', backgroundColor: '#0284C7', color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', fontWeight: 900 }}>
-                                🏥
+                                {roleCategory === 'PATHOLOGY_LAB' ? '🧪' : '🏥'}
                               </div>
                             )}
                             <div>
                               <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 900, color: '#0F172A', letterSpacing: '-0.02em' }}>
-                                {addressData.legalName || 'HEALTHCARE HOSPITAL & RESEARCH CENTER'}
+                                {addressData.legalName || (roleCategory === 'PATHOLOGY_LAB' ? 'CLINICAL PATHOLOGY & DIAGNOSTIC LABORATORY' : 'HEALTHCARE HOSPITAL & RESEARCH CENTER')}
                               </h3>
                               <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#0284C7', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                {brandingData.rxHeaderNotes || 'CLINICAL EVIDENCE-BASED HEALTHCARE CONSULTATION'}
+                                {roleCategory === 'PATHOLOGY_LAB' ? 'NABL ISO 15189:2022 ACCREDITED COMPREHENSIVE LABORATORY' : (brandingData.rxHeaderNotes || 'CLINICAL EVIDENCE-BASED HEALTHCARE CONSULTATION')}
                               </span>
                               <span style={{ fontSize: '0.625rem', color: '#475569', display: 'block', marginTop: '2px' }}>
                                 {addressData.addressLine1 || 'Main Healthcare Road'}, {addressData.city || 'District'} {addressData.state || ''} - {addressData.pincode || '226001'}
@@ -2912,71 +3235,215 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                           </div>
 
                           <div style={{ textAlign: 'right', fontSize: '0.625rem', color: '#334155' }}>
+                            {certData.nablCertificateNo && <div>NABL: <strong style={{ color: '#0284C7' }}>{certData.nablCertificateNo}</strong></div>}
                             {certData.hospitalCeaRegNo && <div>CEA Reg: <strong style={{ color: '#0F172A' }}>{certData.hospitalCeaRegNo}</strong></div>}
                             {certData.abdmFacilityId && <div>ABDM HFR: <strong style={{ color: '#0284C7' }}>{certData.abdmFacilityId}</strong></div>}
-                            {addressData.emergencyHelpline && <div>24x7 Helpline: <strong style={{ color: '#DC2626' }}>{addressData.emergencyHelpline}</strong></div>}
-                            <div>Reception: {addressData.officialPhone || 'Not set'}</div>
+                            {addressData.emergencyHelpline && <div>Helpline: <strong style={{ color: '#DC2626' }}>{addressData.emergencyHelpline}</strong></div>}
+                            <div>Contact: {addressData.officialPhone || 'Not set'}</div>
                           </div>
                         </div>
                       </div>
                     )}
 
-                    {/* Simulated Rx Body */}
-                    <div style={{ padding: '12px 0', flex: 1 }}>
-                      <div style={{ backgroundColor: '#F1F5F9', padding: '6px 10px', borderRadius: '4px', display: 'flex', justifyContent: 'space-between', fontSize: '0.6875rem', marginBottom: '10px' }}>
-                        <span>Pt: <strong>Rahul Kumar (38y / M)</strong> • UHID: DS-9921</span>
-                        <span>Date: <strong>{new Date().toLocaleDateString('en-IN')}</strong> • Token: #07</span>
-                      </div>
-
-                      <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#0284C7', marginBottom: '4px' }}>℞</div>
-                      <div style={{ fontSize: '0.6875rem', color: '#334155', lineHeight: 1.4 }}>
-                        <div style={{ marginBottom: '4px' }}>1. <strong>Tab. Augmentin 625mg</strong> — 1 tablet after meals (1-0-1) x 5 days</div>
-                        <div style={{ marginBottom: '4px' }}>2. <strong>Tab. Pan-D (40mg)</strong> — 1 tablet before breakfast (1-0-0) x 5 days</div>
-                        <div>3. <strong>Syp. Grilinctus-BM</strong> — 10ml thrice daily (1-1-1) x 3 days</div>
-                      </div>
-                    </div>
-
-                    {/* Simulated Doctor Signature & Stamp Footer */}
-                    <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '8px', marginTop: 'auto' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '6px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.625rem', color: '#64748B' }}>
-                          <span style={{ fontSize: '1.2rem' }}>📱</span>
-                          <span>Scan QR on Mobile for ABDM / PHR Record Verification</span>
-                        </div>
-
-                        <div style={{ position: 'relative', textAlign: 'center', minWidth: '120px' }}>
-                          {brandingData.stampSealUrl && (
-                            <img
-                              src={brandingData.stampSealUrl}
-                              alt="Stamp"
-                              style={{
-                                position: 'absolute',
-                                right: '10px',
-                                bottom: '15px',
-                                width: '56px',
-                                height: '56px',
-                                opacity: 0.65,
-                                pointerEvents: 'none'
-                              }}
-                            />
-                          )}
-                          {brandingData.signatureUrl ? (
-                            <img src={brandingData.signatureUrl} alt="Signature" style={{ height: '32px', width: 'auto', margin: '0 auto', display: 'block' }} />
-                          ) : (
-                            <div style={{ height: '24px', fontStyle: 'italic', fontSize: '0.75rem', color: '#0284C7' }}>
-                              Dr. {currentUser?.name || 'Chief Medical Officer'}
-                            </div>
-                          )}
-                          <div style={{ fontSize: '0.625rem', fontWeight: 800, color: '#0F172A', borderTop: '1px solid #CBD5E1', paddingTop: '2px' }}>
-                            Authorized Medical Practitioner
+                    {/* Simulated Body (Pathology Report vs OPD Rx) */}
+                    {roleCategory === 'PATHOLOGY_LAB' ? (
+                      <div style={{ padding: '8px 0', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                        {/* Accession & Patient Banner */}
+                        <div style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', padding: '6px 8px', borderRadius: '4px', display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '8px', fontSize: '0.625rem', marginBottom: '8px' }}>
+                          <div>
+                            <div>Pt: <strong>Rahul Kumar (38y / M)</strong> • UHID: <strong>DS-LAB-8821</strong></div>
+                            <div style={{ color: '#475569', marginTop: '2px' }}>Ref By: <strong>Dr. Amit Verma, MD</strong> • Specimen: <strong>EDTA Whole Blood</strong></div>
+                          </div>
+                          <div style={{ textAlign: 'right', color: '#475569' }}>
+                            <div>Barcode: <strong style={{ fontFamily: 'monospace', color: '#0F172A' }}>ACC-99214</strong></div>
+                            <div style={{ marginTop: '2px' }}>Collected: <strong>Today 08:30 AM</strong> • Reported: <strong>Today 10:45 AM</strong></div>
                           </div>
                         </div>
-                      </div>
 
-                      <div style={{ fontSize: '0.5625rem', color: '#64748B', textAlign: 'center' }}>
-                        {brandingData.rxFooterDisclaimer}
+                        {/* Investigation Title */}
+                        <div style={{ backgroundColor: '#0284C7', color: '#FFF', padding: '3px 8px', borderRadius: '3px', fontSize: '0.6875rem', fontWeight: 800, letterSpacing: '0.04em', marginBottom: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span>HAEMATOLOGY • COMPLETE BLOOD COUNT (CBC)</span>
+                          <span style={{ fontSize: '0.5625rem', fontWeight: 600, opacity: 0.9 }}>Primary Sample Tube</span>
+                        </div>
+
+                        {/* Parameters Table */}
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.625rem', marginBottom: '8px' }}>
+                          <thead>
+                            <tr style={{ borderBottom: '1.5px solid #CBD5E1', color: '#475569', fontSize: '0.5625rem', textAlign: 'left' }}>
+                              <th style={{ padding: '2px 4px' }}>INVESTIGATION</th>
+                              <th style={{ padding: '2px 4px', textAlign: 'center' }}>OBSERVED</th>
+                              <th style={{ padding: '2px 4px', textAlign: 'center' }}>REF INTERVAL</th>
+                              <th style={{ padding: '2px 4px', textAlign: 'center' }}>UNIT</th>
+                              <th style={{ padding: '2px 4px', textAlign: 'right' }}>STATUS</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr style={{ borderBottom: '1px solid #F1F5F9' }}>
+                              <td style={{ padding: '3px 4px', fontWeight: 700, color: '#0F172A' }}>Haemoglobin (Hb)</td>
+                              <td style={{ padding: '3px 4px', textAlign: 'center', fontWeight: 800 }}>14.2</td>
+                              <td style={{ padding: '3px 4px', textAlign: 'center', color: '#64748B' }}>13.0 - 17.0</td>
+                              <td style={{ padding: '3px 4px', textAlign: 'center', color: '#64748B' }}>g/dL</td>
+                              <td style={{ padding: '3px 4px', textAlign: 'right' }}><span style={{ backgroundColor: '#DCFCE7', color: '#16A34A', padding: '1px 4px', borderRadius: '3px', fontWeight: 800, fontSize: '0.5625rem' }}>NORMAL</span></td>
+                            </tr>
+                            <tr style={{ borderBottom: '1px solid #F1F5F9' }}>
+                              <td style={{ padding: '3px 4px', fontWeight: 700, color: '#0F172A' }}>Total Leukocyte Count (TLC)</td>
+                              <td style={{ padding: '3px 4px', textAlign: 'center', fontWeight: 800 }}>7,400</td>
+                              <td style={{ padding: '3px 4px', textAlign: 'center', color: '#64748B' }}>4,000 - 11,000</td>
+                              <td style={{ padding: '3px 4px', textAlign: 'center', color: '#64748B' }}>/cu.mm</td>
+                              <td style={{ padding: '3px 4px', textAlign: 'right' }}><span style={{ backgroundColor: '#DCFCE7', color: '#16A34A', padding: '1px 4px', borderRadius: '3px', fontWeight: 800, fontSize: '0.5625rem' }}>NORMAL</span></td>
+                            </tr>
+                            <tr style={{ borderBottom: '1px solid #F1F5F9' }}>
+                              <td style={{ padding: '3px 4px', fontWeight: 700, color: '#0F172A' }}>Platelet Count</td>
+                              <td style={{ padding: '3px 4px', textAlign: 'center', fontWeight: 800 }}>2.80</td>
+                              <td style={{ padding: '3px 4px', textAlign: 'center', color: '#64748B' }}>1.50 - 4.50</td>
+                              <td style={{ padding: '3px 4px', textAlign: 'center', color: '#64748B' }}>Lakh/cu.mm</td>
+                              <td style={{ padding: '3px 4px', textAlign: 'right' }}><span style={{ backgroundColor: '#DCFCE7', color: '#16A34A', padding: '1px 4px', borderRadius: '3px', fontWeight: 800, fontSize: '0.5625rem' }}>NORMAL</span></td>
+                            </tr>
+                            <tr style={{ borderBottom: '1px solid #F1F5F9' }}>
+                              <td style={{ padding: '3px 4px', fontWeight: 700, color: '#0F172A' }}>RBC Count</td>
+                              <td style={{ padding: '3px 4px', textAlign: 'center', fontWeight: 800 }}>4.90</td>
+                              <td style={{ padding: '3px 4px', textAlign: 'center', color: '#64748B' }}>4.50 - 5.50</td>
+                              <td style={{ padding: '3px 4px', textAlign: 'center', color: '#64748B' }}>mil/cu.mm</td>
+                              <td style={{ padding: '3px 4px', textAlign: 'right' }}><span style={{ backgroundColor: '#DCFCE7', color: '#16A34A', padding: '1px 4px', borderRadius: '3px', fontWeight: 800, fontSize: '0.5625rem' }}>NORMAL</span></td>
+                            </tr>
+                          </tbody>
+                        </table>
+
+                        {/* Analyzer Footnote */}
+                        <div style={{ fontSize: '0.5625rem', color: '#64748B', fontStyle: 'italic', marginBottom: '4px' }}>
+                          Method: Fully Automated 5-Part Differential Analyzer (Sysmex XN-350) • Internal QC Passed (Level 1 & Level 2).
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      /* Simulated Rx Body */
+                      <div style={{ padding: '12px 0', flex: 1 }}>
+                        <div style={{ backgroundColor: '#F1F5F9', padding: '6px 10px', borderRadius: '4px', display: 'flex', justifyContent: 'space-between', fontSize: '0.6875rem', marginBottom: '10px' }}>
+                          <span>Pt: <strong>Rahul Kumar (38y / M)</strong> • UHID: DS-9921</span>
+                          <span>Date: <strong>{new Date().toLocaleDateString('en-IN')}</strong> • Token: #07</span>
+                        </div>
+
+                        <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#0284C7', marginBottom: '4px' }}>℞</div>
+                        <div style={{ fontSize: '0.6875rem', color: '#334155', lineHeight: 1.4 }}>
+                          <div style={{ marginBottom: '4px' }}>1. <strong>Tab. Augmentin 625mg</strong> — 1 tablet after meals (1-0-1) x 5 days</div>
+                          <div style={{ marginBottom: '4px' }}>2. <strong>Tab. Pan-D (40mg)</strong> — 1 tablet before breakfast (1-0-0) x 5 days</div>
+                          <div>3. <strong>Syp. Grilinctus-BM</strong> — 10ml thrice daily (1-1-1) x 3 days</div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Simulated Signatories Footer (Dual for Pathology vs Single for Doctor) */}
+                    {roleCategory === 'PATHOLOGY_LAB' ? (
+                      <div style={{ borderTop: '1.5px solid #E2E8F0', paddingTop: '8px', marginTop: 'auto' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 0.8fr 1fr', gap: '8px', alignItems: 'flex-end', marginBottom: '6px' }}>
+                          {/* Technologist Block */}
+                          <div style={{ textAlign: 'left' }}>
+                            {brandingData.technologistSignatureUrl ? (
+                              <img src={brandingData.technologistSignatureUrl} alt="Technologist Signature" style={{ height: '26px', width: 'auto', display: 'block', marginBottom: '2px' }} />
+                            ) : (
+                              <div style={{ fontFamily: 'cursive', fontSize: '0.85rem', color: '#0284C7', marginBottom: '2px' }}>
+                                {brandingData.technologistName || 'Aniket Verma, BMLT'}
+                              </div>
+                            )}
+                            <div style={{ fontSize: '0.625rem', fontWeight: 800, color: '#0F172A', borderTop: '1px solid #CBD5E1', paddingTop: '2px' }}>
+                              {brandingData.technologistName || certData.technologistName || 'Authorized Medical Lab Technologist'}
+                            </div>
+                            <div style={{ fontSize: '0.5625rem', color: '#64748B' }}>
+                              {brandingData.technologistDegree || 'B.Sc (MLT), DMLT'}
+                            </div>
+                            <div style={{ fontSize: '0.5rem', color: '#94A3B8' }}>
+                              {brandingData.technologistRegNo || 'Staff ID: #104'}
+                            </div>
+                          </div>
+
+                          {/* QR Code Verification */}
+                          <div style={{ textAlign: 'center' }}>
+                            <span style={{ fontSize: '1.4rem', display: 'block', lineHeight: 1 }}>📱</span>
+                            <span style={{ fontSize: '0.5rem', color: '#64748B' }}>Scan to Verify NABL Result</span>
+                          </div>
+
+                          {/* Pathologist Block with Official Stamp */}
+                          <div style={{ position: 'relative', textAlign: 'right' }}>
+                            {brandingData.stampSealUrl && (
+                              <img
+                                src={brandingData.stampSealUrl}
+                                alt="Stamp"
+                                style={{
+                                  position: 'absolute',
+                                  right: '20px',
+                                  bottom: '10px',
+                                  width: '48px',
+                                  height: '48px',
+                                  opacity: 0.65,
+                                  pointerEvents: 'none'
+                                }}
+                              />
+                            )}
+                            {brandingData.signatureUrl ? (
+                              <img src={brandingData.signatureUrl} alt="Pathologist Signature" style={{ height: '26px', width: 'auto', marginLeft: 'auto', display: 'block', marginBottom: '2px' }} />
+                            ) : (
+                              <div style={{ fontFamily: 'cursive', fontSize: '0.9rem', color: '#16A34A', marginBottom: '2px' }}>
+                                Dr. {brandingData.pathologistName || currentUser?.name || 'Chief Pathologist'}
+                              </div>
+                            )}
+                            <div style={{ fontSize: '0.625rem', fontWeight: 800, color: '#0F172A', borderTop: '1px solid #CBD5E1', paddingTop: '2px' }}>
+                              Dr. {brandingData.pathologistName || certData.doctorName || currentUser?.name || 'Consultant Pathologist'}
+                            </div>
+                            <div style={{ fontSize: '0.5625rem', color: '#64748B' }}>
+                              {brandingData.pathologistDegree || 'MD (Pathology), DCP'}
+                            </div>
+                            <div style={{ fontSize: '0.5rem', color: '#0284C7', fontWeight: 700 }}>
+                              {brandingData.pathologistRegNo || certData.doctorRegNo ? `Reg No: ${brandingData.pathologistRegNo || certData.doctorRegNo}` : 'Reg No: MCI Verified'}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div style={{ fontSize: '0.5rem', color: '#64748B', textAlign: 'center' }}>
+                          {brandingData.reportFooterDisclaimer}
+                        </div>
+                      </div>
+                    ) : (
+                      /* Doctor OPD Prescription Footer */
+                      <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '8px', marginTop: 'auto' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '6px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.625rem', color: '#64748B' }}>
+                            <span style={{ fontSize: '1.2rem' }}>📱</span>
+                            <span>Scan QR on Mobile for ABDM / PHR Record Verification</span>
+                          </div>
+
+                          <div style={{ position: 'relative', textAlign: 'center', minWidth: '120px' }}>
+                            {brandingData.stampSealUrl && (
+                              <img
+                                src={brandingData.stampSealUrl}
+                                alt="Stamp"
+                                style={{
+                                  position: 'absolute',
+                                  right: '10px',
+                                  bottom: '15px',
+                                  width: '56px',
+                                  height: '56px',
+                                  opacity: 0.65,
+                                  pointerEvents: 'none'
+                                }}
+                              />
+                            )}
+                            {brandingData.signatureUrl ? (
+                              <img src={brandingData.signatureUrl} alt="Signature" style={{ height: '32px', width: 'auto', margin: '0 auto', display: 'block' }} />
+                            ) : (
+                              <div style={{ height: '24px', fontStyle: 'italic', fontSize: '0.75rem', color: '#0284C7' }}>
+                                Dr. {currentUser?.name || 'Chief Medical Officer'}
+                              </div>
+                            )}
+                            <div style={{ fontSize: '0.625rem', fontWeight: 800, color: '#0F172A', borderTop: '1px solid #CBD5E1', paddingTop: '2px' }}>
+                              Authorized Medical Practitioner
+                            </div>
+                          </div>
+                        </div>
+
+                        <div style={{ fontSize: '0.5625rem', color: '#64748B', textAlign: 'center' }}>
+                          {brandingData.rxFooterDisclaimer}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 

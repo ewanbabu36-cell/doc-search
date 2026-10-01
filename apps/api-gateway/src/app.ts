@@ -91,7 +91,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
 
   const app = Fastify({
     logger: false,
-    bodyLimit: 1048576, // 1MB payload ceiling for DoS / resource exhaustion protection
+    bodyLimit: 10485760, // 10MB payload ceiling for letterhead branding assets, stamps, and digital signatures
     genReqId: () => crypto.randomUUID()
   });
 

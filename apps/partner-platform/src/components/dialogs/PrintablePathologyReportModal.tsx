@@ -814,7 +814,11 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
             
             {/* Tech Signature */}
             <div>
-              <div style={{ fontFamily: 'cursive', fontSize: '1rem', color: '#0369A1', marginBottom: '2px' }}>{settings.technicianName.split(',')[0]}</div>
+              {profile.branding?.technologistSignatureUrl ? (
+                <img src={profile.branding.technologistSignatureUrl} alt="Technologist Signature" style={{ height: '36px', width: 'auto', maxHeight: '36px', objectFit: 'contain', display: 'block', marginBottom: '2px' }} />
+              ) : (
+                <div style={{ fontFamily: 'cursive', fontSize: '1rem', color: '#0369A1', marginBottom: '2px' }}>{settings.technicianName.split(',')[0]}</div>
+              )}
               <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0F172A' }}>{settings.technicianName}</div>
               <div style={{ fontSize: '0.6875rem', color: '#64748B' }}>{settings.technicianTitle}</div>
             </div>

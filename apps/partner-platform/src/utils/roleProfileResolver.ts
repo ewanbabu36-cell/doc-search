@@ -25,6 +25,14 @@ export interface VerifiedRoleProfile {
     logoUrl?: string | undefined;
     stampSealUrl?: string | undefined;
     signatureUrl?: string | undefined;
+    technologistSignatureUrl?: string | undefined;
+    technologistName?: string | undefined;
+    technologistDegree?: string | undefined;
+    technologistRegNo?: string | undefined;
+    pathologistSignatureUrl?: string | undefined;
+    pathologistName?: string | undefined;
+    pathologistDegree?: string | undefined;
+    pathologistRegNo?: string | undefined;
     letterheadMode?: 'FULL_DIGITAL' | 'PRE_PRINTED_PAD' | undefined;
     rxHeaderNotes?: string | undefined;
     rxFooterDisclaimer?: string | undefined;
@@ -67,6 +75,8 @@ export interface VerifiedRoleProfile {
   upiId: string;
 
   technicianName?: string;
+  technicianDegree?: string;
+  technicianRegNo?: string;
 
   // Verification & Trust Badge
   isVerified: boolean;
@@ -173,17 +183,21 @@ export const getVerifiedRoleProfile = (currentUserOverride?: any): VerifiedRoleP
   const doctorSpecialty = authUser?.roleTitle || cert.doctorSpecialty || (roleCategory === 'DOCTOR' ? 'General Medicine' : '');
   const doctorIndemnityNo = cert.doctorIndemnityPolicyNo || '';
 
+  const branding = savedSettings?.branding || {};
+
   // Lab credentials
   const nablCertificateNo = cert.nablCertificateNo || registeredPartner?.nablCertNo || '';
-  const pathologistName = (roleCategory === 'PATHOLOGY_LAB')
-    ? (authUser?.name || cert.pathologistName || '')
-    : (cert.pathologistName || '');
-  const pathologistDegree = cert.pathologistDegree || (roleCategory === 'PATHOLOGY_LAB' ? (authUser?.roleTitle || 'MD (Pathology)') : '');
-  const pathologistRegNo = cert.pathologistRegNo || cert.doctorRegNo || registeredPartner?.clinicalLicense || '';
+  const pathologistName = branding.pathologistName || (roleCategory === 'PATHOLOGY_LAB'
+    ? (authUser?.name || cert.pathologistName || cert.doctorName || '')
+    : (cert.pathologistName || cert.doctorName || ''));
+  const pathologistDegree = branding.pathologistDegree || cert.pathologistDegree || (roleCategory === 'PATHOLOGY_LAB' ? (authUser?.roleTitle || 'MD (Pathology)') : 'MD (Pathology)');
+  const pathologistRegNo = branding.pathologistRegNo || cert.pathologistRegNo || cert.doctorRegNo || registeredPartner?.clinicalLicense || '';
   const bmwClearanceNo = cert.bmwPollutionAuthNo || registeredPartner?.bmwCertNo || '';
-  const technicianName = cert.staffHighestQualification
+  const technicianName = branding.technologistName || cert.technologistName || (cert.staffHighestQualification
     ? (authUser?.name || 'Medical Lab Technologist')
-    : (roleCategory === 'STAFF_OPERATIONS' ? (authUser?.name || 'Medical Lab Technologist') : 'Authorized Lab Technologist');
+    : (roleCategory === 'STAFF_OPERATIONS' ? (authUser?.name || 'Medical Lab Technologist') : 'Authorized Lab Technologist'));
+  const technicianDegree = branding.technologistDegree || cert.technologistDegree || 'B.Sc (MLT), DMLT';
+  const technicianRegNo = branding.technologistRegNo || cert.technologistRegNo || '';
 
   // Hospital credentials
   const hospitalCeaRegNo = cert.hospitalCeaRegNo || registeredPartner?.clinicalLicense || '';
@@ -257,6 +271,8 @@ export const getVerifiedRoleProfile = (currentUserOverride?: any): VerifiedRoleP
     pathologistRegNo,
     bmwClearanceNo,
     technicianName,
+    technicianDegree,
+    technicianRegNo,
 
     // Hospital Credentials
     hospitalCeaRegNo,
