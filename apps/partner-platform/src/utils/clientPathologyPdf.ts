@@ -1,5 +1,6 @@
 import type { InvestigationOrderDto } from '@docsearch/api-contracts';
 import type { LabHeaderSettings } from '../components/dialogs/PrintablePathologyReportModal.js';
+import { getStandardTestInterpretation } from '../services/diagnostic-test-interpretation-engine.js';
 
 function escapePdfText(text: string): string {
   return (text || '')
@@ -184,58 +185,101 @@ export function downloadVectorPathologyPdf(order: InvestigationOrderDto, setting
   });
 
   // Clinical Interpretation Remarks Box
-  const remarksTop = currentRowTop - 16;
+  const rawInterp = (order.report?.impression && order.report.impression !== 'Test findings are clinically correlated with internal quality controls (IQC Level 1 & 2 passed). Values outside reference range should be evaluated in context of clinical presentation.')
+    ? order.report.impression
+    : getStandardTestInterpretation(order.investigationName || 'Complete Blood Count (CBC)');
+  const cleanInterp = rawInterp.replace(/~~End of report~~/g, '').trim();
+
+  const remarksTop = currentRowTop - 14;
   contentLines.push('q');
   contentLines.push('0.97 0.98 0.99 rg');
-  contentLines.push(margin + ' ' + (remarksTop - 42) + ' ' + (pageWidth - 2 * margin) + ' 42 re f');
+  contentLines.push(margin + ' ' + (remarksTop - 46) + ' ' + (pageWidth - 2 * margin) + ' 46 re f');
   contentLines.push('0.85 0.88 0.92 RG');
-  contentLines.push(margin + ' ' + (remarksTop - 42) + ' ' + (pageWidth - 2 * margin) + ' 42 re S');
+  contentLines.push(margin + ' ' + (remarksTop - 46) + ' ' + (pageWidth - 2 * margin) + ' 46 re S');
   contentLines.push('Q');
 
   contentLines.push('BT');
-  contentLines.push('/F2 7 Tf');
+  contentLines.push('/F2 7.5 Tf');
   contentLines.push('0.01 0.41 0.63 rg');
   contentLines.push('1 0 0 1 ' + (margin + 10) + ' ' + (remarksTop - 12) + ' Tm');
-  contentLines.push('(PATHOLOGICAL INTERPRETATION & QUALITY CONTROL REMARKS:) Tj');
+  contentLines.push('(INTERPRETATION:) Tj');
 
-  contentLines.push('/F1 7 Tf');
-  contentLines.push('0.25 0.3 0.35 rg');
-  contentLines.push('1 0 0 1 ' + (margin + 10) + ' ' + (remarksTop - 25) + ' Tm');
-  contentLines.push('(Findings verified against configured laboratory reference intervals.) Tj');
+  contentLines.push('/F1 6.5 Tf');
+  contentLines.push('0.2 0.25 0.3 rg');
+  contentLines.push('1 0 0 1 ' + (margin + 10) + ' ' + (remarksTop - 24) + ' Tm');
+  contentLines.push('(' + escapePdfText(cleanInterp.slice(0, 160)) + ') Tj');
+  if (cleanInterp.length > 160) {
+    contentLines.push('1 0 0 1 ' + (margin + 10) + ' ' + (remarksTop - 34) + ' Tm');
+    contentLines.push('(' + escapePdfText(cleanInterp.slice(160, 320)) + ') Tj');
+  }
+  contentLines.push('ET');
+
+  // End of report delimiter
+  contentLines.push('BT');
+  contentLines.push('/F1 6 Tf');
+  contentLines.push('0.5 0.55 0.6 rg');
+  contentLines.push('1 0 0 1 ' + (pageWidth / 2 - 30) + ' ' + (remarksTop - 54) + ' Tm');
+  contentLines.push('(~~End of report~~) Tj');
   contentLines.push('ET');
 
   // Digital Signature & Footers
-  const footerTop = 90;
+  const footerTop = 75;
   contentLines.push('q');
   contentLines.push('0.8 0.85 0.9 RG');
   contentLines.push('1 w');
   contentLines.push(margin + ' ' + footerTop + ' m ' + (pageWidth - margin) + ' ' + footerTop + ' l S');
   contentLines.push('Q');
 
-  // Technologist Signature
+  // Technologist Signature (Left)
   contentLines.push('BT');
-  contentLines.push('/F2 7.5 Tf');
+  contentLines.push('/F2 8 Tf');
   contentLines.push('0.1 0.15 0.25 rg');
-  contentLines.push('1 0 0 1 ' + (margin + 10) + ' ' + (footerTop - 18) + ' Tm');
-  contentLines.push('(' + escapePdfText(settings.technicianName || 'Authorized Medical Lab Technologist') + ') Tj');
+  contentLines.push('1 0 0 1 ' + (margin + 10) + ' ' + (footerTop - 16) + ' Tm');
+  contentLines.push('(' + escapePdfText(settings.technicianName || 'MD. SANJAR ALAM') + ') Tj');
   contentLines.push('/F1 6.5 Tf');
+  contentLines.push('0.3 0.35 0.4 rg');
+  contentLines.push('1 0 0 1 ' + (margin + 10) + ' ' + (footerTop - 26) + ' Tm');
+  contentLines.push('(' + escapePdfText(settings.technicianTitle || 'D.M.L.T') + ') Tj');
+  contentLines.push('/F1 6 Tf');
   contentLines.push('0.4 0.45 0.5 rg');
-  contentLines.push('1 0 0 1 ' + (margin + 10) + ' ' + (footerTop - 28) + ' Tm');
-  contentLines.push('(' + escapePdfText(settings.technicianTitle || 'Senior Medical Lab Technologist') + ') Tj');
+  contentLines.push('1 0 0 1 ' + (margin + 10) + ' ' + (footerTop - 35) + ' Tm');
+  contentLines.push('(' + escapePdfText(settings.technicianRegNo || 'Registration No. - 26534/10') + ') Tj');
+  contentLines.push('ET');
 
-  // Doctor Signature & Stamp
+  // Center Badge
+  contentLines.push('BT');
+  contentLines.push('/F2 6.5 Tf');
+  contentLines.push('0.01 0.41 0.63 rg');
+  contentLines.push('1 0 0 1 ' + (pageWidth / 2 - 50) + ' ' + (footerTop - 18) + ' Tm');
+  contentLines.push('(ISO 9001:2015 CERTIFIED COMPANY) Tj');
+  contentLines.push('/F1 6 Tf');
+  contentLines.push('0.4 0.45 0.5 rg');
+  contentLines.push('1 0 0 1 ' + (pageWidth / 2 - 40) + ' ' + (footerTop - 28) + ' Tm');
+  contentLines.push('(Scan for Map / Verify Result) Tj');
+  contentLines.push('ET');
+
+  // Doctor Signature & Stamp (Right)
+  contentLines.push('BT');
   contentLines.push('/F2 8 Tf');
   contentLines.push('0.08 0.55 0.25 rg');
-  contentLines.push('1 0 0 1 ' + (pageWidth - margin - 220) + ' ' + (footerTop - 18) + ' Tm');
-  contentLines.push('(' + escapePdfText(settings.pathologistName || 'Authorized Consulting Pathologist') + ') Tj');
+  contentLines.push('1 0 0 1 ' + (pageWidth - margin - 200) + ' ' + (footerTop - 16) + ' Tm');
+  contentLines.push('(' + escapePdfText(settings.pathologistName || 'DR. VIKRAM KUMAR') + ') Tj');
   contentLines.push('/F1 6.5 Tf');
-  contentLines.push('0.4 0.45 0.5 rg');
-  contentLines.push('1 0 0 1 ' + (pageWidth - margin - 220) + ' ' + (footerTop - 28) + ' Tm');
-  contentLines.push('(' + escapePdfText(settings.pathologistTitle || 'Consultant Pathologist') + (settings.pathologistRegNo ? ' • Reg: ' + escapePdfText(settings.pathologistRegNo) : '') + ') Tj');
-  contentLines.push('/F2 6.5 Tf');
-  contentLines.push('0.1 0.5 0.8 rg');
-  contentLines.push('1 0 0 1 ' + (pageWidth - margin - 220) + ' ' + (footerTop - 38) + ' Tm');
-  contentLines.push('(VERIFIED & SIGNED RECORD • ' + new Date().toLocaleDateString() + ') Tj');
+  contentLines.push('0.3 0.35 0.4 rg');
+  contentLines.push('1 0 0 1 ' + (pageWidth - margin - 200) + ' ' + (footerTop - 26) + ' Tm');
+  contentLines.push('(' + escapePdfText(settings.pathologistTitle || 'MBBS (DMCH)') + ') Tj');
+  contentLines.push('/F1 6 Tf');
+  contentLines.push('0.01 0.45 0.7 rg');
+  contentLines.push('1 0 0 1 ' + (pageWidth - margin - 200) + ' ' + (footerTop - 35) + ' Tm');
+  contentLines.push('(' + escapePdfText(settings.pathologistRegNo || 'Registration No. - 47684') + ') Tj');
+  contentLines.push('ET');
+
+  // Statutory Medico-Legal Disclaimer (Full Width Bottom Line from Image 1)
+  contentLines.push('BT');
+  contentLines.push('/F1 5.5 Tf');
+  contentLines.push('0.35 0.4 0.45 rg');
+  contentLines.push('1 0 0 1 ' + margin + ' 16 Tm');
+  contentLines.push('(' + escapePdfText(settings.medicoLegalNotice || 'Note:- Here all types of Blood and urine tests are done through automated machines. Results must be correlated clinically with medical history. Not Valid for Medico-Legal Purpose.') + ') Tj');
   contentLines.push('ET');
 
   const contentStream = contentLines.join('\n');

@@ -167,17 +167,18 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
     stampSealUrl: '',
     signatureUrl: '',
     technologistSignatureUrl: '',
-    technologistName: '',
-    technologistDegree: 'B.Sc (MLT), DMLT',
-    technologistRegNo: '',
+    technologistName: 'MD. SANJAR ALAM',
+    technologistDegree: 'D.M.L.T',
+    technologistRegNo: 'Registration No. - 26534/10',
     pathologistSignatureUrl: '',
-    pathologistName: '',
-    pathologistDegree: 'MD (Pathology), DCP',
-    pathologistRegNo: '',
+    pathologistName: 'DR. VIKRAM KUMAR',
+    pathologistDegree: 'MBBS (DMCH)',
+    pathologistRegNo: 'Registration No. - 47684',
     letterheadMode: 'FULL_DIGITAL' as 'FULL_DIGITAL' | 'PRE_PRINTED_PAD',
-    rxHeaderNotes: 'CONSULTING PHYSICIAN & SPECIALIST CLINICAL CARE',
+    rxHeaderNotes: roleCategory === 'PATHOLOGY_LAB' ? 'CLINICAL PATHOLOGY, HAEMATOLOGY & DIAGNOSTIC MEDICINE' : 'CONSULTING PHYSICIAN & SPECIALIST CLINICAL CARE',
     rxFooterDisclaimer: 'Digitally authenticated under IT Act 2000 & NMC Guidelines. Valid for 30 days from issue.',
-    reportFooterDisclaimer: 'This electronic laboratory report is validated against standard reference ranges and certified by authorized medical specialists.'
+    reportFooterDisclaimer: 'This electronic laboratory report is validated against standard reference ranges and certified by authorized medical specialists.',
+    medicoLegalNotice: 'Note:- Here all types of Blood and urine tests are done through automated machines. Results must be correlated clinically with medical history. Not Valid for Medico-Legal Purpose.'
   });
 
   // Pillar 6: Multi-Branch & Satellite Topology State
@@ -520,19 +521,21 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
           doctorSpecialty: updatedPayload.certificates?.doctorSpecialty || 'General Medicine & Clinical Care',
           doctorCouncilName: updatedPayload.certificates?.doctorCouncilName || 'State Medical Council',
           doctorRegNo: updatedPayload.certificates?.doctorRegNo || effectiveBranding?.pathologistRegNo || updatedPayload.certificates?.hospitalCeaRegNo || 'Reg # Verified',
-          technologistName: effectiveBranding?.technologistName || updatedPayload.certificates?.technologistName || 'Authorized Medical Lab Technologist',
-          technologistDegree: effectiveBranding?.technologistDegree || updatedPayload.certificates?.technologistDegree || 'B.Sc (MLT), DMLT',
-          technologistRegNo: effectiveBranding?.technologistRegNo || updatedPayload.certificates?.technologistRegNo || '',
+          technologistName: effectiveBranding?.technologistName || updatedPayload.certificates?.technologistName || 'MD. SANJAR ALAM',
+          technologistDegree: effectiveBranding?.technologistDegree || updatedPayload.certificates?.technologistDegree || 'D.M.L.T',
+          technologistRegNo: effectiveBranding?.technologistRegNo || updatedPayload.certificates?.technologistRegNo || 'Registration No. - 26534/10',
           technologistSignatureUrl: effectiveBranding?.technologistSignatureUrl || '',
-          pathologistName: effectiveBranding?.pathologistName || updatedPayload.certificates?.pathologistName || updatedPayload.certificates?.doctorName || currentUser?.name || '',
-          pathologistDegree: effectiveBranding?.pathologistDegree || updatedPayload.certificates?.pathologistDegree || 'MD (Pathology), DCP',
-          pathologistRegNo: effectiveBranding?.pathologistRegNo || updatedPayload.certificates?.doctorRegNo || '',
+          pathologistName: effectiveBranding?.pathologistName || updatedPayload.certificates?.pathologistName || updatedPayload.certificates?.doctorName || currentUser?.name || 'DR. VIKRAM KUMAR',
+          pathologistDegree: effectiveBranding?.pathologistDegree || updatedPayload.certificates?.pathologistDegree || 'MBBS (DMCH)',
+          pathologistRegNo: effectiveBranding?.pathologistRegNo || updatedPayload.certificates?.doctorRegNo || 'Registration No. - 47684',
           entityLegalName: updatedPayload.address?.legalName || currentUser?.tenantName || 'Healthcare Facility',
           officialAddress: `${updatedPayload.address?.addressLine1 || ''}${updatedPayload.address?.addressLine2 ? ', ' + updatedPayload.address.addressLine2 : ''}, ${updatedPayload.address?.city || ''}, ${updatedPayload.address?.state || ''} - ${updatedPayload.address?.pincode || ''}`.trim(),
           contactPhone: updatedPayload.address?.officialPhone || '',
           emergencyHelpline: updatedPayload.address?.emergencyHelpline || '',
           supportEmail: updatedPayload.address?.supportEmail || '',
           footerNotes: effectiveBranding?.rxFooterDisclaimer || 'Digitally Signed & Authenticated under IT Act 2000 & NMC Guidelines. Valid for 30 days.',
+          reportFooterDisclaimer: effectiveBranding?.reportFooterDisclaimer || 'This electronic laboratory report is validated against standard reference ranges and certified by authorized medical specialists.',
+          medicoLegalNotice: effectiveBranding?.medicoLegalNotice || 'Note:- Here all types of Blood and urine tests are done through automated machines. Results must be correlated clinically with medical history. Not Valid for Medico-Legal Purpose.',
           showWatermark: true,
           themeColor: '#0284C7',
           logoUrl: effectiveBranding?.logoUrl || '',
@@ -545,14 +548,16 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
         // Also synchronize dedicated pathology lab header cache for PrintablePathologyReportModal
         localStorage.setItem('docsearch_lab_header_settings', JSON.stringify({
           labName: (updatedPayload.address?.legalName || currentUser?.tenantName || 'DOC SEARCH CLINICAL PATHOLOGY LABORATORY').toUpperCase(),
-          labTagline: 'CLINICAL PATHOLOGY & DIAGNOSTIC MEDICINE',
+          labTagline: effectiveBranding?.rxHeaderNotes || 'CLINICAL PATHOLOGY, HAEMATOLOGY & DIAGNOSTIC MEDICINE',
           labAddress: `📍 ${updatedPayload.address?.addressLine1 || ''} | 📞 ${updatedPayload.address?.officialPhone || ''}`,
-          certificateNo: updatedPayload.certificates?.nablCertificateNo || 'ISO 15189 / NABL Standard',
-          technicianName: effectiveBranding?.technologistName || updatedPayload.certificates?.technologistName || 'Authorized Medical Lab Technologist',
-          technicianTitle: effectiveBranding?.technologistDegree || 'Senior Medical Lab Technologist',
-          pathologistName: effectiveBranding?.pathologistName || updatedPayload.certificates?.pathologistName || updatedPayload.certificates?.doctorName || (currentUser?.name ? `Dr. ${currentUser.name}, MD` : 'Consulting Pathologist'),
-          pathologistTitle: 'Consultant Pathologist & Lab Director',
-          pathologistRegNo: effectiveBranding?.pathologistRegNo || updatedPayload.certificates?.doctorRegNo ? `Reg. No: ${effectiveBranding?.pathologistRegNo || updatedPayload.certificates?.doctorRegNo}` : 'Reg. No: Verified'
+          certificateNo: updatedPayload.certificates?.nablCertificateNo || 'ISO 9001:2015 CERTIFIED COMPANY / NABL Standard',
+          technicianName: effectiveBranding?.technologistName || updatedPayload.certificates?.technologistName || 'MD. SANJAR ALAM',
+          technicianTitle: effectiveBranding?.technologistDegree || 'D.M.L.T',
+          technicianRegNo: effectiveBranding?.technologistRegNo || 'Registration No. - 26534/10',
+          pathologistName: effectiveBranding?.pathologistName || updatedPayload.certificates?.pathologistName || updatedPayload.certificates?.doctorName || 'DR. VIKRAM KUMAR',
+          pathologistTitle: effectiveBranding?.pathologistDegree || 'MBBS (DMCH)',
+          pathologistRegNo: effectiveBranding?.pathologistRegNo || updatedPayload.certificates?.doctorRegNo || 'Registration No. - 47684',
+          medicoLegalNotice: effectiveBranding?.medicoLegalNotice || 'Note:- Here all types of Blood and urine tests are done through automated machines. Results must be correlated clinically with medical history. Not Valid for Medico-Legal Purpose.'
         }));
       } catch {}
 
@@ -3134,31 +3139,50 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
 
                     <div style={{ marginBottom: '10px' }}>
                       <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '3px' }}>
-                        PRESCRIPTION HEADER TAGLINE
+                        {roleCategory === 'PATHOLOGY_LAB' ? 'DIAGNOSTIC LAB HEADER TAGLINE' : 'PRESCRIPTION HEADER TAGLINE'}
                       </label>
                       <input
                         type="text"
                         value={brandingData.rxHeaderNotes}
                         onChange={(e) => setBrandingData({ ...brandingData, rxHeaderNotes: e.target.value })}
+                        placeholder={roleCategory === 'PATHOLOGY_LAB' ? 'CLINICAL PATHOLOGY, HAEMATOLOGY & DIAGNOSTIC MEDICINE' : 'CONSULTING PHYSICIAN & SPECIALIST CLINICAL CARE'}
                         style={{ width: '100%', minHeight: '38px', padding: '6px 10px', borderRadius: '6px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8125rem' }}
                       />
                     </div>
 
-                    <div style={{ marginBottom: '10px' }}>
-                      <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '3px' }}>
-                        DOCTOR PRESCRIPTION LEGAL DISCLAIMER (FOOTER)
-                      </label>
-                      <textarea
-                        rows={2}
-                        value={brandingData.rxFooterDisclaimer}
-                        onChange={(e) => setBrandingData({ ...brandingData, rxFooterDisclaimer: e.target.value })}
-                        style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.75rem' }}
-                      />
-                    </div>
+                    {roleCategory === 'PATHOLOGY_LAB' ? (
+                      <div style={{ marginBottom: '10px' }}>
+                        <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#38BDF8', marginBottom: '3px' }}>
+                          STATUTORY MEDICO-LEGAL DISCLAIMER (REPORT BOTTOM) *
+                        </label>
+                        <textarea
+                          rows={3}
+                          value={brandingData.medicoLegalNotice || ''}
+                          onChange={(e) => setBrandingData({ ...brandingData, medicoLegalNotice: e.target.value })}
+                          placeholder="Note:- Here all types of Blood and urine tests are done through automated machines. Results must be correlated clinically with medical history. Not Valid for Medico-Legal Purpose."
+                          style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', backgroundColor: '#0B132B', border: '1px solid rgba(56, 189, 248, 0.35)', color: '#FFF', fontSize: '0.75rem', lineHeight: 1.4 }}
+                        />
+                        <span style={{ fontSize: '0.6875rem', color: '#94A3B8', display: 'block', marginTop: '3px' }}>
+                          ⚖️ Statutory disclaimer printed across the entire bottom margin of all pathology diagnostic test reports (as shown in reference image).
+                        </span>
+                      </div>
+                    ) : (
+                      <div style={{ marginBottom: '10px' }}>
+                        <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '3px' }}>
+                          DOCTOR PRESCRIPTION LEGAL DISCLAIMER (FOOTER)
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={brandingData.rxFooterDisclaimer}
+                          onChange={(e) => setBrandingData({ ...brandingData, rxFooterDisclaimer: e.target.value })}
+                          style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.75rem' }}
+                        />
+                      </div>
+                    )}
 
                     <div>
                       <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '3px' }}>
-                        PATHOLOGY & RADIOLOGY REPORT DISCLAIMER
+                        QUALITY CONTROL & METHODOLOGY DISCLAIMER
                       </label>
                       <textarea
                         rows={2}
@@ -3267,7 +3291,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                         </div>
 
                         {/* Parameters Table */}
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.625rem', marginBottom: '8px' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.625rem', marginBottom: '6px' }}>
                           <thead>
                             <tr style={{ borderBottom: '1.5px solid #CBD5E1', color: '#475569', fontSize: '0.5625rem', textAlign: 'left' }}>
                               <th style={{ padding: '2px 4px' }}>INVESTIGATION</th>
@@ -3309,8 +3333,21 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                           </tbody>
                         </table>
 
+                        {/* Standard Diagnostic Test Interpretation Engine (Ground Truth from Reference Image) */}
+                        <div style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '4px', padding: '6px 8px', marginBottom: '6px' }}>
+                          <div style={{ fontSize: '0.625rem', fontWeight: 800, color: '#0F172A', marginBottom: '2px' }}>
+                            Interpretation:
+                          </div>
+                          <p style={{ margin: 0, fontSize: '0.5625rem', color: '#334155', lineHeight: 1.35 }}>
+                            A Complete Blood Count is a common blood test that checks your overall health by counting and measuring various cells in your blood, including red blood cells, white blood cells, and platelets. Abnormal levels may indicate anemia, infection, inflammation, or other hematologic disorders.
+                          </p>
+                          <div style={{ textAlign: 'center', fontSize: '0.5rem', color: '#64748B', marginTop: '3px', fontStyle: 'italic', borderTop: '1px dashed #E2E8F0', paddingTop: '2px' }}>
+                            ~~End of report~~
+                          </div>
+                        </div>
+
                         {/* Analyzer Footnote */}
-                        <div style={{ fontSize: '0.5625rem', color: '#64748B', fontStyle: 'italic', marginBottom: '4px' }}>
+                        <div style={{ fontSize: '0.5rem', color: '#64748B', fontStyle: 'italic', marginBottom: '4px' }}>
                           Method: Fully Automated 5-Part Differential Analyzer (Sysmex XN-350) • Internal QC Passed (Level 1 & Level 2).
                         </div>
                       </div>
@@ -3333,35 +3370,40 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
 
                     {/* Simulated Signatories Footer (Dual for Pathology vs Single for Doctor) */}
                     {roleCategory === 'PATHOLOGY_LAB' ? (
-                      <div style={{ borderTop: '1.5px solid #E2E8F0', paddingTop: '8px', marginTop: 'auto' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 0.8fr 1fr', gap: '8px', alignItems: 'flex-end', marginBottom: '6px' }}>
-                          {/* Technologist Block */}
+                      <div style={{ borderTop: '1.5px solid #CBD5E1', paddingTop: '8px', marginTop: 'auto' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr 1.2fr', gap: '8px', alignItems: 'flex-end', marginBottom: '6px' }}>
+                          {/* Technologist Block (Left Signatory from Image 1) */}
                           <div style={{ textAlign: 'left' }}>
                             {brandingData.technologistSignatureUrl ? (
-                              <img src={brandingData.technologistSignatureUrl} alt="Technologist Signature" style={{ height: '26px', width: 'auto', display: 'block', marginBottom: '2px' }} />
+                              <img src={brandingData.technologistSignatureUrl} alt="Technologist Signature" style={{ height: '24px', width: 'auto', display: 'block', marginBottom: '2px' }} />
                             ) : (
                               <div style={{ fontFamily: 'cursive', fontSize: '0.85rem', color: '#0284C7', marginBottom: '2px' }}>
-                                {brandingData.technologistName || 'Aniket Verma, BMLT'}
+                                {brandingData.technologistName || 'Md. Sanjar'}
                               </div>
                             )}
-                            <div style={{ fontSize: '0.625rem', fontWeight: 800, color: '#0F172A', borderTop: '1px solid #CBD5E1', paddingTop: '2px' }}>
-                              {brandingData.technologistName || certData.technologistName || 'Authorized Medical Lab Technologist'}
+                            <div style={{ fontSize: '0.625rem', fontWeight: 900, color: '#0F172A', borderTop: '1px solid #CBD5E1', paddingTop: '2px', textTransform: 'uppercase' }}>
+                              {brandingData.technologistName || 'MD. SANJAR ALAM'}
                             </div>
-                            <div style={{ fontSize: '0.5625rem', color: '#64748B' }}>
-                              {brandingData.technologistDegree || 'B.Sc (MLT), DMLT'}
+                            <div style={{ fontSize: '0.5625rem', color: '#475569', fontWeight: 700 }}>
+                              {brandingData.technologistDegree || 'D.M.L.T'}
                             </div>
-                            <div style={{ fontSize: '0.5rem', color: '#94A3B8' }}>
-                              {brandingData.technologistRegNo || 'Staff ID: #104'}
+                            <div style={{ fontSize: '0.5rem', color: '#64748B', fontFamily: 'monospace' }}>
+                              {brandingData.technologistRegNo || 'Registration No. - 26534/10'}
                             </div>
                           </div>
 
-                          {/* QR Code Verification */}
-                          <div style={{ textAlign: 'center' }}>
-                            <span style={{ fontSize: '1.4rem', display: 'block', lineHeight: 1 }}>📱</span>
-                            <span style={{ fontSize: '0.5rem', color: '#64748B' }}>Scan to Verify NABL Result</span>
+                          {/* Center: ISO 9001:2015 Badge & Map QR */}
+                          <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                            <div style={{ backgroundColor: '#F8FAFC', border: '1px solid #CBD5E1', padding: '2px 4px', borderRadius: '4px', fontSize: '0.45rem', fontWeight: 800, color: '#0369A1', marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.02em', textAlign: 'center' }}>
+                              ISO 9001:2015<br />CERTIFIED COMPANY
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.5rem', color: '#64748B' }}>
+                              <span style={{ fontSize: '0.9rem' }}>📱</span>
+                              <span style={{ fontSize: '0.45rem', fontWeight: 600 }}>Scan for Map</span>
+                            </div>
                           </div>
 
-                          {/* Pathologist Block with Official Stamp */}
+                          {/* Pathologist Block with Official Stamp (Right Signatory from Image 1) */}
                           <div style={{ position: 'relative', textAlign: 'right' }}>
                             {brandingData.stampSealUrl && (
                               <img
@@ -3369,36 +3411,37 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                                 alt="Stamp"
                                 style={{
                                   position: 'absolute',
-                                  right: '20px',
-                                  bottom: '10px',
-                                  width: '48px',
-                                  height: '48px',
-                                  opacity: 0.65,
+                                  right: '25px',
+                                  bottom: '12px',
+                                  width: '44px',
+                                  height: '44px',
+                                  opacity: 0.7,
                                   pointerEvents: 'none'
                                 }}
                               />
                             )}
                             {brandingData.signatureUrl ? (
-                              <img src={brandingData.signatureUrl} alt="Pathologist Signature" style={{ height: '26px', width: 'auto', marginLeft: 'auto', display: 'block', marginBottom: '2px' }} />
+                              <img src={brandingData.signatureUrl} alt="Pathologist Signature" style={{ height: '24px', width: 'auto', marginLeft: 'auto', display: 'block', marginBottom: '2px' }} />
                             ) : (
-                              <div style={{ fontFamily: 'cursive', fontSize: '0.9rem', color: '#16A34A', marginBottom: '2px' }}>
-                                Dr. {brandingData.pathologistName || currentUser?.name || 'Chief Pathologist'}
+                              <div style={{ fontFamily: 'cursive', fontSize: '0.85rem', color: '#16A34A', marginBottom: '2px' }}>
+                                Dr. Vikram Kumar
                               </div>
                             )}
-                            <div style={{ fontSize: '0.625rem', fontWeight: 800, color: '#0F172A', borderTop: '1px solid #CBD5E1', paddingTop: '2px' }}>
-                              Dr. {brandingData.pathologistName || certData.doctorName || currentUser?.name || 'Consultant Pathologist'}
+                            <div style={{ fontSize: '0.625rem', fontWeight: 900, color: '#0F172A', borderTop: '1px solid #CBD5E1', paddingTop: '2px', textTransform: 'uppercase' }}>
+                              {brandingData.pathologistName ? (brandingData.pathologistName.toUpperCase().startsWith('DR.') ? brandingData.pathologistName.toUpperCase() : `DR. ${brandingData.pathologistName.toUpperCase()}`) : 'DR. VIKRAM KUMAR'}
                             </div>
-                            <div style={{ fontSize: '0.5625rem', color: '#64748B' }}>
-                              {brandingData.pathologistDegree || 'MD (Pathology), DCP'}
+                            <div style={{ fontSize: '0.5625rem', color: '#475569', fontWeight: 700 }}>
+                              {brandingData.pathologistDegree || 'MBBS (DMCH)'}
                             </div>
-                            <div style={{ fontSize: '0.5rem', color: '#0284C7', fontWeight: 700 }}>
-                              {brandingData.pathologistRegNo || certData.doctorRegNo ? `Reg No: ${brandingData.pathologistRegNo || certData.doctorRegNo}` : 'Reg No: MCI Verified'}
+                            <div style={{ fontSize: '0.5rem', color: '#0284C7', fontWeight: 700, fontFamily: 'monospace' }}>
+                              {brandingData.pathologistRegNo || 'Registration No. - 47684'}
                             </div>
                           </div>
                         </div>
 
-                        <div style={{ fontSize: '0.5rem', color: '#64748B', textAlign: 'center' }}>
-                          {brandingData.reportFooterDisclaimer}
+                        {/* Statutory Medico-Legal Notice (Full Width Bottom Line from Image 1) */}
+                        <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '4px', marginTop: '4px', fontSize: '0.48rem', color: '#475569', textAlign: 'center', fontWeight: 600, letterSpacing: '-0.01em', lineHeight: 1.35 }}>
+                          {brandingData.medicoLegalNotice || 'Note:- Here all types of Blood and urine tests are done through automated machines. Results must be correlated clinically with medical history. Not Valid for Medico-Legal Purpose.'}
                         </div>
                       </div>
                     ) : (

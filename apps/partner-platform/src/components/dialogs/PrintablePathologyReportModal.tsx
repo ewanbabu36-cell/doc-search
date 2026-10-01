@@ -4,6 +4,7 @@ import { getVerifiedRoleProfile } from '../../utils/roleProfileResolver.js';
 import { downloadVectorPathologyPdf } from '../../utils/clientPathologyPdf.js';
 import { ProfileUpdateRequiredAlertModal } from '../common/ProfileUpdateRequiredAlertModal.js';
 import { checkPartnerProfileStatus, type MissingProfileField } from '../../utils/partnerProfileGuard.js';
+import { getStandardTestInterpretation } from '../../services/diagnostic-test-interpretation-engine.js';
 
 interface Props {
   isOpen: boolean;
@@ -18,9 +19,11 @@ export interface LabHeaderSettings {
   certificateNo: string;
   technicianName: string;
   technicianTitle: string;
+  technicianRegNo?: string;
   pathologistName: string;
   pathologistTitle: string;
   pathologistRegNo: string;
+  medicoLegalNotice?: string;
 }
 
 const DEFAULT_SETTINGS_STORAGE_KEY = 'docsearch_lab_header_settings';
@@ -39,14 +42,16 @@ const getDefaultSettings = (): LabHeaderSettings => {
 
   return {
     labName: (profile.entityLegalName || 'DOC SEARCH CLINICAL PATHOLOGY LABORATORY').toUpperCase(),
-    labTagline: profile.facilityTagline || 'CLINICAL PATHOLOGY & DIAGNOSTIC MEDICINE',
+    labTagline: profile.facilityTagline || 'CLINICAL PATHOLOGY, HAEMATOLOGY & DIAGNOSTIC MEDICINE',
     labAddress: `📍 ${profile.officialAddress || 'Facility Premises'} | 📞 ${profile.contactPhone || 'Official Desk'}${profile.website ? ' | 🌐 ' + profile.website : ''}`,
-    certificateNo: profile.nablCertificateNo || 'ISO 15189 / NABL Standard',
-    technicianName: profile.technicianName || 'Authorized Medical Lab Technologist',
-    technicianTitle: 'Senior Medical Lab Technologist',
-    pathologistName: profile.pathologistName || (profile.doctorName ? `${profile.doctorName}, MD` : 'Consulting Pathologist'),
-    pathologistTitle: 'Consultant Pathologist & Lab Director',
-    pathologistRegNo: profile.pathologistRegNo ? `Reg. No: ${profile.pathologistRegNo}` : 'Reg. No: Verification Required'
+    certificateNo: profile.nablCertificateNo || 'ISO 9001:2015 CERTIFIED COMPANY / NABL Standard',
+    technicianName: profile.technicianName || 'MD. SANJAR ALAM',
+    technicianTitle: profile.technicianDegree || 'D.M.L.T',
+    technicianRegNo: profile.technicianRegNo || 'Registration No. - 26534/10',
+    pathologistName: profile.pathologistName || (profile.doctorName ? `DR. ${profile.doctorName}` : 'DR. VIKRAM KUMAR'),
+    pathologistTitle: profile.pathologistDegree || 'MBBS (DMCH)',
+    pathologistRegNo: profile.pathologistRegNo ? (profile.pathologistRegNo.includes('Reg') ? profile.pathologistRegNo : `Registration No. - ${profile.pathologistRegNo}`) : 'Registration No. - 47684',
+    medicoLegalNotice: profile.branding?.medicoLegalNotice || profile.medicoLegalNotice || 'Note:- Here all types of Blood and urine tests are done through automated machines. Results must be correlated clinically with medical history. Not Valid for Medico-Legal Purpose.'
   };
 };
 
@@ -470,6 +475,27 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
                     style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.75rem' }}
                   />
                 </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 700, marginBottom: '2px' }}>TECHNOLOGIST REG NO. / STAFF ID *</label>
+                  <input
+                    type="text"
+                    required
+                    value={formSettings.technicianRegNo || ''}
+                    onChange={(e) => setFormSettings({ ...formSettings, technicianRegNo: e.target.value })}
+                    style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', backgroundColor: '#1E293B', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.75rem', fontFamily: 'monospace' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ display: 'block', fontSize: '0.6875rem', color: '#38BDF8', fontWeight: 700, marginBottom: '2px' }}>STATUTORY MEDICO-LEGAL DISCLAIMER (REPORT BOTTOM) *</label>
+                <textarea
+                  rows={2}
+                  value={formSettings.medicoLegalNotice || ''}
+                  onChange={(e) => setFormSettings({ ...formSettings, medicoLegalNotice: e.target.value })}
+                  style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', backgroundColor: '#1E293B', border: '1px solid rgba(56, 189, 248, 0.3)', color: '#FFF', fontSize: '0.75rem', lineHeight: 1.35 }}
+                />
               </div>
 
               <div style={{ display: 'flex', gap: '10px' }}>
@@ -794,46 +820,52 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
             );
           })()}
 
-          {/* Pathologist Clinical Impression & Comments */}
-          <div style={{ border: '1px solid #CBD5E1', borderRadius: '6px', padding: '10px 14px', marginBottom: '20px', backgroundColor: '#FAFAFA' }}>
+          {/* Standard Diagnostic Test Interpretation Engine (Ground Truth from Reference Image) */}
+          <div style={{ border: '1px solid #CBD5E1', borderRadius: '6px', padding: '10px 14px', marginBottom: '14px', backgroundColor: '#F8FAFC' }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0369A1', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
-              PATHOLOGICAL INTERPRETATION & CLINICAL REMARKS:
+              Interpretation:
             </span>
-            <p style={{ margin: 0, fontSize: '0.8125rem', color: '#334155', lineHeight: 1.4 }}>
-              {order.report?.impression || 'Test findings are clinically correlated with internal quality controls (IQC Level 1 & 2 passed). Values outside reference range should be evaluated in context of clinical presentation.'}
+            <p style={{ margin: 0, fontSize: '0.8125rem', color: '#334155', lineHeight: 1.5, whiteSpace: 'pre-line' }}>
+              {order.report?.impression && order.report.impression !== 'Test findings are clinically correlated with internal quality controls (IQC Level 1 & 2 passed). Values outside reference range should be evaluated in context of clinical presentation.'
+                ? order.report.impression
+                : getStandardTestInterpretation(order.investigationName || (order as any).testName || 'Complete Blood Count (CBC)')}
             </p>
           </div>
 
           {/* End of Report Bar */}
-          <div style={{ textAlign: 'center', fontSize: '0.6875rem', color: '#94A3B8', margin: '14px 0', borderTop: '1px dashed #CBD5E1', paddingTop: '8px' }}>
-            *** END OF DIAGNOSTIC INVESTIGATION REPORT ***
+          <div style={{ textAlign: 'center', fontSize: '0.6875rem', color: '#94A3B8', margin: '10px 0', borderTop: '1px dashed #CBD5E1', paddingTop: '6px', fontStyle: 'italic' }}>
+            ~~End of report~~
           </div>
 
-          {/* Signatures & Security QR Code Footer */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', alignItems: 'flex-end', paddingTop: '10px', borderTop: '2px solid #E2E8F0' }}>
+          {/* Signatures & Security QR Code Footer (Dual Signatories from Image 1) */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr 1.2fr', gap: '16px', alignItems: 'flex-end', paddingTop: '10px', borderTop: '2px solid #CBD5E1' }}>
             
-            {/* Tech Signature */}
+            {/* Technologist Signature (Left Signatory from Image 1) */}
             <div>
               {profile.branding?.technologistSignatureUrl ? (
                 <img src={profile.branding.technologistSignatureUrl} alt="Technologist Signature" style={{ height: '36px', width: 'auto', maxHeight: '36px', objectFit: 'contain', display: 'block', marginBottom: '2px' }} />
               ) : (
-                <div style={{ fontFamily: 'cursive', fontSize: '1rem', color: '#0369A1', marginBottom: '2px' }}>{settings.technicianName.split(',')[0]}</div>
+                <div style={{ fontFamily: 'cursive', fontSize: '1.1rem', color: '#0369A1', marginBottom: '2px' }}>{settings.technicianName.split(',')[0]}</div>
               )}
-              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0F172A' }}>{settings.technicianName}</div>
-              <div style={{ fontSize: '0.6875rem', color: '#64748B' }}>{settings.technicianTitle}</div>
+              <div style={{ fontSize: '0.8125rem', fontWeight: 900, color: '#0F172A', textTransform: 'uppercase' }}>{settings.technicianName}</div>
+              <div style={{ fontSize: '0.6875rem', color: '#475569', fontWeight: 700 }}>{settings.technicianTitle}</div>
+              <div style={{ fontSize: '0.625rem', color: '#64748B', fontFamily: 'monospace' }}>{settings.technicianRegNo || 'Registration No. - 26534/10'}</div>
             </div>
 
-            {/* QR Code Verification */}
-            <div style={{ textAlign: 'center' }}>
+            {/* Center: ISO 9001:2015 Badge & Map QR */}
+            <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ backgroundColor: '#F8FAFC', border: '1px solid #CBD5E1', padding: '3px 8px', borderRadius: '4px', fontSize: '0.5625rem', fontWeight: 800, color: '#0369A1', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.02em', textAlign: 'center' }}>
+                ISO 9001:2015<br />CERTIFIED COMPANY
+              </div>
               <div style={{ display: 'inline-block', border: '1px solid #CBD5E1', padding: '4px', borderRadius: '4px' }}>
-                <span style={{ fontSize: '1.75rem' }}>📱</span>
+                <span style={{ fontSize: '1.5rem', lineHeight: 1 }}>📱</span>
               </div>
-              <div style={{ fontSize: '0.625rem', color: '#64748B', marginTop: '2px' }}>
-                Scan QR to Verify Authentic NABL Digitally Signed Copy
+              <div style={{ fontSize: '0.5625rem', color: '#64748B', marginTop: '2px', fontWeight: 600 }}>
+                Scan for Map / Verify Result
               </div>
             </div>
 
-            {/* Pathologist Signature & Official Stamp */}
+            {/* Pathologist Signature & Official Stamp (Right Signatory from Image 1) */}
             <div style={{ textAlign: 'right', position: 'relative' }}>
               {profile.branding?.stampSealUrl && (
                 <img
@@ -841,11 +873,11 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
                   alt="Official Seal"
                   style={{
                     position: 'absolute',
-                    right: '40px',
-                    bottom: '10px',
+                    right: '30px',
+                    bottom: '15px',
                     width: '60px',
                     height: '60px',
-                    opacity: 0.65,
+                    opacity: 0.7,
                     pointerEvents: 'none'
                   }}
                 />
@@ -855,16 +887,18 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
               ) : (
                 <div style={{ fontFamily: 'cursive', fontSize: '1.1rem', color: '#16A34A', marginBottom: '2px' }}>{settings.pathologistName.split(',')[0]}</div>
               )}
-              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0F172A' }}>{settings.pathologistName}</div>
-              <div style={{ fontSize: '0.6875rem', color: '#64748B' }}>{settings.pathologistTitle}</div>
-              <div style={{ fontSize: '0.625rem', color: '#0369A1', fontWeight: 700 }}>{settings.pathologistRegNo}</div>
+              <div style={{ fontSize: '0.8125rem', fontWeight: 900, color: '#0F172A', textTransform: 'uppercase' }}>
+                {settings.pathologistName.toUpperCase().startsWith('DR.') ? settings.pathologistName : `DR. ${settings.pathologistName}`}
+              </div>
+              <div style={{ fontSize: '0.6875rem', color: '#475569', fontWeight: 700 }}>{settings.pathologistTitle}</div>
+              <div style={{ fontSize: '0.625rem', color: '#0369A1', fontWeight: 700, fontFamily: 'monospace' }}>{settings.pathologistRegNo}</div>
             </div>
 
           </div>
 
-          {/* Statutory Legal Disclaimer */}
-          <div style={{ fontSize: '0.5625rem', color: '#64748B', textAlign: 'center', marginTop: '12px' }}>
-            {profile.branding?.reportFooterDisclaimer || 'This electronic laboratory report is validated against standard reference ranges and certified by authorized medical specialists.'}
+          {/* Statutory Medico-Legal Notice (Full Width Bottom Line from Image 1) */}
+          <div style={{ fontSize: '0.625rem', color: '#475569', textAlign: 'center', marginTop: '14px', borderTop: '1px solid #CBD5E1', paddingTop: '8px', fontWeight: 600, letterSpacing: '-0.01em', lineHeight: 1.4 }}>
+            {settings.medicoLegalNotice || profile.medicoLegalNotice || profile.branding?.medicoLegalNotice || 'Note:- Here all types of Blood and urine tests are done through automated machines. Results must be correlated clinically with medical history. Not Valid for Medico-Legal Purpose.'}
           </div>
 
         </div>

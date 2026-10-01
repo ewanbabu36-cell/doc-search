@@ -37,8 +37,10 @@ export interface VerifiedRoleProfile {
     rxHeaderNotes?: string | undefined;
     rxFooterDisclaimer?: string | undefined;
     reportFooterDisclaimer?: string | undefined;
+    medicoLegalNotice?: string | undefined;
   } | undefined;
   branches?: Array<{ id: string; branchName: string; branchType: string; address: string; phone: string; isMainHq: boolean }> | undefined;
+  medicoLegalNotice?: string | undefined;
   
   // Doctor Credentials
   doctorName: string;
@@ -250,8 +252,12 @@ export const getVerifiedRoleProfile = (currentUserOverride?: any): VerifiedRoleP
     panNumber: addr.panNumber || registeredPartner?.panNumber || '',
     geoCoordinates: (addr.latitude && addr.longitude) ? { latitude: addr.latitude, longitude: addr.longitude } : undefined,
     clinicalBedCapacity: savedSettings?.clinical,
-    branding: savedSettings?.branding,
+    branding: {
+      ...savedSettings?.branding,
+      medicoLegalNotice: savedSettings?.branding?.medicoLegalNotice || 'Note:- Here all types of Blood and urine tests are done through automated machines. Results must be correlated clinically with medical history. Not Valid for Medico-Legal Purpose.'
+    },
     branches: savedSettings?.branches,
+    medicoLegalNotice: savedSettings?.branding?.medicoLegalNotice || 'Note:- Here all types of Blood and urine tests are done through automated machines. Results must be correlated clinically with medical history. Not Valid for Medico-Legal Purpose.',
     supportEmail,
     website,
     gstin,

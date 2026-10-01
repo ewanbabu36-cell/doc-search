@@ -56,8 +56,9 @@ const files = [
   'apps/company-platform/src/components/billing/FinanceDomainManager.tsx',
   'apps/company-platform/src/components/common/UniversalAccountSettingsModal.tsx',
   'apps/partner-platform/src/components/common/HospitalPlanUpgradeModal.tsx',
-  'apps/partner-platform/src/components/common/UniversalAccountSettingsModal.tsx',
   'apps/partner-platform/src/components/dialogs/CommercialRenewalModal.tsx',
+  'apps/partner-platform/src/services/diagnostic-test-interpretation-engine.ts',
+  'apps/partner-platform/src/utils/clientPathologyPdf.ts',
   'apps/api-gateway/test/company-bank-and-revenue-separation.test.mjs'
 ];
 
