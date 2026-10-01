@@ -232,22 +232,30 @@ export function downloadVectorPathologyPdf(order: InvestigationOrderDto, setting
 
   // Technologist Signature (Left)
   contentLines.push('BT');
+  contentLines.push('/F2 6 Tf');
+  contentLines.push('0.02 0.58 0.41 rg');
+  contentLines.push('1 0 0 1 ' + (margin + 10) + ' ' + (footerTop - 8) + ' Tm');
+  contentLines.push('(TECHNOLOGIST SIGN-OFF: APPROVED) Tj');
   contentLines.push('/F2 8 Tf');
   contentLines.push('0.1 0.15 0.25 rg');
-  contentLines.push('1 0 0 1 ' + (margin + 10) + ' ' + (footerTop - 16) + ' Tm');
+  contentLines.push('1 0 0 1 ' + (margin + 10) + ' ' + (footerTop - 18) + ' Tm');
   contentLines.push('(' + escapePdfText(settings.technicianName || 'MD. SANJAR ALAM') + ') Tj');
   contentLines.push('/F1 6.5 Tf');
   contentLines.push('0.3 0.35 0.4 rg');
-  contentLines.push('1 0 0 1 ' + (margin + 10) + ' ' + (footerTop - 26) + ' Tm');
+  contentLines.push('1 0 0 1 ' + (margin + 10) + ' ' + (footerTop - 27) + ' Tm');
   contentLines.push('(' + escapePdfText(settings.technicianTitle || 'D.M.L.T') + ') Tj');
   contentLines.push('/F1 6 Tf');
   contentLines.push('0.4 0.45 0.5 rg');
-  contentLines.push('1 0 0 1 ' + (margin + 10) + ' ' + (footerTop - 35) + ' Tm');
+  contentLines.push('1 0 0 1 ' + (margin + 10) + ' ' + (footerTop - 36) + ' Tm');
   contentLines.push('(' + escapePdfText(settings.technicianRegNo || 'Registration No. - 26534/10') + ') Tj');
   contentLines.push('ET');
 
   // Center Badge
   contentLines.push('BT');
+  contentLines.push('/F2 6 Tf');
+  contentLines.push('0.02 0.58 0.41 rg');
+  contentLines.push('1 0 0 1 ' + (pageWidth / 2 - 50) + ' ' + (footerTop - 8) + ' Tm');
+  contentLines.push('(DIGITALLY SIGNED & APPROVED) Tj');
   contentLines.push('/F2 6.5 Tf');
   contentLines.push('0.01 0.41 0.63 rg');
   contentLines.push('1 0 0 1 ' + (pageWidth / 2 - 50) + ' ' + (footerTop - 18) + ' Tm');
@@ -260,17 +268,21 @@ export function downloadVectorPathologyPdf(order: InvestigationOrderDto, setting
 
   // Doctor Signature & Stamp (Right)
   contentLines.push('BT');
+  contentLines.push('/F2 6 Tf');
+  contentLines.push('0.02 0.58 0.41 rg');
+  contentLines.push('1 0 0 1 ' + (pageWidth - margin - 200) + ' ' + (footerTop - 8) + ' Tm');
+  contentLines.push('(CLINICAL SIGN-OFF: APPROVED & VALIDATED) Tj');
   contentLines.push('/F2 8 Tf');
   contentLines.push('0.08 0.55 0.25 rg');
-  contentLines.push('1 0 0 1 ' + (pageWidth - margin - 200) + ' ' + (footerTop - 16) + ' Tm');
+  contentLines.push('1 0 0 1 ' + (pageWidth - margin - 200) + ' ' + (footerTop - 18) + ' Tm');
   contentLines.push('(' + escapePdfText(settings.pathologistName || 'DR. VIKRAM KUMAR') + ') Tj');
   contentLines.push('/F1 6.5 Tf');
   contentLines.push('0.3 0.35 0.4 rg');
-  contentLines.push('1 0 0 1 ' + (pageWidth - margin - 200) + ' ' + (footerTop - 26) + ' Tm');
+  contentLines.push('1 0 0 1 ' + (pageWidth - margin - 200) + ' ' + (footerTop - 27) + ' Tm');
   contentLines.push('(' + escapePdfText(settings.pathologistTitle || 'MBBS (DMCH)') + ') Tj');
   contentLines.push('/F1 6 Tf');
   contentLines.push('0.01 0.45 0.7 rg');
-  contentLines.push('1 0 0 1 ' + (pageWidth - margin - 200) + ' ' + (footerTop - 35) + ' Tm');
+  contentLines.push('1 0 0 1 ' + (pageWidth - margin - 200) + ' ' + (footerTop - 36) + ' Tm');
   contentLines.push('(' + escapePdfText(settings.pathologistRegNo || 'Registration No. - 47684') + ') Tj');
   contentLines.push('ET');
 

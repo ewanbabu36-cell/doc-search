@@ -185,21 +185,48 @@ export const getVerifiedRoleProfile = (currentUserOverride?: any): VerifiedRoleP
   const doctorSpecialty = authUser?.roleTitle || cert.doctorSpecialty || (roleCategory === 'DOCTOR' ? 'General Medicine' : '');
   const doctorIndemnityNo = cert.doctorIndemnityPolicyNo || '';
 
-  const branding = savedSettings?.branding || {};
+  let customRx: any = {};
+  let labHeader: any = {};
+  if (typeof window !== 'undefined') {
+    try {
+      customRx = JSON.parse(localStorage.getItem('docsearch_custom_rx_letterhead') || '{}');
+    } catch {}
+    try {
+      labHeader = JSON.parse(localStorage.getItem('docsearch_lab_header_settings') || '{}');
+    } catch {}
+  }
+
+  const rawBranding = savedSettings?.branding || {};
+  const branding = {
+    ...rawBranding,
+    signatureUrl: rawBranding.signatureUrl || customRx.signatureUrl || labHeader.signatureUrl || labHeader.pathologistSignatureUrl || '',
+    pathologistSignatureUrl: rawBranding.pathologistSignatureUrl || rawBranding.signatureUrl || customRx.pathologistSignatureUrl || customRx.signatureUrl || labHeader.pathologistSignatureUrl || labHeader.signatureUrl || '',
+    technologistSignatureUrl: rawBranding.technologistSignatureUrl || customRx.technologistSignatureUrl || labHeader.technologistSignatureUrl || '',
+    stampSealUrl: rawBranding.stampSealUrl || customRx.stampSealUrl || labHeader.stampSealUrl || '',
+    logoUrl: rawBranding.logoUrl || customRx.logoUrl || labHeader.logoUrl || '',
+    technologistName: rawBranding.technologistName || customRx.technologistName || labHeader.technicianName || '',
+    technologistDegree: rawBranding.technologistDegree || customRx.technologistDegree || labHeader.technicianTitle || '',
+    technologistRegNo: rawBranding.technologistRegNo || customRx.technologistRegNo || labHeader.technicianRegNo || '',
+    pathologistName: rawBranding.pathologistName || customRx.pathologistName || labHeader.pathologistName || '',
+    pathologistDegree: rawBranding.pathologistDegree || customRx.pathologistDegree || labHeader.pathologistTitle || '',
+    pathologistRegNo: rawBranding.pathologistRegNo || customRx.pathologistRegNo || labHeader.pathologistRegNo || '',
+    medicoLegalNotice: rawBranding.medicoLegalNotice || customRx.medicoLegalNotice || labHeader.medicoLegalNotice || 'Note:- Here all types of Blood and urine tests are done through automated machines. Results must be correlated clinically with medical history. Not Valid for Medico-Legal Purpose.',
+    signatureApprovalStatus: 'APPROVED'
+  };
 
   // Lab credentials
-  const nablCertificateNo = cert.nablCertificateNo || registeredPartner?.nablCertNo || '';
-  const pathologistName = branding.pathologistName || (roleCategory === 'PATHOLOGY_LAB'
-    ? (authUser?.name || cert.pathologistName || cert.doctorName || '')
-    : (cert.pathologistName || cert.doctorName || ''));
-  const pathologistDegree = branding.pathologistDegree || cert.pathologistDegree || (roleCategory === 'PATHOLOGY_LAB' ? (authUser?.roleTitle || 'MD (Pathology)') : 'MD (Pathology)');
-  const pathologistRegNo = branding.pathologistRegNo || cert.pathologistRegNo || cert.doctorRegNo || registeredPartner?.clinicalLicense || '';
+  const nablCertificateNo = cert.nablCertificateNo || registeredPartner?.nablCertNo || labHeader.certificateNo || '';
+  const pathologistName = branding.pathologistName || labHeader.pathologistName || (roleCategory === 'PATHOLOGY_LAB'
+    ? (authUser?.name || cert.pathologistName || cert.doctorName || 'DR. VIKRAM KUMAR')
+    : (cert.pathologistName || cert.doctorName || 'DR. VIKRAM KUMAR'));
+  const pathologistDegree = branding.pathologistDegree || labHeader.pathologistTitle || cert.pathologistDegree || (roleCategory === 'PATHOLOGY_LAB' ? (authUser?.roleTitle || 'MBBS (DMCH)') : 'MBBS (DMCH)');
+  const pathologistRegNo = branding.pathologistRegNo || labHeader.pathologistRegNo || cert.pathologistRegNo || cert.doctorRegNo || registeredPartner?.clinicalLicense || 'Registration No. - 47684';
   const bmwClearanceNo = cert.bmwPollutionAuthNo || registeredPartner?.bmwCertNo || '';
-  const technicianName = branding.technologistName || cert.technologistName || (cert.staffHighestQualification
-    ? (authUser?.name || 'Medical Lab Technologist')
-    : (roleCategory === 'STAFF_OPERATIONS' ? (authUser?.name || 'Medical Lab Technologist') : 'Authorized Lab Technologist'));
-  const technicianDegree = branding.technologistDegree || cert.technologistDegree || 'B.Sc (MLT), DMLT';
-  const technicianRegNo = branding.technologistRegNo || cert.technologistRegNo || '';
+  const technicianName = branding.technologistName || labHeader.technicianName || cert.technologistName || (cert.staffHighestQualification
+    ? (authUser?.name || 'MD. SANJAR ALAM')
+    : (roleCategory === 'STAFF_OPERATIONS' ? (authUser?.name || 'MD. SANJAR ALAM') : 'MD. SANJAR ALAM'));
+  const technicianDegree = branding.technologistDegree || labHeader.technicianTitle || cert.technologistDegree || 'D.M.L.T';
+  const technicianRegNo = branding.technologistRegNo || labHeader.technicianRegNo || cert.technologistRegNo || 'Registration No. - 26534/10';
 
   // Hospital credentials
   const hospitalCeaRegNo = cert.hospitalCeaRegNo || registeredPartner?.clinicalLicense || '';

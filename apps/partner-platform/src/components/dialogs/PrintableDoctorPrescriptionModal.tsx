@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { ConsultationDto } from '@docsearch/api-contracts';
 import { getVerifiedRoleProfile } from '../../utils/roleProfileResolver.js';
 import { ProfileUpdateRequiredAlertModal } from '../common/ProfileUpdateRequiredAlertModal.js';
@@ -24,6 +24,8 @@ export interface CustomPrescriptionHeader {
   footerNotes: string;
   showWatermark: boolean;
   themeColor: string;
+  signatureUrl?: string;
+  stampSealUrl?: string;
 }
 
 const STORAGE_KEY = 'docsearch_custom_rx_letterhead';
@@ -33,32 +35,45 @@ export const PrintableDoctorPrescriptionModal: React.FC<Props> = ({
   onClose,
   consultation
 }) => {
-  const profile = getVerifiedRoleProfile();
+  const [profile, setProfile] = useState(getVerifiedRoleProfile);
 
-  const [headerConfig, setHeaderConfig] = useState<CustomPrescriptionHeader>(() => {
+  const getActiveHeaderConfig = (): CustomPrescriptionHeader => {
+    const prof = getVerifiedRoleProfile();
+    let saved: any = null;
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
+      const savedStr = localStorage.getItem(STORAGE_KEY);
+      if (savedStr) {
         try {
-          return JSON.parse(saved);
+          saved = JSON.parse(savedStr);
         } catch {}
       }
     }
     return {
-      doctorName: consultation?.doctorName || profile.doctorName || 'Consulting Physician',
-      doctorDegree: profile.doctorDegree || 'MBBS',
-      doctorSpecialty: profile.doctorSpecialty || 'General Medicine',
-      doctorCouncilName: profile.doctorCouncilName || 'State Medical Council',
-      doctorRegNo: profile.doctorRegNo || 'Reg # Verification Required',
-      entityLegalName: profile.entityLegalName || 'Healthcare Clinic & Consultation',
-      officialAddress: profile.officialAddress,
-      contactPhone: profile.contactPhone,
-      supportEmail: profile.supportEmail,
-      footerNotes: 'Digitally Signed & Authenticated under IT Act 2000 & NMC Guidelines. Valid for 30 days.',
-      showWatermark: true,
-      themeColor: '#0284C7'
+      doctorName: saved?.doctorName || consultation?.doctorName || prof.doctorName || 'Consulting Physician',
+      doctorDegree: saved?.doctorDegree || prof.doctorDegree || 'MBBS',
+      doctorSpecialty: saved?.doctorSpecialty || prof.doctorSpecialty || 'General Medicine',
+      doctorCouncilName: saved?.doctorCouncilName || prof.doctorCouncilName || 'State Medical Council',
+      doctorRegNo: saved?.doctorRegNo || prof.doctorRegNo || 'Reg # Verification Required',
+      entityLegalName: saved?.entityLegalName || prof.entityLegalName || 'Healthcare Clinic & Consultation',
+      officialAddress: saved?.officialAddress || prof.officialAddress,
+      contactPhone: saved?.contactPhone || prof.contactPhone,
+      supportEmail: saved?.supportEmail || prof.supportEmail,
+      footerNotes: saved?.footerNotes || 'Digitally Signed & Authenticated under IT Act 2000 & NMC Guidelines. Valid for 30 days.',
+      showWatermark: saved?.showWatermark ?? true,
+      themeColor: saved?.themeColor || '#0284C7',
+      signatureUrl: saved?.signatureUrl || prof.branding?.signatureUrl || '',
+      stampSealUrl: saved?.stampSealUrl || prof.branding?.stampSealUrl || ''
     };
-  });
+  };
+
+  const [headerConfig, setHeaderConfig] = useState<CustomPrescriptionHeader>(getActiveHeaderConfig);
+
+  useEffect(() => {
+    if (isOpen) {
+      setProfile(getVerifiedRoleProfile());
+      setHeaderConfig(getActiveHeaderConfig());
+    }
+  }, [isOpen]);
 
   const [isEditing, setIsEditing] = useState(false);
   const [saveToast, setSaveToast] = useState(false);
@@ -590,10 +605,33 @@ export const PrintableDoctorPrescriptionModal: React.FC<Props> = ({
                 </div>
               </div>
 
-              <div style={{ textAlign: 'center', minWidth: '220px' }}>
-                <div style={{ fontFamily: 'cursive', fontSize: '1.25rem', color: headerConfig.themeColor, marginBottom: '2px' }}>
-                  {headerConfig.doctorName}
-                </div>
+              <div style={{ textAlign: 'center', minWidth: '220px', position: 'relative' }}>
+                {(headerConfig.stampSealUrl || profile.branding?.stampSealUrl) && (
+                  <img
+                    src={headerConfig.stampSealUrl || profile.branding?.stampSealUrl}
+                    alt="Official Seal"
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      bottom: '20px',
+                      width: '56px',
+                      height: '56px',
+                      opacity: 0.65,
+                      pointerEvents: 'none'
+                    }}
+                  />
+                )}
+                {(headerConfig.signatureUrl || profile.branding?.signatureUrl) ? (
+                  <img
+                    src={headerConfig.signatureUrl || profile.branding?.signatureUrl}
+                    alt="Doctor Signature"
+                    style={{ height: '40px', width: 'auto', maxHeight: '40px', objectFit: 'contain', margin: '0 auto 2px', display: 'block' }}
+                  />
+                ) : (
+                  <div style={{ fontFamily: 'cursive', fontSize: '1.25rem', color: headerConfig.themeColor, marginBottom: '2px' }}>
+                    {headerConfig.doctorName}
+                  </div>
+                )}
                 <div style={{ borderTop: '1px solid #0F172A', paddingTop: '2px' }}>
                   <strong style={{ fontSize: '0.75rem', color: '#0F172A', display: 'block' }}>{headerConfig.doctorName}</strong>
                   <span style={{ fontSize: '0.6875rem', color: '#64748B', display: 'block' }}>{headerConfig.doctorDegree}</span>

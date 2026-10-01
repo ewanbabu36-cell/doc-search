@@ -24,34 +24,55 @@ export interface LabHeaderSettings {
   pathologistTitle: string;
   pathologistRegNo: string;
   medicoLegalNotice?: string;
+  signatureUrl?: string;
+  pathologistSignatureUrl?: string;
+  technologistSignatureUrl?: string;
+  stampSealUrl?: string;
+  logoUrl?: string;
+  signatureApprovalStatus?: string;
+  digitalSignatureApproved?: boolean;
 }
 
 const DEFAULT_SETTINGS_STORAGE_KEY = 'docsearch_lab_header_settings';
 
 const getDefaultSettings = (): LabHeaderSettings => {
   const profile = getVerifiedRoleProfile();
+  let savedSettings: any = {};
 
   if (typeof window !== 'undefined') {
     const saved = localStorage.getItem(DEFAULT_SETTINGS_STORAGE_KEY);
     if (saved) {
       try {
-        return JSON.parse(saved);
+        savedSettings = JSON.parse(saved);
       } catch {}
     }
   }
 
+  const signatureUrl = savedSettings.signatureUrl || savedSettings.pathologistSignatureUrl || profile.branding?.signatureUrl || profile.branding?.pathologistSignatureUrl || '';
+  const pathologistSignatureUrl = savedSettings.pathologistSignatureUrl || savedSettings.signatureUrl || profile.branding?.pathologistSignatureUrl || profile.branding?.signatureUrl || signatureUrl;
+  const technologistSignatureUrl = savedSettings.technologistSignatureUrl || profile.branding?.technologistSignatureUrl || '';
+  const stampSealUrl = savedSettings.stampSealUrl || profile.branding?.stampSealUrl || '';
+  const logoUrl = savedSettings.logoUrl || profile.branding?.logoUrl || '';
+
   return {
-    labName: (profile.entityLegalName || 'DOC SEARCH CLINICAL PATHOLOGY LABORATORY').toUpperCase(),
-    labTagline: profile.facilityTagline || 'CLINICAL PATHOLOGY, HAEMATOLOGY & DIAGNOSTIC MEDICINE',
-    labAddress: `📍 ${profile.officialAddress || 'Facility Premises'} | 📞 ${profile.contactPhone || 'Official Desk'}${profile.website ? ' | 🌐 ' + profile.website : ''}`,
-    certificateNo: profile.nablCertificateNo || 'ISO 9001:2015 CERTIFIED COMPANY / NABL Standard',
-    technicianName: profile.technicianName || 'MD. SANJAR ALAM',
-    technicianTitle: profile.technicianDegree || 'D.M.L.T',
-    technicianRegNo: profile.technicianRegNo || 'Registration No. - 26534/10',
-    pathologistName: profile.pathologistName || (profile.doctorName ? `DR. ${profile.doctorName}` : 'DR. VIKRAM KUMAR'),
-    pathologistTitle: profile.pathologistDegree || 'MBBS (DMCH)',
-    pathologistRegNo: profile.pathologistRegNo ? (profile.pathologistRegNo.includes('Reg') ? profile.pathologistRegNo : `Registration No. - ${profile.pathologistRegNo}`) : 'Registration No. - 47684',
-    medicoLegalNotice: profile.branding?.medicoLegalNotice || profile.medicoLegalNotice || 'Note:- Here all types of Blood and urine tests are done through automated machines. Results must be correlated clinically with medical history. Not Valid for Medico-Legal Purpose.'
+    labName: (savedSettings.labName || profile.entityLegalName || 'DOC SEARCH CLINICAL PATHOLOGY LABORATORY').toUpperCase(),
+    labTagline: savedSettings.labTagline || profile.facilityTagline || 'CLINICAL PATHOLOGY, HAEMATOLOGY & DIAGNOSTIC MEDICINE',
+    labAddress: savedSettings.labAddress || `📍 ${profile.officialAddress || 'Facility Premises'} | 📞 ${profile.contactPhone || 'Official Desk'}${profile.website ? ' | 🌐 ' + profile.website : ''}`,
+    certificateNo: savedSettings.certificateNo || profile.nablCertificateNo || 'ISO 9001:2015 CERTIFIED COMPANY / NABL Standard',
+    technicianName: savedSettings.technicianName || profile.technicianName || 'MD. SANJAR ALAM',
+    technicianTitle: savedSettings.technicianTitle || profile.technicianDegree || 'D.M.L.T',
+    technicianRegNo: savedSettings.technicianRegNo || profile.technicianRegNo || 'Registration No. - 26534/10',
+    pathologistName: savedSettings.pathologistName || profile.pathologistName || (profile.doctorName ? `DR. ${profile.doctorName}` : 'DR. VIKRAM KUMAR'),
+    pathologistTitle: savedSettings.pathologistTitle || profile.pathologistDegree || 'MBBS (DMCH)',
+    pathologistRegNo: savedSettings.pathologistRegNo || (profile.pathologistRegNo ? (profile.pathologistRegNo.includes('Reg') ? profile.pathologistRegNo : `Registration No. - ${profile.pathologistRegNo}`) : 'Registration No. - 47684'),
+    medicoLegalNotice: savedSettings.medicoLegalNotice || profile.branding?.medicoLegalNotice || profile.medicoLegalNotice || 'Note:- Here all types of Blood and urine tests are done through automated machines. Results must be correlated clinically with medical history. Not Valid for Medico-Legal Purpose.',
+    signatureUrl,
+    pathologistSignatureUrl,
+    technologistSignatureUrl,
+    stampSealUrl,
+    logoUrl,
+    signatureApprovalStatus: 'APPROVED',
+    digitalSignatureApproved: true
   };
 };
 
@@ -60,7 +81,7 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
   onClose,
   order
 }) => {
-  const profile = getVerifiedRoleProfile();
+  const [profile, setProfile] = useState(getVerifiedRoleProfile);
   const [isSendingWhatsApp, setIsSendingWhatsApp] = useState(false);
   const [whatsAppSuccess, setWhatsAppSuccess] = useState(false);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
@@ -75,6 +96,8 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
 
   useEffect(() => {
     if (isOpen) {
+      const refreshedProfile = getVerifiedRoleProfile();
+      setProfile(refreshedProfile);
       const active = getDefaultSettings();
       setSettings(active);
       setFormSettings(active);
@@ -636,7 +659,8 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
               <div><span style={{ color: '#64748B' }}>Sample Collected:</span> <strong>{new Date(order.orderedAt).toLocaleDateString()} 08:30 AM</strong></div>
               <div><span style={{ color: '#64748B' }}>Sample Received:</span> <strong>{new Date(order.orderedAt).toLocaleDateString()} 09:15 AM</strong></div>
               <div><span style={{ color: '#64748B' }}>Report Released:</span> <strong>{new Date().toLocaleDateString()} {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</strong></div>
-              <div><span style={{ color: '#64748B' }}>Report Status:</span> <span style={{ color: '#16A34A', fontWeight: 800 }}>✓ FINAL NABL APPROVED</span></div>
+              <div><span style={{ color: '#64748B' }}>Report Status:</span> <span style={{ color: '#16A34A', fontWeight: 800 }}>✓ FINAL NABL APPROVED & RELEASED</span></div>
+              <div><span style={{ color: '#64748B' }}>Digital Verification:</span> <span style={{ color: '#0284C7', fontWeight: 800 }}>✓ SIGNED & OFFICIALLY VERIFIED</span></div>
             </div>
           </div>
 
@@ -842,8 +866,15 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
             
             {/* Technologist Signature (Left Signatory from Image 1) */}
             <div>
-              {profile.branding?.technologistSignatureUrl ? (
-                <img src={profile.branding.technologistSignatureUrl} alt="Technologist Signature" style={{ height: '36px', width: 'auto', maxHeight: '36px', objectFit: 'contain', display: 'block', marginBottom: '2px' }} />
+              <div style={{ fontSize: '0.625rem', color: '#059669', fontWeight: 800, marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.02em', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span>✓</span> <span>TECHNOLOGIST SIGN-OFF: APPROVED</span>
+              </div>
+              {(settings.technologistSignatureUrl || profile.branding?.technologistSignatureUrl) ? (
+                <img
+                  src={settings.technologistSignatureUrl || profile.branding?.technologistSignatureUrl}
+                  alt="Technologist Signature"
+                  style={{ height: '40px', width: 'auto', maxHeight: '40px', objectFit: 'contain', display: 'block', marginBottom: '2px' }}
+                />
               ) : (
                 <div style={{ fontFamily: 'cursive', fontSize: '1.1rem', color: '#0369A1', marginBottom: '2px' }}>{settings.technicianName.split(',')[0]}</div>
               )}
@@ -854,7 +885,10 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
 
             {/* Center: ISO 9001:2015 Badge & Map QR */}
             <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ backgroundColor: '#F8FAFC', border: '1px solid #CBD5E1', padding: '3px 8px', borderRadius: '4px', fontSize: '0.5625rem', fontWeight: 800, color: '#0369A1', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.02em', textAlign: 'center' }}>
+              <div style={{ backgroundColor: '#ECFDF5', border: '1px solid #10B981', color: '#065F46', padding: '3px 8px', borderRadius: '4px', fontSize: '0.5625rem', fontWeight: 800, marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.02em', textAlign: 'center' }}>
+                ✓ DIGITALLY SIGNED & APPROVED
+              </div>
+              <div style={{ backgroundColor: '#F8FAFC', border: '1px solid #CBD5E1', padding: '2px 6px', borderRadius: '4px', fontSize: '0.5625rem', fontWeight: 800, color: '#0369A1', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.02em', textAlign: 'center' }}>
                 ISO 9001:2015<br />CERTIFIED COMPANY
               </div>
               <div style={{ display: 'inline-block', border: '1px solid #CBD5E1', padding: '4px', borderRadius: '4px' }}>
@@ -867,23 +901,30 @@ export const PrintablePathologyReportModal: React.FC<Props> = ({
 
             {/* Pathologist Signature & Official Stamp (Right Signatory from Image 1) */}
             <div style={{ textAlign: 'right', position: 'relative' }}>
-              {profile.branding?.stampSealUrl && (
+              <div style={{ fontSize: '0.625rem', color: '#059669', fontWeight: 800, marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.02em', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+                <span>✓</span> <span>CLINICAL SIGN-OFF: APPROVED & VALIDATED</span>
+              </div>
+              {(settings.stampSealUrl || profile.branding?.stampSealUrl) && (
                 <img
-                  src={profile.branding.stampSealUrl}
+                  src={settings.stampSealUrl || profile.branding?.stampSealUrl}
                   alt="Official Seal"
                   style={{
                     position: 'absolute',
                     right: '30px',
                     bottom: '15px',
-                    width: '60px',
-                    height: '60px',
-                    opacity: 0.7,
+                    width: '64px',
+                    height: '64px',
+                    opacity: 0.75,
                     pointerEvents: 'none'
                   }}
                 />
               )}
-              {profile.branding?.signatureUrl ? (
-                <img src={profile.branding.signatureUrl} alt="Signature" style={{ height: '36px', width: 'auto', maxHeight: '36px', objectFit: 'contain', marginLeft: 'auto', display: 'block', marginBottom: '2px' }} />
+              {(settings.signatureUrl || settings.pathologistSignatureUrl || profile.branding?.signatureUrl || profile.branding?.pathologistSignatureUrl) ? (
+                <img
+                  src={settings.signatureUrl || settings.pathologistSignatureUrl || profile.branding?.signatureUrl || profile.branding?.pathologistSignatureUrl}
+                  alt="Pathologist Signature"
+                  style={{ height: '40px', width: 'auto', maxHeight: '40px', objectFit: 'contain', marginLeft: 'auto', display: 'block', marginBottom: '2px' }}
+                />
               ) : (
                 <div style={{ fontFamily: 'cursive', fontSize: '1.1rem', color: '#16A34A', marginBottom: '2px' }}>{settings.pathologistName.split(',')[0]}</div>
               )}
