@@ -10,6 +10,7 @@ import {
   planEntitlements,
   subscriptions,
   licenses,
+  users,
   eq,
   or
 } from '@docsearch/database';
@@ -223,7 +224,7 @@ export class PartnerSyncService {
         .map((item: any) => ({
           id: item.id,
           email: item.details?.['Registered Email'] || item.details?.['Applicant Email'] || (item as any).contactEmail || '',
-          facilityName: item.facilityName || 'Healthcare Facility',
+          facilityName: item.organizationName || item.facilityName || item.details?.['Hospital Name'] || item.details?.['Clinic Name'] || item.details?.['Lab Name'] || item.details?.['Facility Name'] || 'Healthcare Partner',
           status: item.status,
           kycStatus: 'KYC_VERIFIED',
           organizationType: item.type || 'HOSPITAL',
@@ -276,6 +277,66 @@ export class PartnerSyncService {
       for (const c of credentialsList) {
         if (c?.email) {
           credsByEmail.set(c.email.toLowerCase().trim(), c);
+        }
+      }
+
+      // Also merge credentials from PostgreSQL core.users so database-registered partners are recognized
+      if (db) {
+        try {
+          const dbUsers = await db.select().from(users);
+          for (const u of dbUsers) {
+            const uEmail = (u.email || '').toLowerCase().trim();
+            if (uEmail && !credsByEmail.has(uEmail)) {
+              const meta = (u.metadata || {}) as Record<string, any>;
+              credsByEmail.set(uEmail, {
+                email: uEmail,
+                tenantId: meta['tenantId'] || undefined,
+                tenantName: meta['tenantName'] || `${u.firstName || ''} ${u.lastName || ''}`.trim(),
+                firstName: u.firstName,
+                lastName: u.lastName,
+                roles: meta['roles'] || [],
+                organizationType: meta['organizationType'],
+                planTier: meta['planTier']
+              });
+            }
+          }
+        } catch (dbUserErr) {
+          logger.warn('Could not query core.users during partner sync: ' + String(dbUserErr));
+        }
+
+        // Also merge active/verified profiles from company.partner_profiles into approvedList
+        try {
+          const dbProfiles = await db
+            .select()
+            .from(partnerProfiles)
+            .where(
+              or(
+                eq(partnerProfiles.lifecycleStatus, 'ACTIVE'),
+                eq(partnerProfiles.verificationStatus, 'VERIFIED')
+              )
+            );
+
+          for (const prof of dbProfiles) {
+            const pEmail = (prof.primaryContactEmail || '').toLowerCase().trim();
+            if (pEmail && !approvedList.some((ap) => (ap.email || '').toLowerCase().trim() === pEmail)) {
+              approvedList.push({
+                id: prof.id,
+                email: pEmail,
+                facilityName: prof.legalName || prof.tradeName || 'Healthcare Facility',
+                status: 'APPROVED',
+                kycStatus: 'KYC_VERIFIED',
+                organizationType: prof.partnerType || 'HOSPITAL',
+                assignedPlan: (prof.metadata as any)?.assignedPlan || null,
+                planTier: (prof.metadata as any)?.planTier,
+                monthlyFee: (prof.metadata as any)?.monthlyFee,
+                finalAmount: (prof.metadata as any)?.finalAmount,
+                invoiceNumber: (prof.metadata as any)?.invoiceNumber,
+                tenantDraftId: prof.tenantId
+              });
+            }
+          }
+        } catch (dbProfErr) {
+          logger.warn('Could not query company.partner_profiles during partner sync: ' + String(dbProfErr));
         }
       }
 
@@ -939,14 +1000,44 @@ export class PartnerSyncService {
         const cred = credsByEmail.get(email);
         const facilityName = partner.facilityName || cred?.tenantName || cred?.firstName || 'Healthcare Partner';
         const partnerId = toDeterministicUuid(partner.id || email);
-        const tenantId = cred?.tenantId || toDeterministicUuid(`tenant-${email}`);
+
+        // Pre-query existing profile in company.partner_profiles to preserve genuine authoritative IDs
+        let existingProfile: any = null;
+        if (db) {
+          try {
+            const matchedProfiles = await db
+              .select({
+                id: partnerProfiles.id,
+                tenantId: partnerProfiles.tenantId,
+                metadata: partnerProfiles.metadata,
+                lifecycleStatus: partnerProfiles.lifecycleStatus,
+                verificationStatus: partnerProfiles.verificationStatus
+              })
+              .from(partnerProfiles)
+              .where(
+                or(
+                  eq(partnerProfiles.id, partner.id),
+                  eq(partnerProfiles.id, partnerId),
+                  eq(partnerProfiles.primaryContactEmail, email),
+                  ...(partner.tenantDraftId ? [eq(partnerProfiles.tenantId, partner.tenantDraftId)] : [])
+                )
+              )
+              .limit(1);
+            existingProfile = matchedProfiles[0] || null;
+          } catch {
+            // Non-fatal
+          }
+        }
+
+        const targetProfileId = existingProfile?.id || partnerId;
+        const tenantId = existingProfile?.tenantId || cred?.tenantId || partner.tenantDraftId || toDeterministicUuid(`tenant-${email}`);
 
         // STRICT RESURRECTION GUARD: Never re-insert or activate permanently purged/deleted partners
         if (
           partnerTombstoneService.isPurged(partner.id) ||
           partnerTombstoneService.isPurged(partnerId) ||
+          partnerTombstoneService.isPurged(targetProfileId) ||
           partnerTombstoneService.isPurged(email) ||
-          partnerTombstoneService.isPurged(facilityName) ||
           partnerTombstoneService.isPurged(tenantId)
         ) {
           continue;
@@ -1017,24 +1108,6 @@ export class PartnerSyncService {
           }
 
           // B. Ensure Partner Profile in company.partner_profiles
-          const [existingProfile] = await db
-            .select({
-              id: partnerProfiles.id,
-              metadata: partnerProfiles.metadata,
-              lifecycleStatus: partnerProfiles.lifecycleStatus,
-              verificationStatus: partnerProfiles.verificationStatus
-            })
-            .from(partnerProfiles)
-            .where(
-              or(
-                eq(partnerProfiles.id, partnerId),
-                eq(partnerProfiles.tenantId, tenantId),
-                eq(partnerProfiles.primaryContactEmail, email)
-              )
-            )
-            .limit(1);
-
-          const targetProfileId = existingProfile?.id || partnerId;
           const loc = resolvePartnerLocation(facilityName, partner, partner);
 
           if (!existingProfile) {

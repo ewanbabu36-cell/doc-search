@@ -13,7 +13,7 @@ import {
   PARTNER_PROFILE_ALLOWED_MODULES,
   isModuleAllowedForPartnerProfile
 } from '@docsearch/shared-core';
-import { getDatabase, partnerProfiles, eq } from '@docsearch/database';
+import { getDatabase, partnerProfiles, eq, or } from '@docsearch/database';
 
 export { PARTNER_PROFILE_ALLOWED_MODULES, isModuleAllowedForPartnerProfile };
 
@@ -81,8 +81,8 @@ export async function requireActiveCommercialAccess(
 
   // Canonical Fail-Closed Rule: Look up active license in company.licenses
   // A partner must NOT receive operational commercial access merely because no license row exists.
-  const tenantLicenses = await licenseRepository.findByTenantId(tenantId);
-  const license =
+  let tenantLicenses = await licenseRepository.findByTenantId(tenantId);
+  let license =
     tenantLicenses.find(
       (l) =>
         l.status === 'ACTIVE' ||
@@ -90,6 +90,37 @@ export async function requireActiveCommercialAccess(
         l.status === 'EXPIRING_SOON' ||
         l.status === 'GRACE_PERIOD'
     ) || tenantLicenses[0];
+
+  if (!license) {
+    // Dynamic Entitlement Auto-Healing: Check if organization is an approved/active partner
+    try {
+      const db = getDatabase();
+      if (db) {
+        const [profile] = await db
+          .select()
+          .from(partnerProfiles)
+          .where(or(eq(partnerProfiles.tenantId, tenantId), eq(partnerProfiles.id, tenantId)))
+          .limit(1);
+
+        if (profile && (profile.lifecycleStatus === 'ACTIVE' || profile.verificationStatus === 'VERIFIED')) {
+          const { partnerSyncService } = await import('../services/company/PartnerSyncService.js');
+          await partnerSyncService.syncApprovedPartnersToDatabase(true);
+
+          tenantLicenses = await licenseRepository.findByTenantId(tenantId);
+          license =
+            tenantLicenses.find(
+              (l) =>
+                l.status === 'ACTIVE' ||
+                l.status === 'FREE_ACTIVE' ||
+                l.status === 'EXPIRING_SOON' ||
+                l.status === 'GRACE_PERIOD'
+            ) || tenantLicenses[0];
+        }
+      }
+    } catch {
+      // Non-fatal, proceed to fail-closed check
+    }
+  }
 
   if (!license) {
     throw new AppError({

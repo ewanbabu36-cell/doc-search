@@ -27,6 +27,18 @@ export const PROTECTED_SYSTEM_TENANTS = new Set([
   '00000000-0000-4000-8000-000000000000'
 ]);
 
+export const GENERIC_FACILITY_NAMES = new Set([
+  'healthcare facility',
+  'healthcare partner',
+  'partner facility',
+  'medical facility',
+  'hospital',
+  'clinic',
+  'pathology lab',
+  'pharmacy',
+  'diagnostic centre'
+]);
+
 export class PartnerTombstoneService {
   private purgedTokens = new Set<string>();
   private tombstones: PurgedPartnerTombstone[] = [];
@@ -93,7 +105,7 @@ export class PartnerTombstoneService {
   private addToken(token?: string | null): void {
     const norm = this.normalize(token);
     if (!norm) return;
-    if (PROTECTED_SYSTEM_TENANTS.has(norm)) return;
+    if (PROTECTED_SYSTEM_TENANTS.has(norm) || GENERIC_FACILITY_NAMES.has(norm)) return;
     this.purgedTokens.add(norm);
 
     try {
