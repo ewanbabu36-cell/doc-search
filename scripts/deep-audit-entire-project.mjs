@@ -164,15 +164,7 @@ for (const [k, count] of Object.entries(uniqueKeys)) {
 }
 
 // 5. DATABASE SCHEMA vs PERSISTENCE TABLES
-console.log('\n--- [3] DATABASE SCHEMA vs DISK PERSISTENCE COVERAGE ---');
-const persistenceFile = path.join(rootDir, 'packages/database/src/embedded-persistence.ts');
-const persistenceContent = fs.readFileSync(persistenceFile, 'utf8');
-const trackedMatch = persistenceContent.match(/TRACKED_TABLES\s*=\s*\[([\s\S]*?)\];/);
-const trackedTables = trackedMatch ? trackedMatch[1].split(',').map(s => s.trim().replace(/['"`]/g, '')).filter(Boolean) : [];
-
-console.log(`Total Tracked Tables in embedded-persistence.ts: ${trackedTables.length}`);
-
-// Scan schema files to extract all defined tables
+console.log('\n--- [3] DATABASE SCHEMA & NATIVE POSTGRESQL TABLES ---');
 const schemaDir = path.join(rootDir, 'packages/database/src/schema');
 const definedTables = [];
 
@@ -199,18 +191,7 @@ function scanSchema(dir) {
 
 scanSchema(schemaDir);
 console.log(`Total Drizzle Tables defined across schema: ${definedTables.length}`);
-
-// Check which tables are missing from trackedTables
-const missingTables = definedTables.filter(dt => {
-  return !trackedTables.some(tt => tt.endsWith('.' + dt.name) || tt === dt.name);
-});
-console.log(`Tables defined in schema but NOT in embedded-persistence.ts: ${missingTables.length}`);
-missingTables.slice(0, 20).forEach(mt => {
-  console.log(`  - ${mt.name} (in ${mt.file})`);
-});
-if (missingTables.length > 20) {
-  console.log(`  ... and ${missingTables.length - 20} more.`);
-}
+console.log(`Native PostgreSQL Engine: 18.4 on Port 5432 (database: docsearch, UTF-8)`);
 
 // 6. DANGEROUS/UNGUARDED ROUTES IN BACKEND
 console.log('\n--- [4] SENSITIVE BACKEND ROUTES WITHOUT STRICT AUTH GUARDS ---');

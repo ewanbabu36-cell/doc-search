@@ -24,6 +24,7 @@ import {
   MOCK_OPERATIONAL_SUBSCRIPTIONS,
   MOCK_OPERATIONAL_AUDIT_TRACES,
   MOCK_PANEL_CONTEXT,
+  MOCK_TENANT_ID,
   MOCK_PARTNER_FOUNDATION_OVERVIEW
 } from './mock-partner-foundation-data.js';
 
@@ -46,13 +47,42 @@ export interface IPartnerFoundationService {
   getAuditTraces(req: QueryOperationalAuditRequest): Promise<OperationalAuditTraceDto[]>;
 }
 
+const resolveInitialPanelContext = (): PanelContextDto => {
+  if (typeof window !== 'undefined') {
+    try {
+      const stored =
+        window.localStorage?.getItem('docsearch_partner_staff_auth') ||
+        window.localStorage?.getItem('docsearch_user_session');
+      if (stored) {
+        const u = JSON.parse(stored);
+        const resolvedTId = u.tenantId || u.partnerId;
+        if (resolvedTId && typeof resolvedTId === 'string' && resolvedTId.trim().length > 0) {
+          return {
+            activeTenantId: resolvedTId,
+            activeTenantName: u.tenantName || MOCK_PANEL_CONTEXT.activeTenantName,
+            activePartnerId: u.partnerId || resolvedTId,
+            activePartnerName: u.tenantName || 'Doc Search Healthcare Partner',
+            activeOrganizationId: u.organizationId || '',
+            activeOrganizationName: u.organizationName || u.tenantName || 'Healthcare Facility',
+            activeFacilityId: u.facilityId || u.branchId || '',
+            activeFacilityName: u.facilityName || u.tenantName || 'Primary Facility',
+            userRole: u.role || 'HOSPITAL_DIRECTOR',
+            userEmail: u.email || ''
+          };
+        }
+      }
+    } catch {}
+  }
+  return { ...MOCK_PANEL_CONTEXT };
+};
+
 export class PartnerFoundationService implements IPartnerFoundationService {
   private partners: OperationalPartnerDto[] = [...MOCK_OPERATIONAL_PARTNERS];
   private organizations: OperationalOrganizationDto[] = [...MOCK_OPERATIONAL_ORGANIZATIONS];
   private facilities: OperationalFacilityDto[] = [...MOCK_OPERATIONAL_FACILITIES];
   private subscriptions: OperationalSubscriptionDto[] = [...MOCK_OPERATIONAL_SUBSCRIPTIONS];
   private auditTraces: OperationalAuditTraceDto[] = [...MOCK_OPERATIONAL_AUDIT_TRACES];
-  private context: PanelContextDto = { ...MOCK_PANEL_CONTEXT };
+  private context: PanelContextDto = resolveInitialPanelContext();
   private inMemoryInvitations: Map<string, ClinicInvitationDto[]> = new Map();
   private inMemoryPreferredPartners: Map<string, ClinicPreferredPartnersDto> = new Map();
 
@@ -111,6 +141,12 @@ export class PartnerFoundationService implements IPartnerFoundationService {
   }
 
   async getPanelContext(): Promise<PanelContextDto> {
+    if (this.context.activeTenantId === MOCK_TENANT_ID) {
+      const fresh = resolveInitialPanelContext();
+      if (fresh.activeTenantId !== MOCK_TENANT_ID) {
+        this.context = { ...this.context, ...fresh };
+      }
+    }
     return { ...this.context };
   }
 

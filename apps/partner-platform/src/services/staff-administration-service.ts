@@ -552,10 +552,18 @@ export class StaffAdministrationService implements IStaffAdministrationService {
   }
 
   async createStaff(req: CreateOperationalStaffRequest): Promise<OperationalStaffDto> {
+    const cleanPayload: Record<string, any> = { ...req };
+    // Enterprise SaaS multi-tenant boundary: Strip legacy dummy template placeholders so backend authoritative session is applied
+    if (cleanPayload['tenantId'] === '11111111-1111-4111-8111-111111111111' || !cleanPayload['tenantId']) {
+      delete cleanPayload['tenantId'];
+    }
+    if (cleanPayload['partnerId'] === '11111111-1111-4111-8111-111111111111' || !cleanPayload['partnerId']) {
+      delete cleanPayload['partnerId'];
+    }
     try {
       const res = await apiRequest<OperationalStaffDto>('/api/v1/partner/staff/members', {
         method: 'POST',
-        body: JSON.stringify(req)
+        body: JSON.stringify(cleanPayload)
       });
       if (res.success && res.data) {
         const staffData = res.data;

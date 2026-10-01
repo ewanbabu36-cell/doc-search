@@ -575,6 +575,9 @@ export class StaffAdministrationService {
   }
 
   async createStaff(input: Omit<CreateOperationalStaffRequest, 'tenantId'> & { tenantId?: string }, session: SessionContext) {
+    if (input.tenantId === '11111111-1111-4111-8111-111111111111' && session.tenantId) {
+      input.tenantId = session.tenantId;
+    }
     if (!session.isSuperAdmin && input.tenantId && input.tenantId !== session.tenantId) {
       throw AppError.forbidden('Cross-tenant staff creation is strictly prohibited.');
     }
@@ -621,6 +624,9 @@ export class StaffAdministrationService {
   }
 
   async updateStaff(staffId: string, input: Omit<UpdateOperationalStaffRequest, 'tenantId'> & { tenantId?: string }, session: SessionContext) {
+    if (input.tenantId === '11111111-1111-4111-8111-111111111111' && session.tenantId) {
+      input.tenantId = session.tenantId;
+    }
     if (!session.isSuperAdmin && input.tenantId && input.tenantId !== session.tenantId) {
       throw AppError.forbidden('Cross-tenant staff update is strictly prohibited.');
     }

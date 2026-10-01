@@ -1,5 +1,25 @@
 [
   {
+    "id": "proof_1790828939354_0876b3df",
+    "partnerId": "00000000-0000-4000-8000-000000000001",
+    "tenantId": "00000000-0000-4000-8000-000000000001",
+    "partnerName": "Partner Facility",
+    "planId": "44444444-4444-4000-8000-000000000004",
+    "planName": "Hospital Enterprise Annual Plan",
+    "planCode": "PLAN_HOSPITAL_ANNUAL",
+    "durationYears": 2,
+    "payableAmountInr": 39200,
+    "paymentMethod": "UPI",
+    "utrNumber": "UTR1790828939342",
+    "payerUpiOrAccount": "metro.hospital@okaxis",
+    "partnerRemarks": "Two-year enterprise subscription renewal",
+    "paymentDate": "2026-10-01T04:28:59.354Z",
+    "submittedAt": "2026-10-01T04:28:59.354Z",
+    "status": "APPROVED",
+    "verifiedAt": "2026-10-01T04:28:59.355Z",
+    "verifiedBy": "00000000-0000-4000-8000-000000000099"
+  },
+  {
     "id": "proof_1790822948252_7df7adaa",
     "partnerId": "00000000-0000-4000-8000-000000000001",
     "tenantId": "00000000-0000-4000-8000-000000000001",

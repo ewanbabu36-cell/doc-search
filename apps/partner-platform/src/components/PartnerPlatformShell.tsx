@@ -744,18 +744,38 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
   }, [isFounderUser, dynamicPartner?.kycStatus, currentUser?.kycStatus]);
 
   useEffect(() => {
-    if (currentUser?.email) {
+    if (currentUser?.email || (currentUser as any)?.tenantId) {
+      const activeTenant = (currentUser as any)?.tenantId || (currentUser as any)?.partnerId || '11111111-1111-4111-8111-111111111111';
+      const activePartner = (currentUser as any)?.partnerId || activeTenant;
+      const activeOrg = (currentUser as any)?.organizationId || '';
+      const activeFacility = (currentUser as any)?.facilityId || (currentUser as any)?.branchId || '';
+
       import('../services/partner-foundation-service.js')
         .then(({ partnerFoundationService }) => {
           void partnerFoundationService.setPanelContext({
-            userEmail: currentUser.email || '',
-            userRole: currentUser.role || 'HOSPITAL_DIRECTOR',
-            activeTenantName: currentUser.tenantName || 'Healthcare Facility'
+            userEmail: currentUser?.email || '',
+            userRole: currentUser?.role || 'HOSPITAL_DIRECTOR',
+            activeTenantName: currentUser?.tenantName || 'Healthcare Facility',
+            activeTenantId: activeTenant,
+            activePartnerId: activePartner,
+            activeOrganizationId: activeOrg,
+            activeFacilityId: activeFacility,
+            activeOrganizationName: currentUser?.tenantName || 'Healthcare Facility',
+            activeFacilityName: currentUser?.tenantName || 'Primary Facility'
           });
         })
         .catch(() => {});
     }
-  }, [currentUser?.email, currentUser?.role, currentUser?.tenantName]);
+  }, [
+    currentUser?.email,
+    currentUser?.role,
+    currentUser?.tenantName,
+    (currentUser as any)?.tenantId,
+    (currentUser as any)?.partnerId,
+    (currentUser as any)?.organizationId,
+    (currentUser as any)?.facilityId,
+    (currentUser as any)?.branchId
+  ]);
 
   const checkLiveApprovalStatus = useCallback(async () => {
     if (!currentUser?.email) return;
@@ -4164,6 +4184,10 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
               <StaffAdministrationDomainManager
                 workspace={workspace}
                 partnerType={currentUser?.organizationType || workspace}
+                tenantId={resolvedTenantId}
+                partnerId={(currentUser as any)?.partnerId || resolvedTenantId}
+                organizationId={(currentUser as any)?.organizationId}
+                facilityId={(currentUser as any)?.facilityId || (currentUser as any)?.branchId}
               />
             )}
             {activeModule === 'doctor-management' && (

@@ -228,11 +228,28 @@ export const CreateStaffDialog: React.FC<CreateStaffDialogProps> = ({
         metadata['licenseNumber'] = professionalRegNumber.trim();
       }
 
+      // Standard ERP/SaaS multi-tenant dynamic resolution:
+      // Ensure genuine tenantId from active session is used, and omit dummy placeholder
+      let resolvedTenant = tenantId;
+      if (!resolvedTenant || resolvedTenant === '11111111-1111-4111-8111-111111111111') {
+        try {
+          const stored = localStorage.getItem('docsearch_partner_staff_auth') || localStorage.getItem('docsearch_user_session');
+          if (stored) {
+            const u = JSON.parse(stored);
+            if (u && (u.tenantId || u.partnerId) && u.tenantId !== '11111111-1111-4111-8111-111111111111') {
+              resolvedTenant = u.tenantId || u.partnerId;
+            }
+          }
+        } catch {}
+      }
+      const safeTenantId = (resolvedTenant && resolvedTenant !== '11111111-1111-4111-8111-111111111111') ? resolvedTenant : undefined;
+      const safePartnerId = (partnerId && partnerId !== '11111111-1111-4111-8111-111111111111') ? partnerId : safeTenantId;
+
       await onCreateStaff({
         actorId,
         actorRole,
-        tenantId,
-        partnerId,
+        tenantId: safeTenantId as string,
+        partnerId: safePartnerId as string,
         organizationId,
         branchId,
         departmentId,

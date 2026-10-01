@@ -49,11 +49,19 @@ type ActiveStaffTab =
 export interface StaffAdministrationDomainManagerProps {
   workspace?: string | undefined;
   partnerType?: string | undefined;
+  tenantId?: string | undefined;
+  partnerId?: string | undefined;
+  organizationId?: string | undefined;
+  facilityId?: string | undefined;
 }
 
 export const StaffAdministrationDomainManager: React.FC<StaffAdministrationDomainManagerProps> = ({
   workspace,
-  partnerType
+  partnerType,
+  tenantId: propTenantId,
+  partnerId: propPartnerId,
+  organizationId: propOrgId,
+  facilityId: propFacilityId
 }) => {
   const normType = (partnerType || workspace || '').toUpperCase().trim().replace(/[\s-]+/g, '_');
   const isEnterpriseMode = normType.includes('HOSPITAL') || normType.includes('ENTERPRISE');
@@ -100,6 +108,14 @@ export const StaffAdministrationDomainManager: React.FC<StaffAdministrationDomai
     setIsLoading(true);
     setError(null);
     try {
+      if (propTenantId) {
+        await partnerFoundationService.setPanelContext({
+          activeTenantId: propTenantId,
+          activePartnerId: propPartnerId || propTenantId,
+          activeOrganizationId: propOrgId || '',
+          activeFacilityId: propFacilityId || ''
+        });
+      }
       const ctx = await partnerFoundationService.getPanelContext();
       setContext(ctx);
 
@@ -281,8 +297,10 @@ export const StaffAdministrationDomainManager: React.FC<StaffAdministrationDomai
   }
 
   const selectedStaff = staffList.find((s) => s.id === selectedStaffId) ?? staffList[0] ?? null;
-  const activeOrgId = context?.activeOrganizationId ?? organizations[0]?.id ?? '';
-  const activeBranchId = context?.activeFacilityId ?? facilities[0]?.id ?? '';
+  const effectiveTenantId = propTenantId || context?.activeTenantId || '';
+  const effectivePartnerId = propPartnerId || context?.activePartnerId || effectiveTenantId;
+  const activeOrgId = propOrgId || context?.activeOrganizationId || organizations[0]?.id || '';
+  const activeBranchId = propFacilityId || context?.activeFacilityId || facilities[0]?.id || '';
 
   const effectiveDepartments: OperationalDepartmentDto[] =
     departments.length > 0
@@ -290,8 +308,8 @@ export const StaffAdministrationDomainManager: React.FC<StaffAdministrationDomai
       : [
           {
             id: 'dept-default-ops',
-            tenantId: context?.activeTenantId || 'default-tenant',
-            partnerId: context?.activePartnerId || 'default-partner',
+            tenantId: effectiveTenantId || 'default-tenant',
+            partnerId: effectivePartnerId || 'default-partner',
             organizationId: activeOrgId || 'default-org',
             departmentCode: workspace ? `${workspace}_OPS` : 'GENERAL_OPS',
             departmentName:
@@ -361,8 +379,8 @@ export const StaffAdministrationDomainManager: React.FC<StaffAdministrationDomai
                 departments={effectiveDepartments}
                 workspace={workspace}
                 partnerType={partnerType}
-                tenantId={context.activeTenantId}
-                partnerId={context.activePartnerId}
+                tenantId={effectiveTenantId}
+                partnerId={effectivePartnerId}
                 organizationId={activeOrgId}
                 branchId={activeBranchId}
                 actorId={context.userRole}
@@ -535,8 +553,8 @@ export const StaffAdministrationDomainManager: React.FC<StaffAdministrationDomai
               departments={effectiveDepartments}
               workspace={workspace}
               partnerType={partnerType}
-              tenantId={context.activeTenantId}
-              partnerId={context.activePartnerId}
+              tenantId={effectiveTenantId}
+              partnerId={effectivePartnerId}
               organizationId={activeOrgId}
               branchId={activeBranchId}
               actorId={context.userRole}
