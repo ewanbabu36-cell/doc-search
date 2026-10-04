@@ -1030,19 +1030,15 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess }) => {
     setIsRegistering(true);
 
     try {
-      // Automatic Plan assignment on Registration: Hospitals automatically start on Foundation Free OPD Core
-      const isHospital = regFacilityType === 'HOSPITAL';
-      const isHospitalFree = isHospital;
-      const planTier = isHospital ? HOSPITAL_FREE_TIER_NAME : (regPlanTier || 'Pending Founder Assignment');
+      // Plan assignment on Registration: All partners start in PENDING_APPROVAL; HQ Admin verifies and assigns plan
+      const planTier = regPlanTier || 'Pending HQ Plan Allocation';
 
       // Build full resolved partner user with declared leadership role
       const normalizedProf = normalizeFacilityProfile(regFacilityType);
       const effectiveOrg = normalizedProf.workspace as OrganizationWorkspaceType;
       const orgDetails = getHealthcareOrgDetails(effectiveOrg, facilityName);
       const newUserId = `partner-usr-${Date.now()}`;
-      const effectiveAccessibleFeatures = regFacilityType === 'HOSPITAL'
-        ? (isHospitalFree ? FREE_HOSPITAL_FEATURES : PRO_HOSPITAL_FEATURES)
-        : normalizedProf.accessibleFeatures;
+      const effectiveAccessibleFeatures = normalizedProf.accessibleFeatures;
 
       const newPartner: HospitalStaffUser = {
         id: newUserId,
@@ -1058,11 +1054,11 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess }) => {
         allowedWorkspaces: orgDetails.allowedWorkspaces,
         defaultModule: orgDetails.defaultModule,
         planTier,
-        planExpiryDate: isHospitalFree ? 'Free Forever' : '14 Days Trial',
-        bedCapacity: isHospitalFree ? 0 : (regBedCapacity ? parseInt(regBedCapacity, 10) : 50),
+        planExpiryDate: 'Pending HQ Approval',
+        bedCapacity: regBedCapacity ? parseInt(regBedCapacity, 10) : 0,
         gstinNumber: cleanGstin || undefined,
         accessibleFeatures: effectiveAccessibleFeatures,
-        restrictedFeatures: isHospitalFree ? ['Inpatient Bed Matrix', 'Operation Theatre Rostering', 'TPA Cashless Claims'] : orgDetails.restrictedFeatures,
+        restrictedFeatures: orgDetails.restrictedFeatures,
         ownerAadhaarNumber: cleanAadhaar || undefined,
         aadhaarDocFileName: regAadhaarDocFileName || regDocFileName,
         aadhaarDocDataUrl: regAadhaarDocDataUrl || regDocDataUrl || undefined,
@@ -1105,7 +1101,7 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess }) => {
         submittedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ', Today',
         category: (regDocType.includes('Aadhaar') ? 'AADHAAR_KYC' : 'LICENSE_CERTIFICATE') as any,
         status: 'PENDING_APPROVAL' as const,
-        requestedPlan: null,
+        requestedPlan: regPlanTier ? { tier: regPlanTier, planName: regPlanTier } : null,
         details: {
           'Facility Name': facilityName,
           'Owner / Lead Doctor': ownerName,
@@ -1116,7 +1112,8 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess }) => {
           'Bed Capacity': regBedCapacity ? `${regBedCapacity} Beds` : 'N/A',
           'GSTIN / Tax ID': cleanGstin || 'N/A',
           'Owner Aadhaar Number': cleanAadhaar ? `XXXX-XXXX-${cleanAadhaar.slice(-4)}` : 'Not Provided / Hidden',
-          'Onboarding Tier': planTier,
+          'Requested Plan': regPlanTier || 'To Be Allocated by HQ',
+          'Onboarding Tier': 'Pending HQ Review & Plan Allocation',
           'Document Proof': [regDocFileName, regAadhaarDocFileName].filter(Boolean).join(', ')
         },
         documentName: regDocFileName || regAadhaarDocFileName,
@@ -1156,7 +1153,7 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess }) => {
 
       // Registration submitted: account pending admin verification (Fail-Closed: no auto-login)
       setIsRegistering(false);
-      setRegSuccessMessage(`Congratulations! Registration for '${facilityName}' has been submitted successfully. In accordance with security protocols, your account has been queued for verification (KYC Approval). You may sign in once approved.`);
+      setRegSuccessMessage(`Registration for '${facilityName}' has been submitted successfully. In accordance with healthcare governance protocols, your partner profile and plan must be approved by DocSearch HQ before access is granted. You may sign in once approved.`);
       setAuthMode('LOGIN');
       setEmailInput(email);
       setPasswordInput('');

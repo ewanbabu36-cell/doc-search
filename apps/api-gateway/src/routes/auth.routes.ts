@@ -29,6 +29,7 @@ import { authenticate, requireRoles } from '../plugins/auth-guard.js';
 import { partnerOnboardingRepository } from '../repositories/company/PartnerOnboardingRepository.js';
 import { registrationFormPolicyService, resolveCanonicalRequestedPlan } from '../services/core/RegistrationFormPolicyService.js';
 import { launchOfferCampaignService } from '../services/core/LaunchOfferCampaignService.js';
+import { getDatabase, partnerProfiles, partnerOnboardingStagedRegistrations, operationalStaff, eq, or } from '@docsearch/database';
 
 export async function getApprovedPartnersFromDisk(): Promise<any[]> {
   try {
@@ -512,6 +513,62 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       userAgent: request.headers['user-agent']
     });
 
+    let loginFirstName = existingUser?.firstName;
+    let loginLastName = existingUser?.lastName;
+    let loginTenantName = existingUser?.tenantName;
+    let loginOrgType = existingUser?.organizationType;
+    let loginPlanTier = existingUser?.planTier;
+
+    if (!loginFirstName || loginFirstName === 'Healthcare' || loginFirstName === 'Verified') {
+      const db = getDatabase();
+      if (db) {
+        try {
+          const profileConditions = [eq(partnerProfiles.primaryContactEmail, authoritativeEmail)];
+          if (tenantId && tenantId.length === 36) {
+            profileConditions.push(eq(partnerProfiles.tenantId, tenantId));
+          }
+          const [prof] = await db
+            .select()
+            .from(partnerProfiles)
+            .where(or(...profileConditions))
+            .limit(1);
+
+          const [staged] = await db
+            .select()
+            .from(partnerOnboardingStagedRegistrations)
+            .where(eq(partnerOnboardingStagedRegistrations.contactEmail, authoritativeEmail))
+            .limit(1);
+
+          const pPayload: any = staged?.registrationPayload || {};
+          const ownerCandidate =
+            prof?.primaryContactName ||
+            staged?.registeredByName ||
+            pPayload.name ||
+            pPayload.details?.['Owner / Lead Doctor'] ||
+            pPayload.details?.['Applicant Name'] ||
+            pPayload.details?.['Doctor Name'] ||
+            (prof?.metadata as any)?.leadDoctorName ||
+            (prof?.metadata as any)?.ownerName;
+
+          if (ownerCandidate && typeof ownerCandidate === 'string' && ownerCandidate.trim() && ownerCandidate.trim().toLowerCase() !== 'verified user') {
+            const parts = ownerCandidate.trim().split(/\s+/);
+            loginFirstName = parts[0];
+            loginLastName = parts.slice(1).join(' ');
+          }
+
+          loginTenantName = loginTenantName || prof?.legalName || prof?.tradeName || staged?.organizationName;
+          loginOrgType = loginOrgType || prof?.partnerType || staged?.organizationType;
+          loginPlanTier = loginPlanTier || (prof?.metadata as any)?.planTier || pPayload.planTier;
+        } catch {}
+      }
+    }
+
+    if (!loginFirstName || loginFirstName === 'Healthcare' || loginFirstName === 'Verified') {
+      const emailPrefix = authoritativeEmail.split('@')[0] || 'Clinician';
+      loginFirstName = emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1);
+      loginLastName = '';
+    }
+
     return reply.status(200).send({
       success: true,
       data: {
@@ -521,16 +578,17 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
         user: {
           id: userId,
           email: authoritativeEmail,
-          firstName: existingUser?.firstName || 'Healthcare',
-          lastName: existingUser?.lastName || 'Staff',
+          firstName: loginFirstName,
+          lastName: loginLastName || '',
+          name: `${loginFirstName} ${loginLastName || ''}`.trim(),
           tenantId,
           organizationId,
           branchId,
           roles,
           permissions,
-          tenantName: existingUser?.tenantName,
-          organizationType: existingUser?.organizationType,
-          planTier: existingUser?.planTier,
+          tenantName: loginTenantName || existingUser?.tenantName,
+          organizationType: loginOrgType || existingUser?.organizationType,
+          planTier: loginPlanTier || existingUser?.planTier,
           planExpiryDate: existingUser?.planExpiryDate,
           accessibleFeatures: existingUser?.accessibleFeatures,
           status: existingUser?.status || 'ACTIVE',
@@ -653,7 +711,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request, reply) => {
       const actorEmail = (request.session.actorEmail || '').toLowerCase().trim();
-      const user = actorEmail ? realAuthService.getUserByEmail(actorEmail) : undefined;
+      let user = actorEmail ? await realAuthService.getUserByEmailAsync(actorEmail) : undefined;
       let isApproved = user?.status === 'ACTIVE' || request.session.isSuperAdmin || actorEmail === 'founder@docsearch.health';
       if (!isApproved && actorEmail) {
         // 1. Check disk persisted approved partners
@@ -679,21 +737,103 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
         }
       }
 
+      let resolvedFirstName = user?.firstName;
+      let resolvedLastName = user?.lastName;
+      let resolvedTenantName = user?.tenantName;
+      let resolvedOrgType = user?.organizationType;
+      let resolvedPlanTier = user?.planTier;
+
+      // Dynamic Resolution: If user name is missing or corrupted with "Verified User" placeholder, resolve authoritative name from DB
+      const isPlaceholder = !resolvedFirstName ||
+        resolvedFirstName.toLowerCase() === 'verified' ||
+        `${resolvedFirstName} ${resolvedLastName || ''}`.trim().toLowerCase() === 'verified user';
+
+      if (isPlaceholder) {
+        const db = getDatabase();
+        if (db) {
+          try {
+            // A. Check company.partner_profiles
+            const profileConditions = [eq(partnerProfiles.primaryContactEmail, actorEmail)];
+            if (request.session.tenantId && request.session.tenantId.length === 36) {
+              profileConditions.push(eq(partnerProfiles.tenantId, request.session.tenantId));
+            }
+            const [prof] = await db
+              .select()
+              .from(partnerProfiles)
+              .where(or(...profileConditions))
+              .limit(1);
+
+            // B. Check company.partner_onboarding_staged_registrations
+            const [staged] = await db
+              .select()
+              .from(partnerOnboardingStagedRegistrations)
+              .where(eq(partnerOnboardingStagedRegistrations.contactEmail, actorEmail))
+              .limit(1);
+
+            const pPayload: any = staged?.registrationPayload || {};
+            const ownerCandidate =
+              prof?.primaryContactName ||
+              staged?.registeredByName ||
+              pPayload.name ||
+              pPayload.details?.['Owner / Lead Doctor'] ||
+              pPayload.details?.['Applicant Name'] ||
+              pPayload.details?.['Doctor Name'] ||
+              (prof?.metadata as any)?.leadDoctorName ||
+              (prof?.metadata as any)?.ownerName;
+
+            if (ownerCandidate && typeof ownerCandidate === 'string' && ownerCandidate.trim() && ownerCandidate.trim().toLowerCase() !== 'verified user') {
+              const parts = ownerCandidate.trim().split(/\s+/);
+              resolvedFirstName = parts[0];
+              resolvedLastName = parts.slice(1).join(' ');
+            }
+
+            // C. Check clinical.operational_staff if this is an onboarded staff member
+            if (!resolvedFirstName || resolvedFirstName.toLowerCase() === 'verified') {
+              const [staffMember] = await db
+                .select()
+                .from(operationalStaff)
+                .where(eq(operationalStaff.workEmail, actorEmail))
+                .limit(1);
+
+              if (staffMember && staffMember.fullName) {
+                const parts = staffMember.fullName.trim().split(/\s+/);
+                resolvedFirstName = parts[0];
+                resolvedLastName = parts.slice(1).join(' ');
+              }
+            }
+
+            resolvedTenantName = resolvedTenantName || prof?.legalName || prof?.tradeName || staged?.organizationName;
+            resolvedOrgType = resolvedOrgType || prof?.partnerType || staged?.organizationType;
+            resolvedPlanTier = resolvedPlanTier || (prof?.metadata as any)?.planTier || pPayload.planTier;
+          } catch {}
+        }
+      }
+
+      // Safe fallback: If still missing, derive from email name prefix, NEVER output "Verified User"
+      if (!resolvedFirstName || resolvedFirstName.toLowerCase() === 'verified') {
+        const emailPrefix = actorEmail.split('@')[0] || 'Clinician';
+        resolvedFirstName = emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1);
+        resolvedLastName = '';
+      }
+
+      const authoritativeFullName = `${resolvedFirstName} ${resolvedLastName || ''}`.trim();
+
       return reply.status(200).send({
         success: true,
         data: {
           id: request.session.userId,
           email: request.session.actorEmail,
-          firstName: user?.firstName || 'Verified',
-          lastName: user?.lastName || 'User',
+          firstName: resolvedFirstName,
+          lastName: resolvedLastName || '',
+          name: authoritativeFullName,
           roles: request.session.roles,
           permissions: request.session.permissions,
           tenantId: request.session.tenantId,
           organizationId: request.session.organizationId,
           branchId: request.session.branchId,
-          tenantName: user?.tenantName,
-          organizationType: user?.organizationType,
-          planTier: user?.planTier,
+          tenantName: resolvedTenantName || user?.tenantName,
+          organizationType: resolvedOrgType || user?.organizationType,
+          planTier: resolvedPlanTier || user?.planTier,
           planExpiryDate: user?.planExpiryDate,
           accessibleFeatures: user?.accessibleFeatures,
           status: isApproved ? 'ACTIVE' : (user?.status || 'PENDING_APPROVAL'),
@@ -1054,20 +1194,13 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     );
     p.requestedPlan = canonicalPlan;
     p.planTier = canonicalPlan.planName;
+    p.status = 'PENDING_APPROVAL';
     if (canonicalPlan.features && canonicalPlan.features.length > 0) {
       p.accessibleFeatures = canonicalPlan.features;
     }
 
-    let hospPlanTier = p.planTier || normalizedProfile.defaultPlanTier;
+    let hospPlanTier = p.planTier || 'Pending HQ Allocation';
     let hospAccessibleFeatures = p.accessibleFeatures || normalizedProfile.accessibleFeatures;
-    if (orgType === 'HOSPITAL') {
-      const planToTest = p.planTier || p.requestedPlan?.tier || v?.requestedPlan?.tier;
-      const isFree = isHospitalFreeTier(planToTest);
-      hospPlanTier = isFree ? HOSPITAL_FREE_TIER_NAME : HOSPITAL_PRO_TIER_NAME;
-      hospAccessibleFeatures = isFree ? [...FREE_HOSPITAL_FEATURES] : [...PRO_HOSPITAL_FEATURES];
-      p.planTier = hospPlanTier;
-      p.accessibleFeatures = hospAccessibleFeatures;
-    }
 
     // Register in realAuthService if password provided
     if (p.email && p.password) {

@@ -557,6 +557,7 @@ export const PartnerVerificationConsole: React.FC = () => {
 
   // Capacity Quotas, Contract Validity & SLA
   const [bedQuota, setBedQuota] = useState<string>('50 Beds');
+  const [doctorQuota, setDoctorQuota] = useState<string>('10 Doctors');
   const [staffSeatsQuota, setStaffSeatsQuota] = useState<string>('25 Staff');
   const [whatsAppQuota, setWhatsAppQuota] = useState<string>('5,000 / mo');
   const [storageQuota, setStorageQuota] = useState<string>('50 GB');
@@ -970,7 +971,12 @@ export const PartnerVerificationConsole: React.FC = () => {
       advanceAmountCredited: hasPaidAdvance ? item.advancePayment?.amount : 0,
       enabledModules,
       bedQuota,
+      maxBeds: parseInt(bedQuota.replace(/[^0-9]/g, ''), 10) || 0,
+      doctorQuota,
+      maxDoctors: parseInt(doctorQuota.replace(/[^0-9]/g, ''), 10) || 10,
       staffSeatsQuota,
+      maxStaff: parseInt(staffSeatsQuota.replace(/[^0-9]/g, ''), 10) || 25,
+      maxConcurrentUsers: parseInt(staffSeatsQuota.replace(/[^0-9]/g, ''), 10) || 25,
       whatsAppQuota,
       storageQuota,
       contractDuration,
@@ -4230,7 +4236,29 @@ export const PartnerVerificationConsole: React.FC = () => {
 
                   <div>
                     <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '3px' }}>
-                      Staff & Doctor User Seats
+                      Doctor User Seats Quota
+                    </label>
+                    <input
+                      type="text"
+                      value={doctorQuota}
+                      onChange={(e) => setDoctorQuota(e.target.value)}
+                      placeholder="e.g. 10 Doctors, 50 Doctors"
+                      style={{
+                        width: '100%',
+                        padding: '6px 10px',
+                        borderRadius: '6px',
+                        backgroundColor: '#070C16',
+                        border: '1px solid rgba(255,255,255,0.15)',
+                        color: '#FFFFFF',
+                        fontSize: '0.78125rem',
+                        fontWeight: 600
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '3px' }}>
+                      Staff & Executive User Seats Quota
                     </label>
                     <input
                       type="text"

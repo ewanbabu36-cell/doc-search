@@ -182,8 +182,6 @@ export class DoctorRosterService implements IDoctorRosterService {
       const res = await apiRequest<any[]>(`/api/v1/partner/staff/members?${params.toString()}`);
       if (res.success && Array.isArray(res.data)) {
         return res.data.map((s) => {
-          const existing = this.doctors.find((d) => d.staffId === s.id || d.id === s.id);
-          if (existing) return existing;
           return {
             id: s.id,
             tenantId: s.tenantId || tenantId,
@@ -195,20 +193,22 @@ export class DoctorRosterService implements IDoctorRosterService {
             fullName: s.fullName || `${s.firstName || ''} ${s.lastName || ''}`.trim() || 'Dr. Physician',
             workEmail: s.workEmail || `${s.staffCode || s.id}@docsearch.health`,
             doctorCode: s.staffCode || 'DOC-001',
-            medicalLicenseNumber: s.medicalLicenseNumber || 'MCI-DEFAULT',
-            qualification: s.qualification || 'MBBS, MD',
-            experienceYears: 10,
-            primarySpecialty: s.specialty || 'General Medicine',
+            medicalLicenseNumber: s.medicalLicenseNumber || (s.metadata?.medicalLicenseNumber as string) || 'MCI-DEFAULT',
+            qualification: s.qualification || (s.metadata?.qualification as string) || 'MBBS, MD',
+            experienceYears: Number(s.metadata?.experienceYears) || 10,
+            primarySpecialty: s.specialty || (s.metadata?.specialty as string) || (s.metadata?.primarySpecialty as string) || 'General Medicine',
             subSpecialties: [],
             consultationModes: ['IN_PERSON', 'TELEHEALTH'],
             telehealthEligible: true,
             bioSummary: 'Consultant Doctor',
             availabilityStatus: 'AVAILABLE',
             status: 'ACTIVE',
-            metadata: {},
+            consultationFee: Number(s.metadata?.consultationFee) || 500,
+            roomNumber: (s.metadata?.chamber as string) || (s.metadata?.roomNumber as string) || 'Chamber 1',
+            metadata: s.metadata || {},
             createdAt: s.createdAt || new Date().toISOString(),
             updatedAt: s.updatedAt || new Date().toISOString()
-          };
+          } as any;
         });
       }
       if (!isMockFallbackAllowed()) {

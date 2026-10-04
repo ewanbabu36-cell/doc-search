@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 
 export interface DialogProps {
   isOpen: boolean;
@@ -83,11 +83,20 @@ export const Dialog: React.FC<DialogProps> = ({
     }
   }, [isOpen, initialMaximized]);
 
+  // Keep stable reference to onClose so child re-renders do not tear down effects
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  const isPushedRef = useRef(false);
+  const poppedByBrowserRef = useRef(false);
+
   // Handle ESC key and document body scroll
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen && !isMinimized) {
-        onClose();
+        onCloseRef.current();
       }
     };
     if (isOpen && !isMinimized) {
@@ -100,7 +109,36 @@ export const Dialog: React.FC<DialogProps> = ({
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = '';
     };
-  }, [isOpen, isMinimized, onClose]);
+  }, [isOpen, isMinimized]);
+
+  // Mobile & Android Hardware Back Button Handling (Only active on mobile screens < 768px)
+  useEffect(() => {
+    if (!isOpen || isMinimized || typeof window === 'undefined') return undefined;
+    // On desktop, hardware back buttons do not exist; keep browser history clean
+    if (window.innerWidth >= 768) return undefined;
+
+    isPushedRef.current = true;
+    poppedByBrowserRef.current = false;
+
+    // Use current URL rather than empty string '' so relative path resolution is never corrupted
+    window.history.pushState({ docsearchDialogId: dialogId }, '', window.location.href);
+
+    const handlePopState = () => {
+      poppedByBrowserRef.current = true;
+      isPushedRef.current = false;
+      onCloseRef.current();
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      // Only pop browser history if closed programmatically, NOT if already popped by back button
+      if (isPushedRef.current && !poppedByBrowserRef.current && window.history.state?.docsearchDialogId === dialogId) {
+        isPushedRef.current = false;
+        window.history.back();
+      }
+    };
+  }, [isOpen, isMinimized, dialogId]);
 
   if (!isOpen) return null;
 
@@ -108,6 +146,113 @@ export const Dialog: React.FC<DialogProps> = ({
 
   return (
     <>
+      {/* Mobile Responsive Bottom Sheet & Touch Optimization Styles */}
+      <style>{`
+        @keyframes dsSlideUpSheet {
+          from {
+            transform: translateY(100%);
+            opacity: 0.85;
+          }
+          to {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+        @media (max-width: 767px) {
+          .ds-modal-backdrop-responsive {
+            position: fixed !important;
+            inset: 0 !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 100vw !important;
+            height: 100dvh !important;
+            align-items: flex-end !important;
+            justify-content: center !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            background-color: rgba(11, 15, 23, 0.75) !important;
+            backdrop-filter: blur(4px) !important;
+            -webkit-backdrop-filter: blur(4px) !important;
+          }
+          .ds-modal-sheet-responsive {
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            max-height: 92dvh !important;
+            height: auto !important;
+            margin: 0 !important;
+            border-radius: 20px 20px 0 0 !important;
+            border-bottom: none !important;
+            border-left: none !important;
+            border-right: none !important;
+            border-top: 1px solid var(--ds-color-border-strong, rgba(255, 255, 255, 0.15)) !important;
+            box-shadow: 0 -12px 48px rgba(0, 0, 0, 0.85) !important;
+            animation: dsSlideUpSheet 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+            display: flex !important;
+            flex-direction: column !important;
+            overflow: hidden !important;
+          }
+          .ds-modal-sheet-responsive.ds-fullpage-mode {
+            max-height: 100dvh !important;
+            height: 100dvh !important;
+            border-radius: 0 !important;
+          }
+          .ds-dialog-mobile-pill {
+            display: block !important;
+          }
+          .ds-dialog-mobile-hide {
+            display: none !important;
+          }
+          .ds-dialog-header-responsive {
+            padding: 10px 16px !important;
+            border-bottom: 1px solid var(--ds-color-border-subtle, rgba(255, 255, 255, 0.08)) !important;
+            flex-shrink: 0 !important;
+          }
+          .ds-dialog-body-responsive {
+            padding: 16px !important;
+            overflow-y: auto !important;
+            overscroll-behavior: contain !important;
+            -webkit-overflow-scrolling: touch !important;
+            flex: 1 1 auto !important;
+          }
+          .ds-dialog-footer-responsive {
+            position: sticky !important;
+            bottom: 0 !important;
+            z-index: 20 !important;
+            padding: 12px 16px max(14px, env(safe-area-inset-bottom)) !important;
+            border-top: 1px solid var(--ds-color-border-subtle, rgba(255, 255, 255, 0.1)) !important;
+            background-color: var(--ds-color-surface-subtle, #0F172A) !important;
+            flex-shrink: 0 !important;
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 10px !important;
+            justify-content: stretch !important;
+          }
+          .ds-dialog-footer-responsive > * {
+            flex: 1 1 auto !important;
+            min-height: 46px !important;
+          }
+          .ds-modal-sheet-responsive input,
+          .ds-modal-sheet-responsive select,
+          .ds-modal-sheet-responsive textarea {
+            font-size: 16px !important;
+          }
+          .ds-modal-sheet-responsive button:not(.ds-dialog-close-btn),
+          .ds-modal-sheet-responsive .ds-touch-target {
+            min-height: 44px !important;
+          }
+        }
+        @media (min-width: 768px) {
+          .ds-dialog-mobile-pill {
+            display: none !important;
+          }
+        }
+      `}</style>
       {/* 1. Sleek Floating Bottom Tray Dock Pill (Visible when minimized) */}
       {isMinimized && (
         <aside
@@ -259,7 +404,7 @@ export const Dialog: React.FC<DialogProps> = ({
 
       {/* 2. Dialog Modal Window (Preserved in DOM with display: none when minimized) */}
       <div
-        className="ds-backdrop"
+        className="ds-backdrop ds-modal-backdrop-responsive"
         onClick={(e) => {
           const canCloseBackdrop = isDrawer ? (closeOnBackdropClick !== false) : closeOnBackdropClick;
           if (canCloseBackdrop && e.target === e.currentTarget) onClose();
@@ -306,6 +451,7 @@ export const Dialog: React.FC<DialogProps> = ({
         }
       >
         <div
+          className={`ds-modal-sheet-responsive ${isDrawer ? 'ds-drawer-sheet-responsive' : ''} ${fullPageMode ? 'ds-fullpage-mode' : ''}`}
           style={
             fullPageMode
               ? {
@@ -368,9 +514,23 @@ export const Dialog: React.FC<DialogProps> = ({
                   }
           }
         >
+          {/* Mobile Drag Pill Handle */}
+          <div
+            className="ds-dialog-mobile-pill"
+            style={{
+              width: '40px',
+              height: '4px',
+              backgroundColor: 'rgba(255, 255, 255, 0.35)',
+              borderRadius: '9999px',
+              margin: '10px auto 4px auto',
+              flexShrink: 0
+            }}
+          />
+
           {/* Header Bar with Full Window Controls */}
           {(Boolean(title) || allowMinimize || allowMaximize || Boolean(onClose)) && (
             <div
+              className="ds-dialog-header-responsive"
               onDoubleClick={() => {
                 if (allowMaximize && !isFullPage && maxWidth !== 'full') {
                   setIsMaximized((prev) => !prev);
@@ -404,7 +564,7 @@ export const Dialog: React.FC<DialogProps> = ({
                       e.stopPropagation();
                       setIsMinimized(true);
                     }}
-                    className="ds-interactive"
+                    className="ds-interactive ds-dialog-mobile-hide"
                     style={{
                       background: 'transparent',
                       border: 'none',
@@ -434,7 +594,7 @@ export const Dialog: React.FC<DialogProps> = ({
                       e.stopPropagation();
                       setIsMaximized((prev) => !prev);
                     }}
-                    className="ds-interactive"
+                    className="ds-interactive ds-dialog-mobile-hide"
                     style={{
                       background: 'transparent',
                       border: 'none',
@@ -463,15 +623,17 @@ export const Dialog: React.FC<DialogProps> = ({
                     e.stopPropagation();
                     onClose();
                   }}
-                  className="ds-interactive"
+                  className="ds-interactive ds-dialog-close-btn"
                   style={{
                     background: 'transparent',
                     border: 'none',
                     cursor: 'pointer',
                     fontSize: '1.2rem',
                     color: 'var(--ds-color-text-muted)',
-                    padding: '4px 8px',
-                    borderRadius: '6px',
+                    padding: '6px 10px',
+                    borderRadius: '8px',
+                    minWidth: '42px',
+                    minHeight: '42px',
                     display: 'inline-flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -492,10 +654,23 @@ export const Dialog: React.FC<DialogProps> = ({
             </div>
           )}
 
-          <div style={{ padding: '20px', flex: '1 1 auto', overflowY: 'auto', color: 'var(--ds-color-text-primary)' }}>{children}</div>
+          <div
+            className="ds-dialog-body-responsive"
+            style={{
+              padding: '20px',
+              flex: '1 1 auto',
+              overflowY: 'auto',
+              overscrollBehavior: 'contain',
+              WebkitOverflowScrolling: 'touch',
+              color: 'var(--ds-color-text-primary)'
+            }}
+          >
+            {children}
+          </div>
 
           {footer && (
             <div
+              className="ds-dialog-footer-responsive"
               style={{
                 padding: '12px 20px',
                 borderTop: '1px solid var(--ds-color-border-subtle)',

@@ -24,6 +24,7 @@ const WORKSPACE_MODULE_ROUTES: Record<OrganizationWorkspaceType, Record<string, 
     'radiology': 'radiology-imaging',
     'opd': 'clinical-consultation',
     'staff': 'staff-administration',
+    'staff-administration': 'staff-administration',
     'patients': 'patient-registration',
     'abdm': 'abdm-fhir-gateway',
     'whatsapp': 'whatsapp-patient-portal',
@@ -51,6 +52,8 @@ const WORKSPACE_MODULE_ROUTES: Record<OrganizationWorkspaceType, Record<string, 
     'catalog': 'pharmacy-medication',
     'overview': 'pharmacy-medication',
     'procurement': 'pharmacy-medication',
+    'staff': 'staff-administration',
+    'staff-administration': 'staff-administration',
     'account': 'account-plan-features',
     'plan': 'account-plan-features',
     'my-account': 'account-plan-features'
@@ -66,6 +69,8 @@ const WORKSPACE_MODULE_ROUTES: Record<OrganizationWorkspaceType, Record<string, 
     'billing': 'billing-revenue-cycle',
     'abdm': 'abdm-fhir-gateway',
     'whatsapp': 'whatsapp-patient-portal',
+    'staff': 'staff-administration',
+    'staff-administration': 'staff-administration',
     'account': 'account-plan-features',
     'plan': 'account-plan-features',
     'my-account': 'account-plan-features'
@@ -77,6 +82,8 @@ const WORKSPACE_MODULE_ROUTES: Record<OrganizationWorkspaceType, Record<string, 
     'barcodes': 'patient-registration',
     'billing': 'billing-revenue-cycle',
     'reports': 'whatsapp-patient-portal',
+    'staff': 'staff-administration',
+    'staff-administration': 'staff-administration',
     'account': 'account-plan-features',
     'plan': 'account-plan-features',
     'my-account': 'account-plan-features'
@@ -88,6 +95,8 @@ const WORKSPACE_MODULE_ROUTES: Record<OrganizationWorkspaceType, Record<string, 
     'scheduling': 'encounters-visits',
     'insurance': 'insurance-claims',
     'billing': 'billing-revenue-cycle',
+    'staff': 'staff-administration',
+    'staff-administration': 'staff-administration',
     'account': 'account-plan-features',
     'plan': 'account-plan-features',
     'my-account': 'account-plan-features'
@@ -102,6 +111,8 @@ const WORKSPACE_MODULE_ROUTES: Record<OrganizationWorkspaceType, Record<string, 
     'lab': 'clinical-investigation',
     'radiology': 'radiology-imaging',
     'billing': 'billing-revenue-cycle',
+    'staff': 'staff-administration',
+    'staff-administration': 'staff-administration',
     'account': 'account-plan-features',
     'plan': 'account-plan-features',
     'my-account': 'account-plan-features'
@@ -152,7 +163,7 @@ const MODULE_TO_SUBPATH: Record<OrganizationWorkspaceType, Partial<Record<Partne
     'clinical-investigation': 'lab',
     'radiology-imaging': 'radiology',
     'clinical-consultation': 'opd',
-    'staff-administration': 'staff',
+    'staff-administration': 'staff-administration',
     'patient-registration': 'patients',
     'abdm-fhir-gateway': 'abdm',
     'whatsapp-patient-portal': 'whatsapp',
@@ -165,6 +176,7 @@ const MODULE_TO_SUBPATH: Record<OrganizationWorkspaceType, Partial<Record<Partne
     'procurement-supply-chain': 'procurement',
     'billing-revenue-cycle': 'billing',
     'whatsapp-patient-portal': 'whatsapp',
+    'staff-administration': 'staff-administration',
     'account-plan-features': 'account'
   },
   CLINIC: {
@@ -176,6 +188,7 @@ const MODULE_TO_SUBPATH: Record<OrganizationWorkspaceType, Partial<Record<Partne
     'billing-revenue-cycle': 'billing',
     'abdm-fhir-gateway': 'abdm',
     'whatsapp-patient-portal': 'whatsapp',
+    'staff-administration': 'staff-administration',
     'account-plan-features': 'account'
   },
   PATHOLOGY: {
@@ -183,6 +196,7 @@ const MODULE_TO_SUBPATH: Record<OrganizationWorkspaceType, Partial<Record<Partne
     'patient-registration': 'barcodes',
     'billing-revenue-cycle': 'billing',
     'whatsapp-patient-portal': 'reports',
+    'staff-administration': 'staff-administration',
     'account-plan-features': 'account'
   },
   DIAGNOSTIC_CENTRE: {
@@ -190,6 +204,7 @@ const MODULE_TO_SUBPATH: Record<OrganizationWorkspaceType, Partial<Record<Partne
     'encounters-visits': 'scheduling',
     'insurance-claims': 'insurance',
     'billing-revenue-cycle': 'billing',
+    'staff-administration': 'staff-administration',
     'account-plan-features': 'account'
   },
   ENTERPRISE_COMMAND: {
@@ -201,6 +216,7 @@ const MODULE_TO_SUBPATH: Record<OrganizationWorkspaceType, Partial<Record<Partne
     'clinical-investigation': 'lab',
     'radiology-imaging': 'radiology',
     'billing-revenue-cycle': 'billing',
+    'staff-administration': 'staff-administration',
     'account-plan-features': 'account'
   }
 };

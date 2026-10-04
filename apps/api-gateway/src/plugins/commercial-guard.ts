@@ -42,6 +42,8 @@ export async function requireActiveCommercialAccess(
   if (
     rawUrl.startsWith('/api/v1/partner/account/') ||
     rawUrl.startsWith('/api/v1/partner/profile') ||
+    rawUrl.startsWith('/api/v1/partner/approvals') ||
+    rawUrl.startsWith('/api/v1/approvals') ||
     rawUrl.startsWith('/api/v1/partner/ewan') ||
     rawUrl.startsWith('/api/v1/partner/ai/trainer') ||
     rawUrl.startsWith('/api/v1/compliance/documents') ||

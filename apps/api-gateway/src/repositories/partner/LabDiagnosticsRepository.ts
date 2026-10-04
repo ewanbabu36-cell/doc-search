@@ -399,30 +399,44 @@ async function resolveEncounterId(
 async function resolveInvestigationCatalogId(
   db: any,
   tenantId: string,
-  partnerId: string,
-  organizationId: string,
-  branchId: string,
+  _partnerId?: string,
+  _organizationId?: string,
+  _branchId?: string,
   testCode?: string,
   testName?: string,
-  category?: string,
+  _category?: string,
   providedInvestigationId?: string
 ): Promise<string> {
-  if (providedInvestigationId && UUID_REGEX.test(providedInvestigationId)) {
+  if (providedInvestigationId) {
+    if (!UUID_REGEX.test(providedInvestigationId)) {
+      throw new AppError({
+        code: ErrorCode.BAD_REQUEST,
+        message: `Invalid investigation catalog UUID format: '${providedInvestigationId}'`,
+        statusCode: 400
+      });
+    }
     const [item] = await db
       .select({ id: investigationCatalog.id, tenantId: investigationCatalog.tenantId })
       .from(investigationCatalog)
       .where(eq(investigationCatalog.id, providedInvestigationId))
       .limit(1);
-    if (item) {
-      if (item.tenantId !== tenantId) {
-        throw new AppError({
-          code: ErrorCode.FORBIDDEN,
-          message: `Investigation catalog item '${providedInvestigationId}' does not belong to tenant '${tenantId}'.`,
-          statusCode: 403
-        });
-      }
-      return item.id;
+
+    if (!item) {
+      throw new AppError({
+        code: ErrorCode.NOT_FOUND,
+        message: `Investigation catalog item '${providedInvestigationId}' not found.`,
+        statusCode: 404
+      });
     }
+
+    if (item.tenantId !== tenantId) {
+      throw new AppError({
+        code: ErrorCode.FORBIDDEN,
+        message: `Investigation catalog item '${providedInvestigationId}' does not belong to tenant '${tenantId}'.`,
+        statusCode: 403
+      });
+    }
+    return item.id;
   }
 
   if (testCode) {
@@ -432,25 +446,40 @@ async function resolveInvestigationCatalogId(
       .where(and(eq(investigationCatalog.tenantId, tenantId), eq(investigationCatalog.testCode, testCode)))
       .limit(1);
     if (item?.id) return item.id;
+    throw new AppError({
+      code: ErrorCode.NOT_FOUND,
+      message: `Investigation test code '${testCode}' not found in catalog for tenant '${tenantId}'.`,
+      statusCode: 404
+    });
   }
 
-  // Insert tenant-scoped investigation catalog item
-  const newCatId = crypto.randomUUID();
-  const effectiveCode = testCode || `TST-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
-  await db.insert(investigationCatalog).values({
-    id: newCatId,
-    tenantId,
-    partnerId,
-    organizationId,
-    branchId,
-    testCode: effectiveCode,
-    testName: testName || 'Complete Blood Count',
-    category: category || 'HEMATOLOGY',
-    department: 'Pathology',
-    specimenType: 'WHOLE_BLOOD',
-    status: 'ACTIVE'
-  } as any);
-  return newCatId;
+  if (testName) {
+    const [item] = await db
+      .select({ id: investigationCatalog.id })
+      .from(investigationCatalog)
+      .where(and(eq(investigationCatalog.tenantId, tenantId), ilike(investigationCatalog.testName, testName.trim())))
+      .limit(1);
+    if (item?.id) return item.id;
+
+    const [fuzzy] = await db
+      .select({ id: investigationCatalog.id })
+      .from(investigationCatalog)
+      .where(and(eq(investigationCatalog.tenantId, tenantId), ilike(investigationCatalog.testName, `%${testName.trim()}%`)))
+      .limit(1);
+    if (fuzzy?.id) return fuzzy.id;
+
+    throw new AppError({
+      code: ErrorCode.NOT_FOUND,
+      message: `Investigation test '${testName}' not found in catalog for tenant '${tenantId}'.`,
+      statusCode: 404
+    });
+  }
+
+  throw new AppError({
+    code: ErrorCode.BAD_REQUEST,
+    message: 'Investigation order must provide a valid investigationId, testCode, or testName matching the tenant catalog.',
+    statusCode: 400
+  });
 }
 
 export interface CreateLabOrderInput {
@@ -546,6 +575,7 @@ export interface StoredLabOrder {
   encounterNumber?: string | undefined;
   consultationId?: string | undefined;
   orderNumber: string;
+  investigationId?: string | undefined;
   testCode: string;
   testName: string;
   investigationCode?: string | undefined;
@@ -981,6 +1011,7 @@ export class LabDiagnosticsRepository {
       patientGender,
       encounterId: validEncounterId,
       orderNumber,
+      investigationId: validInvestigationId,
       testCode,
       testName,
       investigationCode: testCode,

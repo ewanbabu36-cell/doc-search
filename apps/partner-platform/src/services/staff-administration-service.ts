@@ -488,9 +488,19 @@ export class StaffAdministrationService implements IStaffAdministrationService {
       if (departmentId) params.append('departmentId', departmentId);
       const queryStr = params.toString() ? `?${params.toString()}` : '';
 
-      const res = await apiRequest<OperationalStaffDto[]>(`/api/v1/partner/staff/members${queryStr}`);
+      let res = await apiRequest<OperationalStaffDto[]>(`/api/v1/partner/staff/members${queryStr}`);
+      if (res.success && Array.isArray(res.data) && res.data.length === 0 && (partnerId || organizationId || branchId)) {
+        const fallbackRes = await apiRequest<OperationalStaffDto[]>(`/api/v1/partner/staff/members`);
+        if (fallbackRes.success && Array.isArray(fallbackRes.data) && fallbackRes.data.length > 0) {
+          res = fallbackRes;
+        }
+      }
+
       if (res.success && Array.isArray(res.data)) {
         if (res.data.length === 0 && !isMockFallbackAllowed()) {
+          if (this.staffList.length > 0) {
+            return this.staffList;
+          }
           this.staffList = [];
           saveStored('docsearch_partner_staff', []);
           return [];
@@ -634,7 +644,7 @@ export class StaffAdministrationService implements IStaffAdministrationService {
       partnerId: req.partnerId,
       organizationId: req.organizationId,
       branchId: req.branchId,
-      departmentId: req.departmentId,
+      departmentId: req.departmentId || dept?.id || '00000000-0000-4000-8000-000000000004',
       departmentName: dept?.departmentName || 'Clinical Services',
       staffCode: finalStaffCode,
       fullName: req.fullName,

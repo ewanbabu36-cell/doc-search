@@ -125,20 +125,6 @@ export const StaffOperationalRoleDashboard: React.FC<StaffOperationalRoleDashboa
   const archetype = resolveStaffArchetype(currentUser?.role, (currentUser as any)?.staffType);
   const perms = currentUser?.permissions;
 
-  // Active Station mapping
-  const activeStageIndex = (() => {
-    switch (archetype) {
-      case 'FRONT_DESK': return 0;
-      case 'NURSE': return 1;
-      case 'DOCTOR': return 2;
-      case 'PATHOLOGIST_LAB_TECH':
-      case 'RADIOLOGIST_TECH': return 3;
-      case 'PHARMACIST':
-      case 'CASHIER_BILLING': return 4;
-      default: return -1;
-    }
-  })();
-
   const renderQuickActions = () => {
     switch (archetype) {
       case 'FRONT_DESK':
@@ -211,28 +197,6 @@ export const StaffOperationalRoleDashboard: React.FC<StaffOperationalRoleDashboa
             module: 'clinical-consultation' as PartnerModuleKey,
             color: '#10b981',
             btnText: 'Open Consultation'
-          },
-          {
-            title: '🛏️ Inpatient Ward Rounds',
-            desc: 'Daily bedside progress notes, vitals monitoring, and discharge summaries.',
-            module: 'inpatient-management' as PartnerModuleKey,
-            subTab: 'rounds',
-            color: '#10b981',
-            btnText: 'IPD Ward Rounds'
-          },
-          {
-            title: '🔬 Order Lab & Radiology',
-            desc: 'Order blood tests, imaging scans, and view past diagnostic history.',
-            module: 'clinical-investigation' as PartnerModuleKey,
-            color: '#10b981',
-            btnText: 'Order Tests'
-          },
-          {
-            title: '🎙️ AI Voice Clinical Scribe',
-            desc: 'Auto-generate structured clinical notes from doctor-patient conversation.',
-            module: 'ai-clinical-cdss' as PartnerModuleKey,
-            color: '#10b981',
-            btnText: 'AI Scribe'
           }
         ];
       case 'PHARMACIST':
@@ -494,66 +458,6 @@ export const StaffOperationalRoleDashboard: React.FC<StaffOperationalRoleDashboa
               </div>
             </div>
           </div>
-
-          {/* 4-Tier Security & Control Badges */}
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: '6px',
-              alignItems: 'center'
-            }}
-          >
-            {/* Tier 1 */}
-            {perms?.canViewFullPhoneNumber ? (
-              <span style={{ fontSize: '0.7rem', padding: '3px 8px', borderRadius: '6px', background: 'rgba(2, 132, 199, 0.15)', color: '#38bdf8', border: '1px solid rgba(2, 132, 199, 0.3)' }} title="Tier 1: Full Patient Mobile Number Unmasked">
-                👁️ Full Contact
-              </span>
-            ) : (
-              <span style={{ fontSize: '0.7rem', padding: '3px 8px', borderRadius: '6px', background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.3)' }} title="Tier 1: Patient Mobile Number Masked for Anti-Theft">
-                🔒 Phone Masked
-              </span>
-            )}
-
-            {perms?.canExportPatientData ? (
-              <span style={{ fontSize: '0.7rem', padding: '3px 8px', borderRadius: '6px', background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.3)' }} title="Tier 1: Patient Data Export Allowed">
-                ⚠️ Export Allowed
-              </span>
-            ) : (
-              <span style={{ fontSize: '0.7rem', padding: '3px 8px', borderRadius: '6px', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)' }} title="Tier 1: Patient Export Blocked (Anti-Theft)">
-                🛡️ Export Blocked
-              </span>
-            )}
-
-            {/* Tier 2 */}
-            {perms?.canGiveDiscounts && (
-              <span style={{ fontSize: '0.7rem', padding: '3px 8px', borderRadius: '6px', background: 'rgba(2, 132, 199, 0.15)', color: '#38bdf8', border: '1px solid rgba(2, 132, 199, 0.3)' }} title={`Tier 2: Max Discount Capped at ${perms.maxDiscountPercent}%`}>
-                💰 Disc: {perms.maxDiscountPercent}%
-              </span>
-            )}
-
-            {/* Tier 3 */}
-            {perms?.canSignPrescriptions && (
-              <span style={{ fontSize: '0.7rem', padding: '3px 8px', borderRadius: '6px', background: 'rgba(168, 85, 247, 0.15)', color: '#c084fc', border: '1px solid rgba(168, 85, 247, 0.3)' }} title="Tier 3: Clinical e-Prescription Signatory">
-                🩺 Rx Signatory
-              </span>
-            )}
-            {perms?.canSignLabReports && (
-              <span style={{ fontSize: '0.7rem', padding: '3px 8px', borderRadius: '6px', background: 'rgba(168, 85, 247, 0.15)', color: '#c084fc', border: '1px solid rgba(168, 85, 247, 0.3)' }} title="Tier 3: NABL / AERB Diagnostic Signatory">
-                ✍️ NABL/AERB Sign
-              </span>
-            )}
-            {perms?.canDispenseRestrictedDrugs && (
-              <span style={{ fontSize: '0.7rem', padding: '3px 8px', borderRadius: '6px', background: 'rgba(168, 85, 247, 0.15)', color: '#c084fc', border: '1px solid rgba(168, 85, 247, 0.3)' }} title="Tier 3: Schedule H & Narcotics Dispensing Authority">
-                💊 Narcotics Disp
-              </span>
-            )}
-            {perms?.canAccessAfterHours && (
-              <span style={{ fontSize: '0.7rem', padding: '3px 8px', borderRadius: '6px', background: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.3)' }} title="Tier 3: 24/7 Emergency Remote & After-Hours Access">
-                🚨 24/7 Access
-              </span>
-            )}
-          </div>
         </div>
       </Card>
 
@@ -592,9 +496,9 @@ export const StaffOperationalRoleDashboard: React.FC<StaffOperationalRoleDashboa
             scrollbarWidth: 'thin'
           }}
         >
-          {FLOW_STAGES.map((stage, idx) => {
-            const isMyStation = idx === activeStageIndex;
-            const isAllowed = isPartnerModuleAllowed(stage.targetModule, currentUser?.role, perms);
+          {FLOW_STAGES.filter((stage) => isPartnerModuleAllowed(stage.targetModule, currentUser?.role, perms)).map((stage) => {
+            const isMyStation = stage.archetype === archetype;
+            const isAllowed = true;
 
             return (
               <button
@@ -699,8 +603,8 @@ export const StaffOperationalRoleDashboard: React.FC<StaffOperationalRoleDashboa
             gap: '14px'
           }}
         >
-          {quickActions.map((action, idx) => {
-            const isAllowed = isPartnerModuleAllowed(action.module, currentUser?.role, perms);
+          {quickActions.filter((action) => isPartnerModuleAllowed(action.module, currentUser?.role, perms)).map((action, idx) => {
+            const isAllowed = true;
 
             return (
               <Card

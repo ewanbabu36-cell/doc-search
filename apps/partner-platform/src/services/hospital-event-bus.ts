@@ -60,6 +60,7 @@ type EventCallback = (payload: HospitalEventPayload) => void;
 class HospitalEventBus {
   private listeners: Map<HospitalEventType | '*', Set<EventCallback>> = new Map();
   private currentPatient: ActivePatientSummary | null = null;
+  private channel: BroadcastChannel | null = null;
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -70,6 +71,19 @@ class HospitalEventBus {
         }
       } catch {
         this.currentPatient = null;
+      }
+
+      if (typeof BroadcastChannel !== 'undefined') {
+        try {
+          this.channel = new BroadcastChannel('docsearch_hospital_realtime_channel');
+          this.channel.onmessage = (event) => {
+            if (event && event.data) {
+              this.dispatchLocal(event.data);
+            }
+          };
+        } catch (e) {
+          console.warn('[EventBus] BroadcastChannel initialization failed:', e);
+        }
       }
     }
   }
@@ -83,6 +97,31 @@ class HospitalEventBus {
     return () => {
       this.listeners.get(eventType)?.delete(callback);
     };
+  }
+
+  private dispatchLocal(payload: HospitalEventPayload): void {
+    // Notify specific type listeners
+    this.listeners.get(payload.type)?.forEach((cb) => {
+      try {
+        cb(payload);
+      } catch (err) {
+        console.error(`[EventBus] Error in listener for ${payload.type}:`, err);
+      }
+    });
+
+    // Notify wildcard listeners
+    this.listeners.get('*')?.forEach((cb) => {
+      try {
+        cb(payload);
+      } catch (err) {
+        console.error(`[EventBus] Error in wildcard listener:`, err);
+      }
+    });
+
+    // Dispatch DOM CustomEvent for interoperability
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('docsearch:hospital-event', { detail: payload }));
+    }
   }
 
   public publish(type: HospitalEventType, sourceModule: string, data: any, summaryText: string = ''): void {
@@ -106,27 +145,16 @@ class HospitalEventBus {
       }
     }
 
-    // Notify specific type listeners
-    this.listeners.get(type)?.forEach((cb) => {
-      try {
-        cb(payload);
-      } catch (err) {
-        console.error(`[EventBus] Error in listener for ${type}:`, err);
-      }
-    });
+    // Dispatch to local subscribers
+    this.dispatchLocal(payload);
 
-    // Notify wildcard listeners
-    this.listeners.get('*')?.forEach((cb) => {
+    // Broadcast across browser tabs / windows in real-time
+    if (this.channel) {
       try {
-        cb(payload);
-      } catch (err) {
-        console.error(`[EventBus] Error in wildcard listener:`, err);
+        this.channel.postMessage(payload);
+      } catch (e) {
+        console.warn('[EventBus] BroadcastChannel postMessage failed:', e);
       }
-    });
-
-    // Dispatch DOM CustomEvent for interoperability
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('docsearch:hospital-event', { detail: payload }));
     }
   }
 

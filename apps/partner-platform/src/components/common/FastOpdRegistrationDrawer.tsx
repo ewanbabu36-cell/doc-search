@@ -27,14 +27,6 @@ interface DoctorOption {
   opdFee: number;
 }
 
-const AVAILABLE_DOCTORS: DoctorOption[] = [
-  { id: 'DOC-1', name: 'Dr. Alok Nath', department: 'General Medicine', room: 'Room 101', opdFee: 300 },
-  { id: 'DOC-2', name: 'Dr. Rajesh Verma', department: 'Cardiology', room: 'Room 102', opdFee: 500 },
-  { id: 'DOC-3', name: 'Dr. Sunita Rao', department: 'Pediatrics', room: 'Room 105', opdFee: 400 },
-  { id: 'DOC-4', name: 'Dr. Priya Nair', department: 'Gynecology & Obstetrics', room: 'Room 204', opdFee: 500 },
-  { id: 'DOC-5', name: 'Dr. Vikram Seth', department: 'Orthopedics', room: 'Room 108', opdFee: 450 }
-];
-
 export const FastOpdRegistrationDrawer: React.FC<FastOpdRegistrationDrawerProps> = ({
   isOpen,
   onClose,
@@ -44,8 +36,8 @@ export const FastOpdRegistrationDrawer: React.FC<FastOpdRegistrationDrawerProps>
   const [fullName, setFullName] = useState('');
   const [age, setAge] = useState('');
   const [gender, setGender] = useState<'MALE' | 'FEMALE' | 'OTHER'>('MALE');
-  const [doctorsList, setDoctorsList] = useState<DoctorOption[]>(AVAILABLE_DOCTORS);
-  const [selectedDoctorId, setSelectedDoctorId] = useState<string>(AVAILABLE_DOCTORS[0]?.id || '');
+  const [doctorsList, setDoctorsList] = useState<DoctorOption[]>([]);
+  const [selectedDoctorId, setSelectedDoctorId] = useState<string>('');
   const [paymentMode, setPaymentMode] = useState<'CASH' | 'UPI' | 'FREE'>('CASH');
   const [customFee, setCustomFee] = useState<number>(300);
   const [, setPanelCtx] = useState<any>(null);
@@ -56,6 +48,33 @@ export const FastOpdRegistrationDrawer: React.FC<FastOpdRegistrationDrawerProps>
 
   useEffect(() => {
     async function loadDoctors() {
+      try {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('docsearch_auth_token') : null;
+        const res = await fetch('/api/v1/partner/staff/members?staffType=DOCTOR', {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+            const mapped: DoctorOption[] = json.data.map((d: any) => ({
+              id: d.id || d.staffCode || 'DOC-1',
+              name: d.fullName || `Dr. ${d.firstName || ''} ${d.lastName || ''}`.trim() || 'Dr. Physician',
+              department: d.departmentName || d.specialty || 'General Medicine',
+              room: d.roomNumber || 'Chamber 1',
+              opdFee: Number(d.metadata?.consultationFee) || 300
+            }));
+            setDoctorsList(mapped);
+            if (mapped[0]) {
+              setSelectedDoctorId(mapped[0].id);
+              setCustomFee(mapped[0].opdFee);
+            }
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('Could not load dynamic doctor staff members:', err);
+      }
+
       try {
         const docs = await doctorRosterService.getDoctors('default');
         if (Array.isArray(docs) && docs.length > 0) {

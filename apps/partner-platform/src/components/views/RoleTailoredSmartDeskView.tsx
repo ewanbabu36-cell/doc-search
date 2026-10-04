@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Card, Button, Badge } from '@docsearch/ui-kit';
 import type { HospitalStaffUser } from '../auth/HospitalStaffLogin.js';
 import type { PartnerModuleKey, RolePerspective } from '../PartnerPlatformShell.js';
+import { isHospitalExecutive } from '../../utils/partnerRolePermissions.js';
 
 export interface RoleTailoredSmartDeskViewProps {
   currentRole: RolePerspective;
@@ -540,10 +541,10 @@ export const RoleTailoredSmartDeskView: React.FC<RoleTailoredSmartDeskViewProps>
                 {currentUser?.name ? `${currentUser.name}'s Smart Desk` : roleLabels[resolvedRole].label}
               </h1>
               <Badge variant="primary" style={{ fontSize: '0.7rem', padding: '2px 8px', fontWeight: 800 }}>
-                ● 4 Killer Tools Active
+                ● Core Station Workflows
               </Badge>
               <Badge variant="neutral" style={{ fontSize: '0.68rem', padding: '2px 8px', color: 'var(--ds-color-text-muted)' }}>
-                38 Modules Condensed
+                Role-Scoped Workspace
               </Badge>
             </div>
             <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: 'var(--ds-color-text-muted)' }}>
@@ -552,38 +553,40 @@ export const RoleTailoredSmartDeskView: React.FC<RoleTailoredSmartDeskViewProps>
           </div>
         </div>
 
-        {/* Persona Switcher Pills */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-          {(['DOCTOR', 'NURSE', 'PHARMACY', 'LAB', 'FRONT_DESK'] as RolePerspective[]).map((rKey) => {
-            const isSelected = resolvedRole === rKey;
-            const rInfo = roleLabels[rKey];
-            return (
-              <button
-                key={rKey}
-                type="button"
-                onClick={() => onChangeRole(rKey)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '6px 12px',
-                  borderRadius: '10px',
-                  border: isSelected ? '1.5px solid #38BDF8' : '1px solid var(--ds-color-border-subtle, rgba(255, 255, 255, 0.08))',
-                  backgroundColor: isSelected ? 'var(--ds-color-primary-subtle, rgba(56, 189, 248, 0.18))' : 'var(--ds-color-surface-subtle, rgba(255, 255, 255, 0.03))',
-                  color: isSelected ? 'var(--ds-color-text-primary, #ffffff)' : 'var(--ds-color-text-muted, #94a3b8)',
-                  fontSize: '0.78rem',
-                  fontWeight: isSelected ? 800 : 600,
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                  boxShadow: isSelected ? '0 0 12px rgba(56, 189, 248, 0.25)' : 'none'
-                }}
-              >
-                <span>{rInfo.icon}</span>
-                <span>{rInfo.label}</span>
-              </button>
-            );
-          })}
-        </div>
+        {/* Persona Switcher Pills (Visible only to Super Admin / Hospital Directors) */}
+        {isHospitalExecutive(currentUser?.role) && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+            {(['DOCTOR', 'NURSE', 'PHARMACY', 'LAB', 'FRONT_DESK'] as RolePerspective[]).map((rKey) => {
+              const isSelected = resolvedRole === rKey;
+              const rInfo = roleLabels[rKey];
+              return (
+                <button
+                  key={rKey}
+                  type="button"
+                  onClick={() => onChangeRole(rKey)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '6px 12px',
+                    borderRadius: '10px',
+                    border: isSelected ? '1.5px solid #38BDF8' : '1px solid var(--ds-color-border-subtle, rgba(255, 255, 255, 0.08))',
+                    backgroundColor: isSelected ? 'var(--ds-color-primary-subtle, rgba(56, 189, 248, 0.18))' : 'var(--ds-color-surface-subtle, rgba(255, 255, 255, 0.03))',
+                    color: isSelected ? 'var(--ds-color-text-primary, #ffffff)' : 'var(--ds-color-text-muted, #94a3b8)',
+                    fontSize: '0.78rem',
+                    fontWeight: isSelected ? 800 : 600,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    boxShadow: isSelected ? '0 0 12px rgba(56, 189, 248, 0.25)' : 'none'
+                  }}
+                >
+                  <span>{rInfo.icon}</span>
+                  <span>{rInfo.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* 2. Keyboard Accelerators Banner */}
@@ -679,7 +682,7 @@ export const RoleTailoredSmartDeskView: React.FC<RoleTailoredSmartDeskViewProps>
                         letterSpacing: '0.05em'
                       }}
                     >
-                      Killer Tool #{tool.slotNumber}
+                      Primary Workflow #{tool.slotNumber}
                     </span>
                     <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: 'var(--ds-color-text-primary)' }}>
                       {tool.title}

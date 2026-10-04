@@ -696,7 +696,7 @@ export class PartnerOnboardingRepository {
          assignedPlanData.price !== existingPayload.requestedPlan.price)
       );
 
-      const defaultPlanName = `${existing.organizationType} Founding Partner (1st Year Free)`;
+      const defaultPlanName = `${existing.organizationType} Standard Operational Plan`;
       const updatedPayload: any = {
         ...existingPayload,
         originalRequestedPlan: existingPayload.requestedPlan || null,
@@ -709,7 +709,7 @@ export class PartnerOnboardingRepository {
         discountPercent: planData?.discountPercent || (isFreePlan ? 100 : 0),
         trialDays: planData?.trialDays || 0,
         paymentMode: planData?.paymentMode || (isAdvancePaid ? existingPayload.advancePayment.paymentMethod || 'RAZORPAY_UPI' : isFreePlan ? 'PROMO_PIONEER_GRANT' : 'ONLINE_GATEWAY'),
-        founderNotes: planData?.founderNotes || (isFreePlan ? 'Approved with 1st Year Free Founding Partner Software Grant (365 Days ₹0).' : ''),
+        founderNotes: planData?.founderNotes || (isFreePlan ? 'Approved with Healthcare Operational Grant.' : 'Verified and Approved by HQ Administration.'),
         invoiceNumber: planData?.invoiceNumber || existingPayload.invoiceNumber || `INV-${Date.now().toString().slice(-6)}`,
         paymentStatus: planData?.paymentStatus || defaultPaymentStatus,
         advanceAmountCredited: isAdvancePaid ? existingPayload.advancePayment.amount : 0

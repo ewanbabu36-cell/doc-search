@@ -26,6 +26,7 @@ import {
   operationalStaff,
   doctorProfiles,
   medicationCatalog,
+  investigationCatalog,
   branches,
   partnerProfiles,
   eq,
@@ -35,6 +36,9 @@ import {
   ilike,
   desc,
   asc,
+  inArray,
+  sql,
+  isNull,
   type Patient,
   type Encounter
 } from '@docsearch/database';
@@ -314,60 +318,85 @@ async function resolveDoctorId(
   departmentId?: string
 ): Promise<string> {
   if (providedDocId) {
-    if (!UUID_REGEX.test(providedDocId)) {
-      throw new AppError({
-        code: ErrorCode.VALIDATION_ERROR,
-        message: `Invalid doctorId UUID format: '${providedDocId}'.`,
-        statusCode: 400
-      });
-    }
-    const [doc] = await db
-      .select({ id: doctorProfiles.id, tenantId: doctorProfiles.tenantId })
-      .from(doctorProfiles)
-      .where(or(eq(doctorProfiles.id, providedDocId), eq(doctorProfiles.staffId, providedDocId)))
-      .limit(1);
-    if (doc) {
-      if (doc.tenantId !== tenantId) {
-        throw new AppError({
-          code: ErrorCode.FORBIDDEN,
-          message: `Doctor profile '${providedDocId}' does not belong to tenant '${tenantId}'.`,
-          statusCode: 403
-        });
+    if (UUID_REGEX.test(providedDocId)) {
+      const [doc] = await db
+        .select({ id: doctorProfiles.id, tenantId: doctorProfiles.tenantId })
+        .from(doctorProfiles)
+        .where(or(eq(doctorProfiles.id, providedDocId), eq(doctorProfiles.staffId, providedDocId)))
+        .limit(1);
+      if (doc) {
+        if (doc.tenantId !== tenantId) {
+          throw new AppError({
+            code: ErrorCode.FORBIDDEN,
+            message: `Doctor profile '${providedDocId}' does not belong to tenant '${tenantId}'.`,
+            statusCode: 403
+          });
+        }
+        return doc.id;
       }
-      return doc.id;
+
+      // Check if providedDocId is a provisioned operationalStaff member of this tenant
+      const [staff] = await db
+        .select()
+        .from(operationalStaff)
+        .where(eq(operationalStaff.id, providedDocId))
+        .limit(1);
+      if (staff) {
+        if (staff.tenantId !== tenantId) {
+          throw new AppError({
+            code: ErrorCode.FORBIDDEN,
+            message: `Doctor staff member '${providedDocId}' does not belong to tenant '${tenantId}'.`,
+            statusCode: 403
+          });
+        }
+        const newDocId = crypto.randomUUID();
+        await db.insert(doctorProfiles).values({
+          id: newDocId,
+          tenantId,
+          partnerId: partnerId || staff.partnerId,
+          organizationId: organizationId || staff.organizationId,
+          branchId: branchId || staff.branchId,
+          departmentId: departmentId || staff.departmentId,
+          staffId: staff.id,
+          doctorCode: `DOC-${staff.staffCode || staff.id.slice(0, 6).toUpperCase()}`,
+          medicalLicenseNumber: `MED-${staff.id.slice(0, 8).toUpperCase()}`,
+          qualification: 'MBBS, MD',
+          primarySpecialty: 'General Medicine',
+          status: 'ACTIVE'
+        }).onConflictDoNothing();
+        return newDocId;
+      }
+    } else {
+      // Non-UUID doctor identifier passed (e.g. 'DOC-ASH-01', staff code, or slug)
+      const [docByCode] = await db
+        .select({ id: doctorProfiles.id, tenantId: doctorProfiles.tenantId })
+        .from(doctorProfiles)
+        .where(and(eq(doctorProfiles.tenantId, tenantId), eq(doctorProfiles.doctorCode, providedDocId)))
+        .limit(1);
+      if (docByCode?.id) return docByCode.id;
+
+      const [staffByCode] = await db
+        .select()
+        .from(operationalStaff)
+        .where(and(eq(operationalStaff.tenantId, tenantId), eq(operationalStaff.staffCode, providedDocId)))
+        .limit(1);
+      if (staffByCode) {
+        const [existingDoc] = await db
+          .select({ id: doctorProfiles.id })
+          .from(doctorProfiles)
+          .where(and(eq(doctorProfiles.tenantId, tenantId), eq(doctorProfiles.staffId, staffByCode.id)))
+          .limit(1);
+        if (existingDoc?.id) return existingDoc.id;
+      }
     }
 
-    // Check if providedDocId is a provisioned operationalStaff member of this tenant
-    const [staff] = await db
-      .select()
-      .from(operationalStaff)
-      .where(eq(operationalStaff.id, providedDocId))
+    // If providedDocId was a frontend placeholder (e.g. 'doc-ash-lead', 'doc-1', 'lead'), resolve to tenant's active doctor profile
+    const [fallbackDoc] = await db
+      .select({ id: doctorProfiles.id })
+      .from(doctorProfiles)
+      .where(eq(doctorProfiles.tenantId, tenantId))
       .limit(1);
-    if (staff) {
-      if (staff.tenantId !== tenantId) {
-        throw new AppError({
-          code: ErrorCode.FORBIDDEN,
-          message: `Doctor staff member '${providedDocId}' does not belong to tenant '${tenantId}'.`,
-          statusCode: 403
-        });
-      }
-      const newDocId = crypto.randomUUID();
-      await db.insert(doctorProfiles).values({
-        id: newDocId,
-        tenantId,
-        partnerId: partnerId || staff.partnerId,
-        organizationId: organizationId || staff.organizationId,
-        branchId: branchId || staff.branchId,
-        departmentId: departmentId || staff.departmentId,
-        staffId: staff.id,
-        doctorCode: `DOC-${staff.staffCode || staff.id.slice(0, 6).toUpperCase()}`,
-        medicalLicenseNumber: `MED-${staff.id.slice(0, 8).toUpperCase()}`,
-        qualification: 'MBBS, MD',
-        primarySpecialty: 'General Medicine',
-        status: 'ACTIVE'
-      }).onConflictDoNothing();
-      return newDocId;
-    }
+    if (fallbackDoc?.id) return fallbackDoc.id;
 
     throw new AppError({
       code: ErrorCode.NOT_FOUND,
@@ -487,15 +516,15 @@ export interface CreateEncounterInput {
 
 export interface CreateQueueTokenInput {
   tenantId: string;
-  partnerId?: string;
-  organizationId?: string;
-  branchId?: string;
-  departmentId?: string;
-  doctorId?: string;
+  partnerId?: string | undefined;
+  organizationId?: string | undefined;
+  branchId?: string | undefined;
+  departmentId?: string | undefined;
+  doctorId?: string | undefined;
   encounterId: string;
-  queueDate?: string;
-  estimatedWaitMinutes?: number;
-  metadata?: any;
+  queueDate?: string | undefined;
+  estimatedWaitMinutes?: number | undefined;
+  metadata?: any | undefined;
 }
 
 export interface StoredQueueToken {
@@ -512,9 +541,39 @@ export interface StoredQueueToken {
   queueStatus: string;
   estimatedWaitMinutes: number;
   calledAt: Date | null;
-  metadata?: any;
+  metadata?: any | undefined;
   createdAt: Date;
   updatedAt: Date;
+
+  // Authoritative enriched patient & encounter fields
+  patientId?: string | undefined;
+  patientName?: string | undefined;
+  patientPhone?: string | undefined;
+  mrn?: string | undefined;
+  uhid?: string | undefined;
+  gender?: string | undefined;
+  age?: number | string | undefined;
+  dateOfBirth?: string | undefined;
+  chiefComplaint?: string | undefined;
+  encounterStatus?: string | undefined;
+  priority?: string | undefined;
+  doctorName?: string | undefined;
+
+  // Authoritative payment fields
+  paymentStatus?: 'PAID' | 'PAY_LATER' | 'PENDING' | string | undefined;
+  paymentAmount?: number | undefined;
+  paymentMethod?: string | undefined;
+  invoiceNumber?: string | undefined;
+  paymentNumber?: string | undefined;
+
+  // Authoritative clinical vitals fields
+  hasVitals?: boolean | undefined;
+  vitals?: any | undefined;
+  triageNotes?: string | null | undefined;
+
+  // Authoritative queue eligibility & gating reasons
+  queueEligibility?: 'READY_FOR_DOCTOR' | 'IN_CHAMBER' | 'IN_CONSULTATION' | 'COMPLETED' | 'NOT_ELIGIBLE' | undefined;
+  blockingReason?: 'PAYMENT_PENDING' | 'VITALS_PENDING' | 'DOCTOR_NOT_ASSIGNED' | null | undefined;
 }
 
 export interface SaveConsultationInput {
@@ -570,14 +629,37 @@ export interface SaveConsultationInput {
     beforeAfterFood?: string;
   }>;
   labInvestigations?: Array<{
+    investigationCatalogId?: string;
+    investigationId?: string;
     testName?: string;
     testCode?: string;
     category?: string;
     priority?: string;
+    clinicalNotes?: string;
   }> | any;
   followUpAdvice?: string;
   followUpDate?: string;
   followUpWindow?: string;
+}
+
+export interface MedicationCatalogSearchOptions {
+  q?: string | undefined;
+  search?: string | undefined;
+  category?: string | undefined;
+  dosageForm?: string | undefined;
+  status?: string | undefined;
+  page?: number | undefined;
+  limit?: number | undefined;
+}
+
+export interface InvestigationCatalogSearchOptions {
+  q?: string | undefined;
+  search?: string | undefined;
+  category?: string | undefined;
+  specimenType?: string | undefined;
+  status?: string | undefined;
+  page?: number | undefined;
+  limit?: number | undefined;
 }
 
 export interface StoredConsultation {
@@ -899,6 +981,21 @@ export interface DoctorOpdWorkspaceDto {
   };
 }
 
+export interface DoctorChamberStatusDto {
+  doctorId: string;
+  isOccupied: boolean;
+  availabilityStatus: string;
+  chamberRoom: string;
+  activeEncounter: Encounter | null;
+  activeConsultation: StoredConsultation | null;
+}
+
+export interface ClaimEncounterResultDto {
+  encounter: Encounter;
+  consultation: StoredConsultation;
+  queueToken: StoredQueueToken | null;
+}
+
 const ICD10_CATALOGUE = [
   { code: 'I10', name: 'Essential (primary) hypertension', category: 'Circulatory System' },
   { code: 'I20.9', name: 'Angina pectoris, unspecified', category: 'Circulatory System' },
@@ -1176,8 +1273,8 @@ export class ClinicalWorkflowRepository {
       branchId,
       patientCode: input.patientCode || `PAT-${Math.floor(100000 + Math.random() * 900000)}`,
       mrn,
-      firstName: input.firstName,
-      lastName: input.lastName,
+      firstName: input.firstName.trim(),
+      lastName: input.lastName && input.lastName.trim().length > 0 ? input.lastName.trim() : (input.firstName.trim() || 'Patient'),
       dateOfBirth: input.dateOfBirth || '2000-01-01',
       gender: input.gender || 'OTHER',
       bloodGroup: input.bloodGroup || null,
@@ -1440,6 +1537,161 @@ export class ClinicalWorkflowRepository {
   // 2. APPOINTMENT / WALK-IN ENCOUNTERS
   // =========================================================================
 
+  async enrichEncounters(
+    tenantId: string,
+    rawEncounters: Encounter[],
+    dbClient = getDatabase()
+  ): Promise<any[]> {
+    if (!rawEncounters || rawEncounters.length === 0) return [];
+    const db = requireDb(dbClient);
+
+    const encounterIds = rawEncounters.map((e) => e.id);
+    const patientIds = Array.from(new Set(rawEncounters.map((e) => e.patientId).filter((id): id is string => typeof id === 'string' && id.length > 0)));
+    const doctorIds = Array.from(new Set(rawEncounters.map((e) => e.doctorId).filter((id): id is string => typeof id === 'string' && id.length > 0)));
+    const departmentIds = Array.from(new Set(rawEncounters.map((e) => e.departmentId).filter((id): id is string => typeof id === 'string' && id.length > 0)));
+
+    const patientRows =
+      patientIds.length > 0
+        ? await db
+            .select()
+            .from(patients)
+            .where(and(eq(patients.tenantId, tenantId), inArray(patients.id, patientIds)))
+        : [];
+    const patientMap = new Map(patientRows.map((p) => [p.id, p]));
+
+    const contactRows =
+      patientIds.length > 0
+        ? await db
+            .select()
+            .from(patientContacts)
+            .where(and(eq(patientContacts.tenantId, tenantId), inArray(patientContacts.patientId, patientIds)))
+        : [];
+    const contactMap = new Map(contactRows.map((c) => [c.patientId, c]));
+
+    const doctorRows =
+      doctorIds.length > 0
+        ? await db
+            .select()
+            .from(doctorProfiles)
+            .where(and(eq(doctorProfiles.tenantId, tenantId), inArray(doctorProfiles.id, doctorIds)))
+        : [];
+    const doctorMap = new Map(doctorRows.map((d) => [d.id, d]));
+
+    const staffIds = doctorRows.map((d) => d.staffId).filter((id): id is string => typeof id === 'string' && id.length > 0);
+    const staffRows =
+      staffIds.length > 0
+        ? await db
+            .select()
+            .from(operationalStaff)
+            .where(and(eq(operationalStaff.tenantId, tenantId), inArray(operationalStaff.id, staffIds)))
+        : [];
+    const staffMap = new Map(staffRows.map((s) => [s.id, s]));
+
+    const departmentRows =
+      departmentIds.length > 0
+        ? await db
+            .select()
+            .from(operationalDepartments)
+            .where(and(eq(operationalDepartments.tenantId, tenantId), inArray(operationalDepartments.id, departmentIds)))
+        : [];
+    const departmentMap = new Map(departmentRows.map((d) => [d.id, d]));
+
+    const queueRows =
+      encounterIds.length > 0
+        ? await db
+            .select()
+            .from(encounterQueues)
+            .where(and(eq(encounterQueues.tenantId, tenantId), inArray(encounterQueues.encounterId, encounterIds)))
+        : [];
+    const queueMap = new Map(queueRows.map((q) => [q.encounterId, q]));
+
+    const vitalsRows =
+      patientIds.length > 0
+        ? await db
+            .select()
+            .from(consultationVitals)
+            .where(and(eq(consultationVitals.tenantId, tenantId), inArray(consultationVitals.patientId, patientIds)))
+            .orderBy(desc(consultationVitals.recordedAt))
+        : [];
+    const vitalsByPatient = new Map<string, any>();
+    for (const v of vitalsRows) {
+      if (!vitalsByPatient.has(v.patientId)) {
+        vitalsByPatient.set(v.patientId, v);
+      }
+    }
+
+    return rawEncounters.map((enc) => {
+      const encMeta: any = enc.metadata || {};
+      const pat = patientMap.get(enc.patientId);
+      const contact = contactMap.get(enc.patientId);
+      const doc = enc.doctorId ? doctorMap.get(enc.doctorId) : undefined;
+      const staff = doc?.staffId ? staffMap.get(doc.staffId) : undefined;
+      const dept = enc.departmentId ? departmentMap.get(enc.departmentId) : undefined;
+      const queueToken = queueMap.get(enc.id);
+      const vit = vitalsByPatient.get(enc.patientId);
+
+      const patientName =
+        (pat ? `${pat.firstName} ${pat.lastName || ''}`.trim() : null) ||
+        encMeta.patientName ||
+        'Patient';
+      const patientMrn = pat?.mrn || encMeta.mrn || encMeta.uhid || '';
+      const patientMobile = contact?.primaryMobile || encMeta.patientPhone || encMeta.patientMobile || '';
+      const patientGender = pat?.gender || encMeta.gender || 'OTHER';
+
+      let patientAge = encMeta.age || '30';
+      if (pat?.dateOfBirth) {
+        const birthDate = new Date(pat.dateOfBirth);
+        if (!isNaN(birthDate.getTime())) {
+          patientAge = String(Math.floor((Date.now() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000)));
+        }
+      }
+
+      const doctorName =
+        staff?.fullName ||
+        (doc?.metadata as any)?.name ||
+        (doc?.metadata as any)?.doctorName ||
+        (doc?.doctorCode ? `Dr. ${doc.doctorCode}` : null) ||
+        encMeta.doctorName ||
+        'Dr. Specialist';
+
+      const tokenNumber =
+        queueToken?.tokenNumber ||
+        encMeta.tokenNumber ||
+        (enc.encounterNumber ? `TK-${enc.encounterNumber.slice(-3)}` : 'TK-01');
+
+      const departmentName =
+        dept?.departmentName ||
+        encMeta.departmentName ||
+        'General Medicine';
+
+      const hasVitals = Boolean(
+        vit ||
+        enc.triageNotes ||
+        encMeta.latestVitalsId ||
+        encMeta.vitals ||
+        encMeta.nurseVitals
+      );
+      const nurseVitals = vit || encMeta.vitals || encMeta.nurseVitals || null;
+
+      return {
+        ...enc,
+        patientName,
+        patientMrn,
+        patientMobile,
+        patientGender,
+        patientAge,
+        doctorName,
+        tokenNumber,
+        departmentName,
+        hasVitals,
+        nurseVitals,
+        staffId: doc?.staffId || undefined,
+        queueStatus: queueToken?.queueStatus || (enc.status === 'COMPLETED' ? 'SERVED' : (enc.status === 'IN_CONSULTATION' ? 'IN_PROGRESS' : 'WAITING')),
+        queueId: queueToken?.id || undefined
+      };
+    });
+  }
+
   async getEncounters(
     tenantId: string,
     status?: string,
@@ -1465,8 +1717,11 @@ export class ClinicalWorkflowRepository {
         );
       }
 
-      if (!status) return rows;
-      return rows.filter(e => e.status === status);
+      let filtered = rows;
+      if (status) {
+        filtered = filtered.filter(e => e.status === status);
+      }
+      return await this.enrichEncounters(tenantId, filtered, db);
     } catch (err) {
       logger.error('Failed to query encounters from database', err);
       throw new AppError({
@@ -1509,7 +1764,8 @@ export class ClinicalWorkflowRepository {
         }
       }
 
-      return found;
+      const [enriched] = await this.enrichEncounters(tenantId, [found], db);
+      return enriched || found;
     } catch (err) {
       if (err instanceof AppError) throw err;
       logger.error('Failed to query encounter by ID in database', err);
@@ -1817,6 +2073,232 @@ export class ClinicalWorkflowRepository {
     }
   }
 
+  private async enrichQueueTokens(
+    tenantId: string,
+    tokens: StoredQueueToken[],
+    dbClient = getDatabase()
+  ): Promise<StoredQueueToken[]> {
+    if (!tokens || tokens.length === 0) return [];
+    const db = requireDb(dbClient);
+
+    const encounterIds = Array.from(new Set(tokens.map((t) => t.encounterId).filter(Boolean)));
+    const encounterRows =
+      encounterIds.length > 0
+        ? await db
+            .select()
+            .from(encounters)
+            .where(and(eq(encounters.tenantId, tenantId), inArray(encounters.id, encounterIds)))
+        : [];
+    const encounterMap = new Map(encounterRows.map((e) => [e.id, e]));
+
+    const patientIds = Array.from(new Set(encounterRows.map((e) => e.patientId).filter(Boolean)));
+    const patientRows =
+      patientIds.length > 0
+        ? await db
+            .select()
+            .from(patients)
+            .where(and(eq(patients.tenantId, tenantId), inArray(patients.id, patientIds)))
+        : [];
+    const patientMap = new Map(patientRows.map((p) => [p.id, p]));
+
+    const contactRows =
+      patientIds.length > 0
+        ? await db
+            .select()
+            .from(patientContacts)
+            .where(and(eq(patientContacts.tenantId, tenantId), inArray(patientContacts.patientId, patientIds)))
+        : [];
+    const contactMap = new Map(contactRows.map((c) => [c.patientId, c]));
+
+    const doctorIds = Array.from(
+      new Set(
+        [...tokens.map((t) => t.doctorId), ...encounterRows.map((e) => e.doctorId)].filter(
+          (id): id is string => typeof id === 'string' && id.length > 0
+        )
+      )
+    );
+    const doctorRows =
+      doctorIds.length > 0
+        ? await db
+            .select()
+            .from(doctorProfiles)
+            .where(and(eq(doctorProfiles.tenantId, tenantId), inArray(doctorProfiles.id, doctorIds)))
+        : [];
+    const doctorMap = new Map(doctorRows.map((d) => [d.id, d]));
+
+    const staffIds = doctorRows.map((d) => d.staffId).filter((id): id is string => typeof id === 'string' && id.length > 0);
+    const staffRows =
+      staffIds.length > 0
+        ? await db
+            .select()
+            .from(operationalStaff)
+            .where(and(eq(operationalStaff.tenantId, tenantId), inArray(operationalStaff.id, staffIds)))
+        : [];
+    const staffMap = new Map(staffRows.map((s) => [s.id, s]));
+
+    const invoiceRows =
+      encounterIds.length > 0
+        ? await db
+            .select()
+            .from(billingInvoices)
+            .where(and(eq(billingInvoices.tenantId, tenantId), inArray(billingInvoices.encounterId, encounterIds)))
+        : [];
+    const invoiceMap = new Map(invoiceRows.map((i) => [i.encounterId, i]));
+    const invoiceIds = invoiceRows.map((i) => i.id).filter(Boolean);
+
+    const paymentRows =
+      invoiceIds.length > 0
+        ? await db
+            .select()
+            .from(billingPayments)
+            .where(and(eq(billingPayments.tenantId, tenantId), inArray(billingPayments.invoiceId, invoiceIds)))
+        : [];
+    const paymentMap = new Map(paymentRows.map((p) => [p.invoiceId, p]));
+
+    const vitalsRows =
+      patientIds.length > 0
+        ? await db
+            .select()
+            .from(consultationVitals)
+            .where(and(eq(consultationVitals.tenantId, tenantId), inArray(consultationVitals.patientId, patientIds)))
+            .orderBy(desc(consultationVitals.recordedAt))
+        : [];
+    const vitalsByPatient = new Map<string, any>();
+    for (const v of vitalsRows) {
+      if (!vitalsByPatient.has(v.patientId)) {
+        vitalsByPatient.set(v.patientId, v);
+      }
+    }
+
+    return tokens.map((token) => {
+      const enc = encounterMap.get(token.encounterId);
+      const encMeta: any = enc?.metadata || {};
+      const tokenMeta: any = token.metadata || {};
+      const pat = enc ? patientMap.get(enc.patientId) : undefined;
+      const contact = enc ? contactMap.get(enc.patientId) : undefined;
+      const doc = doctorMap.get(token.doctorId || enc?.doctorId || '');
+      const staff = doc?.staffId ? staffMap.get(doc.staffId) : undefined;
+      const inv = token.encounterId ? invoiceMap.get(token.encounterId) : undefined;
+      const pay = inv?.id ? paymentMap.get(inv.id) : undefined;
+      const vit = enc ? vitalsByPatient.get(enc.patientId) : undefined;
+
+      const patientName =
+        (pat ? `${pat.firstName} ${pat.lastName || ''}`.trim() : null) ||
+        tokenMeta?.patientName ||
+        'Patient';
+      const patientPhone = contact?.primaryMobile || tokenMeta?.patientPhone || '';
+      const mrn = pat?.mrn || tokenMeta?.mrn || tokenMeta?.uhid || '';
+      const uhid = mrn;
+      const gender = pat?.gender || tokenMeta?.gender || 'MALE';
+
+      let age: number | string = tokenMeta?.age || '30';
+      if (pat?.dateOfBirth) {
+        const birthDate = new Date(pat.dateOfBirth);
+        if (!isNaN(birthDate.getTime())) {
+          age = Math.floor((Date.now() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+        }
+      }
+
+      const chiefComplaint = enc?.chiefComplaint || tokenMeta?.chiefComplaint || 'OPD Consultation';
+      const encounterStatus = enc?.status || token.queueStatus;
+      const priority = enc?.priority || 'ROUTINE';
+      const doctorName =
+        staff?.fullName ||
+        (doc?.metadata as any)?.name ||
+        (doc?.metadata as any)?.doctorName ||
+        (doc?.doctorCode ? `Dr. ${doc.doctorCode}` : null) ||
+        tokenMeta?.doctorName ||
+        'Dr. Specialist';
+
+      // Authoritative Payment Status
+      let paymentStatus: 'PAID' | 'PAY_LATER' | 'PENDING' | string = 'PENDING';
+      if (
+        pay?.status === 'SUCCESS' ||
+        encMeta.paymentStatus === 'PAID' ||
+        encMeta.feeStatus === 'PAID' ||
+        tokenMeta.feeStatus === 'PAID' ||
+        tokenMeta.feePaymentMode === 'WAIVED'
+      ) {
+        paymentStatus = 'PAID';
+      } else if (
+        encMeta.paymentStatus === 'PAY_LATER' ||
+        encMeta.feeStatus === 'PAY_LATER' ||
+        tokenMeta.feeStatus === 'PAY_LATER'
+      ) {
+        paymentStatus = 'PAY_LATER';
+      }
+
+      const paymentAmount = Number(
+        pay?.amount || encMeta.paymentAmount || tokenMeta.consultationFee || 500
+      );
+
+      // Authoritative Vitals
+      const hasVitals = Boolean(
+        vit ||
+        enc?.triageNotes ||
+        encMeta.latestVitalsId ||
+        encMeta.vitals ||
+        tokenMeta.vitals
+      );
+      const vitals = vit || encMeta.vitals || tokenMeta.vitals || null;
+      const triageNotes = enc?.triageNotes || tokenMeta.triageNotes || null;
+
+      // Authoritative Queue Eligibility
+      let queueEligibility: 'READY_FOR_DOCTOR' | 'IN_CHAMBER' | 'IN_CONSULTATION' | 'COMPLETED' | 'NOT_ELIGIBLE';
+      let blockingReason: 'PAYMENT_PENDING' | 'VITALS_PENDING' | 'DOCTOR_NOT_ASSIGNED' | null = null;
+
+      if (token.queueStatus === 'SERVED' || token.queueStatus === 'COMPLETED' || encounterStatus === 'COMPLETED') {
+        queueEligibility = 'COMPLETED';
+      } else if (token.queueStatus === 'IN_PROGRESS' || encounterStatus === 'IN_CONSULTATION') {
+        queueEligibility = 'IN_CONSULTATION';
+      } else if (token.queueStatus === 'CALLED' || encounterStatus === 'CALLED') {
+        queueEligibility = 'IN_CHAMBER';
+      } else {
+        // WAITING tokens
+        if (paymentStatus !== 'PAID' && paymentStatus !== 'PAY_LATER') {
+          queueEligibility = 'NOT_ELIGIBLE';
+          blockingReason = 'PAYMENT_PENDING';
+        } else if (!hasVitals && tokenMeta.vitalsBypassed !== true && encMeta.vitalsBypassed !== true) {
+          queueEligibility = 'NOT_ELIGIBLE';
+          blockingReason = 'VITALS_PENDING';
+        } else if (!token.doctorId && !enc?.doctorId) {
+          queueEligibility = 'NOT_ELIGIBLE';
+          blockingReason = 'DOCTOR_NOT_ASSIGNED';
+        } else {
+          queueEligibility = 'READY_FOR_DOCTOR';
+          blockingReason = null;
+        }
+      }
+
+      return {
+        ...token,
+        patientId: enc?.patientId,
+        patientName,
+        patientPhone,
+        mrn,
+        uhid,
+        gender,
+        age,
+        dateOfBirth: pat?.dateOfBirth ? String(pat.dateOfBirth) : undefined,
+        chiefComplaint,
+        encounterStatus,
+        priority,
+        doctorName,
+        staffId: doc?.staffId || undefined,
+        paymentStatus,
+        paymentAmount,
+        paymentMethod: pay?.paymentMethod || encMeta.feePaymentMode || tokenMeta.feePaymentMode,
+        invoiceNumber: encMeta.invoiceNumber || pay?.invoiceId,
+        paymentNumber: pay?.paymentNumber || encMeta.paymentNumber,
+        hasVitals,
+        vitals,
+        triageNotes,
+        queueEligibility,
+        blockingReason
+      };
+    });
+  }
+
   async getQueue(
     tenantId: string,
     filters?: { branchId?: string; doctorId?: string; queueDate?: string; queueStatus?: string },
@@ -1837,7 +2319,17 @@ export class ClinicalWorkflowRepository {
       if (filters?.queueDate) list = list.filter(q => q.queueDate === filters.queueDate);
       if (filters?.queueStatus) list = list.filter(q => q.queueStatus === filters.queueStatus);
 
-      return list;
+      const enriched = await this.enrichQueueTokens(tenantId, list, db);
+      const priorityWeights: Record<string, number> = { EMERGENCY: 1, URGENT: 2, ROUTINE: 3 };
+      return enriched.sort((a, b) => {
+        const weightA = priorityWeights[a.priority || 'ROUTINE'] || 3;
+        const weightB = priorityWeights[b.priority || 'ROUTINE'] || 3;
+        if (weightA !== weightB) return weightA - weightB;
+        const timeA = new Date(a.createdAt).getTime();
+        const timeB = new Date(b.createdAt).getTime();
+        if (timeA !== timeB) return timeA - timeB;
+        return (a.tokenNumber || '').localeCompare(b.tokenNumber || '');
+      });
     } catch (err) {
       logger.error('Failed to query queue from database', err);
       throw new AppError({
@@ -1855,7 +2347,9 @@ export class ClinicalWorkflowRepository {
         .select()
         .from(encounterQueues)
         .where(and(eq(encounterQueues.tenantId, tenantId), eq(encounterQueues.id, queueId)));
-      return (found as unknown as StoredQueueToken) || null;
+      if (!found) return null;
+      const [enriched] = await this.enrichQueueTokens(tenantId, [found as unknown as StoredQueueToken], db);
+      return enriched || (found as unknown as StoredQueueToken);
     } catch (err) {
       logger.error('Failed to query queue token by ID in database', err);
       throw new AppError({
@@ -1893,7 +2387,14 @@ export class ClinicalWorkflowRepository {
         .where(and(eq(encounterQueues.tenantId, tenantId), eq(encounterQueues.id, queueId)))
         .returning();
 
-      return updated as unknown as StoredQueueToken;
+      // Authoritative State: update linked encounter to CALLED
+      await db
+        .update(encounters)
+        .set({ status: 'CALLED', updatedAt: now })
+        .where(and(eq(encounters.tenantId, tenantId), eq(encounters.id, token.encounterId)));
+
+      const [enriched] = await this.enrichQueueTokens(tenantId, [updated as unknown as StoredQueueToken], db);
+      return enriched || (updated as unknown as StoredQueueToken);
     } catch (err) {
       logger.error('Failed to call queue token in database', err);
       throw new AppError({
@@ -1931,13 +2432,14 @@ export class ClinicalWorkflowRepository {
         .where(and(eq(encounterQueues.tenantId, tenantId), eq(encounterQueues.id, queueId)))
         .returning();
 
-      // Also update linked encounter to IN_CONSULTATION
+      // Authoritative State: update linked encounter to IN_CONSULTATION
       await db
         .update(encounters)
-        .set({ status: 'IN_CONSULTATION', updatedAt: now })
+        .set({ status: 'IN_CONSULTATION', consultationStartedAt: now, updatedAt: now })
         .where(and(eq(encounters.tenantId, tenantId), eq(encounters.id, token.encounterId)));
 
-      return updated as unknown as StoredQueueToken;
+      const [enriched] = await this.enrichQueueTokens(tenantId, [updated as unknown as StoredQueueToken], db);
+      return enriched || (updated as unknown as StoredQueueToken);
     } catch (err) {
       logger.error('Failed to start queue token in database', err);
       throw new AppError({
@@ -1959,7 +2461,7 @@ export class ClinicalWorkflowRepository {
       });
     }
 
-    if (token.queueStatus === 'CANCELLED' || token.queueStatus === 'COMPLETED') {
+    if (token.queueStatus === 'CANCELLED' || token.queueStatus === 'COMPLETED' || token.queueStatus === 'SERVED') {
       throw new AppError({
         message: `Cannot complete queue token with status '${token.queueStatus}'.`,
         code: ErrorCode.BAD_REQUEST,
@@ -1979,11 +2481,18 @@ export class ClinicalWorkflowRepository {
     try {
       const [updated] = await db
         .update(encounterQueues)
-        .set({ queueStatus: 'COMPLETED', updatedAt: now })
+        .set({ queueStatus: 'SERVED', updatedAt: now })
         .where(and(eq(encounterQueues.tenantId, tenantId), eq(encounterQueues.id, queueId)))
         .returning();
 
-      return updated as unknown as StoredQueueToken;
+      // Authoritative State: update linked encounter to COMPLETED
+      await db
+        .update(encounters)
+        .set({ status: 'COMPLETED', completedAt: now, updatedAt: now })
+        .where(and(eq(encounters.tenantId, tenantId), eq(encounters.id, token.encounterId)));
+
+      const [enriched] = await this.enrichQueueTokens(tenantId, [updated as unknown as StoredQueueToken], db);
+      return enriched || (updated as unknown as StoredQueueToken);
     } catch (err) {
       logger.error('Failed to complete queue token in database', err);
       throw new AppError({
@@ -2895,6 +3404,22 @@ export class ClinicalWorkflowRepository {
       queueToken = await this.completeQueueToken(tenantId, linkedToken.id, db);
     }
 
+    // 3b. Mark doctor availability back to AVAILABLE
+    if (effectiveDoctorId) {
+      await db
+        .update(doctorProfiles)
+        .set({
+          availabilityStatus: 'AVAILABLE',
+          updatedAt: new Date()
+        })
+        .where(
+          and(
+            eq(doctorProfiles.tenantId, tenantId),
+            eq(doctorProfiles.id, effectiveDoctorId)
+          )
+        );
+    }
+
     // 4. Downstream: Digital Prescription & Pharmacy Order
     let prescription: StoredPrescription | null = null;
     let pharmacyOrder: any = null;
@@ -2975,16 +3500,16 @@ export class ClinicalWorkflowRepository {
     const labOrders: any[] = [];
     const labInvestigations = consultation.labInvestigations;
     if (labInvestigations && (Array.isArray(labInvestigations) ? labInvestigations.length > 0 : Object.keys(labInvestigations).length > 0)) {
-      const testNames: string[] = Array.isArray(labInvestigations)
-        ? labInvestigations.map((t: any) => typeof t === 'string' ? t : (t.testName || t.name || 'Diagnostic Test'))
-        : (labInvestigations.testNames || ['Complete Blood Count']);
+      const items: any[] = Array.isArray(labInvestigations)
+        ? labInvestigations
+        : (labInvestigations.items || (Array.isArray(labInvestigations.testNames) ? labInvestigations.testNames : [labInvestigations]));
 
       const createdLabs = await this.bridgeDiagnosticOrders(
         tenantId,
         consultation.patientId,
         consultation.encounterId,
         effectiveDoctorId,
-        testNames,
+        items,
         db
       );
       labOrders.push(...createdLabs);
@@ -3078,7 +3603,7 @@ export class ClinicalWorkflowRepository {
     patientId: string,
     encounterId: string,
     doctorId: string,
-    testNames: string[],
+    diagnosticItems: any[],
     dbClient = getDatabase()
   ) {
     const db = requireDb(dbClient);
@@ -3105,10 +3630,106 @@ export class ClinicalWorkflowRepository {
     const existingEncounterOrders = existingOrders.filter(o => o.encounterId === encounterId);
 
     const createdOrders = [];
-    for (const testName of testNames) {
-      const alreadyCreated = existingEncounterOrders.find(o => o.testName === testName);
+    for (const item of diagnosticItems) {
+      const candidateId = typeof item === 'object' && item !== null
+        ? (item.investigationCatalogId || item.investigationId || (typeof item.id === 'string' && UUID_REGEX.test(item.id) ? item.id : undefined))
+        : undefined;
+
+      const rawCode = typeof item === 'object' && item !== null ? (item.testCode || item.code) : undefined;
+      const rawName = typeof item === 'string' ? item : (item?.testName || item?.name || item?.investigationName);
+      const priority = (typeof item === 'object' && item?.priority) || 'ROUTINE';
+      const clinicalNotes = (typeof item === 'object' && item?.clinicalNotes) || `Ordered during OPD Consultation (Enc: ${encounterId}, Doctor: ${doctorId})`;
+
+      let catalogRecord: any = null;
+
+      // 1. If candidate catalog UUID is provided, resolve & validate catalog item
+      if (candidateId) {
+        if (!UUID_REGEX.test(candidateId)) {
+          throw new AppError({
+            message: `Invalid investigation catalog UUID format: ${candidateId}`,
+            code: ErrorCode.BAD_REQUEST,
+            statusCode: 400
+          });
+        }
+        const [found] = await db
+          .select()
+          .from(investigationCatalog)
+          .where(eq(investigationCatalog.id, candidateId))
+          .limit(1);
+
+        if (!found) {
+          throw new AppError({
+            message: `Investigation catalog record not found: ${candidateId}`,
+            code: ErrorCode.NOT_FOUND,
+            statusCode: 404
+          });
+        }
+
+        if (found.tenantId !== tenantId) {
+          throw new AppError({
+            message: `Investigation catalog record ${candidateId} does not belong to authorized tenant ${tenantId}`,
+            code: ErrorCode.FORBIDDEN,
+            statusCode: 403
+          });
+        }
+
+        catalogRecord = found;
+      } else if (rawCode) {
+        // 2. Lookup by testCode within tenant
+        const [found] = await db
+          .select()
+          .from(investigationCatalog)
+          .where(and(eq(investigationCatalog.tenantId, tenantId), eq(investigationCatalog.testCode, rawCode)))
+          .limit(1);
+
+        if (!found) {
+          throw new AppError({
+            message: `Investigation catalog record with testCode '${rawCode}' not found for tenant`,
+            code: ErrorCode.NOT_FOUND,
+            statusCode: 404
+          });
+        }
+        catalogRecord = found;
+      } else if (rawName) {
+        // 3. Lookup by testName within tenant
+        const [found] = await db
+          .select()
+          .from(investigationCatalog)
+          .where(and(eq(investigationCatalog.tenantId, tenantId), ilike(investigationCatalog.testName, rawName.trim())))
+          .limit(1);
+
+        if (found) {
+          catalogRecord = found;
+        } else {
+          // Try prefix/case-insensitive fuzzy match within tenant
+          const [fuzzy] = await db
+            .select()
+            .from(investigationCatalog)
+            .where(and(eq(investigationCatalog.tenantId, tenantId), ilike(investigationCatalog.testName, `%${rawName.trim()}%`)))
+            .limit(1);
+          if (!fuzzy) {
+            throw new AppError({
+              message: `Investigation catalog record for test '${rawName}' not found in tenant catalog`,
+              code: ErrorCode.NOT_FOUND,
+              statusCode: 404
+            });
+          }
+          catalogRecord = fuzzy;
+        }
+      } else {
+        throw new AppError({
+          message: 'Diagnostic investigation item must specify a valid catalog ID, code, or name',
+          code: ErrorCode.BAD_REQUEST,
+          statusCode: 400
+        });
+      }
+
+      // Check idempotency against existing encounter orders
+      const alreadyCreated = existingEncounterOrders.find(
+        o => o.investigationId === catalogRecord.id || o.testCode === catalogRecord.testCode || o.testName === catalogRecord.testName
+      );
       if (alreadyCreated) {
-        logger.info('Duplicate lab order prevented. Returning existing order.', { orderId: alreadyCreated.id, testName });
+        logger.info('Duplicate lab order prevented. Returning existing order.', { orderId: alreadyCreated.id, testName: catalogRecord.testName });
         createdOrders.push(alreadyCreated);
         continue;
       }
@@ -3121,10 +3742,12 @@ export class ClinicalWorkflowRepository {
         patientId,
         encounterId,
         orderingDoctorId: doctorId,
-        testName,
-        category: testName.includes('CBC') || testName.includes('Blood Count') ? 'HEMATOLOGY' : 'BIOCHEMISTRY',
-        priority: 'ROUTINE',
-        clinicalNotes: `Ordered during OPD Consultation (Enc: ${encounterId}, Doctor: ${doctorId})`
+        investigationId: catalogRecord.id,
+        testCode: catalogRecord.testCode,
+        testName: catalogRecord.testName,
+        category: catalogRecord.category || 'HEMATOLOGY',
+        priority,
+        clinicalNotes
       }, db);
       createdOrders.push(order);
     }
@@ -3542,6 +4165,149 @@ export class ClinicalWorkflowRepository {
     );
   }
 
+  async searchMedicationCatalog(
+    tenantId: string,
+    options?: MedicationCatalogSearchOptions,
+    dbClient = getDatabase()
+  ): Promise<{ items: any[]; total: number; page: number; limit: number; totalPages: number }> {
+    const db = requireDb(dbClient);
+    try {
+      const page = Math.max(1, Number(options?.page || 1));
+      const limit = Math.min(100, Math.max(1, Number(options?.limit || 50)));
+      const offset = (page - 1) * limit;
+
+      const conditions: any[] = [eq(medicationCatalog.tenantId, tenantId)];
+
+      const status = options?.status ?? 'ACTIVE';
+      if (status && status !== 'ALL') {
+        conditions.push(eq(medicationCatalog.status, status));
+      }
+
+      if (options?.category && options.category !== 'ALL') {
+        conditions.push(eq(medicationCatalog.category, options.category));
+      }
+
+      if (options?.dosageForm && options.dosageForm !== 'ALL') {
+        conditions.push(eq(medicationCatalog.dosageForm, options.dosageForm));
+      }
+
+      const rawSearch = (options?.q || options?.search || '').trim();
+      if (rawSearch) {
+        const term = `%${rawSearch}%`;
+        conditions.push(
+          or(
+            ilike(medicationCatalog.medicationCode, term),
+            ilike(medicationCatalog.brandName, term),
+            ilike(medicationCatalog.genericName, term)
+          )
+        );
+      }
+
+      const whereClause = and(...conditions);
+
+      const countRows = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(medicationCatalog)
+        .where(whereClause);
+      const total = Number(countRows[0]?.count || 0);
+
+      const items = await db
+        .select()
+        .from(medicationCatalog)
+        .where(whereClause)
+        .orderBy(asc(medicationCatalog.brandName), asc(medicationCatalog.medicationCode))
+        .limit(limit)
+        .offset(offset);
+
+      return {
+        items: items || [],
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      };
+    } catch (err: any) {
+      logger.error('Failed to query medication catalog from database', err);
+      throw new AppError({
+        message: `Database query failed. Medication catalog search unavailable: ${err?.message || String(err)}`,
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
+    }
+  }
+
+  async searchInvestigationCatalog(
+    tenantId: string,
+    options?: InvestigationCatalogSearchOptions,
+    dbClient = getDatabase()
+  ): Promise<{ items: any[]; total: number; page: number; limit: number; totalPages: number }> {
+    const db = requireDb(dbClient);
+    try {
+      const page = Math.max(1, Number(options?.page || 1));
+      const limit = Math.min(100, Math.max(1, Number(options?.limit || 50)));
+      const offset = (page - 1) * limit;
+
+      const conditions: any[] = [eq(investigationCatalog.tenantId, tenantId)];
+
+      const status = options?.status ?? 'ACTIVE';
+      if (status && status !== 'ALL') {
+        conditions.push(eq(investigationCatalog.status, status));
+      }
+
+      if (options?.category && options.category !== 'ALL') {
+        conditions.push(eq(investigationCatalog.category, options.category));
+      }
+
+      if (options?.specimenType && options.specimenType !== 'ALL') {
+        conditions.push(eq(investigationCatalog.specimenType, options.specimenType));
+      }
+
+      const rawSearch = (options?.q || options?.search || '').trim();
+      if (rawSearch) {
+        const term = `%${rawSearch}%`;
+        conditions.push(
+          or(
+            ilike(investigationCatalog.testCode, term),
+            ilike(investigationCatalog.testName, term),
+            ilike(investigationCatalog.shortName, term),
+            ilike(investigationCatalog.department, term)
+          )
+        );
+      }
+
+      const whereClause = and(...conditions);
+
+      const countRows = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(investigationCatalog)
+        .where(whereClause);
+      const total = Number(countRows[0]?.count || 0);
+
+      const items = await db
+        .select()
+        .from(investigationCatalog)
+        .where(whereClause)
+        .orderBy(asc(investigationCatalog.testName), asc(investigationCatalog.testCode))
+        .limit(limit)
+        .offset(offset);
+
+      return {
+        items: items || [],
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      };
+    } catch (err: any) {
+      logger.error('Failed to query investigation catalog from database', err);
+      throw new AppError({
+        message: `Database query failed. Investigation catalog search unavailable: ${err?.message || String(err)}`,
+        code: ErrorCode.SERVICE_UNAVAILABLE,
+        statusCode: 503
+      });
+    }
+  }
+
   async getExitHubPatients(tenantId: string, search?: string, dbClient = getDatabase()) {
     const db = requireDb(dbClient);
     try {
@@ -3778,6 +4544,18 @@ export class ClinicalWorkflowRepository {
         })
         .where(and(eq(encounters.tenantId, tenantId), eq(encounters.id, encounterId)));
 
+      try {
+        await db
+          .update(encounterQueues)
+          .set({
+            queueStatus: 'SERVED',
+            updatedAt: now
+          })
+          .where(and(eq(encounterQueues.tenantId, tenantId), eq(encounterQueues.encounterId, encounterId)));
+      } catch (qErr) {
+        logger.warn('Failed to update queue status on encounter checkout: ' + String(qErr));
+      }
+
       return {
         success: true,
         message: 'Patient encounter successfully cleared and discharged',
@@ -3787,7 +4565,7 @@ export class ClinicalWorkflowRepository {
       };
     } catch (err) {
       if (err instanceof AppError || (err && typeof err === 'object' && ('statusCode' in err || 'code' in err))) throw err;
-      logger.error('Failed to checkout encounter', err);
+      logger.error('Failed to checkout encounter: ' + String(err));
       throw new AppError({
         message: 'Encounter checkout failed',
         code: ErrorCode.INTERNAL_SERVER_ERROR,
@@ -5136,6 +5914,361 @@ export class ClinicalWorkflowRepository {
         servedTodayCount,
         activeAlertsCount
       }
+    };
+  }
+
+  // =========================================================================
+  // 17. OPD CHAMBER STATE MACHINE & CONSULTATION OWNERSHIP
+  // =========================================================================
+
+  async getDoctorChamberStatus(
+    tenantId: string,
+    doctorId: string,
+    dbClient = getDatabase()
+  ): Promise<DoctorChamberStatusDto> {
+    const db = requireDb(dbClient);
+    const resolvedDocId = await resolveDoctorId(db, tenantId, doctorId);
+
+    const [doc] = await db
+      .select()
+      .from(doctorProfiles)
+      .where(
+        and(
+          eq(doctorProfiles.tenantId, tenantId),
+          eq(doctorProfiles.id, resolvedDocId)
+        )
+      )
+      .limit(1);
+
+    const chamberRoom = (doc?.metadata as any)?.chamber || 'Room 101';
+
+    // 1. Look for active encounter where doctor is assigned and status is IN_CONSULTATION or CALLED
+    const [activeEncRow] = await db
+      .select()
+      .from(encounters)
+      .where(
+        and(
+          eq(encounters.tenantId, tenantId),
+          eq(encounters.doctorId, resolvedDocId),
+          inArray(encounters.status, ['IN_CONSULTATION', 'CALLED'])
+        )
+      )
+      .orderBy(desc(encounters.consultationStartedAt), desc(encounters.updatedAt))
+      .limit(1);
+
+    let activeConsultation: StoredConsultation | null = null;
+    let activeEncounter: Encounter | null = null;
+
+    if (activeEncRow) {
+      activeEncounter = await this.getEncounterById(tenantId, activeEncRow.id, db);
+      const [consRow] = await db
+        .select()
+        .from(consultations)
+        .where(
+          and(
+            eq(consultations.tenantId, tenantId),
+            eq(consultations.encounterId, activeEncRow.id),
+            ne(consultations.consultationStatus, 'COMPLETED'),
+            ne(consultations.consultationStatus, 'CANCELLED')
+          )
+        )
+        .limit(1);
+      if (consRow) {
+        activeConsultation = await this.getConsultationById(tenantId, consRow.id, db);
+      }
+    } else {
+      // 2. Look for active in-progress consultation for this doctor
+      const [consRow] = await db
+        .select()
+        .from(consultations)
+        .where(
+          and(
+            eq(consultations.tenantId, tenantId),
+            eq(consultations.doctorId, resolvedDocId),
+            inArray(consultations.consultationStatus, ['STARTED', 'IN_PROGRESS', 'DRAFT'])
+          )
+        )
+        .orderBy(desc(consultations.startedAt), desc(consultations.updatedAt))
+        .limit(1);
+
+      if (consRow) {
+        let encCandidate: Encounter | null = null;
+        if (consRow.encounterId) {
+          encCandidate = await this.getEncounterById(tenantId, consRow.encounterId, db);
+        }
+        if (encCandidate && (encCandidate.status === 'IN_CONSULTATION' || encCandidate.status === 'CALLED')) {
+          activeConsultation = await this.getConsultationById(tenantId, consRow.id, db);
+          activeEncounter = encCandidate;
+        }
+      }
+    }
+
+    const isOccupied = Boolean(activeConsultation || (activeEncRow && activeEncRow.status === 'IN_CONSULTATION'));
+
+    return {
+      doctorId: resolvedDocId,
+      isOccupied,
+      availabilityStatus: isOccupied ? 'BUSY' : (doc?.availabilityStatus || 'AVAILABLE'),
+      chamberRoom,
+      activeEncounter,
+      activeConsultation
+    };
+  }
+
+  async claimEncounter(
+    tenantId: string,
+    encounterId: string,
+    doctorId: string,
+    dbClient = getDatabase()
+  ): Promise<ClaimEncounterResultDto> {
+    const db = requireDb(dbClient);
+    const resolvedDocId = await resolveDoctorId(db, tenantId, doctorId);
+
+    const enc = await this.getEncounterById(tenantId, encounterId, db);
+    if (!enc) {
+      throw new AppError({
+        message: `Encounter not found: ${encounterId}`,
+        code: ErrorCode.NOT_FOUND,
+        statusCode: 404
+      });
+    }
+
+    if (enc.status === 'COMPLETED') {
+      throw new AppError({
+        message: `Cannot claim completed encounter: ${encounterId}`,
+        code: ErrorCode.BAD_REQUEST,
+        statusCode: 400
+      });
+    }
+
+    if (enc.doctorId && enc.doctorId !== resolvedDocId && enc.status === 'IN_CONSULTATION') {
+      throw new AppError({
+        message: `Encounter '${encounterId}' is already claimed by another physician.`,
+        code: ErrorCode.CONFLICT,
+        statusCode: 409
+      });
+    }
+
+    const now = new Date();
+    // Atomic conditional update on encounters to avoid claim race condition
+    const [updatedEnc] = await db
+      .update(encounters)
+      .set({
+        doctorId: resolvedDocId,
+        status: 'IN_CONSULTATION',
+        consultationStartedAt: enc.consultationStartedAt || now,
+        updatedAt: now
+      })
+      .where(
+        and(
+          eq(encounters.tenantId, tenantId),
+          eq(encounters.id, encounterId),
+          or(
+            isNull(encounters.doctorId),
+            eq(encounters.doctorId, resolvedDocId),
+            ne(encounters.status, 'IN_CONSULTATION')
+          )
+        )
+      )
+      .returning();
+
+    if (!updatedEnc) {
+      throw new AppError({
+        message: `Failed to claim encounter '${encounterId}' due to a concurrent update conflict.`,
+        code: ErrorCode.CONFLICT,
+        statusCode: 409
+      });
+    }
+
+    // Update linked queue token if present
+    let updatedQueueToken: StoredQueueToken | null = null;
+    const [qRow] = await db
+      .update(encounterQueues)
+      .set({
+        doctorId: resolvedDocId,
+        queueStatus: 'IN_PROGRESS',
+        calledAt: now,
+        updatedAt: now
+      })
+      .where(
+        and(
+          eq(encounterQueues.tenantId, tenantId),
+          eq(encounterQueues.encounterId, encounterId)
+        )
+      )
+      .returning();
+
+    if (qRow) {
+      const [enrichedQ] = await this.enrichQueueTokens(tenantId, [qRow as unknown as StoredQueueToken], db);
+      updatedQueueToken = enrichedQ || (qRow as unknown as StoredQueueToken);
+    }
+
+    // Set doctor availability to BUSY and update metadata
+    await db
+      .update(doctorProfiles)
+      .set({
+        availabilityStatus: 'BUSY',
+        updatedAt: now
+      })
+      .where(
+        and(
+          eq(doctorProfiles.tenantId, tenantId),
+          eq(doctorProfiles.id, resolvedDocId)
+        )
+      );
+
+    // Find or create active consultation
+    let [existingCons] = await db
+      .select()
+      .from(consultations)
+      .where(
+        and(
+          eq(consultations.tenantId, tenantId),
+          eq(consultations.encounterId, encounterId),
+          ne(consultations.consultationStatus, 'CANCELLED')
+        )
+      )
+      .limit(1);
+
+    if (!existingCons) {
+      const seqRows = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(consultations)
+        .where(eq(consultations.tenantId, tenantId));
+      const seq = Number(seqRows[0]?.count || 0) + 1;
+      const consNumber = `CON-${tenantId.substring(0, 4).toUpperCase()}-${String(seq).padStart(6, '0')}`;
+      const consId = crypto.randomUUID();
+
+      const [created] = await db
+        .insert(consultations)
+        .values({
+          id: consId,
+          tenantId,
+          partnerId: enc.partnerId,
+          organizationId: enc.organizationId,
+          branchId: enc.branchId,
+          patientId: enc.patientId,
+          encounterId: enc.id,
+          doctorId: resolvedDocId,
+          consultationNumber: consNumber,
+          consultationStatus: 'IN_PROGRESS',
+          consultationType: 'OPD_CONSULTATION',
+          chiefComplaint: enc.chiefComplaint || 'OPD Consultation',
+          createdBy: resolvedDocId,
+          updatedBy: resolvedDocId,
+          startedAt: now,
+          createdAt: now,
+          updatedAt: now
+        } as unknown as typeof consultations.$inferInsert)
+        .returning();
+      existingCons = created;
+    } else if (existingCons.consultationStatus !== 'COMPLETED') {
+      const [updated] = await db
+        .update(consultations)
+        .set({
+          doctorId: resolvedDocId,
+          consultationStatus: 'IN_PROGRESS',
+          updatedAt: now
+        })
+        .where(
+          and(
+            eq(consultations.tenantId, tenantId),
+            eq(consultations.id, existingCons.id)
+          )
+        )
+        .returning();
+      existingCons = updated || existingCons;
+    }
+
+    const consultation = existingCons?.id
+      ? await this.getConsultationById(tenantId, existingCons.id, db)
+      : null;
+    const enrichedEnc = await this.getEncounterById(tenantId, encounterId, db);
+
+    return {
+      encounter: enrichedEnc || (updatedEnc as unknown as Encounter),
+      consultation: consultation!,
+      queueToken: updatedQueueToken
+    };
+  }
+
+  async vacateDoctorChamber(
+    tenantId: string,
+    doctorId: string,
+    dbClient = getDatabase()
+  ): Promise<{ success: boolean; doctorId: string; availabilityStatus: string; chamberRoom: string }> {
+    const db = requireDb(dbClient);
+    const resolvedDocId = await resolveDoctorId(db, tenantId, doctorId);
+
+    const now = new Date();
+
+    // Release any lingering uncompleted encounters assigned to this doctor back to WAITING
+    await db
+      .update(encounters)
+      .set({
+        status: 'WAITING',
+        doctorId: null,
+        updatedAt: now
+      })
+      .where(
+        and(
+          eq(encounters.tenantId, tenantId),
+          eq(encounters.doctorId, resolvedDocId),
+          inArray(encounters.status, ['IN_CONSULTATION', 'CALLED'])
+        )
+      );
+
+    // Release linked queues back to WAITING
+    await db
+      .update(encounterQueues)
+      .set({
+        queueStatus: 'WAITING',
+        doctorId: null,
+        updatedAt: now
+      })
+      .where(
+        and(
+          eq(encounterQueues.tenantId, tenantId),
+          eq(encounterQueues.doctorId, resolvedDocId),
+          inArray(encounterQueues.queueStatus, ['IN_PROGRESS', 'CALLED'])
+        )
+      );
+
+    // Cancel lingering active consultations for this doctor so they cannot resurrect
+    await db
+      .update(consultations)
+      .set({
+        consultationStatus: 'CANCELLED',
+        updatedAt: now
+      })
+      .where(
+        and(
+          eq(consultations.tenantId, tenantId),
+          eq(consultations.doctorId, resolvedDocId),
+          inArray(consultations.consultationStatus, ['STARTED', 'IN_PROGRESS', 'DRAFT'])
+        )
+      );
+
+    const [doc] = await db
+      .update(doctorProfiles)
+      .set({
+        availabilityStatus: 'AVAILABLE',
+        updatedAt: now
+      })
+      .where(
+        and(
+          eq(doctorProfiles.tenantId, tenantId),
+          eq(doctorProfiles.id, resolvedDocId)
+        )
+      )
+      .returning();
+
+    const chamberRoom = (doc?.metadata as any)?.chamber || 'Room 101';
+    return {
+      success: true,
+      doctorId: resolvedDocId,
+      availabilityStatus: 'AVAILABLE',
+      chamberRoom
     };
   }
 }

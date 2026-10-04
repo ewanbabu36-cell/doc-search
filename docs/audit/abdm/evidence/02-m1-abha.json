@@ -1,6 +1,6 @@
 {
   "testId": "ABDM-EXT-02",
-  "timestamp": "2026-09-27T09:27:11.129Z",
+  "timestamp": "2026-10-01T11:00:44.217Z",
   "milestone": "M1",
   "certificationLevel": "NHA_LEVEL_1_M1",
   "standard": "ABDM Gateway API v0.5 - ABHA Creation & Aadhaar OTP Verification",
@@ -9,7 +9,7 @@
   "external": false,
   "endpoint": "https://dev.abdm.gov.in/gateway/v0.5/identity/aadhaar/generateOtp",
   "method": "POST",
-  "requestCorrelationId": "CORR-M1-1790501231131",
+  "requestCorrelationId": "CORR-M1-1790852444299",
   "httpStatus": null,
   "status": "BLOCKED",
   "blockerReason": "External NHA sandbox connectivity blocked by missing sandbox credentials",
@@ -22,14 +22,14 @@
     "headers": {
       "Authorization": "Bearer <GATEWAY_TOKEN>",
       "X-CM-ID": "sbx",
-      "REQUEST-ID": "req-m1-1790501231131",
-      "TIMESTAMP": "2026-09-27T09:27:11.129Z"
+      "REQUEST-ID": "req-m1-1790852444299",
+      "TIMESTAMP": "2026-10-01T11:00:44.217Z"
     },
     "generateOtpPayload": {
       "aadhaar": "XXXXXXXX9842"
     },
     "verifyOtpPayload": {
-      "txnId": "txn-aadhaar-1790501231131",
+      "txnId": "txn-aadhaar-1790852444299",
       "otp": "XXXXXX"
     }
   },
@@ -52,5 +52,5 @@
   },
   "databaseVerified": false,
   "callbackVerified": false,
-  "evidenceHash": "3634bb39a9006ef649935ec21f99e8e466dad82fb157d7b16652498da399f9b3"
+  "evidenceHash": "c93dd7db068018da8ec8e88fb6c9ae8962600905a2459afd340c9e9d5e178331"
 }

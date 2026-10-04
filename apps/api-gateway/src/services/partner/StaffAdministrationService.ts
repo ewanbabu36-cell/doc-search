@@ -28,37 +28,66 @@ import type {
 
 export const ROLE_REQUIRED_MODULE_MAP: Record<string, string> = {
   INSURANCE_CLAIMS_MANAGER: 'TPA_INSURANCE',
+  TPA_OFFICER: 'TPA_INSURANCE',
+  TPA_DESK_LEAD: 'TPA_INSURANCE',
   BILLING_MANAGER: 'TPA_INSURANCE',
   CASHIER_BILLING_OFFICER: 'TPA_INSURANCE',
+  HOSPITAL_BILLING_LEAD: 'TPA_INSURANCE',
+  CLINIC_ACCOUNTANT: 'TPA_INSURANCE',
+
   CHIEF_PHARMACIST: 'PHARMACY_POS',
   DISPENSING_PHARMACIST: 'PHARMACY_POS',
+  DISPENSING_CHEMIST: 'PHARMACY_POS',
   PHARMACY_INVENTORY_CONTROLLER: 'PHARMACY_POS',
+  INVENTORY_STORE_MGR: 'PHARMACY_POS',
+  INVENTORY_STOCK_MGR: 'PHARMACY_POS',
   PHARMACY_BILLING_CLERK: 'PHARMACY_POS',
+  PHARMACY_CASHIER: 'PHARMACY_POS',
+
   WHOLESALE_PHARMACIST: 'PHARMACY_WHOLESALE',
   WHOLESALE_OPERATIONS_MANAGER: 'PHARMACY_WHOLESALE',
   WAREHOUSE_INVENTORY_CONTROLLER: 'PHARMACY_WHOLESALE',
   DISTRIBUTION_BILLING_OFFICER: 'PHARMACY_WHOLESALE',
   DRUG_COMPLIANCE_OFFICER: 'PHARMACY_WHOLESALE',
+
   LAB_DIRECTOR: 'PATHOLOGY_LIMS',
   PATHOLOGIST: 'PATHOLOGY_LIMS',
+  PATHOLOGIST_MD: 'PATHOLOGY_LIMS',
+  CHIEF_PATHOLOGIST: 'PATHOLOGY_LIMS',
   SENIOR_LAB_TECH: 'PATHOLOGY_LIMS',
+  LAB_TECHNICIAN_SR: 'PATHOLOGY_LIMS',
   LAB_TECHNICIAN: 'PATHOLOGY_LIMS',
   PHLEBOTOMIST: 'PATHOLOGY_LIMS',
   SAMPLE_ACCESSION_OFFICER: 'PATHOLOGY_LIMS',
+  LAB_RECEPTIONIST: 'PATHOLOGY_LIMS',
+
   RADIOLOGIST: 'RADIOLOGY_PACS',
+  RADIOLOGIST_MD: 'RADIOLOGY_PACS',
   CHIEF_RADIOLOGIST: 'RADIOLOGY_PACS',
   RADIOLOGY_TECH: 'RADIOLOGY_PACS',
+  RADIOGRAPHER_TECH: 'RADIOLOGY_PACS',
   PACS_ADMINISTRATOR: 'RADIOLOGY_PACS',
   MODALITY_TECHNICIAN: 'RADIOLOGY_PACS',
+  MODALITY_COORDINATOR: 'RADIOLOGY_PACS',
+
   CLINICAL_DIRECTOR: 'CLINICAL_EMR',
   CHIEF_MEDICAL_OFFICER: 'CLINICAL_EMR',
   HEAD_OF_DEPARTMENT: 'CLINICAL_EMR',
   ATTENDING_DOCTOR: 'CLINICAL_EMR',
   CONSULTANT_PHYSICIAN: 'CLINICAL_EMR',
   RESIDENT_DOCTOR: 'CLINICAL_EMR',
+  RMO_RESIDENT: 'CLINICAL_EMR',
+  HOSPITAL_SPECIALIST: 'CLINICAL_EMR',
   MEDICAL_OFFICER: 'CLINICAL_EMR',
+  CLINIC_DOCTOR: 'CLINICAL_EMR',
+  SURGEON: 'OPERATION_THEATRE',
+  OT_TECHNICIAN: 'OPERATION_THEATRE',
+  CARDIOLOGIST: 'CLINICAL_EMR',
+  EMERGENCY_PHYSICIAN: 'EMERGENCY_TRIAGE',
   CHARGE_NURSE: 'CLINICAL_EMR',
-  STAFF_NURSE: 'CLINICAL_EMR'
+  STAFF_NURSE: 'CLINICAL_EMR',
+  CLINIC_NURSE: 'CLINICAL_EMR',
+  HOSPITAL_DIRECTOR: 'CLINICAL_EMR'
 };
 
 export const VALID_PARTNER_STAFF_ROLES = new Set<string>([
@@ -71,6 +100,9 @@ export const VALID_PARTNER_STAFF_ROLES = new Set<string>([
   'OPERATIONS_MANAGER',
   'RECEPTIONIST',
   'FRONT_DESK_EXECUTIVE',
+  'FRONT_DESK_LEAD',
+  'CLINIC_FRONT_DESK',
+  'CLINIC_ACCOUNTANT',
   'COMPLIANCE_COORDINATOR',
   'HR_COORDINATOR',
   'DOCTOR',
@@ -95,27 +127,41 @@ const DOCTOR_SEAT_ROLES = new Set<string>([
   'ATTENDING_DOCTOR',
   'CONSULTANT_PHYSICIAN',
   'RESIDENT_DOCTOR',
+  'RMO_RESIDENT',
+  'HOSPITAL_SPECIALIST',
   'MEDICAL_OFFICER',
   'RADIOLOGIST',
+  'RADIOLOGIST_MD',
   'CHIEF_RADIOLOGIST',
   'PATHOLOGIST',
+  'PATHOLOGIST_MD',
+  'CHIEF_PATHOLOGIST',
   'LAB_DIRECTOR',
-  'DOCTOR'
+  'DOCTOR',
+  'CLINIC_DOCTOR',
+  'SURGEON',
+  'CARDIOLOGIST',
+  'EMERGENCY_PHYSICIAN'
 ]);
 
 export const PROFILE_ALLOWED_ROLES_MAP: Record<string, Set<string>> = {
   PATHOLOGY: new Set([
     'LAB_DIRECTOR',
     'PATHOLOGIST',
+    'PATHOLOGIST_MD',
+    'CHIEF_PATHOLOGIST',
     'SENIOR_LAB_TECH',
+    'LAB_TECHNICIAN_SR',
     'LAB_TECHNICIAN',
     'PHLEBOTOMIST',
     'SAMPLE_ACCESSION_OFFICER',
+    'LAB_RECEPTIONIST',
     'PARTNER_ADMIN',
     'FACILITY_ADMIN',
     'OPERATIONS_MANAGER',
     'RECEPTIONIST',
     'FRONT_DESK_EXECUTIVE',
+    'FRONT_DESK_LEAD',
     'BILLING_MANAGER',
     'CASHIER_BILLING_OFFICER',
     'INSURANCE_CLAIMS_MANAGER',
@@ -126,8 +172,12 @@ export const PROFILE_ALLOWED_ROLES_MAP: Record<string, Set<string>> = {
   PHARMACY: new Set([
     'CHIEF_PHARMACIST',
     'DISPENSING_PHARMACIST',
+    'DISPENSING_CHEMIST',
     'PHARMACY_INVENTORY_CONTROLLER',
+    'INVENTORY_STORE_MGR',
+    'INVENTORY_STOCK_MGR',
     'PHARMACY_BILLING_CLERK',
+    'PHARMACY_CASHIER',
     'PHARMACIST',
     'PARTNER_ADMIN',
     'FACILITY_ADMIN',
@@ -141,7 +191,10 @@ export const PROFILE_ALLOWED_ROLES_MAP: Record<string, Set<string>> = {
   PHARMACY_WHOLESALE: new Set([
     'CHIEF_PHARMACIST',
     'PHARMACY_INVENTORY_CONTROLLER',
+    'INVENTORY_STORE_MGR',
+    'INVENTORY_STOCK_MGR',
     'PHARMACY_BILLING_CLERK',
+    'PHARMACY_CASHIER',
     'PHARMACIST',
     'WHOLESALE_PHARMACIST',
     'WHOLESALE_OPERATIONS_MANAGER',
@@ -160,8 +213,12 @@ export const PROFILE_ALLOWED_ROLES_MAP: Record<string, Set<string>> = {
   PHARMACY_HYBRID: new Set([
     'CHIEF_PHARMACIST',
     'DISPENSING_PHARMACIST',
+    'DISPENSING_CHEMIST',
     'PHARMACY_INVENTORY_CONTROLLER',
+    'INVENTORY_STORE_MGR',
+    'INVENTORY_STOCK_MGR',
     'PHARMACY_BILLING_CLERK',
+    'PHARMACY_CASHIER',
     'PHARMACIST',
     'WHOLESALE_PHARMACIST',
     'WHOLESALE_OPERATIONS_MANAGER',
@@ -180,21 +237,29 @@ export const PROFILE_ALLOWED_ROLES_MAP: Record<string, Set<string>> = {
   RESTRICTED: new Set([]),
   DIAGNOSTIC_CENTRE: new Set([
     'RADIOLOGIST',
+    'RADIOLOGIST_MD',
     'CHIEF_RADIOLOGIST',
     'RADIOLOGY_TECH',
+    'RADIOGRAPHER_TECH',
     'PACS_ADMINISTRATOR',
     'MODALITY_TECHNICIAN',
+    'MODALITY_COORDINATOR',
     'LAB_DIRECTOR',
     'PATHOLOGIST',
+    'PATHOLOGIST_MD',
+    'CHIEF_PATHOLOGIST',
     'SENIOR_LAB_TECH',
+    'LAB_TECHNICIAN_SR',
     'LAB_TECHNICIAN',
     'PHLEBOTOMIST',
     'SAMPLE_ACCESSION_OFFICER',
+    'LAB_RECEPTIONIST',
     'PARTNER_ADMIN',
     'FACILITY_ADMIN',
     'OPERATIONS_MANAGER',
     'RECEPTIONIST',
     'FRONT_DESK_EXECUTIVE',
+    'FRONT_DESK_LEAD',
     'BILLING_MANAGER',
     'CASHIER_BILLING_OFFICER',
     'INSURANCE_CLAIMS_MANAGER',
@@ -214,6 +279,11 @@ export const PROFILE_ALLOWED_ROLES_MAP: Record<string, Set<string>> = {
     'STAFF_NURSE',
     'DOCTOR',
     'NURSE',
+    'CLINIC_DOCTOR',
+    'CLINIC_NURSE',
+    'CLINIC_FRONT_DESK',
+    'CLINIC_ACCOUNTANT',
+    'FRONT_DESK_LEAD',
     'PARTNER_ADMIN',
     'FACILITY_ADMIN',
     'OPERATIONS_MANAGER',
@@ -222,6 +292,8 @@ export const PROFILE_ALLOWED_ROLES_MAP: Record<string, Set<string>> = {
     'BILLING_MANAGER',
     'CASHIER_BILLING_OFFICER',
     'INSURANCE_CLAIMS_MANAGER',
+    'TPA_OFFICER',
+    'TPA_DESK_LEAD',
     'COMPLIANCE_COORDINATOR',
     'HR_COORDINATOR',
     'ADMIN'
@@ -489,6 +561,30 @@ export class StaffAdministrationService {
     }
   }
 
+  private async enforceStaffSeatQuotaIfApplicable(
+    employmentStatus: string | undefined,
+    session: SessionContext,
+    tx?: any,
+    excludeStaffId?: string
+  ): Promise<void> {
+    if (session.isSuperAdmin || !session.tenantId) return;
+    if (!isActiveStaffStatus(employmentStatus)) return;
+
+    const existingStaff = await staffAdministrationRepository.getStaff(session.tenantId, {}, tx);
+    const activeStaff = existingStaff.filter((s: any) => {
+      if (excludeStaffId && s.id === excludeStaffId) return false;
+      const status = s.employmentStatus || s.status || 'ACTIVE';
+      return isActiveStaffStatus(status);
+    });
+
+    const limitCheck = await entitlementService.checkStaffLimit(session.tenantId, activeStaff.length);
+    if (!limitCheck.allowed || activeStaff.length >= limitCheck.maxAllowed) {
+      throw AppError.forbidden(
+        `Staff seat quota exceeded (${activeStaff.length}/${limitCheck.maxAllowed} active staff seats used). Please upgrade your subscription plan or deactivate an existing staff member.`
+      );
+    }
+  }
+
   async getOverview(session: SessionContext, partnerId?: string, organizationId?: string) {
     return withSecurityContext(getDatabase(), session, async (tx) => {
       return staffAdministrationRepository.getOverview(session.tenantId, partnerId, organizationId, tx);
@@ -590,6 +686,12 @@ export class StaffAdministrationService {
         await this.enforceDoctorSeatQuotaIfApplicable(
           input.primaryRole,
           input.staffType,
+          (input as any).employmentStatus || (input as any).status || 'ACTIVE',
+          session,
+          tx
+        );
+
+        await this.enforceStaffSeatQuotaIfApplicable(
           (input as any).employmentStatus || (input as any).status || 'ACTIVE',
           session,
           tx
@@ -710,6 +812,12 @@ export class StaffAdministrationService {
           await this.enforceDoctorSeatQuotaIfApplicable(
             existing.primaryRole,
             existing.staffType,
+            input.newStatus,
+            session,
+            tx,
+            input.staffId
+          );
+          await this.enforceStaffSeatQuotaIfApplicable(
             input.newStatus,
             session,
             tx,

@@ -9,7 +9,7 @@ import {
 } from '@docsearch/auth';
 import type { PermissionAction, RoleType } from '@docsearch/api-contracts';
 import { AppError, ErrorCode, createLogger } from '@docsearch/shared-core';
-import { getDatabase, breakGlassAccess, eq, and } from '@docsearch/database';
+import { getDatabase, breakGlassAccess, operationalPartners, partnerProfiles, operationalFacilities, eq, and } from '@docsearch/database';
 import { env } from '../config/env.js';
 import { enforceIdempotency } from './idempotency.js';
 import { sessionRevocationService } from '../services/core/SessionRevocationService.js';
@@ -381,18 +381,52 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
       !request.session.roles.includes('COMPANY_ADMIN') &&
       clientPartnerId !== request.session.tenantId
     ) {
-      logger.warn('Cross-partner parameter tampering attempt blocked', {
-        requestId: request.id,
-        sessionTenantId: request.session.tenantId,
-        clientPartnerId,
-        userId: request.session.userId,
-        url: request.url
-      });
-      throw new AppError({
-        message: 'Access denied: Cross-partner parameter tampering is strictly forbidden',
-        code: ErrorCode.TENANT_ACCESS_DENIED,
-        statusCode: 403
-      });
+      let isPartnerOfTenant = false;
+      const db = getDatabase();
+      if (db && request.session.tenantId) {
+        try {
+          const [opP] = await db
+            .select({ id: operationalPartners.id })
+            .from(operationalPartners)
+            .where(
+              and(
+                eq(operationalPartners.tenantId, request.session.tenantId),
+                eq(operationalPartners.id, clientPartnerId)
+              )
+            )
+            .limit(1);
+          if (opP) {
+            isPartnerOfTenant = true;
+          } else {
+            const [pp] = await db
+              .select({ id: partnerProfiles.id })
+              .from(partnerProfiles)
+              .where(
+                and(
+                  eq(partnerProfiles.tenantId, request.session.tenantId),
+                  eq(partnerProfiles.id, clientPartnerId)
+                )
+              )
+              .limit(1);
+            if (pp) isPartnerOfTenant = true;
+          }
+        } catch {}
+      }
+
+      if (!isPartnerOfTenant) {
+        logger.warn('Cross-partner parameter tampering attempt blocked', {
+          requestId: request.id,
+          sessionTenantId: request.session.tenantId,
+          clientPartnerId,
+          userId: request.session.userId,
+          url: request.url
+        });
+        throw new AppError({
+          message: 'Access denied: Cross-partner parameter tampering is strictly forbidden',
+          code: ErrorCode.TENANT_ACCESS_DENIED,
+          statusCode: 403
+        });
+      }
     }
 
     // 2. Enforce Branch Isolation: Reject Unauthorized Client-Supplied branchId
@@ -409,29 +443,54 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
       !request.session.isSuperAdmin
     ) {
       // Determine if caller's session is restricted to a branch
+      const sessionRoles = request.session.roles as string[];
       const isTenantOrGlobalAdmin =
-        request.session.roles.includes('SUPER_ADMIN') ||
-        request.session.roles.includes('COMPANY_ADMIN') ||
-        (request.session.roles.includes('HOSPITAL_ADMIN') && request.session.dataScope !== 'branch') ||
-        (request.session.roles.includes('CLINIC_ADMIN') && request.session.dataScope !== 'branch');
+        sessionRoles.includes('SUPER_ADMIN') ||
+        sessionRoles.includes('COMPANY_ADMIN') ||
+        sessionRoles.includes('PARTNER_ADMIN') ||
+        sessionRoles.includes('OWNER') ||
+        sessionRoles.includes('HOSPITAL_DIRECTOR') ||
+        (sessionRoles.includes('HOSPITAL_ADMIN') && request.session.dataScope !== 'branch') ||
+        (sessionRoles.includes('CLINIC_ADMIN') && request.session.dataScope !== 'branch') ||
+        (sessionRoles.includes('CLINIC_DOCTOR') && request.session.dataScope !== 'branch');
 
       const isBranchScoped =
         request.session.dataScope === 'branch' ||
         (!isTenantOrGlobalAdmin && Boolean(request.session.branchId));
 
       if (isBranchScoped && request.session.branchId && clientBranchId !== request.session.branchId) {
-        logger.warn('Unauthorized cross-branch access attempt blocked', {
-          requestId: request.id,
-          sessionBranchId: request.session.branchId,
-          clientBranchId,
-          userId: request.session.userId,
-          url: request.url
-        });
-        throw new AppError({
-          message: 'Access denied: Access outside your assigned branch is forbidden',
-          code: ErrorCode.BRANCH_ACCESS_DENIED,
-          statusCode: 403
-        });
+        let isFacilityOfTenant = false;
+        const db = getDatabase();
+        if (db && request.session.tenantId && request.session.dataScope !== 'branch') {
+          try {
+            const [fac] = await db
+              .select({ id: operationalFacilities.id })
+              .from(operationalFacilities)
+              .where(
+                and(
+                  eq(operationalFacilities.tenantId, request.session.tenantId),
+                  eq(operationalFacilities.id, clientBranchId)
+                )
+              )
+              .limit(1);
+            if (fac) isFacilityOfTenant = true;
+          } catch {}
+        }
+
+        if (!isFacilityOfTenant) {
+          logger.warn('Unauthorized cross-branch access attempt blocked', {
+            requestId: request.id,
+            sessionBranchId: request.session.branchId,
+            clientBranchId,
+            userId: request.session.userId,
+            url: request.url
+          });
+          throw new AppError({
+            message: 'Access denied: Access outside your assigned branch is forbidden',
+            code: ErrorCode.BRANCH_ACCESS_DENIED,
+            statusCode: 403
+          });
+        }
       }
     }
 
@@ -493,6 +552,23 @@ export function requirePermission(resource: string, action: PermissionAction) {
         }
       }
       throw err;
+    }
+  };
+}
+
+/**
+ * PreHandler Factory: Enforces that the session has at least one of the specified permissions.
+ */
+export function requireAnyPermission(...permissions: { resource: string; action: PermissionAction }[]) {
+  return async (request: FastifyRequest, _reply: FastifyReply): Promise<void> => {
+    if (!request.session) {
+      throw AppError.unauthorized('Authentication required before checking permissions');
+    }
+    const hasAny = permissions.some((p) => RBACEvaluator.hasPermission(request.session, p.resource, p.action));
+    if (!hasAny) {
+      throw AppError.forbidden(
+        `Access denied: Requires at least one permission from: ${permissions.map((p) => `${p.resource}:${p.action}`).join(', ')}`
+      );
     }
   };
 }

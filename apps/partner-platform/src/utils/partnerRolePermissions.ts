@@ -236,26 +236,42 @@ export const PARTNER_ROLE_MODULE_PERMISSIONS: Record<string, PartnerModuleKey[] 
   CLINIC_DOCTOR: [
     'clinic-home',
     'clinical-consultation',
+    'opd-one-flow-express',
+    'pharmacy-medication',
+    'billing-revenue-cycle',
     'encounters-visits',
     'patient-registration',
     'nurse-triage-station',
-    'pharmacy-medication',
-    'billing-revenue-cycle',
     'doctor-management',
-    'clinical-investigation',
-    'radiology-imaging',
+    'staff-administration',
     'ai-clinical-cdss',
     'ai-chat-assistant',
     'telemedicine-rpm',
     'abdm-fhir-gateway',
     'whatsapp-patient-portal',
-    'staff-administration',
-    'organization-foundation',
-    'opd-one-flow-express',
-    'help-desk-exit-hub',
-    'preferred-partner-network',
-    'offers-rewards-hub',
-    'account-plan-features',
+    'my-smart-desk'
+  ],
+  CLINIC_FRONT_DESK: [
+    'clinic-home',
+    'patient-registration',
+    'encounters-visits',
+    'doctor-management',
+    'billing-revenue-cycle',
+    'abdm-fhir-gateway',
+    'whatsapp-patient-portal',
+    'my-smart-desk'
+  ],
+  CLINIC_NURSE: [
+    'clinic-home',
+    'nurse-triage-station',
+    'patient-registration',
+    'encounters-visits',
+    'my-smart-desk'
+  ],
+  CLINIC_ACCOUNTANT: [
+    'clinic-home',
+    'billing-revenue-cycle',
+    'patient-registration',
     'my-smart-desk'
   ],
 
@@ -498,27 +514,68 @@ export const PARTNER_ROLE_MODULE_PERMISSIONS: Record<string, PartnerModuleKey[] 
     'patient-registration'
   ],
   RECEPTIONIST: [
+    'clinic-home',
+    'hospital-home',
     'patient-registration',
     'encounters-visits',
+    'billing-revenue-cycle',
     'doctor-management',
     'abdm-fhir-gateway',
-    'whatsapp-patient-portal'
+    'whatsapp-patient-portal',
+    'my-smart-desk'
+  ],
+  FRONT_DESK: [
+    'clinic-home',
+    'hospital-home',
+    'patient-registration',
+    'encounters-visits',
+    'billing-revenue-cycle',
+    'doctor-management',
+    'abdm-fhir-gateway',
+    'whatsapp-patient-portal',
+    'my-smart-desk'
+  ],
+  FRONT_DESK_EXECUTIVE: [
+    'clinic-home',
+    'hospital-home',
+    'patient-registration',
+    'encounters-visits',
+    'billing-revenue-cycle',
+    'doctor-management',
+    'abdm-fhir-gateway',
+    'whatsapp-patient-portal',
+    'my-smart-desk'
   ],
   FRONT_DESK_LEAD: [
+    'clinic-home',
+    'hospital-home',
     'patient-registration',
     'encounters-visits',
     'billing-revenue-cycle',
     'doctor-management',
     'abdm-fhir-gateway',
-    'whatsapp-patient-portal'
+    'whatsapp-patient-portal',
+    'my-smart-desk'
   ],
   FRONT_DESK_RECEPTIONIST: [
+    'clinic-home',
+    'hospital-home',
     'patient-registration',
     'encounters-visits',
     'billing-revenue-cycle',
     'doctor-management',
     'abdm-fhir-gateway',
-    'whatsapp-patient-portal'
+    'whatsapp-patient-portal',
+    'my-smart-desk'
+  ],
+  LAB_RECEPTIONIST: [
+    'pathology-home',
+    'diagnostic-home',
+    'patient-registration',
+    'clinical-investigation',
+    'billing-revenue-cycle',
+    'whatsapp-patient-portal',
+    'my-smart-desk'
   ],
 
   // 8. Hospital Engineering, Quality & Supply
@@ -665,13 +722,18 @@ export function isPartnerModuleAllowed(
       'OWNER',
       'EXECUTIVE_ADMIN',
       'ADMINISTRATOR',
-      'CENTRE_MANAGER'
+      'CENTRE_MANAGER',
+      'CLINIC_DOCTOR',
+      'CLINIC_OWNER',
+      'CLINIC_ADMIN'
     ];
     if (
       authorizedAdminRoles.includes(norm) ||
       norm.endsWith('_ADMIN') ||
       norm.endsWith('_DIRECTOR') ||
-      norm.endsWith('_OWNER')
+      norm.endsWith('_OWNER') ||
+      norm === 'CLINIC_DOCTOR' ||
+      norm === 'CLINIC_OWNER'
     ) {
       return true;
     }
@@ -833,11 +895,11 @@ export function getRoleDefaultPerspective(userRole?: string): 'DOCTOR' | 'NURSE'
   if (!userRole) return 'DOCTOR';
   if (isHospitalExecutive(userRole)) return 'AUTO';
   const upper = userRole.toUpperCase();
+  if (upper.includes('FRONT') || upper.includes('RECEPT') || upper.includes('TOKEN') || upper.includes('CLERK') || upper.includes('INTAKE')) return 'FRONT_DESK';
   if (upper.includes('NURSE')) return 'NURSE';
   if (upper.includes('PHARMAC') || upper.includes('AUSHADHI')) return 'PHARMACY';
   if (upper.includes('LAB') || upper.includes('PATHO') || upper.includes('RADIO') || upper.includes('PHLEBOTOM')) return 'LAB';
   if (upper.includes('BILL') || upper.includes('CASH') || upper.includes('ACCOUNTS') || upper.includes('FINANCE')) return 'BILLING';
-  if (upper.includes('FRONT') || upper.includes('RECEPT') || upper.includes('TOKEN') || upper.includes('CLERK')) return 'FRONT_DESK';
   return 'DOCTOR';
 }
 
@@ -871,9 +933,11 @@ export function isDestructiveActionAllowed(userRole?: string): boolean {
     'CLINICAL_DIRECTOR',
     'PHARMACY_DIRECTOR',
     'LAB_DIRECTOR',
-    'CENTRE_MANAGER'
+    'CENTRE_MANAGER',
+    'CLINIC_DOCTOR',
+    'CLINIC_OWNER'
   ]);
-  return allowedRoles.has(upper) || upper === '*' || upper.includes('ADMIN') || upper.includes('DIRECTOR') || upper.includes('OWNER');
+  return allowedRoles.has(upper) || upper === '*' || upper.includes('ADMIN') || upper.includes('DIRECTOR') || upper.includes('OWNER') || upper.includes('CLINIC_DOCTOR');
 }
 
 /**

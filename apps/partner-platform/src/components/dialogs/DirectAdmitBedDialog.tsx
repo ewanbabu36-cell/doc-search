@@ -29,19 +29,53 @@ export const DirectAdmitBedDialog: React.FC<DirectAdmitBedDialogProps> = ({
   onClose,
   onSubmit,
   bed,
-  wards: _wards
+  wards: _wards,
+  tenantId
 }) => {
   const [patientName, setPatientName] = useState('');
   const [patientMrn, setPatientMrn] = useState(`MRN-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`);
   const [patientAge, setPatientAge] = useState('42');
   const [patientGender, setPatientGender] = useState<'M' | 'F' | 'OTHER'>('M');
-  const [admittingDoctorName, setAdmittingDoctorName] = useState('Dr. Rajesh Verma, MD (Internal Med)');
+  const [doctorOptions, setDoctorOptions] = useState<{ value: string; label: string }[]>([]);
+  const [admittingDoctorName, setAdmittingDoctorName] = useState('Attending Doctor');
   const [department, setDepartment] = useState('General Medicine');
   const [provisionalDiagnosis, setProvisionalDiagnosis] = useState('');
   const [admissionType, setAdmissionType] = useState<'EMERGENCY' | 'ELECTIVE'>('EMERGENCY');
   const [expectedStayDays, setExpectedStayDays] = useState('3');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    async function loadDocs() {
+      try {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('docsearch_auth_token') : null;
+        const res = await fetch('/api/v1/partner/staff/members?staffType=DOCTOR', {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+            const mapped = json.data.map((d: any) => {
+              const name = d.fullName || `Dr. ${d.firstName || ''} ${d.lastName || ''}`.trim() || 'Attending Physician';
+              const specialty = d.departmentName || d.specialty || 'General Medicine';
+              const label = `${name} (${specialty})`;
+              return { value: label, label };
+            });
+            setDoctorOptions(mapped);
+            if (mapped[0]) {
+              setAdmittingDoctorName(mapped[0].value);
+            }
+            return;
+          }
+        }
+      } catch {}
+      setDoctorOptions([
+        { value: 'Attending Consultant Physician', label: 'Attending Consultant Physician' }
+      ]);
+      setAdmittingDoctorName('Attending Consultant Physician');
+    }
+    loadDocs();
+  }, [tenantId]);
 
   if (!isOpen || !bed) return null;
 
@@ -196,12 +230,8 @@ export const DirectAdmitBedDialog: React.FC<DirectAdmitBedDialogProps> = ({
             <Select
               value={admittingDoctorName}
               onChange={(e) => setAdmittingDoctorName(e.target.value)}
-              options={[
-                { value: 'Dr. Rajesh Verma, MD (Internal Med)', label: 'Dr. Rajesh Verma, MD (Internal Med)' },
-                { value: 'Dr. Priya Nair, MD (Critical Care)', label: 'Dr. Priya Nair, MD (Critical Care)' },
-                { value: 'Dr. Amitabh Sen, MS (General Surgery)', label: 'Dr. Amitabh Sen, MS (General Surgery)' },
-                { value: 'Dr. Sunita Rao, DNB (Paediatrics)', label: 'Dr. Sunita Rao, DNB (Paediatrics)' },
-                { value: 'Dr. Vikram Malhotra, MCh (Orthopaedics)', label: 'Dr. Vikram Malhotra, MCh (Orthopaedics)' }
+              options={doctorOptions.length > 0 ? doctorOptions : [
+                { value: admittingDoctorName || 'Attending Physician', label: admittingDoctorName || 'Attending Physician' }
               ]}
             />
           </div>

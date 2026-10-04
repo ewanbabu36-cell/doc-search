@@ -380,7 +380,7 @@ export const WebDicomAiHeatmapViewer: React.FC = () => {
                       cursor: 'pointer'
                     }}
                   >
-                    {preset === 'DEFAULT' ? 'Standard' : preset.charAt(0) + preset.slice(1).toLowerCase() + ' Window'}
+                    {preset === 'DEFAULT' ? 'Standard' : (preset ? (preset.charAt(0) + preset.slice(1).toLowerCase() + ' Window') : 'Window')}
                   </button>
                 ))}
               </div>

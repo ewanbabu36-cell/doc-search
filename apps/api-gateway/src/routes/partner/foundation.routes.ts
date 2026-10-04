@@ -29,6 +29,30 @@ export const partnerFoundationRoutes: FastifyPluginAsync = async (fastify) => {
     }
   );
 
+  fastify.get(
+    '/api/v1/partner/foundation/organizations',
+    {
+      preHandler: [authenticate, requirePermission('partners', 'read')]
+    },
+    async (request) => {
+      const query = request.query as { partnerId?: string };
+      const organizations = await partnerFoundationService.getOrganizations(request.session, query?.partnerId);
+      return { success: true, data: organizations };
+    }
+  );
+
+  fastify.get(
+    '/api/v1/partner/foundation/facilities',
+    {
+      preHandler: [authenticate, requirePermission('partners', 'read')]
+    },
+    async (request) => {
+      const query = request.query as { partnerId?: string; organizationId?: string };
+      const facilities = await partnerFoundationService.getFacilities(request.session, query?.partnerId, query?.organizationId);
+      return { success: true, data: facilities };
+    }
+  );
+
   fastify.post(
     '/api/v1/partner/foundation/partners',
     {

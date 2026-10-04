@@ -149,7 +149,13 @@ const PRESET_CLINICAL_SCENARIOS: Record<string, { label: string; transcript: str
   }
 };
 
-export const AmbientVoiceScribeCapsule: React.FC = () => {
+export interface AmbientVoiceScribeCapsuleProps {
+  isConsultationMode?: boolean;
+}
+
+export const AmbientVoiceScribeCapsule: React.FC<AmbientVoiceScribeCapsuleProps> = ({
+  isConsultationMode = false
+}) => {
   // Check permission from localStorage / current session - strictly lock to prescribing clinicians
   const isAllowed = useMemo(() => {
     if (typeof window === 'undefined') return true;
@@ -164,6 +170,7 @@ export const AmbientVoiceScribeCapsule: React.FC = () => {
   }, []);
 
   const [isVisible, setIsVisible] = useState(true);
+  const [isMinimized, setIsMinimized] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isListening, setIsListening] = useState(true);
   const [language, setLanguage] = useState<ScribeLanguage>('HINGLISH');
@@ -185,6 +192,7 @@ export const AmbientVoiceScribeCapsule: React.FC = () => {
 
     const handleToggle = () => {
       setIsVisible(true);
+      setIsMinimized(false);
       setIsExpanded((prev) => !prev);
     };
 
@@ -193,6 +201,7 @@ export const AmbientVoiceScribeCapsule: React.FC = () => {
       if (e.altKey && !e.ctrlKey && !e.metaKey && e.key.toLowerCase() === 'm') {
         e.preventDefault();
         setIsVisible(true);
+        setIsMinimized(false);
         setIsExpanded((prev) => !prev);
       }
       // Ctrl + Enter or Cmd + Enter auto-fills when capsule is open
@@ -335,7 +344,7 @@ export const AmbientVoiceScribeCapsule: React.FC = () => {
     <div
       style={{
         position: 'fixed',
-        bottom: '16px',
+        bottom: isConsultationMode ? '76px' : '16px',
         right: '16px',
         zIndex: 9990,
         display: 'flex',
@@ -585,137 +594,202 @@ export const AmbientVoiceScribeCapsule: React.FC = () => {
         </div>
       )}
 
-      {/* Floating Audio Capsule Pill */}
-      <div
-        onClick={() => setIsExpanded((prev) => !prev)}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          padding: '8px 14px',
-          backgroundColor: 'var(--ds-color-surface, #0F172A)',
-          border: isListening ? '1.5px solid #06B6D4' : '1.5px solid rgba(255,255,255,0.15)',
-          borderRadius: '30px',
-          boxShadow: isListening
-            ? '0 10px 25px rgba(0,0,0,0.6), 0 0 20px rgba(6, 182, 212, 0.35)'
-            : '0 8px 20px rgba(0,0,0,0.4)',
-          cursor: 'pointer',
-          transition: 'all 0.2s ease',
-          color: 'var(--ds-color-text-primary, #F8FAFC)'
-        }}
-      >
-        {/* Animated Audio Waveform Bars */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '3px', height: '24px' }}>
-          {waveHeight.map((h, i) => (
-            <span
-              key={i}
-              style={{
-                width: '3px',
-                height: `${isListening ? h : 4}px`,
-                backgroundColor: isListening ? '#38BDF8' : '#64748B',
-                borderRadius: '2px',
-                transition: 'height 0.1s ease'
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Status indicator */}
-        <div className="ds-hide-on-mobile" style={{ display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span
-              style={{
-                width: '7px',
-                height: '7px',
-                borderRadius: '50%',
-                backgroundColor: isListening ? '#10B981' : '#EF4444',
-                boxShadow: isListening ? '0 0 8px #10B981' : 'none'
-              }}
-            />
-            <span style={{ fontSize: '0.78125rem', fontWeight: 800, color: 'var(--ds-color-text-primary, #F8FAFC)' }}>
-              AI Voice Scribe
-            </span>
-            <kbd
-              style={{
-                fontSize: '0.59375rem',
-                fontFamily: 'monospace',
-                backgroundColor: 'rgba(255,255,255,0.08)',
-                color: 'var(--ds-color-text-muted, #94A3B8)',
-                padding: '1px 4px',
-                borderRadius: '3px',
-                border: '1px solid rgba(255,255,255,0.1)'
-              }}
-              title="Shortcut: Alt+M to open or close"
-            >
-              Alt+M
-            </kbd>
-            <span
-              style={{
-                fontSize: '0.625rem',
-                fontWeight: 700,
-                color: '#38BDF8',
-                backgroundColor: 'rgba(6, 182, 212, 0.15)',
-                padding: '1px 5px',
-                borderRadius: '4px'
-              }}
-            >
-              {language}
-            </span>
-          </div>
-          <span style={{ fontSize: '0.6875rem', color: 'var(--ds-color-text-muted, #94A3B8)' }}>
-            {isListening ? 'Ambient listening... (Click to expand)' : 'Paused (Click to activate)'}
-          </span>
-        </div>
-
-        {/* 1-Click Fast Auto-Fill Pill Button inside Capsule */}
+      {/* Minimized or Expanded Floating Audio Capsule Pill */}
+      {isMinimized ? (
         <button
           type="button"
-          className="ds-hide-on-mobile"
-          onClick={(e) => {
-            e.stopPropagation();
-            triggerAutoFill();
-          }}
-          title="1-Click Auto-Fill Prescription & Diagnosis into active consultation"
+          onClick={() => setIsMinimized(false)}
+          title="Open AI Voice Scribe (Alt + M)"
           style={{
-            marginLeft: '4px',
-            backgroundColor: 'rgba(6, 182, 212, 0.2)',
-            border: '1px solid #06B6D4',
-            color: '#38BDF8',
-            borderRadius: '20px',
-            padding: '4px 10px',
-            fontSize: '0.6875rem',
-            fontWeight: 800,
+            width: '42px',
+            height: '42px',
+            borderRadius: '50%',
+            backgroundColor: 'var(--ds-color-surface, #0F172A)',
+            border: isListening ? '1.5px solid #06B6D4' : '1.5px solid rgba(255,255,255,0.2)',
+            boxShadow: isListening
+              ? '0 6px 20px rgba(6, 182, 212, 0.45)'
+              : '0 4px 14px rgba(0,0,0,0.5)',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '4px'
+            justifyContent: 'center',
+            position: 'relative',
+            transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+            color: '#38BDF8'
           }}
         >
-          <span>⚡</span>
-          <span>Auto-Fill</span>
+          <span style={{ fontSize: '1.2rem' }}>🎙️</span>
+          <span
+            style={{
+              position: 'absolute',
+              top: '3px',
+              right: '3px',
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              backgroundColor: isListening ? '#10B981' : '#EF4444',
+              boxShadow: isListening ? '0 0 6px #10B981' : 'none'
+            }}
+          />
         </button>
-
-        {/* Toggle Mic Button */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            toggleMic();
-          }}
-          title={isListening ? 'Pause listening' : 'Start listening'}
+      ) : (
+        <div
+          onClick={() => setIsExpanded((prev) => !prev)}
           style={{
-            background: 'none',
-            border: 'none',
-            color: isListening ? '#EF4444' : '#10B981',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            padding: '8px 14px',
+            backgroundColor: 'var(--ds-color-surface, #0F172A)',
+            border: isListening ? '1.5px solid #06B6D4' : '1.5px solid rgba(255,255,255,0.15)',
+            borderRadius: '30px',
+            boxShadow: isListening
+              ? '0 10px 25px rgba(0,0,0,0.6), 0 0 20px rgba(6, 182, 212, 0.35)'
+              : '0 8px 20px rgba(0,0,0,0.4)',
             cursor: 'pointer',
-            fontSize: '1rem',
-            padding: '2px 4px',
-            lineHeight: 1
+            transition: 'all 0.2s ease',
+            color: 'var(--ds-color-text-primary, #F8FAFC)'
           }}
         >
-          {isListening ? '⏸' : '▶'}
-        </button>
-      </div>
+          {/* Animated Audio Waveform Bars */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '3px', height: '24px' }}>
+            {waveHeight.map((h, i) => (
+              <span
+                key={i}
+                style={{
+                  width: '3px',
+                  height: `${isListening ? h : 4}px`,
+                  backgroundColor: isListening ? '#38BDF8' : '#64748B',
+                  borderRadius: '2px',
+                  transition: 'height 0.1s ease'
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Status indicator */}
+          <div className="ds-hide-on-mobile" style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span
+                style={{
+                  width: '7px',
+                  height: '7px',
+                  borderRadius: '50%',
+                  backgroundColor: isListening ? '#10B981' : '#EF4444',
+                  boxShadow: isListening ? '0 0 8px #10B981' : 'none'
+                }}
+              />
+              <span style={{ fontSize: '0.78125rem', fontWeight: 800, color: 'var(--ds-color-text-primary, #F8FAFC)' }}>
+                AI Voice Scribe
+              </span>
+              <kbd
+                style={{
+                  fontSize: '0.59375rem',
+                  fontFamily: 'monospace',
+                  backgroundColor: 'rgba(255,255,255,0.08)',
+                  color: 'var(--ds-color-text-muted, #94A3B8)',
+                  padding: '1px 4px',
+                  borderRadius: '3px',
+                  border: '1px solid rgba(255,255,255,0.1)'
+                }}
+                title="Shortcut: Alt+M to open or close"
+              >
+                Alt+M
+              </kbd>
+              <span
+                style={{
+                  fontSize: '0.625rem',
+                  fontWeight: 700,
+                  color: '#38BDF8',
+                  backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                  padding: '1px 5px',
+                  borderRadius: '4px'
+                }}
+              >
+                {language}
+              </span>
+            </div>
+            <span style={{ fontSize: '0.6875rem', color: 'var(--ds-color-text-muted, #94A3B8)' }}>
+              {isListening ? 'Ambient listening... (Click to expand)' : 'Paused (Click to activate)'}
+            </span>
+          </div>
+
+          {/* 1-Click Fast Auto-Fill Pill Button inside Capsule */}
+          <button
+            type="button"
+            className="ds-hide-on-mobile"
+            onClick={(e) => {
+              e.stopPropagation();
+              triggerAutoFill();
+            }}
+            title="1-Click Auto-Fill Prescription & Diagnosis into active consultation"
+            style={{
+              marginLeft: '4px',
+              backgroundColor: 'rgba(6, 182, 212, 0.2)',
+              border: '1px solid #06B6D4',
+              color: '#38BDF8',
+              borderRadius: '20px',
+              padding: '4px 10px',
+              fontSize: '0.6875rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}
+          >
+            <span>⚡</span>
+            <span>Auto-Fill</span>
+          </button>
+
+          {/* Toggle Mic Button */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleMic();
+            }}
+            title={isListening ? 'Pause listening' : 'Start listening'}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: isListening ? '#EF4444' : '#10B981',
+              cursor: 'pointer',
+              fontSize: '1rem',
+              padding: '2px 4px',
+              lineHeight: 1
+            }}
+          >
+            {isListening ? '⏸' : '▶'}
+          </button>
+
+          {/* Minimize Button */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsMinimized(true);
+            }}
+            title="Minimize Scribe (Alt + M)"
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--ds-color-text-muted, #94A3B8)',
+              cursor: 'pointer',
+              fontSize: '0.875rem',
+              padding: '2px 4px',
+              lineHeight: 1,
+              marginLeft: '2px',
+              borderRadius: '4px',
+              transition: 'color 0.15s ease'
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = '#F8FAFC')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ds-color-text-muted, #94A3B8)')}
+          >
+            ✕
+          </button>
+        </div>
+      )}
     </div>
   );
 };

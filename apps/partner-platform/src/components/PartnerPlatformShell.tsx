@@ -10,6 +10,7 @@ import {
   isHospitalModuleLocked
 } from '@docsearch/shared-core';
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { encounterService } from '../services/encounter-service.js';
 
 // Lazy-loaded secondary modals & drawers for minimal initial partner platform shell bundle
 const UniversalAccountSettingsModal = React.lazy(() => import('./common/UniversalAccountSettingsModal.js').then(m => ({ default: m.UniversalAccountSettingsModal })));
@@ -77,7 +78,8 @@ const OpdOneFlowExpressView = React.lazy(() => import('./views/OpdOneFlowExpress
 const CentralHelpDeskExitHubView = React.lazy(() => import('./views/CentralHelpDeskExitHubView.js').then(m => ({ default: m.CentralHelpDeskExitHubView })));
 const PreferredPartnerNetworkView = React.lazy(() => import('./views/PreferredPartnerNetworkView.js').then(m => ({ default: m.PreferredPartnerNetworkView })));
 const HospitalInHouseClosedLoopView = React.lazy(() => import('./views/HospitalInHouseClosedLoopView.js').then(m => ({ default: m.HospitalInHouseClosedLoopView })));
-import { isPartnerModuleAllowed, isModuleAllowedForPartnerProfile, isWorkspaceAllowedForPartnerProfile, isDestructiveActionAllowed, isHospitalExecutive, getRoleDefaultPerspective, isVoiceScribeAllowed } from '../utils/partnerRolePermissions.js';
+import { isPartnerModuleAllowed, isModuleAllowedForPartnerProfile, isWorkspaceAllowedForPartnerProfile, isDestructiveActionAllowed, isHospitalExecutive, getRoleDefaultPerspective, isVoiceScribeAllowed, isClinicianRole } from '../utils/partnerRolePermissions.js';
+const FrontDeskWorkstationView = React.lazy(() => import('./views/FrontDeskWorkstationView.js').then(m => ({ default: m.FrontDeskWorkstationView })));
 const StaffOperationalRoleDashboard = React.lazy(() => import('./dashboard/StaffOperationalRoleDashboard.js').then(m => ({ default: m.StaffOperationalRoleDashboard })));
 const RoleTailoredSmartDeskView = React.lazy(() => import('./views/RoleTailoredSmartDeskView.js').then(m => ({ default: m.RoleTailoredSmartDeskView })));
 const GlobalFounderApprovalsModal = React.lazy(() => import('./common/GlobalFounderApprovalsModal.js').then(m => ({ default: m.GlobalFounderApprovalsModal })));
@@ -363,8 +365,8 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
       currentUser?.permissions,
       currentUser?.accessibleFeatures
     )
-      ? parsed.activeModule
-      : defaultMod;
+      ? (validWorkspace === 'CLINIC' && (parsed.activeModule === 'my-smart-desk' || !parsed.activeModule) ? 'clinic-home' : parsed.activeModule)
+      : (validWorkspace === 'CLINIC' ? 'clinic-home' : defaultMod);
     return {
       ...parsed,
       workspace: validWorkspace,
@@ -374,6 +376,14 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
 
   const [workspace, setWorkspace] = useState<OrganizationWorkspaceType>(initialRoute.workspace);
   const [activeModule, setActiveModule] = useState<PartnerModuleKey>(initialRoute.activeModule);
+  const effectiveWorkspace = useMemo(() => normalizeFacilityProfile(workspace).workspace, [workspace]);
+
+  // Auto-redirect my-smart-desk to clinic-home for CLINIC workspace
+  useEffect(() => {
+    if (effectiveWorkspace === 'CLINIC' && activeModule === 'my-smart-desk') {
+      setActiveModule('clinic-home');
+    }
+  }, [effectiveWorkspace, activeModule]);
 
   // Synchronize state whenever currentUser changes (e.g. instant staff switch or login)
   useEffect(() => {
@@ -854,6 +864,27 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
     : (liveKycStatus === 'KYC_VERIFIED' ? 'KYC_VERIFIED' : (dynamicPartner?.kycStatus || currentUser?.kycStatus || 'PENDING_ADMIN_VERIFICATION'));
   const resolvedTenantId = (currentUser as any)?.tenantId || '11111111-1111-4111-8111-111111111111';
 
+  // Live waiting patient telemetry for sidebar Chamber action card
+  const [liveWaitingCount, setLiveWaitingCount] = useState<number>(3);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchWaiting = async () => {
+      try {
+        const ov = await encounterService.getOverview(resolvedTenantId).catch(() => null);
+        if (isMounted && ov && typeof ov.waitingQueueCount === 'number') {
+          setLiveWaitingCount(ov.waitingQueueCount);
+        }
+      } catch {}
+    };
+    void fetchWaiting();
+    const interval = setInterval(fetchWaiting, 15000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [resolvedTenantId]);
+
   // Auto-open Password tab in Settings Modal on first-time login
   useEffect(() => {
     if (currentUser?.mustChangePassword) {
@@ -1004,14 +1035,25 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
       setIsFastOpdDrawerOpen(true);
     };
 
+    const handleExitCockpit = () => {
+      setActiveModule('clinic-home');
+      setIsDoctorFocusMode(false);
+      setIsSidebarCollapsed(false);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('docsearch_doctor_focus_mode', 'false');
+      }
+    };
+
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('docsearch:toggle_doctor_focus', handleToggleFocus);
     window.addEventListener('docsearch:open_fast_opd', handleOpenFastOpd);
+    window.addEventListener('docsearch:exit_cockpit', handleExitCockpit);
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('docsearch:toggle_doctor_focus', handleToggleFocus);
       window.removeEventListener('docsearch:open_fast_opd', handleOpenFastOpd);
+      window.removeEventListener('docsearch:exit_cockpit', handleExitCockpit);
     };
   }, []);
 
@@ -1038,18 +1080,34 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
 
   const { theme, toggleTheme } = useTheme();
 
+  const verifiedProfile = useMemo(() => getUnifiedPartnerProfile(currentUser), [currentUser]);
+
+  const cleanFacilityBrand = useMemo(() => {
+    if (verifiedProfile?.entityLegalName && !verifiedProfile.entityLegalName.toUpperCase().includes('INDEPENDENT_CLINIC')) {
+      return verifiedProfile.entityLegalName;
+    }
+    const raw = currentUser?.tenantName || 'MediSphere Healthcare Clinic';
+    if (raw && typeof raw === 'string' && raw.toUpperCase().includes('INDEPENDENT_CLINIC')) {
+      const parts = raw.split(/[\s_]+/);
+      const clean = parts[0] || 'Care';
+      const capitalized = clean ? (clean.charAt(0).toUpperCase() + clean.slice(1).toLowerCase()) : 'Care';
+      return `Dr. ${capitalized} Care Clinic & Polyclinic`;
+    }
+    return raw;
+  }, [verifiedProfile, currentUser?.tenantName]);
+
   // Dynamic Workspace definitions with specialized colors & tags
   const workspaceProfiles: Record<OrganizationWorkspaceType, { name: string; icon: string; badge: string; color: string; defaultModule: PartnerModuleKey }> = {
     ENTERPRISE_COMMAND: { name: currentUser?.tenantName || 'Healthcare Enterprise HQ', icon: '👑', badge: 'All-in-One Multi-Org Hub', color: '#8B5CF6', defaultModule: 'enterprise-home' },
-    HOSPITAL: { name: currentUser?.tenantName || 'Hospital & Trauma Care', icon: '🏥', badge: currentUser?.planTier || 'Inpatient & Tertiary Suite', color: '#3B82F6', defaultModule: 'hospital-home' },
-    CLINIC: { name: currentUser?.tenantName || 'Doctor Clinic & OPD Desk', icon: '🩺', badge: currentUser?.planTier || 'OPD & Scribe EMR', color: '#06B6D4', defaultModule: 'clinic-home' },
+    HOSPITAL: { name: cleanFacilityBrand || currentUser?.tenantName || 'Hospital & Trauma Care', icon: '🏥', badge: currentUser?.planTier || 'Inpatient & Tertiary Suite', color: '#3B82F6', defaultModule: 'hospital-home' },
+    CLINIC: { name: cleanFacilityBrand, icon: '🩺', badge: currentUser?.planTier || 'OPD & Polyclinic', color: '#06B6D4', defaultModule: 'clinic-home' },
     PHARMACY: { name: currentUser?.tenantName || 'Pharmacy & Medical Store POS', icon: '💊', badge: currentUser?.planTier || 'Retail POS & Inventory', color: '#10B981', defaultModule: 'pharmacy-home' },
     PATHOLOGY: { name: currentUser?.tenantName || 'Pathology & Diagnostic LIS Hub', icon: '🧪', badge: currentUser?.planTier || 'Diagnostic LIS Hub', color: '#A855F7', defaultModule: 'pathology-home' },
     DIAGNOSTIC_CENTRE: { name: currentUser?.tenantName || 'Imaging & Radiology Centre', icon: '🔬', badge: currentUser?.planTier || 'DICOM & Modality Centre', color: '#F59E0B', defaultModule: 'diagnostic-home' }
   };
 
   const currentWsp = workspaceProfiles[workspace] || workspaceProfiles[normalizeFacilityProfile(workspace).workspace as OrganizationWorkspaceType] || {
-    name: currentUser?.tenantName || 'Healthcare Facility',
+    name: cleanFacilityBrand,
     icon: '🏥',
     badge: currentUser?.planTier || 'Healthcare Suite',
     color: '#3B82F6',
@@ -1233,8 +1291,8 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
       ]);
     }
 
-    if ((isSimpleMode || !isHospitalExecutive(currentUser?.role)) && (effectiveWorkspace === 'HOSPITAL' || effectiveWorkspace === 'ENTERPRISE_COMMAND' || effectiveWorkspace === 'CLINIC')) {
-      const homeId: PartnerModuleKey = effectiveWorkspace === 'HOSPITAL' ? 'hospital-home' : effectiveWorkspace === 'CLINIC' ? 'clinic-home' : 'enterprise-home';
+    if ((isSimpleMode || !isHospitalExecutive(currentUser?.role)) && (effectiveWorkspace === 'HOSPITAL' || effectiveWorkspace === 'ENTERPRISE_COMMAND')) {
+      const homeId: PartnerModuleKey = effectiveWorkspace === 'HOSPITAL' ? 'hospital-home' : 'enterprise-home';
       const roleUpper = rolePerspective !== 'AUTO'
         ? rolePerspective
         : String(currentUser?.role || '').toUpperCase();
@@ -1255,7 +1313,10 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
           { id: 'opd-one-flow-express', label: '1-Flow OPD Express', icon: <span>⚡</span>, isActive: activeModule === 'opd-one-flow-express', onClick: () => setActiveModule('opd-one-flow-express') },
           { id: 'encounters-visits', label: 'Queue & Token Dispatch', icon: <span>⏱️</span>, isActive: activeModule === 'encounters-visits', onClick: () => setActiveModule('encounters-visits') },
           { id: 'inpatient-management', label: 'Inpatient Bed Rounds', icon: <span>🛏️</span>, isActive: activeModule === 'inpatient-management' && inpatientTab === 'patient-census', onClick: () => { setActiveModule('inpatient-management'); setInpatientTab('patient-census'); } },
-          { id: 'telemedicine-rpm', label: 'Telehealth Video Consult', icon: <span>📹</span>, isActive: activeModule === 'telemedicine-rpm', onClick: () => setActiveModule('telemedicine-rpm') }
+          { id: 'telemedicine-rpm', label: 'Telehealth Video Consult', icon: <span>📹</span>, isActive: activeModule === 'telemedicine-rpm', onClick: () => setActiveModule('telemedicine-rpm') },
+          ...(roleUpper.includes('CLINIC') || currentUser?.organizationType === 'CLINIC' ? [
+            { id: 'staff-administration' as PartnerModuleKey, label: 'Staff & Team Directory', icon: <span>👥</span>, isActive: activeModule === 'staff-administration', onClick: () => setActiveModule('staff-administration') }
+          ] : [])
         ];
       } else if (isNurseRole) {
         roleTitle = '👩‍⚕️ Nursing Station';
@@ -1359,40 +1420,54 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
       return filterSectionsByRole([
         {
           items: [
-            { id: 'my-smart-desk', label: '⚡ My Smart Desk', icon: <span>⚡</span>, isActive: activeModule === 'my-smart-desk', onClick: () => setActiveModule('my-smart-desk') },
-            { id: 'clinic-home', label: 'Home Overview', icon: <span>🏠</span>, isActive: activeModule === 'clinic-home', onClick: () => setActiveModule('clinic-home') }
+            {
+              id: 'clinic-home',
+              label: '🏠 Clinic Dashboard',
+              icon: <span>🏠</span>,
+              isActive: isHomeModule || activeModule === 'clinic-home' || activeModule === 'my-smart-desk',
+              onClick: () => setActiveModule('clinic-home')
+            },
+            {
+              id: 'clinical-consultation',
+              label: '🩺 Doctor Chamber',
+              icon: <span>🩺</span>,
+              isActive: activeModule === 'clinical-consultation',
+              onClick: () => setActiveModule('clinical-consultation')
+            },
+            {
+              id: 'pharmacy-medication',
+              label: '💊 Pharmacy & Dispensary',
+              icon: <span>💊</span>,
+              isActive: activeModule === 'pharmacy-medication',
+              onClick: () => setActiveModule('pharmacy-medication')
+            },
+            {
+              id: 'billing-revenue-cycle',
+              label: '💰 Cashier & Daily Billing',
+              icon: <span>⚡</span>,
+              isActive: activeModule === 'billing-revenue-cycle',
+              onClick: () => setActiveModule('billing-revenue-cycle')
+            }
           ]
         },
         {
-          title: '1. Front Desk & Triage',
+          title: 'Admin & Settings',
           items: [
-            { id: 'patient-registration', label: 'Patient Tokens & MPI', icon: <span>📇</span>, isActive: activeModule === 'patient-registration', onClick: () => setActiveModule('patient-registration') },
-            { id: 'nurse-triage-station', label: 'Nurse Vitals Station', icon: <span>👩‍⚕️</span>, isActive: activeModule === 'nurse-triage-station', onClick: () => setActiveModule('nurse-triage-station') },
-            { id: 'encounters-visits', label: 'OPD Queue & Appointments', icon: <span>⏱️</span>, isActive: activeModule === 'encounters-visits', onClick: () => setActiveModule('encounters-visits') }
-          ]
-        },
-        {
-          title: '2. Doctor OPD & Clinical Desk',
-          items: [
-            { id: 'clinical-consultation', label: 'Consultation & EMR', icon: <span>🩺</span>, isActive: activeModule === 'clinical-consultation', onClick: () => setActiveModule('clinical-consultation') },
-            { id: 'ai-clinical-cdss', label: 'AI Voice Scribe & CDSS', icon: <span>🎙️</span>, isActive: activeModule === 'ai-clinical-cdss', onClick: () => setActiveModule('ai-clinical-cdss') },
-            { id: 'telemedicine-rpm', label: 'Telemedicine Video', icon: <span>📹</span>, isActive: activeModule === 'telemedicine-rpm', onClick: () => setActiveModule('telemedicine-rpm') }
-          ]
-        },
-        {
-          title: '3. Pharmacy & Billing',
-          items: [
-            { id: 'pharmacy-medication', label: 'Clinic Dispensary POS', icon: <span>💊</span>, isActive: activeModule === 'pharmacy-medication', onClick: () => setActiveModule('pharmacy-medication') },
-            { id: 'billing-revenue-cycle', label: 'Cashier & Instant UPI', icon: <span>⚡</span>, isActive: activeModule === 'billing-revenue-cycle', onClick: () => setActiveModule('billing-revenue-cycle') },
-            { id: 'whatsapp-patient-portal', label: 'Digital Rx & Reports', icon: <span>📲</span>, isActive: activeModule === 'whatsapp-patient-portal', onClick: () => setActiveModule('whatsapp-patient-portal') },
-            { id: 'abdm-fhir-gateway', label: 'ABDM Scan & Share', icon: <span>🇮🇳</span>, isActive: activeModule === 'abdm-fhir-gateway', onClick: () => setActiveModule('abdm-fhir-gateway') }
-          ]
-        },
-        {
-          title: '4. Care Team & Governance',
-          items: [
-            { id: 'staff-administration', label: 'Clinic Staff & Care Team', icon: <span>👥</span>, isActive: activeModule === 'staff-administration', onClick: () => setActiveModule('staff-administration') },
-            { id: 'doctor-management', label: 'Doctor Timings & Roster', icon: <span>👨‍⚕️</span>, isActive: activeModule === 'doctor-management', onClick: () => setActiveModule('doctor-management') }
+            {
+              id: 'staff-administration',
+              label: '👥 Clinic Staff',
+              icon: <span>👥</span>,
+              isActive: activeModule === 'staff-administration',
+              onClick: () => setActiveModule('staff-administration')
+            },
+            {
+              id: 'chamber-settings-modal',
+              moduleId: 'clinic-home',
+              label: '⚙️ Chamber Settings',
+              icon: <span>⚙️</span>,
+              isActive: isSettingsModalOpen,
+              onClick: () => setIsSettingsModalOpen(true)
+            }
           ]
         }
       ]);
@@ -2011,7 +2086,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
             : 'management'
         }
         sidebar={
-          isDoctorFocusMode ? null : (
+          isDoctorFocusMode || activeModule === 'clinical-consultation' ? null : (
             <Sidebar
               brand={
                 <DocSearchResponsiveBrand
@@ -2087,39 +2162,74 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
                     {!isHospitalExecutive(currentUser?.role) ? (
-                      /* Sandboxed Persona Station Header for Operational Staff */
+                      /* ⚡ Live Interactive Chamber Action Card */
                       <div
                         style={{
                           display: 'flex',
                           flexDirection: 'column',
-                          gap: '6px',
-                          padding: '10px 12px',
-                          borderRadius: '10px',
-                          backgroundColor: 'rgba(16, 185, 129, 0.08)',
-                          border: '1.5px solid rgba(16, 185, 129, 0.3)'
+                          gap: '8px',
+                          padding: '12px 14px',
+                          borderRadius: '12px',
+                          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.14) 0%, rgba(6, 182, 212, 0.08) 100%)',
+                          border: '1.5px solid rgba(16, 185, 129, 0.4)',
+                          boxShadow: '0 4px 16px rgba(16, 185, 129, 0.15)',
+                          transition: 'all 0.2s ease'
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#34D399', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                            🔒 Assigned Station
+                          <span style={{ fontSize: '0.72rem', fontWeight: 900, color: '#34D399', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10B981', boxShadow: '0 0 8px #10B981' }} />
+                            CHAMBER 1 ({currentUser?.name ? currentUser.name.toUpperCase() : 'ATTENDING PHYSICIAN'})
                           </span>
-                          <span style={{ fontSize: '0.6rem', color: '#10B981', fontWeight: 700, backgroundColor: 'rgba(16, 185, 129, 0.2)', padding: '1px 5px', borderRadius: '4px' }}>
-                            RBAC LOCKED
+                          <span style={{ fontSize: '0.65rem', color: '#FCD34D', fontWeight: 800, backgroundColor: 'rgba(245, 158, 11, 0.2)', padding: '2px 6px', borderRadius: '4px' }}>
+                            👥 {liveWaitingCount} Waiting
                           </span>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '1.25rem' }}>
-                            {rolePerspective === 'DOCTOR' ? '🩺' : rolePerspective === 'NURSE' ? '👩‍⚕️' : rolePerspective === 'PHARMACY' ? '💊' : rolePerspective === 'LAB' ? '🧪' : rolePerspective === 'BILLING' ? '💳' : '📇'}
-                          </span>
-                          <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                            <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#FFFFFF', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
-                              {rolePerspective === 'DOCTOR' ? 'Doctor OPD Cockpit' : rolePerspective === 'NURSE' ? 'Nursing Station' : rolePerspective === 'PHARMACY' ? 'Pharmacy Counter' : rolePerspective === 'LAB' ? 'Pathology Workbench' : rolePerspective === 'BILLING' ? 'Cashier & POS Desk' : 'Front Desk Reception'}
-                            </span>
-                            <span style={{ fontSize: '0.65rem', color: '#94A3B8', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
-                              {currentUser?.name || currentUser?.roleTitle || 'Authorized Staff'}
-                            </span>
-                          </div>
-                        </div>
+
+                        {/* Direct 1-Click Action Button */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (rolePerspective === 'DOCTOR' || effectiveWorkspace === 'CLINIC') {
+                              setActiveModule('clinical-consultation');
+                            } else if (rolePerspective === 'PHARMACY') {
+                              setActiveModule('pharmacy-medication');
+                            } else if (rolePerspective === 'BILLING') {
+                              setActiveModule('billing-revenue-cycle');
+                            } else {
+                              setActiveModule('clinic-home');
+                            }
+                          }}
+                          style={{
+                            width: '100%',
+                            padding: '8px 12px',
+                            borderRadius: '8px',
+                            backgroundColor: '#0284C7',
+                            border: 'none',
+                            color: '#FFFFFF',
+                            fontSize: '0.78rem',
+                            fontWeight: 900,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            boxShadow: '0 2px 10px rgba(2, 132, 199, 0.45)',
+                            transition: 'all 0.15s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = '#0369A1';
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = '#0284C7';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                          }}
+                          title="Click to jump directly into consultation room"
+                        >
+                          <span>🩺</span>
+                          <span>Open Chamber ➔</span>
+                        </button>
                       </div>
                     ) : (
                       /* Executive Multi-Desk Switcher for Hospital Directors / Leadership */
@@ -2348,7 +2458,8 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
           )
         }
       header={
-        <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+        activeModule === 'clinical-consultation' ? null : (
+          <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
           {isDoctorFocusMode ? (
             <div
             style={{
@@ -2367,10 +2478,10 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                 <span style={{ fontSize: '1.25rem' }}>🩺</span>
                 <div>
                   <div style={{ fontSize: '0.9375rem', fontWeight: 800, color: 'var(--ds-color-text-primary, #F8FAFC)' }}>
-                    {currentUser?.name || 'Dr. Aryan Sharma, MD'}
+                    {currentUser?.name || 'Doctor On Duty'}
                   </div>
                   <div style={{ fontSize: '0.6875rem', color: '#38BDF8', fontWeight: 600 }}>
-                    Consulting Physician • OPD Desk (Room #04)
+                    Consulting Physician • OPD Desk (Room 101)
                   </div>
                 </div>
               </div>
@@ -2479,51 +2590,75 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
               }
             }}
             onBack={handleGoBack}
-            canGoBack={navHistory.length > 0}
+            canGoBack={!isClinicVertical && navHistory.length > 0}
           title={
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-              <span
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '3px 9px',
-                  borderRadius: '6px',
-                  backgroundColor: 'rgba(56, 189, 248, 0.1)',
-                  border: '1px solid rgba(56, 189, 248, 0.22)',
-                  color: '#38BDF8',
-                  fontSize: '0.75rem',
-                  fontWeight: 800,
-                  letterSpacing: '0.04em',
-                  textTransform: 'uppercase',
-                  whiteSpace: 'nowrap',
-                  flexShrink: 0
-                }}
-              >
-                <span style={{ fontSize: '0.85rem' }}>{currentWsp.icon}</span>
-                <span>{workspace.replace(/_/g, ' ')}</span>
-              </span>
-              <span style={{ color: 'rgba(255, 255, 255, 0.3)', fontSize: '0.85rem', userSelect: 'none' }}>›</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
-                <span style={{ fontSize: '0.95rem' }}>{currentModuleMeta.icon}</span>
+            isClinicVertical ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
                 <span
                   style={{
-                    fontSize: '0.875rem',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '4px 10px',
+                    borderRadius: '8px',
+                    backgroundColor: 'rgba(56, 189, 248, 0.12)',
+                    border: '1px solid rgba(56, 189, 248, 0.25)',
+                    color: '#38BDF8',
+                    fontSize: '0.8125rem',
                     fontWeight: 700,
-                    color: '#F8FAFC',
                     whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis'
+                    flexShrink: 0
                   }}
-                  title={currentModuleMeta.title}
                 >
-                  {currentModuleMeta.title}
+                  <span style={{ fontSize: '0.9rem' }}>{currentModuleMeta.icon}</span>
+                  <span>{currentModuleMeta.title}</span>
                 </span>
               </div>
-            </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '3px 9px',
+                    borderRadius: '6px',
+                    backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                    border: '1px solid rgba(56, 189, 248, 0.22)',
+                    color: '#38BDF8',
+                    fontSize: '0.75rem',
+                    fontWeight: 800,
+                    letterSpacing: '0.04em',
+                    textTransform: 'uppercase',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0
+                  }}
+                >
+                  <span style={{ fontSize: '0.85rem' }}>{currentWsp.icon}</span>
+                  <span>{workspace.replace(/_/g, ' ')}</span>
+                </span>
+                <span style={{ color: 'rgba(255, 255, 255, 0.3)', fontSize: '0.85rem', userSelect: 'none' }}>›</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+                  <span style={{ fontSize: '0.95rem' }}>{currentModuleMeta.icon}</span>
+                  <span
+                    style={{
+                      fontSize: '0.875rem',
+                      fontWeight: 700,
+                      color: '#F8FAFC',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}
+                    title={currentModuleMeta.title}
+                  >
+                    {currentModuleMeta.title}
+                  </span>
+                </div>
+              </div>
+            )
           }
           organizationSlot={
-            <div style={{ width: '100%', maxWidth: '520px', minWidth: '140px' }}>
+            <div style={{ width: '100%', maxWidth: '540px', minWidth: '160px' }}>
               <button
                 type="button"
                 onClick={() => setIsCommandPaletteOpen(true)}
@@ -2592,8 +2727,8 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
               {/* DocSearch Offline-First Background Sync Indicator */}
               <OptimisticSyncBadge />
 
-              {/* PWA 1-Click Installation & Native Standalone Indicator */}
-              <PwaInstallButton />
+              {/* PWA 1-Click Installation - tucked into profile on clinic */}
+              {!isClinicVertical && <PwaInstallButton />}
 
               {/* Universal 1-Click Quick Add Menu */}
               <div ref={quickAddRef} style={{ position: 'relative', flexShrink: 0 }}>
@@ -2648,215 +2783,339 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                     }}
                   >
                     <div style={{ padding: '6px 8px', fontSize: '0.6875rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      Fast Clinical Actions
+                      {rolePerspective === 'FRONT_DESK' ? 'Front Desk Fast Actions' : 'Fast Clinical Actions'}
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsQuickAddOpen(false);
-                        setIsFastOpdDrawerOpen(true);
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: '8px',
-                        padding: '8px 10px',
-                        borderRadius: '6px',
-                        background: 'transparent',
-                        border: 'none',
-                        color: '#F1F5F9',
-                        fontSize: '0.8125rem',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        transition: 'all 0.12s ease'
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.15)')}
-                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span>⚡</span>
-                        <span>Express OPD Registration</span>
-                      </div>
-                      <kbd style={{ fontSize: '0.625rem', padding: '1px 5px', borderRadius: '4px', background: 'rgba(255,255,255,0.1)', color: '#94A3B8', border: '1px solid rgba(255,255,255,0.15)' }}>Alt+N</kbd>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsQuickAddOpen(false);
-                        setActiveModule('pharmacy-medication');
-                        setPharmacyTab('pos');
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: '8px',
-                        padding: '8px 10px',
-                        borderRadius: '6px',
-                        background: 'transparent',
-                        border: 'none',
-                        color: '#F1F5F9',
-                        fontSize: '0.8125rem',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        transition: 'all 0.12s ease'
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.15)')}
-                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span>💊</span>
-                        <span>Fast Pharmacy POS Counter</span>
-                      </div>
-                      <kbd style={{ fontSize: '0.625rem', padding: '1px 5px', borderRadius: '4px', background: 'rgba(255,255,255,0.1)', color: '#94A3B8', border: '1px solid rgba(255,255,255,0.15)' }}>Alt+B</kbd>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsQuickAddOpen(false);
-                        window.dispatchEvent(new CustomEvent('docsearch:toggle_ambient_scribe'));
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: '8px',
-                        padding: '8px 10px',
-                        borderRadius: '6px',
-                        background: 'transparent',
-                        border: 'none',
-                        color: '#F1F5F9',
-                        fontSize: '0.8125rem',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        transition: 'all 0.12s ease'
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.15)')}
-                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span>🎙️</span>
-                        <span>Ambient AI Voice Scribe</span>
-                      </div>
-                      <kbd style={{ fontSize: '0.625rem', padding: '1px 5px', borderRadius: '4px', background: 'rgba(255,255,255,0.1)', color: '#94A3B8', border: '1px solid rgba(255,255,255,0.15)' }}>Alt+M</kbd>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsQuickAddOpen(false);
-                        setActiveModule('clinical-consultation');
-                        window.dispatchEvent(new CustomEvent('docsearch:switch_to_cockpit'));
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: '8px',
-                        padding: '8px 10px',
-                        borderRadius: '6px',
-                        background: 'transparent',
-                        border: 'none',
-                        color: '#F1F5F9',
-                        fontSize: '0.8125rem',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        transition: 'all 0.12s ease'
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.15)')}
-                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span>🩺</span>
-                        <span>Solo Doctor Cockpit (30/70)</span>
-                      </div>
-                      <kbd style={{ fontSize: '0.625rem', padding: '1px 5px', borderRadius: '4px', background: 'rgba(6, 182, 212, 0.15)', color: '#38BDF8', border: '1px solid rgba(6, 182, 212, 0.3)' }}>Alt+C</kbd>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsQuickAddOpen(false);
-                        setActiveModule('opd-one-flow-express');
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '8px 10px',
-                        borderRadius: '6px',
-                        background: 'transparent',
-                        border: 'none',
-                        color: '#F1F5F9',
-                        fontSize: '0.8125rem',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        transition: 'all 0.12s ease'
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.15)')}
-                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                    >
-                      <span>⚡</span>
-                      <span>⚡ 1-Flow Express</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsQuickAddOpen(false);
-                        setActiveModule('clinical-consultation');
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '8px 10px',
-                        borderRadius: '6px',
-                        background: 'transparent',
-                        border: 'none',
-                        color: '#F1F5F9',
-                        fontSize: '0.8125rem',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        transition: 'all 0.12s ease'
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.15)')}
-                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                    >
-                      <span>📋</span>
-                      <span>Doctor Consultation Desk</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsQuickAddOpen(false);
-                        setActiveModule('billing-revenue-cycle');
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '8px 10px',
-                        borderRadius: '6px',
-                        background: 'transparent',
-                        border: 'none',
-                        color: '#F1F5F9',
-                        fontSize: '0.8125rem',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        transition: 'all 0.12s ease'
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.15)')}
-                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                    >
-                      <span>💳</span>
-                      <span>Walk-In Bill & Receipt</span>
-                    </button>
+
+                    {rolePerspective === 'FRONT_DESK' ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsQuickAddOpen(false);
+                            window.dispatchEvent(new CustomEvent('docsearch:open_frontdesk_walkin'));
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '8px',
+                            padding: '8px 10px',
+                            borderRadius: '6px',
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#F1F5F9',
+                            fontSize: '0.8125rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.12s ease'
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.15)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>🎫</span>
+                            <span>+ New Walk-in / OPD Token</span>
+                          </div>
+                          <kbd style={{ fontSize: '0.625rem', padding: '1px 5px', borderRadius: '4px', background: 'rgba(255,255,255,0.1)', color: '#38BDF8', border: '1px solid rgba(56,189,248,0.3)' }}>F2</kbd>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsQuickAddOpen(false);
+                            window.dispatchEvent(new CustomEvent('docsearch:open_frontdesk_book'));
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '8px',
+                            padding: '8px 10px',
+                            borderRadius: '6px',
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#F1F5F9',
+                            fontSize: '0.8125rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.12s ease'
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.15)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>📅</span>
+                            <span>+ Book Future Slot</span>
+                          </div>
+                          <kbd style={{ fontSize: '0.625rem', padding: '1px 5px', borderRadius: '4px', background: 'rgba(255,255,255,0.1)', color: '#38BDF8', border: '1px solid rgba(56,189,248,0.3)' }}>F3</kbd>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsQuickAddOpen(false);
+                            setIsFastOpdDrawerOpen(true);
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '8px',
+                            padding: '8px 10px',
+                            borderRadius: '6px',
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#F1F5F9',
+                            fontSize: '0.8125rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.12s ease'
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.15)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>⚡</span>
+                            <span>Express OPD Registration</span>
+                          </div>
+                          <kbd style={{ fontSize: '0.625rem', padding: '1px 5px', borderRadius: '4px', background: 'rgba(255,255,255,0.1)', color: '#94A3B8', border: '1px solid rgba(255,255,255,0.15)' }}>Alt+N</kbd>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsQuickAddOpen(false);
+                            setActiveModule('billing-revenue-cycle');
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '8px 10px',
+                            borderRadius: '6px',
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#F1F5F9',
+                            fontSize: '0.8125rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.12s ease'
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.15)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                        >
+                          <span>💳</span>
+                          <span>Walk-In Bill & Receipt</span>
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsQuickAddOpen(false);
+                            setIsFastOpdDrawerOpen(true);
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '8px',
+                            padding: '8px 10px',
+                            borderRadius: '6px',
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#F1F5F9',
+                            fontSize: '0.8125rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.12s ease'
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.15)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>⚡</span>
+                            <span>Express OPD Registration</span>
+                          </div>
+                          <kbd style={{ fontSize: '0.625rem', padding: '1px 5px', borderRadius: '4px', background: 'rgba(255,255,255,0.1)', color: '#94A3B8', border: '1px solid rgba(255,255,255,0.15)' }}>Alt+N</kbd>
+                        </button>
+
+                        {(rolePerspective === 'PHARMACY' || isHospitalExecutive(currentUser?.role)) && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsQuickAddOpen(false);
+                              setActiveModule('pharmacy-medication');
+                              setPharmacyTab('pos');
+                            }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              gap: '8px',
+                              padding: '8px 10px',
+                              borderRadius: '6px',
+                              background: 'transparent',
+                              border: 'none',
+                              color: '#F1F5F9',
+                              fontSize: '0.8125rem',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                              transition: 'all 0.12s ease'
+                            }}
+                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.15)')}
+                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span>💊</span>
+                              <span>Fast Pharmacy POS Counter</span>
+                            </div>
+                            <kbd style={{ fontSize: '0.625rem', padding: '1px 5px', borderRadius: '4px', background: 'rgba(255,255,255,0.1)', color: '#94A3B8', border: '1px solid rgba(255,255,255,0.15)' }}>Alt+B</kbd>
+                          </button>
+                        )}
+
+                        {isVoiceScribeAllowed(currentUser?.role) && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsQuickAddOpen(false);
+                              window.dispatchEvent(new CustomEvent('docsearch:toggle_ambient_scribe'));
+                            }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              gap: '8px',
+                              padding: '8px 10px',
+                              borderRadius: '6px',
+                              background: 'transparent',
+                              border: 'none',
+                              color: '#F1F5F9',
+                              fontSize: '0.8125rem',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                              transition: 'all 0.12s ease'
+                            }}
+                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.15)')}
+                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span>🎙️</span>
+                              <span>Ambient AI Voice Scribe</span>
+                            </div>
+                            <kbd style={{ fontSize: '0.625rem', padding: '1px 5px', borderRadius: '4px', background: 'rgba(255,255,255,0.1)', color: '#94A3B8', border: '1px solid rgba(255,255,255,0.15)' }}>Alt+M</kbd>
+                          </button>
+                        )}
+
+                        {isClinicianRole(currentUser?.role) && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsQuickAddOpen(false);
+                              setActiveModule('clinical-consultation');
+                              window.dispatchEvent(new CustomEvent('docsearch:switch_to_cockpit'));
+                            }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              gap: '8px',
+                              padding: '8px 10px',
+                              borderRadius: '6px',
+                              background: 'transparent',
+                              border: 'none',
+                              color: '#F1F5F9',
+                              fontSize: '0.8125rem',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                              transition: 'all 0.12s ease'
+                            }}
+                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.15)')}
+                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span>🩺</span>
+                              <span>Solo Doctor Cockpit (30/70)</span>
+                            </div>
+                            <kbd style={{ fontSize: '0.625rem', padding: '1px 5px', borderRadius: '4px', background: 'rgba(6, 182, 212, 0.15)', color: '#38BDF8', border: '1px solid rgba(6, 182, 212, 0.3)' }}>Alt+C</kbd>
+                          </button>
+                        )}
+
+                        {(workspace === 'CLINIC' || String(currentUser?.role || '').toUpperCase().includes('CLINIC') || rolePerspective === 'DOCTOR' || isHospitalExecutive(currentUser?.role)) && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsQuickAddOpen(false);
+                              setActiveModule('staff-administration');
+                              setTimeout(() => {
+                                window.dispatchEvent(new CustomEvent('docsearch:open_create_staff'));
+                              }, 120);
+                            }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              gap: '8px',
+                              padding: '8px 10px',
+                              borderRadius: '6px',
+                              background: 'transparent',
+                              border: 'none',
+                              color: '#F1F5F9',
+                              fontSize: '0.8125rem',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                              transition: 'all 0.12s ease'
+                            }}
+                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.15)')}
+                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span>👥</span>
+                              <span style={{ color: '#34D399' }}>+ Add Staff (Nurse / Reception)</span>
+                            </div>
+                            <span style={{ fontSize: '0.625rem', color: '#10B981', fontWeight: 800 }}>INVITE</span>
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsQuickAddOpen(false);
+                            setActiveModule('billing-revenue-cycle');
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '8px 10px',
+                            borderRadius: '6px',
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#F1F5F9',
+                            fontSize: '0.8125rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.12s ease'
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.15)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                        >
+                          <span>💳</span>
+                          <span>Walk-In Bill & Receipt</span>
+                        </button>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -2904,14 +3163,14 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                         boxShadow: `0 0 8px ${currentWsp.color}40`
                       }}
                     >
-                      {currentUser.name.charAt(0).toUpperCase()}
+                      {(currentUser?.name || currentUser?.email || 'U').charAt(0).toUpperCase()}
                     </div>
                     <div className="ds-hide-on-compact" style={{ display: 'flex', flexDirection: 'column', textAlign: 'left', flexShrink: 0 }}>
                       <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#F8FAFC', lineHeight: 1.2 }}>
-                        {currentUser.name}
+                        {currentUser?.name || currentUser?.email || 'Healthcare Staff'}
                       </span>
                       <span style={{ fontSize: '0.65rem', color: currentWsp.color, fontWeight: 600, lineHeight: 1.1 }}>
-                        {currentUser.role?.replace(/_/g, ' ') || 'Healthcare Staff'}
+                        {currentUser?.role?.replace(/_/g, ' ') || 'Healthcare Staff'}
                       </span>
                     </div>
                     <span
@@ -2974,11 +3233,11 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                               boxShadow: `0 0 10px ${currentWsp.color}50`
                             }}
                           >
-                            {currentUser.name.charAt(0).toUpperCase()}
+                            {(currentUser?.name || currentUser?.email || 'U').charAt(0).toUpperCase()}
                           </div>
                           <div style={{ minWidth: 0, flex: 1 }}>
                             <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#F8FAFC', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                              {currentUser.name}
+                              {currentUser?.name || currentUser?.email || 'Healthcare Staff'}
                             </div>
                             {currentUser.email && (
                               <div style={{ fontSize: '0.6875rem', color: '#94A3B8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -3014,154 +3273,156 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                         </div>
                       </div>
 
-                      {/* CARD 2: Active SaaS Plan & Upgrade Suite */}
-                      <div
-                        style={{
-                          backgroundColor: 'rgba(15, 23, 42, 0.75)',
-                          border: '1px solid rgba(255, 255, 255, 0.08)',
-                          borderRadius: '10px',
-                          padding: '10px 12px'
-                        }}
-                      >
-                        {(() => {
-                          const currentPlan = partnerAccountPlan?.currentPlan;
-                          const subscription = partnerAccountPlan?.subscription;
-                          const isPaidOrPro = currentPlanTier.toLowerCase().includes('pro') || currentPlanTier.toLowerCase().includes('annual') || (subscription && subscription.status === 'ACTIVE' && !subscription.isFirstYearFree);
-                          const planDisplayName = currentPlan?.name || (isPaidOrPro ? (isLabOrPathology ? 'Pathology LIMS Enterprise Suite' : isPharmacyVertical ? 'Pharmacy Super-Billing Suite' : isClinicVertical ? 'Polyclinic Pro Suite' : 'Hospital Enterprise Pro Suite') : (isLabOrPathology ? 'Pathology Founding Partner (1st Year Free)' : isPharmacyVertical ? 'Pharmacy Founding Partner (1st Year Free)' : isClinicVertical ? 'Clinic Founding Partner (1st Year Free)' : 'Hospital Founding Partner (1st Year Free)'));
-                          const daysLeft = subscription?.daysRemaining ?? 365;
-                          const statusBadgeText = subscription?.status === 'EXPIRED' || subscription?.status === 'LOCKED'
-                            ? '🔴 Locked'
-                            : subscription?.isInGracePeriod
-                            ? '🟠 Grace Period'
-                            : subscription?.isExpiringSoon
-                            ? '🟡 Expiring Soon'
-                            : isPaidOrPro
-                            ? '💎 Pro Suite'
-                            : '🟢 1st Year Free';
+                      {/* CARD 2: Active SaaS Plan & Upgrade Suite (Restricted to Hospital Executives / Owners) */}
+                      {isHospitalExecutive(currentUser?.role) && (
+                        <div
+                          style={{
+                            backgroundColor: 'rgba(15, 23, 42, 0.75)',
+                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                            borderRadius: '10px',
+                            padding: '10px 12px'
+                          }}
+                        >
+                          {(() => {
+                            const currentPlan = partnerAccountPlan?.currentPlan;
+                            const subscription = partnerAccountPlan?.subscription;
+                            const isPaidOrPro = currentPlanTier.toLowerCase().includes('pro') || currentPlanTier.toLowerCase().includes('annual') || (subscription && subscription.status === 'ACTIVE' && !subscription.isFirstYearFree);
+                            const planDisplayName = currentPlan?.name || (isPaidOrPro ? (isLabOrPathology ? 'Pathology LIMS Enterprise Suite' : isPharmacyVertical ? 'Pharmacy Super-Billing Suite' : isClinicVertical ? 'Polyclinic Pro Suite' : 'Hospital Enterprise Pro Suite') : (isLabOrPathology ? 'Pathology Founding Partner (1st Year Free)' : isPharmacyVertical ? 'Pharmacy Founding Partner (1st Year Free)' : isClinicVertical ? 'Clinic Founding Partner (1st Year Free)' : 'Hospital Founding Partner (1st Year Free)'));
+                            const daysLeft = subscription?.daysRemaining ?? 365;
+                            const statusBadgeText = subscription?.status === 'EXPIRED' || subscription?.status === 'LOCKED'
+                              ? '🔴 Locked'
+                              : subscription?.isInGracePeriod
+                              ? '🟠 Grace Period'
+                              : subscription?.isExpiringSoon
+                              ? '🟡 Expiring Soon'
+                              : isPaidOrPro
+                              ? '💎 Pro Suite'
+                              : '🟢 1st Year Free';
 
-                          return (
-                            <>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                                <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                                  SaaS License Tier
-                                </span>
-                                <span
+                            return (
+                              <>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                  <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                    SaaS License Tier
+                                  </span>
+                                  <span
+                                    style={{
+                                      fontSize: '0.6875rem',
+                                      fontWeight: 800,
+                                      color: isPaidOrPro ? '#A78BFA' : '#10B981',
+                                      backgroundColor: isPaidOrPro ? 'rgba(167, 139, 250, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+                                      border: `1px solid ${isPaidOrPro ? 'rgba(167, 139, 250, 0.3)' : 'rgba(16, 185, 129, 0.3)'}`,
+                                      padding: '2px 6px',
+                                      borderRadius: '4px'
+                                    }}
+                                  >
+                                    {statusBadgeText}
+                                  </span>
+                                </div>
+
+                                {/* Real Authoritative Plan & Countdown Box */}
+                                <div
                                   style={{
-                                    fontSize: '0.6875rem',
-                                    fontWeight: 800,
-                                    color: isPaidOrPro ? '#A78BFA' : '#10B981',
-                                    backgroundColor: isPaidOrPro ? 'rgba(167, 139, 250, 0.15)' : 'rgba(16, 185, 129, 0.15)',
-                                    border: `1px solid ${isPaidOrPro ? 'rgba(167, 139, 250, 0.3)' : 'rgba(16, 185, 129, 0.3)'}`,
-                                    padding: '2px 6px',
-                                    borderRadius: '4px'
+                                    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                                    borderRadius: '8px',
+                                    padding: '8px 10px',
+                                    marginBottom: '10px',
+                                    border: '1px solid rgba(255, 255, 255, 0.06)'
                                   }}
                                 >
-                                  {statusBadgeText}
-                                </span>
-                              </div>
-
-                              {/* Real Authoritative Plan & Countdown Box */}
-                              <div
-                                style={{
-                                  backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                                  borderRadius: '8px',
-                                  padding: '8px 10px',
-                                  marginBottom: '10px',
-                                  border: '1px solid rgba(255, 255, 255, 0.06)'
-                                }}
-                              >
-                                <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#F8FAFC', marginBottom: '4px', lineHeight: 1.3 }}>
-                                  {planDisplayName}
+                                  <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#F8FAFC', marginBottom: '4px', lineHeight: 1.3 }}>
+                                    {planDisplayName}
+                                  </div>
+                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.7rem', color: '#94A3B8' }}>
+                                    <span>⏳ {daysLeft} Days Left</span>
+                                    <span style={{ color: '#38BDF8', fontWeight: 700 }}>✓ Node-Locked</span>
+                                  </div>
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.7rem', color: '#94A3B8' }}>
-                                  <span>⏳ {daysLeft} Days Left</span>
-                                  <span style={{ color: '#38BDF8', fontWeight: 700 }}>✓ Node-Locked</span>
-                                </div>
-                              </div>
-                            </>
-                          );
-                        })()}
+                              </>
+                            );
+                          })()}
 
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsUserMenuOpen(false);
-                            setUpgradeModalTargetFeature(drawerUpgradeTargetFeature);
-                            setIsHospitalUpgradeModalOpen(true);
-                          }}
-                          style={{
-                            width: '100%',
-                            padding: '8px 12px',
-                            borderRadius: '6px',
-                            background: 'linear-gradient(135deg, #7C3AED 0%, #4F46E5 100%)',
-                            border: '1px solid #A78BFA',
-                            color: '#FFFFFF',
-                            fontWeight: 800,
-                            fontSize: '0.75rem',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '6px',
-                            boxShadow: '0 2px 10px rgba(124, 58, 237, 0.35)',
-                            marginBottom: '6px',
-                            transition: 'all 0.15s ease'
-                          }}
-                        >
-                          <span>{drawerUpgradeSuiteTitle}</span>
-                        </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsUserMenuOpen(false);
+                              setUpgradeModalTargetFeature(drawerUpgradeTargetFeature);
+                              setIsHospitalUpgradeModalOpen(true);
+                            }}
+                            style={{
+                              width: '100%',
+                              padding: '8px 12px',
+                              borderRadius: '6px',
+                              background: 'linear-gradient(135deg, #7C3AED 0%, #4F46E5 100%)',
+                              border: '1px solid #A78BFA',
+                              color: '#FFFFFF',
+                              fontWeight: 800,
+                              fontSize: '0.75rem',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '6px',
+                              boxShadow: '0 2px 10px rgba(124, 58, 237, 0.35)',
+                              marginBottom: '6px',
+                              transition: 'all 0.15s ease'
+                            }}
+                          >
+                            <span>{drawerUpgradeSuiteTitle}</span>
+                          </button>
 
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsUserMenuOpen(false);
-                            setIsOfflineLicenseModalOpen(true);
-                          }}
-                          style={{
-                            width: '100%',
-                            padding: '6px 10px',
-                            borderRadius: '6px',
-                            backgroundColor: 'rgba(56, 189, 248, 0.12)',
-                            border: '1px solid #0284C7',
-                            color: '#38BDF8',
-                            fontWeight: 700,
-                            fontSize: '0.72rem',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '5px',
-                            marginBottom: '6px',
-                            transition: 'all 0.15s ease'
-                          }}
-                        >
-                          <span>🔑 Activate / Node-Lock License</span>
-                        </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsUserMenuOpen(false);
+                              setIsOfflineLicenseModalOpen(true);
+                            }}
+                            style={{
+                              width: '100%',
+                              padding: '6px 10px',
+                              borderRadius: '6px',
+                              backgroundColor: 'rgba(56, 189, 248, 0.12)',
+                              border: '1px solid #0284C7',
+                              color: '#38BDF8',
+                              fontWeight: 700,
+                              fontSize: '0.72rem',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '5px',
+                              marginBottom: '6px',
+                              transition: 'all 0.15s ease'
+                            }}
+                          >
+                            <span>🔑 Activate / Node-Lock License</span>
+                          </button>
 
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setActiveModule('account-plan-features');
-                            setIsUserMenuOpen(false);
-                          }}
-                          style={{
-                            width: '100%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '4px 6px',
-                            background: 'transparent',
-                            border: 'none',
-                            color: '#38BDF8',
-                            fontSize: '0.72rem',
-                            fontWeight: 600,
-                            cursor: 'pointer'
-                          }}
-                        >
-                          <span>Manage Plan & Add-ons</span>
-                          <span>➔</span>
-                        </button>
-                      </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveModule('account-plan-features');
+                              setIsUserMenuOpen(false);
+                            }}
+                            style={{
+                              width: '100%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              padding: '4px 6px',
+                              background: 'transparent',
+                              border: 'none',
+                              color: '#38BDF8',
+                              fontSize: '0.72rem',
+                              fontWeight: 600,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <span>Manage Plan & Add-ons</span>
+                            <span>➔</span>
+                          </button>
+                        </div>
+                      )}
 
                       {/* CARD 3: Focus & Display Mode */}
                       <div
@@ -3304,6 +3565,99 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                               </div>
                               <span style={{ fontSize: '0.625rem', backgroundColor: 'rgba(16, 185, 129, 0.2)', color: '#10B981', padding: '1px 5px', borderRadius: '4px', fontWeight: 700 }}>
                                 FEFO INVENTORY
+                              </span>
+                            </button>
+                          </>
+                        ) : rolePerspective === 'FRONT_DESK' ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsUserMenuOpen(false);
+                                setActiveModule(workspace === 'CLINIC' ? 'clinic-home' : 'hospital-home');
+                              }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '6px 8px',
+                                borderRadius: '6px',
+                                background: (activeModule === 'clinic-home' || activeModule === 'hospital-home' || activeModule === 'my-smart-desk') ? 'rgba(2, 132, 199, 0.2)' : 'rgba(255, 255, 255, 0.03)',
+                                border: (activeModule === 'clinic-home' || activeModule === 'hospital-home' || activeModule === 'my-smart-desk') ? '1px solid #38BDF8' : '1px solid rgba(255, 255, 255, 0.06)',
+                                color: (activeModule === 'clinic-home' || activeModule === 'hospital-home' || activeModule === 'my-smart-desk') ? '#38BDF8' : '#CBD5E1',
+                                fontSize: '0.78rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                transition: 'all 0.12s ease'
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                                <span>📇</span>
+                                <span>Front Desk Workstation</span>
+                              </div>
+                              <span style={{ fontSize: '0.625rem', backgroundColor: 'rgba(56, 189, 248, 0.2)', color: '#38BDF8', padding: '1px 5px', borderRadius: '4px', fontWeight: 700 }}>
+                                ACTIVE DESK
+                              </span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsUserMenuOpen(false);
+                                window.dispatchEvent(new CustomEvent('docsearch:open_frontdesk_walkin'));
+                              }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '6px 8px',
+                                borderRadius: '6px',
+                                background: 'rgba(255, 255, 255, 0.03)',
+                                border: '1px solid rgba(255, 255, 255, 0.06)',
+                                color: '#CBD5E1',
+                                fontSize: '0.78rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                transition: 'all 0.12s ease'
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                                <span>🎫</span>
+                                <span>+ New Walk-in / OPD Token</span>
+                              </div>
+                              <kbd style={{ fontSize: '0.625rem', padding: '1px 5px', borderRadius: '4px', background: 'rgba(255,255,255,0.1)', color: '#38BDF8', border: '1px solid rgba(56,189,248,0.3)' }}>F2</kbd>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsUserMenuOpen(false);
+                                setActiveModule('encounters-visits');
+                              }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '6px 8px',
+                                borderRadius: '6px',
+                                background: activeModule === 'encounters-visits' ? 'rgba(2, 132, 199, 0.2)' : 'rgba(255, 255, 255, 0.03)',
+                                border: activeModule === 'encounters-visits' ? '1px solid #38BDF8' : '1px solid rgba(255, 255, 255, 0.06)',
+                                color: activeModule === 'encounters-visits' ? '#38BDF8' : '#CBD5E1',
+                                fontSize: '0.78rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                transition: 'all 0.12s ease'
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                                <span>⏱️</span>
+                                <span>Live OPD Queue Board</span>
+                              </div>
+                              <span style={{ fontSize: '0.625rem', backgroundColor: 'rgba(16, 185, 129, 0.2)', color: '#10B981', padding: '1px 5px', borderRadius: '4px', fontWeight: 700 }}>
+                                REAL-TIME
                               </span>
                             </button>
                           </>
@@ -3639,106 +3993,111 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                           )}
                         </button>
 
-                        {/* 3. Break-Glass Emergency Override */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsGlobalBreakGlassOpen(true);
-                            setIsUserMenuOpen(false);
-                          }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '6px 8px',
-                            borderRadius: '6px',
-                            background: 'transparent',
-                            border: 'none',
-                            color: '#FCA5A5',
-                            fontSize: '0.78rem',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            textAlign: 'left',
-                            transition: 'all 0.12s ease'
-                          }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.12)')}
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                          title="Break-Glass Emergency Protocol for Trauma & Life-Saving Interventions"
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span>🚨</span>
-                            <span>Break-Glass Emergency</span>
-                          </div>
-                          <span style={{ fontSize: '0.6rem', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)', padding: '1px 4px', borderRadius: '4px', fontWeight: 700 }}>
-                            OVERRIDE
-                          </span>
-                        </button>
+                        {/* 3, 4, 5: Executive-only Security & Emergency Overrides */}
+                        {isHospitalExecutive(currentUser?.role) && (
+                          <>
+                            {/* 3. Break-Glass Emergency Override */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsGlobalBreakGlassOpen(true);
+                                setIsUserMenuOpen(false);
+                              }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '6px 8px',
+                                borderRadius: '6px',
+                                background: 'transparent',
+                                border: 'none',
+                                color: '#FCA5A5',
+                                fontSize: '0.78rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                transition: 'all 0.12s ease'
+                              }}
+                              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.12)')}
+                              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                              title="Break-Glass Emergency Protocol for Trauma & Life-Saving Interventions"
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span>🚨</span>
+                                <span>Break-Glass Emergency</span>
+                              </div>
+                              <span style={{ fontSize: '0.6rem', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)', padding: '1px 4px', borderRadius: '4px', fontWeight: 700 }}>
+                                OVERRIDE
+                              </span>
+                            </button>
 
-                        {/* 4. Pre-LLM PHI Redactor Studio */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsPreLlmModalOpen(true);
-                            setIsUserMenuOpen(false);
-                          }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '6px 8px',
-                            borderRadius: '6px',
-                            background: 'transparent',
-                            border: 'none',
-                            color: '#CBD5E1',
-                            fontSize: '0.78rem',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            textAlign: 'left',
-                            transition: 'all 0.12s ease'
-                          }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)')}
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                          title="HIPAA / DISHA Compliant Local Pre-LLM PHI Redaction"
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span>🛡️</span>
-                            <span>PHI Redactor Studio</span>
-                          </div>
-                          <span style={{ fontSize: '0.65rem', color: '#10B981', fontWeight: 600 }}>Zero-Leak</span>
-                        </button>
+                            {/* 4. Pre-LLM PHI Redactor Studio */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsPreLlmModalOpen(true);
+                                setIsUserMenuOpen(false);
+                              }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '6px 8px',
+                                borderRadius: '6px',
+                                background: 'transparent',
+                                border: 'none',
+                                color: '#CBD5E1',
+                                fontSize: '0.78rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                transition: 'all 0.12s ease'
+                              }}
+                              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)')}
+                              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                              title="HIPAA / DISHA Compliant Local Pre-LLM PHI Redaction"
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span>🛡️</span>
+                                <span>PHI Redactor Studio</span>
+                              </div>
+                              <span style={{ fontSize: '0.65rem', color: '#10B981', fontWeight: 600 }}>Zero-Leak</span>
+                            </button>
 
-                        {/* 5. Forensic Leak Investigator */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsLeakInvestigatorOpen(true);
-                            setIsUserMenuOpen(false);
-                          }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '6px 8px',
-                            borderRadius: '6px',
-                            background: 'transparent',
-                            border: 'none',
-                            color: '#CBD5E1',
-                            fontSize: '0.78rem',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            textAlign: 'left',
-                            transition: 'all 0.12s ease'
-                          }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)')}
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                          title="Watermark & Forensic Cryptographic Audit Leak Investigator"
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span>🔍</span>
-                            <span>Forensic Leak Audit</span>
-                          </div>
-                          <span style={{ fontSize: '0.65rem', color: '#A78BFA', fontWeight: 600 }}>SHA-256</span>
-                        </button>
+                            {/* 5. Forensic Leak Investigator */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsLeakInvestigatorOpen(true);
+                                setIsUserMenuOpen(false);
+                              }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '6px 8px',
+                                borderRadius: '6px',
+                                background: 'transparent',
+                                border: 'none',
+                                color: '#CBD5E1',
+                                fontSize: '0.78rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                transition: 'all 0.12s ease'
+                              }}
+                              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)')}
+                              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                              title="Watermark & Forensic Cryptographic Audit Leak Investigator"
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span>🔍</span>
+                                <span>Forensic Leak Audit</span>
+                              </div>
+                              <span style={{ fontSize: '0.65rem', color: '#A78BFA', fontWeight: 600 }}>SHA-256</span>
+                            </button>
+                          </>
+                        )}
 
                         {/* 6. Theme Studio */}
                         <button
@@ -3914,19 +4273,22 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
           }
         />
         )}
-        <PatientSessionTabBar
-          onNavigateModule={(modKey, subTab) => {
-            setActiveModule(modKey as PartnerModuleKey);
-            if (modKey === 'pharmacy-medication' && subTab) {
-              setPharmacyTab(subTab as ActivePharmacyTab);
-            }
-            if (modKey === 'inpatient-management' && subTab) {
-              setInpatientTab(subTab as InpatientTab);
-            }
-          }}
-          onOpenFastRegistration={() => setIsFastOpdDrawerOpen(true)}
-        />
+        {workspace !== 'CLINIC' && (
+          <PatientSessionTabBar
+            onNavigateModule={(modKey, subTab) => {
+              setActiveModule(modKey as PartnerModuleKey);
+              if (modKey === 'pharmacy-medication' && subTab) {
+                setPharmacyTab(subTab as ActivePharmacyTab);
+              }
+              if (modKey === 'inpatient-management' && subTab) {
+                setInpatientTab(subTab as InpatientTab);
+              }
+            }}
+            onOpenFastRegistration={() => setIsFastOpdDrawerOpen(true)}
+          />
+        )}
       </div>
+      )
     }
     >
       <ContentArea>
@@ -4000,151 +4362,162 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
               </div>
             }
           >
-            {activeModule === 'my-smart-desk' && (
-              <RoleTailoredSmartDeskView
-                currentRole={rolePerspective}
-                onChangeRole={handleSetRolePerspective}
+            {rolePerspective === 'FRONT_DESK' && (isHomeModule || activeModule === 'my-smart-desk') ? (
+              <FrontDeskWorkstationView
                 currentUser={currentUser}
-                onNavigateModule={(modKey, subTab) => {
-                  if (modKey === 'pharmacy-medication' && subTab) {
-                    setPharmacyTab(subTab as ActivePharmacyTab);
-                  }
-                  if (modKey === 'patient-registration' && subTab) {
-                    setPatientRegistrationTab(subTab as ActivePatientTab);
-                  }
-                  if (modKey === 'inpatient-management' && subTab) {
-                    setInpatientTab(subTab as InpatientTab);
-                  }
-                  if (modKey === 'clinical-investigation' && subTab) {
-                    setInvestigationTab(subTab as ActiveInvestigationTab);
-                  }
-                  if (modKey === 'radiology-imaging' && subTab) {
-                    setRadiologyTab(subTab);
-                  }
-                  if (modKey === 'billing-revenue-cycle' && subTab) {
-                    setBillingTab(subTab);
-                  }
-                  setActiveModule(modKey);
-                }}
-                onOpenAllModulesDrawer={() => setIsAllModulesDrawerOpen(true)}
-                facilityName={currentUser?.tenantName || currentWsp.name}
-              />
-            )}
-            {isHomeModule && (
-              <StaffOperationalRoleDashboard
-                currentUser={currentUser}
-                onNavigateModule={(modKey, subTab) => {
-                  if (modKey === 'pharmacy-medication' && subTab) {
-                    setPharmacyTab(subTab as ActivePharmacyTab);
-                  }
-                  if (modKey === 'patient-registration' && subTab) {
-                    setPatientRegistrationTab(subTab as ActivePatientTab);
-                  }
-                  if (modKey === 'inpatient-management' && subTab) {
-                    setInpatientTab(subTab as InpatientTab);
-                  }
-                  if (modKey === 'clinical-investigation' && subTab) {
-                    setInvestigationTab(subTab as ActiveInvestigationTab);
-                  }
-                  if (modKey === 'radiology-imaging' && subTab) {
-                    setRadiologyTab(subTab);
-                  }
-                  if (modKey === 'billing-revenue-cycle' && subTab) {
-                    setBillingTab(subTab);
-                  }
-                  setActiveModule(modKey);
-                }}
                 tenantId={resolvedTenantId}
-                facilityName={currentUser?.tenantName || currentWsp.name}
+                facilityName={cleanFacilityBrand}
+                onNavigateModule={(modKey) => setActiveModule(modKey)}
               />
-            )}
-            {activeModule === 'pathology-home' && (
-              <PathologyHomeActivityHub
-                tenantId={resolvedTenantId}
-                onNavigateModule={(modKey, subTab) => {
-                  if (modKey === 'clinical-investigation' && subTab) {
-                    setInvestigationTab(subTab as ActiveInvestigationTab);
-                  }
-                  setActiveModule(modKey);
-                }}
-                staffName={currentUser?.name}
-                facilityName={currentUser?.tenantName || currentWsp.name}
-                role={currentUser?.role}
-              />
-            )}
-            {activeModule === 'clinic-home' && (
-              <ClinicHomeActivityHub
-                tenantId={resolvedTenantId}
-                onNavigateModule={(modKey, subTab) => {
-                  if (modKey === 'pharmacy-medication' && subTab) {
-                    setPharmacyTab(subTab as ActivePharmacyTab);
-                  }
-                  if (modKey === 'patient-registration' && subTab) {
-                    setPatientRegistrationTab(subTab as ActivePatientTab);
-                  }
-                  if (modKey === 'inpatient-management' && subTab) {
-                    setInpatientTab(subTab as InpatientTab);
-                  }
-                  setActiveModule(modKey);
-                }}
-                staffName={currentUser?.name}
-                facilityName={currentUser?.tenantName || currentWsp.name}
-                role={currentUser?.role}
-              />
-            )}
-            {activeModule === 'pharmacy-home' && (
-              <PharmacyHomeActivityHub
-                tenantId={resolvedTenantId}
-                onNavigateModule={(modKey, subTab) => {
-                  if (modKey === 'pharmacy-medication' && subTab) {
-                    setPharmacyTab(subTab as ActivePharmacyTab);
-                  }
-                  setActiveModule(modKey);
-                }}
-                staffName={currentUser?.name}
-                facilityName={currentUser?.tenantName || currentWsp.name}
-                role={currentUser?.role}
-              />
-            )}
-            {activeModule === 'diagnostic-home' && (
-              <DiagnosticCentreHomeActivityHub
-                tenantId={resolvedTenantId}
-                onNavigateModule={(modKey, subTab) => {
-                  if (modKey === 'patient-registration' && subTab) {
-                    setPatientRegistrationTab(subTab as ActivePatientTab);
-                  }
-                  if (modKey === 'radiology-imaging' && subTab) {
-                    setRadiologyTab(subTab);
-                  }
-                  if (modKey === 'billing-revenue-cycle' && subTab) {
-                    setBillingTab(subTab);
-                  }
-                  setActiveModule(modKey);
-                }}
-                staffName={currentUser?.name}
-                facilityName={currentUser?.tenantName || currentWsp.name}
-                role={currentUser?.role}
-              />
-            )}
-            {activeModule === 'hospital-home' && (
-              <HospitalHomeActivityHub
-                tenantId={resolvedTenantId}
-                onNavigateModule={(modKey, subTab) => {
-                  if (modKey === 'inpatient-management' && subTab) {
-                    setInpatientTab(subTab as InpatientTab);
-                  }
-                  if (modKey === 'pharmacy-medication' && subTab) {
-                    setPharmacyTab(subTab as ActivePharmacyTab);
-                  }
-                  if (modKey === 'patient-registration' && subTab) {
-                    setPatientRegistrationTab(subTab as ActivePatientTab);
-                  }
-                  setActiveModule(modKey);
-                }}
-                staffName={currentUser?.name}
-                facilityName={currentUser?.tenantName || currentWsp.name}
-                role={currentUser?.role}
-              />
+            ) : (
+              <>
+                {activeModule === 'my-smart-desk' && effectiveWorkspace !== 'CLINIC' && (
+                  <RoleTailoredSmartDeskView
+                    currentRole={rolePerspective}
+                    onChangeRole={handleSetRolePerspective}
+                    currentUser={currentUser}
+                    onNavigateModule={(modKey, subTab) => {
+                      if (modKey === 'pharmacy-medication' && subTab) {
+                        setPharmacyTab(subTab as ActivePharmacyTab);
+                      }
+                      if (modKey === 'patient-registration' && subTab) {
+                        setPatientRegistrationTab(subTab as ActivePatientTab);
+                      }
+                      if (modKey === 'inpatient-management' && subTab) {
+                        setInpatientTab(subTab as InpatientTab);
+                      }
+                      if (modKey === 'clinical-investigation' && subTab) {
+                        setInvestigationTab(subTab as ActiveInvestigationTab);
+                      }
+                      if (modKey === 'radiology-imaging' && subTab) {
+                        setRadiologyTab(subTab);
+                      }
+                      if (modKey === 'billing-revenue-cycle' && subTab) {
+                        setBillingTab(subTab);
+                      }
+                      setActiveModule(modKey);
+                    }}
+                    onOpenAllModulesDrawer={() => setIsAllModulesDrawerOpen(true)}
+                    facilityName={cleanFacilityBrand || currentUser?.tenantName || currentWsp.name}
+                  />
+                )}
+                {activeModule === 'my-smart-desk' && effectiveWorkspace !== 'CLINIC' && (
+                  <StaffOperationalRoleDashboard
+                    currentUser={currentUser}
+                    onNavigateModule={(modKey, subTab) => {
+                      if (modKey === 'pharmacy-medication' && subTab) {
+                        setPharmacyTab(subTab as ActivePharmacyTab);
+                      }
+                      if (modKey === 'patient-registration' && subTab) {
+                        setPatientRegistrationTab(subTab as ActivePatientTab);
+                      }
+                      if (modKey === 'inpatient-management' && subTab) {
+                        setInpatientTab(subTab as InpatientTab);
+                      }
+                      if (modKey === 'clinical-investigation' && subTab) {
+                        setInvestigationTab(subTab as ActiveInvestigationTab);
+                      }
+                      if (modKey === 'radiology-imaging' && subTab) {
+                        setRadiologyTab(subTab);
+                      }
+                      if (modKey === 'billing-revenue-cycle' && subTab) {
+                        setBillingTab(subTab);
+                      }
+                      setActiveModule(modKey);
+                    }}
+                    tenantId={resolvedTenantId}
+                    facilityName={cleanFacilityBrand || currentUser?.tenantName || currentWsp.name}
+                  />
+                )}
+                {activeModule === 'pathology-home' && (
+                  <PathologyHomeActivityHub
+                    tenantId={resolvedTenantId}
+                    onNavigateModule={(modKey, subTab) => {
+                      if (modKey === 'clinical-investigation' && subTab) {
+                        setInvestigationTab(subTab as ActiveInvestigationTab);
+                      }
+                      setActiveModule(modKey);
+                    }}
+                    staffName={currentUser?.name}
+                    facilityName={cleanFacilityBrand || currentUser?.tenantName || currentWsp.name}
+                    role={currentUser?.role}
+                  />
+                )}
+                {(activeModule === 'clinic-home' || (activeModule === 'my-smart-desk' && effectiveWorkspace === 'CLINIC')) && (
+                  <ClinicHomeActivityHub
+                    tenantId={resolvedTenantId}
+                    onNavigateModule={(modKey, subTab) => {
+                      if (modKey === 'pharmacy-medication' && subTab) {
+                        setPharmacyTab(subTab as ActivePharmacyTab);
+                      }
+                      if (modKey === 'patient-registration' && subTab) {
+                        setPatientRegistrationTab(subTab as ActivePatientTab);
+                      }
+                      if (modKey === 'inpatient-management' && subTab) {
+                        setInpatientTab(subTab as InpatientTab);
+                      }
+                      setActiveModule(modKey);
+                    }}
+                    staffName={currentUser?.name}
+                    facilityName={cleanFacilityBrand || currentUser?.tenantName || currentWsp.name}
+                    role={currentUser?.role}
+                  />
+                )}
+                {activeModule === 'pharmacy-home' && (
+                  <PharmacyHomeActivityHub
+                    tenantId={resolvedTenantId}
+                    onNavigateModule={(modKey, subTab) => {
+                      if (modKey === 'pharmacy-medication' && subTab) {
+                        setPharmacyTab(subTab as ActivePharmacyTab);
+                      }
+                      setActiveModule(modKey);
+                    }}
+                    staffName={currentUser?.name}
+                    facilityName={cleanFacilityBrand || currentUser?.tenantName || currentWsp.name}
+                    role={currentUser?.role}
+                  />
+                )}
+                {activeModule === 'diagnostic-home' && (
+                  <DiagnosticCentreHomeActivityHub
+                    tenantId={resolvedTenantId}
+                    onNavigateModule={(modKey, subTab) => {
+                      if (modKey === 'patient-registration' && subTab) {
+                        setPatientRegistrationTab(subTab as ActivePatientTab);
+                      }
+                      if (modKey === 'radiology-imaging' && subTab) {
+                        setRadiologyTab(subTab);
+                      }
+                      if (modKey === 'billing-revenue-cycle' && subTab) {
+                        setBillingTab(subTab);
+                      }
+                      setActiveModule(modKey);
+                    }}
+                    staffName={currentUser?.name}
+                    facilityName={cleanFacilityBrand || currentUser?.tenantName || currentWsp.name}
+                    role={currentUser?.role}
+                  />
+                )}
+                {activeModule === 'hospital-home' && (
+                  <HospitalHomeActivityHub
+                    tenantId={resolvedTenantId}
+                    onNavigateModule={(modKey, subTab) => {
+                      if (modKey === 'inpatient-management' && subTab) {
+                        setInpatientTab(subTab as InpatientTab);
+                      }
+                      if (modKey === 'pharmacy-medication' && subTab) {
+                        setPharmacyTab(subTab as ActivePharmacyTab);
+                      }
+                      if (modKey === 'patient-registration' && subTab) {
+                        setPatientRegistrationTab(subTab as ActivePatientTab);
+                      }
+                      setActiveModule(modKey);
+                    }}
+                    staffName={currentUser?.name}
+                    facilityName={cleanFacilityBrand || currentUser?.tenantName || currentWsp.name}
+                    role={currentUser?.role}
+                  />
+                )}
+              </>
             )}
             {activeModule === 'enterprise-home' && (
               <EnterpriseCommandHomeActivityHub
@@ -4223,7 +4596,11 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
             {visitedModules.has('clinical-consultation') && (
               <div style={{ display: activeModule === 'clinical-consultation' ? 'block' : 'none' }}>
                 <DomainErrorBoundary domainName="Clinical Consultation & EMR">
-                  <ClinicalConsultationDomainManager />
+                  <ClinicalConsultationDomainManager
+                    currentUser={currentUser}
+                    tenantId={resolvedTenantId}
+                    facilityName={cleanFacilityBrand || currentUser?.tenantName || currentWsp.name}
+                  />
                 </DomainErrorBoundary>
               </div>
             )}
@@ -4232,7 +4609,8 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                 <DomainErrorBoundary domainName="OPD 1-Flow Express">
                   <OpdOneFlowExpressView
                     tenantId={resolvedTenantId}
-                    doctorName={currentUser?.name || 'Dr. Aryan Sharma (Consultant Physician)'}
+                    doctorName={currentUser?.name || 'Consultant Physician'}
+                    doctorId={currentUser?.id}
                     onClose={() => setActiveModule('clinical-consultation')}
                   />
                 </DomainErrorBoundary>
@@ -4640,13 +5018,13 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
         {/* SUB-10MS OPTIMISTIC UI + 5-SECOND UNDO (CTRL+Z) TOAST */}
         <OptimisticActionToast />
 
-        {/* AMBIENT VOICE AI CLINICAL SCRIBE FLOATING HUD (ALT+M) - ROLE RESTRICTED TO CLINICIANS */}
-        {isVoiceScribeAllowed(currentUser?.role, currentUser?.permissions) && (
-          <AmbientVoiceScribeCapsule />
+        {/* AMBIENT VOICE AI CLINICAL SCRIBE FLOATING HUD (ALT+M) - ONLY ACTIVE INSIDE CLINICAL CONSULTATION */}
+        {isVoiceScribeAllowed(currentUser?.role, currentUser?.permissions) && activeModule === 'clinical-consultation' && (
+          <AmbientVoiceScribeCapsule isConsultationMode={true} />
         )}
 
-        {/* HARDWARE STATUS PILL (BARCODE, THERMAL PRINTER & ASTM ANALYZERS) */}
-        <HardwareStatusPill />
+        {/* HARDWARE STATUS PILL - MOVED TO SETTINGS DRAWER, HIDDEN FROM MAIN CLINICAL DASHBOARD */}
+        <HardwareStatusPill hidden={true} />
 
         {/* FULL-SCREEN BIOLUMINESCENT LASER BEAM SWEEP OVERLAY */}
         <BarcodeLaserSweepOverlay />

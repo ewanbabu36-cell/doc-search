@@ -221,13 +221,13 @@ export const ActivePatientContextBar: React.FC<ActivePatientContextBarProps> = (
                   flexShrink: 0
                 }}
               >
-                {activePatient.name.charAt(0)}
+                {(activePatient?.name || 'P').charAt(0).toUpperCase()}
               </div>
 
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                   <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#F8FAFC' }}>
-                    {activePatient.name}
+                    {activePatient?.name || 'Active Patient'}
                   </span>
                   <span
                     style={{
@@ -660,7 +660,7 @@ export const ActivePatientContextBar: React.FC<ActivePatientContextBarProps> = (
                   }}
                 >
                   <span>{p.gender === 'FEMALE' ? '👩' : '👨'}</span>
-                  <span>{p.name.split(' ')[0]} ({p.uhid ? p.uhid.slice(-4) : 'PAT'})</span>
+                  <span>{(p?.name || 'Patient').split(' ')[0]} ({p.uhid ? p.uhid.slice(-4) : 'PAT'})</span>
                 </button>
               ))
             ) : (

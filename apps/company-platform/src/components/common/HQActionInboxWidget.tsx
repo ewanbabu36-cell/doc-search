@@ -252,17 +252,40 @@ export const HQActionInboxWidget: React.FC<HQActionInboxWidgetProps> = ({
         ? (localStorage.getItem('docsearch_company_token') || localStorage.getItem('docsearch_auth_token'))
         : null;
 
+      const orgType = partner.type || 'HOSPITAL';
+      const reqPlan = (partner as any).requestedPlan;
+      const resolvedPlan = reqPlan?.planName
+        ? {
+            planId: reqPlan.id || `plan-${orgType.toLowerCase()}-standard`,
+            planName: reqPlan.planName,
+            tier: reqPlan.tier || 'STANDARD',
+            monthlyFee: reqPlan.price || (orgType === 'HOSPITAL' ? 14999 : orgType === 'CLINIC' ? 1999 : 2999),
+            finalAmount: reqPlan.price || (orgType === 'HOSPITAL' ? 14999 : orgType === 'CLINIC' ? 1999 : 2999),
+            billingInterval: 'ANNUAL',
+            billingFrequency: 'ANNUAL',
+            maxDoctors: orgType === 'HOSPITAL' ? 50 : orgType === 'CLINIC' ? 5 : 10,
+            maxStaff: orgType === 'HOSPITAL' ? 100 : orgType === 'CLINIC' ? 15 : 25,
+            maxBeds: orgType === 'HOSPITAL' ? 50 : 0
+          }
+        : {
+            planId: `plan-${orgType.toLowerCase()}-operational`,
+            planName: `${orgType} Standard Operational Suite`,
+            tier: 'STANDARD',
+            monthlyFee: orgType === 'HOSPITAL' ? 14999 : orgType === 'CLINIC' ? 1999 : 2999,
+            finalAmount: orgType === 'HOSPITAL' ? 14999 : orgType === 'CLINIC' ? 1999 : 2999,
+            billingInterval: 'ANNUAL',
+            billingFrequency: 'ANNUAL',
+            maxDoctors: orgType === 'HOSPITAL' ? 50 : orgType === 'CLINIC' ? 5 : 10,
+            maxStaff: orgType === 'HOSPITAL' ? 100 : orgType === 'CLINIC' ? 15 : 25,
+            maxBeds: orgType === 'HOSPITAL' ? 50 : 0
+          };
+
       const approvePayload = {
         id: partner.id,
         email: partner.email,
         partnerName: partner.name,
-        organizationType: partner.type || 'HOSPITAL',
-        assignedPlan: {
-          planId: 'plan-hospital-pioneer',
-          planName: 'Pioneer Free Onboarding Environment',
-          monthlyFee: 0,
-          billingInterval: 'ANNUAL'
-        },
+        organizationType: orgType,
+        assignedPlan: resolvedPlan,
         reason: `1-Click Executive Approval via HQ Action Inbox (EWAN AI Score: ${scorecard.confidenceScore}%)`
       };
 

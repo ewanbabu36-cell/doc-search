@@ -5,9 +5,9 @@ import {
   Input,
   Badge
 } from '@docsearch/ui-kit';
-import { encounterService } from '../../services/encounter-service.js';
 import { hospitalEventBus } from '../../services/hospital-event-bus.js';
 import { doctorRosterService } from '../../services/doctor-roster-service.js';
+import { apiRequest } from '../../services/api-client.js';
 
 export interface FrontDeskMobileWorkstationViewProps {
   tenantId?: string | undefined;
@@ -32,6 +32,8 @@ export interface OpdDoctorOption {
 
 export interface OpdQueueItem {
   id: string;
+  encounterId?: string;
+  patientId?: string;
   name: string;
   mobile: string;
   gender: 'MALE' | 'FEMALE' | 'OTHER';
@@ -198,63 +200,54 @@ export const FrontDeskMobileWorkstationView: React.FC<FrontDeskMobileWorkstation
     }
   };
 
-  // Load live encounters queue
+  // Load live encounters queue directly from backend API
   const loadLiveQueue = useCallback(async () => {
     setIsLoadingQueue(true);
     try {
-      const list = await encounterService.searchEncounters({ tenantId, pageIndex: 1, pageSize: 50 }).catch(() => []);
-      
-      let merged: OpdQueueItem[] = [];
-      try {
-        const stored = localStorage.getItem('docsearch_recent_opd_queue');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed)) {
-            merged = parsed;
-          }
-        }
-      } catch {}
-
-      // Merge encounters from API if not already present
-      for (const item of list) {
-        const exists = merged.some((e) => e.token === (item as any).tokenNumber || e.mrn === (item as any).patientMrn);
-        if (!exists) {
-          merged.push({
-            id: item.id || `enc-${Date.now()}`,
-            name: item.patientName || 'Patient',
-            mobile: item.patientMobile || '',
-            gender: (item.patientGender as any) || 'MALE',
-            age: '30',
-            mrn: item.patientMrn || `MRN-${Math.floor(100000 + Math.random() * 900000)}`,
-            token: (item as any).tokenNumber || `TK-0${merged.length + 1}`,
-            doctor: item.doctorName || 'Consultant Physician',
-            doctorId: item.doctorId || 'doc-1',
-            room: (item.metadata as any)?.room || 'Room 101',
-            status: ((item.status as any) || 'WAITING') as OpdQueueItem['status'],
-            visitType: ((item.encounterType as any) || 'WALK_IN') as OpdQueueItem['visitType'],
-            complaint: item.chiefComplaint || 'OPD Consultation',
-            registeredAt: item.registeredAt || new Date().toISOString(),
-            consultationFee: 500,
-            feePaymentMode: 'CASH',
-            feeStatus: 'PAID',
-            feeReceiptNo: `REC-${Date.now().toString().slice(-6)}`
-          });
-        }
+      const qRes = await apiRequest<any[]>('/api/v1/partner/clinical/queues');
+      let liveList: OpdQueueItem[] = [];
+      if (qRes.success && Array.isArray(qRes.data)) {
+        liveList = qRes.data.map((item) => ({
+          id: item.id,
+          encounterId: item.encounterId,
+          patientId: item.patientId,
+          token: item.tokenNumber || `TK-${item.id.slice(0, 4)}`,
+          name: item.patientName || item.metadata?.patientName || 'Patient',
+          mobile: item.patientPhone || item.metadata?.patientPhone || '',
+          gender: (item.gender || item.metadata?.gender || 'MALE') as any,
+          age: String(item.age || item.metadata?.age || '30'),
+          mrn: item.mrn || item.uhid || item.metadata?.mrn || 'UHID-00000',
+          doctor: item.doctorName || item.metadata?.doctorName || 'Consultant Physician',
+          doctorId: item.doctorId || 'doc-1',
+          room: item.metadata?.chamber || 'Room 101',
+          status: (item.queueStatus === 'SERVED' || item.encounterStatus === 'COMPLETED')
+            ? 'COMPLETED'
+            : (item.queueStatus === 'IN_PROGRESS' || item.queueStatus === 'CALLED' ? 'IN_CONSULTATION' : 'WAITING'),
+          visitType: (item.metadata?.visitType || 'WALK_IN') as any,
+          complaint: item.chiefComplaint || item.metadata?.chiefComplaint || 'OPD Consultation',
+          registeredAt: item.createdAt || new Date().toISOString(),
+          consultationFee: item.paymentAmount || item.metadata?.consultationFee || 500,
+          feePaymentMode: (item.paymentMethod || item.metadata?.feePaymentMode || 'CASH') as any,
+          feeStatus: (item.paymentStatus === 'PAID' ? 'PAID' : (item.paymentStatus === 'PAY_LATER' ? 'PAY_LATER' : 'PENDING')) as any,
+          feeReceiptNo: item.paymentNumber || item.invoiceNumber || item.metadata?.feeReceiptNo || ''
+        }));
       }
 
-      setQueue(merged);
+      setQueue(liveList);
 
       // Update doctor queue counts
       setDoctors((prev) =>
         prev.map((doc) => ({
           ...doc,
-          currentQueueCount: merged.filter((e) => (e.doctor === doc.name || e.doctorId === doc.id) && e.status === 'WAITING').length
+          currentQueueCount: liveList.filter((e) => (e.doctor === doc.name || e.doctorId === doc.id) && e.status === 'WAITING').length
         }))
       );
+    } catch (err) {
+      console.warn('Mobile queue load error:', err);
     } finally {
       setIsLoadingQueue(false);
     }
-  }, [tenantId]);
+  }, []);
 
   useEffect(() => {
     void loadLiveQueue();
@@ -286,15 +279,81 @@ export const FrontDeskMobileWorkstationView: React.FC<FrontDeskMobileWorkstation
     const selectedDoc = doctors.find((d) => d.id === selectedDoctorId) || doctors[0];
     const docName = selectedDoc?.name || 'Consultant Doctor';
     const chamber = selectedDoc?.chamber || 'Room 101';
+    const normalizedPhone = mobile.replace(/\D/g, '');
+    const nameParts = name.trim().split(/\s+/);
+    const firstName = nameParts[0] || 'Patient';
+    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : firstName;
 
     setIsSubmitting(true);
     try {
-      const tokenNumber = `TK-${Math.floor(10 + Math.random() * 90)}`;
-      const mrn = `MRN-${Math.floor(100000 + Math.random() * 900000)}`;
-      const feeReceiptNo = `REC-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
+      // 1. Authoritative Backend Patient Registration
+      const patRes = await apiRequest<any>('/api/v1/partner/clinical/patients', {
+        method: 'POST',
+        body: JSON.stringify({
+          firstName,
+          lastName,
+          gender: patientGender,
+          mobileNumber: normalizedPhone,
+          dateOfBirth: new Date(Date.now() - (parseInt(patientAge || '30', 10) * 365.25 * 24 * 3600 * 1000)).toISOString().split('T')[0]
+        })
+      });
+
+      const patientData = patRes.data || patRes;
+      const patientId = patientData?.id;
+      if (!patientId) {
+        throw new Error('Failed to resolve patient identity from database');
+      }
+
+      // 2. Authoritative Backend Encounter Check-In & Token Allocation
+      const checkInRes = await apiRequest<any>('/api/v1/partner/clinical/encounters/check-in', {
+        method: 'POST',
+        body: JSON.stringify({
+          patientId,
+          doctorId: selectedDoc?.id,
+          encounterType: visitType,
+          chiefComplaint: chiefComplaint || 'General OPD Consultation',
+          status: 'WAITING',
+          metadata: {
+            feePaymentMode,
+            feeStatus: isFeePaid ? 'PAID' : 'PAY_LATER',
+            consultationFee,
+            patientName: name,
+            patientPhone: normalizedPhone,
+            age: patientAge || '30',
+            gender: patientGender,
+            chamber,
+            visitType,
+            abhaNumber: abhaNumber || undefined,
+            abhaAddress: abhaAddress || undefined
+          }
+        })
+      });
+
+      const encounterData = checkInRes.data || checkInRes;
+      const activeEncounterId = encounterData?.id;
+
+      // 3. Authoritative Backend Payment Collection if marked Paid
+      let paymentRecord: any = null;
+      if (isFeePaid && activeEncounterId && consultationFee > 0) {
+        const payRes = await apiRequest<any>(`/api/v1/partner/clinical/encounters/${activeEncounterId}/payments`, {
+          method: 'POST',
+          body: JSON.stringify({
+            amount: Number(consultationFee),
+            paymentMethod: feePaymentMode === 'PAY_LATER' ? 'CASH' : feePaymentMode,
+            notes: 'OPD Consultation Fee collected at Mobile Workstation'
+          })
+        });
+        paymentRecord = payRes.data || payRes;
+      }
+
+      const tokenNumber = encounterData?.metadata?.tokenNumber || (encounterData?.encounterNumber ? `TK-${encounterData.encounterNumber.slice(-3)}` : `TK-${Math.floor(10 + Math.random() * 90)}`);
+      const mrn = patientData?.mrn || patientData?.uhid || `UHID-${patientId.slice(0, 8)}`;
+      const feeReceiptNo = paymentRecord?.paymentNumber || `REC-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
 
       const newQueueItem: OpdQueueItem = {
-        id: `pat-${Date.now()}`,
+        id: activeEncounterId || patientId,
+        encounterId: activeEncounterId,
+        patientId,
         name,
         mobile,
         gender: patientGender,
@@ -316,62 +375,8 @@ export const FrontDeskMobileWorkstationView: React.FC<FrontDeskMobileWorkstation
         abhaAddress: abhaAddress || undefined
       };
 
-      // Save to local storage queue
-      const existingQueue: OpdQueueItem[] = JSON.parse(localStorage.getItem('docsearch_recent_opd_queue') || '[]');
-      existingQueue.unshift(newQueueItem);
-      localStorage.setItem('docsearch_recent_opd_queue', JSON.stringify(existingQueue));
-
-      // Synchronize with docsearch_encounters so Doctor Worklist & EMR see the arriving token immediately
-      const newEncounter = {
-        id: newQueueItem.id,
-        tenantId: tenantId || 'default',
-        partnerId: 'default',
-        organizationId: '33333333-3333-4333-8333-333333333301',
-        organizationName: 'Doctor Clinic & Multi-Specialty OPD',
-        branchId: '44444444-4444-4444-8444-444444444401',
-        branchName: 'Main OPD Floor',
-        departmentId: 'dept-opd-001',
-        departmentName: selectedDoc?.specialty || 'General OPD',
-        patientId: newQueueItem.id,
-        patientName: name,
-        patientMrn: mrn,
-        patientGender: patientGender,
-        patientDob: new Date(Date.now() - (parseInt(patientAge, 10) || 30) * 365.25 * 24 * 3600 * 1000).toISOString().split('T')[0],
-        patientMobile: mobile,
-        doctorId: selectedDoc?.id || 'doc-1',
-        doctorName: docName,
-        doctorSpecialty: selectedDoc?.specialty || 'General Medicine',
-        encounterNumber: `ENC-${Math.floor(100000 + Math.random() * 900000)}`,
-        encounterType: visitType,
-        status: 'WAITING',
-        priority: visitType === 'EMERGENCY' ? 'EMERGENCY' : 'ROUTINE',
-        consultationMode: 'IN_PERSON',
-        chiefComplaint: chiefComplaint || 'General OPD Consultation',
-        tokenNumber,
-        registeredAt: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        metadata: {
-          paymentMode: feePaymentMode,
-          feePaid: isFeePaid ? consultationFee : 0,
-          room: chamber,
-          tokenNumber,
-          feeReceiptNo
-        }
-      };
-
-      try {
-        const existingEncsRaw = localStorage.getItem('docsearch_encounters');
-        const encs = existingEncsRaw ? JSON.parse(existingEncsRaw) : [];
-        encs.unshift(newEncounter);
-        localStorage.setItem('docsearch_encounters', JSON.stringify(encs.slice(0, 100)));
-      } catch (err) {
-        console.warn('Failed to save to docsearch_encounters:', err);
-      }
-
       // Broadcast system events for instant multi-station interoperability
       window.dispatchEvent(new CustomEvent('docsearch:patient-registered', { detail: newQueueItem }));
-      window.dispatchEvent(new CustomEvent('docsearch:encounters-updated', { detail: newEncounter }));
       hospitalEventBus.publish(
         'PATIENT_SELECTED',
         'FrontDeskMobile',
@@ -420,8 +425,9 @@ export const FrontDeskMobileWorkstationView: React.FC<FrontDeskMobileWorkstation
 
       showToast(`Token ${tokenNumber} issued! Fee: ₹${consultationFee} (${isFeePaid ? 'PAID' : 'PENDING'})`);
       void loadLiveQueue();
-    } catch (err) {
-      showToast('Failed to issue token. Please try again.', 'error');
+    } catch (err: any) {
+      console.error('Failed to issue token:', err);
+      showToast(err?.message || 'Failed to issue token. Please try again.', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -433,11 +439,14 @@ export const FrontDeskMobileWorkstationView: React.FC<FrontDeskMobileWorkstation
     showToast(`📢 Calling Token ${token} (${patient}) to ${chamber}`);
   };
 
-  const handleDispatchToNurse = (item: OpdQueueItem) => {
-    const updated = queue.map((q) => (q.id === item.id ? { ...q, status: 'IN_TRIAGE' as const } : q));
-    setQueue(updated);
-    localStorage.setItem('docsearch_recent_opd_queue', JSON.stringify(updated));
-
+  const handleDispatchToNurse = async (item: OpdQueueItem) => {
+    if (item.id) {
+      try {
+        await apiRequest(`/api/v1/partner/clinical/queues/${item.id}/call`, { method: 'PATCH' });
+      } catch (err) {
+        console.warn('Queue call API warning:', err);
+      }
+    }
     showToast(`👩‍⚕️ ${item.name} (${item.token}) dispatched to Nurse Vitals Triage!`);
     hospitalEventBus.publish(
       'PATIENT_SELECTED',
@@ -455,13 +464,17 @@ export const FrontDeskMobileWorkstationView: React.FC<FrontDeskMobileWorkstation
       },
       `Token ${item.token} routed to Nurse Vitals Triage Station`
     );
+    void loadLiveQueue();
   };
 
-  const handleDispatchToDoctor = (item: OpdQueueItem) => {
-    const updated = queue.map((q) => (q.id === item.id ? { ...q, status: 'IN_CONSULTATION' as const } : q));
-    setQueue(updated);
-    localStorage.setItem('docsearch_recent_opd_queue', JSON.stringify(updated));
-
+  const handleDispatchToDoctor = async (item: OpdQueueItem) => {
+    if (item.id) {
+      try {
+        await apiRequest(`/api/v1/partner/clinical/queues/${item.id}/call`, { method: 'PATCH' });
+      } catch (err) {
+        console.warn('Queue call API warning:', err);
+      }
+    }
     announceToken(item.token, item.room, item.name);
     showToast(`👨‍⚕️ ${item.name} (${item.token}) dispatched to ${item.doctor} (${item.room})!`);
     hospitalEventBus.publish(
@@ -480,31 +493,45 @@ export const FrontDeskMobileWorkstationView: React.FC<FrontDeskMobileWorkstation
       },
       `Token ${item.token} dispatched into Doctor Chamber ${item.room}`
     );
+    void loadLiveQueue();
   };
 
-  const handleMarkComplete = (item: OpdQueueItem) => {
-    const updated = queue.map((q) => (q.id === item.id ? { ...q, status: 'COMPLETED' as const } : q));
-    setQueue(updated);
-    localStorage.setItem('docsearch_recent_opd_queue', JSON.stringify(updated));
-    showToast(`✅ ${item.name} (${item.token}) consultation completed.`);
+  const handleMarkComplete = async (item: OpdQueueItem) => {
+    try {
+      if (item.id) {
+        await apiRequest(`/api/v1/partner/clinical/queues/${item.id}/complete`, { method: 'PATCH' });
+      } else if (item.encounterId) {
+        await apiRequest(`/api/v1/partner/clinical/encounters/${item.encounterId}/checkout`, { method: 'POST' });
+      }
+      showToast(`✅ ${item.name} (${item.token}) consultation completed.`);
+      void loadLiveQueue();
+    } catch (err) {
+      console.warn('Complete queue warning:', err);
+      showToast(`✅ ${item.name} (${item.token}) consultation marked completed.`);
+      void loadLiveQueue();
+    }
   };
 
   // 2. Fee Collection Actions
-  const handleSettleFee = (item: OpdQueueItem, mode: 'CASH' | 'UPI_QR' | 'CARD') => {
-    const updated = queue.map((q) =>
-      q.id === item.id
-        ? {
-            ...q,
-            feeStatus: 'PAID' as const,
-            feePaymentMode: mode,
-            feeReceiptNo: q.feeReceiptNo || `REC-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`
-          }
-        : q
-    );
-    setQueue(updated);
-    localStorage.setItem('docsearch_recent_opd_queue', JSON.stringify(updated));
-    setCollectingItem(null);
-    showToast(`⚡ ₹${item.consultationFee} collected for ${item.name} via ${mode}! Receipt generated.`);
+  const handleSettleFee = async (item: OpdQueueItem, mode: 'CASH' | 'UPI_QR' | 'CARD') => {
+    try {
+      if (item.encounterId) {
+        await apiRequest(`/api/v1/partner/clinical/encounters/${item.encounterId}/payments`, {
+          method: 'POST',
+          body: JSON.stringify({
+            amount: Number(item.consultationFee),
+            paymentMethod: mode === 'UPI_QR' ? 'UPI' : mode,
+            notes: 'Fee settled at mobile front desk'
+          })
+        });
+      }
+      setCollectingItem(null);
+      showToast(`⚡ ₹${item.consultationFee} collected for ${item.name} via ${mode}! Receipt generated.`);
+      void loadLiveQueue();
+    } catch (err: any) {
+      console.error('Fee settlement error:', err);
+      showToast(err?.message || 'Failed to settle fee', 'error');
+    }
   };
 
   // Fee Analytics

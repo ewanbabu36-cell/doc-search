@@ -538,7 +538,7 @@ class PharmacyRevenueGallaService {
     const newRecord: GallaShiftHandoverRecord = {
       ...record,
       id: `gla-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-      handoverNumber: `GLA-${dateStr.replace(/-/g, '')}-${record.shiftType.charAt(0)}${suffix}`,
+      handoverNumber: `GLA-${dateStr.replace(/-/g, '')}-${(record.shiftType || 'G').charAt(0)}${suffix}`,
       handoverTimestamp: now.toISOString()
     };
 

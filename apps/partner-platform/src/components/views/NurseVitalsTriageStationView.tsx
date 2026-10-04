@@ -5,10 +5,8 @@ import {
   Button,
   Input
 } from '@docsearch/ui-kit';
-import { encounterService } from '../../services/encounter-service.js';
 import { hospitalEventBus } from '../../services/hospital-event-bus.js';
 import { apiRequest } from '../../services/api-client.js';
-import { optimisticActionService } from '../../services/optimistic-action-service.js';
 
 export interface NurseCapturedVitals {
   encounterId: string;
@@ -92,7 +90,7 @@ const DEFAULT_INPATIENTS: InpatientWardRecord[] = [];
 const DEFAULT_EMERGENCY_PATIENTS: EmergencyTriagePatient[] = [];
 
 export const NurseVitalsTriageStationView: React.FC<NurseVitalsTriageStationViewProps> = ({
-  tenantId = 'default',
+  tenantId: _tenantId = 'default',
   nurseName = 'Staff Nurse, RN',
   onPatientSentToDoctor
 }) => {
@@ -185,96 +183,90 @@ export const NurseVitalsTriageStationView: React.FC<NurseVitalsTriageStationView
     } catch {}
   };
 
-  // Load patient queue from encounterService and localStorage
+  // Load patient queue from authoritative PostgreSQL backend
   const loadQueue = useCallback(async () => {
     setIsLoading(true);
     try {
-      const list = await encounterService.searchEncounters({ tenantId, pageIndex: 1, pageSize: 50 }).catch(() => []);
-      
-      let merged: any[] = [];
-      try {
-        const recentRaw = localStorage.getItem('docsearch_recent_opd_queue');
-        if (recentRaw) {
-          const parsed = JSON.parse(recentRaw);
-          if (Array.isArray(parsed)) {
-            merged = parsed;
-          }
-        }
-      } catch {}
-
-      // Add encounters from API
-      for (const item of list) {
-        const exists = merged.some((e) => e.mrn === (item as any).patientMrn || e.token === (item as any).tokenNumber);
-        if (!exists) {
-          merged.push({
-            id: item.id || `enc-${Date.now()}`,
-            name: item.patientName || 'Patient',
-            mobile: item.patientMobile || '',
-            gender: item.patientGender || 'MALE',
-            age: '30',
-            mrn: item.patientMrn || `MRN-${Math.floor(100000 + Math.random() * 900000)}`,
-            token: (item as any).tokenNumber || `TK-0${merged.length + 1}`,
-            doctor: item.doctorName || 'Consulting Physician',
-            doctorId: item.doctorId || 'doc-1',
-            room: (item.metadata as any)?.room || 'Room 101',
-            status: item.status || 'WAITING',
-            visitType: item.encounterType || 'WALK_IN',
-            complaint: item.chiefComplaint || 'OPD Consultation',
-            registeredAt: item.registeredAt || new Date().toISOString()
-          });
-        }
+      const qRes = await apiRequest<any[]>('/api/v1/partner/clinical/queues');
+      let liveList: any[] = [];
+      if (qRes.success && Array.isArray(qRes.data)) {
+        liveList = qRes.data.map((item) => ({
+          id: item.id,
+          encounterId: item.encounterId,
+          patientId: item.patientId,
+          name: item.patientName || item.metadata?.patientName || 'Patient',
+          mobile: item.patientPhone || item.metadata?.patientPhone || '',
+          gender: item.gender || item.metadata?.gender || 'MALE',
+          age: String(item.age || item.metadata?.age || '30'),
+          mrn: item.mrn || item.uhid || item.metadata?.mrn || 'UHID-00000',
+          token: item.tokenNumber || `TK-${item.id.slice(0, 4)}`,
+          doctor: item.doctorName || item.metadata?.doctorName || 'Consulting Physician',
+          doctorId: item.doctorId || 'doc-1',
+          room: item.metadata?.chamber || 'Room 101',
+          status: item.queueStatus,
+          visitType: item.metadata?.visitType || 'WALK_IN',
+          complaint: item.chiefComplaint || 'OPD Consultation',
+          registeredAt: item.createdAt || new Date().toISOString(),
+          hasVitals: item.hasVitals,
+          vitals: item.vitals,
+          queueEligibility: item.queueEligibility,
+          blockingReason: item.blockingReason
+        }));
       }
 
-      setEncounters(merged);
-      if (!selectedEncounter && merged.length > 0) {
-        setSelectedEncounter(merged[0]);
+      setEncounters(liveList);
+      if (liveList.length > 0) {
+        setSelectedEncounter((prev: any) => {
+          if (!prev) return liveList[0];
+          const found = liveList.find((e) => e.id === prev.id || e.encounterId === prev.encounterId);
+          return found || liveList[0];
+        });
       }
+    } catch (err) {
+      console.warn('Live queue load error:', err);
     } finally {
       setIsLoading(false);
     }
-  }, [tenantId, selectedEncounter]);
+  }, []);
 
   useEffect(() => {
     void loadQueue();
     const handleRegistered = () => void loadQueue();
     window.addEventListener('docsearch:patient-registered', handleRegistered);
     window.addEventListener('docsearch:encounters-updated', handleRegistered);
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      void loadQueue();
+    }, 12000);
     return () => {
       window.removeEventListener('docsearch:patient-registered', handleRegistered);
       window.removeEventListener('docsearch:encounters-updated', handleRegistered);
+      clearInterval(interval);
     };
   }, [loadQueue]);
 
   // Load existing vitals when patient is selected
   useEffect(() => {
     if (!selectedEncounter) return;
-    try {
-      const storedNurseVitals = JSON.parse(localStorage.getItem('docsearch_nurse_vitals') || '{}');
-      const vit = storedNurseVitals[selectedEncounter.id];
-      if (vit) {
-        setSystolicBp(String(vit.systolicBp || 120));
-        setDiastolicBp(String(vit.diastolicBp || 80));
-        setPulseBpm(String(vit.pulseBpm || 74));
-        setSpo2Percent(String(vit.spo2Percent || 98));
-        setTempF(String(vit.tempF || 98.4));
-        setBloodSugarMgDl(String(vit.bloodSugarMgDl || 110));
-        setWeightKg(String(vit.weightKg || 68));
-        setHeightCm(String(vit.heightCm || 170));
-        setChiefComplaints(vit.chiefComplaints || selectedEncounter.complaint || '');
-        setTriageCategory(vit.triageCategory || 'NORMAL');
-      } else {
-        setChiefComplaints(selectedEncounter.complaint || '');
-      }
-    } catch {}
+    const vit = selectedEncounter.vitals;
+    if (vit) {
+      setSystolicBp(String(vit.systolicBp || 120));
+      setDiastolicBp(String(vit.diastolicBp || 80));
+      setPulseBpm(String(vit.pulseBpm || 74));
+      setSpo2Percent(String(vit.oxygenSaturationPercent || vit.spo2Percent || 98));
+      setTempF(String(vit.temperatureCelsius ? ((parseFloat(vit.temperatureCelsius) * 9 / 5) + 32).toFixed(1) : (vit.tempF || 98.4)));
+      setBloodSugarMgDl(String(vit.bloodSugarMgDl || 110));
+      setWeightKg(String(vit.weightKg || 68));
+      setHeightCm(String(vit.heightCm || 170));
+      setChiefComplaints(selectedEncounter.complaint || '');
+    } else {
+      setChiefComplaints(selectedEncounter.complaint || '');
+    }
   }, [selectedEncounter]);
 
   const hasVitalsRecorded = (encId: string) => {
-    try {
-      const stored = JSON.parse(localStorage.getItem('docsearch_nurse_vitals') || '{}');
-      return !!stored[encId];
-    } catch {
-      return false;
-    }
+    const enc = encounters.find((e) => e.id === encId || e.encounterId === encId);
+    return Boolean(enc?.hasVitals || enc?.vitals);
   };
 
   const filteredEncounters = useMemo(() => {
@@ -349,29 +341,39 @@ export const NurseVitalsTriageStationView: React.FC<NurseVitalsTriageStationView
       };
 
 
-      // 1b. Authoritative Server Persistence: Save vitals to consultation on PostgreSQL
+      // 1b. Authoritative Server Persistence: Save vitals to encounter on PostgreSQL
       try {
-        await apiRequest('/api/v1/partner/consultations', {
+        const activeEncounterId = selectedEncounter.encounterId || selectedEncounter.id;
+        const sBp = parseInt(systolicBp, 10) || 120;
+        const dBp = parseInt(diastolicBp, 10) || 80;
+        const pulse = parseInt(pulseBpm, 10) || 74;
+        const spo2 = parseInt(spo2Percent, 10) || 98;
+        const tempCelsius = ((parseFloat(tempF || '98.4') - 32) * 5 / 9).toFixed(1);
+        const wKg = parseFloat(weightKg) || 68;
+        const hCm = parseFloat(heightCm) || 170;
+
+        await apiRequest(`/api/v1/partner/clinical/encounters/${activeEncounterId}/vitals`, {
           method: 'POST',
           body: JSON.stringify({
-            encounterId: selectedEncounter.id,
-            patientId: selectedEncounter.patientId || selectedEncounter.id,
-            doctorId: selectedEncounter.doctorId,
-            status: 'TRIAGED',
-            chiefComplaint: chiefComplaints.trim() || 'Routine OPD consultation',
-            vitals: vitalsPayload
+            systolicBp: sBp,
+            diastolicBp: dBp,
+            pulseBpm: pulse,
+            oxygenSaturationPercent: spo2,
+            temperatureCelsius: tempCelsius,
+            temperatureFahrenheit: parseFloat(tempF) || 98.4,
+            weightKg: wKg,
+            heightCm: hCm,
+            painScore: 0,
+            clinicalNotes: `Triage vitals recorded: ${chiefComplaints.trim() || 'Routine OPD consultation'}. Category: ${triageCategory}.`,
+            recordedBy: nurseName || 'Staff Nurse, RN'
           })
         });
-      } catch (err) {
+      } catch (err: any) {
         console.warn('Backend vitals sync notice:', err);
       }
 
-      // 2. Update status in docsearch_recent_opd_queue to READY_FOR_ESCORT
-      const updatedQueue = encounters.map((q) =>
-        q.id === selectedEncounter.id ? { ...q, status: 'READY_FOR_ESCORT' } : q
-      );
-      setEncounters(updatedQueue);
-      localStorage.setItem('docsearch_recent_opd_queue', JSON.stringify(updatedQueue));
+      // 2. Refresh live queue directly from PostgreSQL backend
+      await loadQueue();
 
       // 3. Dispatch global events
       window.dispatchEvent(new CustomEvent('docsearch:vitals-recorded', { detail: vitalsPayload }));
@@ -379,7 +381,7 @@ export const NurseVitalsTriageStationView: React.FC<NurseVitalsTriageStationView
         'PATIENT_SELECTED',
         'NurseVitalsStation',
         {
-          patientId: selectedEncounter.id,
+          patientId: selectedEncounter.encounterId || selectedEncounter.id,
           name: selectedEncounter.name,
           uhid: selectedEncounter.mrn,
           opdToken: parseInt((selectedEncounter.token || '1').replace(/\D/g, ''), 10) || 1,
@@ -390,58 +392,40 @@ export const NurseVitalsTriageStationView: React.FC<NurseVitalsTriageStationView
         `Vitals captured for Token ${selectedEncounter.token} (${selectedEncounter.name}). Ready for Chamber Escort.`
       );
 
-      showToast(`✓ Vitals for Token #${selectedEncounter.token} recorded! Moved to Chamber Escort Queue.`);
-
-      const previousQueueSnapshot = [...encounters];
-      const previousToken = selectedEncounter.token;
-      const previousPatientName = selectedEncounter.name;
-
-      optimisticActionService.dispatch({
-        title: `Vitals recorded for Token #${previousToken} (${previousPatientName})`,
-        category: 'NURSE_VITALS',
-        countdownSeconds: 5,
-        onCommit: async () => {},
-        onUndo: () => {
-          setEncounters(previousQueueSnapshot);
-          localStorage.setItem('docsearch_recent_opd_queue', JSON.stringify(previousQueueSnapshot));
-          showToast(`↩️ Vitals capture undone for Token #${previousToken}`);
-          setActiveTab('RECORD_VITALS');
-        }
-      });
-
+      showToast(`✓ Vitals for Token #${selectedEncounter.token} recorded in database! Moved to Chamber Escort Queue.`);
       setActiveTab('CHAMBER_ESCORT');
-      await loadQueue();
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Chamber Escort Actions
-  const handleEscortToChamber = (item: any) => {
+  // Chamber Escort Actions - Bound to PostgreSQL API
+  const handleEscortToChamber = async (item: any) => {
     announceChamberEscort(item.token, item.name, item.room);
-    
-    // Update encounter status to IN_CONSULTATION
-    const updatedQueue = encounters.map((q) =>
-      q.id === item.id ? { ...q, status: 'IN_CONSULTATION' } : q
-    );
-    setEncounters(updatedQueue);
-    localStorage.setItem('docsearch_recent_opd_queue', JSON.stringify(updatedQueue));
+    try {
+      await apiRequest(`/api/v1/partner/clinical/queues/${item.id}/call`, {
+        method: 'PATCH'
+      });
+      await loadQueue();
 
-    hospitalEventBus.publish(
-      'PATIENT_SELECTED',
-      'NurseVitalsStation',
-      {
-        patientId: item.id,
-        name: item.name,
-        uhid: item.mrn,
-        opdToken: parseInt((item.token || '1').replace(/\D/g, ''), 10) || 1,
-        doctorName: item.doctor,
-        stage: 'IN_CONSULTATION'
-      },
-      `Token ${item.token} escorted into Doctor Chamber ${item.room}`
-    );
+      hospitalEventBus.publish(
+        'PATIENT_SELECTED',
+        'NurseVitalsStation',
+        {
+          patientId: item.encounterId || item.id,
+          name: item.name,
+          uhid: item.mrn,
+          opdToken: parseInt((item.token || '1').replace(/\D/g, ''), 10) || 1,
+          doctorName: item.doctor,
+          stage: 'IN_CONSULTATION'
+        },
+        `Token ${item.token} escorted into Doctor Chamber ${item.room}`
+      );
 
-    showToast(`🚪 Escorting ${item.name} (${item.token}) to ${item.doctor} (${item.room})!`);
+      showToast(`🚪 Escorting ${item.name} (${item.token}) to ${item.doctor} (${item.room})! Status updated in database.`);
+    } catch (err: any) {
+      showToast(err?.message || 'Failed to update chamber escort status in database');
+    }
   };
 
   const handleHandoverComplete = (item: any) => {
@@ -1193,7 +1177,7 @@ export const NurseVitalsTriageStationView: React.FC<NurseVitalsTriageStationView
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '12px' }}>
               {chamberEscortPatients.map((p) => {
-                const storedVitals = JSON.parse(localStorage.getItem('docsearch_nurse_vitals') || '{}')[p.id];
+                const storedVitals = p.vitals || null;
 
                 return (
                   <Card

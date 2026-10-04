@@ -1,6 +1,6 @@
 {
   "testId": "ABDM-EXT-04",
-  "timestamp": "2026-09-27T09:27:11.133Z",
+  "timestamp": "2026-10-01T11:00:44.377Z",
   "milestone": "M2",
   "certificationLevel": "NHA_LEVEL_2_M2",
   "standard": "ABDM Gateway API v1.0 - Patient Counter QR Scan & Share (OPD Fast-Track)",
@@ -9,7 +9,7 @@
   "external": false,
   "endpoint": "https://dev.abdm.gov.in/gateway/v1.0/patients/profile/share",
   "method": "POST",
-  "requestCorrelationId": "CORR-SCAN-SHARE-1790501231135",
+  "requestCorrelationId": "CORR-SCAN-SHARE-1790852444518",
   "httpStatus": null,
   "status": "BLOCKED",
   "blockerReason": "External scan & share counter sync blocked by missing sandbox credentials",
@@ -38,5 +38,5 @@
   },
   "databaseVerified": false,
   "callbackVerified": false,
-  "evidenceHash": "638d0d2c52544a610e8801d0c3ba2f799283cd6cbb452699ce955f5c0c2f1043"
+  "evidenceHash": "8d31822df3db3fd3bb94d43c036675ebdb9b9ad4804cf56f10b688c74b8698a5"
 }

@@ -1,4 +1,4 @@
-import { getDatabase, founderApprovalRequests, eq, desc, and } from '@docsearch/database';
+import { getDatabase, founderApprovalRequests, eq, desc, and, tenants, users } from '@docsearch/database';
 import { AppError, ErrorCode, createLogger } from '@docsearch/shared-core';
 import crypto from 'node:crypto';
 
@@ -138,6 +138,38 @@ export class FounderApprovalRepository {
       })
       .where(eq(founderApprovalRequests.id, id))
       .returning();
+
+    // If this was a profile amendment, execute the database cutover:
+    if (existing.entityType === 'PARTNER_PROFILE_AMENDMENT' && existing.payloadData) {
+      const payload = existing.payloadData as any;
+      try {
+        if (payload.proposedFacilityName && payload.tenantSlug) {
+          await dbClient
+            .update(tenants)
+            .set({
+              name: payload.proposedFacilityName,
+              updatedAt: new Date()
+            })
+            .where(eq(tenants.slug, payload.tenantSlug));
+        }
+
+        if (payload.proposedOwnerName && payload.userEmail) {
+          const parts = payload.proposedOwnerName.trim().split(/\s+/);
+          const firstName = parts[0] || payload.proposedOwnerName;
+          const lastName = parts.slice(1).join(' ') || '';
+          await dbClient
+            .update(users)
+            .set({
+              firstName,
+              lastName,
+              updatedAt: new Date()
+            })
+            .where(eq(users.email, payload.userEmail.toLowerCase().trim()));
+        }
+      } catch (syncErr) {
+        logger.warn('Failed to auto-update tenant/user record on amendment approval', { error: syncErr });
+      }
+    }
 
     return {
       success: true,

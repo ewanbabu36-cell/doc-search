@@ -5,6 +5,7 @@ export interface DocSearchResponsiveBrandProps {
   workspaceName?: string;
   workspaceColor?: string;
   workspaceIcon?: string;
+  subtitle?: string;
   isCompact?: boolean;
   onClick?: () => void;
   className?: string;
@@ -12,6 +13,7 @@ export interface DocSearchResponsiveBrandProps {
 
 export const DocSearchResponsiveBrand: React.FC<DocSearchResponsiveBrandProps> = ({
   workspaceName = 'Healthcare',
+  subtitle,
   isCompact = false,
   onClick,
   className = ''
@@ -27,11 +29,17 @@ export const DocSearchResponsiveBrand: React.FC<DocSearchResponsiveBrandProps> =
     }
   };
 
+  const defaultSubtitle =
+    workspaceName.toUpperCase() === 'CLINIC'
+      ? 'Clinic & OPD Chamber'
+      : `${workspaceName.replace(/_/g, ' ')} Intelligence`;
+
   return (
     <DocSearchLogo
       variant={isCompact ? 'icon-only' : 'full'}
       size="sm"
       badgeText={workspaceName.replace(/_/g, ' ').toUpperCase()}
+      subtitle={subtitle || defaultSubtitle}
       redirectUrl="/"
       clickable={true}
       onClick={handleHomeClick}

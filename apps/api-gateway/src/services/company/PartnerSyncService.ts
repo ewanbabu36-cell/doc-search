@@ -1247,11 +1247,52 @@ export class PartnerSyncService {
             planTier
           );
 
+          // Dynamically read quotas from HQ assigned plan if present
+          const assigned = partner.assignedPlan || {};
+          const effectiveMaxDoctors =
+            assigned.maxDoctors !== undefined ? Number(assigned.maxDoctors) :
+            assigned.doctorQuota ? parseInt(String(assigned.doctorQuota), 10) || maxDoctors :
+            maxDoctors;
+
+          const effectiveMaxStaff =
+            assigned.maxStaff !== undefined ? Number(assigned.maxStaff) :
+            assigned.maxConcurrentUsers !== undefined ? Number(assigned.maxConcurrentUsers) :
+            assigned.staffSeatsQuota ? parseInt(String(assigned.staffSeatsQuota), 10) || maxConcurrentUsers :
+            maxConcurrentUsers;
+
+          const effectiveMaxBranches =
+            assigned.maxBranches !== undefined ? Number(assigned.maxBranches) :
+            assigned.branchQuota ? parseInt(String(assigned.branchQuota), 10) || maxBranches :
+            maxBranches;
+
+          const effectiveMaxBeds =
+            assigned.maxBeds !== undefined ? Number(assigned.maxBeds) :
+            assigned.bedQuota ? parseInt(String(assigned.bedQuota), 10) || (partnerType.includes('HOSPITAL') ? 50 : 0) :
+            (partnerType.includes('HOSPITAL') ? 50 : 0);
+
+          // Calculate expiryDate dynamically based on plan terms
+          const startDate = new Date();
+          let expiryDate = new Date(Date.now() + 365 * 24 * 3600 * 1000); // 1 year default
+          if (assigned.expiryDate) {
+            const parsed = new Date(assigned.expiryDate);
+            if (!isNaN(parsed.getTime())) expiryDate = parsed;
+          } else if (assigned.trialDays && Number(assigned.trialDays) > 0) {
+            expiryDate = new Date(Date.now() + Number(assigned.trialDays) * 24 * 3600 * 1000);
+          } else if (assigned.contractDuration === '1_MONTH') {
+            expiryDate = new Date(Date.now() + 30 * 24 * 3600 * 1000);
+          } else if (assigned.contractDuration === '3_MONTHS') {
+            expiryDate = new Date(Date.now() + 90 * 24 * 3600 * 1000);
+          } else if (assigned.contractDuration === '6_MONTHS') {
+            expiryDate = new Date(Date.now() + 180 * 24 * 3600 * 1000);
+          } else if (assigned.contractDuration === '2_YEARS') {
+            expiryDate = new Date(Date.now() + 730 * 24 * 3600 * 1000);
+          } else if (assigned.contractDuration === 'LIFETIME') {
+            expiryDate = new Date(Date.now() + 25 * 365 * 24 * 3600 * 1000);
+          }
+          const gracePeriodEnd = new Date(expiryDate.getTime() + 15 * 24 * 3600 * 1000);
+
           const subscriptionId = toDeterministicUuid(`sub-${tenantId}`);
           const licenseKey = `LIC-2026-${partnerType.substring(0, 4).toUpperCase()}-${tenantId.substring(0, 8).toUpperCase()}`;
-          const startDate = new Date();
-          const expiryDate = new Date(Date.now() + 365 * 24 * 3600 * 1000);
-          const gracePeriodEnd = new Date(Date.now() + 380 * 24 * 3600 * 1000);
 
           // Check if subscription exists
           const [existingSub] = await db
@@ -1280,11 +1321,20 @@ export class PartnerSyncService {
                 planId,
                 planVersion: '1.0.0',
                 status: 'ACTIVE',
-                billingCycle: 'ANNUAL',
+                billingCycle: (assigned.billingFrequency as any) || 'ANNUAL',
                 startDate,
                 renewalDate: expiryDate,
                 endDate: expiryDate,
-                metadata: { autoHydrated: true, planTier, partnerType, operatingMode: effectiveOperatingMode, assignedPlan: partner.assignedPlan || null }
+                metadata: {
+                  autoHydrated: true,
+                  planTier,
+                  partnerType,
+                  operatingMode: effectiveOperatingMode,
+                  assignedPlan: partner.assignedPlan || null,
+                  maxBeds: effectiveMaxBeds,
+                  maxStaff: effectiveMaxStaff,
+                  maxDoctors: effectiveMaxDoctors
+                }
               })
               .onConflictDoNothing();
           } else {
@@ -1296,7 +1346,16 @@ export class PartnerSyncService {
                 status: 'ACTIVE',
                 endDate: expiryDate,
                 renewalDate: expiryDate,
-                metadata: { autoHydrated: true, planTier, partnerType, operatingMode: effectiveOperatingMode, assignedPlan: partner.assignedPlan || null },
+                metadata: {
+                  autoHydrated: true,
+                  planTier,
+                  partnerType,
+                  operatingMode: effectiveOperatingMode,
+                  assignedPlan: partner.assignedPlan || null,
+                  maxBeds: effectiveMaxBeds,
+                  maxStaff: effectiveMaxStaff,
+                  maxDoctors: effectiveMaxDoctors
+                },
                 updatedAt: new Date()
               })
               .where(eq(subscriptions.id, existingSub.id));
@@ -1322,15 +1381,24 @@ export class PartnerSyncService {
                 licenseType: 'COMMERCIAL',
                 status: 'ACTIVE',
                 activationStatus: 'ACTIVATED',
-                maxConcurrentUsers,
-                maxDoctors,
-                maxBranches,
+                maxConcurrentUsers: effectiveMaxStaff,
+                maxDoctors: effectiveMaxDoctors,
+                maxBranches: effectiveMaxBranches,
                 issuedAt: startDate,
                 startDate,
                 expiryDate,
                 gracePeriodEnd,
                 signature,
-                metadata: { autoHydrated: true, planTier, partnerType, operatingMode: effectiveOperatingMode, assignedPlan: partner.assignedPlan || null }
+                metadata: {
+                  autoHydrated: true,
+                  planTier,
+                  partnerType,
+                  operatingMode: effectiveOperatingMode,
+                  assignedPlan: partner.assignedPlan || null,
+                  maxBeds: effectiveMaxBeds,
+                  maxStaff: effectiveMaxStaff,
+                  maxDoctors: effectiveMaxDoctors
+                }
               })
               .onConflictDoNothing();
           } else {
@@ -1344,13 +1412,22 @@ export class PartnerSyncService {
                 planId,
                 status: 'ACTIVE',
                 activationStatus: 'ACTIVATED',
-                maxConcurrentUsers,
-                maxDoctors,
-                maxBranches,
+                maxConcurrentUsers: effectiveMaxStaff,
+                maxDoctors: effectiveMaxDoctors,
+                maxBranches: effectiveMaxBranches,
                 expiryDate,
                 gracePeriodEnd,
                 signature,
-                metadata: { autoHydrated: true, planTier, partnerType, operatingMode: effectiveOperatingMode, assignedPlan: partner.assignedPlan || null },
+                metadata: {
+                  autoHydrated: true,
+                  planTier,
+                  partnerType,
+                  operatingMode: effectiveOperatingMode,
+                  assignedPlan: partner.assignedPlan || null,
+                  maxBeds: effectiveMaxBeds,
+                  maxStaff: effectiveMaxStaff,
+                  maxDoctors: effectiveMaxDoctors
+                },
                 updatedAt: new Date()
               })
               .where(eq(licenses.id, existingLicense.id));

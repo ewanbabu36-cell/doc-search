@@ -4,7 +4,7 @@ const endpoints = [
   { name: 'API Gateway (http://localhost:4000/api/v1/health)', url: 'http://localhost:4000/api/v1/health' },
   { name: 'API Gateway (http://localhost:4000/api/v1/commercial/plans)', url: 'http://localhost:4000/api/v1/commercial/plans' },
   { name: 'Partner Platform (http://localhost:5173/)', url: 'http://localhost:5173/' },
-  { name: 'Company Platform (http://localhost:5174/)', url: 'http://localhost:5174/' },
+  { name: 'Company Platform (http://localhost:5177/)', url: 'http://localhost:5177/' },
   { name: 'Landing Page (http://localhost:5175/)', url: 'http://localhost:5175/' },
 ];
 

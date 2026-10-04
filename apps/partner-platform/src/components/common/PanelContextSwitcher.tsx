@@ -22,22 +22,60 @@ export const PanelContextSwitcher: React.FC<PanelContextSwitcherProps> = ({
   facilities,
   onContextChange
 }) => {
-  const filteredOrgs = organizations.filter((o) => o.partnerId === context.activePartnerId);
+  const displayPartners = partners.length > 0
+    ? partners
+    : [{
+        id: context.activePartnerId || context.activeTenantId,
+        partnerCode: `PRT-${(context.activeTenantId || '').substring(0, 8).toUpperCase() || 'MAIN'}`,
+        legalBusinessName: context.activeTenantName || 'Healthcare Network'
+      } as any];
+
+  const partnerOptions = displayPartners.map((p) => {
+    const code = p.partnerCode || (p as any).code || `PRT-${p.id ? p.id.substring(0, 8).toUpperCase() : 'MAIN'}`;
+    const name = p.legalBusinessName || (p as any).legalName || (p as any).tradeName || context.activeTenantName || 'Healthcare Facility';
+    return {
+      value: p.id,
+      label: `${code} — ${name}`
+    };
+  });
+
+  const filteredOrgs = organizations.filter((o) => !context.activePartnerId || o.partnerId === context.activePartnerId);
+  const displayOrgs = filteredOrgs.length > 0 ? filteredOrgs : organizations;
+  const orgOptions = displayOrgs.length > 0
+    ? displayOrgs.map((o) => ({
+        value: o.id,
+        label: `${o.organizationCode || 'ORG'} — ${o.organizationName || 'Organization'} (${o.organizationType || 'CLINIC'})`
+      }))
+    : [{
+        value: context.activeOrganizationId || 'org-main',
+        label: `${context.activeOrganizationName || context.activeTenantName || 'Primary Healthcare Organization'} (CLINIC)`
+      }];
+
   const filteredFacilities = facilities.filter(
     (f) =>
-      f.partnerId === context.activePartnerId &&
+      (!context.activePartnerId || f.partnerId === context.activePartnerId) &&
       (!context.activeOrganizationId || f.organizationId === context.activeOrganizationId)
   );
+  const displayFacilities = filteredFacilities.length > 0 ? filteredFacilities : facilities;
+  const facOptions = displayFacilities.length > 0
+    ? displayFacilities.map((f) => ({
+        value: f.id,
+        label: `${f.facilityCode || 'LOC'} — ${f.facilityName || 'Primary Location'}`
+      }))
+    : [{
+        value: context.activeFacilityId || 'loc-main',
+        label: `${context.activeFacilityName || context.activeTenantName || 'Primary Location / Branch'}`
+      }];
 
   const handlePartnerChange = (partnerId: string) => {
-    const selected = partners.find((p) => p.id === partnerId);
-    const orgs = organizations.filter((o) => o.partnerId === partnerId);
-    const firstOrg = orgs[0];
-    const firstFac = facilities.find((f) => f.partnerId === partnerId && f.organizationId === firstOrg?.id);
+    const selected = displayPartners.find((p) => p.id === partnerId);
+    const orgs = displayOrgs.filter((o) => o.partnerId === partnerId);
+    const firstOrg = orgs[0] || displayOrgs[0];
+    const firstFac = displayFacilities.find((f) => f.partnerId === partnerId && f.organizationId === firstOrg?.id) || displayFacilities[0];
 
     onContextChange({
       activePartnerId: partnerId,
-      activePartnerName: selected?.legalBusinessName ?? 'Partner',
+      activePartnerName: selected?.legalBusinessName ?? selected?.legalName ?? 'Partner',
       activeOrganizationId: firstOrg?.id,
       activeOrganizationName: firstOrg?.organizationName,
       activeFacilityId: firstFac?.id,
@@ -46,9 +84,9 @@ export const PanelContextSwitcher: React.FC<PanelContextSwitcherProps> = ({
   };
 
   const handleOrgChange = (orgId: string) => {
-    const selected = organizations.find((o) => o.id === orgId);
-    const facs = facilities.filter((f) => f.organizationId === orgId);
-    const firstFac = facs[0];
+    const selected = displayOrgs.find((o) => o.id === orgId);
+    const facs = displayFacilities.filter((f) => f.organizationId === orgId);
+    const firstFac = facs[0] || displayFacilities[0];
 
     onContextChange({
       activeOrganizationId: orgId,
@@ -59,12 +97,24 @@ export const PanelContextSwitcher: React.FC<PanelContextSwitcherProps> = ({
   };
 
   const handleFacilityChange = (facId: string) => {
-    const selected = facilities.find((f) => f.id === facId);
+    const selected = displayFacilities.find((f) => f.id === facId);
     onContextChange({
       activeFacilityId: facId,
       activeFacilityName: selected?.facilityName
     });
   };
+
+  const currentPartnerVal = partnerOptions.some((o) => o.value === context.activePartnerId)
+    ? context.activePartnerId
+    : partnerOptions[0]?.value;
+
+  const currentOrgVal = orgOptions.some((o) => o.value === context.activeOrganizationId)
+    ? context.activeOrganizationId
+    : orgOptions[0]?.value;
+
+  const currentFacVal = facOptions.some((o) => o.value === context.activeFacilityId)
+    ? context.activeFacilityId
+    : facOptions[0]?.value;
 
   return (
     <Card padding="md">
@@ -93,12 +143,9 @@ export const PanelContextSwitcher: React.FC<PanelContextSwitcherProps> = ({
               Active Partner Network
             </label>
             <Select
-              value={context.activePartnerId}
+              value={currentPartnerVal}
               onChange={(e) => handlePartnerChange(e.target.value)}
-              options={partners.map((p) => ({
-                value: p.id,
-                label: `${p.partnerCode} — ${p.legalBusinessName}`
-              }))}
+              options={partnerOptions}
             />
           </div>
 
@@ -107,12 +154,9 @@ export const PanelContextSwitcher: React.FC<PanelContextSwitcherProps> = ({
               Active Clinic / Hospital Organization
             </label>
             <Select
-              value={context.activeOrganizationId ?? ''}
+              value={currentOrgVal ?? ''}
               onChange={(e) => handleOrgChange(e.target.value)}
-              options={filteredOrgs.map((o) => ({
-                value: o.id,
-                label: `${o.organizationCode} — ${o.organizationName} (${o.organizationType})`
-              }))}
+              options={orgOptions}
             />
           </div>
 
@@ -121,12 +165,9 @@ export const PanelContextSwitcher: React.FC<PanelContextSwitcherProps> = ({
               Active Facility Branch
             </label>
             <Select
-              value={context.activeFacilityId ?? ''}
+              value={currentFacVal ?? ''}
               onChange={(e) => handleFacilityChange(e.target.value)}
-              options={filteredFacilities.map((f) => ({
-                value: f.id,
-                label: `${f.facilityCode} — ${f.facilityName}`
-              }))}
+              options={facOptions}
             />
           </div>
         </div>

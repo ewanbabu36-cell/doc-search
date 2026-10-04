@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type {
   OperationalStaffDto,
   OperationalDepartmentDto,
@@ -118,6 +118,7 @@ export const StaffDirectoryView: React.FC<StaffDirectoryViewProps> = ({
 
   const normRole = (actorRole || '').toUpperCase();
   const normWsp = (workspace || '').toUpperCase();
+  const isClinicMode = normWsp.includes('CLINIC') || dedicatedCategory === 'INDEPENDENT_CLINIC';
   const isSuperOrAdmin =
     isDestructiveActionAllowed(actorRole) ||
     !actorRole ||
@@ -141,6 +142,12 @@ export const StaffDirectoryView: React.FC<StaffDirectoryViewProps> = ({
 
   // Dialog States
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+
+  useEffect(() => {
+    const handleOpenCreate = () => setIsCreateOpen(true);
+    window.addEventListener('docsearch:open_create_staff', handleOpenCreate);
+    return () => window.removeEventListener('docsearch:open_create_staff', handleOpenCreate);
+  }, []);
   const [editStaff, setEditStaff] = useState<OperationalStaffDto | null>(null);
   const [statusStaff, setStatusStaff] = useState<OperationalStaffDto | null>(null);
   const [roleStaff, setRoleStaff] = useState<OperationalStaffDto | null>(null);
@@ -258,11 +265,28 @@ export const StaffDirectoryView: React.FC<StaffDirectoryViewProps> = ({
 
   const filteredStaff = deduplicatedStaffList.filter((s) => {
     const staffCat: PartnerCategory =
-      (s as any).partnerCategory || s.metadata?.['partnerCategory'] || 'INDEPENDENT_CLINIC';
+      (s as any).partnerCategory || s.metadata?.['partnerCategory'] || (
+        s.staffType === 'PHARMACIST' ? 'PHARMACY' :
+        s.staffType === 'LAB_TECHNICIAN' ? 'PATHOLOGY' :
+        s.staffType === 'DOCTOR' ? (workspace === 'PATHOLOGY' ? 'PATHOLOGY' : workspace === 'CLINIC' ? 'INDEPENDENT_CLINIC' : 'MULTI_SPECIALITY_HOSPITAL') :
+        workspace === 'PHARMACY' ? 'PHARMACY' :
+        workspace === 'PATHOLOGY' ? 'PATHOLOGY' :
+        workspace === 'CLINIC' ? 'INDEPENDENT_CLINIC' :
+        'MULTI_SPECIALITY_HOSPITAL'
+      );
 
     // Strict partner isolation: Pharmacy only sees Pharmacy staff, Clinic only Clinic staff, etc.
     if (dedicatedCategory) {
-      if (staffCat !== dedicatedCategory) return false;
+      if (staffCat !== dedicatedCategory) {
+        if (dedicatedCategory === 'INDEPENDENT_CLINIC') {
+          const role = (s.primaryRole || s.staffType || '').toUpperCase();
+          if (!role.includes('CLINIC') && !role.includes('FRONT_DESK') && !role.includes('RECEPTION') && !role.includes('DOCTOR') && !role.includes('NURSE')) {
+            return false;
+          }
+        } else {
+          return false;
+        }
+      }
     } else if (categoryFilter !== 'ALL') {
       if (staffCat !== categoryFilter) return false;
     }
@@ -438,20 +462,27 @@ export const StaffDirectoryView: React.FC<StaffDirectoryViewProps> = ({
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <h2 style={{ margin: 0, fontSize: '1.125rem', fontWeight: '700', color: 'var(--ds-color-text-primary)' }}>
-              {headerInfo.title}
+              {isClinicMode ? 'Active Staff & Reception Team' : headerInfo.title}
             </h2>
             {dedicatedCategory && (
               <Badge variant="primary">
-                {PARTNER_CATEGORIES[dedicatedCategory].icon} {PARTNER_CATEGORIES[dedicatedCategory].shortLabel} Profile
+                {PARTNER_CATEGORIES[dedicatedCategory].icon} {PARTNER_CATEGORIES[dedicatedCategory].shortLabel}
               </Badge>
+            )}
+            {isClinicMode && (
+              <span style={{ fontSize: '0.8rem', color: 'var(--ds-color-text-muted)', fontWeight: 600 }}>
+                ({filteredStaff.length} {filteredStaff.length === 1 ? 'Member' : 'Members'})
+              </span>
             )}
           </div>
           <span style={{ fontSize: '0.75rem', color: 'var(--ds-color-text-muted)' }}>
-            {headerInfo.subtitle}
+            {isClinicMode
+              ? 'Frontdesk token dispatchers, clinic assistants, and tablet PIN logins'
+              : headerInfo.subtitle}
           </span>
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          {isSuperOrAdmin && (
+          {isSuperOrAdmin && !isClinicMode && (
             <Button variant="outline" size="sm" onClick={handleExportCSV}>
               📥 Export CSV
             </Button>
@@ -549,71 +580,375 @@ export const StaffDirectoryView: React.FC<StaffDirectoryViewProps> = ({
         </div>
       )}
 
-      {/* Filters */}
-      <Card padding="md">
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '600', marginBottom: '4px' }}>
-              Search Personnel
-            </label>
+      {/* Filters: Compact for clinic when > 4 staff, standard grid for enterprise */}
+      {isClinicMode ? (
+        staffList.length > 4 ? (
+          <div style={{ maxWidth: '340px' }}>
             <Input
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by name, code, or email..."
+              placeholder="🔍 Search staff by name or phone..."
             />
           </div>
+        ) : null
+      ) : (
+        <Card padding="md">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '600', marginBottom: '4px' }}>
+                Search Personnel
+              </label>
+              <Input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search by name, code, or email..."
+              />
+            </div>
 
-          <div>
-            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '600', marginBottom: '4px' }}>
-              Staff Classification
-            </label>
-            <Select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              options={getClassificationOptions()}
-            />
-          </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '600', marginBottom: '4px' }}>
+                Staff Classification
+              </label>
+              <Select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+                options={getClassificationOptions()}
+              />
+            </div>
 
-          <div>
-            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '600', marginBottom: '4px' }}>
-              Department
-            </label>
-            <Select
-              value={deptFilter}
-              onChange={(e) => setDeptFilter(e.target.value)}
-              options={[
-                { value: 'ALL', label: 'All Departments' },
-                ...departments.map((d) => ({
-                  value: d.id,
-                  label: d.departmentName
-                }))
-              ]}
-            />
-          </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '600', marginBottom: '4px' }}>
+                Department
+              </label>
+              <Select
+                value={deptFilter}
+                onChange={(e) => setDeptFilter(e.target.value)}
+                options={[
+                  { value: 'ALL', label: 'All Departments' },
+                  ...departments.map((d) => ({
+                    value: d.id,
+                    label: d.departmentName
+                  }))
+                ]}
+              />
+            </div>
 
-          <div>
-            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '600', marginBottom: '4px' }}>
-              Lifecycle Status
-            </label>
-            <Select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              options={[
-                { value: 'ALL', label: 'All Statuses' },
-                { value: 'ACTIVE', label: 'Active' },
-                { value: 'ON_LEAVE', label: 'On Leave' },
-                { value: 'SUSPENDED', label: 'Suspended' },
-                { value: 'TERMINATED', label: 'Terminated' }
-              ]}
-            />
+            <div>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '600', marginBottom: '4px' }}>
+                Lifecycle Status
+              </label>
+              <Select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                options={[
+                  { value: 'ALL', label: 'All Statuses' },
+                  { value: 'ACTIVE', label: 'Active' },
+                  { value: 'ON_LEAVE', label: 'On Leave' },
+                  { value: 'SUSPENDED', label: 'Suspended' },
+                  { value: 'TERMINATED', label: 'Terminated' }
+                ]}
+              />
+            </div>
           </div>
+        </Card>
+      )}
+
+      {/* Staff View: Bento Cards for Clinic, Table for Enterprise/Hospital */}
+      {isClinicMode ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
+          {filteredStaff.length === 0 ? (
+            <div
+              style={{
+                gridColumn: '1 / -1',
+                padding: '48px 24px',
+                textAlign: 'center',
+                backgroundColor: 'rgba(15, 23, 42, 0.4)',
+                borderRadius: '16px',
+                border: '1.5px dashed rgba(255, 255, 255, 0.12)'
+              }}
+            >
+              <span style={{ fontSize: '2.5rem' }}>👥</span>
+              <h3 style={{ margin: '12px 0 6px 0', fontSize: '1.1rem', color: '#F8FAFC', fontWeight: 800 }}>
+                No Clinic Staff Members Found
+              </h3>
+              <p style={{ margin: '0 0 16px 0', fontSize: '0.85rem', color: '#94A3B8' }}>
+                Onboard your receptionists, clinic compounders, or nurses to give them instant 4-digit PIN login.
+              </p>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setIsCreateOpen(true)}
+                style={{ backgroundColor: '#10b981', borderColor: '#059669', color: '#fff', fontWeight: 700 }}
+              >
+                ➕ Add New Staff Member
+              </Button>
+            </div>
+          ) : (
+            filteredStaff.map((s) => {
+              const isRevoked = Boolean((s as any).isAccessRevoked || s.employmentStatus === 'SUSPENDED');
+              const pinCode = String(s.metadata?.['password'] || s.metadata?.['pin'] || '123456');
+              const roleUpper = (s.primaryRole || s.staffType || '').toUpperCase();
+
+              const roleInfo =
+                roleUpper.includes('FRONT') || roleUpper.includes('RECEPT')
+                  ? { label: 'Frontdesk & Tokens', icon: '📇', bg: 'rgba(56, 189, 248, 0.15)', border: 'rgba(56, 189, 248, 0.35)', color: '#38BDF8' }
+                  : roleUpper.includes('NURSE')
+                  ? { label: 'Clinic Nurse / Vitals', icon: '👩‍⚕️', bg: 'rgba(236, 72, 153, 0.15)', border: 'rgba(236, 72, 153, 0.35)', color: '#F472B6' }
+                  : roleUpper.includes('PHARMAC') || roleUpper.includes('DISPENS')
+                  ? { label: 'Dispensary / Medicine', icon: '💊', bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.35)', color: '#34D399' }
+                  : roleUpper.includes('DOCTOR')
+                  ? { label: 'Consulting Doctor', icon: '🩺', bg: 'rgba(6, 182, 212, 0.15)', border: 'rgba(6, 182, 212, 0.35)', color: '#22D3EE' }
+                  : { label: s.primaryRole || 'Clinic Assistant', icon: '👤', bg: 'rgba(168, 85, 247, 0.15)', border: 'rgba(168, 85, 247, 0.35)', color: '#C084FC' };
+
+              return (
+                <div
+                  key={s.id}
+                  style={{
+                    backgroundColor: 'rgba(15, 23, 42, 0.75)',
+                    border: isRevoked ? '1.5px solid rgba(239, 68, 68, 0.45)' : '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '16px',
+                    padding: '20px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    gap: '14px',
+                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)',
+                    backdropFilter: 'blur(16px)',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  {/* Top Bar: Role badge + Status */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '3px 10px',
+                        borderRadius: '20px',
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        backgroundColor: roleInfo.bg,
+                        border: `1px solid ${roleInfo.border}`,
+                        color: roleInfo.color
+                      }}
+                    >
+                      <span>{roleInfo.icon}</span>
+                      <span>{roleInfo.label}</span>
+                    </span>
+
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '2px 8px',
+                        borderRadius: '6px',
+                        fontSize: '0.68rem',
+                        fontWeight: 700,
+                        backgroundColor: isRevoked ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+                        border: `1px solid ${isRevoked ? 'rgba(239, 68, 68, 0.4)' : 'rgba(16, 185, 129, 0.4)'}`,
+                        color: isRevoked ? '#F87171' : '#34D399'
+                      }}
+                    >
+                      <span>{isRevoked ? '⛔' : '●'}</span>
+                      <span>{isRevoked ? 'SUSPENDED' : 'ACTIVE'}</span>
+                    </span>
+                  </div>
+
+                  {/* Profile info */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                    <div
+                      style={{
+                        width: '46px',
+                        height: '46px',
+                        borderRadius: '12px',
+                        backgroundColor: isRevoked ? 'rgba(239, 68, 68, 0.15)' : 'rgba(56, 189, 248, 0.15)',
+                        border: `1.5px solid ${isRevoked ? 'rgba(239, 68, 68, 0.3)' : 'rgba(56, 189, 248, 0.3)'}`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '1.2rem',
+                        fontWeight: 800,
+                        color: isRevoked ? '#F87171' : '#38BDF8',
+                        flexShrink: 0
+                      }}
+                    >
+                      {s.fullName ? s.fullName.charAt(0).toUpperCase() : '👤'}
+                    </div>
+
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontSize: '1rem', fontWeight: 800, color: '#F8FAFC', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {s.fullName}
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: '#94A3B8', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span>📞 {s.workPhone ? maskPhone(s.workPhone) : 'No Phone'}</span>
+                        <span style={{ opacity: 0.4 }}>•</span>
+                        <span>ID: {s.staffCode}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Hero Quick Login PIN Box */}
+                  <div
+                    style={{
+                      backgroundColor: 'rgba(0, 0, 0, 0.35)',
+                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                      borderRadius: '10px',
+                      padding: '10px 14px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between'
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontSize: '0.68rem', color: '#94A3B8', fontWeight: 600 }}>
+                        QUICK TABLET / POS LOGIN PIN
+                      </div>
+                      <div style={{ fontSize: '1.1rem', fontWeight: 800, fontFamily: 'monospace', letterSpacing: '0.15em', color: '#38BDF8', marginTop: '2px' }}>
+                        {isRevoked ? '••••' : pinCode}
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setEditStaff(s)}
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                        border: '1px solid rgba(56, 189, 248, 0.25)',
+                        color: '#38BDF8',
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        cursor: 'pointer'
+                      }}
+                      title="Change or reset 4-digit PIN"
+                    >
+                      Change PIN
+                    </button>
+                  </div>
+
+                  {/* Actions Footer */}
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '12px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setEditStaff(s)}
+                      style={{
+                        flex: 1,
+                        padding: '6px 12px',
+                        borderRadius: '8px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                        border: '1px solid rgba(255, 255, 255, 0.12)',
+                        color: '#F1F5F9',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '5px'
+                      }}
+                    >
+                      <span>✏️</span>
+                      <span>Edit</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setPermissionsStaff(s)}
+                      style={{
+                        padding: '6px 10px',
+                        borderRadius: '8px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                        border: '1px solid rgba(255, 255, 255, 0.12)',
+                        color: '#94A3B8',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                      title="Manage Scoped Permissions"
+                    >
+                      <span>🛡️</span>
+                    </button>
+
+                    {isRevoked ? (
+                      <button
+                        type="button"
+                        onClick={() => handleRestoreAccess(s)}
+                        style={{
+                          flex: 1,
+                          padding: '6px 12px',
+                          borderRadius: '8px',
+                          backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                          border: '1px solid rgba(16, 185, 129, 0.35)',
+                          color: '#34D399',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '5px'
+                        }}
+                      >
+                        <span>▶️</span>
+                        <span>Activate</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setRevokeStaff(s)}
+                        style={{
+                          flex: 1,
+                          padding: '6px 12px',
+                          borderRadius: '8px',
+                          backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                          border: '1px solid rgba(239, 68, 68, 0.3)',
+                          color: '#F87171',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '5px'
+                        }}
+                      >
+                        <span>⏸️</span>
+                        <span>Pause</span>
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => setDeleteStaff(s)}
+                      style={{
+                        padding: '6px 10px',
+                        borderRadius: '8px',
+                        backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                        border: '1px solid rgba(239, 68, 68, 0.2)',
+                        color: '#F87171',
+                        fontSize: '0.75rem',
+                        cursor: 'pointer'
+                      }}
+                      title="Delete Staff Member"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
-      </Card>
-
-      {/* Staff Table */}
-      <Card padding="none">
-        <TableContainer style={{ border: 'none', borderRadius: '0' }}>
-          <Table>
+      ) : (
+        <Card padding="none">
+          <TableContainer style={{ border: 'none', borderRadius: '0' }}>
+            <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Code</TableHead>
@@ -870,6 +1205,7 @@ export const StaffDirectoryView: React.FC<StaffDirectoryViewProps> = ({
           </Table>
         </TableContainer>
       </Card>
+      )}
 
       {/* Dialog Modals */}
       {isCreateOpen && (

@@ -317,7 +317,7 @@ export const CreateOperationalStaffRequestSchema = z.object({
   partnerId: z.string().uuid(),
   organizationId: z.string().uuid(),
   branchId: z.string().uuid(),
-  departmentId: z.string().uuid(),
+  departmentId: z.string().optional(),
   staffCode: z.string().min(2),
   fullName: z.string().min(2),
   workEmail: z.string().email(),

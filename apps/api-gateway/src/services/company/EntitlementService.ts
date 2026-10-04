@@ -467,6 +467,7 @@ export class EntitlementService {
       (tenantLicenses && tenantLicenses.length > 0 ? tenantLicenses[0] : null);
 
     const maxAllowed =
+      (license?.metadata as any)?.maxDoctors ??
       (license?.metadata as any)?.maxDoctorSeats ??
       (license?.metadata as any)?.doctorSeats ??
       license?.maxDoctors ??
@@ -503,6 +504,56 @@ export class EntitlementService {
       limit: maxAllowed,
       currentCount: countVal,
       limitType: 'DOCTORS'
+    };
+  }
+
+  /**
+   * Database-driven operational staff seat quota check (considers licenses + partner governance overrides + operationalStaff).
+   */
+  async checkStaffLimit(tenantId: string, currentCount?: number): Promise<LimitCheckResult> {
+    const govQuotas = partnerGovernanceService.getGovernanceSnapshot(tenantId)?.quotas;
+    const tenantLicenses = await licenseRepository.findByTenantId(tenantId);
+    const license =
+      (tenantLicenses &&
+        tenantLicenses.find((l) => l.status === 'ACTIVE' || l.status === 'EXPIRING_SOON' || l.status === 'GRACE_PERIOD')) ||
+      (tenantLicenses && tenantLicenses.length > 0 ? tenantLicenses[0] : null);
+
+    const maxAllowed =
+      (license?.metadata as any)?.maxStaff ??
+      (license?.metadata as any)?.staffSeatsQuota ??
+      license?.maxConcurrentUsers ??
+      (govQuotas as any)?.maxStaffSeats ??
+      30;
+
+    let countVal = currentCount;
+    if (countVal === undefined) {
+      const db = getDatabase();
+      if (db) {
+        try {
+          const rows = await db
+            .select()
+            .from(operationalStaff)
+            .where(
+              and(
+                eq(operationalStaff.tenantId, tenantId),
+                eq(operationalStaff.employmentStatus, 'ACTIVE')
+              )
+            );
+          countVal = rows.length;
+        } catch {
+          countVal = 0;
+        }
+      } else {
+        countVal = 0;
+      }
+    }
+
+    return {
+      allowed: countVal < maxAllowed,
+      maxAllowed,
+      limit: maxAllowed,
+      currentCount: countVal,
+      limitType: 'STAFF' as any
     };
   }
 

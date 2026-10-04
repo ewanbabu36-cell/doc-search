@@ -4,6 +4,9 @@ import {
   partnerProfiles,
   subscriptions,
   userBranches,
+  operationalPartners,
+  operationalOrganizations,
+  operationalFacilities,
   type PartnerProfile
 } from '@docsearch/database';
 
@@ -84,15 +87,38 @@ export class PartnerFoundationRepository {
     };
   }
 
-  async getPartners(tenantId: string, dbClient = getDatabase()): Promise<PartnerProfile[]> {
+  async getPartners(tenantId: string, dbClient = getDatabase()): Promise<any[]> {
     if (dbClient) {
       try {
+        const opPartners = await dbClient
+          .select()
+          .from(operationalPartners)
+          .where(eq(operationalPartners.tenantId, tenantId))
+          .orderBy(desc(operationalPartners.createdAt));
+
+        if (opPartners.length > 0) {
+          return opPartners.map((p: any) => ({
+            ...p,
+            legalName: p.legalBusinessName,
+            tradeName: p.legalBusinessName,
+            partnerCode: p.partnerCode || `PRT-${p.tenantId.substring(0, 8).toUpperCase()}`,
+            legalBusinessName: p.legalBusinessName
+          }));
+        }
+
         const items = await dbClient
           .select()
           .from(partnerProfiles)
           .where(eq(partnerProfiles.tenantId, tenantId))
           .orderBy(desc(partnerProfiles.createdAt));
-        if (items.length > 0) return items;
+
+        if (items.length > 0) {
+          return items.map((p: any) => ({
+            ...p,
+            partnerCode: `PRT-${p.tenantId.substring(0, 8).toUpperCase()}`,
+            legalBusinessName: p.legalName || p.tradeName || 'Healthcare Facility'
+          }));
+        }
       } catch {
         // Fallback
       }
@@ -102,6 +128,8 @@ export class PartnerFoundationRepository {
       {
         id: crypto.randomUUID(),
         tenantId,
+        partnerCode: `PRT-${tenantId.substring(0, 8).toUpperCase()}`,
+        legalBusinessName: 'Doc Search Healthcare Network',
         legalName: 'Doc Search Healthcare Network',
         tradeName: 'Doc Search Hospital Network',
         partnerType: 'HOSPITAL_NETWORK',
@@ -121,6 +149,89 @@ export class PartnerFoundationRepository {
         metadata: {},
         createdAt: new Date(),
         updatedAt: new Date()
+      }
+    ];
+  }
+
+  async getOrganizations(tenantId: string, partnerId?: string, dbClient = getDatabase()): Promise<any[]> {
+    if (dbClient) {
+      try {
+        const conditions = [eq(operationalOrganizations.tenantId, tenantId)];
+        if (partnerId) conditions.push(eq(operationalOrganizations.partnerId, partnerId));
+
+        const rows = await dbClient
+          .select()
+          .from(operationalOrganizations)
+          .where(and(...conditions))
+          .orderBy(desc(operationalOrganizations.createdAt));
+
+        if (rows.length > 0) return rows;
+
+        if (partnerId) {
+          const tenantRows = await dbClient
+            .select()
+            .from(operationalOrganizations)
+            .where(eq(operationalOrganizations.tenantId, tenantId))
+            .orderBy(desc(operationalOrganizations.createdAt));
+          if (tenantRows.length > 0) return tenantRows;
+        }
+      } catch {}
+    }
+
+    return [
+      {
+        id: crypto.randomUUID(),
+        tenantId,
+        partnerId: partnerId || tenantId,
+        organizationCode: `ORG-${tenantId.substring(0, 8).toUpperCase()}`,
+        organizationName: 'Primary Healthcare Organization',
+        organizationType: 'CLINIC',
+        status: 'ACTIVE',
+        facilityCount: 1,
+        metadata: {},
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+    ];
+  }
+
+  async getFacilities(tenantId: string, partnerId?: string, organizationId?: string, dbClient = getDatabase()): Promise<any[]> {
+    if (dbClient) {
+      try {
+        const conditions = [eq(operationalFacilities.tenantId, tenantId)];
+        if (partnerId) conditions.push(eq(operationalFacilities.partnerId, partnerId));
+        if (organizationId) conditions.push(eq(operationalFacilities.organizationId, organizationId));
+
+        const rows = await dbClient
+          .select()
+          .from(operationalFacilities)
+          .where(and(...conditions))
+          .orderBy(desc(operationalFacilities.createdAt));
+
+        if (rows.length > 0) return rows;
+
+        const tenantRows = await dbClient
+          .select()
+          .from(operationalFacilities)
+          .where(eq(operationalFacilities.tenantId, tenantId))
+          .orderBy(desc(operationalFacilities.createdAt));
+        if (tenantRows.length > 0) return tenantRows;
+      } catch {}
+    }
+
+    return [
+      {
+        id: crypto.randomUUID(),
+        tenantId,
+        partnerId: partnerId || tenantId,
+        organizationId: organizationId || crypto.randomUUID(),
+        facilityCode: `LOC-${tenantId.substring(0, 8).toUpperCase()}-MAIN`,
+        facilityName: 'Primary Location / Branch',
+        facilityType: 'OUTPATIENT_CLINIC',
+        status: 'ACTIVE',
+        metadata: {},
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       }
     ];
   }

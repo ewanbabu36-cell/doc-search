@@ -1,6 +1,6 @@
 {
   "testId": "ABDM-EXT-06",
-  "timestamp": "2026-09-27T09:27:11.137Z",
+  "timestamp": "2026-10-01T11:00:44.613Z",
   "milestone": "M3",
   "certificationLevel": "NHA_LEVEL_3_M3",
   "standard": "ABDM Gateway API v0.5 - Encrypted Health Information Transfer (HIP to HIU)",
@@ -9,12 +9,12 @@
   "external": false,
   "endpoint": "https://dev.abdm.gov.in/gateway/v0.5/health-information/hip/request",
   "method": "POST",
-  "requestCorrelationId": "CORR-HI-TRANSFER-1790501231139",
+  "requestCorrelationId": "CORR-HI-TRANSFER-1790852444709",
   "httpStatus": null,
   "status": "BLOCKED",
   "blockerReason": "Missing external NHA bridge keys for data transfer handshake",
   "cryptoHandshake": {
-    "transactionId": "TXN-FHIR-1790501231139",
+    "transactionId": "TXN-FHIR-1790852444709",
     "keyExchangeCurve": "Curve25519",
     "keyDerivationFunction": "HKDF-SHA256",
     "payloadCipher": "AES-256-GCM",
@@ -35,5 +35,5 @@
   },
   "databaseVerified": false,
   "callbackVerified": false,
-  "evidenceHash": "c50824c79b4eddc2ca0c0d919d8a526ed9285d712c53b929214ff176fb45bec7"
+  "evidenceHash": "b0cf9584892fc6e6e256ed361659983d97084ce92a2a9ac77c8d638306db5fe0"
 }

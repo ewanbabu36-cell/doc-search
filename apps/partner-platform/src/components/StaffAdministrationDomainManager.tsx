@@ -65,6 +65,7 @@ export const StaffAdministrationDomainManager: React.FC<StaffAdministrationDomai
 }) => {
   const normType = (partnerType || workspace || '').toUpperCase().trim().replace(/[\s-]+/g, '_');
   const isEnterpriseMode = normType.includes('HOSPITAL') || normType.includes('ENTERPRISE');
+  const isClinicMode = (workspace || '').toUpperCase() === 'CLINIC' || normType.includes('CLINIC');
   const [partnerView, setPartnerView] = useState<'roster' | 'governance' | 'profile'>('roster');
   const [activeTab, setActiveTab] = useState<ActiveStaffTab>(isEnterpriseMode ? 'overview' : 'directory');
   const [governanceSubTab, setGovernanceSubTab] = useState<'roles' | 'departments' | 'credentials' | 'audit'>('roles');
@@ -100,7 +101,17 @@ export const StaffAdministrationDomainManager: React.FC<StaffAdministrationDomai
           workspace === 'CLINIC' ? 'INDEPENDENT_CLINIC' :
           'MULTI_SPECIALITY_HOSPITAL'
         );
-      return staffCat === dedicatedCategory;
+
+      if (staffCat === dedicatedCategory) return true;
+
+      if (dedicatedCategory === 'INDEPENDENT_CLINIC') {
+        const role = (s.primaryRole || s.staffType || '').toUpperCase();
+        if (role.includes('CLINIC') || role.includes('FRONT_DESK') || role.includes('RECEPTION') || role.includes('DOCTOR') || role.includes('NURSE')) {
+          return true;
+        }
+      }
+
+      return false;
     });
   }, [staffList, dedicatedCategory, workspace]);
 
@@ -116,7 +127,7 @@ export const StaffAdministrationDomainManager: React.FC<StaffAdministrationDomai
           activeFacilityId: propFacilityId || ''
         });
       }
-      const ctx = await partnerFoundationService.getPanelContext();
+      let ctx = await partnerFoundationService.getPanelContext();
       setContext(ctx);
 
       const [partnersRes, orgsRes, facsRes] = await Promise.all([
@@ -127,6 +138,29 @@ export const StaffAdministrationDomainManager: React.FC<StaffAdministrationDomai
       setPartners(partnersRes);
       setOrganizations(orgsRes);
       setFacilities(facsRes);
+
+      const activePartnerId =
+        (partnersRes.some((p) => p.id === ctx.activePartnerId) ? ctx.activePartnerId : partnersRes[0]?.id) ||
+        ctx.activePartnerId;
+      const activeOrgId =
+        (orgsRes.some((o) => o.id === ctx.activeOrganizationId) ? ctx.activeOrganizationId : orgsRes[0]?.id) ||
+        ctx.activeOrganizationId;
+      const activeFacId =
+        (facsRes.some((f) => f.id === ctx.activeFacilityId) ? ctx.activeFacilityId : facsRes[0]?.id) ||
+        ctx.activeFacilityId;
+
+      if (
+        (activePartnerId && activePartnerId !== ctx.activePartnerId) ||
+        (activeOrgId && activeOrgId !== ctx.activeOrganizationId) ||
+        (activeFacId && activeFacId !== ctx.activeFacilityId)
+      ) {
+        ctx = await partnerFoundationService.setPanelContext({
+          activePartnerId: activePartnerId || ctx.activePartnerId,
+          activeOrganizationId: activeOrgId || ctx.activeOrganizationId,
+          activeFacilityId: activeFacId || ctx.activeFacilityId
+        });
+        setContext(ctx);
+      }
 
       const [overviewRes, deptsRes, staffRes, rolesRes, credsRes, transRes, auditsRes] =
         await Promise.all([
@@ -307,7 +341,7 @@ export const StaffAdministrationDomainManager: React.FC<StaffAdministrationDomai
       ? departments
       : [
           {
-            id: 'dept-default-ops',
+            id: '',
             tenantId: effectiveTenantId || 'default-tenant',
             partnerId: effectivePartnerId || 'default-partner',
             organizationId: activeOrgId || 'default-org',
@@ -334,20 +368,23 @@ export const StaffAdministrationDomainManager: React.FC<StaffAdministrationDomai
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Header */}
       <div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-          <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700', color: 'var(--ds-color-text-primary)' }}>
-            Staff Administration & Department Hierarchy
-          </h1>
-          
-          <Badge variant="success">● LIVE PRODUCTION</Badge>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '4px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h1 style={{ margin: 0, fontSize: isClinicMode ? '1.35rem' : '1.5rem', fontWeight: '800', color: 'var(--ds-color-text-primary)' }}>
+              {isClinicMode ? '👥 Clinic Staff & Quick PINs' : 'Staff Administration & Department Hierarchy'}
+            </h1>
+            <Badge variant="success">{isClinicMode ? '● ACTIVE CHAMBER' : '● LIVE PRODUCTION'}</Badge>
+          </div>
         </div>
-        <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--ds-color-text-muted)' }}>
-          Operational clinical staff directory, department hierarchy, role & scope bindings, and audited credential verification
+        <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--ds-color-text-muted)' }}>
+          {isClinicMode
+            ? 'Manage receptionists, compounders, clinic assistants, and quick 4-digit tablet login PINs.'
+            : 'Operational clinical staff directory, department hierarchy, role & scope bindings, and audited credential verification'}
         </p>
       </div>
 
-      {/* Panel Context Switcher */}
-      {context && (
+      {/* Panel Context Switcher - Hidden on single-facility CLINIC */}
+      {context && !isClinicMode && (
         <PanelContextSwitcher
           context={context}
           partners={partners}
@@ -362,17 +399,19 @@ export const StaffAdministrationDomainManager: React.FC<StaffAdministrationDomai
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {partnerView === 'roster' && context && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '-6px' }}>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPartnerView('governance')}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                >
-                  <span>⚙️</span>
-                  <span>Role Templates & Governance Settings</span>
-                </Button>
-              </div>
+              {!isClinicMode && (
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '-6px' }}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPartnerView('governance')}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    <span>⚙️</span>
+                    <span>Role Templates & Governance Settings</span>
+                  </Button>
+                </div>
+              )}
 
               <StaffDirectoryView
                 staffList={effectiveStaffList}

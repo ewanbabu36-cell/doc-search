@@ -1,6 +1,6 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { staffAdministrationService } from '../../services/partner/StaffAdministrationService.js';
-import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
+import { authenticate, requirePermission, requireAnyPermission } from '../../plugins/auth-guard.js';
 import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 import type {
   CreateOperationalDepartmentRequest,
@@ -83,7 +83,13 @@ export const staffAdministrationRoutes: FastifyPluginAsync = async (fastify) => 
   fastify.get(
     '/api/v1/partner/staff/members',
     {
-      preHandler: [authenticate, requirePermission('partners', 'read')]
+      preHandler: [
+        authenticate,
+        requireAnyPermission(
+          { resource: 'partners', action: 'read' },
+          { resource: 'staff', action: 'read' }
+        )
+      ]
     },
     async (request) => {
       const query = request.query as {
@@ -102,7 +108,13 @@ export const staffAdministrationRoutes: FastifyPluginAsync = async (fastify) => 
   fastify.get(
     '/api/v1/partner/staff/members/:id',
     {
-      preHandler: [authenticate, requirePermission('partners', 'read')]
+      preHandler: [
+        authenticate,
+        requireAnyPermission(
+          { resource: 'partners', action: 'read' },
+          { resource: 'staff', action: 'read' }
+        )
+      ]
     },
     async (request) => {
       const { id } = request.params as { id: string };
@@ -114,7 +126,13 @@ export const staffAdministrationRoutes: FastifyPluginAsync = async (fastify) => 
   fastify.post(
     '/api/v1/partner/staff/members',
     {
-      preHandler: [authenticate, requirePermission('partners', 'create')]
+      preHandler: [
+        authenticate,
+        requireAnyPermission(
+          { resource: 'partners', action: 'create' },
+          { resource: 'staff', action: 'create' }
+        )
+      ]
     },
     async (request, reply) => {
       const payload = request.body as Omit<CreateOperationalStaffRequest, 'tenantId'>;
@@ -127,7 +145,13 @@ export const staffAdministrationRoutes: FastifyPluginAsync = async (fastify) => 
   fastify.put(
     '/api/v1/partner/staff/members/:id',
     {
-      preHandler: [authenticate, requirePermission('partners', 'update')]
+      preHandler: [
+        authenticate,
+        requireAnyPermission(
+          { resource: 'partners', action: 'update' },
+          { resource: 'staff', action: 'update' }
+        )
+      ]
     },
     async (request) => {
       const { id } = request.params as { id: string };
@@ -140,7 +164,13 @@ export const staffAdministrationRoutes: FastifyPluginAsync = async (fastify) => 
   fastify.patch(
     '/api/v1/partner/staff/members/:id/status',
     {
-      preHandler: [authenticate, requirePermission('partners', 'update')]
+      preHandler: [
+        authenticate,
+        requireAnyPermission(
+          { resource: 'partners', action: 'update' },
+          { resource: 'staff', action: 'update' }
+        )
+      ]
     },
     async (request) => {
       const { id } = request.params as { id: string };

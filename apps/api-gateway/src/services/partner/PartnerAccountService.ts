@@ -35,6 +35,8 @@ export interface PartnerAccountPlanFeaturesDto {
     primaryContactEmail: string | null;
     primaryContactPhone: string | null;
     primaryContactRole: string | null;
+    leadDoctorName?: string | null;
+    ownerName?: string | null;
     tenantName: string | null;
     tenantSlug: string | null;
     tenantStatus: string;
@@ -230,6 +232,17 @@ export class PartnerAccountService {
 
     const resolvedPartnerId = partnerRecord?.id || (session as any).partnerId || session.organizationId || null;
 
+    const certs = { ...((partnerRecord?.metadata as any)?.certificates || {}) };
+    const rawDoctorName = certs.doctorName;
+    const authoritativeOwner =
+      partnerRecord?.primaryContactName ||
+      (partnerRecord?.metadata as any)?.leadDoctorName ||
+      (partnerRecord?.metadata as any)?.ownerName ||
+      null;
+    if (authoritativeOwner && (!rawDoctorName || rawDoctorName.toLowerCase() === 'verified user' || rawDoctorName.toLowerCase() === 'verified')) {
+      certs.doctorName = authoritativeOwner;
+    }
+
     const organizationProfile = {
       partnerId: resolvedPartnerId,
       tenantId,
@@ -242,6 +255,8 @@ export class PartnerAccountService {
       primaryContactEmail: partnerRecord?.primaryContactEmail || session.actorEmail || null,
       primaryContactPhone: partnerRecord?.primaryContactPhone || null,
       primaryContactRole: partnerRecord?.primaryContactRole || null,
+      leadDoctorName: authoritativeOwner,
+      ownerName: authoritativeOwner,
       tenantName: tenantRecord?.name || null,
       tenantSlug: tenantRecord?.slug || null,
       tenantStatus: tenantRecord?.status || 'ACTIVE',
@@ -250,7 +265,7 @@ export class PartnerAccountService {
       preferences: (partnerRecord?.metadata as any)?.preferences || {},
       statutory: (partnerRecord?.metadata as any)?.statutory || {},
       address: (partnerRecord?.metadata as any)?.address || {},
-      certificates: (partnerRecord?.metadata as any)?.certificates || {},
+      certificates: certs,
       bank: (partnerRecord?.metadata as any)?.bank || {},
       clinical: (partnerRecord?.metadata as any)?.clinical || {},
       branding: (partnerRecord?.metadata as any)?.branding || {},
@@ -726,10 +741,34 @@ export class PartnerAccountService {
         ...((currentMeta['address'] as Record<string, any>) || {}),
         ...(input.address || {})
       },
-      certificates: {
-        ...((currentMeta['certificates'] as Record<string, any>) || {}),
-        ...(input.certificates || {})
-      },
+      certificates: (() => {
+        const inputCerts = { ...(input.certificates || {}) };
+        if (
+          inputCerts.doctorName &&
+          (inputCerts.doctorName.toLowerCase() === 'verified user' || inputCerts.doctorName.toLowerCase() === 'verified')
+        ) {
+          inputCerts.doctorName =
+            currentPartner?.primaryContactName ||
+            ((currentMeta['certificates'] as any)?.doctorName &&
+            (currentMeta['certificates'] as any)?.doctorName.toLowerCase() !== 'verified user'
+              ? (currentMeta['certificates'] as any).doctorName
+              : undefined);
+        }
+        if (!inputCerts.doctorName && currentPartner?.primaryContactName) {
+          inputCerts.doctorName = currentPartner.primaryContactName;
+        }
+        const mergedCerts = {
+          ...((currentMeta['certificates'] as Record<string, any>) || {}),
+          ...inputCerts
+        };
+        if (
+          mergedCerts.doctorName &&
+          (mergedCerts.doctorName.toLowerCase() === 'verified user' || mergedCerts.doctorName.toLowerCase() === 'verified')
+        ) {
+          mergedCerts.doctorName = currentPartner?.primaryContactName || 'Lead Clinician';
+        }
+        return mergedCerts;
+      })(),
       bank: {
         ...((currentMeta['bank'] as Record<string, any>) || {}),
         ...(input.bank || {})

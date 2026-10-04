@@ -231,6 +231,96 @@ export class StaffAdministrationRepository {
             .onConflictDoNothing();
         } catch {}
       }
+
+      // Ensure Lead Doctor exists for CLINIC and HOSPITAL facilities
+      if (resolvedOrgType === 'CLINIC' || resolvedOrgType === 'HOSPITAL') {
+        try {
+          const [existingDoc] = await dbClient
+            .select({ id: operationalStaff.id })
+            .from(operationalStaff)
+            .where(
+              and(
+                eq(operationalStaff.tenantId, tenantId),
+                eq(operationalStaff.staffType, 'DOCTOR')
+              )
+            )
+            .limit(1);
+
+          if (!existingDoc) {
+            const rawContactName = String(profileRow?.primaryContactName || '').trim();
+            const doctorName = rawContactName
+              ? (rawContactName.toLowerCase().startsWith('dr') ? rawContactName : `Dr. ${rawContactName}`)
+              : `Dr. Consultant`;
+            const docStaffId = detHash(`op-doctor:${tenantId}`);
+            const docCode = `DOC-${tenantId.substring(0, 4).toUpperCase()}-01`;
+
+            let docDeptId: string | null = null;
+            try {
+              const [firstDept] = await dbClient
+                .select({ id: operationalDepartments.id })
+                .from(operationalDepartments)
+                .where(eq(operationalDepartments.tenantId, tenantId))
+                .limit(1);
+              docDeptId = firstDept?.id || null;
+            } catch {}
+
+            await dbClient
+              .insert(operationalStaff)
+              .values({
+                id: docStaffId,
+                tenantId,
+                partnerId,
+                organizationId,
+                branchId,
+                departmentId: docDeptId,
+                staffCode: docCode,
+                fullName: doctorName,
+                workEmail: contactEmail,
+                workPhone: contactPhone,
+                staffType: 'DOCTOR',
+                primaryRole: 'CLINIC_DOCTOR',
+                employmentType: 'FULL_TIME',
+                employmentStatus: 'ACTIVE',
+                joiningDate: new Date(),
+                metadata: {
+                  isLeadClinician: true,
+                  partnerCategory: 'INDEPENDENT_CLINIC',
+                  designationTitle: 'Lead Consultant Physician',
+                  specialty: 'General Physician',
+                  consultationFee: 500,
+                  chamber: 'Chamber 1'
+                }
+              })
+              .onConflictDoNothing();
+
+            await dbClient
+              .insert(doctorProfiles)
+              .values({
+                id: docStaffId,
+                tenantId,
+                partnerId,
+                organizationId,
+                branchId,
+                departmentId: docDeptId,
+                staffId: docStaffId,
+                doctorCode: docCode,
+                medicalLicenseNumber: `MCI-${tenantId.substring(0, 8).toUpperCase()}`,
+                qualification: 'MBBS, MD',
+                experienceYears: 12,
+                primarySpecialty: 'General Physician',
+                availabilityStatus: 'AVAILABLE',
+                status: 'ACTIVE',
+                consultationModes: ['IN_PERSON', 'TELECONSULT'],
+                telehealthEligible: 'YES',
+                metadata: {
+                  consultationFee: 500,
+                  chamber: 'Chamber 1'
+                }
+              })
+              .onConflictDoNothing();
+          }
+        } catch {}
+      }
     } catch {
       // Keep deterministic tenant-isolated IDs
     }
@@ -308,6 +398,27 @@ export class StaffAdministrationRepository {
         .from(operationalDepartments)
         .where(and(...conditions))
         .orderBy(desc(operationalDepartments.createdAt));
+
+      if (rows.length === 0 && tenantId) {
+        try {
+          const defaults = await this.ensureDefaults(dbClient, tenantId);
+          const baseDept = await this.createDepartment(
+            {
+              actorId: 'SYSTEM_ADMIN',
+              actorRole: 'HOSPITAL_ADMIN',
+              tenantId,
+              partnerId: partnerId || defaults.partnerId,
+              organizationId: organizationId || defaults.organizationId,
+              branchId: defaults.branchId,
+              departmentCode: `DEP-OPS-${tenantId.substring(0, 4).toUpperCase()}`,
+              departmentName: 'General Clinical & Outpatient Operations',
+              reason: 'Auto-provisioned base operational department'
+            },
+            dbClient
+          );
+          return [baseDept];
+        } catch {}
+      }
 
       return rows.map((r: any) => ({
         id: r.id,
@@ -498,14 +609,16 @@ export class StaffAdministrationRepository {
 
     try {
       const conditions = [eq(operationalStaff.tenantId, tenantId)];
-      if (filters.partnerId) conditions.push(eq(operationalStaff.partnerId, filters.partnerId));
+      if (filters.partnerId && filters.partnerId !== tenantId) {
+        conditions.push(eq(operationalStaff.partnerId, filters.partnerId));
+      }
       if (filters.organizationId) conditions.push(eq(operationalStaff.organizationId, filters.organizationId));
       if (filters.branchId) conditions.push(eq(operationalStaff.branchId, filters.branchId));
       if (filters.departmentId) conditions.push(eq(operationalStaff.departmentId, filters.departmentId));
       if (filters.staffType) conditions.push(eq(operationalStaff.staffType, filters.staffType));
       if (filters.status) conditions.push(eq(operationalStaff.employmentStatus, filters.status));
 
-      const rows = await dbClient
+      let rows = await dbClient
         .select({
           staff: operationalStaff,
           deptName: operationalDepartments.departmentName
@@ -514,6 +627,25 @@ export class StaffAdministrationRepository {
         .leftJoin(operationalDepartments, eq(operationalStaff.departmentId, operationalDepartments.id))
         .where(and(...conditions))
         .orderBy(desc(operationalStaff.createdAt));
+
+      // Fallback: If scoped query returned 0 rows because partnerId/organizationId/branchId were mismatched,
+      // but staff exists for this tenant, fallback to tenant-level staff so valid staff is never hidden
+      if (rows.length === 0 && (filters.partnerId || filters.organizationId || filters.branchId)) {
+        const fallbackConditions = [eq(operationalStaff.tenantId, tenantId)];
+        if (filters.departmentId) fallbackConditions.push(eq(operationalStaff.departmentId, filters.departmentId));
+        if (filters.staffType) fallbackConditions.push(eq(operationalStaff.staffType, filters.staffType));
+        if (filters.status) fallbackConditions.push(eq(operationalStaff.employmentStatus, filters.status));
+
+        rows = await dbClient
+          .select({
+            staff: operationalStaff,
+            deptName: operationalDepartments.departmentName
+          })
+          .from(operationalStaff)
+          .leftJoin(operationalDepartments, eq(operationalStaff.departmentId, operationalDepartments.id))
+          .where(and(...fallbackConditions))
+          .orderBy(desc(operationalStaff.createdAt));
+      }
 
       const nonMockRows = rows.filter((r: any) => {
         const email = (r.staff?.workEmail || '').toLowerCase();
@@ -668,11 +800,31 @@ export class StaffAdministrationRepository {
       }
     }
 
+    const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     let departmentId = req.departmentId;
+
+    if (departmentId && UUID_PATTERN.test(departmentId)) {
+      try {
+        const [d] = await dbClient
+          .select({ id: operationalDepartments.id })
+          .from(operationalDepartments)
+          .where(and(eq(operationalDepartments.tenantId, req.tenantId), eq(operationalDepartments.id, departmentId)))
+          .limit(1);
+        if (!d) {
+          departmentId = undefined;
+        }
+      } catch {
+        departmentId = undefined;
+      }
+    } else {
+      departmentId = undefined;
+    }
+
     if (!departmentId) {
       const depts = await this.getDepartments(req.tenantId, partnerId, organizationId, dbClient);
-      if (depts.length > 0 && depts[0]?.id) {
-        departmentId = depts[0].id;
+      const validDept = depts.find((d) => d.id && UUID_PATTERN.test(d.id));
+      if (validDept?.id) {
+        departmentId = validDept.id;
       } else {
         const defaultDept = await this.createDepartment(
           {
@@ -708,6 +860,22 @@ export class StaffAdministrationRepository {
           ]
         });
       }
+    }
+
+    // Quota Enforcement: Total active staff seat quota check
+    const staffLimitCheck = await entitlementService.checkStaffLimit(req.tenantId);
+    if (!staffLimitCheck.allowed) {
+      throw new AppError({
+        message: `Staff seat quota exceeded. Your contracted plan allows a maximum of ${staffLimitCheck.maxAllowed} staff seats (currently using ${staffLimitCheck.currentCount}). Please upgrade your plan in HQ.`,
+        code: ErrorCode.FORBIDDEN,
+        statusCode: 403,
+        details: [
+          {
+            field: 'staffSeats',
+            message: `Current staff: ${staffLimitCheck.currentCount}, Maximum allowed: ${staffLimitCheck.maxAllowed}`
+          }
+        ]
+      });
     }
 
     const staffMetadata = (req as any).metadata || {};

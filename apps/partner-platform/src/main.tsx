@@ -91,7 +91,8 @@ const App: React.FC = () => {
           'docsearch_pharmacy_substitutions',
           'docsearch_whatsapp_conversations',
           'docsearch_whatsapp_dispatches',
-          'docsearch_whatsapp_queue_tokens'
+          'docsearch_whatsapp_queue_tokens',
+          'docsearch_chamber_profile'
         ];
         for (const key of legacyMockKeys) {
           localStorage.removeItem(key);
@@ -132,7 +133,11 @@ const App: React.FC = () => {
       if (rawStored) {
         try {
           const parsed = JSON.parse(rawStored);
-          if (parsed && parsed.name && parsed.email) {
+          if (parsed && (parsed.email || parsed.name || parsed.id)) {
+            parsed.name = parsed.name || parsed.tenantName || (parsed.email ? parsed.email.split('@')[0] : 'Healthcare Staff');
+            if (parsed.name.toLowerCase() === 'verified user' || parsed.name.toLowerCase() === 'verified') {
+              parsed.name = parsed.tenantName || (parsed.email ? parsed.email.split('@')[0] : 'Healthcare Staff');
+            }
             return parsed;
           }
         } catch (e) {}
@@ -197,10 +202,18 @@ const App: React.FC = () => {
           });
           const json = await res.json();
           if (json.success && json.data) {
+            const rawFullName = `${json.data.firstName || ''} ${json.data.lastName || ''}`.trim();
+            const isPlaceholder = !rawFullName || rawFullName.toLowerCase() === 'verified user' || rawFullName.toLowerCase() === 'verified';
+            const resolvedName = !isPlaceholder
+              ? rawFullName
+              : (staff?.name && staff.name.toLowerCase() !== 'verified user' && staff.name.toLowerCase() !== 'verified')
+                ? staff.name
+                : (json.data.tenantName || json.data.email);
+
             const verifiedUser: HospitalStaffUser = {
               id: json.data.id,
               category: 'HEALTHCARE',
-              name: `${json.data.firstName || ''} ${json.data.lastName || ''}`.trim() || json.data.email,
+              name: resolvedName,
               email: json.data.email,
               role: json.data.roles?.[0] || staff?.role || 'HOSPITAL_STAFF',
               roleTitle: staff?.roleTitle || (json.data.roles?.[0] ? json.data.roles[0].replace(/_/g, ' ') : 'Healthcare Staff'),

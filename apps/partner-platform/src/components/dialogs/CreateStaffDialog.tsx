@@ -244,6 +244,8 @@ export const CreateStaffDialog: React.FC<CreateStaffDialogProps> = ({
       }
       const safeTenantId = (resolvedTenant && resolvedTenant !== '11111111-1111-4111-8111-111111111111') ? resolvedTenant : undefined;
       const safePartnerId = (partnerId && partnerId !== '11111111-1111-4111-8111-111111111111') ? partnerId : safeTenantId;
+      const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      const safeDepartmentId = departmentId && UUID_REGEX.test(departmentId) ? departmentId : undefined;
 
       await onCreateStaff({
         actorId,
@@ -252,7 +254,7 @@ export const CreateStaffDialog: React.FC<CreateStaffDialogProps> = ({
         partnerId: safePartnerId as string,
         organizationId,
         branchId,
-        departmentId,
+        departmentId: safeDepartmentId,
         staffCode,
         fullName: fullName.trim(),
         workEmail: workEmail.trim().toLowerCase(),

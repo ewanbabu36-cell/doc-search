@@ -69,7 +69,8 @@ const ROLE_PERMISSION_PROFILES: Record<string, string[]> = {
     'encounters:read',
     'encounters:write',
     'billing:invoices:read',
-    'billing:invoices:create'
+    'billing:invoices:create',
+    'staff:read'
   ],
   FRONT_DESK_EXECUTIVE: [
     'patients:read',
@@ -81,7 +82,34 @@ const ROLE_PERMISSION_PROFILES: Record<string, string[]> = {
     'encounters:read',
     'encounters:write',
     'billing:invoices:read',
-    'billing:invoices:create'
+    'billing:invoices:create',
+    'staff:read'
+  ],
+  CLINIC_FRONT_DESK: [
+    'patients:read',
+    'patients:write',
+    'clinical:patients:read',
+    'clinical:patients:create',
+    'appointments:read',
+    'appointments:write',
+    'encounters:read',
+    'encounters:write',
+    'billing:invoices:read',
+    'billing:invoices:create',
+    'staff:read'
+  ],
+  FRONT_DESK_LEAD: [
+    'patients:read',
+    'patients:write',
+    'clinical:patients:read',
+    'clinical:patients:create',
+    'appointments:read',
+    'appointments:write',
+    'encounters:read',
+    'encounters:write',
+    'billing:invoices:read',
+    'billing:invoices:create',
+    'staff:read'
   ],
   DISPENSING_PHARMACIST: [
     'pharmacy:read',
@@ -109,7 +137,8 @@ const ROLE_PERMISSION_PROFILES: Record<string, string[]> = {
     'clinical:patients:read',
     'encounters:read',
     'encounters:write',
-    'inpatient:read'
+    'inpatient:read',
+    'staff:read'
   ],
   NURSE: [
     'clinical:read',
@@ -117,7 +146,8 @@ const ROLE_PERMISSION_PROFILES: Record<string, string[]> = {
     'clinical:patients:read',
     'encounters:read',
     'encounters:write',
-    'inpatient:read'
+    'inpatient:read',
+    'staff:read'
   ],
   LAB_TECHNICIAN: [
     'lab:orders:read',
@@ -141,7 +171,8 @@ const ROLE_PERMISSION_PROFILES: Record<string, string[]> = {
     'lab:orders:create',
     'radiology:read',
     'inpatient:read',
-    'inpatient:write'
+    'inpatient:write',
+    'staff:read'
   ],
   CLINIC_DOCTOR: [
     'clinical:read',
@@ -159,7 +190,14 @@ const ROLE_PERMISSION_PROFILES: Record<string, string[]> = {
     'radiology:read',
     'billing:read',
     'billing:invoices:read',
-    'billing:invoices:create'
+    'billing:invoices:create',
+    'staff:read',
+    'staff:write',
+    'staff:create',
+    'staff:update',
+    'partners:read',
+    'partners:update',
+    'partners:create'
   ],
   PATHOLOGIST: [
     'lab:orders:read',
@@ -194,6 +232,7 @@ export function resolveStrictPermissionsForRoles(roles: RoleType[]): string[] {
     return [
       'partners:read',
       'partners:write',
+      'partners:create',
       'clinical:read',
       'clinical:write',
       'patients:read',
@@ -225,7 +264,8 @@ export function resolveStrictPermissionsForRoles(roles: RoleType[]): string[] {
       'billing:invoices:read',
       'billing:invoices:create',
       'staff:read',
-      'staff:write'
+      'staff:write',
+      'staff:create'
     ];
   }
 
@@ -1003,8 +1043,11 @@ export class RealAuthService {
         user.organizationType = workspace;
       }
       if (normalizedRole && !user.roles.includes(normalizedRole)) {
-        user.roles = [normalizedRole, 'HOSPITAL_ADMIN'];
+        user.roles = [normalizedRole, 'PARTNER_ADMIN' as RoleType, 'HOSPITAL_ADMIN' as RoleType];
+      } else if (!user.roles.includes('PARTNER_ADMIN' as RoleType)) {
+        user.roles = [...user.roles, 'PARTNER_ADMIN' as RoleType];
       }
+      user.permissions = resolveStrictPermissionsForRoles(user.roles);
       if (accessibleFeatures && accessibleFeatures.length > 0) {
         user.accessibleFeatures = accessibleFeatures;
       }

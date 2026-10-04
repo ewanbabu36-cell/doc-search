@@ -83,7 +83,7 @@ export class UniqueIdentifierService {
    * Typo-proof: catches 100% of single-digit substitution errors and 98% of transpositions.
    */
   calculateLuhnChecksum(digits: string): number {
-    const clean = digits.replace(/\D/g, '');
+    const clean = (digits || '').replace(/\D/g, '');
     let sum = 0;
     let shouldDouble = true;
     for (let i = clean.length - 1; i >= 0; i--) {

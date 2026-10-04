@@ -246,9 +246,15 @@ export class PartnerFoundationService implements IPartnerFoundationService {
   }
 
   async getOrganizations(tenantId: string, partnerId?: string): Promise<OperationalOrganizationDto[]> {
+    try {
+      const q = partnerId ? `?partnerId=${encodeURIComponent(partnerId)}` : '';
+      const list = await apiCall<OperationalOrganizationDto[]>(`/api/v1/partner/foundation/organizations${q}`);
+      if (Array.isArray(list) && list.length > 0) return list;
+    } catch {}
     const orgs = this.organizations.filter((o) => o.tenantId === tenantId);
     if (partnerId) {
-      return orgs.filter((o) => o.partnerId === partnerId);
+      const matched = orgs.filter((o) => o.partnerId === partnerId);
+      if (matched.length > 0) return matched;
     }
     return orgs;
   }
@@ -341,6 +347,14 @@ export class PartnerFoundationService implements IPartnerFoundationService {
   }
 
   async getFacilities(tenantId: string, partnerId?: string, organizationId?: string): Promise<OperationalFacilityDto[]> {
+    try {
+      const params = new URLSearchParams();
+      if (partnerId) params.append('partnerId', partnerId);
+      if (organizationId) params.append('organizationId', organizationId);
+      const q = params.toString() ? `?${params.toString()}` : '';
+      const list = await apiCall<OperationalFacilityDto[]>(`/api/v1/partner/foundation/facilities${q}`);
+      if (Array.isArray(list) && list.length > 0) return list;
+    } catch {}
     return this.facilities.filter((f) => {
       if (f.tenantId !== tenantId) return false;
       if (partnerId && f.partnerId !== partnerId) return false;

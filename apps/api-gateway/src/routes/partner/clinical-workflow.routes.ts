@@ -17,7 +17,7 @@ import {
 
 export const CreatePatientSchema = z.object({
   firstName: z.string().trim().min(1, 'firstName is required'),
-  lastName: z.string().trim().min(1, 'lastName is required'),
+  lastName: z.string().trim().optional().default(''),
   gender: z.string().trim().min(1, 'gender is required'),
   dateOfBirth: z.string().trim().optional(),
   mobileNumber: z.string().trim().optional(),
@@ -236,6 +236,38 @@ export const ConvertFollowUpToAppointmentSchema = z.object({
   slotTime: z.string().trim().min(1, 'slotTime is required'),
   departmentId: z.string().trim().optional()
 });
+
+export const SearchMedicationsQuerySchema = z.object({
+  q: z.string().trim().optional(),
+  search: z.string().trim().optional(),
+  category: z.string().trim().optional(),
+  dosageForm: z.string().trim().optional(),
+  status: z.string().trim().optional().default('ACTIVE'),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(50)
+});
+
+export const SearchInvestigationsQuerySchema = z.object({
+  q: z.string().trim().optional(),
+  search: z.string().trim().optional(),
+  category: z.string().trim().optional(),
+  specimenType: z.string().trim().optional(),
+  status: z.string().trim().optional().default('ACTIVE'),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(50)
+});
+
+function validateQuery<T>(schema: z.ZodSchema<T>, query: unknown): T {
+  const parsed = schema.safeParse(query || {});
+  if (!parsed.success) {
+    throw new AppError({
+      message: parsed.error.issues.map((i) => i.message).join('; '),
+      code: ErrorCode.VALIDATION_ERROR,
+      statusCode: 400
+    });
+  }
+  return parsed.data;
+}
 
 function validateBody<T>(schema: z.ZodSchema<T>, body: unknown): T {
   const parsed = schema.safeParse(body || {});
@@ -698,6 +730,80 @@ export const clinicalWorkflowRoutes: FastifyPluginAsync = async (fastify) => {
     }
   );
 
+  // POST /api/v1/partner/clinical/encounters/:id/claim
+  fastify.post(
+    '/api/v1/partner/clinical/encounters/:id/claim',
+    {
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'update')]
+    },
+    async (request) => {
+      const { id } = request.params as { id: string };
+      const doctorId = (request.body as any)?.doctorId || request.session.userId;
+      const data = await clinicalWorkflowService.claimEncounter(id, doctorId, request.session);
+      return { success: true, data };
+    }
+  );
+
+  // POST /api/v1/partner/clinical/encounters/:id/complete
+  fastify.post(
+    '/api/v1/partner/clinical/encounters/:id/complete',
+    {
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'update')]
+    },
+    async (request) => {
+      const { id } = request.params as { id: string };
+      const doctorId = (request.body as any)?.doctorId || request.session.userId;
+      const cons = await clinicalWorkflowService.getConsultationByEncounter(id, request.session);
+      if (cons) {
+        const data = await clinicalWorkflowService.completeConsultationWorkflow(cons.id, doctorId, request.session);
+        return { success: true, data };
+      }
+      const data = await clinicalWorkflowService.updateEncounterStatus(id, 'COMPLETED', request.session);
+      await clinicalWorkflowService.vacateDoctorChamber(doctorId, request.session);
+      return { success: true, data };
+    }
+  );
+
+  // GET /api/v1/partner/clinical/chamber/status
+  fastify.get(
+    '/api/v1/partner/clinical/chamber/status',
+    {
+      preHandler: [authenticate, requirePermission('clinical:consultations', 'read')]
+    },
+    async (request) => {
+      const doctorId = (request.query as any)?.doctorId || request.session.userId;
+      const data = await clinicalWorkflowService.getDoctorChamberStatus(doctorId, request.session);
+      return { success: true, data };
+    }
+  );
+
+  // POST /api/v1/partner/clinical/chamber/vacate
+  fastify.post(
+    '/api/v1/partner/clinical/chamber/vacate',
+    {
+      preHandler: [authenticate, requirePermission('clinical:consultations', 'update')]
+    },
+    async (request) => {
+      const doctorId = (request.body as any)?.doctorId || request.session.userId;
+      const data = await clinicalWorkflowService.vacateDoctorChamber(doctorId, request.session);
+      return { success: true, data };
+    }
+  );
+
+  // GET /api/v1/partner/clinical/workspace
+  fastify.get(
+    '/api/v1/partner/clinical/workspace',
+    {
+      preHandler: [authenticate, requirePermission('clinical:consultations', 'read')]
+    },
+    async (request) => {
+      const q = request.query as { doctorId?: string; branchId?: string };
+      const doctorId = q?.doctorId || request.session.userId;
+      const data = await clinicalWorkflowService.getDoctorOpdWorkspace(doctorId, request.session, q?.branchId);
+      return { success: true, data };
+    }
+  );
+
   // ==========================================
   // 3. ICD-10 DIAGNOSES & GENERIC ALTERNATIVES
   // ==========================================
@@ -710,6 +816,30 @@ export const clinicalWorkflowRoutes: FastifyPluginAsync = async (fastify) => {
     async (request) => {
       const query = (request.query as { q?: string })?.q;
       const data = await clinicalWorkflowService.searchIcd10(query);
+      return { success: true, data };
+    }
+  );
+
+  fastify.get(
+    '/api/v1/partner/clinical/medications',
+    {
+      preHandler: [authenticate, requirePermission('clinical:consultations', 'read')]
+    },
+    async (request) => {
+      const query = validateQuery(SearchMedicationsQuerySchema, request.query);
+      const data = await clinicalWorkflowService.searchMedications(request.session, query);
+      return { success: true, data };
+    }
+  );
+
+  fastify.get(
+    '/api/v1/partner/clinical/investigations',
+    {
+      preHandler: [authenticate, requirePermission('clinical:consultations', 'read')]
+    },
+    async (request) => {
+      const query = validateQuery(SearchInvestigationsQuerySchema, request.query);
+      const data = await clinicalWorkflowService.searchInvestigations(request.session, query);
       return { success: true, data };
     }
   );

@@ -1,6 +1,6 @@
 {
   "testId": "ABDM-EXT-05",
-  "timestamp": "2026-09-27T09:27:11.135Z",
+  "timestamp": "2026-10-01T11:00:44.518Z",
   "milestone": "M3",
   "certificationLevel": "NHA_LEVEL_3_M3",
   "standard": "ABDM Gateway API v0.5 - Health Information User (HIU) Consent Request Flow",
@@ -9,7 +9,7 @@
   "external": false,
   "endpoint": "https://dev.abdm.gov.in/gateway/v0.5/consent-requests/init",
   "method": "POST",
-  "requestCorrelationId": "CORR-CONSENT-1790501231137",
+  "requestCorrelationId": "CORR-CONSENT-1790852444613",
   "httpStatus": null,
   "status": "BLOCKED",
   "blockerReason": "Missing live gateway keys for external consent init",
@@ -52,7 +52,7 @@
   },
   "callbackEvidence": {
     "callbackEndpoint": "/api/v1/abdm/callback/v0.5/consent-requests/on-init",
-    "consentRequestId": "CRQ-1790501231137",
+    "consentRequestId": "CRQ-1790852444613",
     "status": "REQUESTED"
   },
   "internalVerification": {
@@ -62,5 +62,5 @@
   },
   "databaseVerified": false,
   "callbackVerified": false,
-  "evidenceHash": "847bb68ea06c6990bb31ff7302b4c96d822bb7e3bb4b7eca355038323561141c"
+  "evidenceHash": "db975baad0580325ad075324c74c58a8ae4fed55807e2c41ec49f55034d1613a"
 }

@@ -3,7 +3,7 @@ const http = require('http');
 const ports = [
   { name: 'API Gateway', port: 4000, path: '/api/v1/health' },
   { name: 'Partner Platform', port: 5173, path: '/' },
-  { name: 'Company Platform', port: 5174, path: '/' },
+  { name: 'Company Platform', port: 5177, path: '/' },
   { name: 'Landing Page', port: 5175, path: '/' }
 ];
 

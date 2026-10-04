@@ -214,22 +214,72 @@ export const FounderApprovalGovernanceView: React.FC<Props> = ({
                         <div style={{ fontSize: '11px', color: '#6B7280' }}>{r.submitterEmail}</div>
                       </td>
 
-                      <td style={{ padding: '12px 16px', maxWidth: '240px' }}>
-                        <div
-                          style={{
-                            background: '#F3F4F6',
-                            padding: '6px 10px',
-                            borderRadius: '4px',
-                            fontSize: '11px',
-                            fontFamily: 'monospace',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
-                          }}
-                          title={JSON.stringify(r.payloadData, null, 2)}
-                        >
-                          {JSON.stringify(r.payloadData)}
-                        </div>
+                      <td style={{ padding: '12px 16px', minWidth: '320px', maxWidth: '420px' }}>
+                        {r.entityType === 'PARTNER_PROFILE_AMENDMENT' && r.payloadData ? (() => {
+                          const pData = (r.payloadData || {}) as any;
+                          return (
+                            <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '10px', fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed #CBD5E1', paddingBottom: '4px' }}>
+                                <span style={{ color: '#64748B' }}>Facility Name:</span>
+                                <span>
+                                  <span style={{ color: '#94A3B8', textDecoration: 'line-through' }}>{String(pData['currentFacilityName'] || '')}</span>
+                                  {' ➔ '}
+                                  <strong style={{ color: '#059669' }}>{String(pData['proposedFacilityName'] || '')}</strong>
+                                </span>
+                              </div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed #CBD5E1', paddingBottom: '4px' }}>
+                                <span style={{ color: '#64748B' }}>Owner / Doctor:</span>
+                                <span>
+                                  <span style={{ color: '#94A3B8', textDecoration: 'line-through' }}>{String(pData['currentOwnerName'] || '')}</span>
+                                  {' ➔ '}
+                                  <strong style={{ color: '#059669' }}>{String(pData['proposedOwnerName'] || '')}</strong>
+                                </span>
+                              </div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: '#64748B' }}>Proposed Aadhaar:</span>
+                                <strong style={{ color: '#2563EB' }}>
+                                  XXXX XXXX {String(pData['proposedAadhaarNumber'] || '').slice(-4)}
+                                </strong>
+                              </div>
+                              {Boolean(pData['proposedDocFileName']) && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#EFF6FF', padding: '4px 8px', borderRadius: '4px', fontSize: '11px' }}>
+                                  <span style={{ color: '#1E40AF' }}>📄 {String(pData['proposedDocFileName'])}</span>
+                                  {Boolean(pData['proposedDocDataUrl']) && (
+                                    <a
+                                      href={String(pData['proposedDocDataUrl'])}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      style={{ color: '#2563EB', fontWeight: 700, textDecoration: 'underline' }}
+                                    >
+                                      View Proof
+                                    </a>
+                                  )}
+                                </div>
+                              )}
+                              {Boolean(pData['reasonForChange']) && (
+                                <div style={{ color: '#475569', fontSize: '11px', fontStyle: 'italic', background: '#F1F5F9', padding: '4px 8px', borderRadius: '4px' }}>
+                                  Reason: "{String(pData['reasonForChange'])}"
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })() : (
+                          <div
+                            style={{
+                              background: '#F3F4F6',
+                              padding: '6px 10px',
+                              borderRadius: '4px',
+                              fontSize: '11px',
+                              fontFamily: 'monospace',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}
+                            title={JSON.stringify(r.payloadData, null, 2)}
+                          >
+                            {JSON.stringify(r.payloadData)}
+                          </div>
+                        )}
                       </td>
 
                       <td style={{ padding: '12px 16px' }}>

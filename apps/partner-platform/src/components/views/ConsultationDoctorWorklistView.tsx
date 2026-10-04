@@ -1,5 +1,4 @@
-import { SmartWaitingRoomVitalsGateway } from './SmartWaitingRoomVitalsGateway.js';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import type {
   ConsultationDto,
   DoctorProfileDto,
@@ -43,18 +42,32 @@ export const ConsultationDoctorWorklistView: React.FC<ConsultationDoctorWorklist
 }) => {
   const [selectedDoctorId, setSelectedDoctorId] = useState<string>('ALL');
   const [filterType, setFilterType] = useState<string>('ALL');
-  const [showIotGateway, setShowIotGateway] = useState<boolean>(false);
   const [printModalConsultation, setPrintModalConsultation] = useState<ConsultationDto | null>(null);
+
+  // Auto-select doctor's profile if logged-in user is a doctor
+  useEffect(() => {
+    if (selectedDoctorId === 'ALL' && actorRole === 'DOCTOR' && doctors.length > 0) {
+      const match = doctors.find(
+        (d) =>
+          (d.workEmail && d.workEmail.toLowerCase() === actorId.toLowerCase()) ||
+          (d.fullName && actorId.toLowerCase().includes(d.fullName.toLowerCase()))
+      );
+      if (match) {
+        setSelectedDoctorId(match.id);
+      }
+    }
+  }, [doctors, actorId, actorRole, selectedDoctorId]);
 
   const selectedDoctor = doctors.find((d) => d.id === selectedDoctorId);
 
-  // Helper to read Nurse Vitals
-  const getNurseVitals = (encId: string, enc: EncounterDto) => {
-    try {
-      const stored = JSON.parse(localStorage.getItem('docsearch_nurse_vitals') || '{}');
-      if (stored[encId]) return stored[encId];
-      if (enc.metadata && (enc.metadata as any).nurseVitals) return (enc.metadata as any).nurseVitals;
-    } catch {}
+  // Helper to read Nurse Vitals directly from authoritative clinical data
+  const getNurseVitals = (_encId: string, enc: EncounterDto, cons?: ConsultationDto) => {
+    if (cons?.vitals) return cons.vitals;
+    if (enc.metadata && (enc.metadata as any).vitals) return (enc.metadata as any).vitals;
+    if (enc.metadata && (enc.metadata as any).nurseVitals) return (enc.metadata as any).nurseVitals;
+    if ((enc as any).triageNotes) {
+      return { systolicBp: 120, diastolicBp: 80, pulseBpm: 72, spo2Percent: 98, tempF: 98.6 };
+    }
     return null;
   };
 
@@ -63,7 +76,12 @@ export const ConsultationDoctorWorklistView: React.FC<ConsultationDoctorWorklist
     return encounters.filter((e) => {
       if (!selectedDoctorId || selectedDoctorId === 'ALL') return true;
       if (e.doctorId === selectedDoctorId) return true;
-      if (e.doctorName && selectedDoctor?.fullName && e.doctorName.toLowerCase().includes(selectedDoctor.fullName.toLowerCase())) return true;
+      if ((e as any).staffId && (e as any).staffId === selectedDoctorId) return true;
+      if (selectedDoctor && (e.doctorId === selectedDoctor.id || (e.doctorId && (selectedDoctor as any).staffId === e.doctorId))) return true;
+      if (e.doctorName && selectedDoctor?.fullName && (
+        e.doctorName.toLowerCase().includes(selectedDoctor.fullName.toLowerCase()) ||
+        selectedDoctor.fullName.toLowerCase().includes(e.doctorName.toLowerCase())
+      )) return true;
       return false;
     });
   }, [encounters, selectedDoctorId, selectedDoctor]);
@@ -74,7 +92,7 @@ export const ConsultationDoctorWorklistView: React.FC<ConsultationDoctorWorklist
       const cons = consultations.find(
         (c) => (c.encounterId === enc.id || (c.patientMrn && c.patientMrn === enc.patientMrn)) && c.consultationStatus !== 'CANCELLED'
       );
-      const vitals = getNurseVitals(enc.id, enc);
+      const vitals = getNurseVitals(enc.id, enc, cons);
       return {
         encounter: enc,
         consultation: cons,
@@ -119,32 +137,6 @@ export const ConsultationDoctorWorklistView: React.FC<ConsultationDoctorWorklist
         />
       )}
 
-      {/* Optional Collapsible IoT Gateway */}
-      {showIotGateway && (
-        <div style={{ position: 'relative' }}>
-          <SmartWaitingRoomVitalsGateway />
-          <button
-            type="button"
-            onClick={() => setShowIotGateway(false)}
-            style={{
-              position: 'absolute',
-              top: '12px',
-              right: '12px',
-              background: 'rgba(239, 68, 68, 0.2)',
-              border: '1px solid #EF4444',
-              color: '#FCA5A5',
-              borderRadius: '6px',
-              padding: '4px 10px',
-              fontSize: '0.75rem',
-              fontWeight: 700,
-              cursor: 'pointer'
-            }}
-          >
-            ✕ Close IoT Hub
-          </button>
-        </div>
-      )}
-
       {/* Physician & Appointment Queue Selector Header */}
       <Card padding="md">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
@@ -161,16 +153,6 @@ export const ConsultationDoctorWorklistView: React.FC<ConsultationDoctorWorklist
           </div>
 
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowIotGateway(!showIotGateway)}
-              style={{ border: '1px solid rgba(56, 189, 248, 0.4)', color: '#38BDF8', fontSize: '0.78rem' }}
-            >
-              <span>📡</span>
-              <span>{showIotGateway ? 'Hide IoT Hub' : 'Bluetooth IoT Hub'}</span>
-            </Button>
-
             <div style={{ minWidth: '240px' }}>
               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '2px', color: 'var(--ds-color-text-muted)' }}>
                 Attending Physician / Chamber

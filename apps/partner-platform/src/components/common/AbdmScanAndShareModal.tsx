@@ -487,11 +487,11 @@ export const AbdmScanAndShareModal: React.FC<AbdmScanAndShareModalProps> = ({
                         fontSize: '1rem'
                       }}
                     >
-                      {p.name.charAt(0)}
+                      {(p?.name || 'P').charAt(0).toUpperCase()}
                     </div>
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <strong style={{ color: '#F8FAFC', fontSize: '0.95rem' }}>{p.name}</strong>
+                        <strong style={{ color: '#F8FAFC', fontSize: '0.95rem' }}>{p?.name || 'Patient'}</strong>
                         <span style={{ backgroundColor: 'rgba(16, 185, 129, 0.2)', color: '#6EE7B7', fontSize: '0.65rem', fontWeight: 800, padding: '1px 5px', borderRadius: '4px' }}>
                           ✓ ABHA VERIFIED
                         </span>

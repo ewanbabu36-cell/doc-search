@@ -661,45 +661,27 @@ export class EncounterService implements IEncounterService {
     departmentId?: string,
     doctorId?: string
   ): Promise<EncounterQueueDto[]> {
-    let dynamicItems: EncounterQueueDto[] = [];
-    if (typeof window !== 'undefined' && window.localStorage) {
-      try {
-        const stored = window.localStorage.getItem('docsearch_opd_queue');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed)) {
-            dynamicItems = parsed.map((item: any, idx: number) => ({
-              id: item.uhid || `dyn-q-${item.token || idx}`,
-              tenantId: tenantId,
-              partnerId: this.queues[0]?.partnerId || '22222222-2222-4222-8222-222222222201',
-              organizationId: organizationId || this.queues[0]?.organizationId || '44444444-4444-4444-8444-444444444401',
-              branchId: branchId || this.queues[0]?.branchId || '88888888-1111-4888-8888-111111111101',
-              departmentId: departmentId || this.queues[0]?.departmentId || '71111111-1111-4111-8111-111111111101',
-              departmentName: item.department || 'Cardiology OPD Wing A',
-              doctorId: doctorId || this.queues[0]?.doctorId || '61111111-1111-4111-8111-111111111101',
-              doctorName: item.doctorName || getUnifiedPartnerProfile().doctorName || 'Consulting Physician',
-              encounterId: `enc-dyn-${item.token || idx}`,
-              tokenNumber: `Q-${String(item.token || idx + 10).padStart(3, '0')}`,
-              queueDate: new Date().toISOString().split('T')[0] || '2026-09-07',
-              queueStatus: 'WAITING',
-              estimatedWaitMinutes: parseInt(item.estWait || '15', 10) || 15,
-              metadata: { patientName: item.name, uhid: item.uhid },
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
-            }));
-          }
-        }
-      } catch {}
-    }
-
-    const merged = [...this.queues];
-    for (const dyn of dynamicItems) {
-      if (!merged.some((q) => q.tokenNumber === dyn.tokenNumber || q.id === dyn.id)) {
-        merged.push(dyn);
+    try {
+      const q = new URLSearchParams();
+      if (branchId) q.set('branchId', branchId);
+      if (doctorId) q.set('doctorId', doctorId);
+      const queryString = q.toString() ? `?${q.toString()}` : '';
+      const res = await apiRequest<EncounterQueueDto[]>(`/api/v1/partner/clinical/queues${queryString}`);
+      if (res.success && Array.isArray(res.data)) {
+        return res.data;
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) {
+        throw err;
       }
     }
 
-    return merged.filter((q) => {
+    if (!isMockFallbackAllowed()) {
+      return [];
+    }
+
+    return this.queues.filter((q) => {
+      if (tenantId && q.tenantId !== tenantId) return false;
       if (organizationId && q.organizationId !== organizationId) return false;
       if (branchId && q.branchId !== branchId) return false;
       if (departmentId && q.departmentId !== departmentId) return false;
@@ -716,10 +698,27 @@ export class EncounterService implements IEncounterService {
     reason: string
   ): Promise<EncounterDto> {
     try {
-      await apiRequest(`/api/v1/partner/clinical/encounters/${encodeURIComponent(encounterId)}/call`, {
+      const claimRes = await apiRequest<{ encounter: EncounterDto }>(`/api/v1/partner/clinical/encounters/${encodeURIComponent(encounterId)}/claim`, {
+        method: 'POST',
+        body: JSON.stringify({ doctorId: actorId })
+      });
+      if (claimRes.success && claimRes.data?.encounter) {
+        return claimRes.data.encounter;
+      }
+    } catch (claimErr) {
+      if (!isMockFallbackAllowed()) {
+        throw claimErr;
+      }
+    }
+
+    try {
+      const callRes = await apiRequest<EncounterDto>(`/api/v1/partner/clinical/encounters/${encodeURIComponent(encounterId)}/call`, {
         method: 'PATCH',
         body: JSON.stringify({ actorId, actorRole, reason })
       });
+      if (callRes.success && callRes.data) {
+        return callRes.data;
+      }
     } catch (error) {
       if (!isMockFallbackAllowed()) {
         throw error;
@@ -740,22 +739,6 @@ export class EncounterService implements IEncounterService {
       enc.queueItem.calledAt = new Date().toISOString();
     }
 
-    this.addAudit(
-      tenantId,
-      enc.partnerId,
-      enc.organizationId,
-      enc.branchId,
-      enc.id,
-      enc.patientId,
-      actorId,
-      actorRole,
-      'CALL_NEXT_PATIENT',
-      'encounters',
-      `${enc.encounterNumber} (Token: ${enc.tokenNumber ?? 'N/A'})`,
-      reason
-    );
-
-    saveStored('docsearch_encounters', this.encounters);
     return { ...enc };
   }
 

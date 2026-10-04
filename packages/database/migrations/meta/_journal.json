@@ -470,6 +470,20 @@
       "when": 1788547000000,
       "tag": "0066_phase15_ai_intelligence_governance",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1788548000000,
+      "tag": "0067_compliance_document_verification",
+      "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1788549000000,
+      "tag": "0068_tenant_isolation_performance_indices",
+      "breakpoints": true
     }
   ]
 }

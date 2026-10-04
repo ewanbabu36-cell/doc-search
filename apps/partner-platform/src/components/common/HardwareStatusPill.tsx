@@ -5,10 +5,15 @@ import {
 } from '../../services/hardware-status-service.js';
 import { HardwareDiagnosticsDrawer } from '../dialogs/HardwareDiagnosticsDrawer.js';
 
-export const HardwareStatusPill: React.FC = () => {
+export interface HardwareStatusPillProps {
+  hidden?: boolean;
+}
+
+export const HardwareStatusPill: React.FC<HardwareStatusPillProps> = ({ hidden = false }) => {
   const [status, setStatus] = useState<HardwarePeripheralOverview>(() => hardwareStatusService.getStatus());
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedDrawerTab, setSelectedDrawerTab] = useState<'BARCODE' | 'PRINTER' | 'ANALYZER'>('BARCODE');
+  const [isDismissed, setIsDismissed] = useState(false);
 
   useEffect(() => {
     const unsubStatus = hardwareStatusService.subscribe(setStatus);
@@ -42,9 +47,10 @@ export const HardwareStatusPill: React.FC = () => {
   return (
     <>
       {/* Floating Hardware Capsule Dock */}
-      <div
-        className="ds-hide-on-mobile"
-        style={{
+      {!hidden && !isDismissed && (
+        <div
+          className="ds-hide-on-mobile"
+          style={{
           position: 'fixed',
           bottom: '16px',
           left: '50%',
@@ -233,7 +239,31 @@ export const HardwareStatusPill: React.FC = () => {
             }}
           />
         </button>
+
+        {/* Dismiss Button */}
+        <button
+          type="button"
+          onClick={() => setIsDismissed(true)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '20px',
+            height: '20px',
+            borderRadius: '50%',
+            border: 'none',
+            backgroundColor: 'rgba(255, 255, 255, 0.08)',
+            color: '#94A3B8',
+            fontSize: '0.65rem',
+            cursor: 'pointer',
+            marginLeft: '4px'
+          }}
+          title="Dismiss floating hardware bar (Configure in Chamber Settings or Alt+H)"
+        >
+          ✕
+        </button>
       </div>
+      )}
 
       {/* Slide-Over Diagnostics Drawer */}
       <HardwareDiagnosticsDrawer

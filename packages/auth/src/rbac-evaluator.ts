@@ -16,10 +16,11 @@ const GOVERNED_ACTIONS = new Set([
 const ACTION_EQUIVALENCES: Record<string, string[]> = {
   view: ['read'],
   read: ['view'],
-  create: ['save'],
-  save: ['create'],
-  edit: ['update'],
-  update: ['edit'],
+  create: ['save', 'write'],
+  save: ['create', 'write'],
+  edit: ['update', 'write'],
+  update: ['edit', 'write'],
+  write: ['create', 'update', 'edit', 'save'],
   remove: ['archive'],
   archive: ['remove'],
   export: ['download'],
@@ -61,40 +62,65 @@ export class RBACEvaluator {
       }
     }
 
-    const exactRequired = `${resource}:${action}`;
-    if (session.permissions.includes(exactRequired)) {
+    // Helper to evaluate a candidate resource name against session permissions
+    const matchesResource = (res: string): boolean => {
+      const exactRequired = `${res}:${action}`;
+      if (session.permissions.includes(exactRequired)) {
+        return true;
+      }
+
+      // Check action equivalence (e.g. read <=> view, create <=> save/write, edit <=> update/write)
+      const equivalents = ACTION_EQUIVALENCES[action] || [];
+      for (const eq of equivalents) {
+        if (session.permissions.includes(`${res}:${eq}`)) {
+          return true;
+        }
+      }
+
+      // High-risk governed actions (delete, refund, share, export, approve, validate, override)
+      // require EXPLICIT permission and CANNOT be satisfied by wildcards (*, all, :*, :manage)
+      if (GOVERNED_ACTIONS.has(action)) {
+        return false;
+      }
+
+      // Check if user has resource:manage
+      if (session.permissions.includes(`${res}:manage`)) {
+        return true;
+      }
+
+      // Standard operational actions can match prefix or wildcard if explicitly configured
+      if (
+        session.permissions.includes(`${res}:*`) ||
+        session.permissions.includes(res)
+      ) {
+        return true;
+      }
+
+      return false;
+    };
+
+    if (matchesResource(resource)) {
       return true;
     }
 
-    // Check action equivalence (e.g. read <=> view, create <=> save, edit <=> update)
-    const equivalents = ACTION_EQUIVALENCES[action] || [];
-    for (const eq of equivalents) {
-      if (session.permissions.includes(`${resource}:${eq}`)) {
+    // Check namespaced resources (e.g., 'clinical:patients' -> sub-resource 'patients', root 'clinical')
+    if (resource.includes(':')) {
+      const parts = resource.split(':');
+      const rootNamespace = parts[0];
+      const subResource = parts.slice(1).join(':');
+
+      if (subResource && matchesResource(subResource)) {
+        return true;
+      }
+      if (rootNamespace && matchesResource(rootNamespace)) {
         return true;
       }
     }
 
-    // High-risk governed actions (delete, refund, share, export, approve, validate, override)
-    // require EXPLICIT permission and CANNOT be satisfied by wildcards (*, all, :*, :manage)
-    if (GOVERNED_ACTIONS.has(action)) {
-      return false;
-    }
-
-    if (session.permissions.includes('*') || session.permissions.includes('all')) {
-      return true;
-    }
-
-    // Check if user has resource:manage
-    if (session.permissions.includes(`${resource}:manage`)) {
-      return true;
-    }
-
-    // Standard operational actions can match prefix or wildcard if explicitly configured
-    if (
-      session.permissions.includes(`${resource}:*`) ||
-      session.permissions.includes(resource)
-    ) {
-      return true;
+    if (!GOVERNED_ACTIONS.has(action)) {
+      if (session.permissions.includes('*') || session.permissions.includes('all')) {
+        return true;
+      }
     }
 
     return false;

@@ -94,6 +94,27 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
       setActiveTab(initialTab);
     }
   }, [initialTab, isOpen]);
+
+  // Mobile / Android Hardware Back Button Support
+  useEffect(() => {
+    if (!isOpen || typeof window === 'undefined') return undefined;
+
+    let isPushed = true;
+    window.history.pushState({ docsearchSettingsModalOpen: true }, '');
+
+    const handlePopState = () => {
+      isPushed = false;
+      onClose();
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      if (isPushed && window.history.state?.docsearchSettingsModalOpen) {
+        window.history.back();
+      }
+    };
+  }, [isOpen, onClose]);
   const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isAiScanning, setIsAiScanning] = useState<boolean>(false);
@@ -206,7 +227,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
     autoRenewalAlertEnabled: true,
 
     // Doctor Fields
-    doctorName: currentUser?.name || '',
+    doctorName: (currentUser?.name && currentUser.name.toLowerCase() !== 'verified user' && currentUser.name.toLowerCase() !== 'verified') ? currentUser.name : '',
     doctorDegreeName: currentUser?.roleTitle || (roleCategory === 'DOCTOR' ? 'MBBS' : ''),
     doctorDegreeFile: '',
     doctorCouncilName: '',
@@ -330,31 +351,91 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
         if (existing) setStagedAmendment(existing);
       } catch {}
 
+      // Hydrate profile amendment status from backend PostgreSQL
+      apiRequest<any>('/api/v1/approvals')
+        .then((res: any) => {
+          const list = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+          const partnerReq = list.find((r: any) => {
+            if (r.entityType !== 'PARTNER_PROFILE_AMENDMENT') return false;
+            const email = (r.submitterEmail || r.payloadData?.userEmail || '').toLowerCase();
+            return email === currentUser?.email?.toLowerCase();
+          });
+          if (partnerReq) {
+            const p = partnerReq.payloadData || {};
+            setStagedAmendment({
+              id: partnerReq.id,
+              userEmail: p.userEmail || currentUser?.email,
+              tenantSlug: p.tenantSlug,
+              currentFacilityName: p.currentFacilityName,
+              currentOwnerName: p.currentOwnerName,
+              currentAadhaarNumber: p.currentAadhaarNumber,
+              proposedFacilityName: p.proposedFacilityName,
+              proposedOwnerName: p.proposedOwnerName,
+              proposedAadhaarNumber: p.proposedAadhaarNumber,
+              proposedDocFileName: p.proposedDocFileName,
+              proposedDocDataUrl: p.proposedDocDataUrl,
+              reasonForChange: p.reasonForChange,
+              status: partnerReq.approvalStatus === 'APPROVED_BY_FOUNDER'
+                ? 'APPROVED'
+                : partnerReq.approvalStatus === 'REJECTED_BY_FOUNDER'
+                ? 'REJECTED'
+                : 'PENDING_ADMIN_APPROVAL',
+              founderRemarks: partnerReq.founderRemarks,
+              submittedAt: new Date(partnerReq.createdAt).toLocaleString()
+            });
+
+            if (partnerReq.approvalStatus === 'APPROVED_BY_FOUNDER' && p.proposedFacilityName) {
+              setAddressData((prev) => ({
+                ...prev,
+                legalName: p.proposedFacilityName
+              }));
+            }
+          }
+        })
+        .catch(() => {});
+
       // Also hydrate from backend PostgreSQL GET /api/v1/partner/profile
       apiRequest<any>('/api/v1/partner/profile')
         .then((res: any) => {
           const prof = res?.data || res;
           if (!prof) return;
+          const leadDoctor = prof.primaryContactName || prof.leadDoctorName || prof.ownerName || null;
+          setDynamicPartner((prev: any) => ({
+            ...prev,
+            ...prof,
+            facilityName: prof.legalName || prof.tradeName || prev?.facilityName,
+            leadDoctorName: (leadDoctor && leadDoctor.toLowerCase() !== 'verified user' && leadDoctor.toLowerCase() !== 'verified')
+              ? leadDoctor
+              : prev?.leadDoctorName
+          }));
           setAddressData((prev) => ({
             ...prev,
             legalName: prof.legalName || prof.tradeName || prev.legalName || currentUser?.tenantName || '',
-            addressLine1: prof.address?.addressLine1 || prev.addressLine1 || '',
-            addressLine2: prof.address?.addressLine2 || prev.addressLine2 || '',
+            addressLine1: prof.address?.addressLine1 || prof.address?.line1 || prev.addressLine1 || '',
+            addressLine2: prof.address?.addressLine2 || prof.address?.line2 || prev.addressLine2 || '',
             city: prof.address?.city || prev.city || '',
             state: prof.address?.state || prev.state || '',
-            pincode: prof.address?.pincode || prev.pincode || '',
-            officialPhone: prof.contactPhone || prev.officialPhone || '',
+            pincode: prof.address?.pincode || prof.address?.postalCode || prev.pincode || '',
+            officialPhone: prof.contactPhone || prof.primaryContactPhone || prev.officialPhone || '',
             emergencyHelpline: prof.statutory?.emergencyHelpline || prev.emergencyHelpline || '',
             panNumber: prof.statutory?.panNumber || prev.panNumber || '',
             latitude: prof.metadata?.latitude || prev.latitude || '',
             longitude: prof.metadata?.longitude || prev.longitude || '',
-            supportEmail: prof.contactEmail || prev.supportEmail || currentUser?.email || '',
+            supportEmail: prof.contactEmail || prof.primaryContactEmail || prev.supportEmail || currentUser?.email || '',
             gstin: prof.statutory?.gstin || prev.gstin || ''
           }));
           if (prof.certificates) {
+            const rawCertDoctor = prof.certificates.doctorName;
+            const validCertDoctor = (rawCertDoctor && rawCertDoctor.toLowerCase() !== 'verified user' && rawCertDoctor.toLowerCase() !== 'verified')
+              ? rawCertDoctor
+              : ((leadDoctor && leadDoctor.toLowerCase() !== 'verified user' && leadDoctor.toLowerCase() !== 'verified')
+                  ? leadDoctor
+                  : (currentUser?.name && currentUser.name.toLowerCase() !== 'verified user' && currentUser.name.toLowerCase() !== 'verified' ? currentUser.name : ''));
+
             setCertData((prev) => ({
               ...prev,
               ...prof.certificates,
+              doctorName: validCertDoctor || prev.doctorName,
               hospitalCeaRegNo: prof.certificates.hospitalCeaRegNo || prof.statutory?.clinicalLicense || prev.hospitalCeaRegNo || '',
               abdmFacilityId: prof.statutory?.abdmFacilityId || prof.certificates.abdmFacilityId || prev.abdmFacilityId || '',
               aerbApprovalNo: prof.statutory?.aerbApprovalNo || prof.certificates.aerbApprovalNo || prev.aerbApprovalNo || '',
@@ -392,7 +473,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
   const aadhaarDocName = dynamicPartner?.aadhaarDocFileName || currentUser?.aadhaarDocFileName || '';
   const kycStatus = dynamicPartner?.kycStatus || currentUser?.kycStatus || 'KYC_PENDING';
 
-  const handleSubmitAmendment = (e: React.FormEvent) => {
+  const handleSubmitAmendment = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
@@ -407,15 +488,24 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
       return;
     }
 
+    const currentOwner =
+      dynamicPartner?.leadDoctorName ||
+      dynamicPartner?.primaryContactName ||
+      dynamicPartner?.ownerName ||
+      (currentUser?.name && currentUser.name.toLowerCase() !== 'verified user' && currentUser.name.toLowerCase() !== 'verified' ? currentUser.name : 'Lead Doctor');
+
+    const proposedFacility = amendmentData.proposedFacilityName.trim() || (currentUser?.tenantName || 'Healthcare Facility');
+    const proposedOwner = amendmentData.proposedOwnerName.trim() || currentOwner;
+
     const newAmendment = {
       id: `AMEND-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`,
       userEmail: currentUser?.email || 'default_user',
       tenantSlug: (currentUser?.tenantName || 'partner').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
       currentFacilityName: currentUser?.tenantName || 'Healthcare Facility',
-      currentOwnerName: currentUser?.name || 'Lead Doctor',
+      currentOwnerName: currentOwner,
       currentAadhaarNumber: ownerAadhaar,
-      proposedFacilityName: amendmentData.proposedFacilityName.trim() || (currentUser?.tenantName || ''),
-      proposedOwnerName: amendmentData.proposedOwnerName.trim() || (currentUser?.name || ''),
+      proposedFacilityName: proposedFacility,
+      proposedOwnerName: proposedOwner,
       proposedAadhaarNumber: cleanAadhaar || ownerAadhaar,
       proposedDocFileName: amendmentData.proposedDocFileName || aadhaarDocName,
       proposedDocDataUrl: amendmentData.proposedDocDataUrl,
@@ -424,7 +514,24 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
       submittedAt: new Date().toLocaleString()
     };
 
-    // Save to staged amendments
+    // 1. Submit to Backend Central Database via API Gateway
+    try {
+      await apiRequest('/api/v1/approvals/submit', {
+        method: 'POST',
+        body: JSON.stringify({
+          entityType: 'PARTNER_PROFILE_AMENDMENT',
+          taskTitle: `Profile Amendment: ${proposedFacility} (${proposedOwner})`,
+          submitterName: currentOwner || 'Partner In-Charge',
+          payloadData: {
+            ...newAmendment
+          }
+        })
+      });
+    } catch (apiErr) {
+      console.warn('Backend approval submission error, retaining local stage fallback', apiErr);
+    }
+
+    // 2. Save to local storage staged amendments & verification queue
     try {
       const amendments = JSON.parse(localStorage.getItem('docsearch_staged_profile_amendments') || '[]');
       const filtered = amendments.filter((a: any) => a.userEmail?.toLowerCase() !== currentUser?.email?.toLowerCase());
@@ -460,7 +567,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
     } catch {}
 
     setIsAmendmentFormOpen(false);
-    setSaveSuccessMessage('⏳ Profile Amendment submitted for Founder / Admin Approval! Your current live system continues using existing approved details until Admin approves.');
+    setSaveSuccessMessage('⏳ Profile Amendment submitted to Company Founder / Compliance Directorate! Your current live system continues using existing approved details until Admin approves.');
     setTimeout(() => setSaveSuccessMessage(null), 6000);
   };
 
@@ -479,6 +586,18 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
   const saveToStorage = async (updatedPayload: any): Promise<boolean> => {
     try {
       const effectiveBranding = updatedPayload.branding || brandingData;
+      const certDocName = updatedPayload.certificates?.doctorName;
+      if (!certDocName || certDocName.toLowerCase() === 'verified user' || certDocName.toLowerCase() === 'verified') {
+        const candidate =
+          dynamicPartner?.leadDoctorName ||
+          dynamicPartner?.primaryContactName ||
+          dynamicPartner?.ownerName ||
+          (currentUser?.name && currentUser.name.toLowerCase() !== 'verified user' && currentUser.name.toLowerCase() !== 'verified' ? currentUser.name : '');
+        if (candidate) {
+          if (!updatedPayload.certificates) updatedPayload.certificates = {};
+          updatedPayload.certificates.doctorName = candidate;
+        }
+      }
       const signatureUrl = effectiveBranding?.signatureUrl || effectiveBranding?.pathologistSignatureUrl || '';
       const pathologistSignatureUrl = effectiveBranding?.pathologistSignatureUrl || effectiveBranding?.signatureUrl || signatureUrl;
       const technologistSignatureUrl = effectiveBranding?.technologistSignatureUrl || '';
@@ -488,7 +607,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
       // 1. Immediately persist branding and letterhead configuration to universal print media cache
       try {
         localStorage.setItem('docsearch_custom_rx_letterhead', JSON.stringify({
-          doctorName: updatedPayload.certificates?.doctorName || effectiveBranding?.pathologistName || currentUser?.name || 'Authorized Consultant',
+          doctorName: updatedPayload.certificates?.doctorName || effectiveBranding?.pathologistName || (currentUser?.name && currentUser.name.toLowerCase() !== 'verified user' ? currentUser.name : '') || 'Authorized Consultant',
           doctorDegree: updatedPayload.certificates?.doctorDegreeName || effectiveBranding?.pathologistDegree || (roleCategory === 'DOCTOR' ? 'MBBS' : 'Chief Medical Superintendent'),
           doctorSpecialty: updatedPayload.certificates?.doctorSpecialty || 'General Medicine & Clinical Care',
           doctorCouncilName: updatedPayload.certificates?.doctorCouncilName || 'State Medical Council',
@@ -1083,17 +1202,80 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      backgroundColor: 'rgba(7, 12, 22, 0.65)',
-      backdropFilter: 'blur(6px)',
-      zIndex: 1000001,
-      display: 'flex',
-      alignItems: 'stretch',
-      justifyContent: 'flex-end',
-      padding: 0
-    }}>
+    <div
+      className="ds-settings-backdrop"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        backgroundColor: 'rgba(7, 12, 22, 0.65)',
+        backdropFilter: 'blur(6px)',
+        zIndex: 1000001,
+        display: 'flex',
+        alignItems: 'stretch',
+        justifyContent: 'flex-end',
+        padding: 0
+      }}
+    >
+      {/* Mobile & Desktop Responsive Styles */}
+      <style>{`
+        @keyframes dsSettingsSlideUp {
+          from {
+            transform: translateY(100%);
+            opacity: 0.85;
+          }
+          to {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+        @media (max-width: 767px) {
+          .ds-settings-backdrop {
+            align-items: flex-end !important;
+            justify-content: center !important;
+          }
+          .ds-adaptive-modal-sheet {
+            width: 100% !important;
+            max-width: 100% !important;
+            height: 94dvh !important;
+            max-height: 94dvh !important;
+            border-radius: 20px 20px 0 0 !important;
+            border: 1.5px solid rgba(6, 182, 212, 0.4) !important;
+            border-bottom: none !important;
+            border-left: none !important;
+            border-right: none !important;
+            box-shadow: 0 -12px 48px rgba(0, 0, 0, 0.85) !important;
+            animation: dsSettingsSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+          }
+          .ds-settings-mobile-pill {
+            display: block !important;
+          }
+          .ds-settings-tabs-scroll {
+            overflow-x: auto !important;
+            white-space: nowrap !important;
+            -webkit-overflow-scrolling: touch !important;
+            scrollbar-width: none !important;
+          }
+          .ds-settings-tabs-scroll::-webkit-scrollbar {
+            display: none !important;
+          }
+          .ds-adaptive-modal-sheet input,
+          .ds-adaptive-modal-sheet select,
+          .ds-adaptive-modal-sheet textarea {
+            font-size: 16px !important;
+          }
+          .ds-adaptive-modal-sheet button {
+            min-height: 44px !important;
+          }
+        }
+        @media (min-width: 768px) {
+          .ds-settings-mobile-pill {
+            display: none !important;
+          }
+        }
+      `}</style>
       <div
         className="ds-adaptive-modal-sheet"
         style={{
@@ -1114,6 +1296,19 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
           flexDirection: 'column'
         }}
       >
+        {/* Mobile Drag Pill */}
+        <div
+          className="ds-settings-mobile-pill"
+          style={{
+            width: '42px',
+            height: '4px',
+            backgroundColor: 'rgba(255, 255, 255, 0.3)',
+            borderRadius: '9999px',
+            margin: '10px auto 4px auto',
+            flexShrink: 0
+          }}
+        />
+
         {/* Header */}
         <div style={{
           backgroundColor: '#0B132B',
@@ -1257,13 +1452,16 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
         )}
 
         {/* Tab Navigation */}
-        <div style={{
-          display: 'flex',
-          borderBottom: '1px solid rgba(255,255,255,0.1)',
-          backgroundColor: '#070C16',
-          padding: '0 16px',
-          overflowX: 'auto'
-        }}>
+        <div
+          className="ds-settings-tabs-scroll"
+          style={{
+            display: 'flex',
+            borderBottom: '1px solid rgba(255,255,255,0.1)',
+            backgroundColor: '#070C16',
+            padding: '0 16px',
+            overflowX: 'auto'
+          }}
+        >
           <button
             type="button"
             onClick={() => { setActiveTab('KYC'); setErrorMessage(null); }}
@@ -1545,7 +1743,21 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                       <span style={{ fontSize: '0.625rem', color: '#EF4444', fontWeight: 800 }}>🔒 LOCKED</span>
                     </div>
                     <div style={{ fontSize: '0.875rem', fontWeight: 800, color: '#F8FAFC' }}>
-                      {dynamicPartner?.leadDoctorName || currentUser?.name || 'Lead Clinical Authority'}
+                      {(() => {
+                        const candidates = [
+                          dynamicPartner?.leadDoctorName,
+                          dynamicPartner?.primaryContactName,
+                          dynamicPartner?.ownerName,
+                          certData.doctorName,
+                          currentUser?.name
+                        ];
+                        for (const c of candidates) {
+                          if (c && typeof c === 'string' && c.trim() && c.trim().toLowerCase() !== 'verified user' && c.trim().toLowerCase() !== 'verified') {
+                            return c.trim();
+                          }
+                        }
+                        return 'Lead Clinical Authority';
+                      })()}
                     </div>
                   </div>
 
@@ -1623,10 +1835,78 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                   <div style={{ backgroundColor: '#070C16', padding: '12px', borderRadius: '8px', fontSize: '0.75rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
                     <div><span style={{ color: '#94A3B8' }}>Proposed Facility Name:</span> <strong style={{ color: '#38BDF8' }}>{stagedAmendment.proposedFacilityName}</strong></div>
                     <div><span style={{ color: '#94A3B8' }}>Proposed Owner Name:</span> <strong style={{ color: '#38BDF8' }}>{stagedAmendment.proposedOwnerName}</strong></div>
-                    <div><span style={{ color: '#94A3B8' }}>Proposed Aadhaar:</span> <strong style={{ color: '#38BDF8' }}>XXXX XXXX {stagedAmendment.proposedAadhaarNumber.slice(-4)}</strong></div>
+                    <div><span style={{ color: '#94A3B8' }}>Proposed Aadhaar:</span> <strong style={{ color: '#38BDF8' }}>XXXX XXXX {stagedAmendment.proposedAadhaarNumber?.slice(-4)}</strong></div>
                     <div><span style={{ color: '#94A3B8' }}>Proof Attached:</span> <span style={{ color: '#A7F3D0' }}>{stagedAmendment.proposedDocFileName}</span></div>
                     <div style={{ gridColumn: 'span 2' }}><span style={{ color: '#94A3B8' }}>Reason For Change:</span> <span style={{ color: '#F8FAFC' }}>{stagedAmendment.reasonForChange}</span></div>
                   </div>
+                </div>
+              )}
+
+              {/* Approved Staged Amendment Banner */}
+              {stagedAmendment && stagedAmendment.status === 'APPROVED' && (
+                <div style={{
+                  backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                  border: '1.5px solid #10B981',
+                  borderRadius: '12px',
+                  padding: '16px 20px'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '1.3rem' }}>✅</span>
+                      <strong style={{ color: '#34D399', fontSize: '0.875rem' }}>
+                        Profile Amendment Verified & Approved by Founder
+                      </strong>
+                    </div>
+                    <span style={{ backgroundColor: '#10B981', color: '#000', fontSize: '0.6875rem', fontWeight: 900, padding: '2px 8px', borderRadius: '6px' }}>
+                      APPROVED
+                    </span>
+                  </div>
+                  <p style={{ margin: '8px 0 0 0', fontSize: '0.8125rem', color: '#E2E8F0' }}>
+                    Your proposed legal facility name (<strong>{stagedAmendment.proposedFacilityName}</strong>) and in-charge owner details have been successfully verified and activated across all live prescriptions, letterheads, and public search.
+                  </p>
+                </div>
+              )}
+
+              {/* Rejected Staged Amendment Banner */}
+              {stagedAmendment && stagedAmendment.status === 'REJECTED' && (
+                <div style={{
+                  backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                  border: '1.5px solid #EF4444',
+                  borderRadius: '12px',
+                  padding: '16px 20px'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '1.3rem' }}>❌</span>
+                      <strong style={{ color: '#F87171', fontSize: '0.875rem' }}>
+                        Profile Amendment Rejected by Compliance Directorate
+                      </strong>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setStagedAmendment(null);
+                        setIsAmendmentFormOpen(true);
+                      }}
+                      style={{
+                        backgroundColor: '#EF4444',
+                        color: '#FFF',
+                        border: 'none',
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Re-Submit Amendment
+                    </button>
+                  </div>
+                  {stagedAmendment.founderRemarks && (
+                    <p style={{ margin: '8px 0 0 0', fontSize: '0.8125rem', color: '#FCA5A5' }}>
+                      Reason: "{stagedAmendment.founderRemarks}"
+                    </p>
+                  )}
                 </div>
               )}
 

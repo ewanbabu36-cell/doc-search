@@ -10,7 +10,7 @@ process.env.ALLOW_EMBEDDED_POSTGRES = 'false';
 process.env.NODE_ENV = 'development';
 
 // 1. Free ports before launching
-const ports = [4000, 5173, 5174, 5175];
+const ports = [4000, 5173, 5175, 5177];
 try {
   const output = execSync('netstat -ano', { encoding: 'utf8' });
   const lines = output.split('\n');
@@ -76,6 +76,22 @@ function spawnService(svc) {
   return child;
 }
 
+async function checkPostgresReady(timeoutMs = 1500) {
+  try {
+    const { Client } = require('pg');
+    const client = new Client({
+      connectionString: process.env.DATABASE_URL || 'postgresql://postgres:password@127.0.0.1:5432/docsearch',
+      connectionTimeoutMillis: timeoutMs
+    });
+    await client.connect();
+    await client.query('SELECT 1');
+    await client.end();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function waitForHealth(url, maxWaitMs = 60000) {
   const start = Date.now();
   return new Promise((resolve) => {
@@ -97,6 +113,29 @@ function waitForHealth(url, maxWaitMs = 60000) {
 }
 
 async function main() {
+  // Step 0: Ensure Native PostgreSQL is listening on port 5432
+  const pgReady = await checkPostgresReady(1000);
+  if (!pgReady) {
+    console.log('[*] Native PostgreSQL not detected on port 5432. Launching native PostgreSQL daemon...');
+    spawnService({
+      name: 'PostgreSQL 18.4',
+      port: 5432,
+      cwd: rootDir,
+      executable: process.execPath,
+      args: ['scripts/native-postgres-daemon.mjs'],
+      color: '\x1b[34m'
+    });
+    for (let i = 0; i < 90; i++) {
+      await new Promise((r) => setTimeout(r, 1000));
+      if (await checkPostgresReady(1500)) {
+        console.log('[\x1b[32m✔\x1b[0m] Native PostgreSQL is listening on 127.0.0.1:5432\n');
+        break;
+      }
+    }
+  } else {
+    console.log('[\x1b[32m✔\x1b[0m] Native PostgreSQL already active on 127.0.0.1:5432\n');
+  }
+
   // Step 1: Start API Gateway
   const gateway = {
     name: 'API Gateway',
@@ -123,15 +162,15 @@ async function main() {
       port: 5173,
       cwd: path.join(rootDir, 'apps/partner-platform'),
       executable: process.execPath,
-      args: [path.join(rootDir, 'apps/partner-platform/node_modules/vite/bin/vite.js'), '--port', '5173', '--host'],
+      args: [path.join(rootDir, 'apps/partner-platform/node_modules/vite/bin/vite.js'), '--port', '5173', '--host', '--strictPort'],
       color: '\x1b[36m'
     },
     {
       name: 'Company Platform',
-      port: 5174,
+      port: 5177,
       cwd: path.join(rootDir, 'apps/company-platform'),
       executable: process.execPath,
-      args: [path.join(rootDir, 'apps/company-platform/node_modules/vite/bin/vite.js'), '--port', '5174', '--host'],
+      args: [path.join(rootDir, 'apps/company-platform/node_modules/vite/bin/vite.js'), '--port', '5177', '--host', '--strictPort'],
       color: '\x1b[32m'
     },
     {
@@ -139,7 +178,7 @@ async function main() {
       port: 5175,
       cwd: path.join(rootDir, 'apps/landing-page'),
       executable: process.execPath,
-      args: [path.join(rootDir, 'apps/landing-page/node_modules/vite/bin/vite.js'), '--port', '5175', '--host'],
+      args: [path.join(rootDir, 'apps/landing-page/node_modules/vite/bin/vite.js'), '--port', '5175', '--host', '--strictPort'],
       color: '\x1b[33m'
     }
   ];

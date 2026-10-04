@@ -16,6 +16,18 @@ export class PartnerFoundationService {
     });
   }
 
+  async getOrganizations(session: SessionContext, partnerId?: string) {
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      return partnerFoundationRepository.getOrganizations(session.tenantId, partnerId, tx);
+    });
+  }
+
+  async getFacilities(session: SessionContext, partnerId?: string, organizationId?: string) {
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      return partnerFoundationRepository.getFacilities(session.tenantId, partnerId, organizationId, tx);
+    });
+  }
+
   async createPartner(data: Omit<CreatePartnerData, 'tenantId'>, session: SessionContext) {
     return withSecurityContext(getDatabase(), session, async (tx) => {
       const created = await partnerFoundationRepository.createPartner({

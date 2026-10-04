@@ -507,12 +507,15 @@ export const DocSearchLogo: React.FC<DocSearchLogoProps> = ({
                 letterSpacing: '0.2px',
                 marginTop: '3px',
                 fontWeight: 500,
-                whiteSpace: 'nowrap'
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                maxWidth: '210px'
               }}
             >
               {isOnline
-                ? subtitle || 'Integrated Hospital & Clinical Intelligence System'
-                : 'Offline Local Cache Active • Safe to Consult & Bill'}
+                ? subtitle || 'Clinical Intelligence System'
+                : 'Offline Cache Active • Safe to Consult'}
             </div>
           )}
         </div>

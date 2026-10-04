@@ -12,14 +12,18 @@ import {
   type RecordEncounterVitalsInput,
   type CreateReferralInput,
   type CreateClinicalAlertInput,
-  type CreateFollowUpInput
+  type CreateFollowUpInput,
+  type MedicationCatalogSearchOptions,
+  type InvestigationCatalogSearchOptions
 } from '../../repositories/partner/ClinicalWorkflowRepository.js';
 import { auditRepository } from '../../repositories/core/AuditRepository.js';
 import { prescriptionPdfGenerator } from './PrescriptionPdfGenerator.js';
 import { type SessionContext, ScopeGuard } from '@docsearch/auth';
 import { withSecurityContext, getDatabase } from '@docsearch/database';
-import { AppError, ErrorCode } from '@docsearch/shared-core';
+import { AppError, ErrorCode, createLogger } from '@docsearch/shared-core';
 import { clinicalSafetyService } from './ClinicalSafetyService.js';
+
+const logger = createLogger('clinical-workflow-service');
 
 export class ClinicalWorkflowService {
   async searchPatients(
@@ -117,16 +121,41 @@ export class ClinicalWorkflowService {
         status: input.status || 'CHECKED_IN'
       }, tx);
 
+      let queueToken: StoredQueueToken | null = null;
+      try {
+        queueToken = await clinicalWorkflowRepository.createQueueToken({
+          tenantId: scope.tenantId,
+          encounterId: encounter.id,
+          doctorId: encounter.doctorId || undefined,
+          branchId: encounter.branchId || undefined,
+          departmentId: encounter.departmentId || undefined,
+          metadata: {
+            encounterNumber: encounter.encounterNumber,
+            ...(encounter.metadata || {})
+          }
+        }, tx);
+      } catch (tokenErr) {
+        logger.warn('Queue token generation during checkin: ' + String(tokenErr));
+      }
+
       await auditRepository.recordEvent({
         eventType: 'ENCOUNTER_CHECKIN',
         resourceType: 'encounter',
         resourceId: encounter.id,
         tenantId: scope.tenantId,
         branchId: scope.branchId || session.branchId,
-        metadata: { encounterNumber: encounter.encounterNumber, patientId: encounter.patientId }
+        metadata: {
+          encounterNumber: encounter.encounterNumber,
+          patientId: encounter.patientId,
+          tokenNumber: queueToken?.tokenNumber || null
+        }
       }, session, tx);
 
-      return encounter;
+      return {
+        ...encounter,
+        queueToken,
+        tokenNumber: queueToken?.tokenNumber || null
+      };
     });
   }
 
@@ -504,6 +533,18 @@ export class ClinicalWorkflowService {
 
   async getGenericAlternatives(drugQuery?: string) {
     return clinicalWorkflowRepository.getGenericAlternatives(drugQuery);
+  }
+
+  async searchMedications(session: SessionContext, options?: MedicationCatalogSearchOptions) {
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      return clinicalWorkflowRepository.searchMedicationCatalog(session.tenantId, options, tx);
+    });
+  }
+
+  async searchInvestigations(session: SessionContext, options?: InvestigationCatalogSearchOptions) {
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      return clinicalWorkflowRepository.searchInvestigationCatalog(session.tenantId, options, tx);
+    });
   }
 
   async bridgeDiagnosticOrders(encounterId: string, patientId: string, doctorId: string, testNames: string[], session: SessionContext) {
@@ -1232,6 +1273,40 @@ export class ClinicalWorkflowService {
         scope.tenantId,
         doctorId,
         scope.branchId,
+        tx
+      );
+    });
+  }
+
+  async getDoctorChamberStatus(doctorId: string, session: SessionContext) {
+    const scope = ScopeGuard.resolveEffectiveQueryScope(session);
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      return clinicalWorkflowRepository.getDoctorChamberStatus(
+        scope.tenantId,
+        doctorId || session.userId,
+        tx
+      );
+    });
+  }
+
+  async claimEncounter(encounterId: string, doctorId: string, session: SessionContext) {
+    const scope = ScopeGuard.resolveEffectiveQueryScope(session);
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      return clinicalWorkflowRepository.claimEncounter(
+        scope.tenantId,
+        encounterId,
+        doctorId || session.userId,
+        tx
+      );
+    });
+  }
+
+  async vacateDoctorChamber(doctorId: string, session: SessionContext) {
+    const scope = ScopeGuard.resolveEffectiveQueryScope(session);
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      return clinicalWorkflowRepository.vacateDoctorChamber(
+        scope.tenantId,
+        doctorId || session.userId,
         tx
       );
     });
