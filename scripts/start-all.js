@@ -10,7 +10,7 @@ process.env.ALLOW_EMBEDDED_POSTGRES = 'false';
 process.env.NODE_ENV = 'development';
 
 // 1. Free ports before launching
-const ports = [4000, 5173, 5175, 5177, 18080];
+const ports = [4000, 5173, 5175, 5177, 18080, 8042, 11112];
 try {
   const output = execSync('netstat -ano', { encoding: 'utf8' });
   const lines = output.split('\n');
@@ -165,6 +165,17 @@ async function main() {
     color: '\x1b[32m'
   };
   spawnService(hardwareAgent);
+
+  // Step 1.6: Start DocSearch Radiology PACS Server (DICOM C-STORE + DICOMweb)
+  const pacsServer = {
+    name: 'PACS Server',
+    port: 8042,
+    cwd: rootDir,
+    executable: process.execPath,
+    args: ['scripts/docsearch-pacs-server.mjs'],
+    color: '\x1b[36m'
+  };
+  spawnService(pacsServer);
 
   // Step 2: Start frontend services with dual-stack host flag
   const frontends = [

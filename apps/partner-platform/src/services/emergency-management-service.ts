@@ -778,12 +778,50 @@ export class MockEmergencyManagementService implements IEmergencyManagementServi
   }
 }
 
+function mapToEmergencyEncounterDto(row: any): EmergencyEncounterDto {
+  return {
+    id: String(row.id || ''),
+    tenantId: String(row.tenantId || ''),
+    partnerId: String(row.partnerId || ''),
+    organizationId: String(row.organizationId || ''),
+    branchId: String(row.branchId || ''),
+    encounterNumber: String(row.encounterNumber || row.emergencyNumber || `EMG-${String(row.id || '').slice(0, 6)}`),
+    patientId: String(row.patientId || ''),
+    patientName: String(row.patientName || row.patientId || 'Emergency Patient'),
+    patientMrn: String(row.patientMrn || row.patientId || 'MRN-PENDING'),
+    isUnknownPatient: Boolean(row.isUnknownPatient || (row.patientId && String(row.patientId).startsWith('UNKNOWN'))),
+    temporaryIdentifier: row.temporaryIdentifier || undefined,
+    patientGender: String(row.patientGender || 'OTHER'),
+    patientAge: row.patientAge ? Number(row.patientAge) : undefined,
+    arrivalMode: (['AMBULANCE', 'WALK_IN', 'POLICE', 'HELICOPTER', 'OTHER'].includes(row.arrivalMode) ? row.arrivalMode : 'WALK_IN') as any,
+    broughtBy: String(row.broughtBy || 'Self / Attendant'),
+    referralSource: row.referralSource || undefined,
+    chiefComplaint: String(row.chiefComplaint || 'Emergency medical triage required'),
+    arrivalTimestamp: typeof row.arrivedAt === 'string' ? row.arrivedAt : (row.arrivedAt ? new Date(row.arrivedAt).toISOString() : (row.arrivalTimestamp || new Date().toISOString())),
+    registrationTimestamp: typeof row.createdAt === 'string' ? row.createdAt : (row.createdAt ? new Date(row.createdAt).toISOString() : (row.registrationTimestamp || new Date().toISOString())),
+    currentStatus: (['REGISTERED', 'TRIAGED', 'IN_RESUSCITATION', 'IN_TRAUMA_BAY', 'UNDER_OBSERVATION', 'PROCEDURE_IN_PROGRESS', 'AWAITING_ADMISSION', 'AWAITING_TRANSFER', 'DISCHARGED', 'TRANSFERRED', 'ADMITTED', 'EXPIRED', 'LEFT_AGAINST_MEDICAL_ADVICE'].includes(row.currentStatus || row.status) ? (row.currentStatus || row.status) : 'REGISTERED') as any,
+    currentZoneId: row.currentZoneId || undefined,
+    currentZoneName: row.currentZoneName || undefined,
+    currentBedNumber: row.currentBedNumber || undefined,
+    assignedPhysicianName: row.assignedPhysicianName || row.assignedClinicianId || undefined,
+    assignedNurseName: row.assignedNurseName || undefined,
+    triageEsiLevel: row.triageEsiLevel || (row.priority === 'CRITICAL' ? 'ESI_1_IMMEDIATE_RESUSCITATION' : 'ESI_3_URGENT_MULTIPLE_RESOURCES'),
+    isTraumaAlert: Boolean(row.isTraumaAlert),
+    isCodeBlue: Boolean(row.isCodeBlue),
+    isMLC: Boolean(row.isMLC),
+    mlcCaseNumber: row.mlcCaseNumber || undefined,
+    dispositionOutcome: row.dispositionOutcome || (row.disposition?.dispositionType ? (row.disposition.dispositionType === 'ADMIT_TO_WARD' ? 'ADMIT_TO_WARD' : row.disposition.dispositionType === 'ADMIT_TO_ICU' ? 'ADMIT_TO_ICU' : 'DISCHARGE_HOME') : undefined),
+    createdAt: typeof row.createdAt === 'string' ? row.createdAt : (row.createdAt ? new Date(row.createdAt).toISOString() : new Date().toISOString()),
+    updatedAt: typeof row.updatedAt === 'string' ? row.updatedAt : (row.updatedAt ? new Date(row.updatedAt).toISOString() : new Date().toISOString())
+  };
+}
+
 export class EmergencyManagementService extends MockEmergencyManagementService implements IEmergencyManagementService {
   override async getEncounters(tenantId: string): Promise<EmergencyEncounterDto[]> {
     try {
-      const res = await apiRequest<EmergencyEncounterDto[]>('/api/v1/partner/emergency/queue');
-      if (res.success && Array.isArray(res.data) && res.data.length > 0) {
-        return res.data;
+      const res = await apiRequest<any[]>('/api/v1/partner/emergency/queue');
+      if (res.success && Array.isArray(res.data)) {
+        return res.data.map(mapToEmergencyEncounterDto);
       }
     } catch (err) {
       if (!isMockFallbackAllowed()) throw err;
@@ -791,65 +829,6 @@ export class EmergencyManagementService extends MockEmergencyManagementService i
     return super.getEncounters(tenantId);
   }
 
-  override async registerEmergencyPatient(req: RegisterEmergencyPatientRequest): Promise<EmergencyEncounterDto> {
-    try {
-      const res = await apiRequest<EmergencyEncounterDto>('/api/v1/partner/emergency/registrations', {
-        method: 'POST',
-        body: JSON.stringify(req)
-      });
-      if (res.success && res.data) {
-        return res.data;
-      }
-    } catch (err) {
-      if (!isMockFallbackAllowed()) throw err;
-    }
-    return super.registerEmergencyPatient(req);
   }
-
-  override async createTriageAssessment(req: CreateTriageAssessmentRequest): Promise<EmergencyTriageAssessmentDto> {
-    try {
-      const res = await apiRequest<EmergencyTriageAssessmentDto>(`/api/v1/partner/emergency/encounters/${req.encounterId}/triage`, {
-        method: 'POST',
-        body: JSON.stringify(req)
-      });
-      if (res.success && res.data) {
-        return res.data;
-      }
-    } catch (err) {
-      if (!isMockFallbackAllowed()) throw err;
-    }
-    return super.createTriageAssessment(req);
-  }
-
-  override async recordTreatment(encounterId: string, payload: { treatmentNotes: string; medicationsAdministered?: any[]; proceduresPerformed?: any[]; ordersPlaced?: any[] }): Promise<any> {
-    try {
-      const res = await apiRequest<any>(`/api/v1/partner/emergency/encounters/${encounterId}/treatments`, {
-        method: 'POST',
-        body: JSON.stringify(payload)
-      });
-      if (res.success && res.data) {
-        return res.data;
-      }
-    } catch (err) {
-      if (!isMockFallbackAllowed()) throw err;
-    }
-    return super.recordTreatment(encounterId, payload);
-  }
-
-  override async createDisposition(req: CreateDispositionRequest): Promise<EmergencyDispositionDto> {
-    try {
-      const res = await apiRequest<EmergencyDispositionDto>(`/api/v1/partner/emergency/encounters/${req.encounterId}/disposition`, {
-        method: 'POST',
-        body: JSON.stringify(req)
-      });
-      if (res.success && res.data) {
-        return res.data;
-      }
-    } catch (err) {
-      if (!isMockFallbackAllowed()) throw err;
-    }
-    return super.createDisposition(req);
-  }
-}
 
 export const emergencyManagementService = new EmergencyManagementService();

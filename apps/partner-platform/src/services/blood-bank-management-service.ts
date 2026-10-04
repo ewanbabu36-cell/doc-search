@@ -902,6 +902,48 @@ export class MockBloodBankManagementService implements IBloodBankManagementServi
   }
 }
 
-export class BloodBankManagementService extends MockBloodBankManagementService implements IBloodBankManagementService {}
+function mapToBloodComponentDto(c: any): BloodComponentDto {
+  const componentTypeMap: Record<string, any> = {
+    PRBC: 'PACKED_RED_BLOOD_CELLS_PRBC',
+    FFP: 'FRESH_FROZEN_PLASMA_FFP',
+    PLATELETS: 'PLATELET_CONCENTRATE_RDP',
+    WHOLE_BLOOD: 'WHOLE_BLOOD',
+    CRYOPRECIPITATE: 'CRYOPRECIPITATE'
+  };
+  return {
+    id: String(c.id || ''),
+    tenantId: String(c.tenantId || ''),
+    partnerId: String(c.partnerId || ''),
+    organizationId: String(c.organizationId || ''),
+    branchId: String(c.branchId || ''),
+    componentCode: String(c.componentCode || `BC-${String(c.id || '').slice(0, 6)}`),
+    donationId: String(c.donationId || ''),
+    componentType: (componentTypeMap[c.componentType] || c.componentType || 'PACKED_RED_BLOOD_CELLS_PRBC') as any,
+    bloodGroup: (c.bloodGroup || 'O_POSITIVE') as any,
+    volumeMl: Number(c.volumeMl || 350),
+    storageLocation: c.storageLocation || 'Blood Refrigerator #1',
+    storageTemperatureTargetC: c.storageTemperatureTargetC || '2°C to 6°C',
+    expiryDate: typeof c.expiryDate === 'string' ? c.expiryDate : (c.expiryDate ? new Date(c.expiryDate).toISOString() : new Date(Date.now() + 35 * 86400000).toISOString()),
+    status: (c.status === 'AVAILABLE' ? 'TESTED_SAFE_AVAILABLE' : c.status === 'ISSUED' ? 'ISSUED_TO_DEPARTMENT' : c.status === 'RESERVED' ? 'RESERVED_FOR_PATIENT' : (c.status || 'AVAILABLE')) as any,
+    preparedByTechnician: c.preparedByTechnician || 'Blood Bank Technologist',
+    releasedByPathologist: c.releasedByPathologist || 'Medical Officer',
+    createdAt: typeof c.createdAt === 'string' ? c.createdAt : (c.createdAt ? new Date(c.createdAt).toISOString() : new Date().toISOString())
+  };
+}
+
+export class BloodBankManagementService extends MockBloodBankManagementService implements IBloodBankManagementService {
+  override async getComponents(tenantId: string): Promise<BloodComponentDto[]> {
+    try {
+      const res = await apiRequest<any[]>('/api/v1/partner/blood-bank/inventory');
+      if (res.success && Array.isArray(res.data)) {
+        return res.data.map(mapToBloodComponentDto);
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
+    return super.getComponents(tenantId);
+  }
+
+  }
 
 export const bloodBankManagementService = new BloodBankManagementService();
