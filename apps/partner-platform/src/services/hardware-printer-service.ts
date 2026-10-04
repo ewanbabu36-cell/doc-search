@@ -456,15 +456,41 @@ export class HardwarePrinterService {
 
   /**
    * Silent 1-click token print with automatic fallback
-   * If a WebUSB/WebSerial device is connected, transmits raw ESC/POS bytes with instant cut.
-   * If no device is connected, falls back to window.print().
+   * 1. First attempts zero-click background print via DocSearch Local Hardware Agent (http://127.0.0.1:18080)
+   * 2. If agent is offline, checks WebUSB / WebSerial paired devices
+   * 3. Finally falls back to browser window.print() dialog if all hardware links are absent
    */
   async printOpdTokenSlip(
     slip: OpdTokenSlipData,
     paperWidthCols: number = 32
-  ): Promise<{ success: boolean; method: 'webusb' | 'webserial' | 'browser_fallback'; message: string }> {
-    const status = this.getStatus();
+  ): Promise<{ success: boolean; method: 'hardware_agent' | 'webusb' | 'webserial' | 'browser_fallback'; message: string }> {
+    // 1. Try DocSearch Local Hardware Agent (LHA) silent spool
+    try {
+      const resp = await fetch('http://127.0.0.1:18080/api/v1/hardware/print/escpos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          slipData: slip,
+          paperWidth: paperWidthCols > 32 ? '80mm' : '58mm',
+          printerId: 'tvs-rp3200'
+        })
+      });
+      if (resp.ok) {
+        const result = await resp.json();
+        if (result.success) {
+          return {
+            success: true,
+            method: 'hardware_agent',
+            message: `Silent zero-click print completed via DocSearch Hardware Agent (Job: ${result.jobId}, Printer: ${result.printer}).`
+          };
+        }
+      }
+    } catch {
+      // Local hardware agent daemon not running on client workstation; continue down the cascade
+    }
 
+    // 2. Try direct WebUSB / WebSerial
+    const status = this.getStatus();
     if (status.isConnected) {
       try {
         const bytes = this.buildOpdTokenEscPos(slip, paperWidthCols);
@@ -479,7 +505,7 @@ export class HardwarePrinterService {
       }
     }
 
-    // Graceful fallback to browser print dialog
+    // 3. Graceful fallback to browser print dialog
     if (typeof window !== 'undefined') {
       window.print();
       return {
@@ -493,6 +519,89 @@ export class HardwarePrinterService {
       success: false,
       method: 'browser_fallback',
       message: 'Print environment unavailable.'
+    };
+  }
+
+  /**
+   * Silent 2-inch Zebra ZPL Patient Wristband Print (Inpatient Ward Admission / Emergency)
+   */
+  async printWristband(data: {
+    hospitalName?: string;
+    patientName: string;
+    mrn: string;
+    age?: number;
+    gender?: string;
+    wardName?: string;
+    bedCode?: string;
+    bloodGroup?: string;
+    allergies?: string;
+    admissionDate?: string;
+  }): Promise<{ success: boolean; method: string; message: string; zplCode?: string }> {
+    try {
+      const resp = await fetch('http://127.0.0.1:18080/api/v1/hardware/print/zpl', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          labelType: 'WRISTBAND',
+          data
+        })
+      });
+      if (resp.ok) {
+        const result = await resp.json();
+        return {
+          success: true,
+          method: 'hardware_agent_zpl',
+          message: `Silent Zebra wristband printed for ${data.patientName} (${data.mrn}) via ${result.printer}.`,
+          zplCode: result.zplCode
+        };
+      }
+    } catch {
+      // Fallback
+    }
+
+    return {
+      success: false,
+      method: 'hardware_offline',
+      message: 'DocSearch Local Hardware Agent offline on 127.0.0.1:18080. Please ensure Zebra printer is connected.'
+    };
+  }
+
+  /**
+   * Silent Cryo-Vial Barcode Label Print (Phlebotomy Blood Collection)
+   */
+  async printCryoVialLabel(data: {
+    patientName: string;
+    mrn: string;
+    specimenBarcode: string;
+    testName: string;
+    tubeColor: string;
+  }): Promise<{ success: boolean; method: string; message: string; zplCode?: string }> {
+    try {
+      const resp = await fetch('http://127.0.0.1:18080/api/v1/hardware/print/zpl', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          labelType: 'CRYO_VIAL',
+          data
+        })
+      });
+      if (resp.ok) {
+        const result = await resp.json();
+        return {
+          success: true,
+          method: 'hardware_agent_zpl',
+          message: `Cryo-vial label printed: ${data.specimenBarcode} (${data.tubeColor}) for ${data.patientName}.`,
+          zplCode: result.zplCode
+        };
+      }
+    } catch {
+      // Fallback
+    }
+
+    return {
+      success: false,
+      method: 'hardware_offline',
+      message: 'DocSearch Local Hardware Agent offline on 127.0.0.1:18080.'
     };
   }
 }

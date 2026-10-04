@@ -10,7 +10,7 @@ process.env.ALLOW_EMBEDDED_POSTGRES = 'false';
 process.env.NODE_ENV = 'development';
 
 // 1. Free ports before launching
-const ports = [4000, 5173, 5175, 5177];
+const ports = [4000, 5173, 5175, 5177, 18080];
 try {
   const output = execSync('netstat -ano', { encoding: 'utf8' });
   const lines = output.split('\n');
@@ -154,6 +154,17 @@ async function main() {
   } else {
     console.log('[\x1b[33m!\x1b[0m] Health check timeout reached; continuing with frontend launch...\n');
   }
+
+  // Step 1.5: Start DocSearch Local Hardware Agent (LHA)
+  const hardwareAgent = {
+    name: 'Hardware Agent',
+    port: 18080,
+    cwd: rootDir,
+    executable: process.execPath,
+    args: ['scripts/docsearch-hardware-agent.mjs'],
+    color: '\x1b[32m'
+  };
+  spawnService(hardwareAgent);
 
   // Step 2: Start frontend services with dual-stack host flag
   const frontends = [

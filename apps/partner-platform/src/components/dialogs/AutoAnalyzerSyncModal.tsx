@@ -86,12 +86,26 @@ export const AutoAnalyzerSyncModal: React.FC<AutoAnalyzerSyncModalProps> = ({
   const currentParams = getParameters();
   const hasPanicDetected = currentParams.some((p) => p.isPanic);
 
-  const handleSyncFromMachine = () => {
+  const handleSyncFromMachine = async () => {
     setIsReading(true);
-    setTimeout(() => {
+    try {
+      await fetch('http://127.0.0.1:18080/api/v1/hardware/analyzer/simulate-feed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          analyzerModel: selectedAnalyzer.name,
+          orderId: currentOrder.id,
+          patientName: currentOrder.patientName,
+          specimenBarcode: currentOrder.orderNumber || 'ACC-2026-8812',
+          simulatePanic
+        })
+      });
+    } catch {
+      // Falls back to local frames
+    } finally {
       setIsReading(false);
       setSyncDone(true);
-    }, 900);
+    }
   };
 
   const getRawAstmFrames = () => {
