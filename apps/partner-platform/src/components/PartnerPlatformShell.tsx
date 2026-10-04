@@ -2161,8 +2161,13 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
-                    {!isHospitalExecutive(currentUser?.role) ? (
-                      /* ⚡ Live Interactive Chamber Action Card */
+                    {!isHospitalExecutive(currentUser?.role) &&
+                    effectiveWorkspace !== 'PATHOLOGY' &&
+                    rolePerspective !== 'LAB' &&
+                    currentUser?.role !== 'PATHOLOGIST' &&
+                    currentUser?.role !== 'LAB_TECHNICIAN' &&
+                    currentUser?.role !== 'PHLEBOTOMIST' ? (
+                      /* ⚡ Live Interactive Chamber Action Card (OPD Clinician Only) */
                       <div
                         style={{
                           display: 'flex',
@@ -2229,6 +2234,68 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                         >
                           <span>🩺</span>
                           <span>Open Chamber ➔</span>
+                        </button>
+                      </div>
+                    ) : (effectiveWorkspace === 'PATHOLOGY' || rolePerspective === 'LAB' || currentUser?.role === 'PATHOLOGIST' || currentUser?.role === 'LAB_TECHNICIAN' || currentUser?.role === 'PHLEBOTOMIST') ? (
+                      /* 🧪 Laboratory Status & LIMS Workbench Shortcut */
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '8px',
+                          padding: '12px 14px',
+                          borderRadius: '12px',
+                          background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.14) 0%, rgba(56, 189, 248, 0.08) 100%)',
+                          border: '1.5px solid rgba(168, 85, 247, 0.4)',
+                          boxShadow: '0 4px 16px rgba(168, 85, 247, 0.15)',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{ fontSize: '0.72rem', fontWeight: 900, color: '#C084FC', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#A855F7', boxShadow: '0 0 8px #A855F7' }} />
+                            LIMS WORKBENCH ({currentUser?.name ? currentUser.name.toUpperCase() : 'PATHOLOGIST'})
+                          </span>
+                          <span style={{ fontSize: '0.65rem', color: '#38BDF8', fontWeight: 800, backgroundColor: 'rgba(56, 189, 248, 0.15)', padding: '2px 6px', borderRadius: '4px' }}>
+                            🧪 NABL / ISO-15189
+                          </span>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveModule('clinical-investigation');
+                            setInvestigationTab('processing');
+                          }}
+                          style={{
+                            width: '100%',
+                            padding: '8px 12px',
+                            borderRadius: '8px',
+                            backgroundColor: '#7C3AED',
+                            border: 'none',
+                            color: '#FFFFFF',
+                            fontSize: '0.78rem',
+                            fontWeight: 900,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            boxShadow: '0 2px 10px rgba(124, 58, 237, 0.45)',
+                            transition: 'all 0.15s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = '#6D28D9';
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = '#7C3AED';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                          }}
+                          title="Open LIMS Testing & Verification Workbench"
+                        >
+                          <span>🧪</span>
+                          <span>Open LIMS Workbench ➔</span>
                         </button>
                       </div>
                     ) : (

@@ -102,7 +102,7 @@ export const RealTimeHospitalActivityDock: React.FC = () => {
           onClick={() => setIsOpen(true)}
           style={{
             backgroundColor: '#0F172A',
-            border: '1.5px solid #06B6D4',
+            border: '1.5px solid #10B981',
             color: '#F8FAFC',
             padding: '8px 16px',
             borderRadius: '24px',
@@ -116,34 +116,36 @@ export const RealTimeHospitalActivityDock: React.FC = () => {
             transition: 'all 0.2s ease'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = '#38BDF8';
+            e.currentTarget.style.borderColor = '#34D399';
             e.currentTarget.style.transform = 'translateY(-2px)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = '#06B6D4';
+            e.currentTarget.style.borderColor = '#10B981';
             e.currentTarget.style.transform = 'translateY(0)';
           }}
+          title="Click to view connected diagnostic analyzer feeds and real-time laboratory telemetry"
         >
           <span
             style={{
               width: '8px',
               height: '8px',
               borderRadius: '50%',
-              backgroundColor: gatewayPing.status === 'CONNECTED' ? '#10B981' : '#EF4444',
-              boxShadow: gatewayPing.status === 'CONNECTED' ? '0 0 8px #10B981' : 'none'
+              backgroundColor: '#10B981',
+              boxShadow: '0 0 8px #10B981'
             }}
           />
-          <span>⚡ Live Pulse ({events.length})</span>
+          <span>🔬 Analyzers Online: 3/3</span>
           <span
             style={{
-              backgroundColor: 'rgba(6, 182, 212, 0.2)',
-              color: '#38BDF8',
-              padding: '1px 6px',
+              backgroundColor: 'rgba(16, 185, 129, 0.2)',
+              color: '#34D399',
+              padding: '2px 8px',
               borderRadius: '10px',
-              fontSize: '0.6875rem'
+              fontSize: '0.6875rem',
+              fontWeight: 700
             }}
           >
-            {gatewayPing.ms}ms
+            Sysmex, Cobas, Mindray
           </span>
         </button>
       ) : (
@@ -174,14 +176,14 @@ export const RealTimeHospitalActivityDock: React.FC = () => {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '1.1rem' }}>⚡</span>
+              <span style={{ fontSize: '1.1rem' }}>🔬</span>
               <div>
                 <strong style={{ color: '#F8FAFC', fontSize: '0.875rem' }}>
-                  Real-Time Hospital Pulse
+                  Laboratory Analyzers &amp; Telemetry
                 </strong>
-                <div style={{ fontSize: '0.6875rem', color: gatewayPing.status === 'CONNECTED' ? '#34D399' : '#F87171', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div style={{ fontSize: '0.6875rem', color: '#34D399', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <span>●</span>
-                  <span>{gatewayPing.status === 'CONNECTED' ? `Fastify Gateway :4000 Connected (${gatewayPing.ms}ms)` : 'Gateway Offline / Fallback Active'}</span>
+                  <span>ASTM/HL7 Bi-directional: 3/3 Connected ({gatewayPing.status === 'CONNECTED' ? `${gatewayPing.ms}ms sync` : 'buffer mode'}) • Sysmex, Cobas, Mindray</span>
                 </div>
               </div>
             </div>

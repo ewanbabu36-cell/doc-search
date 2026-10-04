@@ -544,7 +544,7 @@ export const AssetBiomedicalDomainManager: React.FC<Props> = ({ tenantId }) => {
       )}
 
       {activeTab === 'downtime' && analytics && (
-        <AssetDowntimeAnalyticsView analytics={analytics} />
+        <AssetDowntimeAnalyticsView analytics={analytics} assets={assets} workOrders={workOrders} />
       )}
 
       {activeTab === 'compliance' && (

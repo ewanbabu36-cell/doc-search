@@ -56,3 +56,4 @@ scratch_inventory.json
 temp_chrome_profile/
 *.pma
 *.binarypb
+data/monorepo-typecheck-results.json

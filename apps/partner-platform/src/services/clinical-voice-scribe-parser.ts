@@ -198,11 +198,31 @@ export function parseDoctorVoiceTranscript(transcript: string): ParsedClinicalVo
     complaints.push('Severe generalized myalgia and malaise');
   }
 
+  if (rawLower.includes('saas phool') || rawLower.includes('saans phool') || rawLower.includes('dum ghut') || rawLower.includes('breathless') || rawLower.includes('dyspnea')) {
+    complaints.push('Exertional dyspnea & acute breathlessness');
+  }
+
+  if (rawLower.includes('seene me dard') || rawLower.includes('chhati me dard') || rawLower.includes('chest pain') || rawLower.includes('chest heaviness')) {
+    complaints.push('Retrosternal chest tightness & heaviness (r/o CAD)');
+  }
+
+  if (rawLower.includes('kamar me dard') || rawLower.includes('peeth me dard') || rawLower.includes('back pain') || rawLower.includes('kamar dard')) {
+    complaints.push('Mechanical lower back pain (lumbago) with muscular spasm');
+  }
+
+  if (rawLower.includes('chakkar') || rawLower.includes('chakar') || rawLower.includes('dizziness') || rawLower.includes('vertigo')) {
+    complaints.push('Episodic vertigo, postural imbalance & lightheadedness');
+  }
+
+  if (rawLower.includes('khujli') || rawLower.includes('daane') || rawLower.includes('rash') || rawLower.includes('allergy')) {
+    complaints.push('Pruritic erythematous skin rash & allergic dermatitis');
+  }
+
   if (rawLower.includes('sugar') || rawLower.includes('diabetes') || rawLower.includes('madhumeh')) {
     complaints.push('Type 2 Diabetes follow-up with uncontrolled glycemia');
   }
 
-  if (rawLower.includes('bp') || rawLower.includes('blood pressure') || rawLower.includes('hypertension') || rawLower.includes('chakkar')) {
+  if (rawLower.includes('bp') || rawLower.includes('blood pressure') || rawLower.includes('hypertension')) {
     complaints.push('Elevated BP recordings with lightheadedness');
   }
 

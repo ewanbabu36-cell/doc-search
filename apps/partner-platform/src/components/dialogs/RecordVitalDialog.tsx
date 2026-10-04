@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Dialog, Button, Input, Alert } from '@docsearch/ui-kit';
 import type { RecordVitalObservationRequest, InpatientAdmissionDto } from '@docsearch/api-contracts';
+import { hospitalEventBus } from '../../services/hospital-event-bus.js';
 
 export interface RecordVitalDialogProps {
   isOpen: boolean;
@@ -39,11 +40,53 @@ export const RecordVitalDialog: React.FC<RecordVitalDialogProps> = ({
 
   if (!admission) return null;
 
+  const sBp = parseInt(systolicBpMmHg, 10) || 120;
+  const hr = parseInt(pulseBpm, 10) || 76;
+  const rr = parseInt(respiratoryRateBpm, 10) || 18;
+  const o2 = parseInt(spo2Percentage, 10) || 98;
+  const temp = parseFloat(temperatureCelsius) || 37.0;
+
+  // Real-world clinical NEWS2 score calculation
+  let news2 = 0;
+  if (rr <= 8) news2 += 3;
+  else if (rr >= 9 && rr <= 11) news2 += 1;
+  else if (rr >= 21 && rr <= 24) news2 += 2;
+  else if (rr >= 25) news2 += 3;
+
+  if (o2 <= 91) news2 += 3;
+  else if (o2 >= 92 && o2 <= 93) news2 += 2;
+  else if (o2 >= 94 && o2 <= 95) news2 += 1;
+
+  if (sBp <= 90) news2 += 3;
+  else if (sBp >= 91 && sBp <= 100) news2 += 2;
+  else if (sBp >= 101 && sBp <= 110) news2 += 1;
+  else if (sBp >= 220) news2 += 3;
+
+  if (hr <= 40) news2 += 3;
+  else if (hr >= 41 && hr <= 50) news2 += 1;
+  else if (hr >= 91 && hr <= 110) news2 += 1;
+  else if (hr >= 111 && hr <= 130) news2 += 2;
+  else if (hr >= 131) news2 += 3;
+
+  if (temp <= 35.0) news2 += 3;
+  else if (temp >= 35.1 && temp <= 36.0) news2 += 1;
+  else if (temp >= 38.1 && temp <= 39.0) news2 += 1;
+  else if (temp >= 39.1) news2 += 2;
+
+  // Septic Shock Triad Detection: Severe Hypotension (sBP <= 90) + Tachycardia (HR >= 110) + Dyspyrexia/Tachypnea
+  const isSepticShockRisk = sBp <= 90 && hr >= 110 && (temp >= 38.0 || temp <= 36.0 || rr >= 22);
+  const isHighRiskNews2 = news2 >= 5 || isSepticShockRisk;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setIsSubmitting(true);
     try {
+      const isAbnormal = isHighRiskNews2;
+      const formattedNotes = isHighRiskNews2
+        ? `[NEWS2: ${news2} - ${isSepticShockRisk ? 'SEPTIC SHOCK TRIAD' : 'HIGH CLINICAL RISK'}] ${notes}`
+        : notes;
+
       await onSubmit({
         tenantId,
         partnerId,
@@ -61,9 +104,27 @@ export const RecordVitalDialog: React.FC<RecordVitalDialogProps> = ({
         bloodGlucoseMgDl: parseFloat(bloodGlucoseMgDl) || undefined,
         painScaleScore: parseInt(painScaleScore, 10) || undefined,
         gcsScore: parseInt(gcsScore, 10) || undefined,
-        isAbnormal: false,
-        notes
+        isAbnormal,
+        notes: formattedNotes
       });
+
+      if (isHighRiskNews2) {
+        hospitalEventBus.publish(
+          'SEPSIS_ALERT_TRIGGERED',
+          'InpatientVitalsStation',
+          {
+            admissionId: admission.id,
+            patientName: admission.patientName,
+            patientMrn: admission.patientMrn,
+            bedCode: admission.bedCode,
+            news2Score: news2,
+            isSepticShockRisk,
+            vitals: { sBp, hr, rr, o2, temp }
+          },
+          `🚨 Sepsis / High-Risk NEWS2 Alert (${news2}): ${admission.patientName} (Bed ${admission.bedCode})`
+        );
+      }
+
       onClose();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to chart vitals');
@@ -126,9 +187,52 @@ export const RecordVitalDialog: React.FC<RecordVitalDialogProps> = ({
           <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.25rem' }}>Observer Notes</label>
           <Input value={notes} onChange={(e) => setNotes(e.target.value)} />
         </div>
+
+        {/* Dynamic NEWS2 & Septic Shock Telemetry Bar */}
+        <div
+          style={{
+            backgroundColor: isHighRiskNews2 ? '#FEF2F2' : '#F0FDF4',
+            border: isHighRiskNews2 ? '1.5px solid #EF4444' : '1px solid #86EFAC',
+            borderRadius: '8px',
+            padding: '10px 14px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '4px'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.8rem', fontWeight: 800, color: isHighRiskNews2 ? '#DC2626' : '#15803D' }}>
+              {isHighRiskNews2 ? '🚨 HIGH CLINICAL RISK DETECTED' : '✓ PHYSIOLOGICALLY STABLE'}
+            </span>
+            <span style={{ fontSize: '0.75rem', fontWeight: 900, backgroundColor: isHighRiskNews2 ? '#EF4444' : '#16A34A', color: '#FFF', padding: '2px 8px', borderRadius: '4px' }}>
+              NEWS2 Score: {news2}
+            </span>
+          </div>
+          {isSepticShockRisk ? (
+            <div style={{ fontSize: '0.75rem', color: '#991B1B', fontWeight: 600 }}>
+              ⚠️ <strong>Septic Shock Triad:</strong> Severe Hypotension (sBP {sBp}) + Tachycardia (Pulse {hr}) with Dyspyrexia. Automatic code-red notification will be dispatched to On-Duty Medical Officer.
+            </div>
+          ) : isHighRiskNews2 ? (
+            <div style={{ fontSize: '0.75rem', color: '#991B1B' }}>
+              Elevated physiological deterioration score (&ge; 5). Escalation protocol active.
+            </div>
+          ) : (
+            <div style={{ fontSize: '0.72rem', color: '#166534' }}>
+              Low risk (Score 0-4). Routine 4-hourly nursing observation protocol.
+            </div>
+          )}
+        </div>
+
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
           <Button variant="outline" type="button" onClick={onClose} disabled={isSubmitting}>Cancel</Button>
-          <Button variant="primary" type="submit" disabled={isSubmitting}>{isSubmitting ? 'Saving...' : 'Save Observation'}</Button>
+          <Button
+            variant="primary"
+            type="submit"
+            disabled={isSubmitting}
+            style={{ backgroundColor: isHighRiskNews2 ? '#DC2626' : undefined, borderColor: isHighRiskNews2 ? '#DC2626' : undefined }}
+          >
+            {isSubmitting ? 'Saving...' : isHighRiskNews2 ? '🚨 Save & Dispatch Code-Red' : 'Save Observation'}
+          </Button>
         </div>
       </form>
     </Dialog>

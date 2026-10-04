@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Badge } from '@docsearch/ui-kit';
 import type { InvestigationOrderDto } from '@docsearch/api-contracts';
+import { hospitalEventBus } from '../../services/hospital-event-bus.js';
 
 export interface AutoAnalyzerSyncModalProps {
   isOpen: boolean;
@@ -38,6 +39,7 @@ export const AutoAnalyzerSyncModal: React.FC<AutoAnalyzerSyncModalProps> = ({
   const [selectedOrderId, setSelectedOrderId] = useState<string>(orders[0]?.id || 'mock-order-01');
   const [isReading, setIsReading] = useState(false);
   const [syncDone, setSyncDone] = useState(false);
+  const [activeView, setActiveView] = useState<'table' | 'raw_astm'>('table');
 
   if (!isOpen) return null;
 
@@ -92,7 +94,51 @@ export const AutoAnalyzerSyncModal: React.FC<AutoAnalyzerSyncModalProps> = ({
     }, 900);
   };
 
+  const getRawAstmFrames = () => {
+    const timestamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
+    const header = `<STX>1H|\\^&|||${selectedAnalyzer.name}^^LIS|||||||P|1394-97|${timestamp}<CR><ETX>4A<CR><LF>`;
+    const patient = `<STX>2P|1||${currentOrder.patientMrn || 'MRN-4421'}||${currentOrder.patientName || 'Patient'}^^^|||||||||||||||||||||||||<CR><ETX>2F<CR><LF>`;
+    const order = `<STX>3O|1|${currentOrder.orderNumber || 'ORD-LAB-9041'}||^^^ROUTINE|R||||||A||||||||||||||F<CR><ETX>B3<CR><LF>`;
+    const results = currentParams.map((p, idx) => {
+      const frameNum = (idx + 4) % 8;
+      const flag = p.isPanic ? 'HH' : 'N';
+      return `<STX>${frameNum}R|${idx + 1}|^^^${p.analyte}|${p.value}|${p.unit}|${p.referenceRange}|${flag}||F||||${timestamp}<CR><ETX>9D<CR><LF>`;
+    }).join('\n');
+    const terminator = `<STX>${(currentParams.length + 4) % 8}L|1|N<CR><ETX>03<CR><LF>`;
+    return `${header}\n${patient}\n${order}\n${results}\n${terminator}`;
+  };
+
   const handleCommit = () => {
+    // 1. Emit ASTM/HL7 ingestion telemetry event on event bus
+    hospitalEventBus.publish(
+      'ASTM_RESULT_EMITTED',
+      'LIMS_AUTO_ANALYZER',
+      {
+        orderId: currentOrder.id,
+        patientMrn: currentOrder.patientMrn,
+        patientName: currentOrder.patientName,
+        analyzerModel: selectedAnalyzer.name,
+        parameterCount: currentParams.length,
+        hasPanic: hasPanicDetected
+      },
+      `ASTM automated test run ingested from ${selectedAnalyzer.name}`
+    );
+
+    // 2. If critical panic detected, publish critical panic alert
+    if (hasPanicDetected) {
+      hospitalEventBus.publish(
+        'CRITICAL_PANIC_ALERT',
+        'LIMS_AUTO_ANALYZER',
+        {
+          orderId: currentOrder.id,
+          patientMrn: currentOrder.patientMrn,
+          patientName: currentOrder.patientName,
+          criticalParameters: currentParams.filter((p) => p.isPanic).map((p) => `${p.analyte}: ${p.value} ${p.unit}`)
+        },
+        `🚨 CRITICAL PANIC ANALYTE detected for ${currentOrder.patientName} (${selectedAnalyzer.name})`
+      );
+    }
+
     onCommitResults({
       orderId: currentOrder.id,
       analyzerModel: selectedAnalyzer.name,
@@ -279,54 +325,106 @@ export const AutoAnalyzerSyncModal: React.FC<AutoAnalyzerSyncModalProps> = ({
           </Button>
         </div>
 
-        {/* Live Parameters Ingestion Table */}
+        {/* View Mode Switcher */}
+        <div style={{ display: 'flex', gap: '8px', padding: '8px 20px', backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+          <button
+            type="button"
+            onClick={() => setActiveView('table')}
+            style={{
+              padding: '5px 12px',
+              borderRadius: '6px',
+              border: 'none',
+              fontSize: '0.78rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              backgroundColor: activeView === 'table' ? '#0F172A' : '#E2E8F0',
+              color: activeView === 'table' ? '#FFFFFF' : '#475569'
+            }}
+          >
+            📋 Parsed Values (Zero-Typing Table)
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveView('raw_astm')}
+            style={{
+              padding: '5px 12px',
+              borderRadius: '6px',
+              border: 'none',
+              fontSize: '0.78rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              backgroundColor: activeView === 'raw_astm' ? '#0F172A' : '#E2E8F0',
+              color: activeView === 'raw_astm' ? '#FFFFFF' : '#475569',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <span>📟 Raw ASTM E1381/E1394 Stream</span>
+            <span style={{ fontSize: '0.62rem', backgroundColor: '#10B981', color: '#FFF', padding: '1px 5px', borderRadius: '4px', fontWeight: 800 }}>LIVE</span>
+          </button>
+        </div>
+
+        {/* Live Parameters / Raw Stream View */}
         <div style={{ padding: '16px 20px', overflowY: 'auto', flex: 1 }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#F1F5F9', borderBottom: '2px solid #CBD5E1', textAlign: 'left' }}>
-                <th style={{ padding: '8px 10px', color: '#334155' }}>Analyte / Test Parameter</th>
-                <th style={{ padding: '8px 10px', color: '#334155' }}>Machine Ingested Value</th>
-                <th style={{ padding: '8px 10px', color: '#334155' }}>Reference Range</th>
-                <th style={{ padding: '8px 10px', color: '#334155' }}>Unit</th>
-                <th style={{ padding: '8px 10px', color: '#334155' }}>Clinical Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentParams.map((p, idx) => (
-                <tr
-                  key={idx}
-                  style={{
-                    borderBottom: '1px solid #E2E8F0',
-                    backgroundColor: p.isPanic ? '#FEF2F2' : idx % 2 === 0 ? '#FFFFFF' : '#F8FAFC'
-                  }}
-                >
-                  <td style={{ padding: '8px 10px', fontWeight: 700, color: p.isPanic ? '#DC2626' : '#1E293B' }}>
-                    {p.analyte}
-                  </td>
-                  <td style={{ padding: '8px 10px', fontSize: '0.92rem', fontWeight: 800, color: p.isPanic ? '#DC2626' : '#0F172A' }}>
-                    {p.value}
-                  </td>
-                  <td style={{ padding: '8px 10px', color: '#64748B' }}>
-                    {p.referenceRange}
-                  </td>
-                  <td style={{ padding: '8px 10px', color: '#64748B', fontWeight: 600 }}>
-                    {p.unit}
-                  </td>
-                  <td style={{ padding: '8px 10px' }}>
-                    {p.isPanic ? (
-                      <span style={{ backgroundColor: '#EF4444', color: '#FFFFFF', padding: '2px 8px', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 800 }}>
-                        🚨 CRITICAL PANIC
-                      </span>
-                    ) : (
-                      <span style={{ backgroundColor: '#DCFCE7', color: '#15803D', padding: '2px 8px', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 700 }}>
-                        ✓ Normal
-                      </span>
-                    )}
-                  </td>
+          {activeView === 'raw_astm' ? (
+            <div style={{ backgroundColor: '#090D16', borderRadius: '8px', border: '1px solid #1E293B', padding: '14px', fontFamily: 'monospace' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #1E293B', paddingBottom: '8px', marginBottom: '10px', fontSize: '0.72rem', color: '#94A3B8' }}>
+                <span>Driver: <strong>ASTM E1381/E1394 Direct Driver</strong> ({selectedAnalyzer.port})</span>
+                <span style={{ color: '#10B981' }}>● Handshake: &lt;ENQ&gt; &lt;ACK&gt; Synchronized</span>
+              </div>
+              <pre style={{ margin: 0, fontSize: '0.75rem', color: '#38BDF8', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                {getRawAstmFrames()}
+              </pre>
+            </div>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#F1F5F9', borderBottom: '2px solid #CBD5E1', textAlign: 'left' }}>
+                  <th style={{ padding: '8px 10px', color: '#334155' }}>Analyte / Test Parameter</th>
+                  <th style={{ padding: '8px 10px', color: '#334155' }}>Machine Ingested Value</th>
+                  <th style={{ padding: '8px 10px', color: '#334155' }}>Reference Range</th>
+                  <th style={{ padding: '8px 10px', color: '#334155' }}>Unit</th>
+                  <th style={{ padding: '8px 10px', color: '#334155' }}>Clinical Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {currentParams.map((p, idx) => (
+                  <tr
+                    key={idx}
+                    style={{
+                      borderBottom: '1px solid #E2E8F0',
+                      backgroundColor: p.isPanic ? '#FEF2F2' : idx % 2 === 0 ? '#FFFFFF' : '#F8FAFC'
+                    }}
+                  >
+                    <td style={{ padding: '8px 10px', fontWeight: 700, color: p.isPanic ? '#DC2626' : '#1E293B' }}>
+                      {p.analyte}
+                    </td>
+                    <td style={{ padding: '8px 10px', fontSize: '0.92rem', fontWeight: 800, color: p.isPanic ? '#DC2626' : '#0F172A' }}>
+                      {p.value}
+                    </td>
+                    <td style={{ padding: '8px 10px', color: '#64748B' }}>
+                      {p.referenceRange}
+                    </td>
+                    <td style={{ padding: '8px 10px', color: '#64748B', fontWeight: 600 }}>
+                      {p.unit}
+                    </td>
+                    <td style={{ padding: '8px 10px' }}>
+                      {p.isPanic ? (
+                        <span style={{ backgroundColor: '#EF4444', color: '#FFFFFF', padding: '2px 8px', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 800 }}>
+                          🚨 CRITICAL PANIC
+                        </span>
+                      ) : (
+                        <span style={{ backgroundColor: '#DCFCE7', color: '#15803D', padding: '2px 8px', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 700 }}>
+                          ✓ Normal
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
 
           {hasPanicDetected && (
             <div
@@ -345,7 +443,7 @@ export const AutoAnalyzerSyncModal: React.FC<AutoAnalyzerSyncModalProps> = ({
             >
               <span style={{ fontSize: '1.2rem' }}>⚠️</span>
               <div>
-                <strong>NABL & NABH Panic Value Intimation Required:</strong> These values breach laboratory critical thresholds. Submitting this run will prompt instant SMS and telephone intimation to the treating doctor.
+                <strong>Critical Value Call Desk (Read-Back Logged) Required:</strong> These values breach laboratory critical thresholds. Submitting this run will route the specimen to the Critical Value Call Desk for mandatory verbal read-back telephonic intimation per NABL ISO-15189 clause 5.8.2.
               </div>
             </div>
           )}
@@ -384,7 +482,7 @@ export const AutoAnalyzerSyncModal: React.FC<AutoAnalyzerSyncModalProps> = ({
                   : '0 2px 8px rgba(22, 163, 74, 0.4)'
               }}
             >
-              {hasPanicDetected ? '⚠️ Commit Panic Results & Trigger Doctor Alert' : '✓ Commit Results to LIMS Workbench'}
+              {hasPanicDetected ? '⚠️ Route to Critical Value Call Desk (Read-Back Logged)' : '✓ Commit Results to LIMS Workbench'}
             </Button>
           </div>
         </div>

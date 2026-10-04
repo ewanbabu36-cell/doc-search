@@ -1172,6 +1172,10 @@ export const PARTNER_PROFILE_ALLOWED_MODULES: Record<string, PartnerModuleKey[]>
   ],
   HOSPITAL: [
     'hospital-home',
+    'pathology-home',
+    'pharmacy-home',
+    'clinic-home',
+    'diagnostic-home',
     'enterprise-home',
     'executive-command-center',
     'clinical-consultation',
@@ -1206,6 +1210,10 @@ export const PARTNER_PROFILE_ALLOWED_MODULES: Record<string, PartnerModuleKey[]>
   ],
   ENTERPRISE_COMMAND: [
     'hospital-home',
+    'pathology-home',
+    'pharmacy-home',
+    'clinic-home',
+    'diagnostic-home',
     'enterprise-home',
     'executive-command-center',
     'clinical-consultation',

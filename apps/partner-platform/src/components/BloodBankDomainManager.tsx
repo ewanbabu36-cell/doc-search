@@ -450,6 +450,8 @@ export const BloodBankDomainManager: React.FC<Props> = ({ tenantId }) => {
         {activeTab === 'transfusion' && (
           <TransfusionWorkbenchView
             transfusions={transfusions}
+            issues={issues}
+            components={components}
             onOpenObservation={(t) => {
               setSelectedTransfusion(t);
               setIsRecordObservationOpen(true);

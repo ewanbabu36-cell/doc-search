@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Card, Badge, Button, Input, TableContainer, Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@docsearch/ui-kit';
 import { buildNhcxClaimBundle, validatePmjayCardNumber, type NhcxClaimInput } from '@docsearch/shared-core';
+import { hospitalEventBus } from '../../services/hospital-event-bus.js';
 
 export interface PreAuthClaim {
   id: string;
@@ -15,7 +16,10 @@ export interface PreAuthClaim {
   icd10Code?: string;
   requestedAmount: number;
   approvedAmount: number;
+  runningBillAmount: number;
   copayAmount: number;
+  estimatedNonMedicalDeductions: number;
+  nonMedicalItems?: { name: string; amount: number; category: string }[];
   status: 'APPROVED' | 'QUERY_RAISED' | 'ENHANCEMENT_PENDING' | 'DISCHARGE_SETTLEMENT' | 'DENIED';
   submissionTime: string;
   nhcxBundleId?: string;
@@ -35,8 +39,15 @@ export const TpaInsuranceClaimsDeskView: React.FC = () => {
       procedurePackageCode: 'SU001A',
       icd10Code: 'K80.20',
       requestedAmount: 75000,
-      approvedAmount: 65000,
-      copayAmount: 10000,
+      approvedAmount: 50000,
+      runningBillAmount: 44500, // 89% Utilized! Within ₹5,500 buffer
+      copayAmount: 5000,
+      estimatedNonMedicalDeductions: 4200,
+      nonMedicalItems: [
+        { name: 'Gloves, Cotton & Antiseptic Consumables', amount: 1850, category: 'IRDAI List I' },
+        { name: 'PPE Kits & Biohazard Disposal', amount: 1450, category: 'IRDAI List II' },
+        { name: 'Admission & Medical Record Charges', amount: 900, category: 'IRDAI List III' }
+      ],
       status: 'APPROVED',
       submissionTime: 'Today, 09:30 AM',
       nhcxBundleId: 'bundle-nhcx-901',
@@ -54,7 +65,14 @@ export const TpaInsuranceClaimsDeskView: React.FC = () => {
       icd10Code: 'M17.11',
       requestedAmount: 180000,
       approvedAmount: 140000,
+      runningBillAmount: 152000, // 108% Exceeded! DEFICIT: ₹12,000!
       copayAmount: 15000,
+      estimatedNonMedicalDeductions: 8500,
+      nonMedicalItems: [
+        { name: 'Orthopedic Knee Brace & Dressing Kit', amount: 3800, category: 'IRDAI List I' },
+        { name: 'Sterile Surgical Gowns & Drapes', amount: 2900, category: 'IRDAI List II' },
+        { name: 'Physiotherapy Assessment & Consumables', amount: 1800, category: 'IRDAI List III' }
+      ],
       status: 'ENHANCEMENT_PENDING',
       submissionTime: 'Today, 10:15 AM'
     },
@@ -69,8 +87,15 @@ export const TpaInsuranceClaimsDeskView: React.FC = () => {
       procedurePackageCode: 'CA003A',
       icd10Code: 'I25.10',
       requestedAmount: 210000,
-      approvedAmount: 0,
+      approvedAmount: 180000,
+      runningBillAmount: 125000, // 69% Utilized (Normal)
       copayAmount: 0,
+      estimatedNonMedicalDeductions: 6200,
+      nonMedicalItems: [
+        { name: 'Femoral Sheath & Compression Band', amount: 2800, category: 'IRDAI List I' },
+        { name: 'Cardiac Telemetry Consumables & ECG Leads', amount: 2100, category: 'IRDAI List II' },
+        { name: 'Sanitization & Infection Control Charges', amount: 1300, category: 'IRDAI List III' }
+      ],
       status: 'QUERY_RAISED',
       submissionTime: 'Today, 11:00 AM'
     },
@@ -86,7 +111,14 @@ export const TpaInsuranceClaimsDeskView: React.FC = () => {
       icd10Code: 'A91',
       requestedAmount: 45000,
       approvedAmount: 45000,
+      runningBillAmount: 42000, // 93% Utilized
       copayAmount: 0,
+      estimatedNonMedicalDeductions: 3100,
+      nonMedicalItems: [
+        { name: 'Platelet Transfusion Giving Sets', amount: 1500, category: 'IRDAI List I' },
+        { name: 'Isolation Consumables & Gloves', amount: 1100, category: 'IRDAI List II' },
+        { name: 'Thermometer & Pulse Oximeter Probe', amount: 500, category: 'IRDAI List III' }
+      ],
       status: 'DISCHARGE_SETTLEMENT',
       submissionTime: 'Yesterday'
     },
@@ -103,7 +135,10 @@ export const TpaInsuranceClaimsDeskView: React.FC = () => {
       icd10Code: 'K35.80',
       requestedAmount: 32000,
       approvedAmount: 32000,
+      runningBillAmount: 28500, // 89% Utilized - Zero out-of-pocket for PMJAY
       copayAmount: 0,
+      estimatedNonMedicalDeductions: 0, // 100% Cashless Package
+      nonMedicalItems: [],
       status: 'APPROVED',
       submissionTime: 'Today, 11:45 AM',
       nhcxBundleId: 'bundle-nhcx-905',
@@ -112,15 +147,16 @@ export const TpaInsuranceClaimsDeskView: React.FC = () => {
   ]);
 
   const [selectedClaim, setSelectedClaim] = useState<PreAuthClaim | null>(claims[0] || null);
-  const [enhancementAmount, setEnhancementAmount] = useState('35000');
+  const [enhancementAmount, setEnhancementAmount] = useState('25000');
   const [enhancementSuccess, setEnhancementSuccess] = useState(false);
   const [queryReplied, setQueryReplied] = useState(false);
   const [activeTab, setActiveTab] = useState<'ALL' | 'PMJAY' | 'COMMERCIAL'>('ALL');
+  const [declarationSuccessMessage, setDeclarationSuccessMessage] = useState<string | null>(null);
 
   // NHCX FHIR Bundle Inspection Modal State
   const [isFhirModalOpen, setIsFhirModalOpen] = useState(false);
   const [fhirBundlePayload, setFhirBundlePayload] = useState<string>('');
-  const [bundleDigest, setBundleDigest] = useState<string>('');
+  const [, setBundleDigest] = useState<string>('');
   const [pmjayCardInput, setPmjayCardInput] = useState('');
   const [cardValidationMessage, setCardValidationMessage] = useState<{ isValid: boolean; message: string } | null>(null);
   const [isSubmittingToNhcx, setIsSubmittingToNhcx] = useState(false);
@@ -149,16 +185,85 @@ export const TpaInsuranceClaimsDeskView: React.FC = () => {
     }
   };
 
+  const handleTriggerAutoEnhancement = (claim: PreAuthClaim) => {
+    const extraNeeded = Math.max(20000, (claim.runningBillAmount - claim.approvedAmount) + 15000);
+    const revisedRequested = claim.approvedAmount + extraNeeded;
+
+    setClaims((prev) =>
+      prev.map((c) =>
+        c.id === claim.id
+          ? {
+              ...c,
+              status: 'ENHANCEMENT_PENDING',
+              requestedAmount: revisedRequested
+            }
+          : c
+      )
+    );
+
+    if (selectedClaim?.id === claim.id) {
+      setSelectedClaim((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: 'ENHANCEMENT_PENDING',
+              requestedAmount: revisedRequested
+            }
+          : null
+      );
+    }
+
+    setEnhancementSuccess(true);
+    setTimeout(() => setEnhancementSuccess(false), 4000);
+
+    // Event bus notification
+    hospitalEventBus.publish(
+      'TPA_ENHANCEMENT_TRIGGERED',
+      'TpaClaimsContinuousAdjudicator',
+      {
+        claimId: claim.id,
+        patientName: claim.patientName,
+        insurer: claim.insurer,
+        approvedAmount: claim.approvedAmount,
+        runningBillAmount: claim.runningBillAmount,
+        enhancementRequested: extraNeeded,
+        newRequestedTotal: revisedRequested,
+        clinicalJustification: 'Prolonged stay, escalation of broad-spectrum antibiotics, additional diagnostic surveillance'
+      },
+      `⚡ Pre-Auth Enhancement Auto-Triggered: ₹${extraNeeded.toLocaleString('en-IN')} requested for ${claim.patientName} (${claim.id}) as running bill reached ₹${claim.runningBillAmount.toLocaleString('en-IN')}.`
+    );
+  };
+
   const handleRequestEnhancement = () => {
     if (!selectedClaim) return;
+    const extra = parseFloat(enhancementAmount) || 0;
+    const revised = selectedClaim.requestedAmount + extra;
+
     setEnhancementSuccess(true);
     setClaims((prev) =>
       prev.map((c) =>
         c.id === selectedClaim.id
-          ? { ...c, status: 'ENHANCEMENT_PENDING', requestedAmount: c.requestedAmount + (parseFloat(enhancementAmount) || 0) }
+          ? { ...c, status: 'ENHANCEMENT_PENDING', requestedAmount: revised }
           : c
       )
     );
+
+    if (selectedClaim) {
+      setSelectedClaim({ ...selectedClaim, status: 'ENHANCEMENT_PENDING', requestedAmount: revised });
+    }
+
+    hospitalEventBus.publish(
+      'TPA_ENHANCEMENT_TRIGGERED',
+      'TpaClaimsDesk',
+      {
+        claimId: selectedClaim.id,
+        patientName: selectedClaim.patientName,
+        insurer: selectedClaim.insurer,
+        enhancementAmount: extra
+      },
+      `Pre-Auth Enhancement Sent: ₹${extra.toLocaleString('en-IN')} requested for ${selectedClaim.patientName}.`
+    );
+
     setTimeout(() => setEnhancementSuccess(false), 3000);
   };
 
@@ -236,7 +341,6 @@ export const TpaInsuranceClaimsDeskView: React.FC = () => {
     setIsSubmittingToNhcx(true);
     setNhcxSuccessBanner(null);
 
-    // Simulate fast cryptographic submission to NHA NHCX Gateway Switch
     setTimeout(() => {
       const generatedDigest = `DIGEST-NHCX-${Math.floor(10000 + Math.random() * 90000).toString(16).toUpperCase()}-${Date.now().toString(16).toUpperCase()}`;
       setClaims((prev) =>
@@ -253,6 +357,24 @@ export const TpaInsuranceClaimsDeskView: React.FC = () => {
       setNhcxSuccessBanner(`✓ Claim ${claim.id} successfully pushed to NHA NHCX Gateway! Ack Digest: ${generatedDigest}`);
       setTimeout(() => setNhcxSuccessBanner(null), 6000);
     }, 1200);
+  };
+
+  const handleDownloadNonMedicalDeclaration = (claim: PreAuthClaim) => {
+    hospitalEventBus.publish(
+      'NON_MEDICAL_DEDUCTION_ESTIMATED',
+      'TpaClaimsEstimator',
+      {
+        claimId: claim.id,
+        patientName: claim.patientName,
+        totalNonMedical: claim.estimatedNonMedicalDeductions,
+        copay: claim.copayAmount,
+        totalOutOfPocket: claim.copayAmount + claim.estimatedNonMedicalDeductions
+      },
+      `📄 Non-Medical Declaration Form Generated for ${claim.patientName}. Patient estimated liability: ₹${(claim.copayAmount + claim.estimatedNonMedicalDeductions).toLocaleString('en-IN')}.`
+    );
+
+    setDeclarationSuccessMessage(`✓ Non-Medical Declaration Slip Signed & Downloaded for ${claim.patientName}. Form committed to EMR record.`);
+    setTimeout(() => setDeclarationSuccessMessage(null), 4000);
   };
 
   return (
@@ -273,13 +395,13 @@ export const TpaInsuranceClaimsDeskView: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
             <span style={{ fontSize: '1.6rem' }}>📑</span>
             <h1 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#F8FAFC', margin: 0 }}>
-              TPA & Insurance Cashless Claims Desk
+              TPA & Insurance Cashless Claims Desk & Continuous Adjudication
             </h1>
             <Badge variant="primary">NHCX FHIR R4 Live</Badge>
             <Badge variant="success">AB-PMJAY Golden Card Verified</Badge>
           </div>
           <p style={{ color: '#94A3B8', fontSize: '0.82rem', margin: 0 }}>
-            Cashless pre-authorization requests, TPA queries resolution, Ayushman Bharat PMJAY claim bundle generation, and discharge settlements.
+            Live Pre-Auth Utilization Meter, Transparent Co-Pay & Non-Medical Estimator, Automated Mid-Stay Enhancement Triggers & AB-PMJAY Cashless Gateway.
           </p>
         </div>
 
@@ -309,6 +431,24 @@ export const TpaInsuranceClaimsDeskView: React.FC = () => {
         </div>
       )}
 
+      {declarationSuccessMessage && (
+        <div style={{
+          backgroundColor: 'rgba(56, 189, 248, 0.15)',
+          border: '1.5px solid #38BDF8',
+          borderRadius: '10px',
+          padding: '12px 16px',
+          color: '#38BDF8',
+          fontWeight: 700,
+          fontSize: '0.875rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <span>📄</span>
+          <span>{declarationSuccessMessage}</span>
+        </div>
+      )}
+
       {/* PMJAY Golden Card Quick Verification Bar */}
       <div style={{
         backgroundColor: '#0F172A',
@@ -328,7 +468,7 @@ export const TpaInsuranceClaimsDeskView: React.FC = () => {
               Ayushman Bharat (AB-PMJAY) Golden Card Validator
             </div>
             <div style={{ fontSize: '0.72rem', color: '#94A3B8' }}>
-              Instant verification of beneficiary family eligibility per National Health Authority rules
+              Instant verification of beneficiary family eligibility per National Health Authority rules (100% Cashless)
             </div>
           </div>
         </div>
@@ -412,12 +552,12 @@ export const TpaInsuranceClaimsDeskView: React.FC = () => {
 
         <Card style={{ backgroundColor: '#0F172A', border: '1px solid #1E293B', borderRadius: '12px', padding: '16px' }}>
           <div style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase' }}>
-            ⚠️ TPA Queries Pending
+            ⚠️ Pre-Auth &gt;80% Buffer Alerts
           </div>
           <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#F59E0B', marginTop: '4px' }}>
-            {claims.filter((c) => c.status === 'QUERY_RAISED').length} Queries
+            {claims.filter((c) => c.approvedAmount > 0 && (c.runningBillAmount / c.approvedAmount) >= 0.8).length} Cases
           </div>
-          <div style={{ fontSize: '0.72rem', color: '#F59E0B', marginTop: '2px' }}>Requires clinical justification</div>
+          <div style={{ fontSize: '0.72rem', color: '#F59E0B', marginTop: '2px' }}>Auto-enhancement recommended</div>
         </Card>
 
         <Card style={{ backgroundColor: '#0F172A', border: '1px solid #1E293B', borderRadius: '12px', padding: '16px' }}>
@@ -432,12 +572,12 @@ export const TpaInsuranceClaimsDeskView: React.FC = () => {
 
         <Card style={{ backgroundColor: '#0F172A', border: '1px solid #1E293B', borderRadius: '12px', padding: '16px' }}>
           <div style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase' }}>
-            🤝 Patient Copay / Deductible
+            🤝 Patient Out-of-Pocket Liability
           </div>
           <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#FCD34D', marginTop: '4px' }}>
-            ₹{claims.reduce((s, c) => s + c.copayAmount, 0).toLocaleString('en-IN')}
+            ₹{claims.reduce((s, c) => s + c.copayAmount + c.estimatedNonMedicalDeductions, 0).toLocaleString('en-IN')}
           </div>
-          <div style={{ fontSize: '0.72rem', color: '#94A3B8', marginTop: '2px' }}>Collectible at Cashier Counter</div>
+          <div style={{ fontSize: '0.72rem', color: '#94A3B8', marginTop: '2px' }}>Co-Pay (₹{claims.reduce((s, c) => s + c.copayAmount, 0).toLocaleString('en-IN')}) + Non-Medical (₹{claims.reduce((s, c) => s + c.estimatedNonMedicalDeductions, 0).toLocaleString('en-IN')})</div>
         </Card>
       </div>
 
@@ -471,11 +611,11 @@ export const TpaInsuranceClaimsDeskView: React.FC = () => {
       {/* 2-Column: Worklist & Selected Case Actions */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '20px' }}>
         
-        {/* Left: Pre-Auth Claims Table */}
+        {/* Left: Pre-Auth Claims Table with Utilization Meters */}
         <Card style={{ backgroundColor: '#0F172A', border: '1px solid #1E293B', borderRadius: '12px', padding: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#F8FAFC', textTransform: 'uppercase' }}>
-              📋 Cashless Pre-Auth Worklist ({filteredClaims.length})
+              📋 Cashless Pre-Auth Worklist & Utilization Meter ({filteredClaims.length})
             </span>
           </div>
 
@@ -485,13 +625,17 @@ export const TpaInsuranceClaimsDeskView: React.FC = () => {
                 <TableRow>
                   <TableHead>Patient / UHID</TableHead>
                   <TableHead>Insurer & Scheme</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>Pre-Auth Utilization</TableHead>
                   <TableHead style={{ textAlign: 'right' }}>Sanctioned</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredClaims.map((c) => {
                   const isSelected = selectedClaim?.id === c.id;
+                  const utilizationPct = c.approvedAmount > 0 ? Math.round((c.runningBillAmount / c.approvedAmount) * 100) : 0;
+                  const isDeficit = c.runningBillAmount > c.approvedAmount;
+                  const isWarning = utilizationPct >= 80 && !isDeficit;
+
                   return (
                     <TableRow
                       key={c.id}
@@ -506,6 +650,7 @@ export const TpaInsuranceClaimsDeskView: React.FC = () => {
                           {c.patientName}
                         </div>
                         <div style={{ fontSize: '0.72rem', color: '#94A3B8' }}>{c.patientUhid} • {c.procedureName}</div>
+                        <div style={{ marginTop: '3px' }}>{getStatusBadge(c.status)}</div>
                       </TableCell>
                       <TableCell>
                         <div style={{ fontWeight: 600, color: '#F8FAFC', fontSize: '0.8rem' }}>{c.insurer}</div>
@@ -513,7 +658,36 @@ export const TpaInsuranceClaimsDeskView: React.FC = () => {
                           {c.pmjayGoldenCardNumber || c.policyNumber}
                         </div>
                       </TableCell>
-                      <TableCell>{getStatusBadge(c.status)}</TableCell>
+                      <TableCell>
+                        <div style={{ minWidth: '130px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', marginBottom: '2px' }}>
+                            <span style={{ color: '#CBD5E1' }}>Running: ₹{c.runningBillAmount.toLocaleString('en-IN')}</span>
+                            <span style={{ fontWeight: 800, color: isDeficit ? '#EF4444' : isWarning ? '#F59E0B' : '#10B981' }}>
+                              {utilizationPct}%
+                            </span>
+                          </div>
+                          <div style={{ width: '100%', height: '5px', backgroundColor: '#334155', borderRadius: '3px', overflow: 'hidden' }}>
+                            <div
+                              style={{
+                                width: `${Math.min(100, utilizationPct)}%`,
+                                height: '100%',
+                                backgroundColor: isDeficit ? '#EF4444' : isWarning ? '#F59E0B' : '#10B981',
+                                transition: 'all 0.3s ease'
+                              }}
+                            />
+                          </div>
+                          {isDeficit && (
+                            <span style={{ fontSize: '0.65rem', color: '#F87171', fontWeight: 800 }}>
+                              🚨 DEFICIT: +₹{(c.runningBillAmount - c.approvedAmount).toLocaleString('en-IN')}
+                            </span>
+                          )}
+                          {isWarning && (
+                            <span style={{ fontSize: '0.65rem', color: '#FBBF24', fontWeight: 700 }}>
+                              ⚠️ Rem: ₹{(c.approvedAmount - c.runningBillAmount).toLocaleString('en-IN')}
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell style={{ textAlign: 'right' }}>
                         <div style={{ fontWeight: 800, color: '#10B981', fontSize: '0.88rem' }}>
                           ₹{c.approvedAmount.toLocaleString('en-IN')}
@@ -530,7 +704,7 @@ export const TpaInsuranceClaimsDeskView: React.FC = () => {
           </TableContainer>
         </Card>
 
-        {/* Right: Selected Claim Detail & Action Console */}
+        {/* Right: Selected Claim Detail, Pre-Auth Utilization Meter & Non-Medical Estimator */}
         {selectedClaim ? (
           <Card style={{ backgroundColor: '#0F172A', border: '1px solid #1E293B', borderRadius: '12px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -549,6 +723,188 @@ export const TpaInsuranceClaimsDeskView: React.FC = () => {
                 </div>
               </div>
               <div>{getStatusBadge(selectedClaim.status)}</div>
+            </div>
+
+            {/* Continuous Real-Time Pre-Auth Utilization Meter */}
+            {(() => {
+              const utilPct = selectedClaim.approvedAmount > 0
+                ? Math.round((selectedClaim.runningBillAmount / selectedClaim.approvedAmount) * 100)
+                : 0;
+              const deficitAmount = selectedClaim.runningBillAmount - selectedClaim.approvedAmount;
+              const bufferRemaining = selectedClaim.approvedAmount - selectedClaim.runningBillAmount;
+              const isDeficit = deficitAmount > 0;
+              const isBufferWarning = utilPct >= 80 && !isDeficit;
+
+              return (
+                <div style={{
+                  backgroundColor: '#1E293B',
+                  borderRadius: '10px',
+                  padding: '14px',
+                  border: isDeficit ? '1.5px solid #EF4444' : isBufferWarning ? '1.5px solid #F59E0B' : '1px solid rgba(255,255,255,0.08)'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#F8FAFC', textTransform: 'uppercase' }}>
+                      ⏱️ Pre-Auth Utilization Meter (Live IPD Running Bill)
+                    </span>
+                    <Badge variant={isDeficit ? 'danger' : isBufferWarning ? 'warning' : 'success'}>
+                      {isDeficit ? `🚨 DEFICIT (${utilPct}%)` : isBufferWarning ? `⚠️ 80% BUFFER REACHED (${utilPct}%)` : `NORMAL (${utilPct}%)`}
+                    </Badge>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#CBD5E1', marginBottom: '6px' }}>
+                    <span>Running Bill: <strong style={{ color: '#F8FAFC' }}>₹{selectedClaim.runningBillAmount.toLocaleString('en-IN')}</strong></span>
+                    <span>Approved Limit: <strong style={{ color: '#10B981' }}>₹{selectedClaim.approvedAmount.toLocaleString('en-IN')}</strong></span>
+                  </div>
+
+                  <div style={{ width: '100%', height: '8px', backgroundColor: '#334155', borderRadius: '4px', overflow: 'hidden', marginBottom: '8px' }}>
+                    <div style={{
+                      width: `${Math.min(100, utilPct)}%`,
+                      height: '100%',
+                      backgroundColor: isDeficit ? '#EF4444' : isBufferWarning ? '#F59E0B' : '#10B981',
+                      transition: 'width 0.4s ease'
+                    }} />
+                  </div>
+
+                  {isDeficit && (
+                    <div style={{
+                      backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                      padding: '8px 12px',
+                      borderRadius: '6px',
+                      fontSize: '0.75rem',
+                      color: '#FCA5A5',
+                      fontWeight: 700,
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}>
+                      <span>🚨 Running bill exceeds approved pre-auth by ₹{deficitAmount.toLocaleString('en-IN')}!</span>
+                      <button
+                        type="button"
+                        onClick={() => handleTriggerAutoEnhancement(selectedClaim)}
+                        style={{
+                          padding: '4px 10px',
+                          backgroundColor: '#EF4444',
+                          border: 'none',
+                          borderRadius: '4px',
+                          color: '#FFFFFF',
+                          fontWeight: 800,
+                          fontSize: '0.7rem',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        ⚡ 1-Tap Enhancement Request
+                      </button>
+                    </div>
+                  )}
+
+                  {isBufferWarning && (
+                    <div style={{
+                      backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                      padding: '8px 12px',
+                      borderRadius: '6px',
+                      fontSize: '0.75rem',
+                      color: '#FCD34D',
+                      fontWeight: 700,
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}>
+                      <span>⚠️ 80% Threshold Reached. Remaining buffer: ₹{bufferRemaining.toLocaleString('en-IN')}.</span>
+                      <button
+                        type="button"
+                        onClick={() => handleTriggerAutoEnhancement(selectedClaim)}
+                        style={{
+                          padding: '4px 10px',
+                          backgroundColor: '#F59E0B',
+                          border: 'none',
+                          borderRadius: '4px',
+                          color: '#0F172A',
+                          fontWeight: 800,
+                          fontSize: '0.7rem',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        ⚡ Prepare Auto-Enhancement
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* Transparent Co-Pay & Non-Medical Deductions Estimator */}
+            <div style={{
+              backgroundColor: '#1E293B',
+              borderRadius: '10px',
+              padding: '14px',
+              border: '1px solid rgba(255,255,255,0.08)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#F8FAFC', textTransform: 'uppercase' }}>
+                  📑 Transparent Co-Pay & Non-Medical Estimator (IRDAI List I-IV)
+                </span>
+                <span style={{ fontSize: '0.7rem', color: '#94A3B8' }}>Upfront Admission Estimation</span>
+              </div>
+
+              {selectedClaim.schemeType === 'AYUSHMAN_BHARAT_PMJAY' ? (
+                <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', padding: '10px', borderRadius: '6px', fontSize: '0.75rem', color: '#34D399', fontWeight: 700 }}>
+                  ✓ AB-PMJAY Golden Card Package: 100% Cashless. Zero Non-Medical Deductions or Co-Pay chargeable per NHA guidelines.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', fontSize: '0.75rem', textAlign: 'center' }}>
+                    <div style={{ padding: '8px', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '6px' }}>
+                      <span style={{ color: '#94A3B8', display: 'block' }}>TPA Covered</span>
+                      <strong style={{ color: '#10B981', fontSize: '0.95rem' }}>₹{selectedClaim.approvedAmount.toLocaleString('en-IN')}</strong>
+                    </div>
+                    <div style={{ padding: '8px', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '6px' }}>
+                      <span style={{ color: '#94A3B8', display: 'block' }}>Co-Pay Share</span>
+                      <strong style={{ color: '#F59E0B', fontSize: '0.95rem' }}>₹{selectedClaim.copayAmount.toLocaleString('en-IN')}</strong>
+                    </div>
+                    <div style={{ padding: '8px', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '6px' }}>
+                      <span style={{ color: '#94A3B8', display: 'block' }}>Non-Medical (IRDAI)</span>
+                      <strong style={{ color: '#F87171', fontSize: '0.95rem' }}>₹{selectedClaim.estimatedNonMedicalDeductions.toLocaleString('en-IN')}</strong>
+                    </div>
+                  </div>
+
+                  {selectedClaim.nonMedicalItems && selectedClaim.nonMedicalItems.length > 0 && (
+                    <div style={{ fontSize: '0.72rem', backgroundColor: 'rgba(0,0,0,0.2)', padding: '8px', borderRadius: '6px' }}>
+                      <span style={{ fontWeight: 700, color: '#94A3B8' }}>Itemized Non-Medical Consumables:</span>
+                      {selectedClaim.nonMedicalItems.map((item) => (
+                        <div key={item.name} style={{ display: 'flex', justifyContent: 'space-between', color: '#CBD5E1', marginTop: '2px' }}>
+                          <span>• {item.name} ({item.category})</span>
+                          <span style={{ fontWeight: 600 }}>₹{item.amount.toLocaleString('en-IN')}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '6px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#CBD5E1' }}>
+                      Net Estimated Patient Liability: <strong style={{ color: '#FCD34D', fontSize: '0.9rem' }}>₹{(selectedClaim.copayAmount + selectedClaim.estimatedNonMedicalDeductions).toLocaleString('en-IN')}</strong>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadNonMedicalDeclaration(selectedClaim)}
+                      style={{
+                        padding: '6px 12px',
+                        backgroundColor: '#38BDF8',
+                        border: 'none',
+                        borderRadius: '6px',
+                        color: '#0F172A',
+                        fontWeight: 800,
+                        fontSize: '0.72rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      🖨️ Patient Declaration Slip
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* NHCX Electronic Digest Badge if already pushed */}
@@ -585,36 +941,6 @@ export const TpaInsuranceClaimsDeskView: React.FC = () => {
               </div>
             )}
 
-            {/* Claim Financials Summary */}
-            <div style={{
-              backgroundColor: '#1E293B',
-              borderRadius: '10px',
-              padding: '14px',
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: '12px',
-              textAlign: 'center'
-            }}>
-              <div>
-                <div style={{ fontSize: '0.72rem', color: '#94A3B8' }}>Requested</div>
-                <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#F8FAFC', marginTop: '2px' }}>
-                  ₹{selectedClaim.requestedAmount.toLocaleString('en-IN')}
-                </div>
-              </div>
-              <div>
-                <div style={{ fontSize: '0.72rem', color: '#94A3B8' }}>Approved (TPA / NHA)</div>
-                <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#10B981', marginTop: '2px' }}>
-                  ₹{selectedClaim.approvedAmount.toLocaleString('en-IN')}
-                </div>
-              </div>
-              <div>
-                <div style={{ fontSize: '0.72rem', color: '#94A3B8' }}>Patient Copay</div>
-                <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#F59E0B', marginTop: '2px' }}>
-                  ₹{selectedClaim.copayAmount.toLocaleString('en-IN')}
-                </div>
-              </div>
-            </div>
-
             {/* Action 1: Query Reply (if query raised) */}
             {selectedClaim.status === 'QUERY_RAISED' && (
               <div style={{
@@ -648,7 +974,7 @@ export const TpaInsuranceClaimsDeskView: React.FC = () => {
               </div>
             )}
 
-            {/* Action 2: Request Enhancement */}
+            {/* Action 2: Manual Request Enhancement */}
             <div style={{
               backgroundColor: '#1E293B',
               borderRadius: '10px',
@@ -658,7 +984,7 @@ export const TpaInsuranceClaimsDeskView: React.FC = () => {
               gap: '10px'
             }}>
               <div style={{ fontWeight: 700, color: '#F8FAFC', fontSize: '0.85rem' }}>
-                ⚡ Request Pre-Auth Enhancement
+                ⚡ Custom Pre-Auth Enhancement Request
               </div>
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                 <Input
@@ -710,7 +1036,7 @@ export const TpaInsuranceClaimsDeskView: React.FC = () => {
           </Card>
         ) : (
           <Card style={{ backgroundColor: '#0F172A', border: '1px solid #1E293B', borderRadius: '12px', padding: '20px', textAlign: 'center', color: '#94A3B8' }}>
-            Select a pre-auth case to view actions and query status.
+            Select a pre-auth case to view actions, utilization meter, and non-medical deductions estimator.
           </Card>
         )}
       </div>
@@ -750,16 +1076,11 @@ export const TpaInsuranceClaimsDeskView: React.FC = () => {
               justifyContent: 'space-between',
               alignItems: 'center'
             }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '1.25rem' }}>🇮🇳</span>
-                  <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 900, color: '#F8FAFC' }}>
-                    NHA NHCX FHIR R4 Claim Resource Bundle
-                  </h3>
-                </div>
-                <div style={{ fontSize: '0.72rem', color: '#10B981', marginTop: '2px', fontFamily: 'monospace' }}>
-                  {bundleDigest}
-                </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '1.2rem' }}>🧬</span>
+                <span style={{ fontWeight: 800, color: '#F8FAFC', fontSize: '0.95rem' }}>
+                  FHIR R4 Electronic Claim Bundle — NHA NHCX Specification
+                </span>
               </div>
               <button
                 type="button"
@@ -768,7 +1089,7 @@ export const TpaInsuranceClaimsDeskView: React.FC = () => {
                   background: 'none',
                   border: 'none',
                   color: '#94A3B8',
-                  fontSize: '1.25rem',
+                  fontSize: '1.2rem',
                   cursor: 'pointer'
                 }}
               >
@@ -776,26 +1097,22 @@ export const TpaInsuranceClaimsDeskView: React.FC = () => {
               </button>
             </div>
 
-            {/* Modal Body: JSON Viewer */}
+            {/* Modal Body */}
             <div style={{ padding: '16px 20px', overflowY: 'auto', flex: 1 }}>
-              <div style={{
-                backgroundColor: '#070C16',
+              <pre style={{
+                margin: 0,
+                fontSize: '0.72rem',
+                color: '#34D399',
+                fontFamily: 'Consolas, Monaco, monospace',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-all',
+                backgroundColor: '#070D1E',
+                padding: '12px',
                 borderRadius: '8px',
-                border: '1px solid rgba(255,255,255,0.08)',
-                padding: '12px'
+                border: '1px solid rgba(16, 185, 129, 0.2)'
               }}>
-                <pre style={{
-                  margin: 0,
-                  color: '#34D399',
-                  fontFamily: 'monospace',
-                  fontSize: '0.75rem',
-                  lineHeight: 1.4,
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-all'
-                }}>
-                  {fhirBundlePayload}
-                </pre>
-              </div>
+                {fhirBundlePayload}
+              </pre>
             </div>
 
             {/* Modal Footer */}
@@ -803,49 +1120,22 @@ export const TpaInsuranceClaimsDeskView: React.FC = () => {
               padding: '12px 20px',
               borderTop: '1px solid rgba(255,255,255,0.1)',
               display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center'
+              justifyContent: 'flex-end',
+              gap: '10px'
             }}>
-              <span style={{ fontSize: '0.72rem', color: '#94A3B8' }}>
-                HL7 FHIR R4 • NRCES India StructureDefinition Compliant
-              </span>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigator.clipboard.writeText(fhirBundlePayload);
-                    alert('Copied FHIR R4 Bundle JSON to clipboard!');
-                  }}
-                  style={{
-                    padding: '6px 14px',
-                    backgroundColor: 'rgba(255,255,255,0.1)',
-                    border: '1px solid rgba(255,255,255,0.2)',
-                    borderRadius: '6px',
-                    color: '#FFFFFF',
-                    fontWeight: 700,
-                    fontSize: '0.75rem',
-                    cursor: 'pointer'
-                  }}
-                >
-                  📋 Copy JSON
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsFhirModalOpen(false)}
-                  style={{
-                    padding: '6px 14px',
-                    backgroundColor: '#10B981',
-                    border: 'none',
-                    borderRadius: '6px',
-                    color: '#0F172A',
-                    fontWeight: 800,
-                    fontSize: '0.75rem',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Close
-                </button>
-              </div>
+              <Button variant="outline" size="sm" onClick={() => setIsFhirModalOpen(false)}>
+                Close
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => {
+                  navigator.clipboard.writeText(fhirBundlePayload);
+                  alert('FHIR JSON copied to clipboard!');
+                }}
+              >
+                📋 Copy JSON
+              </Button>
             </div>
           </div>
         </div>

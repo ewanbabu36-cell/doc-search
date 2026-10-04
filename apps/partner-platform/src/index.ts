@@ -276,6 +276,7 @@ export * from './components/views/RevenueAnalyticsView.js';
 export * from './components/views/PatientBillingHistoryView.js';
 export * from './components/views/BillingAuditVaultView.js';
 export * from './components/BillingDomainManager.js';
+export * from './components/views/RcmAntiLeakageDeskView.js';
 
 // Phase 2.10: Insurance, TPA, Claims & Third-Party Payer Management Exports
 export * from './services/mock-insurance-claims-data.js';

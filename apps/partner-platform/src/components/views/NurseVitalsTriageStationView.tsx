@@ -391,6 +391,20 @@ export const NurseVitalsTriageStationView: React.FC<NurseVitalsTriageStationView
         },
         `Vitals captured for Token ${selectedEncounter.token} (${selectedEncounter.name}). Ready for Chamber Escort.`
       );
+      hospitalEventBus.publish(
+        'TRIAGE_VITALS_RECORDED',
+        'NurseVitalsStation',
+        {
+          encounterId: selectedEncounter.encounterId || selectedEncounter.id,
+          patientId: selectedEncounter.patientId,
+          name: selectedEncounter.name,
+          uhid: selectedEncounter.mrn,
+          opdToken: parseInt((selectedEncounter.token || '1').replace(/\D/g, ''), 10) || 1,
+          doctorName: selectedEncounter.doctor,
+          vitals: vitalsPayload
+        },
+        `Real-time triage vitals recorded for ${selectedEncounter.name} (Token #${selectedEncounter.token})`
+      );
 
       showToast(`✓ Vitals for Token #${selectedEncounter.token} recorded in database! Moved to Chamber Escort Queue.`);
       setActiveTab('CHAMBER_ESCORT');

@@ -61,6 +61,7 @@ import { CreateInvoiceView } from './views/CreateInvoiceView.js';
 import { InstantBillSettlementView } from './views/InstantBillSettlementView.js';
 import { DailyCounterCashLedgerView } from './views/DailyCounterCashLedgerView.js';
 import { TpaInsuranceClaimsDeskView } from './views/TpaInsuranceClaimsDeskView.js';
+import { RcmAntiLeakageDeskView } from './views/RcmAntiLeakageDeskView.js';
 import { ShiftHandoverSignOffView } from './views/ShiftHandoverSignOffView.js';
 import { TabOverflowMenu } from './common/TabOverflowMenu.js';
 import { DocSearchSpatialCore3D } from '@docsearch/ui-kit';
@@ -109,6 +110,8 @@ export const BillingDomainManager: React.FC<BillingDomainManagerProps> = ({
         setActiveTab('cash-ledger');
       } else if (initialTab === 'shift-handover' || initialTab === 'handover') {
         setActiveTab('shift-handover');
+      } else if (initialTab === 'rcm' || initialTab === 'leakage' || initialTab === 'anti-leakage' || initialTab === 'rcm-anti-leakage') {
+        setActiveTab('rcm-anti-leakage');
       } else {
         setActiveTab(initialTab);
       }
@@ -531,7 +534,33 @@ export const BillingDomainManager: React.FC<BillingDomainManagerProps> = ({
           <span style={{ fontSize: '1.4rem' }}>📑</span>
         </div>
 
-        {/* Pillar 4: 🔄 Shift Handover Sign-off */}
+        {/* Pillar 4: 🛡️ Anti-Leakage & RCM Desk */}
+        <div
+          onClick={() => setActiveTab('rcm-anti-leakage')}
+          style={{
+            backgroundColor: activeTab === 'rcm-anti-leakage' ? 'rgba(239, 68, 68, 0.2)' : 'var(--ds-color-surface)',
+            border: `1.5px solid ${activeTab === 'rcm-anti-leakage' ? '#EF4444' : 'var(--ds-color-border, rgba(255,255,255,0.08))'}`,
+            borderRadius: '10px',
+            padding: '12px 16px',
+            cursor: 'pointer',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <div>
+            <span style={{ fontSize: '0.68rem', color: '#EF4444', fontWeight: 700, textTransform: 'uppercase' }}>
+              🛡️ 4. Anti-Leakage Desk
+            </span>
+            <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#EF4444' }}>
+              ₹38.4k Recovered
+            </div>
+          </div>
+          <span style={{ fontSize: '1.4rem' }}>🛡️</span>
+        </div>
+
+        {/* Pillar 5: 🔄 Shift Handover Sign-off */}
         <div
           onClick={() => setActiveTab('shift-handover')}
           style={{
@@ -548,7 +577,7 @@ export const BillingDomainManager: React.FC<BillingDomainManagerProps> = ({
         >
           <div>
             <span style={{ fontSize: '0.68rem', color: 'var(--ds-color-accent)', fontWeight: 700, textTransform: 'uppercase' }}>
-              🔄 4. Shift Handover
+              🔄 5. Shift Handover
             </span>
             <div style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--ds-color-accent)' }}>
               Mandatory Sign-off
@@ -577,6 +606,7 @@ export const BillingDomainManager: React.FC<BillingDomainManagerProps> = ({
           { id: 'instant-settlement', label: '⚡ Instant Settlement' },
           { id: 'cash-ledger', label: '💵 Daily Cash Ledger' },
           { id: 'claims-desk', label: '📑 TPA / Insurance Claims' },
+          { id: 'rcm-anti-leakage', label: '🛡️ Anti-Leakage Desk' },
           { id: 'shift-handover', label: '🔄 Shift Handover' },
           { id: 'invoices', label: `🧾 Invoices (${(invoices || []).length})` },
           { id: 'create-invoice', label: '➕ Full Tax Invoice' },
@@ -714,6 +744,10 @@ export const BillingDomainManager: React.FC<BillingDomainManagerProps> = ({
 
       {activeTab === 'claims-desk' && (
         <TpaInsuranceClaimsDeskView />
+      )}
+
+      {activeTab === 'rcm-anti-leakage' && (
+        <RcmAntiLeakageDeskView />
       )}
 
       {activeTab === 'shift-handover' && (

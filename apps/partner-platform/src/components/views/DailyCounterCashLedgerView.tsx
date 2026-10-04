@@ -85,6 +85,11 @@ export const DailyCounterCashLedgerView: React.FC<DailyCounterCashLedgerViewProp
     1: 0
   });
 
+  const [isBlindCountMode, setIsBlindCountMode] = useState(true);
+  const [hasUnmasked, setHasUnmasked] = useState(false);
+  const [supervisorPin, setSupervisorPin] = useState('');
+  const [isSupervisorOverridden, setIsSupervisorOverridden] = useState(false);
+
   const handleDenominationChange = (denom: number, count: number) => {
     setDenominations((prev) => ({
       ...prev,
@@ -153,14 +158,34 @@ export const DailyCounterCashLedgerView: React.FC<DailyCounterCashLedgerViewProp
         </Card>
 
         <Card style={{ backgroundColor: '#0F172A', border: '1px solid #1E293B', borderRadius: '12px', padding: '16px' }}>
-          <div style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase' }}>
-            💵 Net Cash In Drawer
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase' }}>
+              💵 Net Cash In Drawer
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setIsBlindCountMode(!isBlindCountMode);
+                setHasUnmasked(false);
+              }}
+              style={{
+                background: 'transparent',
+                border: '1px solid #475569',
+                borderRadius: '4px',
+                color: '#94A3B8',
+                fontSize: '0.68rem',
+                padding: '1px 6px',
+                cursor: 'pointer'
+              }}
+            >
+              {isBlindCountMode ? '🔒 Blind Audit' : '👁️ Standard'}
+            </button>
           </div>
           <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#10B981', marginTop: '4px' }}>
-            ₹{expectedDrawerCash.toLocaleString('en-IN')}
+            {isBlindCountMode && !hasUnmasked ? '🔒 [MASKED]' : `₹${expectedDrawerCash.toLocaleString('en-IN')}`}
           </div>
           <div style={{ fontSize: '0.72rem', color: '#94A3B8', marginTop: '2px' }}>
-            +₹{cashReceived.toLocaleString('en-IN')} cash in • -₹{cashRefunded} refunds
+            {isBlindCountMode && !hasUnmasked ? 'Count drawer notes blindly' : `+₹${cashReceived.toLocaleString('en-IN')} in • -₹${cashRefunded} refunds`}
           </div>
         </Card>
 
@@ -201,25 +226,45 @@ export const DailyCounterCashLedgerView: React.FC<DailyCounterCashLedgerViewProp
                 Enter note count from physical cash drawer to verify tally.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                // Auto-match denominations to expected
-                setDenominations({ 500: 34, 200: 12, 100: 6, 50: 2, 20: 2, 10: 1, 1: 0 });
-              }}
-              style={{
-                padding: '4px 10px',
-                backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                border: '1px solid #10B981',
-                borderRadius: '6px',
-                color: '#10B981',
-                fontSize: '0.72rem',
-                fontWeight: 700,
-                cursor: 'pointer'
-              }}
-            >
-              ⚡ Auto-Match Tally
-            </button>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              {isBlindCountMode && !hasUnmasked && (
+                <button
+                  type="button"
+                  onClick={() => setHasUnmasked(true)}
+                  style={{
+                    padding: '4px 10px',
+                    backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                    border: '1px solid #38BDF8',
+                    borderRadius: '6px',
+                    color: '#38BDF8',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                >
+                  🔍 Unmask & Verify Tally
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  // Auto-match denominations to expected
+                  setDenominations({ 500: 34, 200: 12, 100: 6, 50: 2, 20: 2, 10: 1, 1: 0 });
+                }}
+                style={{
+                  padding: '4px 10px',
+                  backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                  border: '1px solid #10B981',
+                  borderRadius: '6px',
+                  color: '#10B981',
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                ⚡ Auto-Match Tally
+              </button>
+            </div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -283,8 +328,8 @@ export const DailyCounterCashLedgerView: React.FC<DailyCounterCashLedgerViewProp
             marginTop: '16px',
             padding: '14px',
             borderRadius: '10px',
-            backgroundColor: variance === 0 ? 'rgba(16, 185, 129, 0.15)' : variance > 0 ? 'rgba(245, 158, 11, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-            border: `1.5px solid ${variance === 0 ? '#10B981' : variance > 0 ? '#F59E0B' : '#EF4444'}`,
+            backgroundColor: (!hasUnmasked && isBlindCountMode) ? 'rgba(148, 163, 184, 0.1)' : variance === 0 ? 'rgba(16, 185, 129, 0.15)' : variance > 0 ? 'rgba(245, 158, 11, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+            border: `1.5px solid ${(!hasUnmasked && isBlindCountMode) ? '#475569' : variance === 0 ? '#10B981' : variance > 0 ? '#F59E0B' : '#EF4444'}`,
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center'
@@ -293,15 +338,93 @@ export const DailyCounterCashLedgerView: React.FC<DailyCounterCashLedgerViewProp
               <div style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase' }}>
                 Drawer Count Status
               </div>
-              <div style={{ fontSize: '1.2rem', fontWeight: 900, color: variance === 0 ? '#10B981' : variance > 0 ? '#F59E0B' : '#EF4444', marginTop: '2px' }}>
-                {variance === 0 ? '🟢 DRAWER BALANCED' : variance > 0 ? `🟡 EXCESS (+₹${variance.toLocaleString('en-IN')})` : `🔴 SHORTAGE (-₹${Math.abs(variance).toLocaleString('en-IN')})`}
+              <div style={{ fontSize: '1.2rem', fontWeight: 900, color: (!hasUnmasked && isBlindCountMode) ? '#94A3B8' : variance === 0 ? '#10B981' : variance > 0 ? '#F59E0B' : '#EF4444', marginTop: '2px' }}>
+                {isBlindCountMode && !hasUnmasked
+                  ? '🔒 BLIND COUNT IN PROGRESS'
+                  : variance === 0
+                  ? '🟢 DRAWER BALANCED'
+                  : variance > 0
+                  ? `🟡 EXCESS (+₹${variance.toLocaleString('en-IN')})`
+                  : `🔴 SHORTAGE (-₹${Math.abs(variance).toLocaleString('en-IN')})`}
               </div>
               <div style={{ fontSize: '0.72rem', color: '#94A3B8', marginTop: '2px' }}>
-                Physical Count: ₹{physicalCashCounted.toLocaleString('en-IN')} • Expected: ₹{expectedDrawerCash.toLocaleString('en-IN')}
+                {isBlindCountMode && !hasUnmasked
+                  ? `Physical Count: ₹${physicalCashCounted.toLocaleString('en-IN')} (Click Unmask to calculate variance)`
+                  : `Physical Count: ₹${physicalCashCounted.toLocaleString('en-IN')} • Expected: ₹${expectedDrawerCash.toLocaleString('en-IN')}`}
               </div>
             </div>
-            <span style={{ fontSize: '1.8rem' }}>{variance === 0 ? '✅' : '⚠️'}</span>
+            <span style={{ fontSize: '1.8rem' }}>{isBlindCountMode && !hasUnmasked ? '🔒' : variance === 0 ? '✅' : '⚠️'}</span>
           </div>
+
+          {/* Supervisor Override Gate for Variance */}
+          {(!isBlindCountMode || hasUnmasked) && variance !== 0 && (
+            <div style={{
+              marginTop: '12px',
+              padding: '12px',
+              borderRadius: '8px',
+              backgroundColor: 'rgba(239, 68, 68, 0.1)',
+              border: '1.5px dashed #EF4444'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                <span>🛡️</span>
+                <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#EF4444', textTransform: 'uppercase' }}>
+                  Handover Discrepancy Gate Active
+                </span>
+              </div>
+              <p style={{ margin: '0 0 8px 0', fontSize: '0.72rem', color: '#FCA5A5' }}>
+                Shift handover sign-off is locked due to an unverified variance of {variance < 0 ? '-' : '+'}₹{Math.abs(variance).toLocaleString('en-IN')}. Supervisor PIN required to proceed.
+              </p>
+              {!isSupervisorOverridden ? (
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <input
+                    type="password"
+                    placeholder="Enter Supervisor PIN"
+                    value={supervisorPin}
+                    onChange={(e) => setSupervisorPin(e.target.value)}
+                    style={{
+                      padding: '6px 10px',
+                      backgroundColor: '#0F172A',
+                      border: '1px solid #475569',
+                      borderRadius: '6px',
+                      color: '#F8FAFC',
+                      fontSize: '0.75rem',
+                      width: '160px'
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (supervisorPin.trim()) {
+                        setIsSupervisorOverridden(true);
+                        hospitalEventBus.publish(
+                          'CASHIER_VARIANCE_OVERRIDDEN',
+                          'DailyCashLedger',
+                          { variance, counterId, cashierName },
+                          `Supervisor PIN authorized shift handover with ₹${variance} variance.`
+                        );
+                      }
+                    }}
+                    style={{
+                      padding: '6px 12px',
+                      backgroundColor: '#EF4444',
+                      border: 'none',
+                      borderRadius: '6px',
+                      color: '#FFFFFF',
+                      fontSize: '0.75rem',
+                      fontWeight: 800,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Authorize Override
+                  </button>
+                </div>
+              ) : (
+                <div style={{ color: '#10B981', fontSize: '0.75rem', fontWeight: 700 }}>
+                  ✓ Supervisor PIN Authorized: Shift handover unlocked.
+                </div>
+              )}
+            </div>
+          )}
         </Card>
 
         {/* Right Column: Live Counter Receipts Tally */}

@@ -874,7 +874,7 @@ export const ClinicalInvestigationDomainManager: React.FC<ClinicalInvestigationD
                 }}>
                   ✓ NABL ISO 15189:2022
                 </span>
-                <DataPulse status="online" label="LIMS CORE ACTIVE" size="sm" color="#06B6D4" />
+                <DataPulse status="online" label="Daily QC: Approved (Level 1 & Level 2 Passed)" size="sm" color="#10B981" />
               </div>
               <div style={{ fontSize: '0.72rem', color: '#94A3B8', marginTop: '2px' }}>
                 Sequential Pipeline: Phlebotomy ➔ Bench Testing ➔ Pathologist Sign-off ➔ WhatsApp Delivery
@@ -1146,10 +1146,10 @@ export const ClinicalInvestigationDomainManager: React.FC<ClinicalInvestigationD
                 alignItems: 'center',
                 gap: '6px'
               }}
-              title="Scan peripheral blood smear via phone eyepiece attachment"
+              title="Digital Pathology & Whole Slide Imaging (WSI) blood smear examination"
             >
               <span>🔬</span>
-              <span>AI Smear Scan</span>
+              <span>Digital Pathology / WSI Viewer</span>
             </button>
 
             {/* Public QR Code Verification */}

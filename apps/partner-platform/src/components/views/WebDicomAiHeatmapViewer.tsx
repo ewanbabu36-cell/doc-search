@@ -1,8 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { Card, Badge, Button } from '@docsearch/ui-kit';
+import { hospitalEventBus } from '../../services/hospital-event-bus.js';
 
 export type RadiologyModality = 'XRAY_CHEST' | 'XRAY_FRACTURE' | 'CT_BRAIN' | 'NORMAL';
 export type WindowPreset = 'DEFAULT' | 'LUNG' | 'BONE' | 'BRAIN' | 'INVERT';
+export type ActiveDicomTool = 'HEATMAP' | 'COBB_ANGLE' | 'CALIPER' | 'HU_PROBE' | 'PACS_CONNECTOR';
 
 export interface RadiologyCase {
   id: string;
@@ -31,7 +33,12 @@ export interface RadiologyCase {
   heatmapGradient: string;
 }
 
-export const WebDicomAiHeatmapViewer: React.FC = () => {
+interface Props {
+  initialStudyInstanceUid?: string;
+  onClose?: () => void;
+}
+
+export const WebDicomAiHeatmapViewer: React.FC<Props> = ({ onClose }) => {
   const [selectedCaseId, setSelectedCaseId] = useState<string>('CASE-CT-BRAIN');
   const [showAiBox, setShowAiBox] = useState(true);
   const [showHeatmap, setShowHeatmap] = useState(true);
@@ -41,6 +48,14 @@ export const WebDicomAiHeatmapViewer: React.FC = () => {
   const [isNotifiedEr, setIsNotifiedEr] = useState(false);
   const [isSignedOff, setIsSignedOff] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Advanced Clinical DICOM & PACS Integration State
+  const [activeDicomTool, setActiveDicomTool] = useState<ActiveDicomTool>('HEATMAP');
+  const [cobbAngle, setCobbAngle] = useState<number>(34.2);
+  const [caliperMm, setCaliperMm] = useState<number>(14.2);
+  const [huProbeDensity, setHuProbeDensity] = useState<number>(68.4);
+  const [isMwlAutoBound, setIsMwlAutoBound] = useState<boolean>(true);
+  const [slaCountdownMinutes] = useState<number>(16);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -174,6 +189,46 @@ export const WebDicomAiHeatmapViewer: React.FC = () => {
     showToast(`✓ Radiologist Report Signed & Committed to Hospital PACS!`);
   };
 
+  const handleTriggerMwlSync = () => {
+    setIsMwlAutoBound(true);
+    hospitalEventBus.publish(
+      'DICOM_SERIES_AUTO_BOUND',
+      'MODALITY_WORKLIST_ROUTER',
+      {
+        accessionNumber: currentCase.accessionNumber,
+        modalityAeTitle: currentCase.id.includes('CT') ? 'SOMATOM_CT01' : 'PHILIPS_DR01',
+        scheduledStepId: 'SPS-' + currentCase.accessionNumber.replace('ACC-', ''),
+        instancesBound: currentCase.id.includes('CT') ? 168 : 2,
+        timestamp: new Date().toISOString()
+      },
+      `Modality Worklist (MWL) Auto-Bound: Series for ${currentCase.patientName} (${currentCase.accessionNumber}) bound to EMR timeline.`
+    );
+    hospitalEventBus.publish(
+      'MODALITY_WORKLIST_SYNCED',
+      'MODALITY_WORKLIST_ROUTER',
+      { accessionNumber: currentCase.accessionNumber },
+      `MWL C-FIND successfully queried and synchronized with Modality.`
+    );
+    showToast(`⚡ MWL Synced: Modality Worklist bound to EMR Study UID via C-FIND!`);
+  };
+
+  const handleEscalateSla = () => {
+    hospitalEventBus.publish(
+      'RADIOLOGY_EMERGENCY_SLA_BREACH_ALERTED',
+      'RADIOLOGY_SLA_ENGINE',
+      {
+        patientName: currentCase.patientName,
+        patientMrn: currentCase.patientMrn,
+        accessionNumber: currentCase.accessionNumber,
+        urgency: currentCase.urgency,
+        minutesRemaining: slaCountdownMinutes,
+        timestamp: new Date().toISOString()
+      },
+      `EMERGENCY SLA ESCALATION: STAT scan ${currentCase.accessionNumber} (${currentCase.patientName}) has ${slaCountdownMinutes}m remaining. Alert sent to Radiologist on-duty.`
+    );
+    showToast(`🚨 STAT SLA Escalation sent to Radiologist on-duty & ER In-charge!`);
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       
@@ -239,6 +294,19 @@ export const WebDicomAiHeatmapViewer: React.FC = () => {
                 >
                   STAT READING REQUIRED
                 </span>
+                <span
+                  style={{
+                    backgroundColor: '#7F1D1D',
+                    color: '#FEE2E2',
+                    fontSize: '0.68rem',
+                    fontWeight: 800,
+                    padding: '2px 8px',
+                    borderRadius: '6px',
+                    border: '1px solid #EF4444'
+                  }}
+                >
+                  ⏱️ 30-MIN SLA: {slaCountdownMinutes}m 48s REMAINING
+                </span>
               </div>
               <div style={{ color: '#FECACA', fontSize: '0.82rem', marginTop: '2px' }}>
                 Patient <strong>{currentCase.patientName}</strong> ({currentCase.patientAgeGender}) • {currentCase.aiDetectionTitle}. Automatically elevated to top of Radiologist worklist.
@@ -248,6 +316,14 @@ export const WebDicomAiHeatmapViewer: React.FC = () => {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Button
+              variant="outline"
+              size="sm"
+              onClick={handleEscalateSla}
+              style={{ fontWeight: 800, padding: '8px 14px', borderColor: '#EF4444', color: '#FCA5A5' }}
+            >
+              ⚠️ Escalate SLA Alert
+            </Button>
+            <Button
               variant="danger"
               size="sm"
               onClick={handleNotifyEr}
@@ -255,6 +331,16 @@ export const WebDicomAiHeatmapViewer: React.FC = () => {
             >
               {isNotifiedEr ? '✓ ER Clinician Intimated' : '⚡ Instant Notify ER Clinician'}
             </Button>
+            {onClose && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onClose}
+                style={{ fontWeight: 800 }}
+              >
+                ✕ Close Viewer
+              </Button>
+            )}
           </div>
         </div>
       )}
@@ -440,6 +526,88 @@ export const WebDicomAiHeatmapViewer: React.FC = () => {
                   style={{ padding: '4px 8px', borderRadius: '4px', backgroundColor: '#1E293B', color: '#FFF', border: '1px solid #475569', fontSize: '0.75rem', cursor: 'pointer' }}
                 >
                   +
+                </button>
+              </div>
+            </div>
+
+            {/* Precision Diagnostic Measurement & MWL Sync Strip */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 12px', backgroundColor: '#0B1120', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.08)', fontSize: '0.72rem', flexWrap: 'wrap', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ color: '#94A3B8', fontWeight: 600 }}>Tools:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveDicomTool('CALIPER');
+                    setCaliperMm((c) => Math.round((c + 0.5) * 10) / 10);
+                  }}
+                  style={{
+                    padding: '3px 8px',
+                    borderRadius: '4px',
+                    backgroundColor: activeDicomTool === 'CALIPER' ? 'rgba(56, 189, 248, 0.25)' : 'rgba(255, 255, 255, 0.05)',
+                    border: activeDicomTool === 'CALIPER' ? '1px solid #38BDF8' : '1px solid rgba(255, 255, 255, 0.1)',
+                    color: activeDicomTool === 'CALIPER' ? '#38BDF8' : '#94A3B8',
+                    cursor: 'pointer',
+                    fontWeight: 700
+                  }}
+                >
+                  📐 Caliper: {caliperMm} mm
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveDicomTool('COBB_ANGLE');
+                    setCobbAngle((a) => Math.round((a + 0.5) * 10) / 10);
+                  }}
+                  style={{
+                    padding: '3px 8px',
+                    borderRadius: '4px',
+                    backgroundColor: activeDicomTool === 'COBB_ANGLE' ? 'rgba(168, 85, 247, 0.25)' : 'rgba(255, 255, 255, 0.05)',
+                    border: activeDicomTool === 'COBB_ANGLE' ? '1px solid #A855F7' : '1px solid rgba(255, 255, 255, 0.1)',
+                    color: activeDicomTool === 'COBB_ANGLE' ? '#C084FC' : '#94A3B8',
+                    cursor: 'pointer',
+                    fontWeight: 700
+                  }}
+                >
+                  📐 Cobb Angle: {cobbAngle}°
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveDicomTool('HU_PROBE');
+                    setHuProbeDensity((h) => Math.round((h + 1.2) * 10) / 10);
+                  }}
+                  style={{
+                    padding: '3px 8px',
+                    borderRadius: '4px',
+                    backgroundColor: activeDicomTool === 'HU_PROBE' ? 'rgba(34, 197, 94, 0.25)' : 'rgba(255, 255, 255, 0.05)',
+                    border: activeDicomTool === 'HU_PROBE' ? '1px solid #22C55E' : '1px solid rgba(255, 255, 255, 0.1)',
+                    color: activeDicomTool === 'HU_PROBE' ? '#86EFAC' : '#94A3B8',
+                    cursor: 'pointer',
+                    fontWeight: 700
+                  }}
+                >
+                  🔬 HU Probe: {huProbeDensity} HU
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={handleTriggerMwlSync}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '3px 8px',
+                    borderRadius: '4px',
+                    backgroundColor: isMwlAutoBound ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)',
+                    border: isMwlAutoBound ? '1px solid #10B981' : '1px solid #F59E0B',
+                    color: isMwlAutoBound ? '#6EE7B7' : '#FCD34D',
+                    cursor: 'pointer',
+                    fontWeight: 700
+                  }}
+                >
+                  <span>{isMwlAutoBound ? '✓ MWL Auto-Bound' : '🔄 Sync Modality Worklist'}</span>
                 </button>
               </div>
             </div>

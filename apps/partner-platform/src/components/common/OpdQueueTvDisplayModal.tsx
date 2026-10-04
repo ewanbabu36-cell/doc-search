@@ -9,7 +9,7 @@ export interface OpdQueueTvDisplayModalProps {
 }
 
 export interface CallingToken {
-  tokenNumber: number;
+  tokenNumber: number | string;
   patientName: string;
   uhid: string;
   doctorName: string;
@@ -19,11 +19,16 @@ export interface CallingToken {
 }
 
 export interface QueueItem {
-  token: number;
+  token: number | string;
   name: string;
   uhid: string;
   estWait: string;
   doctor: string;
+  estCallTime?: string;
+  patientsAhead?: number;
+  priorityTier?: string;
+  isCritical?: boolean;
+  isReportsReady?: boolean;
 }
 
 export const OpdQueueTvDisplayModal: React.FC<OpdQueueTvDisplayModalProps> = ({
@@ -37,6 +42,7 @@ export const OpdQueueTvDisplayModal: React.FC<OpdQueueTvDisplayModalProps> = ({
     : (partnerProfile.entityLegalName || 'DocSearch Hospital & Medical Center');
 
   const [currentToken, setCurrentToken] = useState<CallingToken | null>(null);
+  const [movingAvgPace, setMovingAvgPace] = useState<number>(3.8);
 
   const [queue, setQueue] = useState<QueueItem[]>(() => {
     if (typeof window !== 'undefined') {
@@ -149,10 +155,32 @@ export const OpdQueueTvDisplayModal: React.FC<OpdQueueTvDisplayModalProps> = ({
       }
     });
 
+    const unsubVelocity = hospitalEventBus.subscribe('QUEUE_VELOCITY_UPDATED', (payload: HospitalEventPayload) => {
+      const data = payload.data || {};
+      if (Array.isArray(data.patients)) {
+        setQueue(data.patients.map((p: any) => ({
+          token: p.token,
+          name: p.name,
+          uhid: p.uhid,
+          estWait: p.estWait || `${(p.patientsAhead || 0) * 4} mins`,
+          estCallTime: p.estCallTime,
+          patientsAhead: p.patientsAhead,
+          doctor: p.doctor || partnerProfile.doctorName || 'Room 101',
+          priorityTier: p.priorityTier,
+          isCritical: p.isCritical,
+          isReportsReady: p.isReportsReady
+        })));
+      }
+      if (data.averageConsultDurationMinutes) {
+        setMovingAvgPace(data.averageConsultDurationMinutes);
+      }
+    });
+
     return () => {
       unsubSelected();
       unsubCalled();
       unsubRegistered();
+      unsubVelocity();
     };
   }, [partnerProfile]);
 
@@ -202,7 +230,9 @@ export const OpdQueueTvDisplayModal: React.FC<OpdQueueTvDisplayModalProps> = ({
       }
     }
 
-    const nextNum = (currentToken?.tokenNumber ?? 0) + 1;
+    const currentRaw = currentToken?.tokenNumber;
+    const currentParsed = typeof currentRaw === 'number' ? currentRaw : parseInt(String(currentRaw || '0').replace(/\D/g, ''), 10) || 0;
+    const nextNum = currentParsed + 1;
     triggerCallToken({
       tokenNumber: nextNum,
       patientName: `Token #${nextNum}`,
@@ -546,7 +576,7 @@ export const OpdQueueTvDisplayModal: React.FC<OpdQueueTvDisplayModalProps> = ({
               <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 900, color: '#F8FAFC' }}>
                 Next In Queue
               </h2>
-              <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>Aage Ke Patients (Estimated Waiting Time)</span>
+              <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>Aage Ke Patients • ⚡ Avg Pace: {movingAvgPace}m / pt</span>
             </div>
             <span
               style={{
@@ -580,7 +610,7 @@ export const OpdQueueTvDisplayModal: React.FC<OpdQueueTvDisplayModalProps> = ({
                 key={item.token}
                 onClick={() =>
                   triggerCallToken({
-                    tokenNumber: item.token,
+                    tokenNumber: typeof item.token === 'number' ? item.token : parseInt(String(item.token).replace(/\D/g, ''), 10) || 1,
                     patientName: item.name,
                     uhid: item.uhid,
                     doctorName: partnerProfile.doctorName || 'Attending Physician',
@@ -591,7 +621,11 @@ export const OpdQueueTvDisplayModal: React.FC<OpdQueueTvDisplayModalProps> = ({
                 }
                 style={{
                   backgroundColor: '#1E293B',
-                  border: '1px solid rgba(255, 255, 255, 0.06)',
+                  border: item.isCritical
+                    ? '1.5px solid #EF4444'
+                    : item.isReportsReady
+                    ? '1.5px solid #A855F7'
+                    : '1px solid rgba(255, 255, 255, 0.06)',
                   borderRadius: '12px',
                   padding: '14px',
                   display: 'flex',
@@ -606,7 +640,11 @@ export const OpdQueueTvDisplayModal: React.FC<OpdQueueTvDisplayModalProps> = ({
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = '#1E293B';
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.06)';
+                  e.currentTarget.style.borderColor = item.isCritical
+                    ? '#EF4444'
+                    : item.isReportsReady
+                    ? '#A855F7'
+                    : 'rgba(255, 255, 255, 0.06)';
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
@@ -615,7 +653,7 @@ export const OpdQueueTvDisplayModal: React.FC<OpdQueueTvDisplayModalProps> = ({
                       width: '44px',
                       height: '44px',
                       borderRadius: '10px',
-                      backgroundColor: '#0284C7',
+                      backgroundColor: item.isCritical ? '#DC2626' : item.isReportsReady ? '#9333EA' : '#0284C7',
                       color: '#FFF',
                       display: 'flex',
                       alignItems: 'center',
@@ -627,24 +665,43 @@ export const OpdQueueTvDisplayModal: React.FC<OpdQueueTvDisplayModalProps> = ({
                     #{item.token}
                   </div>
                   <div>
-                    <strong style={{ color: '#F8FAFC', fontSize: '1rem', display: 'block' }}>{item.name}</strong>
-                    <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>{item.uhid}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <strong style={{ color: '#F8FAFC', fontSize: '1rem' }}>{item.name}</strong>
+                      {item.isCritical && (
+                        <span style={{ fontSize: '0.625rem', fontWeight: 900, backgroundColor: 'rgba(239,68,68,0.25)', color: '#F87171', border: '1px solid #EF4444', padding: '1px 5px', borderRadius: '4px' }}>
+                          🚨 STAT PRIORITY
+                        </span>
+                      )}
+                      {item.isReportsReady && (
+                        <span style={{ fontSize: '0.625rem', fontWeight: 900, backgroundColor: 'rgba(168,85,247,0.25)', color: '#C084FC', border: '1px solid #A855F7', padding: '1px 5px', borderRadius: '4px' }}>
+                          🧪 REPORTS READY
+                        </span>
+                      )}
+                    </div>
+                    <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
+                      {item.uhid}
+                      {typeof item.patientsAhead === 'number' && (
+                        <span style={{ marginLeft: '6px', color: '#38BDF8' }}>
+                          ({item.patientsAhead} ahead)
+                        </span>
+                      )}
+                    </span>
                   </div>
                 </div>
 
                 <div style={{ textAlign: 'right' }}>
                   <span
                     style={{
-                      backgroundColor: 'rgba(245, 158, 11, 0.15)',
-                      border: '1px solid #F59E0B',
-                      color: '#FCD34D',
+                      backgroundColor: item.isCritical ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                      border: item.isCritical ? '1px solid #EF4444' : '1px solid #F59E0B',
+                      color: item.isCritical ? '#FCA5A5' : '#FCD34D',
                       padding: '2px 8px',
                       borderRadius: '4px',
                       fontSize: '0.75rem',
                       fontWeight: 700
                     }}
                   >
-                    ⏱️ ~{item.estWait}
+                    {item.estCallTime ? `⏱️ Call ~${item.estCallTime}` : `⏱️ ~${item.estWait}`}
                   </span>
                   <div style={{ fontSize: '0.7rem', color: '#64748B', marginTop: '4px' }}>Click to Call ➔</div>
                 </div>

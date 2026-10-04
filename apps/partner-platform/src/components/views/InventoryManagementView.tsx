@@ -23,6 +23,47 @@ import type {
   BatchStatus
 } from '@docsearch/api-contracts';
 import { INDIAN_PHARMACY_FORMULARY, type IndianMedicationFormularyItem } from '../../services/indian-pharmacy-catalog.js';
+import { hospitalEventBus } from '../../services/hospital-event-bus.js';
+
+export interface PredictiveStockItem {
+  id: string;
+  medicationCode: string;
+  brandName: string;
+  genericName: string;
+  dosageForm: string;
+  currentPhysicalStock: number;
+  movingAverageDailyVelocity: number;
+  supplierLeadTimeDays: number;
+  safetyBufferStock: number;
+  calculatedDynamicRop: number;
+  projectedDaysOfStock: number;
+  isOutbreakSurge: boolean;
+  recommendedOrderQuantity: number;
+  primarySupplier: string;
+}
+
+export interface DischargeWardReturnCase {
+  id: string;
+  patientName: string;
+  uhid: string;
+  wardName: string;
+  bedNumber: string;
+  dischargedAt: string;
+  dispensedItemsCount: number;
+  returnableItems: {
+    itemId: string;
+    medicationName: string;
+    batchNumber: string;
+    dispensedQty: number;
+    unopenedReturnQty: number;
+    unitPriceMrp: number;
+    calculatedRefundAmount: number;
+    isSealIntact: boolean;
+  }[];
+  totalRefundAmount: number;
+  reconciliationStatus: 'PENDING_WARD_SCAN' | 'RECONCILED_REFUNDED';
+  creditNoteNumber?: string;
+}
 
 export interface InventoryManagementViewProps {
   inventory: PharmacyInventoryDto[];
@@ -42,7 +83,7 @@ export interface InventoryManagementViewProps {
   onCleanupDevMockStock?: () => Promise<void>;
 }
 
-export type InventorySubView = 'stock' | 'batches' | 'movements' | 'returns';
+export type InventorySubView = 'stock' | 'predictiveReorder' | 'wardReturns' | 'batches' | 'movements' | 'returns';
 
 export const InventoryManagementView: React.FC<InventoryManagementViewProps> = ({
   inventory,
@@ -74,6 +115,214 @@ export const InventoryManagementView: React.FC<InventoryManagementViewProps> = (
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStockLevel, setFilterStockLevel] = useState<string>('ALL');
   const [batchStatusFilter, setBatchStatusFilter] = useState<string>('ALL');
+
+  // Dynamic Consumption-Velocity Reordering State
+  const [isOutbreakSurgeSimulated, setIsOutbreakSurgeSimulated] = useState(false);
+  const [predictiveItems] = useState<PredictiveStockItem[]>([
+    {
+      id: 'pred-1',
+      medicationCode: 'MED-PARA-650',
+      brandName: 'Dolo 650mg Tab',
+      genericName: 'Paracetamol',
+      dosageForm: 'TABLET',
+      currentPhysicalStock: 420,
+      movingAverageDailyVelocity: 210,
+      supplierLeadTimeDays: 2,
+      safetyBufferStock: 150,
+      calculatedDynamicRop: 570,
+      projectedDaysOfStock: 2.0,
+      isOutbreakSurge: true,
+      recommendedOrderQuantity: 2500,
+      primarySupplier: 'Apex Healthcare Distributors Pvt Ltd'
+    },
+    {
+      id: 'pred-2',
+      medicationCode: 'MED-CEFT-1G',
+      brandName: 'Monocef 1g Injection',
+      genericName: 'Ceftriaxone Sodium',
+      dosageForm: 'INJECTION',
+      currentPhysicalStock: 95,
+      movingAverageDailyVelocity: 42,
+      supplierLeadTimeDays: 2,
+      safetyBufferStock: 40,
+      calculatedDynamicRop: 124,
+      projectedDaysOfStock: 2.2,
+      isOutbreakSurge: true,
+      recommendedOrderQuantity: 500,
+      primarySupplier: 'Apex Healthcare Distributors Pvt Ltd'
+    },
+    {
+      id: 'pred-3',
+      medicationCode: 'MED-PAN-40',
+      brandName: 'Pantocid 40mg Tab',
+      genericName: 'Pantoprazole Sodium',
+      dosageForm: 'TABLET',
+      currentPhysicalStock: 850,
+      movingAverageDailyVelocity: 65,
+      supplierLeadTimeDays: 3,
+      safetyBufferStock: 80,
+      calculatedDynamicRop: 275,
+      projectedDaysOfStock: 13.0,
+      isOutbreakSurge: false,
+      recommendedOrderQuantity: 1000,
+      primarySupplier: 'Cipla Depot & C&F Agency'
+    },
+    {
+      id: 'pred-4',
+      medicationCode: 'MED-NS-500',
+      brandName: 'Normal Saline 0.9% 500ml',
+      genericName: 'Sodium Chloride IV Infusion',
+      dosageForm: 'IV_FLUID',
+      currentPhysicalStock: 110,
+      movingAverageDailyVelocity: 55,
+      supplierLeadTimeDays: 2,
+      safetyBufferStock: 60,
+      calculatedDynamicRop: 170,
+      projectedDaysOfStock: 2.0,
+      isOutbreakSurge: true,
+      recommendedOrderQuantity: 600,
+      primarySupplier: 'Albert David & Otsuka Parenterals'
+    }
+  ]);
+  const [generatedPoAlert, setGeneratedPoAlert] = useState<string | null>(null);
+
+  // Discharge Automated Ward Return Reconciler State
+  const [wardReturnCases, setWardReturnCases] = useState<DischargeWardReturnCase[]>([
+    {
+      id: 'wrc-1',
+      patientName: 'Ramesh Patel',
+      uhid: 'UHID-2026-901',
+      wardName: 'Male Surgical Ward 3',
+      bedNumber: 'Bed 14',
+      dischargedAt: 'Today 11:30 AM',
+      dispensedItemsCount: 12,
+      returnableItems: [
+        {
+          itemId: 'ret-it-1',
+          medicationName: 'Monocef 1g Injection (Ceftriaxone)',
+          batchNumber: 'BTH-MNC-331',
+          dispensedQty: 8,
+          unopenedReturnQty: 3,
+          unitPriceMrp: 68.0,
+          calculatedRefundAmount: 204.0,
+          isSealIntact: true
+        },
+        {
+          itemId: 'ret-it-2',
+          medicationName: 'Normal Saline 0.9% 500ml IV Bottle',
+          batchNumber: 'BTH-NS-2026',
+          dispensedQty: 6,
+          unopenedReturnQty: 2,
+          unitPriceMrp: 45.0,
+          calculatedRefundAmount: 90.0,
+          isSealIntact: true
+        },
+        {
+          itemId: 'ret-it-3',
+          medicationName: 'Pan-IV 40mg Injection (Pantoprazole)',
+          batchNumber: 'BTH-PAN-902',
+          dispensedQty: 4,
+          unopenedReturnQty: 2,
+          unitPriceMrp: 54.0,
+          calculatedRefundAmount: 108.0,
+          isSealIntact: true
+        }
+      ],
+      totalRefundAmount: 402.0,
+      reconciliationStatus: 'PENDING_WARD_SCAN'
+    },
+    {
+      id: 'wrc-2',
+      patientName: 'Sunita Rao',
+      uhid: 'UHID-2026-872',
+      wardName: 'Medical ICU Bay',
+      bedNumber: 'ICU Bed 04',
+      dischargedAt: 'Today 10:15 AM',
+      dispensedItemsCount: 18,
+      returnableItems: [
+        {
+          itemId: 'ret-it-4',
+          medicationName: 'Inj Meropenem 1g (Meromac)',
+          batchNumber: 'BTH-MRO-811',
+          dispensedQty: 6,
+          unopenedReturnQty: 2,
+          unitPriceMrp: 950.0,
+          calculatedRefundAmount: 1900.0,
+          isSealIntact: true
+        },
+        {
+          itemId: 'ret-it-5',
+          medicationName: 'Inj Enoxaparin 40mg/0.4ml Prefilled Syringe (Clexane)',
+          batchNumber: 'BTH-CLX-551',
+          dispensedQty: 4,
+          unopenedReturnQty: 1,
+          unitPriceMrp: 480.0,
+          calculatedRefundAmount: 480.0,
+          isSealIntact: true
+        }
+      ],
+      totalRefundAmount: 2380.0,
+      reconciliationStatus: 'PENDING_WARD_SCAN'
+    }
+  ]);
+  const [reconciledCreditNoteAlert, setReconciledCreditNoteAlert] = useState<string | null>(null);
+
+  const handleTriggerDynamicPo = (item: PredictiveStockItem) => {
+    const poNumber = `PO-2026-AUTODIST-${Math.floor(100 + Math.random() * 900)}`;
+    hospitalEventBus.publish(
+      'DYNAMIC_REORDER_TRIGGERED',
+      'InventoryManagementView',
+      {
+        poNumber,
+        medicationCode: item.medicationCode,
+        medicationName: item.brandName,
+        dailyVelocity: item.movingAverageDailyVelocity,
+        leadTimeDays: item.supplierLeadTimeDays,
+        dynamicRop: item.calculatedDynamicRop,
+        currentStock: item.currentPhysicalStock,
+        projectedDaysOfStock: item.projectedDaysOfStock,
+        orderedQty: item.recommendedOrderQuantity,
+        distributor: item.primarySupplier
+      },
+      `Dynamic ROP Breach: ${item.brandName} projected days-of-stock (${item.projectedDaysOfStock}d < 3d). Auto-PO ${poNumber} raised for ${item.recommendedOrderQuantity} units to ${item.primarySupplier}`
+    );
+
+    setGeneratedPoAlert(`✓ Auto-generated PO ${poNumber} for ${item.recommendedOrderQuantity} units of ${item.brandName} dispatched via EDI to ${item.primarySupplier}!`);
+    setTimeout(() => setGeneratedPoAlert(null), 4000);
+  };
+
+  const handleReconcileWardReturn = (wrc: DischargeWardReturnCase) => {
+    const creditNoteNo = `CN-2026-WARD-${Math.floor(1000 + Math.random() * 9000)}`;
+    setWardReturnCases((prev) =>
+      prev.map((c) =>
+        c.id === wrc.id
+          ? { ...c, reconciliationStatus: 'RECONCILED_REFUNDED', creditNoteNumber: creditNoteNo }
+          : c
+      )
+    );
+
+    hospitalEventBus.publish(
+      'WARD_MEDICATION_RETURN_RECONCILED',
+      'InventoryManagementView',
+      {
+        creditNoteNumber: creditNoteNo,
+        patientName: wrc.patientName,
+        uhid: wrc.uhid,
+        ward: wrc.wardName,
+        refundAmount: wrc.totalRefundAmount,
+        returnedItems: wrc.returnableItems.map((i) => ({
+          name: i.medicationName,
+          batch: i.batchNumber,
+          qty: i.unopenedReturnQty,
+          refund: i.calculatedRefundAmount
+        }))
+      },
+      `Discharge Ward Return Reconciled: ${wrc.patientName} (${wrc.uhid}) — Refund Credit Note ${creditNoteNo} (₹ ${wrc.totalRefundAmount.toFixed(2)}) issued; sealed vials restocked to FEFO inventory`
+    );
+
+    setReconciledCreditNoteAlert(`✓ Credit Note ${creditNoteNo} (₹ ${wrc.totalRefundAmount.toFixed(2)}) generated for ${wrc.patientName}! Unused sealed vials restocked to Central Pharmacy FEFO batches.`);
+    setTimeout(() => setReconciledCreditNoteAlert(null), 4000);
+  };
 
   // KPI Calculations
   const totalSkus = inventory.length;
@@ -915,6 +1164,46 @@ export const InventoryManagementView: React.FC<InventoryManagementViewProps> = (
 
         <button
           type="button"
+          onClick={() => setSubView('predictiveReorder')}
+          style={{
+            background: subView === 'predictiveReorder' ? 'rgba(59, 130, 246, 0.18)' : '#1E293B',
+            color: subView === 'predictiveReorder' ? '#60A5FA' : '#94A3B8',
+            border: subView === 'predictiveReorder' ? '1px solid #3B82F6' : '1px solid #334155',
+            borderRadius: '8px',
+            padding: '8px 16px',
+            fontSize: '0.85rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}
+        >
+          <span>⚡</span> Predictive Reorder Engine ({predictiveItems.filter(p => p.projectedDaysOfStock < 3).length} Urgent)
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setSubView('wardReturns')}
+          style={{
+            background: subView === 'wardReturns' ? 'rgba(16, 185, 129, 0.18)' : '#1E293B',
+            color: subView === 'wardReturns' ? '#34D399' : '#94A3B8',
+            border: subView === 'wardReturns' ? '1px solid #10B981' : '1px solid #334155',
+            borderRadius: '8px',
+            padding: '8px 16px',
+            fontSize: '0.85rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}
+        >
+          <span>🔄</span> Discharge Ward Return Reconciler ({wardReturnCases.filter(w => w.reconciliationStatus === 'PENDING_WARD_SCAN').length} Pending)
+        </button>
+
+        <button
+          type="button"
           onClick={() => setSubView('batches')}
           style={{
             background: subView === 'batches' ? 'rgba(245, 158, 11, 0.15)' : '#1E293B',
@@ -1045,48 +1334,50 @@ export const InventoryManagementView: React.FC<InventoryManagementViewProps> = (
           )}
 
           {/* Search & Filter Inputs */}
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#94A3B8', marginBottom: '6px' }}>
-                Search Medications, Batches, HSN or Pack
-              </label>
-              <Input
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search generic salt, brand name, batch no, HSN (300490), pack (1x10)..."
-              />
-            </div>
+          {subView !== 'predictiveReorder' && subView !== 'wardReturns' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#94A3B8', marginBottom: '6px' }}>
+                  Search Medications, Batches, HSN or Pack
+                </label>
+                <Input
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search generic salt, brand name, batch no, HSN (300490), pack (1x10)..."
+                />
+              </div>
 
-            <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#94A3B8', marginBottom: '6px' }}>
-                {subView === 'stock' ? 'Filter by Stock Level' : 'Filter by Batch Status'}
-              </label>
-              {subView === 'stock' ? (
-                <Select
-                  value={filterStockLevel}
-                  onChange={(e) => setFilterStockLevel(e.target.value)}
-                  options={[
-                    { value: 'ALL', label: 'All Inventory Items' },
-                    { value: 'LOW', label: '⚠️ Low Stock (At/Below Reorder Minimum)' },
-                    { value: 'NEAR_EXPIRY', label: '⏳ Near Expiry (< 60 Days FEFO)' },
-                    { value: 'NORMAL', label: '✅ Adequate Stock Level' },
-                    { value: 'BLOCKED', label: '🛑 Expired / Quarantined' }
-                  ]}
-                />
-              ) : (
-                <Select
-                  value={batchStatusFilter}
-                  onChange={(e) => setBatchStatusFilter(e.target.value)}
-                  options={[
-                    { value: 'ALL', label: 'All Batches' },
-                    { value: 'ACTIVE', label: '✅ Active (Good to Dispense)' },
-                    { value: 'NEAR_EXPIRY', label: '⏳ Near Expiry (< 60 Days)' },
-                    { value: 'BLOCKED', label: '🛑 Blocked / Expired (Locked)' }
-                  ]}
-                />
-              )}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#94A3B8', marginBottom: '6px' }}>
+                  {subView === 'stock' ? 'Filter by Stock Level' : 'Filter by Batch Status'}
+                </label>
+                {subView === 'stock' ? (
+                  <Select
+                    value={filterStockLevel}
+                    onChange={(e) => setFilterStockLevel(e.target.value)}
+                    options={[
+                      { value: 'ALL', label: 'All Inventory Items' },
+                      { value: 'LOW', label: '⚠️ Low Stock (At/Below Reorder Minimum)' },
+                      { value: 'NEAR_EXPIRY', label: '⏳ Near Expiry (< 60 Days FEFO)' },
+                      { value: 'NORMAL', label: '✅ Adequate Stock Level' },
+                      { value: 'BLOCKED', label: '🛑 Expired / Quarantined' }
+                    ]}
+                  />
+                ) : (
+                  <Select
+                    value={batchStatusFilter}
+                    onChange={(e) => setBatchStatusFilter(e.target.value)}
+                    options={[
+                      { value: 'ALL', label: 'All Batches' },
+                      { value: 'ACTIVE', label: '✅ Active (Good to Dispense)' },
+                      { value: 'NEAR_EXPIRY', label: '⏳ Near Expiry (< 60 Days)' },
+                      { value: 'BLOCKED', label: '🛑 Blocked / Expired (Locked)' }
+                    ]}
+                  />
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* 1. Stock Overview Sub-view */}
@@ -1748,6 +2039,226 @@ export const InventoryManagementView: React.FC<InventoryManagementViewProps> = (
                 </TableBody>
               </Table>
             </TableContainer>
+          </div>
+        )}
+
+        {/* 5. Dynamic Consumption-Velocity Reordering Sub-view */}
+        {subView === 'predictiveReorder' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ backgroundColor: '#070C16', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '12px', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '1.4rem' }}>⚡</span>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#60A5FA' }}>
+                    Dynamic Consumption-Velocity Reordering & Predictive Stock Engine
+                  </h3>
+                </div>
+                <p style={{ margin: '4px 0 0 0', fontSize: '0.76rem', color: '#94A3B8' }}>
+                  Dynamic ROP Formula: <code>(7-Day Moving Daily Velocity × Supplier Lead Time) + Safety Buffer Stock</code>. Daily midnight cron auto-drafts POs when projected stock &lt; 3.0 days.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <Button
+                  variant={isOutbreakSurgeSimulated ? 'danger' : 'outline'}
+                  size="sm"
+                  onClick={() => setIsOutbreakSurgeSimulated(!isOutbreakSurgeSimulated)}
+                  style={{ fontSize: '0.78rem', fontWeight: 800 }}
+                >
+                  {isOutbreakSurgeSimulated ? '🦟 Dengue Surge Active (3.5x Spike)' : '🦟 Simulate Seasonal Surge (Dengue/Flu)'}
+                </Button>
+              </div>
+            </div>
+
+            {generatedPoAlert && (
+              <div style={{ backgroundColor: 'rgba(59, 130, 246, 0.2)', border: '1px solid #3B82F6', color: '#93C5FD', padding: '12px 16px', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 800 }}>
+                {generatedPoAlert}
+              </div>
+            )}
+
+            <TableContainer style={{ maxHeight: '600px', overflowY: 'auto', borderRadius: '8px', border: '1.5px solid #334155', backgroundColor: '#0A0F1D' }}>
+              <Table isStickyHeader>
+                <TableHeader isSticky style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#1E293B' }}>
+                  <TableRow style={{ borderBottom: '1.5px solid #334155' }}>
+                    <TableHead style={{ color: '#94A3B8', fontWeight: 800, fontSize: '0.78rem' }}>Medication (Brand / Generic)</TableHead>
+                    <TableHead style={{ color: '#94A3B8', fontWeight: 800, fontSize: '0.78rem' }}>Current Stock</TableHead>
+                    <TableHead style={{ color: '#94A3B8', fontWeight: 800, fontSize: '0.78rem' }}>Daily Velocity (7-Day MA)</TableHead>
+                    <TableHead style={{ color: '#94A3B8', fontWeight: 800, fontSize: '0.78rem' }}>Lead Time</TableHead>
+                    <TableHead style={{ color: '#94A3B8', fontWeight: 800, fontSize: '0.78rem' }}>Dynamic ROP</TableHead>
+                    <TableHead style={{ color: '#94A3B8', fontWeight: 800, fontSize: '0.78rem' }}>Projected Stock Days</TableHead>
+                    <TableHead style={{ color: '#94A3B8', fontWeight: 800, fontSize: '0.78rem' }}>Primary Distributor</TableHead>
+                    <TableHead style={{ color: '#94A3B8', fontWeight: 800, fontSize: '0.78rem', textAlign: 'right' }}>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {predictiveItems.map((item) => {
+                    const velocity = isOutbreakSurgeSimulated && item.isOutbreakSurge ? Math.round(item.movingAverageDailyVelocity * 2.5) : item.movingAverageDailyVelocity;
+                    const dynamicRop = Math.round(velocity * item.supplierLeadTimeDays + item.safetyBufferStock);
+                    const daysLeft = Number((item.currentPhysicalStock / velocity).toFixed(1));
+                    const isUrgent = daysLeft < 3.0;
+
+                    return (
+                      <TableRow key={item.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                        <TableCell>
+                          <div style={{ fontWeight: 800, color: '#F8FAFC' }}>{item.brandName}</div>
+                          <div style={{ fontSize: '0.72rem', color: '#94A3B8' }}>{item.genericName} • {item.dosageForm}</div>
+                        </TableCell>
+                        <TableCell style={{ fontWeight: 900, color: isUrgent ? '#F87171' : '#34D399', fontSize: '0.9rem' }}>
+                          {item.currentPhysicalStock} units
+                        </TableCell>
+                        <TableCell style={{ fontWeight: 700, color: '#CBD5E1' }}>
+                          {velocity} units/day
+                          {isOutbreakSurgeSimulated && item.isOutbreakSurge && (
+                            <span style={{ marginLeft: '4px', fontSize: '0.68rem', color: '#F59E0B', fontWeight: 800 }}>⚡ Surge</span>
+                          )}
+                        </TableCell>
+                        <TableCell style={{ color: '#CBD5E1' }}>{item.supplierLeadTimeDays} Days</TableCell>
+                        <TableCell style={{ fontWeight: 800, color: '#FBBF24' }}>
+                          {dynamicRop} units
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={isUrgent ? 'danger' : 'success'}>
+                            {daysLeft} Days {isUrgent ? '⚠️ DEPLETION RISK' : '✓ HEALTHY'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell style={{ fontSize: '0.75rem', color: '#94A3B8' }}>{item.primarySupplier}</TableCell>
+                        <TableCell style={{ textAlign: 'right' }}>
+                          <Button
+                            variant={isUrgent ? 'primary' : 'outline'}
+                            size="sm"
+                            onClick={() => handleTriggerDynamicPo({ ...item, calculatedDynamicRop: dynamicRop, projectedDaysOfStock: daysLeft, movingAverageDailyVelocity: velocity })}
+                            style={{ fontSize: '0.75rem', fontWeight: 800, backgroundColor: isUrgent ? '#3B82F6' : undefined }}
+                          >
+                            ⚡ Auto-PO Draft ({item.recommendedOrderQuantity})
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </div>
+        )}
+
+        {/* 6. Discharge Automated Ward Return Reconciler Sub-view */}
+        {subView === 'wardReturns' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ backgroundColor: '#070C16', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '12px', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '1.4rem' }}>🔄</span>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#34D399' }}>
+                    Discharge Automated Ward Return Reconciler & Refund Desk
+                  </h3>
+                </div>
+                <p style={{ margin: '4px 0 0 0', fontSize: '0.76rem', color: '#94A3B8' }}>
+                  Scans unopened sealed IV fluids, antibiotics, and injections from bedside lockers upon inpatient discharge. Generates instant refund credit notes and restocks FEFO batches.
+                </p>
+              </div>
+              <span style={{ backgroundColor: 'rgba(16, 185, 129, 0.2)', border: '1px solid #10B981', color: '#6EE7B7', padding: '4px 12px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 800 }}>
+                Discharge Gateway Linked
+              </span>
+            </div>
+
+            {reconciledCreditNoteAlert && (
+              <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.2)', border: '1px solid #10B981', color: '#6EE7B7', padding: '12px 16px', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 800 }}>
+                {reconciledCreditNoteAlert}
+              </div>
+            )}
+
+            <div className="space-y-4">
+              {wardReturnCases.map((wrc) => {
+                const isReconciled = wrc.reconciliationStatus === 'RECONCILED_REFUNDED';
+                return (
+                  <div
+                    key={wrc.id}
+                    style={{
+                      backgroundColor: '#070C16',
+                      border: isReconciled ? '1px solid rgba(16, 185, 129, 0.3)' : '1.5px solid rgba(245, 158, 11, 0.4)',
+                      borderRadius: '10px',
+                      padding: '16px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '12px'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '10px' }}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '1rem', fontWeight: 800, color: '#F8FAFC' }}>
+                            {wrc.patientName}
+                          </span>
+                          <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>({wrc.uhid})</span>
+                          <span style={{ backgroundColor: 'rgba(56, 189, 248, 0.15)', color: '#38BDF8', padding: '2px 8px', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 700 }}>
+                            {wrc.wardName} • {wrc.bedNumber}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '0.72rem', color: '#94A3B8', marginTop: '2px' }}>
+                          Discharged: {wrc.dischargedAt} • Total Inpatient Dispenses: {wrc.dispensedItemsCount} items
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        {isReconciled ? (
+                          <span style={{ backgroundColor: 'rgba(16, 185, 129, 0.2)', border: '1px solid #10B981', color: '#34D399', padding: '4px 10px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 800 }}>
+                            ✓ {wrc.creditNoteNumber} Issued
+                          </span>
+                        ) : (
+                          <span style={{ backgroundColor: 'rgba(245, 158, 11, 0.2)', border: '1px solid #F59E0B', color: '#FBBF24', padding: '4px 10px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 800 }}>
+                            ⏳ Pending Ward Return Scan
+                          </span>
+                        )}
+
+                        {!isReconciled && (
+                          <Button
+                            variant="success"
+                            size="sm"
+                            onClick={() => handleReconcileWardReturn(wrc)}
+                            style={{ fontSize: '0.75rem', fontWeight: 800 }}
+                          >
+                            ⚡ Reconcile Return & Issue Refund (₹{wrc.totalRefundAmount.toFixed(2)})
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+
+                    <TableContainer style={{ borderRadius: '6px', border: '1px solid #1E293B', backgroundColor: '#0A0F1D' }}>
+                      <Table>
+                        <TableHeader>
+                          <TableRow style={{ borderBottom: '1px solid #1E293B' }}>
+                            <TableHead style={{ color: '#94A3B8', fontSize: '0.75rem' }}>Unused Medicine</TableHead>
+                            <TableHead style={{ color: '#94A3B8', fontSize: '0.75rem' }}>Batch #</TableHead>
+                            <TableHead style={{ color: '#94A3B8', fontSize: '0.75rem' }}>Dispensed / Returned</TableHead>
+                            <TableHead style={{ color: '#94A3B8', fontSize: '0.75rem' }}>Seal Status</TableHead>
+                            <TableHead style={{ color: '#94A3B8', fontSize: '0.75rem', textAlign: 'right' }}>Refund Amount</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {wrc.returnableItems.map((item) => (
+                            <TableRow key={item.itemId} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                              <TableCell style={{ color: '#F8FAFC', fontWeight: 700, fontSize: '0.8rem' }}>{item.medicationName}</TableCell>
+                              <TableCell style={{ fontFamily: 'monospace', color: '#38BDF8', fontSize: '0.75rem' }}>{item.batchNumber}</TableCell>
+                              <TableCell style={{ color: '#CBD5E1', fontSize: '0.75rem' }}>
+                                Dispensed: {item.dispensedQty} ➔ <strong style={{ color: '#34D399' }}>Returned: {item.unopenedReturnQty}</strong>
+                              </TableCell>
+                              <TableCell>
+                                <span style={{ color: '#34D399', fontSize: '0.72rem', fontWeight: 700 }}>
+                                  {item.isSealIntact ? '✓ Seal Intact (Restockable)' : 'Damaged / Discard'}
+                                </span>
+                              </TableCell>
+                              <TableCell style={{ textAlign: 'right', fontWeight: 800, color: '#FBBF24', fontSize: '0.8rem' }}>
+                                ₹{item.calculatedRefundAmount.toFixed(2)}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </Card>

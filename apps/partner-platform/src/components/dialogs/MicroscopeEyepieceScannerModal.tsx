@@ -257,7 +257,7 @@ export const MicroscopeEyepieceScannerModal: React.FC<MicroscopeEyepieceScannerM
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 900, color: '#F8FAFC' }}>
-                  Microscope Eyepiece Phone Scan (Pathology AI)
+                  Digital Pathology / WSI Viewer (Blood Smear Morphology)
                 </h3>
                 <span
                   style={{
@@ -274,7 +274,7 @@ export const MicroscopeEyepieceScannerModal: React.FC<MicroscopeEyepieceScannerM
                 </span>
               </div>
               <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', color: '#94A3B8' }}>
-                Lab technician mounts phone camera onto microscope eyepiece. Instant AI recognition of Malaria, Sickle Cell, and Atypical Blasts with automated counts.
+                Whole Slide Imaging (WSI) &amp; peripheral blood smear examination. Microscopic reticle analysis for Leishman stain, Malaria parasites, Sickle Cells, and blast morphology.
               </p>
             </div>
           </div>

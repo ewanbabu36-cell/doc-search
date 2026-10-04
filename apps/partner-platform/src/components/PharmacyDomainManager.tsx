@@ -398,6 +398,17 @@ export const PharmacyDomainManager: React.FC<PharmacyDomainManagerProps> = ({
       justification: `Wholesale GRN Inward: ${invoice.distributorName} (${invoice.invoiceNumber})`
     });
     await loadData();
+    hospitalEventBus.publish(
+      'GRN_INWARD_AUTO_PARSED',
+      'PharmacyDomainManager',
+      {
+        invoiceNumber: invoice.invoiceNumber,
+        distributor: invoice.distributorName,
+        itemCount: invoice.items.length,
+        totalAmount: invoice.totalBilledAmount
+      },
+      `Wholesale Invoice ${invoice.invoiceNumber} (${invoice.distributorName}) auto-parsed into GRN (${invoice.items.length} items)`
+    );
   };
 
   const handleVerifyPrescription = async (req: VerifyPrescriptionRequest) => {
