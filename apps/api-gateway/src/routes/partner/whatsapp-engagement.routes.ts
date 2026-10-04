@@ -18,13 +18,22 @@ export const whatsappEngagementRoutes: FastifyPluginAsync = async (app) => {
     await requireModuleCommercialAccess('WHATSAPP_AUTOMATION')(request, reply);
   });
 
-  // 1. Overview Metrics
+  // 1. Overview Metrics & Gateway Status
   app.get(
     '/api/v1/partner/whatsapp/overview',
     { preHandler: [authenticate] },
     async (request, reply) => {
       const { tenantId } = request.session;
       const data = await service.getOverviewMetrics(tenantId);
+      return reply.send({ success: true, data });
+    }
+  );
+
+  app.get(
+    '/api/v1/partner/whatsapp/gateway-status',
+    { preHandler: [authenticate] },
+    async (_request, reply) => {
+      const data = service.getGatewayStatus();
       return reply.send({ success: true, data });
     }
   );

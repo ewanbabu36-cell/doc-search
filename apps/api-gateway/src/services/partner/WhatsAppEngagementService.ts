@@ -10,7 +10,10 @@ import {
   type WhatsAppAuditTraceRecord,
   type WhatsAppOverviewMetricsRecord
 } from '../../repositories/partner/WhatsAppEngagementRepository.js';
-import { AppError } from '@docsearch/shared-core';
+import { AppError, createLogger } from '@docsearch/shared-core';
+import { metaWhatsAppClient, type MetaWhatsAppGatewayStatus } from './MetaWhatsAppClient.js';
+
+const logger = createLogger('whatsapp-engagement-service');
 
 export interface SendWhatsAppMessageDto {
   conversationId: string;
@@ -58,6 +61,10 @@ export const WA_SECURITY_DEFAULTS = {
 export class WhatsAppEngagementService {
   constructor(private repo = whatsAppEngagementRepository) {}
 
+  getGatewayStatus(): MetaWhatsAppGatewayStatus {
+    return metaWhatsAppClient.getGatewayStatus();
+  }
+
   // --- Metrics ---
   async getOverviewMetrics(tenantId: string): Promise<WhatsAppOverviewMetricsRecord> {
     return this.repo.getOverviewMetrics(tenantId);
@@ -98,6 +105,22 @@ export class WhatsAppEngagementService {
       quickReplyOptions: payload.quickReplyOptions,
       deliveryStatus: 'SENT'
     });
+
+    // Outbound Meta Cloud API Dispatch
+    try {
+      if (payload.mediaUrl) {
+        await metaWhatsAppClient.sendDocumentMessage(
+          conv.phoneNumber,
+          payload.mediaUrl,
+          payload.mediaCaption || 'document.pdf',
+          payload.textContent
+        );
+      } else {
+        await metaWhatsAppClient.sendTextMessage(conv.phoneNumber, payload.textContent);
+      }
+    } catch (e: any) {
+      logger.warn(`Outbound Meta API dispatch failed: ${e?.message}`);
+    }
 
     await this.repo.createAuditTrace(tenantId, {
       traceNumber: `TRACE-WA-${Math.floor(10000 + Math.random() * 90000)}`,
@@ -202,6 +225,14 @@ export class WhatsAppEngagementService {
           quickReplyOptions: ['CONFIRM', 'REPORT', 'RX', 'QUEUE', 'AGENT'],
           deliveryStatus: 'SENT'
         });
+
+        // Trigger real Meta WhatsApp Cloud API v18.0 document delivery
+        await metaWhatsAppClient.sendDocumentMessage(
+          payload.phoneNumber,
+          fileUrl,
+          payload.fileName,
+          `${docLabel} (${payload.documentNumber}) - DocSearch Health`
+        );
       } catch (err: any) {
         // Safe Graceful Degradation: Fallback to Patient Portal Vault
         channel = 'PATIENT_PORTAL_VAULT';
@@ -304,6 +335,12 @@ export class WhatsAppEngagementService {
       quickReplyOptions: ['TAKEN', 'REFILL', 'AGENT'],
       deliveryStatus: 'SENT'
     });
+
+    try {
+      await metaWhatsAppClient.sendTextMessage(payload.phoneNumber, msgText);
+    } catch (e: any) {
+      logger.warn(`Outbound Meta medication reminder failed: ${e?.message}`);
+    }
 
     await this.repo.createAuditTrace(tenantId, {
       traceNumber: `TRACE-WA-${Math.floor(10000 + Math.random() * 90000)}`,

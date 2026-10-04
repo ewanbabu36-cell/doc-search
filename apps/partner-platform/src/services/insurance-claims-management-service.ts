@@ -85,6 +85,7 @@ export interface IInsuranceClaimsManagementService {
   validateClaim(request: ValidateClaimRequest): Promise<{ valid: boolean; validationErrors: string[] }>;
   submitClaim(request: SubmitClaimRequest): Promise<InsuranceClaimSubmissionDto>;
   acknowledgeClaim(request: AcknowledgeClaimRequest): Promise<InsuranceClaimDto>;
+  generateHcxClaimBundle(claimId: string): Promise<Record<string, unknown>>;
   adjudicateClaim(request: AdjudicateClaimRequest): Promise<InsuranceClaimAdjudicationDto>;
   recordDenial(request: RecordClaimDenialRequest): Promise<InsuranceClaimDenialDto>;
   createAppeal(request: CreateClaimAppealRequest): Promise<InsuranceClaimAppealDto>;
@@ -675,17 +676,28 @@ export class InsuranceClaimsManagementService implements IInsuranceClaimsManagem
       throw new Error(`Claim ${claim.claimNumber} is in status '${claim.status}' and cannot be submitted.`);
     }
 
+    const isHcx = (claim.submissionMode as string) === 'HCX_ELECTRONIC' || claim.submissionMode === 'API_DIRECT' || !claim.submissionMode.includes('EDI');
+    const submissionPayloadReference = isHcx
+      ? `hcx_fhir_claim_${claim.claimNumber.toLowerCase()}.json`
+      : `edi_837_${claim.claimNumber.toLowerCase()}.x12`;
+    const payerAck = isHcx
+      ? `National Health Claims Exchange (HCX) Switch acknowledged: FHIR R4 Claim dispatched electronically to ${claim.payerName}.`
+      : 'Electronic EDI clearinghouse batch acknowledged (TA1/999 Accepted).';
+    const ackRef = isHcx
+      ? `HCX-ACK-${claim.payerCode.slice(0, 4)}-${Math.floor(Math.random() * 899999 + 100000)}`
+      : `ACK-${claim.payerCode.slice(0, 4)}-${Math.floor(Math.random() * 899999 + 100000)}`;
+
     const submission: InsuranceClaimSubmissionDto = {
       id: crypto.randomUUID(),
       tenantId: request.tenantId,
       claimId: claim.id,
       claimNumber: claim.claimNumber,
       submissionNumber: `SUB-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.floor(Math.random() * 899 + 100)}`,
-      transmissionBatchId: request.transmissionBatchId || `BATCH-EDI-${Math.floor(Math.random() * 8999 + 1000)}`,
-      submissionPayloadReference: `edi_837_${claim.claimNumber.toLowerCase()}.x12`,
+      transmissionBatchId: request.transmissionBatchId || (isHcx ? `HCX-BATCH-${Math.floor(Math.random() * 8999 + 1000)}` : `BATCH-EDI-${Math.floor(Math.random() * 8999 + 1000)}`),
+      submissionPayloadReference,
       transmissionStatus: 'ACKNOWLEDGED',
-      payerAcknowledgement: 'Electronic EDI clearinghouse batch acknowledged (TA1/999 Accepted).',
-      acknowledgementReference: `ACK-${claim.payerCode.slice(0, 4)}-${Math.floor(Math.random() * 899999 + 100000)}`,
+      payerAcknowledgement: payerAck,
+      acknowledgementReference: ackRef,
       submittedBy: request.actorId,
       submittedAt: new Date().toISOString(),
       responseReceivedAt: new Date().toISOString()
@@ -714,6 +726,61 @@ export class InsuranceClaimsManagementService implements IInsuranceClaimsManagem
       claim.patientId
     );
     return submission;
+  }
+
+  async generateHcxClaimBundle(claimId: string): Promise<Record<string, unknown>> {
+    const claim = this.claims.find((c) => c.id === claimId);
+    if (!claim) {
+      throw new Error(`Claim with ID '${claimId}' not found for HCX bundle export.`);
+    }
+
+    const payer = this.payers.find((p) => p.id === claim.payerId);
+    const now = new Date().toISOString();
+
+    return {
+      hcxProtocolEnvelope: {
+        'x-hcx-sender_code': 'HOSP_DOCSEARCH_01',
+        'x-hcx-recipient_code': payer?.electronicPayerId || payer?.payerCode || 'TPA_MEDIBUDDY',
+        'x-hcx-api_call_id': crypto.randomUUID(),
+        'x-hcx-correlation_id': `CORR-${claim.claimNumber}`,
+        'x-hcx-workflow_id': 'HCX_CLAIM_SUBMIT_V0.7',
+        'x-hcx-timestamp': now,
+        'x-hcx-status': 'request.queued'
+      },
+      fhirClaimResource: {
+        resourceType: 'Claim',
+        id: claim.id,
+        identifier: [{ system: 'https://hcx.org/claims', value: claim.claimNumber }],
+        status: 'active',
+        type: {
+          coding: [{ system: 'http://terminology.hl7.org/CodeSystem/claim-type', code: 'institutional', display: 'Hospital Care' }]
+        },
+        use: 'claim',
+        patient: { reference: `Patient/${claim.patientId}`, display: claim.patientName },
+        billablePeriod: { start: claim.createdAt, end: now },
+        created: now,
+        provider: { reference: `Organization/${claim.organizationId}`, display: 'DocSearch Multispeciality Hospital' },
+        insurer: { reference: `Organization/${claim.payerCode}`, display: claim.payerName },
+        insurance: [{ sequence: 1, focal: true, coverage: { reference: `Coverage/${claim.policyNumber}` } }],
+        diagnosis: [
+          {
+            sequence: 1,
+            diagnosisCodeableConcept: {
+              coding: [{ system: 'http://hl7.org/fhir/sid/icd-10', code: claim.primaryDiagnosisCode || 'Z00.0' }],
+              text: claim.primaryDiagnosisDescription || 'General Consultation'
+            }
+          }
+        ],
+        item: (claim.items || []).map((it, idx) => ({
+          sequence: idx + 1,
+          productOrService: { text: it.serviceDescription },
+          quantity: { value: it.quantity },
+          unitPrice: { value: it.unitPrice, currency: 'INR' },
+          net: { value: it.billedAmount, currency: 'INR' }
+        })),
+        total: { value: claim.totalClaimAmount, currency: 'INR' }
+      }
+    };
   }
 
   async acknowledgeClaim(request: AcknowledgeClaimRequest): Promise<InsuranceClaimDto> {

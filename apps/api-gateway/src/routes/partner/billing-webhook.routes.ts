@@ -72,4 +72,49 @@ export const billingWebhookRoutes: FastifyPluginAsync = async (fastify) => {
       }
     }
   );
+
+  // 3. Dynamic UPI Soundbox Instant Ingestion Webhook (Paytm, PhonePe, Razorpay POS)
+  fastify.post(
+    '/api/v1/partner/billing/webhooks/upi-soundbox',
+    async (request, reply) => {
+      const payload = (request.body || {}) as Record<string, unknown>;
+
+      const txnRef = String(payload['txnRef'] || payload['transactionReference'] || payload['orderId'] || '');
+      const amount = Number(payload['amount'] || payload['paymentAmount'] || 0);
+      const status = String(payload['status'] || payload['paymentStatus'] || 'SUCCESS').toUpperCase() === 'SUCCESS' ? 'SUCCESS' : 'FAILURE';
+      const payerVpa = payload['payerVpa'] ? String(payload['payerVpa']) : undefined;
+      const soundboxDeviceId = payload['deviceId'] || payload['soundboxDeviceId'] ? String(payload['deviceId'] || payload['soundboxDeviceId']) : undefined;
+
+      if (!txnRef) {
+        throw new AppError({
+          message: 'Missing txnRef in UPI soundbox webhook payload.',
+          code: ErrorCode.VALIDATION_ERROR,
+          statusCode: 400
+        });
+      }
+
+      try {
+        const result = await billingManagementService.processSoundboxWebhook({
+          txnRef,
+          amount,
+          status,
+          payerVpa,
+          soundboxDeviceId
+        });
+
+        return reply.status(200).send({
+          status: 'ok',
+          result
+        });
+      } catch (err) {
+        if (err instanceof AppError) throw err;
+        logger.error('Error processing UPI Soundbox webhook', err);
+        throw new AppError({
+          message: 'UPI Soundbox webhook processing failed',
+          code: ErrorCode.INTERNAL_SERVER_ERROR,
+          statusCode: 500
+        });
+      }
+    }
+  );
 };

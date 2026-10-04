@@ -25,6 +25,7 @@ import {
 } from '@docsearch/database';
 import { AppError, ErrorCode, createLogger } from '@docsearch/shared-core';
 import crypto from 'node:crypto';
+import { env } from '../../config/env.js';
 import { licenseService } from '../company/LicenseService.js';
 import { cashierShiftService } from './CashierShiftService.js';
 
@@ -824,6 +825,176 @@ export class BillingManagementService {
         durationYears: snapshot.billingDurationYears
       };
     });
+  }
+
+  // =========================================================================
+  // Dynamic UPI Soundbox & Instant Reconciliation Engine
+  // =========================================================================
+  private readonly upiTransactions = new Map<
+    string,
+    {
+      txnRef: string;
+      invoiceId: string;
+      invoiceNumber: string;
+      patientId?: string | undefined;
+      patientName?: string | undefined;
+      amount: number;
+      currency: 'INR';
+      vpa: string;
+      merchantName: string;
+      upiUri: string;
+      qrPayloadBase64: string;
+      status: 'PENDING' | 'PAID_CONFIRMED' | 'FAILED';
+      tenantId: string;
+      branchId?: string | undefined;
+      createdAt: string;
+      expiresAt: string;
+      settledAt?: string | undefined;
+    }
+  >();
+
+  async generateDynamicUpiQr(
+    session: SessionContext,
+    input: { invoiceId: string; amount?: number; note?: string }
+  ) {
+    const invoice = await this.getInvoiceById(session, input.invoiceId);
+    if (!invoice) {
+      throw AppError.notFound(`Invoice ${input.invoiceId} not found`);
+    }
+
+    const payAmount = input.amount ?? Number(invoice.balanceDue || invoice.totalAmount);
+    if (payAmount <= 0) {
+      throw AppError.badRequest('Invoice has zero balance due');
+    }
+
+    const txnRef = `UPI-${Date.now().toString(36).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const vpa = env.UPI_VPA || 'docsearch.hospital@icici';
+    const merchantName = env.UPI_MERCHANT_NAME || 'DocSearch Multispeciality Hospital';
+    const invoiceNumber = invoice.invoiceNumber || 'INV-001';
+    const note = input.note || `Bill ${invoiceNumber}`;
+
+    // NPCI Compliant UPI Deep Link
+    const upiUri = `upi://pay?pa=${encodeURIComponent(vpa)}&pn=${encodeURIComponent(merchantName)}&am=${payAmount.toFixed(2)}&cu=INR&tr=${txnRef}&tn=${encodeURIComponent(note)}`;
+    const qrPayloadBase64 = Buffer.from(upiUri).toString('base64');
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + 15 * 60 * 1000).toISOString(); // 15 mins expiry
+
+    const record = {
+      txnRef,
+      invoiceId: input.invoiceId,
+      invoiceNumber,
+      patientId: (invoice as any).patientId,
+      patientName: (invoice as any).patientName,
+      amount: payAmount,
+      currency: 'INR' as const,
+      vpa,
+      merchantName,
+      upiUri,
+      qrPayloadBase64,
+      status: 'PENDING' as const,
+      tenantId: session.tenantId,
+      branchId: session.branchId,
+      createdAt: now.toISOString(),
+      expiresAt
+    };
+
+    this.upiTransactions.set(txnRef, record);
+
+    logger.info(`Generated Dynamic UPI QR for Invoice ${invoiceNumber} (₹${payAmount}, Ref: ${txnRef})`);
+
+    return record;
+  }
+
+  getUpiPaymentStatus(txnRef: string) {
+    const txn = this.upiTransactions.get(txnRef);
+    if (!txn) {
+      return {
+        txnRef,
+        status: 'UNKNOWN_OR_EXPIRED',
+        message: 'No active UPI transaction found for reference'
+      };
+    }
+    return txn;
+  }
+
+  async processSoundboxWebhook(payload: {
+    txnRef: string;
+    amount: number;
+    payerVpa?: string | undefined;
+    status: 'SUCCESS' | 'FAILURE';
+    soundboxDeviceId?: string | undefined;
+  }) {
+    const txn = this.upiTransactions.get(payload.txnRef);
+    if (!txn) {
+      logger.warn(`Soundbox Webhook: Unknown transaction reference ${payload.txnRef}`);
+      return {
+        status: 'IGNORED',
+        message: 'Transaction reference not found in active UPI cache'
+      };
+    }
+
+    if (payload.status !== 'SUCCESS') {
+      txn.status = 'FAILED';
+      return {
+        status: 'FAILED',
+        txnRef: payload.txnRef,
+        message: 'Payment notification indicated non-success status'
+      };
+    }
+
+    if (txn.status === 'PAID_CONFIRMED') {
+      return {
+        status: 'ALREADY_SETTLED',
+        txnRef: payload.txnRef,
+        settledAt: txn.settledAt
+      };
+    }
+
+    // Auto-reconcile and settle the invoice atomically
+    const systemSession: SessionContext = {
+      sessionId: `session_soundbox_${Date.now()}`,
+      userId: 'usr_sys_upi_soundbox',
+      actorEmail: 'soundbox.webhook@docsearch.internal',
+      roles: ['SUPER_ADMIN'] as RoleType[],
+      permissions: ['*'],
+      dataScope: 'tenant',
+      isSuperAdmin: true,
+      tenantId: txn.tenantId,
+      organizationId: txn.tenantId,
+      branchId: txn.branchId || '00000000-0000-4000-8000-000000000003'
+    };
+
+    try {
+      await this.collectPayment(
+        {
+          invoiceId: txn.invoiceId,
+          patientId: txn.patientId || 'pat_upi_direct',
+          amount: payload.amount || txn.amount,
+          paymentMode: 'UPI',
+          transactionReference: payload.txnRef
+        },
+        systemSession
+      );
+
+      txn.status = 'PAID_CONFIRMED';
+      txn.settledAt = new Date().toISOString();
+
+      const announcement = `Rupees ${payload.amount || txn.amount} received successfully for invoice ${txn.invoiceNumber} on DocSearch UPI`;
+      logger.info(`🔊 SOUNDBOX AUDIO BROADCAST: "${announcement}"`);
+
+      return {
+        status: 'PAID_CONFIRMED',
+        txnRef: payload.txnRef,
+        invoiceId: txn.invoiceId,
+        invoiceNumber: txn.invoiceNumber,
+        amount: payload.amount || txn.amount,
+        soundboxVoicePrompt: announcement,
+        settledAt: txn.settledAt
+      };
+    } catch (err: any) {
+      logger.error(`Soundbox instant settlement failed for ${payload.txnRef}`, err);
+      throw AppError.internal(`Soundbox settlement error: ${err?.message || err}`);
+    }
   }
 }
 

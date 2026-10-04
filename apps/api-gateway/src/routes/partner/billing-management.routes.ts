@@ -295,6 +295,40 @@ export const billingManagementRoutes: FastifyPluginAsync = async (fastify) => {
     }
   );
 
+  // 4b. Generate Dynamic UPI Payment QR Code
+  fastify.post(
+    '/api/v1/partner/billing/payments/dynamic-upi-qr',
+    {
+      preHandler: [authenticate, requirePermission('billing:invoices', 'read')]
+    },
+    async (request, reply) => {
+      const body = (request.body || {}) as { invoiceId: string; amount?: number; note?: string };
+      if (!body.invoiceId) {
+        throw new AppError({
+          message: 'invoiceId is required to generate dynamic UPI QR',
+          code: ErrorCode.VALIDATION_ERROR,
+          statusCode: 400
+        });
+      }
+      const data = await billingManagementService.generateDynamicUpiQr(request.session, body);
+      reply.status(201);
+      return { success: true, data };
+    }
+  );
+
+  // 4c. Poll or Check Real-Time Dynamic UPI Payment Status
+  fastify.get(
+    '/api/v1/partner/billing/payments/upi-status/:txnRef',
+    {
+      preHandler: [authenticate, requirePermission('billing:invoices', 'read')]
+    },
+    async (request, reply) => {
+      const { txnRef } = request.params as { txnRef: string };
+      const data = billingManagementService.getUpiPaymentStatus(txnRef);
+      return reply.send({ success: true, data });
+    }
+  );
+
   // 5. Void / Cancel Invoice (with strict supervisor override policy)
   const handleVoidInvoice = async (request: any, reply: any) => {
     const { id } = request.params as { id: string };

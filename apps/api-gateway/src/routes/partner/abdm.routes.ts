@@ -27,6 +27,15 @@ export const abdmRoutes: FastifyPluginAsync = async (app) => {
     }
   );
 
+  app.get(
+    '/api/v1/partner/abdm/gateway-status',
+    { preHandler: [authenticate] },
+    async (_request, reply) => {
+      const data = await service.getGatewayStatus();
+      return reply.send({ success: true, data });
+    }
+  );
+
   // --------------------------------------------------------------------------
   // Milestone 1: ABHA Registration & Verification
   // --------------------------------------------------------------------------

@@ -32,6 +32,23 @@ const EnvSchema = z.object({
   ABDM_HIP_ID: z.string().default('IN0710002981'),
   ABDM_HIU_ID: z.string().default('HIU-001'),
 
+  // Meta WhatsApp Cloud API (v18.0) Configuration
+  META_WA_API_URL: z.string().url().default('https://graph.facebook.com/v18.0'),
+  META_WA_ACCESS_TOKEN: z.string().optional(),
+  META_WA_PHONE_NUMBER_ID: z.string().optional(),
+  META_WA_BUSINESS_ACCOUNT_ID: z.string().optional(),
+  META_WA_WEBHOOK_VERIFY_TOKEN: z.string().default('docsearch_wa_webhook_verify_token_prod'),
+
+  // IRDAI HCX (National Health Claims Exchange) Gateway Configuration
+  HCX_BASE_URL: z.string().url().default('https://hcx-mock-service.swasth.app/v0.7'),
+  HCX_PARTICIPANT_CODE: z.string().default('HOSP_DOCSEARCH_01'),
+  HCX_AUTH_TOKEN: z.string().optional(),
+
+  // Dynamic UPI & Soundbox Gateway Configuration
+  UPI_VPA: z.string().default('docsearch.hospital@icici'),
+  UPI_MERCHANT_NAME: z.string().default('DocSearch Multispeciality Hospital'),
+  UPI_SOUNDBOX_WEBHOOK_SECRET: z.string().default('docsearch_soundbox_secret_default'),
+
   // Speech-to-Text Configuration
   STT_PROVIDER: z.enum([
     'NONE',
@@ -132,6 +149,24 @@ export function getExternalReadinessReport() {
     hardware: {
       status: env.HARDWARE_BRIDGE_ENABLED ? 'BRIDGE_ACTIVE_AWAITING_PHYSICAL_USB' : 'DISABLED',
       zebraDefaultDpi: env.ZEBRA_PRINTER_DEFAULT_DPI
+    },
+    whatsapp: {
+      status: env.META_WA_ACCESS_TOKEN && env.META_WA_PHONE_NUMBER_ID ? 'CONFIGURED' : 'SANDBOX_SIMULATION_ACTIVE',
+      apiUrl: env.META_WA_API_URL,
+      hasAccessToken: Boolean(env.META_WA_ACCESS_TOKEN),
+      phoneNumberId: env.META_WA_PHONE_NUMBER_ID || 'UNCONFIGURED (FALLBACK ACTIVE)'
+    },
+    hcx: {
+      status: env.HCX_AUTH_TOKEN ? 'CONFIGURED' : 'SANDBOX_SIMULATION_ACTIVE',
+      baseUrl: env.HCX_BASE_URL,
+      participantCode: env.HCX_PARTICIPANT_CODE,
+      hasAuthToken: Boolean(env.HCX_AUTH_TOKEN)
+    },
+    upi: {
+      status: 'ACTIVE',
+      vpa: env.UPI_VPA,
+      merchantName: env.UPI_MERCHANT_NAME,
+      soundboxConfigured: Boolean(env.UPI_SOUNDBOX_WEBHOOK_SECRET)
     }
   };
 }
