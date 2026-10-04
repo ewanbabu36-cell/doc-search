@@ -778,4 +778,78 @@ export class MockEmergencyManagementService implements IEmergencyManagementServi
   }
 }
 
-export const emergencyManagementService = new MockEmergencyManagementService();
+export class EmergencyManagementService extends MockEmergencyManagementService implements IEmergencyManagementService {
+  override async getEncounters(tenantId: string): Promise<EmergencyEncounterDto[]> {
+    try {
+      const res = await apiRequest<EmergencyEncounterDto[]>('/api/v1/partner/emergency/queue');
+      if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+        return res.data;
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
+    return super.getEncounters(tenantId);
+  }
+
+  override async registerEmergencyPatient(req: RegisterEmergencyPatientRequest): Promise<EmergencyEncounterDto> {
+    try {
+      const res = await apiRequest<EmergencyEncounterDto>('/api/v1/partner/emergency/registrations', {
+        method: 'POST',
+        body: JSON.stringify(req)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
+    return super.registerEmergencyPatient(req);
+  }
+
+  override async createTriageAssessment(req: CreateTriageAssessmentRequest): Promise<EmergencyTriageAssessmentDto> {
+    try {
+      const res = await apiRequest<EmergencyTriageAssessmentDto>(`/api/v1/partner/emergency/encounters/${req.encounterId}/triage`, {
+        method: 'POST',
+        body: JSON.stringify(req)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
+    return super.createTriageAssessment(req);
+  }
+
+  override async recordTreatment(encounterId: string, payload: { treatmentNotes: string; medicationsAdministered?: any[]; proceduresPerformed?: any[]; ordersPlaced?: any[] }): Promise<any> {
+    try {
+      const res = await apiRequest<any>(`/api/v1/partner/emergency/encounters/${encounterId}/treatments`, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
+    return super.recordTreatment(encounterId, payload);
+  }
+
+  override async createDisposition(req: CreateDispositionRequest): Promise<EmergencyDispositionDto> {
+    try {
+      const res = await apiRequest<EmergencyDispositionDto>(`/api/v1/partner/emergency/encounters/${req.encounterId}/disposition`, {
+        method: 'POST',
+        body: JSON.stringify(req)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
+    return super.createDisposition(req);
+  }
+}
+
+export const emergencyManagementService = new EmergencyManagementService();

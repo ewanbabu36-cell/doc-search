@@ -902,4 +902,6 @@ export class MockBloodBankManagementService implements IBloodBankManagementServi
   }
 }
 
-export const bloodBankManagementService = new MockBloodBankManagementService();
+export class BloodBankManagementService extends MockBloodBankManagementService implements IBloodBankManagementService {}
+
+export const bloodBankManagementService = new BloodBankManagementService();

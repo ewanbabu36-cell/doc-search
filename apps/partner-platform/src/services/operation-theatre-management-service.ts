@@ -1155,4 +1155,6 @@ export class MockOperationTheatreManagementService implements IOperationTheatreM
   }
 }
 
-export const operationTheatreManagementService = new MockOperationTheatreManagementService();
+export class OperationTheatreManagementService extends MockOperationTheatreManagementService implements IOperationTheatreManagementService {}
+
+export const operationTheatreManagementService = new OperationTheatreManagementService();

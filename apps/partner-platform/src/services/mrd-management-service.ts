@@ -561,4 +561,6 @@ export class MockMrdManagementService implements IMrdManagementService {
   }
 }
 
-export const mrdManagementService = new MockMrdManagementService();
+export class MRDManagementService extends MockMrdManagementService implements IMrdManagementService {}
+
+export const mrdManagementService = new MRDManagementService();
