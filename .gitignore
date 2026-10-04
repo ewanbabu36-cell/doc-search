@@ -59,4 +59,6 @@ temp_chrome_profile/
 data/monorepo-typecheck-results.json
 data/printers/
 data/analyzers/
-data/pacs-storage/
+data/pacs-storage/
+data/backups/
+data/dsc-vault/

@@ -177,6 +177,17 @@ async function main() {
   };
   spawnService(pacsServer);
 
+  // Step 1.7: Start Automated Encrypted Database Backup Cron (Every 6h)
+  const backupCron = {
+    name: 'Backup Daemon',
+    port: 5432,
+    cwd: rootDir,
+    executable: process.execPath,
+    args: ['scripts/automated-encrypted-backup-cron.mjs'],
+    color: '\x1b[33m'
+  };
+  spawnService(backupCron);
+
   // Step 2: Start frontend services with dual-stack host flag
   const frontends = [
     {

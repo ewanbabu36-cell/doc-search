@@ -70,6 +70,7 @@ import { partnerAiIntelligenceRoutes } from './routes/partner/ai-intelligence.ro
 import { ewanRoutes } from './routes/ewan.routes.js';
 import { publicKioskRoutes } from './routes/partner/public-kiosk.routes.js';
 import { catalogSyncRoutes } from './routes/partner/catalog-sync.routes.js';
+import { distributedLockRoutes } from './routes/locks.routes.js';
 import { AppError } from '@docsearch/shared-core';
 import { ensureDatabaseReady, setTestDatabase } from '@docsearch/database';
 
@@ -279,6 +280,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   // 3. Register Health & Readiness Routes
   await app.register(healthRoutes);
   await app.register(authRoutes);
+  await app.register(distributedLockRoutes);
 
   // 4. Register All 15 Wave 3 Company Platform Domain Routes
   await app.register(executiveRoutes);

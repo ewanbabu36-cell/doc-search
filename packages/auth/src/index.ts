@@ -7,4 +7,5 @@ export * from './rbac-evaluator.js';
 export * from './scope-guard.js';
 export * from './audit-helper.js';
 export * from './redis-session-store.js';
+export * from './redis-distributed-lock.js';
 export * from './webhook-signature-verifier.js';
