@@ -623,6 +623,7 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess }) => {
   const handleQuickDemoLogin = (tier: 'FREE' | 'PRO') => {
     const isFree = tier === 'FREE';
     const planTierName = isFree ? HOSPITAL_FREE_TIER_NAME : HOSPITAL_PRO_TIER_NAME;
+    const resolvedTenantId = (typeof window !== 'undefined' && localStorage.getItem('docsearch_partner_tenant')) || '1e72b864-920a-c07d-98c5-183d3eb50428';
     const demoUser: HospitalStaffUser = {
       id: isFree ? 'usr_demo_free_hospital' : 'usr_demo_pro_hospital',
       category: 'HEALTHCARE',
@@ -632,7 +633,7 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess }) => {
       roleTitle: isFree ? 'Hospital Director (OPD Foundation)' : 'Medical Superintendent & Director',
       department: isFree ? 'Hospital Administration (Free OPD)' : 'Hospital Administration & Inpatient Governance',
       tenantName: isFree ? 'CarePlus Community Hospital (Free OPD)' : 'Ewan Multi-Specialty Hospital',
-      tenantId: '11111111-1111-4111-8111-111111111111',
+      tenantId: resolvedTenantId,
       organizationType: 'HOSPITAL',
       allowedWorkspaces: ['HOSPITAL', 'CLINIC', 'PHARMACY', 'PATHOLOGY', 'DIAGNOSTIC_CENTRE', 'ENTERPRISE_COMMAND'],
       defaultModule: isFree ? 'patient-registration' : 'inpatient-management',
@@ -658,6 +659,7 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess }) => {
   // 1-Click Role-Isolated Persona Login (Strict Access Separation)
   const handleRolePersonaLogin = (persona: 'DOCTOR' | 'PHARMACIST' | 'LAB_TECH' | 'NURSE' | 'FRONT_DESK' | 'DIRECTOR') => {
     let personaUser: HospitalStaffUser;
+    const resolvedTenantId = (typeof window !== 'undefined' && localStorage.getItem('docsearch_partner_tenant')) || '1e72b864-920a-c07d-98c5-183d3eb50428';
 
     switch (persona) {
       case 'DOCTOR':
@@ -670,7 +672,7 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess }) => {
           roleTitle: 'Consultant Physician & OPD Specialist',
           department: 'Clinical Consultation & OPD',
           tenantName: 'Ewan Multi-Specialty Hospital',
-          tenantId: '11111111-1111-4111-8111-111111111111',
+          tenantId: resolvedTenantId,
           organizationType: 'HOSPITAL',
           allowedWorkspaces: ['HOSPITAL', 'CLINIC'],
           defaultModule: 'clinical-consultation',
@@ -693,7 +695,7 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess }) => {
           roleTitle: 'Chief Pharmacist & Chemist In-Charge',
           department: 'Hospital Pharmacy & Dispensing',
           tenantName: 'CarePlus Pharmacy & Surgical Store',
-          tenantId: '11111111-1111-4111-8111-111111111111',
+          tenantId: resolvedTenantId,
           organizationType: 'PHARMACY',
           allowedWorkspaces: ['PHARMACY'],
           defaultModule: 'pharmacy-medication',
@@ -716,7 +718,7 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess }) => {
           roleTitle: 'Senior Medical Laboratory Technologist',
           department: 'Pathology & Diagnostic Laboratory',
           tenantName: 'Ewan Diagnostics & Pathology Hub',
-          tenantId: '11111111-1111-4111-8111-111111111111',
+          tenantId: resolvedTenantId,
           organizationType: 'PATHOLOGY',
           allowedWorkspaces: ['PATHOLOGY'],
           defaultModule: 'clinical-investigation',
@@ -739,7 +741,7 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess }) => {
           roleTitle: 'Inpatient Charge Nurse & Triage Officer',
           department: 'Nursing Station & Inpatient Ward',
           tenantName: 'Ewan Multi-Specialty Hospital',
-          tenantId: '11111111-1111-4111-8111-111111111111',
+          tenantId: resolvedTenantId,
           organizationType: 'HOSPITAL',
           allowedWorkspaces: ['HOSPITAL'],
           defaultModule: 'nurse-triage-station',
@@ -762,7 +764,7 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess }) => {
           roleTitle: 'Front Desk Receptionist & OPD Cashier',
           department: 'Front Desk & Cashier Counter',
           tenantName: 'Ewan Multi-Specialty Hospital',
-          tenantId: '11111111-1111-4111-8111-111111111111',
+          tenantId: resolvedTenantId,
           organizationType: 'HOSPITAL',
           allowedWorkspaces: ['HOSPITAL'],
           defaultModule: 'patient-registration',

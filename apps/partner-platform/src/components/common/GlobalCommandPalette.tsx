@@ -6,6 +6,7 @@ import { patientRegistrationService } from '../../services/patient-registration-
 import { pharmacyManagementService } from '../../services/pharmacy-management-service.js';
 import { MASTER_CLINICAL_TEST_LIBRARY } from '../../services/clinical-test-library.js';
 import { doctorRosterService } from '../../services/doctor-roster-service.js';
+import { inpatientManagementService } from '../../services/inpatient-management-service.js';
 
 export type CommandCategory =
   | 'Workspace'
@@ -376,6 +377,36 @@ export const GlobalCommandPalette: React.FC<Props> = ({
                 }
               });
             }
+          }
+        } catch {}
+
+        // 5. Search Live Beds in Inpatient Department
+        try {
+          const liveBeds = await inpatientManagementService.getBeds(tenantId);
+          if (active && liveBeds && liveBeds.length > 0) {
+            const matchingBeds = liveBeds.filter(
+              (b) =>
+                b.bedCode.toLowerCase().includes(cleanQuery) ||
+                (b.wardName && b.wardName.toLowerCase().includes(cleanQuery)) ||
+                (b.currentPatientName && b.currentPatientName.toLowerCase().includes(cleanQuery)) ||
+                b.status.toLowerCase().includes(cleanQuery)
+            );
+            matchingBeds.slice(0, 3).forEach((b) => {
+              if (!entities.some((e) => e.id === `bed-${b.id}`)) {
+                entities.push({
+                  id: `bed-${b.id}`,
+                  category: 'Bed',
+                  title: `🛏️ ${b.bedCode} — ${b.wardName || 'Ward'} (${b.status})`,
+                  subtitle: b.currentPatientName ? `Patient: ${b.currentPatientName} (${b.currentPatientMrn || ''}) · Click to open bed chart` : `Available for admission · Type: ${b.bedClass} · Click to allocate`,
+                  icon: '🛏️',
+                  targetModule: 'inpatient-management',
+                  action: () => {
+                    onNavigateModule('inpatient-management');
+                    onClose();
+                  }
+                });
+              }
+            });
           }
         } catch {}
 

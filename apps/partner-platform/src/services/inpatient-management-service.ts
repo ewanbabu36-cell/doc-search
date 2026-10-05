@@ -249,7 +249,7 @@ export class MockInpatientManagementService implements IInpatientManagementServi
           this.wards.push(w);
         }
       }
-    } else if (tenantId !== '11111111-1111-4111-8111-111111111111') {
+    } else if (isMockFallbackAllowed() && tenantId !== '11111111-1111-4111-8111-111111111111') {
       const starterWards: InpatientWardDto[] = [
         {
           id: `wrd-${tenantId}-1`,
@@ -366,7 +366,7 @@ export class MockInpatientManagementService implements IInpatientManagementServi
           this.beds.push(b);
         }
       }
-    } else if (tenantId !== '11111111-1111-4111-8111-111111111111') {
+    } else if (isMockFallbackAllowed() && tenantId !== '11111111-1111-4111-8111-111111111111') {
       const starterBeds: InpatientBedDto[] = [
         {
           id: `bed-${tenantId}-101`,
@@ -642,7 +642,7 @@ export class MockInpatientManagementService implements IInpatientManagementServi
           this.admissions.push(a);
         }
       }
-    } else if (tenantId !== '11111111-1111-4111-8111-111111111111') {
+    } else if (isMockFallbackAllowed() && tenantId !== '11111111-1111-4111-8111-111111111111') {
       const starterAdmissions: InpatientAdmissionDto[] = [
         {
           id: `adm-${tenantId}-1`,
@@ -732,6 +732,12 @@ export class MockInpatientManagementService implements IInpatientManagementServi
   }
 
   async getOverviewMetrics(tenantId: string): Promise<InpatientOverviewMetricsDto> {
+    try {
+      await Promise.all([
+        this.getBeds(tenantId).catch(() => []),
+        this.getAdmissions(tenantId).catch(() => [])
+      ]);
+    } catch {}
     this.ensureTenantData(tenantId);
     const bedsToUse = this.beds.filter((b) => b.tenantId === tenantId).length > 0
       ? this.beds.filter((b) => b.tenantId === tenantId)

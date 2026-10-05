@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getVerifiedRoleProfile } from '../../utils/roleProfileResolver.js';
 import { calculateBedBreakdownMetrics } from '../../services/bed-profile-synchronizer.js';
+import { apiRequest } from '../../services/api-client.js';
 
 export interface OwnerPulseCockpitProps {
   currentUser?: {
@@ -26,24 +27,24 @@ export const OwnerPulseCockpit: React.FC<OwnerPulseCockpitProps> = ({
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const profile = getVerifiedRoleProfile();
 
-  // Metrics state (hydrated from local storage cache / live operational bus)
+  // Metrics state (hydrated from live operational API / bus)
   const [metrics, setMetrics] = useState({
-    todayRevenue: 48250,
-    cashCollection: 16400,
-    upiCollection: 31850,
-    opdRegistered: 34,
-    opdConsulted: 26,
-    opdWaiting: 8,
-    occupiedBeds: 18,
-    totalBeds: profile.clinicalBedCapacity?.totalLicensedBeds || 25,
-    icuOccupied: 3,
-    icuTotal: profile.clinicalBedCapacity?.icuBeds || 4,
-    wardOccupied: 13,
-    wardTotal: profile.clinicalBedCapacity?.generalWardBeds || 15,
-    deluxeOccupied: 2,
-    deluxeTotal: profile.clinicalBedCapacity?.deluxeBeds || 4,
-    labPending: 9,
-    labCompleted: 22,
+    todayRevenue: 0,
+    cashCollection: 0,
+    upiCollection: 0,
+    opdRegistered: 0,
+    opdConsulted: 0,
+    opdWaiting: 0,
+    occupiedBeds: 0,
+    totalBeds: profile.clinicalBedCapacity?.totalLicensedBeds || 0,
+    icuOccupied: 0,
+    icuTotal: profile.clinicalBedCapacity?.icuBeds || 0,
+    wardOccupied: 0,
+    wardTotal: profile.clinicalBedCapacity?.generalWardBeds || 0,
+    deluxeOccupied: 0,
+    deluxeTotal: profile.clinicalBedCapacity?.deluxeBeds || 0,
+    labPending: 0,
+    labCompleted: 0,
     discrepancies: 0
   });
 
@@ -106,6 +107,28 @@ export const OwnerPulseCockpit: React.FC<OwnerPulseCockpitProps> = ({
         }
       }
     } catch {}
+
+    const loadLiveCockpit = async () => {
+      try {
+        const res = await apiRequest<any>('/api/v1/partner/command-center/overview');
+        if (res.success && res.data) {
+          const d = res.data;
+          setMetrics((prev) => ({
+            ...prev,
+            todayRevenue: d.revenue?.netRealizedRevenue ?? prev.todayRevenue,
+            cashCollection: d.revenue?.paymentsByMode?.CASH ?? prev.cashCollection,
+            upiCollection: d.revenue?.paymentsByMode?.UPI ?? prev.upiCollection,
+            opdRegistered: d.patients?.totalRegistered ?? prev.opdRegistered,
+            opdWaiting: d.pendingQueue?.unifiedPendingTotal ?? prev.opdWaiting,
+            occupiedBeds: d.ipd?.occupiedBeds ?? prev.occupiedBeds,
+            totalBeds: d.ipd?.totalBeds ?? prev.totalBeds,
+            labPending: d.lab?.pendingReportsCount ?? prev.labPending,
+            labCompleted: d.lab?.completedReportsCount ?? prev.labCompleted
+          }));
+        }
+      } catch {}
+    };
+    void loadLiveCockpit();
 
     const handleBedChanged = (e: any) => {
       const bMetrics = e.detail?.metrics || (e.detail?.beds ? calculateBedBreakdownMetrics(e.detail.beds) : null);

@@ -13,11 +13,17 @@ import {
 } from '@docsearch/ui-kit';
 import { inpatientManagementService } from '../services/inpatient-management-service.js';
 import { emergencyManagementService } from '../services/emergency-management-service.js';
+import { operationTheatreManagementService } from '../services/operation-theatre-management-service.js';
+import { bloodBankManagementService } from '../services/blood-bank-management-service.js';
 import type {
   InpatientOverviewMetricsDto,
   InpatientAdmissionDto,
+  InpatientWardDto,
+  InpatientBedDto,
   EmergencyOverviewMetricsDto,
-  EmergencyEncounterDto
+  EmergencyEncounterDto,
+  OTOverviewMetricsDto,
+  BloodBankOverviewMetricsDto
 } from '@docsearch/api-contracts';
 import type { PartnerModuleKey } from './PartnerPlatformShell.js';
 
@@ -38,6 +44,10 @@ export const HospitalHomeActivityHub: React.FC<HospitalHomeActivityHubProps> = (
 }) => {
   const [ipdMetrics, setIpdMetrics] = useState<InpatientOverviewMetricsDto | null>(null);
   const [erMetrics, setErMetrics] = useState<EmergencyOverviewMetricsDto | null>(null);
+  const [otMetrics, setOtMetrics] = useState<OTOverviewMetricsDto | null>(null);
+  const [bloodBankMetrics, setBloodBankMetrics] = useState<BloodBankOverviewMetricsDto | null>(null);
+  const [wards, setWards] = useState<InpatientWardDto[]>([]);
+  const [beds, setBeds] = useState<InpatientBedDto[]>([]);
   const [admissions, setAdmissions] = useState<InpatientAdmissionDto[]>([]);
   const [erCases, setErCases] = useState<EmergencyEncounterDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -53,16 +63,24 @@ export const HospitalHomeActivityHub: React.FC<HospitalHomeActivityHubProps> = (
   const loadHospitalData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [ipdMet, erMet, admList, erList] = await Promise.all([
+      const [ipdMet, erMet, admList, erList, wrdList, bedList, otMet, bbMet] = await Promise.all([
         inpatientManagementService.getOverviewMetrics(tenantId).catch(() => null),
         emergencyManagementService.getOverviewMetrics(tenantId).catch(() => null),
         inpatientManagementService.getAdmissions(tenantId).catch(() => []),
-        emergencyManagementService.getEncounters ? emergencyManagementService.getEncounters(tenantId).catch(() => []) : Promise.resolve([])
+        emergencyManagementService.getEncounters ? emergencyManagementService.getEncounters(tenantId).catch(() => []) : Promise.resolve([]),
+        inpatientManagementService.getWards(tenantId).catch(() => []),
+        inpatientManagementService.getBeds(tenantId).catch(() => []),
+        operationTheatreManagementService.getOverviewMetrics(tenantId).catch(() => null),
+        bloodBankManagementService.getOverviewMetrics(tenantId).catch(() => null)
       ]);
       setIpdMetrics(ipdMet);
       setErMetrics(erMet);
       setAdmissions(admList || []);
       setErCases(erList || []);
+      setWards(wrdList || []);
+      setBeds(bedList || []);
+      setOtMetrics(otMet);
+      setBloodBankMetrics(bbMet);
     } catch (err) {
       console.warn('Could not load Hospital Home live telemetry:', err);
     } finally {
@@ -100,9 +118,38 @@ export const HospitalHomeActivityHub: React.FC<HospitalHomeActivityHubProps> = (
     });
   }, [admissions, searchTerm, statusFilter]);
 
-  const totalBeds = ipdMetrics?.totalBeds || 120;
-  const occupiedBeds = ipdMetrics?.occupiedBeds || admissions.length || 76;
-  const occupancyPercent = Math.round((occupiedBeds / totalBeds) * 100);
+  const totalBeds = (beds.length > 0 ? beds.length : ipdMetrics?.totalBeds) || 0;
+  const occupiedBeds = (beds.filter(b => b.status === 'OCCUPIED').length || ipdMetrics?.occupiedBeds || admissions.filter(a => a.status === 'ADMITTED').length) || 0;
+  const occupancyPercent = totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0;
+  const activeErResusCount = erMetrics?.activeResuscitationCount ?? erCases.filter(c => c.isCodeBlue || c.isTraumaAlert || c.triageEsiLevel === 'ESI_1_IMMEDIATE_RESUSCITATION' || c.triageEsiLevel === 'ESI_2_EMERGENT_HIGH_RISK' || c.currentStatus === 'RESUSCITATION').length;
+  const runningOTSurgeries = otMetrics?.inProgressSurgeries ?? 0;
+  const criticalNews2Alerts = (ipdMetrics?.criticalAlertsCount ?? 0) + admissions.filter(a => a.isolationRequired || (a.primaryDiagnosis && a.primaryDiagnosis.toLowerCase().includes('sepsis'))).length;
+  const bloodBankStockUnits = bloodBankMetrics?.totalAvailableUnits ?? 0;
+  const pendingDischargesCount = ipdMetrics?.dischargeBacklog ?? admissions.filter(a => a.status === 'DISCHARGE_PLANNED' && !a.billingCleared).length;
+
+  const wardStats = useMemo(() => {
+    if (!wards || wards.length === 0) return [];
+    return wards.map((w) => {
+      const wardBeds = beds.filter((b) => b.wardId === w.id);
+      const total = wardBeds.length > 0 ? wardBeds.length : (w.totalBeds || w.activeBeds || 0);
+      const occupied = wardBeds.filter((b) => b.status === 'OCCUPIED').length;
+      const pct = total > 0 ? Math.round((occupied / total) * 100) : 0;
+      let barColor = '#3B82F6';
+      if (pct >= 85) barColor = '#EF4444';
+      else if (pct >= 60) barColor = '#F59E0B';
+      else if (pct > 0) barColor = '#10B981';
+
+      return {
+        id: w.id,
+        name: w.wardName,
+        code: w.wardCode,
+        total,
+        occupied,
+        pct,
+        barColor
+      };
+    });
+  }, [wards, beds]);
 
   return (
     <div
@@ -533,7 +580,7 @@ export const HospitalHomeActivityHub: React.FC<HospitalHomeActivityHubProps> = (
             <span style={{ fontSize: '1.1rem' }}>🚨</span>
           </div>
           <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#F87171', marginTop: '6px' }}>
-            {erMetrics?.activeResuscitationCount ?? erCases.length ?? 3} Active
+            {activeErResusCount} Active
           </div>
           <div style={{ fontSize: '0.6875rem', color: '#FCA5A5', marginTop: '4px', fontWeight: 600 }}>
             Red / Amber Urgent Resus
@@ -546,7 +593,7 @@ export const HospitalHomeActivityHub: React.FC<HospitalHomeActivityHubProps> = (
             <span style={{ fontSize: '1.1rem' }}>🔪</span>
           </div>
           <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#C084FC', marginTop: '6px' }}>
-            4 Running
+            {runningOTSurgeries} Running
           </div>
           <div style={{ fontSize: '0.6875rem', color: '#E9D5FF', marginTop: '4px', fontWeight: 600 }}>
             Major Surgical Procedures
@@ -559,7 +606,7 @@ export const HospitalHomeActivityHub: React.FC<HospitalHomeActivityHubProps> = (
             <span style={{ fontSize: '1.1rem' }}>⚠️</span>
           </div>
           <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#FBBF24', marginTop: '6px' }}>
-            2 Monitored
+            {criticalNews2Alerts} Monitored
           </div>
           <div style={{ fontSize: '0.6875rem', color: '#FCD34D', marginTop: '4px', fontWeight: 600 }}>
             Automated Deterioration Alerts
@@ -572,7 +619,7 @@ export const HospitalHomeActivityHub: React.FC<HospitalHomeActivityHubProps> = (
             <span style={{ fontSize: '1.1rem' }}>🩸</span>
           </div>
           <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#F87171', marginTop: '6px' }}>
-            48 Units
+            {bloodBankStockUnits} Units
           </div>
           <div style={{ fontSize: '0.6875rem', color: '#FCA5A5', marginTop: '4px', fontWeight: 600 }}>
             O- / B+ / A+ Tested Stock
@@ -585,7 +632,7 @@ export const HospitalHomeActivityHub: React.FC<HospitalHomeActivityHubProps> = (
             <span style={{ fontSize: '1.1rem' }}>📋</span>
           </div>
           <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#34D399', marginTop: '6px' }}>
-            {ipdMetrics?.dischargeBacklog ?? 5}
+            {pendingDischargesCount}
           </div>
           <div style={{ fontSize: '0.6875rem', color: '#6EE7B7', marginTop: '4px', fontWeight: 600 }}>
             Clinical & Billing Clearance
@@ -596,60 +643,58 @@ export const HospitalHomeActivityHub: React.FC<HospitalHomeActivityHubProps> = (
       {/* 3. BED MATRIX WARD UTILIZATION STRIP */}
       <Card
         style={{
-          padding: '16px 20px',
+          padding: '18px 20px',
           backgroundColor: 'rgba(15, 23, 42, 0.75)',
           border: '1px solid rgba(255, 255, 255, 0.08)',
           borderRadius: '14px'
         }}
       >
-        <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '12px' }}>
-          Hospital Bed Matrix Ward Occupancy
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Hospital Bed Matrix — Ward Occupancy & Census ({wardStats.length} Active Wards)
+          </div>
+          <button
+            type="button"
+            onClick={() => onNavigateModule('inpatient-management', 'beds')}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#38BDF8',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}
+          >
+            Manage Beds ➔
+          </button>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700, color: '#F8FAFC', marginBottom: '4px' }}>
-              <span>Cardio Critical Care (ICU)</span>
-              <span style={{ color: '#EF4444' }}>90%</span>
-            </div>
-            <div style={{ height: '6px', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
-              <div style={{ width: '90%', height: '100%', backgroundColor: '#EF4444', borderRadius: '3px' }} />
-            </div>
-            <div style={{ fontSize: '0.6875rem', color: '#94A3B8', marginTop: '3px' }}>9 / 10 Beds Occupied</div>
-          </div>
 
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700, color: '#F8FAFC', marginBottom: '4px' }}>
-              <span>Emergency Trauma (ER)</span>
-              <span style={{ color: '#F59E0B' }}>75%</span>
-            </div>
-            <div style={{ height: '6px', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
-              <div style={{ width: '75%', height: '100%', backgroundColor: '#F59E0B', borderRadius: '3px' }} />
-            </div>
-            <div style={{ fontSize: '0.6875rem', color: '#94A3B8', marginTop: '3px' }}>15 / 20 Beds Occupied</div>
+        {wardStats.length === 0 ? (
+          <div style={{ padding: '24px', textAlign: 'center', color: '#94A3B8', fontSize: '0.85rem', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '10px' }}>
+            No wards registered in database. Access Inpatient Management to configure wards and assign operational beds.
           </div>
-
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700, color: '#F8FAFC', marginBottom: '4px' }}>
-              <span>General Medical Ward</span>
-              <span style={{ color: '#3B82F6' }}>82%</span>
-            </div>
-            <div style={{ height: '6px', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
-              <div style={{ width: '82%', height: '100%', backgroundColor: '#3B82F6', borderRadius: '3px' }} />
-            </div>
-            <div style={{ fontSize: '0.6875rem', color: '#94A3B8', marginTop: '3px' }}>41 / 50 Beds Occupied</div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+            {wardStats.map((stat) => (
+              <div key={stat.id} style={{ backgroundColor: 'rgba(255,255,255,0.02)', padding: '12px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', fontWeight: 700, color: '#F8FAFC', marginBottom: '6px' }}>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={stat.name}>{stat.name}</span>
+                  <span style={{ color: stat.barColor, fontWeight: 800 }}>{stat.pct}%</span>
+                </div>
+                <div style={{ height: '6px', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
+                  <div style={{ width: `${Math.min(100, stat.pct)}%`, height: '100%', backgroundColor: stat.barColor, borderRadius: '3px', transition: 'width 0.4s ease' }} />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.6875rem', color: '#94A3B8', marginTop: '5px' }}>
+                  <span>{stat.occupied} of {stat.total} beds occupied</span>
+                  <span style={{ color: '#64748B' }}>{stat.code}</span>
+                </div>
+              </div>
+            ))}
           </div>
-
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700, color: '#F8FAFC', marginBottom: '4px' }}>
-              <span>Maternity & Postnatal</span>
-              <span style={{ color: '#10B981' }}>55%</span>
-            </div>
-            <div style={{ height: '6px', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
-              <div style={{ width: '55%', height: '100%', backgroundColor: '#10B981', borderRadius: '3px' }} />
-            </div>
-            <div style={{ fontSize: '0.6875rem', color: '#94A3B8', marginTop: '3px' }}>11 / 20 Beds Occupied</div>
-          </div>
-        </div>
+        )}
       </Card>
 
       {/* 4. 1-CLICK HOSPITAL LAUNCHERS */}

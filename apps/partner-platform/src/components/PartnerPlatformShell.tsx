@@ -21,6 +21,7 @@ const AllHospitalModulesDrawer = React.lazy(() => import('./common/AllHospitalMo
 const HospitalPlanUpgradeModal = React.lazy(() => import('./common/HospitalPlanUpgradeModal.js').then(m => ({ default: m.HospitalPlanUpgradeModal })));
 const HospitalFeatureUpgradeShowcase = React.lazy(() => import('./common/HospitalFeatureUpgradeShowcase.js').then(m => ({ default: m.HospitalFeatureUpgradeShowcase })));
 const OfflineLicenseActivationModal = React.lazy(() => import('./dialogs/OfflineLicenseActivationModal.js').then(m => ({ default: m.OfflineLicenseActivationModal })));
+const KeyboardShortcutsModal = React.lazy(() => import('./common/KeyboardShortcutsModal.js').then(m => ({ default: m.KeyboardShortcutsModal })));
 import {
   AppShell,
   Header,
@@ -541,6 +542,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
   };
 
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [isKeyboardShortcutsOpen, setIsKeyboardShortcutsOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isAccountPlanModalOpen, setIsAccountPlanModalOpen] = useState(false);
   const [isFounderApprovalsOpen, setIsFounderApprovalsOpen] = useState(false);
@@ -954,6 +956,40 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // 0. Keyboard Shortcuts Cheat Sheet: Ctrl+/ or Cmd+/
+      if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+        e.preventDefault();
+        setIsKeyboardShortcutsOpen((prev) => !prev);
+        return;
+      }
+
+      // 0.5. Hospital Standard Function Keys (F1, F2, F3, F4, F9)
+      if (e.key === 'F1') {
+        e.preventDefault();
+        setIsFastOpdDrawerOpen(true);
+        return;
+      }
+      if (e.key === 'F2') {
+        e.preventDefault();
+        setActiveModule('clinical-consultation');
+        return;
+      }
+      if (e.key === 'F3') {
+        e.preventDefault();
+        setActiveModule('billing-revenue-cycle');
+        return;
+      }
+      if (e.key === 'F4') {
+        e.preventDefault();
+        setActiveModule('inpatient-management');
+        return;
+      }
+      if (e.key === 'F9') {
+        e.preventDefault();
+        setActiveModule('emergency-trauma');
+        return;
+      }
+
       // 1. Universal Multi-Entity Search Palette: Ctrl+K / Cmd+K
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
@@ -968,6 +1004,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
         setIsQuickAddOpen(false);
         setIsWorkspaceMenuOpen(false);
         setIsCommandPaletteOpen(false);
+        setIsKeyboardShortcutsOpen(false);
         return;
       }
 
@@ -2725,12 +2762,12 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
             )
           }
           organizationSlot={
-            <div style={{ width: '100%', maxWidth: '540px', minWidth: '160px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', maxWidth: '620px', minWidth: '160px' }}>
               <button
                 type="button"
                 onClick={() => setIsCommandPaletteOpen(true)}
                 style={{
-                  width: '100%',
+                  flex: 1,
                   backgroundColor: 'rgba(15, 23, 42, 0.65)',
                   border: '1px solid rgba(255, 255, 255, 0.12)',
                   color: '#94A3B8',
@@ -2786,6 +2823,38 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                 >
                   {typeof navigator !== 'undefined' && /Mac|iPhone|iPod|iPad/.test(navigator.platform) ? 'Cmd+K' : 'Ctrl+K'}
                 </kbd>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsKeyboardShortcutsOpen(true)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  backgroundColor: 'rgba(15, 23, 42, 0.65)',
+                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  color: '#94A3B8',
+                  padding: '6px 10px',
+                  borderRadius: '10px',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                  transition: 'all 0.15s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.4)';
+                  e.currentTarget.style.color = '#F8FAFC';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.12)';
+                  e.currentTarget.style.color = '#94A3B8';
+                }}
+                title="Keyboard Shortcuts Cheat Sheet (Ctrl + /)"
+              >
+                <span>⌨️</span>
+                <kbd style={{ fontSize: '0.65rem', fontFamily: 'monospace', color: '#38BDF8', backgroundColor: 'rgba(255,255,255,0.06)', padding: '2px 5px', borderRadius: '4px' }}>Ctrl+/</kbd>
               </button>
             </div>
           }
@@ -4786,7 +4855,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
               <OTDomainManager tenantId={resolvedTenantId} />
             )}
             {activeModule === 'medical-records' && (
-              <MRDDomainManager />
+              <MRDDomainManager tenantId={resolvedTenantId} />
             )}
             {activeModule === 'blood-bank-transfusion' && (
               <BloodBankDomainManager tenantId={resolvedTenantId} />
@@ -4836,6 +4905,16 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
         currentUserRole={currentUser?.role}
         allowedWorkspaces={currentUser?.allowedWorkspaces}
       />
+      <React.Suspense fallback={null}>
+        {isKeyboardShortcutsOpen && (
+          <KeyboardShortcutsModal
+            isOpen={isKeyboardShortcutsOpen}
+            onClose={() => setIsKeyboardShortcutsOpen(false)}
+            onNavigateModule={setActiveModule}
+            onOpenFastOpd={() => setIsFastOpdDrawerOpen(true)}
+          />
+        )}
+      </React.Suspense>
       <ProfileUpdateRequiredAlertModal
         isOpen={isProfileGuardAlertOpen}
         onClose={() => setIsProfileGuardAlertOpen(false)}
