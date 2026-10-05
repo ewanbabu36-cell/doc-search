@@ -380,26 +380,54 @@ export class EmergencyManagementRepository {
 
     let patientName = (input as any).patientName || 'Emergency Patient';
     let patientMrn = (input as any).patientMrn || `MRN-${emergencyNumber}`;
-    let patientGender = 'UNKNOWN';
-    let patientAge: number | null = null;
+    let patientGender = (input as any).patientGender || 'UNKNOWN';
+    let patientAge: number | null = (input as any).patientAge || null;
 
-    try {
-      const [pat] = await db
-        .select()
-        .from(patients)
-        .where(and(eq(patients.tenantId, input.tenantId), eq(patients.id, input.patientId)))
-        .limit(1);
-      if (pat) {
-        patientName = `${pat.firstName || ''} ${pat.lastName || ''}`.trim() || patientName;
-        patientMrn = pat.mrn || patientMrn;
-        patientGender = pat.gender || 'UNKNOWN';
-        if (pat.dateOfBirth) {
-          const birthYear = new Date(pat.dateOfBirth).getFullYear();
-          const currYear = new Date().getFullYear();
-          patientAge = Math.max(1, currYear - birthYear);
+    let patientId = input.patientId;
+    if (patientId) {
+      try {
+        const [pat] = await db
+          .select()
+          .from(patients)
+          .where(and(eq(patients.tenantId, input.tenantId), eq(patients.id, patientId)))
+          .limit(1);
+        if (pat) {
+          patientName = `${pat.firstName || ''} ${pat.lastName || ''}`.trim() || patientName;
+          patientMrn = pat.mrn || patientMrn;
+          patientGender = pat.gender || 'UNKNOWN';
+          if (pat.dateOfBirth) {
+            const birthYear = new Date(pat.dateOfBirth).getFullYear();
+            const currYear = new Date().getFullYear();
+            patientAge = Math.max(1, currYear - birthYear);
+          }
         }
+      } catch {}
+    } else {
+      patientId = crypto.randomUUID();
+      const uhid = `EMG-${Math.floor(100000 + Math.random() * 900000)}`;
+      patientMrn = patientMrn || uhid;
+      const estAge = patientAge || 30;
+      const estBirthYear = new Date().getFullYear() - estAge;
+      const estDob = (input as any).dateOfBirth || `${estBirthYear}-01-01`;
+      try {
+        await db.insert(patients).values({
+          id: patientId,
+          tenantId: input.tenantId,
+          partnerId,
+          organizationId,
+          branchId,
+          patientCode: `PAT-${uhid}`,
+          mrn: patientMrn,
+          firstName: patientName,
+          lastName: '(Emergency)',
+          dateOfBirth: estDob,
+          gender: patientGender === 'MALE' ? 'MALE' : patientGender === 'FEMALE' ? 'FEMALE' : 'OTHER',
+          status: 'ACTIVE'
+        } as unknown as typeof patients.$inferInsert);
+      } catch (err) {
+        logger.warn('Failed to insert emergency patient stub', { error: String(err) });
       }
-    } catch {}
+    }
 
     const record: StoredEmergencyEncounter = {
       id,
@@ -408,7 +436,7 @@ export class EmergencyManagementRepository {
       organizationId,
       branchId,
       emergencyNumber,
-      patientId: input.patientId,
+      patientId,
       canonicalEncounterId,
       assignedClinicianId: doctorId,
       arrivalMode: input.arrivalMode || 'WALK_IN',

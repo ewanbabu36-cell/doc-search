@@ -230,10 +230,10 @@ export class EntitlementService {
       if ((normalizedCode === 'OPD' || normalizedCode === 'OPD_QUEUE' || normalizedCode.startsWith('OPD_')) && eCode.includes('OPD')) return true;
       if ((normalizedCode === 'INPATIENT' || normalizedCode === 'INPATIENT_IPD' || normalizedCode.startsWith('INPATIENT_')) && (eCode.includes('INPATIENT') || eCode.includes('ADT') || eCode.includes('IPD'))) return true;
       if ((normalizedCode === 'EMERGENCY' || normalizedCode === 'EMERGENCY_ICU' || normalizedCode.startsWith('EMERGENCY_')) && (eCode.includes('EMERGENCY') || eCode.includes('ICU'))) return true;
-      if ((normalizedCode === 'OT' || normalizedCode === 'OT_SURGERY' || normalizedCode.startsWith('OT_')) && (eCode.includes('OT') || eCode.includes('SURGERY'))) return true;
+      if ((normalizedCode === 'OT' || normalizedCode === 'OT_SURGERY' || normalizedCode.startsWith('OT_')) && (eCode.includes('OT') || eCode.includes('SURGERY') || eCode.includes('INPATIENT') || eCode.includes('OPERATIONS'))) return true;
       if ((normalizedCode === 'ABDM' || normalizedCode === 'ABDM_GATEWAY') && eCode.includes('ABDM')) return true;
       if ((normalizedCode === 'WHATSAPP' || normalizedCode === 'WHATSAPP_AUTOMATION') && (eCode.includes('WHATSAPP') || eCode.includes('COMMUNICATION'))) return true;
-      if (normalizedCode === 'BLOOD_BANK' && (eCode.includes('BLOOD') || eCode.includes('DIAGNOSTICS'))) return true;
+      if (normalizedCode === 'BLOOD_BANK' && (eCode.includes('BLOOD') || eCode.includes('DIAGNOSTICS') || eCode.includes('PATHOLOGY') || eCode.includes('LAB') || eCode.includes('INPATIENT'))) return true;
       if (normalizedCode === 'MRD' && (eCode.includes('MRD') || eCode.includes('RECORDS') || eCode.includes('EMR'))) return true;
       if (normalizedCode === 'DIETARY' && (eCode.includes('DIETARY') || eCode.includes('OPERATIONS') || eCode.includes('CLINICAL'))) return true;
       if (normalizedCode === 'OPERATIONS' && (eCode.includes('OPERATIONS') || eCode.includes('CORE') || eCode.includes('ADMIN'))) return true;

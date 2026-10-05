@@ -823,12 +823,86 @@ export class EmergencyManagementService extends MockEmergencyManagementService i
       if (res.success && Array.isArray(res.data)) {
         return res.data.map(mapToEmergencyEncounterDto);
       }
+      if (!isMockFallbackAllowed()) {
+        throw new Error(res.error?.message || 'Failed to fetch emergency queue from server');
+      }
     } catch (err) {
       if (!isMockFallbackAllowed()) throw err;
     }
     return super.getEncounters(tenantId);
   }
 
+  override async registerEmergencyPatient(req: RegisterEmergencyPatientRequest): Promise<EmergencyEncounterDto> {
+    try {
+      const res = await apiRequest<any>('/api/v1/partner/emergency/registrations', {
+        method: 'POST',
+        body: JSON.stringify(req)
+      });
+      if (res.success && res.data) {
+        return mapToEmergencyEncounterDto(res.data);
+      }
+      if (!isMockFallbackAllowed()) {
+        throw new Error(res.error?.message || 'Emergency registration rejected by server');
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
+    return super.registerEmergencyPatient(req);
   }
+
+  override async createTriageAssessment(req: CreateTriageAssessmentRequest): Promise<EmergencyTriageAssessmentDto> {
+    try {
+      const res = await apiRequest<EmergencyTriageAssessmentDto>(`/api/v1/partner/emergency/encounters/${req.encounterId}/triage`, {
+        method: 'POST',
+        body: JSON.stringify(req)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+      if (!isMockFallbackAllowed()) {
+        throw new Error(res.error?.message || 'Triage assessment rejected by server');
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
+    return super.createTriageAssessment(req);
+  }
+
+  override async recordTreatment(encounterId: string, payload: { treatmentNotes: string; medicationsAdministered?: any[]; proceduresPerformed?: any[]; ordersPlaced?: any[] }): Promise<any> {
+    try {
+      const res = await apiRequest(`/api/v1/partner/emergency/encounters/${encodeURIComponent(encounterId)}/treatments`, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+      if (!isMockFallbackAllowed()) {
+        throw new Error(res.error?.message || 'Emergency treatment rejected by server');
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
+    return super.recordTreatment(encounterId, payload);
+  }
+
+  override async createDisposition(req: CreateDispositionRequest): Promise<EmergencyDispositionDto> {
+    try {
+      const res = await apiRequest<EmergencyDispositionDto>(`/api/v1/partner/emergency/encounters/${req.encounterId}/disposition`, {
+        method: 'POST',
+        body: JSON.stringify(req)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+      if (!isMockFallbackAllowed()) {
+        throw new Error(res.error?.message || 'Emergency disposition rejected by server');
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
+    return super.createDisposition(req);
+  }
+}
 
 export const emergencyManagementService = new EmergencyManagementService();

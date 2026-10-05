@@ -1912,6 +1912,380 @@ export class MockInpatientManagementService implements IInpatientManagementServi
   }
 }
 
-export class InpatientManagementService extends MockInpatientManagementService implements IInpatientManagementService {}
+function mapToInpatientWardDto(w: any): InpatientWardDto {
+  return {
+    id: String(w.id || ''),
+    tenantId: String(w.tenantId || ''),
+    partnerId: String(w.partnerId || ''),
+    organizationId: String(w.organizationId || ''),
+    branchId: String(w.branchId || ''),
+    unitId: String(w.unitId || '00000000-0000-4000-8000-000000000001'),
+    wardCode: String(w.wardCode || w.code || ''),
+    wardName: String(w.name || w.wardName || 'Ward'),
+    wardType: (w.wardType || 'GENERAL') as any,
+    careLevel: (w.careLevel || 'GENERAL_CARE') as any,
+    genderPolicy: String(w.genderPolicy || 'ALL'),
+    building: String(w.building || 'Main Block'),
+    floor: String(w.floor || w.floorNumber || '1'),
+    wing: w.wing || undefined,
+    nursingStationName: String(w.nursingStationName || 'Station A'),
+    isolationCapable: Boolean(w.isolationCapable),
+    ventilatorCapable: Boolean(w.ventilatorCapable),
+    totalBeds: Number(w.capacity || w.totalBeds || 0),
+    activeBeds: Number(w.activeBeds || w.capacity || 0),
+    occupiedBeds: Number(w.occupiedBeds || 0),
+    blockedBeds: Number(w.blockedBeds || 0),
+    cleaningBeds: Number(w.cleaningBeds || 0),
+    isActive: Boolean(w.isActive ?? true),
+    createdAt: typeof w.createdAt === 'string' ? w.createdAt : new Date().toISOString(),
+    updatedAt: typeof w.updatedAt === 'string' ? w.updatedAt : new Date().toISOString()
+  };
+}
+
+function mapToInpatientBedDto(b: any): InpatientBedDto {
+  return {
+    id: String(b.id || ''),
+    tenantId: String(b.tenantId || ''),
+    partnerId: String(b.partnerId || ''),
+    organizationId: String(b.organizationId || ''),
+    branchId: String(b.branchId || ''),
+    wardId: String(b.wardId || ''),
+    wardName: b.wardName || undefined,
+    roomId: b.roomId || undefined,
+    roomNumber: b.roomNumber || undefined,
+    bedCode: String(b.bedNumber || b.bedCode || ''),
+    bedNumber: String(b.bedNumber || b.bedCode || ''),
+    bedType: (b.bedType || 'STANDARD_MANUAL') as any,
+    bedClass: (b.bedClass || 'GENERAL') as any,
+    status: (b.status || 'AVAILABLE') as any,
+    genderEligibility: String(b.genderEligibility || 'ALL'),
+    hasOxygenPort: Boolean(b.hasOxygenPort ?? true),
+    hasSuctionPort: Boolean(b.hasSuctionPort ?? true),
+    hasVentilator: Boolean(b.hasVentilator ?? false),
+    hasCardiacMonitor: Boolean(b.hasCardiacMonitor ?? false),
+    dailyChargeRate: Number(b.dailyChargeRate || 1500),
+    currentPatientId: b.currentPatientId || undefined,
+    currentPatientName: b.currentPatientName || undefined,
+    currentPatientMrn: b.currentPatientMrn || undefined,
+    currentAdmissionId: b.currentAdmissionId || undefined,
+    lastCleanedAt: b.lastCleanedAt || undefined,
+    lastOccupiedAt: b.lastOccupiedAt || undefined,
+    isActive: Boolean(b.isActive ?? true),
+    notes: b.notes || undefined,
+    createdAt: typeof b.createdAt === 'string' ? b.createdAt : new Date().toISOString(),
+    updatedAt: typeof b.updatedAt === 'string' ? b.updatedAt : new Date().toISOString()
+  };
+}
+
+function mapToInpatientAdmissionDto(a: any): InpatientAdmissionDto {
+  return {
+    id: String(a.id || ''),
+    tenantId: String(a.tenantId || ''),
+    partnerId: String(a.partnerId || ''),
+    organizationId: String(a.organizationId || ''),
+    branchId: String(a.branchId || ''),
+    admissionNumber: String(a.admissionNumber || `ADM-${String(a.id || '').slice(0, 6)}`),
+    patientId: String(a.patientId || ''),
+    patientName: String(a.patientName || a.patientId || 'Inpatient'),
+    patientMrn: String(a.patientMrn || a.patientId || 'MRN-IPD'),
+    patientAge: Number(a.patientAge || 35),
+    patientGender: (a.patientGender || 'OTHER') as any,
+    wardId: String(a.wardId || ''),
+    wardName: String(a.wardName || 'Inpatient Ward'),
+    bedId: String(a.bedId || ''),
+    bedCode: String(a.bedNumber || a.bedCode || 'BED'),
+    department: String(a.department || 'GENERAL_MEDICINE'),
+    specialty: String(a.department || 'GENERAL_MEDICINE'),
+    attendingConsultantName: String(a.attendingDoctorName || a.attendingDoctorId || 'Attending Physician'),
+    admittingDoctorName: String(a.admittingDoctorName || a.attendingDoctorId || 'Admitting Physician'),
+    admissionDateTime: typeof a.admittedAt === 'string' ? a.admittedAt : (a.admittedAt ? new Date(a.admittedAt).toISOString() : (typeof a.createdAt === 'string' ? a.createdAt : new Date().toISOString())),
+    expectedDischargeDate: typeof a.expectedDischargeDate === 'string' ? a.expectedDischargeDate : new Date(Date.now() + 3 * 86400000).toISOString(),
+    primaryDiagnosis: String(a.admissionReason || a.primaryDiagnosis || 'Clinical Observation'),
+    admissionType: (a.admissionType || 'ELECTIVE') as any,
+    admissionSource: (a.admissionSource || 'EMERGENCY_TRANSFER') as any,
+    isolationRequired: Boolean(a.isolationRequired),
+    payerType: (a.payerType || 'CASH_SELF_PAY') as any,
+    payerName: String(a.payerName || 'Direct / TPA'),
+    financialDepositAmount: Number(a.financialDepositAmount || 0),
+    clinicalClearance: Boolean(a.clinicalClearance ?? true),
+    billingCleared: Boolean(a.billingCleared ?? true),
+    insuranceCleared: Boolean(a.insuranceCleared ?? true),
+    dischargeSummaryFinalized: Boolean(a.dischargeSummaryFinalized),
+    status: (a.status || 'ADMITTED') as any,
+    createdAt: typeof a.createdAt === 'string' ? a.createdAt : new Date().toISOString(),
+    updatedAt: typeof a.updatedAt === 'string' ? a.updatedAt : new Date().toISOString()
+  };
+}
+
+export class InpatientManagementService extends MockInpatientManagementService implements IInpatientManagementService {
+  override async getWards(tenantId: string): Promise<InpatientWardDto[]> {
+    try {
+      const res = await apiRequest<any[]>('/api/v1/partner/inpatient/wards');
+      if (res.success && Array.isArray(res.data)) {
+        return res.data.map(mapToInpatientWardDto);
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
+    return super.getWards(tenantId);
+  }
+
+  override async createWard(req: CreateWardRequest): Promise<InpatientWardDto> {
+    try {
+      const res = await apiRequest<any>('/api/v1/partner/inpatient/wards', {
+        method: 'POST',
+        body: JSON.stringify({
+          wardCode: req.wardCode,
+          name: req.wardName,
+          wardType: req.wardType,
+          capacity: req.totalBeds,
+          floorNumber: parseInt(req.floor, 10) || 1
+        })
+      });
+      if (res.success && res.data) {
+        return mapToInpatientWardDto(res.data);
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
+    return super.createWard(req);
+  }
+
+  override async getBeds(tenantId: string): Promise<InpatientBedDto[]> {
+    try {
+      const res = await apiRequest<any[]>('/api/v1/partner/inpatient/beds');
+      if (res.success && Array.isArray(res.data)) {
+        return res.data.map(mapToInpatientBedDto);
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
+    return super.getBeds(tenantId);
+  }
+
+  override async createBed(req: CreateBedRequest): Promise<InpatientBedDto> {
+    try {
+      const res = await apiRequest<any>('/api/v1/partner/inpatient/beds', {
+        method: 'POST',
+        body: JSON.stringify({
+          wardId: req.wardId,
+          bedNumber: req.bedNumber || req.bedCode,
+          bedType: req.bedType,
+          bedClass: req.bedClass,
+          dailyChargeRate: req.dailyChargeRate
+        })
+      });
+      if (res.success && res.data) {
+        return mapToInpatientBedDto(res.data);
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
+    return super.createBed(req);
+  }
+
+  override async getAdmissions(tenantId: string): Promise<InpatientAdmissionDto[]> {
+    try {
+      const res = await apiRequest<any[]>('/api/v1/partner/inpatient/admissions');
+      if (res.success && Array.isArray(res.data)) {
+        return res.data.map(mapToInpatientAdmissionDto);
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
+    return super.getAdmissions(tenantId);
+  }
+
+  override async directAdmitPatient(req: DirectAdmitPatientRequest): Promise<InpatientAdmissionDto> {
+    try {
+      const res = await apiRequest<any>('/api/v1/partner/inpatient/admissions', {
+        method: 'POST',
+        body: JSON.stringify({
+          patientId: req.patientMrn,
+          doctorId: req.admittingDoctorName,
+          bedId: req.bedId,
+          department: req.department,
+          admissionReason: req.provisionalDiagnosis,
+          encounterType: 'INPATIENT'
+        })
+      });
+      if (res.success && res.data) {
+        return mapToInpatientAdmissionDto({
+          ...res.data,
+          patientName: req.patientName,
+          patientMrn: req.patientMrn,
+          patientAge: req.patientAge,
+          patientGender: req.patientGender === 'M' ? 'MALE' : req.patientGender === 'F' ? 'FEMALE' : 'OTHER',
+          bedId: req.bedId,
+          department: req.department,
+          admittingDoctorName: req.admittingDoctorName,
+          admissionReason: req.provisionalDiagnosis
+        });
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
+    return super.directAdmitPatient(req);
+  }
+
+  override async createTransfer(req: CreateTransferRequest): Promise<InpatientTransferDto> {
+    try {
+      const res = await apiRequest<any>('/api/v1/partner/inpatient/transfers', {
+        method: 'POST',
+        body: JSON.stringify({
+          admissionId: req.admissionId,
+          transferReason: req.transferReason
+        })
+      });
+      if (res.success && res.data) {
+        return {
+          id: res.data.id || String(Math.random()),
+          tenantId: req.tenantId,
+          partnerId: req.partnerId,
+          organizationId: req.organizationId,
+          branchId: req.branchId,
+          transferNumber: `TRF-${Date.now().toString().slice(-6)}`,
+          admissionId: req.admissionId,
+          patientId: 'patient-id',
+          patientName: 'Transferred Patient',
+          patientMrn: 'MRN',
+          destinationWardId: req.destinationWardId,
+          destinationWardName: 'Ward',
+          transferReason: req.transferReason,
+          transferType: req.transferType,
+          priority: req.priority,
+          requestingDoctorName: req.requestingDoctorName,
+          transportRequirement: req.transportRequirement,
+          status: 'COMPLETED',
+          createdAt: new Date().toISOString(),
+          completedAt: new Date().toISOString()
+        } as any;
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
+    return super.createTransfer(req);
+  }
+
+  override async completeDischarge(req: CompleteDischargeRequest): Promise<InpatientAdmissionDto> {
+    try {
+      const res = await apiRequest<any>(`/api/v1/partner/inpatient/admissions/${req.admissionId}/discharge`, {
+        method: 'POST',
+        body: JSON.stringify({
+          dischargeType: req.dischargeDisposition,
+          dischargeSummary: 'Discharged from care'
+        })
+      });
+      if (res.success && res.data) {
+        return mapToInpatientAdmissionDto(res.data);
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
+    return super.completeDischarge(req);
+  }
+
+  override async recordDoctorRound(req: RecordDoctorRoundRequest): Promise<InpatientDoctorRoundDto> {
+    try {
+      const res = await apiRequest<any>('/api/v1/partner/inpatient/rounds', {
+        method: 'POST',
+        body: JSON.stringify({
+          admissionId: req.admissionId,
+          roundNotes: req.clinicalImpression || req.subjectiveAssessment,
+          planOfCare: req.treatmentPlanUpdates
+        })
+      });
+      if (res.success && res.data) {
+        return {
+          id: res.data.id || String(Math.random()),
+          tenantId: req.tenantId,
+          partnerId: req.partnerId,
+          organizationId: req.organizationId,
+          branchId: req.branchId,
+          admissionId: req.admissionId,
+          patientId: req.patientId,
+          doctorName: req.doctorName,
+          doctorSpecialty: req.doctorSpecialty,
+          roundType: req.roundType,
+          subjectiveAssessment: req.subjectiveAssessment,
+          objectiveClinicalFindings: req.objectiveClinicalFindings,
+          clinicalImpression: req.clinicalImpression,
+          treatmentPlanUpdates: req.treatmentPlanUpdates,
+          orderedInvestigationsSummary: req.orderedInvestigationsSummary,
+          medicationAdjustments: req.medicationAdjustments,
+          dischargeReadinessScore: req.dischargeReadinessScore || 70,
+          roundTimestamp: new Date().toISOString()
+        };
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
+    return super.recordDoctorRound(req);
+  }
+
+  override async recordVitalObservation(req: RecordVitalObservationRequest): Promise<InpatientVitalObservationDto> {
+    try {
+      const res = await apiRequest<any>('/api/v1/partner/inpatient/vitals', {
+        method: 'POST',
+        body: JSON.stringify({
+          admissionId: req.admissionId,
+          systolicBp: req.systolicBpMmHg,
+          diastolicBp: req.diastolicBpMmHg,
+          heartRate: req.pulseBpm,
+          temperatureF: req.temperatureCelsius ? (req.temperatureCelsius * 9/5 + 32) : undefined,
+          respiratoryRate: req.respiratoryRateBpm,
+          spo2Percent: req.spo2Percentage,
+          consciousnessLevel: req.gcsScore && req.gcsScore < 15 ? 'CONFUSED' : 'ALERT'
+        })
+      });
+      if (res.success && res.data) {
+        return {
+          id: res.data.id || String(Math.random()),
+          tenantId: req.tenantId,
+          partnerId: req.partnerId,
+          organizationId: req.organizationId,
+          branchId: req.branchId,
+          admissionId: req.admissionId,
+          patientId: req.patientId,
+          recordedBy: req.recordedBy,
+          temperatureCelsius: req.temperatureCelsius,
+          pulseBpm: req.pulseBpm,
+          respiratoryRateBpm: req.respiratoryRateBpm,
+          systolicBpMmHg: req.systolicBpMmHg,
+          diastolicBpMmHg: req.diastolicBpMmHg,
+          spo2Percentage: req.spo2Percentage,
+          bloodGlucoseMgDl: req.bloodGlucoseMgDl,
+          painScaleScore: req.painScaleScore,
+          gcsScore: req.gcsScore,
+          isAbnormal: req.isAbnormal ?? false,
+          notes: req.notes,
+          recordedAt: new Date().toISOString()
+        };
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
+    return super.recordVitalObservation(req);
+  }
+
+  override async recordNursingNote(req: RecordNursingNoteRequest): Promise<void> {
+    try {
+      await apiRequest<any>('/api/v1/partner/inpatient/nursing-notes', {
+        method: 'POST',
+        body: JSON.stringify({
+          admissionId: req.admissionId,
+          noteType: req.noteType,
+          noteContent: req.noteContent
+        })
+      });
+      return;
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
+    return super.recordNursingNote(req);
+  }
+}
 
 export const inpatientManagementService = new InpatientManagementService();
+
+

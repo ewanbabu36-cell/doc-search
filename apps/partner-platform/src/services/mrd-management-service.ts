@@ -561,6 +561,72 @@ export class MockMrdManagementService implements IMrdManagementService {
   }
 }
 
-export class MRDManagementService extends MockMrdManagementService implements IMrdManagementService {}
+export class MRDManagementService extends MockMrdManagementService implements IMrdManagementService {
+  override async getRecords(tenantId: string): Promise<MedicalRecordIndexDto[]> {
+    try {
+      const res = await apiRequest<MedicalRecordIndexDto[]>('/api/v1/partner/mrd/records');
+      if (res.success && Array.isArray(res.data)) {
+        return res.data;
+      }
+      if (!isMockFallbackAllowed()) {
+        throw new Error(res.error?.message || 'Failed to fetch medical records from server');
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+    return super.getRecords(tenantId);
+  }
+
+  override async getICD10Catalog(): Promise<ICDCodeItemDto[]> {
+    try {
+      const res = await apiRequest<ICDCodeItemDto[]>('/api/v1/partner/mrd/icd10/search');
+      if (res.success && Array.isArray(res.data)) {
+        return res.data;
+      }
+      if (!isMockFallbackAllowed()) {
+        throw new Error(res.error?.message || 'Failed to fetch ICD10 catalog from server');
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+    return super.getICD10Catalog();
+  }
+
+  override async assignDiagnosisCode(req: AssignDiagnosisCodeRequest): Promise<MedicalDiagnosisCodeDto> {
+    try {
+      const res = await apiRequest<MedicalDiagnosisCodeDto>(`/api/v1/partner/mrd/records/${req.recordId}/diagnoses`, {
+        method: 'POST',
+        body: JSON.stringify(req)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+      if (!isMockFallbackAllowed()) {
+        throw new Error(res.error?.message || 'Failed to assign diagnosis code on server');
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+    return super.assignDiagnosisCode(req);
+  }
+
+  override async submitCodingReview(req: SubmitCodingReviewRequest): Promise<CodingReviewDto> {
+    try {
+      const res = await apiRequest<CodingReviewDto>(`/api/v1/partner/mrd/records/${req.recordId}/reviews`, {
+        method: 'POST',
+        body: JSON.stringify(req)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+      if (!isMockFallbackAllowed()) {
+        throw new Error(res.error?.message || 'Failed to submit coding review on server');
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+    return super.submitCodingReview(req);
+  }
+}
 
 export const mrdManagementService = new MRDManagementService();

@@ -1155,6 +1155,235 @@ export class MockOperationTheatreManagementService implements IOperationTheatreM
   }
 }
 
-export class OperationTheatreManagementService extends MockOperationTheatreManagementService implements IOperationTheatreManagementService {}
+function mapToOTRoomDto(r: any): OperationTheatreRoomDto {
+  return {
+    id: String(r.id || ''),
+    tenantId: String(r.tenantId || ''),
+    partnerId: String(r.partnerId || ''),
+    organizationId: String(r.organizationId || ''),
+    branchId: String(r.branchId || ''),
+    complexId: String(r.complexId || '00000000-0000-4000-8000-000000000001'),
+    complexName: r.complexName || 'Main Complex',
+    roomNumber: String(r.roomNumber || r.name || ''),
+    roomName: String(r.name || r.roomNumber || 'Major OT'),
+    otType: (r.otType || (r.roomType === 'MAJOR' ? 'MAJOR_OT' : 'MINOR_OT')) as any,
+    status: (r.status || 'AVAILABLE') as any,
+    primarySpecialty: (r.primarySpecialty || 'GENERAL_SURGERY') as any,
+    supportedSpecialties: Array.isArray(r.supportedSpecialties) ? r.supportedSpecialties : ['GENERAL_SURGERY'],
+    hasPendantSystem: Boolean(r.hasPendantSystem ?? true),
+    hasCardiacMonitor: Boolean(r.hasCardiacMonitor ?? true),
+    hasAnaesthesiaWorkstation: Boolean(r.hasAnaesthesiaWorkstation ?? true),
+    hasLaminarFlow: Boolean(r.hasLaminarFlow ?? true),
+    hasHepaFilter: Boolean(r.hasHepaFilter ?? true),
+    hourlyRate: Number(r.hourlyRate || 2500),
+    isActive: Boolean(r.isActive ?? true),
+    currentSurgeryId: r.currentSurgeryId || undefined,
+    currentPatientName: r.currentPatientName || undefined,
+    createdAt: typeof r.createdAt === 'string' ? r.createdAt : new Date().toISOString(),
+    updatedAt: typeof r.updatedAt === 'string' ? r.updatedAt : new Date().toISOString()
+  };
+}
+
+function mapToOTScheduleDto(s: any): OTScheduleDto {
+  return {
+    id: String(s.id || ''),
+    tenantId: String(s.tenantId || ''),
+    partnerId: String(s.partnerId || ''),
+    organizationId: String(s.organizationId || ''),
+    branchId: String(s.branchId || ''),
+    scheduleNumber: String(s.scheduleNumber || `OT-${String(s.id || '').slice(0, 6)}`),
+    surgeryRequestId: String(s.surgeryRequestId || '00000000-0000-4000-8000-000000000001'),
+    patientId: String(s.patientId || ''),
+    patientName: String(s.patientName || 'Surgical Patient'),
+    patientMrn: String(s.patientMrn || 'MRN-SURG'),
+    procedureName: String(s.procedureName || 'Surgical Procedure'),
+    roomId: String(s.otRoomId || s.roomId || ''),
+    roomName: String(s.roomName || 'Operation Theatre 1'),
+    scheduledDate: typeof s.scheduledDate === 'string' && s.scheduledDate.includes('T') ? s.scheduledDate : (typeof s.scheduledDate === 'string' ? `${s.scheduledDate}T09:00:00.000Z` : new Date().toISOString()),
+    startTime: typeof s.scheduledDate === 'string' && s.scheduledDate.includes('T') ? s.scheduledDate : new Date().toISOString(),
+    endTime: new Date(Date.now() + 7200000).toISOString(),
+    estimatedDurationMinutes: Number(s.estimatedDurationMinutes || 90),
+    primarySurgeonName: String(s.leadSurgeonName || s.primarySurgeonName || 'Surgeon'),
+    assistantSurgeonName: s.assistantSurgeonName || undefined,
+    leadAnaesthetistName: String(s.leadAnaesthetistName || 'Anaesthetist'),
+    anaesthesiaTechName: s.anaesthesiaTechName || undefined,
+    scrubNurseName: String(s.scrubNurseName || 'Scrub Nurse'),
+    circulatingNurseName: String(s.circulatingNurseName || 'Circulating Nurse'),
+    isEmergency: Boolean(s.urgencyLevel === 'EMERGENCY' || s.isEmergency),
+    status: (s.status || 'SCHEDULED') as any,
+    delayReason: s.delayReason || undefined,
+    createdAt: typeof s.createdAt === 'string' ? s.createdAt : new Date().toISOString(),
+    updatedAt: typeof s.updatedAt === 'string' ? s.updatedAt : new Date().toISOString()
+  };
+}
+
+export class OperationTheatreManagementService extends MockOperationTheatreManagementService implements IOperationTheatreManagementService {
+  override async getRooms(tenantId: string): Promise<OperationTheatreRoomDto[]> {
+    try {
+      const res = await apiRequest<any[]>('/api/v1/partner/ot/rooms');
+      if (res.success && Array.isArray(res.data)) {
+        return res.data.map(mapToOTRoomDto);
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
+    return super.getRooms(tenantId);
+  }
+
+  override async createRoom(req: CreateOTRoomRequest): Promise<OperationTheatreRoomDto> {
+    try {
+      const res = await apiRequest<any>('/api/v1/partner/ot/rooms', {
+        method: 'POST',
+        body: JSON.stringify({
+          roomNumber: req.roomNumber,
+          name: req.roomName,
+          roomType: req.otType === 'MINOR_OT' ? 'MINOR' : 'MAJOR',
+          status: 'AVAILABLE'
+        })
+      });
+      if (res.success && res.data) {
+        return mapToOTRoomDto(res.data);
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
+    return super.createRoom(req);
+  }
+
+  override async getSchedules(tenantId: string): Promise<OTScheduleDto[]> {
+    try {
+      const res = await apiRequest<any[]>('/api/v1/partner/ot/schedules');
+      if (res.success && Array.isArray(res.data)) {
+        return res.data.map(mapToOTScheduleDto);
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
+    return super.getSchedules(tenantId);
+  }
+
+  override async createSchedule(req: CreateOTScheduleRequest): Promise<OTScheduleDto> {
+    try {
+      const res = await apiRequest<any>('/api/v1/partner/ot/schedules', {
+        method: 'POST',
+        body: JSON.stringify({
+          otRoomId: req.roomId,
+          patientId: req.patientId,
+          leadSurgeonId: req.primarySurgeonName,
+          leadSurgeonName: req.primarySurgeonName,
+          procedureName: req.procedureName,
+          procedureCode: 'SURG-PROC',
+          scheduledDate: req.scheduledDate.split('T')[0],
+          estimatedDurationMinutes: req.estimatedDurationMinutes,
+          urgencyLevel: req.isEmergency ? 'EMERGENCY' : 'ELECTIVE',
+          preOpDiagnosis: 'Pre-operative surgery booking'
+        })
+      });
+      if (res.success && res.data) {
+        return mapToOTScheduleDto(res.data);
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
+    return super.createSchedule(req);
+  }
+
+  override async createEmergencySurgery(req: CreateEmergencySurgeryRequest): Promise<OTScheduleDto> {
+    try {
+      const res = await apiRequest<any>('/api/v1/partner/ot/schedules', {
+        method: 'POST',
+        body: JSON.stringify({
+          otRoomId: req.roomId,
+          patientId: req.patientId,
+          leadSurgeonId: req.primarySurgeonName,
+          leadSurgeonName: req.primarySurgeonName,
+          procedureName: req.procedureName,
+          procedureCode: 'EMERG-SURG',
+          scheduledDate: new Date().toISOString().split('T')[0],
+          estimatedDurationMinutes: 120,
+          urgencyLevel: 'EMERGENCY',
+          preOpDiagnosis: req.preOperativeDiagnosis
+        })
+      });
+      if (res.success && res.data) {
+        return mapToOTScheduleDto(res.data);
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
+    return super.createEmergencySurgery(req);
+  }
+
+  override async createPreOpAssessment(req: CreatePreOperativeAssessmentRequest): Promise<PreOperativeAssessmentDto> {
+    try {
+      await apiRequest<any>(`/api/v1/partner/ot/schedules/${req.surgeryRequestId}/pac`, {
+        method: 'POST',
+        body: JSON.stringify({
+          asaClassification: req.asaClassification,
+          mallampatiScore: req.airwayMallampatiScore,
+          npoStatusHours: req.npoStatusHours,
+          cardiacClearance: req.cardiacClearanceGiven,
+          respiratoryClearance: req.respiratoryClearanceGiven,
+          pacFitnessStatus: req.fitnessStatus,
+          anaesthesiaPlan: req.anaesthesiaPlanNotes
+        })
+      });
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
+    return super.createPreOpAssessment(req);
+  }
+
+  override async createOperativeNote(req: CreateOperativeNoteRequest): Promise<OperativeNoteDto> {
+    try {
+      await apiRequest<any>(`/api/v1/partner/ot/schedules/${req.scheduleId}/operative-notes`, {
+        method: 'POST',
+        body: JSON.stringify({
+          findings: req.detailedOperativeFindings,
+          procedureDetails: req.operativeTechniqueStepByStep,
+          estimatedBloodLossMl: req.estimatedBloodLossMl,
+          complications: req.postOperativeInstructions
+        })
+      });
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
+    return super.createOperativeNote(req);
+  }
+
+  override async createPACURecord(req: CreatePACURecordRequest): Promise<PACURecoveryRecordDto> {
+    try {
+      await apiRequest<any>(`/api/v1/partner/ot/schedules/${req.scheduleId}/pacu`, {
+        method: 'POST',
+        body: JSON.stringify({
+          aldreteScore: req.currentAldreteScore,
+          consciousnessLevel: req.consciousnessLevel,
+          oxygenSaturation: req.spo2Percentage,
+          painScore: req.painScoreNumeric,
+          dischargeCriteriaMet: req.currentAldreteScore >= 9
+        })
+      });
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
+    return super.createPACURecord(req);
+  }
+
+  override async createPostoperativeTransfer(req: CreatePostoperativeTransferRequest): Promise<PostoperativeTransferDto> {
+    try {
+      await apiRequest<any>(`/api/v1/partner/ot/schedules/${req.scheduleId}/transfer-postop`, {
+        method: 'POST',
+        body: JSON.stringify({
+          destinationWardId: req.destinationWardOrICU,
+          destinationBedId: req.destinationBedNumber,
+          transferNotes: req.clinicalConditionSummary
+        })
+      });
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
+    return super.createPostoperativeTransfer(req);
+  }
+}
 
 export const operationTheatreManagementService = new OperationTheatreManagementService();
