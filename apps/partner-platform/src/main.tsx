@@ -5,6 +5,9 @@ import { setupCrossBrowserThemeSync, persistCloudThemePreference } from './servi
 const PartnerPlatformShell = React.lazy(() =>
   import('./components/PartnerPlatformShell.js').then((m) => ({ default: m.PartnerPlatformShell }))
 );
+const HospitalQueueTvDisplayView = React.lazy(() =>
+  import('./components/views/HospitalQueueTvDisplayView.js').then((m) => ({ default: m.HospitalQueueTvDisplayView }))
+);
 import { HospitalStaffLogin, type HospitalStaffUser } from './components/auth/HospitalStaffLogin.js';
 import { getUrlForModule } from './utils/urlRouter.js';
 import { ensureAuthToken, isTokenExpired } from './services/api-client.js';
@@ -316,6 +319,28 @@ const App: React.FC = () => {
   const handleThemeChange = (newTheme: ThemeMode) => {
     void persistCloudThemePreference(newTheme);
   };
+
+  const isTvDisplay = typeof window !== 'undefined' && (
+    window.location.pathname.startsWith('/display/queue') ||
+    window.location.pathname.startsWith('/tv') ||
+    window.location.search.includes('view=tv-display')
+  );
+
+  if (isTvDisplay) {
+    return (
+      <ThemeProvider cloudTheme={cloudTheme} onThemeChange={handleThemeChange}>
+        <React.Suspense
+          fallback={
+            <div style={{ minHeight: '100vh', background: '#05070E', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <DocSearch3DLogoLoader mode="download" size="lg" />
+            </div>
+          }
+        >
+          <HospitalQueueTvDisplayView onExit={() => { window.location.href = '/'; }} />
+        </React.Suspense>
+      </ThemeProvider>
+    );
+  }
 
   if (!currentUser) {
     return (

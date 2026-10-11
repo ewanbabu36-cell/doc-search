@@ -19,6 +19,7 @@ import { OpdDuplicatePatientMergeModal } from '../dialogs/OpdDuplicatePatientMer
 import { OpdAllergyHardLockModal, type AllergyConflictData } from '../dialogs/OpdAllergyHardLockModal.js';
 import { OpdChamberPaymentModal } from '../dialogs/OpdChamberPaymentModal.js';
 import { VernacularPrescriptionPreviewModal } from '../dialogs/VernacularPrescriptionPreviewModal.js';
+import { RapidRxPrescriptionPad } from '../dialogs/RapidRxPrescriptionPad.js';
 import {
   clinicalCatalogService,
   mapCatalogMedicationToCockpitDrug,
@@ -1115,6 +1116,38 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
     setAdderInstructions('');
     setStatusMessage(`✓ Added ${medName} to Prescription`);
     setTimeout(() => setStatusMessage(null), 2500);
+  };
+
+  const handleAddMedicationFromRapidRx = (newMed: CockpitMedItem) => {
+    setMedList((prev) => {
+      const exists = prev.some((m) => m.medicationName.toLowerCase() === newMed.medicationName.toLowerCase());
+      if (exists) return prev;
+      return [...prev, newMed];
+    });
+    setStatusMessage(`⚡ Rapid Rx: Added ${newMed.medicationName}`);
+    setTimeout(() => setStatusMessage(null), 2500);
+  };
+
+  const handleAddMultipleMedicationsFromRapidRx = (
+    meds: CockpitMedItem[],
+    clinicalNotes?: { diagnosis?: string; treatmentPlan?: string; followUpDays?: string }
+  ) => {
+    setMedList((prev) => {
+      const existingNames = new Set(prev.map((m) => m.medicationName.toLowerCase()));
+      const filteredNew = meds.filter((m) => !existingNames.has(m.medicationName.toLowerCase()));
+      return [...prev, ...filteredNew];
+    });
+    if (clinicalNotes?.diagnosis) {
+      setClinicalAssessment((prev) => (prev ? `${prev}; ${clinicalNotes.diagnosis}` : (clinicalNotes.diagnosis || '')));
+    }
+    if (clinicalNotes?.treatmentPlan) {
+      setTreatmentPlan(clinicalNotes.treatmentPlan);
+    }
+    if (clinicalNotes?.followUpDays) {
+      setFollowUpDays(clinicalNotes.followUpDays);
+    }
+    setStatusMessage(`⚡ Rapid Kit Applied: ${meds.length} medications added (<10s Rx)!`);
+    setTimeout(() => setStatusMessage(null), 3000);
   };
 
   // Initial load of server-backed popular medicines & active lab tests
@@ -7839,6 +7872,16 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
                   </tbody>
                 </table>
               </div>
+            )}
+
+            {/* ⚡ HealthPlix Killer: 25-Second Rapid Rx Smart Pad */}
+            {!isSignedOrCompleted && (
+              <RapidRxPrescriptionPad
+                onAddMedication={handleAddMedicationFromRapidRx}
+                onAddMultipleMedications={handleAddMultipleMedicationsFromRapidRx}
+                currentMedCount={medList.length}
+                consultationId={consultation.id}
+              />
             )}
 
             {/* Fast Inline Medicine Adder Bar */}

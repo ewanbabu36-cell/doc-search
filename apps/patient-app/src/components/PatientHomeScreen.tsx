@@ -6,6 +6,7 @@ import { BookOpdModal } from './BookOpdModal.js';
 import { EmergencySosModal } from './EmergencySosModal.js';
 import { FamilyProfileSwitcherModal } from './FamilyProfileSwitcherModal.js';
 import { DigitalReceiptModal } from './DigitalReceiptModal.js';
+import { PaperParchiScannerModal } from './PaperParchiScannerModal.js';
 
 interface Props {
   language: Language;
@@ -28,6 +29,7 @@ export const PatientHomeScreen: React.FC<Props> = ({
   const [showFamilyModal, setShowFamilyModal] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [showBookModal, setShowBookModal] = useState(false);
+  const [showPaperScanner, setShowPaperScanner] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
 
   // Clean format token number to prevent ##14 bug
@@ -347,6 +349,37 @@ export const PatientHomeScreen: React.FC<Props> = ({
         <span style={{ fontSize: '0.75rem', color: '#34D399', fontWeight: 800 }}>View ➔</span>
       </div>
 
+      {/* 5b. Eka Care Killer: 1-Click Scan Old Paper Parchi Banner */}
+      <div
+        onClick={() => setShowPaperScanner(true)}
+        style={{
+          backgroundColor: 'rgba(2, 132, 199, 0.12)',
+          border: '1.5px dashed #0284C7',
+          borderRadius: '16px',
+          padding: '12px 16px',
+          marginBottom: '20px',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span style={{ fontSize: '1.5rem' }}>📸</span>
+          <div>
+            <div style={{ fontSize: '0.875rem', fontWeight: 800, color: '#F8FAFC' }}>
+              {language === 'hi' ? 'पुराने कागज़ पर्ची व टेस्ट रिपोर्ट स्कैन करें' : 'Scan Paper Parchi & Lab Reports'}
+            </div>
+            <div style={{ fontSize: '0.6875rem', color: '#38BDF8' }}>
+              {language === 'hi' ? 'AI से पुरानी पर्ची तुरंत डिजिटल टाइमलाइन में जोड़ें' : 'Instant AI Digitization • Eka Care Killer'}
+            </div>
+          </div>
+        </div>
+        <span style={{ backgroundColor: '#0284C7', color: '#FFFFFF', padding: '5px 10px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800 }}>
+          + Scan ➔
+        </span>
+      </div>
+
       {/* 6. 4 Main Action Tiles (Fat-Finger Friendly) */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', flex: 1, marginBottom: '20px' }}>
         <button
@@ -502,6 +535,16 @@ export const PatientHomeScreen: React.FC<Props> = ({
           onSuccess={(updated) => onSelectPatient(updated)}
         />
       )}
+
+      {/* Eka Care Killer: Paper Parchi Scanner Modal */}
+      <PaperParchiScannerModal
+        isOpen={showPaperScanner}
+        onClose={() => setShowPaperScanner(false)}
+        language={language}
+        onRecordSaved={(_record) => {
+          onNavigate('PARCHI');
+        }}
+      />
     </div>
   );
 };

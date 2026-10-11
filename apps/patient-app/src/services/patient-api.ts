@@ -43,6 +43,37 @@ export interface PatientLabReport {
   signedBy: string;
 }
 
+export interface ScannedParchiRecord {
+  id: string;
+  scannedAt: string;
+  sourceType: 'CAMERA_SCAN' | 'UPLOAD_FILE' | 'DEMO_SAMPLE';
+  doctorName: string;
+  clinicHospital: string;
+  consultationDate: string;
+  diagnosis: string;
+  vitals?: {
+    bp?: string | undefined;
+    pulse?: string | undefined;
+    spo2?: string | undefined;
+    weight?: string | undefined;
+  } | undefined;
+  medicines: Array<{
+    name: string;
+    dosage: string;
+    timing: string;
+    duration: string;
+  }>;
+  labValues?: Array<{
+    testName: string;
+    value: string;
+    unit: string;
+    flag: 'NORMAL' | 'HIGH' | 'LOW';
+  }> | undefined;
+  originalImageUri?: string | undefined;
+  confidenceScore: number;
+  aiNotes: string;
+}
+
 export interface ScheduledDose {
   id: string;
   medicationName: string;
@@ -270,9 +301,88 @@ export const DEMO_LAB_REPORTS: PatientLabReport[] = [
   }
 ];
 
+export const DEMO_SCANNED_RECORDS: ScannedParchiRecord[] = [
+  {
+    id: 'SCAN-PARCHI-2023-01',
+    scannedAt: '11 Oct 2026',
+    sourceType: 'CAMERA_SCAN',
+    doctorName: 'Dr. R. K. Sharma (MBBS, MD Med)',
+    clinicHospital: 'City Polyclinic & Diagnostic Centre, Civil Lines',
+    consultationDate: '14 Oct 2023',
+    diagnosis: 'Acute Viral Bronchitis with Wheezing (तीव्र ब्रोंकाइटिस)',
+    vitals: {
+      bp: '130/84 mmHg',
+      pulse: '78 bpm',
+      spo2: '97%',
+      weight: '68 kg'
+    },
+    medicines: [
+      { name: 'Tab Montelukast-LC (10/5mg)', dosage: '1 Tab', timing: 'रात को (Bedtime)', duration: '10 Days' },
+      { name: 'Tab Augmentin 625 Duo', dosage: '1 Tab', timing: 'दिन में 2 बार खाने के बाद', duration: '5 Days' },
+      { name: 'Syp Ascoril LS', dosage: '2 चम्मच (10ml)', timing: 'दिन में 3 बार', duration: '5 Days' }
+    ],
+    confidenceScore: 98.4,
+    aiNotes: 'Handwritten ink prescription transcribed with 98.4% clinical confidence. Jan Aushadhi alternatives available.',
+    originalImageUri: 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=600&q=80'
+  },
+  {
+    id: 'SCAN-LAB-2024-02',
+    scannedAt: '11 Oct 2026',
+    sourceType: 'UPLOAD_FILE',
+    doctorName: 'Dr. M. S. Bedi (Chief Biochemist)',
+    clinicHospital: 'Dr. Lal PathLabs - Pathology Division',
+    consultationDate: '18 Mar 2024',
+    diagnosis: 'Routine Annual Metabolic Health Panel',
+    labValues: [
+      { testName: 'Fasting Blood Glucose', value: '112', unit: 'mg/dL', flag: 'HIGH' },
+      { testName: 'Hemoglobin (Hb)', value: '13.4', unit: 'g/dL', flag: 'NORMAL' },
+      { testName: 'Total Leukocyte Count (TLC)', value: '7,800', unit: '/mcL', flag: 'NORMAL' },
+      { testName: 'Platelet Count', value: '2.45', unit: 'Lakh/mcL', flag: 'NORMAL' },
+      { testName: 'Serum Creatinine', value: '0.9', unit: 'mg/dL', flag: 'NORMAL' }
+    ],
+    medicines: [],
+    confidenceScore: 99.1,
+    aiNotes: 'Laboratory printed report parsed via OCR. Fasting sugar is slightly borderline (112 mg/dL).',
+    originalImageUri: 'https://images.unsplash.com/photo-1579154204601-01588f351e67?auto=format&fit=crop&w=600&q=80'
+  }
+];
+
 class PatientApiService {
   private currentPatient: PatientProfile | null = null;
   private token: string | null = null;
+
+  getScannedParchis(): ScannedParchiRecord[] {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('docsearch_scanned_parchis');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch {}
+    }
+    return DEMO_SCANNED_RECORDS;
+  }
+
+  saveScannedParchi(record: ScannedParchiRecord): void {
+    const list = this.getScannedParchis();
+    const updated = [record, ...list.filter((r) => r.id !== record.id)];
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('docsearch_scanned_parchis', JSON.stringify(updated));
+      } catch {}
+    }
+  }
+
+  deleteScannedParchi(id: string): void {
+    const list = this.getScannedParchis();
+    const updated = list.filter((r) => r.id !== id);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('docsearch_scanned_parchis', JSON.stringify(updated));
+      } catch {}
+    }
+  }
 
   getToken(): string | null {
     return this.token;

@@ -2964,6 +2964,27 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                 >
                   <span>🚨 F9 ER</span>
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setIsTvDisplayOpen(true)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    backgroundColor: isTvDisplayOpen ? 'rgba(56, 189, 248, 0.25)' : 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(56, 189, 248, 0.35)',
+                    color: '#38BDF8',
+                    padding: '5px 8px',
+                    borderRadius: '8px',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Hospital Waiting Lounge TV Display (BestDoc Killer)"
+                >
+                  <span>📺 Lounge TV</span>
+                </button>
               </div>
             </div>
           }
