@@ -172,36 +172,36 @@ export interface PartnerPlatformShellProps {
 
 export const MODULE_METADATA: Record<PartnerModuleKey, { title: string; icon: string }> = {
   'my-smart-desk': { title: 'My Smart Desk', icon: '⚡' },
-  'hospital-closed-loop': { title: 'In-House Closed-Loop Pipeline', icon: '🔄' },
+  'hospital-closed-loop': { title: "Today's Patient Journeys", icon: '🔄' },
   'opd-one-flow-express': { title: 'OPD 1-Flow Express', icon: '⚡' },
-  'help-desk-exit-hub': { title: 'Central Help Desk & Exit Hub', icon: '🖨️' },
-  'preferred-partner-network': { title: 'Preferred Partner Network (Tie-Ups)', icon: '🤝' },
+  'help-desk-exit-hub': { title: 'Discharge & Exit Desk', icon: '🖨️' },
+  'preferred-partner-network': { title: 'Referrals & Tie-Ups', icon: '🤝' },
   'pathology-home': { title: 'Pathology Overview', icon: '🔬' },
   'clinic-home': { title: 'Clinic Overview', icon: '🏥' },
   'pharmacy-home': { title: 'Pharmacy Overview', icon: '💊' },
   'diagnostic-home': { title: 'Diagnostic Overview', icon: '🩻' },
   'hospital-home': { title: 'Hospital Overview', icon: '🏢' },
   'enterprise-home': { title: 'Enterprise Command Overview', icon: '🌐' },
-  'executive-command-center': { title: 'Executive Command Center', icon: '🏛️' },
+  'executive-command-center': { title: 'Hospital Director Overview', icon: '🏛️' },
   'ai-chat-assistant': { title: 'AI Clinical Assistant', icon: '💬' },
-  'organization-foundation': { title: 'Organization Foundation', icon: '🏛️' },
-  'staff-administration': { title: 'Staff Administration', icon: '👥' },
-  'doctor-management': { title: 'Doctor Management & Roster', icon: '👨‍⚕️' },
-  'patient-registration': { title: 'OPD Reception & Tokens', icon: '📇' },
-  'encounters-visits': { title: 'OPD Queue & Appointments', icon: '⏱️' },
-  'clinical-consultation': { title: 'Doctor OPD Desk & EMR', icon: '🩺' },
+  'organization-foundation': { title: 'Hospital Profile & Settings', icon: '🏛️' },
+  'staff-administration': { title: 'Staff Administration & Roles', icon: '👥' },
+  'doctor-management': { title: 'Doctor Roster & Shifts', icon: '👨‍⚕️' },
+  'patient-registration': { title: 'Reception & Token Slip', icon: '📇' },
+  'encounters-visits': { title: 'Live Queue & Appointments', icon: '⏱️' },
+  'clinical-consultation': { title: 'Doctor Chamber & EMR', icon: '🩺' },
   'nurse-triage-station': { title: 'Nurse Vitals & Triage', icon: '👩‍⚕️' },
   'clinical-investigation': { title: 'Pathology LIMS Workbench', icon: '🧪' },
   'pharmacy-medication': { title: 'Pharmacy POS & Dispense', icon: '💊' },
-  'inpatient-management': { title: 'Inpatient Beds & ADT', icon: '🛏️' },
+  'inpatient-management': { title: 'Inpatient Ward & Beds', icon: '🛏️' },
   'operation-theatre-management': { title: 'Operation Theatre (OT)', icon: '🔪' },
   'emergency-trauma': { title: 'Emergency & Trauma Bay', icon: '🚨' },
   'medical-records': { title: 'MRD & Medical Records', icon: '📂' },
   'blood-bank-transfusion': { title: 'Blood Bank & Transfusion', icon: '🩸' },
   'radiology-imaging': { title: 'Radiology & PACS Imaging', icon: '☢️' },
   'dietary-kitchen-management': { title: 'Dietary & Nutrition', icon: '🥗' },
-  'asset-biomedical-maintenance': { title: 'Biomedical Assets & Engineering', icon: '🔧' },
-  'quality-incident-infection-control': { title: 'Quality & Infection Control', icon: '🧼' },
+  'asset-biomedical-maintenance': { title: 'Medical Equipment & AMC', icon: '🔧' },
+  'quality-incident-infection-control': { title: 'Hospital Quality & Infection (NABH)', icon: '🧼' },
   'abdm-fhir-gateway': { title: 'ABDM & Ayushman Bharat', icon: '🇮🇳' },
   'ai-clinical-cdss': { title: 'AI Clinical CDSS & Scribe', icon: '🎙️' },
   'telemedicine-rpm': { title: 'Telemedicine & Video OPD', icon: '📹' },
@@ -2856,6 +2856,115 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                 <span>⌨️</span>
                 <kbd style={{ fontSize: '0.65rem', fontFamily: 'monospace', color: '#38BDF8', backgroundColor: 'rgba(255,255,255,0.06)', padding: '2px 5px', borderRadius: '4px' }}>Ctrl+/</kbd>
               </button>
+
+              {/* Ergonomic 1-Click Clinical Hotkey Strip */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexShrink: 0 }}>
+                <button
+                  type="button"
+                  onClick={() => setIsFastOpdDrawerOpen(true)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    backgroundColor: 'rgba(56, 189, 248, 0.12)',
+                    border: '1px solid rgba(56, 189, 248, 0.3)',
+                    color: '#38BDF8',
+                    padding: '5px 8px',
+                    borderRadius: '8px',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Express OPD Registration & Token (F1)"
+                >
+                  <span>⚡ F1 Token</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveModule('clinical-consultation')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    backgroundColor: (activeModule as string) === 'clinical-consultation' ? 'rgba(16, 185, 129, 0.25)' : 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(16, 185, 129, 0.35)',
+                    color: '#34D399',
+                    padding: '5px 8px',
+                    borderRadius: '8px',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Doctor Chamber & EMR (F2)"
+                >
+                  <span>🩺 F2 Chamber</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveModule('billing-revenue-cycle')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    backgroundColor: activeModule === 'billing-revenue-cycle' ? 'rgba(245, 158, 11, 0.25)' : 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(245, 158, 11, 0.35)',
+                    color: '#FBBF24',
+                    padding: '5px 8px',
+                    borderRadius: '8px',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Billing Desk & Cashier POS (F3)"
+                >
+                  <span>🧾 F3 Billing</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveModule('inpatient-management')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    backgroundColor: activeModule === 'inpatient-management' ? 'rgba(139, 92, 246, 0.25)' : 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(139, 92, 246, 0.35)',
+                    color: '#A78BFA',
+                    padding: '5px 8px',
+                    borderRadius: '8px',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Inpatient Ward Bed Map (F4)"
+                >
+                  <span>🛏️ F4 Beds</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveModule('emergency-trauma')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    backgroundColor: activeModule === 'emergency-trauma' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(239, 68, 68, 0.12)',
+                    border: '1px solid rgba(239, 68, 68, 0.45)',
+                    color: '#F87171',
+                    padding: '5px 8px',
+                    borderRadius: '8px',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Emergency & Trauma Resuscitation (F9)"
+                >
+                  <span>🚨 F9 ER</span>
+                </button>
+              </div>
             </div>
           }
           userSlot={
