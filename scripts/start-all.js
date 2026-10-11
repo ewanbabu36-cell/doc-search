@@ -10,7 +10,7 @@ process.env.ALLOW_EMBEDDED_POSTGRES = 'false';
 process.env.NODE_ENV = 'development';
 
 // 1. Free ports before launching
-const ports = [4000, 5173, 5175, 5177, 18080, 8042, 11112];
+const ports = [4000, 5173, 5174, 5175, 5177, 18080, 8042, 11112];
 try {
   const output = execSync('netstat -ano', { encoding: 'utf8' });
   const lines = output.split('\n');
@@ -197,6 +197,14 @@ async function main() {
       executable: process.execPath,
       args: [path.join(rootDir, 'apps/partner-platform/node_modules/vite/bin/vite.js'), '--port', '5173', '--host', '--strictPort'],
       color: '\x1b[36m'
+    },
+    {
+      name: 'Patient Mobile App',
+      port: 5174,
+      cwd: path.join(rootDir, 'apps/patient-app'),
+      executable: process.execPath,
+      args: [path.join(rootDir, 'apps/patient-app/node_modules/vite/bin/vite.js'), '--port', '5174', '--host', '--strictPort'],
+      color: '\x1b[35m'
     },
     {
       name: 'Company Platform',
