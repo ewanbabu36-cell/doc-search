@@ -44,11 +44,52 @@ export const PaperParchiScannerModal: React.FC<PaperParchiScannerModalProps> = (
 
   if (!isOpen) return null;
 
-  const handleStartProcessing = (imageUri: string, isLabSample: boolean = false) => {
+  const handleStartProcessing = (imageUri: string, isLabSample: boolean = false, isMessyCursive: boolean = false) => {
     setSelectedImage(imageUri);
     setScanStep('PROCESSING');
 
-    // Simulate multi-stage AI Vision & OCR pipeline
+    // Simulate multi-stage AI Vision & Google Med-PaLM OCR pipeline
+    if (isMessyCursive) {
+      setScanProgressText(
+        language === 'hi'
+          ? 'Google Med-PaLM 2 न्यूरल लिगेचर (Ligature Analysis) शुरू...'
+          : 'Initializing Google Med-PaLM 2 Clinical Cursive De-ligature Model...'
+      );
+      setTimeout(() => {
+        setScanProgressText(
+          language === 'hi'
+            ? 'घसीटी लिखावट (Messy Cursive Doctor Scrawl) के मेडिकल स्ट्रोक्स का विश्लेषण...'
+            : 'Analyzing doctor handwritten medical strokes, cursive ligatures & rx slang...'
+        );
+      }, 1000);
+
+      setTimeout(() => {
+        setScanProgressText(
+          language === 'hi'
+            ? 'ब्रांड मॉलिक्यूल मैपिंग (Drug-Molecule NER matching across 1,20,000 SKUs)...'
+            : 'Cross-referencing Brand & Molecule database with 1,20,000 drug entities...'
+        );
+      }, 2000);
+
+      setTimeout(() => {
+        setExtractedDoctor('Dr. A. K. Banerjee (MBBS, MD Med, DM Card)');
+        setExtractedClinic('Fortis Escorts Heart & Chest Specialty');
+        setExtractedDate('11 Oct 2024');
+        setExtractedDiagnosis('Essential Hypertension with Acute Bronchial Spasm (तीव्र ब्रोंकियल ऐंठन व उच्च रक्तचाप)');
+        setExtractedBp('142/90 mmHg');
+        setConfidenceScore(98.6);
+        setExtractedMedicines([
+          { name: 'Tab Telma 40mg (Telmisartan)', dosage: '1 Tab', timing: 'सुबह नाश्ते के बाद (OD Morning)', duration: '30 Days' },
+          { name: 'Tab Dolo 650 (Paracetamol)', dosage: '1 Tab', timing: 'बुखार / दर्द होने पर (SOS)', duration: '3 Days' },
+          { name: 'Cap Pan-D (Pantoprazole + Domperidone)', dosage: '1 Cap', timing: 'सुबह खाली पेट (Empty Stomach)', duration: '15 Days' },
+          { name: 'Tab Augmentin 625 Duo (Amoxicillin + Clavulanate)', dosage: '1 Tab', timing: 'दिन में 2 बार (BD) खाने के बाद', duration: '5 Days' },
+          { name: 'Syp Ascoril LS (Levosalbutamol + Ambroxol)', dosage: '2 चम्मच (10ml)', timing: 'दिन में 3 बार (TDS)', duration: '7 Days' }
+        ]);
+        setScanStep('REVIEW');
+      }, 3000);
+      return;
+    }
+
     setScanProgressText(language === 'hi' ? 'दस्तावेज़ की पहचान व किनारों को सीधा किया जा रहा है...' : 'Detecting document borders & auto-straightening...');
     setTimeout(() => {
       setScanProgressText(language === 'hi' ? 'हैंड-रिटन ओसीआर (Optical Character Recognition) चल रहा है...' : 'Running Clinical OCR & Handwritten Text Recognition...');
@@ -339,6 +380,39 @@ export const PaperParchiScannerModal: React.FC<PaperParchiScannerModalProps> = (
                   </div>
                   <span style={{ fontSize: '0.75rem', color: '#10B981', fontWeight: 800 }}>Scan ➔</span>
                 </div>
+
+                <div
+                  onClick={() =>
+                    handleStartProcessing(
+                      'https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&w=600&q=80',
+                      false,
+                      true
+                    )
+                  }
+                  style={{
+                    backgroundColor: '#1E293B',
+                    borderRadius: '12px',
+                    padding: '10px 14px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    border: '1px solid rgba(168, 85, 247, 0.3)'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '1.25rem' }}>✍️</span>
+                    <div>
+                      <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#F8FAFC' }}>
+                        Dr. A.K. Banerjee — {language === 'hi' ? 'घसीटा पर्चा (Messy Cursive Scrawl)' : 'Messy Cursive Doctor Scrawl'}
+                      </div>
+                      <div style={{ fontSize: '0.6875rem', color: '#C084FC' }}>
+                        Med-PaLM 2 Vision • 98.6% Cursive OCR • Telma, Pan-D, Dolo, Augmentin
+                      </div>
+                    </div>
+                  </div>
+                  <span style={{ fontSize: '0.75rem', color: '#C084FC', fontWeight: 800 }}>Scan ➔</span>
+                </div>
               </div>
             </div>
           </div>
@@ -393,15 +467,15 @@ export const PaperParchiScannerModal: React.FC<PaperParchiScannerModalProps> = (
         {scanStep === 'REVIEW' && (
           <div>
             {/* Confidence Banner */}
-            <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid #10B981', borderRadius: '12px', padding: '10px 12px', marginBottom: '14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid #10B981', borderRadius: '12px', padding: '10px 12px', marginBottom: '14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ fontSize: '1.25rem' }}>🎯</span>
                 <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#34D399' }}>
-                  {confidenceScore}% {language === 'hi' ? 'सटीक निष्कर्षण' : 'Extraction Accuracy'}
+                  {confidenceScore}% {language === 'hi' ? 'सटीक निष्कर्षण (Med-PaLM 2)' : 'Extraction Accuracy (Med-PaLM 2)'}
                 </span>
               </div>
               <span style={{ fontSize: '0.6875rem', color: '#CBD5E1', backgroundColor: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: '6px' }}>
-                Verified by DOC SEARCH AI
+                🧠 Google Med-PaLM Cursive OCR Active
               </span>
             </div>
 
