@@ -40,7 +40,18 @@ export const translations = {
     videoActive: 'डॉक्टर के साथ वीडियो परामर्श सक्रिय है',
     endCall: 'कॉल समाप्त करें',
     emergencyPass: 'इमरजेंसी हेल्थ क्यूआर पास',
-    emergencyNotice: 'इमरजेंसी में अस्पताल काउंटर पर यह क्यूआर स्कैन करवाएँ।'
+    emergencyNotice: 'इमरजेंसी में अस्पताल काउंटर पर यह क्यूआर स्कैन करवाएँ।',
+    hospitalName: 'Apex Care Superspeciality Hospital',
+    branchName: 'गोमती नगर शाखा (Gomti Nagar)',
+    opdActiveStatus: '🟢 डॉक्टर चैंबर चालू है • लाइव कतार',
+    emergencySos: '🚨 24x7 इमरजेंसी / एम्बुलेंस हेल्पलाइन',
+    bookOpdToken: 'नया टोकन / अपॉइंटमेंट',
+    familyProfiles: 'परिवार के सदस्य',
+    switchMember: 'मरीज़ बदलें',
+    addMember: '+ नया सदस्य जोड़ें',
+    paidReceipt: 'फीस रसीद (Paid Slip)',
+    voicePrescription: '🔊 डॉक्टर की सलाह सुनें',
+    offlineStatus: '📶 ऑफ़लाइन मोड: पर्ची और क्यूआर फोन में सुरक्षित हैं'
   },
   en: {
     welcome: 'Welcome',
@@ -81,6 +92,17 @@ export const translations = {
     videoActive: 'Encrypted Video Consultation Active',
     endCall: 'End Call',
     emergencyPass: 'Emergency Health QR Pass',
-    emergencyNotice: 'Show this QR at the hospital desk for instant 1-second admission.'
+    emergencyNotice: 'Show this QR at the hospital desk for instant 1-second admission.',
+    hospitalName: 'Apex Care Superspeciality Hospital',
+    branchName: 'Gomti Nagar Branch',
+    opdActiveStatus: '🟢 Doctor Chamber Active • Live Queue',
+    emergencySos: '🚨 24x7 Emergency / Ambulance Desk',
+    bookOpdToken: 'Book OPD Token',
+    familyProfiles: 'Family Profiles',
+    switchMember: 'Switch Patient',
+    addMember: '+ Add Family Member',
+    paidReceipt: 'Fee Receipt (Paid Slip)',
+    voicePrescription: '🔊 Listen Doctor Advice',
+    offlineStatus: '📶 Offline Safe Mode: Rx & Health QR stored offline'
   }
 };

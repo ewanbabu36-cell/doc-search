@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { type Language, translations } from '../i18n.js';
 import { patientApiService, type PatientPrescription, type PatientLabReport } from '../services/patient-api.js';
+import { speakAdvice } from '../utils/voice-assistant.js';
 
 interface Props {
   language: Language;
@@ -140,6 +141,48 @@ export const MeriParchiScreen: React.FC<Props> = ({ language, onBack }) => {
                   </div>
                 ))}
               </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const medText = rx.medicines
+                    .map(
+                      (m) =>
+                        `${m.name}, ${m.dosage}, ${
+                          m.timing === 'EMPTY_STOMACH'
+                            ? 'सुबह खाली पेट'
+                            : m.timing === 'NIGHT'
+                            ? 'रात को सोते समय'
+                            : 'खाने के बाद'
+                        }`
+                    )
+                    .join('. ');
+                  const speech =
+                    language === 'hi'
+                      ? `${rx.doctorName} की सलाह: बीमारी - ${rx.diagnosis}। दवाइयाँ: ${medText}।`
+                      : `Prescription by ${rx.doctorName}: Diagnosis ${rx.diagnosis}. Medicines: ${medText}.`;
+                  speakAdvice(speech, language);
+                }}
+                style={{
+                  width: '100%',
+                  backgroundColor: 'rgba(56, 189, 248, 0.12)',
+                  border: '1px solid rgba(56, 189, 248, 0.25)',
+                  color: '#38BDF8',
+                  borderRadius: '12px',
+                  padding: '8px 12px',
+                  fontSize: '0.8125rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  marginBottom: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px'
+                }}
+              >
+                <span>🔊</span>
+                <span>{language === 'hi' ? 'दवा की सलाह सुनें (आवाज़)' : 'Listen Prescription Advice'}</span>
+              </button>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                 <button
