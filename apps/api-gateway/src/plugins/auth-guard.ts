@@ -326,9 +326,9 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
       headers['x-tenant-id'];
 
     // ERP/SaaS Multi-Tenant Gateway Sanitization:
-    // If client supplied the static template placeholder ('11111111-1111-4111-8111-111111111111'),
+    // If client supplied the static template placeholder ('11111111-1111-4111-8111-111111111111') AND their authenticated session is indeed that tenant,
     // gracefully bind it to the authenticated session's tenantId rather than rejecting authentic enterprise users.
-    if (clientTenantId === '11111111-1111-4111-8111-111111111111' && request.session.tenantId) {
+    if (clientTenantId === '11111111-1111-4111-8111-111111111111' && request.session.tenantId === '11111111-1111-4111-8111-111111111111') {
       clientTenantId = request.session.tenantId;
       if (body['tenantId']) body['tenantId'] = request.session.tenantId;
       if (body['tenant_id']) body['tenant_id'] = request.session.tenantId;
@@ -364,7 +364,7 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
       headers['x-partner-id'];
 
     if (
-      (clientPartnerId === '11111111-1111-4111-8111-111111111111' || clientPartnerId === '') &&
+      ((clientPartnerId === '11111111-1111-4111-8111-111111111111' && request.session.tenantId === '11111111-1111-4111-8111-111111111111') || clientPartnerId === '') &&
       request.session.tenantId
     ) {
       clientPartnerId = request.session.tenantId;

@@ -252,11 +252,18 @@ export async function ensureDatabaseReady(config?: DatabaseConfig): Promise<Node
     // Strict Fail-Closed Policy:
     // Staging and Production MUST NEVER fallback to pg-mem under any circumstances.
     // Non-test environments must also fail closed unless ALLOW_EMBEDDED_POSTGRES='true' is explicitly configured for offline developer sandboxes.
+    if (process.env['NODE_ENV'] === 'production') {
+      logger.error('CRITICAL: Native PostgreSQL connection failed in production. Fail-Closed policy active: Embedded pg-mem fallback is strictly disabled.');
+      throw new Error(
+        `FATAL_DATABASE_ERROR: PostgreSQL connection failed: ${errMsg}. Embedded database fallback is strictly disabled in production (Fail-Closed policy enforced).`
+      );
+    }
+
     if (isProduction || isStaging || isStrict || (!isExplicitTestMode && !allowEmbeddedSandbox)) {
       const envName = process.env['NODE_ENV'] || 'unspecified';
-      logger.error(`CRITICAL: Native PostgreSQL connection failed in environment "${envName}". Fail-Closed policy active: Embedded pg-mem fallback is strictly forbidden.`);
+      logger.error(`CRITICAL: Native PostgreSQL connection failed in environment "${envName}". Fail-Closed policy active: Embedded pg-mem fallback is strictly disabled.`);
       throw new Error(
-        `FATAL_DATABASE_ERROR: PostgreSQL connection failed: ${errMsg}. Embedded database fallback is strictly forbidden in ${envName} (Fail-Closed policy enforced).`
+        `FATAL_DATABASE_ERROR: PostgreSQL connection failed: ${errMsg}. Embedded database fallback is strictly disabled in ${envName} (Fail-Closed policy enforced).`
       );
     }
 
