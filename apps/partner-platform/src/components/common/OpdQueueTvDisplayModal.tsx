@@ -31,6 +31,70 @@ export interface QueueItem {
   isReportsReady?: boolean;
 }
 
+export type RegionalBroadcastLanguage =
+  | 'hi-IN'
+  | 'ta-IN'
+  | 'te-IN'
+  | 'kn-IN'
+  | 'ml-IN'
+  | 'bn-IN'
+  | 'mr-IN'
+  | 'gu-IN';
+
+export const REGIONAL_BROADCAST_CONFIG: Record<
+  RegionalBroadcastLanguage,
+  { label: string; flag: string; nativeName: string; getText: (token: CallingToken) => string }
+> = {
+  'hi-IN': {
+    label: 'Hindi / हिन्दी',
+    flag: '🇮🇳',
+    nativeName: 'हिन्दी',
+    getText: (t) => `टोकन संख्या ${t.tokenNumber}. ${t.patientName}. कृपया कमरा संख्या ${t.roomNumber} में पधारें।`
+  },
+  'ta-IN': {
+    label: 'Tamil / தமிழ்',
+    flag: '🇮🇳',
+    nativeName: 'தமிழ்',
+    getText: (t) => `டோக்கன் எண் ${t.tokenNumber}. ${t.patientName}. அறை எண் ${t.roomNumber}-க்கு செல்லவும்.`
+  },
+  'te-IN': {
+    label: 'Telugu / తెలుగు',
+    flag: '🇮🇳',
+    nativeName: 'తెలుగు',
+    getText: (t) => `టోకెన్ నంబర్ ${t.tokenNumber}. ${t.patientName}. దయచేసి గది ${t.roomNumber} కి వెళ్ళండి.`
+  },
+  'kn-IN': {
+    label: 'Kannada / ಕನ್ನಡ',
+    flag: '🇮🇳',
+    nativeName: 'ಕನ್ನಡ',
+    getText: (t) => `ಟೋಕನ್ ಸಂಖ್ಯೆ ${t.tokenNumber}. ${t.patientName}. ದಯವಿಟ್ಟು ಕೊಠಡಿ ${t.roomNumber} ಗೆ ಬನ್ನಿ.`
+  },
+  'ml-IN': {
+    label: 'Malayalam / മലയാളം',
+    flag: '🇮🇳',
+    nativeName: 'മലയാളം',
+    getText: (t) => `ടോക്കൺ നമ്പർ ${t.tokenNumber}. ${t.patientName}. ദയവായി മുറി ${t.roomNumber} ലേക്ക് പോകുക.`
+  },
+  'bn-IN': {
+    label: 'Bengali / বাংলা',
+    flag: '🇮🇳',
+    nativeName: 'বাংলা',
+    getText: (t) => `টোকেন নম্বর ${t.tokenNumber}. ${t.patientName}. দয়া করে রুম নম্বর ${t.roomNumber}-এ আসুন।`
+  },
+  'mr-IN': {
+    label: 'Marathi / मराठी',
+    flag: '🇮🇳',
+    nativeName: 'मराठी',
+    getText: (t) => `टोकन क्रमांक ${t.tokenNumber}. ${t.patientName}. कृपया खोली क्रमांक ${t.roomNumber} मध्ये यावे.`
+  },
+  'gu-IN': {
+    label: 'Gujarati / ગુજરાતી',
+    flag: '🇮🇳',
+    nativeName: 'ગુજરાતી',
+    getText: (t) => `ટોકન નંબર ${t.tokenNumber}. ${t.patientName}. કૃપા કરીને રૂમ નંબર ${t.roomNumber} માં પધારો.`
+  }
+};
+
 export const OpdQueueTvDisplayModal: React.FC<OpdQueueTvDisplayModalProps> = ({
   isOpen,
   onClose,
@@ -61,6 +125,22 @@ export const OpdQueueTvDisplayModal: React.FC<OpdQueueTvDisplayModalProps> = ({
   const [timeString, setTimeString] = useState(new Date().toLocaleTimeString());
   const [isCallingPulse, setIsCallingPulse] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState<RegionalBroadcastLanguage>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('docsearch_tv_broadcast_lang') as RegionalBroadcastLanguage;
+      if (stored && REGIONAL_BROADCAST_CONFIG[stored]) return stored;
+    }
+    return 'hi-IN';
+  });
+
+  const handleLanguageChange = (lang: RegionalBroadcastLanguage) => {
+    setSelectedLanguage(lang);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('docsearch_tv_broadcast_lang', lang);
+      } catch {}
+    }
+  };
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -223,15 +303,16 @@ export const OpdQueueTvDisplayModal: React.FC<OpdQueueTvDisplayModalProps> = ({
     try {
       window.speechSynthesis.cancel(); // cancel pending speech
 
-      // 2. Hindi Broadcast: "टोकन संख्या 14, कमरा संख्या 102 में पधारें"
-      const hindiText = `टोकन संख्या ${token.tokenNumber}. ${token.patientName}. कृपया ${token.roomNumber} में पधारें।`;
-      const hindiUtterance = new SpeechSynthesisUtterance(hindiText);
-      hindiUtterance.rate = 0.88;
-      hindiUtterance.pitch = 1.05;
-      hindiUtterance.lang = 'hi-IN';
+      // 2. Regional Native Broadcast (Hindi, Tamil, Telugu, Kannada, Malayalam, Bengali, Marathi, Gujarati)
+      const config = REGIONAL_BROADCAST_CONFIG[selectedLanguage] || REGIONAL_BROADCAST_CONFIG['hi-IN'];
+      const regionalText = config.getText(token);
+      const regionalUtterance = new SpeechSynthesisUtterance(regionalText);
+      regionalUtterance.rate = 0.88;
+      regionalUtterance.pitch = 1.05;
+      regionalUtterance.lang = selectedLanguage;
 
-      // 3. English Broadcast after Hindi completes
-      hindiUtterance.onend = () => {
+      // 3. English Broadcast after Regional completes
+      regionalUtterance.onend = () => {
         try {
           const englishText = `Token number ${token.tokenNumber}. ${token.patientName}. Please proceed to ${token.roomNumber}.`;
           const englishUtterance = new SpeechSynthesisUtterance(englishText);
@@ -244,7 +325,7 @@ export const OpdQueueTvDisplayModal: React.FC<OpdQueueTvDisplayModalProps> = ({
 
       // Slight delay so the pleasant chime finishes before voice speaks
       setTimeout(() => {
-        window.speechSynthesis.speak(hindiUtterance);
+        window.speechSynthesis.speak(regionalUtterance);
       }, 500);
     } catch {
       // Speech synthesis fallback
@@ -376,6 +457,32 @@ export const OpdQueueTvDisplayModal: React.FC<OpdQueueTvDisplayModalProps> = ({
           >
             <span>{isMuted ? '🔇 Audio Muted' : '🔊 Voice Calling ON'}</span>
           </button>
+
+          {/* Regional Multi-Lingual Broadcast Selector (BestDoc Killer) */}
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <select
+              value={selectedLanguage}
+              onChange={(e) => handleLanguageChange(e.target.value as RegionalBroadcastLanguage)}
+              style={{
+                backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                border: '1.5px solid #38BDF8',
+                color: '#38BDF8',
+                padding: '8px 12px',
+                borderRadius: '8px',
+                fontSize: '0.85rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                outline: 'none'
+              }}
+              title="Select TV Waiting Lounge Broadcast Language"
+            >
+              {(Object.keys(REGIONAL_BROADCAST_CONFIG) as RegionalBroadcastLanguage[]).map((code) => (
+                <option key={code} value={code} style={{ backgroundColor: '#0F172A', color: '#F8FAFC' }}>
+                  {REGIONAL_BROADCAST_CONFIG[code].flag} {REGIONAL_BROADCAST_CONFIG[code].label}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <button
             type="button"

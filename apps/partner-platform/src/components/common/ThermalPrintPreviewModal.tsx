@@ -4,6 +4,7 @@ import { uniqueIdentifierService } from '../../services/unique-identifier-servic
 import { ProfileUpdateRequiredAlertModal } from './ProfileUpdateRequiredAlertModal.js';
 import { checkPartnerProfileStatus, type MissingProfileField } from '../../utils/partnerProfileGuard.js';
 import { getUnifiedPartnerProfile } from '../../utils/roleProfileResolver.js';
+import { hardwarePrinterService } from '../../services/hardware-printer-service.js';
 
 export type ThermalPrintType = 'TOKEN' | 'RECEIPT' | 'WRISTBAND' | 'PRESCRIPTION';
 
@@ -33,6 +34,8 @@ export const ThermalPrintPreviewModal: React.FC<ThermalPrintPreviewModalProps> =
   const [isMaximized, setIsMaximized] = useState(false);
   const [isProfileGuardAlertOpen, setIsProfileGuardAlertOpen] = useState(false);
   const [profileMissingFields, setProfileMissingFields] = useState<MissingProfileField[]>([]);
+  const [isDirectPrinting, setIsDirectPrinting] = useState(false);
+  const [directPrintFeedback, setDirectPrintFeedback] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -109,6 +112,42 @@ export const ThermalPrintPreviewModal: React.FC<ThermalPrintPreviewModalProps> =
       return;
     }
     window.print();
+  };
+
+  const handleDirectSilentPrint = async () => {
+    const status = checkPartnerProfileStatus();
+    if (!status.isUpdated) {
+      setProfileMissingFields(status.missingFields);
+      setIsProfileGuardAlertOpen(true);
+      return;
+    }
+
+    setIsDirectPrinting(true);
+    setDirectPrintFeedback('Sending ESC/POS bytes to Thermal Printer...');
+
+    try {
+      const res = await hardwarePrinterService.printOpdTokenSlip({
+        tokenNumber: String(currentPatient.opdToken || '14'),
+        uhid: currentPatient.uhid,
+        mrn: currentPatient.uhid,
+        patientName: currentPatient.name,
+        doctorName: currentPatient.doctorName || 'Attending Physician',
+        room: 'ROOM 101',
+        time: new Date().toLocaleTimeString(),
+        fee: 500,
+        clinicName: effectiveHospitalName
+      }, paperWidth === '80mm' ? 48 : 32);
+
+      setDirectPrintFeedback(`✓ ${res.message}`);
+      setTimeout(() => setDirectPrintFeedback(null), 4000);
+    } catch (e: any) {
+      console.warn('Direct ESC/POS failed, falling back to browser dialog:', e);
+      setDirectPrintFeedback('Direct hardware unavailable — opening system print...');
+      window.print();
+      setTimeout(() => setDirectPrintFeedback(null), 3000);
+    } finally {
+      setIsDirectPrinting(false);
+    }
   };
 
   return (
@@ -590,8 +629,15 @@ export const ThermalPrintPreviewModal: React.FC<ThermalPrintPreviewModalProps> =
             justifyContent: 'space-between'
           }}
         >
-          <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
-            Ready to print on default system printer or ESC/POS hardware spooler.
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
+              WebUSB & WebSerial Direct ESC/POS Spooler (Epson, TVS, Everycom, NGX)
+            </div>
+            {directPrintFeedback && (
+              <div style={{ fontSize: '0.72rem', color: '#34D399', fontWeight: 700 }}>
+                {directPrintFeedback}
+              </div>
+            )}
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -602,7 +648,7 @@ export const ThermalPrintPreviewModal: React.FC<ThermalPrintPreviewModalProps> =
                 backgroundColor: 'transparent',
                 border: '1px solid #64748B',
                 color: '#CBD5E1',
-                padding: '8px 16px',
+                padding: '8px 14px',
                 borderRadius: '8px',
                 fontSize: '0.8125rem',
                 fontWeight: 700,
@@ -612,6 +658,32 @@ export const ThermalPrintPreviewModal: React.FC<ThermalPrintPreviewModalProps> =
               Cancel
             </button>
 
+            {/* 1. Silent 1-Click Direct Raw ESC/POS Print without OS Dialog */}
+            <button
+              type="button"
+              onClick={handleDirectSilentPrint}
+              disabled={isDirectPrinting}
+              style={{
+                backgroundColor: '#10B981',
+                border: 'none',
+                color: '#FFFFFF',
+                padding: '8px 18px',
+                borderRadius: '8px',
+                fontSize: '0.8125rem',
+                fontWeight: 800,
+                cursor: isDirectPrinting ? 'wait' : 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)'
+              }}
+              title="Silent direct raw ESC/POS thermal print to USB/Serial printer with automatic paper cut (No Windows dialog!)"
+            >
+              <span>⚡</span>
+              <span>{isDirectPrinting ? 'Printing...' : 'Silent ESC/POS Print (0.5s)'}</span>
+            </button>
+
+            {/* 2. Standard Windows Browser Dialog Fallback */}
             <button
               type="button"
               onClick={handleTriggerPrint}
@@ -619,19 +691,19 @@ export const ThermalPrintPreviewModal: React.FC<ThermalPrintPreviewModalProps> =
                 backgroundColor: '#0284C7',
                 border: 'none',
                 color: '#FFFFFF',
-                padding: '8px 20px',
+                padding: '8px 16px',
                 borderRadius: '8px',
                 fontSize: '0.8125rem',
-                fontWeight: 800,
+                fontWeight: 700,
                 cursor: 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '6px',
-                boxShadow: '0 4px 14px rgba(2, 132, 199, 0.4)'
+                gap: '6px'
               }}
+              title="Standard Windows system printer dialog (Ctrl+P)"
             >
               <span>🖨️</span>
-              <span>Print Slip Now</span>
+              <span>System Dialog</span>
             </button>
           </div>
         </div>

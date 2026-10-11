@@ -102,6 +102,7 @@ const News2ClinicalAlertModal = React.lazy(() => import('./common/News2ClinicalA
 const ScheduleH1DrugRegisterModal = React.lazy(() => import('./common/ScheduleH1DrugRegisterModal.js').then(m => ({ default: m.ScheduleH1DrugRegisterModal })));
 const AbdmScanAndShareModal = React.lazy(() => import('./common/AbdmScanAndShareModal.js').then(m => ({ default: m.AbdmScanAndShareModal })));
 const TpaAyushmanCashlessDeskModal = React.lazy(() => import('./dialogs/TpaAyushmanCashlessDeskModal.js').then(m => ({ default: m.TpaAyushmanCashlessDeskModal })));
+const LegacyDataMigrationModal = React.lazy(() => import('./dialogs/LegacyDataMigrationModal.js').then(m => ({ default: m.LegacyDataMigrationModal })));
 import { DocSearchResponsiveBrand } from './common/DocSearchResponsiveBrand.js';
 import { OptimisticActionToast } from './common/OptimisticActionToast.js';
 import { AmbientVoiceScribeCapsule } from './common/AmbientVoiceScribeCapsule.js';
@@ -595,6 +596,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
   const [isScheduleH1ModalOpen, setIsScheduleH1ModalOpen] = useState(false);
   const [isAbdmScanModalOpen, setIsAbdmScanModalOpen] = useState(false);
   const [isCashlessDeskOpen, setIsCashlessDeskOpen] = useState(false);
+  const [isMigrationModalOpen, setIsMigrationModalOpen] = useState(false);
   const [isThemeStudioOpen, setIsThemeStudioOpen] = useState(false);
   const [isHospitalUpgradeModalOpen, setIsHospitalUpgradeModalOpen] = useState(false);
   const [isOfflineLicenseModalOpen, setIsOfflineLicenseModalOpen] = useState(false);
@@ -3015,6 +3017,27 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                 >
                   <span>🛡️ PM-JAY / Cashless</span>
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setIsMigrationModalOpen(true)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    backgroundColor: isMigrationModalOpen ? 'rgba(56, 189, 248, 0.25)' : 'rgba(56, 189, 248, 0.1)',
+                    border: '1px solid rgba(56, 189, 248, 0.35)',
+                    color: '#38BDF8',
+                    padding: '5px 8px',
+                    borderRadius: '8px',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="1-Click Data Migration Wizard: Import Practo Ray patients, Marg ERP medicines & Excel lists in 60s"
+                >
+                  <span>📥 Migration (Practo/Marg)</span>
+                </button>
               </div>
             </div>
           }
@@ -5388,6 +5411,14 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
             onClose={() => setIsCashlessDeskOpen(false)}
             patientName={printTargetPatient?.fullName}
             patientUhid={printTargetPatient?.uhid}
+          />
+        )}
+
+        {/* 4c. 1-CLICK LEGACY SOFTWARE DATA MIGRATION WIZARD (PRACTO / MARG / EXCEL) */}
+        {isMigrationModalOpen && (
+          <LegacyDataMigrationModal
+            isOpen={isMigrationModalOpen}
+            onClose={() => setIsMigrationModalOpen(false)}
           />
         )}
 
