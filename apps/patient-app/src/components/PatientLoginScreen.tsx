@@ -121,7 +121,7 @@ export const PatientLoginScreen: React.FC<Props> = ({ language, onLanguageToggle
 
       {/* Main Content Box */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', maxWidth: '420px', margin: '0 auto', width: '100%' }}>
-        <div style={{ marginBottom: '28px', textAlign: 'center' }}>
+        <div style={{ marginBottom: '24px', textAlign: 'center' }}>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 900, marginBottom: '8px', color: '#F8FAFC' }}>
             {step === 'SELECT_PATIENT' ? t.selectPatientTitle : `${t.welcome} 👋`}
           </h1>
@@ -129,6 +129,81 @@ export const PatientLoginScreen: React.FC<Props> = ({ language, onLanguageToggle
             {step === 'SELECT_PATIENT' ? t.selectPatientSubtitle : t.subtitle}
           </p>
         </div>
+
+        {step === 'PHONE' && (
+          <div
+            style={{
+              background: 'linear-gradient(135deg, rgba(2, 132, 199, 0.22) 0%, rgba(16, 185, 129, 0.18) 100%)',
+              border: '1.5px solid rgba(56, 189, 248, 0.45)',
+              borderRadius: '18px',
+              padding: '16px',
+              marginBottom: '20px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px',
+              boxShadow: '0 8px 24px rgba(2, 132, 199, 0.2)'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '1.75rem' }}>📲⚡</span>
+              <div>
+                <div style={{ fontSize: '0.9375rem', fontWeight: 900, color: '#38BDF8' }}>
+                  {language === 'hi' ? 'अस्पताल गेट इंस्टेंट पास (Zero-Download)' : 'Hospital Gate Instant Pass (Zero-Download)'}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
+                  {language === 'hi' ? 'बिना 40MB ऐप डाउनलोड किए 1 सेकंड में टोकन प्राप्त करें' : 'Get live token in 1s without downloading 40MB app'}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              <button
+                type="button"
+                onClick={handleQuickDemo}
+                style={{
+                  backgroundColor: '#10B981',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: '10px',
+                  padding: '10px 8px',
+                  fontSize: '0.8125rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '4px'
+                }}
+              >
+                <span>⚡ तुरंत टोकन लें</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const url = `https://wa.me/?text=${encodeURIComponent('DOC SEARCH टोकन पास: आपका टोकन #14 (Chamber 102 - Dr. Vivek Sharma) बुक हो चुका है। लाइव कतार: http://localhost:5174')}`;
+                  window.open(url, '_blank');
+                }}
+                style={{
+                  backgroundColor: '#25D366',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: '10px',
+                  padding: '10px 8px',
+                  fontSize: '0.8125rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '4px'
+                }}
+              >
+                <span>💬 WhatsApp टोकन</span>
+              </button>
+            </div>
+          </div>
+        )}
 
         {step === 'PHONE' && (
           <form onSubmit={handleSendOtp} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
