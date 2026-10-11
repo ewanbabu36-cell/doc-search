@@ -184,17 +184,68 @@ export const OpdQueueTvDisplayModal: React.FC<OpdQueueTvDisplayModalProps> = ({
     };
   }, [partnerProfile]);
 
+  const playAirportChime = () => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      
+      const playTone = (freq: number, start: number, duration: number) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
+        gain.gain.setValueAtTime(0, ctx.currentTime + start);
+        gain.gain.linearRampToValueAtTime(0.25, ctx.currentTime + start + 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + start);
+        osc.stop(ctx.currentTime + start + duration);
+      };
+
+      // BestDoc / Airport-grade 2-tone chime: Ding (523.25Hz / C5) -> Dong (659.25Hz / E5)
+      playTone(523.25, 0, 0.4);
+      playTone(659.25, 0.22, 0.55);
+    } catch {
+      // AudioContext fallback
+    }
+  };
+
   const playVoiceAnnouncement = (token: CallingToken) => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window) || isMuted) return;
+    if (typeof window === 'undefined' || isMuted) return;
+
+    // 1. Play pleasant melodic chime
+    playAirportChime();
+
+    if (!('speechSynthesis' in window)) return;
 
     try {
       window.speechSynthesis.cancel(); // cancel pending speech
-      const text = `Token Number ${token.tokenNumber}. ${token.patientName}. Please proceed to ${token.roomNumber}, ${token.doctorName}.`;
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.9;
-      utterance.pitch = 1.0;
-      utterance.lang = 'en-IN';
-      window.speechSynthesis.speak(utterance);
+
+      // 2. Hindi Broadcast: "टोकन संख्या 14, कमरा संख्या 102 में पधारें"
+      const hindiText = `टोकन संख्या ${token.tokenNumber}. ${token.patientName}. कृपया ${token.roomNumber} में पधारें।`;
+      const hindiUtterance = new SpeechSynthesisUtterance(hindiText);
+      hindiUtterance.rate = 0.88;
+      hindiUtterance.pitch = 1.05;
+      hindiUtterance.lang = 'hi-IN';
+
+      // 3. English Broadcast after Hindi completes
+      hindiUtterance.onend = () => {
+        try {
+          const englishText = `Token number ${token.tokenNumber}. ${token.patientName}. Please proceed to ${token.roomNumber}.`;
+          const englishUtterance = new SpeechSynthesisUtterance(englishText);
+          englishUtterance.rate = 0.92;
+          englishUtterance.pitch = 1.0;
+          englishUtterance.lang = 'en-IN';
+          window.speechSynthesis.speak(englishUtterance);
+        } catch {}
+      };
+
+      // Slight delay so the pleasant chime finishes before voice speaks
+      setTimeout(() => {
+        window.speechSynthesis.speak(hindiUtterance);
+      }, 500);
     } catch {
       // Speech synthesis fallback
     }

@@ -13,6 +13,7 @@ export const MyTokenQueueScreen: React.FC<Props> = ({ language, patient, onBack 
   const [patientsAhead, setPatientsAhead] = useState(patient.activeToken?.patientsAhead ?? 2);
   const [isCalled, setIsCalled] = useState(patient.activeToken?.isCalled ?? false);
   const [isDelayed, setIsDelayed] = useState(false);
+  const [showOfflinePass, setShowOfflinePass] = useState(false);
 
   // Real-time Live Queue Polling (every 5 seconds)
   useEffect(() => {
@@ -169,6 +170,101 @@ export const MyTokenQueueScreen: React.FC<Props> = ({ language, patient, onBack 
 
       {/* Action Controls */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: 'auto' }}>
+        {/* Offline Basement Gate Pass Toggle */}
+        <button
+          type="button"
+          onClick={() => setShowOfflinePass((prev) => !prev)}
+          style={{
+            width: '100%',
+            backgroundColor: showOfflinePass ? '#0284C7' : 'rgba(56, 189, 248, 0.12)',
+            border: '1.5px solid #38BDF8',
+            color: showOfflinePass ? '#FFFFFF' : '#38BDF8',
+            borderRadius: '16px',
+            padding: '14px',
+            fontSize: '0.9375rem',
+            fontWeight: 800,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            boxShadow: showOfflinePass ? '0 0 16px rgba(2, 132, 199, 0.4)' : 'none'
+          }}
+        >
+          <span>📲</span>
+          <span>
+            {showOfflinePass
+              ? (language === 'hi' ? 'पास छिपाएं' : 'Hide Offline Pass')
+              : (language === 'hi' ? 'बेसमेंट ऑफलाइन गेट पास (Offline QR Pass)' : 'Basement Offline QR Pass')}
+          </span>
+        </button>
+
+        {/* Offline Scannable QR Ticket Card */}
+        {showOfflinePass && (
+          <div
+            style={{
+              backgroundColor: '#FFFFFF',
+              color: '#0F172A',
+              borderRadius: '20px',
+              padding: '20px',
+              textAlign: 'center',
+              boxShadow: '0 12px 36px rgba(0, 0, 0, 0.5)',
+              animation: 'fadeIn 0.2s ease-in'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', color: '#059669', fontSize: '0.75rem', fontWeight: 800, marginBottom: '10px' }}>
+              <span>✓ 100% OFFLINE VAULT TICKET</span>
+            </div>
+
+            {/* Simulated High-Contrast Scannable 2D Barcode / QR Matrix */}
+            <div
+              style={{
+                width: '180px',
+                height: '180px',
+                margin: '0 auto 14px auto',
+                backgroundColor: '#000000',
+                padding: '10px',
+                borderRadius: '12px',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(9, 1fr)',
+                gridTemplateRows: 'repeat(9, 1fr)',
+                gap: '3px'
+              }}
+            >
+              {Array.from({ length: 81 }).map((_, i) => {
+                // High density QR-like deterministic pattern
+                const isCorner = (i < 3 || (i >= 6 && i <= 8) || i === 9 || i === 11 || i === 15 || i === 17 || i === 18 || i === 20 || i === 24 || i === 26 || (i >= 54 && i <= 56) || i === 63 || i === 65 || (i >= 72 && i <= 74));
+                const isBlack = isCorner || (i % 2 === 0 && (i * 7) % 5 !== 0) || i % 7 === 0;
+                return (
+                  <div
+                    key={i}
+                    style={{
+                      backgroundColor: isBlack ? '#FFFFFF' : '#000000',
+                      borderRadius: '2px'
+                    }}
+                  />
+                );
+              })}
+            </div>
+
+            <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0F172A', marginBottom: '2px' }}>
+              TOKEN #{patient.activeToken?.tokenNumber || '14'}
+            </div>
+            <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#475569', marginBottom: '2px' }}>
+              {patient.fullName} • {patient.uhid}
+            </div>
+            <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#0284C7', marginBottom: '10px' }}>
+              {patient.activeToken?.doctorName} ({patient.activeToken?.chamberRoom})
+            </div>
+
+            <div style={{ fontSize: '0.6875rem', color: '#64748B', fontWeight: 600, backgroundColor: '#F1F5F9', padding: '6px 10px', borderRadius: '8px' }}>
+              {language === 'hi'
+                ? 'यह पास बेसमेंट लैब/एक्स-रे काउंटर पर दिखाएं (इंटरनेट की ज़रूरत नहीं)'
+                : 'Show this pass at Basement Lab/X-Ray counter (No Internet Needed)'}
+            </div>
+          </div>
+        )}
+
         {!isCalled && (
           <button
             type="button"

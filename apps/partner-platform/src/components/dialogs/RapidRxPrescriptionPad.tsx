@@ -60,8 +60,8 @@ export const RAPID_INDIAN_FORMULARY: RapidDrugCatalogItem[] = [
   },
   {
     id: 'rx-panto-40',
-    brandName: 'Pan 40 / Pantocid',
-    genericName: 'Pantoprazole Sodium',
+    brandName: 'Pantocid 40mg / Pan 40',
+    genericName: 'Pantoprazole Sodium 40mg',
     formulation: 'TAB',
     defaultStrength: '40mg',
     defaultFrequency: '1 - 0 - 0',
@@ -70,7 +70,7 @@ export const RAPID_INDIAN_FORMULARY: RapidDrugCatalogItem[] = [
     defaultDosage: '1 Tab',
     instructions: 'Morning 30 mins before breakfast',
     janAushadhiEquivalent: { name: 'Jan Aushadhi Pantoprazole 40mg', brandPrice: 110, janAushadhiPrice: 15 },
-    keywords: ['pa', 'pan', 'panto', 'pantocid', 'pantodac', 'acid', 'gerd', 'gas', 'gastric']
+    keywords: ['pa', 'pan', 'panto', 'pantocid', 'pan40', 'pantosec', 'pantodac', 'acid', 'gerd', 'gas', 'gastric']
   },
   {
     id: 'rx-pan-d',
@@ -84,7 +84,21 @@ export const RAPID_INDIAN_FORMULARY: RapidDrugCatalogItem[] = [
     defaultDosage: '1 Cap',
     instructions: 'Early morning empty stomach with full glass of water',
     janAushadhiEquivalent: { name: 'Jan Aushadhi Pantoprazole + Domperidone', brandPrice: 165, janAushadhiPrice: 24 },
-    keywords: ['pan', 'pand', 'dsr', 'dom', 'vomit', 'nausea', 'reflux', 'heartburn']
+    keywords: ['pa', 'pan', 'pand', 'dsr', 'pantocid-dsr', 'dom', 'vomit', 'nausea', 'reflux', 'heartburn']
+  },
+  {
+    id: 'rx-pantosec-40',
+    brandName: 'Pantosec 40 / Pantodac',
+    genericName: 'Pantoprazole Gastro-Resistant 40mg',
+    formulation: 'TAB',
+    defaultStrength: '40mg',
+    defaultFrequency: '1 - 0 - 0',
+    defaultDurationDays: 14,
+    defaultTiming: 'EMPTY_STOMACH',
+    defaultDosage: '1 Tab',
+    instructions: 'Once daily before morning tea/breakfast',
+    janAushadhiEquivalent: { name: 'Jan Aushadhi Pantoprazole 40mg', brandPrice: 115, janAushadhiPrice: 15 },
+    keywords: ['pa', 'pan', 'pantosec', 'pantodac', 'sec', 'hyperacidity', 'esophagitis']
   },
   {
     id: 'rx-azithro-500',

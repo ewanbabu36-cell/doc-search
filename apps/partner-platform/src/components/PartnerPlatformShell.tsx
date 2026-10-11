@@ -582,8 +582,15 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
     return () => {
       window.removeEventListener('docsearch:open_settings', handleOpenSettingsEvent);
     };
-  }, []);
-  const [isTvDisplayOpen, setIsTvDisplayOpen] = useState(false);
+  const [isTvDisplayOpen, setIsTvDisplayOpen] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const p = window.location.pathname.toLowerCase();
+      const s = window.location.search.toLowerCase();
+      const h = window.location.hash.toLowerCase();
+      return p.includes('/display/queue') || p.includes('tv-display') || s.includes('display=tv') || s.includes('queue=tv') || h.includes('tv-display');
+    }
+    return false;
+  });
   const [isNews2ModalOpen, setIsNews2ModalOpen] = useState(false);
   const [isScheduleH1ModalOpen, setIsScheduleH1ModalOpen] = useState(false);
   const [isAbdmScanModalOpen, setIsAbdmScanModalOpen] = useState(false);
