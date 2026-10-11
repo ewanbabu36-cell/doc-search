@@ -101,6 +101,7 @@ const OpdQueueTvDisplayModal = React.lazy(() => import('./common/OpdQueueTvDispl
 const News2ClinicalAlertModal = React.lazy(() => import('./common/News2ClinicalAlertModal.js').then(m => ({ default: m.News2ClinicalAlertModal })));
 const ScheduleH1DrugRegisterModal = React.lazy(() => import('./common/ScheduleH1DrugRegisterModal.js').then(m => ({ default: m.ScheduleH1DrugRegisterModal })));
 const AbdmScanAndShareModal = React.lazy(() => import('./common/AbdmScanAndShareModal.js').then(m => ({ default: m.AbdmScanAndShareModal })));
+const TpaAyushmanCashlessDeskModal = React.lazy(() => import('./dialogs/TpaAyushmanCashlessDeskModal.js').then(m => ({ default: m.TpaAyushmanCashlessDeskModal })));
 import { DocSearchResponsiveBrand } from './common/DocSearchResponsiveBrand.js';
 import { OptimisticActionToast } from './common/OptimisticActionToast.js';
 import { AmbientVoiceScribeCapsule } from './common/AmbientVoiceScribeCapsule.js';
@@ -586,6 +587,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
   const [isNews2ModalOpen, setIsNews2ModalOpen] = useState(false);
   const [isScheduleH1ModalOpen, setIsScheduleH1ModalOpen] = useState(false);
   const [isAbdmScanModalOpen, setIsAbdmScanModalOpen] = useState(false);
+  const [isCashlessDeskOpen, setIsCashlessDeskOpen] = useState(false);
   const [isThemeStudioOpen, setIsThemeStudioOpen] = useState(false);
   const [isHospitalUpgradeModalOpen, setIsHospitalUpgradeModalOpen] = useState(false);
   const [isOfflineLicenseModalOpen, setIsOfflineLicenseModalOpen] = useState(false);
@@ -2985,6 +2987,27 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                 >
                   <span>📺 Lounge TV</span>
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setIsCashlessDeskOpen(true)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    backgroundColor: isCashlessDeskOpen ? 'rgba(16, 185, 129, 0.25)' : 'rgba(16, 185, 129, 0.1)',
+                    border: '1px solid rgba(16, 185, 129, 0.35)',
+                    color: '#34D399',
+                    padding: '5px 8px',
+                    borderRadius: '8px',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="PM-JAY Ayushman Bharat & TPA Cashless Insurance Desk (IRDAI Pre-Auth / NHCX)"
+                >
+                  <span>🛡️ PM-JAY / Cashless</span>
+                </button>
               </div>
             </div>
           }
@@ -5348,6 +5371,16 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
             isOpen={isAbdmScanModalOpen}
             onClose={() => setIsAbdmScanModalOpen(false)}
             hospitalName={getUnifiedPartnerProfile(currentUser).entityLegalName}
+          />
+        )}
+
+        {/* 4b. AYUSHMAN BHARAT PM-JAY & TPA CASHLESS INSURANCE PRE-AUTH DESK */}
+        {isCashlessDeskOpen && (
+          <TpaAyushmanCashlessDeskModal
+            isOpen={isCashlessDeskOpen}
+            onClose={() => setIsCashlessDeskOpen(false)}
+            patientName={printTargetPatient?.fullName}
+            patientUhid={printTargetPatient?.uhid}
           />
         )}
 

@@ -7879,6 +7879,8 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
               <RapidRxPrescriptionPad
                 onAddMedication={handleAddMedicationFromRapidRx}
                 onAddMultipleMedications={handleAddMultipleMedicationsFromRapidRx}
+                onRepeatPreviousRx={chronicMedsList.length > 0 ? handleRepeatAllChronic : undefined}
+                hasPreviousRx={chronicMedsList.length > 0}
                 currentMedCount={medList.length}
                 consultationId={consultation.id}
               />

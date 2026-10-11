@@ -4,6 +4,8 @@ import type { CockpitMedItem } from '../views/SoloDoctorOpdCockpitView.js';
 export interface RapidRxPrescriptionPadProps {
   onAddMedication: (med: CockpitMedItem) => void;
   onAddMultipleMedications?: (meds: CockpitMedItem[], clinicalNotes?: { diagnosis?: string; treatmentPlan?: string; followUpDays?: string }) => void;
+  onRepeatPreviousRx?: (() => void) | undefined;
+  hasPreviousRx?: boolean | undefined;
   currentMedCount: number;
   consultationId: string;
 }
@@ -485,6 +487,8 @@ export const RAPID_CLINICAL_KITS: RapidClinicalKit[] = [
 export const RapidRxPrescriptionPad: React.FC<RapidRxPrescriptionPadProps> = ({
   onAddMedication,
   onAddMultipleMedications,
+  onRepeatPreviousRx,
+  hasPreviousRx,
   currentMedCount,
   consultationId
 }) => {
@@ -499,6 +503,110 @@ export const RapidRxPrescriptionPad: React.FC<RapidRxPrescriptionPadProps> = ({
   const [durationDays, setDurationDays] = useState(3);
   const [timing, setTiming] = useState<'AFTER_FOOD' | 'BEFORE_FOOD' | 'BEDTIME' | 'EMPTY_STOMACH'>('AFTER_FOOD');
   const [instructions, setInstructions] = useState('');
+
+  // Voice Scribe State (बोलकर पर्चा लिखें - AI Clinical NLP Assist)
+  const [isListeningVoice, setIsListeningVoice] = useState(false);
+  const [voiceInterimTranscript, setVoiceInterimTranscript] = useState('');
+  const recognitionRef = useRef<any>(null);
+
+  // Physical Letterhead Margin Mode (for doctors who print on physical clinic pads)
+  const [isLetterheadMode, setIsLetterheadMode] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('docsearch_letterhead_margin_enabled') === 'true';
+    }
+    return false;
+  });
+
+  const toggleLetterheadMode = () => {
+    const nextVal = !isLetterheadMode;
+    setIsLetterheadMode(nextVal);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('docsearch_letterhead_margin_enabled', String(nextVal));
+    }
+  };
+
+  const toggleVoiceScribe = () => {
+    if (typeof window === 'undefined') return;
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('Speech recognition is not supported in this browser. Please use Google Chrome or Microsoft Edge.');
+      return;
+    }
+
+    if (isListeningVoice) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      setIsListeningVoice(false);
+      setVoiceInterimTranscript('');
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'hi-IN'; // Dual bilingual Hindi/English
+      recognitionRef.current = recognition;
+
+      recognition.onstart = () => {
+        setIsListeningVoice(true);
+        setVoiceInterimTranscript('🎙️ बोलिए... (e.g. "Dolo 650 TDS, Pan 40 OD")');
+      };
+
+      recognition.onresult = (event: any) => {
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        setVoiceInterimTranscript(transcript);
+
+        // Smart Clinical Voice NLP Parser
+        const lower = transcript.toLowerCase();
+        for (const drug of RAPID_INDIAN_FORMULARY) {
+          const matchKeyword = drug.keywords.some((k) => lower.includes(k.toLowerCase()));
+          if (matchKeyword) {
+            const freq = lower.includes('thrice') || lower.includes('teen') || lower.includes('tds') ? '1 - 1 - 1'
+              : lower.includes('twice') || lower.includes('do') || lower.includes('bd') ? '1 - 0 - 1'
+              : lower.includes('night') || lower.includes('raat') || lower.includes('hs') ? '0 - 0 - 1'
+              : lower.includes('once') || lower.includes('ek') || lower.includes('od') ? '1 - 0 - 0'
+              : drug.defaultFrequency;
+
+            const newMed: CockpitMedItem = {
+              id: `voice-rx-${drug.id}-${Date.now()}`,
+              medicationName: drug.brandName,
+              strength: drug.defaultStrength,
+              dosage: drug.defaultDosage,
+              frequency: freq,
+              duration: drug.defaultDurationDays,
+              durationUnit: 'DAYS',
+              beforeAfterFood: drug.defaultTiming,
+              instructions: `Auto-scribed from voice: ${drug.instructions}`,
+              genericSubstitute: drug.janAushadhiEquivalent
+            };
+
+            onAddMedication(newMed);
+            setVoiceInterimTranscript(`✓ Added ${drug.brandName} (${freq}) from voice!`);
+            break;
+          }
+        }
+      };
+
+      recognition.onerror = () => {
+        setIsListeningVoice(false);
+        setVoiceInterimTranscript('');
+      };
+
+      recognition.onend = () => {
+        setIsListeningVoice(false);
+      };
+
+      recognition.start();
+    } catch (e) {
+      console.warn('Voice scribe error:', e);
+      setIsListeningVoice(false);
+    }
+  };
 
   // 25-Second Prescribing Speed Timer (Gamification for Doctor Efficiency)
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -618,8 +726,78 @@ export const RapidRxPrescriptionPad: React.FC<RapidRxPrescriptionPadProps> = ({
           </div>
         </div>
 
-        {/* Speedometer Indicator */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {/* Speedometer & Doctor Resistance Killers (Voice + Repeat Rx + Letterhead) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          {/* 1. Voice Scribe Button */}
+          <button
+            type="button"
+            onClick={toggleVoiceScribe}
+            style={{
+              backgroundColor: isListeningVoice ? '#DC2626' : 'rgba(56, 189, 248, 0.15)',
+              border: `1.5px solid ${isListeningVoice ? '#EF4444' : '#38BDF8'}`,
+              color: isListeningVoice ? '#FFFFFF' : '#38BDF8',
+              borderRadius: '8px',
+              padding: '5px 10px',
+              fontSize: '0.75rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              boxShadow: isListeningVoice ? '0 0 12px rgba(239, 68, 68, 0.6)' : 'none'
+            }}
+            title="Speak medicines in Hindi/English — AI Auto-Transcribes into Rx without typing!"
+          >
+            <span>{isListeningVoice ? '🔴' : '🎙️'}</span>
+            <span>{isListeningVoice ? 'Listening (बोलिए)...' : 'Voice Scribe'}</span>
+          </button>
+
+          {/* 2. 1-Tap Repeat Previous Rx Button */}
+          {onRepeatPreviousRx && (
+            <button
+              type="button"
+              onClick={onRepeatPreviousRx}
+              style={{
+                backgroundColor: 'rgba(251, 191, 36, 0.15)',
+                border: '1px solid #F59E0B',
+                color: '#FCD34D',
+                borderRadius: '8px',
+                padding: '5px 10px',
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+              title="1-Tap: Copy entire chronic medication list from previous consultation visit"
+            >
+              <span>🔁</span>
+              <span>Repeat Last Rx</span>
+            </button>
+          )}
+
+          {/* 3. Letterhead Margin Mode Toggle */}
+          <button
+            type="button"
+            onClick={toggleLetterheadMode}
+            style={{
+              backgroundColor: isLetterheadMode ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.06)',
+              border: `1px solid ${isLetterheadMode ? '#10B981' : 'rgba(255, 255, 255, 0.15)'}`,
+              color: isLetterheadMode ? '#34D399' : '#94A3B8',
+              borderRadius: '8px',
+              padding: '5px 8px',
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              cursor: 'pointer'
+            }}
+            title="Toggle top margin reservation for printing directly on doctor physical letterhead paper"
+          >
+            <span>📜</span>
+            <span>{isLetterheadMode ? 'Letterhead Margin: ON (2.5")' : 'Blank Paper'}</span>
+          </button>
+
+          {/* Speedometer Indicator */}
           <div
             style={{
               display: 'flex',
@@ -627,7 +805,7 @@ export const RapidRxPrescriptionPad: React.FC<RapidRxPrescriptionPadProps> = ({
               gap: '6px',
               backgroundColor: elapsedSeconds <= 25 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
               border: `1px solid ${elapsedSeconds <= 25 ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)'}`,
-              padding: '4px 10px',
+              padding: '4px 8px',
               borderRadius: '20px'
             }}
           >
@@ -635,16 +813,34 @@ export const RapidRxPrescriptionPad: React.FC<RapidRxPrescriptionPadProps> = ({
             <span style={{ fontSize: '0.75rem', fontWeight: 800, color: elapsedSeconds <= 25 ? '#34D399' : '#F87171' }}>
               {elapsedSeconds}s
             </span>
-            <span style={{ fontSize: '0.625rem', color: '#94A3B8' }}>
-              {elapsedSeconds <= 25 ? '• Target Achieved 🚀' : '• Target 25s'}
-            </span>
           </div>
 
           <div style={{ fontSize: '0.75rem', color: '#E2E8F0', fontWeight: 700 }}>
-            <span style={{ color: '#38BDF8', fontWeight: 900 }}>{currentMedCount}</span> meds in Rx
+            <span style={{ color: '#38BDF8', fontWeight: 900 }}>{currentMedCount}</span> in Rx
           </div>
         </div>
       </div>
+
+      {/* Voice Interim Transcript Banner */}
+      {voiceInterimTranscript && (
+        <div
+          style={{
+            backgroundColor: 'rgba(56, 189, 248, 0.12)',
+            border: '1px solid rgba(56, 189, 248, 0.35)',
+            borderRadius: '8px',
+            padding: '6px 12px',
+            marginBottom: '10px',
+            fontSize: '0.75rem',
+            color: '#38BDF8',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          <span>🎙️</span>
+          <span><strong>AI Scribe:</strong> {voiceInterimTranscript}</span>
+        </div>
+      )}
 
       {/* 1-Click Clinical Disease Protocol Kits (Row of quick pill buttons) */}
       <div style={{ marginBottom: '12px' }}>
