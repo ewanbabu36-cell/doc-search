@@ -51,7 +51,17 @@ export const translations = {
     addMember: '+ नया सदस्य जोड़ें',
     paidReceipt: 'फीस रसीद (Paid Slip)',
     voicePrescription: '🔊 डॉक्टर की सलाह सुनें',
-    offlineStatus: '📶 ऑफ़लाइन मोड: पर्ची और क्यूआर फोन में सुरक्षित हैं'
+    offlineStatus: '📶 ऑफ़लाइन मोड: पर्ची और क्यूआर फोन में सुरक्षित हैं',
+    profile: 'प्रोफाइल',
+    abhaCard: 'आयुष्मान भारत डिजिटल हेल्थ कार्ड (ABHA ID)',
+    abhaLinked: 'ABDM से लिंक एवं सत्यापित',
+    abhaNumber: 'ABHA संख्या',
+    personalDetails: 'व्यक्तिगत जानकारी',
+    medicalFlags: 'एलर्जी एवं स्वास्थ्य स्थिति',
+    emergencyContact: 'आपातकालीन संपर्क (Emergency Contact)',
+    selectPatientTitle: 'परामर्श हेतु मरीज़ चुनें',
+    selectPatientSubtitle: 'इस मोबाइल नंबर पर कई मरीज़ पंजीकृत हैं। आज किसके लिए परामर्श लेना है?',
+    addNewFamilyMember: '+ नया मरीज़ / परिजन जोड़ें'
   },
   en: {
     welcome: 'Welcome',
@@ -103,6 +113,16 @@ export const translations = {
     addMember: '+ Add Family Member',
     paidReceipt: 'Fee Receipt (Paid Slip)',
     voicePrescription: '🔊 Listen Doctor Advice',
-    offlineStatus: '📶 Offline Safe Mode: Rx & Health QR stored offline'
+    offlineStatus: '📶 Offline Safe Mode: Rx & Health QR stored offline',
+    profile: 'Profile',
+    abhaCard: 'Ayushman Bharat Digital Health Card (ABHA ID)',
+    abhaLinked: 'Linked & Verified with ABDM',
+    abhaNumber: 'ABHA Number',
+    personalDetails: 'Personal Medical Details',
+    medicalFlags: 'Allergies & Clinical Conditions',
+    emergencyContact: 'Emergency SOS Contact',
+    selectPatientTitle: 'Select Patient for Consultation',
+    selectPatientSubtitle: 'Multiple patients are linked to this phone number. Who is consulting today?',
+    addNewFamilyMember: '+ Add New Patient / Family Member'
   }
 };

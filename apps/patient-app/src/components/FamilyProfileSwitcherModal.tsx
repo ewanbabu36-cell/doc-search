@@ -15,61 +15,36 @@ export const FamilyProfileSwitcherModal: React.FC<Props> = ({
   onClose,
   onSelectPatient
 }) => {
-  const [familyMembers, setFamilyMembers] = useState<PatientProfile[]>([
-    currentPatient,
-    {
-      id: 'pat-mother-102',
-      uhid: 'MRN-882104',
-      fullName: 'Shanti Devi (Mataji)',
-      age: 68,
-      gender: 'FEMALE',
-      phone: currentPatient.phone,
-      bloodGroup: 'B +ve',
-      allergies: ['Dust', 'Sulfa Drugs'],
-      activeToken: null
-    },
-    {
-      id: 'pat-son-103',
-      uhid: 'MRN-910244',
-      fullName: 'Aarav Roy (Beta)',
-      age: 8,
-      gender: 'MALE',
-      phone: currentPatient.phone,
-      bloodGroup: 'O +ve',
-      allergies: [],
-      activeToken: {
-        tokenNumber: '#04',
-        doctorName: 'Dr. Meera Sen (MD Pediatrics)',
-        chamberRoom: 'Pediatrics - Room 108',
-        patientsAhead: 1,
-        estimatedWaitMins: 4,
-        isCalled: false
-      }
-    }
-  ]);
-
+  const [familyMembers, setFamilyMembers] = useState<PatientProfile[]>([currentPatient]);
   const [showAddMember, setShowAddMember] = useState(false);
   const [newMemberName, setNewMemberName] = useState('');
   const [newMemberAge, setNewMemberAge] = useState('');
   const [newMemberRelation, setNewMemberRelation] = useState('Pita Ji (Father)');
 
-  const handleAddMember = (e: React.FormEvent) => {
+  React.useEffect(() => {
+    let active = true;
+    patientApiService.getFamilyMembers(currentPatient.phone).then((m) => {
+      if (active && m.length > 0) setFamilyMembers(m);
+    });
+    return () => {
+      active = false;
+    };
+  }, [currentPatient.phone]);
+
+  const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMemberName.trim()) return;
 
-    const newPat: PatientProfile = {
-      id: `pat-fam-${Date.now()}`,
-      uhid: `MRN-${Math.floor(600000 + Math.random() * 300000)}`,
+    const added = await patientApiService.addFamilyMember(currentPatient.phone, {
       fullName: `${newMemberName.trim()} (${newMemberRelation})`,
       age: parseInt(newMemberAge, 10) || 50,
       gender: 'MALE',
-      phone: currentPatient.phone,
-      bloodGroup: 'B +ve',
-      allergies: [],
-      activeToken: null
-    };
+      relationship: newMemberRelation
+    });
 
-    setFamilyMembers([...familyMembers, newPat]);
+    if (added) {
+      setFamilyMembers((prev) => [...prev, added]);
+    }
     setShowAddMember(false);
     setNewMemberName('');
     setNewMemberAge('');

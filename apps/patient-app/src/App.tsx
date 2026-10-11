@@ -7,9 +7,10 @@ import { MyTokenQueueScreen } from './components/MyTokenQueueScreen.js';
 import { MeriParchiScreen } from './components/MeriParchiScreen.js';
 import { DawaReminderScreen } from './components/DawaReminderScreen.js';
 import { VideoConsultationScreen } from './components/VideoConsultationScreen.js';
+import { PatientProfileScreen } from './components/PatientProfileScreen.js';
 import { BookOpdModal } from './components/BookOpdModal.js';
 
-export type PatientScreen = 'HOME' | 'QUEUE' | 'PARCHI' | 'DAWA' | 'VIDEO' | 'BOOK';
+export type PatientScreen = 'HOME' | 'QUEUE' | 'PARCHI' | 'DAWA' | 'VIDEO' | 'BOOK' | 'PROFILE';
 
 export const App: React.FC = () => {
   const [language, setLanguage] = useState<Language>('hi');
@@ -62,7 +63,6 @@ export const App: React.FC = () => {
               setActiveScreen(screen);
             }
           }}
-          onLogout={handleLogout}
           onSelectPatient={(p) => setCurrentPatient(p)}
         />
       )}
@@ -92,6 +92,17 @@ export const App: React.FC = () => {
       {activeScreen === 'VIDEO' && (
         <VideoConsultationScreen
           language={language}
+          onBack={() => setActiveScreen('HOME')}
+        />
+      )}
+
+      {activeScreen === 'PROFILE' && (
+        <PatientProfileScreen
+          language={language}
+          onLanguageToggle={handleLanguageToggle}
+          patient={currentPatient}
+          onSelectPatient={(p) => setCurrentPatient(p)}
+          onLogout={handleLogout}
           onBack={() => setActiveScreen('HOME')}
         />
       )}
@@ -210,11 +221,11 @@ export const App: React.FC = () => {
 
         <button
           type="button"
-          onClick={() => setShowBookModal(true)}
+          onClick={() => setActiveScreen('PROFILE')}
           style={{
             background: 'none',
             border: 'none',
-            color: '#34D399',
+            color: activeScreen === 'PROFILE' ? '#38BDF8' : '#94A3B8',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -224,12 +235,12 @@ export const App: React.FC = () => {
             cursor: 'pointer'
           }}
         >
-          <span style={{ fontSize: '1.25rem' }}>📅</span>
-          <span>{language === 'hi' ? 'बुक' : 'Book'}</span>
+          <span style={{ fontSize: '1.25rem' }}>👤</span>
+          <span>{language === 'hi' ? 'प्रोफाइल' : 'Profile'}</span>
         </button>
       </nav>
 
-      {/* Book OPD Modal from Bottom Nav */}
+      {/* Book OPD Modal */}
       {showBookModal && (
         <BookOpdModal
           language={language}

@@ -40,9 +40,19 @@ export const PatientRequestOtpSchema = z.object({
 export const PatientVerifyOtpSchema = z.object({
   mobileNumber: z.string().trim().min(10, 'Mobile number must be at least 10 digits'),
   otp: z.string().trim().min(4, 'OTP must be 4 digits'),
+  selectedPatientId: z.string().trim().optional(),
   fullName: z.string().trim().optional(),
   age: z.number().int().min(1).max(130).optional(),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional()
+});
+
+export const PatientAddFamilyMemberSchema = z.object({
+  mobileNumber: z.string().trim().min(10, 'Mobile number must be at least 10 digits'),
+  fullName: z.string().trim().min(2, 'Name must be at least 2 characters'),
+  age: z.number().int().min(1).max(130).default(30),
+  gender: z.enum(['MALE', 'FEMALE', 'OTHER']).default('MALE'),
+  relationship: z.string().trim().optional(),
+  bloodGroup: z.string().trim().optional()
 });
 
 export const PatientDelayAlertSchema = z.object({
@@ -59,18 +69,19 @@ export const PatientBookAppointmentSchema = z.object({
 });
 
 export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
-  // 1. Request OTP for Patient Mobile App
+  // 1. Request OTP for Patient Mobile App (Multi-Patient Aware)
   app.post('/api/v1/patient/auth/request-otp', async (request, reply) => {
     const payload = PatientRequestOtpSchema.parse(request.body);
     const { last10, withCountry } = normalizePhone(payload.mobileNumber);
     const db = getDatabase();
 
-    // Check if patient already exists in PostgreSQL database
+    // Check if patient(s) already exist in PostgreSQL database
     let existingPatientName: string | null = null;
     let existingMrn: string | null = null;
+    const registeredPatientsList: Array<{ id: string; name: string; mrn: string }> = [];
 
     try {
-      const [contact] = await db
+      const contacts = await db
         .select({
           patientId: patientContacts.patientId,
           primaryMobile: patientContacts.primaryMobile
@@ -82,40 +93,54 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
             eq(patientContacts.primaryMobile, withCountry),
             sql`${patientContacts.primaryMobile} LIKE ${`%${last10}`}`
           )
-        )
-        .limit(1);
+        );
 
-      if (contact?.patientId) {
+      const uniquePatientIds = Array.from(new Set(contacts.map((c) => c.patientId).filter(Boolean))) as string[];
+
+      for (const patId of uniquePatientIds) {
         const [pat] = await db
           .select({
+            id: patients.id,
             firstName: patients.firstName,
             lastName: patients.lastName,
-            mrn: patients.mrn
+            mrn: patients.mrn,
+            uhid: patients.uhid
           })
           .from(patients)
-          .where(eq(patients.id, contact.patientId))
+          .where(eq(patients.id, patId))
           .limit(1);
 
         if (pat) {
-          existingPatientName = `${pat.firstName} ${pat.lastName}`.trim();
-          existingMrn = pat.mrn;
+          registeredPatientsList.push({
+            id: pat.id,
+            name: `${pat.firstName} ${pat.lastName}`.trim(),
+            mrn: pat.uhid || pat.mrn
+          });
         }
       }
+
+      if (registeredPatientsList.length > 0) {
+        existingPatientName = registeredPatientsList[0]?.name || null;
+        existingMrn = registeredPatientsList[0]?.mrn || null;
+      }
     } catch (err) {
-      logger.warn('Error checking existing patient contact:', { error: String(err) });
+      logger.warn('Error checking existing patient contacts:', { error: String(err) });
     }
 
     return reply.send({
       success: true,
       message: `OTP sent successfully to +91 ${last10}`,
-      isRegistered: Boolean(existingPatientName),
+      isRegistered: registeredPatientsList.length > 0,
+      multiplePatients: registeredPatientsList.length > 1,
+      patientCount: registeredPatientsList.length,
       registeredName: existingPatientName,
       patientMrn: existingMrn,
+      patients: registeredPatientsList,
       devOtp: '1234'
     });
   });
 
-  // 2. Verify OTP & Auto-Link or Auto-Register Patient
+  // 2. Verify OTP & Auto-Link or Multi-Patient Selector
   app.post('/api/v1/patient/auth/verify-otp', async (request, reply) => {
     const payload = PatientVerifyOtpSchema.parse(request.body);
     const { last10, withCountry } = normalizePhone(payload.mobileNumber);
@@ -130,13 +155,51 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
       });
     }
 
-    // A. Query database for existing patient contact
-    let patientRecord: any = null;
-    let contactRecord: any = null;
-
-    try {
-      const [contact] = await db
+    // A. If selectedPatientId is specified, directly login as that patient
+    if (payload.selectedPatientId) {
+      const [pat] = await db
         .select()
+        .from(patients)
+        .where(eq(patients.id, payload.selectedPatientId))
+        .limit(1);
+
+      if (pat) {
+        let age = 45;
+        if (pat.dateOfBirth) {
+          const birthYear = new Date(pat.dateOfBirth).getFullYear();
+          if (!isNaN(birthYear) && birthYear > 1900) {
+            age = Math.max(1, new Date().getFullYear() - birthYear);
+          }
+        }
+        const activeToken = await resolveActiveTokenForPatient(db, pat.id);
+
+        return reply.send({
+          success: true,
+          multiplePatients: false,
+          token: `PAT-${Buffer.from(`${pat.id}:${last10}:${Date.now()}`).toString('base64')}`,
+          patient: {
+            id: pat.id,
+            uhid: pat.uhid || pat.mrn,
+            fullName: `${pat.firstName} ${pat.lastName}`.trim(),
+            age,
+            gender: pat.gender || 'MALE',
+            phone: withCountry,
+            bloodGroup: pat.bloodGroup || 'B +ve',
+            allergies: (pat.metadata as any)?.allergies || ['Penicillin (Mild)'],
+            activeToken
+          }
+        });
+      }
+    }
+
+    // B. Query database for all contacts linked to this phone number
+    let uniquePatientIds: string[] = [];
+    try {
+      const contacts = await db
+        .select({
+          patientId: patientContacts.patientId,
+          primaryMobile: patientContacts.primaryMobile
+        })
         .from(patientContacts)
         .where(
           or(
@@ -144,29 +207,61 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
             eq(patientContacts.primaryMobile, withCountry),
             sql`${patientContacts.primaryMobile} LIKE ${`%${last10}`}`
           )
-        )
-        .limit(1);
+        );
 
-      if (contact?.patientId) {
-        contactRecord = contact;
-        const [pat] = await db
-          .select()
-          .from(patients)
-          .where(eq(patients.id, contact.patientId))
-          .limit(1);
-        if (pat) {
-          patientRecord = pat;
-        }
-      }
+      uniquePatientIds = Array.from(new Set(contacts.map((c) => c.patientId).filter(Boolean))) as string[];
     } catch (err) {
       logger.warn('Contact lookup warning:', { error: String(err) });
     }
 
-    // B. Auto-Register if this is a first-time patient who booked via app
+    // C. If multiple patients exist under this phone number, return selection list
+    if (uniquePatientIds.length > 1) {
+      const matchingPatientsList = [];
+      for (const pid of uniquePatientIds) {
+        const [pat] = await db.select().from(patients).where(eq(patients.id, pid)).limit(1);
+        if (pat) {
+          let age = 45;
+          if (pat.dateOfBirth) {
+            const birthYear = new Date(pat.dateOfBirth).getFullYear();
+            if (!isNaN(birthYear) && birthYear > 1900) {
+              age = Math.max(1, new Date().getFullYear() - birthYear);
+            }
+          }
+          const activeToken = await resolveActiveTokenForPatient(db, pat.id);
+          matchingPatientsList.push({
+            id: pat.id,
+            uhid: pat.uhid || pat.mrn,
+            fullName: `${pat.firstName} ${pat.lastName}`.trim(),
+            age,
+            gender: pat.gender || 'MALE',
+            phone: withCountry,
+            bloodGroup: pat.bloodGroup || 'B +ve',
+            allergies: (pat.metadata as any)?.allergies || ['Penicillin (Mild)'],
+            activeToken
+          });
+        }
+      }
+
+      if (matchingPatientsList.length > 1) {
+        return reply.send({
+          success: true,
+          multiplePatients: true,
+          patients: matchingPatientsList
+        });
+      }
+    }
+
+    // D. Single patient resolution or auto-register if new
+    let patientRecord: any = null;
+    const singlePatientId = uniquePatientIds[0];
+    if (singlePatientId) {
+      const [pat] = await db.select().from(patients).where(eq(patients.id, singlePatientId)).limit(1);
+      patientRecord = pat;
+    }
+
     if (!patientRecord) {
       logger.info('Auto-registering new patient profile for phone:', { phone: last10 });
 
-      // Resolve tenant & partner hierarchy
       const [partner] = await db
         .select({ id: operationalPartners.id, tenantId: operationalPartners.tenantId })
         .from(operationalPartners)
@@ -210,12 +305,9 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
       if (branchId) patInput.branchId = branchId;
 
       const newPat = await clinicalWorkflowRepository.createPatient(patInput);
-
       patientRecord = newPat;
-      contactRecord = { primaryMobile: withCountry };
     }
 
-    // C. Calculate Patient Age
     let age = 45;
     if (patientRecord.dateOfBirth) {
       const birthYear = new Date(patientRecord.dateOfBirth).getFullYear();
@@ -224,11 +316,11 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
       }
     }
 
-    // D. Fetch Active Token & OPD Encounter if any exists for this patient
     const activeToken = await resolveActiveTokenForPatient(db, patientRecord.id);
 
     return reply.send({
       success: true,
+      multiplePatients: false,
       token: `PAT-${Buffer.from(`${patientRecord.id}:${last10}:${Date.now()}`).toString('base64')}`,
       patient: {
         id: patientRecord.id,
@@ -236,10 +328,137 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
         fullName: `${patientRecord.firstName} ${patientRecord.lastName}`.trim(),
         age,
         gender: patientRecord.gender || 'MALE',
-        phone: contactRecord?.primaryMobile || withCountry,
+        phone: withCountry,
         bloodGroup: patientRecord.bloodGroup || 'B +ve',
         allergies: (patientRecord.metadata as any)?.allergies || ['Penicillin (Mild)'],
         activeToken
+      }
+    });
+  });
+
+  // 2b. Fetch All Family Members Linked to Mobile Number
+  app.get('/api/v1/patient/family-members', async (request, reply) => {
+    const { phone } = request.query as { phone?: string };
+    if (!phone) {
+      throw new AppError({
+        message: 'phone parameter is required',
+        code: ErrorCode.VALIDATION_ERROR,
+        statusCode: 400
+      });
+    }
+
+    const { last10, withCountry } = normalizePhone(phone);
+    const db = getDatabase();
+
+    const contacts = await db
+      .select({ patientId: patientContacts.patientId })
+      .from(patientContacts)
+      .where(
+        or(
+          eq(patientContacts.primaryMobile, last10),
+          eq(patientContacts.primaryMobile, withCountry),
+          sql`${patientContacts.primaryMobile} LIKE ${`%${last10}`}`
+        )
+      );
+
+    const uniqueIds = Array.from(new Set(contacts.map((c) => c.patientId).filter(Boolean))) as string[];
+    const members = [];
+
+    for (const pid of uniqueIds) {
+      const [pat] = await db.select().from(patients).where(eq(patients.id, pid)).limit(1);
+      if (!pat) continue;
+
+      let age = 45;
+      if (pat.dateOfBirth) {
+        const birthYear = new Date(pat.dateOfBirth).getFullYear();
+        if (!isNaN(birthYear) && birthYear > 1900) {
+          age = Math.max(1, new Date().getFullYear() - birthYear);
+        }
+      }
+      const activeToken = await resolveActiveTokenForPatient(db, pat.id);
+
+      members.push({
+        id: pat.id,
+        uhid: pat.uhid || pat.mrn,
+        fullName: `${pat.firstName} ${pat.lastName}`.trim(),
+        age,
+        gender: pat.gender || 'MALE',
+        phone: withCountry,
+        bloodGroup: pat.bloodGroup || 'B +ve',
+        allergies: (pat.metadata as any)?.allergies || ['Penicillin (Mild)'],
+        activeToken
+      });
+    }
+
+    return reply.send({
+      success: true,
+      familyMembers: members
+    });
+  });
+
+  // 2c. Add New Family Member under Same Mobile Number
+  app.post('/api/v1/patient/family-members/add', async (request, reply) => {
+    const payload = PatientAddFamilyMemberSchema.parse(request.body);
+    const { withCountry } = normalizePhone(payload.mobileNumber);
+    const db = getDatabase();
+
+    const [partner] = await db
+      .select({ id: operationalPartners.id, tenantId: operationalPartners.tenantId })
+      .from(operationalPartners)
+      .limit(1);
+
+    const [org] = await db
+      .select({ id: operationalOrganizations.id })
+      .from(operationalOrganizations)
+      .where(eq(operationalOrganizations.tenantId, partner?.tenantId || ''))
+      .limit(1);
+
+    const [facility] = await db
+      .select({ id: operationalFacilities.id })
+      .from(operationalFacilities)
+      .where(eq(operationalFacilities.tenantId, partner?.tenantId || ''))
+      .limit(1);
+
+    const tenantId = partner?.tenantId || '00000000-0000-0000-0000-000000000000';
+    const partnerId = partner?.id;
+    const organizationId = org?.id;
+    const branchId = facility?.id;
+
+    const fullName = payload.fullName.trim();
+    const parts = fullName.split(/\s+/);
+    const firstName = parts[0] || 'Member';
+    const lastName = parts.slice(1).join(' ') || 'Kumar';
+    const age = payload.age || 30;
+    const birthYear = new Date().getFullYear() - age;
+    const dateOfBirth = `${birthYear}-01-01`;
+
+    const patInput: any = {
+      tenantId,
+      firstName,
+      lastName,
+      gender: payload.gender || 'MALE',
+      dateOfBirth,
+      mobileNumber: withCountry
+    };
+    if (partnerId) patInput.partnerId = partnerId;
+    if (organizationId) patInput.organizationId = organizationId;
+    if (branchId) patInput.branchId = branchId;
+
+    const newPat = await clinicalWorkflowRepository.createPatient(patInput);
+
+    return reply.status(201).send({
+      success: true,
+      message: 'Naya parivar sadasya safaltapoorvak jod diya gaya!',
+      patient: {
+        id: newPat.id,
+        uhid: newPat.uhid || newPat.mrn,
+        fullName: `${newPat.firstName} ${newPat.lastName}`.trim(),
+        age,
+        gender: newPat.gender || 'MALE',
+        phone: withCountry,
+        bloodGroup: payload.bloodGroup || 'B +ve',
+        allergies: [],
+        activeToken: null
       }
     });
   });

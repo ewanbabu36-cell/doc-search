@@ -11,8 +11,7 @@ interface Props {
   language: Language;
   onLanguageToggle: () => void;
   patient: PatientProfile;
-  onNavigate: (screen: 'QUEUE' | 'PARCHI' | 'DAWA' | 'VIDEO' | 'BOOK') => void;
-  onLogout: () => void;
+  onNavigate: (screen: 'QUEUE' | 'PARCHI' | 'DAWA' | 'VIDEO' | 'BOOK' | 'PROFILE') => void;
   onSelectPatient: (p: PatientProfile) => void;
 }
 
@@ -21,7 +20,6 @@ export const PatientHomeScreen: React.FC<Props> = ({
   onLanguageToggle,
   patient,
   onNavigate,
-  onLogout,
   onSelectPatient
 }) => {
   const t = translations[language];
@@ -163,19 +161,24 @@ export const PatientHomeScreen: React.FC<Props> = ({
 
           <button
             type="button"
-            onClick={onLogout}
+            onClick={() => onNavigate('PROFILE')}
             style={{
-              backgroundColor: 'rgba(239, 68, 68, 0.1)',
-              border: 'none',
-              color: '#F87171',
+              backgroundColor: 'rgba(56, 189, 248, 0.15)',
+              border: '1px solid rgba(56, 189, 248, 0.35)',
+              color: '#38BDF8',
               padding: '6px 10px',
               borderRadius: '16px',
               fontSize: '0.75rem',
-              fontWeight: 700,
-              cursor: 'pointer'
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
             }}
+            title={t.profile}
           >
-            ✕
+            <span>👤</span>
+            <span>{t.profile}</span>
           </button>
         </div>
       </div>

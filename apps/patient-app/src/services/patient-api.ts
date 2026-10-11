@@ -47,9 +47,20 @@ export interface OtpRequestResult {
   success: boolean;
   message: string;
   isRegistered: boolean;
+  multiplePatients?: boolean;
+  patientCount?: number;
   registeredName?: string | null;
   patientMrn?: string | null;
+  patients?: Array<{ id: string; name: string; mrn: string }>;
   devOtp?: string;
+}
+
+export interface VerifyOtpResult {
+  success: boolean;
+  multiplePatients?: boolean;
+  patients?: PatientProfile[];
+  patient?: PatientProfile;
+  token?: string;
 }
 
 export const DEMO_PATIENT: PatientProfile = {
@@ -70,6 +81,39 @@ export const DEMO_PATIENT: PatientProfile = {
     isCalled: false
   }
 };
+
+export const DEMO_FAMILY_MEMBERS: PatientProfile[] = [
+  DEMO_PATIENT,
+  {
+    id: 'pat-mother-102',
+    uhid: 'MRN-882104',
+    fullName: 'Shanti Devi (Mataji)',
+    age: 68,
+    gender: 'FEMALE',
+    phone: '9876543210',
+    bloodGroup: 'B +ve',
+    allergies: ['Sulfa Drugs'],
+    activeToken: null
+  },
+  {
+    id: 'pat-son-103',
+    uhid: 'MRN-910244',
+    fullName: 'Aarav Roy (Beta)',
+    age: 8,
+    gender: 'MALE',
+    phone: '9876543210',
+    bloodGroup: 'O +ve',
+    allergies: [],
+    activeToken: {
+      tokenNumber: '#04',
+      doctorName: 'Dr. Meera Sen (MD Pediatrics)',
+      chamberRoom: 'Pediatrics - Room 108',
+      patientsAhead: 1,
+      estimatedWaitMins: 4,
+      isCalled: false
+    }
+  }
+];
 
 export const DEMO_PRESCRIPTIONS: PatientPrescription[] = [
   {
@@ -141,8 +185,11 @@ class PatientApiService {
           success: true,
           message: data.message || 'OTP sent successfully',
           isRegistered: Boolean(data.isRegistered),
+          multiplePatients: Boolean(data.multiplePatients),
+          patientCount: data.patientCount || (data.isRegistered ? 1 : 0),
           registeredName: data.registeredName || null,
           patientMrn: data.patientMrn || null,
+          patients: data.patients || [],
           devOtp: data.devOtp || '1234'
         };
       }
@@ -154,8 +201,11 @@ class PatientApiService {
       success: true,
       message: 'Demo OTP: 1234 (Enter to continue)',
       isRegistered: phone === '9876543210',
+      multiplePatients: phone === '9876543210',
+      patientCount: phone === '9876543210' ? 3 : 1,
       registeredName: phone === '9876543210' ? 'Vikramaditya Roy' : null,
       patientMrn: 'MRN-381778',
+      patients: phone === '9876543210' ? DEMO_FAMILY_MEMBERS.map(m => ({ id: m.id, name: m.fullName, mrn: m.uhid })) : [],
       devOtp: '1234'
     };
   }
@@ -163,8 +213,8 @@ class PatientApiService {
   async verifyOtp(
     phone: string,
     otp: string,
-    options?: { fullName?: string; age?: number; gender?: 'MALE' | 'FEMALE' | 'OTHER' }
-  ): Promise<PatientProfile> {
+    options?: { fullName?: string; age?: number; gender?: 'MALE' | 'FEMALE' | 'OTHER'; selectedPatientId?: string }
+  ): Promise<VerifyOtpResult> {
     try {
       const res = await fetch('/api/v1/patient/auth/verify-otp', {
         method: 'POST',
@@ -172,6 +222,7 @@ class PatientApiService {
         body: JSON.stringify({
           mobileNumber: phone,
           otp,
+          selectedPatientId: options?.selectedPatientId,
           fullName: options?.fullName,
           age: options?.age,
           gender: options?.gender
@@ -180,25 +231,112 @@ class PatientApiService {
 
       if (res.ok) {
         const data = await res.json();
-        if (data.success && data.patient) {
-          this.currentPatient = data.patient;
-          this.token = data.token;
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('docsearch_patient_profile', JSON.stringify(data.patient));
-            if (data.token) localStorage.setItem('docsearch_patient_token', data.token);
+        if (data.success) {
+          if (data.multiplePatients && Array.isArray(data.patients)) {
+            return {
+              success: true,
+              multiplePatients: true,
+              patients: data.patients
+            };
           }
-          return data.patient;
+
+          if (data.patient) {
+            this.currentPatient = data.patient;
+            this.token = data.token;
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('docsearch_patient_profile', JSON.stringify(data.patient));
+              if (data.token) localStorage.setItem('docsearch_patient_token', data.token);
+            }
+            return {
+              success: true,
+              multiplePatients: false,
+              patient: data.patient,
+              token: data.token
+            };
+          }
         }
       }
     } catch (err) {
       console.warn('API Gateway offline, using demo verification fallback:', err);
     }
 
-    this.currentPatient = { ...DEMO_PATIENT, phone };
+    if (phone === '9876543210' && !options?.selectedPatientId) {
+      return {
+        success: true,
+        multiplePatients: true,
+        patients: DEMO_FAMILY_MEMBERS
+      };
+    }
+
+    const fallbackPatient = options?.selectedPatientId
+      ? DEMO_FAMILY_MEMBERS.find((p) => p.id === options.selectedPatientId) || DEMO_PATIENT
+      : { ...DEMO_PATIENT, phone };
+
+    this.currentPatient = fallbackPatient;
     if (typeof window !== 'undefined') {
       localStorage.setItem('docsearch_patient_profile', JSON.stringify(this.currentPatient));
     }
-    return this.currentPatient;
+    return {
+      success: true,
+      multiplePatients: false,
+      patient: this.currentPatient
+    };
+  }
+
+  async getFamilyMembers(phone: string): Promise<PatientProfile[]> {
+    try {
+      const res = await fetch(`/api/v1/patient/family-members?phone=${encodeURIComponent(phone)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.familyMembers) && data.familyMembers.length > 0) {
+          return data.familyMembers;
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to fetch family members from server:', err);
+    }
+    return DEMO_FAMILY_MEMBERS;
+  }
+
+  async addFamilyMember(
+    phone: string,
+    member: { fullName: string; age: number; gender: 'MALE' | 'FEMALE' | 'OTHER'; relationship?: string; bloodGroup?: string }
+  ): Promise<PatientProfile | null> {
+    try {
+      const res = await fetch('/api/v1/patient/family-members/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mobileNumber: phone,
+          fullName: member.fullName,
+          age: member.age,
+          gender: member.gender,
+          relationship: member.relationship,
+          bloodGroup: member.bloodGroup
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.patient) {
+          return data.patient;
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to add family member to server:', err);
+    }
+
+    const fallback: PatientProfile = {
+      id: `pat-fam-${Date.now()}`,
+      uhid: `MRN-${Math.floor(600000 + Math.random() * 300000)}`,
+      fullName: member.fullName,
+      age: member.age,
+      gender: member.gender,
+      phone,
+      bloodGroup: member.bloodGroup || 'B +ve',
+      allergies: [],
+      activeToken: null
+    };
+    return fallback;
   }
 
   getCurrentPatient(): PatientProfile | null {
