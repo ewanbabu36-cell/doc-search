@@ -103,6 +103,10 @@ const ScheduleH1DrugRegisterModal = React.lazy(() => import('./common/ScheduleH1
 const AbdmScanAndShareModal = React.lazy(() => import('./common/AbdmScanAndShareModal.js').then(m => ({ default: m.AbdmScanAndShareModal })));
 const TpaAyushmanCashlessDeskModal = React.lazy(() => import('./dialogs/TpaAyushmanCashlessDeskModal.js').then(m => ({ default: m.TpaAyushmanCashlessDeskModal })));
 const LegacyDataMigrationModal = React.lazy(() => import('./dialogs/LegacyDataMigrationModal.js').then(m => ({ default: m.LegacyDataMigrationModal })));
+const WhatsAppPatientDispatchModal = React.lazy(() => import('./dialogs/WhatsAppPatientDispatchModal.js').then(m => ({ default: m.WhatsAppPatientDispatchModal })));
+const B2BWholesaleInvoiceSyncModal = React.lazy(() => import('./dialogs/B2BWholesaleInvoiceSyncModal.js').then(m => ({ default: m.B2BWholesaleInvoiceSyncModal })));
+const PharmaDistributorFranchiseModal = React.lazy(() => import('./dialogs/PharmaDistributorFranchiseModal.js').then(m => ({ default: m.PharmaDistributorFranchiseModal })));
+import { offlineResilienceService } from '../services/offlineResilienceService.js';
 import { DocSearchResponsiveBrand } from './common/DocSearchResponsiveBrand.js';
 import { OptimisticActionToast } from './common/OptimisticActionToast.js';
 import { AmbientVoiceScribeCapsule } from './common/AmbientVoiceScribeCapsule.js';
@@ -583,6 +587,8 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
     return () => {
       window.removeEventListener('docsearch:open_settings', handleOpenSettingsEvent);
     };
+  }, []);
+
   const [isTvDisplayOpen, setIsTvDisplayOpen] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       const p = window.location.pathname.toLowerCase();
@@ -597,6 +603,32 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
   const [isAbdmScanModalOpen, setIsAbdmScanModalOpen] = useState(false);
   const [isCashlessDeskOpen, setIsCashlessDeskOpen] = useState(false);
   const [isMigrationModalOpen, setIsMigrationModalOpen] = useState(false);
+  const [isWhatsAppDispatchOpen, setIsWhatsAppDispatchOpen] = useState(false);
+  const [isWholesaleSyncOpen, setIsWholesaleSyncOpen] = useState(false);
+  const [isFranchiseModalOpen, setIsFranchiseModalOpen] = useState(false);
+  const [isNetworkOnline, setIsNetworkOnline] = useState<boolean>(() => offlineResilienceService.isOnline());
+  const [pendingOfflineCount, setPendingOfflineCount] = useState<number>(() => offlineResilienceService.getPendingQueue().length);
+
+  useEffect(() => {
+    const unsubscribe = offlineResilienceService.subscribe((online, count) => {
+      setIsNetworkOnline(online);
+      setPendingOfflineCount(count);
+    });
+    const handleOpenWhatsAppEvent = () => setIsWhatsAppDispatchOpen(true);
+    const handleOpenWholesaleEvent = () => setIsWholesaleSyncOpen(true);
+    const handleOpenFranchiseEvent = () => setIsFranchiseModalOpen(true);
+
+    window.addEventListener('docsearch:open_whatsapp_dispatch', handleOpenWhatsAppEvent);
+    window.addEventListener('docsearch:open_wholesale_sync', handleOpenWholesaleEvent);
+    window.addEventListener('docsearch:open_franchise', handleOpenFranchiseEvent);
+
+    return () => {
+      unsubscribe();
+      window.removeEventListener('docsearch:open_whatsapp_dispatch', handleOpenWhatsAppEvent);
+      window.removeEventListener('docsearch:open_wholesale_sync', handleOpenWholesaleEvent);
+      window.removeEventListener('docsearch:open_franchise', handleOpenFranchiseEvent);
+    };
+  }, []);
   const [isThemeStudioOpen, setIsThemeStudioOpen] = useState(false);
   const [isHospitalUpgradeModalOpen, setIsHospitalUpgradeModalOpen] = useState(false);
   const [isOfflineLicenseModalOpen, setIsOfflineLicenseModalOpen] = useState(false);
@@ -3036,7 +3068,101 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                   }}
                   title="1-Click Data Migration Wizard: Import Practo Ray patients, Marg ERP medicines & Excel lists in 60s"
                 >
-                  <span>📥 Migration (Practo/Marg)</span>
+                  <span>📥 Migration</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nowSimulated = offlineResilienceService.toggleSimulatedOffline();
+                    if (nowSimulated) {
+                      offlineResilienceService.queueOfflineAction('OPD_TOKEN', { token: 'OFFLINE-DEMO', patient: 'Local Patient' });
+                    }
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    backgroundColor: isNetworkOnline ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.25)',
+                    border: `1px solid ${isNetworkOnline ? 'rgba(16, 185, 129, 0.35)' : '#EF4444'}`,
+                    color: isNetworkOnline ? '#34D399' : '#FCA5A5',
+                    padding: '5px 8px',
+                    borderRadius: '8px',
+                    fontSize: '0.72rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title={isNetworkOnline ? '🟢 Online (Cloud Connected) - Click to test broadband cut simulation' : '🟠 OFFLINE MODE (Local Cache Active - 0 Data Loss)'}
+                >
+                  <span>{isNetworkOnline ? '🟢 Online' : '🟠 Offline Mode'}</span>
+                  {pendingOfflineCount > 0 && (
+                    <span style={{ backgroundColor: '#EF4444', color: '#FFFFFF', padding: '1px 5px', borderRadius: '10px', fontSize: '0.65rem' }}>
+                      {pendingOfflineCount}
+                    </span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsWhatsAppDispatchOpen(true)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    backgroundColor: isWhatsAppDispatchOpen ? 'rgba(37, 211, 102, 0.25)' : 'rgba(37, 211, 102, 0.1)',
+                    border: '1px solid rgba(37, 211, 102, 0.35)',
+                    color: '#4ADE80',
+                    padding: '5px 8px',
+                    borderRadius: '8px',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="WhatsApp-First Zero-Install Patient Dispatcher (Meta Green Tick API)"
+                >
+                  <span>📲 WhatsApp</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsWholesaleSyncOpen(true)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    backgroundColor: isWholesaleSyncOpen ? 'rgba(245, 158, 11, 0.25)' : 'rgba(245, 158, 11, 0.1)',
+                    border: '1px solid rgba(245, 158, 11, 0.35)',
+                    color: '#FBBF24',
+                    padding: '5px 8px',
+                    borderRadius: '8px',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="B2B Wholesale Invoice Auto-Sync (Marg ERP Killer)"
+                >
+                  <span>📦 Wholesale</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsFranchiseModalOpen(true)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    backgroundColor: isFranchiseModalOpen ? 'rgba(139, 92, 246, 0.25)' : 'rgba(139, 92, 246, 0.1)',
+                    border: '1px solid rgba(139, 92, 246, 0.35)',
+                    color: '#C4B5FD',
+                    padding: '5px 8px',
+                    borderRadius: '8px',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="B2B Pharma Distributor Partner & MR Referral Franchise (Feet-on-Street Network)"
+                >
+                  <span>🤝 MR Franchise</span>
                 </button>
               </div>
             </div>
@@ -5409,8 +5535,8 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
           <TpaAyushmanCashlessDeskModal
             isOpen={isCashlessDeskOpen}
             onClose={() => setIsCashlessDeskOpen(false)}
-            patientName={printTargetPatient?.fullName}
-            patientUhid={printTargetPatient?.uhid}
+            patientName={printTargetPatient?.name || undefined}
+            patientUhid={printTargetPatient?.uhid || undefined}
           />
         )}
 
@@ -5419,6 +5545,32 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
           <LegacyDataMigrationModal
             isOpen={isMigrationModalOpen}
             onClose={() => setIsMigrationModalOpen(false)}
+          />
+        )}
+
+        {/* 4d. WHATSAPP-FIRST ZERO-INSTALL PATIENT DISPATCHER */}
+        {isWhatsAppDispatchOpen && (
+          <WhatsAppPatientDispatchModal
+            isOpen={isWhatsAppDispatchOpen}
+            onClose={() => setIsWhatsAppDispatchOpen(false)}
+            patientName={printTargetPatient?.name || undefined}
+            patientUhid={printTargetPatient?.uhid || undefined}
+          />
+        )}
+
+        {/* 4e. B2B PHARMA DISTRIBUTOR WHOLESALE INVOICE AUTO-SYNC (MARG ERP KILLER) */}
+        {isWholesaleSyncOpen && (
+          <B2BWholesaleInvoiceSyncModal
+            isOpen={isWholesaleSyncOpen}
+            onClose={() => setIsWholesaleSyncOpen(false)}
+          />
+        )}
+
+        {/* 4f. B2B PHARMA DISTRIBUTOR & MR FIELD NETWORK FRANCHISE */}
+        {isFranchiseModalOpen && (
+          <PharmaDistributorFranchiseModal
+            isOpen={isFranchiseModalOpen}
+            onClose={() => setIsFranchiseModalOpen(false)}
           />
         )}
 

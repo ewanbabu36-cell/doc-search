@@ -4,8 +4,8 @@ import { hardwareBiometricService } from '../../services/hardware-biometric-serv
 export interface TpaAyushmanCashlessDeskModalProps {
   isOpen: boolean;
   onClose: () => void;
-  patientName?: string;
-  patientUhid?: string;
+  patientName?: string | undefined;
+  patientUhid?: string | undefined;
   defaultDiagnosis?: string;
 }
 
@@ -61,7 +61,7 @@ export const TpaAyushmanCashlessDeskModal: React.FC<TpaAyushmanCashlessDeskModal
   const [icd10, setIcd10] = useState('K35.80');
   const [doctorName] = useState('Dr. Vikram Malhotra (MCI-2014-99823)');
   const [wardType, setWardType] = useState<'ICU' | 'DELUXE' | 'TWIN_SHARING' | 'GENERAL'>('TWIN_SHARING');
-  const [estimatedStayDays, setEstimatedStayDays] = useState(3);
+  const [estimatedStayDays] = useState(3);
   const [estimatedBillAmount, setEstimatedBillAmount] = useState(35000);
   const [preAuthRequestedAmount, setPreAuthRequestedAmount] = useState(35000);
 

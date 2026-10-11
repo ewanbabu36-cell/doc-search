@@ -767,7 +767,7 @@ export const RapidRxPrescriptionPad: React.FC<RapidRxPrescriptionPadProps> = ({
           </button>
 
           {/* 2. 1-Tap Repeat Previous Rx Button */}
-          {onRepeatPreviousRx && (
+          {onRepeatPreviousRx && hasPreviousRx !== false && (
             <button
               type="button"
               onClick={onRepeatPreviousRx}
