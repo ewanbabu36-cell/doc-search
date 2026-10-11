@@ -385,7 +385,16 @@ class PatientApiService {
   }
 
   getToken(): string | null {
-    return this.token;
+    return this.token || (typeof window !== 'undefined' ? localStorage.getItem('docsearch_patient_token') : null);
+  }
+
+  getAuthHeaders(additional: Record<string, string> = {}): Record<string, string> {
+    const token = this.getToken();
+    const headers: Record<string, string> = { ...additional };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    return headers;
   }
 
   async requestOtp(phone: string): Promise<OtpRequestResult> {
@@ -501,7 +510,9 @@ class PatientApiService {
 
   async getFamilyMembers(phone: string): Promise<PatientProfile[]> {
     try {
-      const res = await fetch(`/api/v1/patient/family-members?phone=${encodeURIComponent(phone)}`);
+      const res = await fetch(`/api/v1/patient/family-members?phone=${encodeURIComponent(phone)}`, {
+        headers: this.getAuthHeaders()
+      });
       if (res.ok) {
         const data = await res.json();
         if (data.success && Array.isArray(data.familyMembers) && data.familyMembers.length > 0) {
@@ -521,7 +532,7 @@ class PatientApiService {
     try {
       const res = await fetch('/api/v1/patient/family-members/add', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: this.getAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           mobileNumber: phone,
           fullName: member.fullName,
@@ -583,7 +594,9 @@ class PatientApiService {
     if (!targetPhone) return this.currentPatient?.activeToken || null;
 
     try {
-      const res = await fetch(`/api/v1/patient/queue/active?phone=${encodeURIComponent(targetPhone)}`);
+      const res = await fetch(`/api/v1/patient/queue/active?phone=${encodeURIComponent(targetPhone)}`, {
+        headers: this.getAuthHeaders()
+      });
       if (res.ok) {
         const data = await res.json();
         if (data.success && data.activeToken !== undefined) {
@@ -607,7 +620,9 @@ class PatientApiService {
     if (!targetPhone) return DEMO_PRESCRIPTIONS;
 
     try {
-      const res = await fetch(`/api/v1/patient/prescriptions?phone=${encodeURIComponent(targetPhone)}`);
+      const res = await fetch(`/api/v1/patient/prescriptions?phone=${encodeURIComponent(targetPhone)}`, {
+        headers: this.getAuthHeaders()
+      });
       if (res.ok) {
         const data = await res.json();
         if (data.success && Array.isArray(data.prescriptions) && data.prescriptions.length > 0) {
@@ -625,7 +640,9 @@ class PatientApiService {
     if (!targetPhone) return DEMO_LAB_REPORTS;
 
     try {
-      const res = await fetch(`/api/v1/patient/lab-reports?phone=${encodeURIComponent(targetPhone)}`);
+      const res = await fetch(`/api/v1/patient/lab-reports?phone=${encodeURIComponent(targetPhone)}`, {
+        headers: this.getAuthHeaders()
+      });
       if (res.ok) {
         const data = await res.json();
         if (data.success && Array.isArray(data.reports) && data.reports.length > 0) {
@@ -642,7 +659,7 @@ class PatientApiService {
     try {
       const res = await fetch('/api/v1/patient/queue/delay-alert', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: this.getAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ mobileNumber: phone, delayMinutes })
       });
       return res.ok;
@@ -659,7 +676,7 @@ class PatientApiService {
     try {
       const res = await fetch('/api/v1/patient/appointments/book', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: this.getAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ mobileNumber: phone, departmentName, chiefComplaint })
       });
       return res.ok;
@@ -695,7 +712,9 @@ class PatientApiService {
     }
 
     try {
-      const res = await fetch(`/api/v1/patient/medications/schedule?phone=${encodeURIComponent(targetPhone)}`);
+      const res = await fetch(`/api/v1/patient/medications/schedule?phone=${encodeURIComponent(targetPhone)}`, {
+        headers: this.getAuthHeaders()
+      });
       if (res.ok) {
         const data = await res.json();
         if (data.success && Array.isArray(data.scheduledDoses)) {
@@ -738,7 +757,7 @@ class PatientApiService {
     try {
       const res = await fetch('/api/v1/patient/medications/log-dose', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: this.getAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           mobileNumber: targetPhone,
           doseId,
@@ -760,7 +779,7 @@ class PatientApiService {
     try {
       const res = await fetch('/api/v1/patient/medications/refill-request', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: this.getAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           mobileNumber: targetPhone,
           medicationName,
