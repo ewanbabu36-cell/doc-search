@@ -72,7 +72,7 @@ import { publicKioskRoutes } from './routes/partner/public-kiosk.routes.js';
 import { patientMobileRoutes } from './routes/patient/patient-mobile.routes.js';
 import { catalogSyncRoutes } from './routes/partner/catalog-sync.routes.js';
 import { distributedLockRoutes } from './routes/locks.routes.js';
-import { AppError } from '@docsearch/shared-core';
+import { AppError, sanitizeObjectPrototype } from '@docsearch/shared-core';
 import { ensureDatabaseReady, setTestDatabase } from '@docsearch/database';
 
 export interface BuildAppOptions {
@@ -178,6 +178,13 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
 
   // 1. Register Core Security (Helmet, CORS, Rate Limit)
   await registerSecurityPlugins(app);
+
+  // 🛡️ Global Security Pre-Validation Hook: Prototype Pollution & XSS Neutralizer
+  app.addHook('preValidation', async (request) => {
+    if (request.body && typeof request.body === 'object') {
+      request.body = sanitizeObjectPrototype(request.body);
+    }
+  });
 
   // Preserve raw request body for webhook cryptographic signature verification (HMAC-SHA256 / SHA-512)
   app.addContentTypeParser('application/json', { parseAs: 'buffer' }, (req, body, done) => {

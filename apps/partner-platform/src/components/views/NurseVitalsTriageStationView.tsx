@@ -118,6 +118,21 @@ export const NurseVitalsTriageStationView: React.FC<NurseVitalsTriageStationView
   const [triageCategory, setTriageCategory] = useState<'NORMAL' | 'URGENT' | 'CRITICAL'>('NORMAL');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // 🚨 Emergency Vital Warning Engine: Auto-detects shock, hypertensive crisis, or severe hypoxia
+  const isVitalsCritical = useMemo(() => {
+    const sys = Number(systolicBp) || 0;
+    const dia = Number(diastolicBp) || 0;
+    const pulse = Number(pulseBpm) || 0;
+    const spo2 = Number(spo2Percent) || 0;
+    return (sys >= 180 || dia >= 120 || (spo2 > 0 && spo2 < 90) || (pulse > 0 && (pulse > 130 || pulse < 45)));
+  }, [systolicBp, diastolicBp, pulseBpm, spo2Percent]);
+
+  useEffect(() => {
+    if (isVitalsCritical && triageCategory !== 'CRITICAL') {
+      setTriageCategory('CRITICAL');
+    }
+  }, [isVitalsCritical, triageCategory]);
+
   // 2. Chamber Escort Queue State
   const [escortDoctorFilter, setEscortDoctorFilter] = useState<string>('ALL');
 
@@ -980,6 +995,32 @@ export const NurseVitalsTriageStationView: React.FC<NurseVitalsTriageStationView
                       </button>
                     ))}
                   </div>
+
+                  {isVitalsCritical && (
+                    <div
+                      role="alert"
+                      style={{
+                        marginTop: '10px',
+                        backgroundColor: 'rgba(239, 68, 68, 0.16)',
+                        border: '1.5px solid #EF4444',
+                        borderRadius: '8px',
+                        padding: '10px 14px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px'
+                      }}
+                    >
+                      <span style={{ fontSize: '1.4rem' }}>🚨</span>
+                      <div>
+                        <div style={{ color: '#FCA5A5', fontWeight: 900, fontSize: '0.8125rem', letterSpacing: '0.3px' }}>
+                          CRITICAL VITALS THRESHOLD BREACHED (EMERGENCY / RED ALERT)
+                        </div>
+                        <div style={{ color: '#FEE2E2', fontSize: '0.72rem', fontWeight: 500, marginTop: '2px' }}>
+                          Severe Hypertensive Crisis, Hypoxia (SpO2 &lt; 90%), or Cardiac Arrhythmia. Immediate doctor escort required!
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Vitals Numeric Grid */}

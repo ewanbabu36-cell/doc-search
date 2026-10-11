@@ -19,10 +19,28 @@ export const App: React.FC = () => {
   const [showBookModal, setShowBookModal] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [basementSimulated, setBasementSimulated] = useState(false);
+  const [showSyncReconnectToast, setShowSyncReconnectToast] = useState(false);
+
+  const triggerHaptic = (ms = 12) => {
+    if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+      try {
+        navigator.vibrate(ms);
+      } catch {}
+    }
+  };
 
   useEffect(() => {
-    const handleOnline = () => setIsOffline(false);
-    const handleOffline = () => setIsOffline(true);
+    const handleOnline = () => {
+      setIsOffline(false);
+      setShowSyncReconnectToast(true);
+      triggerHaptic(20);
+      const timer = setTimeout(() => setShowSyncReconnectToast(false), 4500);
+      return () => clearTimeout(timer);
+    };
+    const handleOffline = () => {
+      setIsOffline(true);
+      triggerHaptic(30);
+    };
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
     return () => {
@@ -41,13 +59,20 @@ export const App: React.FC = () => {
   }, []);
 
   const handleLanguageToggle = () => {
+    triggerHaptic(8);
     setLanguage((prev) => (prev === 'hi' ? 'en' : 'hi'));
   };
 
   const handleLogout = () => {
+    triggerHaptic(15);
     patientApiService.setPatient(null);
     setCurrentPatient(null);
     setActiveScreen('HOME');
+  };
+
+  const navigateToScreen = (screen: PatientScreen) => {
+    triggerHaptic(10);
+    setActiveScreen(screen);
   };
 
   if (!currentPatient) {
@@ -244,7 +269,7 @@ export const App: React.FC = () => {
       >
         <button
           type="button"
-          onClick={() => setActiveScreen('HOME')}
+          onClick={() => navigateToScreen('HOME')}
           style={{
             background: 'none',
             border: 'none',
@@ -264,7 +289,7 @@ export const App: React.FC = () => {
 
         <button
           type="button"
-          onClick={() => setActiveScreen('QUEUE')}
+          onClick={() => navigateToScreen('QUEUE')}
           style={{
             background: 'none',
             border: 'none',
@@ -298,7 +323,7 @@ export const App: React.FC = () => {
 
         <button
           type="button"
-          onClick={() => setActiveScreen('PARCHI')}
+          onClick={() => navigateToScreen('PARCHI')}
           style={{
             background: 'none',
             border: 'none',
@@ -318,7 +343,7 @@ export const App: React.FC = () => {
 
         <button
           type="button"
-          onClick={() => setActiveScreen('DAWA')}
+          onClick={() => navigateToScreen('DAWA')}
           style={{
             background: 'none',
             border: 'none',
@@ -338,7 +363,7 @@ export const App: React.FC = () => {
 
         <button
           type="button"
-          onClick={() => setActiveScreen('PROFILE')}
+          onClick={() => navigateToScreen('PROFILE')}
           style={{
             background: 'none',
             border: 'none',
@@ -357,6 +382,40 @@ export const App: React.FC = () => {
         </button>
       </nav>
 
+      {/* Dynamic Network Sync Reconnection Floating Pill */}
+      {showSyncReconnectToast && (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            position: 'fixed',
+            top: '16px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            backgroundColor: '#064E3B',
+            border: '1px solid #10B981',
+            color: '#D1FAE5',
+            padding: '8px 18px',
+            borderRadius: '9999px',
+            fontSize: '0.75rem',
+            fontWeight: 800,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            zIndex: 9999,
+            boxShadow: '0 10px 25px -5px rgba(0,0,0,0.5)',
+            letterSpacing: '0.2px'
+          }}
+        >
+          <span style={{ fontSize: '0.9rem' }}>🟢</span>
+          <span>
+            {language === 'hi'
+              ? 'इंटरनेट पुनः कनेक्ट हो गया • सभी पर्चे और टोकन सिंक हैं'
+              : 'Back Online • Prescriptions & Live Token Synchronized'}
+          </span>
+        </div>
+      )}
+
       {/* Book OPD Modal */}
       {showBookModal && (
         <BookOpdModal
@@ -365,7 +424,7 @@ export const App: React.FC = () => {
           onClose={() => setShowBookModal(false)}
           onSuccess={(updated) => {
             setCurrentPatient(updated);
-            setActiveScreen('QUEUE');
+            navigateToScreen('QUEUE');
           }}
         />
       )}

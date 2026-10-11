@@ -22,7 +22,7 @@ import {
   and
 } from '@docsearch/database';
 import { clinicalWorkflowRepository } from '../../repositories/partner/ClinicalWorkflowRepository.js';
-import { AppError, ErrorCode, createLogger } from '@docsearch/shared-core';
+import { AppError, ErrorCode, createLogger, isSessionTokenExpired } from '@docsearch/shared-core';
 import { otpAntiBombingGuard } from '../../services/security/otpAntiBombingGuard.js';
 
 const logger = createLogger('patient-mobile-routes');
@@ -62,10 +62,20 @@ function verifyPatientSessionToken(
 
   try {
     const decoded = Buffer.from(token.slice(4), 'base64').toString('utf8');
-    const [patientId, tokenPhone] = decoded.split(':');
+    const [patientId, tokenPhone, timestampStr] = decoded.split(':');
 
     if (!patientId || !tokenPhone) {
       return { valid: false, reason: 'Malformed patient session token.' };
+    }
+
+    if (timestampStr) {
+      const createdAtMs = parseInt(timestampStr, 10);
+      if (!isNaN(createdAtMs) && isSessionTokenExpired(createdAtMs, 30)) {
+        return {
+          valid: false,
+          reason: 'SESSION_EXPIRED: Patient session token has expired (30d limit). Please re-authenticate via OTP.'
+        };
+      }
     }
 
     if (normalizedTarget && normalizedTarget !== '9876543210' && tokenPhone !== normalizedTarget) {

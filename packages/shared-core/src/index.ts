@@ -25,4 +25,4 @@ export * from './queue/transactional-outbox.js';
 export * from './compliance/document-ai-verifier.js';
 export * from './billing/gst-einvoice-engine.js';
 export * from './claims/nhcx-fhir-claim-builder.js';
-export * from './security/envelope-encryption.js';
+export * from './security/clinical-input-sanitizer.js';
