@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { type Language, translations } from '../i18n.js';
-import { type PatientProfile } from '../services/patient-api.js';
+import { type PatientProfile, patientApiService } from '../services/patient-api.js';
 
 interface Props {
   language: Language;
@@ -14,6 +14,28 @@ export const MyTokenQueueScreen: React.FC<Props> = ({ language, patient, onBack 
   const [isCalled, setIsCalled] = useState(patient.activeToken?.isCalled ?? false);
   const [isDelayed, setIsDelayed] = useState(false);
 
+  // Real-time Live Queue Polling (every 5 seconds)
+  useEffect(() => {
+    let mounted = true;
+    const interval = setInterval(async () => {
+      const active = await patientApiService.pollActiveToken(patient.phone);
+      if (mounted && active) {
+        setPatientsAhead(active.patientsAhead);
+        if (active.isCalled && !isCalled) {
+          setIsCalled(true);
+          if ('vibrate' in navigator) {
+            navigator.vibrate([200, 100, 200, 100, 400]);
+          }
+        }
+      }
+    }, 5000);
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, [patient.phone, isCalled]);
+
   const handleSimulateDoctorCall = () => {
     setIsCalled(true);
     setPatientsAhead(0);
@@ -22,9 +44,10 @@ export const MyTokenQueueScreen: React.FC<Props> = ({ language, patient, onBack 
     }
   };
 
-  const handleDelay = () => {
+  const handleDelay = async () => {
     setIsDelayed(true);
     setPatientsAhead((prev) => prev + 2);
+    await patientApiService.sendDelayAlert(patient.phone, 5);
   };
 
   return (

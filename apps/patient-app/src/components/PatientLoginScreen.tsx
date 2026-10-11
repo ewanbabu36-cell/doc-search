@@ -14,13 +14,20 @@ export const PatientLoginScreen: React.FC<Props> = ({ language, onLanguageToggle
   const [otp, setOtp] = useState('');
   const [step, setStep] = useState<'PHONE' | 'OTP'>('PHONE');
   const [isLoading, setIsLoading] = useState(false);
+  const [registeredInfo, setRegisteredInfo] = useState<{ isRegistered: boolean; name?: string | null | undefined; mrn?: string | null | undefined }>({ isRegistered: false });
+  const [newPatientName, setNewPatientName] = useState('');
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (phone.length < 10) return;
     setIsLoading(true);
-    await patientApiService.requestOtp(phone);
+    const res = await patientApiService.requestOtp(phone);
     setIsLoading(false);
+    setRegisteredInfo({
+      isRegistered: res.isRegistered,
+      name: res.registeredName,
+      mrn: res.patientMrn
+    });
     setStep('OTP');
   };
 
@@ -28,7 +35,9 @@ export const PatientLoginScreen: React.FC<Props> = ({ language, onLanguageToggle
     e.preventDefault();
     if (otp.length < 4) return;
     setIsLoading(true);
-    const patient = await patientApiService.verifyOtp(phone, otp);
+    const verifyOptions: any = {};
+    if (newPatientName.trim()) verifyOptions.fullName = newPatientName.trim();
+    const patient = await patientApiService.verifyOtp(phone, otp, verifyOptions);
     setIsLoading(false);
     onLoginSuccess(patient);
   };
@@ -127,6 +136,43 @@ export const PatientLoginScreen: React.FC<Props> = ({ language, onLanguageToggle
           </form>
         ) : (
           <form onSubmit={handleVerifyOtp} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {registeredInfo.isRegistered ? (
+              <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '12px', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '1.25rem' }}>🏥</span>
+                <div>
+                  <div style={{ fontSize: '0.875rem', fontWeight: 800, color: '#34D399' }}>
+                    {registeredInfo.name ? `Namaste ${registeredInfo.name} ji!` : 'Hospital Record Linked'}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
+                    UHID: {registeredInfo.mrn || 'Linked'} • Doctor ke clinic se auto-connected
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '6px' }}>
+                  {language === 'hi' ? 'मरीज का नाम (Patient Name)' : 'Patient Full Name'}
+                </label>
+                <input
+                  type="text"
+                  value={newPatientName}
+                  onChange={(e) => setNewPatientName(e.target.value)}
+                  placeholder={language === 'hi' ? 'उदा. रमेश कुमार' : 'e.g. Ramesh Kumar'}
+                  style={{
+                    width: '100%',
+                    backgroundColor: '#1E293B',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    borderRadius: '12px',
+                    padding: '12px 14px',
+                    color: '#F8FAFC',
+                    fontSize: '0.9375rem',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+            )}
+
             <div>
               <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 700, color: '#E2E8F0', marginBottom: '8px' }}>
                 {t.enterOtpFor} +91 {phone}
@@ -149,9 +195,13 @@ export const PatientLoginScreen: React.FC<Props> = ({ language, onLanguageToggle
                   fontWeight: 900,
                   textAlign: 'center',
                   letterSpacing: '0.5em',
-                  outline: 'none'
+                  outline: 'none',
+                  boxSizing: 'border-box'
                 }}
               />
+              <div style={{ fontSize: '0.75rem', color: '#38BDF8', textAlign: 'center', marginTop: '6px' }}>
+                ⚡ Test OTP: <strong>1234</strong>
+              </div>
             </div>
 
             <button

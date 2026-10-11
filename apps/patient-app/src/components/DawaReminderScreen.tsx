@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { type Language, translations } from '../i18n.js';
+import { patientApiService } from '../services/patient-api.js';
 
 interface Props {
   language: Language;
@@ -20,10 +21,37 @@ export const DawaReminderScreen: React.FC<Props> = ({ language, onBack }) => {
   const [doses, setDoses] = useState<DoseItem[]>([
     { id: '1', name: 'Pantoprazole 40mg', dosage: '1 Tab', instruction: 'Empty Stomach (30 mins before tea)', timeSlot: 'MORNING', taken: true },
     { id: '2', name: 'Paracetamol 650mg', dosage: '1 Tab', instruction: 'After Food (Lunch)', timeSlot: 'AFTERNOON', taken: false },
-    { id: '3', name: 'Cetirizine 10mg', dosage: '1 Tab', instruction: 'At Bedtime', timeSlot: 'NIGHT', taken: false },
-    { id: '4', name: 'Metformin 500mg PR', dosage: '1 Tab', instruction: 'With Dinner', timeSlot: 'NIGHT', taken: false }
+    { id: '3', name: 'Cetirizine 10mg', dosage: '1 Tab', instruction: 'At Bedtime', timeSlot: 'NIGHT', taken: false }
   ]);
   const [isOrdered, setIsOrdered] = useState(false);
+
+  useEffect(() => {
+    patientApiService.getPrescriptions().then((prescriptions) => {
+      if (prescriptions.length > 0 && prescriptions[0]?.medicines) {
+        const latestRx = prescriptions[0];
+        const newDoses: DoseItem[] = latestRx.medicines.map((m, idx) => {
+          let timeSlot: 'MORNING' | 'AFTERNOON' | 'NIGHT' = 'AFTERNOON';
+          let instruction = 'After Food (Post Meal)';
+          if (m.timing === 'EMPTY_STOMACH') {
+            timeSlot = 'MORNING';
+            instruction = 'Empty Stomach (Morning before tea/breakfast)';
+          } else if (m.timing === 'NIGHT') {
+            timeSlot = 'NIGHT';
+            instruction = 'At Bedtime (After dinner)';
+          }
+          return {
+            id: String(idx + 1),
+            name: m.name,
+            dosage: m.dosage,
+            instruction,
+            timeSlot,
+            taken: m.takenToday ?? false
+          };
+        });
+        if (newDoses.length > 0) setDoses(newDoses);
+      }
+    });
+  }, []);
 
   const toggleDose = (id: string) => {
     setDoses(doses.map((d) => (d.id === id ? { ...d, taken: !d.taken } : d)));

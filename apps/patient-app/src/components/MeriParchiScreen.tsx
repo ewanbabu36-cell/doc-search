@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { type Language, translations } from '../i18n.js';
-import { patientApiService, type PatientPrescription } from '../services/patient-api.js';
+import { patientApiService, type PatientPrescription, type PatientLabReport } from '../services/patient-api.js';
 
 interface Props {
   language: Language;
@@ -11,9 +11,24 @@ export const MeriParchiScreen: React.FC<Props> = ({ language, onBack }) => {
   const t = translations[language];
   const [activeTab, setActiveTab] = useState<'RX' | 'LAB'>('RX');
   const [selectedRx, setSelectedRx] = useState<PatientPrescription | null>(null);
+  const [prescriptions, setPrescriptions] = useState<PatientPrescription[]>([]);
+  const [labReports, setLabReports] = useState<PatientLabReport[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const prescriptions = patientApiService.getPrescriptions();
-  const labReports = patientApiService.getLabReports();
+  useEffect(() => {
+    let mounted = true;
+    Promise.all([
+      patientApiService.getPrescriptions(),
+      patientApiService.getLabReports()
+    ]).then(([rx, labs]) => {
+      if (mounted) {
+        setPrescriptions(rx);
+        setLabReports(labs);
+        setIsLoading(false);
+      }
+    });
+    return () => { mounted = false; };
+  }, []);
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0B0F19', color: '#F8FAFC', padding: '20px 16px', display: 'flex', flexDirection: 'column' }}>
@@ -78,6 +93,12 @@ export const MeriParchiScreen: React.FC<Props> = ({ language, onBack }) => {
           🧪 {t.labReports} ({labReports.length})
         </button>
       </div>
+
+      {isLoading && (
+        <div style={{ textAlign: 'center', padding: '24px 16px', color: '#94A3B8', fontSize: '0.9375rem' }}>
+          ⏳ {language === 'hi' ? 'डॉक्टर का पर्चा और रिपोर्ट लोड हो रही है...' : 'Loading medical records...'}
+        </div>
+      )}
 
       {/* List of Prescriptions */}
       {activeTab === 'RX' && (

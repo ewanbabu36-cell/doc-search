@@ -69,6 +69,7 @@ import { hqAiIntelligenceRoutes } from './routes/company/ai-intelligence-hq.rout
 import { partnerAiIntelligenceRoutes } from './routes/partner/ai-intelligence.routes.js';
 import { ewanRoutes } from './routes/ewan.routes.js';
 import { publicKioskRoutes } from './routes/partner/public-kiosk.routes.js';
+import { patientMobileRoutes } from './routes/patient/patient-mobile.routes.js';
 import { catalogSyncRoutes } from './routes/partner/catalog-sync.routes.js';
 import { distributedLockRoutes } from './routes/locks.routes.js';
 import { AppError } from '@docsearch/shared-core';
@@ -349,6 +350,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(workflowRoutes, { prefix: '/api/v1/workflow' });
   await app.register(businessHistoryRoutes);
   await app.register(publicKioskRoutes);
+  await app.register(patientMobileRoutes);
   await app.register(catalogSyncRoutes);
 
   // Block any direct guessed physical storage URL access (/storage/*)
