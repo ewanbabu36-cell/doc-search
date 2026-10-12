@@ -33,7 +33,8 @@ import {
   AdaptiveProvider,
   EwanSystemTrainer,
   DocSearch3DLogoLoader,
-  LiveSyncRefreshButton
+  LiveSyncRefreshButton,
+  SkeletonPage
 } from '@docsearch/ui-kit';
 import type { ActivePatientTab } from './PatientRegistrationDomainManager.js';
 import type { ActivePharmacyTab } from './PharmacyDomainManager.js';
@@ -452,6 +453,74 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
       return next;
     });
   }, [activeModule]);
+
+  // Eager background module preloader to ensure 0ms instant page navigation
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const schedulePreload = 'requestIdleCallback' in window
+      ? (window as any).requestIdleCallback
+      : (cb: () => void) => setTimeout(cb, 200);
+
+    const idleHandle = schedulePreload(() => {
+      const dynamicModuleLoaders = [
+        () => import('./ClinicalConsultationDomainManager.js'),
+        () => import('./BillingDomainManager.js'),
+        () => import('./PharmacyDomainManager.js'),
+        () => import('./PatientRegistrationDomainManager.js'),
+        () => import('./InpatientDomainManager.js'),
+        () => import('./ClinicalInvestigationDomainManager.js'),
+        () => import('./EmergencyDomainManager.js'),
+        () => import('./RadiologyDomainManager.js'),
+        () => import('./StaffAdministrationDomainManager.js'),
+        () => import('./DoctorRosterDomainManager.js'),
+        () => import('./ExecutiveCommandDomainManager.js'),
+        () => import('./AiChatAssistantDomainManager.js'),
+        () => import('./PartnerFoundationDomainManager.js'),
+        () => import('./views/FrontDeskWorkstationView.js'),
+        () => import('./views/OpdOneFlowExpressView.js'),
+        () => import('./views/RoleTailoredSmartDeskView.js'),
+        () => import('./dashboard/StaffOperationalRoleDashboard.js'),
+        () => import('./HospitalHomeActivityHub.js'),
+        () => import('./ClinicHomeActivityHub.js'),
+        () => import('./PharmacyHomeActivityHub.js'),
+        () => import('./DiagnosticCentreHomeActivityHub.js'),
+        () => import('./PathologyHomeActivityHub.js'),
+        () => import('./EnterpriseCommandHomeActivityHub.js'),
+        () => import('./InsuranceClaimsDomainManager.js'),
+        () => import('./ProcurementDomainManager.js'),
+        () => import('./OTDomainManager.js'),
+        () => import('./MRDDomainManager.js'),
+        () => import('./BloodBankDomainManager.js'),
+        () => import('./DietaryDomainManager.js'),
+        () => import('./AssetBiomedicalDomainManager.js'),
+        () => import('./QualityInfectionDomainManager.js'),
+        () => import('./AbdmFhirDomainManager.js'),
+        () => import('./AiCdssDomainManager.js'),
+        () => import('./TelemedicineRpmDomainManager.js'),
+        () => import('./WhatsAppPortalDomainManager.js'),
+        () => import('./offers/PartnerOffersRewardsHub.js'),
+        () => import('./views/CentralHelpDeskExitHubView.js'),
+        () => import('./views/PreferredPartnerNetworkView.js'),
+        () => import('./views/HospitalInHouseClosedLoopView.js'),
+        () => import('./views/NurseVitalsTriageStationView.js')
+      ];
+
+      dynamicModuleLoaders.forEach((loader) => {
+        try {
+          void loader();
+        } catch {
+          // Silent preload catch
+        }
+      });
+    });
+
+    return () => {
+      if (typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
+        (window as any).cancelIdleCallback(idleHandle);
+      }
+    };
+  }, []);
 
   const handleGoBack = () => {
     if (navHistory.length > 0) {
@@ -2179,6 +2248,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                   workspaceColor={currentWsp.color}
                   workspaceIcon={currentWsp.icon}
                   isCompact={isSidebarCollapsed}
+                  onClick={() => setActiveModule(isHomeModule ? 'hospital-home' : 'my-smart-desk')}
                 />
               }
               headerSlot={
@@ -4938,14 +5008,15 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
             fallback={
               <div
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  minHeight: '440px',
-                  width: '100%'
+                  padding: '24px 32px',
+                  width: '100%',
+                  minHeight: '440px'
                 }}
               >
-                <DocSearch3DLogoLoader mode="download" size="md" />
+                <div style={{ display: 'none' }}>
+                  <DocSearch3DLogoLoader mode="download" size="md" />
+                </div>
+                <SkeletonPage metricCount={4} layout="table" />
               </div>
             }
           >
@@ -5106,52 +5177,64 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                 )}
               </>
             )}
-            {activeModule === 'enterprise-home' && (
-              <EnterpriseCommandHomeActivityHub
-                tenantId={resolvedTenantId}
-                onNavigateModule={(modKey, subTab) => {
-                  if (modKey === 'pharmacy-medication' && subTab) {
-                    setPharmacyTab(subTab as ActivePharmacyTab);
-                  }
-                  if (modKey === 'patient-registration' && subTab) {
-                    setPatientRegistrationTab(subTab as ActivePatientTab);
-                  }
-                  if (modKey === 'inpatient-management' && subTab) {
-                    setInpatientTab(subTab as InpatientTab);
-                  }
-                  setActiveModule(modKey);
-                }}
-                staffName={currentUser?.name}
-                facilityName={currentUser?.tenantName || currentWsp.name}
-                role={currentUser?.role}
-                onOpenApprovalsModal={() => setIsFounderApprovalsOpen(true)}
-              />
+            {visitedModules.has('enterprise-home') && (
+              <div style={{ display: activeModule === 'enterprise-home' ? 'block' : 'none' }}>
+                <EnterpriseCommandHomeActivityHub
+                  tenantId={resolvedTenantId}
+                  onNavigateModule={(modKey, subTab) => {
+                    if (modKey === 'pharmacy-medication' && subTab) {
+                      setPharmacyTab(subTab as ActivePharmacyTab);
+                    }
+                    if (modKey === 'patient-registration' && subTab) {
+                      setPatientRegistrationTab(subTab as ActivePatientTab);
+                    }
+                    if (modKey === 'inpatient-management' && subTab) {
+                      setInpatientTab(subTab as InpatientTab);
+                    }
+                    setActiveModule(modKey);
+                  }}
+                  staffName={currentUser?.name}
+                  facilityName={currentUser?.tenantName || currentWsp.name}
+                  role={currentUser?.role}
+                  onOpenApprovalsModal={() => setIsFounderApprovalsOpen(true)}
+                />
+              </div>
             )}
-            {activeModule === 'executive-command-center' && (
-              <ExecutiveCommandDomainManager
-                tenantId={resolvedTenantId}
-                onNavigateModule={(modKey) => setActiveModule(modKey)}
-                currentUserRole={currentUser?.role}
-              />
+            {visitedModules.has('executive-command-center') && (
+              <div style={{ display: activeModule === 'executive-command-center' ? 'block' : 'none' }}>
+                <ExecutiveCommandDomainManager
+                  tenantId={resolvedTenantId}
+                  onNavigateModule={(modKey) => setActiveModule(modKey)}
+                  currentUserRole={currentUser?.role}
+                />
+              </div>
             )}
-            {activeModule === 'ai-chat-assistant' && (
-              <AiChatAssistantDomainManager tenantId={resolvedTenantId} role={currentUser?.role} />
+            {visitedModules.has('ai-chat-assistant') && (
+              <div style={{ display: activeModule === 'ai-chat-assistant' ? 'block' : 'none' }}>
+                <AiChatAssistantDomainManager tenantId={resolvedTenantId} role={currentUser?.role} />
+              </div>
             )}
-            {activeModule === 'organization-foundation' && (
-              <PartnerFoundationDomainManager />
+            {visitedModules.has('organization-foundation') && (
+              <div style={{ display: activeModule === 'organization-foundation' ? 'block' : 'none' }}>
+                <PartnerFoundationDomainManager />
+              </div>
             )}
-            {activeModule === 'staff-administration' && (
-              <StaffAdministrationDomainManager
-                workspace={workspace}
-                partnerType={currentUser?.organizationType || workspace}
-                tenantId={resolvedTenantId}
-                partnerId={(currentUser as any)?.partnerId || resolvedTenantId}
-                organizationId={(currentUser as any)?.organizationId}
-                facilityId={(currentUser as any)?.facilityId || (currentUser as any)?.branchId}
-              />
+            {visitedModules.has('staff-administration') && (
+              <div style={{ display: activeModule === 'staff-administration' ? 'block' : 'none' }}>
+                <StaffAdministrationDomainManager
+                  workspace={workspace}
+                  partnerType={currentUser?.organizationType || workspace}
+                  tenantId={resolvedTenantId}
+                  partnerId={(currentUser as any)?.partnerId || resolvedTenantId}
+                  organizationId={(currentUser as any)?.organizationId}
+                  facilityId={(currentUser as any)?.facilityId || (currentUser as any)?.branchId}
+                />
+              </div>
             )}
-            {activeModule === 'doctor-management' && (
-              <DoctorRosterDomainManager />
+            {visitedModules.has('doctor-management') && (
+              <div style={{ display: activeModule === 'doctor-management' ? 'block' : 'none' }}>
+                <DoctorRosterDomainManager />
+              </div>
             )}
             {/* Dedicated Partner Promotional Offers & Cash Rewards Hub */}
             {visitedModules.has('offers-rewards-hub') && (
@@ -5302,44 +5385,68 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                 </DomainErrorBoundary>
               </div>
             )}
-            {activeModule === 'operation-theatre-management' && (
-              <OTDomainManager tenantId={resolvedTenantId} />
+            {visitedModules.has('operation-theatre-management') && (
+              <div style={{ display: activeModule === 'operation-theatre-management' ? 'block' : 'none' }}>
+                <OTDomainManager tenantId={resolvedTenantId} />
+              </div>
             )}
-            {activeModule === 'medical-records' && (
-              <MRDDomainManager tenantId={resolvedTenantId} />
+            {visitedModules.has('medical-records') && (
+              <div style={{ display: activeModule === 'medical-records' ? 'block' : 'none' }}>
+                <MRDDomainManager tenantId={resolvedTenantId} />
+              </div>
             )}
-            {activeModule === 'blood-bank-transfusion' && (
-              <BloodBankDomainManager tenantId={resolvedTenantId} />
+            {visitedModules.has('blood-bank-transfusion') && (
+              <div style={{ display: activeModule === 'blood-bank-transfusion' ? 'block' : 'none' }}>
+                <BloodBankDomainManager tenantId={resolvedTenantId} />
+              </div>
             )}
-            {activeModule === 'radiology-imaging' && (
-              <RadiologyDomainManager tenantId={resolvedTenantId} initialTab={radiologyTab} />
+            {visitedModules.has('radiology-imaging') && (
+              <div style={{ display: activeModule === 'radiology-imaging' ? 'block' : 'none' }}>
+                <RadiologyDomainManager tenantId={resolvedTenantId} initialTab={radiologyTab} />
+              </div>
             )}
-            {activeModule === 'dietary-kitchen-management' && (
-              <DietaryDomainManager />
+            {visitedModules.has('dietary-kitchen-management') && (
+              <div style={{ display: activeModule === 'dietary-kitchen-management' ? 'block' : 'none' }}>
+                <DietaryDomainManager />
+              </div>
             )}
-            {activeModule === 'asset-biomedical-maintenance' && (
-              <AssetBiomedicalDomainManager tenantId={resolvedTenantId} />
+            {visitedModules.has('asset-biomedical-maintenance') && (
+              <div style={{ display: activeModule === 'asset-biomedical-maintenance' ? 'block' : 'none' }}>
+                <AssetBiomedicalDomainManager tenantId={resolvedTenantId} />
+              </div>
             )}
-            {activeModule === 'quality-incident-infection-control' && (
-              <QualityInfectionDomainManager tenantId={resolvedTenantId} />
+            {visitedModules.has('quality-incident-infection-control') && (
+              <div style={{ display: activeModule === 'quality-incident-infection-control' ? 'block' : 'none' }}>
+                <QualityInfectionDomainManager tenantId={resolvedTenantId} />
+              </div>
             )}
-            {activeModule === 'abdm-fhir-gateway' && (
-              <AbdmFhirDomainManager tenantId={resolvedTenantId} />
+            {visitedModules.has('abdm-fhir-gateway') && (
+              <div style={{ display: activeModule === 'abdm-fhir-gateway' ? 'block' : 'none' }}>
+                <AbdmFhirDomainManager tenantId={resolvedTenantId} />
+              </div>
             )}
-            {activeModule === 'ai-clinical-cdss' && (
-              <AiCdssDomainManager tenantId={resolvedTenantId} />
+            {visitedModules.has('ai-clinical-cdss') && (
+              <div style={{ display: activeModule === 'ai-clinical-cdss' ? 'block' : 'none' }}>
+                <AiCdssDomainManager tenantId={resolvedTenantId} />
+              </div>
             )}
-            {activeModule === 'telemedicine-rpm' && (
-              <TelemedicineRpmDomainManager tenantId={resolvedTenantId} />
+            {visitedModules.has('telemedicine-rpm') && (
+              <div style={{ display: activeModule === 'telemedicine-rpm' ? 'block' : 'none' }}>
+                <TelemedicineRpmDomainManager tenantId={resolvedTenantId} />
+              </div>
             )}
-            {activeModule === 'whatsapp-patient-portal' && (
-              <WhatsAppPortalDomainManager tenantId={resolvedTenantId} />
+            {visitedModules.has('whatsapp-patient-portal') && (
+              <div style={{ display: activeModule === 'whatsapp-patient-portal' ? 'block' : 'none' }}>
+                <WhatsAppPortalDomainManager tenantId={resolvedTenantId} />
+              </div>
             )}
-            {activeModule === 'account-plan-features' && (
-              <PartnerAccountPlanView
-                currentUser={currentUser}
-                onOpenQuickModal={() => setIsAccountPlanModalOpen(true)}
-              />
+            {visitedModules.has('account-plan-features') && (
+              <div style={{ display: activeModule === 'account-plan-features' ? 'block' : 'none' }}>
+                <PartnerAccountPlanView
+                  currentUser={currentUser}
+                  onOpenQuickModal={() => setIsAccountPlanModalOpen(true)}
+                />
+              </div>
             )}
           </React.Suspense>
         )}

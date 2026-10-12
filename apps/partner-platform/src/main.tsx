@@ -2,9 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { ThemeProvider, EffectIntensityProvider, DocSearch3DLogoLoader, type ThemeMode } from '@docsearch/ui-kit';
 import { setupCrossBrowserThemeSync, persistCloudThemePreference } from './services/theme-sync-service.js';
-const PartnerPlatformShell = React.lazy(() =>
-  import('./components/PartnerPlatformShell.js').then((m) => ({ default: m.PartnerPlatformShell }))
-);
+import { PartnerPlatformShell } from './components/PartnerPlatformShell.js';
 const HospitalQueueTvDisplayView = React.lazy(() =>
   import('./components/views/HospitalQueueTvDisplayView.js').then((m) => ({ default: m.HospitalQueueTvDisplayView }))
 );
@@ -354,15 +352,7 @@ const App: React.FC = () => {
 
   return (
     <ThemeProvider cloudTheme={cloudTheme} onThemeChange={handleThemeChange}>
-      <React.Suspense
-        fallback={
-          <div style={{ minHeight: '100vh', background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <DocSearch3DLogoLoader mode="download" size="lg" />
-          </div>
-        }
-      >
-        <PartnerPlatformShell currentUser={currentUser} onLogout={handleLogout} />
-      </React.Suspense>
+      <PartnerPlatformShell currentUser={currentUser} onLogout={handleLogout} />
     </ThemeProvider>
   );
 };
