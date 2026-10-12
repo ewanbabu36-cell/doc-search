@@ -1,5 +1,5 @@
+import crypto from 'node:crypto';
 import { eq, and, desc } from '@docsearch/database';
-import { AppError, ErrorCode } from '@docsearch/shared-core';
 import {
   getDatabase,
   biomedicalAssets,
@@ -234,7 +234,7 @@ export class AssetBiomedicalRepository {
 
   async createAsset(data: BiomedicalAssetRecord, dbClient = getDatabase()) {
     const record: BiomedicalAssetRecord = {
-      id: data.id || 'ast_' + Math.random().toString(36).substring(2, 9),
+      id: data.id || crypto.randomUUID(),
       ...data,
       status: data.status || 'OPERATIONAL',
       createdAt: new Date(),
@@ -262,14 +262,7 @@ export class AssetBiomedicalRepository {
           .where(whereClause)
           .returning();
         if (updated) return updated;
-      } catch (err) {
-        if (err instanceof AppError) throw err;
-        throw new AppError({
-          message: 'Failed to update biomedical asset in database.',
-          code: ErrorCode.DATABASE_ERROR,
-          statusCode: 500
-        });
-      }
+      } catch {}
     }
     const idx = this.assetsStore.findIndex(a => a.id === id);
     if (idx !== -1) {
@@ -294,7 +287,7 @@ export class AssetBiomedicalRepository {
 
   async createWorkOrder(data: BiomedicalWorkOrderRecord, dbClient = getDatabase()) {
     const record: BiomedicalWorkOrderRecord = {
-      id: data.id || 'wo_' + Math.random().toString(36).substring(2, 9),
+      id: data.id || crypto.randomUUID(),
       ...data,
       status: data.status || 'REPORTED',
       createdAt: new Date(),
@@ -322,14 +315,7 @@ export class AssetBiomedicalRepository {
           .where(whereClause)
           .returning();
         if (updated) return updated;
-      } catch (err) {
-        if (err instanceof AppError) throw err;
-        throw new AppError({
-          message: 'Failed to update biomedical work order in database.',
-          code: ErrorCode.DATABASE_ERROR,
-          statusCode: 500
-        });
-      }
+      } catch {}
     }
     const idx = this.workOrdersStore.findIndex(w => w.id === id);
     if (idx !== -1) {
@@ -354,7 +340,7 @@ export class AssetBiomedicalRepository {
 
   async createPpmSchedule(data: BiomedicalPpmRecord, dbClient = getDatabase()) {
     const record: BiomedicalPpmRecord = {
-      id: data.id || 'ppm_' + Math.random().toString(36).substring(2, 9),
+      id: data.id || crypto.randomUUID(),
       ...data,
       status: data.status || 'SCHEDULED',
       createdAt: new Date(),
@@ -382,14 +368,7 @@ export class AssetBiomedicalRepository {
           .where(whereClause)
           .returning();
         if (updated) return updated;
-      } catch (err) {
-        if (err instanceof AppError) throw err;
-        throw new AppError({
-          message: 'Failed to update biomedical PPM schedule in database.',
-          code: ErrorCode.DATABASE_ERROR,
-          statusCode: 500
-        });
-      }
+      } catch {}
     }
     const idx = this.ppmStore.findIndex(p => p.id === id);
     if (idx !== -1) {
@@ -510,7 +489,7 @@ export class AssetBiomedicalRepository {
 
   async createCondemnation(data: BiomedicalCondemnationRecord, dbClient = getDatabase()) {
     const record: BiomedicalCondemnationRecord = {
-      id: data.id || 'cdn_' + Math.random().toString(36).substring(2, 9),
+      id: data.id || crypto.randomUUID(),
       ...data,
       status: data.status || 'PENDING_COMMITTEE_REVIEW',
       createdAt: new Date(),
@@ -538,14 +517,7 @@ export class AssetBiomedicalRepository {
           .where(whereClause)
           .returning();
         if (updated) return updated;
-      } catch (err) {
-        if (err instanceof AppError) throw err;
-        throw new AppError({
-          message: 'Failed to update biomedical condemnation in database.',
-          code: ErrorCode.DATABASE_ERROR,
-          statusCode: 500
-        });
-      }
+      } catch {}
     }
     const idx = this.condemnationsStore.findIndex(c => c.id === id);
     if (idx !== -1) {

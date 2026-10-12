@@ -77,7 +77,12 @@ export class AuditRepository {
 
     const auditRecord = buildSecurityAuditRecord(payload, session, previousHash || undefined);
 
-    const rawActorId = String(auditRecord.actorId || session.userId || '').trim();
+    const rawActorId = String(
+      auditRecord.actorId ||
+      session?.userId ||
+      (session?.isSuperAdmin ? '00000000-0000-4000-8000-000000000001' : '') ||
+      ''
+    ).trim();
     if (!rawActorId) {
       throw new AppError({
         code: ErrorCode.VALIDATION_ERROR,
@@ -179,8 +184,13 @@ export class AuditRepository {
       resolvedBranch = facility || coreBranch;
 
       if (!resolvedBranch) {
-        if (branchUuid === 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' || isSuperAdminContext) {
-          // Canonical platform system branch or superadmin event; permit audit event without failing
+        if (
+          branchUuid === 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' ||
+          branchUuid === '11111111-1111-4111-8111-111111111111' ||
+          (tenantUuid && branchUuid === tenantUuid) ||
+          isSuperAdminContext
+        ) {
+          // Canonical platform system branch, single-facility main branch, or superadmin event; permit audit event without failing
           resolvedBranch = { id: branchUuid, tenantId: tenantUuid || branchUuid } as any;
         } else {
           throw new AppError({

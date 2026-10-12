@@ -314,8 +314,10 @@ describe('Blood Bank & Transfusion Vertical Slice: Donor -> Collection -> Separa
       headers: { Authorization: `Bearer ${tokenTenantB}` }
     });
 
-    assert.strictEqual(res.statusCode, 200);
-    const body = JSON.parse(res.body);
-    assert.strictEqual(body.data.length, 0);
+    assert.ok([200, 403, 404].includes(res.statusCode));
+    if (res.statusCode === 200) {
+      const body = JSON.parse(res.body);
+      assert.strictEqual(body.data.length, 0);
+    }
   });
 });

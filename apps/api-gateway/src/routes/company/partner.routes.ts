@@ -606,9 +606,31 @@ export const partnerRoutes: FastifyPluginAsync = async (fastify) => {
         });
       }
 
-      const { toStatus, reason } = parseResult.data;
+      const { fromStatus, toStatus, reason } = parseResult.data;
       const normToStatus = toStatus.toUpperCase();
+      const normFromStatus = fromStatus?.toUpperCase();
       const statusReason = reason || `Transitioned to ${normToStatus} via Founder console`;
+
+      const ALLOWED_TRANSITIONS: Record<string, string[]> = {
+        LEAD: ['PROSPECT', 'ONBOARDING'],
+        PROSPECT: ['ONBOARDING', 'SUSPENDED'],
+        ONBOARDING: ['VERIFICATION', 'ACTIVE', 'SUSPENDED'],
+        VERIFICATION: ['ACTIVE', 'SUSPENDED'],
+        ACTIVE: ['SUSPENDED', 'OFFBOARDED'],
+        SUSPENDED: ['ACTIVE', 'OFFBOARDED'],
+        OFFBOARDED: []
+      };
+
+      if (normFromStatus) {
+        const allowed = ALLOWED_TRANSITIONS[normFromStatus] || [];
+        if (!allowed.includes(normToStatus)) {
+          throw new AppError({
+            message: `Invalid partner status transition from ${normFromStatus} to ${normToStatus}. Allowed transitions: ${allowed.join(', ') || 'None'}`,
+            code: ErrorCode.BAD_REQUEST,
+            statusCode: 400
+          });
+        }
+      }
 
       let updatedProfile: any = null;
       const db = getDatabase();
@@ -630,6 +652,14 @@ export const partnerRoutes: FastifyPluginAsync = async (fastify) => {
         );
 
         if (matchedProfile) {
+          const currentProfileStatus = matchedProfile.lifecycleStatus?.toUpperCase();
+          if (currentProfileStatus === 'OFFBOARDED') {
+            throw new AppError({
+              message: 'Partner is OFFBOARDED and cannot transition to another status',
+              code: ErrorCode.BAD_REQUEST,
+              statusCode: 400
+            });
+          }
           const [upd] = await db
             .update(partnerProfiles)
             .set({

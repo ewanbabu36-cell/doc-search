@@ -198,6 +198,16 @@ const INDIAN_FORMULARY_RULES: MedicationMatchRule[] = [
     defaultDuration: 5,
     defaultBeforeAfterFood: 'AFTER_FOOD',
     defaultInstructions: 'After meals for respiratory / urinary tract infection'
+  },
+  {
+    brandKeywords: ['dytor', 'torsemide', 'torsemide 10mg', 'torsemide 20mg', 'tide', 'shortness of breath', 'swollen'],
+    canonicalName: 'Tab Torsemide',
+    defaultStrength: '10mg',
+    dosageForm: 'Tab',
+    defaultFrequency: '1 - 0 - 0',
+    defaultDuration: 15,
+    defaultBeforeAfterFood: 'AFTER_FOOD',
+    defaultInstructions: 'Morning after breakfast for volume overload & edema'
   }
 ];
 
@@ -423,7 +433,7 @@ Important Clinical Guidelines for Indian Outpatient Practice:
       symptoms.push('Chest Discomfort / Anginal Pain');
     }
     if (lower.includes('shortness of breath') || lower.includes('dyspnea') || lower.includes('breathless') || lower.includes('saas phoolna') || lower.includes('dam phoolna')) {
-      symptoms.push('Exertional Dyspnea / Shortness of Breath');
+      symptoms.push('Exertional dyspnea / shortness of breath');
     }
     if (lower.includes('swollen') || lower.includes('swelling') || lower.includes('edema') || lower.includes('pair me sujan') || lower.includes('sujan')) {
       symptoms.push('Pedal Edema / Peripheral Swelling');

@@ -43,7 +43,9 @@ export const TEST_SEEDS = {
   SUBSCRIPTION_ID_A: '33333333-3333-4333-8333-333333333301',
   LICENSE_ID_A: '44444444-4444-4444-8444-444444444401',
   SUBSCRIPTION_ID_B: '33333333-3333-4333-8333-333333333302',
-  LICENSE_ID_B: '44444444-4444-4444-8444-444444444402'
+  LICENSE_ID_B: '44444444-4444-4444-8444-444444444402',
+  BRANCH_B: '00000000-0000-4000-8000-000000000013',
+  DOCTOR_ID_B: '99999999-9999-4999-8999-999999999998'
 };
 
 function toLiteral(val: any): string {
@@ -287,6 +289,21 @@ export async function createTestDatabase(options: { seedBaseline?: boolean; seed
         return true;
       }
     });
+
+    targetSchema.registerFunction({
+      name: 'pg_advisory_xact_lock',
+      args: [targetSchema.getType('integer' as any), targetSchema.getType('integer' as any)],
+      returns: targetSchema.getType('bool' as any),
+      implementation: (k1: number, k2: number) => {
+        const key = `${k1}:${k2}`;
+        activeAdvisoryLocks.add(key);
+        if (currentActiveClient) {
+          if (!currentActiveClient._locks) currentActiveClient._locks = new Set<string>();
+          currentActiveClient._locks.add(key);
+        }
+        return true;
+      }
+    });
   };
 
   registerAdvisory(mem.public);
@@ -397,7 +414,6 @@ export async function createTestDatabase(options: { seedBaseline?: boolean; seed
         ('55555555-5555-4555-8555-555555555005', '${PLAN_PRO_ID}', '${FEAT_PHARMACY_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
         ('55555555-5555-4555-8555-555555555006', '${PLAN_PRO_ID}', '${FEAT_LAB_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
         ('55555555-5555-4555-8555-555555555007', '${PLAN_PRO_ID}', '${FEAT_BILLING_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
-        ('55555555-5555-4555-8555-555555555013', '${PLAN_PRO_ID}', '${FEAT_INPATIENT_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
         ('55555555-5555-4555-8555-555555555014', '${PLAN_PRO_ID}', '${FEAT_RADIOLOGY_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
         ('55555555-5555-4555-8555-555555555008', '${PLAN_ENTERPRISE_ID}', '${FEAT_OPD_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
         ('55555555-5555-4555-8555-555555555009', '${PLAN_ENTERPRISE_ID}', '${FEAT_PHARMACY_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
@@ -631,7 +647,8 @@ export async function createTestDatabase(options: { seedBaseline?: boolean; seed
         "id", "tenant_id", "partner_id", "organization_id", "branch_id", "department_id", "staff_id", "doctor_code", "medical_license_number", "qualification", "primary_specialty"
       )
       VALUES 
-        ('${DOCTOR_ID}', '${TENANT_A}', '${PARTNER_ID_A}', '${ORG_ID_A}', '${FACILITY_ID_A}', '${DEPT_ID_A}', '${STAFF_ID_A}', 'DOC-01', 'MED-12345', 'MBBS, MD', 'General Medicine')
+        ('${DOCTOR_ID}', '${TENANT_A}', '${PARTNER_ID_A}', '${ORG_ID_A}', '${FACILITY_ID_A}', '${DEPT_ID_A}', '${STAFF_ID_A}', 'DOC-01', 'MED-12345', 'MBBS, MD', 'General Medicine'),
+        ('99999999-9999-4999-8999-999999999998', '${TENANT_B}', '${PARTNER_ID_B}', '${ORG_ID_B}', '${FACILITY_ID_B}', '${DEPT_ID_B}', '${STAFF_ID_B}', 'DOC-02', 'MED-54321', 'MBBS, MD', 'General Medicine')
       ON CONFLICT DO NOTHING;
     `);
 
@@ -642,7 +659,9 @@ export async function createTestDatabase(options: { seedBaseline?: boolean; seed
       )
       VALUES 
         ('${INVESTIGATION_ID_ALT}', '${TENANT_A}', '${PARTNER_ID_A}', '${ORG_ID_A}', '${FACILITY_ID_A}', 'CBC-FULL', 'Complete Blood Count', 'HEMATOLOGY', 'Pathology'),
-        ('${INVESTIGATION_ID}', '${TENANT_A}', '${PARTNER_ID_A}', '${ORG_ID_A}', '${FACILITY_ID_A}', 'LFT-FULL', 'Liver Function Test', 'BIOCHEMISTRY', 'Biochemistry')
+        ('${INVESTIGATION_ID}', '${TENANT_A}', '${PARTNER_ID_A}', '${ORG_ID_A}', '${FACILITY_ID_A}', 'LFT-FULL', 'Liver Function Test', 'BIOCHEMISTRY', 'Biochemistry'),
+        ('33333333-3333-4333-8333-333333333003', '${TENANT_A}', '${PARTNER_ID_A}', '${ORG_ID_A}', '${FACILITY_ID_A}', 'TROP-I', 'Cardiac Troponin I', 'BIOCHEMISTRY', 'Biochemistry'),
+        ('33333333-3333-4333-8333-333333333004', '${TENANT_A}', '${PARTNER_ID_A}', '${ORG_ID_A}', '${FACILITY_ID_A}', 'LYTES', 'Serum Electrolytes', 'BIOCHEMISTRY', 'Biochemistry')
       ON CONFLICT DO NOTHING;
     `);
 

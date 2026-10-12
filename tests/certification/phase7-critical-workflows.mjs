@@ -99,12 +99,15 @@ function createToken(overrides = {}) {
       'billing:invoices:create',
       'billing:invoices:read',
       'billing:invoices:update',
+      'billing:invoices:refund',
       'billing:payments:create',
       'billing:payments:read',
       'billing:refunds:create'
     ],
     iss: ISSUER,
-    aud: AUDIENCE
+    aud: AUDIENCE,
+    ...(overrides.override !== undefined ? { override: overrides.override } : {}),
+    ...(overrides.purpose !== undefined ? { purpose: overrides.purpose } : {})
   };
   return signJwt(claims, { secret: MASTER_SECRET, issuer: ISSUER, audience: AUDIENCE, expiresInSeconds: 3600 });
 }
@@ -778,6 +781,9 @@ export async function runCriticalWorkflows() {
         }
       });
 
+      if (![200, 201].includes(validRefundRes.statusCode)) {
+        console.error('REFUND FAILED RESPONSE:', validRefundRes.statusCode, validRefundRes.body);
+      }
       assert.ok([200, 201].includes(validRefundRes.statusCode), 'Valid refund must succeed with 200 or 201');
       const refundBody = JSON.parse(validRefundRes.body);
       sharedRefundId = refundBody.data?.refund?.id || refundBody.data?.refundId || refundBody.data?.id;

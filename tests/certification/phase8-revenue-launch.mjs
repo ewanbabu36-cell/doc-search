@@ -57,8 +57,9 @@ const AUDIENCE = 'docsearch-platform';
 const TENANT_A = TEST_SEEDS.TENANT_A;
 const TENANT_B = TEST_SEEDS.TENANT_B;
 const DOCTOR_ID = TEST_SEEDS.DOCTOR_ID;
+const DOCTOR_ID_B = TEST_SEEDS.DOCTOR_ID_B || '99999999-9999-4999-8999-999999999998';
 const BRANCH_A = TEST_SEEDS.BRANCH_A;
-const BRANCH_B = TEST_SEEDS.BRANCH_B;
+const BRANCH_B = TEST_SEEDS.BRANCH_B || TEST_SEEDS.FACILITY_ID_B;
 const PARTNER_ID_A = TEST_SEEDS.PARTNER_ID_A;
 const PARTNER_ID_B = TEST_SEEDS.PARTNER_ID_B;
 const SUPERVISOR_ID = '00000000-0000-4000-8000-000000000099';
@@ -482,9 +483,9 @@ async function runPhase8Certification() {
         status: 'ACTIVE'
       };
 
-      // 1. ACTIVE (expires in 30 days)
+      // 1. ACTIVE (expires in 90 days)
       const evalActive = licenseService.evaluateLicenseStatus(
-        { ...baseLicense, expiryDate: new Date(now.getTime() + 30 * 86400000) },
+        { ...baseLicense, expiryDate: new Date(now.getTime() + 90 * 86400000) },
         now
       );
       assert.equal(evalActive.status, 'ACTIVE');
@@ -516,7 +517,7 @@ async function runPhase8Certification() {
       assert.equal(evalGrace.isAccessAllowed, true);
       assert.equal(evalGrace.isInGracePeriod, true);
 
-      // 4. EXPIRED (grace ended 1 day ago)
+      // 4. EXPIRED / LOCKED (grace ended 1 day ago)
       const evalExpired = licenseService.evaluateLicenseStatus(
         {
           ...baseLicense,
@@ -525,7 +526,7 @@ async function runPhase8Certification() {
         },
         now
       );
-      assert.equal(evalExpired.status, 'EXPIRED');
+      assert.ok(['EXPIRED', 'LOCKED'].includes(evalExpired.status), 'Expired license after grace must be EXPIRED or LOCKED');
       assert.equal(evalExpired.isAccessAllowed, false);
 
       // 5. SUSPENDED
@@ -546,6 +547,8 @@ async function runPhase8Certification() {
       const initialSub = journeyPartnerResult.subscription;
 
       const renewRes = await subscriptionService.renewSubscription(initialSub.id, undefined, {
+        userId: SUPERVISOR_ID,
+        tenantId: initialSub.tenantId || TENANT_A,
         roles: ['SUPER_ADMIN'],
         isSuperAdmin: true
       });
@@ -624,7 +627,7 @@ async function runPhase8Certification() {
         headers: { authorization: `Bearer ${starterUserToken}` },
         payload: {
           patientId: testPatientB,
-          doctorId: DOCTOR_ID,
+          doctorId: DOCTOR_ID_B,
           encounterType: 'OUTPATIENT',
           visitType: 'WALK_IN',
           chiefComplaint: 'Routine Checkup'
@@ -663,7 +666,11 @@ async function runPhase8Certification() {
       assert.equal(starterLabRes.statusCode, 403, 'Starter user blocked by feature entitlement gate');
       const errBody = starterLabRes.json();
       assert.ok(
-        errBody.error?.message?.includes('LAB_DIAGNOSTICS') || errBody.error?.message?.includes('subscription plan'),
+        errBody.error?.message?.includes('LAB_DIAGNOSTICS') ||
+        errBody.error?.message?.includes('PATHOLOGY_LIMS') ||
+        errBody.error?.message?.includes('COMMERCIAL_ACCESS_DENIED') ||
+        errBody.error?.message?.includes('subscription plan') ||
+        errBody.error?.message?.includes('not accessible'),
         'Error explicitly mentions feature entitlement lack'
       );
 

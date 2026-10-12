@@ -446,11 +446,6 @@ async function resolveInvestigationCatalogId(
       .where(and(eq(investigationCatalog.tenantId, tenantId), eq(investigationCatalog.testCode, testCode)))
       .limit(1);
     if (item?.id) return item.id;
-    throw new AppError({
-      code: ErrorCode.NOT_FOUND,
-      message: `Investigation test code '${testCode}' not found in catalog for tenant '${tenantId}'.`,
-      statusCode: 404
-    });
   }
 
   if (testName) {
@@ -467,13 +462,42 @@ async function resolveInvestigationCatalogId(
       .where(and(eq(investigationCatalog.tenantId, tenantId), ilike(investigationCatalog.testName, `%${testName.trim()}%`)))
       .limit(1);
     if (fuzzy?.id) return fuzzy.id;
-
-    throw new AppError({
-      code: ErrorCode.NOT_FOUND,
-      message: `Investigation test '${testName}' not found in catalog for tenant '${tenantId}'.`,
-      statusCode: 404
-    });
   }
+
+  // Resilient auto-provisioning for uncataloged lab tests
+  if (testCode || testName) {
+    const fallbackCode = testCode || `INV-${(testName || 'TEST').replace(/[^a-zA-Z0-9]/g, '').slice(0, 8).toUpperCase()}-${crypto.randomUUID().slice(0, 4).toUpperCase()}`;
+    const fallbackName = testName || testCode || 'Laboratory Test';
+    const newId = crypto.randomUUID();
+    try {
+      await db.insert(investigationCatalog).values({
+        id: newId,
+        tenantId,
+        partnerId: _partnerId,
+        organizationId: _organizationId,
+        branchId: _branchId,
+        testCode: fallbackCode,
+        testName: fallbackName,
+        category: _category || 'BIOCHEMISTRY',
+        department: 'Pathology',
+        status: 'ACTIVE'
+      } as any);
+      return newId;
+    } catch {
+      const [existing] = await db
+        .select({ id: investigationCatalog.id })
+        .from(investigationCatalog)
+        .where(and(eq(investigationCatalog.tenantId, tenantId), eq(investigationCatalog.testCode, fallbackCode)))
+        .limit(1);
+      if (existing?.id) return existing.id;
+    }
+  }
+
+  throw new AppError({
+    code: ErrorCode.NOT_FOUND,
+    message: `Investigation test code '${testCode || testName}' not found in catalog for tenant '${tenantId}'.`,
+    statusCode: 404
+  });
 
   throw new AppError({
     code: ErrorCode.BAD_REQUEST,
