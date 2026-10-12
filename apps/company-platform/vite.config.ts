@@ -39,6 +39,9 @@ export default defineConfig({
     }
   },
   server: {
+    watch: {
+      ignored: ['**/dist/**', '**/node_modules/**']
+    },
     port: 5177,
     strictPort: true,
     proxy: {
