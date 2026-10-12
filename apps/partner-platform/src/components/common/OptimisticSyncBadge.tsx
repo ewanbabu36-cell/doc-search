@@ -95,6 +95,8 @@ export const OptimisticSyncBadge: React.FC = () => {
           fontWeight: 800,
           fontFamily: 'system-ui, monospace',
           boxShadow: '0 0 12px rgba(16, 185, 129, 0.35)',
+          whiteSpace: 'nowrap',
+          flexShrink: 0,
           transition: 'all 0.2s ease'
         }}
       >
@@ -119,6 +121,8 @@ export const OptimisticSyncBadge: React.FC = () => {
         color: 'var(--ds-color-text-muted, #94a3b8)',
         fontSize: '0.6875rem',
         fontWeight: 600,
+        whiteSpace: 'nowrap',
+        flexShrink: 0,
         userSelect: 'none'
       }}
     >

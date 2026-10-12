@@ -195,8 +195,7 @@ export const Header: React.FC<HeaderProps> = ({
       {organizationSlot && (
         <div
           style={{
-            flex: '1 1 auto',
-            maxWidth: '560px',
+            flex: '0 1 540px',
             minWidth: 0,
             display: 'flex',
             justifyContent: 'center',
@@ -260,7 +259,7 @@ export const Header: React.FC<HeaderProps> = ({
                   <line x1="14" y1="10" x2="21" y2="3" />
                   <line x1="3" y1="21" x2="10" y2="14" />
                 </svg>
-                <span>Exit Full</span>
+                <span className="ds-hide-on-compact">Exit Full</span>
               </>
             ) : (
               <>
@@ -270,7 +269,7 @@ export const Header: React.FC<HeaderProps> = ({
                   <line x1="21" y1="3" x2="14" y2="10" />
                   <line x1="3" y1="21" x2="10" y2="14" />
                 </svg>
-                <span>Fullscreen</span>
+                <span className="ds-hide-on-compact">Fullscreen</span>
               </>
             )}
           </button>
