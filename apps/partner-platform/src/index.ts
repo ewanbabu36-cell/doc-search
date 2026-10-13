@@ -395,6 +395,7 @@ export * from './components/dialogs/CompleteDischargeDialog.js';
 export * from './components/dialogs/FinalizeDischargeSummaryDialog.js';
 export * from './components/dialogs/PrintableDischargeSummaryModal.js';
 export * from './components/dialogs/PrintableBedsideQrCardModal.js';
+export * from './components/dialogs/PrintableOpdTokenSlipModal.js';
 export * from './components/dialogs/ReleaseBedDialog.js';
 export * from './components/dialogs/CompleteCleaningDialog.js';
 export * from './components/dialogs/DirectAdmitBedDialog.js';

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, Badge, Button } from '@docsearch/ui-kit';
 import type { AbdmScanAndShareTokenDto } from '@docsearch/api-contracts';
 import { getUnifiedPartnerProfile } from '../../utils/roleProfileResolver.js';
+import { PrintableOpdTokenSlipModal } from '../dialogs/PrintableOpdTokenSlipModal.js';
 
 interface Props {
   tokens: AbdmScanAndShareTokenDto[];
@@ -29,8 +30,15 @@ export const ScanAndShareCounterView: React.FC<Props> = ({ tokens: initialTokens
     scannedAt: new Date().toLocaleTimeString()
   });
 
-  const [printSuccess, setPrintSuccess] = useState(false);
-  const [whatsAppDispatched, setWhatsAppDispatched] = useState(false);
+  const [isTokenSlipModalOpen, setIsTokenSlipModalOpen] = useState(false);
+  const [selectedTokenForSlip, setSelectedTokenForSlip] = useState<{
+    tokenNumber: string;
+    patientName: string;
+    patientMobile?: string;
+    patientMrn?: string;
+    doctor?: string;
+    chamber?: string;
+  } | null>(null);
 
   // Official ABDM Counter QR Code URL
   const counterQrData = 'https://abdm.gov.in/scan-share/counter?facId=IN0710002148&counter=01&dept=OPD_GENERAL';
@@ -65,8 +73,6 @@ export const ScanAndShareCounterView: React.FC<Props> = ({ tokens: initialTokens
         scannedAt: new Date().toLocaleTimeString()
       };
       setScannedPatient(newScan);
-      setPrintSuccess(true);
-      setTimeout(() => setPrintSuccess(false), 3000);
 
       // Add to tokens table
       const newRecord: AbdmScanAndShareTokenDto = {
@@ -86,11 +92,6 @@ export const ScanAndShareCounterView: React.FC<Props> = ({ tokens: initialTokens
       };
       setTokensList((prev) => [newRecord, ...prev]);
     }, 600);
-  };
-
-  const handleWhatsAppDispatch = () => {
-    setWhatsAppDispatched(true);
-    setTimeout(() => setWhatsAppDispatched(false), 3000);
   };
 
   return (
@@ -294,18 +295,24 @@ export const ScanAndShareCounterView: React.FC<Props> = ({ tokens: initialTokens
             <Button
               variant="outline"
               size="md"
-              onClick={() => window.print()}
-              style={{ flex: '1 1 auto', fontWeight: 700 }}
+              onClick={() => {
+                setSelectedTokenForSlip(scannedPatient);
+                setIsTokenSlipModalOpen(true);
+              }}
+              style={{ flex: '1 1 auto', fontWeight: 800 }}
             >
-              {printSuccess ? '✓ Token Printed!' : '🖨️ Print 80mm Slip'}
+              🖨️ Print 80mm Slip
             </Button>
             <Button
               variant="primary"
               size="md"
-              onClick={handleWhatsAppDispatch}
+              onClick={() => {
+                setSelectedTokenForSlip(scannedPatient);
+                setIsTokenSlipModalOpen(true);
+              }}
               style={{ flex: '1 1 auto', fontWeight: 800, backgroundColor: '#10B981', borderColor: '#10B981' }}
             >
-              {whatsAppDispatched ? '✓ WhatsApp Slip Sent!' : '📲 Send on WhatsApp'}
+              📲 Send on WhatsApp / Live Radar
             </Button>
           </div>
         </div>
@@ -392,16 +399,59 @@ export const ScanAndShareCounterView: React.FC<Props> = ({ tokens: initialTokens
                   {t.patientAbhaAddress}
                 </div>
               </div>
-              <div style={{ textAlign: 'right' }}>
+              <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
                 <Badge variant="success">{t.status}</Badge>
-                <div style={{ fontSize: '0.6875rem', color: '#94A3B8', marginTop: '4px' }}>
+                <div style={{ fontSize: '0.6875rem', color: '#94A3B8' }}>
                   {t.assignedDoctorName}
                 </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedTokenForSlip({
+                      tokenNumber: t.tokenNumber,
+                      patientName: t.patientName,
+                      patientMobile: t.mobile || '+91 98765 43210',
+                      patientMrn: t.patientAbhaNumber || 'UHID-8812',
+                      doctor: t.assignedDoctorName,
+                      chamber: 'Chamber 104'
+                    });
+                    setIsTokenSlipModalOpen(true);
+                  }}
+                  style={{
+                    backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                    border: '1px solid rgba(56, 189, 248, 0.4)',
+                    color: '#38BDF8',
+                    borderRadius: '5px',
+                    padding: '3px 8px',
+                    fontSize: '0.6875rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    marginTop: '2px'
+                  }}
+                  title="Print Thermal 80mm Slip or Dispatch WhatsApp Live Tracker"
+                >
+                  🎫 Slip / Radar
+                </button>
               </div>
             </div>
           ))}
         </div>
       </Card>
+
+      {/* 🎫 Zero-App WhatsApp Live Queue Radar & 80mm Thermal Slip Modal */}
+      {selectedTokenForSlip && (
+        <PrintableOpdTokenSlipModal
+          isOpen={isTokenSlipModalOpen}
+          onClose={() => setIsTokenSlipModalOpen(false)}
+          tokenNumber={selectedTokenForSlip.tokenNumber}
+          patientName={selectedTokenForSlip.patientName}
+          patientMobile={selectedTokenForSlip.patientMobile}
+          patientMrn={selectedTokenForSlip.patientMrn}
+          doctorName={selectedTokenForSlip.doctor}
+          roomNumber={selectedTokenForSlip.chamber}
+          facilityName={partnerProfile.entityLegalName || 'Apex Medicity Multi-Speciality Hospital'}
+        />
+      )}
     </div>
   );
 };

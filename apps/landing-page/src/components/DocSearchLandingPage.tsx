@@ -7,6 +7,7 @@ const FullPageRegistrationView = React.lazy(() => import('./FullPageRegistration
 const LaunchOfferFlashTakeoverModal = React.lazy(() => import('./LaunchOfferFlashTakeoverModal.js').then(m => ({ default: m.LaunchOfferFlashTakeoverModal })));
 const LiveEmergencyBedRadarWidget = React.lazy(() => import('./LiveEmergencyBedRadarWidget.js').then(m => ({ default: m.LiveEmergencyBedRadarWidget })));
 const AIReceptionistWidget = React.lazy(() => import('./AIReceptionistWidget.js').then(m => ({ default: m.AIReceptionistWidget })));
+const LiveOpdQueueTrackerView = React.lazy(() => import('./LiveOpdQueueTrackerView.js').then(m => ({ default: m.LiveOpdQueueTrackerView })));
 import { InteractiveClinicSandbox } from './InteractiveClinicSandbox.js';
 import { AdaptiveRoiCalculator } from './AdaptiveRoiCalculator.js';
 import {
@@ -45,10 +46,13 @@ export const DocSearchLandingPage: React.FC = () => {
   const [campaign, setCampaign] = useState<PromotionalCampaignConfig>(getPromotionalCampaign());
   const [campaignMetrics, setCampaignMetrics] = useState<CampaignCalculatedMetrics>(calculateCampaignMetrics(campaign));
 
-  // Dedicated Full-Page View Mode ('LANDING' vs 'REGISTRATION')
-  const [currentView, setCurrentView] = useState<'LANDING' | 'REGISTRATION'>(() => {
+  // Dedicated Full-Page View Mode ('LANDING' vs 'REGISTRATION' vs 'TRACK_TOKEN')
+  const [currentView, setCurrentView] = useState<'LANDING' | 'REGISTRATION' | 'TRACK_TOKEN'>(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
+      if (params.get('view') === 'track-token' || params.get('token') || params.get('t')) {
+        return 'TRACK_TOKEN';
+      }
       if (params.get('view') === 'register' || params.get('register') === 'true') {
         return 'REGISTRATION';
       }
@@ -283,6 +287,26 @@ export const DocSearchLandingPage: React.FC = () => {
           }}
           partnerPortalUrl={partnerPortalUrl}
           companyPortalUrl={companyPortalUrl}
+        />
+      </React.Suspense>
+    );
+  }
+
+  // Render Full-Page Zero-App Live OPD Queue Tracker View
+  if (currentView === 'TRACK_TOKEN') {
+    return (
+      <React.Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#090D16', color: '#06B6D4' }}>Loading Live OPD Radar...</div>}>
+        <LiveOpdQueueTrackerView
+          onBackToHome={() => {
+            setCurrentView('LANDING');
+            if (typeof window !== 'undefined') {
+              const url = new URL(window.location.href);
+              url.searchParams.delete('view');
+              url.searchParams.delete('token');
+              url.searchParams.delete('t');
+              window.history.replaceState({}, document.title, url.pathname);
+            }
+          }}
         />
       </React.Suspense>
     );
@@ -762,6 +786,27 @@ export const DocSearchLandingPage: React.FC = () => {
           <a href="#emergency" style={{ color: '#F87171', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 800, transition: 'color 0.2s', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>🚨 ICU Bed Radar</a>
           <a href="#architecture" style={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 600, transition: 'color 0.2s' }}>Architecture</a>
           <a href="#security" style={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 600, transition: 'color 0.2s' }}>Security</a>
+          <button
+            type="button"
+            onClick={() => setCurrentView('TRACK_TOKEN')}
+            style={{
+              background: 'rgba(16, 185, 129, 0.12)',
+              border: '1px solid rgba(16, 185, 129, 0.35)',
+              borderRadius: '6px',
+              padding: '4px 10px',
+              color: '#34D399',
+              fontSize: '0.8125rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '5px',
+              transition: 'all 0.2s'
+            }}
+          >
+            <span>📱</span>
+            <span>Track OPD Token</span>
+          </button>
         </nav>
 
         {/* Right CTA Actions - Clean Linear/Apple-Style (Demo CTA + Sign In) */}

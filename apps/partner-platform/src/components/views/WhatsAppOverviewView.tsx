@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, Badge, Button } from '@docsearch/ui-kit';
 import type {
   WhatsAppOverviewMetricsDto,
@@ -6,6 +6,7 @@ import type {
   HealthDocumentDispatchDto,
   LiveQueueTokenDto
 } from '@docsearch/api-contracts';
+import { PrintableOpdTokenSlipModal } from '../dialogs/PrintableOpdTokenSlipModal.js';
 
 interface Props {
   metrics: WhatsAppOverviewMetricsDto;
@@ -26,6 +27,9 @@ export const WhatsAppOverviewView: React.FC<Props> = ({
   onDispatchDoc,
   onSendReminder
 }) => {
+  const [selectedTokenForSlip, setSelectedTokenForSlip] = useState<LiveQueueTokenDto | null>(null);
+  const [isTokenSlipModalOpen, setIsTokenSlipModalOpen] = useState(false);
+
   return (
     <div className="space-y-6">
       {/* Top Banner */}
@@ -110,7 +114,15 @@ export const WhatsAppOverviewView: React.FC<Props> = ({
           </div>
           <div className="space-y-2">
             {tokens.map((t) => (
-              <div key={t.id} className="p-3 bg-blue-50 rounded-lg border border-blue-200 text-xs space-y-1">
+              <div
+                key={t.id}
+                onClick={() => {
+                  setSelectedTokenForSlip(t);
+                  setIsTokenSlipModalOpen(true);
+                }}
+                className="p-3 bg-blue-50 hover:bg-blue-100/70 transition-colors rounded-lg border border-blue-200 text-xs space-y-1 cursor-pointer"
+                title="Click to print 80mm slip or dispatch live WhatsApp radar link"
+              >
                 <div className="flex justify-between items-center">
                   <span className="font-bold text-blue-950 text-sm">Token #{t.tokenNumber} — {t.patientName}</span>
                   <Badge variant={t.queueStatus === 'CALLED_TO_ROOM' ? 'success' : 'primary'}>{t.queueStatus}</Badge>
@@ -150,6 +162,23 @@ export const WhatsAppOverviewView: React.FC<Props> = ({
           ))}
         </div>
       </Card>
+
+      {/* 🎫 Zero-App WhatsApp Live Queue Radar & 80mm Thermal Slip Modal */}
+      {selectedTokenForSlip && (
+        <PrintableOpdTokenSlipModal
+          isOpen={isTokenSlipModalOpen}
+          onClose={() => setIsTokenSlipModalOpen(false)}
+          tokenNumber={String(selectedTokenForSlip.tokenNumber)}
+          patientName={selectedTokenForSlip.patientName}
+          patientMobile="+91 98765 43210"
+          patientMrn={`UHID-2026-${selectedTokenForSlip.tokenNumber}`}
+          doctorName={selectedTokenForSlip.doctorName}
+          departmentName={selectedTokenForSlip.departmentName}
+          roomNumber={selectedTokenForSlip.roomNumber}
+          estimatedWaitMinutes={selectedTokenForSlip.estimatedWaitMinutes}
+          currentTokenServing={selectedTokenForSlip.currentTokenServing}
+        />
+      )}
     </div>
   );
 };
