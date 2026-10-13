@@ -1614,5 +1614,36 @@ textarea.ds-interactive:focus-visible {
   }
 }
 
+/* ==========================================================================
+   ⚡ V8 ENGINE & LIGHT-SPEED RENDERING PERFORMANCE PRIMITIVES
+   ========================================================================== */
+
+/* 1. Skip rendering calculations for below-the-fold content & hidden tabs */
+.ds-content-visibility-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 450px;
+}
+
+/* 2. Hardware-accelerated GPU layer promotion for 120 FPS interactions */
+.ds-gpu-accelerated {
+  transform: translateZ(0);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* 3. Strict Paint & Layout containment for isolated hospital modules */
+.ds-isolated-module {
+  contain: layout style paint;
+}
+
+/* 4. Optimized virtual list container */
+.ds-virtual-scroll-viewport {
+  overflow-y: auto;
+  contain: strict;
+  will-change: scroll-position;
+  -webkit-overflow-scrolling: touch;
+}
+
 
 

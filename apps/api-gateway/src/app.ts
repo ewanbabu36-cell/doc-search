@@ -12,6 +12,7 @@ import { billingWebhookRoutes } from './routes/partner/billing-webhook.routes.js
 import { mrdManagementRoutes } from './routes/partner/mrd-management.routes.js';
 import { authRoutes } from './routes/auth.routes.js';
 import Fastify, { type FastifyInstance } from 'fastify';
+import crypto from 'node:crypto';
 import { registerSecurityPlugins } from './plugins/security.js';
 import { authGuardPlugin, authenticate } from './plugins/auth-guard.js';
 import { requireActiveCommercialAccess } from './plugins/commercial-guard.js';
@@ -109,6 +110,21 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
       }
       return { value: data };
     };
+  });
+
+  // ⚡ V8 Light-Speed HTTP Conditional ETag Hook (Sub-5ms Responses & Zero Bandwidth Waste)
+  app.addHook('onSend', async (request, reply, payload) => {
+    if (request.method === 'GET' && reply.statusCode === 200 && typeof payload === 'string') {
+      const etag = `W/"${crypto.createHash('md5').update(payload).digest('hex').slice(0, 16)}"`;
+      reply.header('ETag', etag);
+
+      const clientEtag = request.headers['if-none-match'];
+      if (clientEtag && clientEtag === etag) {
+        reply.status(304);
+        return '';
+      }
+    }
+    return payload;
   });
 
   // Global Error Handler

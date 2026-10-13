@@ -19,17 +19,27 @@ export default defineConfig({
     }
   },
   build: {
+    target: 'es2022',
     outDir: 'dist/bundle',
     emptyOutDir: false,
-    chunkSizeWarningLimit: 5000,
+    cssCodeSplit: true,
+    assetsInlineLimit: 4096,
+    chunkSizeWarningLimit: 2500,
+    minify: 'esbuild',
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/scheduler')) {
             return 'vendor-react';
           }
           if (id.includes('node_modules/lucide-react')) {
             return 'vendor-icons';
+          }
+          if (id.includes('/packages/ui-kit/')) {
+            return 'vendor-ui-kit';
+          }
+          if (id.includes('/packages/shared-core/') || id.includes('/packages/api-contracts/')) {
+            return 'vendor-core-contracts';
           }
           if (id.includes('node_modules')) {
             return 'vendor';

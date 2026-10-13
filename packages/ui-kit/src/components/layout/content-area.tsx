@@ -30,7 +30,7 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
 }) => {
   return (
     <main
-      className={`ds-content-area ${className}`}
+      className={`ds-content-area ds-gpu-accelerated ds-performance-viewport ${className}`}
       style={{
         flex: '1 1 auto',
         width: '100%',
@@ -40,6 +40,7 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
         display: 'flex',
         flexDirection: 'column',
         gap: '20px',
+        contain: 'layout style',
         ...style
       }}
       {...props}

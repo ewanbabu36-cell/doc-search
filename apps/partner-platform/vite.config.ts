@@ -16,6 +16,7 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true,
+        navigationPreload: true,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.(?:googleapis|gstatic)\.com\/.*/i,
@@ -23,7 +24,7 @@ export default defineConfig({
             options: {
               cacheName: 'google-fonts',
               expiration: {
-                maxEntries: 20,
+                maxEntries: 30,
                 maxAgeSeconds: 60 * 60 * 24 * 365
               },
               cacheableResponse: {
@@ -32,25 +33,39 @@ export default defineConfig({
             }
           },
           {
-            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|woff2?)$/i,
+            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|woff2?|ico)$/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'static-media-assets',
               expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 30
+                maxEntries: 200,
+                maxAgeSeconds: 60 * 60 * 24 * 60
               }
             }
           },
           {
-            // Offline clinical lookups: tests, drug catalog, ICD-10
-            urlPattern: /\/api\/v1\/(?:partner\/(?:catalog|profile|medicines|tests)|catalog)/i,
+            // Offline clinical lookups: tests, drug catalog, ICD-10, specialties
+            urlPattern: /\/api\/v1\/(?:partner\/(?:catalog|profile|medicines|tests|specialties|icd10)|catalog)/i,
             handler: 'StaleWhileRevalidate',
             options: {
               cacheName: 'docsearch-offline-catalogs',
+              networkTimeoutSeconds: 2,
+              expiration: {
+                maxEntries: 200,
+                maxAgeSeconds: 60 * 60 * 24 * 7
+              }
+            }
+          },
+          {
+            // Hospital Doctor Roster & Bed Inventory Layout
+            urlPattern: /\/api\/v1\/(?:partner\/(?:roster|beds|facilities|departments))/i,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'docsearch-hospital-metadata',
+              networkTimeoutSeconds: 2,
               expiration: {
                 maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24
+                maxAgeSeconds: 60 * 60 * 24 * 3
               }
             }
           }
@@ -76,20 +91,30 @@ export default defineConfig({
     }
   },
   build: {
+    target: 'es2022',
     outDir: 'dist/bundle',
     emptyOutDir: true,
-    chunkSizeWarningLimit: 5000,
+    cssCodeSplit: true,
+    assetsInlineLimit: 4096,
+    chunkSizeWarningLimit: 2500,
+    minify: 'esbuild',
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/scheduler')) {
             return 'vendor-react';
           }
           if (id.includes('node_modules/lucide-react')) {
             return 'vendor-icons';
           }
-          if (id.includes('node_modules/workbox')) {
+          if (id.includes('node_modules/workbox') || id.includes('workbox-window')) {
             return 'vendor-workbox';
+          }
+          if (id.includes('/packages/ui-kit/')) {
+            return 'vendor-ui-kit';
+          }
+          if (id.includes('/packages/shared-core/') || id.includes('/packages/api-contracts/')) {
+            return 'vendor-core-contracts';
           }
           if (id.includes('node_modules')) {
             return 'vendor';

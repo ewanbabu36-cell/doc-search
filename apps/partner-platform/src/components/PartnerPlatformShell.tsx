@@ -22,6 +22,7 @@ const HospitalPlanUpgradeModal = React.lazy(() => import('./common/HospitalPlanU
 const HospitalFeatureUpgradeShowcase = React.lazy(() => import('./common/HospitalFeatureUpgradeShowcase.js').then(m => ({ default: m.HospitalFeatureUpgradeShowcase })));
 const OfflineLicenseActivationModal = React.lazy(() => import('./dialogs/OfflineLicenseActivationModal.js').then(m => ({ default: m.OfflineLicenseActivationModal })));
 const KeyboardShortcutsModal = React.lazy(() => import('./common/KeyboardShortcutsModal.js').then(m => ({ default: m.KeyboardShortcutsModal })));
+const AutonomousGuidedWorkflowTunnel = React.lazy(() => import('./common/AutonomousGuidedWorkflowTunnel.js').then(m => ({ default: m.AutonomousGuidedWorkflowTunnel })));
 import {
   AppShell,
   Header,
@@ -675,6 +676,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
   const [isWhatsAppDispatchOpen, setIsWhatsAppDispatchOpen] = useState(false);
   const [isWholesaleSyncOpen, setIsWholesaleSyncOpen] = useState(false);
   const [isFranchiseModalOpen, setIsFranchiseModalOpen] = useState(false);
+  const [isAutonomousDischargeTunnelOpen, setIsAutonomousDischargeTunnelOpen] = useState(false);
   const [isNetworkOnline, setIsNetworkOnline] = useState<boolean>(() => offlineResilienceService.isOnline());
   const [pendingOfflineCount, setPendingOfflineCount] = useState<number>(() => offlineResilienceService.getPendingQueue().length);
 
@@ -5864,6 +5866,18 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
             onTogglePersistentFullMode={() => {
               toggleSimpleMode();
             }}
+          />
+        )}
+
+        {/* 8. ZERO-FRICTION AUTONOMOUS DISCHARGE EXPRESS TUNNEL */}
+        {isAutonomousDischargeTunnelOpen && (
+          <AutonomousGuidedWorkflowTunnel
+            isOpen={isAutonomousDischargeTunnelOpen}
+            onClose={() => setIsAutonomousDischargeTunnelOpen(false)}
+            patientUhid={printTargetPatient?.uhid || 'UHID-2026-901'}
+            patientName={printTargetPatient?.name || 'Ramesh Patel (58M)'}
+            bedNumber={printTargetPatient?.bedNumber || 'ICU-Bed 04'}
+            ipdNumber="IPD-2026-8812"
           />
         )}
       </React.Suspense>

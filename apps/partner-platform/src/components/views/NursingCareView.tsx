@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, Button } from '@docsearch/ui-kit';
 import type { InpatientNursingAssessmentDto } from '@docsearch/api-contracts';
 import { hospitalEventBus } from '../../services/hospital-event-bus.js';
+import { BedsideBcmaScannerModal } from '../dialogs/BedsideBcmaScannerModal.js';
 
 export interface MarScheduleEntry {
   id: string;
@@ -188,10 +189,6 @@ export const NursingCareView: React.FC<NursingCareViewProps> = ({ assessments = 
 
   // 5-Rights Scanner Dialog State
   const [selectedMarForScan, setSelectedMarForScan] = useState<MarScheduleEntry | null>(null);
-  const [scannedPatientBarcode, setScannedPatientBarcode] = useState('');
-  const [scannedMedBarcode, setScannedMedBarcode] = useState('');
-  const [scanVerificationError, setScanVerificationError] = useState<string | null>(null);
-  const [scanVerificationSuccess, setScanVerificationSuccess] = useState(false);
 
   // Fluid I/O State
   const [fluidEntries] = useState<FluidIoEntry[]>([
@@ -224,71 +221,7 @@ export const NursingCareView: React.FC<NursingCareViewProps> = ({ assessments = 
   const [newSbarAssessment, setNewSbarAssessment] = useState('');
   const [newSbarRecommendation, setNewSbarRecommendation] = useState('');
 
-  // 5-Rights Verification Handler
-  const handleVerifyAndAdminister = () => {
-    if (!selectedMarForScan) return;
 
-    if (!scannedPatientBarcode.trim()) {
-      setScanVerificationError('⚠️ Missing Patient Wristband Scan! Please scan patient wristband.');
-      return;
-    }
-    if (!scannedMedBarcode.trim()) {
-      setScanVerificationError('⚠️ Missing Medication Barcode Scan! Please scan ampoule/vial barcode.');
-      return;
-    }
-
-    setScanVerificationError(null);
-    setScanVerificationSuccess(true);
-
-    hospitalEventBus.publish(
-      'OPTIMISTIC_ACTION_DISPATCHED',
-      'DigitalNurseMarView',
-      {
-        marId: selectedMarForScan.id,
-        patientUhid: selectedMarForScan.patientUhid,
-        medicationName: selectedMarForScan.medicationName,
-        administeredTime: new Date().toLocaleTimeString()
-      },
-      `5-Rights Barcode Check Passed: ${selectedMarForScan.medicationName} given to ${selectedMarForScan.patientName}`
-    );
-
-    hospitalEventBus.publish(
-      'EMAR_MEDICATION_ADMINISTERED_BILLED',
-      'DigitalNurseMarView',
-      {
-        marId: selectedMarForScan.id,
-        patientUhid: selectedMarForScan.patientUhid,
-        patientName: selectedMarForScan.patientName,
-        medicationName: selectedMarForScan.medicationName,
-        dose: selectedMarForScan.dosage,
-        administeredTime: new Date().toISOString(),
-        batchNumber: scannedMedBarcode,
-        autoBilled: true,
-        revenueProtected: true
-      },
-      `🔒 Closed-Loop Revenue Protection: Administered dose ${selectedMarForScan.medicationName} (${selectedMarForScan.dosage}) auto-synchronized to Inpatient Billing Ledger for ${selectedMarForScan.patientName} (${selectedMarForScan.patientUhid}) without nurse manual data entry.`
-    );
-
-    setTimeout(() => {
-      setMarList((prev) =>
-        prev.map((m) =>
-          m.id === selectedMarForScan.id
-            ? {
-                ...m,
-                status: 'GIVEN',
-                administeredBy: 'Staff Nurse (Barcode Verified)',
-                administeredAt: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
-                batchNumber: scannedMedBarcode
-              }
-            : m
-        )
-      );
-      setScanVerificationSuccess(false);
-      setSelectedMarForScan(null);
-      setScannedPatientBarcode('');
-      setScannedMedBarcode('');
-    }, 1200);
-  };
 
   const handleSaveSbar = () => {
     if (!newSbarSituation.trim() || !newSbarAssessment.trim()) return;
@@ -719,89 +652,44 @@ export const NursingCareView: React.FC<NursingCareViewProps> = ({ assessments = 
         </Card>
       )}
 
-      {/* 5-RIGHTS SCANNER MODAL */}
+      {/* 5-RIGHTS BEDSIDE CLOSED-LOOP BCMA SCANNER WORKSTATION */}
       {selectedMarForScan && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '16px' }}>
-          <div style={{ backgroundColor: '#0F172A', border: '1.5px solid #06B6D4', borderRadius: '16px', width: '100%', maxWidth: '580px', padding: '24px', boxShadow: '0 25px 50px rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '12px' }}>
-              <div>
-                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 900, color: '#38BDF8' }}>
-                  📲 5-Rights Point-of-Care Barcode Verification
-                </h3>
-                <span style={{ fontSize: '0.72rem', color: '#94A3B8' }}>
-                  {selectedMarForScan.patientName} • {selectedMarForScan.bedNumber}
-                </span>
-              </div>
-              <button type="button" onClick={() => setSelectedMarForScan(null)} style={{ background: 'none', border: 'none', color: '#94A3B8', fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
-            </div>
-
-            {scanVerificationError && (
-              <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #EF4444', color: '#FCA5A5', padding: '8px 12px', borderRadius: '6px', fontSize: '0.78rem' }}>
-                {scanVerificationError}
-              </div>
-            )}
-
-            {scanVerificationSuccess && (
-              <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.2)', border: '1px solid #10B981', color: '#6EE7B7', padding: '8px 12px', borderRadius: '6px', fontSize: '0.78rem', fontWeight: 800 }}>
-                ✓ 5-Rights Verified! Medication administered and permanently logged in e-MAR.
-              </div>
-            )}
-
-            <div style={{ backgroundColor: '#0B111E', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>SCHEDULED MEDICATION:</div>
-              <div style={{ fontSize: '1rem', fontWeight: 800, color: '#F8FAFC', marginTop: '2px' }}>{selectedMarForScan.medicationName}</div>
-              <div style={{ fontSize: '0.75rem', color: '#38BDF8', marginTop: '2px' }}>Dose: {selectedMarForScan.dosage} • Route: {selectedMarForScan.route}</div>
-            </div>
-
-            {/* Simulated Barcode Inputs */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '3px' }}>
-                  1. Scan Patient Wristband Barcode:
-                </label>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <input
-                    type="text"
-                    value={scannedPatientBarcode}
-                    onChange={(e) => setScannedPatientBarcode(e.target.value)}
-                    placeholder="Scan or enter wristband code..."
-                    style={{ flex: 1, padding: '8px', borderRadius: '6px', backgroundColor: '#070C16', border: '1px solid rgba(255,255,255,0.2)', color: '#F8FAFC', fontSize: '0.78rem' }}
-                  />
-                  <button type="button" onClick={() => setScannedPatientBarcode('UHID-2026-901-ICU04')} style={{ padding: '6px 12px', borderRadius: '6px', backgroundColor: 'rgba(56,189,248,0.2)', border: '1px solid #38BDF8', color: '#38BDF8', fontSize: '0.72rem', cursor: 'pointer' }}>
-                    Auto-Scan Wristband
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '3px' }}>
-                  2. Scan Medication Vial / Strip Barcode:
-                </label>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <input
-                    type="text"
-                    value={scannedMedBarcode}
-                    onChange={(e) => setScannedMedBarcode(e.target.value)}
-                    placeholder="Scan vial GS1 Datamatrix barcode..."
-                    style={{ flex: 1, padding: '8px', borderRadius: '6px', backgroundColor: '#070C16', border: '1px solid rgba(255,255,255,0.2)', color: '#F8FAFC', fontSize: '0.78rem' }}
-                  />
-                  <button type="button" onClick={() => setScannedMedBarcode('GS1-MED-CTX-8819')} style={{ padding: '6px 12px', borderRadius: '6px', backgroundColor: 'rgba(16,185,129,0.2)', border: '1px solid #10B981', color: '#34D399', fontSize: '0.72rem', cursor: 'pointer' }}>
-                    Auto-Scan Vial
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
-              <button type="button" onClick={() => setSelectedMarForScan(null)} style={{ padding: '8px 16px', borderRadius: '6px', backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', color: '#CBD5E1', fontSize: '0.78rem', cursor: 'pointer' }}>
-                Cancel
-              </button>
-              <button type="button" onClick={handleVerifyAndAdminister} style={{ padding: '8px 20px', borderRadius: '6px', backgroundColor: '#06B6D4', border: 'none', color: '#070C16', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer' }}>
-                Confirm 5-Rights & Sign Off
-              </button>
-            </div>
-          </div>
-        </div>
+        <BedsideBcmaScannerModal
+          scheduleItem={{
+            id: selectedMarForScan.id,
+            patientName: selectedMarForScan.patientName,
+            patientUhid: selectedMarForScan.patientUhid,
+            bedNumber: selectedMarForScan.bedNumber,
+            medicationName: selectedMarForScan.medicationName,
+            dosage: selectedMarForScan.dosage,
+            route: selectedMarForScan.route,
+            scheduledTime: selectedMarForScan.scheduledTime,
+            status: selectedMarForScan.status,
+            pharmacyStatus: selectedMarForScan.pharmacyStatus,
+            batchNumber: selectedMarForScan.batchNumber,
+            unitPriceInr: 420
+          }}
+          nurseName="Sr. Sunita R.N."
+          onClose={() => setSelectedMarForScan(null)}
+          onAdministrationConfirmed={(adm) => {
+            setMarList((prev) =>
+              prev.map((m) =>
+                m.id === adm.marId
+                  ? {
+                      ...m,
+                      status: 'GIVEN',
+                      administeredBy: adm.witnessNurse
+                        ? `Sr. Sunita (Witnessed by ${adm.witnessNurse})`
+                        : 'Sr. Sunita R.N. (BCMA 5-Rights Verified)',
+                      administeredAt: adm.administeredAt,
+                      batchNumber: adm.batchNumber
+                    }
+                  : m
+              )
+            );
+            setSelectedMarForScan(null);
+          }}
+        />
       )}
 
       {/* NEW SBAR SHIFT HANDOFF MODAL */}
