@@ -116,6 +116,7 @@ export interface InpatientDomainManagerProps {
   organizationId?: string;
   branchId?: string | null;
   initialTab?: InpatientTab;
+  facilityName?: string;
 }
 
 export type InpatientTab =
@@ -153,7 +154,8 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
   partnerId = '22222222-2222-4222-8222-222222222222',
   organizationId = '33333333-3333-4333-8333-333333333333',
   branchId = '44444444-4444-4444-8444-444444444444',
-  initialTab
+  initialTab,
+  facilityName
 }) => {
   const [activeTab, setActiveTab] = useState<InpatientTab>(initialTab || 'bed-board');
 
@@ -1148,7 +1150,7 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
       )}
 
       {activeTab === 'discharge-summaries' && (
-        <DischargeSummaryView summaries={dischargeSummaries} />
+        <DischargeSummaryView summaries={dischargeSummaries} facilityName={facilityName} />
       )}
 
       {activeTab === 'bed-turnaround' && (

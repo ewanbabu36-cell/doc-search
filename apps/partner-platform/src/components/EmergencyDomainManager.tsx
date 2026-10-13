@@ -110,13 +110,15 @@ interface Props {
   partnerId?: string;
   organizationId?: string;
   branchId?: string;
+  facilityName?: string;
 }
 
 export const EmergencyDomainManager: React.FC<Props> = ({
   tenantId = '11111111-1111-4111-8111-111111111111',
   partnerId = '22222222-2222-4222-8222-222222222222',
   organizationId = '33333333-3333-4333-8333-333333333333',
-  branchId = '44444444-4444-4444-8444-444444444444'
+  branchId = '44444444-4444-4444-8444-444444444444',
+  facilityName = 'Apex Medicity Multi-Speciality Hospital & Trauma Centre'
 }) => {
   const [activeTab, setActiveTab] = useState<EmergencyTab>('command-center');
   const [loading, setLoading] = useState(true);
@@ -441,6 +443,7 @@ export const EmergencyDomainManager: React.FC<Props> = ({
           cases={mlcCases}
           encounters={encounters}
           onRegisterMLC={(e) => { setSelectedEncounter(e); setIsMLCOpen(true); }}
+          facilityName={facilityName}
         />
       )}
 

@@ -2,14 +2,16 @@ import React, { useState } from 'react';
 import { Card, Table, Badge, Button } from '@docsearch/ui-kit';
 import type { EmergencyMLCCaseDto, EmergencyEncounterDto } from '@docsearch/api-contracts';
 import { hospitalEventBus } from '../../services/hospital-event-bus.js';
+import { PrintablePoliceIntimationModal } from '../dialogs/PrintablePoliceIntimationModal.js';
 
 interface Props {
   cases: EmergencyMLCCaseDto[];
   encounters: EmergencyEncounterDto[];
   onRegisterMLC: (enc: EmergencyEncounterDto) => void;
+  facilityName?: string | undefined;
 }
 
-export const MLCWorkbenchView: React.FC<Props> = ({ cases, encounters, onRegisterMLC }) => {
+export const MLCWorkbenchView: React.FC<Props> = ({ cases, encounters, onRegisterMLC, facilityName }) => {
   const [selectedCaseForSlip, setSelectedCaseForSlip] = useState<EmergencyMLCCaseDto | null>(null);
   const [dispatchedIntimations, setDispatchedIntimations] = useState<Record<string, {
     dispatchHash: string;
@@ -135,78 +137,14 @@ export const MLCWorkbenchView: React.FC<Props> = ({ cases, encounters, onRegiste
         </Table>
       </Card>
 
-      {/* MODAL: Statutory Police Intimation Slip View */}
+      {/* MODAL: Statutory Medico-Legal Police Intimation Suite */}
       {selectedCaseForSlip && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-xl rounded-xl bg-white p-6 shadow-2xl border border-slate-300">
-            <div className="flex justify-between items-center border-b pb-3">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl">⚖️</span>
-                <div>
-                  <h3 className="font-black text-base text-slate-900 uppercase">
-                    Statutory Medico-Legal Police Intimation Slip
-                  </h3>
-                  <p className="text-xs text-slate-500">Government Standard Form • Emergency Medical Services</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedCaseForSlip(null)}
-                className="text-slate-400 hover:text-slate-700 font-bold"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="mt-4 space-y-3 text-xs text-slate-700">
-              <div className="bg-slate-50 p-3 rounded-lg border flex justify-between">
-                <div>
-                  <span className="block text-slate-500 font-bold">MLC Registration:</span>
-                  <strong className="text-indigo-700 text-sm">{selectedCaseForSlip.mlcNumber}</strong>
-                </div>
-                <div>
-                  <span className="block text-slate-500 font-bold">Patient Name:</span>
-                  <strong className="text-slate-900">{selectedCaseForSlip.patientName}</strong>
-                </div>
-                <div>
-                  <span className="block text-slate-500 font-bold">Incident Type:</span>
-                  <span className="text-red-700 font-bold">{selectedCaseForSlip.caseType}</span>
-                </div>
-              </div>
-
-              <div>
-                <strong className="text-slate-900 block mb-1">Addressed To:</strong>
-                <p className="bg-slate-100 p-2 rounded">
-                  The Station House Officer (SHO), <strong>{selectedCaseForSlip.policeStation || 'Jurisdiction Police Station'}</strong>
-                </p>
-              </div>
-
-              <div>
-                <strong className="text-slate-900 block mb-1">Clinical Injuries & Medical Intimation Notes:</strong>
-                <p className="p-2.5 rounded border bg-amber-50/50 text-slate-800 leading-relaxed">
-                  Patient brought to Emergency Room with alleged history of {selectedCaseForSlip.caseType.toLowerCase()}. Physical examination reveals acute trauma/injuries consistent with medico-legal nature. Preserved toxicological/biological samples labeled and sealed under legal chain-of-custody.
-                </p>
-              </div>
-
-              <div className="p-3 rounded bg-emerald-50 border border-emerald-300 text-emerald-900 flex justify-between items-center">
-                <div>
-                  <span className="block font-bold">Digital Dispatch Encryption Stamp:</span>
-                  <span className="font-mono text-[11px]">SHA256:POL-ACK-9041-SECURE-SENT</span>
-                </div>
-                <Badge variant="success">Statutory Compliant ✓</Badge>
-              </div>
-            </div>
-
-            <div className="mt-5 flex justify-end gap-2 border-t pt-3">
-              <Button variant="outline" size="sm" onClick={() => setSelectedCaseForSlip(null)}>
-                Close
-              </Button>
-              <Button variant="primary" size="sm" onClick={() => window.print()}>
-                🖨️ Print Statutory Copy
-              </Button>
-            </div>
-          </div>
-        </div>
+        <PrintablePoliceIntimationModal
+          caseData={selectedCaseForSlip}
+          isOpen={!!selectedCaseForSlip}
+          onClose={() => setSelectedCaseForSlip(null)}
+          facilityName={facilityName}
+        />
       )}
     </div>
   );

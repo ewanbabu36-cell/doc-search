@@ -21,6 +21,7 @@ import type {
 } from '@docsearch/api-contracts';
 import type { PartnerModuleKey } from './PartnerPlatformShell.js';
 import { MicroscopeEyepieceScannerModal, type MicroscopeSmearReport } from './dialogs/MicroscopeEyepieceScannerModal.js';
+import { ThermalBarcodeStickerModal } from './dialogs/ThermalBarcodeStickerModal.js';
 import { PathologistTargetCockpitView } from './views/PathologistTargetCockpitView.js';
 
 export type LaboratoryPhase = 'ALL' | 'PRE_ANALYTICAL' | 'ANALYTICAL' | 'POST_ANALYTICAL';
@@ -360,6 +361,8 @@ export const PathologyHomeActivityHub: React.FC<PathologyHomeActivityHubProps> =
   const [isBatchDscModalOpen, setIsBatchDscModalOpen] = useState(false);
 
   const [isMicroscopeModalOpen, setIsMicroscopeModalOpen] = useState(false);
+  const [isBarcodeModalOpen, setIsBarcodeModalOpen] = useState(false);
+  const [selectedBarcodeOrder, setSelectedBarcodeOrder] = useState<InvestigationOrderDto | null>(null);
   const [quickNotification, setQuickNotification] = useState<string | null>(null);
 
   const triggerToast = (msg: string) => {
@@ -1109,7 +1112,9 @@ export const PathologyHomeActivityHub: React.FC<PathologyHomeActivityHubProps> =
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  triggerToast('🖨️ Printing Barcode Labels: Vacutainer UID labels queued on Zebra printer');
+                  const targetOrder = orders.find(o => o.status === 'SAMPLE_REQUIRED' || o.status === 'SAMPLE_COLLECTED' || (o as any).labPhase === 'PRE_ANALYTICAL') || orders[0] || null;
+                  setSelectedBarcodeOrder(targetOrder);
+                  setIsBarcodeModalOpen(true);
                 }}
                 style={{
                   borderColor: 'rgba(245, 158, 11, 0.5)',
@@ -2043,6 +2048,28 @@ export const PathologyHomeActivityHub: React.FC<PathologyHomeActivityHubProps> =
                               </Button>
                             )}
 
+                            {/* Vacutainer Barcode Label Generator */}
+                            {(order.status === 'SAMPLE_REQUIRED' || order.status === 'SAMPLE_COLLECTED' || order.status === 'ORDERED' || (order as any).labPhase === 'PRE_ANALYTICAL') && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setSelectedBarcodeOrder(order);
+                                  setIsBarcodeModalOpen(true);
+                                }}
+                                style={{
+                                  fontSize: '0.68rem',
+                                  padding: '3px 8px',
+                                  borderColor: 'rgba(245, 158, 11, 0.5)',
+                                  color: '#FCD34D',
+                                  backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                                  fontWeight: 700
+                                }}
+                                title="Print Vacutainer Thermal Barcode Label (Code 128 / ESC/POS)"
+                              >
+                                🏷️ Barcode
+                              </Button>
+                            )}
 
                             {activeRolePerspective === 'TECHNICIAN' && (order.status === 'ORDERED' || order.status === 'SAMPLE_COLLECTED') && (
                               <Button
@@ -2227,6 +2254,15 @@ export const PathologyHomeActivityHub: React.FC<PathologyHomeActivityHubProps> =
           patientName="Walk-in Hematology Specimen"
           patientMrn="MRN-SMEAR-01"
           orderNumber="ORD-AI-9021"
+        />
+      )}
+
+      {/* Vacutainer Thermal Barcode Sticker Print Modal */}
+      {isBarcodeModalOpen && (
+        <ThermalBarcodeStickerModal
+          isOpen={isBarcodeModalOpen}
+          onClose={() => setIsBarcodeModalOpen(false)}
+          order={selectedBarcodeOrder}
         />
       )}
 

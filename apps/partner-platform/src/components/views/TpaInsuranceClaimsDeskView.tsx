@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, Badge, Button, Input, TableContainer, Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@docsearch/ui-kit';
 import { buildNhcxClaimBundle, validatePmjayCardNumber, type NhcxClaimInput } from '@docsearch/shared-core';
 import { hospitalEventBus } from '../../services/hospital-event-bus.js';
+import { TpaAyushmanCashlessDeskModal } from '../dialogs/TpaAyushmanCashlessDeskModal.js';
 
 export interface PreAuthClaim {
   id: string;
@@ -152,6 +153,7 @@ export const TpaInsuranceClaimsDeskView: React.FC = () => {
   const [queryReplied, setQueryReplied] = useState(false);
   const [activeTab, setActiveTab] = useState<'ALL' | 'PMJAY' | 'COMMERCIAL'>('ALL');
   const [declarationSuccessMessage, setDeclarationSuccessMessage] = useState<string | null>(null);
+  const [isCashlessDeskOpen, setIsCashlessDeskOpen] = useState(false);
 
   // NHCX FHIR Bundle Inspection Modal State
   const [isFhirModalOpen, setIsFhirModalOpen] = useState(false);
@@ -405,7 +407,24 @@ export const TpaInsuranceClaimsDeskView: React.FC = () => {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => setIsCashlessDeskOpen(true)}
+            style={{
+              fontWeight: 800,
+              backgroundColor: '#F59E0B',
+              color: '#0F172A',
+              border: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <span>⚡</span>
+            <span>New Pre-Auth / Ayushman Desk</span>
+          </Button>
           <Button variant="outline" size="sm" onClick={() => window.print()} style={{ fontWeight: 700 }}>
             🖨️ Print Pre-Auth Worklist
           </Button>
@@ -1140,6 +1159,15 @@ export const TpaInsuranceClaimsDeskView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* TPA & Ayushman Bharat Cashless Desk Modal */}
+      <TpaAyushmanCashlessDeskModal
+        isOpen={isCashlessDeskOpen}
+        onClose={() => setIsCashlessDeskOpen(false)}
+        patientName={selectedClaim?.patientName || 'Ramesh Kumar'}
+        patientUhid={selectedClaim?.patientUhid || 'UHID-2026-1014'}
+        defaultDiagnosis={selectedClaim?.procedureName || 'Acute Cholecystitis / Appendicitis'}
+      />
     </div>
   );
 };
