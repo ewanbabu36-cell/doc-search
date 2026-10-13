@@ -916,6 +916,8 @@ export * from './components/views/CentralHelpDeskExitHubView.js';
 export * from './components/views/PreferredPartnerNetworkView.js';
 export * from './components/views/HospitalInHouseClosedLoopView.js';
 export * from './services/unique-identifier-service.js';
+export * from './components/views/LiveIcuTelemetryCodeBlueView.js';
+
 
 
 

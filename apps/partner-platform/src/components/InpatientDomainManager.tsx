@@ -996,7 +996,7 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
       )}
 
       {activeTab === 'icu-telemetry' && (
-        <LiveIcuTelemetryCodeBlueView />
+        <LiveIcuTelemetryCodeBlueView onClose={() => setActiveTab('bed-board')} />
       )}
 
       {activeTab === 'bed-board' && (
