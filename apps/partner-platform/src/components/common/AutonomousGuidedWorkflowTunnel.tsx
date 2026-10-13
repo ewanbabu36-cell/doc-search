@@ -2,14 +2,30 @@ import React, { useState, useEffect } from 'react';
 import { Badge, Button } from '@docsearch/ui-kit';
 import { hospitalEventBus } from '../../services/hospital-event-bus.js';
 
+export type AutonomousTunnelMode =
+  | 'INPATIENT_DISCHARGE_EXPRESS'
+  | 'INPATIENT_ADMISSION_BED_EXPRESS'
+  | 'BEDSIDE_BCMA_MEDICATION_EXPRESS'
+  | 'TPA_CASHLESS_CLAIM_EXPRESS';
+
 export interface WorkflowStepPrerequisite {
   id: string;
   label: string;
   description: string;
   isResolved: boolean;
-  fieldComponentType: 'TEXT' | 'SELECT_ICD10' | 'DOCTOR_SIGN' | 'PHARMACY_RETURN' | 'PAYMENT_UPI';
+  fieldComponentType:
+    | 'TEXT'
+    | 'SELECT_ICD10'
+    | 'DOCTOR_SIGN'
+    | 'PHARMACY_RETURN'
+    | 'PAYMENT_UPI'
+    | 'BED_SELECTOR'
+    | 'VITAL_INPUT'
+    | 'BARCODE_SCAN'
+    | 'CLAIM_SCRUBBER_FIX';
   suggestedValue?: string | undefined;
   resolvedValue?: string | undefined;
+  metadata?: Record<string, any> | undefined;
 }
 
 export interface TunnelStepDefinition {
@@ -24,6 +40,7 @@ export interface TunnelStepDefinition {
 export interface AutonomousGuidedWorkflowTunnelProps {
   isOpen: boolean;
   onClose: () => void;
+  initialMode?: AutonomousTunnelMode;
   patientUhid?: string;
   patientName?: string;
   bedNumber?: string;
@@ -34,96 +51,338 @@ export interface AutonomousGuidedWorkflowTunnelProps {
 export const AutonomousGuidedWorkflowTunnel: React.FC<AutonomousGuidedWorkflowTunnelProps> = ({
   isOpen,
   onClose,
+  initialMode = 'INPATIENT_DISCHARGE_EXPRESS',
   patientUhid = 'UHID-2026-901',
   patientName = 'Ramesh Patel (58M)',
   bedNumber = 'ICU-Bed 04',
   ipdNumber = 'IPD-2026-8812',
   onWorkflowCompleted
 }) => {
-  // Steps definition for 3-Minute Inpatient Discharge Express Tunnel
-  const [steps, setSteps] = useState<TunnelStepDefinition[]>([
-    {
-      id: 'step-1-clinical',
-      title: '1. Consultant Clinical Discharge Certification',
-      subtitle: 'ICD-10 Primary Codification & Attending Doctor Digital Signature',
-      badge: 'CLINICAL',
-      isCompleted: false,
-      prerequisites: [
-        {
-          id: 'pre-icd10',
-          label: 'Primary ICD-10 Codification',
-          description: 'Required by ABDM & TPA claims',
-          isResolved: false,
-          fieldComponentType: 'SELECT_ICD10',
-          suggestedValue: 'K80.20 (Calculus of Gallbladder with Cholecystitis)'
-        },
-        {
-          id: 'pre-doc-sign',
-          label: 'Attending Consultant Digital Sign-Off',
-          description: 'RMP certified signature on clinical summary',
-          isResolved: false,
-          fieldComponentType: 'DOCTOR_SIGN',
-          suggestedValue: 'Dr. Rajesh Sharma, MD, DM'
-        }
-      ]
-    },
-    {
-      id: 'step-2-pharmacy',
-      title: '2. Ward Sub-Stock & Pharmacy Returns',
-      subtitle: 'Unused IV ampoules credit note & reconciliation',
-      badge: 'PHARMACY',
-      isCompleted: false,
-      prerequisites: [
-        {
-          id: 'pre-pharma-return',
-          label: 'Bedside Unused Medication Reconciliation',
-          description: '2x Inj Meropenem 1g unused in ward sub-stock',
-          isResolved: false,
-          fieldComponentType: 'PHARMACY_RETURN',
-          suggestedValue: '₹840.00 Credit to Inpatient Ledger'
-        }
-      ]
-    },
-    {
-      id: 'step-3-billing',
-      title: '3. Final IPD Ledger Net Settlement',
-      subtitle: 'Running bill balance clearance & GST tax invoice generation',
-      badge: 'BILLING',
-      isCompleted: false,
-      prerequisites: [
-        {
-          id: 'pre-bill-settle',
-          label: 'Net Balance Settlement',
-          description: 'Total Bill: ₹44,500 • Advance Paid: ₹40,000 • Net Due: ₹4,500',
-          isResolved: false,
-          fieldComponentType: 'PAYMENT_UPI',
-          suggestedValue: '₹4,500.00'
-        }
-      ]
-    },
-    {
-      id: 'step-4-exit',
-      title: '4. Bed Sanitization & WhatsApp Gate Pass',
-      subtitle: 'Digital exit permit & WhatsApp discharge card dispatch',
-      badge: 'LOGISTICS',
-      isCompleted: false,
-      prerequisites: [
-        {
-          id: 'pre-whatsapp-gatepass',
-          label: 'Automated WhatsApp Delivery & Bed Release',
-          description: 'Dispatches signed PDF + clearance QR to attendant',
-          isResolved: false,
-          fieldComponentType: 'TEXT',
-          suggestedValue: 'Auto-Send to +91 98765 43210'
-        }
-      ]
-    }
-  ]);
+  const [activeTunnelMode, setActiveTunnelMode] = useState<AutonomousTunnelMode>(initialMode);
 
+  // Helper to generate mode steps
+  const getStepsForMode = (mode: AutonomousTunnelMode): TunnelStepDefinition[] => {
+    switch (mode) {
+      case 'INPATIENT_ADMISSION_BED_EXPRESS':
+        return [
+          {
+            id: 'adm-step-1',
+            title: '1. Admission Order & Clinical Specialty',
+            subtitle: 'Doctor admission intent, acuity classification, and attending department',
+            badge: 'TRIAGE',
+            isCompleted: false,
+            prerequisites: [
+              {
+                id: 'adm-pre-specialty',
+                label: 'Admitting Clinical Department',
+                description: 'Department responsible for primary care',
+                isResolved: false,
+                fieldComponentType: 'TEXT',
+                suggestedValue: 'Department of Cardiology & CCU'
+              },
+              {
+                id: 'adm-pre-acuity',
+                label: 'Clinical Acuity Tier',
+                description: 'Acuity determines nurse-to-patient ratio',
+                isResolved: false,
+                fieldComponentType: 'TEXT',
+                suggestedValue: 'Acuity Level 2 (High Dependency / Cardiac Step-Down)'
+              }
+            ]
+          },
+          {
+            id: 'adm-step-2',
+            title: '2. 1-Click Ward & Bed Allocation',
+            subtitle: 'Autonomous vacant bed matching without leaving screen',
+            badge: 'BED MESH',
+            isCompleted: false,
+            prerequisites: [
+              {
+                id: 'adm-pre-bed-select',
+                label: 'Select Target Bed Slot',
+                description: 'Automatically filtered by available sanitized beds',
+                isResolved: false,
+                fieldComponentType: 'BED_SELECTOR',
+                suggestedValue: 'ICU-Bed 04 (Telemetry Enabled)'
+              }
+            ]
+          },
+          {
+            id: 'adm-step-3',
+            title: '3. Emergency Admission Deposit & Cashless',
+            subtitle: 'Advance deposit collection or Ayushman / TPA Pre-Auth linking',
+            badge: 'ACCOUNTS',
+            isCompleted: false,
+            prerequisites: [
+              {
+                id: 'adm-pre-deposit',
+                label: 'Admission Advance Deposit / Pre-Auth',
+                description: 'Standard emergency deposit ₹15,000 or TPA Cashless',
+                isResolved: false,
+                fieldComponentType: 'PAYMENT_UPI',
+                suggestedValue: '₹15,000.00 Advance Deposit'
+              }
+            ]
+          },
+          {
+            id: 'adm-step-4',
+            title: '4. Bedside Wristband Barcode & eMAR Roster',
+            subtitle: 'Thermal barcode wristband print and nursing medication schedule initialization',
+            badge: 'EXECUTION',
+            isCompleted: false,
+            prerequisites: [
+              {
+                id: 'adm-pre-wristband',
+                label: 'Initialize Wristband QR & eMAR',
+                description: 'Binds UHID, Bed Number, and initial Doctor round orders',
+                isResolved: false,
+                fieldComponentType: 'TEXT',
+                suggestedValue: 'Thermal Wristband QR Dispatched'
+              }
+            ]
+          }
+        ];
+
+      case 'BEDSIDE_BCMA_MEDICATION_EXPRESS':
+        return [
+          {
+            id: 'bcma-step-1',
+            title: '1. Patient Wristband 2D Barcode Scan',
+            subtitle: 'Point-of-care positive patient identification (Five Rights: Right Patient)',
+            badge: 'PATIENT ID',
+            isCompleted: false,
+            prerequisites: [
+              {
+                id: 'bcma-pre-wristband',
+                label: 'Patient Wristband Verification',
+                description: `Scan wristband for ${patientName} (${patientUhid})`,
+                isResolved: false,
+                fieldComponentType: 'BARCODE_SCAN',
+                suggestedValue: `${patientUhid}-${bedNumber.replace(/\s+/g, '')}`
+              }
+            ]
+          },
+          {
+            id: 'bcma-step-2',
+            title: '2. Pre-Administration Vital Signs Check',
+            subtitle: 'Hemodynamic safety gate (Heart rate & Blood pressure verification)',
+            badge: 'VITALS',
+            isCompleted: false,
+            prerequisites: [
+              {
+                id: 'bcma-pre-vitals',
+                label: 'Verify Bedside Blood Pressure & Heart Rate',
+                description: 'SBP must be >= 100 mmHg; Pulse must be >= 60 bpm',
+                isResolved: false,
+                fieldComponentType: 'VITAL_INPUT',
+                suggestedValue: 'BP: 124/82 mmHg • Pulse: 78 bpm'
+              }
+            ]
+          },
+          {
+            id: 'bcma-step-3',
+            title: '3. Medication GS1 Barcode & High-Alert Witness',
+            subtitle: 'Drug chemical, dosage, route, expiry & dual-nurse verification',
+            badge: 'SAFETY',
+            isCompleted: false,
+            prerequisites: [
+              {
+                id: 'bcma-pre-drug-scan',
+                label: 'Scan Inj Ceftriaxone 1g IV Vial GS1 DataMatrix',
+                description: 'GTIN 08901112233445 • Batch CTX-2026-88 • Exp: 12/27',
+                isResolved: false,
+                fieldComponentType: 'BARCODE_SCAN',
+                suggestedValue: 'GS1-MED-CTX-88-EXP27'
+              }
+            ]
+          },
+          {
+            id: 'bcma-step-4',
+            title: '4. Closed-Loop Auto-Billing & Sub-Stock Depletion',
+            subtitle: 'Zero revenue leakage posting to IPD bill + real-time sub-stock decrement',
+            badge: 'REVENUE',
+            isCompleted: false,
+            prerequisites: [
+              {
+                id: 'bcma-pre-auto-bill',
+                label: 'Post ₹420.00 to IPD Ledger & Deduct 1 Vial',
+                description: 'Synchronizes with Inpatient bill and Ward Sub-Stock inventory',
+                isResolved: false,
+                fieldComponentType: 'TEXT',
+                suggestedValue: 'Auto-Posted ₹420 to IPD Ledger'
+              }
+            ]
+          }
+        ];
+
+      case 'TPA_CASHLESS_CLAIM_EXPRESS':
+        return [
+          {
+            id: 'tpa-step-1',
+            title: '1. Automated 12-Gate IRDAI Scrubber Audit',
+            subtitle: 'Pre-flight rules scanning discharge summary, OT notes, and test reports',
+            badge: 'AUDIT',
+            isCompleted: false,
+            prerequisites: [
+              {
+                id: 'tpa-pre-scrubber-run',
+                label: 'Run Pre-Submission Scrubber Check',
+                description: 'Checks 12 IRDAI/ABDM/NHCX compliance rules',
+                isResolved: false,
+                fieldComponentType: 'CLAIM_SCRUBBER_FIX',
+                suggestedValue: '96% Clean Claim Score (1 Warning)'
+              }
+            ]
+          },
+          {
+            id: 'tpa-step-2',
+            title: '2. Non-Medical Consumables Capping Auto-Repair',
+            subtitle: 'Auto-formats gloves, cotton, and drapes into IRDAI List I/II/III',
+            badge: 'COMPLIANCE',
+            isCompleted: false,
+            prerequisites: [
+              {
+                id: 'tpa-pre-capping-fix',
+                label: 'Auto-Categorize Non-Medical Consumables',
+                description: 'Separates ₹4,200 into standard IRDAI non-payable schedule',
+                isResolved: false,
+                fieldComponentType: 'CLAIM_SCRUBBER_FIX',
+                suggestedValue: 'IRDAI Schedule Capped & Reconciled'
+              }
+            ]
+          },
+          {
+            id: 'tpa-step-3',
+            title: '3. Pre-Auth Ceiling vs Running Bill Reconciliation',
+            subtitle: 'Verifies running bill against pre-authorized approved amount',
+            badge: 'UTILIZATION',
+            isCompleted: false,
+            prerequisites: [
+              {
+                id: 'tpa-pre-ceiling',
+                label: 'Reconcile Buffer (Approved ₹50,000 vs Bill ₹44,500)',
+                description: 'Within safe 89% utilization buffer (Zero enhancement required)',
+                isResolved: false,
+                fieldComponentType: 'TEXT',
+                suggestedValue: 'Buffer Reconciled: ₹5,500 Headroom'
+              }
+            ]
+          },
+          {
+            id: 'tpa-step-4',
+            title: '4. NHCX FHIR Bundle Seal & Gateway Dispatch',
+            subtitle: 'Embeds SHA-256 digital signature and transmits to Insurance Clearinghouse',
+            badge: 'DISPATCH',
+            isCompleted: false,
+            prerequisites: [
+              {
+                id: 'tpa-pre-dispatch',
+                label: 'Seal NHCX FHIR Bundle & Transmit',
+                description: 'Dispatches electronic claim package to Star Health / Medi Assist',
+                isResolved: false,
+                fieldComponentType: 'TEXT',
+                suggestedValue: 'Dispatched to NHCX Gateway'
+              }
+            ]
+          }
+        ];
+
+      case 'INPATIENT_DISCHARGE_EXPRESS':
+      default:
+        return [
+          {
+            id: 'dis-step-1',
+            title: '1. Consultant Clinical Discharge Certification',
+            subtitle: 'ICD-10 Primary Codification & Attending Doctor Digital Signature',
+            badge: 'CLINICAL',
+            isCompleted: false,
+            prerequisites: [
+              {
+                id: 'dis-pre-icd10',
+                label: 'Primary ICD-10 Codification',
+                description: 'Required by ABDM & TPA claims',
+                isResolved: false,
+                fieldComponentType: 'SELECT_ICD10',
+                suggestedValue: 'K80.20 (Calculus of Gallbladder with Cholecystitis)'
+              },
+              {
+                id: 'dis-pre-doc-sign',
+                label: 'Attending Consultant Digital Sign-Off',
+                description: 'RMP certified signature on clinical summary',
+                isResolved: false,
+                fieldComponentType: 'DOCTOR_SIGN',
+                suggestedValue: 'Dr. Rajesh Sharma, MD, DM'
+              }
+            ]
+          },
+          {
+            id: 'dis-step-2',
+            title: '2. Ward Sub-Stock & Pharmacy Returns',
+            subtitle: 'Unused IV ampoules credit note & reconciliation',
+            badge: 'PHARMACY',
+            isCompleted: false,
+            prerequisites: [
+              {
+                id: 'dis-pre-pharma-return',
+                label: 'Bedside Unused Medication Reconciliation',
+                description: '2x Inj Meropenem 1g unused in ward sub-stock',
+                isResolved: false,
+                fieldComponentType: 'PHARMACY_RETURN',
+                suggestedValue: '₹840.00 Credit to Inpatient Ledger'
+              }
+            ]
+          },
+          {
+            id: 'dis-step-3',
+            title: '3. Final IPD Ledger Net Settlement',
+            subtitle: 'Running bill balance clearance & GST tax invoice generation',
+            badge: 'BILLING',
+            isCompleted: false,
+            prerequisites: [
+              {
+                id: 'dis-pre-bill-settle',
+                label: 'Net Balance Settlement',
+                description: 'Total Bill: ₹44,500 • Advance Paid: ₹40,000 • Net Due: ₹4,500',
+                isResolved: false,
+                fieldComponentType: 'PAYMENT_UPI',
+                suggestedValue: '₹4,500.00'
+              }
+            ]
+          },
+          {
+            id: 'dis-step-4',
+            title: '4. Bed Sanitization & WhatsApp Gate Pass',
+            subtitle: 'Digital exit permit & WhatsApp discharge card dispatch',
+            badge: 'LOGISTICS',
+            isCompleted: false,
+            prerequisites: [
+              {
+                id: 'dis-pre-whatsapp-gatepass',
+                label: 'Automated WhatsApp Delivery & Bed Release',
+                description: 'Dispatches signed PDF + clearance QR to attendant',
+                isResolved: false,
+                fieldComponentType: 'TEXT',
+                suggestedValue: 'Auto-Send to +91 98765 43210'
+              }
+            ]
+          }
+        ];
+    }
+  };
+
+  const [steps, setSteps] = useState<TunnelStepDefinition[]>(() => getStepsForMode(initialMode));
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [activePrereqId, setActivePrereqId] = useState<string | null>(null);
   const [autoSaveNotification, setAutoSaveNotification] = useState<string | null>(null);
   const [isFinishing, setIsFinishing] = useState(false);
+
+  // Switch mode handler
+  const handleSwitchMode = (mode: AutonomousTunnelMode) => {
+    setActiveTunnelMode(mode);
+    setSteps(getStepsForMode(mode));
+    setActiveStepIndex(0);
+    setActivePrereqId(null);
+  };
 
   // Auto-detect next missing prerequisite in the active step
   useEffect(() => {
@@ -182,12 +441,13 @@ export const AutonomousGuidedWorkflowTunnel: React.FC<AutonomousGuidedWorkflowTu
       'OPTIMISTIC_ACTION_DISPATCHED',
       'AutonomousGuidedWorkflowTunnel',
       {
+        mode: activeTunnelMode,
         uhid: patientUhid,
         stepIndex: stepIdx,
         prereqId,
         resolvedVal
       },
-      `⚡ Zero-Friction Auto-Progression: Resolved ${prereqId} for ${patientName}`
+      `⚡ Zero-Friction Auto-Progression (${activeTunnelMode}): Resolved ${prereqId} for ${patientName}`
     );
   };
 
@@ -195,23 +455,28 @@ export const AutonomousGuidedWorkflowTunnel: React.FC<AutonomousGuidedWorkflowTu
     setIsFinishing(true);
 
     hospitalEventBus.publish(
-      'DISCHARGE_ORDERED_INPATIENT',
+      'OPTIMISTIC_ACTION_DISPATCHED',
       'AutonomousGuidedWorkflowTunnel',
       {
+        mode: activeTunnelMode,
         uhid: patientUhid,
         patientName,
         bedNumber,
         ipdNumber,
-        status: 'DISCHARGED_CLEARED',
-        whatsappDispatched: true
+        status: 'TUNNEL_COMPLETED'
       },
-      `🎉 3-Minute Inpatient Discharge Express Tunnel completed for ${patientName} (${bedNumber}). Bed sanitized and WhatsApp gate pass dispatched.`
+      `🎉 Express Tunnel (${activeTunnelMode}) successfully executed for ${patientName} (${bedNumber}) without screen switching.`
     );
 
     setTimeout(() => {
       setIsFinishing(false);
       if (onWorkflowCompleted) {
-        onWorkflowCompleted({ uhid: patientUhid, patientName, completedAt: new Date().toISOString() });
+        onWorkflowCompleted({
+          mode: activeTunnelMode,
+          uhid: patientUhid,
+          patientName,
+          completedAt: new Date().toISOString()
+        });
       }
       onClose();
     }, 1200);
@@ -240,7 +505,7 @@ export const AutonomousGuidedWorkflowTunnel: React.FC<AutonomousGuidedWorkflowTu
           border: '1.5px solid #38BDF8',
           borderRadius: '20px',
           width: '100%',
-          maxWidth: '820px',
+          maxWidth: '860px',
           maxHeight: '94vh',
           overflowY: 'auto',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.95), 0 0 30px rgba(56, 189, 248, 0.25)',
@@ -248,7 +513,7 @@ export const AutonomousGuidedWorkflowTunnel: React.FC<AutonomousGuidedWorkflowTu
           flexDirection: 'column'
         }}
       >
-        {/* Header */}
+        {/* Header & Mode Selector */}
         <div
           style={{
             padding: '16px 24px',
@@ -278,12 +543,12 @@ export const AutonomousGuidedWorkflowTunnel: React.FC<AutonomousGuidedWorkflowTu
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 900, color: '#38BDF8' }}>
-                  Zero-Friction Inpatient Discharge Express Tunnel
+                  Zero-Friction Autonomous Workflow OS
                 </h3>
-                <Badge variant="success">Auto-Advancing Engine</Badge>
+                <Badge variant="success">Auto-Advancing</Badge>
               </div>
               <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
-                Patient: <strong style={{ color: '#F8FAFC' }}>{patientName}</strong> • {bedNumber} • IPD #{ipdNumber}
+                Active Patient: <strong style={{ color: '#F8FAFC' }}>{patientName}</strong> • {bedNumber} • IPD #{ipdNumber}
               </span>
             </div>
           </div>
@@ -302,6 +567,45 @@ export const AutonomousGuidedWorkflowTunnel: React.FC<AutonomousGuidedWorkflowTu
           >
             ✕
           </button>
+        </div>
+
+        {/* 4 Core Tunnel Mode Switcher Tabs */}
+        <div
+          style={{
+            display: 'flex',
+            backgroundColor: '#070C16',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+            padding: '4px 16px',
+            gap: '6px',
+            overflowX: 'auto'
+          }}
+        >
+          {[
+            { mode: 'INPATIENT_DISCHARGE_EXPRESS', label: '⚡ 3-Min Discharge Tunnel' },
+            { mode: 'INPATIENT_ADMISSION_BED_EXPRESS', label: '🏥 1-Screen Admission Tunnel' },
+            { mode: 'BEDSIDE_BCMA_MEDICATION_EXPRESS', label: '💊 Bedside BCMA Tunnel' },
+            { mode: 'TPA_CASHLESS_CLAIM_EXPRESS', label: '🛡️ TPA Claim Scrubber Tunnel' }
+          ].map((t) => (
+            <button
+              key={t.mode}
+              type="button"
+              onClick={() => handleSwitchMode(t.mode as AutonomousTunnelMode)}
+              style={{
+                padding: '8px 14px',
+                borderRadius: '8px 8px 0 0',
+                border: 'none',
+                borderBottom: activeTunnelMode === t.mode ? '2px solid #38BDF8' : '2px solid transparent',
+                backgroundColor: activeTunnelMode === t.mode ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
+                color: activeTunnelMode === t.mode ? '#38BDF8' : '#94A3B8',
+                fontSize: '0.78rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
         </div>
 
         {/* Floating Auto-Save Notification Badge */}
@@ -370,7 +674,7 @@ export const AutonomousGuidedWorkflowTunnel: React.FC<AutonomousGuidedWorkflowTu
                   </Badge>
                 </div>
                 <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#F8FAFC', marginTop: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {step.title.split('. ')[1]}
+                  {step.title.split('. ')[1] || step.title}
                 </div>
               </div>
             );
@@ -451,7 +755,84 @@ export const AutonomousGuidedWorkflowTunnel: React.FC<AutonomousGuidedWorkflowTu
                           👉 1-Click Auto-Resolve & Advance:
                         </div>
 
-                        {/* Custom Micro Field Component depending on type */}
+                        {/* Bed Selector Component */}
+                        {p.fieldComponentType === 'BED_SELECTOR' && (
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            {[
+                              { bed: 'ICU-Bed 04', type: 'Intensive Care (Telemetry)' },
+                              { bed: 'Deluxe-204', type: 'Private AC Room' },
+                              { bed: 'Ward-Bed 12', type: 'General Medical Ward' }
+                            ].map((b) => (
+                              <button
+                                key={b.bed}
+                                type="button"
+                                onClick={() => handleResolvePrerequisite(activeStepIndex, p.id, `${b.bed} (${b.type})`)}
+                                style={{
+                                  padding: '8px 14px',
+                                  borderRadius: '8px',
+                                  backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                                  border: '1px solid #06B6D4',
+                                  color: '#38BDF8',
+                                  fontSize: '0.78rem',
+                                  fontWeight: 700,
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                🛏️ Allocate {b.bed}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Vital Input Component */}
+                        {p.fieldComponentType === 'VITAL_INPUT' && (
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <span style={{ fontSize: '0.8rem', color: '#A7F3D0' }}>
+                              Suggested Bedside Reading: <strong>BP 124/82 • HR 78 bpm</strong>
+                            </span>
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              onClick={() => handleResolvePrerequisite(activeStepIndex, p.id, 'BP: 124/82 mmHg • HR: 78 bpm (Normal)')}
+                            >
+                              ✓ Confirm Vitals & Proceed
+                            </Button>
+                          </div>
+                        )}
+
+                        {/* Barcode Scan Component */}
+                        {p.fieldComponentType === 'BARCODE_SCAN' && (
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <span style={{ fontSize: '0.8rem', color: '#CBD5E1' }}>
+                              Auto-Decode Barcode: <strong>{p.suggestedValue}</strong>
+                            </span>
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              onClick={() => handleResolvePrerequisite(activeStepIndex, p.id, `Scanned & Verified: ${p.suggestedValue}`)}
+                            >
+                              📲 Scan & Match
+                            </Button>
+                          </div>
+                        )}
+
+                        {/* Claim Scrubber Fix Component */}
+                        {p.fieldComponentType === 'CLAIM_SCRUBBER_FIX' && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '0.8rem', color: '#FCD34D' }}>
+                              Auto-Apply IRDAI Schedule Capping Rules (Non-Medical List I/II/III)
+                            </span>
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              onClick={() => handleResolvePrerequisite(activeStepIndex, p.id, 'Applied IRDAI Schedule Capping (Score: 98%)')}
+                            >
+                              ⚡ Auto-Repair Claim
+                            </Button>
+                          </div>
+                        )}
+
+                        {/* ICD-10 Component */}
                         {p.fieldComponentType === 'SELECT_ICD10' && (
                           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                             {[
@@ -480,6 +861,7 @@ export const AutonomousGuidedWorkflowTunnel: React.FC<AutonomousGuidedWorkflowTu
                           </div>
                         )}
 
+                        {/* Doctor Sign Component */}
                         {p.fieldComponentType === 'DOCTOR_SIGN' && (
                           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                             <span style={{ fontSize: '0.8rem', color: '#E2E8F0' }}>
@@ -495,6 +877,7 @@ export const AutonomousGuidedWorkflowTunnel: React.FC<AutonomousGuidedWorkflowTu
                           </div>
                         )}
 
+                        {/* Pharmacy Return Component */}
                         {p.fieldComponentType === 'PHARMACY_RETURN' && (
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <span style={{ fontSize: '0.8rem', color: '#FCD34D' }}>
@@ -510,32 +893,34 @@ export const AutonomousGuidedWorkflowTunnel: React.FC<AutonomousGuidedWorkflowTu
                           </div>
                         )}
 
+                        {/* Payment UPI Component */}
                         {p.fieldComponentType === 'PAYMENT_UPI' && (
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div style={{ fontSize: '0.8rem', color: '#34D399' }}>
-                              Dynamic UPI QR generated for <strong>₹4,500.00</strong>
+                              Dynamic UPI QR generated for <strong>{p.suggestedValue}</strong>
                             </div>
                             <Button
                               variant="primary"
                               size="sm"
-                              onClick={() => handleResolvePrerequisite(activeStepIndex, p.id, 'UPI Paid: ₹4,500 Ref #UPI-9912')}
+                              onClick={() => handleResolvePrerequisite(activeStepIndex, p.id, `Confirmed Receipt: ${p.suggestedValue}`)}
                             >
                               ✓ Confirm Cashless / UPI Received
                             </Button>
                           </div>
                         )}
 
+                        {/* Text Default Component */}
                         {p.fieldComponentType === 'TEXT' && (
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <span style={{ fontSize: '0.8rem', color: '#CBD5E1' }}>
-                              Target WhatsApp: <strong>+91 98765 43210 (Attendant)</strong>
+                              Action Target: <strong>{p.suggestedValue}</strong>
                             </span>
                             <Button
                               variant="primary"
                               size="sm"
-                              onClick={() => handleResolvePrerequisite(activeStepIndex, p.id, 'Dispatched to +91 98765 43210')}
+                              onClick={() => handleResolvePrerequisite(activeStepIndex, p.id, p.suggestedValue || 'Confirmed')}
                             >
-                              🚀 Dispatch WhatsApp PDF & Free Bed
+                              🚀 Complete & Advance
                             </Button>
                           </div>
                         )}
@@ -586,7 +971,7 @@ export const AutonomousGuidedWorkflowTunnel: React.FC<AutonomousGuidedWorkflowTu
                   padding: '8px 24px'
                 }}
               >
-                {isFinishing ? 'Finishing Discharge...' : '🎉 Finalize Discharge & Release Bed'}
+                {isFinishing ? 'Finalizing Tunnel Execution...' : '🎉 Finalize Express Tunnel Execution'}
               </Button>
             ) : (
               <Button

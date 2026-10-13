@@ -3389,6 +3389,31 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                 </div>
               )}
 
+              {/* Zero-Friction Autonomous Express Tunnels Trigger */}
+              <button
+                type="button"
+                onClick={() => setIsAutonomousDischargeTunnelOpen(true)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '5px 12px',
+                  borderRadius: '8px',
+                  backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                  border: '1px solid rgba(56, 189, 248, 0.4)',
+                  color: '#38BDF8',
+                  fontWeight: 800,
+                  fontSize: '0.8125rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  flexShrink: 0
+                }}
+                title="Zero-Friction Express Tunnels: 3-Min Discharge, 1-Screen Admission, BCMA Bedside, TPA Claim Scrubber"
+              >
+                <span>⚡</span>
+                <span className="ds-hide-on-compact">Express Tunnels</span>
+              </button>
+
               {/* Universal 1-Click Quick Add Menu */}
               <div ref={quickAddRef} style={{ position: 'relative', flexShrink: 0 }}>
                 <button
