@@ -8,6 +8,7 @@ interface Props {
   pacuRecords: PACURecoveryRecordDto[];
   onOpenSchedule: () => void;
   onOpenEmergency: () => void;
+  onOpenFlightBoard?: () => void;
 }
 
 export const OTCommandCenterView: React.FC<Props> = ({
@@ -15,7 +16,8 @@ export const OTCommandCenterView: React.FC<Props> = ({
   schedules,
   pacuRecords,
   onOpenSchedule,
-  onOpenEmergency
+  onOpenEmergency,
+  onOpenFlightBoard
 }) => {
   return (
     <div className="space-y-6">
@@ -28,6 +30,15 @@ export const OTCommandCenterView: React.FC<Props> = ({
           <p className="text-xs text-slate-400 mt-1">Real-time telemetry, surgeon workloads, and active theatre interventions</p>
         </div>
         <div className="flex items-center gap-3">
+          {onOpenFlightBoard && (
+            <Button
+              variant="primary"
+              onClick={onOpenFlightBoard}
+              style={{ backgroundColor: '#0284C7', fontWeight: 800 }}
+            >
+              📺 Live Corridor Flight TV
+            </Button>
+          )}
           <Button variant="outline" onClick={onOpenSchedule}>OT Roster</Button>
           <Button variant="danger" onClick={onOpenEmergency}>🚨 Fast-Track Emergency</Button>
         </div>

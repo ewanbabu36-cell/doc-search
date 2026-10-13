@@ -459,6 +459,7 @@ export * from './components/dialogs/CreateEmergencySurgeryDialog.js';
 export * from './components/dialogs/OverrideOTConflictDialog.js';
 export * from './components/views/OTOverviewView.js';
 export * from './components/views/OTCommandCenterView.js';
+export * from './components/views/OtCathLabLiveFlightBoardView.js';
 export * from './components/views/OTDirectoryView.js';
 export * from './components/views/OTRoomDirectoryView.js';
 export * from './components/views/OTRoomDetailView.js';

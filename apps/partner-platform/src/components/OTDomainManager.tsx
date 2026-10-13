@@ -29,6 +29,7 @@ import { operationTheatreManagementService } from '../services/operation-theatre
 // Import Views
 import { OTOverviewView } from './views/OTOverviewView.js';
 import { OTCommandCenterView } from './views/OTCommandCenterView.js';
+import { OtCathLabLiveFlightBoardView } from './views/OtCathLabLiveFlightBoardView.js';
 import { OTDirectoryView } from './views/OTDirectoryView.js';
 import { OTRoomDirectoryView } from './views/OTRoomDirectoryView.js';
 import { OTRoomDetailView } from './views/OTRoomDetailView.js';
@@ -244,6 +245,7 @@ export const OTDomainManager: React.FC<Props> = ({
   const navItems = [
     { id: 'overview', label: 'OT Overview' },
     { id: 'command-center', label: 'Command Center' },
+    { id: 'live-flight-board', label: 'Corridor Flight Board' },
     { id: 'ot-complexes', label: 'OT Complexes' },
     { id: 'ot-rooms', label: 'OT Rooms' },
     { id: 'surgery-requests', label: 'Surgery Requests' },
@@ -270,7 +272,7 @@ export const OTDomainManager: React.FC<Props> = ({
     { id: 'audit-vault', label: 'Audit Vault' }
   ];
 
-  const primaryNavIds = ['overview', 'command-center', 'ot-schedules', 'preop-workbench', 'emergency-ot'];
+  const primaryNavIds = ['overview', 'command-center', 'live-flight-board', 'ot-schedules', 'preop-workbench', 'emergency-ot'];
   const primaryNavItems = navItems.filter((i) => primaryNavIds.includes(i.id));
   const secondaryNavItems = navItems.filter((i) => !primaryNavIds.includes(i.id));
 
@@ -391,6 +393,15 @@ export const OTDomainManager: React.FC<Props> = ({
             pacuRecords={pacuRecords}
             onOpenSchedule={() => setActiveTab('ot-schedules')}
             onOpenEmergency={() => setIsEmergencyOpen(true)}
+            onOpenFlightBoard={() => setActiveTab('live-flight-board')}
+          />
+        )}
+
+        {activeTab === 'live-flight-board' && (
+          <OtCathLabLiveFlightBoardView
+            schedules={schedules}
+            rooms={rooms}
+            onClose={() => setActiveTab('command-center')}
           />
         )}
 
