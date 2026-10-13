@@ -252,6 +252,23 @@ export const NursingCareView: React.FC<NursingCareViewProps> = ({ assessments = 
       `5-Rights Barcode Check Passed: ${selectedMarForScan.medicationName} given to ${selectedMarForScan.patientName}`
     );
 
+    hospitalEventBus.publish(
+      'EMAR_MEDICATION_ADMINISTERED_BILLED',
+      'DigitalNurseMarView',
+      {
+        marId: selectedMarForScan.id,
+        patientUhid: selectedMarForScan.patientUhid,
+        patientName: selectedMarForScan.patientName,
+        medicationName: selectedMarForScan.medicationName,
+        dose: selectedMarForScan.dosage,
+        administeredTime: new Date().toISOString(),
+        batchNumber: scannedMedBarcode,
+        autoBilled: true,
+        revenueProtected: true
+      },
+      `🔒 Closed-Loop Revenue Protection: Administered dose ${selectedMarForScan.medicationName} (${selectedMarForScan.dosage}) auto-synchronized to Inpatient Billing Ledger for ${selectedMarForScan.patientName} (${selectedMarForScan.patientUhid}) without nurse manual data entry.`
+    );
+
     setTimeout(() => {
       setMarList((prev) =>
         prev.map((m) =>

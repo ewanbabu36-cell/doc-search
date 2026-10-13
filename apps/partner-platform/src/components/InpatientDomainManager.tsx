@@ -1029,6 +1029,7 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
             setSelectedBed(b);
             setActiveTab('bed-detail');
           }}
+          facilityName={facilityName}
         />
       )}
 

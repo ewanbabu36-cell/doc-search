@@ -12,6 +12,7 @@ import { PatientWhatsAppSmartRxModal } from '../dialogs/PatientWhatsAppSmartRxMo
 import { PrintableMedicalCertificateModal } from '../dialogs/PrintableMedicalCertificateModal.js';
 import { DoctorOpdReferralModal } from '../dialogs/DoctorOpdReferralModal.js';
 import { ExternalInvestigationViewerModal } from '../dialogs/ExternalInvestigationViewerModal.js';
+import { WebDicomAiHeatmapViewer } from './WebDicomAiHeatmapViewer.js';
 import { OpdDaycareProcedureModal, type DaycareProcedureItem } from '../dialogs/OpdDaycareProcedureModal.js';
 import { OpdMlcRecordModal, type MlcDetails } from '../dialogs/OpdMlcRecordModal.js';
 import { OpdTeleTriageDeskModal } from '../dialogs/OpdTeleTriageDeskModal.js';
@@ -682,6 +683,7 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
   const [isMedicalCertModalOpen, setIsMedicalCertModalOpen] = useState(false);
   const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
   const [isExternalViewerOpen, setIsExternalViewerOpen] = useState(false);
+  const [isDicomViewerOpen, setIsDicomViewerOpen] = useState(false);
 
   // 💓 Gap 2: In-Chamber Fast Vitals Quick-Capture / Doctor Override State
   const [isQuickVitalsModalOpen, setIsQuickVitalsModalOpen] = useState(false);
@@ -2579,6 +2581,9 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
       } else if (e.key === 'F4') {
         e.preventDefault();
         setIsExternalViewerOpen(true);
+      } else if (e.key === 'F5') {
+        e.preventDefault();
+        setIsDicomViewerOpen(true);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -3934,6 +3939,68 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
           patientName={activePatient.name}
           patientMrn={activePatient.mrn}
         />
+      )}
+
+      {/* ☢️ Pillar 4: Embedded Zero-Footprint 3D Web DICOM PACS Radiology Viewer */}
+      {isDicomViewerOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.92)',
+            zIndex: 99999,
+            display: 'flex',
+            flexDirection: 'column',
+            padding: '16px',
+            boxSizing: 'border-box'
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '10px',
+              padding: '10px 18px',
+              backgroundColor: '#0F172A',
+              borderRadius: '10px',
+              border: '1px solid #334155'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '1.4rem' }}>☢️</span>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1rem', color: '#F8FAFC', fontWeight: 800 }}>
+                  EMBEDDED 3D DICOM PACS RADIOLOGY VIEWER (Orthanc Port 8042)
+                </h3>
+                <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
+                  Patient: <strong style={{ color: '#F1F5F9' }}>{activePatient.name}</strong> • MRN: {activePatient.mrn} • Multi-Slice CT/MRI, Caliper &amp; AI Heatmap
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={() => setIsDicomViewerOpen(false)}
+              style={{
+                padding: '6px 16px',
+                backgroundColor: '#EF4444',
+                color: '#FFF',
+                border: 'none',
+                borderRadius: '6px',
+                fontWeight: 800,
+                cursor: 'pointer',
+                fontSize: '0.85rem'
+              }}
+            >
+              ✕ Close PACS Viewer
+            </button>
+          </div>
+          <div style={{ flex: 1, minHeight: 0, overflow: 'auto', borderRadius: '12px' }}>
+            <WebDicomAiHeatmapViewer onClose={() => setIsDicomViewerOpen(false)} />
+          </div>
+        </div>
       )}
 
       {/* 💉 Pillar 3: OPD Daycare Minor Procedures Modal */}
@@ -8171,6 +8238,29 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
                     <span>📑</span>
                     <span>Outside Scans (3)</span>
                   </button>
+
+                  {/* ☢️ Pillar 4: Embedded 3D Web DICOM PACS Radiology Viewer */}
+                  <button
+                    type="button"
+                    onClick={() => setIsDicomViewerOpen(true)}
+                    style={{
+                      padding: '2px 8px',
+                      borderRadius: '5px',
+                      backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                      border: '1px solid rgba(239, 68, 68, 0.4)',
+                      color: '#F87171',
+                      fontSize: '0.6875rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                    title="Open Zero-Footprint 3D DICOM PACS Viewer (Orthanc Port 8042 CT/MRI/X-Ray Multi-slice & Heatmap)"
+                  >
+                    <span>☢️</span>
+                    <span>PACS DICOM (3D)</span>
+                  </button>
                 </div>
                 {!isSignedOrCompleted && selectedTests.length > 0 && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -8799,6 +8889,29 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
             >
               <span>👨‍⚕️</span>
               <span>Refer Specialist</span>
+            </button>
+
+            {/* ☢️ Embedded PACS DICOM 3D Viewer */}
+            <button
+              type="button"
+              onClick={() => setIsDicomViewerOpen(true)}
+              style={{
+                backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                border: '1px solid #EF4444',
+                color: '#FCA5A5',
+                borderRadius: '8px',
+                padding: '8px 12px',
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px'
+              }}
+              title="Open Zero-Footprint 3D DICOM PACS Viewer (Orthanc Port 8042)"
+            >
+              <span>☢️</span>
+              <span>PACS 3D Viewer</span>
             </button>
 
             {/* Direct IPD Emergency Admission */}

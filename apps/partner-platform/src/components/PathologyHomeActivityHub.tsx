@@ -22,6 +22,7 @@ import type {
 import type { PartnerModuleKey } from './PartnerPlatformShell.js';
 import { MicroscopeEyepieceScannerModal, type MicroscopeSmearReport } from './dialogs/MicroscopeEyepieceScannerModal.js';
 import { ThermalBarcodeStickerModal } from './dialogs/ThermalBarcodeStickerModal.js';
+import { AutoAnalyzerSyncModal } from './dialogs/AutoAnalyzerSyncModal.js';
 import { PathologistTargetCockpitView } from './views/PathologistTargetCockpitView.js';
 
 export type LaboratoryPhase = 'ALL' | 'PRE_ANALYTICAL' | 'ANALYTICAL' | 'POST_ANALYTICAL';
@@ -363,11 +364,48 @@ export const PathologyHomeActivityHub: React.FC<PathologyHomeActivityHubProps> =
   const [isMicroscopeModalOpen, setIsMicroscopeModalOpen] = useState(false);
   const [isBarcodeModalOpen, setIsBarcodeModalOpen] = useState(false);
   const [selectedBarcodeOrder, setSelectedBarcodeOrder] = useState<InvestigationOrderDto | null>(null);
+  const [isAnalyzerModalOpen, setIsAnalyzerModalOpen] = useState(false);
+  const [analyzerTargetOrders, setAnalyzerTargetOrders] = useState<InvestigationOrderDto[]>([]);
   const [quickNotification, setQuickNotification] = useState<string | null>(null);
 
   const triggerToast = (msg: string) => {
     setQuickNotification(msg);
     setTimeout(() => setQuickNotification(null), 3500);
+  };
+
+  const handleCommitAnalyzerResults = (payload: {
+    orderId: string;
+    analyzerModel: string;
+    parameters: Array<{
+      analyte: string;
+      value: string;
+      unit: string;
+      referenceRange: string;
+      isPanic: boolean;
+    }>;
+    hasPanic: boolean;
+  }) => {
+    setOrders((prev) =>
+      prev.map((ord) => {
+        if (ord.id === payload.orderId || ord.orderNumber === payload.orderId) {
+          return {
+            ...ord,
+            status: 'RESULT_READY',
+            isCritical: payload.hasPanic || ord.isCritical,
+            analyzerMachine: payload.analyzerModel,
+            observedResult: payload.parameters.map((p) => `${p.analyte}: ${p.value} ${p.unit}`).join('; '),
+            labPhase: 'POST_ANALYTICAL' as const
+          };
+        }
+        return ord;
+      })
+    );
+    setIsAnalyzerModalOpen(false);
+    triggerToast(
+      `🔬 Analyzer Results Synced: ${payload.analyzerModel} data imported for Order ${payload.orderId}${
+        payload.hasPanic ? ' ⚠️ CRITICAL PANIC VALUE FLAGGED!' : ' ✓'
+      }`
+    );
   };
 
   // 🤝 1-Click Clinic Partner Handshake
@@ -1083,7 +1121,28 @@ export const PathologyHomeActivityHub: React.FC<PathologyHomeActivityHubProps> =
                 }}
               >
                 <span>⚙️</span>
-                <span>Push HL7 Analyzer Worklist</span>
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setAnalyzerTargetOrders(orders);
+                  setIsAnalyzerModalOpen(true);
+                }}
+                style={{
+                  borderColor: 'rgba(56, 189, 248, 0.5)',
+                  color: '#38BDF8',
+                  backgroundColor: 'rgba(56, 189, 248, 0.12)',
+                  fontWeight: 700,
+                  fontSize: '0.8rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <span>🔬</span>
+                <span>Direct ASTM/HL7 Analyzer Sync</span>
               </Button>
 
               <Button
@@ -2086,7 +2145,28 @@ export const PathologyHomeActivityHub: React.FC<PathologyHomeActivityHubProps> =
                                   fontWeight: 700
                                 }}
                               >
-                                ⚙️ Load Rack
+                              </Button>
+                            )}
+
+                            {activeRolePerspective === 'TECHNICIAN' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setAnalyzerTargetOrders([order]);
+                                  setIsAnalyzerModalOpen(true);
+                                }}
+                                style={{
+                                  fontSize: '0.68rem',
+                                  padding: '3px 8px',
+                                  borderColor: 'rgba(56, 189, 248, 0.5)',
+                                  color: '#38BDF8',
+                                  backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                                  fontWeight: 700
+                                }}
+                                title="Fetch results directly from ASTM / HL7 Automated Machine (Sysmex, Roche, Mindray)"
+                              >
+                                🔬 Auto-Analyzer
                               </Button>
                             )}
 
@@ -2883,6 +2963,14 @@ export const PathologyHomeActivityHub: React.FC<PathologyHomeActivityHubProps> =
           </div>
         </div>
       )}
+
+      {/* 🔬 Pillar 3: Direct ASTM / HL7 Lab Machine Auto-Analyzer Sync Modal */}
+      <AutoAnalyzerSyncModal
+        isOpen={isAnalyzerModalOpen}
+        onClose={() => setIsAnalyzerModalOpen(false)}
+        orders={analyzerTargetOrders.length > 0 ? analyzerTargetOrders : orders}
+        onCommitResults={handleCommitAnalyzerResults}
+      />
     </div>
   );
 };

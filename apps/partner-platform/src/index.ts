@@ -394,6 +394,7 @@ export * from './components/dialogs/ApproveDischargeDialog.js';
 export * from './components/dialogs/CompleteDischargeDialog.js';
 export * from './components/dialogs/FinalizeDischargeSummaryDialog.js';
 export * from './components/dialogs/PrintableDischargeSummaryModal.js';
+export * from './components/dialogs/PrintableBedsideQrCardModal.js';
 export * from './components/dialogs/ReleaseBedDialog.js';
 export * from './components/dialogs/CompleteCleaningDialog.js';
 export * from './components/dialogs/DirectAdmitBedDialog.js';
@@ -861,6 +862,7 @@ export * from './components/views/EpidemicOutbreakRadarView.js';
 // Phase 3.7: Diagnostics AI Copilot (Pathology Microscope & Radiology Web DICOM Heatmap)
 export * from './components/views/WebDicomAiHeatmapViewer.js';
 export * from './components/dialogs/MicroscopeEyepieceScannerModal.js';
+export * from './components/dialogs/AutoAnalyzerSyncModal.js';
 
 // Phase 3.8: Patient Digital Twin, Health Chrono-Score & Autonomous Post-Care Agent
 export * from './components/views/PatientDigitalTwinLongevityView.js';

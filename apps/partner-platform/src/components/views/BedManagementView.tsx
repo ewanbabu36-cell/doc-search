@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Card, Button, Input, Select, Badge } from '@docsearch/ui-kit';
 import type { InpatientBedDto, InpatientWardDto } from '@docsearch/api-contracts';
+import { PrintableBedsideQrCardModal } from '../dialogs/PrintableBedsideQrCardModal.js';
 
 export interface BedManagementViewProps {
   beds: InpatientBedDto[];
@@ -13,6 +14,7 @@ export interface BedManagementViewProps {
   onOpenQuickAdmit?: (bed: InpatientBedDto) => void;
   onCompleteCleaning?: (bed: InpatientBedDto) => void;
   onSelectBed?: (bed: InpatientBedDto) => void;
+  facilityName?: string | undefined;
 }
 
 export const BedManagementView: React.FC<BedManagementViewProps> = ({
@@ -25,11 +27,13 @@ export const BedManagementView: React.FC<BedManagementViewProps> = ({
   onOpenReleaseBed,
   onOpenQuickAdmit,
   onCompleteCleaning,
-  onSelectBed
+  onSelectBed,
+  facilityName
 }) => {
   const [selectedWard, setSelectedWard] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedBedForQr, setSelectedBedForQr] = useState<InpatientBedDto | null>(null);
 
   const safeBeds = Array.isArray(beds) ? beds : [];
   const safeWards = Array.isArray(wards) ? wards : [];
@@ -360,16 +364,28 @@ export const BedManagementView: React.FC<BedManagementViewProps> = ({
                 </>
               )}
 
-              {/* OCCUPIED BED: 1-Click Release Bed */}
+              {/* OCCUPIED BED: Bedside Concierge QR & 1-Click Release Bed */}
               {bed.status === 'OCCUPIED' && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onOpenReleaseBed(bed)}
-                  style={{ borderColor: '#EF4444', color: '#DC2626', fontWeight: 600 }}
-                >
-                  🚪 Release Bed
-                </Button>
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedBedForQr(bed)}
+                    style={{ borderColor: '#6366F1', color: '#818CF8', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                    title="Generate Bedside Patient Concierge QR Standee"
+                  >
+                    <span>📱</span>
+                    <span>Bedside QR</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onOpenReleaseBed(bed)}
+                    style={{ borderColor: '#EF4444', color: '#DC2626', fontWeight: 600 }}
+                  >
+                    🚪 Release Bed
+                  </Button>
+                </>
               )}
 
               {/* CLEANING BED: 1-Click Mark Cleaned */}
@@ -392,6 +408,16 @@ export const BedManagementView: React.FC<BedManagementViewProps> = ({
           </Card>
         ))}
       </div>
+
+      {/* Bedside Patient Concierge QR Standee Modal */}
+      {selectedBedForQr && (
+        <PrintableBedsideQrCardModal
+          isOpen={Boolean(selectedBedForQr)}
+          onClose={() => setSelectedBedForQr(null)}
+          bed={selectedBedForQr}
+          facilityName={facilityName}
+        />
+      )}
     </div>
   );
 };
