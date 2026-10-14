@@ -105,6 +105,8 @@ const ScheduleH1DrugRegisterModal = React.lazy(() => import('./common/ScheduleH1
 const AbdmScanAndShareModal = React.lazy(() => import('./common/AbdmScanAndShareModal.js').then(m => ({ default: m.AbdmScanAndShareModal })));
 const TpaAyushmanCashlessDeskModal = React.lazy(() => import('./dialogs/TpaAyushmanCashlessDeskModal.js').then(m => ({ default: m.TpaAyushmanCashlessDeskModal })));
 const LegacyDataMigrationModal = React.lazy(() => import('./dialogs/LegacyDataMigrationModal.js').then(m => ({ default: m.LegacyDataMigrationModal })));
+const PractoMigrationBridgeModal = React.lazy(() => import('./dialogs/PractoMigrationBridgeModal.js').then(m => ({ default: m.PractoMigrationBridgeModal })));
+const SurgicalCareConciergeView = React.lazy(() => import('./views/SurgicalCareConciergeView.js').then(m => ({ default: m.SurgicalCareConciergeView })));
 const WhatsAppPatientDispatchModal = React.lazy(() => import('./dialogs/WhatsAppPatientDispatchModal.js').then(m => ({ default: m.WhatsAppPatientDispatchModal })));
 const B2BWholesaleInvoiceSyncModal = React.lazy(() => import('./dialogs/B2BWholesaleInvoiceSyncModal.js').then(m => ({ default: m.B2BWholesaleInvoiceSyncModal })));
 const PharmaDistributorFranchiseModal = React.lazy(() => import('./dialogs/PharmaDistributorFranchiseModal.js').then(m => ({ default: m.PharmaDistributorFranchiseModal })));
@@ -673,6 +675,8 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
   const [isAbdmScanModalOpen, setIsAbdmScanModalOpen] = useState(false);
   const [isCashlessDeskOpen, setIsCashlessDeskOpen] = useState(false);
   const [isMigrationModalOpen, setIsMigrationModalOpen] = useState(false);
+  const [isPractoBridgeOpen, setIsPractoBridgeOpen] = useState(false);
+  const [isSurgicalConciergeOpen, setIsSurgicalConciergeOpen] = useState(false);
   const [isWhatsAppDispatchOpen, setIsWhatsAppDispatchOpen] = useState(false);
   const [isWholesaleSyncOpen, setIsWholesaleSyncOpen] = useState(false);
   const [isFranchiseModalOpen, setIsFranchiseModalOpen] = useState(false);
@@ -3291,6 +3295,54 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                           type="button"
                           onClick={() => {
                             setIsFastLaunchOpen(false);
+                            setIsPractoBridgeOpen(true);
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '6px 8px',
+                            borderRadius: '6px',
+                            background: 'rgba(56, 189, 248, 0.12)',
+                            border: '1px solid rgba(56, 189, 248, 0.3)',
+                            color: '#38BDF8',
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <span>🔄</span>
+                          <span>Practo Ray</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsFastLaunchOpen(false);
+                            setIsSurgicalConciergeOpen(true);
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '6px 8px',
+                            borderRadius: '6px',
+                            background: 'rgba(129, 140, 248, 0.12)',
+                            border: '1px solid rgba(129, 140, 248, 0.3)',
+                            color: '#818CF8',
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <span>🔪</span>
+                          <span>Surgery Care</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsFastLaunchOpen(false);
                             setIsFranchiseModalOpen(true);
                           }}
                           style={{
@@ -5822,6 +5874,72 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
             isOpen={isMigrationModalOpen}
             onClose={() => setIsMigrationModalOpen(false)}
           />
+        )}
+
+        {/* 4c-2. PRACTO RAY SPECIFIC 1-CLICK MIGRATION BRIDGE */}
+        {isPractoBridgeOpen && (
+          <PractoMigrationBridgeModal
+            isOpen={isPractoBridgeOpen}
+            onClose={() => setIsPractoBridgeOpen(false)}
+          />
+        )}
+
+        {/* 4c-3. DOC SEARCH CARE ELECTIVE SURGICAL CONCIERGE */}
+        {isSurgicalConciergeOpen && (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(5, 10, 24, 0.92)',
+              backdropFilter: 'blur(10px)',
+              zIndex: 9999,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '24px'
+            }}
+          >
+            <div
+              style={{
+                width: '100%',
+                maxWidth: '1200px',
+                height: '90vh',
+                backgroundColor: '#0F172A',
+                borderRadius: '24px',
+                border: '1px solid rgba(129, 140, 248, 0.4)',
+                boxShadow: '0 25px 60px rgba(0,0,0,0.9)',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+                padding: '20px'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsSurgicalConciergeOpen(false)}
+                  style={{
+                    backgroundColor: 'rgba(255,255,255,0.08)',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '36px',
+                    height: '36px',
+                    color: '#94A3B8',
+                    cursor: 'pointer',
+                    fontSize: '1.2rem'
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+              <div style={{ flex: 1, overflowY: 'auto' }}>
+                <SurgicalCareConciergeView />
+              </div>
+            </div>
+          </div>
         )}
 
         {/* 4d. WHATSAPP-FIRST ZERO-INSTALL PATIENT DISPATCHER */}

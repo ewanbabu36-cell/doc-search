@@ -8,6 +8,7 @@ const LaunchOfferFlashTakeoverModal = React.lazy(() => import('./LaunchOfferFlas
 const LiveEmergencyBedRadarWidget = React.lazy(() => import('./LiveEmergencyBedRadarWidget.js').then(m => ({ default: m.LiveEmergencyBedRadarWidget })));
 const AIReceptionistWidget = React.lazy(() => import('./AIReceptionistWidget.js').then(m => ({ default: m.AIReceptionistWidget })));
 const LiveOpdQueueTrackerView = React.lazy(() => import('./LiveOpdQueueTrackerView.js').then(m => ({ default: m.LiveOpdQueueTrackerView })));
+const MeritDoctorMarketplaceModal = React.lazy(() => import('./MeritDoctorMarketplaceModal.js').then(m => ({ default: m.MeritDoctorMarketplaceModal })));
 import { InteractiveClinicSandbox } from './InteractiveClinicSandbox.js';
 import { AdaptiveRoiCalculator } from './AdaptiveRoiCalculator.js';
 import {
@@ -23,6 +24,7 @@ export const DocSearchLandingPage: React.FC = () => {
   const { theme } = useTheme();
   const [showDemoModal, setShowDemoModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showMarketplaceModal, setShowMarketplaceModal] = useState(false);
   const [loginModalInitialTab, setLoginModalInitialTab] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
   const [isOmniCapsuleOpen, setIsOmniCapsuleOpen] = useState(false);
   const [isAiReceptionistOpen, setIsAiReceptionistOpen] = useState(false);
@@ -786,6 +788,28 @@ export const DocSearchLandingPage: React.FC = () => {
           <a href="#emergency" style={{ color: '#F87171', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 800, transition: 'color 0.2s', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>🚨 ICU Bed Radar</a>
           <a href="#architecture" style={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 600, transition: 'color 0.2s' }}>Architecture</a>
           <a href="#security" style={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 600, transition: 'color 0.2s' }}>Security</a>
+          <button
+            type="button"
+            onClick={() => setShowMarketplaceModal(true)}
+            style={{
+              background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(59, 130, 246, 0.2))',
+              border: '1px solid rgba(56, 189, 248, 0.45)',
+              borderRadius: '6px',
+              padding: '4px 12px',
+              color: '#38BDF8',
+              fontSize: '0.8125rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              transition: 'all 0.2s',
+              boxShadow: '0 0 12px rgba(6, 182, 212, 0.25)'
+            }}
+          >
+            <span>👨‍⚕️</span>
+            <span>Find Doctors (Merit)</span>
+          </button>
           <button
             type="button"
             onClick={() => setCurrentView('TRACK_TOKEN')}
@@ -3554,7 +3578,16 @@ export const DocSearchLandingPage: React.FC = () => {
             metrics={campaignMetrics}
           />
         )}
+
+        {/* Merit-Based Doctor & Clinic Discovery Marketplace (Anti-Practo) */}
+        {showMarketplaceModal && (
+          <MeritDoctorMarketplaceModal
+            isOpen={showMarketplaceModal}
+            onClose={() => setShowMarketplaceModal(false)}
+          />
+        )}
       </React.Suspense>
+
 
       {/* ✦ UNIFIED FLOATING ACTION CAPSULE ("Omni-Action Capsule") */}
       {!showLoginModal && !showFlashTakeover && !isAiReceptionistOpen && !showDemoModal && !showSpotlightModal && !videoPreviewDoctor && (

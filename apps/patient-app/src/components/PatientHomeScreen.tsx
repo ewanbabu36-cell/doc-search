@@ -7,12 +7,14 @@ import { EmergencySosModal } from './EmergencySosModal.js';
 import { FamilyProfileSwitcherModal } from './FamilyProfileSwitcherModal.js';
 import { DigitalReceiptModal } from './DigitalReceiptModal.js';
 import { PaperParchiScannerModal } from './PaperParchiScannerModal.js';
+import { DocSearchPlusSubscriptionModal } from './DocSearchPlusSubscriptionModal.js';
+import { PaperlessPreArrivalIntakeModal } from './PaperlessPreArrivalIntakeModal.js';
 
 interface Props {
   language: Language;
   onLanguageToggle: () => void;
   patient: PatientProfile;
-  onNavigate: (screen: 'QUEUE' | 'PARCHI' | 'DAWA' | 'VIDEO' | 'BOOK' | 'PROFILE') => void;
+  onNavigate: (screen: 'QUEUE' | 'PARCHI' | 'DAWA' | 'VIDEO' | 'BOOK' | 'PROFILE' | 'MARKETPLACE' | 'PLUS') => void;
   onSelectPatient: (p: PatientProfile) => void;
 }
 
@@ -30,6 +32,8 @@ export const PatientHomeScreen: React.FC<Props> = ({
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [showBookModal, setShowBookModal] = useState(false);
   const [showPaperScanner, setShowPaperScanner] = useState(false);
+  const [showPlusModal, setShowPlusModal] = useState(false);
+  const [showIntakeModal, setShowIntakeModal] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
 
   // Clean format token number to prevent ##14 bug
@@ -380,6 +384,102 @@ export const PatientHomeScreen: React.FC<Props> = ({
         </span>
       </div>
 
+      {/* 5c. Practo Killer: Verified Doctor Marketplace Banner */}
+      <div
+        onClick={() => onNavigate('MARKETPLACE')}
+        style={{
+          backgroundColor: 'rgba(6, 182, 212, 0.12)',
+          border: '1.5px solid #06B6D4',
+          borderRadius: '16px',
+          padding: '12px 16px',
+          marginBottom: '12px',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          boxShadow: '0 4px 16px rgba(6, 182, 212, 0.15)'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span style={{ fontSize: '1.5rem' }}>👨‍⚕️</span>
+          <div>
+            <div style={{ fontSize: '0.875rem', fontWeight: 800, color: '#F8FAFC' }}>
+              {language === 'hi' ? 'सत्यापित डॉक्टर खोजें (0% ऐड-स्लॉट दलाली)' : 'Find Verified Doctors (0% Ad-Slots)'}
+            </div>
+            <div style={{ fontSize: '0.6875rem', color: '#38BDF8' }}>
+              {language === 'hi' ? 'शुद्ध मेरिट रैंकिंग • लाइव कतार व सबसे कम वेटिंग टाइम' : 'Pure Merit Ranking • Live Queue & Shortest Wait Time'}
+            </div>
+          </div>
+        </div>
+        <span style={{ backgroundColor: '#06B6D4', color: '#070C16', padding: '5px 10px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800 }}>
+          Find ➔
+        </span>
+      </div>
+
+      {/* 5d. Practo Plus Killer: DocSearch Plus Family Membership Pass Banner */}
+      <div
+        onClick={() => setShowPlusModal(true)}
+        style={{
+          background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.15) 100%)',
+          border: '1.5px solid #F59E0B',
+          borderRadius: '16px',
+          padding: '12px 16px',
+          marginBottom: '20px',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          boxShadow: '0 4px 16px rgba(245, 158, 11, 0.15)'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span style={{ fontSize: '1.5rem' }}>💎</span>
+          <div>
+            <div style={{ fontSize: '0.875rem', fontWeight: 900, color: '#FCD34D' }}>
+              DocSearch Plus™ {language === 'hi' ? 'फैमिली हेल्थ शील्ड' : 'Family Health Shield'}
+            </div>
+            <div style={{ fontSize: '0.6875rem', color: '#FDE68A' }}>
+              {language === 'hi' ? 'असीमित 24x7 वीडियो कंसल्ट + 15% दवा छूट + ₹0 ओपीडी पर्ची' : 'Unlimited 24x7 Consults + 15% Pharmacy Off + ₹0 OPD Slip'}
+            </div>
+          </div>
+        </div>
+        <span style={{ backgroundColor: '#F59E0B', color: '#070C16', padding: '5px 10px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 900 }}>
+          Join ➔
+        </span>
+      </div>
+
+      {/* 5e. Zocdoc Killer: Paperless Pre-Arrival Digital Intake & Insurance Card OCR Banner */}
+      <div
+        onClick={() => setShowIntakeModal(true)}
+        style={{
+          background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.15) 0%, rgba(14, 165, 233, 0.15) 100%)',
+          border: '1.5px solid #38BDF8',
+          borderRadius: '16px',
+          padding: '12px 16px',
+          marginBottom: '20px',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          boxShadow: '0 4px 16px rgba(56, 189, 248, 0.15)'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span style={{ fontSize: '1.5rem' }}>🪪</span>
+          <div>
+            <div style={{ fontSize: '0.875rem', fontWeight: 900, color: '#38BDF8' }}>
+              {language === 'hi' ? 'पेपरलेस प्री-अराइवल चेक-इन (Zocdoc-स्टाइल)' : 'Paperless Pre-Arrival Check-in (Zocdoc-Style)'}
+            </div>
+            <div style={{ fontSize: '0.6875rem', color: '#BAE6FD' }}>
+              {language === 'hi' ? 'इंश्योरेंस कार्ड OCR स्कैन • डिजिटल लक्षण व सहमति पत्र • 0-वेट फास्ट पास' : 'Insurance Card OCR • Symptoms & E-Sign • 0-Wait Fast-Pass'}
+            </div>
+          </div>
+        </div>
+        <span style={{ backgroundColor: '#0284C7', color: '#FFFFFF', padding: '5px 10px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 900 }}>
+          Start ➔
+        </span>
+      </div>
+
       {/* 6. 4 Main Action Tiles (Fat-Finger Friendly) */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', flex: 1, marginBottom: '20px' }}>
         <button
@@ -544,6 +644,21 @@ export const PatientHomeScreen: React.FC<Props> = ({
         onRecordSaved={(_record) => {
           onNavigate('PARCHI');
         }}
+      />
+
+      {/* Practo Plus Killer: DocSearch Plus Subscription Modal */}
+      <DocSearchPlusSubscriptionModal
+        language={language}
+        patient={patient}
+        isOpen={showPlusModal}
+        onClose={() => setShowPlusModal(false)}
+        onPlanActivated={(p) => onSelectPatient(p)}
+      />
+
+      {/* Zocdoc Killer: Paperless Pre-Arrival Digital Intake Modal */}
+      <PaperlessPreArrivalIntakeModal
+        isOpen={showIntakeModal}
+        onClose={() => setShowIntakeModal(false)}
       />
     </div>
   );

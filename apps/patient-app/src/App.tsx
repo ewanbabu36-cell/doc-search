@@ -9,8 +9,9 @@ import { DawaReminderScreen } from './components/DawaReminderScreen.js';
 import { VideoConsultationScreen } from './components/VideoConsultationScreen.js';
 import { PatientProfileScreen } from './components/PatientProfileScreen.js';
 import { BookOpdModal } from './components/BookOpdModal.js';
+import { MeritDoctorMarketplaceScreen } from './components/MeritDoctorMarketplaceScreen.js';
 
-export type PatientScreen = 'HOME' | 'QUEUE' | 'PARCHI' | 'DAWA' | 'VIDEO' | 'BOOK' | 'PROFILE';
+export type PatientScreen = 'HOME' | 'QUEUE' | 'PARCHI' | 'DAWA' | 'VIDEO' | 'BOOK' | 'PROFILE' | 'MARKETPLACE' | 'PLUS';
 
 export const App: React.FC = () => {
   const [language, setLanguage] = useState<Language>('hi');
@@ -246,6 +247,16 @@ export const App: React.FC = () => {
           onSelectPatient={(p) => setCurrentPatient(p)}
           onLogout={handleLogout}
           onBack={() => setActiveScreen('HOME')}
+        />
+      )}
+
+      {activeScreen === 'MARKETPLACE' && (
+        <MeritDoctorMarketplaceScreen
+          language={language}
+          patient={currentPatient}
+          onBack={() => setActiveScreen('HOME')}
+          onBookOpdSuccess={(updated) => setCurrentPatient(updated)}
+          onLaunchVideoConsult={() => setActiveScreen('VIDEO')}
         />
       )}
 

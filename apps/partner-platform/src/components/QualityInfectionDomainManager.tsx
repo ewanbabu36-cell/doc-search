@@ -47,6 +47,7 @@ import { QualityCommitteeView } from './views/QualityCommitteeView.js';
 import { BiomedicalWasteView } from './views/BiomedicalWasteView.js';
 import { NabhChapterComplianceView } from './views/NabhChapterComplianceView.js';
 import { QualityAuditVaultView } from './views/QualityAuditVaultView.js';
+import { VerifiedPatientFeedbackSentimentView } from './views/VerifiedPatientFeedbackSentimentView.js';
 import { TabOverflowMenu } from './common/TabOverflowMenu.js';
 
 // Dialogs
@@ -80,6 +81,7 @@ type QualityTab =
   | 'COMMITTEE'
   | 'BIOMEDICAL_WASTE'
   | 'CHAPTER_RADAR'
+  | 'VERIFIED_FEEDBACK'
   | 'AUDIT_VAULT';
 
 interface Props {
@@ -262,6 +264,7 @@ export const QualityInfectionDomainManager: React.FC<Props> = ({ tenantId }) => 
       >
         {[
           { id: 'OVERVIEW' as QualityTab, label: '📊 Quality Overview' },
+          { id: 'VERIFIED_FEEDBACK' as QualityTab, label: '⭐ Verified Patient Sentiment' },
           { id: 'INCIDENTS' as QualityTab, label: `🚨 Incidents (${incidents.filter((i) => i.status !== 'CLOSED').length})` },
           { id: 'CAPA_ENGINE' as QualityTab, label: `🎯 CAPA Engine (${capas.filter((c) => c.status !== 'VERIFIED_EFFECTIVE').length})` },
           { id: 'HAI_SURVEILLANCE' as QualityTab, label: `🦠 HAI Surveillance (${hais.length})` },
@@ -441,6 +444,7 @@ export const QualityInfectionDomainManager: React.FC<Props> = ({ tenantId }) => 
       )}
 
       {activeTab === 'CHAPTER_RADAR' && <NabhChapterComplianceView />}
+      {activeTab === 'VERIFIED_FEEDBACK' && <VerifiedPatientFeedbackSentimentView />}
       {activeTab === 'AUDIT_VAULT' && <QualityAuditVaultView traces={traces} />}
 
       {/* Dialog Modals */}
