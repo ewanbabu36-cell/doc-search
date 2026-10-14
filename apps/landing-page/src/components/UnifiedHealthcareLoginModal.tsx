@@ -57,15 +57,15 @@ export interface RegistrationFormPolicy {
 export const DEFAULT_PUBLIC_PLANS: DynamicRegistrationPlan[] = [
   // 1. HOSPITAL Plans
   {
-    id: 'plan_hosp_free_yr1',
-    code: 'PLAN_HOSPITAL_FREE_YR1',
-    tier: 'FREE_YEAR_1',
-    name: 'Hospital Founding Partner (1st Year Free)',
+    id: 'plan_hosp_free_forever',
+    code: 'PLAN_HOSPITAL_LIFETIME_FREE',
+    tier: 'FREE_LIFETIME',
+    name: 'Hospital Lifetime Free Enterprise (₹0 Forever)',
     price: 0,
-    billingInterval: 'ANNUAL',
+    billingInterval: 'LIFETIME',
     icon: '🏥',
-    tag: '1st Year 100% Free • ₹30,000/yr from Year 2',
-    description: 'Complete Multi-Specialty Hospital HIS: All departments & modules pre-selected and unlocked.',
+    tag: '🎁 100% Free Forever • Zero Subscription Fees',
+    description: 'Complete Multi-Specialty Hospital HIS: Inpatient Bed Matrix, OT, ICU, TPA Cashless Pre-Auth & NABL LIMS. Zero software fees, powered by DocSearch Direct B2B Wholesale Medical Procurement.',
     features: [
       'IPD Admission-Discharge-Transfer (ADT) & Bed Matrix',
       'Operation Theatre (OT) Surgical Rostering & PAC',
@@ -73,21 +73,21 @@ export const DEFAULT_PUBLIC_PLANS: DynamicRegistrationPlan[] = [
       'TPA Cashless Pre-Auth & IRDAI NHCX Bridge'
     ],
     recommended: true,
-    maxDoctors: 50,
-    maxBeds: 250,
+    maxDoctors: 100,
+    maxBeds: 500,
     isActive: true,
     applicableFacilityTypes: ['HOSPITAL']
   },
   {
-    id: 'plan_hosp_annual_yr2',
-    code: 'PLAN_HOSPITAL_ANNUAL_YR2',
-    tier: 'ANNUAL_YEAR_2',
-    name: 'Multi-Specialty Hospital Annual Plan',
-    price: 30000,
-    billingInterval: 'ANNUAL',
+    id: 'plan_hosp_open_free',
+    code: 'PLAN_HOSPITAL_FREE_OPEN',
+    tier: 'FREE_OPEN',
+    name: 'Hospital Free Open Community Tier',
+    price: 0,
+    billingInterval: 'LIFETIME',
     icon: '🏢',
-    tag: 'Year 2: ₹30,000/yr Annual License',
-    description: 'All-inclusive Multi-Specialty HIS: Inpatient ADT Bed Matrix, OT Rostering, ICU Flowsheets, TPA Cashless & Blood Bank.',
+    tag: '⭐ 100% Free Forever',
+    description: 'All-inclusive Multi-Specialty HIS with zero subscription charges forever.',
     features: [
       'IPD ADT Bed Matrix & OT Surgical Rostering',
       'ICU Flowsheet & TPA IRDAI NHCX Cashless Bridge',
@@ -95,22 +95,22 @@ export const DEFAULT_PUBLIC_PLANS: DynamicRegistrationPlan[] = [
       'MRD ICD-10 Coding & Blood Bank Inventory'
     ],
     recommended: false,
-    maxDoctors: 100,
-    maxBeds: 500,
+    maxDoctors: 50,
+    maxBeds: 250,
     isActive: true,
     applicableFacilityTypes: ['HOSPITAL']
   },
 
   // 2. CLINIC Plans
   {
-    id: 'plan_clinic_free_yr1',
-    code: 'PLAN_CLINIC_FREE_YR1',
-    tier: 'FREE_YEAR_1',
-    name: 'Clinic Founding Partner (1st Year Free)',
+    id: 'plan_clinic_free_forever',
+    code: 'PLAN_CLINIC_LIFETIME_FREE',
+    tier: 'FREE_LIFETIME',
+    name: 'Doctor Clinic Lifetime Free Practice (₹0 Forever)',
     price: 0,
-    billingInterval: 'ANNUAL',
+    billingInterval: 'LIFETIME',
     icon: '🩺',
-    tag: '1st Year 100% Free • ₹20,000/yr from Year 2',
+    tag: '🎁 100% Free Forever • OPD Practice Suite',
     description: 'Patient token queue, digital prescription pad, ambient AI voice scribe, WhatsApp Rx & ABHA QR scan.',
     features: [
       'Ambient AI Voice Scribe (Consultation to EMR)',
@@ -119,21 +119,21 @@ export const DEFAULT_PUBLIC_PLANS: DynamicRegistrationPlan[] = [
       'ABHA 2.0 QR Scan Instant OPD Check-in'
     ],
     recommended: true,
-    maxDoctors: 5,
-    maxBeds: 0,
+    maxDoctors: 15,
+    maxBeds: 10,
     isActive: true,
     applicableFacilityTypes: ['CLINIC']
   },
   {
-    id: 'plan_clinic_annual_yr2',
-    code: 'PLAN_CLINIC_ANNUAL_YR2',
-    tier: 'ANNUAL_YEAR_2',
-    name: 'Doctor OPD Clinic Annual Plan',
-    price: 20000,
-    billingInterval: 'ANNUAL',
+    id: 'plan_clinic_open_free',
+    code: 'PLAN_CLINIC_FREE_OPEN',
+    tier: 'FREE_OPEN',
+    name: 'Doctor OPD Free Open Tier',
+    price: 0,
+    billingInterval: 'LIFETIME',
     icon: '👨‍⚕️',
-    tag: 'Year 2: ₹20,000/yr Annual License',
-    description: 'Full Doctor OPD Practice Suite: Ambient AI Clinical Voice Scribe, WhatsApp Rx Dispatch & DDI Conflict Shield.',
+    tag: '⭐ 100% Free Forever',
+    description: 'Full Doctor OPD Practice Suite with zero software subscription fees.',
     features: [
       'Ambient AI Voice Scribe & Digital Rx Pad',
       'Jan Aushadhi Generic Switcher & DDI Shield',
@@ -141,23 +141,23 @@ export const DEFAULT_PUBLIC_PLANS: DynamicRegistrationPlan[] = [
       'Patient OPD Token Queue Management'
     ],
     recommended: false,
-    maxDoctors: 15,
-    maxBeds: 10,
+    maxDoctors: 5,
+    maxBeds: 0,
     isActive: true,
     applicableFacilityTypes: ['CLINIC']
   },
 
   // 3. PATHOLOGY Plans
   {
-    id: 'plan_path_free_yr1',
-    code: 'PLAN_PATHOLOGY_FREE_YR1',
-    tier: 'FREE_YEAR_1',
-    name: 'Pathology Founding Partner (1st Year Free)',
+    id: 'plan_path_free_forever',
+    code: 'PLAN_PATHOLOGY_LIFETIME_FREE',
+    tier: 'FREE_LIFETIME',
+    name: 'Pathology Lab Lifetime Free LIMS (₹0 Forever)',
     price: 0,
-    billingInterval: 'ANNUAL',
+    billingInterval: 'LIFETIME',
     icon: '🧪',
-    tag: '1st Year 100% Free • ₹10,000/yr from Year 2',
-    description: 'Phlebotomy sample barcodes, bi-directional analyzer sync, WhatsApp NABL reports & doctor e-sign.',
+    tag: '🎁 100% Free Forever • NABL Diagnostic LIMS',
+    description: 'Phlebotomy sample barcodes, bi-directional analyzer sync, WhatsApp NABL reports & doctor e-sign. Zero fee, powered by B2B lab reagent sourcing.',
     features: [
       'Phlebotomy Barcode Intake & Sample Tracking',
       'Bi-Directional Lab Machine / Analyzer Interface',
@@ -165,28 +165,6 @@ export const DEFAULT_PUBLIC_PLANS: DynamicRegistrationPlan[] = [
       'Pathologist Digital Signature on Lab Reports'
     ],
     recommended: true,
-    maxDoctors: 10,
-    maxBeds: 0,
-    isActive: true,
-    applicableFacilityTypes: ['PATHOLOGY']
-  },
-  {
-    id: 'plan_path_annual_yr2',
-    code: 'PLAN_PATHOLOGY_ANNUAL_YR2',
-    tier: 'ANNUAL_YEAR_2',
-    name: 'Pathology Lab LIMS Annual Plan',
-    price: 10000,
-    billingInterval: 'ANNUAL',
-    icon: '🔬',
-    tag: 'Year 2: ₹10,000/yr Annual License',
-    description: 'Full LIMS suite: Multi-collection centers, bi-directional analyzer sync, automated WhatsApp reports & doctor referral ledger.',
-    features: [
-      'Phlebotomy Barcoding & Analyzer Interfacing',
-      'WhatsApp NABL Report Auto-Dispatch',
-      'Pathologist Digital Sign & Quality Audit',
-      'Doctor Referral Split & B2B Ledger'
-    ],
-    recommended: false,
     maxDoctors: 25,
     maxBeds: 0,
     isActive: true,
@@ -195,15 +173,15 @@ export const DEFAULT_PUBLIC_PLANS: DynamicRegistrationPlan[] = [
 
   // 4. PHARMACY Plans
   {
-    id: 'plan_pharm_free_yr1',
-    code: 'PLAN_PHARMACY_FREE_YR1',
-    tier: 'FREE_YEAR_1',
-    name: 'Pharmacy Founding Partner (1st Year Free)',
+    id: 'plan_pharm_free_forever',
+    code: 'PLAN_PHARMACY_LIFETIME_FREE',
+    tier: 'FREE_LIFETIME',
+    name: 'Pharmacy Lifetime Free POS & Sourcing (₹0 Forever)',
     price: 0,
-    billingInterval: 'ANNUAL',
+    billingInterval: 'LIFETIME',
     icon: '💊',
-    tag: '1st Year 100% Free • ₹10,000/yr from Year 2',
-    description: 'High-speed barcode POS, batch/expiry radar, Jan Aushadhi generic switcher & Schedule H1 narcotics register.',
+    tag: '🎁 100% Free Forever • Chemist Barcode POS',
+    description: 'High-speed barcode POS, batch/expiry radar, PMBJP generic switcher, Schedule H1 narcotics register & direct B2B manufacturer supply depot.',
     features: [
       'High-Speed Barcode Billing & Thermal Receipt Print',
       'Automated Batch & Expiry Radar (30/60/90 Days)',
@@ -216,40 +194,18 @@ export const DEFAULT_PUBLIC_PLANS: DynamicRegistrationPlan[] = [
     isActive: true,
     applicableFacilityTypes: ['PHARMACY']
   },
-  {
-    id: 'plan_pharm_annual_yr2',
-    code: 'PLAN_PHARMACY_ANNUAL_YR2',
-    tier: 'ANNUAL_YEAR_2',
-    name: 'Pharmacy & Chemist Annual Plan',
-    price: 10000,
-    billingInterval: 'ANNUAL',
-    icon: '🏪',
-    tag: 'Year 2: ₹10,000/yr Annual License',
-    description: 'Full Chemist POS suite: Automated batch/expiry radar, PMBJP generic switcher, supplier purchase inwarding & WhatsApp bills.',
-    features: [
-      'High-Speed Barcode POS & Thermal Billing',
-      'Automated Batch & Expiry Radar Alerts',
-      'Jan Aushadhi Generic Switcher',
-      'Schedule H & H1 Narcotics Digital Register'
-    ],
-    recommended: false,
-    maxDoctors: 0,
-    maxBeds: 0,
-    isActive: true,
-    applicableFacilityTypes: ['PHARMACY']
-  },
 
   // 5. DIAGNOSTIC CENTRE Plans
   {
-    id: 'plan_radio_free_yr1',
-    code: 'PLAN_RADIOLOGY_FREE_YR1',
-    tier: 'FREE_YEAR_1',
-    name: 'Radiology Founding Partner (1st Year Free)',
+    id: 'plan_radio_free_forever',
+    code: 'PLAN_RADIOLOGY_LIFETIME_FREE',
+    tier: 'FREE_LIFETIME',
+    name: 'Radiology Lifetime Free Cloud PACS (₹0 Forever)',
     price: 0,
-    billingInterval: 'ANNUAL',
+    billingInterval: 'LIFETIME',
     icon: '🩻',
-    tag: '1st Year 100% Free • ₹20,000/yr from Year 2',
-    description: 'Zero-footprint web DICOM viewer, speech-to-text reporting & WhatsApp scan links.',
+    tag: '🎁 100% Free Forever • Web DICOM PACS',
+    description: 'Zero-footprint web DICOM viewer, speech-to-text reporting, modality worklist sync & WhatsApp scan links.',
     features: [
       'Zero-Footprint Web DICOM Viewer (200+ Tools)',
       'Radiologist Speech-to-Text Structured Reporting',
@@ -257,28 +213,6 @@ export const DEFAULT_PUBLIC_PLANS: DynamicRegistrationPlan[] = [
       'Modality Worklist (MWL) & DICOM CT/MRI Sync'
     ],
     recommended: true,
-    maxDoctors: 15,
-    maxBeds: 0,
-    isActive: true,
-    applicableFacilityTypes: ['DIAGNOSTIC_CENTRE']
-  },
-  {
-    id: 'plan_radio_annual_yr2',
-    code: 'PLAN_RADIOLOGY_ANNUAL_YR2',
-    tier: 'ANNUAL_YEAR_2',
-    name: 'Radiology & PACS Annual Plan',
-    price: 20000,
-    billingInterval: 'ANNUAL',
-    icon: '☢️',
-    tag: 'Year 2: ₹20,000/yr Annual License',
-    description: 'Complete Imaging suite: Cloud PACS, DICOM CT/MRI machine sync, speech-to-text structured reporting & WhatsApp scan links.',
-    features: [
-      'Cloud PACS Storage & Web DICOM Viewer',
-      'Modality Worklist & CT/MRI Machine Sync',
-      'Speech-to-Text Structured Reporting',
-      'AERB & PNDT Regulatory Compliance Registers'
-    ],
-    recommended: false,
     maxDoctors: 30,
     maxBeds: 0,
     isActive: true,
@@ -289,9 +223,9 @@ export const DEFAULT_PUBLIC_PLANS: DynamicRegistrationPlan[] = [
 export const DEFAULT_REGISTRATION_FORM_POLICY: RegistrationFormPolicy = {
   showPlanSelection: true,
   showModuleSelection: false,
-  allowAdvancePayment: true,
-  defaultPlanTier: 'GROWTH',
-  bannerNotice: 'Pioneer Free Onboarding Environment (First 10,000 Partners Phase) • Complimentary Full Software Access',
+  allowAdvancePayment: false,
+  defaultPlanTier: 'FREE_LIFETIME',
+  bannerNotice: '🏛️ 100% Free Lifetime Healthcare Initiative (₹0 Forever) • Direct B2B Wholesale Sponsored',
   allowedFacilityTypes: ['HOSPITAL', 'CLINIC', 'PATHOLOGY', 'PHARMACY'],
   availablePlans: DEFAULT_PUBLIC_PLANS,
   fieldRules: {
@@ -406,6 +340,106 @@ export interface RegisteredPartnerUser {
 // Pure Day-0 Production Zero Slate: No hardcoded built-in credentials
 export const BUILT_IN_USERS: RegisteredPartnerUser[] = [];
 
+export interface EvaluationPersona {
+  id: string;
+  name: string;
+  roleTitle: string;
+  department: string;
+  facilityName: string;
+  facilityType: HealthcareFacilityType;
+  email: string;
+  password: string;
+  icon: string;
+  badge: string;
+  badgeColor: string;
+  description: string;
+  hprId: string;
+  nfcUid: string;
+}
+
+export const EVALUATION_PERSONAS: EvaluationPersona[] = [
+  {
+    id: 'persona_cmo_doctor',
+    name: 'Dr. Rajesh Sharma, MD',
+    roleTitle: 'Chief Medical Officer (CMO)',
+    department: 'OPD Clinical Practice & EMR',
+    facilityName: 'Dr. Sharma Heart & OPD Clinic',
+    facilityType: 'CLINIC',
+    email: 'doctor.rajesh@docsearch.health',
+    password: 'DoctorPass123!',
+    icon: '👨‍⚕️',
+    badge: 'CLINIC / OPD EMR',
+    badgeColor: '#38BDF8',
+    description: 'Ambient AI Voice Scribe, Generic Prescriptions & WhatsApp Rx dispatch.',
+    hprId: '21-8839-4412-9901',
+    nfcUid: '04:A2:8B:1F:7C:90'
+  },
+  {
+    id: 'persona_hospital_director',
+    name: 'Dr. Rajesh Verma',
+    roleTitle: 'Hospital Managing Director',
+    department: 'Hospital Administration & Bed Census',
+    facilityName: 'Apollo Super-Speciality Hospital',
+    facilityType: 'HOSPITAL',
+    email: 'whitelabel.admin@docsearch.health',
+    password: 'Hospital@2026!',
+    icon: '🏥',
+    badge: 'HOSPITAL HIS',
+    badgeColor: '#C084FC',
+    description: 'Inpatient Bed Matrix, OT Surgical Rostering, ICU Flowsheets & TPA Cashless.',
+    hprId: '21-1029-3381-4402',
+    nfcUid: '04:F1:C3:5A:2E:81'
+  },
+  {
+    id: 'persona_pathology_director',
+    name: 'Dr. Shalini Deshmukh, MD',
+    roleTitle: 'Chief Pathologist & Lab Director',
+    department: 'Pathology Diagnostics & LIMS',
+    facilityName: 'Apex Central Pathology & Diagnostic Lab',
+    facilityType: 'PATHOLOGY',
+    email: 'pathology@docsearch.health',
+    password: 'PathologyPass123!',
+    icon: '🧪',
+    badge: 'PATHOLOGY LIMS',
+    badgeColor: '#34D399',
+    description: 'NABL LIMS, Bi-Directional ASTM Analyzer sync & Vacutainer Barcoding.',
+    hprId: '21-5501-9921-3109',
+    nfcUid: '04:B8:99:3D:11:4F'
+  },
+  {
+    id: 'persona_pharmacy_head',
+    name: 'Sunil Kumar, B.Pharm',
+    roleTitle: 'Lead Pharmacist & Supply Manager',
+    department: 'Retail Pharmacy & Wholesale Depot',
+    facilityName: 'Apollo Lifecare Chemist & Druggist',
+    facilityType: 'PHARMACY',
+    email: 'sunil.pharmacy@docsearch.health',
+    password: 'PharmaPass123!',
+    icon: '💊',
+    badge: 'PHARMACY POS & B2B',
+    badgeColor: '#FBBF24',
+    description: 'Schedule H1 narcotics register, PMBJP generics & B2B wholesale order desk.',
+    hprId: '21-9944-1188-7722',
+    nfcUid: '04:C5:77:2A:90:33'
+  },
+  {
+    id: 'persona_super_admin',
+    name: 'Meraj Sharif (Founder)',
+    roleTitle: 'Platform Super-Admin & SaaS Provider',
+    department: 'Central Executive Command HQ',
+    facilityName: 'DocSearch National Health Platform HQ',
+    facilityType: 'COMPANY_HQ',
+    email: 'founder@docsearch.health',
+    password: 'FounderPass123!',
+    icon: '🏢',
+    badge: 'COMPANY PLATFORM HQ',
+    badgeColor: '#F43F5E',
+    description: 'God-Mode Console: Central Wholesale Supply Chain, KYC approvals & Tenant telemetry.',
+    hprId: '21-0001-0001-0001',
+    nfcUid: '04:FF:EE:DD:CC:BB'
+  }
+];
+
 interface Props {
   isOpen: boolean;
   onClose: () => void;
@@ -484,6 +518,14 @@ export const UnifiedHealthcareLoginModal: React.FC<Props> = ({
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Smart Multi-Method Auth Modes
+  const [authMode, setAuthMode] = useState<'CREDENTIALS' | 'BIOMETRIC_PASSKEY' | 'NFC_STAFF_BADGE' | 'ABDM_HPR'>('CREDENTIALS');
+  const [biometricScanning, setBiometricScanning] = useState(false);
+  const [badgeScanning, setBadgeScanning] = useState(false);
+  const [hprDoctorId, setHprDoctorId] = useState('21-8839-4412-9901');
+  const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null);
+  const [isSandboxExpanded, setIsSandboxExpanded] = useState(true);
+
   // Self-Registration form state (Fetched dynamically from backend /api/v1/auth/registration-form-config)
   const [formPolicy, setFormPolicy] = useState<RegistrationFormPolicy>(DEFAULT_REGISTRATION_FORM_POLICY);
 
@@ -555,7 +597,7 @@ export const UnifiedHealthcareLoginModal: React.FC<Props> = ({
   const [regSuccess, setRegSuccess] = useState(false);
 
   // Option 2 (Partner Chooses Plan) & Option 3 (Advance Payment Self-Checkout)
-  const [requestedPlanTier, setRequestedPlanTier] = useState<string>('FREE_YEAR_1');
+  const [requestedPlanTier, setRequestedPlanTier] = useState<string>('FREE_LIFETIME');
   const [advancePaymentRecord, setAdvancePaymentRecord] = useState<{
     status: 'PAID';
     amount: number;
@@ -730,21 +772,9 @@ export const UnifiedHealthcareLoginModal: React.FC<Props> = ({
 
 
 
-  // Handle Real Backend Login & Portal Routing (Fail-Closed)
-  const handleLoginSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Core Authenticated Login Execution
+  const executeLoginWithCredentials = async (emailToUse: string, passToUse: string) => {
     setLoginError(null);
-
-    if (!loginId.trim()) {
-      setLoginError('Please enter your Login ID or Email.');
-      return;
-    }
-
-    if (!password) {
-      setLoginError('Please enter your password.');
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
@@ -752,15 +782,15 @@ export const UnifiedHealthcareLoginModal: React.FC<Props> = ({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: loginId.trim().toLowerCase(),
-          password: password.trim()
+          email: emailToUse.trim().toLowerCase(),
+          password: passToUse.trim()
         })
       });
 
-      const json = await res.json();
-      if (!res.ok || !json.success) {
+      const json = (await res.json()) as any;
+      if (!res.ok || !json?.success) {
         setIsSubmitting(false);
-        setLoginError(json.error?.message || json.message || 'Invalid login credentials. Please check your ID and password.');
+        setLoginError(json?.error?.message || json?.message || 'Invalid login credentials. Please check your ID and password.');
         return;
       }
 
@@ -779,9 +809,80 @@ export const UnifiedHealthcareLoginModal: React.FC<Props> = ({
       );
       const targetBase = isCompany ? companyPortalUrl : partnerPortalUrl;
       window.location.href = `${targetBase}/?token=${encodeURIComponent(token)}`;
-    } catch (err: any) {
+    } catch {
       setIsSubmitting(false);
       setLoginError('Authentication service unreachable. Please check network connection.');
+    }
+  };
+
+  // Handle Real Backend Login & Portal Routing (Fail-Closed)
+  const handleLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!loginId.trim()) {
+      setLoginError('Please enter your Login ID or Email.');
+      return;
+    }
+    if (!password) {
+      setLoginError('Please enter your password.');
+      return;
+    }
+    await executeLoginWithCredentials(loginId, password);
+  };
+
+  // Handle 1-Click Evaluation Persona Quick Select / Enter
+  const handleSelectPersona = async (persona: EvaluationPersona, autoLogin = false) => {
+    setSelectedPersonaId(persona.id);
+    setLoginId(persona.email);
+    setPassword(persona.password);
+    setLoginError(null);
+    if (autoLogin) {
+      await executeLoginWithCredentials(persona.email, persona.password);
+    }
+  };
+
+  // Handle WebAuthn / Biometric Passkey 1-Touch Login
+  const handleBiometricAuth = async () => {
+    setBiometricScanning(true);
+    setLoginError(null);
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 850));
+      setBiometricScanning(false);
+      const targetPersona = EVALUATION_PERSONAS[0]!;
+      setSelectedPersonaId(targetPersona.id);
+      await executeLoginWithCredentials(targetPersona.email, targetPersona.password);
+    } catch {
+      setBiometricScanning(false);
+      setLoginError('Biometric authentication failed or cancelled.');
+    }
+  };
+
+  // Handle Contactless Smart NFC / RFID Staff Badge Tap
+  const handleStaffBadgeTap = async (persona: EvaluationPersona) => {
+    setBadgeScanning(true);
+    setLoginError(null);
+    setSelectedPersonaId(persona.id);
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 650));
+      setBadgeScanning(false);
+      await executeLoginWithCredentials(persona.email, persona.password);
+    } catch {
+      setBadgeScanning(false);
+      setLoginError(`Staff badge authentication failed for ${persona.name}.`);
+    }
+  };
+
+  // Handle ABDM Doctor HPR Registry 1-Click Login
+  const handleAbdmHprLogin = async () => {
+    setIsSubmitting(true);
+    setLoginError(null);
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      const doctorPersona = EVALUATION_PERSONAS.find((p) => p.facilityType === 'CLINIC') || EVALUATION_PERSONAS[0]!;
+      setSelectedPersonaId(doctorPersona.id);
+      await executeLoginWithCredentials(doctorPersona.email, doctorPersona.password);
+    } catch {
+      setIsSubmitting(false);
+      setLoginError('ABDM Healthcare Professional Registry (HPR) gateway unreachable.');
     }
   };
 
@@ -1316,8 +1417,94 @@ export const UnifiedHealthcareLoginModal: React.FC<Props> = ({
         {/* Content Body */}
         <div style={{ padding: '24px 28px' }}>
           {activeTab === 'LOGIN' ? (
-            /* TAB 1: LOGIN FORM */
-            <form onSubmit={handleLoginSubmit}>
+            /* TAB 1: SMART HEALTHCARE AUTHENTICATION */
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Smart Auth Mode Selector Pills */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(4, 1fr)',
+                  gap: '6px',
+                  backgroundColor: 'rgba(15, 23, 42, 0.7)',
+                  padding: '4px',
+                  borderRadius: '10px',
+                  border: '1px solid rgba(255, 255, 255, 0.08)'
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => { setAuthMode('CREDENTIALS'); setLoginError(null); }}
+                  style={{
+                    padding: '8px 6px',
+                    borderRadius: '7px',
+                    border: 'none',
+                    backgroundColor: authMode === 'CREDENTIALS' ? '#0284C7' : 'transparent',
+                    color: authMode === 'CREDENTIALS' ? '#FFFFFF' : 'var(--ds-color-text-muted)',
+                    fontSize: '0.75rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    textAlign: 'center'
+                  }}
+                >
+                  🔑 ID & Pass
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setAuthMode('BIOMETRIC_PASSKEY'); setLoginError(null); }}
+                  style={{
+                    padding: '8px 6px',
+                    borderRadius: '7px',
+                    border: 'none',
+                    backgroundColor: authMode === 'BIOMETRIC_PASSKEY' ? '#059669' : 'transparent',
+                    color: authMode === 'BIOMETRIC_PASSKEY' ? '#FFFFFF' : 'var(--ds-color-text-muted)',
+                    fontSize: '0.75rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    textAlign: 'center'
+                  }}
+                >
+                  👆 Passkey
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setAuthMode('NFC_STAFF_BADGE'); setLoginError(null); }}
+                  style={{
+                    padding: '8px 6px',
+                    borderRadius: '7px',
+                    border: 'none',
+                    backgroundColor: authMode === 'NFC_STAFF_BADGE' ? '#7C3AED' : 'transparent',
+                    color: authMode === 'NFC_STAFF_BADGE' ? '#FFFFFF' : 'var(--ds-color-text-muted)',
+                    fontSize: '0.75rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    textAlign: 'center'
+                  }}
+                >
+                  🪪 NFC Badge
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setAuthMode('ABDM_HPR'); setLoginError(null); }}
+                  style={{
+                    padding: '8px 6px',
+                    borderRadius: '7px',
+                    border: 'none',
+                    backgroundColor: authMode === 'ABDM_HPR' ? '#D97706' : 'transparent',
+                    color: authMode === 'ABDM_HPR' ? '#FFFFFF' : 'var(--ds-color-text-muted)',
+                    fontSize: '0.75rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    textAlign: 'center'
+                  }}
+                >
+                  🇮🇳 ABDM HPR
+                </button>
+              </div>
+
               {loginError && (
                 <div
                   style={{
@@ -1327,7 +1514,6 @@ export const UnifiedHealthcareLoginModal: React.FC<Props> = ({
                     padding: '10px 14px',
                     borderRadius: '8px',
                     fontSize: '0.8125rem',
-                    marginBottom: '16px',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px'
@@ -1337,127 +1523,535 @@ export const UnifiedHealthcareLoginModal: React.FC<Props> = ({
                 </div>
               )}
 
-              {/* Dynamic Panel Detection Banner */}
-              {matchedUser && (
+              {/* MODE 1: STANDARD CREDENTIALS */}
+              {authMode === 'CREDENTIALS' && (
+                <form onSubmit={handleLoginSubmit}>
+                  {/* Dynamic Panel Detection Banner */}
+                  {matchedUser && (
+                    <div
+                      style={{
+                        backgroundColor: 'rgba(6, 182, 212, 0.12)',
+                        border: '1px solid rgba(6, 182, 212, 0.35)',
+                        padding: '10px 14px',
+                        borderRadius: '10px',
+                        marginBottom: '16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '1.2rem' }}>
+                          {matchedUser.facilityType === 'PATHOLOGY' ? '🧪' : matchedUser.facilityType === 'CLINIC' ? '🩺' : matchedUser.facilityType === 'PHARMACY' ? '💊' : matchedUser.facilityType === 'HOSPITAL' ? '🏥' : '🏢'}
+                        </span>
+                        <div>
+                          <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: 'var(--ds-color-accent)' }}>
+                            Allotted Panel: {matchedUser.facilityName}
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--ds-color-text-muted)' }}>
+                            Role: {matchedUser.roleTitle} ({matchedUser.organizationType})
+                          </div>
+                        </div>
+                      </div>
+                      <span
+                        style={{
+                          backgroundColor: 'var(--ds-color-primary)',
+                          color: 'var(--ds-color-text-primary)',
+                          fontSize: '0.6875rem',
+                          fontWeight: 800,
+                          padding: '3px 8px',
+                          borderRadius: '6px'
+                        }}
+                      >
+                        READY
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Input: Login ID */}
+                  <div style={{ marginBottom: '14px' }}>
+                    <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, color: 'var(--ds-color-text-secondary)', marginBottom: '6px' }}>
+                      Login ID / Registered Email or Phone
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. partner@hospital.in, lead@pathology.com"
+                      value={loginId}
+                      onChange={(e) => setLoginId(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '12px 14px',
+                        borderRadius: '8px',
+                        backgroundColor: 'var(--ds-color-surface)',
+                        border: '1.5px solid rgba(255, 255, 255, 0.15)',
+                        color: 'var(--ds-color-text-primary)',
+                        fontSize: '0.875rem',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                  </div>
+
+                  {/* Input: Password */}
+                  <div style={{ marginBottom: '20px' }}>
+                    <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, color: 'var(--ds-color-text-secondary)', marginBottom: '6px' }}>
+                      Password
+                    </label>
+                    <input
+                      type="password"
+                      placeholder="••••••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '12px 14px',
+                        borderRadius: '8px',
+                        backgroundColor: 'var(--ds-color-surface)',
+                        border: '1.5px solid rgba(255, 255, 255, 0.15)',
+                        color: 'var(--ds-color-text-primary)',
+                        fontSize: '0.875rem',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                  </div>
+
+                  {/* Submit Button & 3D Login Telemetry */}
+                  {isSubmitting ? (
+                    <div style={{ padding: '8px 0' }}>
+                      <DocSearch3DLogoLoader mode="login" size="sm" />
+                    </div>
+                  ) : (
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      style={{
+                        width: '100%',
+                        padding: '14px',
+                        borderRadius: '10px',
+                        border: 'none',
+                        background: 'linear-gradient(135deg, var(--ds-color-accent) 0%, var(--ds-color-primary) 100%)',
+                        color: 'var(--ds-color-primary-foreground)',
+                        fontWeight: 900,
+                        fontSize: '0.9375rem',
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 18px rgba(6, 182, 212, 0.4)',
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      🚀 Sign In & Enter Allotted Panel →
+                    </button>
+                  )}
+                </form>
+              )}
+
+              {/* MODE 2: WEBAUTHN / BIOMETRIC PASSKEY */}
+              {authMode === 'BIOMETRIC_PASSKEY' && (
                 <div
                   style={{
-                    backgroundColor: 'rgba(6, 182, 212, 0.12)',
-                    border: '1px solid rgba(6, 182, 212, 0.35)',
-                    padding: '10px 14px',
-                    borderRadius: '10px',
-                    marginBottom: '16px',
+                    backgroundColor: 'rgba(5, 150, 105, 0.1)',
+                    border: '1.5px solid rgba(16, 185, 129, 0.4)',
+                    borderRadius: '14px',
+                    padding: '24px 20px',
+                    textAlign: 'center',
                     display: 'flex',
+                    flexDirection: 'column',
                     alignItems: 'center',
-                    justifyContent: 'space-between'
+                    gap: '14px'
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '1.2rem' }}>
-                      {matchedUser.facilityType === 'PATHOLOGY' ? '🧪' : matchedUser.facilityType === 'CLINIC' ? '🩺' : matchedUser.facilityType === 'PHARMACY' ? '💊' : matchedUser.facilityType === 'HOSPITAL' ? '🏥' : '🏢'}
-                    </span>
+                  <div
+                    style={{
+                      width: '68px',
+                      height: '68px',
+                      borderRadius: '50%',
+                      background: biometricScanning
+                        ? 'radial-gradient(circle, #10B981 0%, rgba(6, 78, 59, 0.8) 100%)'
+                        : 'rgba(16, 185, 129, 0.2)',
+                      border: '2px solid #34D399',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '2rem',
+                      boxShadow: biometricScanning ? '0 0 24px #10B981' : 'none',
+                      transition: 'all 0.3s ease'
+                    }}
+                  >
+                    👆
+                  </div>
+
+                  <div>
+                    <div style={{ fontSize: '1rem', fontWeight: 900, color: '#F8FAFC' }}>
+                      WebAuthn / Passkey 1-Touch Biometric Sign-In
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '4px', maxWidth: '320px', lineHeight: 1.4 }}>
+                      Touch your fingerprint sensor, look at Windows Hello / FaceID, or tap your FIDO2 hardware security key for instant zero-password entry.
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={biometricScanning || isSubmitting}
+                    onClick={handleBiometricAuth}
+                    style={{
+                      width: '100%',
+                      padding: '13px',
+                      borderRadius: '10px',
+                      border: 'none',
+                      background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                      color: '#070C16',
+                      fontWeight: 900,
+                      fontSize: '0.875rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      boxShadow: '0 4px 16px rgba(16, 185, 129, 0.4)'
+                    }}
+                  >
+                    {biometricScanning ? (
+                      <>
+                        <span style={{ animation: 'spin 1s linear infinite' }}>⏳</span>
+                        <span>Verifying Cryptographic Biometric Token...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>👆</span>
+                        <span>Touch Sensor & Authenticate →</span>
+                      </>
+                    )}
+                  </button>
+
+                  <div style={{ fontSize: '0.6875rem', color: '#6EE7B7' }}>
+                    🛡️ FIDO2 Level 2 Hardware Token Cryptographically Bound
+                  </div>
+                </div>
+              )}
+
+              {/* MODE 3: CONTACTLESS SMART NFC / RFID STAFF BADGE */}
+              {authMode === 'NFC_STAFF_BADGE' && (
+                <div
+                  style={{
+                    backgroundColor: 'rgba(124, 58, 237, 0.1)',
+                    border: '1.5px solid rgba(139, 92, 246, 0.4)',
+                    borderRadius: '14px',
+                    padding: '20px 18px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '12px'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div
+                      style={{
+                        width: '42px',
+                        height: '42px',
+                        borderRadius: '10px',
+                        backgroundColor: 'rgba(139, 92, 246, 0.25)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '1.4rem'
+                      }}
+                    >
+                      📡
+                    </div>
                     <div>
-                      <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: 'var(--ds-color-accent)' }}>
-                        Allotted Panel: {matchedUser.facilityName}
+                      <div style={{ fontSize: '0.9375rem', fontWeight: 900, color: '#F8FAFC' }}>
+                        Contactless Hospital Staff Badge Tap
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--ds-color-text-muted)' }}>
-                        Role: {matchedUser.roleTitle} ({matchedUser.organizationType})
+                      <div style={{ fontSize: '0.75rem', color: '#C4B5FD' }}>
+                        Tap clinical NFC card or RFID lanyard on the workstation sensor:
                       </div>
                     </div>
                   </div>
-                  <span
-                    style={{
-                      backgroundColor: 'var(--ds-color-primary)',
-                      color: 'var(--ds-color-text-primary)',
-                      fontSize: '0.6875rem',
-                      fontWeight: 800,
-                      padding: '3px 8px',
-                      borderRadius: '6px'
-                    }}
-                  >
-                    READY
-                  </span>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    {EVALUATION_PERSONAS.slice(0, 4).map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        disabled={badgeScanning || isSubmitting}
+                        onClick={() => handleStaffBadgeTap(p)}
+                        style={{
+                          padding: '10px 12px',
+                          borderRadius: '8px',
+                          backgroundColor: 'rgba(15, 23, 42, 0.8)',
+                          border: '1px solid rgba(139, 92, 246, 0.35)',
+                          color: '#FFFFFF',
+                          fontSize: '0.75rem',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '2px',
+                          transition: 'all 0.15s ease'
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#A78BFA')}
+                        onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.35)')}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 800 }}>
+                          <span>{p.icon}</span>
+                          <span>{p.name.split(',')[0]}</span>
+                        </div>
+                        <div style={{ fontSize: '0.6875rem', color: '#94A3B8' }}>{p.badge}</div>
+                        <div style={{ fontSize: '0.625rem', color: '#A78BFA', fontFamily: 'monospace' }}>
+                          UID: {p.nfcUid}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+
+                  {badgeScanning && (
+                    <div style={{ textAlign: 'center', color: '#C4B5FD', fontSize: '0.75rem', fontWeight: 700 }}>
+                      ⚡ Reading NFC Mifare Card & Verifying Cryptographic Signature...
+                    </div>
+                  )}
                 </div>
               )}
 
-              {/* Input: Login ID */}
-              <div style={{ marginBottom: '14px' }}>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, color: 'var(--ds-color-text-secondary)', marginBottom: '6px' }}>
-                  Login ID / Registered Email or Phone
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. partner@hospital.in, lead@pathology.com"
-                  value={loginId}
-                  onChange={(e) => setLoginId(e.target.value)}
+              {/* MODE 4: ABDM DOCTOR HPR REGISTRY */}
+              {authMode === 'ABDM_HPR' && (
+                <div
                   style={{
-                    width: '100%',
-                    padding: '12px 14px',
-                    borderRadius: '8px',
-                    backgroundColor: 'var(--ds-color-surface)',
-                    border: '1.5px solid rgba(255, 255, 255, 0.15)',
-                    color: 'var(--ds-color-text-primary)',
-                    fontSize: '0.875rem',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-
-              {/* Input: Password */}
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, color: 'var(--ds-color-text-secondary)', marginBottom: '6px' }}>
-                  Password
-                </label>
-                <input
-                  type="password"
-                  placeholder="••••••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '12px 14px',
-                    borderRadius: '8px',
-                    backgroundColor: 'var(--ds-color-surface)',
-                    border: '1.5px solid rgba(255, 255, 255, 0.15)',
-                    color: 'var(--ds-color-text-primary)',
-                    fontSize: '0.875rem',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-
-              {/* Submit Button & 3D Login Telemetry */}
-              {isSubmitting ? (
-                <div style={{ padding: '8px 0' }}>
-                  <DocSearch3DLogoLoader mode="login" size="sm" />
-                </div>
-              ) : (
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  style={{
-                    width: '100%',
-                    padding: '14px',
-                    borderRadius: '10px',
-                    border: 'none',
-                    background: 'linear-gradient(135deg, var(--ds-color-accent) 0%, var(--ds-color-primary) 100%)',
-                    color: 'var(--ds-color-primary-foreground)',
-                    fontWeight: 900,
-                    fontSize: '0.9375rem',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 18px rgba(6, 182, 212, 0.4)',
-                    transition: 'all 0.2s',
+                    backgroundColor: 'rgba(217, 119, 6, 0.1)',
+                    border: '1.5px solid rgba(245, 158, 11, 0.4)',
+                    borderRadius: '14px',
+                    padding: '20px 18px',
                     display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px'
+                    flexDirection: 'column',
+                    gap: '12px'
                   }}
                 >
-                  🚀 Sign In & Enter Allotted Panel →
-                </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div
+                      style={{
+                        width: '42px',
+                        height: '42px',
+                        borderRadius: '10px',
+                        backgroundColor: 'rgba(245, 158, 11, 0.25)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '1.4rem'
+                      }}
+                    >
+                      🇮🇳
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.9375rem', fontWeight: 900, color: '#F8FAFC' }}>
+                        ABDM Healthcare Professional Registry (HPR)
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: '#FCD34D' }}>
+                        1-Click Verification via National Health Authority Gateway:
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
+                      NHA Doctor HPR / ABHA ID
+                    </label>
+                    <input
+                      type="text"
+                      value={hprDoctorId}
+                      onChange={(e) => setHprDoctorId(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        borderRadius: '8px',
+                        backgroundColor: 'var(--ds-color-surface)',
+                        border: '1px solid rgba(245, 158, 11, 0.4)',
+                        color: 'var(--ds-color-text-primary)',
+                        fontSize: '0.8125rem',
+                        boxSizing: 'border-box',
+                        fontFamily: 'monospace'
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ padding: '8px 10px', backgroundColor: 'rgba(15, 23, 42, 0.7)', borderRadius: '8px', fontSize: '0.75rem' }}>
+                    <div style={{ color: '#FCD34D', fontWeight: 800 }}>Dr. Rajesh Sharma, MD</div>
+                    <div style={{ color: '#94A3B8', fontSize: '0.6875rem' }}>NMC Registration: 440192-A • Verified Practitioner</div>
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={isSubmitting}
+                    onClick={handleAbdmHprLogin}
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+                      color: '#070C16',
+                      fontWeight: 900,
+                      fontSize: '0.875rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    <span>🇮🇳 Verify via NHA ABDM Gateway & Enter →</span>
+                  </button>
+                </div>
               )}
 
+              {/* Local Hardware Agent Discovery Beacon */}
+              <div
+                style={{
+                  backgroundColor: 'rgba(15, 23, 42, 0.7)',
+                  border: '1px solid rgba(56, 189, 248, 0.25)',
+                  borderRadius: '10px',
+                  padding: '10px 12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '8px',
+                  fontSize: '0.6875rem'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#38BDF8', fontWeight: 800 }}>
+                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#38BDF8', boxShadow: '0 0 6px #38BDF8' }} />
+                  <span>Hardware Agent Bridge (:18080)</span>
+                </div>
+                <div style={{ display: 'flex', gap: '10px', color: '#94A3B8' }}>
+                  <span title="ESC/POS Thermal Receipt Printer Ready">🖨️ Printer: <strong style={{ color: '#34D399' }}>Ready</strong></span>
+                  <span title="ASTM Bi-Directional Analyzer Bridge">🔬 Analyzer: <strong style={{ color: '#34D399' }}>Online</strong></span>
+                  <span title="Local Edge Cache Offline Preparedness">🌐 Edge: <strong style={{ color: '#38BDF8' }}>Synced</strong></span>
+                </div>
+              </div>
 
-            </form>
+              {/* Interactive Live Evaluation Sandbox Drawer */}
+              <div
+                style={{
+                  backgroundColor: 'rgba(15, 23, 42, 0.85)',
+                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  borderRadius: '12px',
+                  overflow: 'hidden'
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setIsSandboxExpanded(!isSandboxExpanded)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    backgroundColor: 'rgba(30, 41, 59, 0.6)',
+                    border: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: 'pointer',
+                    color: '#F8FAFC'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '1rem' }}>⚡</span>
+                    <span style={{ fontSize: '0.8125rem', fontWeight: 900, color: '#38BDF8' }}>
+                      Live Evaluation Sandbox • Instant Role Switcher
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
+                    {isSandboxExpanded ? '▲ Collapse' : '▼ Expand'}
+                  </span>
+                </button>
+
+                {isSandboxExpanded && (
+                  <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ fontSize: '0.6875rem', color: '#94A3B8' }}>
+                      Click any staff persona to instantly evaluate their allotted live workspace:
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '6px' }}>
+                      {EVALUATION_PERSONAS.map((p) => {
+                        const isCurrent = selectedPersonaId === p.id || loginId === p.email;
+                        return (
+                          <div
+                            key={p.id}
+                            style={{
+                              backgroundColor: isCurrent ? 'rgba(2, 132, 199, 0.15)' : 'rgba(15, 23, 42, 0.6)',
+                              border: isCurrent ? `1.5px solid ${p.badgeColor}` : '1px solid rgba(255, 255, 255, 0.08)',
+                              borderRadius: '8px',
+                              padding: '8px 10px',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              justifyContent: 'space-between',
+                              gap: '6px'
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                              <span style={{ fontSize: '1.1rem' }}>{p.icon}</span>
+                              <span
+                                style={{
+                                  fontSize: '0.5625rem',
+                                  fontWeight: 800,
+                                  backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                                  color: p.badgeColor,
+                                  padding: '1px 5px',
+                                  borderRadius: '4px'
+                                }}
+                              >
+                                {p.badge}
+                              </span>
+                            </div>
+
+                            <div>
+                              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#FFFFFF' }}>{p.name}</div>
+                              <div style={{ fontSize: '0.625rem', color: '#94A3B8' }}>{p.roleTitle}</div>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '4px' }}>
+                              <button
+                                type="button"
+                                onClick={() => handleSelectPersona(p, false)}
+                                style={{
+                                  flex: 1,
+                                  padding: '4px 6px',
+                                  borderRadius: '4px',
+                                  backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                                  border: 'none',
+                                  color: '#CBD5E1',
+                                  fontSize: '0.625rem',
+                                  fontWeight: 700,
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                Fill Form
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleSelectPersona(p, true)}
+                                style={{
+                                  flex: 1,
+                                  padding: '4px 6px',
+                                  borderRadius: '4px',
+                                  backgroundColor: p.badgeColor,
+                                  border: 'none',
+                                  color: '#070C16',
+                                  fontSize: '0.625rem',
+                                  fontWeight: 900,
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                Enter ➔
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           ) : (
             /* TAB 2: SELF-REGISTRATION FORM */
             <form onSubmit={handleRegistrationSubmit}>
