@@ -16,7 +16,8 @@ export const ROLE_DOMAIN_PERMISSIONS: Record<string, string[]> = {
     'analytics-reporting-bi',
     'compliance-data-governance',
     'compliance-regulatory-legal',
-    'company-admin-governance'
+    'company-admin-governance',
+    'central-supply-chain'
   ],
   COMPLIANCE_OFFICER: [
     'compliance-data-governance',

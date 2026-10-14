@@ -31,6 +31,14 @@ export const PHASE_1_DOMAINS: Phase1Domain[] = [
 
   // 2. Growth & Revenue (revenue)
   {
+    id: 'central-supply-chain',
+    title: 'B2B Medical & Chemical Supply Chain HQ',
+    description: 'Central wholesale medicine, chemical reagent & equipment depot, inbound hospital POs & margin control',
+    icon: '🚚',
+    category: 'revenue',
+    status: 'active'
+  },
+  {
     id: 'growth-engine',
     title: 'Growth Engine & Monetization HQ',
     description: 'Care Pass pricing, commission margin splits, WhatsApp broadcasts, and partner settlements',

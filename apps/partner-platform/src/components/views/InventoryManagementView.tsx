@@ -24,6 +24,7 @@ import type {
 } from '@docsearch/api-contracts';
 import { INDIAN_PHARMACY_FORMULARY, type IndianMedicationFormularyItem } from '../../services/indian-pharmacy-catalog.js';
 import { hospitalEventBus } from '../../services/hospital-event-bus.js';
+import { B2BWholesaleMarketplaceView } from './B2BWholesaleMarketplaceView.js';
 
 export interface PredictiveStockItem {
   id: string;
@@ -83,7 +84,7 @@ export interface InventoryManagementViewProps {
   onCleanupDevMockStock?: () => Promise<void>;
 }
 
-export type InventorySubView = 'stock' | 'predictiveReorder' | 'wardReturns' | 'batches' | 'movements' | 'returns';
+export type InventorySubView = 'stock' | 'predictiveReorder' | 'b2bMarketplace' | 'wardReturns' | 'batches' | 'movements' | 'returns';
 
 export const InventoryManagementView: React.FC<InventoryManagementViewProps> = ({
   inventory,
@@ -1184,6 +1185,27 @@ export const InventoryManagementView: React.FC<InventoryManagementViewProps> = (
 
         <button
           type="button"
+          onClick={() => setSubView('b2bMarketplace')}
+          style={{
+            background: subView === 'b2bMarketplace' ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(14, 165, 233, 0.2) 100%)' : '#1E293B',
+            color: subView === 'b2bMarketplace' ? '#34D399' : '#38BDF8',
+            border: subView === 'b2bMarketplace' ? '1.5px solid #10B981' : '1px solid #0284C7',
+            borderRadius: '8px',
+            padding: '8px 18px',
+            fontSize: '0.85rem',
+            fontWeight: 800,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            boxShadow: subView === 'b2bMarketplace' ? '0 0 16px rgba(16, 185, 129, 0.3)' : '0 2px 8px rgba(0, 0, 0, 0.2)'
+          }}
+        >
+          <span>🚚</span> DocSearch B2B Wholesale Depot & Auto-GRN (Direct Sourcing)
+        </button>
+
+        <button
+          type="button"
           onClick={() => setSubView('wardReturns')}
           style={{
             background: subView === 'wardReturns' ? 'rgba(16, 185, 129, 0.18)' : '#1E293B',
@@ -2139,6 +2161,11 @@ export const InventoryManagementView: React.FC<InventoryManagementViewProps> = (
               </Table>
             </TableContainer>
           </div>
+        )}
+
+        {/* 5B. DocSearch Direct B2B Wholesale Depot & Auto-GRN Sub-view */}
+        {subView === 'b2bMarketplace' && (
+          <B2BWholesaleMarketplaceView />
         )}
 
         {/* 6. Discharge Automated Ward Return Reconciler Sub-view */}

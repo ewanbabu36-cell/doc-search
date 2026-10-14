@@ -40,30 +40,30 @@ export const PROMOTIONAL_CAMPAIGN_STORAGE_KEY = 'docsearch_launch_promotional_ca
 export const PROMOTIONAL_CAMPAIGN_EVENT = 'docsearch:promotional_campaign_update';
 
 export const DEFAULT_PROMOTIONAL_CAMPAIGN: PromotionalCampaignConfig = {
-  campaignId: 'early-bird-launch-2026',
-  title: "Founder's 100 Early-Bird Launch Initiative",
-  subtitle: 'First 100 Healthcare Facilities Get 1-Year Free Enterprise Suite!',
-  badgeText: 'LIMITED LAUNCH OFFER',
-  targetSeats: 100,
-  claimedBaseline: 68,
-  offerEndDate: '2026-09-30T23:59:59',
-  planName: 'Early-Bird Launch Partner License',
-  planTier: 'Enterprise Suite (Early-Bird Launch Partner)',
-  originalPriceInr: 59999,
+  campaignId: 'lifetime-free-initiative-2026',
+  title: "DocSearch 100% Free Lifetime Healthcare Initiative",
+  subtitle: "World's First 100% Free Hospital ERP & EMR — Zero Software Fees Forever!",
+  badgeText: '100% FREE FOREVER',
+  targetSeats: 1000,
+  claimedBaseline: 342,
+  offerEndDate: '2030-12-31T23:59:59',
+  planName: 'Lifetime Free Enterprise License',
+  planTier: 'Lifetime Enterprise Suite (₹0 Forever)',
+  originalPriceInr: 120000,
   discountedPriceInr: 0,
-  durationMonths: 12,
-  promoCode: 'LAUNCH100',
+  durationMonths: 120,
+  promoCode: 'FREEFOREVER',
   status: 'ACTIVE',
   allowedFacilityTypes: ['HOSPITAL', 'CLINIC', 'PATHOLOGY', 'PHARMACY'],
-  autoLockOnTargetReached: true,
+  autoLockOnTargetReached: false,
   highlightFeatures: [
-    '₹0 Platform & Setup Fee for Full Year 1 (Worth ₹59,999)',
-    '100% ABDM M1/M2/M3 National Health Gateway Certified',
-    'AI Ambient Voice Scribe 3.0 & E-Prescriptions Included',
-    'Full Multi-Department Clinical Operations & LIS/RIS/POS'
+    '₹0 Software & Setup Fee Lifetime (Worth ₹1,20,000/yr)',
+    '100% Free HIS, OPD/IPD Bed Matrix, OT, LIMS, PACS & Voice EMR',
+    'Powered by DocSearch Direct B2B Wholesale Medical & Chemical Sourcing',
+    'Zero-Typing Automated Goods Receipt Note (Auto-GRN) Synchronization'
   ],
-  updatedAt: '2026-09-11T04:00:00Z',
-  updatedBy: 'Founder (MERAJ SHARIF)'
+  updatedAt: '2026-10-14T10:00:00Z',
+  updatedBy: 'DocSearch Platform HQ'
 };
 
 function getGlobalStorage(): any {

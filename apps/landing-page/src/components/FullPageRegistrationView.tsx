@@ -56,23 +56,23 @@ export const HEALTHCARE_PROFILE_PRESETS: Record<HealthcareFacilityType, Healthca
     ],
     plans: [
       {
-        id: 'hosp-free-yr1',
-        code: 'HOSPITAL_FREE_YR1',
-        name: 'Hospital Founding Partner (1st Year Free)',
+        id: 'hosp-free-forever',
+        code: 'HOSPITAL_FREE_FOREVER',
+        name: 'Hospital Lifetime Free Enterprise (₹0 Forever)',
         price: 0,
-        billingInterval: 'ANNUAL',
-        badge: '🎁 1st Year Free',
-        description: '100% Free for 365 Days - Complete Multi-Specialty Hospital HIS: All departments & modules pre-selected and unlocked. Renews at ₹30,000/yr from Year 2.',
+        billingInterval: 'LIFETIME',
+        badge: '🎁 100% Free Forever',
+        description: '100% Free Lifetime Multi-Specialty Hospital HIS: Inpatient ADT Bed Matrix, OT, ICU, TPA Cashless, PACS, ABDM & Voice EMR. Zero software fees, powered by DocSearch Direct Wholesale Procurement for medicines & equipment.',
         recommended: true
       },
       {
-        id: 'hosp-annual-yr2',
-        code: 'HOSPITAL_ANNUAL_YR2',
-        name: 'Multi-Specialty Hospital Annual Plan',
-        price: 30000,
-        billingInterval: 'ANNUAL',
-        badge: '⭐ Year 2: ₹30,000/yr',
-        description: 'All-inclusive Multi-Specialty HIS: Inpatient ADT Bed Matrix, OT Rostering, ICU Flowsheets, TPA IRDAI NHCX Cashless Bridge, ABDM Kiosk, MRD ICD-10 & Blood Bank.',
+        id: 'hosp-self-procure',
+        code: 'HOSPITAL_FREE_DIRECT',
+        name: 'Hospital Free Open Tier',
+        price: 0,
+        billingInterval: 'LIFETIME',
+        badge: '⭐ 100% Free',
+        description: 'All-inclusive Multi-Specialty HIS with zero subscription charges forever.',
         recommended: false
       }
     ]
@@ -94,23 +94,23 @@ export const HEALTHCARE_PROFILE_PRESETS: Record<HealthcareFacilityType, Healthca
     ],
     plans: [
       {
-        id: 'clinic-free-yr1',
-        code: 'CLINIC_FREE_YR1',
-        name: 'Clinic Founding Partner (1st Year Free)',
+        id: 'clinic-free-forever',
+        code: 'CLINIC_FREE_FOREVER',
+        name: 'Clinic Lifetime Free Practice (₹0 Forever)',
         price: 0,
-        billingInterval: 'ANNUAL',
-        badge: '🎁 1st Year Free',
-        description: '100% Free for 365 Days - Patient token queue, digital prescription pad, ambient AI voice scribe, WhatsApp Rx & ABHA QR scan. Renews at ₹20,000/yr from Year 2.',
+        billingInterval: 'LIFETIME',
+        badge: '🎁 100% Free Forever',
+        description: '100% Free Lifetime Doctor Clinic Suite: Ambient AI Voice Scribe, Digital Rx, WhatsApp PDF, ABHA QR Scan Check-in. Zero subscription fees forever.',
         recommended: true
       },
       {
-        id: 'clinic-annual-yr2',
-        code: 'CLINIC_ANNUAL_YR2',
-        name: 'Doctor OPD Clinic Annual Plan',
-        price: 20000,
-        billingInterval: 'ANNUAL',
-        badge: '⭐ Year 2: ₹20,000/yr',
-        description: 'Full Doctor OPD Practice Suite: Ambient AI Clinical Voice Scribe, WhatsApp Rx Dispatch, Jan Aushadhi Generic Switcher, ABHA 2.0 QR Scan & DDI Conflict Shield.',
+        id: 'clinic-open-free',
+        code: 'CLINIC_FREE_DIRECT',
+        name: 'Doctor OPD Free Open Tier',
+        price: 0,
+        billingInterval: 'LIFETIME',
+        badge: '⭐ 100% Free',
+        description: 'Full Doctor OPD Practice Suite with zero software subscription fees.',
         recommended: false
       }
     ]
@@ -131,23 +131,23 @@ export const HEALTHCARE_PROFILE_PRESETS: Record<HealthcareFacilityType, Healthca
     ],
     plans: [
       {
-        id: 'path-free-yr1',
-        code: 'PATHOLOGY_FREE_YR1',
-        name: 'Pathology Founding Partner (1st Year Free)',
+        id: 'path-free-forever',
+        code: 'PATHOLOGY_FREE_FOREVER',
+        name: 'Pathology Lifetime Free LIMS (₹0 Forever)',
         price: 0,
-        billingInterval: 'ANNUAL',
-        badge: '🎁 1st Year Free',
-        description: '100% Free for 365 Days - Phlebotomy sample barcodes, bi-directional analyzer sync, WhatsApp NABL reports & doctor e-sign. Renews at ₹10,000/yr from Year 2.',
+        billingInterval: 'LIFETIME',
+        badge: '🎁 100% Free Forever',
+        description: '100% Free Lifetime LIMS: Phlebotomy barcodes, bi-directional analyzer interfacing, WhatsApp NABL reports. Zero software fee, powered by DocSearch Direct Lab Chemical & Reagent Sourcing.',
         recommended: true
       },
       {
-        id: 'path-annual-yr2',
-        code: 'PATHOLOGY_ANNUAL_YR2',
-        name: 'Pathology Lab LIMS Annual Plan',
-        price: 10000,
-        billingInterval: 'ANNUAL',
-        badge: '⭐ Year 2: ₹10,000/yr',
-        description: 'Full LIMS suite: Multi-collection centers, bi-directional analyzer sync, automated WhatsApp reports, doctor referral ledger & NABL logs.',
+        id: 'path-open-free',
+        code: 'PATHOLOGY_FREE_DIRECT',
+        name: 'Pathology Lab Free Open Tier',
+        price: 0,
+        billingInterval: 'LIFETIME',
+        badge: '⭐ 100% Free',
+        description: 'Full LIMS suite with zero software subscription fees.',
         recommended: false
       }
     ]
@@ -169,23 +169,23 @@ export const HEALTHCARE_PROFILE_PRESETS: Record<HealthcareFacilityType, Healthca
     ],
     plans: [
       {
-        id: 'pharma-free-yr1',
-        code: 'PHARMACY_FREE_YR1',
-        name: 'Pharmacy Founding Partner (1st Year Free)',
+        id: 'pharma-free-forever',
+        code: 'PHARMACY_FREE_FOREVER',
+        name: 'Pharmacy Lifetime Free POS (₹0 Forever)',
         price: 0,
-        billingInterval: 'ANNUAL',
-        badge: '🎁 1st Year Free',
-        description: '100% Free for 365 Days - High-speed barcode POS, batch/expiry radar, Jan Aushadhi generic switcher & Schedule H1 narcotics register. Renews at ₹10,000/yr from Year 2.',
+        billingInterval: 'LIFETIME',
+        badge: '🎁 100% Free Forever',
+        description: '100% Free Lifetime Chemist POS: High-speed barcode POS, batch/expiry radar, Schedule H1 narcotics register. Zero software fees, powered by DocSearch Wholesale Direct Pharma Sourcing.',
         recommended: true
       },
       {
-        id: 'pharma-annual-yr2',
-        code: 'PHARMACY_ANNUAL_YR2',
-        name: 'Pharmacy & Chemist Annual Plan',
-        price: 10000,
-        billingInterval: 'ANNUAL',
-        badge: '⭐ Year 2: ₹10,000/yr',
-        description: 'Full Chemist POS suite: Automated batch/expiry radar, PMBJP generic switcher, supplier purchase inwarding, WhatsApp bills & Schedule H1 narcotics register.',
+        id: 'pharma-open-free',
+        code: 'PHARMACY_FREE_DIRECT',
+        name: 'Pharmacy Free Open Tier',
+        price: 0,
+        billingInterval: 'LIFETIME',
+        badge: '⭐ 100% Free',
+        description: 'Full Chemist POS suite with zero software subscription charges.',
         recommended: false
       }
     ]
@@ -207,23 +207,23 @@ export const HEALTHCARE_PROFILE_PRESETS: Record<HealthcareFacilityType, Healthca
     ],
     plans: [
       {
-        id: 'radio-free-yr1',
-        code: 'RADIOLOGY_FREE_YR1',
-        name: 'Radiology Founding Partner (1st Year Free)',
+        id: 'radio-free-forever',
+        code: 'RADIOLOGY_FREE_FOREVER',
+        name: 'Radiology Lifetime Free PACS (₹0 Forever)',
         price: 0,
-        billingInterval: 'ANNUAL',
-        badge: '🎁 1st Year Free',
-        description: '100% Free for 365 Days - Zero-footprint web DICOM viewer, speech-to-text reporting & WhatsApp scan links. Renews at ₹20,000/yr from Year 2.',
+        billingInterval: 'LIFETIME',
+        badge: '🎁 100% Free Forever',
+        description: '100% Free Lifetime Radiology & PACS: Web DICOM viewer, speech-to-text reporting & WhatsApp scan links. Zero software fees forever.',
         recommended: true
       },
       {
-        id: 'radio-annual-yr2',
-        code: 'RADIOLOGY_ANNUAL_YR2',
-        name: 'Radiology & PACS Annual Plan',
-        price: 20000,
-        billingInterval: 'ANNUAL',
-        badge: '⭐ Year 2: ₹20,000/yr',
-        description: 'Complete Imaging suite: Cloud PACS, DICOM CT/MRI machine sync, speech-to-text structured reporting & WhatsApp scan links.',
+        id: 'radio-open-free',
+        code: 'RADIOLOGY_FREE_DIRECT',
+        name: 'Radiology Free Open Tier',
+        price: 0,
+        billingInterval: 'LIFETIME',
+        badge: '⭐ 100% Free',
+        description: 'Complete Imaging & PACS suite with zero subscription fees.',
         recommended: false
       }
     ]

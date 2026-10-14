@@ -43,6 +43,7 @@ const PlatformEngineeringDomainManager = React.lazy(() => import('./platform-eng
 const InfrastructureDomainManager = React.lazy(() => import('./infrastructure/InfrastructureDomainManager.js').then(m => ({ default: m.InfrastructureDomainManager })));
 const CompanyAdminDomainManager = React.lazy(() => import('./company-admin/CompanyAdminDomainManager.js').then(m => ({ default: m.CompanyAdminDomainManager })));
 const CompanyGrowthEngineDomainManager = React.lazy(() => import('./growth/CompanyGrowthEngineDomainManager.js').then(m => ({ default: m.CompanyGrowthEngineDomainManager })));
+const CentralSupplyChainDomainManager = React.lazy(() => import('./supply-chain/CentralSupplyChainDomainManager.js').then(m => ({ default: m.CentralSupplyChainDomainManager })));
 import { GlobalFounderApprovalsModal } from './common/GlobalFounderApprovalsModal.js';
 import { useFounderApproval } from '../hooks/useFounderApproval.js';
 import { CompanyPulseTicker } from './common/CompanyPulseTicker.js';
@@ -1287,6 +1288,11 @@ const CompanyShellInner: React.FC<CompanyShellProps> = ({ currentUser, onLogout 
             {visitedDomains.has('executive-command-center') && (
               <div style={{ display: activeDomainId === 'executive-command-center' ? 'block' : 'none' }}>
                 <ExecutiveCommandCenter />
+              </div>
+            )}
+            {visitedDomains.has('central-supply-chain') && (
+              <div style={{ display: activeDomainId === 'central-supply-chain' ? 'block' : 'none' }}>
+                <CentralSupplyChainDomainManager />
               </div>
             )}
             {visitedDomains.has('growth-engine') && (
