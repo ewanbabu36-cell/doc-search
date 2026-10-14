@@ -46,7 +46,7 @@ export default defineConfig({
           {
             // Offline clinical lookups: tests, drug catalog, ICD-10, specialties
             urlPattern: /\/api\/v1\/(?:partner\/(?:catalog|profile|medicines|tests|specialties|icd10)|catalog)/i,
-            handler: 'StaleWhileRevalidate',
+            handler: 'NetworkFirst',
             options: {
               cacheName: 'docsearch-offline-catalogs',
               networkTimeoutSeconds: 2,
@@ -59,7 +59,7 @@ export default defineConfig({
           {
             // Hospital Doctor Roster & Bed Inventory Layout
             urlPattern: /\/api\/v1\/(?:partner\/(?:roster|beds|facilities|departments))/i,
-            handler: 'StaleWhileRevalidate',
+            handler: 'NetworkFirst',
             options: {
               cacheName: 'docsearch-hospital-metadata',
               networkTimeoutSeconds: 2,

@@ -9,6 +9,7 @@ build/
 out/
 .next/
 dist/bundle/
+dev-dist/
 *.tsbuildinfo
 *.map
 
