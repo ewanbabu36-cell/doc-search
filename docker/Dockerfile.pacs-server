@@ -1,0 +1,32 @@
+# ==============================================================================
+# DocSearch Radiology PACS Server - Production Dockerfile
+# Provides DICOM C-STORE (Port 11112) & DICOMweb WADO-RS / QIDO-RS (Port 8042)
+# ==============================================================================
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+RUN apk add --no-cache curl dumb-init
+
+# Create unprivileged application user
+RUN addgroup --system --gid 1001 pacs && \
+    adduser --system --uid 1001 pacs && \
+    mkdir -p /app/data/pacs-storage && \
+    chown -R pacs:pacs /app
+
+USER pacs
+
+COPY --chown=pacs:pacs scripts/docsearch-pacs-server.mjs ./scripts/
+
+ENV NODE_ENV=production
+ENV PACS_DICOM_PORT=11112
+ENV PACS_HTTP_PORT=8042
+ENV PACS_AE_TITLE=DOCSEARCH_PACS
+
+EXPOSE 11112 8042
+
+HEALTHCHECK --interval=15s --timeout=5s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:8042/health || exit 1
+
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]
+CMD ["node", "scripts/docsearch-pacs-server.mjs"]

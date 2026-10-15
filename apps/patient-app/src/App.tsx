@@ -10,6 +10,7 @@ import { VideoConsultationScreen } from './components/VideoConsultationScreen.js
 import { PatientProfileScreen } from './components/PatientProfileScreen.js';
 import { BookOpdModal } from './components/BookOpdModal.js';
 import { MeritDoctorMarketplaceScreen } from './components/MeritDoctorMarketplaceScreen.js';
+import { nativeBridge } from './services/native-bridge.js';
 
 export type PatientScreen = 'HOME' | 'QUEUE' | 'PARCHI' | 'DAWA' | 'VIDEO' | 'BOOK' | 'PROFILE' | 'MARKETPLACE' | 'PLUS';
 
@@ -23,12 +24,26 @@ export const App: React.FC = () => {
   const [showSyncReconnectToast, setShowSyncReconnectToast] = useState(false);
 
   const triggerHaptic = (ms = 12) => {
-    if (typeof window !== 'undefined' && 'vibrate' in navigator) {
-      try {
-        navigator.vibrate(ms);
-      } catch {}
-    }
+    void nativeBridge.triggerHaptic(ms);
   };
+
+  useEffect(() => {
+    void nativeBridge.hideSplashScreen();
+    void nativeBridge.configureStatusBar(true);
+
+    const unregisterBack = nativeBridge.registerHardwareBackButton(() => {
+      setActiveScreen((prev) => {
+        if (prev !== 'HOME') {
+          return 'HOME';
+        }
+        return prev;
+      });
+    });
+
+    return () => {
+      unregisterBack();
+    };
+  }, []);
 
   useEffect(() => {
     const handleOnline = () => {

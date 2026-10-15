@@ -1,3 +1,6 @@
+# ==============================================================================
+# DocSearch Production Resource & Swarm Orchestration Override Spec
+# ==============================================================================
 services:
   postgres:
     deploy:
@@ -42,12 +45,44 @@ services:
         max-size: "100m"
         max-file: "10"
 
+  pacs-server:
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
   partner-platform:
     deploy:
       resources:
         limits:
           cpus: '1.0'
           memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  patient-app:
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
 
   company-platform:
     deploy:
@@ -55,6 +90,11 @@ services:
         limits:
           cpus: '1.0'
           memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
 
   landing-page:
     deploy:
@@ -62,3 +102,23 @@ services:
         limits:
           cpus: '1.0'
           memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  nginx-ingress:
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
