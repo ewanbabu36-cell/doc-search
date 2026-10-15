@@ -51,6 +51,7 @@ class NativeBridgeService {
   public async configureStatusBar(dark: boolean = true) {
     if (typeof window === 'undefined') return;
     try {
+      // @ts-ignore
       const { StatusBar, Style } = await import('@capacitor/status-bar');
       await StatusBar.setStyle({ style: dark ? Style.Dark : Style.Light });
       await StatusBar.setBackgroundColor({ color: '#0B0F19' });
@@ -69,6 +70,7 @@ class NativeBridgeService {
   public async hideSplashScreen() {
     if (!this.isNative) return;
     try {
+      // @ts-ignore
       const { SplashScreen } = await import('@capacitor/splash-screen');
       await SplashScreen.hide();
     } catch {}
@@ -80,6 +82,7 @@ class NativeBridgeService {
   public async triggerHaptic(durationMs: number = 15, style: 'light' | 'medium' | 'heavy' = 'light') {
     if (this.isNative) {
       try {
+        // @ts-ignore
         const { Haptics, ImpactStyle } = await import('@capacitor/haptics');
         const capStyle =
           style === 'heavy' ? ImpactStyle.Heavy : style === 'medium' ? ImpactStyle.Medium : ImpactStyle.Light;
@@ -101,6 +104,7 @@ class NativeBridgeService {
   public async scheduleDawaReminder(reminder: MedicineReminderNotification): Promise<boolean> {
     if (this.isNative) {
       try {
+        // @ts-ignore
         const { LocalNotifications } = await import('@capacitor/local-notifications');
         const perm = await LocalNotifications.requestPermissions();
         if (perm.display === 'granted') {
@@ -152,6 +156,7 @@ class NativeBridgeService {
   public async capturePrescriptionPhoto(): Promise<string | null> {
     if (this.isNative) {
       try {
+        // @ts-ignore
         const { Camera, CameraResultType, CameraSource } = await import('@capacitor/camera');
         const image = await Camera.getPhoto({
           quality: 90,
@@ -200,11 +205,12 @@ class NativeBridgeService {
     // If Capacitor App plugin available
     let removeListener: (() => void) | null = null;
     if (this.isNative) {
+      // @ts-ignore
       import('@capacitor/app')
-        .then(({ App }) => {
+        .then(({ App }: any) => {
           App.addListener('backButton', () => {
             onBack();
-          }).then((handle) => {
+          }).then((handle: any) => {
             removeListener = () => handle.remove();
           });
         })

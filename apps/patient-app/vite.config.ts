@@ -22,6 +22,7 @@ export default defineConfig({
     emptyOutDir: false,
     chunkSizeWarningLimit: 3000,
     rollupOptions: {
+      external: [/^@capacitor\/.*/],
       output: {
         manualChunks(id) {
           if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {

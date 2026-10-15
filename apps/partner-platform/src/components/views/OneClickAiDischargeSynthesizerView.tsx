@@ -381,6 +381,7 @@ export const OneClickAiDischargeSynthesizerView: React.FC = () => {
               1-Click AI Inpatient Discharge Summary Synthesizer
             </h1>
             <Badge variant="success">NABH 5th Edition & NHA ABDM Certified</Badge>
+            {synthesizedSuccess && <Badge variant="info">AI Synthesized ({partnerProfile.entityLegalName})</Badge>}
           </div>
           <p style={{ color: '#94A3B8', fontSize: '0.85rem', margin: 0, maxWidth: '850px' }}>
             Synthesizes multi-day admission notes, OT surgery logs, 24-hr ICU vitals, and lab trends into a complete NABH Discharge Summary in <strong>&lt; 3 seconds</strong>, reducing resident doctor documentation burden from 45 minutes to 1 click.

@@ -26,6 +26,7 @@ import { ScanAndShareCounterView } from './views/ScanAndShareCounterView.js';
 import { HfrHprRegistryView } from './views/HfrHprRegistryView.js';
 import { AbdmGatewayAuditVaultView } from './views/AbdmGatewayAuditVaultView.js';
 import { TabOverflowMenu } from './common/TabOverflowMenu.js';
+import { AbdmMilestoneSandboxSimulatorView } from './views/AbdmMilestoneSandboxSimulatorView.js';
 
 // Dialogs
 import { CreateAbhaNumberDialog } from './dialogs/CreateAbhaNumberDialog.js';
@@ -36,6 +37,7 @@ import { ProcessScanAndShareDialog } from './dialogs/ProcessScanAndShareDialog.j
 
 type AbdmTab =
   | 'OVERVIEW'
+  | 'M1_M2_M3_SIMULATOR'
   | 'ABHA_REGISTRY'
   | 'CARE_CONTEXTS'
   | 'CONSENT_MANAGER'
@@ -148,6 +150,7 @@ export const AbdmFhirDomainManager: React.FC<Props> = ({ tenantId }) => {
       >
         {[
           { id: 'OVERVIEW' as AbdmTab, label: '🏛️ Gateway Overview' },
+          { id: 'M1_M2_M3_SIMULATOR' as AbdmTab, label: '🇮🇳 ABDM M1/M2/M3 Simulator' },
           { id: 'ABHA_REGISTRY' as AbdmTab, label: '🪪 ABHA (M1)' },
           { id: 'CARE_CONTEXTS' as AbdmTab, label: '🔗 Care Contexts (M2)' },
           { id: 'CONSENT_MANAGER' as AbdmTab, label: '🛡️ Consents (HIU)' },
@@ -217,6 +220,8 @@ export const AbdmFhirDomainManager: React.FC<Props> = ({ tenantId }) => {
           onScanAndShare={() => setShowScanAndShare(true)}
         />
       )}
+
+      {activeTab === 'M1_M2_M3_SIMULATOR' && <AbdmMilestoneSandboxSimulatorView />}
 
       {activeTab === 'ABHA_REGISTRY' && (
         <AbhaManagementView
