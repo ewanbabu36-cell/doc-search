@@ -77,6 +77,7 @@ import { IPDReportsView } from './views/IPDReportsView.js';
 import { IPDAuditVaultView } from './views/IPDAuditVaultView.js';
 import { BedOccupancyAnalyticsView } from './views/BedOccupancyAnalyticsView.js';
 import { InstantNhcxAutoAdjudicationView } from './views/InstantNhcxAutoAdjudicationView.js';
+import { OneClickAiDischargeSynthesizerView } from './views/OneClickAiDischargeSynthesizerView.js';
 import { SmartHospitalIotBedOrchestrationView } from './views/SmartHospitalIotBedOrchestrationView.js';
 import { TabOverflowMenu } from './common/TabOverflowMenu.js';
 
@@ -139,6 +140,7 @@ export type InpatientTab =
   | 'rounds'
   | 'discharge-planning'
   | 'discharge-workbench'
+  | 'ai-discharge-synthesizer'
   | 'nhcx-auto-discharge'
   | 'discharge-summaries'
   | 'bed-turnaround'
@@ -566,7 +568,8 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
     { id: 'patient-census', label: '3. Daily Patient Census', icon: '📋', count: activeInpatientsCount },
     { id: 'rounds', label: '4. Doctor Daily Rounds', icon: '👨‍⚕️' },
     { id: 'admissions', label: '5. Admission Requests', icon: '📝', count: safeRequests.filter((r) => r?.status === 'SUBMITTED').length },
-    { id: 'discharge-workbench', label: '6. Discharge & Clearances', icon: '🚪', count: plannedDischargesCount }
+    { id: 'discharge-workbench', label: '6. Discharge & Clearances', icon: '🚪', count: plannedDischargesCount },
+    { id: 'ai-discharge-synthesizer', label: '7. ⚡ AI Discharge Synthesizer', icon: '⚡' }
   ];
 
   const secondaryFacilityTabs: { id: InpatientTab; label: string; icon: string }[] = [
@@ -1144,6 +1147,10 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
             setIsFinalizeSummaryOpen(true);
           }}
         />
+      )}
+
+      {activeTab === 'ai-discharge-synthesizer' && (
+        <OneClickAiDischargeSynthesizerView />
       )}
 
       {activeTab === 'nhcx-auto-discharge' && (

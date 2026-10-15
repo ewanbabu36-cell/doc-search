@@ -47,6 +47,7 @@ import { RadiologyQualityView } from './views/RadiologyQualityView.js';
 import { RadiologyAnalyticsView } from './views/RadiologyAnalyticsView.js';
 import { RadiologyAuditVaultView } from './views/RadiologyAuditVaultView.js';
 import { WebDicomAiHeatmapViewer } from './views/WebDicomAiHeatmapViewer.js';
+import { DicomModalityWorklistBrokerView } from './views/DicomModalityWorklistBrokerView.js';
 import { TabOverflowMenu } from './common/TabOverflowMenu.js';
 import { DocSearchSpatialCore3D, Alert, SkeletonPage } from '@docsearch/ui-kit';
 import { hospitalEventBus } from '../services/hospital-event-bus.js';
@@ -74,6 +75,7 @@ export interface RadiologyDomainManagerProps {
 type TabType =
   | 'overview'
   | 'ai-chest-xray'
+  | 'dicom-mwl-broker'
   | 'orders'
   | 'scheduling'
   | 'modalities'
@@ -206,6 +208,7 @@ export const RadiologyDomainManager: React.FC<RadiologyDomainManagerProps> = ({ 
   const tabs: { id: TabType; label: string; count?: number; badgeVariant?: TabBadgeVariant }[] = [
     { id: 'overview', label: 'Radiology Overview' },
     { id: 'ai-chest-xray', label: '🔥 Web DICOM AI Heatmap', count: 3, badgeVariant: 'danger' },
+    { id: 'dicom-mwl-broker', label: '📡 Modality Worklist (MWL)', count: 5, badgeVariant: 'primary' },
     { id: 'orders', label: 'Imaging Orders', count: orders.length },
     { id: 'scheduling', label: 'Modality Scheduling', count: appointments.length },
     { id: 'modalities', label: 'Modality Fleet', count: modalities.length },
@@ -228,7 +231,7 @@ export const RadiologyDomainManager: React.FC<RadiologyDomainManagerProps> = ({ 
     { id: 'control-center', label: '🎛️ Modality Control Center' },
   ];
 
-  const primaryTabIds: TabType[] = ['overview', 'tech-worklist', 'ai-chest-xray', 'radiologist-workbench', 'scheduling', 'orders'];
+  const primaryTabIds: TabType[] = ['overview', 'tech-worklist', 'dicom-mwl-broker', 'ai-chest-xray', 'radiologist-workbench', 'scheduling', 'orders'];
   const primaryTabs = tabs.filter((t) => primaryTabIds.includes(t.id));
   const secondaryTabs = tabs.filter((t) => !primaryTabIds.includes(t.id));
 
@@ -303,10 +306,10 @@ export const RadiologyDomainManager: React.FC<RadiologyDomainManagerProps> = ({ 
         </div>
       </div>
 
-      {/* 4-Pillar Quick Navigation Bar for Radiologist / Radiographer Workstation */}
+      {/* 5-Pillar Quick Navigation Bar for Radiologist / Radiographer Workstation */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
         gap: '12px',
         marginBottom: '16px'
       }}>
@@ -336,7 +339,33 @@ export const RadiologyDomainManager: React.FC<RadiologyDomainManagerProps> = ({ 
           <span style={{ fontSize: '1.4rem' }}>🩻</span>
         </div>
 
-        {/* Pillar 2: 🖥️ PACS DICOM Viewer */}
+        {/* Pillar 2: 📡 Modality Worklist (MWL) Broker */}
+        <div
+          onClick={() => setActiveTab('dicom-mwl-broker')}
+          style={{
+            backgroundColor: activeTab === 'dicom-mwl-broker' ? 'rgba(99, 102, 241, 0.2)' : 'var(--ds-color-surface)',
+            border: `1.5px solid ${activeTab === 'dicom-mwl-broker' ? '#6366F1' : 'var(--ds-color-border)'}`,
+            borderRadius: '10px',
+            padding: '12px 16px',
+            cursor: 'pointer',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <div>
+            <span style={{ fontSize: '0.68rem', color: '#818CF8', fontWeight: 700, textTransform: 'uppercase' }}>
+              📡 2. MWL Broker (Port 11112)
+            </span>
+            <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#A5B4FC' }}>
+              C-FIND SCP Active
+            </div>
+          </div>
+          <span style={{ fontSize: '1.4rem' }}>📡</span>
+        </div>
+
+        {/* Pillar 3: 🖥️ PACS DICOM Viewer */}
         <div
           onClick={() => setActiveTab('ai-chest-xray')}
           style={{
@@ -353,7 +382,7 @@ export const RadiologyDomainManager: React.FC<RadiologyDomainManagerProps> = ({ 
         >
           <div>
             <span style={{ fontSize: '0.68rem', color: '#7DD3FC', fontWeight: 700, textTransform: 'uppercase' }}>
-              🖥️ 2. PACS DICOM Viewer
+              🖥️ 3. PACS DICOM Viewer
             </span>
             <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#38BDF8' }}>
               Web DICOM & AI
@@ -362,7 +391,7 @@ export const RadiologyDomainManager: React.FC<RadiologyDomainManagerProps> = ({ 
           <span style={{ fontSize: '1.4rem' }}>🖥️</span>
         </div>
 
-        {/* Pillar 3: ✍️ Sign Radiology Report */}
+        {/* Pillar 4: ✍️ Sign Radiology Report */}
         <div
           onClick={() => setActiveTab('radiologist-workbench')}
           style={{
@@ -379,7 +408,7 @@ export const RadiologyDomainManager: React.FC<RadiologyDomainManagerProps> = ({ 
         >
           <div>
             <span style={{ fontSize: '0.68rem', color: '#D8B4FE', fontWeight: 700, textTransform: 'uppercase' }}>
-              ✍️ 3. Sign Radiology Report
+              ✍️ 4. Sign Radiology Report
             </span>
             <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#C084FC' }}>
               {studies.filter((s) => s.status === 'ACQUIRED').length} Awaiting Sign
@@ -388,7 +417,7 @@ export const RadiologyDomainManager: React.FC<RadiologyDomainManagerProps> = ({ 
           <span style={{ fontSize: '1.4rem' }}>✍️</span>
         </div>
 
-        {/* Pillar 4: ⏱️ Modality Scheduling */}
+        {/* Pillar 5: ⏱️ Modality Scheduling */}
         <div
           onClick={() => setActiveTab('scheduling')}
           style={{
@@ -405,7 +434,7 @@ export const RadiologyDomainManager: React.FC<RadiologyDomainManagerProps> = ({ 
         >
           <div>
             <span style={{ fontSize: '0.68rem', color: '#6EE7B7', fontWeight: 700, textTransform: 'uppercase' }}>
-              ⏱️ 4. Modality Scheduling
+              ⏱️ 5. Modality Scheduling
             </span>
             <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#34D399' }}>
               {appointments.length} Booked Slots
@@ -626,6 +655,13 @@ export const RadiologyDomainManager: React.FC<RadiologyDomainManagerProps> = ({ 
 
         {activeTab === 'pacs' && <WebDicomAiHeatmapViewer />}
         {activeTab === 'ai-chest-xray' && <WebDicomAiHeatmapViewer />}
+        {activeTab === 'dicom-mwl-broker' && (
+          <DicomModalityWorklistBrokerView
+            onOpenPacsViewer={(_acc) => {
+              setActiveTab('ai-chest-xray');
+            }}
+          />
+        )}
 
         {activeTab === 'catalog' && <RadiologyProcedureCatalogView procedures={procedures} />}
 
