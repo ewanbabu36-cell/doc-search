@@ -50,7 +50,9 @@ export const CANONICAL_FACILITY_PROFILES: Record<CanonicalWorkspaceType, Normali
       'LIMS Testing Workbench',
       'Barcodes & Phlebotomy Accession',
       'WhatsApp Report Delivery',
-      'ABDM 2.0 Diagnostic Link'
+      'ABDM 2.0 Diagnostic Link',
+      'B2B Reagents & Consumables Sourcing',
+      'NABL Quality & Panic Broadcast'
     ],
     isRestricted: false
   },
@@ -70,7 +72,9 @@ export const CANONICAL_FACILITY_PROFILES: Record<CanonicalWorkspaceType, Normali
       'Clinic Dispensary POS',
       'Instant UPI & Billing',
       'WhatsApp Digital Rx',
-      'ABDM Scan & Share'
+      'ABDM Scan & Share',
+      'Telemedicine Video Consult',
+      'B2B Medicine & Supply Restock'
     ],
     isRestricted: false
   },
@@ -88,7 +92,9 @@ export const CANONICAL_FACILITY_PROFILES: Record<CanonicalWorkspaceType, Normali
       'Stock Inward & Batch Expiry',
       'Drug Formulary Catalog',
       'Schedule H1 Compliance Register',
-      'WhatsApp Bill & Receipt'
+      'WhatsApp Bill & Receipt',
+      'Direct B2B Wholesale Depot Procurement',
+      'Auto-GRN Stock Reconciliation'
     ],
     isRestricted: false
   },
@@ -105,7 +111,10 @@ export const CANONICAL_FACILITY_PROFILES: Record<CanonicalWorkspaceType, Normali
       'Modality Scheduling',
       'Cashless TPA Pre-Auth',
       'Diagnostic Billing POS',
-      'WhatsApp Imaging Reports'
+      'WhatsApp Imaging Reports',
+      'Pathology Laboratory LIMS',
+      'Medical Equipment & AMC Maintenance',
+      'B2B Consumables Procurement'
     ],
     isRestricted: false
   },
@@ -120,7 +129,7 @@ export const CANONICAL_FACILITY_PROFILES: Record<CanonicalWorkspaceType, Normali
     accessibleFeatures: [
       'Multi-Department HIS & Closed Loop',
       'Inpatient ADT & Bed Management',
-      'Emergency & Trauma Care (ER)',
+      'Emergency & Trauma Care (ER Code Blue)',
       'Operation Theatres (OT)',
       'Blood Bank & Transfusion',
       'Doctor OPD Desk & EMR',
@@ -129,7 +138,10 @@ export const CANONICAL_FACILITY_PROFILES: Record<CanonicalWorkspaceType, Normali
       'Hospital Pharmacy POS',
       'Billing POS & Multi-Party UPI',
       'TPA Cashless Claims & NHCX',
-      'NABH Quality & Infection Control'
+      'NABH Quality & Infection Control',
+      'B2B Wholesale Medical & Chemical Procurement',
+      'Biomedical Asset IoT & Maintenance',
+      'Central Dietary & Kitchen'
     ],
     isRestricted: false
   },
@@ -146,6 +158,7 @@ export const CANONICAL_FACILITY_PROFILES: Record<CanonicalWorkspaceType, Normali
       'Multi-Facility Governance',
       'Enterprise Inpatient Census',
       'Enterprise Revenue & Escrow',
+      'Central Supply Chain & Depot Command',
       'Global Audit & Compliance'
     ],
     isRestricted: false
@@ -366,7 +379,14 @@ export const PARTNER_PROFILE_ALLOWED_MODULES: Readonly<Record<string, readonly s
     'PATIENTS',
     'APPOINTMENTS',
     'ABDM',
-    'WHATSAPP'
+    'WHATSAPP',
+    'WHATSAPP_PATIENT_PORTAL',
+    'PROCUREMENT',
+    'PROCUREMENT_SUPPLY_CHAIN',
+    'SUPPLY_CHAIN',
+    'QUALITY',
+    'QUALITY_INCIDENT_INFECTION_CONTROL',
+    'NABH'
   ],
   DIAGNOSTIC_LAB: [
     'OPERATIONS',
@@ -379,7 +399,14 @@ export const PARTNER_PROFILE_ALLOWED_MODULES: Readonly<Record<string, readonly s
     'PATIENTS',
     'APPOINTMENTS',
     'ABDM',
-    'WHATSAPP'
+    'WHATSAPP',
+    'WHATSAPP_PATIENT_PORTAL',
+    'PROCUREMENT',
+    'PROCUREMENT_SUPPLY_CHAIN',
+    'SUPPLY_CHAIN',
+    'QUALITY',
+    'QUALITY_INCIDENT_INFECTION_CONTROL',
+    'NABH'
   ],
   PHARMACY: [
     'OPERATIONS',
@@ -389,7 +416,13 @@ export const PARTNER_PROFILE_ALLOWED_MODULES: Readonly<Record<string, readonly s
     'TPA_INSURANCE',
     'STAFF',
     'PATIENTS',
-    'WHATSAPP'
+    'WHATSAPP',
+    'WHATSAPP_PATIENT_PORTAL',
+    'PROCUREMENT',
+    'PROCUREMENT_SUPPLY_CHAIN',
+    'SUPPLY_CHAIN',
+    'QUALITY',
+    'QUALITY_INCIDENT_INFECTION_CONTROL'
   ],
   PHARMACY_WHOLESALE: [
     'OPERATIONS',
@@ -399,7 +432,13 @@ export const PARTNER_PROFILE_ALLOWED_MODULES: Readonly<Record<string, readonly s
     'TPA_INSURANCE',
     'STAFF',
     'PATIENTS',
-    'WHATSAPP'
+    'WHATSAPP',
+    'WHATSAPP_PATIENT_PORTAL',
+    'PROCUREMENT',
+    'PROCUREMENT_SUPPLY_CHAIN',
+    'SUPPLY_CHAIN',
+    'QUALITY',
+    'QUALITY_INCIDENT_INFECTION_CONTROL'
   ],
   CLINIC: [
     'OPERATIONS',
@@ -414,8 +453,18 @@ export const PARTNER_PROFILE_ALLOWED_MODULES: Readonly<Record<string, readonly s
     'APPOINTMENTS',
     'ABDM',
     'WHATSAPP',
+    'WHATSAPP_PATIENT_PORTAL',
     'AI_COPILOT',
-    'MODULE_AI_COPILOT'
+    'MODULE_AI_COPILOT',
+    'AI_CDSS',
+    'PROCUREMENT',
+    'PROCUREMENT_SUPPLY_CHAIN',
+    'SUPPLY_CHAIN',
+    'TELEMEDICINE',
+    'TELEMEDICINE_RPM',
+    'QUALITY',
+    'QUALITY_INCIDENT_INFECTION_CONTROL',
+    'NABH'
   ],
   CLINIC_OPD: [
     'OPERATIONS',
@@ -430,8 +479,18 @@ export const PARTNER_PROFILE_ALLOWED_MODULES: Readonly<Record<string, readonly s
     'APPOINTMENTS',
     'ABDM',
     'WHATSAPP',
+    'WHATSAPP_PATIENT_PORTAL',
     'AI_COPILOT',
-    'MODULE_AI_COPILOT'
+    'MODULE_AI_COPILOT',
+    'AI_CDSS',
+    'PROCUREMENT',
+    'PROCUREMENT_SUPPLY_CHAIN',
+    'SUPPLY_CHAIN',
+    'TELEMEDICINE',
+    'TELEMEDICINE_RPM',
+    'QUALITY',
+    'QUALITY_INCIDENT_INFECTION_CONTROL',
+    'NABH'
   ],
   COMBO_CLINIC_PATHOLOGY: [
     'OPERATIONS',
@@ -449,8 +508,18 @@ export const PARTNER_PROFILE_ALLOWED_MODULES: Readonly<Record<string, readonly s
     'APPOINTMENTS',
     'ABDM',
     'WHATSAPP',
+    'WHATSAPP_PATIENT_PORTAL',
     'AI_COPILOT',
-    'MODULE_AI_COPILOT'
+    'MODULE_AI_COPILOT',
+    'AI_CDSS',
+    'PROCUREMENT',
+    'PROCUREMENT_SUPPLY_CHAIN',
+    'SUPPLY_CHAIN',
+    'TELEMEDICINE',
+    'TELEMEDICINE_RPM',
+    'QUALITY',
+    'QUALITY_INCIDENT_INFECTION_CONTROL',
+    'NABH'
   ],
   COMBO_CLINIC_PHARMACY: [
     'OPERATIONS',
@@ -467,8 +536,18 @@ export const PARTNER_PROFILE_ALLOWED_MODULES: Readonly<Record<string, readonly s
     'APPOINTMENTS',
     'ABDM',
     'WHATSAPP',
+    'WHATSAPP_PATIENT_PORTAL',
     'AI_COPILOT',
-    'MODULE_AI_COPILOT'
+    'MODULE_AI_COPILOT',
+    'AI_CDSS',
+    'PROCUREMENT',
+    'PROCUREMENT_SUPPLY_CHAIN',
+    'SUPPLY_CHAIN',
+    'TELEMEDICINE',
+    'TELEMEDICINE_RPM',
+    'QUALITY',
+    'QUALITY_INCIDENT_INFECTION_CONTROL',
+    'NABH'
   ],
   DIAGNOSTIC_CENTRE: [
     'OPERATIONS',
@@ -483,7 +562,16 @@ export const PARTNER_PROFILE_ALLOWED_MODULES: Readonly<Record<string, readonly s
     'PATIENTS',
     'APPOINTMENTS',
     'ABDM',
-    'WHATSAPP'
+    'WHATSAPP',
+    'WHATSAPP_PATIENT_PORTAL',
+    'PROCUREMENT',
+    'PROCUREMENT_SUPPLY_CHAIN',
+    'SUPPLY_CHAIN',
+    'BIOMEDICAL',
+    'ASSET_BIOMEDICAL_MAINTENANCE',
+    'QUALITY',
+    'QUALITY_INCIDENT_INFECTION_CONTROL',
+    'NABH'
   ],
   RADIOLOGY: [
     'OPERATIONS',
@@ -498,7 +586,16 @@ export const PARTNER_PROFILE_ALLOWED_MODULES: Readonly<Record<string, readonly s
     'PATIENTS',
     'APPOINTMENTS',
     'ABDM',
-    'WHATSAPP'
+    'WHATSAPP',
+    'WHATSAPP_PATIENT_PORTAL',
+    'PROCUREMENT',
+    'PROCUREMENT_SUPPLY_CHAIN',
+    'SUPPLY_CHAIN',
+    'BIOMEDICAL',
+    'ASSET_BIOMEDICAL_MAINTENANCE',
+    'QUALITY',
+    'QUALITY_INCIDENT_INFECTION_CONTROL',
+    'NABH'
   ],
   HOSPITAL: [
     'OPERATIONS',
@@ -530,9 +627,21 @@ export const PARTNER_PROFILE_ALLOWED_MODULES: Readonly<Record<string, readonly s
     'APPOINTMENTS',
     'ABDM',
     'WHATSAPP',
+    'WHATSAPP_PATIENT_PORTAL',
     'AI_COPILOT',
     'MODULE_AI_COPILOT',
-    'EXECUTIVE_COMMAND'
+    'AI_CDSS',
+    'EXECUTIVE_COMMAND',
+    'PROCUREMENT',
+    'PROCUREMENT_SUPPLY_CHAIN',
+    'SUPPLY_CHAIN',
+    'BIOMEDICAL',
+    'ASSET_BIOMEDICAL_MAINTENANCE',
+    'QUALITY',
+    'QUALITY_INCIDENT_INFECTION_CONTROL',
+    'NABH',
+    'TELEMEDICINE',
+    'TELEMEDICINE_RPM'
   ],
   ENTERPRISE_COMMAND: [
     'OPERATIONS',
@@ -564,9 +673,21 @@ export const PARTNER_PROFILE_ALLOWED_MODULES: Readonly<Record<string, readonly s
     'APPOINTMENTS',
     'ABDM',
     'WHATSAPP',
+    'WHATSAPP_PATIENT_PORTAL',
     'AI_COPILOT',
     'MODULE_AI_COPILOT',
-    'EXECUTIVE_COMMAND'
+    'AI_CDSS',
+    'EXECUTIVE_COMMAND',
+    'PROCUREMENT',
+    'PROCUREMENT_SUPPLY_CHAIN',
+    'SUPPLY_CHAIN',
+    'BIOMEDICAL',
+    'ASSET_BIOMEDICAL_MAINTENANCE',
+    'QUALITY',
+    'QUALITY_INCIDENT_INFECTION_CONTROL',
+    'NABH',
+    'TELEMEDICINE',
+    'TELEMEDICINE_RPM'
   ],
   RESTRICTED: []
 };
@@ -592,33 +713,57 @@ export function isModuleAllowedForPartnerProfile(rawPartnerType: string | null |
 
   if (allowed.includes(normMod)) return true;
 
-  // Map granular sub-feature codes to their canonical parent module boundary
+  // Map granular sub-feature codes and UI slugs to their canonical parent module boundary
+  if (normMod.startsWith('EMERGENCY') || normMod.includes('TRAUMA') || normMod === 'EMERGENCY-TRAUMA') {
+    return allowed.includes('EMERGENCY') || allowed.includes('EMERGENCY_ICU');
+  }
+  if (normMod.startsWith('ICU') || normMod.includes('CRITICAL_CARE') || normMod === 'ICU-CRITICAL-CARE') {
+    return allowed.includes('EMERGENCY_ICU') || allowed.includes('INPATIENT_IPD') || allowed.includes('INPATIENT');
+  }
+  if (normMod.startsWith('OT') || normMod.includes('SURGERY') || normMod === 'OT-MANAGEMENT') {
+    return allowed.includes('OT') || allowed.includes('OT_SURGERY');
+  }
+  if (normMod.startsWith('IPD') || normMod.startsWith('INPATIENT_') || normMod === 'IPD-WARDS' || normMod === 'INPATIENT-MANAGEMENT') {
+    return allowed.includes('INPATIENT_IPD') || allowed.includes('INPATIENT');
+  }
   if (normMod.startsWith('PHARMACY_WHOLESALE')) {
     return allowed.includes('PHARMACY_WHOLESALE');
   }
-  if (normMod.startsWith('PHARMACY_')) {
-    return allowed.includes('PHARMACY_POS');
+  if (normMod.startsWith('PHARMACY_') || normMod === 'PHARMACY-MEDICATION' || normMod === 'PHARMACY-POS') {
+    return allowed.includes('PHARMACY_POS') || allowed.includes('PHARMACY');
   }
-  if (normMod.startsWith('LAB_') || normMod.startsWith('PATHOLOGY_')) {
+  if (normMod.startsWith('LAB_') || normMod.startsWith('PATHOLOGY_') || normMod === 'PATHOLOGY-LIMS' || normMod === 'CLINICAL-INVESTIGATION') {
     return allowed.includes('PATHOLOGY_LIMS') || allowed.includes('PATHOLOGY') || allowed.includes('LAB');
   }
-  if (normMod.startsWith('RADIOLOGY_')) {
+  if (normMod.startsWith('RADIOLOGY_') || normMod === 'RADIOLOGY-IMAGING' || normMod === 'RADIOLOGY-PACS') {
     return allowed.includes('RADIOLOGY_PACS') || allowed.includes('RADIOLOGY');
   }
-  if (normMod.startsWith('INPATIENT_')) {
-    return allowed.includes('INPATIENT_IPD') || allowed.includes('INPATIENT');
-  }
-  if (normMod.startsWith('CLINICAL_') || normMod.startsWith('OPD_')) {
+  if (normMod.startsWith('CLINICAL_') || normMod.startsWith('OPD_') || normMod === 'CLINICAL-CONSULTATION' || normMod === 'OPD-CONSULTATION') {
     return allowed.includes('CLINICAL_EMR') || allowed.includes('CLINICAL') || allowed.includes('OPD');
   }
-  if (normMod.startsWith('BILLING_') || normMod.startsWith('INSURANCE_')) {
+  if (normMod.startsWith('BILLING_') || normMod.startsWith('INSURANCE_') || normMod === 'BILLING-REVENUE-CYCLE' || normMod === 'BILLING-REVENUE' || normMod === 'INSURANCE-CLAIMS') {
     return allowed.includes('BILLING') || allowed.includes('TPA_INSURANCE');
   }
-  if (normMod.startsWith('ABDM')) {
+  if (normMod.startsWith('ABDM') || normMod === 'ABDM-FHIR-GATEWAY') {
     return allowed.includes('ABDM') || allowed.includes('ABDM_GATEWAY');
   }
-  if (normMod.startsWith('WHATSAPP')) {
-    return allowed.includes('WHATSAPP') || allowed.includes('WHATSAPP_AUTOMATION');
+  if (normMod.startsWith('WHATSAPP') || normMod === 'WHATSAPP-PATIENT-PORTAL') {
+    return allowed.includes('WHATSAPP') || allowed.includes('WHATSAPP_AUTOMATION') || allowed.includes('WHATSAPP_PATIENT_PORTAL');
+  }
+  if (normMod.startsWith('PROCUREMENT') || normMod.includes('SUPPLY_CHAIN') || normMod === 'PROCUREMENT-SUPPLY-CHAIN') {
+    return allowed.includes('PROCUREMENT') || allowed.includes('PROCUREMENT_SUPPLY_CHAIN') || allowed.includes('SUPPLY_CHAIN');
+  }
+  if (normMod.startsWith('ASSET_') || normMod.includes('BIOMEDICAL') || normMod === 'ASSET-BIOMEDICAL-MAINTENANCE') {
+    return allowed.includes('BIOMEDICAL') || allowed.includes('ASSET_BIOMEDICAL_MAINTENANCE');
+  }
+  if (normMod.startsWith('QUALITY') || normMod.includes('INFECTION') || normMod.includes('NABH') || normMod === 'QUALITY-INCIDENT-INFECTION-CONTROL') {
+    return allowed.includes('QUALITY') || allowed.includes('QUALITY_INCIDENT_INFECTION_CONTROL') || allowed.includes('NABH');
+  }
+  if (normMod.startsWith('TELEMEDICINE') || normMod.includes('RPM') || normMod === 'TELEMEDICINE-RPM') {
+    return allowed.includes('TELEMEDICINE') || allowed.includes('TELEMEDICINE_RPM');
+  }
+  if (normMod.startsWith('AI') || normMod === 'AI-CLINICAL-CDSS' || normMod === 'AI-CHAT-ASSISTANT') {
+    return allowed.includes('AI_COPILOT') || allowed.includes('MODULE_AI_COPILOT') || allowed.includes('AI_CDSS');
   }
 
   return false;

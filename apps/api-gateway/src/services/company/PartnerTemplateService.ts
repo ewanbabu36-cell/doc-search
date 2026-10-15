@@ -117,13 +117,14 @@ export const INITIAL_MASTER_TEMPLATES: TemplateBlueprint[] = [
     code: 'TPL_CLINIC_BASIC',
     name: 'Clinic Basic',
     category: 'CLINIC',
-    description: 'Entry outpatient practice management with basic OPD queue, patient EMR and billing receipts.',
+    description: 'Entry outpatient practice management with basic OPD queue, patient EMR, digital Rx and billing receipts.',
     supportedProfiles: ['CLINIC'],
-    capabilities: ['OPD', 'BILLING', 'COMMUNICATION'],
+    capabilities: ['OPD', 'BILLING', 'COMMUNICATION', 'WHATSAPP', 'ABDM', 'PROCUREMENT'],
     departments: [
       { code: 'OPD_RECEPTION', name: 'Reception & Patient Desk', capabilities: ['OPD'] },
       { code: 'OPD_CLINIC', name: 'General Outpatient Clinic', capabilities: ['OPD'] },
-      { code: 'BILLING_CASHIER', name: 'Accounts & Cashier', capabilities: ['BILLING'] }
+      { code: 'BILLING_CASHIER', name: 'Accounts & Cashier Desk', capabilities: ['BILLING'] },
+      { code: 'CLINIC_SUPPLY', name: 'Clinic Sourcing & Restock', capabilities: ['PROCUREMENT'] }
     ],
     defaultRoles: [
       {
@@ -155,13 +156,13 @@ export const INITIAL_MASTER_TEMPLATES: TemplateBlueprint[] = [
       }
     ],
     permissionPacks: ['PACK_OPD_BASIC', 'PACK_CLINICAL_DOCS', 'PACK_RECEPTION_DESK', 'PACK_BILLING_DESK'],
-    features: ['opd.queue', 'patient.emr', 'prescription.basic', 'billing.invoices', 'whatsapp.alerts'],
+    features: ['opd.queue', 'patient.emr', 'prescription.basic', 'billing.invoices', 'whatsapp.alerts', 'abdm.abha', 'procurement.restock_cart'],
     limits: {
       maxBeds: 0,
       maxDoctors: 3,
       maxBranches: 1,
-      storageQuotaGb: 10,
-      monthlyWhatsAppCredits: 500
+      storageQuotaGb: 25,
+      monthlyWhatsAppCredits: 1000
     },
     policies: []
   },
@@ -171,15 +172,16 @@ export const INITIAL_MASTER_TEMPLATES: TemplateBlueprint[] = [
     code: 'TPL_CLINIC_PRO',
     name: 'Clinic Pro',
     category: 'CLINIC',
-    description: 'Advanced multi-doctor polyclinic with AI voice scribe, retail pharmacy POS and lab investigations.',
+    description: 'Advanced multi-doctor polyclinic with ambient AI voice scribe, smart Rx, Jan Aushadhi generic switcher, dispensary POS, ABDM scan & share, and B2B clinic restock.',
     supportedProfiles: ['CLINIC', 'PHARMACY', 'LABORATORY'],
-    capabilities: ['OPD', 'PHARMACY', 'LABORATORY', 'BILLING', 'AI', 'COMMUNICATION', 'INTEGRATION'],
+    capabilities: ['OPD', 'PHARMACY', 'LABORATORY', 'BILLING', 'AI', 'AI_CDSS', 'COMMUNICATION', 'INTEGRATION', 'ABDM', 'WHATSAPP', 'PROCUREMENT', 'TELEMEDICINE'],
     departments: [
       { code: 'OPD_RECEPTION', name: 'Reception & Queue Management', capabilities: ['OPD'] },
       { code: 'OPD_CONSULTATION', name: 'Clinical Consultation Suites', capabilities: ['OPD', 'AI'] },
       { code: 'CLINIC_PHARMACY', name: 'In-House Dispensary', capabilities: ['PHARMACY'] },
       { code: 'CLINIC_SAMPLE_COLLECTION', name: 'Diagnostic Collection Bay', capabilities: ['LABORATORY'] },
-      { code: 'BILLING_FINANCE', name: 'Billing & TPA Desk', capabilities: ['BILLING'] }
+      { code: 'BILLING_FINANCE', name: 'Billing & TPA Desk', capabilities: ['BILLING'] },
+      { code: 'CLINIC_PROCUREMENT', name: 'B2B Medicine & Consumables Restock Desk', capabilities: ['PROCUREMENT'] }
     ],
     defaultRoles: [
       {
@@ -211,13 +213,27 @@ export const INITIAL_MASTER_TEMPLATES: TemplateBlueprint[] = [
       }
     ],
     permissionPacks: ['PACK_OPD_BASIC', 'PACK_CLINICAL_DOCS', 'PACK_PHARMACY_OPERATOR', 'PACK_LAB_TECH', 'PACK_BILLING_DESK'],
-    features: ['opd.queue', 'patient.emr', 'ai.ambient_scribe', 'pharmacy.pos', 'lab.orders', 'billing.invoices', 'abdm.abha'],
+    features: [
+      'opd.queue',
+      'patient.emr',
+      'ai.ambient_scribe',
+      'prescription.smart_rx',
+      'prescription.jan_aushadhi_switcher',
+      'pharmacy.pos',
+      'lab.orders',
+      'billing.invoices',
+      'abdm.abha',
+      'abdm.scan_and_share',
+      'whatsapp.pdf_rx',
+      'telemedicine.webrtc',
+      'procurement.restock_cart'
+    ],
     limits: {
-      maxBeds: 5,
-      maxDoctors: 10,
-      maxBranches: 2,
-      storageQuotaGb: 50,
-      monthlyWhatsAppCredits: 2000
+      maxBeds: 10,
+      maxDoctors: 20,
+      maxBranches: 3,
+      storageQuotaGb: 100,
+      monthlyWhatsAppCredits: 5000
     },
     policies: []
   },
@@ -227,18 +243,23 @@ export const INITIAL_MASTER_TEMPLATES: TemplateBlueprint[] = [
     code: 'TPL_HOSPITAL_STANDARD',
     name: 'Hospital Standard',
     category: 'HOSPITAL',
-    description: 'Mid-sized 50-bed community hospital with OPD, IPD ward management, OT surgery and 24x7 emergency desk.',
+    description: 'Community hospital with OPD, IPD ward management, OT surgery, 24x7 emergency desk, LIMS, pharmacy, and central B2B wholesale procurement.',
     supportedProfiles: ['HOSPITAL', 'PHARMACY', 'LABORATORY'],
-    capabilities: ['OPD', 'IPD', 'EMERGENCY', 'OT', 'PHARMACY', 'LABORATORY', 'BILLING', 'MRD', 'COMMUNICATION', 'INTEGRATION'],
+    capabilities: [
+      'OPD', 'IPD', 'EMERGENCY', 'OT', 'PHARMACY', 'LABORATORY', 'BILLING', 'MRD',
+      'COMMUNICATION', 'INTEGRATION', 'PROCUREMENT', 'ABDM', 'WHATSAPP', 'INSURANCE_TPA', 'BIOMEDICAL'
+    ],
     departments: [
-      { code: 'HOSP_EMERGENCY', name: 'Emergency & Casualty', capabilities: ['EMERGENCY'] },
+      { code: 'HOSP_EMERGENCY', name: 'Emergency & Casualty (ER)', capabilities: ['EMERGENCY'] },
       { code: 'HOSP_OPD', name: 'Outpatient Specialty Clinics', capabilities: ['OPD'] },
       { code: 'HOSP_IPD_WARDS', name: 'Inpatient General & Private Wards', capabilities: ['IPD'] },
       { code: 'HOSP_OT', name: 'Operation Theatre Block', capabilities: ['OT', 'IPD'] },
-      { code: 'HOSP_PHARMACY', name: 'Central Hospital Pharmacy', capabilities: ['PHARMACY'] },
-      { code: 'HOSP_LAB', name: 'Diagnostic Laboratory', capabilities: ['LABORATORY'] },
-      { code: 'HOSP_BILLING', name: 'Hospital Invoicing & TPA Desk', capabilities: ['BILLING'] },
-      { code: 'HOSP_MRD', name: 'Medical Records Department', capabilities: ['MRD'] }
+      { code: 'HOSP_PHARMACY', name: 'Central Hospital Pharmacy Hub', capabilities: ['PHARMACY'] },
+      { code: 'HOSP_LAB', name: 'Diagnostic Pathology Laboratory', capabilities: ['LABORATORY'] },
+      { code: 'HOSP_BILLING', name: 'Hospital Invoicing & TPA Desk', capabilities: ['BILLING', 'INSURANCE_TPA'] },
+      { code: 'HOSP_MRD', name: 'Medical Records Department (MRD)', capabilities: ['MRD'] },
+      { code: 'HOSP_BIOMEDICAL', name: 'Biomedical Equipment & AMC', capabilities: ['BIOMEDICAL'] },
+      { code: 'HOSP_PROCUREMENT', name: 'Central Wholesale Procurement & Depot Sourcing', capabilities: ['PROCUREMENT'] }
     ],
     defaultRoles: [
       {
@@ -270,13 +291,27 @@ export const INITIAL_MASTER_TEMPLATES: TemplateBlueprint[] = [
       }
     ],
     permissionPacks: ['PACK_OPD_BASIC', 'PACK_CLINICAL_DOCS', 'PACK_NURSING_CORE', 'PACK_PHARMACY_OPERATOR', 'PACK_LAB_TECH', 'PACK_BILLING_DESK', 'PACK_EXECUTIVE_AUDIT'],
-    features: ['opd.queue', 'inpatient.bed_management', 'emergency.triage', 'ot.scheduling', 'pharmacy.pos', 'lab.lims', 'tpa.insurance', 'abdm.abha'],
+    features: [
+      'opd.queue',
+      'inpatient.bed_management',
+      'emergency.triage',
+      'emergency.code_blue',
+      'ot.scheduling',
+      'pharmacy.pos',
+      'lab.lims',
+      'tpa.insurance',
+      'abdm.abha',
+      'whatsapp.reports',
+      'procurement.b2b_wholesale',
+      'auto_grn.sync',
+      'biomedical.amc'
+    ],
     limits: {
-      maxBeds: 50,
-      maxDoctors: 25,
-      maxBranches: 1,
-      storageQuotaGb: 200,
-      monthlyWhatsAppCredits: 5000
+      maxBeds: 100,
+      maxDoctors: 50,
+      maxBranches: 3,
+      storageQuotaGb: 500,
+      monthlyWhatsAppCredits: 10000
     },
     policies: []
   },
@@ -286,31 +321,35 @@ export const INITIAL_MASTER_TEMPLATES: TemplateBlueprint[] = [
     code: 'TPL_HOSPITAL_ENTERPRISE',
     name: 'Hospital Enterprise',
     category: 'HOSPITAL',
-    description: 'Tier-1 tertiary care hospital network with ICU critical care, Cath Lab, PACS Radiology, Blood Bank, AI and TPA auto-adjudication.',
+    description: 'Tier-1 tertiary care hospital network with ICU critical care, Cath Lab, PACS Radiology, Blood Bank, AI CDSS, NHCX cashless claims, and central depot procurement.',
     supportedProfiles: ['HOSPITAL', 'PHARMACY', 'LABORATORY', 'SPECIALTY'],
     capabilities: [
       'OPD', 'IPD', 'EMERGENCY', 'ICU', 'OT', 'LABORATORY', 'PATHOLOGY', 'RADIOLOGY',
-      'PHARMACY', 'BLOOD_BANK', 'MRD', 'DIETARY', 'BILLING', 'FINANCE', 'HR', 'CRM',
-      'ANALYTICS', 'SUPPORT', 'COMMUNICATION', 'AI', 'INTEGRATION'
+      'PHARMACY', 'BLOOD_BANK', 'MRD', 'DIETARY', 'BIOMEDICAL', 'BILLING', 'FINANCE', 'HR', 'CRM',
+      'ANALYTICS', 'SUPPORT', 'COMMUNICATION', 'AI', 'AI_CDSS', 'INTEGRATION', 'ABDM', 'WHATSAPP',
+      'INSURANCE_TPA', 'PROCUREMENT', 'TELEMEDICINE', 'QUALITY_NABH'
     ],
     departments: [
-      { code: 'ENT_EMERGENCY', name: 'Trauma & Emergency Centre', capabilities: ['EMERGENCY'] },
+      { code: 'ENT_EMERGENCY', name: 'Trauma & Emergency Centre (ER Code Blue)', capabilities: ['EMERGENCY'] },
       { code: 'ENT_ICU_CCU', name: 'Critical Care (ICU, CCU, NICU)', capabilities: ['ICU', 'IPD'] },
       { code: 'ENT_SURGERY_OT', name: 'Modular Surgical OT Complex', capabilities: ['OT', 'IPD'] },
       { code: 'ENT_OPD_COMPLEX', name: 'Super-Specialty OPD Complex', capabilities: ['OPD'] },
-      { code: 'ENT_IPD_WARDS', name: 'Executive Inpatient Towers', capabilities: ['IPD'] },
-      { code: 'ENT_RADIOLOGY', name: 'Advanced PACS Imaging & MRI', capabilities: ['RADIOLOGY'] },
-      { code: 'ENT_PATHOLOGY', name: 'NABL Accredited Pathology Lab', capabilities: ['LABORATORY', 'PATHOLOGY'] },
+      { code: 'ENT_IPD_WARDS', name: 'Executive Inpatient Towers & Private Wards', capabilities: ['IPD'] },
+      { code: 'ENT_RADIOLOGY', name: 'Advanced PACS Imaging & MRI/CT Suites', capabilities: ['RADIOLOGY'] },
+      { code: 'ENT_PATHOLOGY', name: 'NABL Accredited Automated Pathology Lab', capabilities: ['LABORATORY', 'PATHOLOGY'] },
       { code: 'ENT_BLOOD_BANK', name: 'Licensed Blood Transfusion Unit', capabilities: ['BLOOD_BANK'] },
-      { code: 'ENT_PHARMACY_HUB', name: 'Central Hospital Pharmacy Hub', capabilities: ['PHARMACY'] },
-      { code: 'ENT_FINANCE', name: 'Corporate Billing & TPA Desk', capabilities: ['BILLING', 'FINANCE'] },
-      { code: 'ENT_MRD_AUDIT', name: 'NABH Quality & MRD Department', capabilities: ['MRD', 'ANALYTICS'] }
+      { code: 'ENT_PHARMACY_HUB', name: 'Central Hospital Pharmacy Hub & Floor Dispensaries', capabilities: ['PHARMACY'] },
+      { code: 'ENT_FINANCE', name: 'Corporate Billing, TPA & NHCX Desk', capabilities: ['BILLING', 'FINANCE', 'INSURANCE_TPA'] },
+      { code: 'ENT_MRD_AUDIT', name: 'NABH Quality & MRD Department', capabilities: ['MRD', 'ANALYTICS', 'QUALITY_NABH'] },
+      { code: 'ENT_DIETARY', name: 'Dietary & Clinical Nutrition Services', capabilities: ['DIETARY'] },
+      { code: 'ENT_BIOMEDICAL', name: 'Biomedical Engineering & Asset Maintenance', capabilities: ['BIOMEDICAL'] },
+      { code: 'ENT_PROCUREMENT', name: 'Central Wholesale Procurement & Depot Fulfillment', capabilities: ['PROCUREMENT'] }
     ],
     defaultRoles: [
       {
         code: 'HOSPITAL_DIRECTOR',
         name: 'Medical Director / CEO',
-        description: 'Ultimate executive authority with multi-branch analytics and compliance controls',
+        description: 'Ultimate executive authority with multi-branch analytics, procurement approvals and compliance controls',
         dataScope: 'PARTNER',
         branchScope: 'ALL_BRANCHES',
         permissions: ['*'],
@@ -349,11 +388,30 @@ export const INITIAL_MASTER_TEMPLATES: TemplateBlueprint[] = [
       }
     ],
     permissionPacks: ['PACK_OPD_BASIC', 'PACK_CLINICAL_DOCS', 'PACK_NURSING_CORE', 'PACK_PHARMACY_OPERATOR', 'PACK_LAB_TECH', 'PACK_BILLING_DESK', 'PACK_EXECUTIVE_AUDIT'],
-    features: ['opd.queue', 'inpatient.bed_management', 'emergency.triage', 'icu.telemetry', 'ot.scheduling', 'pacs.dicom', 'lims.pathology', 'blood_bank.transfusion', 'tpa.nhcx', 'ai.cdss', 'abdm.m1_m2_m3'],
+    features: [
+      'opd.queue',
+      'inpatient.bed_management',
+      'emergency.triage',
+      'emergency.code_blue',
+      'icu.telemetry',
+      'ot.scheduling',
+      'pacs.dicom',
+      'lims.pathology',
+      'blood_bank.transfusion',
+      'tpa.nhcx',
+      'ai.cdss',
+      'ai.ambient_scribe',
+      'abdm.m1_m2_m3',
+      'telemedicine.webrtc',
+      'procurement.b2b_wholesale',
+      'auto_grn.sync',
+      'biomedical.amc',
+      'quality.nabh_audit'
+    ],
     limits: {
       maxBeds: 500,
       maxDoctors: 150,
-      maxBranches: 5,
+      maxBranches: 10,
       storageQuotaGb: 2000,
       monthlyWhatsAppCredits: 50000
     },
@@ -365,14 +423,15 @@ export const INITIAL_MASTER_TEMPLATES: TemplateBlueprint[] = [
     code: 'TPL_DIAGNOSTIC_LAB',
     name: 'Diagnostic Lab',
     category: 'DIAGNOSTICS',
-    description: 'Standalone pathology laboratory with barcode accessioning, analyzer interfacing and WhatsApp reports.',
+    description: 'Standalone pathology laboratory with barcode accessioning, analyzer interfacing, WhatsApp reports, and wholesale reagents procurement.',
     supportedProfiles: ['LABORATORY'],
-    capabilities: ['LABORATORY', 'PATHOLOGY', 'BILLING', 'COMMUNICATION', 'INTEGRATION'],
+    capabilities: ['LABORATORY', 'PATHOLOGY', 'BILLING', 'COMMUNICATION', 'INTEGRATION', 'PROCUREMENT', 'WHATSAPP', 'ABDM'],
     departments: [
       { code: 'LAB_SAMPLE_INTAKE', name: 'Phlebotomy & Sample Reception', capabilities: ['LABORATORY'] },
       { code: 'LAB_BIOCHEMISTRY', name: 'Biochemistry & Hematology', capabilities: ['LABORATORY'] },
       { code: 'LAB_MICROBIOLOGY', name: 'Microbiology & Serology', capabilities: ['PATHOLOGY'] },
-      { code: 'LAB_BILLING', name: 'Cash Counter & Test Booking', capabilities: ['BILLING'] }
+      { code: 'LAB_BILLING', name: 'Cash Counter & Test Booking', capabilities: ['BILLING'] },
+      { code: 'LAB_PROCUREMENT', name: 'Chemicals & Reagents Wholesale Sourcing', capabilities: ['PROCUREMENT'] }
     ],
     defaultRoles: [
       {
@@ -395,13 +454,23 @@ export const INITIAL_MASTER_TEMPLATES: TemplateBlueprint[] = [
       }
     ],
     permissionPacks: ['PACK_LAB_TECH', 'PACK_BILLING_DESK'],
-    features: ['lab.lims', 'barcode.accessioning', 'analyzer.integration', 'whatsapp.reports', 'billing.invoices'],
+    features: [
+      'lab.lims',
+      'barcode.accessioning',
+      'analyzer.integration',
+      'panic.alerts',
+      'pathologist.esign',
+      'whatsapp.reports',
+      'billing.invoices',
+      'abdm.abha',
+      'procurement.reagents'
+    ],
     limits: {
       maxBeds: 0,
-      maxDoctors: 5,
-      maxBranches: 2,
-      storageQuotaGb: 100,
-      monthlyWhatsAppCredits: 10000
+      maxDoctors: 10,
+      maxBranches: 3,
+      storageQuotaGb: 200,
+      monthlyWhatsAppCredits: 15000
     },
     policies: []
   },
@@ -411,13 +480,18 @@ export const INITIAL_MASTER_TEMPLATES: TemplateBlueprint[] = [
     code: 'TPL_DIAGNOSTIC_RADIOLOGY',
     name: 'Diagnostic + Radiology',
     category: 'DIAGNOSTICS',
-    description: 'Integrated imaging and pathology diagnostic centre with DICOM server, MRI, CT and Lab suites.',
+    description: 'Integrated imaging and pathology diagnostic centre with DICOM server, MRI, CT, Lab suites, and medical equipment maintenance.',
     supportedProfiles: ['LABORATORY', 'SPECIALTY'],
-    capabilities: ['LABORATORY', 'PATHOLOGY', 'RADIOLOGY', 'BILLING', 'COMMUNICATION', 'INTEGRATION'],
+    capabilities: [
+      'LABORATORY', 'PATHOLOGY', 'RADIOLOGY', 'BILLING', 'COMMUNICATION', 'INTEGRATION',
+      'PROCUREMENT', 'WHATSAPP', 'ABDM', 'INSURANCE_TPA', 'BIOMEDICAL'
+    ],
     departments: [
-      { code: 'DIAG_INTAKE', name: 'Patient Booking & Registration', capabilities: ['BILLING'] },
+      { code: 'DIAG_INTAKE', name: 'Patient Booking & Registration Desk', capabilities: ['BILLING'] },
       { code: 'DIAG_RADIOLOGY', name: 'Radiology Imaging (X-Ray, CT, MRI)', capabilities: ['RADIOLOGY'] },
-      { code: 'DIAG_PATHOLOGY', name: 'Central Automated Lab', capabilities: ['LABORATORY', 'PATHOLOGY'] }
+      { code: 'DIAG_PATHOLOGY', name: 'Central Automated Lab', capabilities: ['LABORATORY', 'PATHOLOGY'] },
+      { code: 'DIAG_BIOMEDICAL', name: 'Modality Maintenance & Calibration', capabilities: ['BIOMEDICAL'] },
+      { code: 'DIAG_PROCUREMENT', name: 'Contrast Media & Reagents Procurement', capabilities: ['PROCUREMENT'] }
     ],
     defaultRoles: [
       {
@@ -431,13 +505,24 @@ export const INITIAL_MASTER_TEMPLATES: TemplateBlueprint[] = [
       }
     ],
     permissionPacks: ['PACK_LAB_TECH', 'PACK_BILLING_DESK'],
-    features: ['pacs.dicom', 'radiology.reporting', 'lab.lims', 'billing.invoices', 'whatsapp.reports'],
+    features: [
+      'pacs.dicom',
+      'radiology.reporting',
+      'modality.scheduling',
+      'lab.lims',
+      'billing.invoices',
+      'whatsapp.reports',
+      'tpa.preauth',
+      'abdm.abha',
+      'biomedical.amc',
+      'procurement.consumables'
+    ],
     limits: {
       maxBeds: 0,
-      maxDoctors: 15,
-      maxBranches: 3,
-      storageQuotaGb: 1000,
-      monthlyWhatsAppCredits: 15000
+      maxDoctors: 25,
+      maxBranches: 5,
+      storageQuotaGb: 1500,
+      monthlyWhatsAppCredits: 25000
     },
     policies: []
   },
@@ -447,12 +532,12 @@ export const INITIAL_MASTER_TEMPLATES: TemplateBlueprint[] = [
     code: 'TPL_RETAIL_PHARMACY',
     name: 'Retail Pharmacy',
     category: 'PHARMACY',
-    description: 'Independent retail chemist with Schedule H1 register, barcode POS, expiry tracking and GST invoicing.',
+    description: 'Independent retail chemist with Schedule H1 register, barcode POS, expiry tracking, direct B2B wholesale depot procurement, and auto-GRN sync.',
     supportedProfiles: ['PHARMACY'],
-    capabilities: ['PHARMACY', 'BILLING', 'COMMUNICATION'],
+    capabilities: ['PHARMACY', 'BILLING', 'COMMUNICATION', 'PROCUREMENT', 'WHATSAPP'],
     departments: [
       { code: 'PHARM_COUNTER', name: 'Retail Dispensing Counter', capabilities: ['PHARMACY'] },
-      { code: 'PHARM_STOCK', name: 'Stock & Wholesale Receiving', capabilities: ['PHARMACY'] }
+      { code: 'PHARM_STOCK', name: 'Stock & Wholesale Receiving (Auto-GRN)', capabilities: ['PHARMACY', 'PROCUREMENT'] }
     ],
     defaultRoles: [
       {
@@ -466,13 +551,22 @@ export const INITIAL_MASTER_TEMPLATES: TemplateBlueprint[] = [
       }
     ],
     permissionPacks: ['PACK_PHARMACY_OPERATOR', 'PACK_BILLING_DESK'],
-    features: ['pharmacy.pos', 'inventory.stock', 'schedule_h1.register', 'gst.invoicing'],
+    features: [
+      'pharmacy.pos',
+      'inventory.stock',
+      'schedule_h1.register',
+      'barcode.laser_pos',
+      'gst.invoicing',
+      'procurement.b2b_wholesale',
+      'auto_grn.sync',
+      'whatsapp.receipt'
+    ],
     limits: {
       maxBeds: 0,
       maxDoctors: 0,
-      maxBranches: 1,
-      storageQuotaGb: 20,
-      monthlyWhatsAppCredits: 2000
+      maxBranches: 2,
+      storageQuotaGb: 50,
+      monthlyWhatsAppCredits: 5000
     },
     policies: []
   },
@@ -482,11 +576,11 @@ export const INITIAL_MASTER_TEMPLATES: TemplateBlueprint[] = [
     code: 'TPL_HOSPITAL_PHARMACY',
     name: 'Hospital Pharmacy',
     category: 'PHARMACY',
-    description: 'Inpatient and emergency hospital dispensary supporting ward indenting, nursing requisitions and bed billing.',
+    description: 'Inpatient and emergency hospital dispensary supporting ward indenting, nursing requisitions, bed billing, and central depot replenishment.',
     supportedProfiles: ['PHARMACY'],
-    capabilities: ['PHARMACY', 'BILLING', 'IPD', 'COMMUNICATION'],
+    capabilities: ['PHARMACY', 'BILLING', 'IPD', 'COMMUNICATION', 'PROCUREMENT', 'WHATSAPP'],
     departments: [
-      { code: 'HOSP_PHARM_CENTRAL', name: 'Central Hospital Pharmacy Store', capabilities: ['PHARMACY'] },
+      { code: 'HOSP_PHARM_CENTRAL', name: 'Central Hospital Pharmacy Store', capabilities: ['PHARMACY', 'PROCUREMENT'] },
       { code: 'HOSP_PHARM_EMERGENCY', name: 'Emergency Crash Dispensary', capabilities: ['PHARMACY'] }
     ],
     defaultRoles: [
@@ -501,13 +595,21 @@ export const INITIAL_MASTER_TEMPLATES: TemplateBlueprint[] = [
       }
     ],
     permissionPacks: ['PACK_PHARMACY_OPERATOR', 'PACK_BILLING_DESK'],
-    features: ['pharmacy.pos', 'ward.indenting', 'inpatient.bed_billing', 'stock.batch_tracking'],
+    features: [
+      'pharmacy.pos',
+      'ward.indenting',
+      'inpatient.bed_billing',
+      'stock.batch_tracking',
+      'procurement.b2b_wholesale',
+      'auto_grn.sync',
+      'whatsapp.receipt'
+    ],
     limits: {
-      maxBeds: 200,
-      maxDoctors: 10,
-      maxBranches: 1,
-      storageQuotaGb: 100,
-      monthlyWhatsAppCredits: 10000
+      maxBeds: 250,
+      maxDoctors: 25,
+      maxBranches: 2,
+      storageQuotaGb: 250,
+      monthlyWhatsAppCredits: 15000
     },
     policies: []
   },
@@ -517,19 +619,21 @@ export const INITIAL_MASTER_TEMPLATES: TemplateBlueprint[] = [
     code: 'TPL_HEALTHCARE_GROUP',
     name: 'Healthcare Group',
     category: 'HEALTHCARE_GROUP',
-    description: 'Multi-entity enterprise healthcare conglomerate managing multiple hospitals, polyclinics, pharmacy chains and central diagnostic labs.',
+    description: 'Multi-entity enterprise healthcare conglomerate managing multiple hospitals, polyclinics, pharmacy chains, central depot supply chain, and central diagnostic labs.',
     supportedProfiles: ['HEALTHCARE_GROUP', 'HOSPITAL', 'CLINIC', 'LABORATORY', 'PHARMACY'],
     capabilities: [
       'OPD', 'IPD', 'EMERGENCY', 'ICU', 'OT', 'LABORATORY', 'PATHOLOGY', 'RADIOLOGY',
-      'PHARMACY', 'BLOOD_BANK', 'MRD', 'DIETARY', 'BILLING', 'FINANCE', 'HR', 'CRM',
-      'ANALYTICS', 'SUPPORT', 'COMMUNICATION', 'AI', 'INTEGRATION'
+      'PHARMACY', 'BLOOD_BANK', 'MRD', 'DIETARY', 'BIOMEDICAL', 'BILLING', 'FINANCE', 'HR', 'CRM',
+      'ANALYTICS', 'SUPPORT', 'COMMUNICATION', 'AI', 'AI_CDSS', 'INTEGRATION', 'ABDM', 'WHATSAPP',
+      'INSURANCE_TPA', 'PROCUREMENT', 'TELEMEDICINE', 'QUALITY_NABH'
     ],
     departments: [
-      { code: 'GRP_HQ', name: 'Corporate HQ Directorate', capabilities: ['ANALYTICS', 'FINANCE', 'CRM'] },
-      { code: 'GRP_HOSPITALS', name: 'Hospital Operations Cluster', capabilities: ['HOSPITAL'] },
-      { code: 'GRP_CLINICS', name: 'Outreach Clinic Network', capabilities: ['CLINIC'] },
-      { code: 'GRP_DIAGNOSTICS', name: 'Central Lab Network', capabilities: ['LABORATORY', 'RADIOLOGY'] },
-      { code: 'GRP_PHARMACIES', name: 'Retail Pharmacy Chain', capabilities: ['PHARMACY'] }
+      { code: 'GRP_HQ', name: 'Corporate HQ Directorate & KPI Command', capabilities: ['ANALYTICS', 'FINANCE', 'CRM'] },
+      { code: 'GRP_HOSPITALS', name: 'Hospital Operations Cluster', capabilities: ['HOSPITAL', 'IPD', 'OT'] },
+      { code: 'GRP_CLINICS', name: 'Outreach Clinic Network', capabilities: ['CLINIC', 'OPD'] },
+      { code: 'GRP_DIAGNOSTICS', name: 'Central Lab Network & Imaging Hub', capabilities: ['LABORATORY', 'RADIOLOGY'] },
+      { code: 'GRP_PHARMACIES', name: 'Retail Pharmacy Chain & Dispensaries', capabilities: ['PHARMACY'] },
+      { code: 'GRP_SUPPLY_CHAIN', name: 'Central Sourcing Depot & Distribution HQ', capabilities: ['PROCUREMENT'] }
     ],
     defaultRoles: [
       {
@@ -543,9 +647,16 @@ export const INITIAL_MASTER_TEMPLATES: TemplateBlueprint[] = [
       }
     ],
     permissionPacks: ['PACK_OPD_BASIC', 'PACK_CLINICAL_DOCS', 'PACK_NURSING_CORE', 'PACK_PHARMACY_OPERATOR', 'PACK_LAB_TECH', 'PACK_BILLING_DESK', 'PACK_EXECUTIVE_AUDIT'],
-    features: ['all.enterprise_suite'],
+    features: [
+      'all.enterprise_suite',
+      'multi_hospital.census',
+      'central.supply_chain',
+      'cross_facility.transfer',
+      'global.audit_logs',
+      'group.quality_benchmarking'
+    ],
     limits: {
-      maxBeds: 2000,
+      maxBeds: 2500,
       maxDoctors: 500,
       maxBranches: 25,
       storageQuotaGb: 10000,
@@ -561,12 +672,13 @@ export const INITIAL_MASTER_TEMPLATES: TemplateBlueprint[] = [
     category: 'SPECIALTY',
     description: 'Focused single-specialty hospital or institute (e.g. Cardiac, Eye Care, Dental, Dialysis, Oncology or IVF).',
     supportedProfiles: ['SPECIALTY', 'CLINIC'],
-    capabilities: ['OPD', 'IPD', 'OT', 'PHARMACY', 'BILLING', 'COMMUNICATION', 'INTEGRATION'],
+    capabilities: ['OPD', 'IPD', 'OT', 'PHARMACY', 'BILLING', 'COMMUNICATION', 'INTEGRATION', 'PROCUREMENT', 'WHATSAPP', 'ABDM'],
     departments: [
       { code: 'SPEC_RECEPTION', name: 'Specialty Reception & Counselling', capabilities: ['OPD'] },
       { code: 'SPEC_PROCEDURE', name: 'Procedure & Minor OT Suite', capabilities: ['OT'] },
       { code: 'SPEC_DAYCARE', name: 'Daycare Recovery Bays', capabilities: ['IPD'] },
-      { code: 'SPEC_PHARMACY', name: 'Specialty Pharmacy Counter', capabilities: ['PHARMACY'] }
+      { code: 'SPEC_PHARMACY', name: 'Specialty Pharmacy Counter', capabilities: ['PHARMACY'] },
+      { code: 'SPEC_PROCUREMENT', name: 'Specialty Consumables Sourcing', capabilities: ['PROCUREMENT'] }
     ],
     defaultRoles: [
       {
@@ -580,13 +692,13 @@ export const INITIAL_MASTER_TEMPLATES: TemplateBlueprint[] = [
       }
     ],
     permissionPacks: ['PACK_OPD_BASIC', 'PACK_CLINICAL_DOCS', 'PACK_PHARMACY_OPERATOR', 'PACK_BILLING_DESK'],
-    features: ['opd.specialty', 'procedure.scheduling', 'daycare.beds', 'specialty.prescriptions', 'billing.invoices'],
+    features: ['opd.specialty', 'procedure.scheduling', 'daycare.beds', 'specialty.prescriptions', 'billing.invoices', 'procurement.restock_cart', 'whatsapp.alerts'],
     limits: {
-      maxBeds: 25,
-      maxDoctors: 15,
-      maxBranches: 2,
-      storageQuotaGb: 150,
-      monthlyWhatsAppCredits: 5000
+      maxBeds: 50,
+      maxDoctors: 25,
+      maxBranches: 3,
+      storageQuotaGb: 250,
+      monthlyWhatsAppCredits: 10000
     },
     policies: []
   }

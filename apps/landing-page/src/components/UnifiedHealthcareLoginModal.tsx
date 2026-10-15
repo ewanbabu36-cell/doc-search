@@ -348,7 +348,6 @@ export interface EvaluationPersona {
   facilityName: string;
   facilityType: HealthcareFacilityType;
   email: string;
-  password: string;
   icon: string;
   badge: string;
   badgeColor: string;
@@ -366,7 +365,6 @@ export const EVALUATION_PERSONAS: EvaluationPersona[] = [
     facilityName: 'Dr. Sharma Heart & OPD Clinic',
     facilityType: 'CLINIC',
     email: 'doctor.rajesh@docsearch.health',
-    password: 'DoctorPass123!',
     icon: '👨‍⚕️',
     badge: 'CLINIC / OPD EMR',
     badgeColor: '#38BDF8',
@@ -382,7 +380,6 @@ export const EVALUATION_PERSONAS: EvaluationPersona[] = [
     facilityName: 'Apollo Super-Speciality Hospital',
     facilityType: 'HOSPITAL',
     email: 'whitelabel.admin@docsearch.health',
-    password: 'Hospital@2026!',
     icon: '🏥',
     badge: 'HOSPITAL HIS',
     badgeColor: '#C084FC',
@@ -398,7 +395,6 @@ export const EVALUATION_PERSONAS: EvaluationPersona[] = [
     facilityName: 'Apex Central Pathology & Diagnostic Lab',
     facilityType: 'PATHOLOGY',
     email: 'pathology@docsearch.health',
-    password: 'PathologyPass123!',
     icon: '🧪',
     badge: 'PATHOLOGY LIMS',
     badgeColor: '#34D399',
@@ -414,7 +410,6 @@ export const EVALUATION_PERSONAS: EvaluationPersona[] = [
     facilityName: 'Apollo Lifecare Chemist & Druggist',
     facilityType: 'PHARMACY',
     email: 'sunil.pharmacy@docsearch.health',
-    password: 'PharmaPass123!',
     icon: '💊',
     badge: 'PHARMACY POS & B2B',
     badgeColor: '#FBBF24',
@@ -430,7 +425,6 @@ export const EVALUATION_PERSONAS: EvaluationPersona[] = [
     facilityName: 'DocSearch National Health Platform HQ',
     facilityType: 'COMPANY_HQ',
     email: 'founder@docsearch.health',
-    password: 'FounderPass123!',
     icon: '🏢',
     badge: 'COMPANY PLATFORM HQ',
     badgeColor: '#F43F5E',
@@ -833,10 +827,9 @@ export const UnifiedHealthcareLoginModal: React.FC<Props> = ({
   const handleSelectPersona = async (persona: EvaluationPersona, autoLogin = false) => {
     setSelectedPersonaId(persona.id);
     setLoginId(persona.email);
-    setPassword(persona.password);
     setLoginError(null);
-    if (autoLogin) {
-      await executeLoginWithCredentials(persona.email, persona.password);
+    if (autoLogin && password) {
+      await executeLoginWithCredentials(persona.email, password);
     }
   };
 
@@ -849,7 +842,10 @@ export const UnifiedHealthcareLoginModal: React.FC<Props> = ({
       setBiometricScanning(false);
       const targetPersona = EVALUATION_PERSONAS[0]!;
       setSelectedPersonaId(targetPersona.id);
-      await executeLoginWithCredentials(targetPersona.email, targetPersona.password);
+      setLoginId(targetPersona.email);
+      if (password) {
+        await executeLoginWithCredentials(targetPersona.email, password);
+      }
     } catch {
       setBiometricScanning(false);
       setLoginError('Biometric authentication failed or cancelled.');
@@ -861,10 +857,13 @@ export const UnifiedHealthcareLoginModal: React.FC<Props> = ({
     setBadgeScanning(true);
     setLoginError(null);
     setSelectedPersonaId(persona.id);
+    setLoginId(persona.email);
     try {
       await new Promise((resolve) => setTimeout(resolve, 650));
       setBadgeScanning(false);
-      await executeLoginWithCredentials(persona.email, persona.password);
+      if (password) {
+        await executeLoginWithCredentials(persona.email, password);
+      }
     } catch {
       setBadgeScanning(false);
       setLoginError(`Staff badge authentication failed for ${persona.name}.`);
@@ -879,7 +878,13 @@ export const UnifiedHealthcareLoginModal: React.FC<Props> = ({
       await new Promise((resolve) => setTimeout(resolve, 800));
       const doctorPersona = EVALUATION_PERSONAS.find((p) => p.facilityType === 'CLINIC') || EVALUATION_PERSONAS[0]!;
       setSelectedPersonaId(doctorPersona.id);
-      await executeLoginWithCredentials(doctorPersona.email, doctorPersona.password);
+      setLoginId(doctorPersona.email);
+      if (password) {
+        await executeLoginWithCredentials(doctorPersona.email, password);
+      } else {
+        setIsSubmitting(false);
+        setLoginError('Please enter your password to authenticate ABDM HPR credentials.');
+      }
     } catch {
       setIsSubmitting(false);
       setLoginError('ABDM Healthcare Professional Registry (HPR) gateway unreachable.');

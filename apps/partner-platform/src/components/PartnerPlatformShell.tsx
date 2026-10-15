@@ -1581,44 +1581,129 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
         {
           items: [
             {
-              id: 'clinic-home',
-              label: '🏠 Clinic Dashboard',
-              icon: <span>🏠</span>,
-              isActive: isHomeModule || activeModule === 'clinic-home' || activeModule === 'my-smart-desk',
-              onClick: () => setActiveModule('clinic-home')
+              id: 'my-smart-desk',
+              label: '⚡ My Smart Desk',
+              icon: <span>⚡</span>,
+              isActive: activeModule === 'my-smart-desk',
+              onClick: () => setActiveModule('my-smart-desk')
             },
             {
+              id: 'clinic-home',
+              label: '🏠 Clinic Overview',
+              icon: <span>🏠</span>,
+              isActive: isHomeModule || activeModule === 'clinic-home',
+              onClick: () => setActiveModule('clinic-home')
+            }
+          ]
+        },
+        {
+          title: 'Doctor Chamber & Clinical',
+          items: [
+            {
               id: 'clinical-consultation',
-              label: '🩺 Doctor Chamber',
+              label: '🩺 Doctor Chamber & EMR',
               icon: <span>🩺</span>,
               isActive: activeModule === 'clinical-consultation',
               onClick: () => setActiveModule('clinical-consultation')
             },
             {
+              id: 'ai-clinical-cdss',
+              label: '🎙️ AI Voice Scribe & CDSS',
+              icon: <span>🎙️</span>,
+              isActive: activeModule === 'ai-clinical-cdss',
+              onClick: () => setActiveModule('ai-clinical-cdss')
+            },
+            {
+              id: 'telemedicine-rpm',
+              label: '📹 Video Teleconsultation',
+              icon: <span>📹</span>,
+              isActive: activeModule === 'telemedicine-rpm',
+              onClick: () => setActiveModule('telemedicine-rpm')
+            }
+          ]
+        },
+        {
+          title: 'Reception & Queue',
+          items: [
+            {
+              id: 'patient-registration',
+              label: '📇 Express OPD Registration',
+              icon: <span>📇</span>,
+              isActive: activeModule === 'patient-registration',
+              onClick: () => setActiveModule('patient-registration')
+            },
+            {
+              id: 'nurse-triage-station',
+              label: '👩‍⚕️ Nurse Vitals & Triage',
+              icon: <span>👩‍⚕️</span>,
+              isActive: activeModule === 'nurse-triage-station',
+              onClick: () => setActiveModule('nurse-triage-station')
+            },
+            {
+              id: 'encounters-visits',
+              label: '⏱️ Live Token Queue',
+              icon: <span>⏱️</span>,
+              isActive: activeModule === 'encounters-visits',
+              onClick: () => setActiveModule('encounters-visits')
+            }
+          ]
+        },
+        {
+          title: 'Pharmacy, Billing & Sourcing',
+          items: [
+            {
               id: 'pharmacy-medication',
-              label: '💊 Pharmacy & Dispensary',
+              label: '💊 Clinic Dispensary POS',
               icon: <span>💊</span>,
               isActive: activeModule === 'pharmacy-medication',
               onClick: () => setActiveModule('pharmacy-medication')
             },
             {
               id: 'billing-revenue-cycle',
-              label: '💰 Cashier & Daily Billing',
+              label: '💰 Cashier & Instant UPI',
               icon: <span>⚡</span>,
               isActive: activeModule === 'billing-revenue-cycle',
               onClick: () => setActiveModule('billing-revenue-cycle')
+            },
+            {
+              id: 'procurement-supply-chain',
+              label: '📦 B2B Wholesale Restock Cart',
+              icon: <span>📦</span>,
+              isActive: activeModule === 'procurement-supply-chain',
+              onClick: () => setActiveModule('procurement-supply-chain')
             }
           ]
         },
         {
-          title: 'Admin & Settings',
+          title: 'Integrations & Governance',
           items: [
             {
+              id: 'whatsapp-patient-portal',
+              label: '📲 WhatsApp Digital Rx',
+              icon: <span>📲</span>,
+              isActive: activeModule === 'whatsapp-patient-portal',
+              onClick: () => setActiveModule('whatsapp-patient-portal')
+            },
+            {
+              id: 'abdm-fhir-gateway',
+              label: '🇮🇳 ABDM Scan & Share',
+              icon: <span>🇮🇳</span>,
+              isActive: activeModule === 'abdm-fhir-gateway',
+              onClick: () => setActiveModule('abdm-fhir-gateway')
+            },
+            {
               id: 'staff-administration',
-              label: '👥 Clinic Staff',
+              label: '👥 Clinic Staff & Rosters',
               icon: <span>👥</span>,
               isActive: activeModule === 'staff-administration',
               onClick: () => setActiveModule('staff-administration')
+            },
+            {
+              id: 'quality-incident-infection-control',
+              label: '🛡️ Quality & Infection Control',
+              icon: <span>🛡️</span>,
+              isActive: activeModule === 'quality-incident-infection-control',
+              onClick: () => setActiveModule('quality-incident-infection-control')
             },
             {
               id: 'chamber-settings-modal',
@@ -1699,12 +1784,19 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
           ]
         },
         {
-          title: 'Stock & Formulary',
+          title: 'Stock & B2B Wholesale',
           items: [
+            {
+              id: 'procurement-supply-chain',
+              label: 'Direct B2B Wholesale Depot',
+              icon: <span>🚚</span>,
+              isActive: activeModule === 'procurement-supply-chain',
+              onClick: () => setActiveModule('procurement-supply-chain')
+            },
             {
               id: 'pharmacy-inventory',
               moduleId: 'pharmacy-medication',
-              label: 'Stock & Batch Inward',
+              label: 'Stock & Batch Inward (GRN)',
               icon: <span>📦</span>,
               isActive: activeModule === 'pharmacy-medication' && (pharmacyTab === 'inventory' || pharmacyTab === 'expiry'),
               onClick: () => {
@@ -1737,7 +1829,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
           ]
         },
         {
-          title: 'Team & Operations',
+          title: 'Team & Quality',
           items: [
             {
               id: 'staff-administration',
@@ -1745,6 +1837,13 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
               icon: <span>👥</span>,
               isActive: activeModule === 'staff-administration',
               onClick: () => setActiveModule('staff-administration')
+            },
+            {
+              id: 'quality-incident-infection-control',
+              label: 'Storage & Schedule H1 Quality',
+              icon: <span>🛡️</span>,
+              isActive: activeModule === 'quality-incident-infection-control',
+              onClick: () => setActiveModule('quality-incident-infection-control')
             }
           ]
         }
@@ -1805,8 +1904,29 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
           ]
         },
         {
-          title: 'Lab Team & Governance',
+          title: 'Reagents, Interop & Quality',
           items: [
+            {
+              id: 'procurement-supply-chain',
+              label: 'Chemicals & Reagents Sourcing',
+              icon: <span>🚚</span>,
+              isActive: activeModule === 'procurement-supply-chain',
+              onClick: () => setActiveModule('procurement-supply-chain')
+            },
+            {
+              id: 'abdm-fhir-gateway',
+              label: 'ABDM 2.0 Diagnostic Link',
+              icon: <span>🇮🇳</span>,
+              isActive: activeModule === 'abdm-fhir-gateway',
+              onClick: () => setActiveModule('abdm-fhir-gateway')
+            },
+            {
+              id: 'quality-incident-infection-control',
+              label: 'NABL Quality & Panic Broadcast',
+              icon: <span>🛡️</span>,
+              isActive: activeModule === 'quality-incident-infection-control',
+              onClick: () => setActiveModule('quality-incident-infection-control')
+            },
             {
               id: 'staff-administration',
               label: 'Lab Staff & Phlebotomists',
@@ -1831,26 +1951,26 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
           title: 'Imaging & Modalities',
           items: [
             { id: 'radiology-imaging', label: 'Web DICOM PACS', icon: <span>🔬</span>, isActive: activeModule === 'radiology-imaging', onClick: () => setActiveModule('radiology-imaging') },
-            { id: 'encounters-visits', label: 'Modality Scheduling', icon: <span>📅</span>, isActive: activeModule === 'encounters-visits', onClick: () => setActiveModule('encounters-visits') }
+            { id: 'encounters-visits', label: 'Modality Scheduling', icon: <span>📅</span>, isActive: activeModule === 'encounters-visits', onClick: () => setActiveModule('encounters-visits') },
+            { id: 'clinical-investigation', label: 'Pathology LIMS Hub', icon: <span>🧪</span>, isActive: activeModule === 'clinical-investigation', onClick: () => setActiveModule('clinical-investigation') }
           ]
         },
         {
-          title: 'Billing & Claims',
+          title: 'Billing, Claims & Dispatch',
           items: [
             { id: 'insurance-claims', label: 'Cashless TPA Pre-Auth', icon: <span>🩻</span>, isActive: activeModule === 'insurance-claims', onClick: () => setActiveModule('insurance-claims') },
-            { id: 'billing-revenue-cycle', label: 'Diagnostic Billing POS', icon: <span>🧾</span>, isActive: activeModule === 'billing-revenue-cycle', onClick: () => setActiveModule('billing-revenue-cycle') }
+            { id: 'billing-revenue-cycle', label: 'Diagnostic Billing POS', icon: <span>🧾</span>, isActive: activeModule === 'billing-revenue-cycle', onClick: () => setActiveModule('billing-revenue-cycle') },
+            { id: 'whatsapp-patient-portal', label: 'WhatsApp Imaging Reports', icon: <span>📲</span>, isActive: activeModule === 'whatsapp-patient-portal', onClick: () => setActiveModule('whatsapp-patient-portal') },
+            { id: 'abdm-fhir-gateway', label: 'ABDM Diagnostic Gateway', icon: <span>🇮🇳</span>, isActive: activeModule === 'abdm-fhir-gateway', onClick: () => setActiveModule('abdm-fhir-gateway') }
           ]
         },
         {
-          title: 'Operations & Team',
+          title: 'Equipment & Sourcing',
           items: [
-            {
-              id: 'staff-administration',
-              label: 'Radiology & Centre Team',
-              icon: <span>👥</span>,
-              isActive: activeModule === 'staff-administration',
-              onClick: () => setActiveModule('staff-administration')
-            }
+            { id: 'asset-biomedical-maintenance', label: 'Modality AMC & Calibration', icon: <span>🔧</span>, isActive: activeModule === 'asset-biomedical-maintenance', onClick: () => setActiveModule('asset-biomedical-maintenance') },
+            { id: 'procurement-supply-chain', label: 'Contrast & Supplies Sourcing', icon: <span>🚚</span>, isActive: activeModule === 'procurement-supply-chain', onClick: () => setActiveModule('procurement-supply-chain') },
+            { id: 'quality-incident-infection-control', label: 'AERB & Radiation Safety', icon: <span>🛡️</span>, isActive: activeModule === 'quality-incident-infection-control', onClick: () => setActiveModule('quality-incident-infection-control') },
+            { id: 'staff-administration', label: 'Radiology & Centre Team', icon: <span>👥</span>, isActive: activeModule === 'staff-administration', onClick: () => setActiveModule('staff-administration') }
           ]
         }
       ]);

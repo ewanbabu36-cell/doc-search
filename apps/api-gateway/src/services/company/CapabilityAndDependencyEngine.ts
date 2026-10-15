@@ -309,6 +309,78 @@ export const MASTER_CAPABILITIES: CapabilityDefinition[] = [
     dependencies: [],
     status: 'ACTIVE',
     version: '1.0.0'
+  },
+  {
+    code: 'BIOMEDICAL',
+    name: 'Biomedical Equipment & Asset Maintenance',
+    category: 'OPERATIONS',
+    description: 'Medical equipment lifecycle, calibration, preventive maintenance, AMC/CMC contracts and breakdown tickets.',
+    dependencies: [],
+    status: 'ACTIVE',
+    version: '1.0.0'
+  },
+  {
+    code: 'INSURANCE_TPA',
+    name: 'TPA & Ayushman Bharat Cashless Claims',
+    category: 'ADMIN',
+    description: 'Pre-authorization requests, IRDAI NHCX claims submission, tariff package mapping and claim settlements.',
+    dependencies: ['BILLING'],
+    status: 'ACTIVE',
+    version: '1.0.0'
+  },
+  {
+    code: 'PROCUREMENT',
+    name: 'B2B Wholesale Procurement & Sourcing',
+    category: 'OPERATIONS',
+    description: 'Direct pharmaceutical and medical supply chain sourcing, bulk POs, and auto-GRN inventory reconciliation.',
+    dependencies: [],
+    status: 'ACTIVE',
+    version: '1.0.0'
+  },
+  {
+    code: 'ABDM',
+    name: 'Ayushman Bharat Digital Mission (M1/M2/M3)',
+    category: 'INTEGRATION',
+    description: 'ABHA number/address creation, Scan & Share OPD tokens, and FHIR longitudinal health record linking.',
+    dependencies: [],
+    status: 'ACTIVE',
+    version: '1.0.0'
+  },
+  {
+    code: 'AI_CDSS',
+    name: 'AI Clinical Decision Support & Ambient Scribe',
+    category: 'CLINICAL',
+    description: 'Real-time drug-drug interaction alerts, clinical decision support, and ambient consultation voice scribe.',
+    dependencies: [],
+    status: 'ACTIVE',
+    version: '1.0.0'
+  },
+  {
+    code: 'TELEMEDICINE',
+    name: 'Telemedicine & Remote Patient Monitoring',
+    category: 'CLINICAL',
+    description: 'Encrypted WebRTC teleconsultations, digital intake queues, and remote vital monitoring.',
+    dependencies: [],
+    status: 'ACTIVE',
+    version: '1.0.0'
+  },
+  {
+    code: 'WHATSAPP',
+    name: 'WhatsApp Patient Automation Portal',
+    category: 'INTEGRATION',
+    description: 'Autonomous WhatsApp bot for PDF prescriptions, lab reports, OPD tokens, and appointment reminders.',
+    dependencies: [],
+    status: 'ACTIVE',
+    version: '1.0.0'
+  },
+  {
+    code: 'QUALITY_NABH',
+    name: 'NABH Quality & Infection Control',
+    category: 'ADMIN',
+    description: 'Hospital-acquired infection (HAI) tracking, incident reporting, and clinical audit indicators.',
+    dependencies: [],
+    status: 'ACTIVE',
+    version: '1.0.0'
   }
 ];
 
