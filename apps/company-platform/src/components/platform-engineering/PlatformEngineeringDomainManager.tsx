@@ -42,10 +42,12 @@ import { KubernetesPodMeshRadarView } from './KubernetesPodMeshRadarView.js';
 import { CloudFinopsCostOptimizerView } from './CloudFinopsCostOptimizerView.js';
 import { SbomVulnerabilityScannerView } from './SbomVulnerabilityScannerView.js';
 import { EphemeralSandboxSpawnerModal } from './EphemeralSandboxSpawnerModal.js';
+import { CloudVpsDeployerConsoleView } from './CloudVpsDeployerConsoleView.js';
 import { Tabs, Badge, Button, Spinner, ErrorState } from '@docsearch/ui-kit';
 
 type ActiveTab =
   | 'overview'
+  | 'vps-deployer'
   | 'canary'
   | 'k8s-radar'
   | 'finops'
@@ -353,6 +355,11 @@ export const PlatformEngineeringDomainManager: React.FC = () => {
             label: '📊 Overview'
           },
           {
+            id: 'vps-deployer',
+            label: '🚀 Cloud VPS Deployer',
+            badge: <Badge variant="success">1-Click Launch</Badge>
+          },
+          {
             id: 'canary',
             label: '🚀 Canary Traffic',
             badge: <Badge variant="success">Blue/Green</Badge>
@@ -447,6 +454,8 @@ export const PlatformEngineeringDomainManager: React.FC = () => {
           incidents={incidents}
         />
       )}
+
+      {activeTab === 'vps-deployer' && <CloudVpsDeployerConsoleView />}
 
       {activeTab === 'canary' && (
         <CanaryTrafficControllerView />
