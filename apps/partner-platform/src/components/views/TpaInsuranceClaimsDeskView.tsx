@@ -3,6 +3,7 @@ import { Card, Badge, Button, Input, TableContainer, Table, TableHeader, TableRo
 import { buildNhcxClaimBundle, validatePmjayCardNumber, type NhcxClaimInput } from '@docsearch/shared-core';
 import { hospitalEventBus } from '../../services/hospital-event-bus.js';
 import { TpaAyushmanCashlessDeskModal } from '../dialogs/TpaAyushmanCashlessDeskModal.js';
+import { AiInsuranceDenialPredictorView } from './AiInsuranceDenialPredictorView.js';
 
 export interface PreAuthClaim {
   id: string;
@@ -154,6 +155,7 @@ export const TpaInsuranceClaimsDeskView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'ALL' | 'PMJAY' | 'COMMERCIAL'>('ALL');
   const [declarationSuccessMessage, setDeclarationSuccessMessage] = useState<string | null>(null);
   const [isCashlessDeskOpen, setIsCashlessDeskOpen] = useState(false);
+  const [isAiPredictorModalOpen, setIsAiPredictorModalOpen] = useState(false);
 
   // NHCX FHIR Bundle Inspection Modal State
   const [isFhirModalOpen, setIsFhirModalOpen] = useState(false);
@@ -408,6 +410,24 @@ export const TpaInsuranceClaimsDeskView: React.FC = () => {
         </div>
 
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => setIsAiPredictorModalOpen(true)}
+            style={{
+              fontWeight: 800,
+              backgroundColor: '#0284C7',
+              borderColor: '#38BDF8',
+              color: '#FFFFFF',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 4px 12px rgba(2, 132, 199, 0.35)'
+            }}
+          >
+            <span>🛡️</span>
+            <span>AI Claim Denial Predictor</span>
+          </Button>
           <Button
             variant="primary"
             size="sm"
@@ -1168,6 +1188,72 @@ export const TpaInsuranceClaimsDeskView: React.FC = () => {
         patientUhid={selectedClaim?.patientUhid || 'UHID-2026-1014'}
         defaultDiagnosis={selectedClaim?.procedureName || 'Acute Cholecystitis / Appendicitis'}
       />
+
+      {/* AI Pre-Submission Denial Predictor Modal */}
+      {isAiPredictorModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            backgroundColor: 'rgba(2, 6, 23, 0.92)',
+            backdropFilter: 'blur(16px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px'
+          }}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: '1200px',
+              maxHeight: '92vh',
+              backgroundColor: '#0B132B',
+              border: '1px solid #1E293B',
+              borderRadius: '16px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.75)',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden'
+            }}
+          >
+            <div
+              style={{
+                padding: '14px 20px',
+                backgroundColor: '#1E293B',
+                borderBottom: '1px solid #334155',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '1.2rem' }}>🛡️</span>
+                <span style={{ fontWeight: 800, color: '#F8FAFC', fontSize: '1rem' }}>
+                  AI Pre-Submission Claim Denial Prevention & Adjudication Console
+                </span>
+              </div>
+              <button
+                onClick={() => setIsAiPredictorModalOpen(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#94A3B8',
+                  fontSize: '1.4rem',
+                  cursor: 'pointer',
+                  padding: '4px'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            <div style={{ padding: '20px', overflowY: 'auto', flex: 1 }}>
+              <AiInsuranceDenialPredictorView />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

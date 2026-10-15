@@ -20,6 +20,7 @@ import {
   type InboundPurchaseOrder,
   resolveNearestDepotByPincode
 } from '../../services/b2b-wholesale-supply-service.js';
+import { HighSpeedCameraBoxScannerModal, type ScannedCartonBatch } from '../dialogs/HighSpeedCameraBoxScannerModal.js';
 
 export interface B2BWholesaleMarketplaceViewProps {
   hospitalName?: string;
@@ -42,6 +43,8 @@ export const B2BWholesaleMarketplaceView: React.FC<B2BWholesaleMarketplaceViewPr
   const [activeTab, setActiveTab] = useState<'CATALOG' | 'MY_ORDERS'>('CATALOG');
   const [orderSuccessModal, setOrderSuccessModal] = useState<InboundPurchaseOrder | null>(null);
   const [autoGrnToast, setAutoGrnToast] = useState<string | null>(null);
+  const [isBoxScannerOpen, setIsBoxScannerOpen] = useState(false);
+  const [activeScanningPo, setActiveScanningPo] = useState<InboundPurchaseOrder | null>(null);
 
   const nearestDepot = useMemo(() => resolveNearestDepotByPincode(facilityPincode), [facilityPincode]);
 
@@ -226,6 +229,28 @@ export const B2BWholesaleMarketplaceView: React.FC<B2BWholesaleMarketplaceViewPr
       }
     } catch (e) {
       console.error('Error applying Auto-GRN:', e);
+    }
+  };
+
+  const handleOpenBoxScanner = (po?: InboundPurchaseOrder) => {
+    setActiveScanningPo(po || (purchaseOrders[0] ?? null));
+    setIsBoxScannerOpen(true);
+  };
+
+  const handleCameraAutoGrnCommitted = (reconciledCartons: ScannedCartonBatch[], totalUnits: number) => {
+    if (activeScanningPo) {
+      const updated = purchaseOrders.map((p) =>
+        p.id === activeScanningPo.id ? { ...p, isAutoGrnApplied: true, status: 'DELIVERED' as const } : p
+      );
+      setPurchaseOrders(updated);
+      b2bWholesaleSupplyService.savePurchaseOrders(updated);
+    }
+    setAutoGrnToast(
+      `📹 Camera Auto-GRN Complete! ${reconciledCartons.length} Carton SKUs (${totalUnits} total units) successfully reconciled into hospital inventory.`
+    );
+    setTimeout(() => setAutoGrnToast(null), 6000);
+    if (onAutoGrnCompleted) {
+      onAutoGrnCompleted(totalUnits);
     }
   };
 
@@ -606,9 +631,27 @@ export const B2BWholesaleMarketplaceView: React.FC<B2BWholesaleMarketplaceViewPr
       ) : (
         /* My Orders & Auto-GRN Desk */
         <Card title="Live Inbound Purchase Orders & Auto-GRN Desk">
-          <p style={{ color: '#94A3B8', fontSize: '0.875rem', margin: '0 0 16px 0' }}>
-            Track orders dispatched by DocSearch Central Depot. When an order is delivered, click <strong>"1-Click Auto-GRN"</strong> to ingest all batch numbers, expiry dates, and MRP values without manual typing.
-          </p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+            <p style={{ color: '#94A3B8', fontSize: '0.875rem', margin: 0, maxWidth: '700px' }}>
+              Track orders dispatched by DocSearch Central Depot. When an order arrives, use the <strong>High-Speed Camera Box Barcode Scanner</strong> to ingest carton barcodes simultaneously, or click <strong>"1-Click Auto-GRN"</strong>.
+            </p>
+            <Button
+              variant="success"
+              onClick={() => handleOpenBoxScanner()}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontWeight: 800,
+                fontSize: '0.85rem',
+                padding: '8px 16px',
+                background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+              }}
+            >
+              📹 Camera Box Auto-GRN Scanner
+            </Button>
+          </div>
 
           <TableContainer>
             <Table>
@@ -669,25 +712,37 @@ export const B2BWholesaleMarketplaceView: React.FC<B2BWholesaleMarketplaceViewPr
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {po.status === 'DELIVERED' ? (
-                        po.isAutoGrnApplied ? (
-                          <Badge variant="success">✅ GRN Ingested (0ms)</Badge>
-                        ) : (
+                      {po.isAutoGrnApplied ? (
+                        <Badge variant="success">✅ GRN Ingested (0ms)</Badge>
+                      ) : (
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                           <Button
                             variant="primary"
                             onClick={() => handleTriggerAutoGrn(po)}
                             style={{
                               background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-                              fontSize: '0.75rem',
+                              fontSize: '0.72rem',
                               fontWeight: 800,
-                              padding: '4px 10px'
+                              padding: '4px 8px'
                             }}
                           >
-                            ⚡ 1-Click Auto-GRN
+                            ⚡ Auto-GRN
                           </Button>
-                        )
-                      ) : (
-                        <span style={{ fontSize: '0.75rem', color: '#64748B' }}>Auto-GRN on Delivery</span>
+                          <Button
+                            variant="outline"
+                            onClick={() => handleOpenBoxScanner(po)}
+                            style={{
+                              fontSize: '0.72rem',
+                              fontWeight: 700,
+                              padding: '4px 8px',
+                              backgroundColor: '#1E293B',
+                              borderColor: '#38BDF8',
+                              color: '#38BDF8'
+                            }}
+                          >
+                            📹 Scan Box
+                          </Button>
+                        </div>
                       )}
                     </TableCell>
                   </TableRow>
@@ -832,6 +887,17 @@ export const B2BWholesaleMarketplaceView: React.FC<B2BWholesaleMarketplaceViewPr
           </div>
         </Dialog>
       )}
+
+      {/* High-Speed Camera Box Barcode Scanner Modal */}
+      <HighSpeedCameraBoxScannerModal
+        isOpen={isBoxScannerOpen}
+        onClose={() => setIsBoxScannerOpen(false)}
+        purchaseOrderId={activeScanningPo?.id}
+        purchaseOrderNumber={activeScanningPo?.poNumber}
+        supplierName={activeScanningPo?.assignedDepot ? `DocSearch Depot (${activeScanningPo.assignedDepot})` : undefined}
+        expectedCartonCount={activeScanningPo ? activeScanningPo.items.length * 2 : 12}
+        onAutoGrnCommitted={handleCameraAutoGrnCommitted}
+      />
     </div>
   );
 };
