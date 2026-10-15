@@ -17,13 +17,16 @@ import {
   centralSupplyChainService,
   type CentralCatalogItem,
   type HospitalPurchaseOrder,
-  type SupplyCategory
+  type SupplyCategory,
+  REGIONAL_DEPOT_NETWORK,
+  resolveNearestDepotByPincode
 } from '../../services/central-supply-chain-service.js';
 
 export const CentralSupplyChainDomainManager: React.FC = () => {
   const [catalog, setCatalog] = useState<CentralCatalogItem[]>([]);
   const [purchaseOrders, setPurchaseOrders] = useState<HospitalPurchaseOrder[]>([]);
-  const [activeTab, setActiveTab] = useState<'INBOUND_POS' | 'CATALOG_MARGINS' | 'ANALYTICS'>('INBOUND_POS');
+  const [activeTab, setActiveTab] = useState<'INBOUND_POS' | 'CATALOG_MARGINS' | 'ANALYTICS' | 'REGIONAL_DEPOTS'>('INBOUND_POS');
+  const [simulatedPincode, setSimulatedPincode] = useState('560001');
   const [statusFilter, setStatusFilter] = useState<HospitalPurchaseOrder['status'] | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -361,6 +364,26 @@ export const CentralSupplyChainDomainManager: React.FC = () => {
         >
           <span>📊</span> Financial & Consumption Analytics
         </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('REGIONAL_DEPOTS')}
+          style={{
+            background: activeTab === 'REGIONAL_DEPOTS' ? 'rgba(245, 158, 11, 0.18)' : '#0F172A',
+            color: activeTab === 'REGIONAL_DEPOTS' ? '#FBBF24' : '#94A3B8',
+            border: activeTab === 'REGIONAL_DEPOTS' ? '1px solid #F59E0B' : '1px solid #1E293B',
+            borderRadius: '10px',
+            padding: '8px 18px',
+            fontWeight: 800,
+            fontSize: '0.875rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          <span>🚚</span> Regional Depots & Fleet (4 Hubs)
+        </button>
       </div>
 
       {activeTab === 'INBOUND_POS' && (
@@ -608,6 +631,206 @@ export const CentralSupplyChainDomainManager: React.FC = () => {
                   <strong style={{ color: '#34D399' }}>₹8,25,000 / mo</strong>
                 </div>
               </div>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {activeTab === 'REGIONAL_DEPOTS' && (
+        <Card title="DocSearch Regional Super-Depots & Pincode Geofencing Network">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {/* Header intro */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#F8FAFC' }}>
+                  Pan-India 4-Hub Super-Depot Fleet Command
+                </h3>
+                <p style={{ margin: '4px 0 0 0', fontSize: '0.8125rem', color: '#94A3B8' }}>
+                  Intelligent pincode geofencing automatically routes wholesale hospital purchase orders to the nearest depot with guaranteed 4h express delivery.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <Badge variant="success">154 Active Cold-Chain Fleet Trucks</Badge>
+                <Badge variant="info">Zero Stockouts Protocol</Badge>
+              </div>
+            </div>
+
+            {/* 4 Regional Depots Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+              {Object.values(REGIONAL_DEPOT_NETWORK).map((depot) => {
+                const assignedOrdersCount = purchaseOrders.filter(
+                  (po) => po.assignedDepot === depot.code || (po.shippingPincode && resolveNearestDepotByPincode(po.shippingPincode).code === depot.code)
+                ).length;
+
+                return (
+                  <div
+                    key={depot.code}
+                    style={{
+                      background: '#0F172A',
+                      border: '1px solid #1E293B',
+                      borderRadius: '12px',
+                      padding: '18px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '12px'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div>
+                        <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#38BDF8', letterSpacing: '0.5px' }}>
+                          {depot.code}
+                        </div>
+                        <h4 style={{ margin: '2px 0 0 0', fontSize: '1rem', fontWeight: 800, color: '#FFFFFF' }}>
+                          {depot.name}
+                        </h4>
+                      </div>
+                      <Badge variant="success" size="sm">
+                        2°C - 8°C Certified
+                      </Badge>
+                    </div>
+
+                    <div style={{ fontSize: '0.8125rem', color: '#94A3B8', lineHeight: 1.4 }}>
+                      📍 <strong>Location:</strong> {depot.hubLocation} ({depot.state})
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', padding: '10px', background: '#1E293B', borderRadius: '8px' }}>
+                      <div>
+                        <div style={{ fontSize: '0.7rem', color: '#94A3B8' }}>EXPRESS SLA</div>
+                        <div style={{ fontSize: '1rem', fontWeight: 900, color: '#FBBF24' }}>{depot.expressSlaHours} Hours</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.7rem', color: '#94A3B8' }}>ACTIVE TRUCKS</div>
+                        <div style={{ fontSize: '1rem', fontWeight: 900, color: '#34D399' }}>{depot.currentFleetCount} Units</div>
+                      </div>
+                    </div>
+
+                    <div style={{ fontSize: '0.75rem', color: '#CBD5E1' }}>
+                      🚚 <strong>Integrated Transporters:</strong>
+                      <div style={{ color: '#94A3B8', marginTop: '2px' }}>
+                        {depot.activeTransporters.join(' · ')}
+                      </div>
+                    </div>
+
+                    <div style={{ borderTop: '1px solid #1E293B', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem' }}>
+                      <span style={{ color: '#94A3B8' }}>Active POs Routed:</span>
+                      <strong style={{ color: '#38BDF8', fontSize: '0.875rem' }}>{assignedOrdersCount} Orders</strong>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Interactive Pincode Geofencing Simulator */}
+            <div style={{ background: '#0F172A', border: '1px solid #1E293B', borderRadius: '12px', padding: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: '#F8FAFC' }}>
+                    ⚡ Real-Time Pincode Routing & SLA Calculator
+                  </h4>
+                  <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: '#94A3B8' }}>
+                    Test how hospital delivery addresses across India are geofenced to our Super-Depots with automatic transporter allocation.
+                  </p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <label style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#CBD5E1' }}>Test Pincode:</label>
+                  <Input
+                    type="text"
+                    value={simulatedPincode}
+                    onChange={(e) => setSimulatedPincode(e.target.value)}
+                    placeholder="e.g. 560001"
+                    style={{ width: '130px', fontWeight: 800 }}
+                  />
+                </div>
+              </div>
+
+              {(() => {
+                const resolved = resolveNearestDepotByPincode(simulatedPincode);
+                return (
+                  <div style={{ padding: '16px', background: '#1E293B', borderRadius: '10px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
+                    <div>
+                      <div style={{ fontSize: '0.7rem', color: '#94A3B8', fontWeight: 700 }}>NEAREST SUPER-DEPOT</div>
+                      <div style={{ fontSize: '1rem', fontWeight: 900, color: '#38BDF8', marginTop: '2px' }}>
+                        {resolved.name} ({resolved.code})
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.7rem', color: '#94A3B8', fontWeight: 700 }}>GEOFENCED HUB</div>
+                      <div style={{ fontSize: '0.875rem', fontWeight: 800, color: '#FFFFFF', marginTop: '2px' }}>
+                        {resolved.hubLocation}
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.7rem', color: '#94A3B8', fontWeight: 700 }}>DISPATCH ESTIMATED ETA</div>
+                      <div style={{ fontSize: '1rem', fontWeight: 900, color: '#10B981', marginTop: '2px' }}>
+                        ⚡ {resolved.expressSlaHours} Hours (Express Cold Fleet)
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.7rem', color: '#94A3B8', fontWeight: 700 }}>PRIMARY CARRIER FLEET</div>
+                      <div style={{ fontSize: '0.875rem', fontWeight: 800, color: '#F59E0B', marginTop: '2px' }}>
+                        {resolved.activeTransporters[0]}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Cold-Chain IoT Telemetry Radar */}
+            <div style={{ background: '#0F172A', border: '1px solid #1E293B', borderRadius: '12px', padding: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: '#F8FAFC' }}>
+                  📡 Live In-Transit Cold-Chain Telemetry Radar
+                </h4>
+                <Badge variant="active" size="sm">
+                  Active Digital Data Loggers Online
+                </Badge>
+              </div>
+
+              <TableContainer>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Shipment PO</TableHead>
+                      <TableHead>Destination Hospital</TableHead>
+                      <TableHead>Fulfilling Depot</TableHead>
+                      <TableHead>Molecules in Transit</TableHead>
+                      <TableHead>Target Temp Range</TableHead>
+                      <TableHead>Live Probe Reading</TableHead>
+                      <TableHead>Telemetry Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell style={{ fontWeight: 800, color: '#38BDF8' }}>PO-DS-2026-0081</TableCell>
+                      <TableCell>Apollo City Hospital (Lucknow)</TableCell>
+                      <TableCell>NORTH_NCR (Gurugram)</TableCell>
+                      <TableCell>Ceftriaxone IV, Normal Saline 500ml</TableCell>
+                      <TableCell>2°C to 8°C (Refrigerated)</TableCell>
+                      <TableCell style={{ fontWeight: 900, color: '#34D399' }}>4.2°C</TableCell>
+                      <TableCell><Badge variant="completed" size="sm">OPTIMAL ✓</Badge></TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell style={{ fontWeight: 800, color: '#38BDF8' }}>PO-DS-2026-0082</TableCell>
+                      <TableCell>Metro Multispecialty & Trauma (Patna)</TableCell>
+                      <TableCell>EAST_CCU (Kolkata)</TableCell>
+                      <TableCell>CBC Diluent 20L, Dengue Rapid Cards</TableCell>
+                      <TableCell>15°C to 25°C (Controlled Ambient)</TableCell>
+                      <TableCell style={{ fontWeight: 900, color: '#34D399' }}>19.4°C</TableCell>
+                      <TableCell><Badge variant="completed" size="sm">OPTIMAL ✓</Badge></TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell style={{ fontWeight: 800, color: '#38BDF8' }}>PO-DS-2026-0083</TableCell>
+                      <TableCell>Bangalore MedCare Super Specialty</TableCell>
+                      <TableCell>SOUTH_BLR (Bengaluru)</TableCell>
+                      <TableCell>Insulin Glargine 100IU, Erythropoietin</TableCell>
+                      <TableCell>2°C to 8°C (Biologicals)</TableCell>
+                      <TableCell style={{ fontWeight: 900, color: '#34D399' }}>3.8°C</TableCell>
+                      <TableCell><Badge variant="completed" size="sm">OPTIMAL ✓</Badge></TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </TableContainer>
             </div>
           </div>
         </Card>

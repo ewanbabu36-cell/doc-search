@@ -35,6 +35,90 @@ export interface WholesaleCatalogItem {
   badge?: string;
 }
 
+export type RegionalDepotCode = 'NORTH_NCR' | 'SOUTH_BLR' | 'WEST_BOM' | 'EAST_CCU';
+
+export interface RegionalDepotInfo {
+  code: RegionalDepotCode;
+  name: string;
+  hubLocation: string;
+  state: string;
+  pincodePrefixes: string[];
+  coldChainCertified: boolean;
+  expressSlaHours: number;
+  standardSlaHours: number;
+  currentFleetCount: number;
+  activeTransporters: string[];
+  contactHelpline: string;
+}
+
+export const REGIONAL_DEPOT_NETWORK: Record<RegionalDepotCode, RegionalDepotInfo> = {
+  NORTH_NCR: {
+    code: 'NORTH_NCR',
+    name: 'DocSearch Northern Super-Depot',
+    hubLocation: 'IMT Manesar, Gurugram NCR',
+    state: 'Haryana',
+    pincodePrefixes: ['11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '30', '31', '32', '33', '34'],
+    coldChainCertified: true,
+    expressSlaHours: 4,
+    standardSlaHours: 18,
+    currentFleetCount: 38,
+    activeTransporters: ['Delhivery MedExpress', 'BlueDart Temperature-Controlled', 'DocSearch Dedicated Cold Fleet'],
+    contactHelpline: '+91 124 8890 011'
+  },
+  WEST_BOM: {
+    code: 'WEST_BOM',
+    name: 'DocSearch Western Super-Depot',
+    hubLocation: 'Bhiwandi Logistics Park, Mumbai MMR',
+    state: 'Maharashtra',
+    pincodePrefixes: ['36', '37', '38', '39', '40', '41', '42', '43', '44', '45', '46', '47', '48', '49'],
+    coldChainCertified: true,
+    expressSlaHours: 6,
+    standardSlaHours: 20,
+    currentFleetCount: 42,
+    activeTransporters: ['Gati-KWE Pharma', 'Safexpress Healthcare Fleet', 'BlueDart Express'],
+    contactHelpline: '+91 22 8890 022'
+  },
+  SOUTH_BLR: {
+    code: 'SOUTH_BLR',
+    name: 'DocSearch Southern Super-Depot',
+    hubLocation: 'Attibele / Electronic City, Bengaluru',
+    state: 'Karnataka',
+    pincodePrefixes: ['50', '51', '52', '53', '56', '57', '58', '59', '60', '61', '62', '63', '64', '67', '68', '69'],
+    coldChainCertified: true,
+    expressSlaHours: 4,
+    standardSlaHours: 24,
+    currentFleetCount: 45,
+    activeTransporters: ['Shadowfax MedFleet', 'Delhivery Healthcare', 'DHL Cold Chain'],
+    contactHelpline: '+91 80 8890 033'
+  },
+  EAST_CCU: {
+    code: 'EAST_CCU',
+    name: 'DocSearch Eastern Super-Depot',
+    hubLocation: 'Dankuni Logistics Hub, Kolkata',
+    state: 'West Bengal',
+    pincodePrefixes: ['70', '71', '72', '73', '74', '75', '76', '78', '79', '80', '81', '82', '83', '84', '85'],
+    coldChainCertified: true,
+    expressSlaHours: 8,
+    standardSlaHours: 36,
+    currentFleetCount: 29,
+    activeTransporters: ['BlueDart MedTransit', 'SpotOn Logistics', 'DocSearch Eastern Fleet'],
+    contactHelpline: '+91 33 8890 044'
+  }
+};
+
+export function resolveNearestDepotByPincode(pincode: string): RegionalDepotInfo {
+  const clean = pincode.trim().replace(/\D/g, '');
+  if (clean.length >= 2) {
+    const prefix = clean.slice(0, 2);
+    for (const depot of Object.values(REGIONAL_DEPOT_NETWORK)) {
+      if (depot.pincodePrefixes.includes(prefix)) {
+        return depot;
+      }
+    }
+  }
+  return REGIONAL_DEPOT_NETWORK.NORTH_NCR;
+}
+
 export interface InboundPurchaseOrder {
   id: string;
   poNumber: string;
@@ -61,6 +145,15 @@ export interface InboundPurchaseOrder {
   dispatchedAt?: string | undefined;
   deliveredAt?: string | undefined;
   isAutoGrnApplied?: boolean | undefined;
+  shippingPincode?: string | undefined;
+  assignedDepot?: RegionalDepotCode | undefined;
+  deliveryEta?: string | undefined;
+  coldChainTelemetry?: {
+    targetRange: string;
+    lastSensorReadingC: number;
+    sensorStatus: 'OPTIMAL' | 'WARNING' | 'EXCURSION';
+    monitoredAt: string;
+  } | undefined;
 }
 
 export const INITIAL_WHOLESALE_CATALOG: WholesaleCatalogItem[] = [

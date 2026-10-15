@@ -81,6 +81,7 @@ const OpdOneFlowExpressView = React.lazy(() => import('./views/OpdOneFlowExpress
 const CentralHelpDeskExitHubView = React.lazy(() => import('./views/CentralHelpDeskExitHubView.js').then(m => ({ default: m.CentralHelpDeskExitHubView })));
 const PreferredPartnerNetworkView = React.lazy(() => import('./views/PreferredPartnerNetworkView.js').then(m => ({ default: m.PreferredPartnerNetworkView })));
 const HospitalInHouseClosedLoopView = React.lazy(() => import('./views/HospitalInHouseClosedLoopView.js').then(m => ({ default: m.HospitalInHouseClosedLoopView })));
+const LegacyDataMigrationWizardView = React.lazy(() => import('./views/LegacyDataMigrationWizardView.js').then(m => ({ default: m.LegacyDataMigrationWizardView })));
 import { isPartnerModuleAllowed, isModuleAllowedForPartnerProfile, isWorkspaceAllowedForPartnerProfile, isDestructiveActionAllowed, isHospitalExecutive, getRoleDefaultPerspective, isVoiceScribeAllowed, isClinicianRole } from '../utils/partnerRolePermissions.js';
 const FrontDeskWorkstationView = React.lazy(() => import('./views/FrontDeskWorkstationView.js').then(m => ({ default: m.FrontDeskWorkstationView })));
 const StaffOperationalRoleDashboard = React.lazy(() => import('./dashboard/StaffOperationalRoleDashboard.js').then(m => ({ default: m.StaffOperationalRoleDashboard })));
@@ -169,7 +170,8 @@ export type PartnerModuleKey =
   | 'opd-one-flow-express'
   | 'help-desk-exit-hub'
   | 'preferred-partner-network'
-  | 'hospital-closed-loop';
+  | 'hospital-closed-loop'
+  | 'legacy-data-migration';
 
 export type RolePerspective = 'AUTO' | 'DOCTOR' | 'NURSE' | 'FRONT_DESK' | 'PHARMACY' | 'LAB' | 'BILLING' | 'ADMIN';
 
@@ -221,6 +223,7 @@ export const MODULE_METADATA: Record<PartnerModuleKey, { title: string; icon: st
   'procurement-supply-chain': { title: 'Procurement & Inventory', icon: '📦' },
   'offers-rewards-hub': { title: 'Partner Rewards & Grants', icon: '🎁' },
   'account-plan-features': { title: 'My Account / Plan & Features', icon: '💳' },
+  'legacy-data-migration': { title: 'Legacy Data Migrator', icon: '⚡' },
 };
 
 const getThemeLabel = (t: string) => {
@@ -2058,7 +2061,8 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
             { id: 'dietary-kitchen-management', label: 'Dietary & Kitchen', icon: <span>🥗</span>, isActive: activeModule === 'dietary-kitchen-management', onClick: () => setActiveModule('dietary-kitchen-management') },
             { id: 'medical-records', label: 'MRD & ICD-10 Archive', icon: <span>📁</span>, isActive: activeModule === 'medical-records', onClick: () => setActiveModule('medical-records') },
             { id: 'organization-foundation', label: 'Organization & Branches', icon: <span>🏢</span>, isActive: activeModule === 'organization-foundation', onClick: () => setActiveModule('organization-foundation') },
-            { id: 'ai-chat-assistant', label: 'AI Copilot Assistant', icon: <span>🤖</span>, isActive: activeModule === 'ai-chat-assistant', onClick: () => setActiveModule('ai-chat-assistant') }
+            { id: 'ai-chat-assistant', label: 'AI Copilot Assistant', icon: <span>🤖</span>, isActive: activeModule === 'ai-chat-assistant', onClick: () => setActiveModule('ai-chat-assistant') },
+            { id: 'legacy-data-migration', label: '1-Click Data Migrator', icon: <span>⚡</span>, isActive: activeModule === 'legacy-data-migration', onClick: () => setActiveModule('legacy-data-migration') }
           ]
         }
       ]);
@@ -2130,7 +2134,8 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
           { id: 'asset-biomedical-maintenance', label: 'Biomedical Assets Maintenance', icon: <span>🔧</span>, isActive: activeModule === 'asset-biomedical-maintenance', onClick: () => setActiveModule('asset-biomedical-maintenance') },
           { id: 'quality-incident-infection-control', label: 'NABH Quality & Infection Control', icon: <span>🛡️</span>, isActive: activeModule === 'quality-incident-infection-control', onClick: () => setActiveModule('quality-incident-infection-control') },
           { id: 'dietary-kitchen-management', label: 'Dietary & Inpatient Kitchen', icon: <span>🥗</span>, isActive: activeModule === 'dietary-kitchen-management', onClick: () => setActiveModule('dietary-kitchen-management') },
-          { id: 'medical-records', label: 'MRD & ICD-10 Archive', icon: <span>📁</span>, isActive: activeModule === 'medical-records', onClick: () => setActiveModule('medical-records') }
+          { id: 'medical-records', label: 'MRD & ICD-10 Archive', icon: <span>📁</span>, isActive: activeModule === 'medical-records', onClick: () => setActiveModule('medical-records') },
+          { id: 'legacy-data-migration', label: 'Legacy Data Migrator (Practo/Marg)', icon: <span>⚡</span>, isActive: activeModule === 'legacy-data-migration', onClick: () => setActiveModule('legacy-data-migration') }
         ]
       }
     ]);
@@ -5645,6 +5650,16 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                   currentUser={currentUser}
                   onOpenQuickModal={() => setIsAccountPlanModalOpen(true)}
                 />
+              </div>
+            )}
+            {visitedModules.has('legacy-data-migration') && (
+              <div style={{ display: activeModule === 'legacy-data-migration' ? 'block' : 'none' }}>
+                <DomainErrorBoundary domainName="Legacy Data Migrator">
+                  <LegacyDataMigrationWizardView
+                    tenantId={resolvedTenantId}
+                    onNavigateToModule={(mod) => setActiveModule(mod as any)}
+                  />
+                </DomainErrorBoundary>
               </div>
             )}
           </React.Suspense>

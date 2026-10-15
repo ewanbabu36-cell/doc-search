@@ -477,6 +477,7 @@ export const GlobalCommandPalette: React.FC<Props> = ({
     { id: 'act-scribe', category: 'Quick Action', title: 'Start Ambient AI Voice Scribe Capsule', subtitle: 'Acoustic Hinglish/English SOAP Note Generation', icon: '🎙️', shortcut: 'Alt+V', targetModule: 'ai-clinical-cdss', action: () => { window.dispatchEvent(new CustomEvent('docsearch:toggle_ambient_scribe')); onClose(); } },
     { id: 'act-upi', category: 'Quick Action', title: 'Instant Multi-Party UPI Split POS', subtitle: 'Dynamic QR with instant doctor/hospital settlement', icon: '⚡', shortcut: 'Alt+U', targetModule: 'billing-revenue-cycle', action: () => { onNavigateModule('billing-revenue-cycle'); onClose(); } },
     { id: 'act-breakglass', category: 'Quick Action', title: 'Emergency Break-Glass Clinical Override', subtitle: '2-hour urgent trauma access with CISO audit', icon: '🚨', targetModule: 'organization-foundation', action: () => { onNavigateModule('organization-foundation'); onClose(); } },
+    { id: 'act-legacy-migrate', category: 'Quick Action', title: '1-Click Legacy Data Migrator (Practo / Marg / Vyapar)', subtitle: 'Automated CSV ingestion with zero downtime & cryptographic audit', icon: '⚡', shortcut: 'Alt+M', targetModule: 'legacy-data-migration', action: () => { onNavigateModule('legacy-data-migration'); onClose(); } },
 
     // Clinical Modules
     { id: 'mod-smart-desk', category: 'Clinical Module', title: 'Role-Tailored Smart Desk', subtitle: '4 Killer Tools condensed from 38 hospital modules', icon: '⚡', targetModule: 'my-smart-desk', action: () => { onNavigateModule('my-smart-desk'); onClose(); } },
@@ -487,6 +488,7 @@ export const GlobalCommandPalette: React.FC<Props> = ({
     { id: 'mod-pharm', category: 'Clinical Module', title: 'Pharmacy POS & Dispensing Counter', subtitle: 'Inventory batch tracking, Schedule H1 register', icon: '💊', targetModule: 'pharmacy-medication', action: () => { onNavigateModule('pharmacy-medication'); onClose(); } },
     { id: 'mod-lab', category: 'Clinical Module', title: 'Pathology Laboratory LIMS', subtitle: 'Bi-directional machine interface & critical alerts', icon: '🧪', targetModule: 'clinical-investigation', action: () => { onNavigateModule('clinical-investigation'); onClose(); } },
     { id: 'mod-rad', category: 'Clinical Module', title: 'Radiology & Web DICOM PACS', subtitle: 'High-res X-Ray, CT, MRI scans on browser', icon: '🔬', targetModule: 'radiology-imaging', action: () => { onNavigateModule('radiology-imaging'); onClose(); } },
+    { id: 'mod-legacy-migration', category: 'Clinical Module', title: 'Legacy Data Migration Wizard', subtitle: '1-click import from Practo Ray, Marg ERP, Vyapar & LiveHealth', icon: '⚡', targetModule: 'legacy-data-migration', action: () => { onNavigateModule('legacy-data-migration'); onClose(); } },
 
     // Theme & UI
     { id: 'thm-toggle', category: 'Theme & Settings', title: 'Cycle Visual Theme', subtitle: 'Advance Pro, Swiss Clinical, Healthcare Light, Obsidian Titanium', icon: '🎨', shortcut: 'Alt+Shift+T', action: () => { onToggleTheme(); onClose(); } }

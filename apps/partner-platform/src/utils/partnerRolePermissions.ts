@@ -654,7 +654,7 @@ export function isPartnerModuleAllowed(
   userPermissions?: StaffPermissions
 ): boolean {
   if (!role) return false;
-  if (moduleKey === 'offers-rewards-hub' || moduleKey === 'account-plan-features' || moduleKey === 'my-smart-desk') {
+  if (moduleKey === 'offers-rewards-hub' || moduleKey === 'account-plan-features' || moduleKey === 'my-smart-desk' || moduleKey === 'legacy-data-migration') {
     return true;
   }
 

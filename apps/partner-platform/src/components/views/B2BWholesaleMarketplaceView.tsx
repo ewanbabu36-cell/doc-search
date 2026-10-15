@@ -17,7 +17,8 @@ import {
   b2bWholesaleSupplyService,
   type WholesaleCatalogItem,
   type SupplyCategory,
-  type InboundPurchaseOrder
+  type InboundPurchaseOrder,
+  resolveNearestDepotByPincode
 } from '../../services/b2b-wholesale-supply-service.js';
 
 export interface B2BWholesaleMarketplaceViewProps {
@@ -33,6 +34,7 @@ export const B2BWholesaleMarketplaceView: React.FC<B2BWholesaleMarketplaceViewPr
   const [purchaseOrders, setPurchaseOrders] = useState<InboundPurchaseOrder[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<SupplyCategory | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const [facilityPincode, setFacilityPincode] = useState('110001');
   
   // Cart state: itemId -> quantity
   const [cart, setCart] = useState<Record<string, number>>({});
@@ -40,6 +42,8 @@ export const B2BWholesaleMarketplaceView: React.FC<B2BWholesaleMarketplaceViewPr
   const [activeTab, setActiveTab] = useState<'CATALOG' | 'MY_ORDERS'>('CATALOG');
   const [orderSuccessModal, setOrderSuccessModal] = useState<InboundPurchaseOrder | null>(null);
   const [autoGrnToast, setAutoGrnToast] = useState<string | null>(null);
+
+  const nearestDepot = useMemo(() => resolveNearestDepotByPincode(facilityPincode), [facilityPincode]);
 
   useEffect(() => {
     setCatalog(b2bWholesaleSupplyService.getCatalog());
@@ -160,7 +164,16 @@ export const B2BWholesaleMarketplaceView: React.FC<B2BWholesaleMarketplaceViewPr
       items,
       subtotalInr: cartTotalAmount,
       gstInr: gst,
-      totalAmountInr: cartTotalAmount + gst
+      totalAmountInr: cartTotalAmount + gst,
+      shippingPincode: facilityPincode,
+      assignedDepot: nearestDepot.code,
+      deliveryEta: `${nearestDepot.expressSlaHours}h Guaranteed (${nearestDepot.name})`,
+      coldChainTelemetry: {
+        targetRange: '2°C to 8°C (Refrigerated & Biologicals)',
+        lastSensorReadingC: 4.2,
+        sensorStatus: 'OPTIMAL',
+        monitoredAt: 'Just now'
+      }
     });
 
     setCart({});
@@ -295,6 +308,48 @@ export const B2BWholesaleMarketplaceView: React.FC<B2BWholesaleMarketplaceViewPr
             <span>🛒</span> View Cart ({cartItemCount})
             {cartTotalAmount > 0 && <span>• ₹{cartTotalAmount.toLocaleString('en-IN')}</span>}
           </Button>
+        </div>
+      </div>
+
+      {/* Regional Depot Geofencing SLA Bar */}
+      <div
+        style={{
+          background: '#0F172A',
+          border: '1px solid #1E293B',
+          borderRadius: '12px',
+          padding: '14px 20px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '12px'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span style={{ fontSize: '20px' }}>📍</span>
+          <div>
+            <div style={{ fontSize: '0.875rem', fontWeight: 800, color: '#F8FAFC' }}>
+              Fulfilling Depot: <span style={{ color: '#38BDF8' }}>{nearestDepot.name} ({nearestDepot.code})</span>
+            </div>
+            <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
+              Hub: {nearestDepot.hubLocation} · Fleet: {nearestDepot.currentFleetCount} Units · Express SLA:{' '}
+              <strong style={{ color: '#34D399' }}>{nearestDepot.expressSlaHours}h Delivery</strong>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94A3B8' }}>Delivery Pincode:</label>
+          <Input
+            type="text"
+            value={facilityPincode}
+            onChange={(e) => setFacilityPincode(e.target.value)}
+            placeholder="Pincode"
+            style={{ width: '100px', fontWeight: 800, textAlign: 'center' }}
+          />
+          <Badge variant="success" size="sm">
+            2°C - 8°C Cold Chain Active
+          </Badge>
         </div>
       </div>
 
