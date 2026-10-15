@@ -387,17 +387,6 @@ export const OneClickAiDischargeSynthesizerView: React.FC = () => {
             Synthesizes multi-day admission notes, OT surgery logs, 24-hr ICU vitals, and lab trends into a complete NABH Discharge Summary in <strong>&lt; 3 seconds</strong>, reducing resident doctor documentation burden from 45 minutes to 1 click.
           </p>
         </div>
-
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => window.print()}
-            style={{ fontWeight: 700 }}
-          >
-            🖨️ Print NABH Summary
-          </Button>
-        </div>
       </div>
 
       {/* Case Selector Bar */}
