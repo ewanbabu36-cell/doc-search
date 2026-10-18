@@ -29,6 +29,14 @@ async function main() {
   } else {
     console.log('[PostgreSQL] Cluster already initialized at', dataDir);
   }
+
+  const pidFile = path.join(dataDir, 'postmaster.pid');
+  if (fs.existsSync(pidFile)) {
+    try {
+      fs.unlinkSync(pidFile);
+      console.log('[PostgreSQL] Safely unlinked stale postmaster.pid lock file.');
+    } catch {}
+  }
   
   await pgServer.start();
   console.log('[PostgreSQL] Native PostgreSQL server listening on 127.0.0.1:5432');

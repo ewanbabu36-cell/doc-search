@@ -1,4 +1,4 @@
-import { isMockFallbackAllowed } from './api-client.js';
+import { apiRequest, isMockFallbackAllowed } from './api-client.js';
 import type {
   InsurancePayerDto,
   InsurancePlanDto,
@@ -171,10 +171,31 @@ export class InsuranceClaimsManagementService implements IInsuranceClaimsManagem
 
   // Payers & Plans
   async getPayers(tenantId: string): Promise<InsurancePayerDto[]> {
+    try {
+      const res = await apiRequest<InsurancePayerDto[]>('/api/v1/partner/insurance/payers');
+      if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
     return this.payers.filter((p) => p.tenantId === tenantId);
   }
 
   async createPayer(request: CreatePayerRequest): Promise<InsurancePayerDto> {
+    try {
+      const res = await apiRequest<InsurancePayerDto>('/api/v1/partner/insurance/payers', {
+        method: 'POST',
+        body: JSON.stringify(request)
+      });
+      if (res.success && res.data) {
+        this.payers.unshift(res.data);
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const exists = this.payers.some(
       (p) => p.tenantId === request.tenantId && p.payerCode.toLowerCase() === request.payerCode.toLowerCase()
     );
@@ -225,10 +246,32 @@ export class InsuranceClaimsManagementService implements IInsuranceClaimsManagem
   }
 
   async getPlans(tenantId: string, payerId?: string): Promise<InsurancePlanDto[]> {
+    try {
+      const url = payerId ? `/api/v1/partner/insurance/plans?payerId=${encodeURIComponent(payerId)}` : '/api/v1/partner/insurance/plans';
+      const res = await apiRequest<InsurancePlanDto[]>(url);
+      if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
     return this.plans.filter((p) => p.tenantId === tenantId && (!payerId || p.payerId === payerId));
   }
 
   async createPlan(request: CreateInsurancePlanRequest): Promise<InsurancePlanDto> {
+    try {
+      const res = await apiRequest<InsurancePlanDto>('/api/v1/partner/insurance/plans', {
+        method: 'POST',
+        body: JSON.stringify(request)
+      });
+      if (res.success && res.data) {
+        this.plans.unshift(res.data);
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const payer = this.payers.find((p) => p.id === request.payerId);
     if (!payer) {
       throw new Error(`Insurance Payer with ID '${request.payerId}' not found.`);
@@ -276,10 +319,32 @@ export class InsuranceClaimsManagementService implements IInsuranceClaimsManagem
 
   // Patient Policies & Eligibility
   async getPatientPolicies(tenantId: string, patientId?: string): Promise<InsurancePatientPolicyDto[]> {
+    try {
+      const url = patientId ? `/api/v1/partner/insurance/policies?patientId=${encodeURIComponent(patientId)}` : '/api/v1/partner/insurance/policies';
+      const res = await apiRequest<InsurancePatientPolicyDto[]>(url);
+      if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
     return this.policies.filter((p) => p.tenantId === tenantId && (!patientId || p.patientId === patientId));
   }
 
   async registerPatientPolicy(request: RegisterPatientPolicyRequest): Promise<InsurancePatientPolicyDto> {
+    try {
+      const res = await apiRequest<InsurancePatientPolicyDto>('/api/v1/partner/insurance/policies', {
+        method: 'POST',
+        body: JSON.stringify(request)
+      });
+      if (res.success && res.data) {
+        this.policies.unshift(res.data);
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const payer = this.payers.find((p) => p.id === request.payerId);
     const plan = this.plans.find((pl) => pl.id === request.planId);
     if (!payer || !plan) {
@@ -405,10 +470,32 @@ export class InsuranceClaimsManagementService implements IInsuranceClaimsManagem
 
   // Authorizations
   async getAuthorizations(tenantId: string, patientId?: string): Promise<InsuranceAuthorizationDto[]> {
+    try {
+      const url = patientId ? `/api/v1/partner/insurance/authorizations?patientId=${encodeURIComponent(patientId)}` : '/api/v1/partner/insurance/authorizations';
+      const res = await apiRequest<InsuranceAuthorizationDto[]>(url);
+      if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
     return this.authorizations.filter((a) => a.tenantId === tenantId && (!patientId || a.patientId === patientId));
   }
 
   async createAuthorization(request: CreateAuthorizationRequest): Promise<InsuranceAuthorizationDto> {
+    try {
+      const res = await apiRequest<InsuranceAuthorizationDto>('/api/v1/partner/insurance/authorizations', {
+        method: 'POST',
+        body: JSON.stringify(request)
+      });
+      if (res.success && res.data) {
+        this.authorizations.unshift(res.data);
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const policy = this.policies.find((p) => p.id === request.policyId);
     if (!policy) {
       throw new Error('Active patient policy reference is required.');
@@ -462,6 +549,17 @@ export class InsuranceClaimsManagementService implements IInsuranceClaimsManagem
   }
 
   async submitAuthorization(request: SubmitAuthorizationRequest): Promise<InsuranceAuthorizationDto> {
+    try {
+      const res = await apiRequest<InsuranceAuthorizationDto>(`/api/v1/partner/insurance/authorizations/${request.authorizationId}/submit`, {
+        method: 'POST'
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const auth = this.authorizations.find((a) => a.id === request.authorizationId && a.tenantId === request.tenantId);
     if (!auth) {
       throw new Error(`Authorization with ID '${request.authorizationId}' not found.`);
@@ -487,6 +585,18 @@ export class InsuranceClaimsManagementService implements IInsuranceClaimsManagem
   }
 
   async approveAuthorization(request: ApproveAuthorizationRequest): Promise<InsuranceAuthorizationDto> {
+    try {
+      const res = await apiRequest<InsuranceAuthorizationDto>(`/api/v1/partner/insurance/authorizations/${request.authorizationId}/approve`, {
+        method: 'POST',
+        body: JSON.stringify({ approvedAmount: request.approvedAmount, remarks: request.payerRemarks })
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const auth = this.authorizations.find((a) => a.id === request.authorizationId && a.tenantId === request.tenantId);
     if (!auth) {
       throw new Error(`Authorization with ID '${request.authorizationId}' not found.`);
@@ -521,6 +631,18 @@ export class InsuranceClaimsManagementService implements IInsuranceClaimsManagem
   }
 
   async denyAuthorization(request: DenyAuthorizationRequest): Promise<InsuranceAuthorizationDto> {
+    try {
+      const res = await apiRequest<InsuranceAuthorizationDto>(`/api/v1/partner/insurance/authorizations/${request.authorizationId}/deny`, {
+        method: 'POST',
+        body: JSON.stringify({ remarks: request.payerRemarks || request.justification })
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const auth = this.authorizations.find((a) => a.id === request.authorizationId && a.tenantId === request.tenantId);
     if (!auth) {
       throw new Error(`Authorization with ID '${request.authorizationId}' not found.`);
@@ -554,6 +676,18 @@ export class InsuranceClaimsManagementService implements IInsuranceClaimsManagem
 
   // Claims
   async getClaims(tenantId: string, options?: { patientId?: string; status?: string }): Promise<InsuranceClaimDto[]> {
+    try {
+      const params = new URLSearchParams();
+      if (options?.patientId) params.append('patientId', options.patientId);
+      if (options?.status) params.append('status', options.status);
+      const qs = params.toString() ? `?${params.toString()}` : '';
+      const res = await apiRequest<InsuranceClaimDto[]>(`/api/v1/partner/insurance/claims${qs}`);
+      if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
     return this.claims.filter(
       (c) =>
         c.tenantId === tenantId &&
@@ -563,10 +697,31 @@ export class InsuranceClaimsManagementService implements IInsuranceClaimsManagem
   }
 
   async getClaimById(tenantId: string, claimId: string): Promise<InsuranceClaimDto | null> {
+    try {
+      const res = await apiRequest<InsuranceClaimDto>(`/api/v1/partner/insurance/claims/${claimId}`);
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
     return this.claims.find((c) => c.tenantId === tenantId && c.id === claimId) || null;
   }
 
   async createClaim(request: CreateClaimRequest): Promise<InsuranceClaimDto> {
+    try {
+      const res = await apiRequest<InsuranceClaimDto>('/api/v1/partner/insurance/claims', {
+        method: 'POST',
+        body: JSON.stringify(request)
+      });
+      if (res.success && res.data) {
+        this.claims.unshift(res.data);
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const policy = this.policies.find((p) => p.id === request.policyId);
     const payer = this.payers.find((p) => p.id === request.payerId);
     if (!policy || !payer) {
@@ -1101,10 +1256,31 @@ export class InsuranceClaimsManagementService implements IInsuranceClaimsManagem
 
   // Settlements & Reconciliations
   async getSettlements(tenantId: string): Promise<InsuranceSettlementDto[]> {
+    try {
+      const res = await apiRequest<InsuranceSettlementDto[]>('/api/v1/partner/insurance/settlements');
+      if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
     return this.settlements.filter((s) => s.tenantId === tenantId);
   }
 
   async recordSettlement(request: RecordSettlementRequest): Promise<InsuranceSettlementDto> {
+    try {
+      const res = await apiRequest<InsuranceSettlementDto>('/api/v1/partner/insurance/settlements', {
+        method: 'POST',
+        body: JSON.stringify(request)
+      });
+      if (res.success && res.data) {
+        this.settlements.unshift(res.data);
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const claim = this.claims.find((c) => c.id === request.claimId && c.tenantId === request.tenantId);
     const payer = this.payers.find((p) => p.id === request.payerId);
     if (!claim || !payer) {
@@ -1212,6 +1388,15 @@ export class InsuranceClaimsManagementService implements IInsuranceClaimsManagem
 
   // Overview, Reports & Audit
   async getOverviewMetrics(tenantId: string): Promise<InsuranceOverviewMetricsDto> {
+    try {
+      const res = await apiRequest<InsuranceOverviewMetricsDto>('/api/v1/partner/insurance/overview');
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (error) {
+      if (!isMockFallbackAllowed()) throw error;
+    }
+
     const claims = this.claims.filter((c) => c.tenantId === tenantId);
     const activePatients = new Set(this.policies.filter((p) => p.tenantId === tenantId && p.coverageStatus === 'ACTIVE').map((p) => p.patientId)).size;
     const checksToday = this.eligibilityChecks.filter((e) => e.tenantId === tenantId).length;

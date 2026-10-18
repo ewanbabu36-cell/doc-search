@@ -42,6 +42,7 @@ import { dietaryRoutes } from './routes/partner/dietary.routes.js';
 import { assetBiomedicalRoutes } from './routes/partner/asset-biomedical.routes.js';
 import { qualityInfectionRoutes } from './routes/partner/quality-infection.routes.js';
 import { procurementRoutes } from './routes/partner/procurement.routes.js';
+import { insuranceManagementRoutes } from './routes/partner/insurance-management.routes.js';
 import { supplyChainRoutes } from './routes/partner/supply-chain.routes.js';
 import { abdmRoutes } from './routes/partner/abdm.routes.js';
 import { aiClinicalCopilotRoutes } from './routes/partner/ai-clinical-copilot.routes.js';
@@ -355,6 +356,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(assetBiomedicalRoutes);
   await app.register(qualityInfectionRoutes);
   await app.register(procurementRoutes);
+  await app.register(insuranceManagementRoutes);
   await app.register(supplyChainRoutes);
   await app.register(abdmRoutes);
   await app.register(aiClinicalCopilotRoutes);

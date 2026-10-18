@@ -151,6 +151,12 @@ async function main() {
   const healthy = await waitForHealth('http://127.0.0.1:4000/api/v1/health');
   if (healthy) {
     console.log('[\x1b[32m✔\x1b[0m] API Gateway is healthy at http://localhost:4000\n');
+    try {
+      console.log('[*] Verifying & seeding Insurance & Procurement PostgreSQL records...');
+      execSync(`"${process.execPath}" scripts/seed-insurance-and-procurement.mjs`, { cwd: rootDir, stdio: 'inherit' });
+    } catch (err) {
+      console.warn('[!] Non-fatal error during insurance/procurement seed:', err.message);
+    }
   } else {
     console.log('[\x1b[33m!\x1b[0m] Health check timeout reached; continuing with frontend launch...\n');
   }
