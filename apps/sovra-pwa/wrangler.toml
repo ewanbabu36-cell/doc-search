@@ -1,0 +1,22 @@
+# Cloudflare Pages Configuration for Sovra Zero-Cost Healthcare PWA
+name = "sovra-pwa"
+compatibility_date = "2026-10-19"
+pages_build_output_dir = "dist"
+
+[site]
+bucket = "./dist"
+
+# Headers for PWA ServiceWorker & Security
+[[headers]]
+for = "/sw.js"
+[headers.values]
+"Cache-Control" = "no-cache, no-store, must-revalidate"
+"Service-Worker-Allowed" = "/"
+
+[[headers]]
+for = "/*"
+[headers.values]
+"X-Frame-Options" = "DENY"
+"X-Content-Type-Options" = "nosniff"
+"Referrer-Policy" = "strict-origin-when-cross-origin"
+"Permissions-Policy" = "camera=(), microphone=(self), geolocation=()"

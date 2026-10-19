@@ -1,0 +1,54 @@
+{
+  "packageId": "com.docsearch.sovra",
+  "host": "sovra-pwa.pages.dev",
+  "name": "Sovra Clinical Health Messenger",
+  "launcherName": "Sovra",
+  "display": "standalone",
+  "themeColor": "#0F766E",
+  "themeColorDark": "#115E59",
+  "navigationColor": "#0F172A",
+  "navigationColorDark": "#0B0F19",
+  "navigationDividerColor": "#00000000",
+  "backgroundColor": "#0F172A",
+  "enableNotifications": true,
+  "startUrl": "/",
+  "iconUrl": "https://sovra-pwa.pages.dev/icon-512.png",
+  "maskableIconUrl": "https://sovra-pwa.pages.dev/icon-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "D:\\DOC SEARCH\\apps\\sovra-pwa\\android.keystore",
+    "alias": "sovra"
+  },
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [
+    {
+      "name": "Prescriptions",
+      "shortName": "Rx",
+      "url": "/?tab=rx",
+      "chosenIconUrl": "https://sovra-pwa.pages.dev/icon-192.png"
+    },
+    {
+      "name": "Lab Reports",
+      "shortName": "Reports",
+      "url": "/?tab=lab",
+      "chosenIconUrl": "https://sovra-pwa.pages.dev/icon-192.png"
+    }
+  ],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://sovra-pwa.pages.dev/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {
+    "playBilling": {
+      "enabled": false
+    }
+  },
+  "permissions": [
+    "android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS",
+    "android.permission.POST_NOTIFICATIONS",
+    "android.permission.WAKE_LOCK"
+  ],
+  "alphaDependencies": {
+    "enabled": false
+  }
+}

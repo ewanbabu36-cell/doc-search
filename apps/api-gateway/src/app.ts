@@ -51,6 +51,7 @@ import { aiChatRoutes } from './routes/partner/ai-chat.routes.js';
 import { aiVoiceRoutes } from './routes/partner/ai-voice.routes.js';
 import { hardwareBridgeRoutes } from './routes/partner/hardware-bridge.routes.js';
 import { whatsappEngagementRoutes } from './routes/partner/whatsapp-engagement.routes.js';
+import { sovraWebhookRoutes } from './routes/partner/sovra-webhook.routes.js';
 import { executiveMisRoutes } from './routes/partner/executive-mis.routes.js';
 import { staffAdministrationRoutes } from './routes/partner/staff-administration.routes.js';
 import { partnerAccountRoutes } from './routes/partner/account.routes.js';
@@ -365,6 +366,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(aiVoiceRoutes);
   await app.register(hardwareBridgeRoutes);
   await app.register(whatsappEngagementRoutes);
+  await app.register(sovraWebhookRoutes);
   await app.register(executiveMisRoutes);
   await app.register(staffAdministrationRoutes);
   await app.register(partnerAccountRoutes);

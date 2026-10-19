@@ -10,7 +10,7 @@ process.env.ALLOW_EMBEDDED_POSTGRES = 'false';
 process.env.NODE_ENV = 'development';
 
 // 1. Free ports before launching
-const ports = [4000, 5173, 5174, 5175, 5177, 18080, 8042, 11112];
+const ports = [4000, 5173, 5174, 5175, 5176, 5177, 18080, 8042, 11112];
 try {
   const output = execSync('netstat -ano', { encoding: 'utf8' });
   const lines = output.split('\n');
@@ -227,6 +227,14 @@ async function main() {
       executable: process.execPath,
       args: [path.join(rootDir, 'apps/landing-page/node_modules/vite/bin/vite.js'), '--port', '5175', '--host', '--strictPort'],
       color: '\x1b[33m'
+    },
+    {
+      name: 'Sovra Healthcare PWA',
+      port: 5176,
+      cwd: path.join(rootDir, 'apps/sovra-pwa'),
+      executable: process.execPath,
+      args: [path.join(rootDir, 'apps/sovra-pwa/node_modules/vite/bin/vite.js'), '--port', '5176', '--host', '--strictPort'],
+      color: '\x1b[32m'
     }
   ];
 

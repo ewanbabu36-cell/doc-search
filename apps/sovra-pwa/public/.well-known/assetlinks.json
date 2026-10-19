@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.docsearch.sovra",
+      "sha256_cert_fingerprints": [
+        "14:6D:E9:7F:AE:6F:AE:5B:BE:4A:27:0B:45:DE:28:C8:63:F7:88:51:7A:B3:CA:9D:6A:19:D9:6C:51:DF:7B:6A",
+        "A1:B2:C3:D4:E5:F6:07:18:29:3A:4B:5C:6D:7E:8F:90:12:34:56:78:9A:BC:DE:F0:12:34:56:78:9A:BC:DE:F0"
+      ]
+    }
+  }
+]
