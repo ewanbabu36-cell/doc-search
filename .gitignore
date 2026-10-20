@@ -62,4 +62,5 @@ data/printers/
 data/analyzers/
 data/pacs-storage/
 data/backups/
-data/dsc-vault/
+data/dsc-vault/
+data/mail-inbox/*.html

@@ -119,6 +119,7 @@ import { PatientSessionTabBar } from './common/PatientSessionTabBar.js';
 import { HardwareStatusPill } from './common/HardwareStatusPill.js';
 import { BarcodeLaserSweepOverlay } from './common/BarcodeLaserSweepOverlay.js';
 import { OwnerPulseCockpit } from './common/OwnerPulseCockpit.js';
+import { adaptSidebarLabel } from '../utils/industryUiAdapter.js';
 const PartnerOffersRewardsHub = React.lazy(() => import('./offers/PartnerOffersRewardsHub.js').then(m => ({ default: m.PartnerOffersRewardsHub })));
 import type { ActivePatientSummary } from '../services/hospital-event-bus.js';
 
@@ -1326,6 +1327,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
       const filtered = (sections || [])
         .map((sec) => ({
           ...sec,
+          title: sec.title ? adaptSidebarLabel(sec.title, profileAnchor) : sec.title,
           items: (sec?.items || [])
             .filter((item) =>
               isModuleAllowedForPartnerProfile(
@@ -1342,12 +1344,16 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                 ? item.label.replace(/^[\p{Emoji}\p{Emoji_Component}\p{Extended_Pictographic}\s]+/u, '').trim() || item.label
                 : item.label;
 
+              const finalLabel = typeof cleanLabel === 'string'
+                ? adaptSidebarLabel(cleanLabel, profileAnchor)
+                : cleanLabel;
+
               const isLocked = isFreeHospital && isHospitalModuleLocked(item.id, currentPlanTier || currentUser?.planTier);
 
               if (isLocked) {
                 return {
                   ...item,
-                  label: cleanLabel,
+                  label: finalLabel,
                   isActive: false,
                   badge: (
                     <span
@@ -1374,7 +1380,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
 
               return {
                 ...item,
-                label: cleanLabel
+                label: finalLabel
               };
             })
         }))

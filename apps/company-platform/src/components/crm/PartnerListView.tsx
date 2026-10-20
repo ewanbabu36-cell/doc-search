@@ -109,7 +109,12 @@ function getCategoryIcon(partner?: PartnerProfileDto | null): string {
   if (cls.includes('CLINIC')) return '🩺';
   if (cls.includes('DIAGNOSTIC') && !cls.includes('LAB')) return '🔬';
   if (cls.includes('LAB') || cls.includes('PATHOLOGY')) return '🧪';
-  return '🏥';
+  if (cls.includes('SALON') || cls.includes('SPA') || cls.includes('BEAUTY')) return '💇';
+  if (cls.includes('AUTO') || cls.includes('GARAGE') || cls.includes('CAR')) return '🚗';
+  if (cls.includes('LEGAL') || cls.includes('LAWYER') || cls.includes('CA') || cls.includes('ADVOCATE')) return '⚖️';
+  if (cls.includes('FITNESS') || cls.includes('GYM') || cls.includes('SPORT')) return '🏸';
+  if (cls.includes('EDU') || cls.includes('COACH') || cls.includes('TUTOR')) return '🎓';
+  return '🏢';
 }
 
 export const PartnerListView: React.FC<PartnerListViewProps> = ({ onSelectPartner, onOpenKycConsole }) => {

@@ -33,6 +33,7 @@ import { updateApprovedPartnerStatusOnDisk, removeApprovedPartnerFromDisk, saveA
 import { partnerGovernanceService } from '../../services/company/PartnerGovernanceService.js';
 import { sessionRevocationService } from '../../services/core/SessionRevocationService.js';
 import { partnerSyncService } from '../../services/company/PartnerSyncService.js';
+import { activationMailerService } from '../../services/mail/ActivationMailerService.js';
 import { env } from '../../config/env.js';
 import { partnerTombstoneService } from '../../services/company/PartnerTombstoneService.js';
 
@@ -781,6 +782,23 @@ export const partnerRoutes: FastifyPluginAsync = async (fastify) => {
         sessionRevocationService.unrevokeTenant(targetTenantId);
         if (partnerId !== targetTenantId) {
           sessionRevocationService.unrevokeTenant(partnerId);
+        }
+
+        // Multi-industry activation email dispatch upon status activation
+        const primaryEmail = updatedProfile?.primaryContactEmail || updatedProfile?.contactEmail || Array.from(emailsToSync)[0];
+        if (primaryEmail) {
+          try {
+            await activationMailerService.dispatchActivationEmail({
+              tenantId: targetTenantId,
+              legalName: updatedProfile?.tradeName || updatedProfile?.legalName || 'DocSearch Partner',
+              email: primaryEmail,
+              industryType: updatedProfile?.partnerType || 'HEALTHCARE',
+              portalUrl: process.env['PARTNER_PORTAL_URL'] || 'http://localhost:5173'
+            });
+            fastify.log.info({ tenantId: targetTenantId, email: primaryEmail }, 'Activation email dispatched via partner lifecycle status update');
+          } catch (mErr: any) {
+            fastify.log.warn({ err: mErr }, 'Failed to dispatch activation email on partner lifecycle update');
+          }
         }
       }
 

@@ -5,7 +5,7 @@ import { isCompanyDestructiveActionAllowed } from '../../navigation/rolePermissi
 export interface PendingVerificationItem {
   id: string;
   partnerName: string;
-  partnerType: 'PATHOLOGY' | 'HOSPITAL' | 'CLINIC' | 'PHARMACY' | 'DOCTOR';
+  partnerType: 'PATHOLOGY' | 'HOSPITAL' | 'CLINIC' | 'PHARMACY' | 'DOCTOR' | 'SALON_SPA' | 'AUTO_SERVICE' | 'LEGAL_CONSULTING' | 'FITNESS_SPORTS' | 'EDUCATION_COACHING' | string;
   tenantSlug: string;
   submittedBy: string;
   submittedAt: string;
@@ -1107,6 +1107,64 @@ export const PartnerVerificationConsole: React.FC = () => {
     fetchServerQueue();
   };
 
+  const [isActivatingDirectly, setIsActivatingDirectly] = useState(false);
+
+  const getIndustryBadge = (partnerType: string) => {
+    const norm = (partnerType || '').toUpperCase();
+    if (norm.includes('SALON') || norm.includes('SPA')) return { label: 'Salon & Spa', icon: '💇', color: '#EC4899', bg: 'rgba(236, 72, 153, 0.15)' };
+    if (norm.includes('AUTO') || norm.includes('GARAGE')) return { label: 'Auto Workshop', icon: '🚗', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.15)' };
+    if (norm.includes('LEGAL') || norm.includes('LAWYER') || norm.includes('CA')) return { label: 'Legal & CA', icon: '⚖️', color: '#6366F1', bg: 'rgba(99, 102, 241, 0.15)' };
+    if (norm.includes('FITNESS') || norm.includes('GYM')) return { label: 'Fitness & Sports', icon: '🏸', color: '#10B981', bg: 'rgba(16, 185, 129, 0.15)' };
+    if (norm.includes('EDU') || norm.includes('COACH') || norm.includes('TUTOR')) return { label: 'Education & Coaching', icon: '🎓', color: '#8B5CF6', bg: 'rgba(139, 92, 246, 0.15)' };
+    if (norm.includes('CLINIC')) return { label: 'Clinic', icon: '🩺', color: '#0EA5E9', bg: 'rgba(14, 165, 233, 0.15)' };
+    if (norm.includes('PATHOLOGY') || norm.includes('LAB')) return { label: 'Pathology Lab', icon: '🧪', color: '#A855F7', bg: 'rgba(168, 85, 247, 0.15)' };
+    if (norm.includes('PHARMACY')) return { label: 'Pharmacy', icon: '💊', color: '#F97316', bg: 'rgba(249, 115, 22, 0.15)' };
+    return { label: norm || 'Hospital', icon: '🏥', color: '#38BDF8', bg: 'rgba(56, 189, 248, 0.15)' };
+  };
+
+  const handleDirectApproveAndActivate = async (item: PendingVerificationItem) => {
+    if (!item) return;
+    setIsActivatingDirectly(true);
+    const token = typeof window !== 'undefined' ? localStorage.getItem('docsearch_company_token') : null;
+    const assignedPlan = {
+      tier: item.requestedPlan?.tier || 'PROFESSIONAL',
+      planName: item.requestedPlan?.planName || `${item.partnerType} Pro Suite`,
+      monthlyFee: item.requestedPlan?.monthlyFee || 0,
+      finalAmount: item.requestedPlan?.price || 0,
+      invoiceNumber: `INV-${Date.now()}`
+    };
+
+    try {
+      const res = await fetch(`/api/v1/auth/verification-queue/${encodeURIComponent(item.id)}/approve`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          id: item.id,
+          assignedPlan,
+          email: item.details?.['Registered Email'] || item.details?.['Applicant Email'] || item.registeredBy?.email,
+          partnerName: item.partnerName,
+          organizationType: item.partnerType
+        })
+      });
+
+      if (res.ok) {
+        setToastMessage(`✓ [APPROVED & ACTIVATION EMAIL DISPATCHED] "${item.partnerName}" activated. One-time link sent!`);
+      } else {
+        setToastMessage(`⚠️ Approval received, check mail preview.`);
+      }
+    } catch (err: any) {
+      console.warn('Direct approval error:', err);
+      setToastMessage(`⚠️ Direct approval failed: ${err.message || 'Network error'}`);
+    } finally {
+      setIsActivatingDirectly(false);
+      setTimeout(() => setToastMessage(null), 5000);
+      fetchServerQueue();
+    }
+  };
+
 
 
   const handleStartReview = async (id: string) => {
@@ -1658,6 +1716,27 @@ export const PartnerVerificationConsole: React.FC = () => {
                       borderLeft: isSelected ? '3px solid #06B6D4' : '3px solid transparent'
                     }}
                   >
+                    {(() => {
+                      const badge = getIndustryBadge(item.partnerType);
+                      return (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '3px' }}>
+                          <span style={{
+                            fontSize: '0.625rem',
+                            fontWeight: 800,
+                            padding: '1px 6px',
+                            borderRadius: '4px',
+                            backgroundColor: badge.bg,
+                            color: badge.color,
+                            border: `1px solid ${badge.color}44`,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '3px'
+                          }}>
+                            {badge.icon} {badge.label}
+                          </span>
+                        </div>
+                      );
+                    })()}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                       <strong style={{ fontSize: '0.8125rem', color: isSelected ? '#38BDF8' : '#F8FAFC' }}>
                         {item.partnerName}
@@ -2390,26 +2469,51 @@ export const PartnerVerificationConsole: React.FC = () => {
                 )}
 
                 {selectedItem.status !== 'APPROVED' ? (
-                  <button
-                    type="button"
-                    onClick={() => handleOpenPlanModal(selectedItem.id)}
-                    style={{
-                      backgroundColor: '#10B981',
-                      color: '#070C16',
-                      border: 'none',
-                      borderRadius: '8px',
-                      padding: '9px 12px',
-                      fontWeight: 900,
-                      fontSize: '0.75rem',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px'
-                    }}
-                  >
-                    <span>💼</span> Approve & Assign Plan
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      disabled={isActivatingDirectly}
+                      onClick={() => handleDirectApproveAndActivate(selectedItem)}
+                      style={{
+                        backgroundColor: '#0284C7',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        borderRadius: '8px',
+                        padding: '9px 14px',
+                        fontWeight: 900,
+                        fontSize: '0.75rem',
+                        cursor: isActivatingDirectly ? 'not-allowed' : 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        boxShadow: '0 2px 10px rgba(2, 132, 199, 0.4)'
+                      }}
+                      title="1-Click Approve partner, issue cryptographic 24h activation token and email link"
+                    >
+                      <span>⚡</span> {isActivatingDirectly ? 'Activating...' : '1-Click Approve & Activate'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenPlanModal(selectedItem.id)}
+                      style={{
+                        backgroundColor: '#10B981',
+                        color: '#070C16',
+                        border: 'none',
+                        borderRadius: '8px',
+                        padding: '9px 12px',
+                        fontWeight: 900,
+                        fontSize: '0.75rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <span>💼</span> Approve & Assign Plan
+                    </button>
+                  </>
                 ) : (
                   <button
                     type="button"

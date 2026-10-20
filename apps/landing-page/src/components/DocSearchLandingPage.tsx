@@ -9,6 +9,7 @@ const LiveEmergencyBedRadarWidget = React.lazy(() => import('./LiveEmergencyBedR
 const AIReceptionistWidget = React.lazy(() => import('./AIReceptionistWidget.js').then(m => ({ default: m.AIReceptionistWidget })));
 const LiveOpdQueueTrackerView = React.lazy(() => import('./LiveOpdQueueTrackerView.js').then(m => ({ default: m.LiveOpdQueueTrackerView })));
 const MeritDoctorMarketplaceModal = React.lazy(() => import('./MeritDoctorMarketplaceModal.js').then(m => ({ default: m.MeritDoctorMarketplaceModal })));
+const IndustryRegistrationModal = React.lazy(() => import('./IndustryRegistrationModal.js').then(m => ({ default: m.IndustryRegistrationModal })));
 import { InteractiveClinicSandbox } from './InteractiveClinicSandbox.js';
 import { AdaptiveRoiCalculator } from './AdaptiveRoiCalculator.js';
 import {
@@ -25,6 +26,7 @@ export const DocSearchLandingPage: React.FC = () => {
   const [showDemoModal, setShowDemoModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showMarketplaceModal, setShowMarketplaceModal] = useState(false);
+  const [showIndustryModal, setShowIndustryModal] = useState(false);
   const [loginModalInitialTab, setLoginModalInitialTab] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
   const [isOmniCapsuleOpen, setIsOmniCapsuleOpen] = useState(false);
   const [isAiReceptionistOpen, setIsAiReceptionistOpen] = useState(false);
@@ -858,6 +860,31 @@ export const DocSearchLandingPage: React.FC = () => {
           >
             <span>⚡</span>
             <span>Live Product Demo</span>
+          </button>
+
+          {/* Universal Multi-Industry ERP Onboarding CTA */}
+          <button
+            type="button"
+            onClick={() => setShowIndustryModal(true)}
+            style={{
+              background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%)',
+              border: '1px solid rgba(236, 72, 153, 0.5)',
+              color: '#F472B6',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              fontWeight: 800,
+              fontSize: '0.875rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              transition: 'all 0.2s ease',
+              boxShadow: '0 0 12px rgba(236, 72, 153, 0.25)',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            <span>✨</span>
+            <span>Multi-Industry ERP</span>
           </button>
 
           {/* Clean Sign In Button */}
@@ -3584,6 +3611,14 @@ export const DocSearchLandingPage: React.FC = () => {
           <MeritDoctorMarketplaceModal
             isOpen={showMarketplaceModal}
             onClose={() => setShowMarketplaceModal(false)}
+          />
+        )}
+
+        {/* Universal Multi-Industry ERP Onboarding Modal */}
+        {showIndustryModal && (
+          <IndustryRegistrationModal
+            isOpen={showIndustryModal}
+            onClose={() => setShowIndustryModal(false)}
           />
         )}
       </React.Suspense>

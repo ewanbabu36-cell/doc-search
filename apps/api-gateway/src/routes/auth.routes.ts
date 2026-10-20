@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import { type FastifyPluginAsync, type FastifyRequest, type FastifyReply } from 'fastify';
 import { z } from 'zod';
 import {
@@ -21,8 +22,10 @@ import {
   HOSPITAL_FREE_TIER_NAME,
   HOSPITAL_PRO_TIER_NAME,
   FREE_HOSPITAL_FEATURES,
-  PRO_HOSPITAL_FEATURES
+  PRO_HOSPITAL_FEATURES,
+  resolveIndustryPreset
 } from '@docsearch/shared-core';
+import { activationMailerService } from '../services/mail/ActivationMailerService.js';
 import type { RoleType } from '@docsearch/api-contracts';
 import { env } from '../config/env.js';
 import { authenticate, requireRoles } from '../plugins/auth-guard.js';
@@ -1279,6 +1282,200 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     });
   });
 
+  // =========================================================================
+  // UNIVERSAL MULTI-INDUSTRY APPOINTMENT & ACTIVATION ENDPOINTS
+  // =========================================================================
+
+  const RegisterIndustryPartnerSchema = z.object({
+    industryType: z.string().optional().default('HEALTHCARE'),
+    businessName: z.string().min(2, 'Business or organization name must be at least 2 characters'),
+    ownerName: z.string().min(2, 'Owner or administrator name must be at least 2 characters'),
+    email: z.string().email('A valid email address is required'),
+    phone: z.string().min(7, 'A valid contact phone number is required'),
+    city: z.string().optional(),
+    address: z.string().optional(),
+    portalSlug: z.string().optional(),
+    notes: z.string().optional(),
+    requestedPlan: z.string().optional(),
+    staffCount: z.number().int().min(1).optional()
+  });
+
+  // POST /api/v1/auth/register-industry-partner
+  fastify.post('/api/v1/auth/register-industry-partner', async (request, reply) => {
+    const parseResult = RegisterIndustryPartnerSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      throw new AppError({
+        message: 'Invalid registration details',
+        code: ErrorCode.VALIDATION_ERROR,
+        statusCode: 400,
+        details: parseResult.error.errors.map((e) => ({
+          field: e.path.join('.'),
+          message: e.message
+        }))
+      });
+    }
+
+    const {
+      industryType,
+      businessName,
+      ownerName,
+      email,
+      phone,
+      city,
+      address,
+      portalSlug,
+      notes,
+      requestedPlan,
+      staffCount
+    } = parseResult.data;
+
+    const preset = resolveIndustryPreset(industryType);
+    const slug = portalSlug && portalSlug.trim().length > 0
+      ? portalSlug.trim().toLowerCase().replace(/[^a-z0-9-]+/g, '-')
+      : businessName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+    const registrationId = crypto.randomUUID();
+
+    const created = await partnerOnboardingRepository.createStagedRegistration({
+      id: registrationId,
+      tenantDraftId: registrationId,
+      organizationName: businessName,
+      organizationType: preset.id,
+      contactEmail: email.toLowerCase().trim(),
+      contactPhone: phone,
+      registeredByName: ownerName,
+      registeredByEmail: email.toLowerCase().trim(),
+      registeredByRole: preset.roles[0] || 'PARTNER_ADMIN',
+      registrationSource: 'MULTI_INDUSTRY_LANDING_PAGE',
+      status: 'PENDING',
+      registrationPayload: {
+        id: registrationId,
+        industryType: preset.id,
+        industryName: preset.name,
+        businessName,
+        ownerName,
+        email: email.toLowerCase().trim(),
+        phone,
+        city: city || '',
+        address: address || '',
+        portalSlug: slug,
+        notes: notes || '',
+        staffCount: staffCount || 1,
+        requestedPlan: requestedPlan || preset.defaultPlanTier,
+        vocabulary: preset.vocabulary,
+        submittedAt: new Date().toISOString()
+      }
+    });
+
+    return reply.status(201).send({
+      success: true,
+      message: 'Multi-industry partner registration queued for Company HQ review and activation.',
+      data: {
+        registrationId: created.id,
+        businessName,
+        industryType: preset.id,
+        industryName: preset.name,
+        status: 'PENDING_APPROVAL',
+        portalSlug: slug,
+        vocabulary: preset.vocabulary
+      }
+    });
+  });
+
+  const ActivateAccountSchema = z.object({
+    token: z.string().min(10, 'Activation token is required'),
+    password: z.string().min(6, 'Password must be at least 6 characters long'),
+    email: z.string().email().optional()
+  });
+
+  // POST /api/v1/auth/activate-account
+  fastify.post('/api/v1/auth/activate-account', async (request, reply) => {
+    const parseResult = ActivateAccountSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      throw new AppError({
+        message: 'Invalid account activation payload',
+        code: ErrorCode.VALIDATION_ERROR,
+        statusCode: 400,
+        details: parseResult.error.errors.map((e) => ({
+          field: e.path.join('.'),
+          message: e.message
+        }))
+      });
+    }
+
+    const { token, password, email } = parseResult.data;
+    const verification = activationMailerService.verifyActivationToken(token);
+
+    if (!verification.valid || !verification.payload) {
+      throw new AppError({
+        message: verification.error || 'Invalid, expired, or tampered activation token.',
+        code: ErrorCode.BAD_REQUEST,
+        statusCode: 400
+      });
+    }
+
+    const { tenantId, email: tokenEmail, industryType } = verification.payload;
+
+    if (email && email.toLowerCase().trim() !== tokenEmail.toLowerCase().trim()) {
+      throw new AppError({
+        message: 'Provided email address does not match the token recipient',
+        code: ErrorCode.BAD_REQUEST,
+        statusCode: 400
+      });
+    }
+
+    const preset = resolveIndustryPreset(industryType);
+
+    // 1. Set password and activate credential in realAuthService
+    realAuthService.resetPartnerPassword(tokenEmail, password);
+    realAuthService.activatePartnerUserCredential(
+      tokenEmail,
+      preset.defaultPlanTier,
+      (preset.roles[0] as RoleType) || ('PARTNER_ADMIN' as RoleType),
+      preset.id,
+      Object.keys(preset.features).filter((k) => (preset.features as any)[k])
+    );
+    await realAuthService.flushPendingWrites();
+
+    // 2. Mark active on disk fixtures & database
+    await updateApprovedPartnerStatusOnDisk(tokenEmail, 'ACTIVE');
+    if (tenantId) {
+      await updateApprovedPartnerStatusOnDisk(tenantId, 'ACTIVE');
+    }
+
+    return reply.status(200).send({
+      success: true,
+      message: 'Account successfully activated! You can now log into your universal appointment dashboard.',
+      data: {
+        tenantId,
+        email: tokenEmail,
+        industryType: preset.id,
+        industryName: preset.name,
+        role: preset.roles[0] || 'PARTNER_ADMIN'
+      }
+    });
+  });
+
+  // GET /api/v1/auth/mail-inbox (Development & audit inspection of activation emails)
+  fastify.get('/api/v1/auth/mail-inbox', async (_request, reply) => {
+    const emails = activationMailerService.getDispatchedEmails();
+    return reply.status(200).send({
+      success: true,
+      total: emails.length,
+      data: emails
+    });
+  });
+
+  // GET /api/v1/auth/mail-inbox/:fileName (Render email HTML directly)
+  fastify.get('/api/v1/auth/mail-inbox/:fileName', async (request, reply) => {
+    const { fileName } = request.params as { fileName: string };
+    const html = activationMailerService.getEmailContent(fileName);
+    if (!html) {
+      return reply.status(404).send({ success: false, error: 'Email not found in preview inbox' });
+    }
+    return reply.type('text/html').send(html);
+  });
+
   // POST /api/v1/auth/upgrade-plan (Deprecated: Unauthenticated plan upgrades forbidden)
   fastify.post('/api/v1/auth/upgrade-plan', async (_request, _reply) => {
     throw new AppError({
@@ -1606,6 +1803,20 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
           normalizedProfile.workspace,
           normalizedProfile.accessibleFeatures
         );
+
+        // Universal Multi-Industry Activation Email Dispatch
+        try {
+          await activationMailerService.dispatchActivationEmail({
+            tenantId: id,
+            legalName: facilityName || 'DocSearch Partner',
+            email,
+            industryType: rawOrgType,
+            portalUrl: process.env['PARTNER_PORTAL_URL'] || 'http://localhost:5173'
+          });
+          request.log.info({ tenantId: id, email }, 'Activation email successfully dispatched upon admin approval');
+        } catch (mailErr: any) {
+          request.log.warn({ err: mailErr, email }, 'Failed to dispatch activation email');
+        }
       }
 
       try {
