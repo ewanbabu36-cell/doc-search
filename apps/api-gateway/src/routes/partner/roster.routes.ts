@@ -1,6 +1,8 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
 import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
+import { distributedCache } from '../../services/cache/DistributedCacheService.js';
+import { horizontalSocketGateway } from '../../services/realtime/HorizontalSocketGateway.js';
 import type {
   DoctorScheduleDto,
   DoctorLeaveDto,
@@ -32,11 +34,21 @@ export const rosterRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request) => {
       const q = request.query as { doctorId?: string; branchId?: string; dayOfWeek?: string };
-      let list = memorySchedules.filter((s) => s.tenantId === request.session.tenantId);
-      if (q.doctorId) list = list.filter((s) => s.doctorId === q.doctorId);
-      if (q.branchId) list = list.filter((s) => s.branchId === q.branchId);
-      if (q.dayOfWeek) list = list.filter((s) => s.dayOfWeek === q.dayOfWeek);
-      return { success: true, data: list };
+      const cacheKey = `docsearch:cache:${request.session.tenantId}:roster:schedules:${q.doctorId || 'all'}:${q.branchId || 'all'}:${q.dayOfWeek || 'all'}`;
+
+      const data = await distributedCache.getOrSet(
+        cacheKey,
+        async () => {
+          let list = memorySchedules.filter((s) => s.tenantId === request.session.tenantId);
+          if (q.doctorId) list = list.filter((s) => s.doctorId === q.doctorId);
+          if (q.branchId) list = list.filter((s) => s.branchId === q.branchId);
+          if (q.dayOfWeek) list = list.filter((s) => s.dayOfWeek === q.dayOfWeek);
+          return list;
+        },
+        60
+      );
+
+      return { success: true, data };
     }
   );
 
@@ -72,6 +84,10 @@ export const rosterRoutes: FastifyPluginAsync = async (fastify) => {
         updatedAt: now
       };
       memorySchedules.unshift(schedule);
+
+      await distributedCache.delPattern(`docsearch:cache:${request.session.tenantId}:roster:*`);
+      await horizontalSocketGateway.broadcast(request.session.tenantId, 'ROSTER_SCHEDULE_CREATED', schedule);
+
       reply.status(201);
       return { success: true, data: schedule };
     }
@@ -97,6 +113,10 @@ export const rosterRoutes: FastifyPluginAsync = async (fastify) => {
       if (req.roomNumber !== undefined) schedule.roomNumber = req.roomNumber;
       if (req.isActive !== undefined) schedule.isActive = req.isActive;
       schedule.updatedAt = new Date().toISOString();
+
+      await distributedCache.delPattern(`docsearch:cache:${request.session.tenantId}:roster:*`);
+      await horizontalSocketGateway.broadcast(request.session.tenantId, 'ROSTER_SCHEDULE_UPDATED', schedule);
+
       return { success: true, data: schedule };
     }
   );
@@ -109,9 +129,19 @@ export const rosterRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request) => {
       const q = request.query as { doctorId?: string };
-      let list = memoryLeaves.filter((l) => l.tenantId === request.session.tenantId);
-      if (q.doctorId) list = list.filter((l) => l.doctorId === q.doctorId);
-      return { success: true, data: list };
+      const cacheKey = `docsearch:cache:${request.session.tenantId}:roster:leaves:${q.doctorId || 'all'}`;
+
+      const data = await distributedCache.getOrSet(
+        cacheKey,
+        async () => {
+          let list = memoryLeaves.filter((l) => l.tenantId === request.session.tenantId);
+          if (q.doctorId) list = list.filter((l) => l.doctorId === q.doctorId);
+          return list;
+        },
+        60
+      );
+
+      return { success: true, data };
     }
   );
 
@@ -143,6 +173,10 @@ export const rosterRoutes: FastifyPluginAsync = async (fastify) => {
         updatedAt: now
       };
       memoryLeaves.unshift(leave);
+
+      await distributedCache.delPattern(`docsearch:cache:${request.session.tenantId}:roster:*`);
+      await horizontalSocketGateway.broadcast(request.session.tenantId, 'ROSTER_LEAVE_CREATED', leave);
+
       reply.status(201);
       return { success: true, data: leave };
     }
@@ -164,6 +198,10 @@ export const rosterRoutes: FastifyPluginAsync = async (fastify) => {
       leave.approvalStatus = req.approvalStatus;
       leave.approvedBy = req.actorId;
       leave.updatedAt = new Date().toISOString();
+
+      await distributedCache.delPattern(`docsearch:cache:${request.session.tenantId}:roster:*`);
+      await horizontalSocketGateway.broadcast(request.session.tenantId, 'ROSTER_LEAVE_STATUS_CHANGED', leave);
+
       return { success: true, data: leave };
     }
   );
@@ -176,11 +214,21 @@ export const rosterRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request) => {
       const q = request.query as { doctorId?: string; branchId?: string; slotDate?: string };
-      let list = memorySlots.filter((s) => s.tenantId === request.session.tenantId);
-      if (q.doctorId) list = list.filter((s) => s.doctorId === q.doctorId);
-      if (q.branchId) list = list.filter((s) => s.branchId === q.branchId);
-      if (q.slotDate) list = list.filter((s) => s.slotDate === q.slotDate);
-      return { success: true, data: list };
+      const cacheKey = `docsearch:cache:${request.session.tenantId}:roster:slots:${q.doctorId || 'all'}:${q.branchId || 'all'}:${q.slotDate || 'all'}`;
+
+      const data = await distributedCache.getOrSet(
+        cacheKey,
+        async () => {
+          let list = memorySlots.filter((s) => s.tenantId === request.session.tenantId);
+          if (q.doctorId) list = list.filter((s) => s.doctorId === q.doctorId);
+          if (q.branchId) list = list.filter((s) => s.branchId === q.branchId);
+          if (q.slotDate) list = list.filter((s) => s.slotDate === q.slotDate);
+          return list;
+        },
+        30
+      );
+
+      return { success: true, data };
     }
   );
 
@@ -220,6 +268,10 @@ export const rosterRoutes: FastifyPluginAsync = async (fastify) => {
         slot.blockReason = req.blockReason;
         slot.updatedAt = new Date().toISOString();
       }
+
+      await distributedCache.delPattern(`docsearch:cache:${request.session.tenantId}:roster:*`);
+      await horizontalSocketGateway.broadcast(request.session.tenantId, 'ROSTER_SLOT_BLOCKED', slot);
+
       return { success: true, data: slot };
     }
   );
@@ -239,6 +291,10 @@ export const rosterRoutes: FastifyPluginAsync = async (fastify) => {
       slot.bookingStatus = 'AVAILABLE';
       slot.blockReason = undefined;
       slot.updatedAt = new Date().toISOString();
+
+      await distributedCache.delPattern(`docsearch:cache:${request.session.tenantId}:roster:*`);
+      await horizontalSocketGateway.broadcast(request.session.tenantId, 'ROSTER_SLOT_UNBLOCKED', slot);
+
       return { success: true, data: slot };
     }
   );
@@ -251,12 +307,22 @@ export const rosterRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request) => {
       const q = request.query as { organizationId?: string; branchId?: string; specialtyCode?: string; doctorId?: string };
-      let list = memoryFees.filter((f) => f.tenantId === request.session.tenantId);
-      if (q.organizationId) list = list.filter((f) => f.organizationId === q.organizationId);
-      if (q.branchId) list = list.filter((f) => f.branchId === q.branchId);
-      if (q.specialtyCode) list = list.filter((f) => f.specialtyCode === q.specialtyCode);
-      if (q.doctorId) list = list.filter((f) => f.doctorId === q.doctorId);
-      return { success: true, data: list };
+      const cacheKey = `docsearch:cache:${request.session.tenantId}:roster:fees:${q.organizationId || 'all'}:${q.branchId || 'all'}:${q.specialtyCode || 'all'}:${q.doctorId || 'all'}`;
+
+      const data = await distributedCache.getOrSet(
+        cacheKey,
+        async () => {
+          let list = memoryFees.filter((f) => f.tenantId === request.session.tenantId);
+          if (q.organizationId) list = list.filter((f) => f.organizationId === q.organizationId);
+          if (q.branchId) list = list.filter((f) => f.branchId === q.branchId);
+          if (q.specialtyCode) list = list.filter((f) => f.specialtyCode === q.specialtyCode);
+          if (q.doctorId) list = list.filter((f) => f.doctorId === q.doctorId);
+          return list;
+        },
+        120
+      );
+
+      return { success: true, data };
     }
   );
 
@@ -289,6 +355,10 @@ export const rosterRoutes: FastifyPluginAsync = async (fastify) => {
         updatedAt: now
       };
       memoryFees.unshift(fee);
+
+      await distributedCache.delPattern(`docsearch:cache:${request.session.tenantId}:roster:*`);
+      await horizontalSocketGateway.broadcast(request.session.tenantId, 'ROSTER_FEE_CREATED', fee);
+
       reply.status(201);
       return { success: true, data: fee };
     }
@@ -311,6 +381,10 @@ export const rosterRoutes: FastifyPluginAsync = async (fastify) => {
       if (req.followUpValidityDays !== undefined) fee.followUpValidityDays = req.followUpValidityDays;
       if (req.status) fee.status = req.status;
       fee.updatedAt = new Date().toISOString();
+
+      await distributedCache.delPattern(`docsearch:cache:${request.session.tenantId}:roster:*`);
+      await horizontalSocketGateway.broadcast(request.session.tenantId, 'ROSTER_FEE_UPDATED', fee);
+
       return { success: true, data: fee };
     }
   );

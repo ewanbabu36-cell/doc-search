@@ -2,6 +2,8 @@ import { type FastifyPluginAsync } from 'fastify';
 import { inpatientManagementService } from '../../services/partner/InpatientManagementService.js';
 import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
 import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
+import { distributedCache } from '../../services/cache/DistributedCacheService.js';
+import { horizontalSocketGateway } from '../../services/realtime/HorizontalSocketGateway.js';
 import {
   type CreateWardInput,
   type CreateBedInput,
@@ -23,7 +25,12 @@ export const inpatientManagementRoutes: FastifyPluginAsync = async (fastify) => 
       preHandler: [authenticate, requirePermission('clinical:encounters', 'read')]
     },
     async (request) => {
-      const data = await inpatientManagementService.getWards(request.session);
+      const cacheKey = `docsearch:cache:${request.session.tenantId}:inpatient:wards`;
+      const data = await distributedCache.getOrSet(
+        cacheKey,
+        () => inpatientManagementService.getWards(request.session),
+        60
+      );
       return { success: true, data };
     }
   );
@@ -36,6 +43,10 @@ export const inpatientManagementRoutes: FastifyPluginAsync = async (fastify) => 
     async (request, reply) => {
       const payload = request.body as Omit<CreateWardInput, 'tenantId'>;
       const data = await inpatientManagementService.createWard(payload, request.session);
+
+      await distributedCache.delPattern(`docsearch:cache:${request.session.tenantId}:inpatient:*`);
+      await horizontalSocketGateway.broadcast(request.session.tenantId, 'WARD_CREATED', data);
+
       reply.status(201);
       return { success: true, data };
     }
@@ -49,7 +60,13 @@ export const inpatientManagementRoutes: FastifyPluginAsync = async (fastify) => 
     },
     async (request) => {
       const query = request.query as { wardId?: string; status?: string };
-      const data = await inpatientManagementService.getBeds(request.session, query?.wardId, query?.status);
+      const cacheKey = `docsearch:cache:${request.session.tenantId}:inpatient:beds:${query?.wardId || 'all'}:${query?.status || 'all'}`;
+
+      const data = await distributedCache.getOrSet(
+        cacheKey,
+        () => inpatientManagementService.getBeds(request.session, query?.wardId, query?.status),
+        30 // 30s cache TTL for real-time bed board
+      );
       return { success: true, data };
     }
   );
@@ -62,6 +79,10 @@ export const inpatientManagementRoutes: FastifyPluginAsync = async (fastify) => 
     async (request, reply) => {
       const payload = request.body as Omit<CreateBedInput, 'tenantId'>;
       const data = await inpatientManagementService.createBed(payload, request.session);
+
+      await distributedCache.delPattern(`docsearch:cache:${request.session.tenantId}:inpatient:*`);
+      await horizontalSocketGateway.broadcast(request.session.tenantId, 'BED_STATUS_CHANGED', data);
+
       reply.status(201);
       return { success: true, data };
     }
@@ -88,6 +109,10 @@ export const inpatientManagementRoutes: FastifyPluginAsync = async (fastify) => 
     async (request, reply) => {
       const payload = request.body as Omit<CreateAdmissionInput, 'tenantId'>;
       const data = await inpatientManagementService.createAdmission(payload, request.session);
+
+      await distributedCache.delPattern(`docsearch:cache:${request.session.tenantId}:inpatient:*`);
+      await horizontalSocketGateway.broadcast(request.session.tenantId, 'PATIENT_ADMITTED', data);
+
       reply.status(201);
       return { success: true, data };
     }
@@ -102,6 +127,10 @@ export const inpatientManagementRoutes: FastifyPluginAsync = async (fastify) => 
     async (request, reply) => {
       const payload = request.body as Omit<TransferBedInput, 'tenantId' | 'transferredBy'>;
       const data = await inpatientManagementService.transferBed(payload, request.session);
+
+      await distributedCache.delPattern(`docsearch:cache:${request.session.tenantId}:inpatient:*`);
+      await horizontalSocketGateway.broadcast(request.session.tenantId, 'BED_STATUS_CHANGED', data);
+
       reply.status(201);
       return { success: true, data };
     }
@@ -142,10 +171,17 @@ export const inpatientManagementRoutes: FastifyPluginAsync = async (fastify) => 
     async (request) => {
       const { id } = request.params as { id: string };
       const payload = request.body as Omit<DischargeInput, 'tenantId' | 'admissionId' | 'dischargingDoctorId'>;
-      const data = await inpatientManagementService.dischargePatient({
-        ...payload,
-        admissionId: id
-      }, request.session);
+      const data = await inpatientManagementService.dischargePatient(
+        {
+          ...payload,
+          admissionId: id
+        },
+        request.session
+      );
+
+      await distributedCache.delPattern(`docsearch:cache:${request.session.tenantId}:inpatient:*`);
+      await horizontalSocketGateway.broadcast(request.session.tenantId, 'PATIENT_DISCHARGED', data);
+
       return { success: true, data };
     }
   );

@@ -101,21 +101,35 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          // 1. React Runtime Core
           if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/scheduler')) {
             return 'vendor-react';
           }
+          // 2. Lucide Icons
           if (id.includes('node_modules/lucide-react')) {
             return 'vendor-icons';
           }
+          // 3. Workbox PWA Engine
           if (id.includes('node_modules/workbox') || id.includes('workbox-window')) {
             return 'vendor-workbox';
           }
+          // 4. UI Kit Framework & Themes
           if (id.includes('/packages/ui-kit/')) {
             return 'vendor-ui-kit';
           }
+          // 5. Core Contracts & Schemas
           if (id.includes('/packages/shared-core/') || id.includes('/packages/api-contracts/')) {
             return 'vendor-core-contracts';
           }
+          // 6. Common Shell Overlays, Command Palettes & Docks
+          if (id.includes('/apps/partner-platform/src/components/common/') || id.includes('/apps/partner-platform/src/components/security/')) {
+            return 'chunk-shell-widgets';
+          }
+          // 7. Clinical Client Services & Local Event Hubs (unified to avoid circular chunking)
+          if (id.includes('/apps/partner-platform/src/services/') || id.includes('/apps/partner-platform/src/utils/')) {
+            return 'chunk-partner-core-services';
+          }
+          // 8. Generic Third-Party Vendor
           if (id.includes('node_modules')) {
             return 'vendor';
           }

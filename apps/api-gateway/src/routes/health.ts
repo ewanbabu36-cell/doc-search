@@ -1,5 +1,7 @@
 import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { getDatabase, getDatabaseStatus } from '@docsearch/database';
+import { distributedCache } from '../services/cache/DistributedCacheService.js';
+import { horizontalSocketGateway } from '../services/realtime/HorizontalSocketGateway.js';
 
 export const healthRoutes: FastifyPluginAsync = async (app: FastifyInstance): Promise<void> => {
   // Liveness Probe (process is alive)
@@ -13,6 +15,8 @@ export const healthRoutes: FastifyPluginAsync = async (app: FastifyInstance): Pr
         mode: status.mode,
         tables: 442
       },
+      cache: distributedCache.getStats(),
+      cluster: horizontalSocketGateway.getTelemetry(),
       uptime: process.uptime(),
       timestamp: new Date().toISOString()
     });
@@ -21,6 +25,24 @@ export const healthRoutes: FastifyPluginAsync = async (app: FastifyInstance): Pr
   app.get('/health', healthHandler);
   app.get('/api/health', healthHandler);
   app.get('/api/v1/health', healthHandler);
+
+  // Dedicated Cache Telemetry Probe
+  app.get('/api/v1/health/cache', async (_req, reply) => {
+    return reply.status(200).send({
+      success: true,
+      data: distributedCache.getStats(),
+      timestamp: new Date().toISOString()
+    });
+  });
+
+  // Dedicated Realtime Cluster Pub/Sub Probe
+  app.get('/api/v1/health/cluster', async (_req, reply) => {
+    return reply.status(200).send({
+      success: true,
+      data: horizontalSocketGateway.getTelemetry(),
+      timestamp: new Date().toISOString()
+    });
+  });
 
   // True Readiness Probe (verifies PostgreSQL database connectivity)
   app.get('/ready', async (_req, reply) => {
