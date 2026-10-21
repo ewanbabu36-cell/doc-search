@@ -10,6 +10,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import nodemailer from 'nodemailer';
 import { createLogger, resolveIndustryPreset } from '@docsearch/shared-core';
 
 const logger = createLogger('activation-mailer');
@@ -178,7 +179,8 @@ export class ActivationMailerService {
 
   /**
    * Dispatches activation email to the business owner.
-   * In local/development, writes directly to 'data/mail-inbox/' for instant inspection.
+   * If 'SMTP_HOST' is defined in environment, sends via live SMTP (nodemailer).
+   * Automatically persists local preview in 'data/mail-inbox/' for dev testing & audit inspection.
    */
   async dispatchActivationEmail(params: ActivationEmailParams): Promise<{
     success: boolean;
@@ -186,6 +188,7 @@ export class ActivationMailerService {
     activationToken: string;
     activationUrl: string;
     previewPath?: string;
+    messageId?: string;
   }> {
     const token = params.activationToken || this.generateActivationToken({
       tenantId: params.tenantId,
@@ -217,6 +220,47 @@ export class ActivationMailerService {
       logger.info(`[MAIL] Activation email generated for ${params.email}. Local preview saved at: ${filePath}`);
     } catch (err: any) {
       logger.warn('[MAIL] Could not persist local preview email: ' + err?.message);
+    }
+
+    // 2. Production SMTP Transport Dispatch
+    const smtpHost = process.env['SMTP_HOST'];
+    if (smtpHost && smtpHost.trim() !== '') {
+      try {
+        const smtpPort = Number(process.env['SMTP_PORT'] || 587);
+        const isSecure = process.env['SMTP_SECURE'] === 'true' || smtpPort === 465;
+        const smtpUser = process.env['SMTP_USER'];
+        const smtpPass = process.env['SMTP_PASSWORD'];
+
+        const transporter = nodemailer.createTransport({
+          host: smtpHost,
+          port: smtpPort,
+          secure: isSecure,
+          ...(smtpUser ? { auth: { user: smtpUser, pass: smtpPass || '' } } : {})
+        });
+
+        const fromAddress = process.env['SMTP_FROM'] || 'DocSearch ERP <activation@docsearch.health>';
+        const subject = `${preset.badgeIcon} Welcome to DocSearch: Activate Your ${preset.name} Workspace`;
+
+        const info = await transporter.sendMail({
+          from: fromAddress,
+          to: params.email,
+          subject,
+          html: htmlContent
+        });
+
+        logger.info(`[MAIL] Live SMTP activation email dispatched to ${params.email} (MessageId: ${info.messageId})`);
+
+        return {
+          success: true,
+          dispatchMode: 'SMTP',
+          activationToken: token,
+          activationUrl,
+          previewPath: filePath,
+          messageId: info.messageId
+        };
+      } catch (smtpErr: any) {
+        logger.warn(`[MAIL] Live SMTP transport failed (${smtpErr?.message}), safely falling back to local file inbox.`);
+      }
     }
 
     return {

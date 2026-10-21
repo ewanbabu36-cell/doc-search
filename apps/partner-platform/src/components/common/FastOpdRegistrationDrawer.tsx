@@ -8,6 +8,7 @@ import { uniqueIdentifierService } from '../../services/unique-identifier-servic
 import { apiRequest, isMockFallbackAllowed } from '../../services/api-client.js';
 import { doctorRosterService } from '../../services/doctor-roster-service.js';
 import { partnerFoundationService } from '../../services/partner-foundation-service.js';
+import { DynamicIndustryIntakeFields } from './DynamicIndustryIntakeFields.js';
 
 export interface FastOpdRegistrationDrawerProps {
   isOpen: boolean;
@@ -40,7 +41,8 @@ export const FastOpdRegistrationDrawer: React.FC<FastOpdRegistrationDrawerProps>
   const [selectedDoctorId, setSelectedDoctorId] = useState<string>('');
   const [paymentMode, setPaymentMode] = useState<'CASH' | 'UPI' | 'FREE'>('CASH');
   const [customFee, setCustomFee] = useState<number>(300);
-  const [, setPanelCtx] = useState<any>(null);
+  const [panelCtx, setPanelCtx] = useState<any>(null);
+  const [dynamicIntake, setDynamicIntake] = useState<Record<string, any>>({});
 
   useEffect(() => {
     partnerFoundationService.getPanelContext().then((c) => setPanelCtx(c)).catch(() => {});
@@ -298,7 +300,8 @@ export const FastOpdRegistrationDrawer: React.FC<FastOpdRegistrationDrawerProps>
       token: tokenStr,
       paymentMode,
       feePaid: paymentMode === 'FREE' ? 0 : customFee,
-      registeredAt: new Date().toISOString()
+      registeredAt: new Date().toISOString(),
+      customIntakeData: dynamicIntake
     };
 
     // Dispatch global events for instant UI live sync across tabs
@@ -861,6 +864,13 @@ export const FastOpdRegistrationDrawer: React.FC<FastOpdRegistrationDrawerProps>
                   </div>
                 </div>
               </div>
+
+                            {/* Dynamic Multi-Industry Intake Fields */}
+              <DynamicIndustryIntakeFields
+                industryType={panelCtx?.organizationType || panelCtx?.industry || 'HEALTHCARE'}
+                values={dynamicIntake}
+                onChange={(field, val) => setDynamicIntake((prev) => ({ ...prev, [field]: val }))}
+              />
 
               {/* Select Doctor */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>

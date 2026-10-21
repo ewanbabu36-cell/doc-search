@@ -130,13 +130,13 @@ export class PartnerOnboardingRepository {
           .limit(1);
         if (tenantExists) {
           validTenantDraftId = tenantExists.id;
-        } else if (process.env['NODE_ENV'] === 'test') {
+        } else {
           await dbClient
             .insert(tenants)
             .values({
               id: input.tenantDraftId,
-              name: `Tenant ${input.tenantDraftId.slice(0, 8)}`,
-              slug: `tenant-${input.tenantDraftId.slice(0, 8)}`
+              name: input.organizationName || `Tenant ${input.tenantDraftId.slice(0, 8)}`,
+              slug: `tenant-${input.tenantDraftId.slice(0, 8)}-${Date.now()}`
             })
             .onConflictDoNothing();
           validTenantDraftId = input.tenantDraftId;
@@ -733,6 +733,34 @@ export class PartnerOnboardingRepository {
           code: ErrorCode.DATABASE_ERROR,
           statusCode: 500
         });
+      }
+
+      // Ensure core.tenants record is created and committed within this transaction prior to configuration version snapshots
+      const effectiveTenantId = (updated.tenantDraftId && UUID_REGEX.test(updated.tenantDraftId))
+        ? updated.tenantDraftId
+        : targetId;
+
+      try {
+        const [tenantExists] = await tx
+          .select({ id: tenants.id })
+          .from(tenants)
+          .where(eq(tenants.id, effectiveTenantId))
+          .limit(1);
+
+        if (!tenantExists) {
+          const rawSlug = ((updated.registrationPayload as any)?.portalSlug || (updated.registrationPayload as any)?.desiredSlug || `tenant-${effectiveTenantId.slice(0, 8)}`).toLowerCase().replace(/[^a-z0-9-]/g, '-');
+          await tx
+            .insert(tenants)
+            .values({
+              id: effectiveTenantId,
+              name: updated.organizationName || `Tenant ${effectiveTenantId.slice(0, 8)}`,
+              slug: `${rawSlug}-${Date.now().toString().slice(-4)}`,
+              status: 'ACTIVE'
+            })
+            .onConflictDoNothing();
+        }
+      } catch (tenantErr) {
+        logger.warn('Non-fatal core.tenants insertion warning on partner approval: ' + String(tenantErr));
       }
 
       // 4. Activate in realAuthService if credentials exist

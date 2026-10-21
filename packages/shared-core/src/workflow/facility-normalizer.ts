@@ -5,6 +5,11 @@ export type CanonicalWorkspaceType =
   | 'PATHOLOGY'
   | 'DIAGNOSTIC_CENTRE'
   | 'ENTERPRISE_COMMAND'
+  | 'SALON_SPA'
+  | 'AUTO_SERVICE'
+  | 'LEGAL_CONSULTING'
+  | 'FITNESS_SPORTS'
+  | 'EDUCATION_COACHING'
   | 'RESTRICTED';
 
 export type CanonicalRoleType =
@@ -15,6 +20,11 @@ export type CanonicalRoleType =
   | 'RADIOLOGIST'
   | 'HOSPITAL_ADMIN'
   | 'SUPER_ADMIN'
+  | 'SALON_MANAGER'
+  | 'WORKSHOP_MANAGER'
+  | 'MANAGING_PARTNER'
+  | 'FITNESS_DIRECTOR'
+  | 'ACADEMIC_ADMIN'
   | 'RESTRICTED';
 
 export type CanonicalCrmPartnerType =
@@ -23,6 +33,11 @@ export type CanonicalCrmPartnerType =
   | 'PHARMACY'
   | 'DIAGNOSTIC_LAB'
   | 'DIAGNOSTIC_CENTRE'
+  | 'SALON_SPA'
+  | 'AUTO_SERVICE'
+  | 'LEGAL_CONSULTING'
+  | 'FITNESS_SPORTS'
+  | 'EDUCATION_COACHING'
   | 'RESTRICTED';
 
 export interface NormalizedFacilityProfile {
@@ -163,6 +178,91 @@ export const CANONICAL_FACILITY_PROFILES: Record<CanonicalWorkspaceType, Normali
     ],
     isRestricted: false
   },
+  SALON_SPA: {
+    workspace: 'SALON_SPA',
+    primaryRole: 'SALON_MANAGER',
+    crmType: 'SALON_SPA',
+    facilityCategoryName: 'Salons, Spas & Wellness Studio',
+    defaultModule: 'calendar-roster',
+    defaultPlanTier: 'Salon Pro & Dynamic Booking',
+    allowedWorkspaces: ['SALON_SPA'],
+    accessibleFeatures: [
+      'Appointments & Bookings',
+      'Stylist Roster & Chairs',
+      'Live Walk-in Queue',
+      'Service Packages & POS Billing',
+      'Client Cards & Loyalty'
+    ],
+    isRestricted: false
+  },
+  AUTO_SERVICE: {
+    workspace: 'AUTO_SERVICE',
+    primaryRole: 'WORKSHOP_MANAGER',
+    crmType: 'AUTO_SERVICE',
+    facilityCategoryName: 'Auto Service & Detailing Workshop',
+    defaultModule: 'bay-roster',
+    defaultPlanTier: 'Auto Workshop Pro',
+    allowedWorkspaces: ['AUTO_SERVICE'],
+    accessibleFeatures: [
+      'Bay Scheduling & Lifts',
+      'Job Cards & Mechanics',
+      'Parts Inventory',
+      'Estimation & GST Billing',
+      'Customer Vehicle Cards'
+    ],
+    isRestricted: false
+  },
+  LEGAL_CONSULTING: {
+    workspace: 'LEGAL_CONSULTING',
+    primaryRole: 'MANAGING_PARTNER',
+    crmType: 'LEGAL_CONSULTING',
+    facilityCategoryName: 'Legal Chambers & Financial Advisory',
+    defaultModule: 'calendar-roster',
+    defaultPlanTier: 'Legal & Consulting Pro',
+    allowedWorkspaces: ['LEGAL_CONSULTING'],
+    accessibleFeatures: [
+      'Consultation Sessions',
+      'Advocate Rostering',
+      'Chamber Scheduling',
+      'Retainer & Invoice Billing',
+      'Case Briefs & Vault'
+    ],
+    isRestricted: false
+  },
+  FITNESS_SPORTS: {
+    workspace: 'FITNESS_SPORTS',
+    primaryRole: 'FITNESS_DIRECTOR',
+    crmType: 'FITNESS_SPORTS',
+    facilityCategoryName: 'Fitness Clubs, Sports Academies & Courts',
+    defaultModule: 'court-calendar',
+    defaultPlanTier: 'Fitness Club Pro',
+    allowedWorkspaces: ['FITNESS_SPORTS'],
+    accessibleFeatures: [
+      'Court & Turf Bookings',
+      'Trainer Roster',
+      'Membership Passes',
+      'POS Counter Billing',
+      'Member Check-in Queue'
+    ],
+    isRestricted: false
+  },
+  EDUCATION_COACHING: {
+    workspace: 'EDUCATION_COACHING',
+    primaryRole: 'ACADEMIC_ADMIN',
+    crmType: 'EDUCATION_COACHING',
+    facilityCategoryName: 'Education Institutes, Coaching & Tutors',
+    defaultModule: 'faculty-calendar',
+    defaultPlanTier: 'Education & Coaching Pro',
+    allowedWorkspaces: ['EDUCATION_COACHING'],
+    accessibleFeatures: [
+      'Batch & Doubt Slots',
+      'Faculty Roster',
+      'Classroom Allocation',
+      'Student Enrollment',
+      'Fee Receipts & Invoicing'
+    ],
+    isRestricted: false
+  },
   RESTRICTED: {
     workspace: 'RESTRICTED',
     primaryRole: 'RESTRICTED',
@@ -262,6 +362,7 @@ export function normalizeFacilityProfile(rawType?: string | null): NormalizedFac
 
   // 5. Hospital / Inpatient / Surgical / Hospital Network matching
   if (
+    cleaned === 'HEALTHCARE' ||
     cleaned === 'HOSPITAL' ||
     cleaned === 'HOSPITAL_NETWORK' ||
     cleaned === 'HOSPITAL_SYSTEM' ||
@@ -282,6 +383,83 @@ export function normalizeFacilityProfile(rawType?: string | null): NormalizedFac
 
   if (cleaned === 'ENTERPRISE_COMMAND' || cleaned === 'ENTERPRISE') {
     return CANONICAL_FACILITY_PROFILES.ENTERPRISE_COMMAND;
+  }
+
+  // 6. Salon & Spa
+  if (
+    cleaned === 'SALON_SPA' ||
+    cleaned === 'SALON' ||
+    cleaned === 'SPA' ||
+    cleaned === 'BEAUTY' ||
+    cleaned === 'BEAUTY_WELLNESS' ||
+    cleaned === 'WELLNESS' ||
+    cleaned === 'PARLOR' ||
+    cleaned.includes('SALON') ||
+    cleaned.includes('SPA') ||
+    cleaned === 'TPL_SALON_SPA'
+  ) {
+    return CANONICAL_FACILITY_PROFILES.SALON_SPA;
+  }
+
+  // 7. Auto Service & Detailing Workshops
+  if (
+    cleaned === 'AUTO_SERVICE' ||
+    cleaned === 'AUTO' ||
+    cleaned === 'GARAGE' ||
+    cleaned === 'WORKSHOP' ||
+    cleaned === 'CAR_SERVICE' ||
+    cleaned === 'AUTO_REPAIR' ||
+    cleaned.includes('AUTO') ||
+    cleaned.includes('GARAGE') ||
+    cleaned === 'TPL_AUTO_SERVICE'
+  ) {
+    return CANONICAL_FACILITY_PROFILES.AUTO_SERVICE;
+  }
+
+  // 8. Legal Chambers & Financial Consulting
+  if (
+    cleaned === 'LEGAL_CONSULTING' ||
+    cleaned === 'LEGAL' ||
+    cleaned === 'LAWYER' ||
+    cleaned === 'ADVOCATE' ||
+    cleaned === 'LAW_FIRM' ||
+    cleaned === 'CONSULTING' ||
+    cleaned === 'ATTORNEY' ||
+    cleaned.includes('LEGAL') ||
+    cleaned.includes('ADVOCATE') ||
+    cleaned === 'TPL_LEGAL_CONSULTING'
+  ) {
+    return CANONICAL_FACILITY_PROFILES.LEGAL_CONSULTING;
+  }
+
+  // 9. Fitness Clubs & Sports Academies
+  if (
+    cleaned === 'FITNESS_SPORTS' ||
+    cleaned === 'FITNESS' ||
+    cleaned === 'GYM' ||
+    cleaned === 'SPORTS' ||
+    cleaned === 'COURT' ||
+    cleaned === 'TURF' ||
+    cleaned.includes('FITNESS') ||
+    cleaned.includes('SPORTS') ||
+    cleaned === 'TPL_FITNESS_SPORTS'
+  ) {
+    return CANONICAL_FACILITY_PROFILES.FITNESS_SPORTS;
+  }
+
+  // 10. Education Institutes & Coaching Tutors
+  if (
+    cleaned === 'EDUCATION_COACHING' ||
+    cleaned === 'EDUCATION' ||
+    cleaned === 'COACHING' ||
+    cleaned === 'TUTOR' ||
+    cleaned === 'TUTORING' ||
+    cleaned === 'ACADEMY' ||
+    cleaned.includes('EDUCATION') ||
+    cleaned.includes('COACHING') ||
+    cleaned === 'TPL_EDUCATION_COACHING'
+  ) {
+    return CANONICAL_FACILITY_PROFILES.EDUCATION_COACHING;
   }
 
   // CAP-03 Fail-closed: Never grant HOSPITAL privileges for unknown/invalid/tampered input
@@ -689,6 +867,72 @@ export const PARTNER_PROFILE_ALLOWED_MODULES: Readonly<Record<string, readonly s
     'TELEMEDICINE',
     'TELEMEDICINE_RPM'
   ],
+  SALON_SPA: [
+    'OPERATIONS',
+    'APPOINTMENTS',
+    'CALENDAR_ROSTER',
+    'LIVE_QUEUE',
+    'STAFF',
+    'PATIENTS',
+    'BILLING',
+    'BILLING_POS',
+    'INVENTORY_STOCK',
+    'LOYALTY_REWARDS',
+    'WHATSAPP',
+    'WHATSAPP_PATIENT_PORTAL'
+  ],
+  AUTO_SERVICE: [
+    'OPERATIONS',
+    'APPOINTMENTS',
+    'BAY_ROSTER',
+    'JOB_CARD_TRACKING',
+    'STAFF',
+    'PATIENTS',
+    'PARTS_INVENTORY',
+    'BILLING',
+    'ESTIMATION_BILLING',
+    'WHATSAPP',
+    'WHATSAPP_PATIENT_PORTAL'
+  ],
+  LEGAL_CONSULTING: [
+    'OPERATIONS',
+    'APPOINTMENTS',
+    'CALENDAR_ROSTER',
+    'DOCUMENT_VAULT',
+    'TIME_TRACKING',
+    'STAFF',
+    'PATIENTS',
+    'BILLING',
+    'RETAINER_BILLING',
+    'WHATSAPP',
+    'WHATSAPP_PATIENT_PORTAL'
+  ],
+  FITNESS_SPORTS: [
+    'OPERATIONS',
+    'APPOINTMENTS',
+    'COURT_CALENDAR',
+    'TRAINER_ROSTER',
+    'MEMBERSHIP_PASSES',
+    'STAFF',
+    'PATIENTS',
+    'BILLING',
+    'BILLING_POS',
+    'WHATSAPP',
+    'WHATSAPP_PATIENT_PORTAL'
+  ],
+  EDUCATION_COACHING: [
+    'OPERATIONS',
+    'APPOINTMENTS',
+    'FACULTY_CALENDAR',
+    'BATCH_ROSTER',
+    'STUDENT_ENROLLMENT',
+    'STAFF',
+    'PATIENTS',
+    'BILLING',
+    'FEE_RECEIPTS',
+    'WHATSAPP',
+    'WHATSAPP_PATIENT_PORTAL'
+  ],
   RESTRICTED: []
 };
 
@@ -764,6 +1008,28 @@ export function isModuleAllowedForPartnerProfile(rawPartnerType: string | null |
   }
   if (normMod.startsWith('AI') || normMod === 'AI-CLINICAL-CDSS' || normMod === 'AI-CHAT-ASSISTANT') {
     return allowed.includes('AI_COPILOT') || allowed.includes('MODULE_AI_COPILOT') || allowed.includes('AI_CDSS');
+  }
+
+  // Multi-Industry Universal Entitlements: Appointments, Rosters, Staff, Customers
+  if (normMod.startsWith('APPOINTMENT') || normMod === 'APPOINTMENTS' || normMod === 'BOOKINGS') {
+    return allowed.includes('APPOINTMENTS');
+  }
+  if (normMod.startsWith('CALENDAR') || normMod.includes('ROSTER') || normMod.includes('QUEUE')) {
+    return (
+      allowed.includes('CALENDAR_ROSTER') ||
+      allowed.includes('BAY_ROSTER') ||
+      allowed.includes('COURT_CALENDAR') ||
+      allowed.includes('FACULTY_CALENDAR') ||
+      allowed.includes('LIVE_QUEUE') ||
+      allowed.includes('OPD_QUEUE') ||
+      allowed.includes('OPD')
+    );
+  }
+  if (normMod.startsWith('STAFF') || normMod.includes('DIRECTORY') || normMod.includes('EMPLOYEE')) {
+    return allowed.includes('STAFF');
+  }
+  if (normMod.startsWith('PATIENT') || normMod.startsWith('CLIENT') || normMod.startsWith('CUSTOMER')) {
+    return allowed.includes('PATIENTS');
   }
 
   return false;

@@ -10,6 +10,7 @@ const AIReceptionistWidget = React.lazy(() => import('./AIReceptionistWidget.js'
 const LiveOpdQueueTrackerView = React.lazy(() => import('./LiveOpdQueueTrackerView.js').then(m => ({ default: m.LiveOpdQueueTrackerView })));
 const MeritDoctorMarketplaceModal = React.lazy(() => import('./MeritDoctorMarketplaceModal.js').then(m => ({ default: m.MeritDoctorMarketplaceModal })));
 const IndustryRegistrationModal = React.lazy(() => import('./IndustryRegistrationModal.js').then(m => ({ default: m.IndustryRegistrationModal })));
+const PublicUniversalBookingView = React.lazy(() => import('./PublicUniversalBookingView.js').then(m => ({ default: m.PublicUniversalBookingView })));
 import { InteractiveClinicSandbox } from './InteractiveClinicSandbox.js';
 import { AdaptiveRoiCalculator } from './AdaptiveRoiCalculator.js';
 import {
@@ -51,9 +52,16 @@ export const DocSearchLandingPage: React.FC = () => {
   const [campaignMetrics, setCampaignMetrics] = useState<CampaignCalculatedMetrics>(calculateCampaignMetrics(campaign));
 
   // Dedicated Full-Page View Mode ('LANDING' vs 'REGISTRATION' vs 'TRACK_TOKEN')
-  const [currentView, setCurrentView] = useState<'LANDING' | 'REGISTRATION' | 'TRACK_TOKEN'>(() => {
+  const [currentView, setCurrentView] = useState<'LANDING' | 'REGISTRATION' | 'TRACK_TOKEN' | 'BOOKING'>(() => {
     if (typeof window !== 'undefined') {
+      const pathname = window.location.pathname;
+      if (pathname.startsWith('/book/') || pathname === '/book') {
+        return 'BOOKING';
+      }
       const params = new URLSearchParams(window.location.search);
+      if (params.get('view') === 'book' || params.get('portalSlug') || params.get('booking') === 'true') {
+        return 'BOOKING';
+      }
       if (params.get('view') === 'track-token' || params.get('token') || params.get('t')) {
         return 'TRACK_TOKEN';
       }
@@ -291,6 +299,26 @@ export const DocSearchLandingPage: React.FC = () => {
           }}
           partnerPortalUrl={partnerPortalUrl}
           companyPortalUrl={companyPortalUrl}
+        />
+      </React.Suspense>
+    );
+  }
+
+  // Render Full-Page Universal Customer Appointment Booking Portal (/book/:portalSlug)
+  if (currentView === 'BOOKING') {
+    return (
+      <React.Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#090D16', color: '#06B6D4' }}>Loading Appointment Booking Portal...</div>}>
+        <PublicUniversalBookingView
+          onBackToHome={() => {
+            setCurrentView('LANDING');
+            if (typeof window !== 'undefined') {
+              const url = new URL(window.location.href);
+              url.searchParams.delete('view');
+              url.searchParams.delete('portalSlug');
+              url.searchParams.delete('booking');
+              window.history.replaceState({}, document.title, url.pathname);
+            }
+          }}
         />
       </React.Suspense>
     );

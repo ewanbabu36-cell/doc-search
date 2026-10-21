@@ -26,42 +26,54 @@ export async function ensureTenantExists(tenantId: string, name = 'Partner Organ
   const db = getDatabase();
   if (!db) return;
   try {
-    await db
-      .insert(tenants)
-      .values({
-        id: tenantId,
-        name: name,
-        slug: `tenant-${tenantId.slice(0, 8)}`,
-        status: 'ACTIVE'
-      })
-      .onConflictDoNothing();
+    const [existing] = await db
+      .select({ id: tenants.id })
+      .from(tenants)
+      .where(eq(tenants.id, tenantId))
+      .limit(1);
 
-    await db
-      .insert(operationalPartners)
-      .values({
-        id: tenantId,
-        tenantId: tenantId,
-        partnerCode: `PARTNER-${tenantId.slice(0, 8)}`,
-        legalBusinessName: name,
-        partnerType: 'HOSPITAL_SYSTEM',
-        contactEmail: `admin@${tenantId.slice(0, 8)}.docsearch.local`,
-        status: 'ACTIVE'
-      })
-      .onConflictDoNothing();
+    if (!existing) {
+      await db
+        .insert(tenants)
+        .values({
+          id: tenantId,
+          name: name,
+          slug: `tenant-${tenantId.slice(0, 8)}-${Date.now()}`,
+          status: 'ACTIVE'
+        })
+        .onConflictDoNothing();
+    }
 
-    await db
-      .insert(operationalOrganizations)
-      .values({
-        id: tenantId,
-        tenantId: tenantId,
-        partnerId: tenantId,
-        organizationCode: `ORG-${tenantId.slice(0, 8)}`,
-        organizationName: name,
-        contactEmail: `admin@${tenantId.slice(0, 8)}.docsearch.local`,
-        status: 'ACTIVE'
-      })
-      .onConflictDoNothing();
-  } catch {}
+    try {
+      await db
+        .insert(operationalPartners)
+        .values({
+          id: tenantId,
+          tenantId: tenantId,
+          partnerCode: `PARTNER-${tenantId.slice(0, 8)}`,
+          legalBusinessName: name,
+          partnerType: 'HOSPITAL_SYSTEM',
+          contactEmail: `admin@${tenantId.slice(0, 8)}.docsearch.local`,
+          status: 'ACTIVE'
+        })
+        .onConflictDoNothing();
+
+      await db
+        .insert(operationalOrganizations)
+        .values({
+          id: tenantId,
+          tenantId: tenantId,
+          partnerId: tenantId,
+          organizationCode: `ORG-${tenantId.slice(0, 8)}`,
+          organizationName: name,
+          contactEmail: `admin@${tenantId.slice(0, 8)}.docsearch.local`,
+          status: 'ACTIVE'
+        })
+        .onConflictDoNothing();
+    } catch {}
+  } catch (err: any) {
+    logger.warn('Non-fatal ensureTenantExists error: ' + String(err));
+  }
 }
 
 export async function ensureUserExists(userId: string, email = 'founder@docsearch.health'): Promise<void> {
