@@ -73,6 +73,7 @@ import { partnerAiIntelligenceRoutes } from './routes/partner/ai-intelligence.ro
 import { ewanRoutes } from './routes/ewan.routes.js';
 import { publicKioskRoutes } from './routes/partner/public-kiosk.routes.js';
 import { patientMobileRoutes } from './routes/patient/patient-mobile.routes.js';
+import { publicBookingRoutes } from './routes/public/public-booking.routes.js';
 import { catalogSyncRoutes } from './routes/partner/catalog-sync.routes.js';
 import { migrationRoutes } from './routes/partner/migration.routes.js';
 import { telemedicineSignalingRoutes } from './routes/partner/telemedicine-signaling.routes.js';
@@ -380,6 +381,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(businessHistoryRoutes);
   await app.register(publicKioskRoutes);
   await app.register(patientMobileRoutes);
+  await app.register(publicBookingRoutes);
   await app.register(catalogSyncRoutes);
   await app.register(migrationRoutes);
   await app.register(telemedicineSignalingRoutes);

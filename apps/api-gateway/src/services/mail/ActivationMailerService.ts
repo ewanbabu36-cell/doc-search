@@ -312,6 +312,92 @@ export class ActivationMailerService {
       return null;
     }
   }
+
+  /**
+   * Dispatches appointment/booking confirmation email with local inbox fallback & SMTP.
+   */
+  async dispatchBookingConfirmationEmail(params: {
+    tenantName: string;
+    email: string;
+    customerName: string;
+    providerName: string;
+    slot: string;
+    date: string;
+    token: string;
+    fee?: number;
+    industryType?: string;
+  }): Promise<{
+    success: boolean;
+    dispatchMode: 'SMTP' | 'LOCAL_PREVIEW';
+    previewPath?: string;
+  }> {
+    const preset = resolveIndustryPreset(params.industryType);
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"/><title>Booking Confirmed — ${params.token}</title></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0f172a; color: #f8fafc; padding: 24px;">
+  <div style="max-width: 560px; margin: 0 auto; background-color: #1e293b; border-radius: 16px; border: 1px solid #334155; padding: 32px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+    <div style="text-align: center; margin-bottom: 24px;">
+      <span style="font-size: 32px;">${preset.badgeIcon}</span>
+      <h2 style="color: #38bdf8; margin: 8px 0 4px 0; font-size: 22px;">${params.tenantName}</h2>
+      <p style="color: #94a3b8; margin: 0; font-size: 13px;">${preset.name} • ${preset.vocabulary.appointment.singular} Confirmed</p>
+    </div>
+    <div style="background-color: #0f172a; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 24px; border: 1.5px dashed ${preset.accentColor};">
+      <div style="color: #94a3b8; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">YOUR BOOKING TOKEN</div>
+      <div style="font-size: 32px; font-weight: 900; font-family: monospace; color: ${preset.accentColor};">${params.token}</div>
+    </div>
+    <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 14px;">
+      <tr><td style="padding: 8px 0; color: #94a3b8;">Customer:</td><td style="padding: 8px 0; color: #f8fafc; font-weight: 600; text-align: right;">${params.customerName}</td></tr>
+      <tr><td style="padding: 8px 0; color: #94a3b8;">Provider:</td><td style="padding: 8px 0; color: #f8fafc; font-weight: 600; text-align: right;">${params.providerName}</td></tr>
+      <tr><td style="padding: 8px 0; color: #94a3b8;">Date & Slot:</td><td style="padding: 8px 0; color: #f8fafc; font-weight: 600; text-align: right;">${params.date} at ${params.slot}</td></tr>
+      <tr><td style="padding: 8px 0; color: #94a3b8;">Estimated Fee:</td><td style="padding: 8px 0; color: #34d399; font-weight: 700; text-align: right;">₹${params.fee || 0}</td></tr>
+    </table>
+    <div style="border-top: 1px solid #334155; padding-top: 16px; text-align: center; font-size: 11px; color: #64748b;">
+      Please arrive 10 minutes prior to your scheduled slot. Show this confirmation token at the reception desk.
+    </div>
+  </div>
+</body>
+</html>
+    `.trim();
+
+    this.ensureMailDirectory();
+    const fileName = `booking-${params.token}-${Date.now()}.html`;
+    const filePath = path.join(MAIL_INBOX_DIR, fileName);
+
+    try {
+      fs.writeFileSync(filePath, htmlContent, 'utf8');
+      logger.info(`[MAIL] Booking confirmation email generated for ${params.email}. Saved: ${filePath}`);
+    } catch (err) {
+      logger.warn('[MAIL] Failed to save local booking email preview', { error: String(err) });
+    }
+
+    if (process.env['SMTP_HOST']) {
+      try {
+        const transporter = nodemailer.createTransport({
+          host: process.env['SMTP_HOST'],
+          port: Number(process.env['SMTP_PORT'] || 587),
+          secure: process.env['SMTP_SECURE'] === 'true',
+          auth: process.env['SMTP_USER']
+            ? { user: process.env['SMTP_USER'], pass: process.env['SMTP_PASSWORD'] || '' }
+            : undefined
+        });
+
+        await transporter.sendMail({
+          from: process.env['MAIL_FROM'] || `"Doc Search Universal" <notifications@docsearch.internal>`,
+          to: params.email,
+          subject: `${preset.badgeIcon} Booking Confirmed [${params.token}] — ${params.tenantName}`,
+          html: htmlContent
+        });
+
+        return { success: true, dispatchMode: 'SMTP', previewPath: filePath };
+      } catch (smtpErr) {
+        logger.warn('[MAIL] Live SMTP failed, fell back to local inbox preview', { error: String(smtpErr) });
+      }
+    }
+
+    return { success: true, dispatchMode: 'LOCAL_PREVIEW', previewPath: filePath };
+  }
 }
 
 export const activationMailerService = new ActivationMailerService();

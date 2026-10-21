@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import type {
   PatientDto,
   PatientDuplicateCandidateDto,
@@ -18,6 +18,7 @@ import type {
   ReviewDuplicatePatientRequest,
   MergePatientRequest
 } from '@docsearch/api-contracts';
+import { resolveIndustryPreset, type IndustryVertical } from '@docsearch/shared-core';
 import { patientRegistrationService } from '../services/patient-registration-service.js';
 import { partnerFoundationService } from '../services/partner-foundation-service.js';
 import { PanelContextSwitcher } from './common/PanelContextSwitcher.js';
@@ -33,7 +34,7 @@ import { PatientMergeHistoryView } from './views/PatientMergeHistoryView.js';
 import { PatientAuditVaultView } from './views/PatientAuditVaultView.js';
 import { DpdpPrivacyConsentHubView } from './views/DpdpPrivacyConsentHubView.js';
 import { FrontDeskMobileWorkstationView } from './views/FrontDeskMobileWorkstationView.js';
-import { Tabs, Badge, Button, ErrorState, DocSearchSpatialCore3D, SkeletonPage } from '@docsearch/ui-kit';
+import { Tabs, Badge, Button, ErrorState, SkeletonPage } from '@docsearch/ui-kit';
 
 export type ActivePatientTab =
   | 'counter-workstation'
@@ -55,9 +56,10 @@ export interface PatientRegistrationDomainManagerProps {
 }
 
 export const PatientRegistrationDomainManager: React.FC<PatientRegistrationDomainManagerProps> = ({
-  initialTab = 'directory'
+  initialTab = 'counter-workstation'
 }) => {
   const [activeTab, setActiveTab] = useState<ActivePatientTab>(initialTab);
+  const [showAdvancedSettings, setShowAdvancedSettings] = useState<boolean>(false);
   const [context, setContext] = useState<PanelContextDto | null>(null);
   const [partners, setPartners] = useState<OperationalPartnerDto[]>([]);
   const [organizations, setOrganizations] = useState<OperationalOrganizationDto[]>([]);
@@ -78,87 +80,95 @@ export const PatientRegistrationDomainManager: React.FC<PatientRegistrationDomai
     setError(null);
     try {
       const ctx = await partnerFoundationService.getPanelContext();
-      try {
-        const storedAuth = typeof window !== 'undefined' ? localStorage.getItem('docsearch_partner_staff_auth') : null;
-        if (storedAuth) {
-          const u = JSON.parse(storedAuth);
-          if (u?.email) {
-            ctx.userEmail = u.email;
-            ctx.userRole = u.role || 'HOSPITAL_DIRECTOR';
-            if (u.tenantName) ctx.activeTenantName = u.tenantName;
-          }
-        }
-      } catch {}
       setContext(ctx);
 
-      const [partnersRes, orgsRes, facsRes] = await Promise.all([
-        partnerFoundationService.getPartners(ctx.activeTenantId),
-        partnerFoundationService.getOrganizations(ctx.activeTenantId),
-        partnerFoundationService.getFacilities(ctx.activeTenantId)
+      const [partnersData, orgsData, facilitiesData] = await Promise.all([
+        ctx.activeTenantId ? partnerFoundationService.getPartners(ctx.activeTenantId) : Promise.resolve([]),
+        ctx.activeTenantId ? partnerFoundationService.getOrganizations(ctx.activeTenantId, ctx.activePartnerId) : Promise.resolve([]),
+        ctx.activeTenantId ? partnerFoundationService.getFacilities(ctx.activeTenantId, ctx.activePartnerId, ctx.activeOrganizationId) : Promise.resolve([])
       ]);
-      setPartners(partnersRes);
-      setOrganizations(orgsRes);
-      setFacilities(facsRes);
+      setPartners(partnersData);
+      setOrganizations(orgsData);
+      setFacilities(facilitiesData);
 
-      const [overviewRes, patientsRes, candidatesRes, mergesRes, auditsRes] = await Promise.all([
-        patientRegistrationService.getOverview(ctx.activeTenantId, ctx.activePartnerId, ctx.activeOrganizationId, ctx.activeFacilityId),
-        patientRegistrationService.searchPatients({
-          tenantId: ctx.activeTenantId,
-          partnerId: ctx.activePartnerId,
-          organizationId: ctx.activeOrganizationId,
-          branchId: ctx.activeFacilityId
-        }),
-        patientRegistrationService.getDuplicateCandidates(ctx.activeTenantId, ctx.activeOrganizationId),
-        patientRegistrationService.getMergeHistory(ctx.activeTenantId, ctx.activeOrganizationId),
-        patientRegistrationService.getAuditTraces({
-          tenantId: ctx.activeTenantId,
-          partnerId: ctx.activePartnerId,
-          organizationId: ctx.activeOrganizationId,
-          pageIndex: 0,
-          pageSize: 50
-        })
-      ]);
-
-      setOverview(overviewRes);
-      setPatients(patientsRes);
-      setDuplicateCandidates(candidatesRes);
-      setMergeEvents(mergesRes);
-      setAuditTraces(auditsRes);
-
-      if (patientsRes[0] && !selectedPatientId) {
-        setSelectedPatientId(patientsRes[0].id);
+      if (ctx.activeTenantId) {
+        const [overviewData, patientsData, candidatesData, mergeEventsData, auditData] =
+          await Promise.all([
+            patientRegistrationService.getOverview(ctx.activeTenantId),
+            patientRegistrationService.searchPatients({
+              tenantId: ctx.activeTenantId,
+              pageIndex: 0,
+              pageSize: 50
+            }),
+            patientRegistrationService.getDuplicateCandidates(ctx.activeTenantId),
+            patientRegistrationService.getMergeHistory(ctx.activeTenantId, ctx.activeOrganizationId),
+            patientRegistrationService.getAuditTraces({ tenantId: ctx.activeTenantId, pageIndex: 0, pageSize: 50 })
+          ]);
+        setOverview(overviewData);
+        setPatients(patientsData);
+        setDuplicateCandidates(candidatesData);
+        setMergeEvents(mergeEventsData);
+        setAuditTraces(auditData);
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load Patient Registration module');
+    } catch (err: any) {
+      setError(err?.message || 'Failed to load registration domain data');
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    void loadData();
+    loadData();
   }, []);
 
-  const handleContextChange = async (newContext: Partial<PanelContextDto>) => {
-    const updated = await partnerFoundationService.setPanelContext(newContext);
-    setContext(updated);
-    if (updated.activeTenantId) {
-      void loadData();
+  // Adaptive Industry Preset
+  const activeVertical: IndustryVertical = useMemo(() => {
+    const pType = String((context as any)?.partnerType || (context as any)?.activePartnerType || '').toUpperCase();
+    if (pType.includes('SALON') || pType.includes('SPA')) return 'SALON_SPA';
+    if (pType.includes('AUTO') || pType.includes('GARAGE')) return 'AUTO_SERVICE';
+    if (pType.includes('LEGAL') || pType.includes('LAW')) return 'LEGAL_CONSULTING';
+    if (pType.includes('FITNESS') || pType.includes('GYM')) return 'FITNESS_SPORTS';
+    if (pType.includes('EDU') || pType.includes('COACH')) return 'EDUCATION_COACHING';
+    return 'HEALTHCARE';
+  }, [context]);
+
+  const preset = useMemo(() => resolveIndustryPreset(activeVertical), [activeVertical]);
+
+  const handleContextChange = async (updated: Partial<PanelContextDto>) => {
+    const merged = context ? { ...context, ...updated } : (updated as PanelContextDto);
+    setContext(merged);
+    if (merged.activeTenantId) {
+      setIsLoading(true);
+      try {
+        const [overviewData, patientsData, candidatesData] = await Promise.all([
+          patientRegistrationService.getOverview(merged.activeTenantId),
+          patientRegistrationService.searchPatients({
+            tenantId: merged.activeTenantId,
+            pageIndex: 0,
+            pageSize: 50
+          }),
+          patientRegistrationService.getDuplicateCandidates(merged.activeTenantId)
+        ]);
+        setOverview(overviewData);
+        setPatients(patientsData);
+        setDuplicateCandidates(candidatesData);
+      } catch (err: any) {
+        setError(err?.message || 'Failed to refresh data for new context');
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
   const handleCreatePatient = async (req: CreatePatientRequest) => {
-    const p = await patientRegistrationService.createPatient(req);
-    setPatients((prev) => [p, ...prev]);
-    setSelectedPatientId(p.id);
+    const created = await patientRegistrationService.createPatient(req);
+    setPatients((prev) => [created, ...prev]);
     if (context) {
-      const [refreshedOverview, refreshedCandidates] = await Promise.all([
-        patientRegistrationService.getOverview(context.activeTenantId),
-        patientRegistrationService.getDuplicateCandidates(context.activeTenantId)
-      ]);
+      const refreshedOverview = await patientRegistrationService.getOverview(context.activeTenantId);
       setOverview(refreshedOverview);
-      setDuplicateCandidates(refreshedCandidates);
     }
+    setSelectedPatientId(created.id);
+    setActiveTab('profile');
   };
 
   const handleUpdatePatient = async (req: UpdatePatientRequest) => {
@@ -223,18 +233,20 @@ export const PatientRegistrationDomainManager: React.FC<PatientRegistrationDomai
     const event = await patientRegistrationService.mergePatients(req);
     setMergeEvents((prev) => [event, ...prev]);
     if (context) {
-      const [refreshedPatients, refreshedCandidates, refreshedOverview] = await Promise.all([
+      const [refreshedPatients, refreshedCandidates, refreshedOverview, refreshedHistory] = await Promise.all([
         patientRegistrationService.searchPatients({
           tenantId: context.activeTenantId,
           pageIndex: 0,
           pageSize: 50
         }),
         patientRegistrationService.getDuplicateCandidates(context.activeTenantId),
-        patientRegistrationService.getOverview(context.activeTenantId)
+        patientRegistrationService.getOverview(context.activeTenantId),
+        patientRegistrationService.getMergeHistory(context.activeTenantId, context.activeOrganizationId)
       ]);
       setPatients(refreshedPatients);
       setDuplicateCandidates(refreshedCandidates);
       setOverview(refreshedOverview);
+      setMergeEvents(refreshedHistory);
     }
   };
 
@@ -243,28 +255,13 @@ export const PatientRegistrationDomainManager: React.FC<PatientRegistrationDomai
     setActiveTab('profile');
   };
 
-  const [isMobileDesk, setIsMobileDesk] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    try {
-      const storedAuth = localStorage.getItem('docsearch_partner_staff_auth');
-      if (storedAuth) {
-        const u = JSON.parse(storedAuth);
-        const r = String(u.role || '').toUpperCase();
-        if (r.includes('RECEPTIONIST') || r.includes('FRONT') || r.includes('TOKEN')) {
-          return true;
-        }
-      }
-    } catch {}
-    return window.innerWidth < 800;
-  });
-
   if (isLoading && !context) {
     return <SkeletonPage layout="table" metricCount={4} />;
   }
 
   if (error && !context) {
     return (
-      <ErrorState title="Patient Registration Module Unavailable" message={error} onRetry={loadData} />
+      <ErrorState title="Registration Module Unavailable" message={error} onRetry={loadData} />
     );
   }
 
@@ -272,71 +269,36 @@ export const PatientRegistrationDomainManager: React.FC<PatientRegistrationDomai
   const activeOrgId = context?.activeOrganizationId ?? organizations[0]?.id ?? '';
   const activeBranchId = context?.activeFacilityId ?? facilities[0]?.id ?? '';
 
-  if (isMobileDesk) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        <FrontDeskMobileWorkstationView
-          tenantId={context?.activeTenantId || 'default'}
-          partnerId={context?.activePartnerId}
-          organizationId={activeOrgId}
-          branchId={activeBranchId}
-          staffName={context?.userRole || 'Front Desk Lead'}
-          onSwitchToFullDesktop={() => setIsMobileDesk(false)}
-        />
-      </div>
-    );
-  }
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {/* 3D Spatial Feature Core: Patient 360 & Registry */}
-      <DocSearchSpatialCore3D
-        preset="patient-registration"
-        height={360}
-        interactive={true}
-        onNodeClick={(id) => {
-          if (id === 'abha-kyc' || id === 'consent-biometrics') {
-            setActiveTab('privacy-dpdp');
-          } else if (id === 'demographics') {
-            setActiveTab('directory');
-          } else if (id === 'emergency-contacts') {
-            setActiveTab('emergency');
-          } else if (id === 'triage-vitals') {
-            setActiveTab('overview');
-          } else if (id === 'insurance-tpa') {
-            setActiveTab('insurance');
-          } else if (id === 'token-queue') {
-            setActiveTab('directory');
-          }
-        }}
-      />
-
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }} data-testid="patient-registration-domain-manager">
+      {/* Streamlined Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', paddingBottom: '4px' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700', color: 'var(--ds-color-text-primary)' }}>
-              Patient Registration & Master Patient Index (MPI)
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
+            <span style={{ fontSize: '1.25rem' }}>{preset.badgeIcon}</span>
+            <h1 style={{ margin: 0, fontSize: '1.35rem', fontWeight: '700', color: 'var(--ds-color-text-primary)' }}>
+              {preset.vocabulary.customer.singular} Registration & Intake Workstation
             </h1>
-            <Badge variant="success">● LIVE PRODUCTION</Badge>
+            <Badge variant="success">● LIVE</Badge>
           </div>
-          <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--ds-color-text-muted)' }}>
-            Canonical patient identities, deterministic MRN issuance, demographic registries, duplicate match adjudication, and consent directives
+          <p style={{ margin: 0, fontSize: '0.8125rem', color: 'var(--ds-color-text-muted)' }}>
+            Instant check-in, dynamic intake fields, token generation, and canonical {preset.vocabulary.customer.plural.toLowerCase()} directory
           </p>
         </div>
 
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={() => setIsMobileDesk(true)}
-          style={{ backgroundColor: '#0d9488', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-        >
-          <span>📱</span>
-          <span>Switch to Front Desk Mobile Desk</span>
-        </Button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
+            style={{ fontSize: '12px' }}
+          >
+            {showAdvancedSettings ? 'Hide Advanced ⚙️' : '⚙️ Advanced Controls'}
+          </Button>
+        </div>
       </div>
 
-      {/* Panel Context Switcher */}
+      {/* Context Switcher */}
       {context && (
         <PanelContextSwitcher
           context={context}
@@ -347,44 +309,122 @@ export const PatientRegistrationDomainManager: React.FC<PatientRegistrationDomai
         />
       )}
 
-      {/* Navigation Tabs */}
+      {/* Advanced Governance Drawer / Accordion */}
+      {showAdvancedSettings && (
+        <div style={{
+          backgroundColor: 'rgba(30, 41, 59, 0.5)',
+          border: '1px solid rgba(71, 85, 105, 0.4)',
+          borderRadius: '10px',
+          padding: '12px',
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '8px',
+          alignItems: 'center'
+        }}>
+          <span style={{ fontSize: '12px', fontWeight: 600, color: '#94a3b8', marginRight: '6px' }}>Advanced Views:</span>
+          <button
+            type="button"
+            onClick={() => setActiveTab('privacy-dpdp')}
+            style={{
+              padding: '4px 10px',
+              borderRadius: '6px',
+              fontSize: '12px',
+              backgroundColor: activeTab === 'privacy-dpdp' ? '#0284c7' : '#334155',
+              color: '#fff',
+              border: 'none',
+              cursor: 'pointer'
+            }}
+          >
+            🛡️ DPDP Privacy & Consent Hub
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('duplicate-review')}
+            style={{
+              padding: '4px 10px',
+              borderRadius: '6px',
+              fontSize: '12px',
+              backgroundColor: activeTab === 'duplicate-review' ? '#0284c7' : '#334155',
+              color: '#fff',
+              border: 'none',
+              cursor: 'pointer'
+            }}
+          >
+            ⚠️ Duplicate Review {duplicateCandidates.filter((c) => c.reviewStatus === 'PENDING_REVIEW').length > 0 && `(${duplicateCandidates.filter((c) => c.reviewStatus === 'PENDING_REVIEW').length})`}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('insurance')}
+            style={{
+              padding: '4px 10px',
+              borderRadius: '6px',
+              fontSize: '12px',
+              backgroundColor: activeTab === 'insurance' ? '#0284c7' : '#334155',
+              color: '#fff',
+              border: 'none',
+              cursor: 'pointer'
+            }}
+          >
+            💳 Insurance & Billing
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('merge-history')}
+            style={{
+              padding: '4px 10px',
+              borderRadius: '6px',
+              fontSize: '12px',
+              backgroundColor: activeTab === 'merge-history' ? '#0284c7' : '#334155',
+              color: '#fff',
+              border: 'none',
+              cursor: 'pointer'
+            }}
+          >
+            🔀 Merge Ledger
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('audit')}
+            style={{
+              padding: '4px 10px',
+              borderRadius: '6px',
+              fontSize: '12px',
+              backgroundColor: activeTab === 'audit' ? '#0284c7' : '#334155',
+              color: '#fff',
+              border: 'none',
+              cursor: 'pointer'
+            }}
+          >
+            🔒 Audit Vault
+          </button>
+        </div>
+      )}
+
+      {/* Streamlined Primary Tabs */}
       <Tabs
         tabs={[
           { id: 'counter-workstation', label: '⚡ Fast Counter Workstation' },
-          { id: 'directory', label: '👥 Patient Index & Search', badge: <Badge variant="neutral">{patients.length}</Badge> },
-          { id: 'profile', label: '📋 Patient Profile' },
-          { id: 'identifiers', label: '🪪 Identifiers' },
-          { id: 'insurance', label: '🛡️ Insurance / TPA' },
-          { id: 'emergency', label: '🚨 Emergency Contacts' },
-          { id: 'consents', label: '📝 Consents' },
-          { id: 'privacy-dpdp', label: '🛡️ DPDP Privacy & Consent Hub' },
-          {
-            id: 'duplicate-review',
-            label: '⚠️ Duplicate Review',
-            badge: duplicateCandidates.filter((c) => c.reviewStatus === 'PENDING_REVIEW').length > 0 ? (
-              <Badge variant="warning">{duplicateCandidates.filter((c) => c.reviewStatus === 'PENDING_REVIEW').length}</Badge>
-            ) : undefined
-          },
-          { id: 'overview', label: '📊 Overview' },
-          { id: 'merge-history', label: '🔀 Merge Ledger', badge: <Badge variant="neutral">{mergeEvents.length}</Badge> },
-          { id: 'audit', label: '🔒 Audit Vault', badge: <Badge variant="neutral">{auditTraces.length}</Badge> }
+          { id: 'directory', label: `👥 ${preset.vocabulary.customer.plural} Directory`, badge: <Badge variant="neutral">{patients.length}</Badge> },
+          { id: 'profile', label: `📋 ${preset.vocabulary.customer.singular} Profile` },
+          { id: 'overview', label: '📊 Metrics & Overview' }
         ]}
-        activeTabId={activeTab}
+        activeTabId={['counter-workstation', 'directory', 'profile', 'overview'].includes(activeTab) ? activeTab : 'directory'}
         onTabChange={(tabId) => setActiveTab(tabId as ActivePatientTab)}
       />
 
-      {/* Tab Contents */}
-      {activeTab === 'counter-workstation' && context && (
+      {/* Active Workstation View (Default) */}
+      {activeTab === 'counter-workstation' && (
         <FrontDeskMobileWorkstationView
-          tenantId={context.activeTenantId || 'default'}
-          partnerId={context.activePartnerId}
+          tenantId={context?.activeTenantId || 'default'}
+          partnerId={context?.activePartnerId}
           organizationId={activeOrgId}
           branchId={activeBranchId}
-          staffName={context.userRole || 'Front Desk Lead'}
+          staffName={context?.userRole || 'Front Desk Lead'}
           onSwitchToFullDesktop={() => setActiveTab('directory')}
         />
       )}
 
+      {/* Overview Analytics View */}
       {activeTab === 'overview' && overview && (
         <PatientOverviewView
           overview={overview}
@@ -393,6 +433,7 @@ export const PatientRegistrationDomainManager: React.FC<PatientRegistrationDomai
         />
       )}
 
+      {/* Directory & Search View */}
       {(activeTab === 'directory' || activeTab === 'search') && context && (
         <PatientDirectoryView
           patients={patients}
@@ -413,6 +454,7 @@ export const PatientRegistrationDomainManager: React.FC<PatientRegistrationDomai
         />
       )}
 
+      {/* Detailed Profile View */}
       {activeTab === 'profile' && (
         <PatientProfileView
           patient={selectedPatient}
@@ -421,6 +463,7 @@ export const PatientRegistrationDomainManager: React.FC<PatientRegistrationDomai
         />
       )}
 
+      {/* Advanced Views */}
       {activeTab === 'identifiers' && (
         <PatientIdentifierCenterView patients={patients} onSelectPatient={handleSelectPatient} />
       )}

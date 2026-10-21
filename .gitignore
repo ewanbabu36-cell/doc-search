@@ -63,4 +63,5 @@ data/analyzers/
 data/pacs-storage/
 data/backups/
 data/dsc-vault/
+data/storage/
 data/mail-inbox/*.html

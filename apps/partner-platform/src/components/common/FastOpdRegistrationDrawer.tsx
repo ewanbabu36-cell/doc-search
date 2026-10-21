@@ -276,7 +276,14 @@ export const FastOpdRegistrationDrawer: React.FC<FastOpdRegistrationDrawerProps>
           doctorId: selectedDoc?.id,
           encounterType: 'WALK_IN',
           status: 'WAITING',
-          chiefComplaint: 'Outpatient Consultation & Prescription Request'
+          chiefComplaint: `${selectedDoc?.department || 'Counter Intake'} — ${fullName.trim()}`,
+          metadata: {
+            token: tokenStr,
+            uhid: uhidStr,
+            paymentMode,
+            feePaid: paymentMode === 'FREE' ? 0 : customFee,
+            customIntake: dynamicIntake
+          }
         })
       });
       if (!encRes.success && !isMockFallbackAllowed() && encRes.error) {

@@ -27,6 +27,7 @@ export const CreatePatientSchema = z.object({
   branchId: z.string().trim().optional(),
   departmentId: z.string().trim().optional(),
   tenantId: z.string().trim().optional(),
+  metadata: z.record(z.unknown()).optional(),
   mrn: z.string().trim().optional()
 });
 
@@ -41,7 +42,8 @@ export const CreateEncounterSchema = z.object({
   organizationId: z.string().trim().optional(),
   branchId: z.string().trim().optional(),
   departmentId: z.string().trim().optional(),
-  tenantId: z.string().trim().optional()
+  tenantId: z.string().trim().optional(),
+  metadata: z.record(z.unknown()).optional()
 });
 
 export const UpdateEncounterStatusSchema = z.object({

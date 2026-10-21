@@ -44,19 +44,12 @@ function verifyPatientSessionToken(
 ): { valid: boolean; reason?: string; patientId?: string; phone?: string } {
   const normalizedTarget = targetPhone ? normalizePhone(targetPhone).last10 : null;
 
-  // In local test fixtures or dev guest access, allow phone 9876543210 without token
   if (!authHeader) {
-    if (normalizedTarget === '9876543210') {
-      return { valid: true, phone: '9876543210' };
-    }
     return { valid: false, reason: 'Missing Authorization header. Valid Bearer token required.' };
   }
 
   const token = authHeader.replace(/^Bearer\s+/i, '').trim();
   if (!token.startsWith('PAT-')) {
-    if (normalizedTarget === '9876543210') {
-      return { valid: true, phone: '9876543210' };
-    }
     return { valid: false, reason: 'Invalid token scheme. Must be PAT session token.' };
   }
 
@@ -78,7 +71,7 @@ function verifyPatientSessionToken(
       }
     }
 
-    if (normalizedTarget && normalizedTarget !== '9876543210' && tokenPhone !== normalizedTarget) {
+    if (normalizedTarget && tokenPhone !== normalizedTarget) {
       return {
         valid: false,
         reason: 'IDOR_ACCESS_DENIED: Token phone identity does not match requested patient phone.'
