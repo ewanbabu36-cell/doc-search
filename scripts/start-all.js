@@ -10,7 +10,7 @@ process.env.ALLOW_EMBEDDED_POSTGRES = 'false';
 process.env.NODE_ENV = 'development';
 
 // 1. Free ports before launching
-const ports = [4000, 5173, 5174, 5175, 5176, 5177, 18080, 8042, 11112];
+const ports = [3000, 4000, 5173, 5174, 5175, 5176, 5177, 18080, 8042, 11112];
 try {
   const output = execSync('netstat -ano', { encoding: 'utf8' });
   const lines = output.split('\n');
@@ -243,6 +243,17 @@ async function main() {
     // Give each frontend 1.5 seconds to bind cleanly without lock contention
     await new Promise((r) => setTimeout(r, 1500));
   }
+
+  // Step 3: Launch DocSearch Master Unified Gateway on Port 3000
+  const unifiedGateway = {
+    name: 'Master Gateway Hub',
+    port: 3000,
+    cwd: rootDir,
+    executable: process.execPath,
+    args: ['scripts/unified-gateway.mjs'],
+    color: '\x1b[36m'
+  };
+  spawnService(unifiedGateway);
 }
 
 const cleanup = () => {
