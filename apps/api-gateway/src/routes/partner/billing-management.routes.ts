@@ -212,6 +212,45 @@ export const billingManagementRoutes: FastifyPluginAsync = async (fastify) => {
     }
   );
 
+  // 1c. Get Dynamic NPCI UPI QR for Counter Display & Split Checkout
+  fastify.get(
+    '/api/v1/partner/billing/invoices/:id/upi-qr',
+    {
+      preHandler: [authenticate, requirePermission('billing:invoices', 'read')]
+    },
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      try {
+        const upiRecord = await billingManagementService.generateDynamicUpiQr(request.session, {
+          invoiceId: id
+        });
+        return {
+          success: true,
+          data: {
+            invoiceId: id,
+            invoiceNumber: upiRecord.invoiceNumber,
+            payableAmount: upiRecord.amount,
+            currency: upiRecord.currency,
+            businessVpa: upiRecord.vpa,
+            merchantName: upiRecord.merchantName,
+            upiIntentUrl: upiRecord.upiUri,
+            qrPayload: upiRecord.upiUri,
+            qrPayloadBase64: upiRecord.qrPayloadBase64,
+            txnRef: upiRecord.txnRef,
+            expiresAt: upiRecord.expiresAt,
+            status: upiRecord.status
+          }
+        };
+      } catch (err: any) {
+        if (err?.statusCode === 404 || err?.status === 404 || err?.name === 'NotFoundError') {
+          reply.status(404);
+          return { success: false, error: { code: 'INVOICE_NOT_FOUND', message: err.message || 'Invoice not found' } };
+        }
+        throw err;
+      }
+    }
+  );
+
   // 2. Create Consolidated Invoice
   fastify.post(
     '/api/v1/partner/billing/invoices',

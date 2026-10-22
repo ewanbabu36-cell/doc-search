@@ -680,6 +680,7 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
   const [admissionNotes, setAdmissionNotes] = useState('');
 
   // 📄 Gap 6 & 7 & 3: Medical Certificate, Referral & External Scans Modals
+  const [isMoreActionsOpen, setIsMoreActionsOpen] = useState(false);
   const [isMedicalCertModalOpen, setIsMedicalCertModalOpen] = useState(false);
   const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
   const [isExternalViewerOpen, setIsExternalViewerOpen] = useState(false);
@@ -8845,189 +8846,379 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
 
           {/* Action Buttons */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-            {/* 📄 Gap 6: 1-Click Medical Leave & Fitness Certificate */}
-            <button
-              type="button"
-              onClick={() => setIsMedicalCertModalOpen(true)}
-              style={{
-                backgroundColor: 'rgba(56, 189, 248, 0.12)',
-                border: '1px solid rgba(56, 189, 248, 0.35)',
-                color: '#38BDF8',
-                borderRadius: '8px',
-                padding: '8px 12px',
-                fontSize: '0.75rem',
-                fontWeight: 800,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px'
-              }}
-              title="Generate 1-Click Formatted Medical Sick Leave or Fitness Certificate"
-            >
-              <span>📄</span>
-              <span>Sick Leave Cert</span>
-            </button>
+            {/* Medico-Legal Case Active Indicator (Visible when MLC active) */}
+            {mlcDetails?.isMlc && (
+              <button
+                type="button"
+                onClick={() => setIsMlcModalOpen(true)}
+                style={{
+                  backgroundColor: '#DC2626',
+                  border: '1.5px solid #EF4444',
+                  color: '#FFFFFF',
+                  borderRadius: '8px',
+                  padding: '8px 12px',
+                  fontSize: '0.75rem',
+                  fontWeight: 900,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  boxShadow: '0 0 10px rgba(239, 68, 68, 0.4)'
+                }}
+                title="Medico-Legal Case active - Click to review or update MLC record"
+              >
+                <span>⚖️</span>
+                <span>MLC Active</span>
+              </button>
+            )}
 
-            {/* 👨‍⚕️ Gap 7: Cross-Specialty OPD Referral */}
-            <button
-              type="button"
-              onClick={() => setIsReferralModalOpen(true)}
-              style={{
-                backgroundColor: 'rgba(168, 85, 247, 0.15)',
-                border: '1px solid #A855F7',
-                color: '#DDD6FE',
-                borderRadius: '8px',
-                padding: '8px 12px',
-                fontSize: '0.75rem',
-                fontWeight: 800,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px'
-              }}
-              title="Cross-consultation referral to Cardiology, Neurology, Orthopedics, etc."
-            >
-              <span>👨‍⚕️</span>
-              <span>Refer Specialist</span>
-            </button>
+            {/* 3-Zone Ergonomics: Advanced Actions Tucked into [··· More Actions ▾] */}
+            <div style={{ position: 'relative' }}>
+              <button
+                type="button"
+                onClick={() => setIsMoreActionsOpen((prev) => !prev)}
+                style={{
+                  backgroundColor: isMoreActionsOpen ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255, 255, 255, 0.08)',
+                  border: isMoreActionsOpen ? '1px solid #38BDF8' : '1px solid rgba(255, 255, 255, 0.18)',
+                  color: isMoreActionsOpen ? '#38BDF8' : '#E2E8F0',
+                  borderRadius: '8px',
+                  padding: '8px 14px',
+                  fontSize: '0.75rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  transition: 'all 0.15s ease'
+                }}
+                title="Open secondary clinical and administrative workflows"
+              >
+                <span>···</span>
+                <span>More Actions</span>
+                <span style={{ fontSize: '0.625rem', opacity: 0.7 }}>▾</span>
+              </button>
 
-            {/* ☢️ Embedded PACS DICOM 3D Viewer */}
-            <button
-              type="button"
-              onClick={() => setIsDicomViewerOpen(true)}
-              style={{
-                backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                border: '1px solid #EF4444',
-                color: '#FCA5A5',
-                borderRadius: '8px',
-                padding: '8px 12px',
-                fontSize: '0.75rem',
-                fontWeight: 800,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px'
-              }}
-              title="Open Zero-Footprint 3D DICOM PACS Viewer (Orthanc Port 8042)"
-            >
-              <span>☢️</span>
-              <span>PACS 3D Viewer</span>
-            </button>
+              {isMoreActionsOpen && (
+                <>
+                  <div
+                    style={{ position: 'fixed', inset: 0, zIndex: 60 }}
+                    onClick={() => setIsMoreActionsOpen(false)}
+                  />
+                  <div
+                    style={{
+                      position: 'absolute',
+                      bottom: 'calc(100% + 8px)',
+                      right: 0,
+                      zIndex: 61,
+                      minWidth: '260px',
+                      backgroundColor: 'var(--ds-color-surface, #0F172A)',
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      borderRadius: '12px',
+                      padding: '8px',
+                      boxShadow: '0 20px 40px rgba(0,0,0,0.85), 0 0 15px rgba(6,182,212,0.15)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px'
+                    }}
+                  >
+                    <div
+                      style={{
+                        padding: '4px 8px 6px 8px',
+                        fontSize: '0.6875rem',
+                        fontWeight: 800,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        color: '#64748B',
+                        borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+                        marginBottom: '4px'
+                      }}
+                    >
+                      Secondary Clinical Actions
+                    </div>
 
-            {/* Direct IPD Emergency Admission */}
-            <button
-              type="button"
-              onClick={() => setIsAdmissionModalOpen(true)}
-              style={{
-                backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                border: '1.5px solid #EF4444',
-                color: '#F87171',
-                borderRadius: '8px',
-                padding: '8px 12px',
-                fontSize: '0.75rem',
-                fontWeight: 900,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
-              title="Emergency Inpatient (IPD) Admission Order & Bed Reservation"
-            >
-              <span>🚨</span>
-              <span>Admit to IPD</span>
-            </button>
+                    {/* 1. Medical Certificate */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMoreActionsOpen(false);
+                        setIsMedicalCertModalOpen(true);
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '8px 10px',
+                        borderRadius: '6px',
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        color: '#F1F5F9',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        textAlign: 'left'
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.06)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                    >
+                      <span>📄</span>
+                      <span>Sick Leave / Medical Cert</span>
+                    </button>
 
-            {/* 💉 Pillar 3: OPD Daycare & Chamber Minor Procedures */}
-            <button
-              type="button"
-              onClick={() => setIsDaycareModalOpen(true)}
-              style={{
-                backgroundColor: 'rgba(245, 158, 11, 0.15)',
-                border: '1px solid #F59E0B',
-                color: '#FDE68A',
-                borderRadius: '8px',
-                padding: '8px 12px',
-                fontSize: '0.75rem',
-                fontWeight: 800,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px'
-              }}
-              title="Order in-chamber or daycare minor procedures (Nebulization, TT, IV drip, Dressing)"
-            >
-              <span>💉</span>
-              <span>Daycare Orders</span>
-            </button>
+                    {/* 2. Referral */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMoreActionsOpen(false);
+                        setIsReferralModalOpen(true);
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '8px 10px',
+                        borderRadius: '6px',
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        color: '#F1F5F9',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        textAlign: 'left'
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.06)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                    >
+                      <span>👨‍⚕️</span>
+                      <span>Refer to Specialist</span>
+                    </button>
 
-            {/* ⚖️ Pillar 5: Medico-Legal Case (MLC) Guardrail */}
-            <button
-              type="button"
-              onClick={() => setIsMlcModalOpen(true)}
-              style={{
-                backgroundColor: mlcDetails?.isMlc ? '#DC2626' : 'rgba(239, 68, 68, 0.12)',
-                border: mlcDetails?.isMlc ? '1.5px solid #EF4444' : '1px solid rgba(239, 68, 68, 0.35)',
-                color: mlcDetails?.isMlc ? '#FFFFFF' : '#FCA5A5',
-                borderRadius: '8px',
-                padding: '8px 12px',
-                fontSize: '0.75rem',
-                fontWeight: 900,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px'
-              }}
-              title="Record Medico-Legal Case (RTA, assault, burns) with statutory police details"
-            >
-              <span>⚖️</span>
-              <span>{mlcDetails?.isMlc ? 'MLC Active' : 'Mark as MLC'}</span>
-            </button>
+                    {/* 3. DICOM PACS */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMoreActionsOpen(false);
+                        setIsDicomViewerOpen(true);
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '8px 10px',
+                        borderRadius: '6px',
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        color: '#F1F5F9',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        textAlign: 'left'
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.06)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                    >
+                      <span>☢️</span>
+                      <span>PACS 3D DICOM Viewer</span>
+                    </button>
 
-            {/* 🌐 Pillar 4: Vernacular Prescription Modal (Hindi / Urdu) */}
-            <button
-              type="button"
-              onClick={() => setIsVernacularModalOpen(true)}
-              style={{
-                backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                border: '1px solid #10B981',
-                color: '#6EE7B7',
-                borderRadius: '8px',
-                padding: '8px 12px',
-                fontSize: '0.75rem',
-                fontWeight: 800,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px'
-              }}
-              title="Print prescription with Hindi/Urdu visual dosage schedule & Sun/Moon icons"
-            >
-              <span>🌐</span>
-              <span>Hindi/Urdu Dosage</span>
-            </button>
+                    {/* 4. IPD Admission */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMoreActionsOpen(false);
+                        setIsAdmissionModalOpen(true);
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '8px 10px',
+                        borderRadius: '6px',
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        color: '#F87171',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        textAlign: 'left'
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.1)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                    >
+                      <span>🚨</span>
+                      <span>Emergency IPD Admission</span>
+                    </button>
 
-            {/* 💰 Pillar 9: Solo Doctor Chamber Fee Settlement */}
-            <button
-              type="button"
-              onClick={() => setIsChamberPaymentOpen(true)}
-              style={{
-                backgroundColor: chamberPaymentReceipt ? 'rgba(34, 197, 94, 0.2)' : 'rgba(16, 185, 129, 0.12)',
-                border: chamberPaymentReceipt ? '1.5px solid #22C55E' : '1px solid rgba(16, 185, 129, 0.3)',
-                color: chamberPaymentReceipt ? '#86EFAC' : '#34D399',
-                borderRadius: '8px',
-                padding: '8px 12px',
-                fontSize: '0.75rem',
-                fontWeight: 800,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px'
-              }}
-              title="In-chamber fee settlement and instant receipt stamp (Cash or UPI)"
-            >
-              <span>💰</span>
-              <span>{chamberPaymentReceipt ? `Fee: #${chamberPaymentReceipt}` : `Chamber Fee: ₹${_consultationFeeFirstVisit || 500}`}</span>
-            </button>
+                    {/* 5. Daycare Procedures */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMoreActionsOpen(false);
+                        setIsDaycareModalOpen(true);
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '8px 10px',
+                        borderRadius: '6px',
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        color: '#F1F5F9',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        textAlign: 'left'
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.06)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                    >
+                      <span>💉</span>
+                      <span>Daycare Minor Procedures</span>
+                    </button>
+
+                    {/* 6. Medico-Legal Case (MLC) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMoreActionsOpen(false);
+                        setIsMlcModalOpen(true);
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '8px 10px',
+                        borderRadius: '6px',
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        color: mlcDetails?.isMlc ? '#EF4444' : '#F1F5F9',
+                        fontSize: '0.75rem',
+                        fontWeight: mlcDetails?.isMlc ? 800 : 600,
+                        cursor: 'pointer',
+                        textAlign: 'left'
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.06)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                    >
+                      <span>⚖️</span>
+                      <span>{mlcDetails?.isMlc ? 'MLC Guardrail (Active)' : 'Mark Medico-Legal Case'}</span>
+                    </button>
+
+                    {/* 7. Hindi/Urdu Vernacular */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMoreActionsOpen(false);
+                        setIsVernacularModalOpen(true);
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '8px 10px',
+                        borderRadius: '6px',
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        color: '#F1F5F9',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        textAlign: 'left'
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.06)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                    >
+                      <span>🌐</span>
+                      <span>Hindi/Urdu Dosage View</span>
+                    </button>
+
+                    {/* 8. Chamber Payment */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMoreActionsOpen(false);
+                        setIsChamberPaymentOpen(true);
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '8px 10px',
+                        borderRadius: '6px',
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        color: '#34D399',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        textAlign: 'left'
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(16,185,129,0.1)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                    >
+                      <span>💰</span>
+                      <span>{chamberPaymentReceipt ? `Fee Paid: #${chamberPaymentReceipt}` : `Chamber Fee: ₹${_consultationFeeFirstVisit || 500}`}</span>
+                    </button>
+
+                    {/* 9. Tele-Triage */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMoreActionsOpen(false);
+                        setIsTeleTriageOpen(true);
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '8px 10px',
+                        borderRadius: '6px',
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        color: '#F1F5F9',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        textAlign: 'left'
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.06)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                    >
+                      <span>📱</span>
+                      <span>Tele-Triage Desk</span>
+                    </button>
+
+                    {/* 10. Merge Duplicate */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMoreActionsOpen(false);
+                        setIsDuplicateMergeOpen(true);
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '8px 10px',
+                        borderRadius: '6px',
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        color: '#F1F5F9',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        textAlign: 'left'
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.06)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                    >
+                      <span>🆔</span>
+                      <span>Merge Duplicate Records</span>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
 
             {/* Same-day Send for Labs & Await (Zero Duplicate Fee Return) */}
             {selectedTests.length > 0 && !isSignedOrCompleted && (

@@ -9,6 +9,7 @@ import { apiRequest, isMockFallbackAllowed } from '../../services/api-client.js'
 import { doctorRosterService } from '../../services/doctor-roster-service.js';
 import { partnerFoundationService } from '../../services/partner-foundation-service.js';
 import { DynamicIndustryIntakeFields } from './DynamicIndustryIntakeFields.js';
+import { offlineTokenCacheService } from '../../services/offline-token-cache.js';
 
 export interface FastOpdRegistrationDrawerProps {
   isOpen: boolean;
@@ -260,11 +261,20 @@ export const FastOpdRegistrationDrawer: React.FC<FastOpdRegistrationDrawerProps>
         return;
       }
     } catch (apiErr: any) {
-      if (!isMockFallbackAllowed()) {
-        setIsSubmitting(false);
-        alert(`Network error during registration: ${apiErr?.message || 'Connection failed'}`);
-        return;
-      }
+      console.warn('[FastOPD] Offline write-ahead buffer active, saving token locally:', apiErr);
+      await offlineTokenCacheService.queueOfflineRegistration({
+        tenantId: 'default-tenant',
+        patientName: fullName.trim(),
+        patientPhone: cleanMob,
+        patientAge: age,
+        patientGender: gender as any,
+        providerId: selectedDoc?.id,
+        providerName: selectedDoc?.name,
+        departmentId: selectedDoc?.department,
+        paymentMode,
+        feePaid: paymentMode === 'FREE' ? 0 : customFee,
+        customIntake: dynamicIntake
+      });
     }
 
     // 2. Authoritative Server Encounter Check-in: POST /api/v1/partner/encounters
