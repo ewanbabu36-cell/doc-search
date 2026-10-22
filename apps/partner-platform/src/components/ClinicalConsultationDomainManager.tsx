@@ -183,62 +183,10 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
         return; // Discard outdated sequence
       }
 
-      // If mock fallback is allowed and encounters are empty, populate diverse realistic OPD queue
+      // Genuine database encounters only - zero fake mock patients
       let finalEncs = encs;
-      if (finalEncs.length === 0) {
-        finalEncs = [
-          {
-            id: 'enc-001',
-            tenantId: ctx.activeTenantId,
-            organizationId: ctx.activeOrganizationId,
-            patientId: 'pat-001',
-            patientName: 'Aman Verma',
-            patientMrn: 'MRN-478827',
-            patientGender: 'Male',
-            patientAge: 26,
-            patientMobile: '9988776655',
-            tokenNumber: 'TK-427',
-            chiefComplaint: 'Viral fever for 3 days',
-            status: 'WAITING',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          } as any,
-          {
-            id: 'enc-002',
-            tenantId: ctx.activeTenantId,
-            organizationId: ctx.activeOrganizationId,
-            patientId: 'pat-002',
-            patientName: 'Rahul Sharma',
-            patientMrn: 'MRN-489211',
-            patientGender: 'Male',
-            patientAge: 34,
-            patientMobile: '9811223344',
-            tokenNumber: 'TK-428',
-            chiefComplaint: 'Type-2 Diabetes routine checkup & general weakness',
-            status: 'WAITING',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          } as any,
-          {
-            id: 'enc-003',
-            tenantId: ctx.activeTenantId,
-            organizationId: ctx.activeOrganizationId,
-            patientId: 'pat-003',
-            patientName: 'Sunita Devi',
-            patientMrn: 'MRN-491024',
-            patientGender: 'Female',
-            patientAge: 48,
-            patientMobile: '9766554433',
-            tokenNumber: 'TK-429',
-            chiefComplaint: 'Bilateral knee joint pain & Elevated BP',
-            status: 'WAITING',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          } as any
-        ];
-      }
 
-      setOverview(ov);
+            setOverview(ov);
       setConsultations(consList);
       setEncounters(finalEncs);
       setDoctors(docsList);

@@ -2240,57 +2240,12 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
       setExamFindings(['GC Fair', 'B/L Clear (NVBS)', 'S1 S2 Normal', 'Soft & Non-Tender']);
     }
 
-    // Sync chronic ongoing medications based on patient clinical history / demographics
-    const pName = (consultation.patientName || '').toLowerCase();
-    const rawAge = (consultation as any)?.patientAge || 35;
-    const numAge = typeof rawAge === 'number' ? rawAge : parseInt(String(rawAge), 10) || 35;
-
-    if (pName.includes('sharma') || pName.includes('verma') || numAge > 45) {
-      setChronicMedsList([
-        {
-          id: 'chr-telma',
-          medicationName: 'Tab Telmisartan',
-          strength: '40mg',
-          frequency: '1 - 0 - 0',
-          beforeAfterFood: 'BEFORE_FOOD',
-          indication: 'Essential Hypertension',
-          prescribedSince: '6 months ago',
-          dispenseQuantity: '30 Tabs (3 Strips)'
-        },
-        {
-          id: 'chr-metformin',
-          medicationName: 'Tab Metformin PR',
-          strength: '500mg',
-          frequency: '1 - 0 - 1',
-          beforeAfterFood: 'AFTER_FOOD',
-          indication: 'Type-2 Diabetes Mellitus',
-          prescribedSince: '1 year ago',
-          dispenseQuantity: '60 Tabs (6 Strips)'
-        },
-        {
-          id: 'chr-atorva',
-          medicationName: 'Tab Atorvastatin',
-          strength: '10mg',
-          frequency: '0 - 0 - 1',
-          beforeAfterFood: 'BEDTIME',
-          indication: 'Dyslipidemia / CV Protection',
-          prescribedSince: '6 months ago',
-          dispenseQuantity: '30 Tabs (3 Strips)'
-        }
-      ]);
+    // Genuine chronic medications from actual patient medical record - zero fake fabrication
+    const recordedChronic = (consultation as any).chronicMedications || (consultation.metadata as any)?.chronicMedications || (activeEncounter?.metadata as any)?.chronicMedications;
+    if (Array.isArray(recordedChronic) && recordedChronic.length > 0) {
+      setChronicMedsList(recordedChronic);
     } else {
-      setChronicMedsList([
-        {
-          id: 'chr-panto',
-          medicationName: 'Tab Pantoprazole',
-          strength: '40mg',
-          frequency: '1 - 0 - 0',
-          beforeAfterFood: 'EMPTY_STOMACH',
-          indication: 'Acid Peptic Disease (GERD)',
-          prescribedSince: '2 months ago',
-          dispenseQuantity: '15 Tabs (2 Strips)'
-        }
-      ]);
+      setChronicMedsList([]);
     }
   }, [consultation.id]);
 
@@ -2357,7 +2312,7 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
     setStatusMessage(`✓ ${activePatient.token} (${activePatient.name}) moved to "Reports Review" Queue (Zero duplicate fee)`);
     setTimeout(() => setStatusMessage(null), 3500);
 
-    setIsNextPatientPromptOpen(true);
+    if (onCallNextPatient) onCallNextPatient();
   };
 
   // Chamber Status Updater
@@ -2410,7 +2365,7 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
     setStatusMessage(`🚨 Emergency Admission Requisition Dispatched to ${admissionWard}!`);
     setTimeout(() => setStatusMessage(null), 4000);
 
-    setIsNextPatientPromptOpen(true);
+    if (onCallNextPatient) onCallNextPatient();
   };
 
   // 💓 Gap 2: In-Chamber Fast Vitals Quick-Capture Handler
@@ -3108,8 +3063,8 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
     const nextWaiting = waitingList[0];
 
     setNextWaitingPatient(nextWaiting || null);
-    setIsNextPatientPromptOpen(true);
-    setStatusMessage(`✓ Prescription Signed & Issued for ${cToken} (${cName})!`);
+    // Smooth zero-popup transition - doctor stays in flow
+    setStatusMessage(`✓ Prescription Signed & Dispatched for ${cToken} (${cName})! ${nextWaiting ? `Next waiting: ${nextWaiting.token} (${nextWaiting.patientName})` : 'Queue complete'}`);
 
     // Immediate authoritative completion & counter dispatch
     if (onCompleteConsultation) {
@@ -9320,7 +9275,7 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
               type="button"
               onClick={() => {
                 if (isSignedOrCompleted) {
-                  setIsNextPatientPromptOpen(true);
+                  if (onCallNextPatient) onCallNextPatient();
                 } else {
                   void handleComplete();
                 }

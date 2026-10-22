@@ -923,8 +923,31 @@ export class BillingManagementService {
     payerVpa?: string | undefined;
     status: 'SUCCESS' | 'FAILURE';
     soundboxDeviceId?: string | undefined;
+    invoiceId?: string | undefined;
   }) {
-    const txn = this.upiTransactions.get(payload.txnRef);
+    let txn = this.upiTransactions.get(payload.txnRef);
+
+    if (!txn && payload.invoiceId) {
+      txn = {
+        txnRef: payload.txnRef,
+        invoiceId: payload.invoiceId,
+        invoiceNumber: `INV-${payload.invoiceId.slice(0, 8).toUpperCase()}`,
+        patientId: 'pat_upi_direct',
+        patientName: 'Counter Walk-in',
+        amount: payload.amount,
+        currency: 'INR',
+        vpa: env.UPI_VPA || 'docsearch.counter@icici',
+        merchantName: env.UPI_MERCHANT_NAME || 'DocSearch Partner Clinic',
+        upiUri: '',
+        qrPayloadBase64: '',
+        status: 'PENDING',
+        tenantId: '00000000-0000-4000-8000-000000000001',
+        branchId: '00000000-0000-4000-8000-000000000003',
+        createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString()
+      };
+      this.upiTransactions.set(payload.txnRef, txn);
+    }
     if (!txn) {
       logger.warn(`Soundbox Webhook: Unknown transaction reference ${payload.txnRef}`);
       return {
@@ -979,16 +1002,21 @@ export class BillingManagementService {
       txn.status = 'PAID_CONFIRMED';
       txn.settledAt = new Date().toISOString();
 
-      const announcement = `Rupees ${payload.amount || txn.amount} received successfully for invoice ${txn.invoiceNumber} on DocSearch UPI`;
-      logger.info(`🔊 SOUNDBOX AUDIO BROADCAST: "${announcement}"`);
+      const finalAmount = payload.amount || txn.amount;
+      const announcementEn = `Rupees ${finalAmount} received successfully for invoice ${txn.invoiceNumber} on DocSearch UPI`;
+      const announcementHi = `DocSearch counter par ${finalAmount} rupaye praapt hue`;
+      logger.info(`🔊 SOUNDBOX AUDIO BROADCAST: "${announcementHi}" / "${announcementEn}"`);
 
       return {
         status: 'PAID_CONFIRMED',
         txnRef: payload.txnRef,
         invoiceId: txn.invoiceId,
         invoiceNumber: txn.invoiceNumber,
-        amount: payload.amount || txn.amount,
-        soundboxVoicePrompt: announcement,
+        amount: finalAmount,
+        soundboxVoicePrompt: announcementHi,
+        soundboxVoicePromptHindi: announcementHi,
+        soundboxVoicePromptEnglish: announcementEn,
+        payerVpa: payload.payerVpa || (txn as any).payerVpa,
         settledAt: txn.settledAt
       };
     } catch (err: any) {

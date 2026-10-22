@@ -36,28 +36,28 @@ export interface OpdTokenSlipData {
 
 export interface InvoiceSlipData {
   facilityName: string;
-  facilityAddress?: string;
-  facilityPhone?: string;
-  facilityGstin?: string;
+  facilityAddress?: string | undefined;
+  facilityPhone?: string | undefined;
+  facilityGstin?: string | undefined;
   invoiceNumber: string;
-  invoiceDate?: string;
-  date?: string;
-  customerName?: string;
-  patientName?: string;
-  patientPhone?: string;
-  items: Array<{ name?: string; description?: string; qty: number; rate?: number; amount: number }>;
-  subtotal?: number;
-  totalAmount?: number;
-  grandTotal?: number;
-  discount?: number;
-  tax?: number;
-  netPayable?: number;
-  paidAmount?: number;
-  balanceDue?: number;
-  paymentMode?: string;
-  upiQrString?: string;
-  qrPayload?: string;
-  cashierName?: string;
+  invoiceDate?: string | undefined;
+  date?: string | undefined;
+  customerName?: string | undefined;
+  patientName?: string | undefined;
+  patientPhone?: string | undefined;
+  items: Array<{ name?: string | undefined; description?: string | undefined; qty: number; rate?: number | undefined; amount: number }>;
+  subtotal?: number | undefined;
+  totalAmount?: number | undefined;
+  grandTotal?: number | undefined;
+  discount?: number | undefined;
+  tax?: number | undefined;
+  netPayable?: number | undefined;
+  paidAmount?: number | undefined;
+  balanceDue?: number | undefined;
+  paymentMode?: string | undefined;
+  upiQrString?: string | undefined;
+  qrPayload?: string | undefined;
+  cashierName?: string | undefined;
 }
 
 export class EscPosReceiptBuilder {

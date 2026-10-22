@@ -1,5 +1,6 @@
 import { GlobalCommandPalette } from './common/GlobalCommandPalette.js';
 import { OptimisticSyncBadge } from './common/OptimisticSyncBadge.js';
+import { SoundboxAudioPlayer } from './common/SoundboxAudioPlayer.js';
 import { PwaInstallButton } from './common/PwaInstallButton.js';
 import { PwaInstallBanner } from './common/PwaInstallBanner.js';
 import { DomainErrorBoundary } from './common/DomainErrorBoundary.js';
@@ -2870,6 +2871,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <SoundboxAudioPlayer facilityName={cleanFacilityBrand} />
               <OptimisticSyncBadge />
 
               <button
@@ -3562,6 +3564,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
           }
           userSlot={
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+              <SoundboxAudioPlayer facilityName={cleanFacilityBrand} />
               {/* DocSearch Offline-First Background Sync Indicator */}
               <OptimisticSyncBadge />
 

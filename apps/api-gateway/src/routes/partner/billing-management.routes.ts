@@ -368,6 +368,51 @@ export const billingManagementRoutes: FastifyPluginAsync = async (fastify) => {
     }
   );
 
+  // 4d. Counter Soundbox Ingestion Webhook (PayTM / PhonePe / Soundbox Simulator)
+  fastify.post(
+    '/api/v1/partner/billing/soundbox-webhook',
+    async (request, reply) => {
+      const body = (request.body || {}) as {
+        txnRef?: string;
+        transactionReference?: string;
+        amount?: number;
+        payerVpa?: string;
+        status?: 'SUCCESS' | 'FAILURE' | string;
+        soundboxDeviceId?: string;
+        invoiceId?: string;
+      };
+
+      const txnRef = body.txnRef || body.transactionReference;
+      if (!txnRef && !body.invoiceId) {
+        reply.status(400);
+        return {
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'txnRef or invoiceId is required for soundbox webhook ingestion'
+          }
+        };
+      }
+
+      const status = (body.status || 'SUCCESS').toUpperCase() === 'SUCCESS' ? 'SUCCESS' : 'FAILURE';
+      const amount = Number(body.amount || 0);
+
+      const result = await billingManagementService.processSoundboxWebhook({
+        txnRef: txnRef || `UPI-DIR-${body.invoiceId}`,
+        amount,
+        payerVpa: body.payerVpa,
+        status,
+        soundboxDeviceId: body.soundboxDeviceId,
+        invoiceId: body.invoiceId
+      });
+
+      return reply.status(200).send({
+        success: true,
+        data: result
+      });
+    }
+  );
+
   // 5. Void / Cancel Invoice (with strict supervisor override policy)
   const handleVoidInvoice = async (request: any, reply: any) => {
     const { id } = request.params as { id: string };
