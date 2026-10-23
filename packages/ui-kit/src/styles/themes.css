@@ -15,7 +15,7 @@
    ========================================================================== */
 :root,
 .theme-advance-pro {
-  --ds-color-bg: #0b0f17;
+  --ds-color-bg: #0B0F19;
   --ds-color-surface: #121826;
   --ds-color-surface-subtle: #182234;
   --ds-color-surface-hover: #1f2d44;
@@ -31,7 +31,7 @@
   --ds-color-text-inverse: #0b0f17;
 
   /* Restrained Healthcare Accent: Serene Cerulean Blue */
-  --ds-color-primary: #0284c7;
+  --ds-color-primary: #06B6D4;
   --ds-color-primary-hover: #0369a1;
   --ds-color-primary-subtle: rgba(2, 132, 199, 0.15);
   --ds-color-primary-foreground: #ffffff;
@@ -223,7 +223,7 @@
   --ds-color-text-muted: #334155;
   --ds-color-text-inverse: #ffffff;
 
-  --ds-color-primary: #0284c7;
+  --ds-color-primary: #06B6D4;
   --ds-color-primary-hover: #0369a1;
   --ds-color-primary-subtle: #e0f2fe;
   --ds-color-primary-foreground: #ffffff;
@@ -525,7 +525,7 @@
   --ds-color-text-muted: #334155;
   --ds-color-text-inverse: #ffffff;
 
-  --ds-color-primary: #0284c7;
+  --ds-color-primary: #06B6D4;
   --ds-color-primary-hover: #0369a1;
   --ds-color-primary-subtle: #e0f2fe;
   --ds-color-primary-foreground: #ffffff;

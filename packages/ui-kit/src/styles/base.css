@@ -3,7 +3,7 @@
  */
 
 :root {
-  --ds-font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --ds-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --ds-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   
   --ds-color-bg-subtle: var(--ds-color-surface-subtle, #182234);
@@ -269,6 +269,36 @@ button:active:not(:disabled),
   box-shadow: var(--ds-specular-edge, inset 0 1px 0 0 rgba(255, 255, 255, 0.12)), var(--ds-shadow-base);
   border: 1px solid var(--ds-color-border);
   border-radius: 16px;
+}
+
+/* 🧊 LUXURY CLINICAL LIQUID GLASS & AMBIENT GLOW SYSTEM */
+.ds-liquid-glass {
+  background: rgba(11, 15, 25, 0.76) !important;
+  backdrop-filter: blur(24px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 12px 36px 0 rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+}
+
+.ds-glow-cyan {
+  box-shadow: 0 0 20px -2px rgba(6, 182, 212, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+}
+
+.ds-glow-emerald {
+  box-shadow: 0 0 22px -2px rgba(16, 185, 129, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+}
+
+.no-scrollbar::-webkit-scrollbar,
+.scrollbar-none::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.no-scrollbar,
+.scrollbar-none {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
 }
 
 /* Level 4: Elevated Modals, Dialogs & Drawers */

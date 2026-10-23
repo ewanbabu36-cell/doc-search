@@ -3983,9 +3983,9 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
         gap: '16px',
         width: '100%',
         minHeight: 'calc(100vh - 120px)',
-        backgroundColor: 'var(--ds-color-bg, #0B111E)',
+        backgroundColor: 'var(--ds-color-bg, #0B0F19)',
         color: 'var(--ds-color-text-primary, #F8FAFC)',
-        fontFamily: 'system-ui, -apple-system, sans-serif'
+        fontFamily: "var(--ds-font-sans, 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif)"
       }}
     >
       {/* 🖨️ Modals */}
@@ -5424,85 +5424,72 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
         </div>
       )}
 
-      {/* 📱 MOBILE VIEW NAVIGATION: 2-Tab Switcher (<768px) */}
+      {/* 🍏 APPLE DYNAMIC ISLAND & LIVE NOTIFICATION PILL (<768px SMARTPHONE / PWA) */}
       {isMobile && (
         <div
           style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '8px',
-            padding: '4px',
-            backgroundColor: 'rgba(255,255,255,0.04)',
-            borderRadius: '12px',
-            border: '1px solid rgba(255,255,255,0.08)'
+            position: 'sticky',
+            top: '8px',
+            zIndex: 100,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '8px 14px',
+            backgroundColor: 'rgba(8, 12, 20, 0.94)',
+            backdropFilter: 'blur(24px) saturate(190%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(190%)',
+            borderRadius: '24px',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            boxShadow: '0 8px 30px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.15)',
+            marginBottom: '8px'
           }}
         >
-          <button
-            type="button"
-            onClick={() => setMobileActiveTab('queue')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-              padding: '10px 12px',
-              borderRadius: '8px',
-              border: 'none',
-              cursor: 'pointer',
-              fontWeight: 800,
-              fontSize: '0.82rem',
-              backgroundColor: mobileActiveTab === 'queue' ? '#0284C7' : 'transparent',
-              color: mobileActiveTab === 'queue' ? '#FFFFFF' : '#94A3B8'
-            }}
+          <div
+            onClick={() => setMobileActiveTab('rx')}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', minWidth: 0 }}
           >
-            <span>👥 1. Live Queue</span>
             <span
               style={{
-                padding: '2px 7px',
-                borderRadius: '10px',
+                display: 'inline-block',
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                backgroundColor: '#10B981',
+                boxShadow: '0 0 8px #10B981'
+              }}
+            />
+            <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+              <span style={{ fontSize: '0.78rem', fontWeight: 900, color: '#F8FAFC', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {activePatient?.token ? `Token #${activePatient.token}` : 'Chamber Ready'} • {activePatient?.name ? activePatient.name.split(' ')[0] : 'Vacant'}
+              </span>
+              <span style={{ fontSize: '0.65rem', color: '#38BDF8', fontWeight: 700 }}>
+                {activePatient?.hasActivePatient ? 'Active Consultation' : 'Waiting for Next Patient'}
+              </span>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <button
+              type="button"
+              onClick={() => setMobileActiveTab(mobileActiveTab === 'queue' ? 'rx' : 'queue')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '4px 10px',
+                borderRadius: '14px',
+                backgroundColor: mobileActiveTab === 'queue' ? '#06B6D4' : 'rgba(255, 255, 255, 0.08)',
+                color: mobileActiveTab === 'queue' ? '#070C16' : '#94A3B8',
+                border: 'none',
                 fontSize: '0.7rem',
-                fontWeight: 900,
-                backgroundColor: mobileActiveTab === 'queue' ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.1)'
+                fontWeight: 800,
+                cursor: 'pointer'
               }}
             >
-              {queueStats.waiting}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setMobileActiveTab('rx')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-              padding: '10px 12px',
-              borderRadius: '8px',
-              border: 'none',
-              cursor: 'pointer',
-              fontWeight: 800,
-              fontSize: '0.82rem',
-              backgroundColor: mobileActiveTab === 'rx' ? '#0284C7' : 'transparent',
-              color: mobileActiveTab === 'rx' ? '#FFFFFF' : '#94A3B8'
-            }}
-          >
-            <span>📝 2. Active Rx</span>
-            {consultation?.patientName && (
-              <span
-                style={{
-                  fontSize: '0.72rem',
-                  opacity: 0.9,
-                  maxWidth: '70px',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                ({consultation.patientName.split(' ')[0]})
-              </span>
-            )}
-          </button>
+              <span>👥 {queueStats.waiting}</span>
+              <span style={{ fontSize: '0.62rem', opacity: 0.85 }}>{mobileActiveTab === 'queue' ? 'Chamber' : 'Queue'}</span>
+            </button>
+          </div>
         </div>
       )}
 
@@ -6306,6 +6293,33 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
               <span>⚡</span>
               <span>{currentVitals?.pulseBpm || 76} bpm</span>
             </div>
+
+            {/* Temperature Pill with Auto-Color Status */}
+            {(() => {
+              const temp = inChamberVitals?.tempF ?? (Number((currentVitals as any)?.tempF) || 98.6);
+              const isFever = temp >= 100.4;
+              const isSubfebrile = temp >= 99.1 && temp < 100.4;
+              return (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    padding: '5px 9px',
+                    borderRadius: '8px',
+                    backgroundColor: isFever ? 'rgba(239, 68, 68, 0.16)' : isSubfebrile ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.12)',
+                    border: isFever ? '1.5px solid #EF4444' : isSubfebrile ? '1px solid #F59E0B' : '1px solid rgba(16, 185, 129, 0.3)',
+                    color: isFever ? '#F87171' : isSubfebrile ? '#FBBF24' : '#34D399',
+                    fontWeight: 800,
+                    fontSize: '0.75rem'
+                  }}
+                  title={`Temperature: ${temp}°F ${isFever ? '⚠️ Pyrexia / Fever' : '✓ Normal'}`}
+                >
+                  <span>🌡️</span>
+                  <span>{temp}°F</span>
+                </div>
+              );
+            })()}
 
             {/* ⚡ Gap 2: Quick Edit Vitals Trigger */}
             <button
@@ -8421,14 +8435,262 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
                     ➕ Add
                   </button>
                 </div>
+
+                {/* 1-Tap Rapid Dosage Chips (1-0-1, Before Food) */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px', marginTop: '6px', paddingTop: '6px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '0.65rem', color: '#38BDF8', fontWeight: 800 }}>⚡ 1-Tap Dosing:</span>
+                    {[
+                      { val: '1 - 0 - 1', label: '1-0-1 (BID)' },
+                      { val: '1 - 1 - 1', label: '1-1-1 (TID)' },
+                      { val: '1 - 0 - 0', label: '1-0-0 (OD)' },
+                      { val: '0 - 0 - 1', label: '0-0-1 (Night)' },
+                      { val: 'SOS', label: 'SOS' }
+                    ].map((d) => (
+                      <button
+                        key={d.val}
+                        type="button"
+                        onClick={() => setAdderFrequency(d.val)}
+                        style={{
+                          padding: '2px 7px',
+                          borderRadius: '4px',
+                          fontSize: '0.65rem',
+                          fontWeight: 700,
+                          backgroundColor: adderFrequency === d.val ? 'rgba(6, 182, 212, 0.25)' : 'rgba(255, 255, 255, 0.04)',
+                          border: adderFrequency === d.val ? '1px solid #06B6D4' : '1px solid rgba(255, 255, 255, 0.08)',
+                          color: adderFrequency === d.val ? '#38BDF8' : '#CBD5E1',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {d.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ fontSize: '0.65rem', color: '#10B981', fontWeight: 800 }}>🍽️ Timing:</span>
+                    {[
+                      { val: 'AFTER_FOOD', label: 'After Food' },
+                      { val: 'BEFORE_FOOD', label: 'Before Food' },
+                      { val: 'EMPTY_STOMACH', label: 'Empty Stom' }
+                    ].map((t) => (
+                      <button
+                        key={t.val}
+                        type="button"
+                        onClick={() => setAdderTiming(t.val as any)}
+                        style={{
+                          padding: '2px 7px',
+                          borderRadius: '4px',
+                          fontSize: '0.65rem',
+                          fontWeight: 700,
+                          backgroundColor: adderTiming === t.val ? 'rgba(16, 185, 129, 0.25)' : 'rgba(255, 255, 255, 0.04)',
+                          border: adderTiming === t.val ? '1px solid #10B981' : '1px solid rgba(255, 255, 255, 0.08)',
+                          color: adderTiming === t.val ? '#34D399' : '#CBD5E1',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
           </div>
 
           {/* ========================================================================= */}
-          {/* RIGHT BENTO COLUMN: 🔬 LABS, PHYSICAL EXAM (O/E) & DIET ADVICE */}
+          {/* RIGHT BENTO COLUMN (ZONE 3): 🧬 PATIENT 360, ALLERGIES, LABS & EXAM     */}
           {/* ========================================================================= */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {/* 🧬 PATIENT 360 & CLINICAL TIMELINE DOSSIER (ZONE 3) */}
+            <div
+              className="ds-liquid-glass"
+              style={{
+                backgroundColor: 'rgba(15, 23, 42, 0.85)',
+                border: '1px solid rgba(56, 189, 248, 0.25)',
+                borderRadius: '14px',
+                padding: '12px 14px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px'
+              }}
+            >
+              {/* Header */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '1rem' }}>🧬</span>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#38BDF8' }}>
+                    PATIENT 360 & CLINICAL DOSSIER
+                  </span>
+                </div>
+                <span style={{ fontSize: '0.65rem', color: '#94A3B8', fontFamily: 'monospace' }}>
+                  UHID: {activePatient.mrn}
+                </span>
+              </div>
+
+              {/* Prominent Allergy Warnings Alert */}
+              {patientAllergies.length > 0 ? (
+                <div
+                  style={{
+                    backgroundColor: 'rgba(239, 68, 68, 0.16)',
+                    border: '1.5px solid #EF4444',
+                    borderRadius: '8px',
+                    padding: '8px 10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    boxShadow: '0 0 15px rgba(239, 68, 68, 0.25)'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '1.1rem' }}>⚠️</span>
+                    <div>
+                      <div style={{ fontSize: '0.7rem', fontWeight: 900, color: '#F87171', textTransform: 'uppercase' }}>
+                        DRUG ALLERGY WARNING (क्रिटिकल एलर्जी)
+                      </div>
+                      <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#FECACA' }}>
+                        {patientAllergies.join(' • ')}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsAllergyModalOpen(true)}
+                    style={{
+                      padding: '3px 7px',
+                      borderRadius: '4px',
+                      backgroundColor: 'rgba(239, 68, 68, 0.3)',
+                      border: '1px solid #EF4444',
+                      color: '#FFFFFF',
+                      fontSize: '0.65rem',
+                      fontWeight: 800,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Edit
+                  </button>
+                </div>
+              ) : (
+                <div
+                  style={{
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                    borderRadius: '8px',
+                    padding: '6px 10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '0.9rem' }}>🛡️</span>
+                    <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#34D399' }}>
+                      NKDA (No Known Drug Allergies Verified)
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsAllergyModalOpen(true)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#38BDF8',
+                      fontSize: '0.68rem',
+                      fontWeight: 800,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    + Add
+                  </button>
+                </div>
+              )}
+
+              {/* Chronic Illness & Comorbidity Tags */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#94A3B8' }}>
+                  CHRONIC COMORBIDITIES & RISK FACTORS:
+                </span>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                  {[
+                    { label: 'Hypertension (HTN)', active: (currentVitals?.systolicBp || 120) >= 140 },
+                    { label: 'Type 2 Diabetes (T2DM)', active: ((currentVitals as any)?.bloodSugarMgDl || 0) >= 140 },
+                    { label: 'Dyslipidemia', active: false },
+                    { label: 'Coronary Artery Disease', active: false },
+                    { label: 'Hypothyroidism', active: false }
+                  ].map((c) => (
+                    <span
+                      key={c.label}
+                      onClick={() => {
+                        if (!isSignedOrCompleted) {
+                          setClinicalAssessment((prev) => (prev ? `${prev} • H/o ${c.label}` : `H/o ${c.label}`));
+                        }
+                      }}
+                      style={{
+                        padding: '2px 7px',
+                        borderRadius: '4px',
+                        fontSize: '0.65rem',
+                        fontWeight: 700,
+                        backgroundColor: c.active ? 'rgba(239, 68, 68, 0.15)' : 'rgba(255, 255, 255, 0.04)',
+                        border: c.active ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)',
+                        color: c.active ? '#F87171' : '#CBD5E1',
+                        cursor: 'pointer'
+                      }}
+                      title="Click to insert into clinical assessment"
+                    >
+                      {c.active ? '⚠️ ' : '+ '}{c.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Past Visit Timeline Summaries */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '2px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#94A3B8' }}>
+                    RECENT VISIT TRAJECTORY:
+                  </span>
+                  <span style={{ fontSize: '0.62rem', color: '#38BDF8' }}>Tap to view Rx</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  {longitudinalVisits.map((v) => (
+                    <div
+                      key={v.id}
+                      onClick={() => setSelectedHistoricalVisit(v)}
+                      style={{
+                        padding: '6px 8px',
+                        borderRadius: '6px',
+                        backgroundColor: v.id === 'visit-current' ? 'rgba(6, 182, 212, 0.1)' : 'rgba(255, 255, 255, 0.03)',
+                        border: v.id === 'visit-current' ? '1px solid rgba(6, 182, 212, 0.35)' : '1px solid rgba(255, 255, 255, 0.06)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '0.72rem' }}>📅</span>
+                        <div>
+                          <div style={{ fontSize: '0.7rem', fontWeight: 800, color: v.id === 'visit-current' ? '#38BDF8' : '#F8FAFC' }}>
+                            {v.label} ({v.relative})
+                          </div>
+                          <div style={{ fontSize: '0.62rem', color: '#94A3B8' }}>
+                            {v.assessment.slice(0, 32)}...
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '0.68rem', fontWeight: 800, color: v.bpSys >= 140 ? '#F87171' : '#34D399' }}>
+                          BP {v.bp}
+                        </div>
+                        <div style={{ fontSize: '0.62rem', color: '#94A3B8' }}>
+                          {v.sugar}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
             {/* 🔬 CARD A: INVESTIGATION ORDERING HUD */}
             <div
               style={{
@@ -9699,10 +9961,10 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
               title="Silent 1-click thermal receipt print with auto-paper cut"
             >
               <span>🖨️</span>
-              <span>{isSilentPrintingReceipt ? 'Printing...' : 'Thermal Print'}</span>
+              <span>{isSilentPrintingReceipt ? 'Cutting...' : 'Thermal Cut'}</span>
             </button>
 
-            {/* Complete Consultation (Step 4: Sign & Prompt Next) */}
+            {/* Complete Consultation (Step 4: Sign & Complete Ctrl+Enter) */}
             <button
               type="button"
               onClick={() => {
@@ -9713,31 +9975,32 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
                 }
               }}
               style={{
-                backgroundColor: isSignedOrCompleted ? '#10B981' : 'var(--ds-color-primary, #06B6D4)',
-                color: isSignedOrCompleted ? '#FFFFFF' : '#070C16',
+                backgroundColor: '#10B981',
+                color: '#FFFFFF',
                 border: 'none',
                 borderRadius: '8px',
-                padding: '8px 18px',
-                fontSize: '0.8rem',
+                padding: '8px 20px',
+                fontSize: '0.82rem',
                 fontWeight: 900,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px',
-                boxShadow: isSignedOrCompleted ? '0 2px 12px rgba(16, 185, 129, 0.4)' : '0 2px 12px rgba(6, 182, 212, 0.4)'
+                gap: '8px',
+                boxShadow: isSignedOrCompleted ? '0 2px 14px rgba(16, 185, 129, 0.4)' : '0 0 22px rgba(16, 185, 129, 0.55)',
+                transition: 'all 0.15s ease'
               }}
               title={isSignedOrCompleted ? 'Prescription is signed and locked' : 'Shortcut: Ctrl + Enter'}
             >
-              <span>{isSignedOrCompleted ? '🔒' : '✓'}</span>
-              <span>{isSignedOrCompleted ? 'Signed & Dispatched' : 'Complete & Sign'}</span>
+              <span>{isSignedOrCompleted ? '🔒' : '✍️'}</span>
+              <span>{isSignedOrCompleted ? 'Signed & Dispatched' : 'Sign & Complete Consultation'}</span>
               {!isSignedOrCompleted && (
                 <kbd
                   style={{
                     fontSize: '0.625rem',
                     fontFamily: 'monospace',
-                    backgroundColor: 'rgba(0,0,0,0.2)',
-                    color: '#070C16',
-                    padding: '2px 5px',
+                    backgroundColor: 'rgba(0,0,0,0.25)',
+                    color: '#FFFFFF',
+                    padding: '2px 6px',
                     borderRadius: '4px',
                     fontWeight: 800
                   }}
@@ -9750,6 +10013,117 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
         </div>
       </div>
     )
+  )}
+
+  {/* 📱 FLOATING FROSTED-GLASS BOTTOM DOCK (MOBILE PWA SINGLE-THUMB NAVIGATION) */}
+  {isMobile && (
+    <div
+      style={{
+        position: 'fixed',
+        bottom: '12px',
+        left: '12px',
+        right: '12px',
+        height: '56px',
+        backgroundColor: 'rgba(11, 15, 25, 0.9)',
+        backdropFilter: 'blur(28px) saturate(200%)',
+        WebkitBackdropFilter: 'blur(28px) saturate(200%)',
+        borderRadius: '24px',
+        border: '1px solid rgba(255, 255, 255, 0.12)',
+        boxShadow: '0 12px 36px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.15)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-around',
+        padding: '0 8px',
+        zIndex: 950
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => setMobileActiveTab('rx')}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '2px',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          color: mobileActiveTab === 'rx' ? '#06B6D4' : '#94A3B8',
+          padding: '6px 12px',
+          borderRadius: '16px',
+          backgroundColor: mobileActiveTab === 'rx' ? 'rgba(6, 182, 212, 0.14)' : 'transparent'
+        }}
+      >
+        <span style={{ fontSize: '1.15rem' }}>🛋️</span>
+        <span style={{ fontSize: '0.65rem', fontWeight: 800 }}>Chamber</span>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => setMobileActiveTab('queue')}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '2px',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          color: mobileActiveTab === 'queue' ? '#06B6D4' : '#94A3B8',
+          padding: '6px 12px',
+          borderRadius: '16px',
+          backgroundColor: mobileActiveTab === 'queue' ? 'rgba(6, 182, 212, 0.14)' : 'transparent'
+        }}
+      >
+        <span style={{ fontSize: '1.15rem' }}>👥</span>
+        <span style={{ fontSize: '0.65rem', fontWeight: 800 }}>Queue ({queueStats.waiting})</span>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => {
+          setMobileActiveTab('rx');
+          setIsMedicineLibraryOpen(true);
+        }}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '2px',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          color: '#34D399',
+          padding: '6px 12px',
+          borderRadius: '16px',
+          backgroundColor: 'rgba(16, 185, 129, 0.1)'
+        }}
+      >
+        <span style={{ fontSize: '1.15rem' }}>💊</span>
+        <span style={{ fontSize: '0.65rem', fontWeight: 800 }}>Rapid Rx</span>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => setIsUpiCardExpanded((prev) => !prev)}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '2px',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          color: isUpiSettled ? '#34D399' : '#38BDF8',
+          padding: '6px 12px',
+          borderRadius: '16px',
+          backgroundColor: isUpiSettled ? 'rgba(16, 185, 129, 0.12)' : 'rgba(56, 189, 248, 0.1)'
+        }}
+      >
+        <span style={{ fontSize: '1.15rem' }}>💳</span>
+        <span style={{ fontSize: '0.65rem', fontWeight: 800 }}>{isUpiSettled ? 'Paid' : 'UPI Pay'}</span>
+      </button>
+    </div>
   )}
 </div>
 );
