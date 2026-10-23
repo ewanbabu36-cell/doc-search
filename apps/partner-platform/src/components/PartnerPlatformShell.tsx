@@ -115,7 +115,6 @@ const PharmaDistributorFranchiseModal = React.lazy(() => import('./dialogs/Pharm
 import { offlineResilienceService } from '../services/offlineResilienceService.js';
 import { DocSearchResponsiveBrand } from './common/DocSearchResponsiveBrand.js';
 import { OptimisticActionToast } from './common/OptimisticActionToast.js';
-import { AmbientVoiceScribeCapsule } from './common/AmbientVoiceScribeCapsule.js';
 import { PatientSessionTabBar } from './common/PatientSessionTabBar.js';
 import { HardwareStatusPill } from './common/HardwareStatusPill.js';
 import { BarcodeLaserSweepOverlay } from './common/BarcodeLaserSweepOverlay.js';
@@ -688,6 +687,8 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
   const [isAutonomousDischargeTunnelOpen, setIsAutonomousDischargeTunnelOpen] = useState(false);
   const [isNetworkOnline, setIsNetworkOnline] = useState<boolean>(() => offlineResilienceService.isOnline());
   const [pendingOfflineCount, setPendingOfflineCount] = useState<number>(() => offlineResilienceService.getPendingQueue().length);
+  void isNetworkOnline;
+  void pendingOfflineCount;
 
   useEffect(() => {
     const unsubscribe = offlineResilienceService.subscribe((online, count) => {
@@ -813,6 +814,9 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
   const quickAddRef = useRef<HTMLDivElement>(null);
   const [isFastLaunchOpen, setIsFastLaunchOpen] = useState(false);
   const fastLaunchRef = useRef<HTMLDivElement>(null);
+  void fastLaunchRef;
+  void isFastLaunchOpen;
+  void setIsFastLaunchOpen;
   const { pendingCount } = useFounderApproval(currentUser?.role, currentUser?.email);
   const [settingsInitialTab, setSettingsInitialTab] = useState<'KYC' | 'BANK' | 'ADDRESS' | 'CERTIFICATES' | 'SECURITY_SEAL' | 'PASSWORD'>('KYC');
 
@@ -2871,7 +2875,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <SoundboxAudioPlayer facilityName={cleanFacilityBrand} />
+              <SoundboxAudioPlayer facilityName={cleanFacilityBrand} compact={true} />
               <OptimisticSyncBadge />
 
               <button
@@ -3019,547 +3023,56 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
             )
           }
           organizationSlot={
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', maxWidth: '520px', minWidth: '180px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <button
                 type="button"
                 onClick={() => setIsCommandPaletteOpen(true)}
                 style={{
-                  flex: 1,
-                  minWidth: '130px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
                   backgroundColor: 'rgba(15, 23, 42, 0.65)',
                   border: '1px solid rgba(255, 255, 255, 0.12)',
                   color: '#94A3B8',
                   padding: '6px 12px',
-                  borderRadius: '10px',
+                  borderRadius: '8px',
                   fontSize: '0.8125rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '8px',
                   cursor: 'pointer',
                   fontWeight: 500,
-                  transition: 'all 0.15s ease',
-                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.2)'
+                  transition: 'all 0.15s ease'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.4)';
-                  e.currentTarget.style.backgroundColor = 'rgba(15, 23, 42, 0.85)';
+                  e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.5)';
+                  e.currentTarget.style.backgroundColor = 'rgba(15, 23, 42, 0.9)';
+                  e.currentTarget.style.color = '#F8FAFC';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.12)';
                   e.currentTarget.style.backgroundColor = 'rgba(15, 23, 42, 0.65)';
+                  e.currentTarget.style.color = '#94A3B8';
                 }}
-                title="Universal Command Palette & Patient Search (Cmd+K / Ctrl+K)"
+                title="Universal Search (Ctrl+K)"
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, overflow: 'hidden' }}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                    <circle cx="11" cy="11" r="8" />
-                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                  </svg>
-                  <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {isLabOrPathology
-                      ? 'Search specimens, test orders, patients...'
-                      : isPharmacyVertical
-                      ? 'Search medicines, barcode, batch, RX...'
-                      : isClinicVertical
-                      ? 'Search patients, appointments, UHID...'
-                      : 'Search patients, records, modules...'}
-                  </span>
-                </div>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <span className="ds-hide-on-compact" style={{ fontSize: '0.78rem', color: '#CBD5E1' }}>Search</span>
                 <kbd
                   style={{
                     backgroundColor: 'rgba(255, 255, 255, 0.08)',
                     border: '1px solid rgba(255, 255, 255, 0.14)',
-                    color: '#94A3B8',
-                    padding: '2px 6px',
+                    color: '#38BDF8',
+                    padding: '1px 5px',
                     borderRadius: '4px',
-                    fontSize: '0.65rem',
+                    fontSize: '0.625rem',
                     fontFamily: 'monospace',
-                    fontWeight: 600,
-                    flexShrink: 0
+                    fontWeight: 700
                   }}
                 >
-                  {typeof navigator !== 'undefined' && /Mac|iPhone|iPod|iPad/.test(navigator.platform) ? 'Cmd+K' : 'Ctrl+K'}
+                  {typeof navigator !== 'undefined' && /Mac|iPhone|iPod|iPad/.test(navigator.platform) ? '⌘K' : 'Ctrl+K'}
                 </kbd>
               </button>
-
-              {/* Ergonomic Fast Launch & Clinical Hotkeys Menu */}
-              <div ref={fastLaunchRef} style={{ position: 'relative', flexShrink: 0 }}>
-                <button
-                  type="button"
-                  onClick={() => setIsFastLaunchOpen((prev) => !prev)}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '5px',
-                    padding: '6px 10px',
-                    borderRadius: '10px',
-                    backgroundColor: isFastLaunchOpen ? 'rgba(56, 189, 248, 0.2)' : 'rgba(15, 23, 42, 0.65)',
-                    border: isFastLaunchOpen ? '1px solid #38BDF8' : '1px solid rgba(255, 255, 255, 0.12)',
-                    color: isFastLaunchOpen ? '#38BDF8' : '#94A3B8',
-                    fontSize: '0.75rem',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isFastLaunchOpen) {
-                      e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.4)';
-                      e.currentTarget.style.color = '#F8FAFC';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isFastLaunchOpen) {
-                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.12)';
-                      e.currentTarget.style.color = '#94A3B8';
-                    }
-                  }}
-                  title="Clinical Hotkeys & Rapid Workflows (F1–F9)"
-                >
-                  <span>⚡</span>
-                  <span className="ds-hide-on-compact">Hotkeys</span>
-                  <span
-                    style={{
-                      fontSize: '0.55rem',
-                      marginLeft: '2px',
-                      transform: isFastLaunchOpen ? 'rotate(180deg)' : 'none',
-                      transition: 'transform 0.2s ease'
-                    }}
-                  >
-                    ▼
-                  </span>
-                </button>
-
-                {isFastLaunchOpen && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: 'calc(100% + 8px)',
-                      left: 0,
-                      width: '320px',
-                      maxHeight: '80vh',
-                      overflowY: 'auto',
-                      backgroundColor: 'var(--ds-color-surface, #0F172A)',
-                      border: '1px solid var(--ds-color-border, #334155)',
-                      borderRadius: '12px',
-                      boxShadow: '0 20px 50px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.08)',
-                      zIndex: 9999,
-                      padding: '8px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '8px'
-                    }}
-                  >
-                    {/* SECTION 1: Clinical Desk Hotkeys (F1–F9) */}
-                    <div>
-                      <div style={{ padding: '4px 8px', fontSize: '0.6875rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        Clinical Desk Hotkeys
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', marginTop: '4px' }}>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsFastLaunchOpen(false);
-                            setIsFastOpdDrawerOpen(true);
-                          }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '7px 10px',
-                            borderRadius: '8px',
-                            background: 'rgba(56, 189, 248, 0.08)',
-                            border: '1px solid rgba(56, 189, 248, 0.2)',
-                            color: '#38BDF8',
-                            fontSize: '0.78rem',
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            textAlign: 'left'
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span>⚡</span>
-                            <span>Express OPD Registration</span>
-                          </div>
-                          <kbd style={{ fontSize: '0.625rem', padding: '1px 5px', borderRadius: '4px', background: 'rgba(255,255,255,0.1)', color: '#38BDF8', border: '1px solid rgba(56,189,248,0.3)' }}>F1</kbd>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsFastLaunchOpen(false);
-                            setActiveModule('clinical-consultation');
-                          }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '7px 10px',
-                            borderRadius: '8px',
-                            background: (activeModule as string) === 'clinical-consultation' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.03)',
-                            border: '1px solid rgba(255, 255, 255, 0.06)',
-                            color: '#34D399',
-                            fontSize: '0.78rem',
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            textAlign: 'left'
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span>🩺</span>
-                            <span>Doctor Chamber & EMR</span>
-                          </div>
-                          <kbd style={{ fontSize: '0.625rem', padding: '1px 5px', borderRadius: '4px', background: 'rgba(255,255,255,0.1)', color: '#34D399', border: '1px solid rgba(52,211,153,0.3)' }}>F2</kbd>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsFastLaunchOpen(false);
-                            setActiveModule('billing-revenue-cycle');
-                          }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '7px 10px',
-                            borderRadius: '8px',
-                            background: activeModule === 'billing-revenue-cycle' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(255, 255, 255, 0.03)',
-                            border: '1px solid rgba(255, 255, 255, 0.06)',
-                            color: '#FBBF24',
-                            fontSize: '0.78rem',
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            textAlign: 'left'
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span>🧾</span>
-                            <span>Billing Desk & POS</span>
-                          </div>
-                          <kbd style={{ fontSize: '0.625rem', padding: '1px 5px', borderRadius: '4px', background: 'rgba(255,255,255,0.1)', color: '#FBBF24', border: '1px solid rgba(251,191,36,0.3)' }}>F3</kbd>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsFastLaunchOpen(false);
-                            setActiveModule('inpatient-management');
-                          }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '7px 10px',
-                            borderRadius: '8px',
-                            background: activeModule === 'inpatient-management' ? 'rgba(139, 92, 246, 0.2)' : 'rgba(255, 255, 255, 0.03)',
-                            border: '1px solid rgba(255, 255, 255, 0.06)',
-                            color: '#A78BFA',
-                            fontSize: '0.78rem',
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            textAlign: 'left'
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span>🛏️</span>
-                            <span>Inpatient Ward Bed Map</span>
-                          </div>
-                          <kbd style={{ fontSize: '0.625rem', padding: '1px 5px', borderRadius: '4px', background: 'rgba(255,255,255,0.1)', color: '#A78BFA', border: '1px solid rgba(167,139,250,0.3)' }}>F4</kbd>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsFastLaunchOpen(false);
-                            setActiveModule('emergency-trauma');
-                          }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '7px 10px',
-                            borderRadius: '8px',
-                            background: activeModule === 'emergency-trauma' ? 'rgba(239, 68, 68, 0.25)' : 'rgba(255, 255, 255, 0.03)',
-                            border: '1px solid rgba(255, 255, 255, 0.06)',
-                            color: '#F87171',
-                            fontSize: '0.78rem',
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            textAlign: 'left'
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span>🚨</span>
-                            <span>Emergency & Trauma</span>
-                          </div>
-                          <kbd style={{ fontSize: '0.625rem', padding: '1px 5px', borderRadius: '4px', background: 'rgba(255,255,255,0.1)', color: '#F87171', border: '1px solid rgba(248,113,113,0.3)' }}>F9</kbd>
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* SECTION 2: Operations & Integrations */}
-                    <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '6px' }}>
-                      <div style={{ padding: '4px 8px', fontSize: '0.6875rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        Hospital Operations
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', marginTop: '4px' }}>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsFastLaunchOpen(false);
-                            setIsTvDisplayOpen(true);
-                          }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            padding: '6px 8px',
-                            borderRadius: '6px',
-                            background: 'rgba(255, 255, 255, 0.04)',
-                            border: '1px solid rgba(255, 255, 255, 0.08)',
-                            color: '#38BDF8',
-                            fontSize: '0.72rem',
-                            fontWeight: 600,
-                            cursor: 'pointer'
-                          }}
-                        >
-                          <span>📺</span>
-                          <span>Lounge TV</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsFastLaunchOpen(false);
-                            setIsCashlessDeskOpen(true);
-                          }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            padding: '6px 8px',
-                            borderRadius: '6px',
-                            background: 'rgba(255, 255, 255, 0.04)',
-                            border: '1px solid rgba(255, 255, 255, 0.08)',
-                            color: '#34D399',
-                            fontSize: '0.72rem',
-                            fontWeight: 600,
-                            cursor: 'pointer'
-                          }}
-                        >
-                          <span>🛡️</span>
-                          <span>PM-JAY</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsFastLaunchOpen(false);
-                            setIsWhatsAppDispatchOpen(true);
-                          }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            padding: '6px 8px',
-                            borderRadius: '6px',
-                            background: 'rgba(255, 255, 255, 0.04)',
-                            border: '1px solid rgba(255, 255, 255, 0.08)',
-                            color: '#4ADE80',
-                            fontSize: '0.72rem',
-                            fontWeight: 600,
-                            cursor: 'pointer'
-                          }}
-                        >
-                          <span>📲</span>
-                          <span>WhatsApp</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsFastLaunchOpen(false);
-                            setIsWholesaleSyncOpen(true);
-                          }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            padding: '6px 8px',
-                            borderRadius: '6px',
-                            background: 'rgba(255, 255, 255, 0.04)',
-                            border: '1px solid rgba(255, 255, 255, 0.08)',
-                            color: '#FBBF24',
-                            fontSize: '0.72rem',
-                            fontWeight: 600,
-                            cursor: 'pointer'
-                          }}
-                        >
-                          <span>📦</span>
-                          <span>Wholesale</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsFastLaunchOpen(false);
-                            setIsMigrationModalOpen(true);
-                          }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            padding: '6px 8px',
-                            borderRadius: '6px',
-                            background: 'rgba(255, 255, 255, 0.04)',
-                            border: '1px solid rgba(255, 255, 255, 0.08)',
-                            color: '#38BDF8',
-                            fontSize: '0.72rem',
-                            fontWeight: 600,
-                            cursor: 'pointer'
-                          }}
-                        >
-                          <span>📥</span>
-                          <span>Migration</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsFastLaunchOpen(false);
-                            setIsPractoBridgeOpen(true);
-                          }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            padding: '6px 8px',
-                            borderRadius: '6px',
-                            background: 'rgba(56, 189, 248, 0.12)',
-                            border: '1px solid rgba(56, 189, 248, 0.3)',
-                            color: '#38BDF8',
-                            fontSize: '0.72rem',
-                            fontWeight: 700,
-                            cursor: 'pointer'
-                          }}
-                        >
-                          <span>🔄</span>
-                          <span>Practo Ray</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsFastLaunchOpen(false);
-                            setIsSurgicalConciergeOpen(true);
-                          }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            padding: '6px 8px',
-                            borderRadius: '6px',
-                            background: 'rgba(129, 140, 248, 0.12)',
-                            border: '1px solid rgba(129, 140, 248, 0.3)',
-                            color: '#818CF8',
-                            fontSize: '0.72rem',
-                            fontWeight: 700,
-                            cursor: 'pointer'
-                          }}
-                        >
-                          <span>🔪</span>
-                          <span>Surgery Care</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsFastLaunchOpen(false);
-                            setIsFranchiseModalOpen(true);
-                          }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            padding: '6px 8px',
-                            borderRadius: '6px',
-                            background: 'rgba(255, 255, 255, 0.04)',
-                            border: '1px solid rgba(255, 255, 255, 0.08)',
-                            color: '#C4B5FD',
-                            fontSize: '0.72rem',
-                            fontWeight: 600,
-                            cursor: 'pointer'
-                          }}
-                        >
-                          <span>🤝</span>
-                          <span>Franchise</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* SECTION 3: System Resilience & Keyboard Guide */}
-                    <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const nowSimulated = offlineResilienceService.toggleSimulatedOffline();
-                          if (nowSimulated) {
-                            offlineResilienceService.queueOfflineAction('OPD_TOKEN', { token: 'OFFLINE-DEMO', patient: 'Local Patient' });
-                          }
-                        }}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '5px',
-                          padding: '4px 8px',
-                          borderRadius: '6px',
-                          background: isNetworkOnline ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.25)',
-                          border: `1px solid ${isNetworkOnline ? 'rgba(16, 185, 129, 0.35)' : '#EF4444'}`,
-                          color: isNetworkOnline ? '#34D399' : '#FCA5A5',
-                          fontSize: '0.6875rem',
-                          fontWeight: 700,
-                          cursor: 'pointer'
-                        }}
-                        title={isNetworkOnline ? 'Online (Cloud Connected) - Click to test broadband cut' : 'OFFLINE MODE Active'}
-                      >
-                        <span>{isNetworkOnline ? '🟢 Online' : '🟠 Offline Mode'}</span>
-                        {pendingOfflineCount > 0 && (
-                          <span style={{ backgroundColor: '#EF4444', color: '#FFFFFF', padding: '1px 5px', borderRadius: '10px', fontSize: '0.6rem' }}>
-                            {pendingOfflineCount}
-                          </span>
-                        )}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsFastLaunchOpen(false);
-                          setIsKeyboardShortcutsOpen(true);
-                        }}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '5px',
-                          padding: '4px 8px',
-                          borderRadius: '6px',
-                          background: 'rgba(255, 255, 255, 0.05)',
-                          border: '1px solid rgba(255, 255, 255, 0.1)',
-                          color: '#94A3B8',
-                          fontSize: '0.6875rem',
-                          fontWeight: 600,
-                          cursor: 'pointer'
-                        }}
-                        title="View Keyboard Shortcuts Cheat Sheet (Ctrl + /)"
-                      >
-                        <span>⌨️</span>
-                        <span>Guide</span>
-                        <kbd style={{ fontSize: '0.6rem', color: '#38BDF8', background: 'rgba(255,255,255,0.08)', padding: '1px 4px', borderRadius: '3px' }}>Ctrl+/</kbd>
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
             </div>
           }
           userSlot={
@@ -3576,9 +3089,10 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
               )}
 
               {/* Zero-Friction Autonomous Express Tunnels Trigger */}
-              <button
-                type="button"
-                onClick={() => setIsAutonomousDischargeTunnelOpen(true)}
+              {!isClinicVertical && (
+                <button
+                  type="button"
+                  onClick={() => setIsAutonomousDischargeTunnelOpen(true)}
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -3599,6 +3113,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                 <span>⚡</span>
                 <span className="ds-hide-on-compact">Express Tunnels</span>
               </button>
+              )}
 
               {/* Universal 1-Click Quick Add Menu */}
               <div ref={quickAddRef} style={{ position: 'relative', flexShrink: 0 }}>
@@ -5946,9 +5461,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
         <OptimisticActionToast />
 
         {/* AMBIENT VOICE AI CLINICAL SCRIBE FLOATING HUD (ALT+M) - ONLY ACTIVE INSIDE CLINICAL CONSULTATION */}
-        {isVoiceScribeAllowed(currentUser?.role, currentUser?.permissions) && activeModule === 'clinical-consultation' && (
-          <AmbientVoiceScribeCapsule isConsultationMode={true} />
-        )}
+        {/* In-cockpit voice scribe active; external floating capsule hidden in consultation view */}
 
         {/* HARDWARE STATUS PILL - MOVED TO SETTINGS DRAWER, HIDDEN FROM MAIN CLINICAL DASHBOARD */}
         <HardwareStatusPill hidden={true} />
@@ -6302,7 +5815,8 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
 
 
       {/* UNIVERSAL MASTER BRAIN & AI SYSTEM TRAINER — EWAN */}
-      <EwanSystemTrainer
+      {!isClinicVertical && activeModule !== 'clinical-consultation' && !isDoctorFocusMode && (
+        <EwanSystemTrainer
         currentPlatform="PARTNER_PLATFORM"
         activeModule={activeModule}
         currentUser={currentUser ? {
@@ -6322,6 +5836,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
         onNavigate={(dest) => setActiveModule(dest as any)}
         onOpenQuickRegister={() => setIsFastOpdDrawerOpen(true)}
       />
+      )}
 
       {/* PWA Floating Installation Banner */}
       <PwaInstallBanner />

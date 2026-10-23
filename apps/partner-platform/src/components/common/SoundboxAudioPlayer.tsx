@@ -24,6 +24,7 @@ export interface SoundboxAudioPlayerProps {
   autoPrintReceipt?: boolean;
   onPaymentReceived?: (detail: SoundboxPaymentEventDetail) => void;
   className?: string;
+  compact?: boolean;
 }
 
 /**
@@ -148,13 +149,16 @@ export const SoundboxAudioPlayer: React.FC<SoundboxAudioPlayerProps> = ({
   defaultLanguage = 'HI',
   autoPrintReceipt = true,
   onPaymentReceived,
-  className
+  className,
+  compact = true
 }) => {
   const [language, setLanguage] = useState<'HI' | 'EN'>(defaultLanguage);
   const [isAutoPrintEnabled, setIsAutoPrintEnabled] = useState<boolean>(autoPrintReceipt);
   const [lastPayment, setLastPayment] = useState<SoundboxPaymentEventDetail | null>(null);
   const [isPulsing, setIsPulsing] = useState<boolean>(false);
   const pulseTimerRef = useRef<any>(null);
+  void setLanguage;
+  void setIsAutoPrintEnabled;
 
   const handleProcessPayment = useCallback(
     (detail: SoundboxPaymentEventDetail) => {
@@ -214,6 +218,45 @@ export const SoundboxAudioPlayer: React.FC<SoundboxAudioPlayerProps> = ({
       soundboxVoicePromptEnglish: 'Rupees 500 received successfully on DocSearch UPI'
     });
   };
+
+  if (compact) {
+    return (
+      <div
+        className={className}
+        title={isPulsing && lastPayment ? `₹${lastPayment.amount} Received via UPI` : `UPI Soundbox Online (${language})`}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '5px',
+          padding: '4px 8px',
+          borderRadius: '8px',
+          backgroundColor: isPulsing ? 'rgba(34, 197, 94, 0.2)' : 'rgba(255, 255, 255, 0.04)',
+          border: `1px solid ${isPulsing ? '#22C55E' : 'rgba(255, 255, 255, 0.08)'}`,
+          fontSize: '0.75rem',
+          color: isPulsing ? '#86EFAC' : '#94A3B8',
+          flexShrink: 0,
+          transition: 'all 0.2s ease',
+          userSelect: 'none'
+        }}
+      >
+        <span style={{ fontSize: '0.85rem' }}>🔊</span>
+        <span
+          style={{
+            width: '6px',
+            height: '6px',
+            borderRadius: '50%',
+            backgroundColor: isPulsing ? '#22C55E' : '#10B981',
+            boxShadow: '0 0 5px #10B981'
+          }}
+        />
+        {isPulsing && lastPayment && (
+          <span style={{ fontWeight: 800, color: '#86EFAC', fontSize: '0.72rem' }}>
+            ₹{lastPayment.amount}
+          </span>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div

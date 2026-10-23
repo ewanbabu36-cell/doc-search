@@ -180,6 +180,17 @@ export const ActivePatientContextBar: React.FC<ActivePatientContextBarProps> = (
     setActivePatient(null);
   };
 
+  void searchQuery;
+  void recentPatients;
+  void showSearchResults;
+  void isSearching;
+  void filteredPatients;
+  void handleSelectPatient;
+
+  if (!activePatient) {
+    return null;
+  }
+
   return (
     <div
       style={{
@@ -528,149 +539,7 @@ export const ActivePatientContextBar: React.FC<ActivePatientContextBarProps> = (
             </div>
           </div>
         </div>
-      ) : (
-        /* Empty State: Quick Search & Demo Patient Fast-Load Strip */
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '10px'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: '280px', position: 'relative' }}>
-            <span style={{ fontSize: '1rem', color: '#38BDF8' }}>🔍</span>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setShowSearchResults(e.target.value.length > 0);
-              }}
-              onFocus={() => setShowSearchResults(true)}
-              placeholder="Search patient by Name, UHID, or Mobile to load across all hospital departments..."
-              style={{
-                width: '100%',
-                backgroundColor: '#1E293B',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
-                borderRadius: '6px',
-                padding: '6px 10px',
-                paddingRight: isSearching ? '90px' : '10px',
-                color: '#F8FAFC',
-                fontSize: '0.8125rem'
-              }}
-            />
-            {isSearching && (
-              <span style={{ position: 'absolute', right: '10px', fontSize: '0.75rem', color: '#38BDF8', fontWeight: 600 }}>
-                ⏳ Searching...
-              </span>
-            )}
-
-            {showSearchResults && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: 'calc(100% + 4px)',
-                  left: '28px',
-                  right: 0,
-                  backgroundColor: '#0F172A',
-                  border: '1.5px solid #0284C7',
-                  borderRadius: '8px',
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
-                  zIndex: 200,
-                  maxHeight: '220px',
-                  overflowY: 'auto',
-                  padding: '4px'
-                }}
-              >
-                {filteredPatients.length > 0 ? (
-                  filteredPatients.map((p) => (
-                    <div
-                      key={p.id}
-                      onClick={() => handleSelectPatient(p)}
-                      style={{
-                        padding: '8px 12px',
-                        borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
-                        cursor: 'pointer',
-                        borderRadius: '4px',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = '#1E293B';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                      }}
-                    >
-                      <div>
-                        <strong style={{ color: '#38BDF8', fontSize: '0.85rem' }}>{p.name}</strong>
-                        <span style={{ color: '#94A3B8', fontSize: '0.75rem', marginLeft: '8px' }}>
-                          ({p.uhid}) • {p.age}y/{p.gender}
-                        </span>
-                      </div>
-                      <span style={{ fontSize: '0.75rem', color: '#34D399', fontWeight: 700 }}>
-                        {p.bedNumber ? `🛏️ ${p.bedNumber}` : `Token #${p.opdToken}`} ➔
-                      </span>
-                    </div>
-                  ))
-                ) : (
-                  <div style={{ padding: '8px', color: '#64748B', fontSize: '0.75rem', textAlign: 'center' }}>
-                    No patient found matching "{searchQuery}"
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 600 }}>Recent Patients:</span>
-            {recentPatients.length > 0 ? (
-              recentPatients.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => handleSelectPatient(p)}
-                  title={`${p.name} • ${p.uhid} • ${p.gender}`}
-                  style={{
-                    backgroundColor: 'rgba(30, 41, 59, 0.8)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    color: '#CBD5E1',
-                    padding: '4px 8px',
-                    borderRadius: '6px',
-                    fontSize: '0.72rem',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    transition: 'all 0.15s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(2, 132, 199, 0.2)';
-                    e.currentTarget.style.borderColor = '#0284C7';
-                    e.currentTarget.style.color = '#38BDF8';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(30, 41, 59, 0.8)';
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                    e.currentTarget.style.color = '#CBD5E1';
-                  }}
-                >
-                  <span>{p.gender === 'FEMALE' ? '👩' : '👨'}</span>
-                  <span>{(p?.name || 'Patient').split(' ')[0]} ({p.uhid ? p.uhid.slice(-4) : 'PAT'})</span>
-                </button>
-              ))
-            ) : (
-              <span style={{ fontSize: '0.72rem', color: '#475569', fontStyle: 'italic' }}>
-                No active patients
-              </span>
-            )}
-          </div>
-        </div>
-      )}
+      ) : null}
 
       {/* Unified Patient 360 Spatial Dossier Modal */}
       {showPatient360 && activePatient && (
