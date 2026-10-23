@@ -21,6 +21,7 @@ import { doctorRosterService } from '../services/doctor-roster-service.js';
 import { partnerFoundationService } from '../services/partner-foundation-service.js';
 import { hospitalEventBus, type HospitalEventPayload } from '../services/hospital-event-bus.js';
 import { patientSessionTabService } from '../services/patient-session-tab-service.js';
+import { patientRegistrationService } from '../services/patient-registration-service.js';
 
 import { PanelContextSwitcher } from './common/PanelContextSwitcher.js';
 import { ConsultationOverviewView } from './views/ConsultationOverviewView.js';
@@ -106,7 +107,7 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
           const parsed = JSON.parse(saved);
           // Purge stale hardcoded mock name if current authenticated user has their own real name
           if (
-            (!parsed.doctorName || parsed.doctorName === 'Dr. Ashraf Ali' || parsed.doctorName === 'Dr. Ashraf') &&
+            (!parsed.doctorName || parsed.doctorName === 'Attending Physician' || parsed.doctorName === 'Attending Physician') &&
             currentUser?.name
           ) {
             parsed.doctorName = currentUser.name;
@@ -127,8 +128,8 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
         if (
           !prev.doctorName ||
           prev.doctorName === 'Attending Physician' ||
-          prev.doctorName === 'Dr. Ashraf Ali' ||
-          prev.doctorName === 'Dr. Ashraf'
+          prev.doctorName === 'Attending Physician' ||
+          prev.doctorName === 'Attending Physician'
         ) {
           return {
             ...prev,
@@ -295,6 +296,10 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
   // Synchronize with global Active Patient selection
   useEffect(() => {
     const unsubscribe = hospitalEventBus.subscribe('PATIENT_SELECTED', (payload: HospitalEventPayload) => {
+      // Ignore self-published events to prevent cyclic feedback loop & input jumping
+      if (payload.sourceModule === 'ClinicalConsultationDomainManager') {
+        return;
+      }
       if (payload.data) {
         const pId = payload.data.patientId;
         const pName = (payload.data.name || '').toLowerCase();
@@ -344,6 +349,101 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
 
     return () => unsubscribe();
   }, [consultations, encounters, context, doctors, loadData]);
+
+
+  // ⚡ 1-Click Zero Tab-Switch Walk-In Registration & Instant Consultation Opener
+  const handleQuickRegisterWalkIn = async (patientData: {
+    name: string;
+    mobile: string;
+    age: number;
+    gender: string;
+    complaint: string;
+    fee?: number | undefined;
+  }) => {
+    if (!context) return;
+    try {
+      const parts = patientData.name.trim().split(' ');
+      const firstName = parts[0] || 'Patient';
+      const lastName = parts.slice(1).join(' ') || 'Kumar';
+      const birthYear = new Date().getFullYear() - (patientData.age || 30);
+      const dateOfBirth = `${birthYear}-01-01`;
+
+      // 1. Create Patient Record in Core Database
+      const newPatient = await patientRegistrationService.createPatient({
+        tenantId: context.activeTenantId,
+        partnerId: context.activePartnerId,
+        organizationId: context.activeOrganizationId || '33333333-3333-4333-8333-333333333301',
+        branchId: context.activeFacilityId || '44444444-4444-4444-8444-444444444401',
+        firstName,
+        lastName,
+        dateOfBirth,
+        gender: patientData.gender === 'Female' ? 'FEMALE' : patientData.gender === 'Other' ? 'OTHER' : 'MALE',
+        primaryMobile: patientData.mobile.trim() || '9876543210',
+        addressLine1: 'Clinic Walk-In',
+        addressLine2: '',
+        city: 'Local',
+        state: 'State',
+        country: 'India',
+        postalCode: '110001',
+        registrationSource: 'RECEPTION_DESK',
+        preferredLanguage: 'English',
+        generalConsentGranted: true,
+        reason: 'OPD Quick Walk-in Registration',
+        actorId: context.userEmail,
+        actorRole: context.userRole
+      });
+
+      // 2. Create Encounter & Auto-Check-in with Queue Token
+      const newEncounter = await encounterService.createEncounter({
+        tenantId: context.activeTenantId,
+        partnerId: context.activePartnerId,
+        organizationId: context.activeOrganizationId || '33333333-3333-4333-8333-333333333301',
+        branchId: context.activeFacilityId || '44444444-4444-4444-8444-444444444401',
+        departmentId: '11111111-1111-4111-8111-111111111101',
+        patientId: newPatient.id,
+        doctorId: doctors[0]?.id || 'aaaa1111-1111-4aaa-8aaa-111111111101',
+        encounterType: 'OPD',
+        priority: 'ROUTINE',
+        consultationMode: 'IN_PERSON',
+        chiefComplaint: patientData.complaint || 'OPD Walk-in Consultation',
+        autoCheckIn: true,
+        reason: 'OPD Quick Walk-in Registration',
+        actorId: context.userEmail,
+        actorRole: context.userRole
+      });
+
+      // 3. Immediately Create Consultation & Open in Chamber (0ms delay)
+      const newCons = await clinicalConsultationService.createConsultation({
+        tenantId: context.activeTenantId,
+        partnerId: context.activePartnerId,
+        organizationId: context.activeOrganizationId || '33333333-3333-4333-8333-333333333301',
+        branchId: context.activeFacilityId || '44444444-4444-4444-8444-444444444401',
+        patientId: newPatient.id,
+        encounterId: newEncounter.id,
+        doctorId: doctors[0]?.id || 'aaaa1111-1111-4aaa-8aaa-111111111101',
+        consultationType: 'OPD_CONSULTATION',
+        chiefComplaint: patientData.complaint || 'OPD Walk-in Consultation',
+        actorId: context.userEmail,
+        actorRole: context.userRole,
+        justification: `Quick Walk-in Registered & Started: ${newPatient.fullName || newPatient.firstName}`
+      });
+
+      isChamberVacantRef.current = false;
+      setIsChamberVacant(false);
+      activeConsultationIdRef.current = newCons.id;
+      setSelectedConsultationId(newCons.id);
+
+      // Trigger optimistic event and silent sync
+      hospitalEventBus.publish('PATIENT_REGISTERED', 'ClinicalConsultationDomainManager', {
+        patientId: newPatient.id,
+        patientName: newPatient.fullName || newPatient.firstName,
+        token: newEncounter.tokenNumber
+      });
+      void loadData(true);
+    } catch (err) {
+      console.error('Failed to quick-register walk-in patient:', err);
+    }
+  };
 
   const handleContextChange = async (newContext: Partial<PanelContextDto>) => {
     try {
@@ -758,218 +858,77 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
 
       {/* Real-World OPD Consultation Cockpit (Queue + Active Desk) */}
       {context && (
-        selectedConsultation ? (
-          <SoloDoctorOpdCockpitView
-            consultation={selectedConsultation}
-            consultations={consultations}
-            encounters={encounters}
-            actorId={context.userEmail}
-            actorRole={context.userRole}
-            onSelectConsultation={handleSelectConsultation}
-            onSaveDraft={async (_c, data) => {
-              await handleSaveDraft({
-                tenantId: _c.tenantId,
-                consultationId: _c.id,
-                chiefComplaint: data.chiefComplaint,
-                clinicalAssessment: data.clinicalAssessment,
-                treatmentPlan: data.treatmentPlan,
-                actorId: context.userEmail,
-                actorRole: context.userRole,
-                justification: 'Auto-saved draft from Doctor OPD Cockpit',
-                ...((_c as any).medications ? { medications: (_c as any).medications } : {}),
-                ...((_c as any).labInvestigations ? { labInvestigations: (_c as any).labInvestigations } : {})
-              } as any);
-            }}
-            onCompleteConsultation={async (_c, asmt, plan) => {
-              await handleCompleteConsultation({
-                tenantId: _c.tenantId,
-                consultationId: _c.id,
-                clinicalAssessment: asmt,
-                treatmentPlan: plan,
-                actorId: context.userEmail,
-                actorRole: context.userRole,
-                justification: 'Completed from Doctor OPD Cockpit',
-                ...((_c as any).medications ? { medications: (_c as any).medications } : {}),
-                ...((_c as any).labInvestigations ? { labInvestigations: (_c as any).labInvestigations } : {})
-              } as any);
-            }}
-            onCallNextPatient={handleCallNextPatient}
-            onAddMedication={handleAddMedication}
-            onRemoveMedication={async (medId) => {
-              const med = selectedConsultation.medications?.find((m) => m.id === medId);
-              if (med) {
-                await handleDiscontinueMedication(selectedConsultation, med);
-              }
-            }}
-            onAddDiagnosis={handleAddDiagnosis}
-            onRemoveDiagnosis={(diagId) => handleRemoveDiagnosis(selectedConsultation, diagId)}
-            chamberRoom={chamberProfile.roomNumber}
-            chamberDoctor={chamberProfile.doctorName || currentUser?.name || 'Attending Physician'}
-            consultationFeeFirstVisit={chamberProfile.consultationFeeFirstVisit}
-            consultationFeeFollowUp={chamberProfile.consultationFeeFollowUp}
-            followUpValidityDays={chamberProfile.followUpValidityDays}
-            onBackToStandardDesk={async () => {
-              isChamberVacantRef.current = true;
-              activeConsultationIdRef.current = null;
-              setIsChamberVacant(true);
-              setSelectedConsultationId(null);
-              try {
-                await clinicalConsultationService.vacateChamber(currentUser?.id);
-              } catch (err) {
-                console.warn('Failed to vacate chamber on server:', err);
-              }
-            }}
-            onOpenSettings={() => {
-              setChamberSettingsTab('profile');
-              setIsSettingsOpen(true);
-            }}
-          />
-        ) : (
-          <div
-            style={{
-              textAlign: 'center',
-              padding: '44px 24px',
-              border: '1.5px dashed rgba(56, 189, 248, 0.3)',
-              borderRadius: '16px',
-              backgroundColor: 'rgba(15, 23, 42, 0.75)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '14px'
-            }}
-          >
-            <div style={{ fontSize: '3rem', marginBottom: '2px' }}>🚪</div>
-            <div
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '6px 16px',
-                borderRadius: '20px',
-                backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                border: '1px solid #10B981',
-                color: '#34D399',
-                fontWeight: 800,
-                fontSize: '0.85rem'
-              }}
-            >
-              <span>●</span>
-              <span>Chamber {chamberProfile.roomNumber} is Vacant & Ready (केबिन खाली है)</span>
-            </div>
-            <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: 'var(--ds-color-text-primary, #F8FAFC)' }}>
-              Attending: {chamberProfile.doctorName || currentUser?.name || 'Dr. Ashraf'}
-            </h3>
-            <p style={{ margin: 0, color: '#94A3B8', fontSize: '0.85rem', maxWidth: '520px', lineHeight: 1.5 }}>
-              The chamber is ready for the next consultation. Call a waiting patient below or register a walk-in patient.
-            </p>
-
-            {/* Waiting Patients Quick-Calling Bar */}
-            {encounters.filter((e) => e.status !== 'COMPLETED' && e.status !== 'CANCELLED').length > 0 && (
-              <div
-                style={{
-                  marginTop: '8px',
-                  width: '100%',
-                  maxWidth: '640px',
-                  backgroundColor: 'rgba(11, 17, 30, 0.85)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: '12px',
-                  padding: '16px',
-                  textAlign: 'left'
-                }}
-              >
-                <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#38BDF8', marginBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>👥 WAITING PATIENTS IN QUEUE ({encounters.filter((e) => e.status !== 'COMPLETED' && e.status !== 'CANCELLED').length})</span>
-                  <span style={{ fontSize: '0.68rem', color: '#64748B' }}>1-CLICK CALL TO CHAMBER</span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {encounters
-                    .filter((e) => e.status !== 'COMPLETED' && e.status !== 'CANCELLED')
-                    .sort((a, b) => {
-                      const priorityWeights: Record<string, number> = { EMERGENCY: 1, URGENT: 2, ROUTINE: 3 };
-                      const wA = priorityWeights[(a as any).priority || 'ROUTINE'] || 3;
-                      const wB = priorityWeights[(b as any).priority || 'ROUTINE'] || 3;
-                      if (wA !== wB) return wA - wB;
-                      const tA = new Date((a as any).createdAt || 0).getTime();
-                      const tB = new Date((b as any).createdAt || 0).getTime();
-                      if (tA !== tB) return tA - tB;
-                      return ((a as any).tokenNumber || '').localeCompare((b as any).tokenNumber || '');
-                    })
-                    .map((enc, idx) => (
-                    <div
-                      key={enc.id}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '10px 14px',
-                        backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                        border: '1px solid rgba(255, 255, 255, 0.06)',
-                        borderRadius: '8px'
-                      }}
-                    >
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontWeight: 800, color: '#F8FAFC', fontSize: '0.85rem' }}>
-                            {enc.patientName || `Patient #${idx + 1}`}
-                          </span>
-                          <span style={{ fontSize: '0.72rem', color: '#06B6D4', fontWeight: 800, backgroundColor: 'rgba(6, 182, 212, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>
-                            {enc.tokenNumber || `TK-${idx + 1}`}
-                          </span>
-                        </div>
-                        <div style={{ fontSize: '0.72rem', color: '#64748B', marginTop: '2px' }}>
-                          MRN: {enc.patientMrn || 'N/A'} • {enc.chiefComplaint || 'Consultation'}
-                        </div>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="primary"
-                        onClick={async () => {
-                          try {
-                            isChamberVacantRef.current = false;
-                            setIsChamberVacant(false);
-                            const claimRes = await clinicalConsultationService.claimEncounter(enc.id, currentUser?.id);
-                            if (claimRes?.consultation) {
-                              activeConsultationIdRef.current = claimRes.consultation.id;
-                              setSelectedConsultationId(claimRes.consultation.id);
-                            } else {
-                              handleSelectConsultation(enc.id);
-                            }
-                            await loadData(true);
-                          } catch (err) {
-                            console.error('Failed to claim patient into chamber:', err);
-                            handleSelectConsultation(enc.id);
-                          }
-                        }}
-                        style={{ fontSize: '0.75rem', fontWeight: 800 }}
-                      >
-                        📞 Call into Chamber
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div style={{ display: 'inline-flex', gap: '12px', alignItems: 'center', marginTop: '6px' }}>
-              <Button
-                size="sm"
-                variant="primary"
-                onClick={() => {
-                  window.dispatchEvent(new CustomEvent('docsearch:open_fast_opd'));
-                }}
-              >
-                + Register Walk-in Patient
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => void loadData()}
-              >
-                ↻ Refresh Live Queue
-              </Button>
-            </div>
-          </div>
-        )
+        <SoloDoctorOpdCockpitView
+          consultation={selectedConsultation}
+          consultations={consultations}
+          encounters={encounters}
+          actorId={context.userEmail}
+          actorRole={context.userRole}
+          onSelectConsultation={handleSelectConsultation}
+          onSaveDraft={async (_c, data) => {
+            if (!_c) return;
+            await handleSaveDraft({
+              tenantId: _c.tenantId,
+              consultationId: _c.id,
+              chiefComplaint: data.chiefComplaint,
+              clinicalAssessment: data.clinicalAssessment,
+              treatmentPlan: data.treatmentPlan,
+              actorId: context.userEmail,
+              actorRole: context.userRole,
+              justification: 'Auto-saved draft from Doctor OPD Cockpit',
+              ...((_c as any).medications ? { medications: (_c as any).medications } : {}),
+              ...((_c as any).labInvestigations ? { labInvestigations: (_c as any).labInvestigations } : {})
+            } as any);
+          }}
+          onCompleteConsultation={async (_c, asmt, plan) => {
+            if (!_c) return;
+            await handleCompleteConsultation({
+              tenantId: _c.tenantId,
+              consultationId: _c.id,
+              clinicalAssessment: asmt,
+              treatmentPlan: plan,
+              actorId: context.userEmail,
+              actorRole: context.userRole,
+              justification: 'Completed from Doctor OPD Cockpit',
+              ...((_c as any).medications ? { medications: (_c as any).medications } : {}),
+              ...((_c as any).labInvestigations ? { labInvestigations: (_c as any).labInvestigations } : {})
+            } as any);
+          }}
+          onCallNextPatient={handleCallNextPatient}
+          onAddMedication={handleAddMedication}
+          onRemoveMedication={async (medId) => {
+            if (!selectedConsultation) return;
+            const med = selectedConsultation.medications?.find((m) => m.id === medId);
+            if (med) {
+              await handleDiscontinueMedication(selectedConsultation, med);
+            }
+          }}
+          onAddDiagnosis={handleAddDiagnosis}
+          onRemoveDiagnosis={(diagId) => {
+            if (selectedConsultation) handleRemoveDiagnosis(selectedConsultation, diagId);
+          }}
+          chamberRoom={chamberProfile.roomNumber}
+          chamberDoctor={chamberProfile.doctorName || currentUser?.name || 'Attending Physician'}
+          consultationFeeFirstVisit={chamberProfile.consultationFeeFirstVisit}
+          consultationFeeFollowUp={chamberProfile.consultationFeeFollowUp}
+          followUpValidityDays={chamberProfile.followUpValidityDays}
+          onBackToStandardDesk={async () => {
+            isChamberVacantRef.current = true;
+            activeConsultationIdRef.current = null;
+            setIsChamberVacant(true);
+            setSelectedConsultationId(null);
+            try {
+              await clinicalConsultationService.vacateChamber(currentUser?.id);
+            } catch (err) {
+              console.warn('Failed to vacate chamber on server:', err);
+            }
+          }}
+          onOpenSettings={() => {
+            setChamberSettingsTab('profile');
+            setIsSettingsOpen(true);
+          }}
+          onQuickRegisterWalkIn={handleQuickRegisterWalkIn}
+        />
       )}
 
       {/* ⚙️ Chamber & Hardware Setup Modal */}

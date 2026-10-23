@@ -91,14 +91,14 @@ export const ThermalPrintPreviewModal: React.FC<ThermalPrintPreviewModalProps> =
 
   const currentPatient = patient || {
     id: 'pat-default',
-    uhid: 'UHID-2026-0812',
-    name: 'Rahul Verma',
-    age: 42,
+    uhid: 'UHID-NEW',
+    name: 'Patient',
+    age: 30,
     gender: 'MALE',
-    bloodGroup: 'B+',
-    bedNumber: 'ICU-04',
-    wardName: 'Critical Care Unit',
-    opdToken: 14,
+    bloodGroup: 'O+',
+    bedNumber: 'OPD',
+    wardName: 'Outpatient Clinic',
+    opdToken: 1,
     doctorName: partnerProfile.doctorName || 'Attending Physician',
     diagnosis: 'Routine Clinical Evaluation',
     allergies: ['None Reported']
