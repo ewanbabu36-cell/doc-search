@@ -44,8 +44,9 @@ export const healthRoutes: FastifyPluginAsync = async (app: FastifyInstance): Pr
     });
   });
 
-  // True Readiness Probe (verifies PostgreSQL database connectivity)
-  app.get('/ready', async (_req, reply) => {
+  // True Readiness Probe (verifies PostgreSQL database connectivity, latency, memory)
+  const readyHandler = async (_req: any, reply: any) => {
+    const start = Date.now();
     try {
       const db = getDatabase();
       if (!db) {
@@ -57,21 +58,40 @@ export const healthRoutes: FastifyPluginAsync = async (app: FastifyInstance): Pr
         });
       }
       await db.execute('SELECT 1;');
+      const latencyMs = Date.now() - start;
       const status = getDatabaseStatus();
+      const mem = process.memoryUsage();
+
       return reply.status(200).send({
         status: 'ready',
-        database: 'connected',
-        mode: status.mode,
-        tables: 442,
+        database: {
+          connected: true,
+          mode: status.mode,
+          latencyMs,
+          tables: 442
+        },
+        memory: {
+          rssMb: Math.round(mem.rss / 1024 / 1024),
+          heapUsedMb: Math.round(mem.heapUsed / 1024 / 1024),
+          heapTotalMb: Math.round(mem.heapTotal / 1024 / 1024)
+        },
+        uptime: process.uptime(),
         timestamp: new Date().toISOString()
       });
     } catch (err: unknown) {
       return reply.status(503).send({
         status: 'not_ready',
-        database: 'disconnected',
-        error: 'Database connection check failed: ' + ((err as any)?.message || String(err)),
+        database: {
+          connected: false,
+          error: 'Database connection check failed: ' + ((err as any)?.message || String(err))
+        },
         timestamp: new Date().toISOString()
       });
     }
-  });
+  };
+
+  app.get('/ready', readyHandler);
+  app.get('/readyz', readyHandler);
+  app.get('/api/readyz', readyHandler);
+  app.get('/api/v1/readyz', readyHandler);
 };

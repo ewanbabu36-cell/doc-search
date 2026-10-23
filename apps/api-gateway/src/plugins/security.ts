@@ -90,6 +90,11 @@ export async function registerSecurityPlugins(app: FastifyInstance): Promise<voi
     allowList: (request) =>
       request.url === '/health' ||
       request.url === '/healthz' ||
+      request.url === '/ready' ||
+      request.url === '/readyz' ||
+      request.url === '/api/readyz' ||
+      request.url === '/api/v1/readyz' ||
+      request.url.startsWith('/api/v1/readyz') ||
       request.url === '/api/v1/health' ||
       request.url.startsWith('/api/v1/health') ||
       request.url.startsWith('/api/v1/auth/launch-offer') ||
