@@ -100,7 +100,8 @@ export async function registerSecurityPlugins(app: FastifyInstance): Promise<voi
       request.url.startsWith('/api/v1/auth/launch-offer') ||
       request.url.startsWith('/api/v1/auth/registration-form-config') ||
       request.url.startsWith('/api/v1/auth/self-registered-partners') ||
-      request.url.startsWith('/api/v1/partner/billing/webhooks'),
+      request.url.startsWith('/api/v1/partner/billing/webhooks') ||
+      request.url.startsWith('/api/v1/webhooks/notifications'),
     keyGenerator: (request) => {
       // 1. If session is already verified and attached
       if (request.session?.userId) {

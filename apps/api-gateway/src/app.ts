@@ -64,6 +64,7 @@ import { documentVerificationRoutes } from './routes/compliance/document-verific
 import { workflowRoutes } from './routes/workflow.routes.js';
 import { businessHistoryRoutes } from './routes/partner/business-history.routes.js';
 import { paymentWebhookRoutes } from './routes/webhooks/payment-webhook.routes.js';
+import { notificationWebhookRoutes } from './routes/webhooks/notification-webhook.routes.js';
 import { licenseGovernanceRoutes } from './routes/company/license-governance.routes.js';
 import { commercialRoutes } from './routes/company/commercial.routes.js';
 import { partnerReliabilityRoutes } from './routes/partner/reliability.routes.js';
@@ -326,6 +327,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(billingManagementRoutes);
   await app.register(billingWebhookRoutes);
   await app.register(paymentWebhookRoutes);
+  await app.register(notificationWebhookRoutes);
   await app.register(mrdManagementRoutes);
   await app.register(productRoutes);
   await app.register(subscriptionRoutes);
