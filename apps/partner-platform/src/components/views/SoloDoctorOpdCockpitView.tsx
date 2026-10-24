@@ -2892,6 +2892,22 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
     });
   }, [encounters, consultations, consultation, inChamberId, isLocalSigned, sentForLabsPatientIds, realtimeTriageVitals, averageConsultDurationMinutes]);
 
+  // Reactively compute next waiting candidate in real-time
+  const computedNextWaiting = useMemo(() => {
+    const priorityWeights: Record<string, number> = { EMERGENCY: 1, URGENT: 2, ROUTINE: 3 };
+    const waitingList = queuePatients
+      .filter((p) => p.status !== 'COMPLETED' && !p.isCurrent)
+      .sort((a, b) => {
+        const wA = priorityWeights[(a as any).priority || 'ROUTINE'] || 3;
+        const wB = priorityWeights[(b as any).priority || 'ROUTINE'] || 3;
+        if (wA !== wB) return wA - wB;
+        return (a.token || '').localeCompare(b.token || '');
+      });
+    return waitingList[0] || null;
+  }, [queuePatients]);
+
+  const activeNextWaiting = nextWaitingPatient || computedNextWaiting;
+
   // Broadcast Dynamic Queue Velocity & ETAs to Event Bus
   useEffect(() => {
     const activeWaiting = queuePatients.filter((p) => !p.isInChamber && p.status !== 'COMPLETED');
@@ -2970,12 +2986,15 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
     playChime(target.token, target.patientName, chamberRoom);
     hospitalEventBus.publish('PATIENT_CALLED', 'SoloDoctorOpdCockpitView', {
       token: target.token,
+      tokenNumber: target.token,
       patientName: target.patientName,
-      chamber: chamberRoom
+      chamber: chamberRoom,
+      roomNumber: chamberRoom,
+      doctorName: chamberDoctor
     }, `📢 Called ${target.token} (${target.patientName}) to ${chamberRoom}`);
     setStatusMessage(`📢 Called ${target.token} (${target.patientName}) to ${chamberRoom}`);
     setTimeout(() => setStatusMessage(null), 3500);
-  }, [onSelectConsultation, chamberRoom]);
+  }, [onSelectConsultation, chamberRoom, chamberDoctor]);
 
   // Select Patient Handler (with Responsive auto-switch to Rx)
   const handleSelectPatient = useCallback((targetId: string) => {
@@ -10268,6 +10287,39 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
               <span>🖨️</span>
               <span>{isSilentPrintingReceipt ? 'Cutting...' : 'Thermal Cut'}</span>
             </button>
+
+            {/* 1-Click "Sign Rx & Call Next Patient ⚡" */}
+            {!isSignedOrCompleted && activeNextWaiting && (
+              <button
+                type="button"
+                onClick={async () => {
+                  const targetToCall = activeNextWaiting;
+                  await handleComplete();
+                  setTimeout(() => {
+                    callPatientToChamber(targetToCall);
+                  }, 80);
+                }}
+                style={{
+                  backgroundColor: '#0284C7',
+                  color: '#FFFFFF',
+                  border: '1px solid #38BDF8',
+                  borderRadius: '8px',
+                  padding: '8px 18px',
+                  fontSize: '0.82rem',
+                  fontWeight: 900,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  boxShadow: '0 0 20px rgba(56, 189, 248, 0.45)',
+                  transition: 'all 0.15s ease'
+                }}
+                title={`Sign active prescription and instantly call ${activeNextWaiting.token} (${activeNextWaiting.patientName}) to chamber`}
+              >
+                <span>⚡</span>
+                <span>Sign Rx & Call Next (${activeNextWaiting.token})</span>
+              </button>
+            )}
 
             {/* Complete Consultation (Step 4: Sign & Complete Ctrl+Enter) */}
             <button

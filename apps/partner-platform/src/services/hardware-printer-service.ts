@@ -91,6 +91,8 @@ export interface ShiftHandoverSlipData {
   totalCardFee: number;
   totalWaivedFee: number;
   totalSplitTokens?: number | undefined;
+  cancelledTokens?: number | undefined;
+  cancelledCashRefunds?: number | undefined;
   grandTotalCollected: number;
   physicalCashEntered: number;
   cashDiscrepancy: number;
@@ -591,6 +593,9 @@ export class HardwarePrinterService {
     builder.twoColumn('Card / POS:', `Rs. ${data.totalCardFee}`, paperWidthCols);
     if (data.totalSplitTokens && data.totalSplitTokens > 0) {
       builder.twoColumn('Split (Cash+UPI):', `${data.totalSplitTokens} Tokens`, paperWidthCols);
+    }
+    if (data.cancelledTokens && data.cancelledTokens > 0) {
+      builder.twoColumn('Cancelled / Refunded:', `${data.cancelledTokens} (-Rs. ${data.cancelledCashRefunds || 0})`, paperWidthCols);
     }
     if (data.totalWaivedFee > 0) {
       builder.twoColumn('Waived / Exempt:', `Rs. ${data.totalWaivedFee}`, paperWidthCols);

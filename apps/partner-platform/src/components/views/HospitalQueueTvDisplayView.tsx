@@ -232,27 +232,28 @@ export const HospitalQueueTvDisplayView: React.FC<HospitalQueueTvDisplayViewProp
   useEffect(() => {
     const unsubCalled = hospitalEventBus.subscribe('PATIENT_CALLED', (payload: HospitalEventPayload) => {
       const data = payload.data || {};
-      const tokenNum = data.tokenNumber || data.opdToken;
+      const tokenNum = data.tokenNumber || data.token || data.opdToken;
       if (tokenNum) {
         handleCallEncounter({
           tokenNumber: String(tokenNum).startsWith('#') ? tokenNum : `#${tokenNum}`,
           patientName: data.patientName || data.name || 'OPD Patient',
           uhid: data.uhid || `UHID-2026-${tokenNum}`,
-          roomNumber: data.roomNumber || 'ROOM 101',
-          doctorName: data.doctorName || partnerProfile.doctorName || 'Dr. Vikram Malhotra'
+          roomNumber: data.roomNumber || data.chamber || 'ROOM 101',
+          doctorName: data.doctorName || partnerProfile.doctorName || 'Attending Physician'
         });
       }
     });
 
     const unsubSelected = hospitalEventBus.subscribe('PATIENT_SELECTED', (payload: HospitalEventPayload) => {
-      if (payload.data?.opdToken) {
-        const tokenNum = payload.data.opdToken;
+      const data = payload.data || {};
+      const tokenNum = data.tokenNumber || data.token || data.opdToken;
+      if (tokenNum) {
         handleCallEncounter({
           tokenNumber: String(tokenNum).startsWith('#') ? tokenNum : `#${tokenNum}`,
-          patientName: payload.data.name || 'OPD Patient',
-          uhid: payload.data.uhid || `UHID-2026-${tokenNum}`,
-          roomNumber: payload.data.roomNumber || 'ROOM 101',
-          doctorName: payload.data.doctorName || partnerProfile.doctorName || 'Dr. Vikram Malhotra'
+          patientName: data.patientName || data.name || 'OPD Patient',
+          uhid: data.uhid || `UHID-2026-${tokenNum}`,
+          roomNumber: data.roomNumber || data.chamber || 'ROOM 101',
+          doctorName: data.doctorName || partnerProfile.doctorName || 'Attending Physician'
         });
       }
     });

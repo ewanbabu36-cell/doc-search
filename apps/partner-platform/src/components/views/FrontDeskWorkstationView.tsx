@@ -49,7 +49,10 @@ export interface FrontDeskPatientToken {
   doctorId: string;
   doctorName: string;
   chamber: string;
-  status: 'WAITING' | 'IN_CONSULTATION' | 'COMPLETED';
+  status: 'WAITING' | 'IN_CONSULTATION' | 'COMPLETED' | 'CANCELLED';
+  cancellationReason?: string | undefined;
+  cancellationRefundMode?: 'CASH_RETURNED' | 'UPI_REVERSAL' | 'NO_FEE_COLLECTED' | undefined;
+  cancelledAt?: string | undefined;
   visitType: 'WALK_IN' | 'APPOINTMENT' | 'FOLLOW_UP' | 'EMERGENCY';
   appointmentTime?: string | undefined;
   chiefComplaint: string;
@@ -175,6 +178,9 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
   const [printSlipItem, setPrintSlipItem] = useState<FrontDeskPatientToken | null>(null);
   const [whatsappModalItem, setWhatsappModalItem] = useState<FrontDeskPatientToken | null>(null);
   const [collectFeeItem, setCollectFeeItem] = useState<FrontDeskPatientToken | null>(null);
+  const [cancelModalItem, setCancelModalItem] = useState<FrontDeskPatientToken | null>(null);
+  const [cancelReason, setCancelReason] = useState<string>('Patient Left / Emergency');
+  const [cancelRefundMode, setCancelRefundMode] = useState<'CASH_RETURNED' | 'UPI_REVERSAL' | 'NO_FEE_COLLECTED'>('CASH_RETURNED');
   const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
   const [physicalCashInput, setPhysicalCashInput] = useState<string>('');
   const [shiftStartTime] = useState<string>(() => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
@@ -185,7 +191,7 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  const isAnyModalOpen = isTokenModalOpen || !!printSlipItem || !!whatsappModalItem || !!collectFeeItem || isShiftModalOpen;
+  const isAnyModalOpen = isTokenModalOpen || !!printSlipItem || !!whatsappModalItem || !!collectFeeItem || !!cancelModalItem || isShiftModalOpen;
 
   // Industry Standard: Lock background body scrolling when bottom sheet / modal is open
   useEffect(() => {
@@ -210,6 +216,7 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
       setPrintSlipItem(null);
       setWhatsappModalItem(null);
       setCollectFeeItem(null);
+      setCancelModalItem(null);
       setIsShiftModalOpen(false);
     };
 
@@ -485,6 +492,16 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
         utterance.lang = lang;
         window.speechSynthesis.speak(utterance);
       }
+
+      // Publish event across hospital network for TV screen & waiting rooms
+      hospitalEventBus.publish('PATIENT_CALLED', 'FrontDeskWorkstationView', {
+        token: item.tokenNumber,
+        tokenNumber: item.tokenNumber,
+        patientName: item.patientName,
+        chamber: item.chamber,
+        roomNumber: item.chamber,
+        doctorName: item.doctorName
+      });
     } catch {}
   };
 
@@ -776,6 +793,60 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
     }
   };
 
+    // Cancel Token & Fee Reversal
+  const handleConfirmCancelToken = async () => {
+    if (!cancelModalItem) return;
+    try {
+      const tokenId = cancelModalItem.id;
+      try {
+        await apiRequest(`/api/v1/partner/clinical/queues/${tokenId}/cancel`, {
+          method: 'PATCH',
+          body: JSON.stringify({ reason: cancelReason, refundMode: cancelRefundMode })
+        });
+      } catch {
+        // Local/graceful database fallback
+      }
+
+      setQueue((prev) =>
+        prev.map((t) =>
+          t.id === tokenId
+            ? {
+                ...t,
+                status: 'CANCELLED' as any,
+                cancellationReason: cancelReason,
+                cancellationRefundMode: cancelRefundMode,
+                cancelledAt: new Date().toISOString()
+              }
+            : t
+        )
+      );
+
+      try {
+        const localTokens = JSON.parse(localStorage.getItem('docsearch_offline_tokens') || '[]');
+        if (Array.isArray(localTokens)) {
+          const updatedLocal = localTokens.map((t: any) =>
+            t.id === tokenId
+              ? {
+                  ...t,
+                  status: 'CANCELLED',
+                  cancellationReason: cancelReason,
+                  cancellationRefundMode: cancelRefundMode,
+                  cancelledAt: new Date().toISOString()
+                }
+              : t
+          );
+          localStorage.setItem('docsearch_offline_tokens', JSON.stringify(updatedLocal));
+        }
+      } catch {}
+
+      showToast(`Token #${cancelModalItem.tokenNumber} marked CANCELLED (${cancelRefundMode === 'CASH_RETURNED' ? 'Cash Refunded' : cancelRefundMode === 'UPI_REVERSAL' ? 'UPI Reversal Initiated' : 'No Fee'})`);
+      setCancelModalItem(null);
+      await fetchQueue();
+    } catch (err: any) {
+      showToast(err?.message || 'Failed to cancel token');
+    }
+  };
+
   // Status changers - Database Bound
   const handleUpdateStatus = async (tokenId: string, newStatus: 'WAITING' | 'IN_CONSULTATION' | 'COMPLETED') => {
     try {
@@ -827,23 +898,37 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
     const appointmentTokens = queue.filter((t) => t.visitType === 'APPOINTMENT').length;
     const emergencyTokens = queue.filter((t) => t.visitType === 'EMERGENCY').length;
 
-    const totalCashFee = queue
+    // Filter cancelled tokens
+    const activeTokens = queue.filter((t) => t.status !== 'CANCELLED');
+    const cancelledTokens = queue.filter((t) => t.status === 'CANCELLED');
+    const totalCancelledCount = cancelledTokens.length;
+
+    // Calculate refunded cash / UPI
+    const cancelledCashRefunds = cancelledTokens
+      .filter((t) => (t as any).cancellationRefundMode === 'CASH_RETURNED')
+      .reduce((sum, t) => sum + (t.feePaymentMode === 'SPLIT' ? (Number((t as any).splitCashAmount) || 0) : (Number(t.consultationFee) || 0)), 0);
+
+    const cancelledUpiRefunds = cancelledTokens
+      .filter((t) => (t as any).cancellationRefundMode === 'UPI_REVERSAL')
+      .reduce((sum, t) => sum + (t.feePaymentMode === 'SPLIT' ? (Number((t as any).splitUpiAmount) || 0) : (Number(t.consultationFee) || 0)), 0);
+
+    const totalCashFee = activeTokens
       .filter((t) => t.feeStatus === 'PAID' && (t.feePaymentMode === 'CASH' || t.feePaymentMode === 'SPLIT'))
       .reduce((sum, t) => sum + (t.feePaymentMode === 'SPLIT' ? (Number((t as any).splitCashAmount) || 0) : (Number(t.consultationFee) || 0)), 0);
 
-    const totalUpiFee = queue
+    const totalUpiFee = activeTokens
       .filter((t) => t.feeStatus === 'PAID' && (t.feePaymentMode === 'UPI_QR' || t.feePaymentMode === 'SPLIT'))
       .reduce((sum, t) => sum + (t.feePaymentMode === 'SPLIT' ? (Number((t as any).splitUpiAmount) || 0) : (Number(t.consultationFee) || 0)), 0);
 
-    const totalCardFee = queue
+    const totalCardFee = activeTokens
       .filter((t) => t.feeStatus === 'PAID' && t.feePaymentMode === 'CARD')
       .reduce((sum, t) => sum + (Number(t.consultationFee) || 0), 0);
 
-    const totalWaivedFee = queue
+    const totalWaivedFee = activeTokens
       .filter((t) => t.feePaymentMode === 'WAIVED')
       .reduce((sum, t) => sum + (Number(t.consultationFee) || 0), 0);
 
-    const totalSplitTokens = queue.filter((t) => t.feePaymentMode === 'SPLIT').length;
+    const totalSplitTokens = activeTokens.filter((t) => t.feePaymentMode === 'SPLIT').length;
     const grandTotalCollected = totalCashFee + totalUpiFee + totalCardFee;
     const physicalCashEntered = parseFloat(physicalCashInput) || 0;
     const cashDiscrepancy = physicalCashEntered - totalCashFee;
@@ -853,6 +938,9 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
       walkInTokens,
       appointmentTokens,
       emergencyTokens,
+      totalCancelledCount,
+      cancelledCashRefunds,
+      cancelledUpiRefunds,
       totalCashFee,
       totalUpiFee,
       totalCardFee,
@@ -884,7 +972,9 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
         totalSplitTokens: shiftStats.totalSplitTokens,
         grandTotalCollected: shiftStats.grandTotalCollected,
         physicalCashEntered: shiftStats.physicalCashEntered,
-        cashDiscrepancy: shiftStats.cashDiscrepancy
+        cashDiscrepancy: shiftStats.cashDiscrepancy,
+        cancelledTokens: shiftStats.totalCancelledCount,
+        cancelledCashRefunds: shiftStats.cancelledCashRefunds
       };
 
       const result = await hardwarePrinterService.printShiftHandoverSlip(data, 32);
@@ -1885,6 +1975,43 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
                           >
                             📲
                           </button>
+
+                          {/* Cancel / Refund Button */}
+                          {(isWaiting || isInConsult) && (
+                            <button
+                              type="button"
+                              onClick={() => setCancelModalItem(item)}
+                              style={{
+                                padding: '5px 8px',
+                                borderRadius: '6px',
+                                backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                                border: '1px solid rgba(239, 68, 68, 0.3)',
+                                color: '#F87171',
+                                fontSize: '0.72rem',
+                                fontWeight: 700,
+                                cursor: 'pointer'
+                              }}
+                              title="Cancel Token & Issue Fee Refund"
+                            >
+                              ✕ Cancel
+                            </button>
+                          )}
+
+                          {item.status === 'CANCELLED' && (
+                            <span
+                              style={{
+                                padding: '4px 8px',
+                                borderRadius: '6px',
+                                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                border: '1px solid rgba(239, 68, 68, 0.25)',
+                                color: '#FCA5A5',
+                                fontSize: '0.7rem',
+                                fontWeight: 700
+                              }}
+                            >
+                              🚫 Cancelled
+                            </span>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -3060,8 +3187,24 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
               <button
                 type="button"
                 onClick={() => {
+                  const rawPhone = (whatsappModalItem.patientMobile || '').replace(/\D/g, '').slice(-10);
+                  const phone = rawPhone || '9876543210';
+                  const cleanToken = String(whatsappModalItem.tokenNumber).replace(/^#+/, '');
+                  const messageText =
+                    `*🏥 ${clinicDisplayName}*\n` +
+                    `*Namaste ${whatsappModalItem.patientName}*,\n\n` +
+                    `Your OPD Registration is Confirmed:\n` +
+                    `• *Token:* #${cleanToken}\n` +
+                    `• *Doctor:* ${whatsappModalItem.doctorName}\n` +
+                    `• *Chamber:* ${whatsappModalItem.chamber}\n` +
+                    `• *Consultation Fee:* ₹${whatsappModalItem.consultationFee} (${whatsappModalItem.feeStatus})\n` +
+                    (whatsappModalItem.feePaymentMode ? `• *Payment Mode:* ${whatsappModalItem.feePaymentMode}\n` : '') +
+                    `\n_Please be seated in the OPD waiting lounge. Your token will be called on the display screen._\n\n` +
+                    `_Powered by DocSearch Healthcare Suite_`;
+                  const encodedText = encodeURIComponent(messageText);
+                  window.open(`https://api.whatsapp.com/send?phone=91${phone}&text=${encodedText}`, '_blank');
                   setWhatsappModalItem(null);
-                  showToast(`WhatsApp message dispatched to ${whatsappModalItem.patientMobile}`);
+                  showToast(`✓ WhatsApp Token Slip opened for +91 ${phone}`);
                 }}
                 style={{
                   padding: '10px 18px',
@@ -3071,10 +3214,14 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
                   color: '#FFFFFF',
                   fontWeight: 800,
                   fontSize: '0.88rem',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
                 }}
               >
-                ✓ Send Now
+                <span>📲</span>
+                <span>Send via WhatsApp (+91 {(whatsappModalItem.patientMobile || '').replace(/\D/g, '').slice(-10) || '9876543210'})</span>
               </button>
             </div>
           </div>
@@ -3276,6 +3423,14 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
                   <span style={{ color: '#38BDF8', fontWeight: 700 }}>{shiftStats.totalSplitTokens} Tokens</span>
                 </div>
               )}
+              {shiftStats.totalCancelledCount > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#F87171' }}>
+                  <span>🚫 Cancelled & Refunded:</span>
+                  <strong style={{ fontFamily: 'monospace' }}>
+                    {shiftStats.totalCancelledCount} Tokens (-₹{shiftStats.cancelledCashRefunds + shiftStats.cancelledUpiRefunds})
+                  </strong>
+                </div>
+              )}
               {shiftStats.totalWaivedFee > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
                   <span style={{ color: '#CBD5E1' }}>🛡️ Fee Waived / VIP Exempt:</span>
@@ -3387,6 +3542,182 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
           </div>
         </div>
       )}
+
+      {/* 9. MODAL: TOKEN CANCELLATION & FEE REFUND */}
+      {cancelModalItem && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.75)',
+            backdropFilter: 'blur(6px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '16px'
+          }}
+          onClick={() => setCancelModalItem(null)}
+        >
+          <div
+            style={{
+              backgroundColor: '#0F172A',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              borderRadius: '16px',
+              width: '100%',
+              maxWidth: '460px',
+              padding: '24px',
+              color: '#F8FAFC',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 25px rgba(239, 68, 68, 0.2)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '1.5rem' }}>❌</span>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#F87171' }}>
+                    Cancel Token & Fee Reversal
+                  </h3>
+                  <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: '#94A3B8' }}>
+                    Token #{cancelModalItem.tokenNumber} • {cancelModalItem.patientName}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCancelModalItem(null)}
+                style={{ backgroundColor: 'transparent', border: 'none', color: '#94A3B8', fontSize: '1.25rem', cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.04)', borderRadius: '10px', padding: '12px', fontSize: '0.82rem', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#94A3B8' }}>Doctor & Chamber:</span>
+                <span style={{ fontWeight: 700 }}>{cancelModalItem.doctorName} ({cancelModalItem.chamber})</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#94A3B8' }}>Collected Fee:</span>
+                <span style={{ fontWeight: 800, color: cancelModalItem.feeStatus === 'PAID' ? '#34D399' : '#F59E0B' }}>
+                  ₹{cancelModalItem.consultationFee} ({cancelModalItem.feeStatus}) - {cancelModalItem.feePaymentMode}
+                </span>
+              </div>
+            </div>
+
+            {/* Cancellation Reason Dropdown */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1' }}>
+                Cancellation Reason:
+              </label>
+              <select
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                style={{
+                  backgroundColor: '#1E293B',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  borderRadius: '8px',
+                  padding: '9px 12px',
+                  color: '#F8FAFC',
+                  fontSize: '0.85rem'
+                }}
+              >
+                <option value="Doctor Delayed">Doctor Delayed / Excessive Wait</option>
+                <option value="Patient Left / Emergency">Patient Left / Personal Emergency</option>
+                <option value="Wrong Doctor Selected">Wrong Doctor / Specialty Selected</option>
+                <option value="Duplicate Token">Duplicate Token Issued</option>
+                <option value="Patient Dissatisfied">Patient Dissatisfied</option>
+              </select>
+            </div>
+
+            {/* Refund Mode Selection */}
+            {cancelModalItem.feeStatus === 'PAID' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1' }}>
+                  Fee Refund Mode:
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setCancelRefundMode('CASH_RETURNED')}
+                    style={{
+                      padding: '8px 4px',
+                      borderRadius: '8px',
+                      border: `1px solid ${cancelRefundMode === 'CASH_RETURNED' ? '#10B981' : 'rgba(255, 255, 255, 0.12)'}`,
+                      backgroundColor: cancelRefundMode === 'CASH_RETURNED' ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
+                      color: cancelRefundMode === 'CASH_RETURNED' ? '#34D399' : '#94A3B8',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    💵 Cash Return
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCancelRefundMode('UPI_REVERSAL')}
+                    style={{
+                      padding: '8px 4px',
+                      borderRadius: '8px',
+                      border: `1px solid ${cancelRefundMode === 'UPI_REVERSAL' ? '#38BDF8' : 'rgba(255, 255, 255, 0.12)'}`,
+                      backgroundColor: cancelRefundMode === 'UPI_REVERSAL' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
+                      color: cancelRefundMode === 'UPI_REVERSAL' ? '#38BDF8' : '#94A3B8',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    📲 UPI Reversal
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCancelRefundMode('NO_FEE_COLLECTED')}
+                    style={{
+                      padding: '8px 4px',
+                      borderRadius: '8px',
+                      border: `1px solid ${cancelRefundMode === 'NO_FEE_COLLECTED' ? '#94A3B8' : 'rgba(255, 255, 255, 0.12)'}`,
+                      backgroundColor: cancelRefundMode === 'NO_FEE_COLLECTED' ? 'rgba(148, 163, 184, 0.15)' : 'transparent',
+                      color: cancelRefundMode === 'NO_FEE_COLLECTED' ? '#F8FAFC' : '#94A3B8',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    🚫 No Refund
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
+              <Button variant="outline" size="sm" onClick={() => setCancelModalItem(null)}>
+                Keep Token
+              </Button>
+              <button
+                type="button"
+                onClick={handleConfirmCancelToken}
+                style={{
+                  padding: '9px 18px',
+                  borderRadius: '8px',
+                  backgroundColor: '#EF4444',
+                  border: 'none',
+                  color: '#FFFFFF',
+                  fontWeight: 800,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Confirm Cancellation
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

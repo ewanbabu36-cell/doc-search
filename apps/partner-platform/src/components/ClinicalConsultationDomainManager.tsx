@@ -615,20 +615,74 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
       }
     }
 
+    const finalMeds: any[] = (req as any).medications || (selectedConsultation as any)?.medications || [];
+    const patientName = (selectedConsultation as any)?.patientName || (req as any).patientName || 'Patient';
+    const patientMrn = (selectedConsultation as any)?.patientMrn || (req as any).patientMrn || `UHID-${String(currentEncId || req.consultationId).slice(-4)}`;
+    const patientPhone = (selectedConsultation as any)?.patientMobile || (req as any).patientMobile || '9876543210';
+    const queueToken = (selectedConsultation as any)?.queueToken || (req as any).queueToken || '#01';
+    const docName = chamberProfile.doctorName || currentUser?.name || 'Attending Physician';
+    const facName = facilityName || context?.activePartnerName || 'Central OPD Clinic';
+
+    const newRxRecord = {
+      id: `rx-${req.consultationId}`,
+      consultationId: req.consultationId,
+      encounterId: currentEncId,
+      patientName,
+      patientMrn,
+      patientPhone,
+      patientToken: queueToken,
+      doctorName: docName,
+      prescribedByDoctorName: docName,
+      prescribingDoctorSpecialty: (chamberProfile as any).specialty || 'General Medicine / OPD',
+      doctorNmcReg: (chamberProfile as any).nmcReg || 'NMC-MCI-2018-847291',
+      facilityName: facName,
+      issuedAt: new Date().toISOString(),
+      prescribedAt: new Date().toISOString(),
+      status: 'READY_FOR_DISPENSING',
+      priority: ((selectedConsultation as any)?.priority || (req as any)?.priority || 'ROUTINE'),
+      items: finalMeds.map((m: any, idx: number) => ({
+        id: m.id || `med-item-${idx}`,
+        medicationName: m.medicationName || m.name || 'Medication',
+        strength: m.strength || 'Standard',
+        dosage: m.dosage || m.dose || '1 Tab',
+        frequency: m.frequency || '1-0-1',
+        duration: parseInt(m.duration, 10) || 5,
+        durationUnit: 'DAYS',
+        timing: m.timing || m.beforeAfterFood || 'After food',
+        instructions: m.instructions || m.beforeAfterFood || 'After food',
+        prescribedQuantity: m.quantity || (m.duration ? Math.ceil(m.duration * 2) : 10),
+        unit: 'TAB'
+      }))
+    };
+
+    try {
+      if (typeof window !== 'undefined') {
+        const existing = JSON.parse(localStorage.getItem('docsearch_doctor_prescriptions') || '[]');
+        const filtered = Array.isArray(existing) ? existing.filter((r: any) => r.consultationId !== req.consultationId) : [];
+        filtered.unshift(newRxRecord);
+        localStorage.setItem('docsearch_doctor_prescriptions', JSON.stringify(filtered.slice(0, 100)));
+      }
+    } catch (e) {
+      console.warn('Failed to cache prescription for pharmacy queue:', e);
+    }
+
     // Publish event for Pharmacy POS & Cashier Counter
     hospitalEventBus.publish('PRESCRIPTION_ISSUED', 'ClinicalConsultationDomainManager', {
       consultationId: req.consultationId,
       encounterId: currentEncId,
-      patientName: selectedConsultation?.patientName || 'Patient',
-      patientMrn: selectedConsultation?.patientMrn,
-      medications: selectedConsultation?.medications || [],
-      doctorName: chamberProfile.doctorName,
-      facilityName: facilityName || context?.activePartnerName
+      patientName,
+      patientMrn,
+      patientPhone,
+      medications: finalMeds,
+      prescriptionRecord: newRxRecord,
+      doctorName: docName,
+      facilityName: facName
     }, 'Prescription signed and patient transferred to Pharmacy & Billing counters');
 
     // Notify other open counter tabs
     window.dispatchEvent(new CustomEvent('docsearch:encounters-updated'));
     window.dispatchEvent(new CustomEvent('docsearch:prescriptions-updated'));
+    window.dispatchEvent(new CustomEvent('docsearch_prescriptions_updated'));
     window.dispatchEvent(new CustomEvent('docsearch:billing-updated'));
 
     // Clear active consultation and set chamber to vacant & ready

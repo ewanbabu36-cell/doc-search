@@ -78,6 +78,17 @@ export const PharmacyPrescriptionQueueView: React.FC<PharmacyPrescriptionQueueVi
 
   // Subscribed to doctor prescriptions from hospital event bus and server domain
   const loadLocalDoctorPrescriptions = useCallback(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const stored = JSON.parse(localStorage.getItem('docsearch_doctor_prescriptions') || '[]');
+        if (Array.isArray(stored)) {
+          setLocalDoctorRxList(stored);
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to load local doctor prescriptions:', e);
+    }
     setLocalDoctorRxList([]);
   }, []);
 
