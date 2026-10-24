@@ -4,6 +4,10 @@ const path = require('node:path');
 
 const rootDir = path.resolve(__dirname, '..');
 
+try {
+  process.loadEnvFile(path.join(rootDir, '.env'));
+} catch {}
+
 process.env.SEED_DEMO_FIXTURES = 'false';
 process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgresql://postgres:password@127.0.0.1:5432/docsearch';
 process.env.ALLOW_EMBEDDED_POSTGRES = 'false';
@@ -142,7 +146,7 @@ async function main() {
     port: 4000,
     cwd: path.join(rootDir, 'apps/api-gateway'),
     executable: process.execPath,
-    args: ['dist/server.js'],
+    args: ['--env-file=' + path.join(rootDir, '.env'), 'dist/server.js'],
     color: '\x1b[35m'
   };
   spawnService(gateway);

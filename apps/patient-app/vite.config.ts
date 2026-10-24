@@ -17,6 +17,16 @@ export default defineConfig({
       '@docsearch/shared-core': path.resolve(__dirname, '../../packages/shared-core/src/index.ts')
     }
   },
+  optimizeDeps: {
+    exclude: [
+      '@capacitor/status-bar',
+      '@capacitor/splash-screen',
+      '@capacitor/haptics',
+      '@capacitor/local-notifications',
+      '@capacitor/camera',
+      '@capacitor/app'
+    ]
+  },
   build: {
     outDir: 'dist/bundle',
     emptyOutDir: false,
