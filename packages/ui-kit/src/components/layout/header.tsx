@@ -91,7 +91,9 @@ export const Header: React.FC<HeaderProps> = ({
     <header
       className={`ds-header ${className}`}
       style={{
+        height: '62px',
         minHeight: '62px',
+        maxHeight: '62px',
         backgroundColor: 'var(--ds-surface-l2, var(--ds-color-surface))',
         backdropFilter: 'blur(24px) saturate(180%)',
         WebkitBackdropFilter: 'blur(24px) saturate(180%)',
@@ -99,19 +101,28 @@ export const Header: React.FC<HeaderProps> = ({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '8px 16px',
+        padding: '0 16px',
         width: '100%',
         maxWidth: '100%',
         boxSizing: 'border-box',
         boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.12), inset 0 -0.5px 0 0 rgba(255, 255, 255, 0.06)',
         flexShrink: 0,
-        gap: '10px',
-        overflow: 'visible',
+        gap: '12px',
+        overflow: 'hidden',
         zIndex: 1000
       }}
     >
       {/* Left Slot: Menu Toggle + Back Button + Title / Launcher */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flexShrink: 1 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          minWidth: 0,
+          flexShrink: 0,
+          overflow: 'hidden'
+        }}
+      >
         {onMenuToggle && (
           <button
             type="button"
@@ -173,7 +184,7 @@ export const Header: React.FC<HeaderProps> = ({
             }}
           >
             <span style={{ fontSize: '0.9rem', lineHeight: 1 }}>←</span>
-            <span>Back</span>
+            <span className="ds-hide-on-compact">Back</span>
           </button>
         )}
         {title && (
@@ -183,7 +194,10 @@ export const Header: React.FC<HeaderProps> = ({
               fontWeight: '700',
               fontSize: '1rem',
               color: 'var(--ds-color-text-primary)',
-              minWidth: 0
+              minWidth: 0,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
             }}
           >
             {title}
@@ -195,11 +209,12 @@ export const Header: React.FC<HeaderProps> = ({
       {organizationSlot && (
         <div
           style={{
-            flex: '0 1 540px',
+            flex: '0 1 420px',
             minWidth: 0,
             display: 'flex',
             justifyContent: 'center',
-            overflow: 'visible',
+            alignItems: 'center',
+            overflow: 'hidden',
             padding: '0 8px'
           }}
         >

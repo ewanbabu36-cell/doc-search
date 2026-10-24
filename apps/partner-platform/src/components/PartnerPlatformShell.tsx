@@ -3047,7 +3047,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
             canGoBack={!isClinicVertical && navHistory.length > 0}
           title={
             isClinicVertical ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, overflow: 'hidden' }}>
                 <span
                   style={{
                     display: 'inline-flex',
@@ -3069,7 +3069,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                 </span>
               </div>
             ) : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, overflow: 'hidden' }}>
                 <span
                   style={{
                     display: 'inline-flex',
@@ -3091,9 +3091,9 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                   <span style={{ fontSize: '0.85rem' }}>{currentWsp.icon}</span>
                   <span>{workspace.replace(/_/g, ' ')}</span>
                 </span>
-                <span style={{ color: 'rgba(255, 255, 255, 0.3)', fontSize: '0.85rem', userSelect: 'none' }}>›</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
-                  <span style={{ fontSize: '0.95rem' }}>{currentModuleMeta.icon}</span>
+                <span className="ds-hide-on-compact" style={{ color: 'rgba(255, 255, 255, 0.3)', fontSize: '0.85rem', userSelect: 'none' }}>›</span>
+                <div className="ds-hide-on-compact" style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, overflow: 'hidden', maxWidth: '200px' }}>
+                  <span style={{ fontSize: '0.95rem', flexShrink: 0 }}>{currentModuleMeta.icon}</span>
                   <span
                     style={{
                       fontSize: '0.875rem',
@@ -3112,7 +3112,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
             )
           }
           organizationSlot={
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 0 }}>
               <button
                 type="button"
                 onClick={() => setIsCommandPaletteOpen(true)}
@@ -3128,7 +3128,8 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                   fontSize: '0.8125rem',
                   cursor: 'pointer',
                   fontWeight: 500,
-                  transition: 'all 0.15s ease'
+                  transition: 'all 0.15s ease',
+                  flexShrink: 0
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.5)';
@@ -3146,8 +3147,9 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                   <circle cx="11" cy="11" r="8" />
                   <line x1="21" y1="21" x2="16.65" y2="16.65" />
                 </svg>
-                <span className="ds-hide-on-compact" style={{ fontSize: '0.78rem', color: '#CBD5E1' }}>Search</span>
+                <span className="ds-hide-on-compact" style={{ fontSize: '0.78rem', color: '#CBD5E1', whiteSpace: 'nowrap' }}>Search</span>
                 <kbd
+                  className="ds-hide-on-compact"
                   style={{
                     backgroundColor: 'rgba(255, 255, 255, 0.08)',
                     border: '1px solid rgba(255, 255, 255, 0.14)',
@@ -3156,7 +3158,8 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                     borderRadius: '4px',
                     fontSize: '0.625rem',
                     fontFamily: 'monospace',
-                    fontWeight: 700
+                    fontWeight: 700,
+                    flexShrink: 0
                   }}
                 >
                   {typeof navigator !== 'undefined' && /Mac|iPhone|iPod|iPad/.test(navigator.platform) ? '⌘K' : 'Ctrl+K'}
@@ -3181,27 +3184,28 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
               {!isClinicVertical && (
                 <button
                   type="button"
+                  className="ds-hide-on-compact"
                   onClick={() => setIsAutonomousDischargeTunnelOpen(true)}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '5px 12px',
-                  borderRadius: '8px',
-                  backgroundColor: 'rgba(56, 189, 248, 0.15)',
-                  border: '1px solid rgba(56, 189, 248, 0.4)',
-                  color: '#38BDF8',
-                  fontWeight: 800,
-                  fontSize: '0.8125rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                  flexShrink: 0
-                }}
-                title="Zero-Friction Express Tunnels: 3-Min Discharge, 1-Screen Admission, BCMA Bedside, TPA Claim Scrubber"
-              >
-                <span>⚡</span>
-                <span className="ds-hide-on-compact">Express Tunnels</span>
-              </button>
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '5px 12px',
+                    borderRadius: '8px',
+                    backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                    border: '1px solid rgba(56, 189, 248, 0.4)',
+                    color: '#38BDF8',
+                    fontWeight: 800,
+                    fontSize: '0.8125rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    flexShrink: 0
+                  }}
+                  title="Zero-Friction Express Tunnels: 3-Min Discharge, 1-Screen Admission, BCMA Bedside, TPA Claim Scrubber"
+                >
+                  <span>⚡</span>
+                  <span>Express Tunnels</span>
+                </button>
               )}
 
               {/* Universal 1-Click Quick Add Menu */}

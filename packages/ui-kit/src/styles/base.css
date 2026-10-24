@@ -770,16 +770,18 @@ textarea:hover {
   }
 
   .ds-header {
-    height: auto !important;
+    height: 56px !important;
     min-height: 56px !important;
-    padding: 8px 12px !important;
-    flex-wrap: wrap !important;
+    max-height: 56px !important;
+    padding: 6px 12px !important;
+    flex-wrap: nowrap !important;
     gap: 8px !important;
+    overflow: hidden !important;
   }
 
   .ds-header-title {
-    font-size: 0.9375rem !important;
-    max-width: 180px !important;
+    font-size: 0.875rem !important;
+    max-width: 140px !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     white-space: nowrap !important;
