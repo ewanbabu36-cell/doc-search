@@ -25,7 +25,7 @@ import { hospitalEventBus } from '../../services/hospital-event-bus.js';
 import { ProfileUpdateRequiredAlertModal } from '../common/ProfileUpdateRequiredAlertModal.js';
 import { checkPartnerProfileStatus, type MissingProfileField } from '../../utils/partnerProfileGuard.js';
 import { getUnifiedPartnerProfile } from '../../utils/roleProfileResolver.js';
-import { useHardwareBarcodeScanner, type ScannedBarcodePayload } from '../../services/hardware-barcode-listener.js';
+import { useHardwareBarcodeScanner, playScannerAudioChime, type ScannedBarcodePayload } from '../../services/hardware-barcode-listener.js';
 import { GenericSaltSubstituteModal } from '../dialogs/GenericSaltSubstituteModal.js';
 import { DoctorPrescriptionQueueImporterModal } from '../dialogs/DoctorPrescriptionQueueImporterModal.js';
 import { PrescriptionCameraOcrModal } from '../dialogs/PrescriptionCameraOcrModal.js';
@@ -227,6 +227,9 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
     return () => window.removeEventListener('docsearch:session_tab_closed' as any, handleTabClosed);
   }, []);
 
+  // Live incoming prescriptions from hospital event bus
+  const [liveIncomingRxList, setLiveIncomingRxList] = useState<any[]>([]);
+
   // Synchronize live count of pending doctor prescriptions from server domain queue
   useEffect(() => {
     const updateCount = () => {
@@ -239,9 +242,13 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
     updateCount();
     const unsub = hospitalEventBus.subscribe('PRESCRIPTION_ISSUED', (payload) => {
       updateCount();
+      const rxData = payload?.data;
+      if (rxData) {
+        setLiveIncomingRxList((prev) => [rxData, ...prev.filter((p) => p.tokenNumber !== rxData.tokenNumber)]);
+      }
       setNotification({
         type: 'success',
-        message: `⚡ New doctor prescription received: ${payload.data?.patientName || 'Patient'}!`
+        message: `⚡ New doctor prescription received: ${payload.data?.patientName || 'Patient'} (Token #${payload.data?.tokenNumber || ''})!`
       });
     });
 
@@ -961,6 +968,90 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
     (scan: ScannedBarcodePayload) => {
       const cleanRaw = scan.raw.trim().toLowerCase();
       const gtinTrim = scan.gtin ? scan.gtin.replace(/^0+/, '') : '';
+
+      // 0. Auto-Load e-Prescription when an Outpatient Token or Rx Slip Barcode is scanned (e.g. TK-042, TK-...)
+      if (cleanRaw.startsWith('tk-') || cleanRaw.startsWith('tok-') || cleanRaw.startsWith('rx-') || cleanRaw.startsWith('uhid-') || cleanRaw.startsWith('mrn-')) {
+        const cleanToken = cleanRaw.replace(/^#+/, '').toUpperCase();
+        const matchedRx =
+          liveIncomingRxList.find(
+            (r) =>
+              (r.tokenNumber && r.tokenNumber.toUpperCase() === cleanToken) ||
+              (r.encounterId && r.encounterId.toUpperCase() === cleanToken)
+          ) ||
+          (prescriptions || []).find(
+            (p) =>
+              (p.prescriptionNumber && p.prescriptionNumber.toUpperCase() === cleanToken) ||
+              (p.id && p.id.toUpperCase() === cleanToken) ||
+              ((p as any).tokenNumber && (p as any).tokenNumber.toUpperCase() === cleanToken)
+          );
+
+        if (matchedRx) {
+          playScannerAudioChime('success');
+          setPatientName(matchedRx.patientName || 'Patient');
+          setPatientPhone(matchedRx.patientMobile || matchedRx.patientPhone || '');
+          setDoctorName(matchedRx.doctorName || 'Dr. Attending Physician');
+          setBillingMode('HOSPITAL_RX');
+          setSelectedRxId(matchedRx.encounterId || matchedRx.id);
+
+          const rxMeds: any[] = matchedRx.medications || [];
+          if (rxMeds.length > 0) {
+            const mappedCartItems: CartItem[] = rxMeds.map((medItem: any, idx: number) => {
+              const medName = medItem.name || medItem.medicationName || 'Medicine';
+              const foundMed = INDIAN_PHARMACY_FORMULARY.find(
+                (m) =>
+                  m.brandName.toLowerCase().includes(medName.toLowerCase()) ||
+                  (medItem.genericName && m.genericName.toLowerCase().includes(medItem.genericName.toLowerCase()))
+              ) || {
+                id: `rx-med-${idx}`,
+                medicationCode: `MED-RX-${idx}`,
+                brandName: medName,
+                genericName: medItem.genericName || medName,
+                strength: medItem.strength || 'Standard',
+                dosageForm: 'TABLET',
+                packConfiguration: 'Pack of 10',
+                packUnits: 10,
+                unitOfMeasure: 'PACK',
+                manufacturer: 'Standard Formulation',
+                mrp: 120,
+                costPrice: 85,
+                unitPrice: 12,
+                gstRate: 12,
+                hsnCode: '30049099',
+                category: 'GENERAL',
+                scheduleType: 'SCHEDULE_H',
+                barcode: `BAR-${idx}`,
+                brandType: 'ETHICAL'
+              };
+              const batch = getFefoBatch(foundMed.id);
+              const qty = Math.max(1, parseInt(String(medItem.duration || '5'), 10) * 2);
+              return {
+                id: `cart-wedge-${Date.now()}-${idx}`,
+                medication: foundMed,
+                selectedBatch: batch,
+                isLoose: false,
+                quantity: qty,
+                rate: foundMed.unitPrice || 12,
+                isSubstituted: false
+              };
+            });
+
+            setCart(mappedCartItems);
+            setNotification({
+              type: 'success',
+              message: `⚡ Barcode Scanned: Loaded Prescription for ${matchedRx.patientName} (Token #${matchedRx.tokenNumber || cleanToken}) with ${mappedCartItems.length} items!`
+            });
+            setTimeout(() => setNotification(null), 5000);
+            return;
+          }
+
+          setNotification({
+            type: 'success',
+            message: `⚡ Barcode Scanned: Identified Patient ${matchedRx.patientName} (Token #${cleanToken})!`
+          });
+          setTimeout(() => setNotification(null), 4000);
+          return;
+        }
+      }
 
       let matchedMed: IndianMedicationFormularyItem | undefined = undefined;
 

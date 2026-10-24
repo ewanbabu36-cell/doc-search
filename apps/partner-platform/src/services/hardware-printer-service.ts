@@ -229,6 +229,36 @@ export class EscPosBuilder {
     return this;
   }
 
+  /**
+   * ESC/POS 1D Barcode (GS k 73 / Code 128)
+   * Standard hardware command: GS h n, GS w n, GS H n, GS f n, GS k m n d1...dn
+   */
+  barcode(data: string, type: 'CODE128' = 'CODE128', height: number = 64): this {
+    void type;
+    const clean = String(data).trim().replace(/^#+/, '');
+    if (!clean) return this;
+
+    // 1. GS h n - Set barcode height in dots (default 64)
+    this.buffer.push(0x1D, 0x68, Math.max(20, Math.min(height, 255)));
+    // 2. GS w n - Set barcode module width (2 = standard high density)
+    this.buffer.push(0x1D, 0x77, 0x02);
+    // 3. GS H n - Select HRI printing position (2 = below barcode)
+    this.buffer.push(0x1D, 0x48, 0x02);
+    // 4. GS f n - Select font for HRI (0 = Font A)
+    this.buffer.push(0x1D, 0x66, 0x00);
+    // 5. GS k m n d1...dn - Print Code 128 (m = 73 / 0x49)
+    const payload: number[] = [];
+    if (!clean.startsWith('{')) {
+      payload.push(0x7B, 0x42); // Code Set B (alphanumeric, TK-042, etc.)
+    }
+    for (let i = 0; i < clean.length; i++) {
+      payload.push(clean.charCodeAt(i));
+    }
+    this.buffer.push(0x1D, 0x6B, 0x49, payload.length, ...payload);
+    this.buffer.push(0x0A);
+    return this;
+  }
+
   /** Silent 1-click token cut command (GS V 0 - full cut, GS V 1 - partial cut) */
   cut(partial: boolean = false): this {
     this.feed(3);
@@ -461,7 +491,7 @@ export class HardwarePrinterService {
 
     builder.divider(paperWidthCols, '=');
 
-    // 2. Queue Token Badge (Large Double Width + Height)
+    // 2. Queue Token Badge (Large Double Width + Height) & Scannable Code128 Barcode
     builder
       .align('center')
       .bold(true)
@@ -470,6 +500,9 @@ export class HardwarePrinterService {
       .line(slip.tokenNumber)
       .size('normal')
       .bold(false)
+      .feed(1)
+      .barcode(slip.tokenNumber, 'CODE128', 56)
+      .feed(1)
       .divider(paperWidthCols, '-');
 
     // 3. Patient & Clinical Details (Two-column layout)
@@ -510,6 +543,13 @@ export class HardwarePrinterService {
       .cut(false);
 
     return builder.build();
+  }
+
+  /**
+   * Alias for buildOpdTokenEscPos
+   */
+  buildTokenSlipEscPos(slip: OpdTokenSlipData, paperWidthCols: number = 32): Uint8Array {
+    return this.buildOpdTokenEscPos(slip, paperWidthCols);
   }
 
   /**
@@ -763,7 +803,7 @@ export class HardwarePrinterService {
 
     builder.divider(paperWidthCols, '=');
 
-    // 2. Patient Demographics Bar
+    // 2. Patient Demographics Bar & Scannable Code128 Barcode
     builder.align('left');
     const tokenStr = String(data.tokenNumber).startsWith('#') ? String(data.tokenNumber) : `#${data.tokenNumber}`;
     builder.twoColumn(`Token: ${tokenStr}`, `Date: ${data.date}`, paperWidthCols);
@@ -771,6 +811,13 @@ export class HardwarePrinterService {
     if (data.patientAge || data.patientGender) {
       builder.line(`Age/Sex: ${data.patientAge || '--'} / ${data.patientGender || '--'}`);
     }
+
+    builder
+      .align('center')
+      .feed(1)
+      .barcode(String(data.tokenNumber).replace(/^#+/, ''), 'CODE128', 56)
+      .feed(1)
+      .align('left');
 
     if (data.vitals) {
       const v = data.vitals;

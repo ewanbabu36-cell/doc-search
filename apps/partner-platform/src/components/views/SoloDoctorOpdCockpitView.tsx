@@ -2011,10 +2011,17 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
   const [isNextPatientPromptOpen, setIsNextPatientPromptOpen] = useState(false);
-  const [completedPatientInfo, setCompletedPatientInfo] = useState<{ name: string; token: string } | null>(null);
+  const [completedPatientInfo, setCompletedPatientInfo] = useState<{
+    name: string;
+    token: string;
+    phone?: string;
+    mrn?: string;
+    encounterId?: string;
+  } | null>(null);
+  const [isPediatricCalcOpen, setIsPediatricCalcOpen] = useState(false);
+  const [customPediatricWeight, setCustomPediatricWeight] = useState<number | null>(null);
   void isNextPatientPromptOpen;
   void setIsNextPatientPromptOpen;
-  void completedPatientInfo;
   const [nextWaitingPatient, setNextWaitingPatient] = useState<any | null>(null);
 
   // Status notification
@@ -2202,6 +2209,7 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
     const isFreeFollowUpRevisit = Boolean(daysSinceLastVisit !== null && daysSinceLastVisit <= (_followUpValidityDays || 7));
 
     return {
+      encounterId: activeEncounter?.id || consultation?.encounterId || consultation?.id || 'enc-active',
       name: nameDisplay,
       token: tokenDisplay,
       age: ageDisplay,
@@ -3285,7 +3293,47 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
     setIsLocalSigned(true);
     const cToken = activePatient.token;
     const cName = activePatient.name;
-    setCompletedPatientInfo({ name: cName, token: cToken });
+    setCompletedPatientInfo({
+      name: cName,
+      token: cToken,
+      phone: activePatient.phone,
+      mrn: activePatient.mrn,
+      encounterId: activePatient.encounterId
+    });
+
+    // 1. Publish PRESCRIPTION_ISSUED to hospital event bus (auto-notifies In-House Pharmacy POS & Front Desk)
+    hospitalEventBus.publish(
+      'PRESCRIPTION_ISSUED',
+      'SoloDoctorOpdCockpitView',
+      {
+        encounterId: activePatient.encounterId,
+        tokenNumber: activePatient.token,
+        patientName: activePatient.name,
+        patientMobile: activePatient.phone,
+        patientMrn: activePatient.mrn,
+        doctorName: chamberDoctor,
+        medications: structuredMeds,
+        diagnoses: clinicalAssessment ? [clinicalAssessment] : [],
+        followUpDays: followUpDays
+      },
+      `Prescription issued for Token #${activePatient.token} (${activePatient.name}) by ${chamberDoctor}`
+    );
+
+    // 2. Publish LAB_ORDER_CREATED if diagnostic tests were ordered
+    if (selectedTests.length > 0) {
+      hospitalEventBus.publish(
+        'LAB_ORDER_CREATED',
+        'SoloDoctorOpdCockpitView',
+        {
+          encounterId: activePatient.encounterId,
+          tokenNumber: activePatient.token,
+          patientName: activePatient.name,
+          doctorName: chamberDoctor,
+          labOrders: structuredLabs
+        },
+        `Lab order created for Token #${activePatient.token} (${activePatient.name}): ${selectedTests.map((t) => t.testName).join(', ')}`
+      );
+    }
 
     try {
       playChime();
@@ -6002,25 +6050,66 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
               </span>
             </div>
           )}
-        {/* Status Notification Pill */}
+        {/* Status Notification Pill with 1-Click WhatsApp Rx Dispatch */}
         {statusMessage && (
           <div
             style={{
-              padding: '8px 16px',
-              borderRadius: '8px',
-              backgroundColor: '#06B6D4',
-              color: '#070C16',
+              padding: '10px 16px',
+              borderRadius: '10px',
+              backgroundColor: '#0B132B',
+              border: '1.5px solid #06B6D4',
+              color: '#F8FAFC',
               fontWeight: 800,
-              fontSize: '0.8rem',
+              fontSize: '0.82rem',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '10px',
               boxShadow: '0 4px 15px rgba(6, 182, 212, 0.4)',
               animation: 'fadeIn 0.2s ease-out'
             }}
           >
-            <span>{statusMessage}</span>
-            <span style={{ fontSize: '0.7rem', opacity: 0.8 }}>Press Ctrl+Z to undo</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ color: '#38BDF8' }}>✓</span>
+              <span>{statusMessage}</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              {completedPatientInfo?.phone && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const phone = (completedPatientInfo.phone || '').replace(/\D/g, '').slice(-10);
+                    const msg = encodeURIComponent(
+                      `*Namaste ${completedPatientInfo.name}*,\n\n` +
+                      `Your prescription for Token #${completedPatientInfo.token} has been signed by *${chamberDoctor}*.\n\n` +
+                      `🔗 *Verify & Download Official PDF:* https://docsearch.in/verify/rx/${completedPatientInfo.encounterId || 'DOC-RX'}\n\n` +
+                      `_DocSearch Smart Healthcare Suite • NMC Telemedicine Guidelines Compliant_`
+                    );
+                    window.open(`https://api.whatsapp.com/send?phone=91${phone}&text=${msg}`, '_blank');
+                  }}
+                  style={{
+                    backgroundColor: '#25D366',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '5px 12px',
+                    fontSize: '0.75rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: '0 2px 8px rgba(37, 211, 102, 0.4)'
+                  }}
+                  title="1-Click send official digital Rx to patient's WhatsApp"
+                >
+                  <span>📲</span>
+                  <span>WhatsApp Rx to +91 {completedPatientInfo.phone.replace(/\D/g, '').slice(-10)}</span>
+                </button>
+              )}
+              <span style={{ fontSize: '0.7rem', color: '#94A3B8' }}>Press Ctrl+Z to undo</span>
+            </div>
           </div>
         )}
 
@@ -8192,6 +8281,32 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
                     💰 Patient Jan Aushadhi Savings: ₹{totalGenericSavings}
                   </span>
                 )}
+                {/* 👶 Pediatric Weight-Based Dosage Calculator Button */}
+                {(activePatient.isPediatric || (activePatient.age && parseInt(String(activePatient.age), 10) <= 12)) && (
+                  <button
+                    type="button"
+                    onClick={() => setIsPediatricCalcOpen(!isPediatricCalcOpen)}
+                    style={{
+                      padding: '3px 10px',
+                      borderRadius: '6px',
+                      backgroundColor: isPediatricCalcOpen ? 'rgba(236, 72, 153, 0.35)' : 'rgba(236, 72, 153, 0.15)',
+                      border: '1.5px solid #EC4899',
+                      color: '#F472B6',
+                      fontSize: '0.72rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      boxShadow: '0 2px 8px rgba(236, 72, 153, 0.25)'
+                    }}
+                    title="Open rapid weight-based pediatric syrup dosage calculator"
+                  >
+                    <span>👶</span>
+                    <span>Pediatric Dose Calculator</span>
+                  </button>
+                )}
+
                 {/* 🔄 1-Click Repeat Previous Rx Button */}
                 {!isSignedOrCompleted && (previousPatientEncounters.length > 0 || chronicMedsList.length > 0) && (
                   <button
@@ -8276,6 +8391,213 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
                 </button>
               </div>
             </div>
+
+            {/* 👶 PEDIATRIC WEIGHT-BASED DOSAGE CALCULATOR PANEL */}
+            {isPediatricCalcOpen && (() => {
+              const weight = customPediatricWeight !== null ? customPediatricWeight : (activePatient.estimatedWeightKg || 12);
+              const pcmDoseMg = Math.round(weight * 15);
+              const pcmVolMl = (pcmDoseMg / 50).toFixed(1); // 250mg/5ml = 50mg/ml
+              const amoxDoseMg = Math.round(weight * 35);
+              const amoxVolMl = ((amoxDoseMg / 2) / 40).toFixed(1); // Augmentin 228.5mg/5ml (40mg amox/ml) divided BD
+              const azithroDoseMg = Math.round(weight * 10);
+              const azithroVolMl = (azithroDoseMg / 40).toFixed(1); // Azithro 200mg/5ml = 40mg/ml OD
+              const ondansetronDoseMg = (weight * 0.15).toFixed(2);
+              const ondansetronVolMl = ((weight * 0.15) / 0.4).toFixed(1); // Emeset 2mg/5ml = 0.4mg/ml
+
+              const pediatricFormulations = [
+                {
+                  name: 'Syp. Paracetamol (Calpol 250)',
+                  genericName: 'Paracetamol Suspension (250mg/5ml)',
+                  strength: '250mg/5ml',
+                  dosage: `${pcmVolMl} mL (${pcmDoseMg} mg)`,
+                  frequency: '1-1-1 (TDS SOS)',
+                  duration: 3,
+                  timing: 'AFTER_FOOD' as const,
+                  instructions: `Give ${pcmVolMl} mL every 6-8 hours for fever >100°F. Do not exceed 4 doses/24hr.`
+                },
+                {
+                  name: 'Syp. Amoxicillin + Clavulanate (Augmentin Duo)',
+                  genericName: 'Amoxicillin + Potassium Clavulanate (228.5mg/5ml)',
+                  strength: '228.5mg/5ml',
+                  dosage: `${amoxVolMl} mL BD`,
+                  frequency: '1-0-1 (BD)',
+                  duration: 5,
+                  timing: 'AFTER_FOOD' as const,
+                  instructions: `Give ${amoxVolMl} mL twice daily after meals for 5 days. Shake bottle well before use.`
+                },
+                {
+                  name: 'Syp. Azithromycin (Azee 200)',
+                  genericName: 'Azithromycin Oral Suspension (200mg/5ml)',
+                  strength: '200mg/5ml',
+                  dosage: `${azithroVolMl} mL OD (${azithroDoseMg} mg)`,
+                  frequency: '1-0-0 (OD)',
+                  duration: 3,
+                  timing: 'EMPTY_STOMACH' as const,
+                  instructions: `Give ${azithroVolMl} mL once daily 1 hour before or 2 hours after food for 3 days.`
+                },
+                {
+                  name: 'Syp. Ondansetron (Emeset)',
+                  genericName: 'Ondansetron Hydrochloride Oral Solution (2mg/5ml)',
+                  strength: '2mg/5ml',
+                  dosage: `${ondansetronVolMl} mL SOS (${ondansetronDoseMg} mg)`,
+                  frequency: '1-1-1 (TDS SOS)',
+                  duration: 2,
+                  timing: 'BEFORE_FOOD' as const,
+                  instructions: `Give ${ondansetronVolMl} mL 30 minutes before food/milk for nausea or vomiting.`
+                },
+                {
+                  name: 'Syp. Montelukast + Levocetirizine (Montair-LC Kid)',
+                  genericName: 'Levocetirizine (2.5mg) + Montelukast (4mg) / 5ml',
+                  strength: '2.5mg + 4mg / 5ml',
+                  dosage: weight >= 15 ? '5.0 mL HS' : '2.5 mL HS',
+                  frequency: '0-0-1 (HS)',
+                  duration: 5,
+                  timing: 'BEDTIME' as const,
+                  instructions: 'Give at bedtime for allergic cough, cold, and sneezing.'
+                }
+              ];
+
+              return (
+                <div
+                  style={{
+                    margin: '12px 0',
+                    padding: '14px 16px',
+                    backgroundColor: 'rgba(236, 72, 153, 0.08)',
+                    border: '1.5px solid rgba(236, 72, 153, 0.4)',
+                    borderRadius: '10px'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', flexWrap: 'wrap', gap: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '1.2rem' }}>👶</span>
+                      <div>
+                        <div style={{ fontSize: '0.82rem', fontWeight: 900, color: '#F472B6' }}>
+                          Indian Pediatric Weight-Based Syrup Calculator
+                        </div>
+                        <div style={{ fontSize: '0.72rem', color: '#94A3B8' }}>
+                          Standard IAP (Indian Academy of Pediatrics) dosing rules for oral liquids
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#F8FAFC' }}>
+                        Child Weight:
+                      </label>
+                      <input
+                        type="number"
+                        min="2"
+                        max="60"
+                        step="0.5"
+                        value={weight}
+                        onChange={(e) => setCustomPediatricWeight(parseFloat(e.target.value) || 10)}
+                        style={{
+                          width: '70px',
+                          padding: '4px 8px',
+                          borderRadius: '6px',
+                          backgroundColor: '#0F172A',
+                          border: '1px solid #EC4899',
+                          color: '#F472B6',
+                          fontWeight: 800,
+                          fontSize: '0.9rem',
+                          textAlign: 'center'
+                        }}
+                      />
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#F472B6' }}>kg</span>
+                      <button
+                        type="button"
+                        onClick={() => setIsPediatricCalcOpen(false)}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#94A3B8',
+                          fontSize: '0.9rem',
+                          cursor: 'pointer',
+                          marginLeft: '8px'
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '10px' }}>
+                    {pediatricFormulations.map((syrup, sIdx) => (
+                      <div
+                        key={sIdx}
+                        style={{
+                          backgroundColor: 'rgba(15, 23, 42, 0.7)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          borderRadius: '8px',
+                          padding: '10px 12px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'space-between'
+                        }}
+                      >
+                        <div>
+                          <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#F8FAFC' }}>
+                            {syrup.name}
+                          </div>
+                          <div style={{ fontSize: '0.7rem', color: '#94A3B8', marginBottom: '6px' }}>
+                            {syrup.genericName}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#F472B6', backgroundColor: 'rgba(236, 72, 153, 0.2)', padding: '2px 6px', borderRadius: '4px' }}>
+                              Dose: {syrup.dosage}
+                            </span>
+                            <span style={{ fontSize: '0.7rem', color: '#CBD5E1' }}>
+                              Freq: {syrup.frequency}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: '0.68rem', color: '#CBD5E1', lineHeight: 1.3, marginBottom: '8px' }}>
+                            {syrup.instructions}
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newMed: CockpitMedItem = {
+                              id: `ped-med-${Date.now()}-${sIdx}`,
+                              medicationName: syrup.name,
+                              genericName: syrup.genericName,
+                              strength: syrup.strength,
+                              dosage: syrup.dosage,
+                              frequency: syrup.frequency,
+                              duration: syrup.duration,
+                              durationUnit: 'days',
+                              beforeAfterFood: syrup.timing,
+                              instructions: syrup.instructions,
+                              dispenseQuantity: '1 Bottle (60ml)'
+                            };
+                            setMedList((prev) => [...prev, newMed]);
+                            setStatusMessage(`✓ Added ${syrup.name} (${syrup.dosage}) to prescription pad!`);
+                          }}
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            backgroundColor: '#EC4899',
+                            color: '#FFFFFF',
+                            border: 'none',
+                            fontSize: '0.74rem',
+                            fontWeight: 800,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            boxShadow: '0 2px 6px rgba(236, 72, 153, 0.4)'
+                          }}
+                        >
+                          <span>+ Add to Rx</span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Quick 1-Tap OPD Medicine Chips */}
             {!isSignedOrCompleted && (
@@ -10081,10 +10403,25 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
               </button>
             )}
 
-            {/* WhatsApp e-Rx */}
+            {/* WhatsApp e-Rx Direct 1-Click Dispatch */}
             <button
               type="button"
-              onClick={() => setIsWhatsAppModalOpen(true)}
+              onClick={() => {
+                const phone = (activePatient.phone || '').replace(/\D/g, '').slice(-10);
+                if (phone) {
+                  const msg = encodeURIComponent(
+                    `*Namaste ${activePatient.name}*,\n\n` +
+                    `Your digital prescription for Token #${activePatient.token} has been signed by *${chamberDoctor}*.\n\n` +
+                    `📋 *Summary:* ${clinicalAssessment || 'OPD Consultation'}\n` +
+                    `💊 *Prescribed Medications:* ${medList.length} items\n` +
+                    `🔗 *Verify & Download Official PDF:* https://docsearch.in/verify/rx/${activePatient.encounterId || 'DOC-RX'}\n\n` +
+                    `_DocSearch Smart Healthcare Suite • NMC Telemedicine Guidelines Compliant_`
+                  );
+                  window.open(`https://api.whatsapp.com/send?phone=91${phone}&text=${msg}`, '_blank');
+                } else {
+                  setIsWhatsAppModalOpen(true);
+                }
+              }}
               style={{
                 backgroundColor: 'rgba(37, 211, 102, 0.15)',
                 border: '1px solid #25D366',
@@ -10098,9 +10435,10 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
                 alignItems: 'center',
                 gap: '6px'
               }}
+              title="1-Click WhatsApp dispatch to patient"
             >
               <span>📲</span>
-              <span>WhatsApp e-Rx</span>
+              <span>WhatsApp Rx to +91 {(activePatient.phone || '').replace(/\D/g, '').slice(-10)}</span>
             </button>
 
             {/* Save Draft */}

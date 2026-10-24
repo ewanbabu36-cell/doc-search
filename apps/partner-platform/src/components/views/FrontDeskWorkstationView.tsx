@@ -383,6 +383,31 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
     };
   }, [formFee, formPaymentMode, formSplitUpi, playCashRegisterChime]);
 
+  // Live Consultation Completion & Prescription Issued Listener
+  useEffect(() => {
+    const unsubRx = hospitalEventBus.subscribe('PRESCRIPTION_ISSUED', (payload) => {
+      const data = payload?.data || {};
+      const targetToken = data.tokenNumber || data.token;
+      const patName = data.patientName || 'Patient';
+      const docName = data.doctorName || 'Doctor';
+
+      if (targetToken || data.encounterId) {
+        setQueue((prev) =>
+          prev.map((t) =>
+            t.tokenNumber === targetToken || (data.encounterId && t.encounterId === data.encounterId)
+              ? { ...t, status: 'COMPLETED' }
+              : t
+          )
+        );
+        showToast(`✓ Token #${targetToken} (${patName}) completed by ${docName}`);
+      }
+    });
+
+    return () => {
+      unsubRx();
+    };
+  }, []);
+
   const [audioCallLanguage, setAudioCallLanguage] = useState<'HI' | 'EN'>(() => {
     if (typeof window !== 'undefined') {
       return (localStorage.getItem('docsearch_audio_call_lang') as 'HI' | 'EN') || 'HI';
