@@ -1,5 +1,5 @@
 import { apiRequest } from './api-client.js';
-import type { QuickCatalogDrug, QuickLabTestItem } from './clinical-diagnostic-icd10-catalog.js';
+import { POPULAR_OPD_DRUGS, type QuickCatalogDrug, type QuickLabTestItem } from './clinical-diagnostic-icd10-catalog.js';
 
 export interface CatalogMedication {
   id: string; // PostgreSQL UUID in clinical.medication_catalog
@@ -184,13 +184,49 @@ class ClinicalCatalogService {
       options.signal = signal;
     }
 
-    const res = await apiRequest<CatalogMedication[]>(endpoint, options);
-
-    if (!res.success) {
-      throw new Error(res.error?.message || 'Failed to search medication catalog');
+    let apiMeds: CatalogMedication[] = [];
+    try {
+      const res = await apiRequest<CatalogMedication[]>(endpoint, options);
+      if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+        apiMeds = res.data;
+      }
+    } catch {
+      // Fallback to top-50 clinical formulary
     }
 
-    return res.data || [];
+    if (apiMeds.length > 0) {
+      return apiMeds;
+    }
+
+    // High-Resilience Clinical Formulary Fallback: Filter Top-50 Indian OPD catalog drugs
+    const query = (params.search || '').toLowerCase().trim();
+    const fallbackList = POPULAR_OPD_DRUGS.filter((d) => {
+      if (!query) return true;
+      return (
+        d.name.toLowerCase().includes(query) ||
+        d.genericName.toLowerCase().includes(query) ||
+        d.category.toLowerCase().includes(query)
+      );
+    }).slice(0, params.limit || 35);
+
+    return fallbackList.map((d) => ({
+      id: d.id,
+      tenantId: 'system',
+      code: d.id,
+      name: d.name,
+      genericName: d.genericName ?? null,
+      brandName: d.name,
+      dosageForm: d.name.startsWith('Tab') ? 'TABLET' : (d.name.startsWith('Cap') ? 'CAPSULE' : (d.name.startsWith('Syp') ? 'SYRUP' : (d.name.startsWith('Inhaler') ? 'INHALER' : 'OTHER'))),
+      strength: d.strength ?? null,
+      standardDosage: d.dosage ?? null,
+      frequency: d.frequency ?? null,
+      durationDays: d.duration ?? null,
+      instructions: d.instructions ?? null,
+      route: null,
+      isRestricted: false,
+      requiresPrescription: true,
+      status: 'ACTIVE'
+    }));
   }
 
   /**

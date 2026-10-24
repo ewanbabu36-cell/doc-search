@@ -16,6 +16,7 @@ import { hospitalEventBus } from '../../services/hospital-event-bus.js';
 import { apiRequest } from '../../services/api-client.js';
 import { getUnifiedPartnerProfile } from '../../utils/roleProfileResolver.js';
 import type { HospitalStaffUser } from '../auth/HospitalStaffLogin.js';
+import { hardwarePrinterService, type OpdTokenSlipData } from '../../services/hardware-printer-service.js';
 
 export interface FrontDeskWorkstationViewProps {
   currentUser?: HospitalStaffUser | undefined;
@@ -228,6 +229,14 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
   const [isPatientFound, setIsPatientFound] = useState(false);
   const [_formMrn, setFormMrn] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [matchedFamilyMembers, setMatchedFamilyMembers] = useState<any[]>([]);
+  const [activeSelectedMemberId, setActiveSelectedMemberId] = useState<string | null>(null);
+  const [audioCallLanguage, setAudioCallLanguage] = useState<'HI' | 'EN'>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('docsearch_audio_call_lang') as 'HI' | 'EN') || 'HI';
+    }
+    return 'HI';
+  });
 
   // Load live doctors from roster service
   useEffect(() => {
@@ -358,56 +367,149 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
     };
   }, [doctors]);
 
-  // Audio Speech & Chime
+  // Audio Speech & Gentle Chime (Bilingual Hindi/English Caller)
   const announcePatientCall = (item: FrontDeskPatientToken) => {
     if (!audioAnnounceEnabled || typeof window === 'undefined') return;
     try {
+      // 1. Play gentle dual-tone chime (Ding-Dong sound) via Web Audio API
+      try {
+        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+        if (AudioCtx) {
+          const ctx = new AudioCtx();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+          osc.frequency.setValueAtTime(880, ctx.currentTime + 0.15); // A5
+          gain.gain.setValueAtTime(0.25, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.6);
+        }
+      } catch {}
+
+      // 2. Bilingual Speech Synthesis
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
-        const text = `Token ${item.tokenNumber}. ${item.patientName}. Please proceed to ${item.chamber}.`;
+        let text = '';
+        let lang = 'en-IN';
+        if (audioCallLanguage === 'HI') {
+          text = `टोकन नंबर ${item.tokenNumber}. ${item.patientName}. कृपया ${item.chamber} में पधारें।`;
+          lang = 'hi-IN';
+        } else {
+          text = `Token number ${item.tokenNumber}. ${item.patientName}. Please proceed to ${item.chamber}.`;
+          lang = 'en-IN';
+        }
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.rate = 0.92;
         utterance.pitch = 1.05;
+        utterance.lang = lang;
         window.speechSynthesis.speak(utterance);
       }
     } catch {}
   };
 
-  // Auto-search patient when mobile is 10 digits
-  const handleMobileChange = (mobile: string) => {
+  // Select a specific family member / dependent
+  const handleSelectFamilyMember = (member: any) => {
+    setActiveSelectedMemberId(member.id);
+    setFormName(member.fullName);
+    setFormAge(member.age || '30');
+    setFormGender(member.gender || 'MALE');
+    setFormMrn(member.mrn || `UHID-${Math.floor(10000 + Math.random() * 90000)}`);
+    setIsPatientFound(true);
+    showToast(`Selected: ${member.fullName} (${member.mrn})`);
+  };
+
+  // 1-Click "Add New Dependent / Child on this mobile"
+  const handleAddNewDependent = () => {
+    setActiveSelectedMemberId('NEW_DEPENDENT');
+    setFormName('');
+    setFormAge('');
+    setFormGender('MALE');
+    setFormMrn(`UHID-${Math.floor(10000 + Math.random() * 90000)}`);
+    setIsPatientFound(false);
+    showToast(`Enter details for new family member on ${formMobile}`);
+  };
+
+  // Auto-search patient & family members when mobile is 10 digits
+  const handleMobileChange = async (mobile: string) => {
     setFormMobile(mobile);
     const digitsOnly = mobile.replace(/\D/g, '');
     if (digitsOnly.length === 10) {
-      // Check existing queue or local patients
-      const foundInQueue = queue.find((q) => q.patientMobile.replace(/\D/g, '') === digitsOnly);
-      if (foundInQueue) {
-        setFormName(foundInQueue.patientName);
-        setFormAge(foundInQueue.age);
-        setFormGender(foundInQueue.gender);
-        setFormMrn(foundInQueue.mrn);
-        setIsPatientFound(true);
-        showToast(`Returning patient detected: ${foundInQueue.patientName} (${foundInQueue.mrn})`);
-        return;
-      }
+      const candidates: any[] = [];
 
-      // Check localStorage patient database
+      // 1. Check existing live queue
+      queue.forEach((q) => {
+        if (q.patientMobile.replace(/\D/g, '') === digitsOnly) {
+          if (!candidates.some((c) => c.fullName.toLowerCase() === q.patientName.toLowerCase())) {
+            candidates.push({
+              id: q.patientId || q.id,
+              fullName: q.patientName,
+              age: q.age,
+              gender: q.gender,
+              mrn: q.mrn,
+              relationship: parseInt(q.age || '30', 10) <= 14 ? 'CHILD' : 'SELF'
+            });
+          }
+        }
+      });
+
+      // 2. Check localStorage patient database
       try {
         const regPatients = JSON.parse(localStorage.getItem('docsearch_patients') || '[]');
-        const found = regPatients.find((p: any) => (p.primaryMobile || p.phone || '').replace(/\D/g, '') === digitsOnly);
-        if (found) {
-          setFormName(found.fullName || `${found.firstName || ''} ${found.lastName || ''}`.trim());
-          setFormAge(found.age?.toString() || '30');
-          setFormGender(found.gender || 'MALE');
-          setFormMrn(found.mrn || `UHID-${Math.floor(10000 + Math.random() * 90000)}`);
-          setIsPatientFound(true);
-          showToast(`Patient found in records: ${found.fullName}`);
-          return;
+        regPatients.forEach((p: any) => {
+          if ((p.primaryMobile || p.phone || '').replace(/\D/g, '') === digitsOnly) {
+            const name = p.fullName || `${p.firstName || ''} ${p.lastName || ''}`.trim();
+            if (!candidates.some((c) => c.fullName.toLowerCase() === name.toLowerCase())) {
+              candidates.push({
+                id: p.id,
+                fullName: name,
+                age: p.age?.toString() || '30',
+                gender: p.gender || 'MALE',
+                mrn: p.mrn || `UHID-${Math.floor(10000 + Math.random() * 90000)}`,
+                relationship: parseInt(p.age?.toString() || '30', 10) <= 14 ? 'CHILD' : 'SELF'
+              });
+            }
+          }
+        });
+      } catch {}
+
+      // 3. Check backend API Gateway for registered patients
+      try {
+        const res = await apiRequest<any>(`/api/v1/partner/clinical/patients?phone=${digitsOnly}`);
+        const apiPatients = res.data?.items || res.data || [];
+        if (Array.isArray(apiPatients)) {
+          apiPatients.forEach((p: any) => {
+            const name = p.fullName || `${p.firstName || ''} ${p.lastName || ''}`.trim();
+            if (!candidates.some((c) => c.fullName.toLowerCase() === name.toLowerCase())) {
+              candidates.push({
+                id: p.id,
+                fullName: name,
+                age: p.age?.toString() || '30',
+                gender: p.gender || 'MALE',
+                mrn: p.mrn || p.uhid || `UHID-${Math.floor(10000 + Math.random() * 90000)}`,
+                relationship: parseInt(p.age?.toString() || '30', 10) <= 14 ? 'CHILD' : 'SELF'
+              });
+            }
+          });
         }
       } catch {}
 
-      setIsPatientFound(false);
-      setFormMrn(`UHID-${Math.floor(10000 + Math.random() * 90000)}`);
+      setMatchedFamilyMembers(candidates);
+
+      if (candidates.length > 0) {
+        handleSelectFamilyMember(candidates[0]);
+        showToast(`${candidates.length} patient record(s) found on this number`);
+      } else {
+        setIsPatientFound(false);
+        setActiveSelectedMemberId(null);
+        setFormMrn(`UHID-${Math.floor(10000 + Math.random() * 90000)}`);
+      }
     } else {
+      setMatchedFamilyMembers([]);
+      setActiveSelectedMemberId(null);
       setIsPatientFound(false);
     }
   };
@@ -421,6 +523,8 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
     setFormGender('MALE');
     setFormComplaint('General OPD Consultation');
     setIsPatientFound(false);
+    setMatchedFamilyMembers([]);
+    setActiveSelectedMemberId(null);
     setFormPaymentMode('UPI_QR');
     setFormIsFeePaid(true);
 
@@ -646,6 +750,31 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
     });
   }, [queue, selectedDoctorFilter, statusFilter, searchTerm]);
 
+  // Zero-Click Silent ESC/POS Thermal Print via Local Hardware Agent (18080) or WebUSB
+  const handleSilentThermalPrint = async (slipItem: FrontDeskPatientToken) => {
+    try {
+      const slipData: OpdTokenSlipData = {
+        tokenNumber: slipItem.tokenNumber,
+        uhid: slipItem.mrn,
+        mrn: slipItem.mrn,
+        patientName: `${slipItem.patientName} (${slipItem.age}${slipItem.gender?.charAt(0) || 'M'})`,
+        doctorName: slipItem.doctorName,
+        department: 'OPD Consultation',
+        room: slipItem.chamber,
+        time: slipItem.createdAt,
+        fee: slipItem.consultationFee,
+        paymentMode: `${slipItem.feeStatus} (${slipItem.feePaymentMode})`,
+        clinicName: clinicDisplayName,
+        organizationName: clinicDisplayName,
+        address: clinicBranch
+      };
+      const res = await hardwarePrinterService.printOpdTokenSlip(slipData, 32);
+      showToast(res.message);
+    } catch {
+      window.print();
+    }
+  };
+
   const totalPatientsCount = queue.length;
   const waitingCount = queue.filter((t) => t.status === 'WAITING').length;
   const inConsultCount = queue.filter((t) => t.status === 'IN_CONSULTATION').length;
@@ -815,6 +944,27 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
               title={audioAnnounceEnabled ? 'Audio Chime & Speech Enabled' : 'Audio Muted'}
             >
               <span>{audioAnnounceEnabled ? '🔊 Audio Chime Active' : '🔇 Audio Muted'}</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const nextLang = audioCallLanguage === 'HI' ? 'EN' : 'HI';
+                setAudioCallLanguage(nextLang);
+                if (typeof window !== 'undefined') {
+                  localStorage.setItem('docsearch_audio_call_lang', nextLang);
+                }
+                showToast(`Token caller set to ${nextLang === 'HI' ? '🇮🇳 Hindi (हिंदी)' : '🌐 English'}`);
+              }}
+              style={{
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                color: audioCallLanguage === 'HI' ? '#F59E0B' : '#38BDF8',
+                backgroundColor: audioCallLanguage === 'HI' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(56, 189, 248, 0.15)',
+                fontWeight: 800
+              }}
+              title="Toggle Token Voice Announcement Language (Hindi / English)"
+            >
+              <span>{audioCallLanguage === 'HI' ? '🇮🇳 Voice: हिंदी' : '🌐 Voice: English'}</span>
             </Button>
             <Button
               variant="outline"
@@ -1575,6 +1725,80 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
                 </div>
               </div>
 
+              {/* Family Members & Dependent Selector Pills */}
+              {matchedFamilyMembers.length > 0 && (
+                <div
+                  style={{
+                    backgroundColor: 'rgba(6, 182, 212, 0.08)',
+                    border: '1px solid rgba(6, 182, 212, 0.25)',
+                    borderRadius: '10px',
+                    padding: '10px 12px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#38BDF8', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <span>👨‍👩‍👧</span> Family Members on this Mobile ({matchedFamilyMembers.length}):
+                    </span>
+                    <span style={{ fontSize: '0.68rem', color: '#94A3B8' }}>Select patient or add dependent</span>
+                  </div>
+
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {matchedFamilyMembers.map((member) => {
+                      const isSelected = activeSelectedMemberId === member.id;
+                      return (
+                        <button
+                          key={member.id}
+                          type="button"
+                          onClick={() => handleSelectFamilyMember(member)}
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: '20px',
+                            border: isSelected ? '1.5px solid #06B6D4' : '1px solid rgba(255, 255, 255, 0.15)',
+                            backgroundColor: isSelected ? '#0891B2' : 'rgba(255, 255, 255, 0.06)',
+                            color: isSelected ? '#FFFFFF' : '#CBD5E1',
+                            fontSize: '0.78rem',
+                            fontWeight: isSelected ? 800 : 600,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          <span>{member.relationship === 'CHILD' ? '👶' : (member.gender === 'FEMALE' ? '👩' : '👤')}</span>
+                          <span>{member.fullName}</span>
+                          <span style={{ opacity: 0.75, fontSize: '0.68rem' }}>({member.age}{member.gender?.charAt(0)})</span>
+                        </button>
+                      );
+                    })}
+
+                    <button
+                      type="button"
+                      onClick={handleAddNewDependent}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: '20px',
+                        border: activeSelectedMemberId === 'NEW_DEPENDENT' ? '1.5px solid #10B981' : '1px dashed #10B981',
+                        backgroundColor: activeSelectedMemberId === 'NEW_DEPENDENT' ? 'rgba(16, 185, 129, 0.25)' : 'rgba(16, 185, 129, 0.1)',
+                        color: '#34D399',
+                        fontSize: '0.78rem',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '5px'
+                      }}
+                    >
+                      <span>➕</span>
+                      <span>Add New Dependent / Child</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Step 2: Patient Name, Age, Gender */}
               <div className="fd-responsive-grid-patient" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1.2fr', gap: '10px' }}>
                 <div>
@@ -1936,35 +2160,78 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
             </div>
 
             {/* Slip Action Buttons */}
-            <div className="fd-responsive-sticky-footer" style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
+            <div className="fd-responsive-sticky-footer" style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
               <button
                 type="button"
-                onClick={() => window.print()}
+                onClick={() => handleSilentThermalPrint(printSlipItem)}
                 style={{
-                  flex: 1,
-                  padding: '11px 16px',
+                  flex: 1.2,
+                  padding: '11px 12px',
                   borderRadius: '6px',
                   backgroundColor: '#0284C7',
                   border: 'none',
                   color: '#FFFFFF',
                   fontWeight: 800,
-                  fontSize: '0.9rem',
-                  cursor: 'pointer'
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px'
                 }}
+                title="Silent zero-click print on connected USB ESC/POS thermal printer (58mm/80mm)"
               >
-                🖨️ Thermal Print
+                <span>🖨️</span>
+                <span>Thermal Cut</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const cleanPhone = printSlipItem.patientMobile.replace(/\D/g, '').slice(-10);
+                  const greeting = audioCallLanguage === 'HI' ? 'नमस्ते' : 'Namaste';
+                  const text = encodeURIComponent(
+                    `*${greeting} ${printSlipItem.patientName}*,\n\n` +
+                    `आपका टोकन कन्फर्म हो गया है: *${clinicDisplayName}*\n\n` +
+                    `🎫 *Token No: #${printSlipItem.tokenNumber}*\n` +
+                    `🩺 *Doctor:* ${printSlipItem.doctorName}\n` +
+                    `📍 *Chamber:* ${printSlipItem.chamber}\n` +
+                    `💰 *Fee:* Rs. ${printSlipItem.consultationFee} (${printSlipItem.feeStatus})\n` +
+                    `🧾 *Receipt:* ${printSlipItem.feeReceiptNo}\n\n` +
+                    `_कृपया टोकन अनाउंस होने पर चेंबर में पधारें।_`
+                  );
+                  window.open(`https://wa.me/91${cleanPhone}?text=${text}`, '_blank');
+                }}
+                style={{
+                  flex: 1.2,
+                  padding: '11px 12px',
+                  borderRadius: '6px',
+                  backgroundColor: '#16A34A',
+                  border: 'none',
+                  color: '#FFFFFF',
+                  fontWeight: 800,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px'
+                }}
+                title="Share Token Slip via WhatsApp Web / Mobile"
+              >
+                <span>📲</span>
+                <span>WhatsApp Slip</span>
               </button>
               <button
                 type="button"
                 onClick={() => setPrintSlipItem(null)}
                 style={{
-                  padding: '11px 18px',
+                  padding: '11px 16px',
                   borderRadius: '6px',
                   backgroundColor: '#E2E8F0',
                   border: 'none',
                   color: '#0F172A',
                   fontWeight: 700,
-                  fontSize: '0.9rem',
+                  fontSize: '0.85rem',
                   cursor: 'pointer'
                 }}
               >

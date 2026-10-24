@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@docsearch/ui-kit';
 import { hospitalEventBus } from '../../services/hospital-event-bus.js';
+import { hardwarePrinterService, type OpdTokenSlipData } from '../../services/hardware-printer-service.js';
 
 export interface PrintableOpdTokenSlipModalProps {
   isOpen: boolean;
@@ -47,12 +48,29 @@ export const PrintableOpdTokenSlipModal: React.FC<PrintableOpdTokenSlipModalProp
   const trackerUrl = `https://docsearch.health/?view=track-token&token=${encodeURIComponent(tokenNumber)}&name=${encodeURIComponent(patientName)}&doc=${encodeURIComponent(doctorName)}&room=${encodeURIComponent(roomNumber)}`;
   const qrSvgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(trackerUrl)}&color=000000&bgcolor=FFFFFF`;
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
     if (onPrintThermal) {
       onPrintThermal();
     }
     setPrintSuccess(true);
-    window.print();
+    try {
+      const slipData: OpdTokenSlipData = {
+        tokenNumber,
+        uhid: patientMrn,
+        mrn: patientMrn,
+        patientName,
+        doctorName,
+        department: departmentName,
+        room: roomNumber,
+        time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+        fee: 500,
+        clinicName: facilityName,
+        organizationName: facilityName
+      };
+      await hardwarePrinterService.printOpdTokenSlip(slipData, 32);
+    } catch {
+      window.print();
+    }
     setTimeout(() => setPrintSuccess(false), 2500);
   };
 

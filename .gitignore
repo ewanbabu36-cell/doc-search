@@ -65,3 +65,5 @@ data/backups/
 data/dsc-vault/
 data/storage/
 data/mail-inbox/*.html
+
+.env.production

@@ -416,7 +416,7 @@ export const POPULAR_INVESTIGATION_PILLS = [
 
 export const COMMON_OPD_DIAGNOSES = INDIAN_100_ICD10_DIAGNOSIS_CATALOG;
 
-// Audio synthesizer for clinical chime
+// Audio synthesizer for clinical chime & bilingual Hindi/English token announcements
 const playChime = (token?: string, patientName?: string, chamberRoom?: string) => {
   try {
     const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -425,21 +425,32 @@ const playChime = (token?: string, patientName?: string, chamberRoom?: string) =
     osc.type = 'sine';
     osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
     osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15); // A5
-    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+    gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.45);
     osc.connect(gain);
     gain.connect(audioCtx.destination);
     osc.start();
-    osc.stop(audioCtx.currentTime + 0.4);
+    osc.stop(audioCtx.currentTime + 0.45);
 
     if (patientName && 'speechSynthesis' in window) {
       setTimeout(() => {
         try {
-          const roomMsg = chamberRoom ? `, please proceed to ${chamberRoom}` : '';
-          const text = token ? `Token number ${token}, ${patientName}${roomMsg}` : `${patientName}${roomMsg}`;
+          const langPref = (typeof window !== 'undefined' && localStorage.getItem('docsearch_audio_call_lang')) || 'HI';
+          window.speechSynthesis.cancel();
+          let text = '';
+          let speechLang = 'en-IN';
+          if (langPref === 'HI') {
+            const roomMsg = chamberRoom ? `, कृपया ${chamberRoom} में पधारें` : ', कृपया डॉक्टर चेंबर में पधारें';
+            text = token ? `टोकन नंबर ${token}, ${patientName}${roomMsg}` : `${patientName}${roomMsg}`;
+            speechLang = 'hi-IN';
+          } else {
+            const roomMsg = chamberRoom ? `, please proceed to ${chamberRoom}` : ', please proceed to doctor chamber';
+            text = token ? `Token number ${token}, ${patientName}${roomMsg}` : `${patientName}${roomMsg}`;
+            speechLang = 'en-IN';
+          }
           const utterance = new SpeechSynthesisUtterance(text);
-          utterance.rate = 1.0;
-          utterance.lang = 'en-IN';
+          utterance.rate = 0.94;
+          utterance.lang = speechLang;
           window.speechSynthesis.speak(utterance);
         } catch {}
       }, 400);
@@ -2513,11 +2524,14 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
 
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
-      const announcement = new SpeechSynthesisUtterance(
-        `Token number ${tokenNo}, ${patName}, please proceed to doctor ${room}.`
-      );
+      const langPref = localStorage.getItem('docsearch_audio_call_lang') || 'HI';
+      const text = langPref === 'HI'
+        ? `टोकन नंबर ${tokenNo}, ${patName}, कृपया डॉक्टर ${room} में पधारें।`
+        : `Token number ${tokenNo}, ${patName}, please proceed to doctor ${room}.`;
+      const announcement = new SpeechSynthesisUtterance(text);
       announcement.rate = 0.95;
       announcement.pitch = 1.0;
+      announcement.lang = langPref === 'HI' ? 'hi-IN' : 'en-IN';
       window.speechSynthesis.speak(announcement);
     }
 
