@@ -315,6 +315,74 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [matchedFamilyMembers, setMatchedFamilyMembers] = useState<any[]>([]);
   const [activeSelectedMemberId, setActiveSelectedMemberId] = useState<string | null>(null);
+  // Predicted Next Token Number for dynamic QR URL
+  const nextAllocatedTokenNum = useMemo(() => {
+    const nums = queue.map((t) => parseInt(t.tokenNumber.replace(/\D/g, '') || '0', 10)).filter((n) => !isNaN(n) && n > 0);
+    const nextVal = nums.length > 0 ? Math.max(...nums) + 1 : (queue.length + 1);
+    return `TK-${String(nextVal).padStart(3, '0')}`;
+  }, [queue]);
+
+  // Audio: Ascending Cash Register Chime (C5 -> E5 -> G5 -> C6)
+  const playCashRegisterChime = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioCtx) {
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        const now = ctx.currentTime;
+        osc.frequency.setValueAtTime(523.25, now); // C5
+        osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
+        osc.frequency.setValueAtTime(783.99, now + 0.16); // G5
+        osc.frequency.setValueAtTime(1046.50, now + 0.24); // C6
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.7);
+      }
+    } catch {}
+  }, []);
+
+  // Live Soundbox & Real-time UPI Payment Reconciliation Listener
+  useEffect(() => {
+    const handleSoundboxPayment = (payload: any) => {
+      const data = payload?.data || payload || {};
+      const receivedAmount = data.amount || data.paidAmount || data.totalAmount || (formPaymentMode === 'SPLIT' ? formSplitUpi : formFee);
+      setFormIsFeePaid(true);
+      playCashRegisterChime();
+      showToast(`✓ ₹${receivedAmount} received via UPI Soundbox!`);
+
+      if (data.tokenNumber || data.token || data.encounterId) {
+        const targetToken = data.tokenNumber || data.token;
+        setQueue((prev) =>
+          prev.map((t) =>
+            t.tokenNumber === targetToken || (data.encounterId && t.encounterId === data.encounterId)
+              ? { ...t, feeStatus: 'PAID' }
+              : t
+          )
+        );
+      }
+    };
+
+    const unsubSoundbox = hospitalEventBus.subscribe('SOUNDBOX_ALERT', handleSoundboxPayment);
+    const unsubPayment = hospitalEventBus.subscribe('PAYMENT_RECEIVED', handleSoundboxPayment);
+
+    const handleDomPayment = (e: any) => {
+      handleSoundboxPayment(e.detail || {});
+    };
+    window.addEventListener('docsearch:soundbox_payment', handleDomPayment);
+
+    return () => {
+      unsubSoundbox();
+      unsubPayment();
+      window.removeEventListener('docsearch:soundbox_payment', handleDomPayment);
+    };
+  }, [formFee, formPaymentMode, formSplitUpi, playCashRegisterChime]);
+
   const [audioCallLanguage, setAudioCallLanguage] = useState<'HI' | 'EN'>(() => {
     if (typeof window !== 'undefined') {
       return (localStorage.getItem('docsearch_audio_call_lang') as 'HI' | 'EN') || 'HI';
@@ -2901,6 +2969,155 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
                     </div>
                   </div>
                 )}
+
+                {/* Countertop Dynamic UPI QR Card & Soundbox Listener */}
+                {(formPaymentMode === 'UPI_QR' || formPaymentMode === 'SPLIT') && (formPaymentMode === 'SPLIT' ? formSplitUpi : formFee) > 0 && (
+                  <div
+                    style={{
+                      marginTop: '12px',
+                      padding: '12px 14px',
+                      backgroundColor: 'rgba(2, 132, 199, 0.08)',
+                      border: '1.5px solid rgba(56, 189, 248, 0.4)',
+                      borderRadius: '10px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '14px',
+                      flexWrap: 'wrap'
+                    }}
+                  >
+                    <div
+                      style={{
+                        backgroundColor: '#0F172A',
+                        padding: '6px',
+                        borderRadius: '8px',
+                        border: '1px solid rgba(56, 189, 248, 0.3)',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0
+                      }}
+                    >
+                      <img
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(
+                          'upi://pay?pa=ashiyana.hospital@upi&pn=' +
+                            encodeURIComponent(clinicDisplayName) +
+                            '&am=' +
+                            (formPaymentMode === 'SPLIT' ? formSplitUpi : formFee) +
+                            '&tn=OPD_Fee_' +
+                            (nextAllocatedTokenNum || 'Token')
+                        )}&color=0284C7&bgcolor=0F172A`}
+                        alt="Countertop UPI QR"
+                        style={{ width: '100px', height: '100px', borderRadius: '4px', display: 'block' }}
+                      />
+                    </div>
+
+                    <div style={{ flex: 1, minWidth: '180px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                        <span
+                          style={{
+                            fontSize: '0.68rem',
+                            fontWeight: 800,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                            backgroundColor: 'rgba(56, 189, 248, 0.2)',
+                            color: '#38BDF8',
+                            padding: '2px 6px',
+                            borderRadius: '4px'
+                          }}
+                        >
+                          Dynamic Counter QR
+                        </span>
+                        {formIsFeePaid ? (
+                          <span
+                            style={{
+                              fontSize: '0.68rem',
+                              fontWeight: 800,
+                              backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                              color: '#34D399',
+                              padding: '2px 6px',
+                              borderRadius: '4px'
+                            }}
+                          >
+                            ✓ Paid
+                          </span>
+                        ) : (
+                          <span
+                            style={{
+                              fontSize: '0.68rem',
+                              fontWeight: 800,
+                              backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                              color: '#FBBF24',
+                              padding: '2px 6px',
+                              borderRadius: '4px'
+                            }}
+                          >
+                            Awaiting Payment
+                          </span>
+                        )}
+                      </div>
+
+                      <div style={{ fontSize: '1.05rem', fontWeight: 900, color: '#F8FAFC', marginBottom: '4px' }}>
+                        Scan to Pay ₹{formPaymentMode === 'SPLIT' ? formSplitUpi : formFee}
+                      </div>
+
+                      <div style={{ fontSize: '0.72rem', color: '#94A3B8', marginBottom: '6px', lineHeight: 1.3 }}>
+                        Scan via GPay, PhonePe, Paytm or BHIM UPI
+                      </div>
+
+                      <div
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          fontSize: '0.72rem',
+                          color: formIsFeePaid ? '#34D399' : '#38BDF8',
+                          fontWeight: 700,
+                          backgroundColor: 'rgba(15, 23, 42, 0.6)',
+                          padding: '3px 8px',
+                          borderRadius: '5px',
+                          border: '1px solid rgba(255, 255, 255, 0.08)'
+                        }}
+                      >
+                        <span>📡</span>
+                        <span>
+                          {formIsFeePaid
+                            ? `✓ ₹${formPaymentMode === 'SPLIT' ? formSplitUpi : formFee} Confirmed via Soundbox`
+                            : 'Listening for Paytm / PhonePe Soundbox payment...'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Fee Collection Status Toggle Chip */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '10px', paddingTop: '8px', borderTop: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                  <span style={{ fontSize: '0.72rem', color: '#94A3B8' }}>Payment Status:</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = !formIsFeePaid;
+                      setFormIsFeePaid(next);
+                      if (next) {
+                        playCashRegisterChime();
+                        showToast('✓ Fee marked as PAID');
+                      } else {
+                        showToast('⚠️ Fee marked as PAY LATER');
+                      }
+                    }}
+                    style={{
+                      padding: '4px 10px',
+                      borderRadius: '6px',
+                      border: formIsFeePaid ? '1px solid #10B981' : '1px solid rgba(245, 158, 11, 0.6)',
+                      backgroundColor: formIsFeePaid ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                      color: formIsFeePaid ? '#34D399' : '#FBBF24',
+                      fontSize: '0.74rem',
+                      fontWeight: 800,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {formIsFeePaid ? '✓ Fee Collected (PAID)' : '⏳ Pay Later / Unpaid'}
+                  </button>
+                </div>
               </div>
 
               {/* Submit Buttons (Sticky on Mobile) */}

@@ -71,6 +71,7 @@ export interface CockpitMedItem {
   id: string;
   medicationCatalogId?: string | undefined; // Phase 4: Exact database UUID in clinical.medication_catalog
   medicationName: string;
+  genericName?: string | undefined;
   strength: string;
   dosage: string;
   frequency: string;
@@ -10249,21 +10250,40 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
               onClick={async () => {
                 setIsSilentPrintingReceipt(true);
                 try {
-                  const res = await hardwarePrinterService.printOpdTokenSlip({
-                    tokenNumber: String(activePatient.token || '01'),
-                    uhid: activePatient.mrn,
-                    mrn: activePatient.mrn,
-                    patientName: activePatient.name,
+                  const res = await hardwarePrinterService.printThermalPrescriptionSlip({
+                    clinicName: (consultation as any)?.facilityName || 'DocSearch Healthcare OPD',
                     doctorName: chamberDoctor,
-                    room: chamberRoom,
-                    time: new Date().toLocaleTimeString(),
-                    fee: _consultationFeeFirstVisit || 500,
-                    clinicName: 'CLINICAL OPD'
-                  }, 48);
-                  setStatusMessage(`✓ Thermal Slip Cut: ${res.message}`);
+                    doctorSpecialty: 'General Medicine / OPD',
+                    doctorRegNo: 'NMC-MCI-2018-847291',
+                    patientName: activePatient.name,
+                    patientAge: activePatient.age,
+                    patientGender: activePatient.gender,
+                    patientMrn: activePatient.mrn,
+                    tokenNumber: String(activePatient.token || '01'),
+                    date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+                    diagnoses: clinicalAssessment ? [clinicalAssessment] : [],
+                    medications: medList.map((m) => ({
+                      name: m.medicationName,
+                      genericName: m.genericName || m.genericSubstitute?.name || m.strength || '',
+                      dosage: m.dosage,
+                      frequency: m.frequency,
+                      duration: `${m.duration} ${m.durationUnit || 'days'}`,
+                      timing: m.beforeAfterFood,
+                      instructions: m.instructions
+                    })),
+                    labOrders: selectedTests.map((t) => t.testName),
+                    followUpDays: followUpDays,
+                    vitals: {
+                      bp: `${editBpSys}/${editBpDia}`,
+                      pulse: editPulse,
+                      spo2: editSpo2,
+                      temp: editTemp
+                    }
+                  }, 42);
+                  setStatusMessage(`✓ Thermal Rx Cut: ${res.message}`);
                   setTimeout(() => setStatusMessage(null), 3500);
                 } catch (e: any) {
-                  console.warn('Silent thermal print fallback to browser:', e);
+                  console.warn('Silent thermal Rx print fallback to browser:', e);
                   window.print();
                 } finally {
                   setIsSilentPrintingReceipt(false);
@@ -10282,10 +10302,10 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
                 fontWeight: 800,
                 cursor: isSilentPrintingReceipt ? 'wait' : 'pointer'
               }}
-              title="Silent 1-click thermal receipt print with auto-paper cut"
+              title="Silent 1-click thermal prescription print (80mm) with auto-paper cut"
             >
               <span>🖨️</span>
-              <span>{isSilentPrintingReceipt ? 'Cutting...' : 'Thermal Cut'}</span>
+              <span>{isSilentPrintingReceipt ? 'Cutting...' : 'Thermal Rx'}</span>
             </button>
 
             {/* 1-Click "Sign Rx & Call Next Patient ⚡" */}

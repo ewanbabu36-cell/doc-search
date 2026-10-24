@@ -92,6 +92,20 @@ export const PrintableDoctorPrescriptionModal: React.FC<Props> = ({
     }
   };
 
+  const [suppressPreprintedFooter, setSuppressPreprintedFooter] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('docsearch_suppress_preprinted_footer') === 'true';
+    }
+    return false;
+  });
+
+  const handleToggleSuppressFooter = (val: boolean) => {
+    setSuppressPreprintedFooter(val);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('docsearch_suppress_preprinted_footer', String(val));
+    }
+  };
+
   const [isProfileGuardAlertOpen, setIsProfileGuardAlertOpen] = useState(false);
   const [profileMissingFields, setProfileMissingFields] = useState<MissingProfileField[]>([]);
 
@@ -246,6 +260,30 @@ export const PrintableDoctorPrescriptionModal: React.FC<Props> = ({
                 <span>Pre-Printed Pad (65mm Top Margin)</span>
               </button>
             </div>
+
+            {letterheadMode === 'PREPRINTED_PAD' && (
+              <button
+                type="button"
+                onClick={() => handleToggleSuppressFooter(!suppressPreprintedFooter)}
+                style={{
+                  backgroundColor: suppressPreprintedFooter ? 'rgba(245, 158, 11, 0.2)' : 'rgba(255, 255, 255, 0.08)',
+                  color: suppressPreprintedFooter ? '#FBBF24' : '#CBD5E1',
+                  border: `1px solid ${suppressPreprintedFooter ? '#F59E0B' : 'rgba(255, 255, 255, 0.15)'}`,
+                  borderRadius: '8px',
+                  padding: '6px 12px',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+                title="Hide bottom clinic address & footer if physical stationery pad already has pre-printed footer"
+              >
+                <span>{suppressPreprintedFooter ? '✓' : '□'}</span>
+                <span>Suppress Footer (Pad has printed address)</span>
+              </button>
+            )}
 
             <button
               type="button"
@@ -613,12 +651,16 @@ export const PrintableDoctorPrescriptionModal: React.FC<Props> = ({
             {/* Doctor Signature & Stamping Footer */}
             <div style={{ marginTop: '28px', borderTop: '1px solid #E2E8F0', paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
               <div>
-                <div style={{ fontSize: '0.6875rem', color: '#64748B' }}>
-                  Digital Prescription Hash (SHA-256): <span style={{ fontFamily: 'monospace' }}>{profile.sha256Hash.substring(0, 24)}...</span>
-                </div>
-                <div style={{ fontSize: '0.6875rem', color: '#16A34A', fontWeight: 700, marginTop: '2px' }}>
-                  ✓ {headerConfig.footerNotes}
-                </div>
+                {!(letterheadMode === 'PREPRINTED_PAD' && suppressPreprintedFooter) && (
+                  <>
+                    <div style={{ fontSize: '0.6875rem', color: '#64748B' }}>
+                      Digital Prescription Hash (SHA-256): <span style={{ fontFamily: 'monospace' }}>{profile.sha256Hash.substring(0, 24)}...</span>
+                    </div>
+                    <div style={{ fontSize: '0.6875rem', color: '#16A34A', fontWeight: 700, marginTop: '2px' }}>
+                      ✓ {headerConfig.footerNotes}
+                    </div>
+                  </>
+                )}
               </div>
 
               <div style={{ textAlign: 'center', minWidth: '220px', position: 'relative' }}>

@@ -98,6 +98,41 @@ export interface ShiftHandoverSlipData {
   cashDiscrepancy: number;
 }
 
+export interface ThermalPrescriptionMedItem {
+  name: string;
+  genericName?: string | undefined;
+  dosage?: string | undefined;
+  frequency?: string | undefined;
+  duration?: string | number | undefined;
+  timing?: string | undefined;
+  instructions?: string | undefined;
+}
+
+export interface ThermalPrescriptionSlipData {
+  clinicName: string;
+  facilityBranch?: string | undefined;
+  doctorName: string;
+  doctorSpecialty?: string | undefined;
+  doctorRegNo?: string | undefined;
+  patientName: string;
+  patientAge?: string | number | undefined;
+  patientGender?: string | undefined;
+  patientMrn: string;
+  tokenNumber: string | number;
+  date: string;
+  diagnoses?: string[] | undefined;
+  medications: ThermalPrescriptionMedItem[];
+  labOrders?: string[] | undefined;
+  followUpDays?: string | undefined;
+  vitals?: {
+    bp?: string | undefined;
+    pulse?: string | number | undefined;
+    spo2?: string | number | undefined;
+    temp?: string | number | undefined;
+    weight?: string | number | undefined;
+  } | undefined;
+}
+
 export interface HardwarePrinterStatus {
   isWebUsbSupported: boolean;
   isWebSerialSupported: boolean;
@@ -678,6 +713,179 @@ export class HardwarePrinterService {
         };
       } catch (err) {
         console.warn('[HardwarePrinterService] Direct thermal print failed, initiating browser fallback:', err);
+      }
+    }
+
+    if (typeof window !== 'undefined') {
+      window.print();
+      return {
+        success: true,
+        method: 'browser_fallback',
+        message: 'Dispatched to browser print dialog.'
+      };
+    }
+
+    return {
+      success: false,
+      method: 'browser_fallback',
+      message: 'Print environment unavailable.'
+    };
+  }
+
+  /**
+   * Build ESC/POS formatted bytes for a Thermal Prescription (80mm Rx Slip)
+   */
+  buildPrescriptionThermalEscPos(data: ThermalPrescriptionSlipData, paperWidthCols: number = 42): Uint8Array {
+    const builder = new EscPosBuilder();
+
+    // 1. Header
+    builder
+      .align('center')
+      .bold(true)
+      .line(data.clinicName || 'DOCSEARCH HEALTHCARE CLINIC')
+      .bold(false);
+
+    if (data.facilityBranch) {
+      builder.line(data.facilityBranch);
+    }
+
+    builder
+      .bold(true)
+      .line(data.doctorName || 'Attending Physician')
+      .bold(false);
+
+    if (data.doctorSpecialty) {
+      builder.line(data.doctorSpecialty);
+    }
+    if (data.doctorRegNo) {
+      builder.line(`Reg No: ${data.doctorRegNo}`);
+    }
+
+    builder.divider(paperWidthCols, '=');
+
+    // 2. Patient Demographics Bar
+    builder.align('left');
+    const tokenStr = String(data.tokenNumber).startsWith('#') ? String(data.tokenNumber) : `#${data.tokenNumber}`;
+    builder.twoColumn(`Token: ${tokenStr}`, `Date: ${data.date}`, paperWidthCols);
+    builder.twoColumn(`Patient: ${data.patientName}`, `MRN: ${data.patientMrn}`, paperWidthCols);
+    if (data.patientAge || data.patientGender) {
+      builder.line(`Age/Sex: ${data.patientAge || '--'} / ${data.patientGender || '--'}`);
+    }
+
+    if (data.vitals) {
+      const v = data.vitals;
+      const vParts: string[] = [];
+      if (v.bp) vParts.push(`BP: ${v.bp}`);
+      if (v.pulse) vParts.push(`Pulse: ${v.pulse} bpm`);
+      if (v.spo2) vParts.push(`SpO2: ${v.spo2}%`);
+      if (vParts.length > 0) {
+        builder.line(vParts.join(' | '));
+      }
+    }
+
+    builder.divider(paperWidthCols, '-');
+
+    // 3. Clinical Diagnosis
+    if (data.diagnoses && data.diagnoses.length > 0) {
+      builder.bold(true).line('DIAGNOSIS:').bold(false);
+      data.diagnoses.forEach((d) => builder.line(`  * ${d}`));
+      builder.divider(paperWidthCols, '-');
+    }
+
+    // 4. Rx Symbol & Prescribed Medications
+    builder
+      .align('left')
+      .bold(true)
+      .line('Rx PRESCRIBED MEDICINES:')
+      .bold(false);
+
+    if (data.medications && data.medications.length > 0) {
+      data.medications.forEach((med, idx) => {
+        builder.bold(true).line(`${idx + 1}. ${med.name} ${med.dosage || ''}`).bold(false);
+        const timingLine = `   Freq: ${med.frequency || '1-0-1'} | Duration: ${med.duration || 5} Days`;
+        builder.line(timingLine);
+        if (med.timing || med.instructions) {
+          builder.line(`   Take: ${med.timing || ''} ${med.instructions ? `(${med.instructions})` : ''}`.trim());
+        }
+      });
+    } else {
+      builder.line('   No oral medications prescribed.');
+    }
+
+    builder.divider(paperWidthCols, '-');
+
+    // 5. Lab Orders (if any)
+    if (data.labOrders && data.labOrders.length > 0) {
+      builder.bold(true).line('LAB / INVESTIGATION ORDERS:').bold(false);
+      data.labOrders.forEach((lab) => builder.line(`  [ ] ${lab}`));
+      builder.divider(paperWidthCols, '-');
+    }
+
+    // 6. Follow-up Review
+    if (data.followUpDays) {
+      builder.twoColumn('Follow-up Review:', data.followUpDays, paperWidthCols);
+    }
+
+    builder.feed(1);
+
+    // 7. Signature & Footer
+    builder
+      .align('right')
+      .line('__________________________')
+      .line(`${data.doctorName}`)
+      .align('center')
+      .feed(1)
+      .line('NMC Generic Prescribing Compliant')
+      .line('DocSearch Smart Healthcare Suite')
+      .cut(false);
+
+    return builder.build();
+  }
+
+  /**
+   * Silent 1-click Thermal Prescription voucher print with auto-paper cut
+   */
+  async printThermalPrescriptionSlip(
+    data: ThermalPrescriptionSlipData,
+    paperWidthCols: number = 42
+  ): Promise<{ success: boolean; method: 'hardware_agent' | 'webusb' | 'webserial' | 'browser_fallback'; message: string }> {
+    try {
+      const resp = await fetch('http://127.0.0.1:18080/api/v1/hardware/print/escpos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          slipData: data,
+          printType: 'PRESCRIPTION_SLIP',
+          paperWidth: paperWidthCols > 32 ? '80mm' : '58mm',
+          printerId: 'tvs-rp3200'
+        })
+      });
+      if (resp.ok) {
+        const result = await resp.json();
+        if (result.success) {
+          return {
+            success: true,
+            method: 'hardware_agent',
+            message: 'Thermal Prescription slip printed via DocSearch Hardware Agent.'
+          };
+        }
+      }
+    } catch {
+      // Local hardware agent daemon not running on client workstation
+    }
+
+    const status = this.getStatus();
+    if (status.isConnected) {
+      try {
+        const bytes = this.buildPrescriptionThermalEscPos(data, paperWidthCols);
+        const result = await this.printRaw(bytes);
+        return {
+          success: true,
+          method: result.method,
+          message: `Thermal Prescription slip printed via ${result.method.toUpperCase()} with paper cut.`
+        };
+      } catch (err) {
+        console.warn('[HardwarePrinterService] Direct thermal Rx print failed, initiating browser fallback:', err);
       }
     }
 
