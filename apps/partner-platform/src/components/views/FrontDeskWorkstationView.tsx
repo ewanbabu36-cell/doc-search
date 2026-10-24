@@ -31,7 +31,7 @@ export interface DutyDoctor {
   specialty: string;
   chamber: string;
   consultationFee: number;
-  status: 'AVAILABLE' | 'IN_CONSULTATION' | 'OFF_SHIFT';
+  status: 'AVAILABLE' | 'IN_CONSULTATION' | 'OFF_SHIFT' | 'ON_BREAK' | 'IN_MINOR_OT';
   queueCount: number;
   currentToken?: string | undefined;
 }
@@ -54,7 +54,9 @@ export interface FrontDeskPatientToken {
   appointmentTime?: string | undefined;
   chiefComplaint: string;
   consultationFee: number;
-  feePaymentMode: 'CASH' | 'UPI_QR' | 'CARD' | 'WAIVED';
+  feePaymentMode: 'CASH' | 'UPI_QR' | 'CARD' | 'WAIVED' | 'SPLIT';
+  splitCashAmount?: number | undefined;
+  splitUpiAmount?: number | undefined;
   feeStatus: 'PAID' | 'PENDING' | 'PAY_LATER';
   feeReceiptNo: string;
   createdAt: string;
@@ -228,7 +230,77 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
   const [formAppointmentSlot, setFormAppointmentSlot] = useState('11:00 AM');
   const [formComplaint, setFormComplaint] = useState('General Consultation');
   const [formFee, setFormFee] = useState(leadDoctor.consultationFee);
-  const [formPaymentMode, setFormPaymentMode] = useState<'CASH' | 'UPI_QR' | 'CARD' | 'WAIVED'>('UPI_QR');
+  const [formPaymentMode, setFormPaymentMode] = useState<'CASH' | 'UPI_QR' | 'CARD' | 'WAIVED' | 'SPLIT'>('UPI_QR');
+  const [formSplitCash, setFormSplitCash] = useState<number>(0);
+  const [formSplitUpi, setFormSplitUpi] = useState<number>(0);
+  const [doctorAvailability, setDoctorAvailability] = useState<Record<string, 'AVAILABLE' | 'ON_BREAK' | 'IN_MINOR_OT'>>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        return JSON.parse(localStorage.getItem('docsearch_doctor_availabilities') || '{}');
+      } catch {
+        return {};
+      }
+    }
+    return {};
+  });
+
+  const handleToggleDoctorStatus = (docId: string, chamber: string, newStatus: 'AVAILABLE' | 'ON_BREAK' | 'IN_MINOR_OT') => {
+    setDoctorAvailability((prev) => {
+      const updated = { ...prev, [docId]: newStatus, [chamber]: newStatus };
+      try {
+        localStorage.setItem('docsearch_doctor_availabilities', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+    setDoctors((prev) =>
+      prev.map((d) => (d.id === docId || d.chamber === chamber ? { ...d, status: newStatus } : d))
+    );
+    hospitalEventBus.publish('DOCTOR_CHAMBER_STATUS_CHANGED', 'FrontDeskWorkstationView', {
+      chamberRoom: chamber,
+      doctorId: docId,
+      status: newStatus
+    }, `Doctor ${docId} is now ${newStatus}`);
+    showToast(`Doctor status: ${newStatus === 'AVAILABLE' ? '🟢 Available' : newStatus === 'ON_BREAK' ? '☕ On 30-min Break' : '🔴 In Minor OT'}`);
+  };
+
+  useEffect(() => {
+    const unsub = hospitalEventBus.subscribe('DOCTOR_CHAMBER_STATUS_CHANGED', (payload) => {
+      const d = payload.data || {};
+      if ((d.chamberRoom || d.chamberDoctor || d.doctorId) && d.status) {
+        setDoctorAvailability((prev) => {
+          const next = { ...prev };
+          if (d.chamberRoom) next[d.chamberRoom] = d.status;
+          if (d.doctorId) next[d.doctorId] = d.status;
+          return next;
+        });
+        setDoctors((prev) =>
+          prev.map((doc) => {
+            if (doc.id === d.doctorId || doc.chamber === d.chamberRoom) {
+              return { ...doc, status: d.status as any };
+            }
+            return doc;
+          })
+        );
+      }
+    });
+
+    const handleCustomStatus = (e: any) => {
+      const d = e.detail || {};
+      if ((d.chamberRoom || d.chamberDoctor) && d.status) {
+        setDoctorAvailability((prev) => {
+          const next = { ...prev };
+          if (d.chamberRoom) next[d.chamberRoom] = d.status;
+          return next;
+        });
+      }
+    };
+
+    window.addEventListener('docsearch:doctor-status-changed', handleCustomStatus);
+    return () => {
+      unsub();
+      window.removeEventListener('docsearch:doctor-status-changed', handleCustomStatus);
+    };
+  }, []);
   const [formIsFeePaid, setFormIsFeePaid] = useState(true);
   const [isPatientFound, setIsPatientFound] = useState(false);
   const [hasRecentVisit, setHasRecentVisit] = useState(false);
@@ -541,6 +613,8 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
     setMatchedFamilyMembers([]);
     setActiveSelectedMemberId(null);
     setFormPaymentMode('UPI_QR');
+    setFormSplitCash(0);
+    setFormSplitUpi(0);
     setFormIsFeePaid(true);
 
     const doc = doctors[0];
@@ -608,6 +682,8 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
           status: 'WAITING',
           metadata: {
             feePaymentMode: formPaymentMode,
+            splitCashAmount: formPaymentMode === 'SPLIT' ? Number(formSplitCash) : undefined,
+            splitUpiAmount: formPaymentMode === 'SPLIT' ? Number(formSplitUpi) : undefined,
             feeStatus: formIsFeePaid ? 'PAID' : 'PAY_LATER',
             consultationFee: formFee,
             patientName: formName.trim(),
@@ -661,6 +737,8 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
         chiefComplaint: formComplaint,
         consultationFee: formFee,
         feePaymentMode: formPaymentMode,
+        splitCashAmount: formPaymentMode === 'SPLIT' ? Number(formSplitCash) : undefined,
+        splitUpiAmount: formPaymentMode === 'SPLIT' ? Number(formSplitUpi) : undefined,
         feeStatus: formIsFeePaid ? 'PAID' : 'PAY_LATER',
         feeReceiptNo: paymentRecord?.paymentNumber || paymentRecord?.invoiceNumber || `REC-${Date.now().toString().slice(-6)}`,
         createdAt: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
@@ -750,12 +828,12 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
     const emergencyTokens = queue.filter((t) => t.visitType === 'EMERGENCY').length;
 
     const totalCashFee = queue
-      .filter((t) => t.feeStatus === 'PAID' && t.feePaymentMode === 'CASH')
-      .reduce((sum, t) => sum + (Number(t.consultationFee) || 0), 0);
+      .filter((t) => t.feeStatus === 'PAID' && (t.feePaymentMode === 'CASH' || t.feePaymentMode === 'SPLIT'))
+      .reduce((sum, t) => sum + (t.feePaymentMode === 'SPLIT' ? (Number((t as any).splitCashAmount) || 0) : (Number(t.consultationFee) || 0)), 0);
 
     const totalUpiFee = queue
-      .filter((t) => t.feeStatus === 'PAID' && t.feePaymentMode === 'UPI_QR')
-      .reduce((sum, t) => sum + (Number(t.consultationFee) || 0), 0);
+      .filter((t) => t.feeStatus === 'PAID' && (t.feePaymentMode === 'UPI_QR' || t.feePaymentMode === 'SPLIT'))
+      .reduce((sum, t) => sum + (t.feePaymentMode === 'SPLIT' ? (Number((t as any).splitUpiAmount) || 0) : (Number(t.consultationFee) || 0)), 0);
 
     const totalCardFee = queue
       .filter((t) => t.feeStatus === 'PAID' && t.feePaymentMode === 'CARD')
@@ -765,6 +843,7 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
       .filter((t) => t.feePaymentMode === 'WAIVED')
       .reduce((sum, t) => sum + (Number(t.consultationFee) || 0), 0);
 
+    const totalSplitTokens = queue.filter((t) => t.feePaymentMode === 'SPLIT').length;
     const grandTotalCollected = totalCashFee + totalUpiFee + totalCardFee;
     const physicalCashEntered = parseFloat(physicalCashInput) || 0;
     const cashDiscrepancy = physicalCashEntered - totalCashFee;
@@ -778,6 +857,7 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
       totalUpiFee,
       totalCardFee,
       totalWaivedFee,
+      totalSplitTokens,
       grandTotalCollected,
       physicalCashEntered,
       cashDiscrepancy
@@ -801,6 +881,7 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
         totalUpiFee: shiftStats.totalUpiFee,
         totalCardFee: shiftStats.totalCardFee,
         totalWaivedFee: shiftStats.totalWaivedFee,
+        totalSplitTokens: shiftStats.totalSplitTokens,
         grandTotalCollected: shiftStats.grandTotalCollected,
         physicalCashEntered: shiftStats.physicalCashEntered,
         cashDiscrepancy: shiftStats.cashDiscrepancy
@@ -1138,54 +1219,141 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
 
             {doctors.map((doc) => {
               const isSelected = selectedDoctorFilter === doc.id;
-              const isConsulting = doc.status === 'IN_CONSULTATION';
+              const docStatus = (doctorAvailability[doc.id] || doctorAvailability[doc.chamber] || doc.status) as 'AVAILABLE' | 'IN_CONSULTATION' | 'ON_BREAK' | 'IN_MINOR_OT';
+              const isConsulting = docStatus === 'IN_CONSULTATION';
+              const isOnBreak = docStatus === 'ON_BREAK';
+              const isInMinorOt = docStatus === 'IN_MINOR_OT';
+
               return (
-                <button
+                <div
                   key={doc.id}
-                  type="button"
-                  onClick={() => setSelectedDoctorFilter(isSelected ? 'ALL' : doc.id)}
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '8px',
-                    padding: '6px 14px',
+                    gap: '4px',
+                    padding: '4px 8px',
                     borderRadius: '8px',
                     border: isSelected
                       ? '1.5px solid #06B6D4'
+                      : isOnBreak
+                      ? '1px solid rgba(245, 158, 11, 0.45)'
+                      : isInMinorOt
+                      ? '1px solid rgba(239, 68, 68, 0.45)'
                       : isConsulting
-                      ? '1px solid rgba(245, 158, 11, 0.4)'
+                      ? '1px solid rgba(56, 189, 248, 0.4)'
                       : '1px solid rgba(16, 185, 129, 0.35)',
                     backgroundColor: isSelected
                       ? 'rgba(6, 182, 212, 0.22)'
+                      : isOnBreak
+                      ? 'rgba(245, 158, 11, 0.12)'
+                      : isInMinorOt
+                      ? 'rgba(239, 68, 68, 0.12)'
                       : isConsulting
-                      ? 'rgba(245, 158, 11, 0.08)'
+                      ? 'rgba(56, 189, 248, 0.08)'
                       : 'rgba(16, 185, 129, 0.08)',
-                    color: '#F8FAFC',
-                    fontSize: '0.78rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
                     boxShadow: isSelected ? '0 0 10px rgba(6, 182, 212, 0.3)' : 'none'
                   }}
                 >
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: isConsulting ? '#F59E0B' : '#10B981', boxShadow: `0 0 6px ${isConsulting ? '#F59E0B' : '#10B981'}` }} />
-                  <span>
-                    <strong style={{ color: '#F1F5F9' }}>{doc.name}</strong> ({doc.chamber})
-                  </span>
-                  <span style={{ color: '#94A3B8', fontSize: '0.72rem' }}>• {doc.specialty}</span>
-                  <span
+                  <button
+                    type="button"
+                    onClick={() => setSelectedDoctorFilter(isSelected ? 'ALL' : doc.id)}
                     style={{
-                      backgroundColor: isConsulting ? 'rgba(245, 158, 11, 0.2)' : 'rgba(16, 185, 129, 0.2)',
-                      color: isConsulting ? '#FBBF24' : '#34D399',
-                      padding: '2px 6px',
-                      borderRadius: '4px',
-                      fontSize: '0.68rem',
-                      fontWeight: 800
+                      background: 'none',
+                      border: 'none',
+                      color: '#F8FAFC',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: 0
                     }}
                   >
-                    {isConsulting ? `In Chamber (${doc.currentToken || 'Active'})` : `Available (${doc.queueCount} wait)`}
-                  </span>
-                </button>
+                    <span
+                      style={{
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%',
+                        backgroundColor: isOnBreak ? '#F59E0B' : isInMinorOt ? '#EF4444' : isConsulting ? '#38BDF8' : '#10B981',
+                        boxShadow: `0 0 6px ${isOnBreak ? '#F59E0B' : isInMinorOt ? '#EF4444' : isConsulting ? '#38BDF8' : '#10B981'}`
+                      }}
+                    />
+                    <span>
+                      <strong style={{ color: '#F1F5F9' }}>{doc.name}</strong> ({doc.chamber})
+                    </span>
+                    <span
+                      style={{
+                        backgroundColor: isOnBreak
+                          ? 'rgba(245, 158, 11, 0.25)'
+                          : isInMinorOt
+                          ? 'rgba(239, 68, 68, 0.25)'
+                          : isConsulting
+                          ? 'rgba(56, 189, 248, 0.2)'
+                          : 'rgba(16, 185, 129, 0.2)',
+                        color: isOnBreak ? '#FBBF24' : isInMinorOt ? '#F87171' : isConsulting ? '#38BDF8' : '#34D399',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        fontSize: '0.68rem',
+                        fontWeight: 800
+                      }}
+                    >
+                      {isOnBreak ? '☕ On Break (30m)' : isInMinorOt ? '🔴 Minor OT' : isConsulting ? `In Chamber (${doc.currentToken || 'Active'})` : `Available (${doc.queueCount} wait)`}
+                    </span>
+                  </button>
+
+                  {/* Quick Receptionist Status Toggle Controls */}
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', marginLeft: '4px', backgroundColor: 'rgba(0, 0, 0, 0.3)', borderRadius: '4px', padding: '1px' }}>
+                    <button
+                      type="button"
+                      title="Set Doctor: Available"
+                      onClick={() => handleToggleDoctorStatus(doc.id, doc.chamber, 'AVAILABLE')}
+                      style={{
+                        padding: '1px 4px',
+                        borderRadius: '3px',
+                        border: 'none',
+                        fontSize: '0.62rem',
+                        cursor: 'pointer',
+                        backgroundColor: docStatus === 'AVAILABLE' ? '#10B981' : 'transparent',
+                        opacity: docStatus === 'AVAILABLE' ? 1 : 0.4
+                      }}
+                    >
+                      🟢
+                    </button>
+                    <button
+                      type="button"
+                      title="Set Doctor: On 30-min Break"
+                      onClick={() => handleToggleDoctorStatus(doc.id, doc.chamber, 'ON_BREAK')}
+                      style={{
+                        padding: '1px 4px',
+                        borderRadius: '3px',
+                        border: 'none',
+                        fontSize: '0.62rem',
+                        cursor: 'pointer',
+                        backgroundColor: docStatus === 'ON_BREAK' ? '#F59E0B' : 'transparent',
+                        opacity: docStatus === 'ON_BREAK' ? 1 : 0.4
+                      }}
+                    >
+                      ☕
+                    </button>
+                    <button
+                      type="button"
+                      title="Set Doctor: In Minor OT / Emergency"
+                      onClick={() => handleToggleDoctorStatus(doc.id, doc.chamber, 'IN_MINOR_OT')}
+                      style={{
+                        padding: '1px 4px',
+                        borderRadius: '3px',
+                        border: 'none',
+                        fontSize: '0.62rem',
+                        cursor: 'pointer',
+                        backgroundColor: docStatus === 'IN_MINOR_OT' ? '#EF4444' : 'transparent',
+                        opacity: docStatus === 'IN_MINOR_OT' ? 1 : 0.4
+                      }}
+                    >
+                      🔴
+                    </button>
+                  </div>
+                </div>
               );
             })}
           </div>
@@ -2196,12 +2364,68 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
                     boxSizing: 'border-box'
                   }}
                 >
-                  {doctors.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.name} • {d.chamber} ({d.specialty}) — Fee: ₹{d.consultationFee}
-                    </option>
-                  ))}
+                  {doctors.map((d) => {
+                    const st = (doctorAvailability[d.id] || doctorAvailability[d.chamber] || d.status) as string;
+                    const badge = st === 'ON_BREAK' ? ' [☕ ON BREAK]' : st === 'IN_MINOR_OT' ? ' [🔴 IN MINOR OT]' : '';
+                    return (
+                      <option key={d.id} value={d.id}>
+                        {d.name} • {d.chamber} ({d.specialty}){badge} — Fee: ₹{d.consultationFee}
+                      </option>
+                    );
+                  })}
                 </select>
+
+                {(() => {
+                  const currentDoc = doctors.find((d) => d.id === formDoctorId) || doctors[0];
+                  const st = currentDoc ? (doctorAvailability[currentDoc.id] || doctorAvailability[currentDoc.chamber] || currentDoc.status) : 'AVAILABLE';
+                  if (st === 'ON_BREAK') {
+                    return (
+                      <div
+                        style={{
+                          marginTop: '6px',
+                          padding: '8px 12px',
+                          borderRadius: '8px',
+                          backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                          border: '1.5px solid #F59E0B',
+                          color: '#FBBF24',
+                          fontSize: '0.75rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px'
+                        }}
+                      >
+                        <span style={{ fontSize: '1rem' }}>☕</span>
+                        <div>
+                          <strong>Doctor on 30-min Break:</strong> Token queue is temporarily paused. Token will wait in line. Issue token anyway?
+                        </div>
+                      </div>
+                    );
+                  }
+                  if (st === 'IN_MINOR_OT') {
+                    return (
+                      <div
+                        style={{
+                          marginTop: '6px',
+                          padding: '8px 12px',
+                          borderRadius: '8px',
+                          backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                          border: '1.5px solid #EF4444',
+                          color: '#F87171',
+                          fontSize: '0.75rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px'
+                        }}
+                      >
+                        <span style={{ fontSize: '1rem' }}>🔴</span>
+                        <div>
+                          <strong>Doctor in Minor OT / Emergency:</strong> Doctor is attending an urgent procedure. Issue token anyway?
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
 
               {/* Step 4: If Appointment, pick Date & Time Slot */}
@@ -2427,7 +2651,7 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                   <span style={{ fontSize: '0.72rem', color: '#94A3B8' }}>Payment Mode:</span>
-                  {(['UPI_QR', 'CASH', 'CARD', 'WAIVED'] as const).map((mode) => {
+                  {(['UPI_QR', 'CASH', 'SPLIT', 'CARD', 'WAIVED'] as const).map((mode) => {
                     const isSel = formPaymentMode === mode;
                     return (
                       <button
@@ -2435,7 +2659,15 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
                         type="button"
                         onClick={() => {
                           setFormPaymentMode(mode);
-                          if (mode === 'WAIVED') setFormFee(0);
+                          if (mode === 'WAIVED') {
+                            setFormFee(0);
+                            setFormSplitCash(0);
+                            setFormSplitUpi(0);
+                          } else if (mode === 'SPLIT') {
+                            const half = Math.floor(formFee / 2);
+                            setFormSplitCash(half);
+                            setFormSplitUpi(formFee - half);
+                          }
                         }}
                         style={{
                           padding: '6px 12px',
@@ -2448,11 +2680,100 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
                           cursor: 'pointer'
                         }}
                       >
-                        {mode === 'UPI_QR' ? '⚡ UPI QR' : mode === 'CASH' ? '💵 Cash' : mode === 'CARD' ? '💳 Card' : '🆓 Free / Waived'}
+                        {mode === 'UPI_QR'
+                          ? '⚡ UPI QR'
+                          : mode === 'CASH'
+                          ? '💵 Cash'
+                          : mode === 'SPLIT'
+                          ? '⚡ Split (Cash + UPI)'
+                          : mode === 'CARD'
+                          ? '💳 Card'
+                          : '🆓 Free / Waived'}
                       </button>
                     );
                   })}
                 </div>
+
+                {/* Split Payment Two-Input Breakdown */}
+                {formPaymentMode === 'SPLIT' && (
+                  <div
+                    style={{
+                      marginTop: '10px',
+                      padding: '10px 12px',
+                      backgroundColor: 'rgba(2, 132, 199, 0.1)',
+                      border: '1.5px solid #0284C7',
+                      borderRadius: '8px',
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: '10px'
+                    }}
+                  >
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#34D399', marginBottom: '4px' }}>
+                        💵 Cash Collected (₹)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max={formFee}
+                        value={formSplitCash}
+                        onChange={(e) => {
+                          const cash = Math.min(formFee, Math.max(0, Number(e.target.value) || 0));
+                          setFormSplitCash(cash);
+                          setFormSplitUpi(Math.max(0, formFee - cash));
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '6px 8px',
+                          borderRadius: '6px',
+                          backgroundColor: '#0F172A',
+                          border: '1px solid rgba(52, 211, 153, 0.4)',
+                          color: '#F8FAFC',
+                          fontWeight: 800,
+                          fontSize: '0.95rem',
+                          textAlign: 'right',
+                          boxSizing: 'border-box'
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#38BDF8', marginBottom: '4px' }}>
+                        📲 UPI via Soundbox/QR (₹)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max={formFee}
+                        value={formSplitUpi}
+                        onChange={(e) => {
+                          const upi = Math.min(formFee, Math.max(0, Number(e.target.value) || 0));
+                          setFormSplitUpi(upi);
+                          setFormSplitCash(Math.max(0, formFee - upi));
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '6px 8px',
+                          borderRadius: '6px',
+                          backgroundColor: '#0F172A',
+                          border: '1px solid rgba(56, 189, 248, 0.4)',
+                          color: '#F8FAFC',
+                          fontWeight: 800,
+                          fontSize: '0.95rem',
+                          textAlign: 'right',
+                          boxSizing: 'border-box'
+                        }}
+                      />
+                    </div>
+
+                    <div style={{ gridColumn: 'span 2', display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: '#94A3B8', borderTop: '1px dashed rgba(255,255,255,0.1)', paddingTop: '6px' }}>
+                      <span>Total Consultation Fee: ₹{formFee}</span>
+                      <span style={{ color: formSplitCash + formSplitUpi === formFee ? '#34D399' : '#EF4444', fontWeight: 800 }}>
+                        {formSplitCash + formSplitUpi === formFee ? '✓ Exact Split Balanced' : `⚠️ Split mismatch (₹${formFee - (formSplitCash + formSplitUpi)} remaining)`}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Submit Buttons (Sticky on Mobile) */}
@@ -2949,6 +3270,12 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
                 <span style={{ color: '#CBD5E1' }}>💳 Debit / Credit Card (POS):</span>
                 <strong style={{ color: '#C084FC', fontFamily: 'monospace' }}>₹{shiftStats.totalCardFee}</strong>
               </div>
+              {shiftStats.totalSplitTokens > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: '#94A3B8' }}>
+                  <span>⚡ Split Payments (Cash + UPI):</span>
+                  <span style={{ color: '#38BDF8', fontWeight: 700 }}>{shiftStats.totalSplitTokens} Tokens</span>
+                </div>
+              )}
               {shiftStats.totalWaivedFee > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
                   <span style={{ color: '#CBD5E1' }}>🛡️ Fee Waived / VIP Exempt:</span>

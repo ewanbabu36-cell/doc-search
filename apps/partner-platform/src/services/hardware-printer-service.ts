@@ -90,6 +90,7 @@ export interface ShiftHandoverSlipData {
   totalUpiFee: number;
   totalCardFee: number;
   totalWaivedFee: number;
+  totalSplitTokens?: number | undefined;
   grandTotalCollected: number;
   physicalCashEntered: number;
   cashDiscrepancy: number;
@@ -588,6 +589,9 @@ export class HardwarePrinterService {
     builder.twoColumn('Cash Collected:', `Rs. ${data.totalCashFee}`, paperWidthCols);
     builder.twoColumn('UPI / Soundbox:', `Rs. ${data.totalUpiFee}`, paperWidthCols);
     builder.twoColumn('Card / POS:', `Rs. ${data.totalCardFee}`, paperWidthCols);
+    if (data.totalSplitTokens && data.totalSplitTokens > 0) {
+      builder.twoColumn('Split (Cash+UPI):', `${data.totalSplitTokens} Tokens`, paperWidthCols);
+    }
     if (data.totalWaivedFee > 0) {
       builder.twoColumn('Waived / Exempt:', `Rs. ${data.totalWaivedFee}`, paperWidthCols);
     }

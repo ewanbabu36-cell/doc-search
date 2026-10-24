@@ -2390,6 +2390,87 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
     setTimeout(() => setStatusMessage(null), 3000);
   };
 
+  // Find previous encounters for the active patient with prescribed medications
+  const previousPatientEncounters = useMemo(() => {
+    if (!consultation?.patientId && !consultation?.patientName && !activePatient?.mrn) return [];
+    const patId = consultation?.patientId || activeEncounter?.patientId;
+    const patMrn = activePatient?.mrn;
+    const patName = (consultation?.patientName || activePatient?.name || '').toLowerCase();
+
+    return encounters.filter((enc) => {
+      if (enc.id === consultation?.id || enc.id === consultation?.encounterId || enc.id === activeEncounter?.id) {
+        return false;
+      }
+      const isSamePatient =
+        (patId && enc.patientId && enc.patientId === patId) ||
+        (patMrn && enc.patientMrn && enc.patientMrn === patMrn) ||
+        (enc.patientName && enc.patientName.toLowerCase() === patName);
+
+      if (!isSamePatient) return false;
+
+      const matchingCons = consultations.find((c) => c.encounterId === enc.id || c.id === enc.id);
+      const encAny = enc as any;
+      const hasMeds =
+        (encAny.prescribedMedicines && encAny.prescribedMedicines.length > 0) ||
+        (encAny.medications && encAny.medications.length > 0) ||
+        ((enc.metadata as any)?.prescribedMedicines && (enc.metadata as any).prescribedMedicines.length > 0) ||
+        (matchingCons && matchingCons.medications && matchingCons.medications.length > 0);
+
+      return Boolean(hasMeds);
+    });
+  }, [encounters, consultations, consultation?.id, consultation?.encounterId, consultation?.patientId, consultation?.patientName, activeEncounter?.id, activeEncounter?.patientId, activePatient?.mrn, activePatient?.name]);
+
+  // 1-Click "Repeat Previous Prescription"
+  const handleRepeatPreviousPrescription = () => {
+    let sourceMeds: any[] = [];
+    let sourceEncounterId = '';
+
+    if (previousPatientEncounters.length > 0) {
+      const prevEnc = previousPatientEncounters[0];
+      const prevAny = prevEnc as any;
+      sourceEncounterId = prevEnc?.id || '';
+      const matchingCons = consultations.find((c) => c.encounterId === prevEnc?.id || c.id === prevEnc?.id);
+      sourceMeds =
+        prevAny?.prescribedMedicines ||
+        prevAny?.medications ||
+        (prevEnc?.metadata as any)?.prescribedMedicines ||
+        matchingCons?.medications ||
+        [];
+    } else if (chronicMedsList.length > 0) {
+      sourceMeds = chronicMedsList;
+      sourceEncounterId = 'CHRONIC_REF';
+    }
+
+    if (!sourceMeds || sourceMeds.length === 0) {
+      setStatusMessage('⚠️ No previous prescription found for this patient.');
+      setTimeout(() => setStatusMessage(null), 3000);
+      return;
+    }
+
+    const mappedMeds: CockpitMedItem[] = sourceMeds.map((m: any, idx: number) => ({
+      id: `repeat-rx-${idx}-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+      medicationName: m.medicationName || m.name || 'Medicine',
+      strength: m.strength || '500mg',
+      dosage: m.dosage || '1 Tab',
+      frequency: m.frequency || '1 - 0 - 1',
+      duration: Number(m.duration || 5),
+      durationUnit: m.durationUnit || 'DAYS',
+      beforeAfterFood: m.beforeAfterFood || 'AFTER_FOOD',
+      instructions: m.instructions || 'Take as advised',
+      genericSubstitute: m.genericSubstitute
+    }));
+
+    setMedList((prev) => {
+      const existingNames = new Set(prev.map((m) => m.medicationName.toLowerCase()));
+      const filtered = mappedMeds.filter((m) => !existingNames.has(m.medicationName.toLowerCase()));
+      return [...prev, ...filtered];
+    });
+
+    const encLabel = sourceEncounterId && sourceEncounterId !== 'CHRONIC_REF' ? `Encounter #${sourceEncounterId.slice(-4)}` : 'previous visit';
+    setStatusMessage(`✓ Loaded ${mappedMeds.length} medications from ${encLabel}!`);
+    setTimeout(() => setStatusMessage(null), 4000);
+  };
+
   // Same-Day "Send for Labs & Await Reports" Handler
   const handleSendForLabsAndAwait = async () => {
     if (selectedTests.length === 0) {
@@ -2435,12 +2516,19 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
   // Chamber Status Updater
   const handleUpdateChamberStatus = (newState: 'ACTIVE' | 'IN_PROCEDURE' | 'PAUSED') => {
     setChamberSessionState(newState);
+    const mappedStatus = newState === 'ACTIVE' ? 'AVAILABLE' : (newState === 'PAUSED' ? 'ON_BREAK' : 'IN_MINOR_OT');
     hospitalEventBus.publish('DOCTOR_CHAMBER_STATUS_CHANGED', 'SoloDoctorOpdCockpitView', {
       chamberRoom,
       chamberDoctor,
-      status: newState
-    }, `Doctor chamber ${chamberRoom} is now ${newState}`);
-    setStatusMessage(`Chamber Status: ${newState === 'ACTIVE' ? '🟢 Active (Calling)' : newState === 'IN_PROCEDURE' ? '🟡 In Minor Procedure' : '🔴 Paused (Rounds)'}`);
+      status: mappedStatus
+    }, `Doctor chamber ${chamberRoom} is now ${mappedStatus}`);
+    try {
+      localStorage.setItem('docsearch_doctor_status_' + chamberRoom, mappedStatus);
+      window.dispatchEvent(new CustomEvent('docsearch:doctor-status-changed', {
+        detail: { chamberRoom, chamberDoctor, status: mappedStatus }
+      }));
+    } catch {}
+    setStatusMessage(`Chamber Status: ${mappedStatus === 'AVAILABLE' ? '🟢 Available (Queue Open)' : mappedStatus === 'ON_BREAK' ? '☕ On Break (30-min break)' : '🔴 In Minor OT / Emergency'}`);
     setTimeout(() => setStatusMessage(null), 2500);
   };
 
@@ -6600,23 +6688,7 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
                   color: chamberSessionState === 'ACTIVE' ? '#FFFFFF' : '#94A3B8'
                 }}
               >
-                🟢 Active
-              </button>
-              <button
-                type="button"
-                onClick={() => handleUpdateChamberStatus('IN_PROCEDURE')}
-                style={{
-                  padding: '4px 8px',
-                  borderRadius: '6px',
-                  border: 'none',
-                  fontSize: '0.6875rem',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  backgroundColor: chamberSessionState === 'IN_PROCEDURE' ? '#F59E0B' : 'transparent',
-                  color: chamberSessionState === 'IN_PROCEDURE' ? '#070C16' : '#94A3B8'
-                }}
-              >
-                🟡 Procedure
+                🟢 Available
               </button>
               <button
                 type="button"
@@ -6628,11 +6700,27 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
                   fontSize: '0.6875rem',
                   fontWeight: 800,
                   cursor: 'pointer',
-                  backgroundColor: chamberSessionState === 'PAUSED' ? '#EF4444' : 'transparent',
-                  color: chamberSessionState === 'PAUSED' ? '#FFFFFF' : '#94A3B8'
+                  backgroundColor: chamberSessionState === 'PAUSED' ? '#F59E0B' : 'transparent',
+                  color: chamberSessionState === 'PAUSED' ? '#070C16' : '#94A3B8'
                 }}
               >
-                🔴 Paused
+                ☕ On Break
+              </button>
+              <button
+                type="button"
+                onClick={() => handleUpdateChamberStatus('IN_PROCEDURE')}
+                style={{
+                  padding: '4px 8px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  fontSize: '0.6875rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  backgroundColor: chamberSessionState === 'IN_PROCEDURE' ? '#EF4444' : 'transparent',
+                  color: chamberSessionState === 'IN_PROCEDURE' ? '#FFFFFF' : '#94A3B8'
+                }}
+              >
+                🔴 In Minor OT
               </button>
             </div>
 
@@ -8083,6 +8171,31 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
                   >
                     💰 Patient Jan Aushadhi Savings: ₹{totalGenericSavings}
                   </span>
+                )}
+                {/* 🔄 1-Click Repeat Previous Rx Button */}
+                {!isSignedOrCompleted && (previousPatientEncounters.length > 0 || chronicMedsList.length > 0) && (
+                  <button
+                    type="button"
+                    onClick={handleRepeatPreviousPrescription}
+                    style={{
+                      padding: '3px 10px',
+                      borderRadius: '6px',
+                      backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                      border: '1.5px solid #6366F1',
+                      color: '#A5B4FC',
+                      fontSize: '0.72rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      boxShadow: '0 2px 8px rgba(99, 102, 241, 0.25)'
+                    }}
+                    title="1-Click clone all medications and dosing from patient's previous encounter"
+                  >
+                    <span>🔄</span>
+                    <span>Repeat Previous Rx</span>
+                  </button>
                 )}
                 <button
                   type="button"
