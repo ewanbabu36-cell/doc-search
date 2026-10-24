@@ -458,6 +458,27 @@ const playChime = (token?: string, patientName?: string, chamberRoom?: string) =
   } catch {}
 };
 
+// Urgent double-tone chime (F5 -> C6) for Emergency STAT triage alerts
+const playEmergencyStatChime = () => {
+  try {
+    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sawtooth';
+    // Urgent double tone: F5 (698.46 Hz) for 0.18s, then C6 (1046.50 Hz) for 0.35s
+    osc.frequency.setValueAtTime(698.46, ctx.currentTime);
+    osc.frequency.setValueAtTime(1046.50, ctx.currentTime + 0.18);
+    gain.gain.setValueAtTime(0.32, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.58);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.58);
+  } catch {}
+};
+
 export interface VitalsRedFlag {
   severity: 'CRITICAL' | 'WARNING';
   label: string;
@@ -1997,6 +2018,50 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
 
   // Status notification
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
+  // 🚨 Real-time Emergency STAT Triage Alert State
+  const [statEmergencyAlert, setStatEmergencyAlert] = useState<{
+    tokenNumber: string;
+    patientName: string;
+    chamber?: string | undefined;
+    encounterId?: string | undefined;
+    timestamp: string;
+  } | null>(null);
+
+  // 🚨 Listen for Emergency / STAT patient arrivals in real time
+  useEffect(() => {
+    const triggerEmergencyAlert = (tokenNum?: string, patName?: string, chamber?: string, encId?: string) => {
+      playEmergencyStatChime();
+      setStatEmergencyAlert({
+        tokenNumber: tokenNum || 'STAT',
+        patientName: patName || 'Emergency Patient',
+        chamber: chamber || chamberRoom,
+        encounterId: encId,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+    };
+
+    const unsubToken = hospitalEventBus.subscribe('TOKEN_GENERATED', (payload) => {
+      const d = payload.data || {};
+      if (d.type === 'EMERGENCY' || d.visitType === 'EMERGENCY') {
+        triggerEmergencyAlert(d.tokenNumber, d.patientName, d.chamber, d.encounterId);
+      }
+    });
+
+    const handlePatientRegistered = (e: any) => {
+      const d = e.detail || {};
+      if (d.visitType === 'EMERGENCY' || d.type === 'EMERGENCY') {
+        triggerEmergencyAlert(d.tokenNumber, d.patientName, d.chamber, d.encounterId || d.id);
+      }
+    };
+
+    window.addEventListener('docsearch:patient-registered', handlePatientRegistered);
+
+    return () => {
+      unsubToken();
+      window.removeEventListener('docsearch:patient-registered', handlePatientRegistered);
+    };
+  }, [chamberRoom]);
 
   // 🚨 Real-time Critical Panic Lab Alert State (NABL ISO 15189 compliance)
   const [criticalPanicAlert, setCriticalPanicAlert] = useState<{
@@ -5848,6 +5913,110 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
           >
             <span>{statusMessage}</span>
             <span style={{ fontSize: '0.7rem', opacity: 0.8 }}>Press Ctrl+Z to undo</span>
+          </div>
+        )}
+
+        {/* 🚨 Emergency STAT Queue Elevation Banner */}
+        {statEmergencyAlert && (
+          <div
+            style={{
+              backgroundColor: '#FEF2F2',
+              border: '2px solid #EF4444',
+              borderRadius: '12px',
+              padding: '12px 18px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '12px',
+              boxShadow: '0 4px 20px rgba(239, 68, 68, 0.35)',
+              animation: 'pulse 1.5s infinite'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: '1.8rem' }}>🚨</span>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <span
+                    style={{
+                      backgroundColor: '#DC2626',
+                      color: '#FFFFFF',
+                      fontWeight: 900,
+                      fontSize: '0.72rem',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      letterSpacing: '0.5px'
+                    }}
+                  >
+                    EMERGENCY / STAT TRIAGE
+                  </span>
+                  <span style={{ fontWeight: 800, color: '#991B1B', fontSize: '1rem' }}>
+                    🚨 STAT ALERT: Emergency patient checked in at Front Desk (Token #{statEmergencyAlert.tokenNumber})
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.78rem', color: '#B91C1C', marginTop: '3px', display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <span><strong>Patient:</strong> {statEmergencyAlert.patientName}</span>
+                  <span>•</span>
+                  <span><strong>Reported:</strong> {statEmergencyAlert.timestamp}</span>
+                  {statEmergencyAlert.chamber && (
+                    <>
+                      <span>•</span>
+                      <span><strong>Chamber:</strong> {statEmergencyAlert.chamber}</span>
+                    </>
+                  )}
+                  <span>•</span>
+                  <span style={{ color: '#DC2626', fontWeight: 700 }}>Auto-ranked to Top of OPD Queue</span>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  const matching = queuePatients.find(
+                    (p) => p.token === statEmergencyAlert.tokenNumber || (statEmergencyAlert.encounterId && p.id === statEmergencyAlert.encounterId)
+                  );
+                  if (matching) {
+                    handleSelectPatient(matching.id);
+                  }
+                  setStatEmergencyAlert(null);
+                }}
+                style={{
+                  backgroundColor: '#DC2626',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  padding: '8px 14px',
+                  borderRadius: '6px',
+                  fontSize: '0.78rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <span>⚡</span>
+                <span>Take into Chamber Now</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setStatEmergencyAlert(null)}
+                style={{
+                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                  color: '#DC2626',
+                  border: '1px solid #FCA5A5',
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                Dismiss
+              </button>
+            </div>
           </div>
         )}
 

@@ -231,6 +231,7 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
   const [formPaymentMode, setFormPaymentMode] = useState<'CASH' | 'UPI_QR' | 'CARD' | 'WAIVED'>('UPI_QR');
   const [formIsFeePaid, setFormIsFeePaid] = useState(true);
   const [isPatientFound, setIsPatientFound] = useState(false);
+  const [hasRecentVisit, setHasRecentVisit] = useState(false);
   const [_formMrn, setFormMrn] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [matchedFamilyMembers, setMatchedFamilyMembers] = useState<any[]>([]);
@@ -423,6 +424,7 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
     setFormGender(member.gender || 'MALE');
     setFormMrn(member.mrn || `UHID-${Math.floor(10000 + Math.random() * 90000)}`);
     setIsPatientFound(true);
+    setHasRecentVisit(Boolean(member.hasRecentVisit ?? true));
     showToast(`Selected: ${member.fullName} (${member.mrn})`);
   };
 
@@ -434,6 +436,7 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
     setFormGender('MALE');
     setFormMrn(`UHID-${Math.floor(10000 + Math.random() * 90000)}`);
     setIsPatientFound(false);
+    setHasRecentVisit(false);
     showToast(`Enter details for new family member on ${formMobile}`);
   };
 
@@ -454,7 +457,8 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
               age: q.age,
               gender: q.gender,
               mrn: q.mrn,
-              relationship: parseInt(q.age || '30', 10) <= 14 ? 'CHILD' : 'SELF'
+              relationship: parseInt(q.age || '30', 10) <= 14 ? 'CHILD' : 'SELF',
+              hasRecentVisit: true
             });
           }
         }
@@ -467,13 +471,15 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
           if ((p.primaryMobile || p.phone || '').replace(/\D/g, '') === digitsOnly) {
             const name = p.fullName || `${p.firstName || ''} ${p.lastName || ''}`.trim();
             if (!candidates.some((c) => c.fullName.toLowerCase() === name.toLowerCase())) {
+              const hasRecent = p.lastVisitDate ? (Date.now() - new Date(p.lastVisitDate).getTime() < 7 * 86400000) : true;
               candidates.push({
                 id: p.id,
                 fullName: name,
                 age: p.age?.toString() || '30',
                 gender: p.gender || 'MALE',
                 mrn: p.mrn || `UHID-${Math.floor(10000 + Math.random() * 90000)}`,
-                relationship: parseInt(p.age?.toString() || '30', 10) <= 14 ? 'CHILD' : 'SELF'
+                relationship: parseInt(p.age?.toString() || '30', 10) <= 14 ? 'CHILD' : 'SELF',
+                hasRecentVisit: hasRecent
               });
             }
           }
@@ -488,13 +494,15 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
           apiPatients.forEach((p: any) => {
             const name = p.fullName || `${p.firstName || ''} ${p.lastName || ''}`.trim();
             if (!candidates.some((c) => c.fullName.toLowerCase() === name.toLowerCase())) {
+              const hasRecent = (p.lastVisitDate || p.updatedAt) ? (Date.now() - new Date(p.lastVisitDate || p.updatedAt).getTime() < 7 * 86400000) : true;
               candidates.push({
                 id: p.id,
                 fullName: name,
                 age: p.age?.toString() || '30',
                 gender: p.gender || 'MALE',
                 mrn: p.mrn || p.uhid || `UHID-${Math.floor(10000 + Math.random() * 90000)}`,
-                relationship: parseInt(p.age?.toString() || '30', 10) <= 14 ? 'CHILD' : 'SELF'
+                relationship: parseInt(p.age?.toString() || '30', 10) <= 14 ? 'CHILD' : 'SELF',
+                hasRecentVisit: hasRecent
               });
             }
           });
@@ -508,6 +516,7 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
         showToast(`${candidates.length} patient record(s) found on this number`);
       } else {
         setIsPatientFound(false);
+        setHasRecentVisit(false);
         setActiveSelectedMemberId(null);
         setFormMrn(`UHID-${Math.floor(10000 + Math.random() * 90000)}`);
       }
@@ -515,6 +524,7 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
       setMatchedFamilyMembers([]);
       setActiveSelectedMemberId(null);
       setIsPatientFound(false);
+      setHasRecentVisit(false);
     }
   };
 
@@ -527,6 +537,7 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
     setFormGender('MALE');
     setFormComplaint('General OPD Consultation');
     setIsPatientFound(false);
+    setHasRecentVisit(false);
     setMatchedFamilyMembers([]);
     setActiveSelectedMemberId(null);
     setFormPaymentMode('UPI_QR');
@@ -663,6 +674,9 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
         doctorId: printTokenItem.doctorId,
         doctorName: printTokenItem.doctorName,
         type: printTokenItem.visitType,
+        visitType: printTokenItem.visitType,
+        tokenNumber: allocatedTokenNum,
+        chamber: printTokenItem.chamber,
         status: 'WAITING'
       }, `Token ${allocatedTokenNum} generated for ${printTokenItem.patientName}`);
 
@@ -1999,6 +2013,168 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
                 </div>
               </div>
 
+              {/* Step 2.5: Interactive Visit Type & Triage Priority Selector */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#CBD5E1' }}>
+                    Visit Type & Triage Priority
+                  </label>
+                  {formVisitType === 'EMERGENCY' && (
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '2px 8px',
+                        borderRadius: '6px',
+                        backgroundColor: 'rgba(239, 68, 68, 0.25)',
+                        border: '1px solid #EF4444',
+                        color: '#F87171',
+                        fontSize: '0.72rem',
+                        fontWeight: 800,
+                        animation: 'pulse 1.5s infinite'
+                      }}
+                    >
+                      🚨 Top Priority STAT Queue Elevation
+                    </span>
+                  )}
+                  {formVisitType === 'FOLLOW_UP' && (
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '2px 8px',
+                        borderRadius: '6px',
+                        backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                        border: '1px solid #10B981',
+                        color: '#34D399',
+                        fontSize: '0.72rem',
+                        fontWeight: 800
+                      }}
+                    >
+                      ✓ 7-Day Follow-Up Review: Free
+                    </span>
+                  )}
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+                  {/* [⚡ Walk-in] */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormVisitType('WALK_IN');
+                      setModalMode('WALK_IN');
+                      const doc = doctors.find((d) => d.id === formDoctorId) || doctors[0];
+                      if (doc) setFormFee(doc.consultationFee);
+                    }}
+                    style={{
+                      padding: '8px 4px',
+                      borderRadius: '8px',
+                      border: formVisitType === 'WALK_IN' ? '1.5px solid #38BDF8' : '1px solid rgba(255, 255, 255, 0.12)',
+                      backgroundColor: formVisitType === 'WALK_IN' ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255, 255, 255, 0.04)',
+                      color: formVisitType === 'WALK_IN' ? '#38BDF8' : '#94A3B8',
+                      fontWeight: formVisitType === 'WALK_IN' ? 800 : 600,
+                      fontSize: '0.78rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '4px',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <span>⚡</span>
+                    <span>Walk-in</span>
+                  </button>
+
+                  {/* [📅 Booked] */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormVisitType('APPOINTMENT');
+                      setModalMode('APPOINTMENT');
+                    }}
+                    style={{
+                      padding: '8px 4px',
+                      borderRadius: '8px',
+                      border: formVisitType === 'APPOINTMENT' ? '1.5px solid #818CF8' : '1px solid rgba(255, 255, 255, 0.12)',
+                      backgroundColor: formVisitType === 'APPOINTMENT' ? 'rgba(129, 140, 248, 0.2)' : 'rgba(255, 255, 255, 0.04)',
+                      color: formVisitType === 'APPOINTMENT' ? '#A5B4FC' : '#94A3B8',
+                      fontWeight: formVisitType === 'APPOINTMENT' ? 800 : 600,
+                      fontSize: '0.78rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '4px',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <span>📅</span>
+                    <span>Booked</span>
+                  </button>
+
+                  {/* [🔄 Follow-up / Review] */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormVisitType('FOLLOW_UP');
+                      setModalMode('WALK_IN');
+                      setFormFee(0);
+                    }}
+                    style={{
+                      padding: '8px 4px',
+                      borderRadius: '8px',
+                      border: formVisitType === 'FOLLOW_UP' ? '1.5px solid #10B981' : '1px solid rgba(255, 255, 255, 0.12)',
+                      backgroundColor: formVisitType === 'FOLLOW_UP' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.04)',
+                      color: formVisitType === 'FOLLOW_UP' ? '#34D399' : '#94A3B8',
+                      fontWeight: formVisitType === 'FOLLOW_UP' ? 800 : 600,
+                      fontSize: '0.78rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '4px',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <span>🔄</span>
+                    <span>Follow-up</span>
+                  </button>
+
+                  {/* [🚨 Emergency / STAT] */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormVisitType('EMERGENCY');
+                      setModalMode('WALK_IN');
+                      const doc = doctors.find((d) => d.id === formDoctorId) || doctors[0];
+                      if (doc) setFormFee(doc.consultationFee);
+                    }}
+                    style={{
+                      padding: '8px 4px',
+                      borderRadius: '8px',
+                      border: formVisitType === 'EMERGENCY' ? '1.5px solid #EF4444' : '1px solid rgba(255, 255, 255, 0.12)',
+                      backgroundColor: formVisitType === 'EMERGENCY' ? 'rgba(239, 68, 68, 0.25)' : 'rgba(255, 255, 255, 0.04)',
+                      color: formVisitType === 'EMERGENCY' ? '#F87171' : '#94A3B8',
+                      fontWeight: formVisitType === 'EMERGENCY' ? 800 : 600,
+                      fontSize: '0.78rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '4px',
+                      boxShadow: formVisitType === 'EMERGENCY' ? '0 0 12px rgba(239, 68, 68, 0.45)' : 'none',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <span>🚨</span>
+                    <span>Emergency</span>
+                  </button>
+                </div>
+              </div>
+
               {/* Step 3: Doctor Selection */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
@@ -2029,7 +2205,7 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
               </div>
 
               {/* Step 4: If Appointment, pick Date & Time Slot */}
-              {modalMode === 'APPOINTMENT' && (
+              {(modalMode === 'APPOINTMENT' || formVisitType === 'APPOINTMENT') && (
                 <div className="fd-responsive-grid-appointment" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
@@ -2113,6 +2289,48 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
 
               {/* Step 6: Consultation Fee & Payment Method */}
               <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.03)', padding: '12px', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                {/* Smart 7-Day Follow-up Pill when existing patient visited recently */}
+                {(isPatientFound || hasRecentVisit) && (
+                  <div
+                    style={{
+                      marginBottom: '10px',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      backgroundColor: 'rgba(56, 189, 248, 0.12)',
+                      border: '1px dashed #38BDF8',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      flexWrap: 'wrap',
+                      gap: '8px'
+                    }}
+                  >
+                    <span style={{ fontSize: '0.76rem', color: '#7DD3FC', fontWeight: 600 }}>
+                      💡 Patient visited recently — Auto-set ₹0 Follow-up?
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormVisitType('FOLLOW_UP');
+                        setFormFee(0);
+                        showToast('Applied 7-Day Free Follow-Up Review (₹0 fee)');
+                      }}
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        backgroundColor: '#0284C7',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Apply ₹0 Free Follow-up
+                    </button>
+                  </div>
+                )}
+
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                   <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#CBD5E1' }}>Consultation Fee:</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -2134,6 +2352,77 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
                       }}
                     />
                   </div>
+                </div>
+
+                {/* Quick Fee Chips: [₹0 Free Follow-up], [₹200 Reduced Review], [Reset Full Fee ₹{doctorFee}] */}
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormFee(0);
+                      setFormVisitType('FOLLOW_UP');
+                      showToast('Applied ₹0 Free Follow-up');
+                    }}
+                    style={{
+                      padding: '4px 8px',
+                      borderRadius: '6px',
+                      backgroundColor: formFee === 0 ? 'rgba(16, 185, 129, 0.25)' : 'rgba(255, 255, 255, 0.05)',
+                      border: formFee === 0 ? '1px solid #10B981' : '1px solid rgba(255, 255, 255, 0.1)',
+                      color: formFee === 0 ? '#34D399' : '#CBD5E1',
+                      fontSize: '0.72rem',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    ₹0 Free Follow-up
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormFee(200);
+                      showToast('Applied ₹200 Reduced Review');
+                    }}
+                    style={{
+                      padding: '4px 8px',
+                      borderRadius: '6px',
+                      backgroundColor: formFee === 200 ? 'rgba(56, 189, 248, 0.25)' : 'rgba(255, 255, 255, 0.05)',
+                      border: formFee === 200 ? '1px solid #38BDF8' : '1px solid rgba(255, 255, 255, 0.1)',
+                      color: formFee === 200 ? '#38BDF8' : '#CBD5E1',
+                      fontSize: '0.72rem',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    ₹200 Reduced Review
+                  </button>
+
+                  {(() => {
+                    const currentDoc = doctors.find((d) => d.id === formDoctorId) || doctors[0];
+                    const docFee = currentDoc?.consultationFee || 500;
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormFee(docFee);
+                          if (formVisitType === 'FOLLOW_UP') setFormVisitType('WALK_IN');
+                          showToast(`Fee reset to standard ₹${docFee}`);
+                        }}
+                        style={{
+                          padding: '4px 8px',
+                          borderRadius: '6px',
+                          backgroundColor: formFee === docFee && formFee > 0 ? 'rgba(99, 102, 241, 0.25)' : 'rgba(255, 255, 255, 0.05)',
+                          border: formFee === docFee && formFee > 0 ? '1px solid #6366F1' : '1px solid rgba(255, 255, 255, 0.1)',
+                          color: formFee === docFee && formFee > 0 ? '#A5B4FC' : '#CBD5E1',
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Reset Full Fee ₹{docFee}
+                      </button>
+                    );
+                  })()}
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
