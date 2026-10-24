@@ -687,8 +687,31 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
   const [isAutonomousDischargeTunnelOpen, setIsAutonomousDischargeTunnelOpen] = useState(false);
   const [isNetworkOnline, setIsNetworkOnline] = useState<boolean>(() => offlineResilienceService.isOnline());
   const [pendingOfflineCount, setPendingOfflineCount] = useState<number>(() => offlineResilienceService.getPendingQueue().length);
-  void isNetworkOnline;
-  void pendingOfflineCount;
+  const [isManualSyncing, setIsManualSyncing] = useState(false);
+
+  const handleManualFlushSync = async () => {
+    setIsManualSyncing(true);
+    try {
+      const res = await offlineResilienceService.flushOutbox();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('docsearch:optimistic_action', {
+            detail: { actionName: `Cloud Synced (${res.syncedCount} changes)` }
+          })
+        );
+      }
+    } catch {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('docsearch:optimistic_action', {
+            detail: { actionName: 'Sync Error - Retrying' }
+          })
+        );
+      }
+    } finally {
+      setIsManualSyncing(false);
+    }
+  };
 
   useEffect(() => {
     const unsubscribe = offlineResilienceService.subscribe((online, count) => {
@@ -2876,7 +2899,73 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <SoundboxAudioPlayer facilityName={cleanFacilityBrand} compact={true} />
-              <OptimisticSyncBadge />
+              {/* DocSearch Interactive Offline / Online Cloud Sync Pill */}
+              {isNetworkOnline && pendingOfflineCount === 0 ? (
+                <div
+                  title="DOCSEARCH Resilient Architecture: Connected to PostgreSQL with zero latency"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    padding: '3px 8px',
+                    borderRadius: '20px',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                    color: '#34D399',
+                    fontSize: '0.6875rem',
+                    fontWeight: 700,
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
+                    userSelect: 'none'
+                  }}
+                >
+                  <span style={{ fontSize: '0.72rem', color: '#10B981' }}>🟢</span>
+                  <span>Cloud Synced</span>
+                </div>
+              ) : (
+                <div
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '2px 6px 2px 8px',
+                    borderRadius: '20px',
+                    backgroundColor: !isNetworkOnline ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                    border: `1px solid ${!isNetworkOnline ? 'rgba(239, 68, 68, 0.4)' : 'rgba(245, 158, 11, 0.4)'}`,
+                    color: !isNetworkOnline ? '#F87171' : '#FBBF24',
+                    fontSize: '0.6875rem',
+                    fontWeight: 700,
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0
+                  }}
+                  title="Offline changes pending background replication. Click to trigger instant sync."
+                >
+                  <span>{!isNetworkOnline ? '📡' : '🟡'}</span>
+                  <span>
+                    {!isNetworkOnline ? 'Offline Mode' : 'Pending Sync'} ({pendingOfflineCount} queued)
+                  </span>
+                  <button
+                    type="button"
+                    disabled={isManualSyncing}
+                    onClick={handleManualFlushSync}
+                    style={{
+                      backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                      border: 'none',
+                      borderRadius: '12px',
+                      color: '#FFFFFF',
+                      padding: '2px 8px',
+                      fontSize: '0.65rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '3px'
+                    }}
+                  >
+                    {isManualSyncing ? '⏳ Syncing...' : '🔄 Sync Now'}
+                  </button>
+                </div>
+              )}
 
               <button
                 type="button"

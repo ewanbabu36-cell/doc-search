@@ -16,7 +16,7 @@ import { hospitalEventBus } from '../../services/hospital-event-bus.js';
 import { apiRequest } from '../../services/api-client.js';
 import { getUnifiedPartnerProfile } from '../../utils/roleProfileResolver.js';
 import type { HospitalStaffUser } from '../auth/HospitalStaffLogin.js';
-import { hardwarePrinterService, type OpdTokenSlipData } from '../../services/hardware-printer-service.js';
+import { hardwarePrinterService, type OpdTokenSlipData, type ShiftHandoverSlipData } from '../../services/hardware-printer-service.js';
 
 export interface FrontDeskWorkstationViewProps {
   currentUser?: HospitalStaffUser | undefined;
@@ -173,6 +173,9 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
   const [printSlipItem, setPrintSlipItem] = useState<FrontDeskPatientToken | null>(null);
   const [whatsappModalItem, setWhatsappModalItem] = useState<FrontDeskPatientToken | null>(null);
   const [collectFeeItem, setCollectFeeItem] = useState<FrontDeskPatientToken | null>(null);
+  const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
+  const [physicalCashInput, setPhysicalCashInput] = useState<string>('');
+  const [shiftStartTime] = useState<string>(() => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -180,7 +183,7 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  const isAnyModalOpen = isTokenModalOpen || !!printSlipItem || !!whatsappModalItem || !!collectFeeItem;
+  const isAnyModalOpen = isTokenModalOpen || !!printSlipItem || !!whatsappModalItem || !!collectFeeItem || isShiftModalOpen;
 
   // Industry Standard: Lock background body scrolling when bottom sheet / modal is open
   useEffect(() => {
@@ -205,6 +208,7 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
       setPrintSlipItem(null);
       setWhatsappModalItem(null);
       setCollectFeeItem(null);
+      setIsShiftModalOpen(false);
     };
 
     window.addEventListener('popstate', handlePopState);
@@ -724,9 +728,80 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
     }
   };
 
-  // Filtered Queue
+  // Shift Handover & Daily Galla (Cash) Tally calculations
+  const shiftStats = useMemo(() => {
+    const totalTokens = queue.length;
+    const walkInTokens = queue.filter((t) => t.visitType === 'WALK_IN').length;
+    const appointmentTokens = queue.filter((t) => t.visitType === 'APPOINTMENT').length;
+    const emergencyTokens = queue.filter((t) => t.visitType === 'EMERGENCY').length;
+
+    const totalCashFee = queue
+      .filter((t) => t.feeStatus === 'PAID' && t.feePaymentMode === 'CASH')
+      .reduce((sum, t) => sum + (Number(t.consultationFee) || 0), 0);
+
+    const totalUpiFee = queue
+      .filter((t) => t.feeStatus === 'PAID' && t.feePaymentMode === 'UPI_QR')
+      .reduce((sum, t) => sum + (Number(t.consultationFee) || 0), 0);
+
+    const totalCardFee = queue
+      .filter((t) => t.feeStatus === 'PAID' && t.feePaymentMode === 'CARD')
+      .reduce((sum, t) => sum + (Number(t.consultationFee) || 0), 0);
+
+    const totalWaivedFee = queue
+      .filter((t) => t.feePaymentMode === 'WAIVED')
+      .reduce((sum, t) => sum + (Number(t.consultationFee) || 0), 0);
+
+    const grandTotalCollected = totalCashFee + totalUpiFee + totalCardFee;
+    const physicalCashEntered = parseFloat(physicalCashInput) || 0;
+    const cashDiscrepancy = physicalCashEntered - totalCashFee;
+
+    return {
+      totalTokens,
+      walkInTokens,
+      appointmentTokens,
+      emergencyTokens,
+      totalCashFee,
+      totalUpiFee,
+      totalCardFee,
+      totalWaivedFee,
+      grandTotalCollected,
+      physicalCashEntered,
+      cashDiscrepancy
+    };
+  }, [queue, physicalCashInput]);
+
+  const handlePrintShiftHandover = async () => {
+    try {
+      const data: ShiftHandoverSlipData = {
+        clinicName: clinicDisplayName,
+        facilityBranch: clinicBranch,
+        receptionistName: currentUser?.name || 'Front Desk Staff',
+        shiftDate: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+        shiftStartTime: shiftStartTime,
+        shiftEndTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        totalTokens: shiftStats.totalTokens,
+        walkInTokens: shiftStats.walkInTokens,
+        appointmentTokens: shiftStats.appointmentTokens,
+        emergencyTokens: shiftStats.emergencyTokens,
+        totalCashFee: shiftStats.totalCashFee,
+        totalUpiFee: shiftStats.totalUpiFee,
+        totalCardFee: shiftStats.totalCardFee,
+        totalWaivedFee: shiftStats.totalWaivedFee,
+        grandTotalCollected: shiftStats.grandTotalCollected,
+        physicalCashEntered: shiftStats.physicalCashEntered,
+        cashDiscrepancy: shiftStats.cashDiscrepancy
+      };
+
+      const result = await hardwarePrinterService.printShiftHandoverSlip(data, 32);
+      showToast(result.message || 'Shift Handover Slip printed successfully');
+    } catch (err: any) {
+      showToast(err?.message || 'Failed to print shift slip');
+    }
+  };
+
+  // Filtered Queue with Emergency STAT Priority Auto-Elevation
   const filteredQueue = useMemo(() => {
-    return queue.filter((item) => {
+    const list = queue.filter((item) => {
       if (selectedDoctorFilter !== 'ALL' && item.doctorId !== selectedDoctorFilter) {
         return false;
       }
@@ -747,6 +822,27 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
       }
 
       return true;
+    });
+
+    // Strictly prioritize queue sorting:
+    // Hierarchy: EMERGENCY (top priority with pulsating red tag) > IN_CONSULTATION > WAITING (chronological token order) > COMPLETED (bottom)
+    return [...list].sort((a, b) => {
+      const getPriorityScore = (item: FrontDeskPatientToken): number => {
+        if (item.visitType === 'EMERGENCY' && item.status !== 'COMPLETED') return 1;
+        if (item.status === 'IN_CONSULTATION') return 2;
+        if (item.status === 'WAITING') return 3;
+        return 4;
+      };
+
+      const scoreA = getPriorityScore(a);
+      const scoreB = getPriorityScore(b);
+      if (scoreA !== scoreB) {
+        return scoreA - scoreB;
+      }
+
+      const numA = parseInt(a.tokenNumber.replace(/\D/g, '') || '0', 10);
+      const numB = parseInt(b.tokenNumber.replace(/\D/g, '') || '0', 10);
+      return numA - numB;
     });
   }, [queue, selectedDoctorFilter, statusFilter, searchTerm]);
 
@@ -976,6 +1072,20 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
               style={{ border: '1px solid rgba(255, 255, 255, 0.15)', color: '#CBD5E1' }}
             >
               🔄 Refresh
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsShiftModalOpen(true)}
+              style={{
+                border: '1px solid #10B981',
+                color: '#10B981',
+                backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                fontWeight: 800
+              }}
+              title="Shift End & Daily Cash Drawer / Galla Tally"
+            >
+              <span>💰 Shift End & Cash Tally</span>
             </Button>
           </div>
         </div>
@@ -1333,33 +1443,43 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
                   const isWaiting = item.status === 'WAITING';
                   const isInConsult = item.status === 'IN_CONSULTATION';
                   const isDone = item.status === 'COMPLETED';
+                  const isEmergency = item.visitType === 'EMERGENCY' && item.status !== 'COMPLETED';
 
                   return (
                     <TableRow
                       key={item.id}
                       style={{
-                        backgroundColor: isInConsult ? 'rgba(6, 182, 212, 0.06)' : isDone ? 'rgba(16, 185, 129, 0.03)' : 'transparent',
+                        backgroundColor: isEmergency ? 'rgba(239, 68, 68, 0.12)' : isInConsult ? 'rgba(6, 182, 212, 0.06)' : isDone ? 'rgba(16, 185, 129, 0.03)' : 'transparent',
+                        borderLeft: isEmergency ? '4px solid #EF4444' : undefined,
                         borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
                         transition: 'background-color 0.12s ease'
                       }}
                     >
                       {/* Token # */}
                       <TableCell style={{ padding: '12px 16px' }}>
-                        <span
-                          style={{
-                            display: 'inline-block',
-                            padding: '4px 10px',
-                            borderRadius: '8px',
-                            fontWeight: 900,
-                            fontSize: '0.85rem',
-                            letterSpacing: '0.04em',
-                            backgroundColor: isInConsult ? '#06B6D4' : isWaiting ? 'rgba(245, 158, 11, 0.2)' : 'rgba(16, 185, 129, 0.15)',
-                            color: isInConsult ? '#0F172A' : isWaiting ? '#FBBF24' : '#34D399',
-                            border: `1px solid ${isInConsult ? '#06B6D4' : isWaiting ? 'rgba(245, 158, 11, 0.4)' : 'rgba(16, 185, 129, 0.3)'}`
-                          }}
-                        >
-                          {item.tokenNumber}
-                        </span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          <span
+                            style={{
+                              display: 'inline-block',
+                              padding: '4px 10px',
+                              borderRadius: '8px',
+                              fontWeight: 900,
+                              fontSize: '0.85rem',
+                              letterSpacing: '0.04em',
+                              backgroundColor: isEmergency ? '#EF4444' : isInConsult ? '#06B6D4' : isWaiting ? 'rgba(245, 158, 11, 0.2)' : 'rgba(16, 185, 129, 0.15)',
+                              color: isEmergency ? '#FFFFFF' : isInConsult ? '#0F172A' : isWaiting ? '#FBBF24' : '#34D399',
+                              border: `1px solid ${isEmergency ? '#DC2626' : isInConsult ? '#06B6D4' : isWaiting ? 'rgba(245, 158, 11, 0.4)' : 'rgba(16, 185, 129, 0.3)'}`,
+                              boxShadow: isEmergency ? '0 0 10px rgba(239, 68, 68, 0.5)' : 'none'
+                            }}
+                          >
+                            {item.tokenNumber}
+                          </span>
+                          {isEmergency && (
+                            <span style={{ fontSize: '0.625rem', color: '#F87171', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                              🚨 STAT EMERGENCY
+                            </span>
+                          )}
+                        </div>
                       </TableCell>
 
                       {/* Patient Details */}
@@ -2440,6 +2560,213 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
               >
                 ✓ Mark Received & Issue Receipt
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 8. SHIFT HANDOVER & DAILY GALLA (CASH) RECONCILIATION MODAL */}
+      {isShiftModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            backgroundColor: 'rgba(0, 0, 0, 0.75)',
+            backdropFilter: 'blur(6px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px'
+          }}
+          onClick={() => setIsShiftModalOpen(false)}
+        >
+          <div
+            style={{
+              backgroundColor: '#0F172A',
+              border: '1.5px solid #10B981',
+              borderRadius: '16px',
+              width: '100%',
+              maxWidth: '560px',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              padding: '24px',
+              color: '#F8FAFC',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+              boxShadow: '0 25px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(16, 185, 129, 0.2)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: 'rgba(16, 185, 129, 0.2)', border: '1.5px solid #10B981', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>
+                  💰
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 900, color: '#F8FAFC' }}>
+                    Shift Handover & Daily Galla Tally
+                  </h3>
+                  <p style={{ margin: '3px 0 0', fontSize: '0.78rem', color: '#94A3B8' }}>
+                    Cashier: <strong style={{ color: '#38BDF8' }}>{currentUser?.name || 'Front Desk Staff'}</strong> • Shift: {shiftStartTime} - Now
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsShiftModalOpen(false)}
+                style={{ backgroundColor: 'transparent', border: 'none', color: '#94A3B8', fontSize: '1.25rem', cursor: 'pointer', padding: '4px' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Token Summary Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+              <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '10px', padding: '10px', textAlign: 'center' }}>
+                <div style={{ fontSize: '0.7rem', color: '#94A3B8', fontWeight: 700 }}>TOTAL TOKENS</div>
+                <div style={{ fontSize: '1.3rem', fontWeight: 900, color: '#F8FAFC', marginTop: '2px' }}>{shiftStats.totalTokens}</div>
+              </div>
+              <div style={{ backgroundColor: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.2)', borderRadius: '10px', padding: '10px', textAlign: 'center' }}>
+                <div style={{ fontSize: '0.7rem', color: '#38BDF8', fontWeight: 700 }}>WALK-INS</div>
+                <div style={{ fontSize: '1.3rem', fontWeight: 900, color: '#38BDF8', marginTop: '2px' }}>{shiftStats.walkInTokens}</div>
+              </div>
+              <div style={{ backgroundColor: 'rgba(192, 132, 252, 0.08)', border: '1px solid rgba(192, 132, 252, 0.2)', borderRadius: '10px', padding: '10px', textAlign: 'center' }}>
+                <div style={{ fontSize: '0.7rem', color: '#C084FC', fontWeight: 700 }}>BOOKED</div>
+                <div style={{ fontSize: '1.3rem', fontWeight: 900, color: '#C084FC', marginTop: '2px' }}>{shiftStats.appointmentTokens}</div>
+              </div>
+              <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '10px', padding: '10px', textAlign: 'center' }}>
+                <div style={{ fontSize: '0.7rem', color: '#F87171', fontWeight: 700 }}>EMERGENCY</div>
+                <div style={{ fontSize: '1.3rem', fontWeight: 900, color: '#F87171', marginTop: '2px' }}>{shiftStats.emergencyTokens}</div>
+              </div>
+            </div>
+
+            {/* Financial Collection Breakdown */}
+            <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '12px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Payment Channel Breakdown
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                <span style={{ color: '#CBD5E1' }}>💵 Cash in Hand (System Expected):</span>
+                <strong style={{ color: '#10B981', fontFamily: 'monospace' }}>₹{shiftStats.totalCashFee}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                <span style={{ color: '#CBD5E1' }}>📲 UPI / Dynamic QR / Soundbox:</span>
+                <strong style={{ color: '#38BDF8', fontFamily: 'monospace' }}>₹{shiftStats.totalUpiFee}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                <span style={{ color: '#CBD5E1' }}>💳 Debit / Credit Card (POS):</span>
+                <strong style={{ color: '#C084FC', fontFamily: 'monospace' }}>₹{shiftStats.totalCardFee}</strong>
+              </div>
+              {shiftStats.totalWaivedFee > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                  <span style={{ color: '#CBD5E1' }}>🛡️ Fee Waived / VIP Exempt:</span>
+                  <span style={{ color: '#F59E0B', fontFamily: 'monospace' }}>₹{shiftStats.totalWaivedFee}</span>
+                </div>
+              )}
+              <div style={{ height: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)', margin: '4px 0' }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem', fontWeight: 900 }}>
+                <span style={{ color: '#F8FAFC' }}>Total Collections:</span>
+                <span style={{ color: '#10B981', fontFamily: 'monospace' }}>₹{shiftStats.grandTotalCollected}</span>
+              </div>
+            </div>
+
+            {/* Physical Cash in Drawer Input & Discrepancy Reconciliation */}
+            <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.06)', border: '1.5px solid rgba(16, 185, 129, 0.3)', borderRadius: '12px', padding: '16px' }}>
+              <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 800, color: '#E2E8F0', marginBottom: '8px' }}>
+                Enter Physical Cash Counted in Drawer (₹):
+              </label>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <div style={{ position: 'relative', flex: 1 }}>
+                  <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8', fontWeight: 700 }}>₹</span>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="e.g. 5000"
+                    value={physicalCashInput}
+                    onChange={(e) => setPhysicalCashInput(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px 10px 28px',
+                      backgroundColor: '#0F172A',
+                      border: '1.5px solid #334155',
+                      borderRadius: '8px',
+                      color: '#F8FAFC',
+                      fontSize: '1.1rem',
+                      fontWeight: 800,
+                      outline: 'none',
+                      fontFamily: 'monospace'
+                    }}
+                  />
+                </div>
+                <div
+                  style={{
+                    padding: '8px 14px',
+                    borderRadius: '8px',
+                    fontWeight: 900,
+                    fontSize: '0.8125rem',
+                    letterSpacing: '0.03em',
+                    backgroundColor:
+                      shiftStats.cashDiscrepancy === 0
+                        ? 'rgba(16, 185, 129, 0.2)'
+                        : shiftStats.cashDiscrepancy > 0
+                        ? 'rgba(56, 189, 248, 0.2)'
+                        : 'rgba(239, 68, 68, 0.2)',
+                    color:
+                      shiftStats.cashDiscrepancy === 0
+                        ? '#34D399'
+                        : shiftStats.cashDiscrepancy > 0
+                        ? '#38BDF8'
+                        : '#F87171',
+                    border: `1px solid ${
+                      shiftStats.cashDiscrepancy === 0
+                        ? '#10B981'
+                        : shiftStats.cashDiscrepancy > 0
+                        ? '#0284C7'
+                        : '#EF4444'
+                    }`,
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {shiftStats.cashDiscrepancy === 0
+                    ? '✓ EXACT MATCH'
+                    : shiftStats.cashDiscrepancy > 0
+                    ? `+₹${shiftStats.cashDiscrepancy} EXCESS`
+                    : `-₹${Math.abs(shiftStats.cashDiscrepancy)} SHORTAGE`}
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', marginTop: '4px' }}>
+              <Button variant="outline" size="sm" onClick={() => setIsShiftModalOpen(false)}>
+                Cancel
+              </Button>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={handlePrintShiftHandover}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '10px 18px',
+                    borderRadius: '8px',
+                    backgroundColor: '#10B981',
+                    border: 'none',
+                    color: '#FFFFFF',
+                    fontWeight: 800,
+                    fontSize: '0.88rem',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)'
+                  }}
+                >
+                  <span>🖨️</span>
+                  <span>Print Shift Handover Slip</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

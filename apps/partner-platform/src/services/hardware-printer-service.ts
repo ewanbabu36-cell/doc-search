@@ -75,6 +75,26 @@ export interface OpdTokenSlipData {
   contactNumber?: string | undefined;
 }
 
+export interface ShiftHandoverSlipData {
+  clinicName: string;
+  facilityBranch?: string | undefined;
+  receptionistName: string;
+  shiftDate: string;
+  shiftStartTime: string;
+  shiftEndTime: string;
+  totalTokens: number;
+  walkInTokens: number;
+  appointmentTokens: number;
+  emergencyTokens: number;
+  totalCashFee: number;
+  totalUpiFee: number;
+  totalCardFee: number;
+  totalWaivedFee: number;
+  grandTotalCollected: number;
+  physicalCashEntered: number;
+  cashDiscrepancy: number;
+}
+
 export interface HardwarePrinterStatus {
   isWebUsbSupported: boolean;
   isWebSerialSupported: boolean;
@@ -512,6 +532,152 @@ export class HardwarePrinterService {
         success: true,
         method: 'browser_fallback',
         message: 'Dispatched to browser print dialog (no direct WebUSB/WebSerial thermal printer paired).'
+      };
+    }
+
+    return {
+      success: false,
+      method: 'browser_fallback',
+      message: 'Print environment unavailable.'
+    };
+  }
+
+  /**
+   * Build ESC/POS formatted bytes for a Shift Handover & Daily Cash Settlement Voucher
+   */
+  buildShiftHandoverEscPos(data: ShiftHandoverSlipData, paperWidthCols: number = 32): Uint8Array {
+    const builder = new EscPosBuilder();
+
+    // 1. Header
+    builder
+      .align('center')
+      .bold(true)
+      .line(data.clinicName || 'DOCSEARCH HEALTHCARE')
+      .bold(false);
+
+    if (data.facilityBranch) {
+      builder.line(`Branch: ${data.facilityBranch.slice(0, paperWidthCols - 8)}`);
+    }
+    builder.divider(paperWidthCols, '=');
+
+    // 2. Title
+    builder
+      .align('center')
+      .bold(true)
+      .line('SHIFT HANDOVER & CASH TALLY')
+      .bold(false)
+      .divider(paperWidthCols, '-');
+
+    // 3. Metadata
+    builder.align('left');
+    builder.twoColumn('Date:', data.shiftDate, paperWidthCols);
+    builder.twoColumn('Shift Window:', `${data.shiftStartTime}-${data.shiftEndTime}`, paperWidthCols);
+    builder.twoColumn('Cashier / Staff:', data.receptionistName.slice(0, 16), paperWidthCols);
+    builder.divider(paperWidthCols, '-');
+
+    // 4. Token Breakdown
+    builder.twoColumn('Walk-in Tokens:', String(data.walkInTokens), paperWidthCols);
+    builder.twoColumn('Appointments:', String(data.appointmentTokens), paperWidthCols);
+    builder.twoColumn('Emergency Tokens:', String(data.emergencyTokens), paperWidthCols);
+    builder.bold(true);
+    builder.twoColumn('Total OPD Tokens:', String(data.totalTokens), paperWidthCols);
+    builder.bold(false);
+    builder.divider(paperWidthCols, '-');
+
+    // 5. Financial Collection Breakdown
+    builder.twoColumn('Cash Collected:', `Rs. ${data.totalCashFee}`, paperWidthCols);
+    builder.twoColumn('UPI / Soundbox:', `Rs. ${data.totalUpiFee}`, paperWidthCols);
+    builder.twoColumn('Card / POS:', `Rs. ${data.totalCardFee}`, paperWidthCols);
+    if (data.totalWaivedFee > 0) {
+      builder.twoColumn('Waived / Exempt:', `Rs. ${data.totalWaivedFee}`, paperWidthCols);
+    }
+    builder.bold(true);
+    builder.twoColumn('Total Revenue:', `Rs. ${data.grandTotalCollected}`, paperWidthCols);
+    builder.bold(false);
+    builder.divider(paperWidthCols, '=');
+
+    // 6. Cash Tally & Discrepancy
+    builder.bold(true);
+    builder.twoColumn('Physical Cash In Hand:', `Rs. ${data.physicalCashEntered}`, paperWidthCols);
+    builder.twoColumn('System Cash Expected:', `Rs. ${data.totalCashFee}`, paperWidthCols);
+
+    const discLabel =
+      data.cashDiscrepancy === 0
+        ? 'MATCHED (Rs. 0)'
+        : data.cashDiscrepancy > 0
+        ? `EXCESS (+Rs. ${data.cashDiscrepancy})`
+        : `SHORTAGE (-Rs. ${Math.abs(data.cashDiscrepancy)})`;
+    builder.twoColumn('Drawer Status:', discLabel, paperWidthCols);
+    builder.bold(false);
+    builder.divider(paperWidthCols, '-');
+
+    // 7. Signatures & Cut
+    builder
+      .align('left')
+      .feed(1)
+      .line('Cashier Signature: _________________')
+      .feed(1)
+      .line('Manager Signature: _________________')
+      .align('center')
+      .line('Official Day-End Financial Record')
+      .cut(false);
+
+    return builder.build();
+  }
+
+  /**
+   * Silent 1-click Shift Handover voucher print
+   */
+  async printShiftHandoverSlip(
+    data: ShiftHandoverSlipData,
+    paperWidthCols: number = 32
+  ): Promise<{ success: boolean; method: 'hardware_agent' | 'webusb' | 'webserial' | 'browser_fallback'; message: string }> {
+    try {
+      const resp = await fetch('http://127.0.0.1:18080/api/v1/hardware/print/escpos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          slipData: data,
+          printType: 'SHIFT_HANDOVER',
+          paperWidth: paperWidthCols > 32 ? '80mm' : '58mm',
+          printerId: 'tvs-rp3200'
+        })
+      });
+      if (resp.ok) {
+        const result = await resp.json();
+        if (result.success) {
+          return {
+            success: true,
+            method: 'hardware_agent',
+            message: `Shift handover voucher printed via DocSearch Hardware Agent.`
+          };
+        }
+      }
+    } catch {
+      // Local hardware agent daemon not running on client workstation
+    }
+
+    const status = this.getStatus();
+    if (status.isConnected) {
+      try {
+        const bytes = this.buildShiftHandoverEscPos(data, paperWidthCols);
+        const result = await this.printRaw(bytes);
+        return {
+          success: true,
+          method: result.method,
+          message: `Shift handover voucher printed via ${result.method.toUpperCase()} with paper cut.`
+        };
+      } catch (err) {
+        console.warn('[HardwarePrinterService] Direct thermal print failed, initiating browser fallback:', err);
+      }
+    }
+
+    if (typeof window !== 'undefined') {
+      window.print();
+      return {
+        success: true,
+        method: 'browser_fallback',
+        message: 'Dispatched to browser print dialog.'
       };
     }
 

@@ -58,7 +58,7 @@ export const PrintableDoctorPrescriptionModal: React.FC<Props> = ({
       officialAddress: saved?.officialAddress || prof.officialAddress,
       contactPhone: saved?.contactPhone || prof.contactPhone,
       supportEmail: saved?.supportEmail || prof.supportEmail,
-      footerNotes: saved?.footerNotes || 'Digitally Signed & Authenticated under IT Act 2000 & NMC Guidelines. Valid for 30 days.',
+      footerNotes: saved?.footerNotes || 'Digitally Signed & Authenticated under IT Act 2000 & NMC Regulations 2023. Valid for 30 days. Emergency: Visit nearest hospital casualty immediately.',
       showWatermark: saved?.showWatermark ?? true,
       themeColor: saved?.themeColor || '#0284C7',
       signatureUrl: saved?.signatureUrl || prof.branding?.signatureUrl || '',
@@ -127,7 +127,7 @@ export const PrintableDoctorPrescriptionModal: React.FC<Props> = ({
       officialAddress: profile.officialAddress,
       contactPhone: profile.contactPhone,
       supportEmail: profile.supportEmail,
-      footerNotes: 'Digitally Signed & Authenticated under IT Act 2000 & NMC Guidelines. Valid for 30 days.',
+      footerNotes: 'Digitally Signed & Authenticated under IT Act 2000 & NMC Regulations 2023. Valid for 30 days. Emergency: Visit nearest hospital casualty immediately.',
       showWatermark: true,
       themeColor: '#0284C7'
     };
@@ -593,6 +593,22 @@ export const PrintableDoctorPrescriptionModal: React.FC<Props> = ({
                 </ul>
               </div>
             )}
+
+            {/* NMC 2023 Statutory Medical Disclaimer & Emergency Casualty Warning */}
+            <div
+              style={{
+                margin: '12px 0 16px',
+                padding: '8px 12px',
+                backgroundColor: '#FFFBEB',
+                border: '1px solid #FDE68A',
+                borderRadius: '6px',
+                fontSize: '0.6875rem',
+                color: '#92400E',
+                lineHeight: 1.45
+              }}
+            >
+              <strong>⚠️ STATUTORY MEDICAL DISCLAIMER (NMC RMP Regulations 2023):</strong> Generic names written as per NMC Regulations. Valid for 30 days unless specified. In case of emergency or worsening symptoms, please visit the nearest hospital casualty immediately.
+            </div>
 
             {/* Doctor Signature & Stamping Footer */}
             <div style={{ marginTop: '28px', borderTop: '1px solid #E2E8F0', paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>

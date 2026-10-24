@@ -2642,11 +2642,20 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
         ? '🧪 Reports Awaiting Review'
         : repeatLabel;
 
-      // Dynamic Priority Weighting (Gold Standard Pillar 1)
+      // Dynamic Priority Weighting (Gold Standard Pillar 1 with Emergency Auto-Priority)
       let priorityScore = 4000;
-      let priorityTier: 'IN_CHAMBER' | 'CRITICAL_TRIAGE' | 'REPORTS_READY' | 'ROUTINE' | 'COMPLETED' = 'ROUTINE';
+      let priorityTier: 'EMERGENCY_STAT' | 'IN_CHAMBER' | 'CRITICAL_TRIAGE' | 'REPORTS_READY' | 'ROUTINE' | 'COMPLETED' = 'ROUTINE';
 
-      if (isInChamber) {
+      const isEmergencyVisit =
+        (enc as any)?.visitType === 'EMERGENCY' ||
+        (cons as any)?.visitType === 'EMERGENCY' ||
+        (enc as any)?.priority === 'EMERGENCY' ||
+        (cons as any)?.priority === 'EMERGENCY';
+
+      if (isEmergencyVisit && computedStatus !== 'COMPLETED') {
+        priorityScore = 20000;
+        priorityTier = 'EMERGENCY_STAT';
+      } else if (isInChamber) {
         priorityScore = 10000;
         priorityTier = 'IN_CHAMBER';
       } else if (computedStatus === 'COMPLETED') {

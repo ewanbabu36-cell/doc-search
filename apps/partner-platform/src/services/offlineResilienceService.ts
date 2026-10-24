@@ -94,6 +94,10 @@ class OfflineResilienceService {
     return { syncedCount: count };
   }
 
+  public flushOutbox = (): Promise<{ syncedCount: number }> => {
+    return this.syncPendingQueue();
+  };
+
   public clearQueue(): void {
     localStorage.removeItem(this.queueKey);
     this.notifyListeners();
