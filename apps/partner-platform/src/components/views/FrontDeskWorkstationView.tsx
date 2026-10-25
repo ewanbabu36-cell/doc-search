@@ -383,30 +383,87 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
     };
   }, [formFee, formPaymentMode, formSplitUpi, playCashRegisterChime]);
 
-  // Live Consultation Completion & Prescription Issued Listener
+  // 🌟 Competitive Gap 5: Automated Clinic Google Review Engine & WhatsApp Follow-up Scheduler
+  const [clinicGoogleReviewUrl, setClinicGoogleReviewUrl] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('docsearch_clinic_google_review_url') || 'https://g.page/r/docsearch-clinic/review';
+    }
+    return 'https://g.page/r/docsearch-clinic/review';
+  });
+
+  const [autoGoogleReviewEnabled, setAutoGoogleReviewEnabled] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('docsearch_auto_google_review_enabled') !== 'false';
+    }
+    return true;
+  });
+
+  const [googleReviewModalData, setGoogleReviewModalData] = useState<{
+    patientName: string;
+    patientMobile: string;
+    doctorName: string;
+    tokenNumber: string;
+    followUpDays: number;
+    waUrl: string;
+  } | null>(null);
+
+  const [isGoogleReviewSettingsOpen, setIsGoogleReviewSettingsOpen] = useState(false);
+  const [tempGoogleReviewUrl, setTempGoogleReviewUrl] = useState(clinicGoogleReviewUrl);
+
+  // Live Consultation Completion & Prescription Issued Listener (with Google Review Auto-Engine)
   useEffect(() => {
     const unsubRx = hospitalEventBus.subscribe('PRESCRIPTION_ISSUED', (payload) => {
       const data = payload?.data || {};
       const targetToken = data.tokenNumber || data.token;
       const patName = data.patientName || 'Patient';
       const docName = data.doctorName || 'Doctor';
+      const followUp = data.followUpDays || 7;
 
       if (targetToken || data.encounterId) {
-        setQueue((prev) =>
-          prev.map((t) =>
+        let matchedPhone = (data.patientMobile || data.phone || '').replace(/\D/g, '').slice(-10);
+
+        setQueue((prev) => {
+          const matched = prev.find(
+            (t) => t.tokenNumber === targetToken || (data.encounterId && t.encounterId === data.encounterId)
+          );
+          if (matched && !matchedPhone && matched.patientMobile) {
+            matchedPhone = matched.patientMobile.replace(/\D/g, '').slice(-10);
+          }
+          return prev.map((t) =>
             t.tokenNumber === targetToken || (data.encounterId && t.encounterId === data.encounterId)
               ? { ...t, status: 'COMPLETED' }
               : t
-          )
-        );
-        showToast(`✓ Token #${targetToken} (${patName}) completed by ${docName}`);
+          );
+        });
+
+        // 🌟 Auto-prepare Google Review & Follow-up deep-link
+        if (autoGoogleReviewEnabled && matchedPhone && matchedPhone.length === 10) {
+          const clinicName = clinicDisplayName || 'Our Clinic';
+          const reviewText =
+            `Namaste ${patName}, thank you for visiting ${clinicName}. Dr. ${docName} hopes you feel better soon!\n\n` +
+            `⭐ Please take 10 seconds to share your experience on our Google Business page:\n${clinicGoogleReviewUrl}\n\n` +
+            `📅 Your next follow-up is recommended in ${followUp} days. Wishing you great health!`;
+          const waUrl = `https://api.whatsapp.com/send?phone=91${matchedPhone}&text=${encodeURIComponent(reviewText)}`;
+
+          setGoogleReviewModalData({
+            patientName: patName,
+            patientMobile: matchedPhone,
+            doctorName: docName,
+            tokenNumber: targetToken || 'Token',
+            followUpDays: followUp,
+            waUrl
+          });
+          showToast(`✓ Completed #${targetToken} — Google Review & Follow-up WhatsApp ready for ${patName}`);
+        } else {
+          showToast(`✓ Token #${targetToken} (${patName}) completed by ${docName}`);
+        }
       }
     });
 
     return () => {
       unsubRx();
     };
-  }, []);
+  }, [autoGoogleReviewEnabled, clinicGoogleReviewUrl, clinicDisplayName]);
 
   const [audioCallLanguage, setAudioCallLanguage] = useState<'HI' | 'EN'>(() => {
     if (typeof window !== 'undefined') {
@@ -1339,6 +1396,27 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
               title="Toggle Token Voice Announcement Language (Hindi / English)"
             >
               <span>{audioCallLanguage === 'HI' ? '🇮🇳 Voice: हिंदी' : '🌐 Voice: English'}</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setTempGoogleReviewUrl(clinicGoogleReviewUrl);
+                setIsGoogleReviewSettingsOpen(true);
+              }}
+              style={{
+                border: '1px solid rgba(245, 158, 11, 0.35)',
+                color: '#FBBF24',
+                backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                fontWeight: 800,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px'
+              }}
+              title="Manage Clinic Google Business Profile Review URL & Auto-Dispatch Settings"
+            >
+              <span>⭐</span>
+              <span>Reviews: {autoGoogleReviewEnabled ? 'Auto ON' : 'Off'}</span>
             </Button>
             <Button
               variant="outline"
@@ -3470,7 +3548,239 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
         </div>
       )}
 
-      {/* 8. MODAL: QUICK CONSULTATION FEE COLLECTION */}
+      {/* 🌟 7.5. MODAL: CLINIC GOOGLE REVIEW & FOLLOW-UP WHATSAPP DISPATCH (Competitive Gap 5 & Prompt 4) */}
+      {googleReviewModalData && (
+        <div
+          className="fd-responsive-overlay"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.78)',
+            backdropFilter: 'blur(5px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999,
+            padding: '16px'
+          }}
+          onClick={() => setGoogleReviewModalData(null)}
+        >
+          <div
+            className="fd-responsive-modal"
+            style={{
+              backgroundColor: '#0F172A',
+              border: '1.5px solid #F59E0B',
+              borderRadius: '16px',
+              padding: '24px',
+              maxWidth: '460px',
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+              position: 'relative'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '1.6rem' }}>⭐</span>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#FBBF24' }}>
+                  Clinic Google Review & Follow-up
+                </h3>
+                <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: '#94A3B8' }}>
+                  Auto-prepared for {googleReviewModalData.patientName} (+91 {googleReviewModalData.patientMobile})
+                </p>
+              </div>
+            </div>
+
+            <div
+              style={{
+                backgroundColor: 'rgba(245, 158, 11, 0.08)',
+                border: '1px solid rgba(245, 158, 11, 0.3)',
+                borderRadius: '10px',
+                padding: '14px',
+                fontSize: '0.8125rem',
+                lineHeight: 1.5,
+                color: '#E2E8F0'
+              }}
+            >
+              <div style={{ fontWeight: 800, color: '#FCD34D', marginBottom: '6px' }}>
+                🏥 {clinicDisplayName} (Token #{googleReviewModalData.tokenNumber})
+              </div>
+              Namaste {googleReviewModalData.patientName}, thank you for visiting our clinic.<br />
+              • <strong>Attending Doctor:</strong> {googleReviewModalData.doctorName}<br />
+              • <strong>Recommended Follow-up:</strong> In {googleReviewModalData.followUpDays} days<br />
+              • <strong>Google Review Page:</strong> <span style={{ color: '#38BDF8', wordBreak: 'break-all' }}>{clinicGoogleReviewUrl}</span>
+            </div>
+
+            <div className="fd-responsive-sticky-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
+              <Button variant="outline" size="sm" onClick={() => setGoogleReviewModalData(null)}>
+                Dismiss
+              </Button>
+              <button
+                type="button"
+                onClick={() => {
+                  window.open(googleReviewModalData.waUrl, '_blank');
+                  showToast(`✓ Google Review link opened for ${googleReviewModalData.patientName}`);
+                  setGoogleReviewModalData(null);
+                }}
+                style={{
+                  padding: '10px 18px',
+                  borderRadius: '8px',
+                  backgroundColor: '#22C55E',
+                  border: 'none',
+                  color: '#FFFFFF',
+                  fontWeight: 800,
+                  fontSize: '0.88rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  boxShadow: '0 4px 12px rgba(34, 197, 94, 0.35)'
+                }}
+              >
+                <span>📲</span>
+                <span>Send WhatsApp Review Link</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🌟 7.6. MODAL: CLINIC GOOGLE REVIEW PROFILE SETTINGS */}
+      {isGoogleReviewSettingsOpen && (
+        <div
+          className="fd-responsive-overlay"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.78)',
+            backdropFilter: 'blur(5px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999,
+            padding: '16px'
+          }}
+          onClick={() => setIsGoogleReviewSettingsOpen(false)}
+        >
+          <div
+            className="fd-responsive-modal"
+            style={{
+              backgroundColor: '#0F172A',
+              border: '1.5px solid rgba(56, 189, 248, 0.4)',
+              borderRadius: '16px',
+              padding: '24px',
+              maxWidth: '480px',
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+              position: 'relative'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '1.6rem' }}>⚙️</span>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#38BDF8' }}>
+                  Clinic Google Business Reputation Engine
+                </h3>
+                <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: '#94A3B8' }}>
+                  Automatically grow 5-star Google reviews on consultation completion
+                </p>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#E2E8F0' }}>
+                Clinic Google Review URL / Short Link:
+              </label>
+              <input
+                type="text"
+                value={tempGoogleReviewUrl}
+                onChange={(e) => setTempGoogleReviewUrl(e.target.value)}
+                placeholder="https://g.page/r/your-clinic/review"
+                style={{
+                  width: '100%',
+                  padding: '9px 12px',
+                  borderRadius: '8px',
+                  backgroundColor: '#0B111E',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  color: '#F8FAFC',
+                  fontSize: '0.8rem',
+                  boxSizing: 'border-box'
+                }}
+              />
+              <span style={{ fontSize: '0.6875rem', color: '#64748B' }}>
+                Tip: Get this from your Google Business Profile &gt; "Ask for reviews" link.
+              </span>
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '10px 12px',
+                borderRadius: '8px',
+                backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                border: '1px solid rgba(255, 255, 255, 0.08)'
+              }}
+            >
+              <div>
+                <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#F1F5F9' }}>
+                  Auto-Send on Consultation Completion
+                </div>
+                <div style={{ fontSize: '0.6875rem', color: '#94A3B8' }}>
+                  Prepares WhatsApp review link as soon as doctor signs prescription
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={autoGoogleReviewEnabled}
+                onChange={(e) => {
+                  const val = e.target.checked;
+                  setAutoGoogleReviewEnabled(val);
+                  if (typeof window !== 'undefined') {
+                    localStorage.setItem('docsearch_auto_google_review_enabled', String(val));
+                  }
+                }}
+                style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#10B981' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
+              <Button variant="outline" size="sm" onClick={() => setIsGoogleReviewSettingsOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => {
+                  const cleanUrl = tempGoogleReviewUrl.trim() || 'https://g.page/r/docsearch-clinic/review';
+                  setClinicGoogleReviewUrl(cleanUrl);
+                  if (typeof window !== 'undefined') {
+                    localStorage.setItem('docsearch_clinic_google_review_url', cleanUrl);
+                  }
+                  setIsGoogleReviewSettingsOpen(false);
+                  showToast('✓ Clinic Google Review settings updated successfully');
+                }}
+              >
+                Save Settings
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
       {collectFeeItem && (
         <div
           className="fd-responsive-overlay"

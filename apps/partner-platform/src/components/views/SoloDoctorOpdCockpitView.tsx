@@ -49,6 +49,97 @@ import {
   saveRxLanguage,
   type RxLanguageCode
 } from '../../utils/regional-prescription-translator.js';
+import { ClinicalSparkline } from '@docsearch/ui-kit';
+import { pharmacyStockService } from '../../services/pharmacy-stock-service.js';
+
+export interface ClinicalQuickProtocol {
+  id: string;
+  name: string;
+  category: string;
+  icon: string;
+  description: string;
+  medications: Array<{
+    medicationName: string;
+    strength: string;
+    dosage: string;
+    frequency: string;
+    duration: number;
+    timing: 'BEFORE_FOOD' | 'AFTER_FOOD' | 'EMPTY_STOMACH' | 'BEDTIME' | 'WITH_FOOD';
+    instructions: string;
+  }>;
+}
+
+export const INDIAN_CLINIC_QUICK_PROTOCOLS: ClinicalQuickProtocol[] = [
+  {
+    id: 'proto-viral-fever',
+    name: 'Acute Viral Fever / URI',
+    category: 'General',
+    icon: '⚡',
+    description: 'Paracetamol 650mg + Levocetirizine 5mg + Pantoprazole 40mg',
+    medications: [
+      { medicationName: 'Tab Dolo 650', strength: '650mg', dosage: '1 Tab', frequency: '1 - 0 - 1 - 0', duration: 3, timing: 'AFTER_FOOD', instructions: 'Take with warm water for fever & body pain' },
+      { medicationName: 'Tab Levocet 5', strength: '5mg', dosage: '1 Tab', frequency: '0 - 0 - 1', duration: 5, timing: 'BEDTIME', instructions: 'Take at night for runny nose / sneezing' },
+      { medicationName: 'Tab Pan 40', strength: '40mg', dosage: '1 Tab', frequency: '1 - 0 - 0', duration: 5, timing: 'EMPTY_STOMACH', instructions: 'Morning before breakfast to prevent gastric irritation' }
+    ]
+  },
+  {
+    id: 'proto-gerd',
+    name: 'Acid Peptic Disorder / GERD',
+    category: 'Gastroenterology',
+    icon: '⚡',
+    description: 'Pan-D + Digene Gel + Sucralfate',
+    medications: [
+      { medicationName: 'Cap Pan-D', strength: '40mg+30mg', dosage: '1 Cap', frequency: '1 - 0 - 0', duration: 7, timing: 'EMPTY_STOMACH', instructions: 'Empty stomach 30 mins before food' },
+      { medicationName: 'Gel Digene Mint', strength: '200ml', dosage: '10 ml', frequency: '1 - 1 - 1', duration: 5, timing: 'AFTER_FOOD', instructions: '2 teaspoons after meals and at bedtime' }
+    ]
+  },
+  {
+    id: 'proto-gastro',
+    name: 'Acute Diarrhea / AGE',
+    category: 'Gastroenterology',
+    icon: '⚡',
+    description: 'Oflox-OZ + Racecadotril + ORS',
+    medications: [
+      { medicationName: 'Tab Oflox-OZ', strength: '200mg+500mg', dosage: '1 Tab', frequency: '1 - 0 - 1', duration: 5, timing: 'AFTER_FOOD', instructions: 'Twice daily after meals' },
+      { medicationName: 'Cap Racecadotril 100', strength: '100mg', dosage: '1 Cap', frequency: '1 - 1 - 1', duration: 3, timing: 'BEFORE_FOOD', instructions: 'Before food for anti-secretory diarrhea control' },
+      { medicationName: 'ORS Sachet', strength: '21.8g', dosage: '1 Pkt', frequency: '1 - 1 - 1', duration: 3, timing: 'WITH_FOOD', instructions: 'Dissolve in 1 liter clean water, sip frequently' }
+    ]
+  },
+  {
+    id: 'proto-htn-refill',
+    name: 'Hypertension Refill (HTN)',
+    category: 'Cardiology',
+    icon: '⚡',
+    description: 'Telmisartan 40mg + Amlodipine 5mg (30 Days)',
+    medications: [
+      { medicationName: 'Tab Telma 40', strength: '40mg', dosage: '1 Tab', frequency: '1 - 0 - 0', duration: 30, timing: 'BEFORE_FOOD', instructions: 'Morning before breakfast daily' },
+      { medicationName: 'Tab Amlong 5', strength: '5mg', dosage: '1 Tab', frequency: '0 - 0 - 1', duration: 30, timing: 'BEDTIME', instructions: 'Night bedtime for 24h BP control' }
+    ]
+  },
+  {
+    id: 'proto-t2dm-refill',
+    name: 'Type 2 Diabetes Refill (T2DM)',
+    category: 'Endocrinology',
+    icon: '⚡',
+    description: 'Metformin 500mg SR + Glimepiride 1mg (30 Days)',
+    medications: [
+      { medicationName: 'Tab Glycomet 500 SR', strength: '500mg', dosage: '1 Tab', frequency: '1 - 0 - 1', duration: 30, timing: 'AFTER_FOOD', instructions: 'Twice daily with breakfast and dinner' },
+      { medicationName: 'Tab Glycomet GP 1', strength: '500mg+1mg', dosage: '1 Tab', frequency: '1 - 0 - 0', duration: 30, timing: 'BEFORE_FOOD', instructions: 'Morning 15 mins before breakfast' }
+    ]
+  },
+  {
+    id: 'proto-peds-cold',
+    name: 'Pediatric Cough & Cold',
+    category: 'Pediatrics',
+    icon: '⚡',
+    description: 'Syp Paracetamol + Syp Montair-LC + Nasal Drops',
+    medications: [
+      { medicationName: 'Syp Calpol 250/5ml', strength: '250mg/5ml', dosage: '5 ml', frequency: '1 - 1 - 1', duration: 3, timing: 'AFTER_FOOD', instructions: 'Give every 6-8 hours for fever/body pain' },
+      { medicationName: 'Syp Montair-LC Kid', strength: '2.5mg+4mg', dosage: '2.5 ml', frequency: '0 - 0 - 1', duration: 5, timing: 'BEDTIME', instructions: 'Give at night for allergic cough & congestion' },
+      { medicationName: 'Nasoclear Saline Drops', strength: '0.65% w/v', dosage: '2 drops', frequency: '1 - 1 - 1 - 1', duration: 3, timing: 'AFTER_FOOD', instructions: '2 drops in each nostril before feeding / sleep' }
+    ]
+  }
+];
 
 export interface SoloDoctorOpdCockpitViewProps {
   consultation: ConsultationDto | null;
@@ -947,6 +1038,42 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
     };
   }, []);
 
+  // ⚡ Competitive Gap 3: Pharmacy Out-of-Stock Substitution Prompt State
+  const [outOfStockPrompt, setOutOfStockPrompt] = useState<{
+    originalDrug: any;
+    substitute: {
+      name: string;
+      genericName: string;
+      strength: string;
+      stock: number;
+      savingsText?: string;
+    };
+  } | null>(null);
+
+  // ⚡ Competitive Gap 4 & Prompt 5: 1-Click Protocol Loader
+  const handleLoadProtocol = (proto: ClinicalQuickProtocol) => {
+    const newItems: CockpitMedItem[] = proto.medications.map((m, idx) => ({
+      id: `proto-med-${Date.now()}-${idx}`,
+      medicationName: m.medicationName,
+      strength: m.strength || 'Standard',
+      dosage: m.dosage,
+      frequency: m.frequency,
+      duration: m.duration,
+      durationUnit: 'DAYS',
+      beforeAfterFood: m.timing,
+      instructions: m.instructions
+    }));
+
+    setMedList((prev) => {
+      const existingNames = new Set(prev.map(p => p.medicationName.toLowerCase()));
+      const filtered = newItems.filter(item => !existingNames.has(item.medicationName.toLowerCase()));
+      return [...prev, ...filtered];
+    });
+
+    setStatusMessage(`✓ Loaded ${proto.medications.length} medicines from "${proto.name}" protocol into prescription pad`);
+    setTimeout(() => setStatusMessage(null), 3000);
+  };
+
   // Symptoms selector helper: Automatically links ICD-10 Diagnosis if not yet specified
   const handleSelectSymptom = (sym: CommonSymptomItem) => {
     setChiefComplaint((prev) => {
@@ -1125,10 +1252,37 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
     setIsMedDropdownOpen(false);
   };
 
-  // Medicine Adder helper (Preserving Database Catalog UUID)
-  const handleAddMedicineFromAdder = (drugOverride?: QuickCatalogDrug & { catalogId?: string }) => {
+  // Medicine Adder helper (Preserving Database Catalog UUID & Real-Time Stock Check)
+  const handleAddMedicineFromAdder = (drugOverride?: QuickCatalogDrug & { catalogId?: string }, skipStockCheck = false) => {
     const medName = drugOverride ? drugOverride.name : medSearchInput.trim();
     if (!medName) return;
+
+    // 🏥 Competitive Gap 3: In-House Pharmacy Real-Time Stock Availability & Substitution Check
+    if (!skipStockCheck) {
+      const genName = (drugOverride && typeof drugOverride === 'object' && 'genericName' in drugOverride)
+        ? String((drugOverride as any).genericName || '')
+        : '';
+      const stockInfo = pharmacyStockService.getPharmacyStock(medName, genName);
+      if (stockInfo.status === 'OUT_OF_STOCK' && stockInfo.substitute) {
+        setOutOfStockPrompt({
+          originalDrug: drugOverride || {
+            name: medName,
+            genericName: genName,
+            strength: adderStrength,
+            dosage: adderDosage,
+            frequency: adderFrequency,
+            duration: adderDuration,
+            beforeAfterFood: adderTiming,
+            instructions: adderInstructions,
+            genericSubstituteName: adderGenericSub?.name || '',
+            janAushadhiPrice: adderGenericSub?.janAushadhiPrice || 0,
+            brandPrice: adderGenericSub?.brandPrice || 0
+          },
+          substitute: stockInfo.substitute
+        });
+        return;
+      }
+    }
 
     // 🛑 Pillar 10: Critical Allergy Hard Lockout Check
     const lowerMed = medName.toLowerCase();
@@ -2263,6 +2417,9 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
         sugarVal: 218,
         pulse: '84 bpm',
         weight: '78.5 kg',
+        weightVal: 78.5,
+        hba1c: '8.4%',
+        hba1cVal: 8.4,
         assessment: 'Newly Diagnosed Essential Hypertension & T2DM',
         prescribedMeds: 'Tab Telmisartan 40mg (OD), Tab Metformin 500mg (BD)',
         keyNote: 'Initial presentation with BP spike and polyuria'
@@ -2278,6 +2435,9 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
         sugarVal: 162,
         pulse: '78 bpm',
         weight: '77.2 kg',
+        weightVal: 77.2,
+        hba1c: '7.8%',
+        hba1cVal: 7.8,
         assessment: 'Hypertension titrating towards control',
         prescribedMeds: 'Tab Telmisartan 40mg + Tab Metformin 500mg + Tab Atorvastatin 10mg HS',
         keyNote: 'BP lowering observed, lipid profile requested'
@@ -2293,12 +2453,52 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
         sugarVal: sugar,
         pulse: `${pulse} bpm`,
         weight: `${weight} kg`,
+        weightVal: weight,
+        hba1c: '7.1%',
+        hba1cVal: 7.1,
         assessment: clinicalAssessment || 'Routine OPD Evaluation',
         prescribedMeds: medList.length > 0 ? medList.map(m => m.medicationName).join(', ') : 'In Consultation Draft',
         keyNote: 'Controlled hemodynamics; ongoing treatment plan'
       }
     ];
   }, [inChamberVitals, activePatient, clinicalAssessment, medList]);
+
+  // Longitudinal Chronic Vitals & Lab Sparklines (Competitive Gap 2: Trend Extraction)
+  const sparklineVitals = useMemo(() => {
+    const labels = longitudinalVisits.map((v) => v.label.replace('Visit ', 'V').split(' ')[0] || v.label);
+    const bpSysData = longitudinalVisits.map((v) => v.bpSys);
+    const bpDiaData = longitudinalVisits.map((v) => v.bpDia);
+    const sugarData = longitudinalVisits.map((v) => v.sugarVal);
+    const weightData = longitudinalVisits.map((v) => v.weightVal ?? 75);
+    const hba1cData = longitudinalVisits.map((v) => v.hba1cVal ?? 7.0);
+
+    const bpSysLatest = bpSysData[bpSysData.length - 1] ?? 120;
+    const bpDiaLatest = bpDiaData[bpDiaData.length - 1] ?? 80;
+    const sugarLatest = sugarData[sugarData.length - 1] ?? 110;
+    const weightLatest = weightData[weightData.length - 1] ?? 70;
+    const hba1cLatest = hba1cData[hba1cData.length - 1] ?? 7.0;
+
+    const bpDiff = bpSysLatest - (bpSysData[0] ?? 120);
+    const sugarDiff = sugarLatest - (sugarData[0] ?? 110);
+    const weightDiff = weightLatest - (weightData[0] ?? 70);
+
+    return {
+      labels,
+      bpSysData,
+      bpDiaData,
+      sugarData,
+      weightData,
+      hba1cData,
+      bpSysLatest,
+      bpDiaLatest,
+      sugarLatest,
+      weightLatest,
+      hba1cLatest,
+      bpDiff,
+      sugarDiff,
+      weightDiff
+    };
+  }, [longitudinalVisits]);
 
   // Sync state whenever consultation changes
   useEffect(() => {
@@ -6922,67 +7122,184 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
           </div>
         )}
 
-        {/* 📈 GAP 1: LONGITUDINAL EHR 3-VISIT COMPARISON SPARKLINE HUD */}
+        {/* 📈 GAP 1 & 2: LONGITUDINAL EHR 3-VISIT COMPARISON & CHRONIC SPARKLINES HUD */}
         <div
           style={{
             backgroundColor: 'rgba(15, 23, 42, 0.95)',
             border: '1px solid rgba(56, 189, 248, 0.25)',
             borderRadius: '12px',
-            padding: '10px 16px',
+            padding: '12px 16px',
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '12px',
+            flexDirection: 'column',
+            gap: '10px',
             boxShadow: '0 4px 15px rgba(0,0,0,0.3)'
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '1.2rem' }}>📈</span>
-            <div>
-              <div style={{ fontSize: '0.75rem', fontWeight: 900, color: '#38BDF8', letterSpacing: '0.5px' }}>
-                LONGITUDINAL CLINICAL TRAJECTORY (3-VISIT TRENDLINE)
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '1.2rem' }}>📈</span>
+              <div>
+                <div style={{ fontSize: '0.75rem', fontWeight: 900, color: '#38BDF8', letterSpacing: '0.5px' }}>
+                  LONGITUDINAL CLINICAL TRAJECTORY & CHRONIC SPARKLINES
+                </div>
+                <div style={{ fontSize: '0.6875rem', color: '#94A3B8' }}>
+                  Real-time Hemodynamic Response, Glycemic Evolution & Trendlines (Tap visit for previous Rx)
+                </div>
               </div>
-              <div style={{ fontSize: '0.6875rem', color: '#94A3B8' }}>
-                Hemodynamic Response & Glycemic Evolution Across Visits (Tap visit for previous Rx)
-              </div>
+            </div>
+
+            {/* 3 Interactive Visit Cards */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              {longitudinalVisits.map((v, i) => (
+                <div
+                  key={v.id}
+                  onClick={() => setSelectedHistoricalVisit(v)}
+                  style={{
+                    backgroundColor: v.id === 'visit-current' ? 'rgba(6, 182, 212, 0.15)' : 'rgba(255, 255, 255, 0.03)',
+                    border: v.id === 'visit-current' ? '1.5px solid #06B6D4' : '1px solid rgba(255, 255, 255, 0.08)',
+                    borderRadius: '8px',
+                    padding: '5px 10px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Click to view previous visit prescription & assessment note"
+                >
+                  <div>
+                    <div style={{ fontSize: '0.625rem', color: v.id === 'visit-current' ? '#38BDF8' : '#94A3B8', fontWeight: 800 }}>
+                      {v.label} ({v.relative})
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px', fontSize: '0.72rem', fontWeight: 800 }}>
+                      <span style={{ color: v.bpSys >= 140 ? '#F87171' : '#34D399' }}>BP {v.bp}</span>
+                      <span style={{ color: '#64748B' }}>•</span>
+                      <span style={{ color: v.sugarVal >= 140 ? '#FBBF24' : '#E2E8F0' }}>{v.sugar}</span>
+                    </div>
+                  </div>
+                  {i < longitudinalVisits.length - 1 && (
+                    <span style={{ fontSize: '0.8rem', color: '#64748B' }}>➔</span>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* 3 Interactive Visit Cards */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-            {longitudinalVisits.map((v, i) => (
-              <div
-                key={v.id}
-                onClick={() => setSelectedHistoricalVisit(v)}
-                style={{
-                  backgroundColor: v.id === 'visit-current' ? 'rgba(6, 182, 212, 0.15)' : 'rgba(255, 255, 255, 0.03)',
-                  border: v.id === 'visit-current' ? '1.5px solid #06B6D4' : '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: '8px',
-                  padding: '5px 10px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  transition: 'all 0.15s ease'
-                }}
-                title="Click to view previous visit prescription & assessment note"
-              >
-                <div>
-                  <div style={{ fontSize: '0.625rem', color: v.id === 'visit-current' ? '#38BDF8' : '#94A3B8', fontWeight: 800 }}>
-                    {v.label} ({v.relative})
-                  </div>
-                  <div style={{ display: 'flex', gap: '6px', fontSize: '0.72rem', fontWeight: 800 }}>
-                    <span style={{ color: v.bpSys >= 140 ? '#F87171' : '#34D399' }}>BP {v.bp}</span>
-                    <span style={{ color: '#64748B' }}>•</span>
-                    <span style={{ color: v.sugarVal >= 140 ? '#FBBF24' : '#E2E8F0' }}>{v.sugar}</span>
-                  </div>
+          {/* Micro Sparklines Row */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+              flexWrap: 'wrap',
+              padding: '6px 12px',
+              backgroundColor: 'rgba(0, 0, 0, 0.25)',
+              borderRadius: '8px',
+              border: '1px solid rgba(255, 255, 255, 0.06)'
+            }}
+          >
+            {/* BP Trend Sparkline */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.65rem', fontWeight: 800 }}>
+                  <span style={{ color: '#94A3B8' }}>BP:</span>
+                  <span style={{ color: sparklineVitals.bpSysLatest >= 140 ? '#F87171' : '#34D399' }}>
+                    {sparklineVitals.bpSysData[0]}/{sparklineVitals.bpDiaData[0]} ➔ {sparklineVitals.bpSysLatest}/{sparklineVitals.bpDiaLatest}
+                  </span>
                 </div>
-                {i < longitudinalVisits.length - 1 && (
-                  <span style={{ fontSize: '0.8rem', color: '#64748B' }}>➔</span>
-                )}
+                <div style={{ fontSize: '0.58rem', color: sparklineVitals.bpDiff < 0 ? '#34D399' : '#FBBF24', fontWeight: 700 }}>
+                  {sparklineVitals.bpDiff < 0 ? '📉 Improving' : sparklineVitals.bpDiff > 0 ? '📈 Elevated' : '🟢 Stable'}
+                </div>
               </div>
-            ))}
+              <ClinicalSparkline
+                data={sparklineVitals.bpSysData}
+                labels={sparklineVitals.labels}
+                unit="mmHg"
+                normalRange={[90, 130]}
+                width={95}
+                height={26}
+                title="Systolic BP Trend Across Visits"
+              />
+            </div>
+
+            <div style={{ width: '1px', height: '24px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }} />
+
+            {/* Glucose Trend Sparkline */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.65rem', fontWeight: 800 }}>
+                  <span style={{ color: '#94A3B8' }}>Sugar:</span>
+                  <span style={{ color: sparklineVitals.sugarLatest >= 140 ? '#FBBF24' : '#34D399' }}>
+                    {sparklineVitals.sugarData[0]} ➔ {sparklineVitals.sugarLatest} mg/dL
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.58rem', color: sparklineVitals.sugarDiff < 0 ? '#34D399' : '#FBBF24', fontWeight: 700 }}>
+                  {sparklineVitals.sugarDiff < 0 ? '📉 Controlled' : sparklineVitals.sugarDiff > 0 ? '📈 Elevated' : '🟢 Stable'}
+                </div>
+              </div>
+              <ClinicalSparkline
+                data={sparklineVitals.sugarData}
+                labels={sparklineVitals.labels}
+                unit="mg/dL"
+                normalRange={[70, 140]}
+                width={95}
+                height={26}
+                title="Blood Glucose Trend Across Visits"
+              />
+            </div>
+
+            <div style={{ width: '1px', height: '24px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }} />
+
+            {/* Weight Evolution Sparkline */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.65rem', fontWeight: 800 }}>
+                  <span style={{ color: '#94A3B8' }}>Weight:</span>
+                  <span style={{ color: '#E2E8F0' }}>
+                    {sparklineVitals.weightData[0]} ➔ {sparklineVitals.weightLatest} kg
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.58rem', color: sparklineVitals.weightDiff < 0 ? '#38BDF8' : '#94A3B8', fontWeight: 700 }}>
+                  {sparklineVitals.weightDiff < 0 ? `📉 ${sparklineVitals.weightDiff.toFixed(1)} kg` : '🟢 Stable'}
+                </div>
+              </div>
+              <ClinicalSparkline
+                data={sparklineVitals.weightData}
+                labels={sparklineVitals.labels}
+                unit="kg"
+                width={85}
+                height={26}
+                strokeColor="#38BDF8"
+                title="Patient Weight Trend Across Visits"
+              />
+            </div>
+
+            <div style={{ width: '1px', height: '24px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }} />
+
+            {/* HbA1c Sparkline */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.65rem', fontWeight: 800 }}>
+                  <span style={{ color: '#94A3B8' }}>HbA1c:</span>
+                  <span style={{ color: sparklineVitals.hba1cLatest > 6.5 ? '#FBBF24' : '#34D399' }}>
+                    {sparklineVitals.hba1cData[0]}% ➔ {sparklineVitals.hba1cLatest}%
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.58rem', color: '#34D399', fontWeight: 700 }}>
+                  📉 Glycemic Response
+                </div>
+              </div>
+              <ClinicalSparkline
+                data={sparklineVitals.hba1cData}
+                labels={sparklineVitals.labels}
+                unit="%"
+                normalRange={[4.0, 5.7]}
+                width={80}
+                height={26}
+                title="HbA1c Glycemic Evolution Trend"
+              />
+            </div>
           </div>
         </div>
 
@@ -8461,6 +8778,64 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
               </div>
             </div>
 
+            {/* ⚡ 1-Click Specialty Quick-Combos Chip Bar (Competitive Gap 4 & Prompt 5) */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                overflowX: 'auto',
+                padding: '6px 10px',
+                backgroundColor: 'rgba(245, 158, 11, 0.08)',
+                borderRadius: '8px',
+                border: '1px solid rgba(245, 158, 11, 0.25)',
+                scrollbarWidth: 'none'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
+                <span style={{ fontSize: '0.85rem' }}>⚡</span>
+                <span style={{ fontSize: '0.6875rem', fontWeight: 900, color: '#FBBF24', letterSpacing: '0.02em' }}>
+                  Quick Combos:
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'nowrap' }}>
+                {INDIAN_CLINIC_QUICK_PROTOCOLS.map((proto) => (
+                  <button
+                    key={proto.id}
+                    type="button"
+                    onClick={() => handleLoadProtocol(proto)}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '3px 8px',
+                      borderRadius: '5px',
+                      backgroundColor: 'rgba(245, 158, 11, 0.12)',
+                      border: '1px solid rgba(245, 158, 11, 0.35)',
+                      color: '#FEF08A',
+                      fontSize: '0.6875rem',
+                      fontWeight: 700,
+                      whiteSpace: 'nowrap',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = 'rgba(245, 158, 11, 0.25)';
+                      e.currentTarget.style.borderColor = '#F59E0B';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'rgba(245, 158, 11, 0.12)';
+                      e.currentTarget.style.borderColor = 'rgba(245, 158, 11, 0.35)';
+                    }}
+                    title={`1-Click load: ${proto.description}`}
+                  >
+                    <span>{proto.name}</span>
+                    <span style={{ fontSize: '0.625rem', color: '#F59E0B', fontWeight: 900 }}>({proto.medications.length})</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* 👶 PEDIATRIC WEIGHT-BASED DOSAGE CALCULATOR PANEL */}
             {isPediatricCalcOpen && (() => {
               const weight = customPediatricWeight !== null ? customPediatricWeight : (activePatient.estimatedWeightKg || 12);
@@ -9103,13 +9478,69 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
                             title="1-Click: Add to Prescription pad"
                           >
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                                 <span style={{ fontWeight: 800, color: '#F8FAFC', fontSize: '0.75rem' }}>
                                   {drug.name}
                                 </span>
                                 <span style={{ fontSize: '0.65rem', color: '#38BDF8', fontWeight: 700 }}>
                                   {drug.strength}
                                 </span>
+                                {/* 🟢 Competitive Gap 3: In-House Pharmacy Real-Time Stock Badge */}
+                                {(() => {
+                                  const stockInfo = pharmacyStockService.getPharmacyStock(drug.name, drug.genericName);
+                                  if (stockInfo.status === 'IN_STOCK') {
+                                    return (
+                                      <span
+                                        style={{
+                                          fontSize: '0.6rem',
+                                          color: '#10B981',
+                                          backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                                          border: '1px solid rgba(16, 185, 129, 0.3)',
+                                          padding: '1px 5px',
+                                          borderRadius: '4px',
+                                          fontWeight: 800
+                                        }}
+                                        title={`Live Dispensary Stock: ${stockInfo.stock} ${stockInfo.unit}`}
+                                      >
+                                        🟢 In Stock: {stockInfo.stock} {stockInfo.unit}
+                                      </span>
+                                    );
+                                  }
+                                  if (stockInfo.status === 'LOW_STOCK') {
+                                    return (
+                                      <span
+                                        style={{
+                                          fontSize: '0.6rem',
+                                          color: '#F59E0B',
+                                          backgroundColor: 'rgba(245, 158, 11, 0.12)',
+                                          border: '1px solid rgba(245, 158, 11, 0.3)',
+                                          padding: '1px 5px',
+                                          borderRadius: '4px',
+                                          fontWeight: 800
+                                        }}
+                                        title={`Low Dispensary Stock: Only ${stockInfo.stock} ${stockInfo.unit} left!`}
+                                      >
+                                        🟡 Low Stock: {stockInfo.stock} {stockInfo.unit}
+                                      </span>
+                                    );
+                                  }
+                                  return (
+                                    <span
+                                      style={{
+                                        fontSize: '0.6rem',
+                                        color: '#EF4444',
+                                        backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                                        padding: '1px 5px',
+                                        borderRadius: '4px',
+                                        fontWeight: 800
+                                      }}
+                                      title="Out of stock at counter pharmacy dispensary"
+                                    >
+                                      🔴 Out of Stock
+                                    </span>
+                                  );
+                                })()}
                               </div>
                               <div style={{ fontSize: '0.625rem', color: '#94A3B8', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '1px' }}>
                                 <span>{drug.genericName}</span>
@@ -9118,6 +9549,19 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
                                 <span>•</span>
                                 <span>{drug.duration}d</span>
                               </div>
+                              {/* In-Stock Substitute Guidance */}
+                              {(() => {
+                                const stockInfo = pharmacyStockService.getPharmacyStock(drug.name, drug.genericName);
+                                if (stockInfo.status === 'OUT_OF_STOCK' && stockInfo.substitute) {
+                                  return (
+                                    <div style={{ fontSize: '0.6rem', color: '#38BDF8', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                      <span>⚡ Counter Substitute:</span>
+                                      <strong style={{ color: '#F8FAFC' }}>{stockInfo.substitute.name} ({stockInfo.substitute.stock} in stock)</strong>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              })()}
                               {drug.janAushadhiPrice && drug.brandPrice > drug.janAushadhiPrice && (
                                 <div style={{ fontSize: '0.6rem', color: '#10B981', marginTop: '1px' }}>
                                   ⚡ Jan Aushadhi: ₹{drug.janAushadhiPrice} (Save ₹{drug.brandPrice - drug.janAushadhiPrice})
@@ -10973,6 +11417,124 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
         <span style={{ fontSize: '1.15rem' }}>💳</span>
         <span style={{ fontSize: '0.65rem', fontWeight: 800 }}>{isUpiSettled ? 'Paid' : 'UPI Pay'}</span>
       </button>
+    </div>
+  )}
+
+  {/* ⚠️ In-House Pharmacy Out-of-Stock Substitution Dialog (Competitive Gap 3 & Prompt 3) */}
+  {outOfStockPrompt && (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.78)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 9999,
+        backdropFilter: 'blur(5px)'
+      }}
+    >
+      <div
+        style={{
+          backgroundColor: '#0F172A',
+          border: '1.5px solid #F59E0B',
+          borderRadius: '14px',
+          padding: '22px',
+          width: '440px',
+          maxWidth: '92vw',
+          boxShadow: '0 25px 35px -5px rgba(0, 0, 0, 0.7), 0 10px 10px -5px rgba(0, 0, 0, 0.4)'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#FBBF24', marginBottom: '12px' }}>
+          <span style={{ fontSize: '1.4rem' }}>⚠️</span>
+          <div style={{ fontSize: '0.95rem', fontWeight: 900, letterSpacing: '0.02em' }}>In-House Pharmacy Stock-Out Alert</div>
+        </div>
+        <div style={{ fontSize: '0.82rem', color: '#CBD5E1', marginBottom: '14px', lineHeight: 1.5 }}>
+          <strong style={{ color: '#F87171' }}>{outOfStockPrompt.originalDrug.name}</strong> is currently <span style={{ color: '#F87171', fontWeight: 800 }}>out of stock</span> at your counter dispensary.
+        </div>
+        <div
+          style={{
+            backgroundColor: 'rgba(16, 185, 129, 0.12)',
+            border: '1px solid rgba(16, 185, 129, 0.35)',
+            borderRadius: '8px',
+            padding: '12px 14px',
+            marginBottom: '18px'
+          }}
+        >
+          <div style={{ fontSize: '0.6875rem', color: '#34D399', fontWeight: 900, letterSpacing: '0.04em' }}>
+            RECOMMENDED IN-STOCK COUNTER SUBSTITUTE:
+          </div>
+          <div style={{ fontSize: '0.9rem', fontWeight: 900, color: '#F8FAFC', marginTop: '3px' }}>
+            {outOfStockPrompt.substitute.name} ({outOfStockPrompt.substitute.strength})
+          </div>
+          <div style={{ fontSize: '0.72rem', color: '#94A3B8', marginTop: '2px' }}>
+            {outOfStockPrompt.substitute.genericName} • <span style={{ color: '#10B981', fontWeight: 800 }}>🟢 {outOfStockPrompt.substitute.stock} tabs in stock</span>
+          </div>
+          {outOfStockPrompt.substitute.savingsText && (
+            <div style={{ fontSize: '0.6875rem', color: '#FBBF24', fontWeight: 700, marginTop: '3px' }}>
+              ⚡ {outOfStockPrompt.substitute.savingsText}
+            </div>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+          <button
+            type="button"
+            onClick={() => {
+              const orig = outOfStockPrompt.originalDrug;
+              setOutOfStockPrompt(null);
+              handleAddMedicineFromAdder(orig, true);
+            }}
+            style={{
+              padding: '7px 12px',
+              borderRadius: '6px',
+              backgroundColor: 'transparent',
+              border: '1px solid #475569',
+              color: '#94A3B8',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              cursor: 'pointer'
+            }}
+          >
+            Keep Original
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const sub = outOfStockPrompt.substitute;
+              setOutOfStockPrompt(null);
+              handleAddMedicineFromAdder({
+                id: `drug-sub-${Date.now()}`,
+                name: sub.name,
+                genericName: sub.genericName,
+                strength: sub.strength,
+                dosage: outOfStockPrompt.originalDrug.dosage || '1 Tab',
+                frequency: outOfStockPrompt.originalDrug.frequency || '1 - 0 - 1',
+                duration: outOfStockPrompt.originalDrug.duration || 5,
+                beforeAfterFood: outOfStockPrompt.originalDrug.beforeAfterFood || 'AFTER_FOOD',
+                instructions: outOfStockPrompt.originalDrug.instructions || '',
+                genericSubstituteName: sub.name,
+                brandPrice: 0,
+                janAushadhiPrice: 0,
+                category: 'General'
+              }, true);
+              setStatusMessage(`✓ Substituted with in-stock ${sub.name} (${sub.stock} tabs)`);
+            }}
+            style={{
+              padding: '7px 14px',
+              borderRadius: '6px',
+              backgroundColor: '#10B981',
+              border: 'none',
+              color: '#FFFFFF',
+              fontSize: '0.75rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(16, 185, 129, 0.4)'
+            }}
+          >
+            ✓ Substitute with {outOfStockPrompt.substitute.name}
+          </button>
+        </div>
+      </div>
     </div>
   )}
 </div>

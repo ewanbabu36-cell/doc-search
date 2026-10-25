@@ -9,3 +9,4 @@ export * from './workstation/index';
 export * from './adaptive/index';
 export * from './marketing/index';
 export * from './ewan/index';
+export * from './charts/index';
