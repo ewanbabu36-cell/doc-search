@@ -251,7 +251,9 @@ const App: React.FC = () => {
   const handleLogin = (user: HospitalStaffUser) => {
     localStorage.removeItem('docsearch_logged_out');
     localStorage.setItem('docsearch_partner_staff_auth', JSON.stringify(user));
-    setCurrentUser(user);
+    React.startTransition(() => {
+      setCurrentUser(user);
+    });
 
     // Force synchronize browser address bar to newly authenticated staff's authorized workspace and default module
     if (typeof window !== 'undefined' && user?.organizationType) {
@@ -271,7 +273,9 @@ const App: React.FC = () => {
   React.useEffect(() => {
     const handleSwitchStaff = (e: any) => {
       if (e?.detail) {
-        handleLogin(e.detail);
+        React.startTransition(() => {
+          handleLogin(e.detail);
+        });
       }
     };
     window.addEventListener('docsearch:switch-staff-user', handleSwitchStaff);
@@ -521,7 +525,15 @@ if (rootElement) {
   ReactDOM.createRoot(rootElement).render(
     <React.StrictMode>
       <ErrorBoundary>
-        <App />
+        <React.Suspense
+          fallback={
+            <div style={{ minHeight: '100vh', backgroundColor: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <DocSearch3DLogoLoader mode="download" size="lg" />
+            </div>
+          }
+        >
+          <App />
+        </React.Suspense>
       </ErrorBoundary>
     </React.StrictMode>
   );

@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import assert from 'assert';
 
-console.log('🧪 Starting DocSearch Competitive Clinical Gap Verification Suite...\n');
+console.log('🧪 Starting DocSearch Competitive Clinical Gap & Resilience Verification Suite...\n');
 
 let passedTests = 0;
 const testQueue = [];
@@ -144,6 +144,36 @@ test('Gate 8: Cockpit provides custom protocol saving, storage, and 1-click comb
   assert.ok(cockpitSource.includes('handleDeleteCustomProtocol'), 'Must implement handleDeleteCustomProtocol handler');
   assert.ok(cockpitSource.includes('Custom Combo'), 'Must render Custom Combo button');
   assert.ok(cockpitSource.includes('Save As 1-Click Quick Combo'), 'Must render custom combo modal dialog');
+});
+
+// Gate 9: Zero-Crash React.Suspense & Concurrent Transition Safety
+test('Gate 9: Partner Platform enforces 100% Suspense coverage and startTransition concurrency', () => {
+  // Check main.tsx root boundary
+  const mainSource = fs.readFileSync('apps/partner-platform/src/main.tsx', 'utf8');
+  assert.ok(mainSource.includes('<React.Suspense'), 'main.tsx must wrap App with root React.Suspense boundary');
+  assert.ok(mainSource.includes('React.startTransition'), 'main.tsx must wrap login and staff-switch in startTransition');
+
+  // Check PartnerPlatformShell.tsx for 0 Suspense depth violations across all lazy components
+  const shellSource = fs.readFileSync('apps/partner-platform/src/components/PartnerPlatformShell.tsx', 'utf8');
+  const lines = shellSource.split('\n');
+  const lazyMatches = [...shellSource.matchAll(/const\s+([A-Za-z0-9_]+)\s*=\s*React\.lazy/g)].map(m => m[1]);
+  assert.ok(lazyMatches.length >= 60, 'Must track all code-split lazy modules');
+
+  for (const comp of lazyMatches) {
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].includes('<' + comp)) {
+        let depth = 0;
+        for (let j = 0; j <= i; j++) {
+          if (lines[j].includes('<React.Suspense') || lines[j].includes('<Suspense')) depth++;
+          if (lines[j].includes('</React.Suspense>') || lines[j].includes('</Suspense>')) depth--;
+        }
+        assert.ok(depth > 0, `Component <${comp}> at line ${i + 1} must be inside a React.Suspense boundary`);
+      }
+    }
+  }
+
+  // Profile update guard modal must be conditionally rendered
+  assert.ok(shellSource.includes('{isProfileGuardAlertOpen && ('), 'ProfileUpdateRequiredAlertModal must be conditionally rendered');
 });
 
 async function run() {

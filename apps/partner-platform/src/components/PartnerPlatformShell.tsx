@@ -2377,17 +2377,23 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
             </button>
           </div>
         </div>
-        <UniversalAccountSettingsModal
-          isOpen={isSettingsModalOpen}
-          onClose={() => setIsSettingsModalOpen(false)}
-          currentUser={currentUser as any}
-          initialTab={settingsInitialTab}
-        />
-        <PartnerAccountPlanModal
-          isOpen={isAccountPlanModalOpen}
-          onClose={() => setIsAccountPlanModalOpen(false)}
-          currentUser={currentUser as any}
-        />
+        <React.Suspense fallback={null}>
+          {isSettingsModalOpen && (
+            <UniversalAccountSettingsModal
+              isOpen={isSettingsModalOpen}
+              onClose={() => setIsSettingsModalOpen(false)}
+              currentUser={currentUser as any}
+              initialTab={settingsInitialTab}
+            />
+          )}
+          {isAccountPlanModalOpen && (
+            <PartnerAccountPlanModal
+              isOpen={isAccountPlanModalOpen}
+              onClose={() => setIsAccountPlanModalOpen(false)}
+              currentUser={currentUser as any}
+            />
+          )}
+        </React.Suspense>
       </div>
     );
   }
@@ -5303,18 +5309,18 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
             onOpenFastOpd={() => setIsFastOpdDrawerOpen(true)}
           />
         )}
-      </React.Suspense>
-      <ProfileUpdateRequiredAlertModal
-        isOpen={isProfileGuardAlertOpen}
-        onClose={() => setIsProfileGuardAlertOpen(false)}
-        blockedActionName={blockedPrintActionName}
-        missingFields={profileGuardMissingFields}
-        onOpenSettings={(tab) => {
-          setSettingsInitialTab(tab || 'ADDRESS');
-          setIsSettingsModalOpen(true);
-        }}
-      />
-      <React.Suspense fallback={null}>
+        {isProfileGuardAlertOpen && (
+          <ProfileUpdateRequiredAlertModal
+            isOpen={isProfileGuardAlertOpen}
+            onClose={() => setIsProfileGuardAlertOpen(false)}
+            blockedActionName={blockedPrintActionName}
+            missingFields={profileGuardMissingFields}
+            onOpenSettings={(tab) => {
+              setSettingsInitialTab(tab || 'ADDRESS');
+              setIsSettingsModalOpen(true);
+            }}
+          />
+        )}
         {isSettingsModalOpen && (
           <UniversalAccountSettingsModal
             isOpen={isSettingsModalOpen}
