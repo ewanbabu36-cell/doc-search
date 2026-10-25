@@ -228,9 +228,26 @@ export const HospitalQueueTvDisplayView: React.FC<HospitalQueueTvDisplayViewProp
     return () => clearInterval(interval);
   }, []);
 
-  // Listen to Hospital Event Bus for Live Calls
+  // Listen to Hospital Event Bus for Live Calls, Completes, and SSE Bridging
   useEffect(() => {
+    // Ensure SSE bridge is connected so cross-device events stream to TV display
+    hospitalEventBus.initSseBridge();
+
     const unsubCalled = hospitalEventBus.subscribe('PATIENT_CALLED', (payload: HospitalEventPayload) => {
+      const data = payload.data || {};
+      const tokenNum = data.tokenNumber || data.token || data.opdToken;
+      if (tokenNum) {
+        handleCallEncounter({
+          tokenNumber: String(tokenNum).startsWith('#') ? tokenNum : `#${tokenNum}`,
+          patientName: data.patientName || data.name || 'OPD Patient',
+          uhid: data.uhid || `UHID-2026-${tokenNum}`,
+          roomNumber: data.roomNumber || data.chamber || 'ROOM 101',
+          doctorName: data.doctorName || partnerProfile.doctorName || 'Attending Physician'
+        });
+      }
+    });
+
+    const unsubChamberCall = hospitalEventBus.subscribe('PATIENT_CALLED_TO_CHAMBER', (payload: HospitalEventPayload) => {
       const data = payload.data || {};
       const tokenNum = data.tokenNumber || data.token || data.opdToken;
       if (tokenNum) {
@@ -258,9 +275,42 @@ export const HospitalQueueTvDisplayView: React.FC<HospitalQueueTvDisplayViewProp
       }
     });
 
+    const unsubCompleted = hospitalEventBus.subscribe('TOKEN_COMPLETED', (payload: HospitalEventPayload) => {
+      const data = payload.data || {};
+      const tokenNum = data.tokenNumber || data.token;
+      if (tokenNum) {
+        const formattedToken = String(tokenNum).startsWith('#') ? tokenNum : `#${tokenNum}`;
+        setChambers((prev) =>
+          prev.map((ch) => ({
+            ...ch,
+            currentToken: ch.currentToken?.tokenNumber === formattedToken ? null : ch.currentToken,
+            waitingTokens: ch.waitingTokens.filter((w) => String(w.tokenNumber) !== formattedToken)
+          }))
+        );
+      }
+    });
+
+    const unsubRx = hospitalEventBus.subscribe('PRESCRIPTION_ISSUED', (payload: HospitalEventPayload) => {
+      const data = payload.data || {};
+      const tokenNum = data.tokenNumber || data.token;
+      if (tokenNum) {
+        const formattedToken = String(tokenNum).startsWith('#') ? tokenNum : `#${tokenNum}`;
+        setChambers((prev) =>
+          prev.map((ch) => ({
+            ...ch,
+            currentToken: ch.currentToken?.tokenNumber === formattedToken ? null : ch.currentToken,
+            waitingTokens: ch.waitingTokens.filter((w) => String(w.tokenNumber) !== formattedToken)
+          }))
+        );
+      }
+    });
+
     return () => {
       unsubCalled();
+      unsubChamberCall();
       unsubSelected();
+      unsubCompleted();
+      unsubRx();
     };
   }, [partnerProfile]);
 
@@ -271,10 +321,10 @@ export const HospitalQueueTvDisplayView: React.FC<HospitalQueueTvDisplayViewProp
     roomNumber: string;
     doctorName: string;
   }) => {
-    // 1. Play Ding-Dong Chime
+    // 1. Play Ding-Dong Bell Chime immediately (<10ms)
     void playHospitalChimeDingDong();
 
-    // 2. Bilingual Voice Callout
+    // 2. Bilingual Voice Callout (Hindi + English)
     setTimeout(() => {
       playBilingualTokenAnnouncement(
         callData.tokenNumber,
@@ -285,13 +335,32 @@ export const HospitalQueueTvDisplayView: React.FC<HospitalQueueTvDisplayViewProp
       );
     }, 600);
 
-    // 3. Set Hero Banner
+    // 3. Immediately set Top Screen Hero Calling Banner
     setHeroCalledToken(callData);
 
-    // 4. Update Chamber State
-    setChambers((prev) =>
-      prev.map((ch) => {
-        if (ch.roomNumber.toLowerCase() === callData.roomNumber.toLowerCase()) {
+    // 4. Update Chamber State & Immediately Trigger Active Flash Animations
+    setChambers((prev) => {
+      // Find matching chamber index by normalized room or doctor
+      const targetRoomNorm = (callData.roomNumber || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const targetDocNorm = (callData.doctorName || '').toLowerCase().replace(/[^a-z]/g, '');
+
+      let matchedIdx = prev.findIndex((ch) => {
+        const chRoomNorm = ch.roomNumber.toLowerCase().replace(/[^a-z0-9]/g, '');
+        return targetRoomNorm && chRoomNorm && (targetRoomNorm === chRoomNorm || targetRoomNorm.includes(chRoomNorm) || chRoomNorm.includes(targetRoomNorm));
+      });
+
+      if (matchedIdx === -1 && targetDocNorm) {
+        matchedIdx = prev.findIndex((ch) => {
+          const chDocNorm = ch.doctorName.toLowerCase().replace(/[^a-z]/g, '');
+          return chDocNorm && (targetDocNorm.includes(chDocNorm) || chDocNorm.includes(targetDocNorm));
+        });
+      }
+
+      // If room not in existing grid, assign to chamber 0
+      const targetIdx = matchedIdx >= 0 ? matchedIdx : 0;
+
+      return prev.map((ch, idx) => {
+        if (idx === targetIdx) {
           const remainingWaiting = ch.waitingTokens.filter(
             (w) => String(w.tokenNumber) !== String(callData.tokenNumber)
           );
@@ -308,13 +377,13 @@ export const HospitalQueueTvDisplayView: React.FC<HospitalQueueTvDisplayViewProp
           };
         }
         return ch;
-      })
-    );
+      });
+    });
 
     // Reset calling pulse after 8 seconds
     setTimeout(() => {
       setChambers((prev) =>
-        prev.map((ch) => (ch.roomNumber.toLowerCase() === callData.roomNumber.toLowerCase() ? { ...ch, isCalling: false } : ch))
+        prev.map((ch) => ({ ...ch, isCalling: false }))
       );
     }, 8000);
   };
@@ -368,6 +437,21 @@ export const HospitalQueueTvDisplayView: React.FC<HospitalQueueTvDisplayViewProp
         overflow: 'hidden'
       }}
     >
+      <style>{`
+        @keyframes glowPulse {
+          0% { transform: scale(1); box-shadow: 0 0 20px rgba(2, 132, 199, 0.4); border-color: #38BDF8; }
+          50% { transform: scale(1.015); box-shadow: 0 0 45px rgba(245, 158, 11, 0.8), 0 0 20px rgba(56, 189, 248, 0.9); border-color: #F59E0B; }
+          100% { transform: scale(1); box-shadow: 0 0 20px rgba(2, 132, 199, 0.4); border-color: #38BDF8; }
+        }
+        @keyframes flashNumber {
+          0%, 100% { opacity: 1; transform: scale(1); color: #FCD34D; }
+          50% { opacity: 0.25; transform: scale(1.08); color: #EF4444; }
+        }
+        @keyframes chamberCallingPulse {
+          0%, 100% { box-shadow: 0 0 25px rgba(56, 189, 248, 0.4); border-color: #38BDF8; }
+          50% { box-shadow: 0 0 55px rgba(245, 158, 11, 0.9), inset 0 0 25px rgba(245, 158, 11, 0.35); border-color: #F59E0B; }
+        }
+      `}</style>
       {/* 1. Header Bar: Hospital Branding, Live Clock & TV Controls */}
       <div
         style={{
@@ -537,7 +621,13 @@ export const HospitalQueueTvDisplayView: React.FC<HospitalQueueTvDisplayViewProp
             </div>
           </div>
 
-          <div style={{ fontSize: '3.5rem', fontWeight: 900, color: '#FCD34D', textShadow: '0 4px 20px rgba(0,0,0,0.5)' }}>
+          <div style={{
+            fontSize: '3.5rem',
+            fontWeight: 900,
+            color: '#FCD34D',
+            textShadow: '0 4px 20px rgba(0,0,0,0.5)',
+            animation: 'flashNumber 0.8s infinite'
+          }}>
             {heroCalledToken.tokenNumber}
           </div>
         </div>
@@ -568,7 +658,8 @@ export const HospitalQueueTvDisplayView: React.FC<HospitalQueueTvDisplayViewProp
                 ? '0 0 35px rgba(56, 189, 248, 0.4), inset 0 0 15px rgba(56, 189, 248, 0.2)'
                 : '0 8px 24px rgba(0, 0, 0, 0.4)',
               transition: 'all 0.3s ease',
-              position: 'relative'
+              position: 'relative',
+              animation: ch.isCalling ? 'chamberCallingPulse 1.2s infinite' : 'none'
             }}
           >
             {/* Chamber Header */}
@@ -632,7 +723,8 @@ export const HospitalQueueTvDisplayView: React.FC<HospitalQueueTvDisplayViewProp
                   color: ch.isCalling ? '#38BDF8' : '#F8FAFC',
                   lineHeight: 1,
                   letterSpacing: '-0.02em',
-                  textShadow: ch.isCalling ? '0 0 25px rgba(56, 189, 248, 0.8)' : 'none'
+                  textShadow: ch.isCalling ? '0 0 25px rgba(56, 189, 248, 0.8)' : 'none',
+                  animation: ch.isCalling ? 'flashNumber 0.8s infinite' : 'none'
                 }}
               >
                 {ch.currentToken?.tokenNumber || '—'}

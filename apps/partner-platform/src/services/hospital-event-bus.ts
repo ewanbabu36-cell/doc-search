@@ -1,6 +1,7 @@
 /**
  * DocSearch Dynamic Hospital Real-Time Event Bus
- * Enables reactive cross-module synchronization without page reloads or data loss.
+ * Enables reactive cross-module synchronization, cross-tab BroadcastChannel,
+ * and Server-Sent Events (SSE) gateway bridging across all clinic workstations.
  */
 
 export type HospitalEventType =
@@ -30,6 +31,7 @@ export type HospitalEventType =
   | 'PATIENT_CALLED'
   | 'PATIENT_REGISTERED'
   | 'TOKEN_GENERATED'
+  | 'TOKEN_COMPLETED'
   | 'ENCOUNTER_SENT_FOR_LABS'
   | 'DOCTOR_CHAMBER_STATUS_CHANGED'
   | 'IPD_ADMISSION_ORDERED'
@@ -95,7 +97,8 @@ export type HospitalEventType =
   | 'BCMA_MEDICATION_VERIFIED_ADMINISTERED'
   | 'BCMA_SAFETY_CLASH_PREVENTED'
   | 'TPA_CLAIM_SCRUBBER_AUDITED'
-  | 'NURSE_CALL_REQUESTED';
+  | 'NURSE_CALL_REQUESTED'
+  | (string & {});
 
 export interface ActivePatientSummary {
   id: string;
@@ -116,19 +119,32 @@ export interface ActivePatientSummary {
 }
 
 export interface HospitalEventPayload {
+  id?: string;
   type: HospitalEventType;
   timestamp: string;
   sourceModule: string;
   data: any;
   summaryText: string;
+  tenantId?: string;
+  senderId?: string;
 }
 
 type EventCallback = (payload: HospitalEventPayload) => void;
 
 class HospitalEventBus {
-  private listeners: Map<HospitalEventType | '*', Set<EventCallback>> = new Map();
+  private listeners: Map<string, Set<EventCallback>> = new Map();
   private currentPatient: ActivePatientSummary | null = null;
   private channel: BroadcastChannel | null = null;
+  private legacyChannel: BroadcastChannel | null = null;
+  private sseSource: EventSource | null = null;
+  private reconnectTimer: any = null;
+  private recentEventIds: Set<string> = new Set();
+  private recentEventRing: string[] = [];
+  public readonly tabId: string =
+    typeof window !== 'undefined'
+      ? `tab-${Math.random().toString(36).slice(2, 9)}-${Date.now()}`
+      : 'tab-server';
+  private apiBaseUrl: string = '';
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -141,18 +157,149 @@ class HospitalEventBus {
         this.currentPatient = null;
       }
 
+      // 1. Native BroadcastChannel ('docsearch_hospital_events') for cross-tab mirroring on same machine
       if (typeof BroadcastChannel !== 'undefined') {
         try {
-          this.channel = new BroadcastChannel('docsearch_hospital_realtime_channel');
+          this.channel = new BroadcastChannel('docsearch_hospital_events');
           this.channel.onmessage = (event) => {
             if (event && event.data) {
-              this.dispatchLocal(event.data);
+              this.handleInboundBroadcast(event.data);
             }
           };
         } catch (e) {
-          console.warn('[EventBus] BroadcastChannel initialization failed:', e);
+          console.warn('[EventBus] BroadcastChannel (docsearch_hospital_events) initialization failed:', e);
+        }
+
+        // Secondary legacy channel for backwards-compatibility
+        try {
+          this.legacyChannel = new BroadcastChannel('docsearch_hospital_realtime_channel');
+          this.legacyChannel.onmessage = (event) => {
+            if (event && event.data) {
+              this.handleInboundBroadcast(event.data);
+            }
+          };
+        } catch {
+          // ignore
         }
       }
+
+      // 2. Initialize Server-Sent Events (SSE) bridge to API Gateway
+      this.initSseBridge();
+    }
+  }
+
+  /**
+   * Initialize or reconnect to API Gateway Server-Sent Events (SSE) Stream
+   * Enables cross-device real-time sync (Doctor PC <-> Reception Desk <-> Pharmacy <-> TV Display)
+   */
+  public initSseBridge(tenantId?: string): void {
+    if (typeof window === 'undefined' || typeof EventSource === 'undefined') return;
+
+    if (this.sseSource && this.sseSource.readyState !== EventSource.CLOSED) {
+      return;
+    }
+
+    try {
+      const baseUrl =
+        (window as any).__DOCSEARCH_API_BASE__ ||
+        ((import.meta as any)?.env?.VITE_API_URL as string) ||
+        '';
+      this.apiBaseUrl = baseUrl;
+
+      const params = new URLSearchParams();
+      params.set('clientId', this.tabId);
+      if (tenantId) params.set('tenantId', tenantId);
+
+      const sseUrl = `${baseUrl}/api/v1/partner/events/stream?${params.toString()}`;
+
+      this.sseSource = new EventSource(sseUrl);
+
+      this.sseSource.addEventListener('hospital-event', (e: MessageEvent) => {
+        try {
+          const payload = JSON.parse(e.data);
+          this.handleInboundSse(payload);
+        } catch (err) {
+          console.warn('[EventBus] Failed to parse inbound SSE hospital-event:', err);
+        }
+      });
+
+      this.sseSource.onmessage = (e: MessageEvent) => {
+        try {
+          const payload = JSON.parse(e.data);
+          this.handleInboundSse(payload);
+        } catch {
+          // heartbeat or unformatted data
+        }
+      };
+
+      this.sseSource.onerror = () => {
+        if (this.sseSource) {
+          try {
+            this.sseSource.close();
+          } catch {}
+          this.sseSource = null;
+        }
+
+        // Reconnect after 3 seconds
+        if (!this.reconnectTimer) {
+          this.reconnectTimer = setTimeout(() => {
+            this.reconnectTimer = null;
+            this.initSseBridge(tenantId);
+          }, 3000);
+        }
+      };
+    } catch (err) {
+      console.warn('[EventBus] SSE stream connection failed, will retry:', err);
+    }
+  }
+
+  private markEventSeen(id?: string): boolean {
+    if (!id) return false;
+    if (this.recentEventIds.has(id)) return true;
+    this.recentEventIds.add(id);
+    this.recentEventRing.push(id);
+    if (this.recentEventRing.length > 250) {
+      const oldest = this.recentEventRing.shift();
+      if (oldest) this.recentEventIds.delete(oldest);
+    }
+    return false;
+  }
+
+  private handleInboundBroadcast(payload: HospitalEventPayload): void {
+    if (!payload || !payload.type) return;
+    if (payload.senderId && payload.senderId === this.tabId) return; // Prevent echo
+    if (this.markEventSeen(payload.id)) return; // Deduplicate
+
+    // Sync active patient context if applicable
+    if (payload.type === 'PATIENT_SELECTED' && payload.data) {
+      this.currentPatient = payload.data as ActivePatientSummary;
+    } else if (payload.type === 'PATIENT_CLEARED') {
+      this.currentPatient = null;
+    }
+
+    this.dispatchLocal(payload);
+  }
+
+  private handleInboundSse(payload: HospitalEventPayload): void {
+    if (!payload || !payload.type) return;
+    if (payload.senderId && payload.senderId === this.tabId) return; // Prevent echo
+    if (this.markEventSeen(payload.id)) return; // Deduplicate
+
+    // Sync active patient context if applicable
+    if (payload.type === 'PATIENT_SELECTED' && payload.data) {
+      this.currentPatient = payload.data as ActivePatientSummary;
+    } else if (payload.type === 'PATIENT_CLEARED') {
+      this.currentPatient = null;
+    }
+
+    // Dispatch to local in-memory listeners in this tab
+    this.dispatchLocal(payload);
+
+    // Also mirror to other tabs on this machine via BroadcastChannel
+    if (this.channel) {
+      try {
+        this.channel.postMessage(payload);
+      } catch {}
     }
   }
 
@@ -186,43 +333,77 @@ class HospitalEventBus {
       }
     });
 
-    // Dispatch DOM CustomEvent for interoperability
+    // Dispatch DOM CustomEvent for backward interoperability
     if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('docsearch:hospital-event', { detail: payload }));
+      try {
+        window.dispatchEvent(new CustomEvent('docsearch:hospital-event', { detail: payload }));
+      } catch {}
     }
   }
 
   public publish(type: HospitalEventType, sourceModule: string, data: any, summaryText: string = ''): void {
+    const eventId = `evt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const payload: HospitalEventPayload = {
+      id: eventId,
       type,
       timestamp: new Date().toLocaleTimeString(),
       sourceModule,
       data,
-      summaryText: summaryText || `${type} from ${sourceModule}`
+      summaryText: summaryText || `${type} from ${sourceModule}`,
+      senderId: this.tabId
     };
+
+    // Mark as seen so this tab never re-processes its own event
+    this.markEventSeen(eventId);
 
     if (type === 'PATIENT_SELECTED') {
       this.currentPatient = data as ActivePatientSummary;
       if (typeof window !== 'undefined') {
-        localStorage.setItem('docsearch_active_patient_context', JSON.stringify(data));
+        try {
+          localStorage.setItem('docsearch_active_patient_context', JSON.stringify(data));
+        } catch {}
       }
     } else if (type === 'PATIENT_CLEARED') {
       this.currentPatient = null;
       if (typeof window !== 'undefined') {
-        localStorage.removeItem('docsearch_active_patient_context');
+        try {
+          localStorage.removeItem('docsearch_active_patient_context');
+        } catch {}
       }
     }
 
-    // Dispatch to local subscribers
+    // 1. Dispatch to local subscribers in this tab (<1ms instant execution)
     this.dispatchLocal(payload);
 
-    // Broadcast across browser tabs / windows in real-time
+    // 2. Broadcast across all browser tabs on the same machine via BroadcastChannel (<10ms)
     if (this.channel) {
       try {
         this.channel.postMessage(payload);
       } catch (e) {
         console.warn('[EventBus] BroadcastChannel postMessage failed:', e);
       }
+    }
+    if (this.legacyChannel) {
+      try {
+        this.legacyChannel.postMessage(payload);
+      } catch {}
+    }
+
+    // 3. Mirror to API Gateway SSE stream for real-time cross-device broadcast across clinic
+    if (typeof window !== 'undefined') {
+      const baseUrl =
+        this.apiBaseUrl ||
+        (window as any).__DOCSEARCH_API_BASE__ ||
+        ((import.meta as any)?.env?.VITE_API_URL as string) ||
+        '';
+
+      fetch(`${baseUrl}/api/v1/partner/events/publish`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).catch(() => {
+        // Silent catch: network drop or offline mode does not impede local BroadcastChannel sync
+      });
     }
   }
 

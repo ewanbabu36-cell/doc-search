@@ -78,6 +78,7 @@ import { publicBookingRoutes } from './routes/public/public-booking.routes.js';
 import { catalogSyncRoutes } from './routes/partner/catalog-sync.routes.js';
 import { migrationRoutes } from './routes/partner/migration.routes.js';
 import { telemedicineSignalingRoutes } from './routes/partner/telemedicine-signaling.routes.js';
+import { hospitalEventsRoutes } from './routes/partner/hospital-events.routes.js';
 import { distributedLockRoutes } from './routes/locks.routes.js';
 import { AppError, sanitizeObjectPrototype } from '@docsearch/shared-core';
 import { ensureDatabaseReady, setTestDatabase } from '@docsearch/database';
@@ -387,6 +388,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(catalogSyncRoutes);
   await app.register(migrationRoutes);
   await app.register(telemedicineSignalingRoutes);
+  await app.register(hospitalEventsRoutes);
 
   // Block any direct guessed physical storage URL access (/storage/*)
   app.get('/storage/*', async (_request, reply) => {

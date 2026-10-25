@@ -766,6 +766,16 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
       facilityName: facName
     }, 'Prescription signed and patient transferred to Pharmacy & Billing counters');
 
+    hospitalEventBus.publish('TOKEN_COMPLETED', 'ClinicalConsultationDomainManager', {
+      consultationId: req.consultationId,
+      encounterId: currentEncId,
+      patientName,
+      patientMrn,
+      tokenNumber: queueToken,
+      token: queueToken,
+      doctorName: docName
+    }, `Token ${queueToken} (${patientName}) completed by Dr. ${docName}`);
+
     // Notify other open counter tabs
     window.dispatchEvent(new CustomEvent('docsearch:encounters-updated'));
     window.dispatchEvent(new CustomEvent('docsearch:prescriptions-updated'));

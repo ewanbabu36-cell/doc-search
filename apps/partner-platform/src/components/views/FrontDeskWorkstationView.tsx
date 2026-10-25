@@ -412,6 +412,44 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
 
   // Live Consultation Completion & Prescription Issued Listener (with Google Review Auto-Engine)
   useEffect(() => {
+    const handlePatientCalled = (payload: any) => {
+      const data = payload?.data || {};
+      const targetToken = data.tokenNumber || data.token;
+      if (targetToken || data.encounterId) {
+        setQueue((prev) =>
+          prev.map((t) =>
+            t.tokenNumber === targetToken || (data.encounterId && t.encounterId === data.encounterId)
+              ? { ...t, status: 'IN_CONSULTATION' }
+              : t
+          )
+        );
+        if (data.doctorId || data.chamber) {
+          setDoctorAvailability((prev) => ({
+            ...prev,
+            ...(data.doctorId ? { [data.doctorId]: 'IN_CONSULTATION' } : {}),
+            ...(data.chamber ? { [data.chamber]: 'IN_CONSULTATION' } : {})
+          }));
+        }
+      }
+    };
+
+    const unsubCalled = hospitalEventBus.subscribe('PATIENT_CALLED', handlePatientCalled);
+    const unsubCalledChamber = hospitalEventBus.subscribe('PATIENT_CALLED_TO_CHAMBER', handlePatientCalled);
+
+    const unsubTokenCompleted = hospitalEventBus.subscribe('TOKEN_COMPLETED', (payload: any) => {
+      const data = payload?.data || {};
+      const targetToken = data.tokenNumber || data.token;
+      if (targetToken || data.encounterId) {
+        setQueue((prev) =>
+          prev.map((t) =>
+            t.tokenNumber === targetToken || (data.encounterId && t.encounterId === data.encounterId)
+              ? { ...t, status: 'COMPLETED' }
+              : t
+          )
+        );
+      }
+    });
+
     const unsubRx = hospitalEventBus.subscribe('PRESCRIPTION_ISSUED', (payload) => {
       const data = payload?.data || {};
       const targetToken = data.tokenNumber || data.token;
@@ -461,6 +499,9 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
     });
 
     return () => {
+      unsubCalled();
+      unsubCalledChamber();
+      unsubTokenCompleted();
       unsubRx();
     };
   }, [autoGoogleReviewEnabled, clinicGoogleReviewUrl, clinicDisplayName]);
