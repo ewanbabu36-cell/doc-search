@@ -115,7 +115,7 @@ console.log('\n--- GATE 3: End-to-End Event Bus Consultation Wiring ---');
 
 const cockpitPath = path.resolve('apps/partner-platform/src/components/views/SoloDoctorOpdCockpitView.tsx');
 assert(fs.existsSync(cockpitPath), 'SoloDoctorOpdCockpitView.tsx exists');
-const cockpitCode = fs.readFileSync(cockpitPath, 'utf8');
+const cockpitCode = fs.readFileSync(cockpitPath, 'utf8').replace(/\r\n/g, '\n');
 
 assert(
   cockpitCode.includes("hospitalEventBus.publish(\n      'PRESCRIPTION_ISSUED'") ||

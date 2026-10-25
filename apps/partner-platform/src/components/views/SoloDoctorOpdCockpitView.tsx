@@ -1050,6 +1050,22 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
     };
   } | null>(null);
 
+  // ⚡ Competitive Gap 4 & Prompt 5: Custom Protocols Saved by Doctor
+  const [customProtocols, setCustomProtocols] = useState<ClinicalQuickProtocol[]>(() => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const saved = localStorage.getItem('docsearch_custom_doctor_protocols');
+        return saved ? JSON.parse(saved) : [];
+      }
+      return [];
+    } catch {
+      return [];
+    }
+  });
+  const [isCustomProtoModalOpen, setIsCustomProtoModalOpen] = useState(false);
+  const [newProtoName, setNewProtoName] = useState('');
+  const [newProtoCategory, setNewProtoCategory] = useState('General');
+
   // ⚡ Competitive Gap 4 & Prompt 5: 1-Click Protocol Loader
   const handleLoadProtocol = (proto: ClinicalQuickProtocol) => {
     const newItems: CockpitMedItem[] = proto.medications.map((m, idx) => ({
@@ -1072,6 +1088,61 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
 
     setStatusMessage(`✓ Loaded ${proto.medications.length} medicines from "${proto.name}" protocol into prescription pad`);
     setTimeout(() => setStatusMessage(null), 3000);
+  };
+
+  const handleSaveCurrentAsProtocol = () => {
+    if (!newProtoName.trim()) {
+      alert('Please enter a protocol name');
+      return;
+    }
+    if (medList.length === 0) {
+      alert('No medicines currently in prescription pad to save.');
+      return;
+    }
+    const newProto: ClinicalQuickProtocol = {
+      id: `custom-proto-${Date.now()}`,
+      name: newProtoName.trim(),
+      category: newProtoCategory.trim() || 'Custom',
+      icon: '⭐',
+      description: medList.map(m => m.medicationName).join(' + '),
+      medications: medList.map(m => ({
+        medicationName: m.medicationName,
+        strength: m.strength || 'Standard',
+        dosage: m.dosage || '1 Tab',
+        frequency: m.frequency || '1 - 0 - 1',
+        duration: m.duration || 5,
+        timing: (m.beforeAfterFood as any) || 'AFTER_FOOD',
+        instructions: m.instructions || ''
+      }))
+    };
+    const updated = [...customProtocols, newProto];
+    setCustomProtocols(updated);
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        localStorage.setItem('docsearch_custom_doctor_protocols', JSON.stringify(updated));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    setIsCustomProtoModalOpen(false);
+    setNewProtoName('');
+    setStatusMessage(`✓ Custom protocol "${newProto.name}" saved! Available in Quick Combos bar.`);
+    setTimeout(() => setStatusMessage(null), 3000);
+  };
+
+  const handleDeleteCustomProtocol = (protoId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const updated = customProtocols.filter(p => p.id !== protoId);
+    setCustomProtocols(updated);
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        localStorage.setItem('docsearch_custom_doctor_protocols', JSON.stringify(updated));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    setStatusMessage(`✓ Custom protocol removed.`);
+    setTimeout(() => setStatusMessage(null), 2000);
   };
 
   // Symptoms selector helper: Automatically links ICD-10 Diagnosis if not yet specified
@@ -8910,40 +8981,107 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
                 </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'nowrap' }}>
-                {INDIAN_CLINIC_QUICK_PROTOCOLS.map((proto) => (
-                  <button
-                    key={proto.id}
-                    type="button"
-                    onClick={() => handleLoadProtocol(proto)}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      padding: '3px 8px',
-                      borderRadius: '5px',
-                      backgroundColor: 'rgba(245, 158, 11, 0.12)',
-                      border: '1px solid rgba(245, 158, 11, 0.35)',
-                      color: '#FEF08A',
-                      fontSize: '0.6875rem',
-                      fontWeight: 700,
-                      whiteSpace: 'nowrap',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = 'rgba(245, 158, 11, 0.25)';
-                      e.currentTarget.style.borderColor = '#F59E0B';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'rgba(245, 158, 11, 0.12)';
-                      e.currentTarget.style.borderColor = 'rgba(245, 158, 11, 0.35)';
-                    }}
-                    title={`1-Click load: ${proto.description}`}
-                  >
-                    <span>{proto.name}</span>
-                    <span style={{ fontSize: '0.625rem', color: '#F59E0B', fontWeight: 900 }}>({proto.medications.length})</span>
-                  </button>
-                ))}
+                {[...INDIAN_CLINIC_QUICK_PROTOCOLS, ...customProtocols].map((proto) => {
+                  const isCustom = proto.id.startsWith('custom-proto-');
+                  return (
+                    <div
+                      key={proto.id}
+                      style={{ display: 'inline-flex', alignItems: 'center' }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => handleLoadProtocol(proto)}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          padding: '3px 8px',
+                          borderRadius: isCustom ? '5px 0 0 5px' : '5px',
+                          backgroundColor: isCustom ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.12)',
+                          border: isCustom ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid rgba(245, 158, 11, 0.35)',
+                          color: isCustom ? '#A7F3D0' : '#FEF08A',
+                          fontSize: '0.6875rem',
+                          fontWeight: 700,
+                          whiteSpace: 'nowrap',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = isCustom ? 'rgba(16, 185, 129, 0.28)' : 'rgba(245, 158, 11, 0.25)';
+                          e.currentTarget.style.borderColor = isCustom ? '#10B981' : '#F59E0B';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = isCustom ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.12)';
+                          e.currentTarget.style.borderColor = isCustom ? 'rgba(16, 185, 129, 0.4)' : 'rgba(245, 158, 11, 0.35)';
+                        }}
+                        title={`1-Click load: ${proto.description}`}
+                      >
+                        {isCustom && <span>⭐</span>}
+                        <span>{proto.name}</span>
+                        <span style={{ fontSize: '0.625rem', color: isCustom ? '#34D399' : '#F59E0B', fontWeight: 900 }}>({proto.medications.length})</span>
+                      </button>
+                      {isCustom && (
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteCustomProtocol(proto.id, e)}
+                          title="Delete custom protocol"
+                          style={{
+                            padding: '3px 6px',
+                            borderRadius: '0 5px 5px 0',
+                            backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                            border: '1px solid rgba(239, 68, 68, 0.4)',
+                            borderLeft: 'none',
+                            color: '#F87171',
+                            fontSize: '0.625rem',
+                            fontWeight: 800,
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.4)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
+                          }}
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+
+                <button
+                  type="button"
+                  onClick={() => setIsCustomProtoModalOpen(true)}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '3px 8px',
+                    borderRadius: '5px',
+                    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                    border: '1px dashed rgba(59, 130, 246, 0.5)',
+                    color: '#93C5FD',
+                    fontSize: '0.6875rem',
+                    fontWeight: 700,
+                    whiteSpace: 'nowrap',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.3)';
+                    e.currentTarget.style.borderColor = '#3B82F6';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.15)';
+                    e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.5)';
+                  }}
+                  title="Save current prescription pad as a reusable 1-click combo chip"
+                >
+                  <span style={{ fontSize: '0.75rem', fontWeight: 900 }}>+</span>
+                  <span>Custom Combo</span>
+                </button>
               </div>
             </div>
 
@@ -11645,6 +11783,232 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
             ✓ Substitute with {outOfStockPrompt.substitute.name}
           </button>
         </div>
+      </div>
+    </div>
+  )}
+
+  {/* ⚡ Prompt 5: Save Custom Quick-Combo Modal */}
+  {isCustomProtoModalOpen && (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.75)',
+        backdropFilter: 'blur(3px)',
+        zIndex: 99999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px'
+      }}
+      onClick={() => setIsCustomProtoModalOpen(false)}
+    >
+      <div
+        style={{
+          backgroundColor: '#0F172A',
+          border: '1px solid #334155',
+          borderRadius: '12px',
+          width: '100%',
+          maxWidth: '520px',
+          padding: '22px',
+          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.7), 0 8px 10px -6px rgba(0, 0, 0, 0.7)'
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '1.25rem' }}>⚡</span>
+            <div>
+              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#F8FAFC' }}>
+                Save As 1-Click Quick Combo
+              </h3>
+              <p style={{ margin: 0, fontSize: '0.72rem', color: '#94A3B8' }}>
+                Turn your active prescription pad into a reusable single-click protocol chip
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsCustomProtoModalOpen(false)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#94A3B8',
+              fontSize: '1.2rem',
+              cursor: 'pointer',
+              lineHeight: 1
+            }}
+          >
+            ✕
+          </button>
+        </div>
+
+        {medList.length === 0 ? (
+          <div
+            style={{
+              padding: '24px',
+              textAlign: 'center',
+              backgroundColor: '#1E293B',
+              borderRadius: '8px',
+              border: '1px dashed #475569',
+              margin: '16px 0'
+            }}
+          >
+            <div style={{ fontSize: '1.5rem', marginBottom: '6px' }}>💊</div>
+            <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#E2E8F0' }}>
+              No medications in prescription pad
+            </div>
+            <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '4px' }}>
+              Add one or more medicines using the formulary adder first, then click Save as Quick Combo.
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsCustomProtoModalOpen(false)}
+              style={{
+                marginTop: '14px',
+                padding: '6px 14px',
+                borderRadius: '6px',
+                backgroundColor: '#3B82F6',
+                border: 'none',
+                color: '#FFFFFF',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              Back to Prescribing
+            </button>
+          </div>
+        ) : (
+          <div>
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '5px' }}>
+                Protocol Name:
+              </label>
+              <input
+                type="text"
+                value={newProtoName}
+                onChange={(e) => setNewProtoName(e.target.value)}
+                placeholder="e.g. URI + Antibiotic, Post-Op Pain, Migraine Acute"
+                autoFocus
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  backgroundColor: '#1E293B',
+                  border: '1px solid #475569',
+                  color: '#F8FAFC',
+                  fontSize: '0.85rem',
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '14px' }}>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '5px' }}>
+                Specialty / Category:
+              </label>
+              <select
+                value={newProtoCategory}
+                onChange={(e) => setNewProtoCategory(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  backgroundColor: '#1E293B',
+                  border: '1px solid #475569',
+                  color: '#F8FAFC',
+                  fontSize: '0.85rem',
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+              >
+                <option value="General">General Practice</option>
+                <option value="Infections">Infectious / URI</option>
+                <option value="Cardiology">Cardiology / HTN</option>
+                <option value="Diabetology">Diabetology / Endocrine</option>
+                <option value="Gastroenterology">Gastroenterology / GERD</option>
+                <option value="Pediatrics">Pediatrics</option>
+                <option value="Orthopedics">Orthopedics / Pain</option>
+                <option value="Custom">Custom / Other</option>
+              </select>
+            </div>
+
+            <div style={{ marginBottom: '16px' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94A3B8', marginBottom: '6px' }}>
+                Medicines included ({medList.length}):
+              </div>
+              <div
+                style={{
+                  maxHeight: '140px',
+                  overflowY: 'auto',
+                  backgroundColor: '#090D16',
+                  borderRadius: '6px',
+                  border: '1px solid #1E293B',
+                  padding: '8px'
+                }}
+              >
+                {medList.map((m, idx) => (
+                  <div
+                    key={m.id || idx}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '4px 6px',
+                      borderBottom: idx === medList.length - 1 ? 'none' : '1px solid #1E293B',
+                      fontSize: '0.75rem'
+                    }}
+                  >
+                    <span style={{ color: '#E2E8F0', fontWeight: 600 }}>
+                      {idx + 1}. {m.medicationName} ({m.strength || 'Std'})
+                    </span>
+                    <span style={{ color: '#38BDF8', fontSize: '0.7rem' }}>
+                      {m.frequency} • {m.duration}d
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => setIsCustomProtoModalOpen(false)}
+                style={{
+                  padding: '7px 14px',
+                  borderRadius: '6px',
+                  backgroundColor: 'transparent',
+                  border: '1px solid #475569',
+                  color: '#94A3B8',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveCurrentAsProtocol}
+                style={{
+                  padding: '7px 16px',
+                  borderRadius: '6px',
+                  backgroundColor: '#10B981',
+                  border: 'none',
+                  color: '#FFFFFF',
+                  fontSize: '0.75rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(16, 185, 129, 0.4)'
+                }}
+              >
+                💾 Save 1-Click Protocol
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )}
