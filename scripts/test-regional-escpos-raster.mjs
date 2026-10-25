@@ -125,6 +125,12 @@ assert(
 );
 console.log(`  ✅ PASS: 203 DPI GS v 0 monochrome raster bitmap encoded cleanly (${rasterBytes.length} bytes, 72 bytes/row)`);
 
+// Verify string input handling
+const stringRasterBytes = printerService.generateThermalRasterEscPos(JSON.stringify(hindiSlipData), 576);
+assert(stringRasterBytes instanceof Uint8Array, 'generateThermalRasterEscPos handles stringified JSON input');
+assert(stringRasterBytes[0] === 0x1B && stringRasterBytes[1] === 0x40, 'String payload produces valid ESC @ initialization');
+console.log('  ✅ PASS: generateThermalRasterEscPos seamlessly processes string and element representations');
+
 // --- GATE 3: PrintableDoctorPrescriptionModal UI Integration ---
 console.log('\n--- GATE 3: PrintableDoctorPrescriptionModal UI Integration ---');
 const modalPath = path.resolve('apps/partner-platform/src/components/dialogs/PrintableDoctorPrescriptionModal.tsx');

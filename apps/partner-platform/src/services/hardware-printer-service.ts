@@ -1518,14 +1518,41 @@ export class HardwarePrinterService {
       if (childCanvas) {
         return encodeCanvasToEscPosRaster(childCanvas, widthPx);
       }
+
+      // Extract medication rows from DOM table if present
+      const meds: ThermalPrescriptionMedItem[] = [];
+      const rows = element.querySelectorAll('table tbody tr');
+      rows.forEach((tr) => {
+        const cells = tr.querySelectorAll('td');
+        if (cells.length >= 5) {
+          const medName = cells[1]?.querySelector('strong')?.textContent?.trim() || cells[1]?.textContent?.trim() || '';
+          const dosage = cells[2]?.textContent?.trim() || '';
+          const freqLine = cells[3]?.textContent?.trim() || '';
+          const regionalTiming = cells[3]?.querySelector('div:last-child')?.textContent?.replace(/^🇮🇳\s*/, '').trim();
+          const duration = cells[4]?.textContent?.trim() || '';
+          const instructions = cells[5]?.textContent?.trim() || '';
+          if (medName) {
+            meds.push({
+              name: medName,
+              dosage,
+              frequency: freqLine.split('(')[0]?.trim() || '1-0-1',
+              duration,
+              timing: freqLine,
+              instructions,
+              regionalTiming
+            });
+          }
+        }
+      });
+
       const textData: ThermalPrescriptionSlipData = {
         clinicName: element.querySelector('h1, h2, h3')?.textContent?.trim() || 'DOCSEARCH CLINIC',
-        doctorName: element.querySelector('[data-doctor-name]')?.textContent?.trim() || 'Attending Physician',
-        patientName: element.querySelector('[data-patient-name]')?.textContent?.trim() || 'Patient',
+        doctorName: element.querySelector('h1')?.textContent?.trim() || element.querySelector('[data-doctor-name]')?.textContent?.trim() || 'Attending Physician',
+        patientName: element.querySelector('strong')?.textContent?.trim() || element.querySelector('[data-patient-name]')?.textContent?.trim() || 'Patient',
         patientMrn: element.querySelector('[data-patient-mrn]')?.textContent?.trim() || 'MRN-001',
         tokenNumber: element.querySelector('[data-token]')?.textContent?.trim() || '1',
         date: new Date().toLocaleDateString('en-IN'),
-        medications: []
+        medications: meds
       };
       const canvas = renderPrescriptionSlipToCanvas(textData, widthPx);
       return encodeCanvasToEscPosRaster(canvas, widthPx);
@@ -1540,6 +1567,12 @@ export class HardwarePrinterService {
         }
       } catch {
         // Not JSON
+      }
+
+      if (typeof document !== 'undefined' && element.includes('<') && element.includes('>')) {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = element;
+        return this.generateThermalRasterEscPos(tempDiv, widthPx);
       }
 
       const textData: ThermalPrescriptionSlipData = {
