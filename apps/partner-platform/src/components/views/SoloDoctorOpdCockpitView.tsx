@@ -7086,6 +7086,117 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
               <span>Vacate Chamber (केबिन खाली करें)</span>
             </button>
           </div>
+
+          {/* 📈 Prompt 2: Compact Longitudinal Health Trends Micro-Row */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              flexWrap: 'wrap',
+              padding: '6px 12px',
+              backgroundColor: 'rgba(0, 0, 0, 0.3)',
+              borderRadius: '8px',
+              border: '1px solid rgba(56, 189, 248, 0.2)',
+              marginTop: '4px'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: '0.85rem' }}>📈</span>
+              <span style={{ fontSize: '0.7rem', fontWeight: 900, color: '#38BDF8', letterSpacing: '0.02em' }}>
+                Longitudinal Health Trends:
+              </span>
+            </div>
+
+            {/* Blood Pressure Trend */}
+            <div
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', cursor: 'pointer' }}
+              title={`BP Progression: ${longitudinalVisits.map(v => `${v.label}: ${v.bp}`).join(' ➔ ')}\nKey Note: ${longitudinalVisits[0]?.keyNote || ''}`}
+            >
+              <strong style={{ color: '#94A3B8' }}>BP:</strong>
+              <span style={{ color: sparklineVitals.bpSysLatest >= 140 ? '#F87171' : '#34D399', fontWeight: 800 }}>
+                {sparklineVitals.bpSysData[0]}/{sparklineVitals.bpDiaData[0]} ➔ {sparklineVitals.bpSysData[1]}/{sparklineVitals.bpDiaData[1]} ➔ {sparklineVitals.bpSysLatest}/{sparklineVitals.bpDiaLatest} mmHg
+              </span>
+              <span style={{ fontSize: '0.625rem', color: sparklineVitals.bpDiff < 0 ? '#34D399' : '#FBBF24', fontWeight: 800 }}>
+                ({sparklineVitals.bpDiff < 0 ? '📉 Improving' : sparklineVitals.bpDiff > 0 ? '📈 Elevated' : '🟢 Stable'})
+              </span>
+              <ClinicalSparkline
+                data={sparklineVitals.bpSysData}
+                labels={sparklineVitals.labels}
+                unit="mmHg"
+                normalRange={[90, 130]}
+                width={70}
+                height={20}
+                showDirection={false}
+              />
+            </div>
+
+            <span style={{ color: '#475569' }}>•</span>
+
+            {/* Blood Sugar Trend */}
+            <div
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', cursor: 'pointer' }}
+              title={`Blood Glucose Progression: ${longitudinalVisits.map(v => `${v.label}: ${v.sugar}`).join(' ➔ ')}`}
+            >
+              <strong style={{ color: '#94A3B8' }}>Sugar:</strong>
+              <span style={{ color: sparklineVitals.sugarLatest >= 140 ? '#FBBF24' : '#34D399', fontWeight: 800 }}>
+                {sparklineVitals.sugarData[0]} ➔ {sparklineVitals.sugarData[1]} ➔ {sparklineVitals.sugarLatest} mg/dL
+              </span>
+              <span style={{ fontSize: '0.625rem', color: sparklineVitals.sugarDiff < 0 ? '#34D399' : '#FBBF24', fontWeight: 800 }}>
+                ({sparklineVitals.sugarDiff < 0 ? '📉 Controlled' : sparklineVitals.sugarDiff > 0 ? '📈 Elevated' : '🟢 Stable'})
+              </span>
+              <ClinicalSparkline
+                data={sparklineVitals.sugarData}
+                labels={sparklineVitals.labels}
+                unit="mg/dL"
+                normalRange={[70, 140]}
+                width={70}
+                height={20}
+                showDirection={false}
+              />
+            </div>
+
+            <span style={{ color: '#475569' }}>•</span>
+
+            {/* Weight Trend */}
+            <div
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', cursor: 'pointer' }}
+              title={`Weight Tracking: ${longitudinalVisits.map(v => `${v.label}: ${v.weight}`).join(' ➔ ')}`}
+            >
+              <strong style={{ color: '#94A3B8' }}>Weight:</strong>
+              <span style={{ color: '#E2E8F0', fontWeight: 800 }}>
+                {sparklineVitals.weightData[0]} ➔ {sparklineVitals.weightData[1]} ➔ {sparklineVitals.weightLatest} kg
+              </span>
+              <span style={{ fontSize: '0.625rem', color: sparklineVitals.weightDiff < 0 ? '#38BDF8' : '#94A3B8', fontWeight: 800 }}>
+                ({sparklineVitals.weightDiff < 0 ? `📉 ${sparklineVitals.weightDiff.toFixed(1)} kg` : '🟢 Stable'})
+              </span>
+              <ClinicalSparkline
+                data={sparklineVitals.weightData}
+                labels={sparklineVitals.labels}
+                unit="kg"
+                width={65}
+                height={20}
+                strokeColor="#38BDF8"
+                showDirection={false}
+              />
+            </div>
+
+            <span style={{ color: '#475569' }}>•</span>
+
+            {/* HbA1c Trend */}
+            <div
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', cursor: 'pointer' }}
+              title={`HbA1c Trajectory: 8.4% (Jan) ➔ 7.8% (Sep) ➔ ${sparklineVitals.hba1cLatest}% (Today)`}
+            >
+              <strong style={{ color: '#94A3B8' }}>HbA1c:</strong>
+              <span style={{ color: sparklineVitals.hba1cLatest > 6.5 ? '#FBBF24' : '#34D399', fontWeight: 800 }}>
+                {sparklineVitals.hba1cData[0]}% ➔ {sparklineVitals.hba1cData[1]}% ➔ {sparklineVitals.hba1cLatest}%
+              </span>
+              <span style={{ fontSize: '0.625rem', color: '#34D399', fontWeight: 800 }}>
+                (📉 Glycemic Response)
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* 👶 PEDIATRIC DOSING SAFETY & WEIGHT-BASED GUIDANCE BANNER */}
