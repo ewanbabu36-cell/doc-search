@@ -49,7 +49,7 @@ const StaffAdministrationDomainManager = React.lazy(() => import('./StaffAdminis
 const DoctorRosterDomainManager = React.lazy(() => import('./DoctorRosterDomainManager.js').then(m => ({ default: m.DoctorRosterDomainManager })));
 const PatientRegistrationDomainManager = React.lazy(() => import('./PatientRegistrationDomainManager.js').then(m => ({ default: m.PatientRegistrationDomainManager })));
 const EncounterDomainManager = React.lazy(() => import('./EncounterDomainManager.js').then(m => ({ default: m.EncounterDomainManager })));
-const ClinicalConsultationDomainManager = React.lazy(() => import('./ClinicalConsultationDomainManager.js').then(m => ({ default: m.ClinicalConsultationDomainManager })));
+import { ClinicalConsultationDomainManager } from './ClinicalConsultationDomainManager.js';
 const NurseVitalsTriageStationView = React.lazy(() => import('./views/NurseVitalsTriageStationView.js').then(m => ({ default: m.NurseVitalsTriageStationView })));
 const ClinicalInvestigationDomainManager = React.lazy(() => import('./ClinicalInvestigationDomainManager.js').then(m => ({ default: m.ClinicalInvestigationDomainManager })));
 const PharmacyDomainManager = React.lazy(() => import('./PharmacyDomainManager.js').then(m => ({ default: m.PharmacyDomainManager })));
@@ -84,7 +84,7 @@ const PreferredPartnerNetworkView = React.lazy(() => import('./views/PreferredPa
 const HospitalInHouseClosedLoopView = React.lazy(() => import('./views/HospitalInHouseClosedLoopView.js').then(m => ({ default: m.HospitalInHouseClosedLoopView })));
 const LegacyDataMigrationWizardView = React.lazy(() => import('./views/LegacyDataMigrationWizardView.js').then(m => ({ default: m.LegacyDataMigrationWizardView })));
 import { isPartnerModuleAllowed, isModuleAllowedForPartnerProfile, isWorkspaceAllowedForPartnerProfile, isDestructiveActionAllowed, isHospitalExecutive, getRoleDefaultPerspective, isVoiceScribeAllowed, isClinicianRole } from '../utils/partnerRolePermissions.js';
-const FrontDeskWorkstationView = React.lazy(() => import('./views/FrontDeskWorkstationView.js').then(m => ({ default: m.FrontDeskWorkstationView })));
+import { FrontDeskWorkstationView } from './views/FrontDeskWorkstationView.js';
 const StaffOperationalRoleDashboard = React.lazy(() => import('./dashboard/StaffOperationalRoleDashboard.js').then(m => ({ default: m.StaffOperationalRoleDashboard })));
 const RoleTailoredSmartDeskView = React.lazy(() => import('./views/RoleTailoredSmartDeskView.js').then(m => ({ default: m.RoleTailoredSmartDeskView })));
 const GlobalFounderApprovalsModal = React.lazy(() => import('./common/GlobalFounderApprovalsModal.js').then(m => ({ default: m.GlobalFounderApprovalsModal })));
@@ -471,7 +471,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
 
     const idleHandle = schedulePreload(() => {
       const dynamicModuleLoaders = [
-        () => import('./ClinicalConsultationDomainManager.js'),
+
         () => import('./BillingDomainManager.js'),
         () => import('./PharmacyDomainManager.js'),
         () => import('./PatientRegistrationDomainManager.js'),
@@ -484,7 +484,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
         () => import('./ExecutiveCommandDomainManager.js'),
         () => import('./AiChatAssistantDomainManager.js'),
         () => import('./PartnerFoundationDomainManager.js'),
-        () => import('./views/FrontDeskWorkstationView.js'),
+
         () => import('./views/OpdOneFlowExpressView.js'),
         () => import('./views/RoleTailoredSmartDeskView.js'),
         () => import('./dashboard/StaffOperationalRoleDashboard.js'),
@@ -4833,18 +4833,20 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
         ) : (
           <React.Suspense
             fallback={
-              <div
-                style={{
-                  padding: '24px 32px',
-                  width: '100%',
-                  minHeight: '440px'
-                }}
-              >
-                <div style={{ display: 'none' }}>
-                  <DocSearch3DLogoLoader mode="download" size="md" />
+              (activeModule === 'clinical-consultation' || (rolePerspective === 'FRONT_DESK' && (isHomeModule || activeModule === 'my-smart-desk'))) ? null : (
+                <div
+                  style={{
+                    padding: '24px 32px',
+                    width: '100%',
+                    minHeight: '440px'
+                  }}
+                >
+                  <div style={{ display: 'none' }}>
+                    <DocSearch3DLogoLoader mode="download" size="md" />
+                  </div>
+                  <SkeletonPage metricCount={4} layout="table" />
                 </div>
-                <SkeletonPage metricCount={4} layout="table" />
-              </div>
+              )
             }
           >
             {rolePerspective === 'FRONT_DESK' && (isHomeModule || activeModule === 'my-smart-desk') ? (

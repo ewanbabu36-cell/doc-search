@@ -5,7 +5,13 @@ import path from 'path';
 
 export default defineConfig({
   plugins: [
-    react(),
+    react({
+      babel: {
+        compact: false,
+        configFile: false,
+        babelrc: false
+      }
+    }),
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
@@ -140,6 +146,14 @@ export default defineConfig({
   server: {
     watch: {
       ignored: ['**/dist/**', '**/node_modules/**']
+    },
+    warmup: {
+      clientFiles: [
+        './src/components/PartnerPlatformShell.tsx',
+        './src/components/ClinicalConsultationDomainManager.tsx',
+        './src/components/views/SoloDoctorOpdCockpitView.tsx',
+        './src/components/views/FrontDeskWorkstationView.tsx'
+      ]
     },
     port: 5173,
     strictPort: true,
