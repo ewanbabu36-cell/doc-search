@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import type { CockpitMedItem } from '../views/SoloDoctorOpdCockpitView.js';
+import { pharmacyStockService } from '../../services/pharmacy-stock-service.js';
 
 export interface RapidRxPrescriptionPadProps {
   onAddMedication: (med: CockpitMedItem) => void;
@@ -982,7 +983,7 @@ export const RapidRxPrescriptionPad: React.FC<RapidRxPrescriptionPadProps> = ({
                   }}
                 >
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                       <span style={{ fontWeight: 800, color: '#F8FAFC', fontSize: '0.8125rem' }}>
                         {drug.brandName}
                       </span>
@@ -992,10 +993,79 @@ export const RapidRxPrescriptionPad: React.FC<RapidRxPrescriptionPadProps> = ({
                       <span style={{ fontSize: '0.625rem', backgroundColor: 'rgba(255,255,255,0.08)', padding: '1px 5px', borderRadius: '4px', color: '#CBD5E1' }}>
                         {drug.formulation}
                       </span>
+                      {/* 🟢 In-House Pharmacy Real-Time Stock Badge */}
+                      {(() => {
+                        const stockInfo = pharmacyStockService.getPharmacyStock(drug.brandName, drug.genericName);
+                        if (stockInfo.status === 'IN_STOCK') {
+                          return (
+                            <span
+                              style={{
+                                fontSize: '0.6rem',
+                                color: '#10B981',
+                                backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                                border: '1px solid rgba(16, 185, 129, 0.3)',
+                                padding: '1px 5px',
+                                borderRadius: '4px',
+                                fontWeight: 800
+                              }}
+                              title={`Live Dispensary Stock: ${stockInfo.stock} ${stockInfo.unit}`}
+                            >
+                              🟢 In Stock: {stockInfo.stock} {stockInfo.unit}
+                            </span>
+                          );
+                        }
+                        if (stockInfo.status === 'LOW_STOCK') {
+                          return (
+                            <span
+                              style={{
+                                fontSize: '0.6rem',
+                                color: '#F59E0B',
+                                backgroundColor: 'rgba(245, 158, 11, 0.12)',
+                                border: '1px solid rgba(245, 158, 11, 0.3)',
+                                padding: '1px 5px',
+                                borderRadius: '4px',
+                                fontWeight: 800
+                              }}
+                              title={`Low Dispensary Stock: ${stockInfo.stock} ${stockInfo.unit} remaining!`}
+                            >
+                              🟡 Low Stock: {stockInfo.stock} {stockInfo.unit}
+                            </span>
+                          );
+                        }
+                        return (
+                          <span
+                            style={{
+                              fontSize: '0.6rem',
+                              color: '#EF4444',
+                              backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                              border: '1px solid rgba(239, 68, 68, 0.3)',
+                              padding: '1px 5px',
+                              borderRadius: '4px',
+                              fontWeight: 800
+                            }}
+                            title="Out of stock at counter pharmacy"
+                          >
+                            🔴 Out of Stock
+                          </span>
+                        );
+                      })()}
                     </div>
                     <div style={{ fontSize: '0.6875rem', color: '#94A3B8', marginTop: '2px' }}>
                       {drug.genericName} • <span style={{ color: '#FCD34D' }}>{drug.defaultFrequency}</span> • {drug.defaultDurationDays}d
                     </div>
+                    {/* In-Stock Substitute Guidance */}
+                    {(() => {
+                      const stockInfo = pharmacyStockService.getPharmacyStock(drug.brandName, drug.genericName);
+                      if (stockInfo.status === 'OUT_OF_STOCK' && stockInfo.substitute) {
+                        return (
+                          <div style={{ fontSize: '0.625rem', color: '#38BDF8', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <span>⚡ Counter Substitute:</span>
+                            <strong style={{ color: '#F8FAFC' }}>{stockInfo.substitute.name} ({stockInfo.substitute.stock} in stock)</strong>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
                     {drug.janAushadhiEquivalent && (
                       <div style={{ fontSize: '0.625rem', color: '#34D399', marginTop: '1px' }}>
                         ⚡ Jan Aushadhi: ₹{drug.janAushadhiEquivalent.janAushadhiPrice} (Save ₹{drug.janAushadhiEquivalent.brandPrice - drug.janAushadhiEquivalent.janAushadhiPrice})
