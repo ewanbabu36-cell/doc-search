@@ -42,6 +42,13 @@ import {
   type ParsedClinicalVoiceData
 } from '../../services/clinical-voice-scribe-parser.js';
 import { hardwarePrinterService } from '../../services/hardware-printer-service.js';
+import {
+  SUPPORTED_RX_LANGUAGES,
+  translateDosageInstructions,
+  getSavedRxLanguage,
+  saveRxLanguage,
+  type RxLanguageCode
+} from '../../utils/regional-prescription-translator.js';
 
 export interface SoloDoctorOpdCockpitViewProps {
   consultation: ConsultationDto | null;
@@ -920,6 +927,16 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
       setIsLocalSigned(consultation.consultationStatus === 'COMPLETED');
     }
   }, [consultation?.id, consultation?.consultationStatus]);
+
+  // Regional Prescription Vernacular Language State (HI, BN, MR, TA, TE, EN)
+  const [rxLanguage, setRxLanguage] = useState<RxLanguageCode>(() => getSavedRxLanguage());
+
+  const handleSelectRxLanguage = (lang: RxLanguageCode) => {
+    setRxLanguage(lang);
+    saveRxLanguage(lang);
+    setStatusMessage(`🌐 Rx language set to ${SUPPORTED_RX_LANGUAGES.find((l) => l.code === lang)?.nativeLabel || lang}`);
+    setTimeout(() => setStatusMessage(null), 3000);
+  };
 
   // Clean up voice speech on unmount
   useEffect(() => {
@@ -6080,9 +6097,21 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
                   type="button"
                   onClick={() => {
                     const phone = (completedPatientInfo.phone || '').replace(/\D/g, '').slice(-10);
+                    const medSummary = medList.map((m, idx) => {
+                      const translated = translateDosageInstructions({
+                        frequency: m.frequency,
+                        timing: m.beforeAfterFood,
+                        duration: m.duration,
+                        lang: rxLanguage,
+                        customInstructions: m.instructions
+                      });
+                      return `${idx + 1}. *${m.medicationName}* ${m.strength || ''}\n   ⏱️ ${translated.nativeScript}`;
+                    }).join('\n');
                     const msg = encodeURIComponent(
                       `*Namaste ${completedPatientInfo.name}*,\n\n` +
                       `Your prescription for Token #${completedPatientInfo.token} has been signed by *${chamberDoctor}*.\n\n` +
+                      `📋 *Assessment:* ${clinicalAssessment || 'OPD Consultation'}\n\n` +
+                      (medSummary ? `💊 *Prescribed Medications (${medList.length}):*\n${medSummary}\n\n` : '') +
                       `🔗 *Verify & Download Official PDF:* https://docsearch.in/verify/rx/${completedPatientInfo.encounterId || 'DOC-RX'}\n\n` +
                       `_DocSearch Smart Healthcare Suite • NMC Telemedicine Guidelines Compliant_`
                     );
@@ -8355,6 +8384,46 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
                 </button>
               </div>
 
+              {/* 🌐 Regional Rx Language Selector */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '3px',
+                  backgroundColor: 'rgba(56, 189, 248, 0.08)',
+                  padding: '2px 6px',
+                  borderRadius: '6px',
+                  border: '1px solid rgba(56, 189, 248, 0.25)'
+                }}
+                title="Select vernacular language for prescription dosage instructions & patient WhatsApp"
+              >
+                <span style={{ fontSize: '0.6875rem', color: '#38BDF8', fontWeight: 800, paddingRight: '2px' }}>🌐 Rx:</span>
+                {SUPPORTED_RX_LANGUAGES.map((langOpt) => {
+                  const isSelected = rxLanguage === langOpt.code;
+                  return (
+                    <button
+                      key={langOpt.code}
+                      type="button"
+                      onClick={() => handleSelectRxLanguage(langOpt.code)}
+                      style={{
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        fontSize: '0.6875rem',
+                        fontWeight: isSelected ? 800 : 500,
+                        border: 'none',
+                        backgroundColor: isSelected ? '#0284C7' : 'transparent',
+                        color: isSelected ? '#FFFFFF' : '#94A3B8',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease'
+                      }}
+                      title={`Switch dosage instructions to ${langOpt.label}`}
+                    >
+                      {langOpt.nativeLabel}
+                    </button>
+                  );
+                })}
+              </div>
+
               {/* View Switcher: Visual Cards ⟷ Compact Table */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '3px', backgroundColor: 'rgba(255,255,255,0.04)', padding: '2px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)' }}>
                 <button
@@ -8728,6 +8797,36 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
                           </span>
                         </div>
 
+                        {/* 🇮🇳 Regional Vernacular Dosage Banner */}
+                        {(() => {
+                          const translated = translateDosageInstructions({
+                            frequency: med.frequency,
+                            timing: med.beforeAfterFood,
+                            duration: med.duration,
+                            lang: rxLanguage,
+                            customInstructions: med.instructions
+                          });
+                          return (
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                padding: '4px 8px',
+                                borderRadius: '6px',
+                                backgroundColor: 'rgba(56, 189, 248, 0.08)',
+                                border: '1px solid rgba(56, 189, 248, 0.2)',
+                                color: '#7DD3FC',
+                                fontSize: '0.72rem',
+                                fontWeight: 700
+                              }}
+                            >
+                              <span style={{ fontSize: '0.75rem' }}>🇮🇳</span>
+                              <span>{translated.nativeScript}</span>
+                            </div>
+                          );
+                        })()}
+
                         {/* Jan Aushadhi Savings Badge */}
                         {med.genericSubstitute && (
                           <div style={{ fontSize: '0.65rem', color: '#10B981', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -8771,8 +8870,23 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
                             <div style={{ fontWeight: 800, color: '#F8FAFC' }}>
                               {med.medicationName} <span style={{ color: '#38BDF8', fontSize: '0.7rem' }}>{med.strength}</span>
                             </div>
+                            {/* 🇮🇳 Regional Vernacular Dosage Sub-line */}
+                            {(() => {
+                              const translated = translateDosageInstructions({
+                                frequency: med.frequency,
+                                timing: med.beforeAfterFood,
+                                duration: med.duration,
+                                lang: rxLanguage,
+                                customInstructions: med.instructions
+                              });
+                              return (
+                                <div style={{ fontSize: '0.6875rem', color: '#7DD3FC', fontWeight: 600, marginTop: '2px' }}>
+                                  🇮🇳 {translated.nativeScript}
+                                </div>
+                              );
+                            })()}
                             {med.genericSubstitute && (
-                              <div style={{ fontSize: '0.625rem', color: '#10B981' }}>
+                              <div style={{ fontSize: '0.625rem', color: '#10B981', marginTop: '2px' }}>
                                 ⚡ Save ₹{med.genericSubstitute.brandPrice - med.genericSubstitute.janAushadhiPrice}
                               </div>
                             )}
@@ -10409,11 +10523,21 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
               onClick={() => {
                 const phone = (activePatient.phone || '').replace(/\D/g, '').slice(-10);
                 if (phone) {
+                  const medSummary = medList.map((m, idx) => {
+                    const translated = translateDosageInstructions({
+                      frequency: m.frequency,
+                      timing: m.beforeAfterFood,
+                      duration: m.duration,
+                      lang: rxLanguage,
+                      customInstructions: m.instructions
+                    });
+                    return `${idx + 1}. *${m.medicationName}* ${m.strength || ''}\n   ⏱️ ${translated.nativeScript}`;
+                  }).join('\n');
                   const msg = encodeURIComponent(
                     `*Namaste ${activePatient.name}*,\n\n` +
                     `Your digital prescription for Token #${activePatient.token} has been signed by *${chamberDoctor}*.\n\n` +
-                    `📋 *Summary:* ${clinicalAssessment || 'OPD Consultation'}\n` +
-                    `💊 *Prescribed Medications:* ${medList.length} items\n` +
+                    `📋 *Assessment:* ${clinicalAssessment || 'OPD Consultation'}\n\n` +
+                    (medSummary ? `💊 *Prescribed Medications (${medList.length}):*\n${medSummary}\n\n` : '') +
                     `🔗 *Verify & Download Official PDF:* https://docsearch.in/verify/rx/${activePatient.encounterId || 'DOC-RX'}\n\n` +
                     `_DocSearch Smart Healthcare Suite • NMC Telemedicine Guidelines Compliant_`
                   );
@@ -10599,16 +10723,27 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
                     patientMrn: activePatient.mrn,
                     tokenNumber: String(activePatient.token || '01'),
                     date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+                    rxLanguage: rxLanguage,
                     diagnoses: clinicalAssessment ? [clinicalAssessment] : [],
-                    medications: medList.map((m) => ({
-                      name: m.medicationName,
-                      genericName: m.genericName || m.genericSubstitute?.name || m.strength || '',
-                      dosage: m.dosage,
-                      frequency: m.frequency,
-                      duration: `${m.duration} ${m.durationUnit || 'days'}`,
-                      timing: m.beforeAfterFood,
-                      instructions: m.instructions
-                    })),
+                    medications: medList.map((m) => {
+                      const translated = translateDosageInstructions({
+                        frequency: m.frequency,
+                        timing: m.beforeAfterFood,
+                        duration: m.duration,
+                        lang: rxLanguage,
+                        customInstructions: m.instructions
+                      });
+                      return {
+                        name: m.medicationName,
+                        genericName: m.genericName || m.genericSubstitute?.name || m.strength || '',
+                        dosage: m.dosage,
+                        frequency: m.frequency,
+                        duration: `${m.duration} ${m.durationUnit || 'days'}`,
+                        timing: m.beforeAfterFood,
+                        instructions: m.instructions,
+                        regionalTiming: translated.romanized
+                      };
+                    }),
                     labOrders: selectedTests.map((t) => t.testName),
                     followUpDays: followUpDays,
                     vitals: {

@@ -106,6 +106,7 @@ export interface ThermalPrescriptionMedItem {
   duration?: string | number | undefined;
   timing?: string | undefined;
   instructions?: string | undefined;
+  regionalTiming?: string | undefined;
 }
 
 export interface ThermalPrescriptionSlipData {
@@ -120,6 +121,7 @@ export interface ThermalPrescriptionSlipData {
   patientMrn: string;
   tokenNumber: string | number;
   date: string;
+  rxLanguage?: string | undefined;
   diagnoses?: string[] | undefined;
   medications: ThermalPrescriptionMedItem[];
   labOrders?: string[] | undefined;
@@ -851,7 +853,9 @@ export class HardwarePrinterService {
         builder.bold(true).line(`${idx + 1}. ${med.name} ${med.dosage || ''}`).bold(false);
         const timingLine = `   Freq: ${med.frequency || '1-0-1'} | Duration: ${med.duration || 5} Days`;
         builder.line(timingLine);
-        if (med.timing || med.instructions) {
+        if (med.regionalTiming) {
+          builder.line(`   Dose: ${med.regionalTiming}`);
+        } else if (med.timing || med.instructions) {
           builder.line(`   Take: ${med.timing || ''} ${med.instructions ? `(${med.instructions})` : ''}`.trim());
         }
       });
