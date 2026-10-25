@@ -1,4 +1,5 @@
 import { apiRequest, isMockFallbackAllowed } from './api-client.js';
+import { pwaCompanion } from './pwa-companion.js';
 import { getUnifiedPartnerProfile } from '../utils/roleProfileResolver.js';
 
 function loadStored<T>(key: string, fallback: T[]): T[] {
@@ -96,9 +97,86 @@ export interface ChamberStatusResponse {
   activeConsultation: ConsultationDto | null;
 }
 
+export interface ClinicalOutboxItem {
+  id: string;
+  type: 'SAVE_CONSULTATION' | 'COMPLETE_CONSULTATION' | 'UPDATE_ENCOUNTER_STATUS';
+  endpoint: string;
+  method: string;
+  payload: any;
+  createdAt: string;
+  retryCount: number;
+}
+
 class ClinicalConsultationService implements IClinicalConsultationService {
-  private consultations: ConsultationDto[] = isMockFallbackAllowed() ? loadStored("docsearch_consultations", MOCK_CONSULTATIONS) : [];
-  private auditTraces: ConsultationAuditTraceDto[] = isMockFallbackAllowed() ? [...MOCK_CONSULTATION_AUDIT_TRACES] : [];
+  private consultations: ConsultationDto[] = loadStored("docsearch_consultations", MOCK_CONSULTATIONS);
+  private auditTraces: ConsultationAuditTraceDto[] = loadStored("docsearch_consultation_audit_traces", MOCK_CONSULTATION_AUDIT_TRACES);
+  private outboxSyncing = false;
+
+  constructor() {
+    if (typeof window !== 'undefined') {
+      pwaCompanion.subscribe((state) => {
+        if (state.isOnline) {
+          void this.flushOutbox();
+        }
+      });
+      window.addEventListener('online', () => {
+        void this.flushOutbox();
+      });
+      if (typeof navigator !== 'undefined' && navigator.onLine) {
+        setTimeout(() => void this.flushOutbox(), 1500);
+      }
+    }
+  }
+
+  public enqueueOutbox(item: Omit<ClinicalOutboxItem, 'id' | 'createdAt' | 'retryCount'>): void {
+    if (typeof window === 'undefined') return;
+    try {
+      const existing: ClinicalOutboxItem[] = JSON.parse(window.localStorage.getItem('docsearch_clinical_outbox') || '[]');
+      existing.push({
+        ...item,
+        id: `outbox-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        createdAt: new Date().toISOString(),
+        retryCount: 0
+      });
+      window.localStorage.setItem('docsearch_clinical_outbox', JSON.stringify(existing));
+    } catch (err) {
+      console.warn('Failed to enqueue to clinical outbox:', err);
+    }
+  }
+
+  public async flushOutbox(): Promise<void> {
+    if (typeof window === 'undefined' || this.outboxSyncing) return;
+    const isOnline = pwaCompanion.getState().isOnline;
+    if (!isOnline) return;
+
+    this.outboxSyncing = true;
+    try {
+      const stored: ClinicalOutboxItem[] = JSON.parse(window.localStorage.getItem('docsearch_clinical_outbox') || '[]');
+      if (!Array.isArray(stored) || stored.length === 0) return;
+
+      const remaining: ClinicalOutboxItem[] = [];
+      for (const item of stored) {
+        try {
+          const res = await apiRequest(item.endpoint, {
+            method: item.method,
+            body: JSON.stringify(item.payload)
+          });
+          if (!res.success) {
+            item.retryCount = (item.retryCount || 0) + 1;
+            if (item.retryCount < 5) remaining.push(item);
+          }
+        } catch {
+          item.retryCount = (item.retryCount || 0) + 1;
+          if (item.retryCount < 5) remaining.push(item);
+        }
+      }
+      window.localStorage.setItem('docsearch_clinical_outbox', JSON.stringify(remaining));
+    } catch (err) {
+      console.warn('Error flushing clinical outbox:', err);
+    } finally {
+      this.outboxSyncing = false;
+    }
+  }
 
   private persistConsultations(): void {
     saveStored('docsearch_consultations', this.consultations);
@@ -167,7 +245,7 @@ class ClinicalConsultationService implements IClinicalConsultationService {
     _branchId?: string
   ): Promise<ConsultationOverviewDto> {
     try {
-      const res = await apiRequest<ConsultationOverviewDto>('/api/v1/partner/consultations/overview');
+      const res = await apiRequest<ConsultationOverviewDto>('/api/v1/partner/clinical/consultations/overview');
       if (res.success && res.data) {
         return res.data;
       }
@@ -210,7 +288,7 @@ class ClinicalConsultationService implements IClinicalConsultationService {
       if (req.encounterId) qs.set('encounterId', req.encounterId);
       if (req.consultationStatus) qs.set('status', req.consultationStatus);
       if (req.searchTerm) qs.set('searchTerm', req.searchTerm);
-      const res = await apiRequest<ConsultationDto[]>(`/api/v1/partner/consultations?${qs.toString()}`);
+      const res = await apiRequest<ConsultationDto[]>(`/api/v1/partner/clinical/consultations?${qs.toString()}`);
       if (res.success && Array.isArray(res.data)) {
         return res.data;
       }
@@ -244,7 +322,7 @@ class ClinicalConsultationService implements IClinicalConsultationService {
 
   public async getConsultationById(tenantId: string, consultationId: string): Promise<ConsultationDto | null> {
     try {
-      const res = await apiRequest<ConsultationDto>(`/api/v1/partner/consultations/${encodeURIComponent(consultationId)}`);
+      const res = await apiRequest<ConsultationDto>(`/api/v1/partner/clinical/consultations/${encodeURIComponent(consultationId)}`);
       if (res.success && res.data) {
         return res.data;
       }
@@ -256,7 +334,7 @@ class ClinicalConsultationService implements IClinicalConsultationService {
 
   public async getConsultationByEncounterId(tenantId: string, encounterId: string): Promise<ConsultationDto | null> {
     try {
-      const res = await apiRequest<ConsultationDto>(`/api/v1/partner/consultations/encounter/${encodeURIComponent(encounterId)}`);
+      const res = await apiRequest<ConsultationDto>(`/api/v1/partner/clinical/consultations/encounter/${encodeURIComponent(encounterId)}`);
       if (res.success && res.data) {
         return res.data;
       }
@@ -268,7 +346,7 @@ class ClinicalConsultationService implements IClinicalConsultationService {
 
   public async createConsultation(req: CreateConsultationRequest): Promise<ConsultationDto> {
     try {
-      const res = await apiRequest<ConsultationDto>('/api/v1/partner/consultations', {
+      const res = await apiRequest<ConsultationDto>('/api/v1/partner/clinical/consultations', {
         method: 'POST',
         body: JSON.stringify(req)
       });
@@ -489,47 +567,91 @@ class ClinicalConsultationService implements IClinicalConsultationService {
       consultation as unknown as Record<string, unknown>
     );
 
+    const draftPayload = {
+      encounterId: consultation.encounterId,
+      patientId: consultation.patientId,
+      doctorId: consultation.doctorId || req.actorId,
+      status: 'DRAFT',
+      chiefComplaint: consultation.chiefComplaint,
+      historyOfPresentIllness: consultation.historyOfPresentIllness,
+      pastMedicalHistory: consultation.medicalHistory,
+      examinationNotes: consultation.examinationSummary,
+      assessmentNotes: req.clinicalAssessment || consultation.clinicalAssessment,
+      planNotes: req.treatmentPlan || consultation.treatmentPlan,
+      followUpAdvice: consultation.followUpNotes,
+      vitals: consultation.vitals ? {
+        systolicBp: consultation.vitals.systolicBp,
+        diastolicBp: consultation.vitals.diastolicBp,
+        pulseBpm: consultation.vitals.pulseBpm,
+        temperatureCelsius: consultation.vitals.temperatureCelsius,
+        oxygenSaturationPercent: consultation.vitals.oxygenSaturationPercent,
+        weightKg: consultation.vitals.weightKg,
+        heightCm: consultation.vitals.heightCm,
+        bmi: consultation.vitals.bmi
+      } : undefined,
+      diagnoses: consultation.diagnoses?.map((d) => ({
+        code: d.diagnosisCode,
+        description: d.diagnosisName,
+        isPrimary: d.isPrimary ?? (d.diagnosisType === 'PRIMARY'),
+        type: d.diagnosisType
+      })) || [],
+      medications: ((consultation as any).medications || (req as any).medications || []).map((m: any) => ({
+        medicationId: m.medicationCatalogId || m.medicationId || (typeof m.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(m.id) ? m.id : undefined),
+        medicationName: m.medicationName || m.name,
+        genericName: m.genericName,
+        strength: m.strength,
+        dosage: m.dosage,
+        frequency: m.frequency,
+        duration: m.duration,
+        durationUnit: m.durationUnit || 'DAYS',
+        beforeAfterFood: m.beforeAfterFood,
+        instructions: m.instructions
+      })),
+      labInvestigations: (
+        (consultation as any).labInvestigations ||
+        (consultation.metadata as any)?.labInvestigations ||
+        (req as any).labInvestigations ||
+        []
+      ).map((l: any) => ({
+        investigationCatalogId: l.investigationCatalogId || l.investigationId || (typeof l.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(l.id) ? l.id : undefined),
+        testCode: l.testCode,
+        testName: l.testName || l.name,
+        priority: l.priority || 'ROUTINE'
+      }))
+    };
+
     try {
-      void apiRequest('/api/v1/partner/consultations', {
+      const res = await apiRequest<{ id: string; consultationNumber?: string }>('/api/v1/partner/clinical/consultations', {
         method: 'POST',
-        body: JSON.stringify({
-          encounterId: consultation.encounterId,
-          patientId: consultation.patientId,
-          doctorId: consultation.doctorId,
-          status: 'DRAFT',
-          chiefComplaint: consultation.chiefComplaint,
-          historyOfPresentIllness: consultation.historyOfPresentIllness,
-          pastMedicalHistory: consultation.medicalHistory,
-          examinationNotes: consultation.examinationSummary,
-          assessmentNotes: consultation.clinicalAssessment,
-          planNotes: consultation.treatmentPlan,
-          followUpAdvice: consultation.followUpNotes,
-          medications: ((consultation as any).medications || (req as any).medications || []).map((m: any) => ({
-            medicationId: m.medicationCatalogId || m.medicationId || (typeof m.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(m.id) ? m.id : undefined),
-            medicationName: m.medicationName || m.name,
-            genericName: m.genericName,
-            strength: m.strength,
-            dosage: m.dosage,
-            frequency: m.frequency,
-            duration: m.duration,
-            durationUnit: m.durationUnit || 'DAYS',
-            beforeAfterFood: m.beforeAfterFood,
-            instructions: m.instructions
-          })),
-          labInvestigations: (
-            (consultation as any).labInvestigations ||
-            (consultation.metadata as any)?.labInvestigations ||
-            (req as any).labInvestigations ||
-            []
-          ).map((l: any) => ({
-            investigationCatalogId: l.investigationCatalogId || l.investigationId || (typeof l.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(l.id) ? l.id : undefined),
-            testCode: l.testCode,
-            testName: l.testName || l.name,
-            priority: l.priority || 'ROUTINE'
-          }))
-        })
+        body: JSON.stringify(draftPayload)
       });
-    } catch {}
+      if (res.success && res.data?.id) {
+        if (consultation.id !== res.data.id) {
+          const oldId = consultation.id;
+          consultation.id = res.data.id;
+          if (res.data.consultationNumber) consultation.consultationNumber = res.data.consultationNumber;
+          if (typeof window !== 'undefined') {
+            try {
+              window.dispatchEvent(new CustomEvent('docsearch:consultation-id-migrated', { detail: { oldId, newId: res.data.id } }));
+            } catch {}
+          }
+        }
+      } else {
+        this.enqueueOutbox({
+          type: 'SAVE_CONSULTATION',
+          endpoint: '/api/v1/partner/clinical/consultations',
+          method: 'POST',
+          payload: draftPayload
+        });
+      }
+    } catch {
+      this.enqueueOutbox({
+        type: 'SAVE_CONSULTATION',
+        endpoint: '/api/v1/partner/clinical/consultations',
+        method: 'POST',
+        payload: draftPayload
+      });
+    }
 
     this.persistConsultations();
     return { ...consultation };
@@ -1088,33 +1210,44 @@ class ClinicalConsultationService implements IClinicalConsultationService {
 
   public async completeConsultation(req: CompleteConsultationRequest): Promise<ConsultationDto> {
     let consultation = this.consultations.find((c) => c.tenantId === req.tenantId && c.id === req.consultationId);
-    if (!consultation && req.consultationId?.startsWith('draft-')) {
-      const encId = req.consultationId.replace('draft-', '');
+    if (!consultation) {
+      const encId = req.consultationId?.startsWith('draft-') ? req.consultationId.replace('draft-', '') : (req as any).encounterId;
+      const cachedEncounters = loadStored<any>('docsearch_encounters', []);
+      const matchedEnc = cachedEncounters.find((e: any) => e.id === encId || e.id === req.consultationId);
+
+      const patientId = (req as any).patientId || matchedEnc?.patientId || 'patient-auto';
+      const patientName = (req as any).patientName || matchedEnc?.patientName || 'Consultation Patient';
+      const patientMrn = (req as any).patientMrn || matchedEnc?.patientMrn || matchedEnc?.mrn || `MRN-${String(encId || req.consultationId).slice(-6)}`;
+      const patientGender = (req as any).patientGender || matchedEnc?.patientGender || matchedEnc?.gender || 'Unknown';
+      const queueToken = (req as any).queueToken || matchedEnc?.tokenNumber || matchedEnc?.queueToken || '#01';
+      const doctorId = (req as any).doctorId || req.actorId || matchedEnc?.doctorId || 'doc-default';
+      const doctorName = (req as any).doctorName || matchedEnc?.doctorName || 'Attending Physician';
+
       consultation = {
         id: req.consultationId,
-        tenantId: req.tenantId,
-        partnerId: 'default',
-        organizationId: '33333333-3333-4333-8333-333333333301',
-        branchId: '44444444-4444-4444-8444-444444444401',
-        encounterId: encId,
-        patientId: 'patient-auto',
-        patientName: 'Aman Verma',
-        patientMrn: 'MRN-478827',
-        patientGender: 'Male',
-        patientDob: '1998-01-01',
-        queueToken: 'TK-427',
-        doctorId: req.actorId || 'doc-default',
-        doctorName: 'Attending Physician',
+        tenantId: req.tenantId || matchedEnc?.tenantId || 'default',
+        partnerId: matchedEnc?.partnerId || 'default',
+        organizationId: matchedEnc?.organizationId || '33333333-3333-4333-8333-333333333301',
+        branchId: matchedEnc?.branchId || '44444444-4444-4444-8444-444444444401',
+        encounterId: encId || matchedEnc?.id || req.consultationId,
+        patientId,
+        patientName,
+        patientMrn,
+        patientGender,
+        patientDob: matchedEnc?.patientDob || matchedEnc?.dob || '1990-01-01',
+        queueToken,
+        doctorId,
+        doctorName,
         version: 1,
         consultationNumber: this.generateConsultationNumber(),
         consultationType: 'OPD_CONSULTATION',
         consultationStatus: 'IN_PROGRESS',
-        chiefComplaint: 'Viral fever for 3 days',
-        clinicalAssessment: req.clinicalAssessment,
-        treatmentPlan: req.treatmentPlan,
-        diagnoses: [],
-        medications: [],
-        investigationOrders: [],
+        chiefComplaint: (req as any).chiefComplaint || matchedEnc?.chiefComplaint || 'OPD Consultation',
+        clinicalAssessment: req.clinicalAssessment || '',
+        treatmentPlan: req.treatmentPlan || '',
+        diagnoses: (req as any).diagnoses || [],
+        medications: (req as any).medications || [],
+        investigationOrders: (req as any).labInvestigations || [],
         auditTraces: [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -1154,76 +1287,137 @@ class ClinicalConsultationService implements IClinicalConsultationService {
       consultation as unknown as Record<string, unknown>
     );
 
-    // AUTHORITATIVE BACKEND CALL: Complete consultation workflow
+    // Prepare authoritative consultation save payload with medications and diagnoses
+    const savePayload = {
+      encounterId: consultation.encounterId,
+      patientId: consultation.patientId,
+      doctorId: consultation.doctorId || req.actorId,
+      status: 'IN_PROGRESS',
+      chiefComplaint: (req as any).chiefComplaint || consultation.chiefComplaint || 'Consultation Completed',
+      historyOfPresentIllness: consultation.historyOfPresentIllness || '',
+      examinationNotes: (req as any).examinationSummary || consultation.examinationSummary || '',
+      assessmentNotes: req.clinicalAssessment || consultation.clinicalAssessment || '',
+      planNotes: req.treatmentPlan || consultation.treatmentPlan || '',
+      followUpAdvice: consultation.followUpNotes,
+      diagnoses: ((req as any).diagnoses || consultation.diagnoses || []).map((d: any) => ({
+        code: d.diagnosisCode || d.code || 'R69',
+        description: d.diagnosisName || d.description || 'General consultation',
+        isPrimary: d.isPrimary ?? (d.diagnosisType === 'PRIMARY'),
+        type: d.diagnosisType || 'PRIMARY'
+      })),
+      medications: ((req as any).medications || (consultation as any).medications || []).map((m: any) => ({
+        medicationId: m.medicationCatalogId || m.medicationId || (typeof m.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(m.id) ? m.id : undefined),
+        medicationName: m.medicationName || m.name,
+        genericName: m.genericName,
+        strength: m.strength,
+        dosage: m.dosage,
+        frequency: m.frequency,
+        duration: m.duration,
+        durationUnit: m.durationUnit || 'DAYS',
+        beforeAfterFood: m.beforeAfterFood,
+        instructions: m.instructions
+      })),
+      labInvestigations: (
+        (req as any).labInvestigations ||
+        (consultation as any).labInvestigations ||
+        (consultation.metadata as any)?.labInvestigations ||
+        []
+      ).map((l: any) => ({
+        investigationCatalogId: l.investigationCatalogId || l.investigationId || (typeof l.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(l.id) ? l.id : undefined),
+        testCode: l.testCode,
+        testName: l.testName || l.name,
+        priority: l.priority || 'ROUTINE'
+      }))
+    };
+
+    let effectiveConsultationId = consultation.id;
     try {
-      const saveRes = await apiRequest<{ id: string }>('/api/v1/partner/consultations', {
+      const saveRes = await apiRequest<{ id: string; consultationNumber?: string }>('/api/v1/partner/clinical/consultations', {
         method: 'POST',
-        body: JSON.stringify({
-          encounterId: consultation.encounterId,
-          patientId: consultation.patientId,
-          doctorId: consultation.doctorId || req.actorId,
-          status: 'IN_PROGRESS',
-          chiefComplaint: consultation.chiefComplaint || 'Consultation Completed',
-          historyOfPresentIllness: consultation.historyOfPresentIllness || '',
-          examinationNotes: consultation.examinationSummary || '',
-          assessmentNotes: req.clinicalAssessment || consultation.clinicalAssessment || '',
-          planNotes: req.treatmentPlan || consultation.treatmentPlan || '',
-          diagnoses: consultation.diagnoses?.map((d) => ({
-            code: d.diagnosisCode,
-            description: d.diagnosisName,
-            isPrimary: d.isPrimary ?? (d.diagnosisType === 'PRIMARY'),
-            type: d.diagnosisType
-          })) || [],
-          medications: ((consultation as any).medications || (req as any).medications || []).map((m: any) => ({
-            medicationId: m.medicationCatalogId || m.medicationId || (typeof m.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(m.id) ? m.id : undefined),
-            medicationName: m.medicationName || m.name,
-            genericName: m.genericName,
-            strength: m.strength,
-            dosage: m.dosage,
-            frequency: m.frequency,
-            duration: m.duration,
-            durationUnit: m.durationUnit || 'DAYS',
-            beforeAfterFood: m.beforeAfterFood,
-            instructions: m.instructions
-          })),
-          labInvestigations: (
-            (consultation as any).labInvestigations ||
-            (consultation.metadata as any)?.labInvestigations ||
-            (req as any).labInvestigations ||
-            []
-          ).map((l: any) => ({
-            investigationCatalogId: l.investigationCatalogId || l.investigationId || (typeof l.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(l.id) ? l.id : undefined),
-            testCode: l.testCode,
-            testName: l.testName || l.name,
-            priority: l.priority || 'ROUTINE'
-          }))
-        })
+        body: JSON.stringify(savePayload)
       });
+      if (saveRes.success && saveRes.data?.id) {
+        effectiveConsultationId = saveRes.data.id;
+        consultation.id = saveRes.data.id;
+        if (saveRes.data.consultationNumber) consultation.consultationNumber = saveRes.data.consultationNumber;
+      } else {
+        this.enqueueOutbox({
+          type: 'SAVE_CONSULTATION',
+          endpoint: '/api/v1/partner/clinical/consultations',
+          method: 'POST',
+          payload: savePayload
+        });
+      }
+    } catch {
+      this.enqueueOutbox({
+        type: 'SAVE_CONSULTATION',
+        endpoint: '/api/v1/partner/clinical/consultations',
+        method: 'POST',
+        payload: savePayload
+      });
+    }
 
-      const effectiveConsultationId = (saveRes.success && saveRes.data?.id) ? saveRes.data.id : consultation.id;
-
-      let completeRes = await apiRequest<{
+    // Complete consultation workflow on server (finalizes consultation, completes encounter & queue token)
+    try {
+      const completeRes = await apiRequest<{
         consultation: any;
         encounter: any;
         queueToken: any;
         prescription: any;
         pharmacyOrder: any;
         labOrders: any[];
-      }>(`/api/v1/partner/consultations/${effectiveConsultationId}/complete`, {
+      }>(`/api/v1/partner/clinical/consultations/${encodeURIComponent(effectiveConsultationId)}/complete`, {
         method: 'POST',
         body: JSON.stringify({ doctorId: req.actorId || consultation.doctorId })
       });
 
-      if (!completeRes.success && !isMockFallbackAllowed() && completeRes.error) {
-        throw new Error(completeRes.error.message || 'Failed to complete consultation on server');
+      if (!completeRes.success) {
+        this.enqueueOutbox({
+          type: 'COMPLETE_CONSULTATION',
+          endpoint: `/api/v1/partner/clinical/consultations/${encodeURIComponent(effectiveConsultationId)}/complete`,
+          method: 'POST',
+          payload: { doctorId: req.actorId || consultation.doctorId }
+        });
       }
-    } catch (err) {
-      if (!isMockFallbackAllowed()) {
-        throw err instanceof Error ? err : new Error('Failed to complete consultation on server');
+    } catch {
+      this.enqueueOutbox({
+        type: 'COMPLETE_CONSULTATION',
+        endpoint: `/api/v1/partner/clinical/consultations/${encodeURIComponent(effectiveConsultationId)}/complete`,
+        method: 'POST',
+        payload: { doctorId: req.actorId || consultation.doctorId }
+      });
+    }
+
+    // Update encounter status in PostgreSQL
+    if (consultation.encounterId) {
+      try {
+        await apiRequest(`/api/v1/partner/clinical/encounters/${encodeURIComponent(consultation.encounterId)}/status`, {
+          method: 'PATCH',
+          body: JSON.stringify({ status: 'COMPLETED' })
+        });
+      } catch {
+        this.enqueueOutbox({
+          type: 'UPDATE_ENCOUNTER_STATUS',
+          endpoint: `/api/v1/partner/clinical/encounters/${encodeURIComponent(consultation.encounterId)}/status`,
+          method: 'PATCH',
+          payload: { status: 'COMPLETED' }
+        });
       }
     }
 
-    saveStored('docsearch_consultations', this.consultations);
+    // LocalStorage write-through outbox & offline state consistency
+    this.persistConsultations();
+    if (typeof window !== 'undefined') {
+      try {
+        const storedEncounters = loadStored<any>('docsearch_encounters', []);
+        const encIdx = storedEncounters.findIndex((e: any) => e.id === consultation.encounterId);
+        if (encIdx >= 0) {
+          storedEncounters[encIdx].status = 'COMPLETED';
+          storedEncounters[encIdx].updatedAt = new Date().toISOString();
+          saveStored('docsearch_encounters', storedEncounters);
+        }
+      } catch {}
+    }
 
     return { ...consultation };
   }

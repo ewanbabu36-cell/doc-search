@@ -673,8 +673,8 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
 
     patientSessionTabService.closeTab(`opd-${req.consultationId}`);
 
-    // Update encounter status in encounterService
-    const currentEncId = selectedConsultation?.encounterId || (req.consultationId?.startsWith('draft-') ? req.consultationId.replace('draft-', '') : undefined);
+    // Update encounter status in encounterService & PostgreSQL
+    const currentEncId = (req as any).encounterId || selectedConsultation?.encounterId || (req.consultationId?.startsWith('draft-') ? req.consultationId.replace('draft-', '') : undefined);
     if (currentEncId && context?.activeTenantId) {
       try {
         await encounterService.changeEncounterStatus({
@@ -692,11 +692,18 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
       }
     }
 
+    // Direct synchronous local encounters state transition
+    if (currentEncId) {
+      setEncounters((prev) =>
+        prev.map((e) => (e.id === currentEncId ? { ...e, status: 'COMPLETED', updatedAt: new Date().toISOString() } : e))
+      );
+    }
+
     const finalMeds: any[] = (req as any).medications || (selectedConsultation as any)?.medications || [];
-    const patientName = (selectedConsultation as any)?.patientName || (req as any).patientName || 'Patient';
-    const patientMrn = (selectedConsultation as any)?.patientMrn || (req as any).patientMrn || `UHID-${String(currentEncId || req.consultationId).slice(-4)}`;
-    const patientPhone = (selectedConsultation as any)?.patientMobile || (req as any).patientMobile || '9876543210';
-    const queueToken = (selectedConsultation as any)?.queueToken || (req as any).queueToken || '#01';
+    const patientName = (req as any).patientName || (selectedConsultation as any)?.patientName || 'Patient';
+    const patientMrn = (req as any).patientMrn || (selectedConsultation as any)?.patientMrn || `UHID-${String(currentEncId || req.consultationId).slice(-4)}`;
+    const patientPhone = (req as any).patientMobile || (selectedConsultation as any)?.patientMobile || '9876543210';
+    const queueToken = (req as any).queueToken || (selectedConsultation as any)?.queueToken || '#01';
     const docName = chamberProfile.doctorName || currentUser?.name || 'Attending Physician';
     const facName = facilityName || context?.activePartnerName || 'Central OPD Clinic';
 
@@ -743,13 +750,16 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
       console.warn('Failed to cache prescription for pharmacy queue:', e);
     }
 
-    // Publish event for Pharmacy POS & Cashier Counter
+    // Publish event for Pharmacy POS & Front Desk Workstation Auto-Reconciliation
     hospitalEventBus.publish('PRESCRIPTION_ISSUED', 'ClinicalConsultationDomainManager', {
       consultationId: req.consultationId,
       encounterId: currentEncId,
       patientName,
       patientMrn,
+      patientMobile: patientPhone,
       patientPhone,
+      tokenNumber: queueToken,
+      token: queueToken,
       medications: finalMeds,
       prescriptionRecord: newRxRecord,
       doctorName: docName,
@@ -1031,6 +1041,15 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
               actorId: context.userEmail,
               actorRole: context.userRole,
               justification: 'Completed from Doctor OPD Cockpit',
+              encounterId: _c.encounterId,
+              patientId: _c.patientId,
+              patientName: _c.patientName,
+              patientMrn: _c.patientMrn,
+              patientMobile: (_c as any).patientMobile,
+              queueToken: (_c as any).queueToken,
+              diagnoses: (_c as any).diagnoses,
+              chiefComplaint: _c.chiefComplaint,
+              vitals: _c.vitals,
               ...((_c as any).medications ? { medications: (_c as any).medications } : {}),
               ...((_c as any).labInvestigations ? { labInvestigations: (_c as any).labInvestigations } : {})
             } as any);
