@@ -65,4 +65,27 @@ export const partnerFoundationRoutes: FastifyPluginAsync = async (fastify) => {
       return { success: true, data: created };
     }
   );
+
+  fastify.post(
+    '/api/v1/partner/foundation/doctor-chamber-profile',
+    {
+      preHandler: [authenticate]
+    },
+    async (request) => {
+      const payload = request.body as any;
+      const result = await partnerFoundationService.ensureDoctorChamberProfile(request.session, payload);
+      return { success: true, data: result };
+    }
+  );
+
+  fastify.get(
+    '/api/v1/partner/foundation/doctor-chamber-profile',
+    {
+      preHandler: [authenticate]
+    },
+    async (request) => {
+      const result = await partnerFoundationService.ensureDoctorChamberProfile(request.session);
+      return { success: true, data: result };
+    }
+  );
 };

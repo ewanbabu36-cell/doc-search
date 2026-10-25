@@ -54,7 +54,9 @@ import type {
 } from '@docsearch/api-contracts';
 import {
   MOCK_CONSULTATIONS,
-  MOCK_CONSULTATION_AUDIT_TRACES
+  MOCK_CONSULTATION_AUDIT_TRACES,
+  isProductionClinicPilot,
+  filterRealClinicalPatients
 } from './mock-clinical-consultation-data.js';
 
 export interface IClinicalConsultationService {
@@ -108,7 +110,9 @@ export interface ClinicalOutboxItem {
 }
 
 class ClinicalConsultationService implements IClinicalConsultationService {
-  private consultations: ConsultationDto[] = loadStored("docsearch_consultations", MOCK_CONSULTATIONS);
+  private consultations: ConsultationDto[] = isProductionClinicPilot()
+    ? filterRealClinicalPatients(loadStored("docsearch_consultations", []))
+    : loadStored("docsearch_consultations", MOCK_CONSULTATIONS);
   private auditTraces: ConsultationAuditTraceDto[] = loadStored("docsearch_consultation_audit_traces", MOCK_CONSULTATION_AUDIT_TRACES);
   private outboxSyncing = false;
 

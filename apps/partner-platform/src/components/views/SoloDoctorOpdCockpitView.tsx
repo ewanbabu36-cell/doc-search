@@ -6229,10 +6229,32 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
                 }}
               >
                 <div style={{ fontSize: '2rem', marginBottom: '8px' }}>⚡</div>
-                <div style={{ fontWeight: 800, color: '#F8FAFC', fontSize: '1rem' }}>No Patients Waiting in Queue</div>
+                <div style={{ fontWeight: 900, color: '#F8FAFC', fontSize: '1.2rem', letterSpacing: '-0.01em' }}>Chamber Ready — Awaiting Next Patient from Reception</div>
                 <div style={{ fontSize: '0.8rem', color: '#94A3B8', marginTop: '4px' }}>
-                  Register a walk-in patient from the left rail or below to begin a consultation.
+                  No patients are currently waiting in line. When Front Desk registers or transfers an OPD token, it will appear here in real time.
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setIsQuickWalkInOpen(true)}
+                  style={{
+                    marginTop: '12px',
+                    padding: '10px 22px',
+                    borderRadius: '10px',
+                    backgroundColor: '#0284C7',
+                    backgroundImage: 'linear-gradient(135deg, #0284C7 0%, #0369A1 100%)',
+                    color: '#FFFFFF',
+                    border: '1px solid #38BDF8',
+                    fontWeight: 800,
+                    fontSize: '0.9rem',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    boxShadow: '0 4px 14px rgba(2, 132, 199, 0.4)'
+                  }}
+                >
+                  <span>⚡ Quick Walk-In Patient</span>
+                </button>
               </div>
             )}
           </div>

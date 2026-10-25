@@ -4,6 +4,7 @@ import { getVerifiedRoleProfile } from '../../utils/roleProfileResolver.js';
 import { ProfileUpdateRequiredAlertModal } from '../common/ProfileUpdateRequiredAlertModal.js';
 import { checkPartnerProfileStatus, type MissingProfileField } from '../../utils/partnerProfileGuard.js';
 import { getBilingualDosingInstruction, findGenericSaltMatch } from '../views/DoctorExpressConsultationDesk.js';
+import { hardwarePrinterService, type ThermalPrescriptionSlipData } from '../../services/hardware-printer-service.js';
 
 interface Props {
   isOpen: boolean;
@@ -108,6 +109,8 @@ export const PrintableDoctorPrescriptionModal: React.FC<Props> = ({
 
   const [isProfileGuardAlertOpen, setIsProfileGuardAlertOpen] = useState(false);
   const [profileMissingFields, setProfileMissingFields] = useState<MissingProfileField[]>([]);
+  const [isThermalPrinting, setIsThermalPrinting] = useState(false);
+  const [thermalToast, setThermalToast] = useState<string | null>(null);
 
   if (!isOpen || !consultation) return null;
 
@@ -119,6 +122,58 @@ export const PrintableDoctorPrescriptionModal: React.FC<Props> = ({
       return;
     }
     window.print();
+  };
+
+  const handleThermalRegionalPrint = async () => {
+    const status = checkPartnerProfileStatus();
+    if (!status.isUpdated) {
+      setProfileMissingFields(status.missingFields);
+      setIsProfileGuardAlertOpen(true);
+      return;
+    }
+
+    setIsThermalPrinting(true);
+    try {
+      const thermalData: ThermalPrescriptionSlipData = {
+        clinicName: headerConfig.entityLegalName,
+        facilityBranch: headerConfig.officialAddress,
+        doctorName: headerConfig.doctorName,
+        doctorSpecialty: `${headerConfig.doctorDegree} · ${headerConfig.doctorSpecialty}`,
+        doctorRegNo: headerConfig.doctorRegNo,
+        patientName: consultation.patientName,
+        patientAge: (consultation as any).patientAge || 38,
+        patientGender: (consultation as any).patientGender || 'M',
+        patientMrn: consultation.patientMrn,
+        tokenNumber: (consultation as any).tokenNumber || consultation.consultationNumber || '1',
+        date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+        rxLanguage: 'HI',
+        diagnoses: consultation.diagnoses?.map((d) => d.diagnosisName) || [],
+        medications: (consultation.medications || []).map((m) => {
+          const bilingual = getBilingualDosingInstruction(m.frequency, m.beforeAfterFood);
+          return {
+            name: m.medicationName,
+            genericName: m.genericName,
+            dosage: m.dosage,
+            frequency: m.frequency,
+            duration: `${m.duration} ${m.durationUnit?.toLowerCase() || 'days'}`,
+            timing: m.beforeAfterFood?.replace(/_/g, ' '),
+            instructions: m.instructions,
+            regionalTiming: bilingual.hindi || m.timing
+          };
+        }),
+        followUpDays: '7 Days',
+        vitals: (consultation as any).vitals
+      };
+
+      const res = await hardwarePrinterService.printThermalPrescriptionSlip(thermalData, 42);
+      setThermalToast(res.message || 'Thermal slip printed successfully!');
+      setTimeout(() => setThermalToast(null), 4000);
+    } catch (err: any) {
+      setThermalToast(`Thermal print error: ${err.message || 'Check printer connection'}`);
+      setTimeout(() => setThermalToast(null), 4000);
+    } finally {
+      setIsThermalPrinting(false);
+    }
   };
 
   const handleSaveConfig = () => {
@@ -304,10 +359,65 @@ export const PrintableDoctorPrescriptionModal: React.FC<Props> = ({
 
             <button
               type="button"
-              onClick={handlePrint}
+              onClick={handleThermalRegionalPrint}
+              disabled={isThermalPrinting}
+              style={{
+                backgroundColor: '#059669',
+                color: '#FFF',
+                border: '1px solid #10B981',
+                borderRadius: '8px',
+                padding: '8px 14px',
+                fontWeight: 800,
+                fontSize: '0.8125rem',
+                cursor: isThermalPrinting ? 'wait' : 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 2px 8px rgba(5, 150, 105, 0.4)'
+              }}
+              title="Silent zero-click 203 DPI thermal POS print with Hindi/Indic dosage & QR code"
             >
-              🖨️ Print Prescription
+              <span>🖨️</span>
+              <span>{isThermalPrinting ? 'Printing Slip...' : 'Thermal Slip (Regional ESC/POS)'}</span>
             </button>
+
+            <button
+              type="button"
+              onClick={handlePrint}
+              style={{
+                backgroundColor: '#0284C7',
+                color: '#FFF',
+                border: '1px solid #38BDF8',
+                borderRadius: '8px',
+                padding: '8px 14px',
+                fontWeight: 800,
+                fontSize: '0.8125rem',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+              title="Print standard A4 prescription letterhead"
+            >
+              <span>📄</span>
+              <span>Print A4 Letterhead</span>
+            </button>
+
+            {thermalToast && (
+              <span
+                style={{
+                  fontSize: '0.75rem',
+                  backgroundColor: '#065F46',
+                  color: '#6EE7B7',
+                  padding: '4px 10px',
+                  borderRadius: '6px',
+                  fontWeight: 700,
+                  border: '1px solid #059669'
+                }}
+              >
+                {thermalToast}
+              </span>
+            )}
 
             <button
               type="button"

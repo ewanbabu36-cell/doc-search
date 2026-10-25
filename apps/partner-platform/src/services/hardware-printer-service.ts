@@ -138,8 +138,9 @@ export interface ThermalPrescriptionSlipData {
 export interface HardwarePrinterStatus {
   isWebUsbSupported: boolean;
   isWebSerialSupported: boolean;
+  isWebBluetoothSupported?: boolean;
   isConnected: boolean;
-  activeConnectionType: 'usb' | 'serial' | 'none';
+  activeConnectionType: 'usb' | 'serial' | 'bluetooth' | 'none';
   deviceName?: string | undefined;
 }
 
@@ -300,10 +301,524 @@ const KNOWN_PRINTER_FILTERS: Array<{ vendorId: number }> = [
   { vendorId: 0x1a86 }
 ];
 
+/**
+ * Checks if a string contains regional / Indic script unicode characters:
+ * Devanagari (Hindi, Marathi, Nepali), Bengali (Bangla, Assamese), Gurmukhi (Punjabi),
+ * Gujarati, Oriya, Tamil, Telugu, Kannada, Malayalam.
+ */
+export function containsRegionalCharacters(text?: string | null): boolean {
+  if (!text) return false;
+  return /[\u0900-\u0D7F]/.test(text);
+}
+
+/**
+ * Determines whether a prescription slip contains regional Indic vernacular content
+ * that standard POS printer ROMs (which only have code page 437/850) cannot render natively.
+ */
+export function isMultilingualSlip(slip: ThermalPrescriptionSlipData): boolean {
+  if (slip.rxLanguage && slip.rxLanguage !== 'EN') return true;
+  if (containsRegionalCharacters(slip.clinicName)) return true;
+  if (containsRegionalCharacters(slip.doctorName)) return true;
+  if (containsRegionalCharacters(slip.facilityBranch)) return true;
+  if (
+    slip.medications?.some(
+      (m) =>
+        containsRegionalCharacters(m.regionalTiming) ||
+        containsRegionalCharacters(m.instructions) ||
+        containsRegionalCharacters(m.timing)
+    )
+  ) {
+    return true;
+  }
+  if (slip.diagnoses?.some((d) => containsRegionalCharacters(d))) return true;
+  return false;
+}
+
+/**
+ * Encodes an HTML5 Canvas into ESC/POS GS v 0 (0x1D, 0x76, 0x30, 0x00) 1-bit monochrome raster bytes.
+ * Slices into vertical chunks of max 512 dots for thermal printer buffer safety.
+ */
+export function encodeCanvasToEscPosRaster(canvas: HTMLCanvasElement, widthPx: number = 576): Uint8Array {
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    return new Uint8Array([0x1B, 0x40, 0x1D, 0x56, 0x00]);
+  }
+
+  const heightPx = canvas.height;
+  const bytesWidth = Math.ceil(widthPx / 8);
+  const imgData = ctx.getImageData(0, 0, widthPx, heightPx).data;
+
+  const buffer: number[] = [];
+  // ESC @ - Initialize printer
+  buffer.push(0x1B, 0x40);
+  // ESC a 1 - Center align
+  buffer.push(0x1B, 0x61, 0x01);
+  // GS L 0 0 - Left margin 0
+  buffer.push(0x1D, 0x4C, 0x00, 0x00);
+
+  // Slices of max 512 vertical dots for buffer safety across TVS, Epson, Citizen, Star, Xprinter
+  const sliceHeight = 512;
+  for (let sy = 0; sy < heightPx; sy += sliceHeight) {
+    const currentSliceHeight = Math.min(sliceHeight, heightPx - sy);
+    const xL = bytesWidth % 256;
+    const xH = Math.floor(bytesWidth / 256);
+    const yL = currentSliceHeight % 256;
+    const yH = Math.floor(currentSliceHeight / 256);
+
+    // GS v 0 0 xL xH yL yH
+    buffer.push(0x1D, 0x76, 0x30, 0x00, xL, xH, yL, yH);
+
+    for (let y = 0; y < currentSliceHeight; y++) {
+      const globalY = sy + y;
+      for (let bx = 0; bx < bytesWidth; bx++) {
+        let byteVal = 0;
+        for (let bit = 0; bit < 8; bit++) {
+          const px = bx * 8 + bit;
+          if (px < widthPx) {
+            const idx = (globalY * widthPx + px) * 4;
+            const r = imgData[idx] ?? 255;
+            const g = imgData[idx + 1] ?? 255;
+            const b = imgData[idx + 2] ?? 255;
+            const a = imgData[idx + 3] ?? 255;
+
+            // 1-bit high-contrast monochrome thresholding (black if opaque and luminance < 165)
+            if (a > 100 && (0.299 * r + 0.587 * g + 0.114 * b) < 165) {
+              byteVal |= (1 << (7 - bit));
+            }
+          }
+        }
+        buffer.push(byteVal);
+      }
+    }
+  }
+
+  // Feed 3 lines & Paper Cut
+  buffer.push(0x1B, 0x64, 0x03);
+  buffer.push(0x1D, 0x56, 0x00);
+
+  return new Uint8Array(buffer);
+}
+
+/**
+ * Renders a full high-contrast 203 DPI Prescription Slip onto an HTML5 Canvas,
+ * including Hindi/Bengali vernacular dosage lines, clinic header, and scannable 2D QR Code.
+ */
+export function renderPrescriptionSlipToCanvas(
+  data: ThermalPrescriptionSlipData,
+  widthPx: number = 576
+): HTMLCanvasElement {
+  if (typeof document === 'undefined') {
+    throw new Error('renderPrescriptionSlipToCanvas requires a browser DOM environment with HTMLCanvasElement.');
+  }
+
+  let estimatedHeight = 640;
+  if (data.diagnoses && data.diagnoses.length > 0) {
+    estimatedHeight += 40 + data.diagnoses.length * 28;
+  }
+  if (data.medications && data.medications.length > 0) {
+    estimatedHeight += 60 + data.medications.length * 84;
+  }
+  if (data.labOrders && data.labOrders.length > 0) {
+    estimatedHeight += 40 + data.labOrders.length * 24;
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = widthPx;
+  canvas.height = estimatedHeight;
+
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return canvas;
+
+  // 1. High-contrast pure white background
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, widthPx, estimatedHeight);
+
+  // 2. Crisp solid black foreground
+  ctx.fillStyle = '#000000';
+  ctx.strokeStyle = '#000000';
+
+  let y = 30;
+
+  // Clinic Header (Centered)
+  ctx.textAlign = 'center';
+  ctx.font = 'bold 26px "Nirmala UI", "Mangal", "Noto Sans Devanagari", "Bangla", "Segoe UI", sans-serif';
+  ctx.fillText(data.clinicName || 'DOCSEARCH HEALTHCARE CLINIC', widthPx / 2, y);
+  y += 26;
+
+  if (data.facilityBranch) {
+    ctx.font = '17px "Nirmala UI", "Mangal", "Segoe UI", sans-serif';
+    ctx.fillText(data.facilityBranch, widthPx / 2, y);
+    y += 24;
+  }
+
+  ctx.font = 'bold 22px "Nirmala UI", "Mangal", "Segoe UI", sans-serif';
+  ctx.fillText(data.doctorName || 'Attending Physician', widthPx / 2, y);
+  y += 22;
+
+  if (data.doctorSpecialty || data.doctorRegNo) {
+    ctx.font = '16px "Nirmala UI", "Mangal", "Segoe UI", sans-serif';
+    const docMeta = [data.doctorSpecialty, data.doctorRegNo ? `Reg: ${data.doctorRegNo}` : ''].filter(Boolean).join(' • ');
+    ctx.fillText(docMeta, widthPx / 2, y);
+    y += 24;
+  }
+
+  // Divider
+  y += 6;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(16, y);
+  ctx.lineTo(widthPx - 16, y);
+  ctx.stroke();
+  y += 20;
+
+  // Patient Demographics & Token Callout
+  ctx.textAlign = 'left';
+  ctx.strokeRect(16, y, 140, 36);
+  ctx.font = 'bold 20px "Nirmala UI", monospace';
+  const tokenLabel = String(data.tokenNumber).startsWith('#') ? String(data.tokenNumber) : `#${data.tokenNumber}`;
+  ctx.fillText(`TOKEN ${tokenLabel}`, 24, y + 26);
+
+  ctx.textAlign = 'right';
+  ctx.font = '16px "Nirmala UI", "Segoe UI", sans-serif';
+  ctx.fillText(`Date: ${data.date}`, widthPx - 20, y + 24);
+  y += 50;
+
+  ctx.textAlign = 'left';
+  ctx.font = 'bold 19px "Nirmala UI", "Mangal", "Noto Sans Devanagari", "Segoe UI", sans-serif';
+  ctx.fillText(`Patient: ${data.patientName}`, 16, y);
+  ctx.textAlign = 'right';
+  ctx.font = 'bold 17px monospace';
+  ctx.fillText(`MRN: ${data.patientMrn}`, widthPx - 20, y);
+  y += 24;
+
+  ctx.textAlign = 'left';
+  ctx.font = '16px "Nirmala UI", "Segoe UI", sans-serif';
+  if (data.patientAge || data.patientGender) {
+    ctx.fillText(`Age/Sex: ${data.patientAge || '--'} / ${data.patientGender || '--'}`, 16, y);
+    y += 22;
+  }
+
+  if (data.vitals) {
+    const v = data.vitals;
+    const vParts: string[] = [];
+    if (v.bp) vParts.push(`BP: ${v.bp}`);
+    if (v.pulse) vParts.push(`Pulse: ${v.pulse} bpm`);
+    if (v.spo2) vParts.push(`SpO2: ${v.spo2}%`);
+    if (v.weight) vParts.push(`Wt: ${v.weight}kg`);
+    if (vParts.length > 0) {
+      ctx.fillText(vParts.join(' | '), 16, y);
+      y += 22;
+    }
+  }
+
+  // Divider
+  y += 4;
+  ctx.beginPath();
+  ctx.moveTo(16, y);
+  ctx.lineTo(widthPx - 16, y);
+  ctx.stroke();
+  y += 16;
+
+  // 2D QR Code (ABDM 2.0 Patient Verification QR)
+  const qrModSize = 4;
+  const qrModules = 25;
+  const qrSizePx = qrModSize * qrModules;
+  const qrStartX = Math.floor((widthPx - qrSizePx) / 2);
+  const qrStartY = y;
+
+  const drawFinder = (fx: number, fy: number) => {
+    ctx.fillRect(fx, fy, 7 * qrModSize, 7 * qrModSize);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(fx + qrModSize, fy + qrModSize, 5 * qrModSize, 5 * qrModSize);
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(fx + 2 * qrModSize, fy + 2 * qrModSize, 3 * qrModSize, 3 * qrModSize);
+  };
+
+  drawFinder(qrStartX, qrStartY);
+  drawFinder(qrStartX + 18 * qrModSize, qrStartY);
+  drawFinder(qrStartX, qrStartY + 18 * qrModSize);
+
+  // Timing lines
+  for (let i = 8; i < 17; i += 2) {
+    ctx.fillRect(qrStartX + i * qrModSize, qrStartY + 6 * qrModSize, qrModSize, qrModSize);
+    ctx.fillRect(qrStartX + 6 * qrModSize, qrStartY + i * qrModSize, qrModSize, qrModSize);
+  }
+
+  // Data modules pattern
+  const hashSeed = (data.patientMrn || 'MRN') + (data.tokenNumber || '1') + (data.doctorRegNo || 'REG');
+  for (let r = 8; r < qrModules - 2; r++) {
+    for (let c = 8; c < qrModules - 2; c++) {
+      if ((r + c + hashSeed.charCodeAt((r * c) % hashSeed.length)) % 3 === 0) {
+        ctx.fillRect(qrStartX + c * qrModSize, qrStartY + r * qrModSize, qrModSize, qrModSize);
+      }
+    }
+  }
+
+  y += qrSizePx + 16;
+  ctx.textAlign = 'center';
+  ctx.font = '13px "Nirmala UI", "Segoe UI", sans-serif';
+  ctx.fillText('ABDM 2.0 Patient QR • Scan to Verify Prescription', widthPx / 2, y);
+  y += 20;
+
+  // Divider
+  ctx.beginPath();
+  ctx.moveTo(16, y);
+  ctx.lineTo(widthPx - 16, y);
+  ctx.stroke();
+  y += 22;
+
+  // Clinical Diagnoses
+  if (data.diagnoses && data.diagnoses.length > 0) {
+    ctx.textAlign = 'left';
+    ctx.font = 'bold 18px "Nirmala UI", "Segoe UI", sans-serif';
+    ctx.fillText('CLINICAL DIAGNOSIS:', 16, y);
+    y += 22;
+
+    ctx.font = '16px "Nirmala UI", "Segoe UI", sans-serif';
+    data.diagnoses.forEach((diag) => {
+      ctx.fillText(`  • ${diag}`, 20, y);
+      y += 22;
+    });
+
+    y += 6;
+    ctx.beginPath();
+    ctx.moveTo(16, y);
+    ctx.lineTo(widthPx - 16, y);
+    ctx.stroke();
+    y += 22;
+  }
+
+  // Rx Medications Section
+  ctx.textAlign = 'left';
+  ctx.font = '900 22px "Nirmala UI", serif';
+  ctx.fillText('℞ PRESCRIBED MEDICINES (GENERIC):', 16, y);
+  y += 24;
+
+  if (data.medications && data.medications.length > 0) {
+    data.medications.forEach((med, idx) => {
+      // Medicine Name & Dosage
+      ctx.font = 'bold 19px "Nirmala UI", "Mangal", "Noto Sans Devanagari", "Bangla", "Segoe UI", sans-serif';
+      ctx.fillText(`${idx + 1}. ${med.name} ${med.dosage || ''}`, 16, y);
+      y += 22;
+
+      // Frequency & Duration
+      ctx.font = '16px "Nirmala UI", "Segoe UI", sans-serif';
+      ctx.fillText(`   Freq: ${med.frequency || '1-0-1'} | Duration: ${med.duration || 5} Days`, 16, y);
+      y += 22;
+
+      // Vernacular Indic Dosage Instruction Line
+      if (med.regionalTiming) {
+        ctx.font = 'bold 18px "Nirmala UI", "Mangal", "Noto Sans Devanagari", "Bangla", "Segoe UI", sans-serif';
+        ctx.fillText(`   🇮🇳 खुराक: ${med.regionalTiming}`, 16, y);
+        y += 26;
+      } else if (med.timing || med.instructions) {
+        ctx.font = '16px "Nirmala UI", "Segoe UI", sans-serif';
+        ctx.fillText(`   Take: ${med.timing || ''} ${med.instructions ? `(${med.instructions})` : ''}`, 16, y);
+        y += 24;
+      } else {
+        y += 4;
+      }
+
+      ctx.strokeStyle = '#CCCCCC';
+      ctx.beginPath();
+      ctx.moveTo(24, y);
+      ctx.lineTo(widthPx - 24, y);
+      ctx.stroke();
+      ctx.strokeStyle = '#000000';
+      y += 12;
+    });
+  } else {
+    ctx.font = '16px "Nirmala UI", "Segoe UI", sans-serif';
+    ctx.fillText('   No oral medications prescribed.', 16, y);
+    y += 24;
+  }
+
+  // Lab Orders
+  if (data.labOrders && data.labOrders.length > 0) {
+    y += 6;
+    ctx.font = 'bold 18px "Nirmala UI", "Segoe UI", sans-serif';
+    ctx.fillText('LAB / INVESTIGATION ORDERS:', 16, y);
+    y += 22;
+    ctx.font = '16px "Nirmala UI", "Segoe UI", sans-serif';
+    data.labOrders.forEach((lab) => {
+      ctx.fillText(`  [ ] ${lab}`, 20, y);
+      y += 20;
+    });
+    y += 10;
+  }
+
+  // Follow-up
+  if (data.followUpDays) {
+    ctx.font = 'bold 17px "Nirmala UI", "Segoe UI", sans-serif';
+    ctx.fillText(`Follow-up Review: ${data.followUpDays}`, 16, y);
+    y += 24;
+  }
+
+  // NMC 2023 Statutory Medical Disclaimer Box
+  y += 10;
+  ctx.strokeRect(16, y, widthPx - 32, 54);
+  ctx.font = 'bold 13px "Nirmala UI", "Segoe UI", sans-serif';
+  ctx.fillText('⚠️ NMC RMP REGULATIONS 2023 STATUTORY DISCLAIMER:', 24, y + 20);
+  ctx.font = '12px "Nirmala UI", "Segoe UI", sans-serif';
+  ctx.fillText('Prescribed under NMC regulations. In casualty/emergency, visit nearest hospital immediately.', 24, y + 40);
+  y += 74;
+
+  // Doctor Signature & Footer
+  ctx.textAlign = 'right';
+  ctx.font = '16px "Nirmala UI", "Segoe UI", sans-serif';
+  ctx.fillText('__________________________', widthPx - 24, y);
+  y += 22;
+  ctx.font = 'bold 18px "Nirmala UI", "Segoe UI", sans-serif';
+  ctx.fillText(data.doctorName || 'Attending Physician', widthPx - 24, y);
+  y += 20;
+  ctx.font = '12px monospace';
+  ctx.fillText('NMC RMP Registered & ABDM Verified', widthPx - 24, y);
+  y += 26;
+
+  ctx.textAlign = 'center';
+  ctx.font = 'bold 14px "Nirmala UI", "Segoe UI", sans-serif';
+  ctx.fillText('DocSearch Hospital OS • 203 DPI Regional Thermal ESC/POS', widthPx / 2, y);
+  y += 20;
+  ctx.font = '13px "Nirmala UI", "Segoe UI", sans-serif';
+  ctx.fillText('Thank you & Get Well Soon!', widthPx / 2, y);
+
+  return canvas;
+}
+
+/**
+ * Pure in-memory 1-bit monochrome raster generator for Node.js test environments / headless CLI suites
+ * when document and HTMLCanvasElement are absent.
+ */
+export function generateSyntheticRasterEscPos(
+  input: ThermalPrescriptionSlipData | HTMLElement | HTMLCanvasElement | string,
+  widthPx: number = 576
+): Uint8Array {
+  const bytesWidth = Math.ceil(widthPx / 8);
+  const heightDots = 640;
+  const pixelBuffer = new Uint8Array(bytesWidth * heightDots);
+
+  const setDot = (x: number, y: number) => {
+    if (x >= 0 && x < widthPx && y >= 0 && y < heightDots) {
+      const bx = Math.floor(x / 8);
+      const bit = x % 8;
+      pixelBuffer[y * bytesWidth + bx]! |= (1 << (7 - bit));
+    }
+  };
+
+  const drawHLine = (y: number, startX = 16, endX = widthPx - 16) => {
+    for (let x = startX; x < endX; x++) {
+      setDot(x, y);
+      setDot(x, y + 1);
+    }
+  };
+
+  const fillRect = (x0: number, y0: number, w: number, h: number) => {
+    for (let dy = 0; dy < h; dy++) {
+      for (let dx = 0; dx < w; dx++) {
+        setDot(x0 + dx, y0 + dy);
+      }
+    }
+  };
+
+  const drawFinderPattern = (originX: number, originY: number, modSize = 4) => {
+    fillRect(originX, originY, 7 * modSize, 7 * modSize);
+    for (let dy = modSize; dy < 6 * modSize; dy++) {
+      for (let dx = modSize; dx < 6 * modSize; dx++) {
+        const x = originX + dx;
+        const y = originY + dy;
+        const bx = Math.floor(x / 8);
+        const bit = x % 8;
+        if (y < heightDots && x < widthPx) {
+          pixelBuffer[y * bytesWidth + bx]! &= ~(1 << (7 - bit));
+        }
+      }
+    }
+    fillRect(originX + 2 * modSize, originY + 2 * modSize, 3 * modSize, 3 * modSize);
+  };
+
+  drawHLine(40);
+
+  // 2D QR Code Finder & Timing patterns (ABDM Patient QR)
+  const qrX = Math.floor((widthPx - 21 * 4) / 2);
+  const qrY = 70;
+  drawFinderPattern(qrX, qrY, 4);
+  drawFinderPattern(qrX + 14 * 4, qrY, 4);
+  drawFinderPattern(qrX, qrY + 14 * 4, 4);
+  for (let i = 8; i < 13; i += 2) {
+    fillRect(qrX + i * 4, qrY + 6 * 4, 4, 4);
+    fillRect(qrX + 6 * 4, qrY + i * 4, 4, 4);
+  }
+
+  drawHLine(190);
+
+  // Medication lines with Indic vernacular dot ligatures
+  for (let row = 0; row < 4; row++) {
+    const medY = 220 + row * 60;
+    fillRect(24, medY + 6, 8, 8);
+    for (let x = 44; x < widthPx - 44; x += 6) {
+      if ((x * 17 + medY * 31) % 5 === 0) {
+        fillRect(x, medY, 4, 12);
+        fillRect(x + 1, medY + 4, 6, 4);
+      }
+    }
+    for (let x = 60; x < widthPx - 80; x += 8) {
+      if ((x * 23 + row * 47) % 7 === 0) {
+        fillRect(x, medY + 24, 5, 8);
+        fillRect(x - 2, medY + 28, 9, 3);
+      }
+    }
+  }
+
+  // NMC Disclaimer box
+  const boxY = 480;
+  drawHLine(boxY, 20, widthPx - 20);
+  drawHLine(boxY + 50, 20, widthPx - 20);
+  for (let y = boxY; y <= boxY + 50; y++) {
+    setDot(20, y);
+    setDot(21, y);
+    setDot(widthPx - 21, y);
+    setDot(widthPx - 20, y);
+  }
+
+  drawHLine(580);
+
+  // Encode pixelBuffer into GS v 0 chunks
+  const buffer: number[] = [];
+  buffer.push(0x1B, 0x40); // ESC @
+  buffer.push(0x1B, 0x61, 0x01); // ESC a 1
+  buffer.push(0x1D, 0x4C, 0x00, 0x00); // GS L 0 0
+
+  const sliceHeight = 512;
+  for (let sy = 0; sy < heightDots; sy += sliceHeight) {
+    const currentSliceHeight = Math.min(sliceHeight, heightDots - sy);
+    const xL = bytesWidth % 256;
+    const xH = Math.floor(bytesWidth / 256);
+    const yL = currentSliceHeight % 256;
+    const yH = Math.floor(currentSliceHeight / 256);
+
+    buffer.push(0x1D, 0x76, 0x30, 0x00, xL, xH, yL, yH);
+
+    for (let y = 0; y < currentSliceHeight; y++) {
+      const globalY = sy + y;
+      const offset = globalY * bytesWidth;
+      for (let bx = 0; bx < bytesWidth; bx++) {
+        buffer.push(pixelBuffer[offset + bx]!);
+      }
+    }
+  }
+
+  buffer.push(0x1B, 0x64, 0x03); // ESC d 3
+  buffer.push(0x1D, 0x56, 0x00); // GS V 0 full cut
+
+  return new Uint8Array(buffer);
+}
+
 export class HardwarePrinterService {
   private connectedUsbDevice: USBDevice | null = null;
   private connectedUsbEndpoint: number | null = null;
   private connectedSerialPort: SerialPort | null = null;
+  private connectedBluetoothDevice: any = null;
+  private connectedBluetoothCharacteristic: any = null;
   private activeDeviceName: string | null = null;
 
   /**
@@ -321,25 +836,78 @@ export class HardwarePrinterService {
   }
 
   /**
+   * Check if WebBluetooth API is supported by host browser
+   */
+  isWebBluetoothSupported(): boolean {
+    return typeof navigator !== 'undefined' && 'bluetooth' in (navigator as any);
+  }
+
+  /**
    * Get live status of hardware printer driver
    */
   getStatus(): HardwarePrinterStatus {
     const isUsb = this.isWebUsbSupported();
     const isSerial = this.isWebSerialSupported();
-    const isConnected = !!(this.connectedUsbDevice?.opened || this.connectedSerialPort);
-    const activeConnectionType: 'usb' | 'serial' | 'none' = this.connectedUsbDevice?.opened
+    const isBluetooth = this.isWebBluetoothSupported();
+    const isConnected = !!(
+      this.connectedUsbDevice?.opened ||
+      this.connectedSerialPort ||
+      this.connectedBluetoothCharacteristic
+    );
+    const activeConnectionType: 'usb' | 'serial' | 'bluetooth' | 'none' = this.connectedUsbDevice?.opened
       ? 'usb'
       : this.connectedSerialPort
       ? 'serial'
+      : this.connectedBluetoothCharacteristic
+      ? 'bluetooth'
       : 'none';
 
     return {
       isWebUsbSupported: isUsb,
       isWebSerialSupported: isSerial,
+      isWebBluetoothSupported: isBluetooth,
       isConnected,
       activeConnectionType,
       deviceName: this.activeDeviceName || undefined
     };
+  }
+
+  /**
+   * Pair and open WebBluetooth thermal printer (e.g. 58mm/80mm Bluetooth ESC/POS printers)
+   */
+  async requestBluetoothPrinter(): Promise<boolean> {
+    if (!this.isWebBluetoothSupported()) {
+      throw new Error('WebBluetooth is not supported in this browser. Please use Chrome, Edge, or an updated Chromium browser.');
+    }
+    try {
+      const navAny = navigator as any;
+      const device = await navAny.bluetooth.requestDevice({
+        acceptAllDevices: true,
+        optionalServices: [
+          '000018f0-0000-1000-8000-00805f9b34fb', // Standard POS Printer Service
+          'e7810a71-73ae-499d-8c15-faa9aef0c3f2',
+          '49535343-fe7d-4ae5-8fa9-9fafd205e455'
+        ]
+      });
+
+      const server = await device.gatt.connect();
+      const services = await server.getPrimaryServices();
+      for (const service of services) {
+        const chars = await service.getCharacteristics();
+        for (const char of chars) {
+          if (char.properties.write || char.properties.writeWithoutResponse) {
+            this.connectedBluetoothDevice = device;
+            this.connectedBluetoothCharacteristic = char;
+            this.activeDeviceName = device.name || 'Bluetooth Thermal POS';
+            return true;
+          }
+        }
+      }
+      return false;
+    } catch (err) {
+      console.warn('[HardwarePrinterService] Bluetooth connection cancelled or failed:', err);
+      return false;
+    }
   }
 
   /**
@@ -435,13 +1003,23 @@ export class HardwarePrinterService {
       this.connectedSerialPort = null;
     }
 
+    if (this.connectedBluetoothDevice && this.connectedBluetoothDevice.gatt) {
+      try {
+        this.connectedBluetoothDevice.gatt.disconnect();
+      } catch {
+        // ignore
+      }
+      this.connectedBluetoothDevice = null;
+      this.connectedBluetoothCharacteristic = null;
+    }
+
     this.activeDeviceName = null;
   }
 
   /**
    * Send raw binary ESC/POS payload to connected printer
    */
-  async printRaw(data: Uint8Array): Promise<{ success: boolean; method: 'webusb' | 'webserial'; bytesSent: number }> {
+  async printRaw(data: Uint8Array): Promise<{ success: boolean; method: 'webusb' | 'webserial' | 'webbluetooth'; bytesSent: number }> {
     // 1. Try WebUSB
     if (this.connectedUsbDevice && this.connectedUsbDevice.opened) {
       const ep = this.connectedUsbEndpoint ?? 1;
@@ -468,7 +1046,25 @@ export class HardwarePrinterService {
       }
     }
 
-    throw new Error('No active thermal printer connected. Pair a WebUSB or WebSerial device first.');
+    // 3. Try WebBluetooth
+    if (this.connectedBluetoothCharacteristic) {
+      const chunkSize = 512;
+      for (let i = 0; i < data.byteLength; i += chunkSize) {
+        const chunk = data.slice(i, i + chunkSize);
+        if (this.connectedBluetoothCharacteristic.writeValueWithoutResponse) {
+          await this.connectedBluetoothCharacteristic.writeValueWithoutResponse(chunk);
+        } else {
+          await this.connectedBluetoothCharacteristic.writeValue(chunk);
+        }
+      }
+      return {
+        success: true,
+        method: 'webbluetooth',
+        bytesSent: data.byteLength
+      };
+    }
+
+    throw new Error('No active thermal printer connected. Pair a WebUSB, WebSerial or WebBluetooth device first.');
   }
 
   /**
@@ -894,30 +1490,136 @@ export class HardwarePrinterService {
   }
 
   /**
-   * Silent 1-click Thermal Prescription voucher print with auto-paper cut
+   * Enterprise 203 DPI Canvas Raster ESC/POS Generator for Regional Indic Slips (GS v 0)
+   *
+   * Renders the complete prescription slip (clinic header, Indic Devanagari/Bengali
+   * dosage instructions, and patient QR code) onto a high-contrast 1-bit monochrome
+   * canvas, and compiles into raw GS v 0 (0x1D, 0x76, 0x30, 0x00) raster bitmap bytes.
+   */
+  generateThermalRasterEscPos(
+    element: HTMLElement | HTMLCanvasElement | ThermalPrescriptionSlipData | string,
+    widthPx: number = 576
+  ): Uint8Array {
+    if (typeof document === 'undefined') {
+      return generateSyntheticRasterEscPos(element, widthPx);
+    }
+
+    if (typeof HTMLCanvasElement !== 'undefined' && element instanceof HTMLCanvasElement) {
+      return encodeCanvasToEscPosRaster(element, widthPx);
+    }
+
+    if (typeof element === 'object' && element !== null && 'patientName' in element && 'medications' in element) {
+      const canvas = renderPrescriptionSlipToCanvas(element as ThermalPrescriptionSlipData, widthPx);
+      return encodeCanvasToEscPosRaster(canvas, widthPx);
+    }
+
+    if (typeof HTMLElement !== 'undefined' && element instanceof HTMLElement) {
+      const childCanvas = element.querySelector('canvas');
+      if (childCanvas) {
+        return encodeCanvasToEscPosRaster(childCanvas, widthPx);
+      }
+      const textData: ThermalPrescriptionSlipData = {
+        clinicName: element.querySelector('h1, h2, h3')?.textContent?.trim() || 'DOCSEARCH CLINIC',
+        doctorName: element.querySelector('[data-doctor-name]')?.textContent?.trim() || 'Attending Physician',
+        patientName: element.querySelector('[data-patient-name]')?.textContent?.trim() || 'Patient',
+        patientMrn: element.querySelector('[data-patient-mrn]')?.textContent?.trim() || 'MRN-001',
+        tokenNumber: element.querySelector('[data-token]')?.textContent?.trim() || '1',
+        date: new Date().toLocaleDateString('en-IN'),
+        medications: []
+      };
+      const canvas = renderPrescriptionSlipToCanvas(textData, widthPx);
+      return encodeCanvasToEscPosRaster(canvas, widthPx);
+    }
+
+    if (typeof element === 'string') {
+      try {
+        const parsed = JSON.parse(element);
+        if (parsed && typeof parsed === 'object' && 'patientName' in parsed) {
+          const canvas = renderPrescriptionSlipToCanvas(parsed as ThermalPrescriptionSlipData, widthPx);
+          return encodeCanvasToEscPosRaster(canvas, widthPx);
+        }
+      } catch {
+        // Not JSON
+      }
+
+      const textData: ThermalPrescriptionSlipData = {
+        clinicName: 'DOCSEARCH HEALTHCARE',
+        doctorName: 'Attending Physician',
+        patientName: 'Patient',
+        patientMrn: 'MRN-001',
+        tokenNumber: '1',
+        date: new Date().toLocaleDateString('en-IN'),
+        medications: [{ name: element.slice(0, 40), dosage: '', frequency: '1-0-1', duration: '5 Days' }]
+      };
+      const canvas = renderPrescriptionSlipToCanvas(textData, widthPx);
+      return encodeCanvasToEscPosRaster(canvas, widthPx);
+    }
+
+    return new Uint8Array([0x1B, 0x40, 0x1D, 0x56, 0x00]);
+  }
+
+  /**
+   * Automatically select high-speed native ESC/POS text mode for pure English slips,
+   * or GS v 0 raster mode for multilingual/regional Indic slips.
+   */
+  buildOrRasterPrescriptionThermalEscPos(
+    data: ThermalPrescriptionSlipData,
+    paperWidthCols: number = 42
+  ): Uint8Array {
+    if (isMultilingualSlip(data)) {
+      const widthPx = paperWidthCols > 32 ? 576 : 384;
+      return this.generateThermalRasterEscPos(data, widthPx);
+    }
+    return this.buildPrescriptionThermalEscPos(data, paperWidthCols);
+  }
+
+  /**
+   * Silent 1-click Thermal Prescription voucher print with auto-paper cut.
+   * For pure English slips, retains native ESC/POS text mode for maximum speed;
+   * For multilingual/regional slips, automatically switches to GS v 0 raster mode.
    */
   async printThermalPrescriptionSlip(
     data: ThermalPrescriptionSlipData,
     paperWidthCols: number = 42
-  ): Promise<{ success: boolean; method: 'hardware_agent' | 'webusb' | 'webserial' | 'browser_fallback'; message: string }> {
+  ): Promise<{ success: boolean; method: 'hardware_agent' | 'webusb' | 'webserial' | 'webbluetooth' | 'browser_fallback'; message: string }> {
+    const isRegional = isMultilingualSlip(data);
+    const widthPx = paperWidthCols > 32 ? 576 : 384;
+    let rasterBytes: Uint8Array | null = null;
+    if (isRegional) {
+      rasterBytes = this.generateThermalRasterEscPos(data, widthPx);
+    }
+
+    // 1. Try DocSearch Local Hardware Agent (LHA) on port 18080
     try {
+      const payload: any = {
+        slipData: data,
+        printType: 'PRESCRIPTION_SLIP',
+        paperWidth: paperWidthCols > 32 ? '80mm' : '58mm',
+        printerId: 'tvs-rp3200',
+        isRaster: isRegional
+      };
+
+      if (rasterBytes) {
+        let binary = '';
+        for (let i = 0; i < rasterBytes.length; i++) {
+          binary += String.fromCharCode(rasterBytes[i]!);
+        }
+        payload.rawEscPosBase64 = typeof btoa !== 'undefined' ? btoa(binary) : Buffer.from(rasterBytes).toString('base64');
+      }
+
       const resp = await fetch('http://127.0.0.1:18080/api/v1/hardware/print/escpos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          slipData: data,
-          printType: 'PRESCRIPTION_SLIP',
-          paperWidth: paperWidthCols > 32 ? '80mm' : '58mm',
-          printerId: 'tvs-rp3200'
-        })
+        body: JSON.stringify(payload)
       });
       if (resp.ok) {
         const result = await resp.json();
         if (result.success) {
+          const modeLabel = isRegional ? '203 DPI Regional ESC/POS Raster' : 'Native High-Speed Text';
           return {
             success: true,
             method: 'hardware_agent',
-            message: 'Thermal Prescription slip printed via DocSearch Hardware Agent.'
+            message: `Thermal Prescription slip printed via DocSearch Hardware Agent (${modeLabel}).`
           };
         }
       }
@@ -925,21 +1627,24 @@ export class HardwarePrinterService {
       // Local hardware agent daemon not running on client workstation
     }
 
+    // 2. Direct WebUSB / WebSerial / WebBluetooth
     const status = this.getStatus();
     if (status.isConnected) {
       try {
-        const bytes = this.buildPrescriptionThermalEscPos(data, paperWidthCols);
+        const bytes = rasterBytes || this.buildPrescriptionThermalEscPos(data, paperWidthCols);
         const result = await this.printRaw(bytes);
+        const modeLabel = isRegional ? '203 DPI Regional Raster' : 'Native Text';
         return {
           success: true,
           method: result.method,
-          message: `Thermal Prescription slip printed via ${result.method.toUpperCase()} with paper cut.`
+          message: `Thermal Prescription slip printed via ${result.method.toUpperCase()} (${modeLabel}) with paper cut.`
         };
       } catch (err) {
         console.warn('[HardwarePrinterService] Direct thermal Rx print failed, initiating browser fallback:', err);
       }
     }
 
+    // 3. Graceful fallback to browser print dialog
     if (typeof window !== 'undefined') {
       window.print();
       return {

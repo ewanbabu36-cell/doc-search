@@ -32,7 +32,9 @@ import { hardwareStatusService } from '../services/hardware-status-service.js';
 import {
   MOCK_CONSULTATIONS,
   MOCK_CONSULTATION_AUDIT_TRACES,
-  MOCK_CONSULTATION_OVERVIEW
+  MOCK_CONSULTATION_OVERVIEW,
+  isProductionClinicPilot,
+  filterRealClinicalPatients
 } from '../services/mock-clinical-consultation-data.js';
 import { MOCK_ENCOUNTERS } from '../services/mock-encounter-data.js';
 import { MOCK_DOCTOR_PROFILES } from '../services/mock-doctor-roster-data.js';
@@ -129,7 +131,9 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
         const item = window.localStorage.getItem('docsearch_consultations');
         if (item) {
           const parsed = JSON.parse(item);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return isProductionClinicPilot() ? filterRealClinicalPatients(parsed) : parsed;
+          }
         }
       } catch {}
     }
@@ -141,7 +145,9 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
         const item = window.localStorage.getItem('docsearch_encounters');
         if (item) {
           const parsed = JSON.parse(item);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return isProductionClinicPilot() ? filterRealClinicalPatients(parsed) : parsed;
+          }
         }
       } catch {}
     }
@@ -281,8 +287,14 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
       }
 
       if (ovRes.status === 'fulfilled') setOverview(ovRes.value);
-      if (consRes.status === 'fulfilled') setConsultations(consRes.value);
-      if (encsRes.status === 'fulfilled') setEncounters(encsRes.value);
+      if (consRes.status === 'fulfilled') {
+        const consList = isProductionClinicPilot() ? filterRealClinicalPatients(consRes.value) : consRes.value;
+        setConsultations(consList);
+      }
+      if (encsRes.status === 'fulfilled') {
+        const encsList = isProductionClinicPilot() ? filterRealClinicalPatients(encsRes.value) : encsRes.value;
+        setEncounters(encsList);
+      }
       if (docsRes.status === 'fulfilled') setDoctors(docsRes.value);
       if (auditsRes.status === 'fulfilled') setAuditTraces(auditsRes.value);
 

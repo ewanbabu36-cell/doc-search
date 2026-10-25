@@ -217,43 +217,48 @@ const server = http.createServer(async (req, res) => {
     const paperWidth = body.paperWidth || '80mm';
     const printerId = body.printerId || 'tvs-rp3200';
 
-    // Construct raw binary ESC/POS stream
-    const chunks = [];
-    chunks.push(Buffer.from([0x1b, 0x40])); // ESC @ (Initialize)
-    chunks.push(Buffer.from([0x1b, 0x61, 0x01])); // Center align
+    let rawBuffer;
+    if (body.rawEscPosBase64 || body.rawRasterBase64) {
+      rawBuffer = Buffer.from(body.rawEscPosBase64 || body.rawRasterBase64, 'base64');
+    } else {
+      // Construct raw binary ESC/POS stream
+      const chunks = [];
+      chunks.push(Buffer.from([0x1b, 0x40])); // ESC @ (Initialize)
+      chunks.push(Buffer.from([0x1b, 0x61, 0x01])); // Center align
 
-    const clinic = slipData.clinicName || 'DOCSEARCH MULTISPECIALTY HOSPITAL';
-    chunks.push(Buffer.from([0x1b, 0x45, 0x01])); // Bold ON
-    chunks.push(Buffer.from(`${clinic}\n`, 'utf8'));
-    chunks.push(Buffer.from([0x1b, 0x45, 0x00])); // Bold OFF
+      const clinic = slipData.clinicName || 'DOCSEARCH MULTISPECIALTY HOSPITAL';
+      chunks.push(Buffer.from([0x1b, 0x45, 0x01])); // Bold ON
+      chunks.push(Buffer.from(`${clinic}\n`, 'utf8'));
+      chunks.push(Buffer.from([0x1b, 0x45, 0x00])); // Bold OFF
 
-    if (slipData.address) chunks.push(Buffer.from(`${slipData.address}\n`, 'utf8'));
-    if (slipData.contactNumber) chunks.push(Buffer.from(`Phone: ${slipData.contactNumber}\n`, 'utf8'));
+      if (slipData.address) chunks.push(Buffer.from(`${slipData.address}\n`, 'utf8'));
+      if (slipData.contactNumber) chunks.push(Buffer.from(`Phone: ${slipData.contactNumber}\n`, 'utf8'));
 
-    chunks.push(Buffer.from('------------------------------------------------\n', 'utf8'));
+      chunks.push(Buffer.from('------------------------------------------------\n', 'utf8'));
 
-    // Token Header
-    if (slipData.tokenNumber) {
-      chunks.push(Buffer.from([0x1d, 0x21, 0x11])); // Double width & height
-      chunks.push(Buffer.from(`TOKEN: ${slipData.tokenNumber}\n`, 'utf8'));
-      chunks.push(Buffer.from([0x1d, 0x21, 0x00])); // Reset size
+      // Token Header
+      if (slipData.tokenNumber) {
+        chunks.push(Buffer.from([0x1d, 0x21, 0x11])); // Double width & height
+        chunks.push(Buffer.from(`TOKEN: ${slipData.tokenNumber}\n`, 'utf8'));
+        chunks.push(Buffer.from([0x1d, 0x21, 0x00])); // Reset size
+      }
+
+      chunks.push(Buffer.from([0x1b, 0x61, 0x00])); // Left align
+      if (slipData.patientName) chunks.push(Buffer.from(`Patient : ${slipData.patientName}\n`, 'utf8'));
+      if (slipData.mrn) chunks.push(Buffer.from(`MRN/UHID: ${slipData.mrn} / ${slipData.uhid || 'NA'}\n`, 'utf8'));
+      if (slipData.doctorName) chunks.push(Buffer.from(`Doctor  : ${slipData.doctorName}\n`, 'utf8'));
+      if (slipData.department) chunks.push(Buffer.from(`Dept    : ${slipData.department} (${slipData.room || 'Chamber 1'})\n`, 'utf8'));
+      if (slipData.time) chunks.push(Buffer.from(`Time    : ${slipData.time}\n`, 'utf8'));
+      if (slipData.fee !== undefined) chunks.push(Buffer.from(`Fee Paid: Rs. ${slipData.fee} (${slipData.paymentMode || 'CASH'})\n`, 'utf8'));
+
+      chunks.push(Buffer.from('------------------------------------------------\n', 'utf8'));
+      chunks.push(Buffer.from([0x1b, 0x61, 0x01])); // Center
+      chunks.push(Buffer.from('Please wait for your token to be called.\n', 'utf8'));
+      chunks.push(Buffer.from('Powered by DocSearch Hospital OS\n\n\n\n', 'utf8'));
+      chunks.push(Buffer.from([0x1d, 0x56, 0x00])); // Full paper cut (GS V 0)
+
+      rawBuffer = Buffer.concat(chunks);
     }
-
-    chunks.push(Buffer.from([0x1b, 0x61, 0x00])); // Left align
-    if (slipData.patientName) chunks.push(Buffer.from(`Patient : ${slipData.patientName}\n`, 'utf8'));
-    if (slipData.mrn) chunks.push(Buffer.from(`MRN/UHID: ${slipData.mrn} / ${slipData.uhid || 'NA'}\n`, 'utf8'));
-    if (slipData.doctorName) chunks.push(Buffer.from(`Doctor  : ${slipData.doctorName}\n`, 'utf8'));
-    if (slipData.department) chunks.push(Buffer.from(`Dept    : ${slipData.department} (${slipData.room || 'Chamber 1'})\n`, 'utf8'));
-    if (slipData.time) chunks.push(Buffer.from(`Time    : ${slipData.time}\n`, 'utf8'));
-    if (slipData.fee !== undefined) chunks.push(Buffer.from(`Fee Paid: Rs. ${slipData.fee} (${slipData.paymentMode || 'CASH'})\n`, 'utf8'));
-
-    chunks.push(Buffer.from('------------------------------------------------\n', 'utf8'));
-    chunks.push(Buffer.from([0x1b, 0x61, 0x01])); // Center
-    chunks.push(Buffer.from('Please wait for your token to be called.\n', 'utf8'));
-    chunks.push(Buffer.from('Powered by DocSearch Hospital OS\n\n\n\n', 'utf8'));
-    chunks.push(Buffer.from([0x1d, 0x56, 0x00])); // Full paper cut (GS V 0)
-
-    const rawBuffer = Buffer.concat(chunks);
     const spoolFile = path.join(PRINTERS_DIR, `receipt-spool-${Date.now()}.bin`);
     fs.writeFileSync(spoolFile, rawBuffer);
     fs.writeFileSync(path.join(PRINTERS_DIR, 'latest-receipt-spool.bin'), rawBuffer);

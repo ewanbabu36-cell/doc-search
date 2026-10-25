@@ -5,6 +5,9 @@ import type {
   EncounterAuditTraceDto,
   EncounterOverviewDto
 } from '@docsearch/api-contracts';
+import { isProductionClinicPilot, filterRealClinicalPatients } from './mock-clinical-consultation-data.js';
+
+export { isProductionClinicPilot, filterRealClinicalPatients };
 
 export const MOCK_ENCOUNTER_REFERRALS: EncounterReferralDto[] = [];
 export const MOCK_ENCOUNTER_QUEUES: EncounterQueueDto[] = [];
