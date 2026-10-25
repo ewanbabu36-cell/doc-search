@@ -2147,6 +2147,47 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
                             📲
                           </button>
 
+                          {/* 🌟 Competitive Gap 5: Google Review Request for Completed Consultations */}
+                          {isDone && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const phone = (item.patientMobile || '').replace(/\D/g, '').slice(-10);
+                                const doc = item.doctorName || 'Attending Physician';
+                                const clinicName = clinicDisplayName || 'Our Clinic';
+                                const text =
+                                  `Namaste ${item.patientName}, thank you for visiting ${clinicName}. Dr. ${doc} hopes you feel better soon!\n\n` +
+                                  `⭐ Please take 10 seconds to share your experience on our Google Business page:\n${clinicGoogleReviewUrl}\n\n` +
+                                  `📅 Your next follow-up is recommended in 7 days. Wishing you great health!`;
+                                const waUrl = `https://api.whatsapp.com/send?phone=91${phone}&text=${encodeURIComponent(text)}`;
+                                setGoogleReviewModalData({
+                                  patientName: item.patientName,
+                                  patientMobile: phone,
+                                  doctorName: doc,
+                                  tokenNumber: item.tokenNumber,
+                                  followUpDays: 7,
+                                  waUrl
+                                });
+                              }}
+                              style={{
+                                padding: '5px 8px',
+                                borderRadius: '6px',
+                                backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                                border: '1px solid rgba(245, 158, 11, 0.35)',
+                                color: '#FBBF24',
+                                fontSize: '0.72rem',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '3px'
+                              }}
+                              title="Send Google Business Profile Review request via WhatsApp"
+                            >
+                              <span>⭐ Review</span>
+                            </button>
+                          )}
+
                           {/* Cancel / Refund Button */}
                           {(isWaiting || isInConsult) && (
                             <button
