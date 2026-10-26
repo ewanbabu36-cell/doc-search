@@ -3045,6 +3045,100 @@ export type PharmacyAuditTrace = typeof pharmacyAuditTraces.$inferSelect;
 export type NewPharmacyAuditTrace = typeof pharmacyAuditTraces.$inferInsert;
 
 /**
+ * 4.15 controlled_substance_records (CDSCO Form 20B/21B Register)
+ * Statutory append-only controlled substances register complying with CDSCO Rules 1945
+ * for Schedule H1, Schedule X, and Schedule H drugs.
+ */
+export const pharmacySchema = pgSchema('pharmacy');
+
+export const controlledSubstanceRecords = pharmacySchema.table(
+  'controlled_substance_records',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    partnerId: uuid('partner_id').references(() => operationalPartners.id, { onDelete: 'set null' }),
+    organizationId: uuid('organization_id').references(() => operationalOrganizations.id, { onDelete: 'set null' }),
+    branchId: uuid('branch_id').references(() => operationalFacilities.id, { onDelete: 'set null' }),
+    dispenseDate: varchar('dispense_date', { length: 50 }).notNull(),
+    invoiceNumber: varchar('invoice_number', { length: 100 }).notNull(),
+    prescriptionId: varchar('prescription_id', { length: 100 }),
+    patientName: varchar('patient_name', { length: 255 }).notNull(),
+    patientUhid: varchar('patient_uhid', { length: 100 }),
+    patientAddress: text('patient_address').notNull().default('Hospital OPD Patient'),
+    patientPhone: varchar('patient_phone', { length: 50 }).notNull(),
+    doctorName: varchar('doctor_name', { length: 255 }).notNull(),
+    doctorRegNumber: varchar('doctor_reg_number', { length: 100 }).notNull(), // MCI / NMC / SMC Reg
+    hospitalName: varchar('hospital_name', { length: 255 }),
+    drugName: varchar('drug_name', { length: 255 }).notNull(),
+    scheduleType: varchar('schedule_type', { length: 50 }).notNull().default('SCHEDULE_H1'), // SCHEDULE_H1, SCHEDULE_X, SCHEDULE_H
+    batchNumber: varchar('batch_number', { length: 100 }).notNull(),
+    expiryDate: varchar('expiry_date', { length: 50 }),
+    quantityDispensed: varchar('quantity_dispensed', { length: 100 }).notNull(),
+    pharmacistLicense: varchar('pharmacist_license', { length: 100 }),
+    pharmacistName: varchar('pharmacist_name', { length: 255 }),
+    metadata: jsonb('metadata').default({}),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    index('idx_ctrl_sub_tenant').on(table.tenantId),
+    index('idx_ctrl_sub_invoice').on(table.invoiceNumber),
+    index('idx_ctrl_sub_drug').on(table.drugName),
+    index('idx_ctrl_sub_schedule').on(table.scheduleType),
+    index('idx_ctrl_sub_doctor_reg').on(table.doctorRegNumber),
+    index('idx_ctrl_sub_date').on(table.dispenseDate)
+  ]
+);
+
+export const pharmacyControlledSubstances = clinicalSchema.table(
+  'pharmacy_controlled_substances',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    partnerId: uuid('partner_id').references(() => operationalPartners.id, { onDelete: 'set null' }),
+    organizationId: uuid('organization_id').references(() => operationalOrganizations.id, { onDelete: 'set null' }),
+    branchId: uuid('branch_id').references(() => operationalFacilities.id, { onDelete: 'set null' }),
+    dispenseDate: varchar('dispense_date', { length: 50 }).notNull(),
+    invoiceNumber: varchar('invoice_number', { length: 100 }).notNull(),
+    prescriptionId: varchar('prescription_id', { length: 100 }),
+    patientName: varchar('patient_name', { length: 255 }).notNull(),
+    patientUhid: varchar('patient_uhid', { length: 100 }),
+    patientAddress: text('patient_address').notNull().default('Hospital OPD Patient'),
+    patientPhone: varchar('patient_phone', { length: 50 }).notNull(),
+    doctorName: varchar('doctor_name', { length: 255 }).notNull(),
+    doctorRegNumber: varchar('doctor_reg_number', { length: 100 }).notNull(),
+    hospitalName: varchar('hospital_name', { length: 255 }),
+    drugName: varchar('drug_name', { length: 255 }).notNull(),
+    scheduleType: varchar('schedule_type', { length: 50 }).notNull().default('SCHEDULE_H1'),
+    batchNumber: varchar('batch_number', { length: 100 }).notNull(),
+    expiryDate: varchar('expiry_date', { length: 50 }),
+    quantityDispensed: varchar('quantity_dispensed', { length: 100 }).notNull(),
+    pharmacistLicense: varchar('pharmacist_license', { length: 100 }),
+    pharmacistName: varchar('pharmacist_name', { length: 255 }),
+    metadata: jsonb('metadata').default({}),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    index('idx_pharm_ctrl_tenant').on(table.tenantId),
+    index('idx_pharm_ctrl_invoice').on(table.invoiceNumber),
+    index('idx_pharm_ctrl_drug').on(table.drugName),
+    index('idx_pharm_ctrl_schedule').on(table.scheduleType),
+    index('idx_pharm_ctrl_doctor_reg').on(table.doctorRegNumber),
+    index('idx_pharm_ctrl_date').on(table.dispenseDate)
+  ]
+);
+
+export type ControlledSubstanceRecord = typeof controlledSubstanceRecords.$inferSelect;
+export type NewControlledSubstanceRecord = typeof controlledSubstanceRecords.$inferInsert;
+export type PharmacyControlledSubstance = typeof pharmacyControlledSubstances.$inferSelect;
+export type NewPharmacyControlledSubstance = typeof pharmacyControlledSubstances.$inferInsert;
+
+/**
  * ============================================================================
  * PHASE 2.9: BILLING, CHARGES, PAYMENTS & REVENUE CYCLE MANAGEMENT (RCM)
  * ============================================================================

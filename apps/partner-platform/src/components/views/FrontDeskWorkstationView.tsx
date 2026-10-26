@@ -17,6 +17,7 @@ import { apiRequest } from '../../services/api-client.js';
 import { getUnifiedPartnerProfile } from '../../utils/roleProfileResolver.js';
 import type { HospitalStaffUser } from '../auth/HospitalStaffLogin.js';
 import { hardwarePrinterService, type OpdTokenSlipData, type ShiftHandoverSlipData } from '../../services/hardware-printer-service.js';
+import { AbdmScanAndShareModal, type AbdmScanProfile } from '../common/AbdmScanAndShareModal.js';
 
 export interface FrontDeskWorkstationViewProps {
   currentUser?: HospitalStaffUser | undefined;
@@ -49,7 +50,7 @@ export interface FrontDeskPatientToken {
   doctorId: string;
   doctorName: string;
   chamber: string;
-  status: 'WAITING' | 'IN_CONSULTATION' | 'COMPLETED' | 'CANCELLED';
+  status: 'WAITING' | 'IN_CONSULTATION' | 'COMPLETED' | 'CANCELLED' | 'SENT_TO_LAB' | 'AWAITING_LAB_RETURN';
   cancellationReason?: string | undefined;
   cancellationRefundMode?: 'CASH_RETURNED' | 'UPI_REVERSAL' | 'NO_FEE_COLLECTED' | undefined;
   cancelledAt?: string | undefined;
@@ -66,6 +67,21 @@ export interface FrontDeskPatientToken {
   queueEligibility?: string;
   blockingReason?: string | null;
   hasVitals?: boolean;
+  priorityScore?: number | undefined;
+  isAbhaLinked?: boolean;
+  abhaAddress?: string;
+  abhaNumber?: string;
+}
+
+export interface InboundAmbulanceAlert {
+  id: string;
+  ambulanceId: string;
+  patientName: string;
+  chiefComplaint: string;
+  severity: string;
+  location?: string;
+  etaSeconds?: number;
+  timestamp: string;
 }
 
 function resolveFacilityLeadDoctor(
@@ -167,7 +183,7 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
   const [queue, setQueue] = useState<FrontDeskPatientToken[]>([]);
   const [isLoadingQueue, setIsLoadingQueue] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'WAITING' | 'IN_CONSULTATION' | 'COMPLETED'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'WAITING' | 'IN_CONSULTATION' | 'COMPLETED' | 'LAB_QUEUE'>('ALL');
 
   // Sound & Speech settings
   const [audioAnnounceEnabled, setAudioAnnounceEnabled] = useState(true);
@@ -182,6 +198,7 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
   const [cancelReason, setCancelReason] = useState<string>('Patient Left / Emergency');
   const [cancelRefundMode, setCancelRefundMode] = useState<'CASH_RETURNED' | 'UPI_REVERSAL' | 'NO_FEE_COLLECTED'>('CASH_RETURNED');
   const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
+  const [isAbdmScanModalOpen, setIsAbdmScanModalOpen] = useState(false);
   const [physicalCashInput, setPhysicalCashInput] = useState<string>('');
   const [shiftStartTime] = useState<string>(() => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -240,6 +257,9 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
   const [formPaymentMode, setFormPaymentMode] = useState<'CASH' | 'UPI_QR' | 'CARD' | 'WAIVED' | 'SPLIT'>('UPI_QR');
   const [formSplitCash, setFormSplitCash] = useState<number>(0);
   const [formSplitUpi, setFormSplitUpi] = useState<number>(0);
+  
+
+  const [inboundAmbulanceAlerts, setInboundAmbulanceAlerts] = useState<InboundAmbulanceAlert[]>([]);
   const [doctorAvailability, setDoctorAvailability] = useState<Record<string, 'AVAILABLE' | 'ON_BREAK' | 'IN_MINOR_OT'>>(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -450,12 +470,78 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
       }
     });
 
+    const unsubSentToLab = hospitalEventBus.subscribe('ENCOUNTER_SENT_FOR_LABS', (payload) => {
+      const data = payload?.data || {};
+      const targetToken = data.tokenNumber || data.token;
+      if (targetToken || data.encounterId) {
+        setQueue((prev) =>
+          prev.map((t) =>
+            t.tokenNumber === targetToken || (data.encounterId && t.encounterId === data.encounterId)
+              ? { ...t, status: 'SENT_TO_LAB' }
+              : t
+          )
+        );
+        showToast(`🧪 Token #${targetToken || ''} (${data.patientName || 'Patient'}) sent to In-House Lab for testing`);
+      }
+    });
+
+    const unsubLabDone = hospitalEventBus.subscribe('LAB_REPORT_COMPLETED', (payload) => {
+      const data = payload?.data || {};
+      const targetToken = data.tokenNumber || data.token;
+      if (targetToken || data.encounterId) {
+        setQueue((prev) =>
+          prev.map((t) =>
+            t.tokenNumber === targetToken || (data.encounterId && t.encounterId === data.encounterId)
+              ? { ...t, status: 'AWAITING_LAB_RETURN' }
+              : t
+          )
+        );
+        showToast(`🧪 Lab Report Ready for Token #${targetToken || ''} (${data.patientName || 'Patient'})! Returning to Doctor Chamber.`);
+      }
+    });
+
+    const unsubLabReturn = hospitalEventBus.subscribe('LAB_RETURN_READY', (payload) => {
+      const data = payload?.data || {};
+      const targetToken = data.tokenNumber || data.token;
+      if (targetToken || data.encounterId) {
+        setQueue((prev) =>
+          prev.map((t) =>
+            t.tokenNumber === targetToken || (data.encounterId && t.encounterId === data.encounterId)
+              ? { ...t, status: 'AWAITING_LAB_RETURN' }
+              : t
+          )
+        );
+        showToast(`🧪 Token #${targetToken || ''} in waiting hall with signed lab reports`);
+      }
+    });
+
+        const handleAmbulanceEmergencyEvent = (payload: any) => {
+      const data = payload?.data || {};
+      const newAlert: InboundAmbulanceAlert = {
+        id: `amb-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        ambulanceId: data.ambulanceId || 'AMB-108',
+        patientName: data.patientName || 'Emergency Inbound Patient',
+        chiefComplaint: data.diagnosis || data.chiefComplaint || data.location || 'Critical Emergency / STEMI / Trauma',
+        severity: data.severity || 'STAT_EMERGENCY',
+        location: data.location || 'Resuscitation Bay 1',
+        etaSeconds: data.etaSeconds || 300,
+        timestamp: data.timestamp || new Date().toISOString()
+      };
+      setInboundAmbulanceAlerts((prev) => [newAlert, ...prev.filter((a) => a.ambulanceId !== newAlert.ambulanceId)]);
+      showToast(`🚨 INBOUND AMBULANCE ALERT: ${newAlert.patientName} (${newAlert.chiefComplaint})`);
+    };
+
+    const unsubCathLab = hospitalEventBus.subscribe('CATH_LAB_PRE_ACTIVATED', handleAmbulanceEmergencyEvent);
+    const unsubErTriage = hospitalEventBus.subscribe('EMERGENCY_TRIAGE_ALERT', handleAmbulanceEmergencyEvent);
+    const unsubAmbDispatch = hospitalEventBus.subscribe('INBOUND_AMBULANCE_DISPATCHED', handleAmbulanceEmergencyEvent);
+
     const unsubRx = hospitalEventBus.subscribe('PRESCRIPTION_ISSUED', (payload) => {
       const data = payload?.data || {};
       const targetToken = data.tokenNumber || data.token;
       const patName = data.patientName || 'Patient';
       const docName = data.doctorName || 'Doctor';
       const followUp = data.followUpDays || 7;
+      const isSentToLab = data.encounterStatus === 'SENT_TO_LAB' || data.sentToLab === true;
 
       if (targetToken || data.encounterId) {
         let matchedPhone = (data.patientMobile || data.phone || '').replace(/\D/g, '').slice(-10);
@@ -469,10 +555,15 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
           }
           return prev.map((t) =>
             t.tokenNumber === targetToken || (data.encounterId && t.encounterId === data.encounterId)
-              ? { ...t, status: 'COMPLETED' }
+              ? { ...t, status: isSentToLab ? 'SENT_TO_LAB' : 'COMPLETED' }
               : t
           );
         });
+
+        if (isSentToLab) {
+          showToast(`🧪 Token #${targetToken} (${patName}) sent to In-House Lab for testing`);
+          return;
+        }
 
         // 🌟 Auto-prepare Google Review & Follow-up deep-link
         if (autoGoogleReviewEnabled && matchedPhone && matchedPhone.length === 10) {
@@ -502,9 +593,60 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
       unsubCalled();
       unsubCalledChamber();
       unsubTokenCompleted();
+      unsubSentToLab();
+      unsubLabDone();
+      unsubLabReturn();
       unsubRx();
+      unsubCathLab();
+      unsubErTriage();
+      unsubAmbDispatch();
     };
   }, [autoGoogleReviewEnabled, clinicGoogleReviewUrl, clinicDisplayName]);
+
+    const handleFastTrackAmbulanceToken = (alert: InboundAmbulanceAlert) => {
+    const nextNum = Math.max(...queue.map((t) => Number(t.tokenNumber) || 0), 0) + 1;
+    const doc = doctors[0] || leadDoctor;
+    const newEmergencyToken: FrontDeskPatientToken = {
+      id: `token-er-${Date.now()}`,
+      tokenNumber: String(nextNum),
+      patientName: alert.patientName,
+      patientMobile: '9999999999',
+      gender: 'MALE',
+      age: '48',
+      mrn: `MRN-ER-${nextNum}`,
+      doctorId: doc.id,
+      doctorName: doc.name,
+      chamber: doc.chamber || 'EMERGENCY RESUSCITATION BAY 1',
+      visitType: 'EMERGENCY',
+      status: 'WAITING',
+      priorityScore: 15000,
+      chiefComplaint: alert.chiefComplaint,
+      consultationFee: 0,
+      feePaymentMode: 'WAIVED',
+      feeStatus: 'PAID',
+      feeReceiptNo: `REC-ER-${nextNum}`,
+      createdAt: new Date().toISOString()
+    };
+
+    setQueue((prev) => [newEmergencyToken, ...prev]);
+
+    hospitalEventBus.publish(
+      'TOKEN_GENERATED',
+      'FrontDeskWorkstation',
+      {
+        token: nextNum,
+        patientName: alert.patientName,
+        doctorName: newEmergencyToken.doctorName,
+        room: newEmergencyToken.chamber,
+        visitType: 'EMERGENCY',
+        chiefComplaint: alert.chiefComplaint
+      },
+      `🚨 STAT EMERGENCY TOKEN #${nextNum} generated for ${alert.patientName} (Inbound Ambulance ${alert.ambulanceId})`
+    );
+
+    showToast(`✓ Emergency Token #${nextNum} generated for ${alert.patientName}! Preempted to top of ER queue.`);
+    setInboundAmbulanceAlerts((prev) => prev.filter((a) => a.id !== alert.id));
+  };
 
   const [audioCallLanguage, setAudioCallLanguage] = useState<'HI' | 'EN'>(() => {
     if (typeof window !== 'undefined') {
@@ -627,6 +769,9 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
       } else if (e.key === 'F3') {
         e.preventDefault();
         openNewTokenModal('APPOINTMENT');
+      } else if (e.key === 'F4') {
+        e.preventDefault();
+        setIsAbdmScanModalOpen(true);
       }
     };
     const handleCustomWalkIn = () => openNewTokenModal('WALK_IN');
@@ -831,6 +976,39 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
       setFormFee(doc.consultationFee);
     }
     setIsTokenModalOpen(true);
+  };
+
+  const handleAbdmRegisterSuccess = (tokenNum: number, patientName: string, profile?: AbdmScanProfile) => {
+    const formattedToken = String(tokenNum).padStart(3, '0');
+    const doc = doctors[0];
+    const newAbhaToken: FrontDeskPatientToken = {
+      id: `token-abdm-${tokenNum}`,
+      encounterId: `enc-abdm-${tokenNum}`,
+      tokenNumber: formattedToken,
+      patientName,
+      patientMobile: profile?.mobile || '',
+      gender: (profile?.gender as any) || 'MALE',
+      age: profile?.dob ? `${new Date().getFullYear() - new Date(profile.dob).getFullYear()}y` : '30y',
+      mrn: `UHID-2026-${String(tokenNum).padStart(4, '0')}`,
+      doctorId: doc?.id || 'doc-001',
+      doctorName: doc?.name || 'Consulting Physician',
+      chamber: doc?.chamber || 'Room 101',
+      status: 'WAITING',
+      visitType: 'WALK_IN',
+      chiefComplaint: 'OPD Consultation (ABDM Fast-Track)',
+      consultationFee: doc?.consultationFee || 500,
+      feePaymentMode: 'WAIVED',
+      feeStatus: 'PAID',
+      feeReceiptNo: `REC-ABHA-${tokenNum}`,
+      createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isAbhaLinked: true,
+      abhaAddress: profile?.abhaAddress,
+      abhaNumber: profile?.abhaNumber,
+      priorityScore: 5000
+    };
+
+    setQueue((prev) => [newAbhaToken, ...prev]);
+    showToast(`🇮🇳 ABHA Verified Token #${formattedToken} for ${patientName} queued!`);
   };
 
   const handleDoctorSelect = (docId: string) => {
@@ -1185,6 +1363,7 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
       if (statusFilter === 'WAITING' && item.status !== 'WAITING') return false;
       if (statusFilter === 'IN_CONSULTATION' && item.status !== 'IN_CONSULTATION') return false;
       if (statusFilter === 'COMPLETED' && item.status !== 'COMPLETED') return false;
+      if (statusFilter === 'LAB_QUEUE' && item.status !== 'SENT_TO_LAB' && item.status !== 'AWAITING_LAB_RETURN') return false;
 
       if (searchTerm.trim()) {
         const q = searchTerm.toLowerCase();
@@ -1201,12 +1380,14 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
     });
 
     // Strictly prioritize queue sorting:
-    // Hierarchy: EMERGENCY (top priority with pulsating red tag) > IN_CONSULTATION > WAITING (chronological token order) > COMPLETED (bottom)
+    // Hierarchy: EMERGENCY (top priority) > AWAITING_LAB_RETURN (top fast-track return) > IN_CONSULTATION > WAITING > SENT_TO_LAB > COMPLETED
     return [...list].sort((a, b) => {
       const getPriorityScore = (item: FrontDeskPatientToken): number => {
         if (item.visitType === 'EMERGENCY' && item.status !== 'COMPLETED') return 1;
+        if (item.status === 'AWAITING_LAB_RETURN') return 1.5;
         if (item.status === 'IN_CONSULTATION') return 2;
         if (item.status === 'WAITING') return 3;
+        if (item.status === 'SENT_TO_LAB') return 3.5;
         return 4;
       };
 
@@ -1251,6 +1432,8 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
   const waitingCount = queue.filter((t) => t.status === 'WAITING').length;
   const inConsultCount = queue.filter((t) => t.status === 'IN_CONSULTATION').length;
   const completedCount = queue.filter((t) => t.status === 'COMPLETED').length;
+  const awaitingLabReturnCount = queue.filter((t) => t.status === 'AWAITING_LAB_RETURN').length;
+  const sentToLabCount = queue.filter((t) => t.status === 'SENT_TO_LAB').length;
 
   return (
     <div
@@ -1729,6 +1912,32 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
             </kbd>
           </button>
 
+          <button
+            type="button"
+            onClick={() => setIsAbdmScanModalOpen(true)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 16px',
+              borderRadius: '10px',
+              backgroundColor: 'rgba(16, 185, 129, 0.16)',
+              border: '1.5px solid #10B981',
+              color: '#34D399',
+              fontWeight: 800,
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+              boxShadow: '0 4px 16px rgba(16, 185, 129, 0.25)',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <span style={{ fontSize: '1rem' }}>🇮🇳</span>
+            <span>ABDM Scan & Share</span>
+            <kbd style={{ fontSize: '0.65rem', padding: '1px 5px', borderRadius: '4px', background: 'rgba(16,185,129,0.2)', border: '1px solid rgba(16,185,129,0.3)', marginLeft: '4px' }}>
+              F4
+            </kbd>
+          </button>
+
           {onNavigateModule && (
             <>
               <button
@@ -1889,6 +2098,26 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
           >
             ✅ Completed ({completedCount})
           </button>
+          <button
+            type="button"
+            onClick={() => setStatusFilter('LAB_QUEUE')}
+            style={{
+              padding: '6px 14px',
+              borderRadius: '7px',
+              border: 'none',
+              backgroundColor: statusFilter === 'LAB_QUEUE' ? '#0284C7' : 'transparent',
+              color: statusFilter === 'LAB_QUEUE' ? '#FFFFFF' : '#38BDF8',
+              fontSize: '0.8125rem',
+              fontWeight: statusFilter === 'LAB_QUEUE' ? 800 : 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}
+          >
+            <span>🧪 Lab Queue</span>
+            <span>({awaitingLabReturnCount + sentToLabCount})</span>
+          </button>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.78rem', color: '#94A3B8' }}>
@@ -1896,6 +2125,90 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
           <span>Showing <strong style={{ color: '#F8FAFC' }}>{filteredQueue.length}</strong> patients in live queue</span>
         </div>
       </div>
+
+      {/* INBOUND CRITICAL AMBULANCE EMERGENCY NOTIFICATION BANNER */}
+      {inboundAmbulanceAlerts.length > 0 && (
+        <div
+          data-testid="inbound-ambulance-alerts-banner"
+          style={{
+            backgroundColor: 'rgba(239, 68, 68, 0.12)',
+            border: '2px solid #EF4444',
+            borderRadius: '14px',
+            padding: '16px 20px',
+            marginBottom: '16px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: '1.6rem' }}>🚑</span>
+              <div>
+                <strong style={{ fontSize: '1.05rem', color: '#F87171', letterSpacing: '-0.01em' }}>
+                  INBOUND CRITICAL AMBULANCE EN ROUTE ({inboundAmbulanceAlerts.length} Active Alert{inboundAmbulanceAlerts.length > 1 ? 's' : ''})
+                </strong>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: '#CBD5E1' }}>
+                  Pre-hospital telemetry received. Fast-track emergency token before arrival to eliminate ER bay delay.
+                </p>
+              </div>
+            </div>
+            <span style={{ backgroundColor: '#EF4444', color: '#FFF', fontSize: '0.72rem', fontWeight: 800, padding: '4px 12px', borderRadius: '6px' }}>
+              CRITICAL RESUSCITATION
+            </span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '12px' }}>
+            {inboundAmbulanceAlerts.map((alert) => (
+              <div
+                key={alert.id}
+                data-testid={`inbound-ambulance-card-${alert.id}`}
+                style={{
+                  backgroundColor: '#0F172A',
+                  border: '1px solid rgba(239, 68, 68, 0.4)',
+                  borderRadius: '10px',
+                  padding: '12px 16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontWeight: 800, color: '#FCA5A5', fontSize: '0.9rem' }}>
+                    {alert.ambulanceId} • {alert.patientName}
+                  </span>
+                  <span style={{ fontSize: '0.75rem', color: '#FCD34D', fontWeight: 700 }}>
+                    ⏱️ ETA: ~{Math.ceil((alert.etaSeconds || 300) / 60)}m
+                  </span>
+                </div>
+
+                <div style={{ fontSize: '0.82rem', color: '#E2E8F0', backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: '6px 10px', borderRadius: '6px' }}>
+                  🚨 <strong>Complaint:</strong> {alert.chiefComplaint}
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '4px' }}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setInboundAmbulanceAlerts((prev) => prev.filter((a) => a.id !== alert.id))}
+                    style={{ fontSize: '0.75rem', borderColor: '#475569', color: '#94A3B8' }}
+                  >
+                    Dismiss
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => handleFastTrackAmbulanceToken(alert)}
+                    style={{ backgroundColor: '#EF4444', borderColor: '#DC2626', color: '#FFF', fontWeight: 800, fontSize: '0.78rem' }}
+                  >
+                    ⚡ Fast-Track ER Token
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 4. TODAY'S LIVE OPD QUEUE BOARD TABLE */}
       <Card style={{ padding: 0, overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '14px', backgroundColor: 'rgba(15, 23, 42, 0.85)' }}>
@@ -1969,11 +2282,30 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
                       {/* Patient Details */}
                       <TableCell style={{ padding: '12px 16px' }}>
                         <div>
-                          <div style={{ fontSize: '0.875rem', fontWeight: 800, color: '#F8FAFC' }}>
-                            {item.patientName} <span style={{ color: '#94A3B8', fontWeight: 600 }}>({item.age}{item.gender === 'MALE' ? 'M' : item.gender === 'FEMALE' ? 'F' : 'O'})</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#F8FAFC' }}>
+                              {item.patientName} <span style={{ color: '#94A3B8', fontWeight: 600 }}>({item.age}{item.gender === 'MALE' ? 'M' : item.gender === 'FEMALE' ? 'F' : 'O'})</span>
+                            </span>
+                            {item.isAbhaLinked && (
+                              <span
+                                style={{
+                                  fontSize: '0.625rem',
+                                  fontWeight: 800,
+                                  padding: '1px 6px',
+                                  borderRadius: '4px',
+                                  backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                                  color: '#34D399',
+                                  border: '1px solid rgba(16, 185, 129, 0.4)'
+                                }}
+                                title={item.abhaAddress ? `ABHA Address: ${item.abhaAddress}` : 'ABHA Verified'}
+                              >
+                                🇮🇳 ABHA Verified
+                              </span>
+                            )}
                           </div>
                           <div style={{ fontSize: '0.72rem', color: '#38BDF8', marginTop: '2px' }}>
                             {item.mrn} • <span style={{ color: '#94A3B8' }}>{item.chiefComplaint}</span>
+                            {item.abhaAddress && <span style={{ color: '#10B981', marginLeft: '6px' }}>• {item.abhaAddress}</span>}
                           </div>
                         </div>
                       </TableCell>
@@ -2071,7 +2403,17 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
 
                       {/* Queue Status */}
                       <TableCell style={{ padding: '12px 16px' }}>
-                        {isInConsult ? (
+                        {item.status === 'AWAITING_LAB_RETURN' ? (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', color: '#38BDF8', fontSize: '0.75rem', fontWeight: 900, backgroundColor: 'rgba(56, 189, 248, 0.2)', padding: '3px 8px', borderRadius: '4px', border: '1px solid #38BDF8', boxShadow: '0 0 10px rgba(56, 189, 248, 0.35)' }}>
+                            <span>🧪</span>
+                            <span>Lab Report Ready</span>
+                          </span>
+                        ) : item.status === 'SENT_TO_LAB' ? (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', color: '#F59E0B', fontSize: '0.75rem', fontWeight: 800, backgroundColor: 'rgba(245, 158, 11, 0.15)', padding: '3px 8px', borderRadius: '4px', border: '1px solid rgba(245, 158, 11, 0.35)' }}>
+                            <span>🧪</span>
+                            <span>Sent to Lab</span>
+                          </span>
+                        ) : isInConsult ? (
                           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', color: '#06B6D4', fontSize: '0.75rem', fontWeight: 800 }}>
                             <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#06B6D4', boxShadow: '0 0 8px #06B6D4' }} />
                             In Consultation
@@ -2110,6 +2452,26 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
                           >
                             📢 Call
                           </button>
+
+                          {item.status === 'AWAITING_LAB_RETURN' && (
+                            <button
+                              type="button"
+                              onClick={() => announcePatientCall(item)}
+                              style={{
+                                padding: '5px 9px',
+                                borderRadius: '6px',
+                                backgroundColor: 'rgba(56, 189, 248, 0.2)',
+                                border: '1px solid #38BDF8',
+                                color: '#38BDF8',
+                                fontSize: '0.72rem',
+                                fontWeight: 800,
+                                cursor: 'pointer'
+                              }}
+                              title="Direct patient with lab reports back to Doctor chamber"
+                            >
+                              🚪 Return to Dr
+                            </button>
+                          )}
 
                           {/* In-Chamber / Complete toggle */}
                           {isWaiting && (
@@ -4351,6 +4713,14 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
           </div>
         </div>
       )}
+
+      {/* ABDM 2.0 Scan & Share Counter Modal */}
+      <AbdmScanAndShareModal
+        isOpen={isAbdmScanModalOpen}
+        onClose={() => setIsAbdmScanModalOpen(false)}
+        hospitalName={facilityName || partnerProfile.entityLegalName}
+        onRegisterSuccess={handleAbdmRegisterSuccess}
+      />
 
     </div>
   );

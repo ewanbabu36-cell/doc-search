@@ -110,6 +110,7 @@ import { FinalizeDischargeSummaryDialog } from './dialogs/FinalizeDischargeSumma
 import { ReleaseBedDialog } from './dialogs/ReleaseBedDialog.js';
 import { CompleteCleaningDialog } from './dialogs/CompleteCleaningDialog.js';
 import { DirectAdmitBedDialog } from './dialogs/DirectAdmitBedDialog.js';
+import { ConsolidatedIpdBillingDialog } from './dialogs/ConsolidatedIpdBillingDialog.js';
 
 export interface InpatientDomainManagerProps {
   tenantId?: string;
@@ -228,6 +229,7 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
   const [isReleaseBedOpen, setIsReleaseBedOpen] = useState(false);
   const [isCompleteCleaningOpen, setIsCompleteCleaningOpen] = useState(false);
   const [isDirectAdmitOpen, setIsDirectAdmitOpen] = useState(false);
+  const [isConsolidatedBillingOpen, setIsConsolidatedBillingOpen] = useState(false);
 
   const [notification, setNotification] = useState<{ message: string; variant: 'success' | 'danger' } | null>(null);
 
@@ -319,16 +321,41 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
       setActivePatient(null);
     });
 
-    const unsubscribeAdmission = hospitalEventBus.subscribe('IPD_ADMISSION_REQUESTED', (payload: HospitalEventPayload) => {
+    const handleAdmissionEvent = (payload: HospitalEventPayload) => {
       const d = payload.data || {};
-      showNotification(`⚡ New Inpatient Admission Requested from OPD: ${d.patientName || 'Patient'}`);
+      showNotification(`🚨 Stat Inpatient Admission Ordered: ${d.patientName || 'Patient'} to ${d.ward || 'Ward'} (${d.priority || 'EMERGENCY'})`);
+      if (d.patientName || d.mrn) {
+        const newReq: any = {
+          id: `req-adm-${Date.now()}`,
+          patientName: d.patientName,
+          patientMrn: d.mrn || d.token,
+          tokenNumber: d.token,
+          targetWard: d.ward,
+          priority: d.priority || 'EMERGENCY',
+          provisionalDiagnosis: d.diagnosis || 'Acute Medical Emergency',
+          requestedAt: new Date().toISOString(),
+          status: 'PENDING'
+        };
+        setRequests((prev) => [newReq, ...prev.filter((r) => r.patientMrn !== d.mrn)]);
+      }
       void loadData();
+    };
+
+    const unsubscribeAdmission = hospitalEventBus.subscribe('IPD_ADMISSION_ORDERED', handleAdmissionEvent);
+    const unsubscribeAdmissionReq = hospitalEventBus.subscribe('IPD_ADMISSION_REQUESTED', handleAdmissionEvent);
+    const unsubscribeNurseCall = hospitalEventBus.subscribe('NURSE_CALL_REQUESTED', (event: HospitalEventPayload) => {
+      const p = (event.data || (event as any).payload) as any;
+      if (p) {
+        showNotification(`🔔 NURSE CALL: Bed ${p.bedCode || 'Bed'} (${p.patientName || 'Patient'}) - ${p.reason || 'Assistance'}`, 'danger');
+      }
     });
 
     return () => {
       unsubscribe();
       unsubscribeClear();
       unsubscribeAdmission();
+      unsubscribeAdmissionReq();
+      unsubscribeNurseCall();
     };
   }, [loadData]);
 
@@ -485,10 +512,25 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
     showNotification(`Patient ${adm.patientName} discharged and bed released.`);
   };
 
+  const handleOpenAllocateBedForRequest = (req: InpatientAdmissionRequestDto) => {
+    setSelectedRequest(req);
+    setIsApproveAdmissionOpen(true);
+  };
+
   const handleFinalizeDischargeSummary = async (req: FinalizeDischargeSummaryRequest) => {
     const ds = await inpatientManagementService.finalizeDischargeSummary(req);
+    const targetAdm = (admissions || []).find((a) => a.id === req.admissionId);
+    if (targetAdm && (targetAdm.bedId || targetAdm.bedCode)) {
+      setBeds((prev) =>
+        prev.map((b) =>
+          b.id === targetAdm.bedId || b.bedCode === targetAdm.bedCode
+            ? { ...b, status: 'CLEANING', currentPatientName: undefined, currentPatientMrn: undefined, currentAdmissionId: undefined }
+            : b
+        )
+      );
+    }
     await loadData();
-    showNotification(`Discharge summary ${ds.summaryNumber} sealed.`);
+    showNotification(`Discharge summary ${ds.summaryNumber} sealed. Bed transitioned to CLEANING.`);
   };
 
   const handleReleaseBed = async (req: ReleaseBedRequest) => {
@@ -1006,6 +1048,9 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
         <BedManagementView
           beds={beds}
           wards={wards}
+          requests={requests}
+          admissionRequests={requests}
+          onAllocateBedRequest={handleOpenAllocateBedForRequest}
           onOpenCreateBed={() => setIsCreateBedOpen(true)}
           onOpenEditBed={(b) => {
             setSelectedBed(b);
@@ -1044,6 +1089,9 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
         <NursingStationView
           admissions={admissions}
           wards={wards}
+          requests={requests}
+          admissionRequests={requests}
+          onAllocateBedRequest={handleOpenAllocateBedForRequest}
           onOpenNursingAssessment={(adm) => {
             setSelectedAdmission(adm);
             setIsNursingAssessmentOpen(true);
@@ -1102,7 +1150,10 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
       )}
 
       {activeTab === 'nursing-care' && (
-        <NursingCareView assessments={nursingAssessments} />
+        <NursingCareView
+          assessments={nursingAssessments}
+          admissions={admissions}
+        />
       )}
 
       {activeTab === 'vitals' && (
@@ -1145,6 +1196,10 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
           onOpenFinalizeSummary={(adm) => {
             setSelectedAdmission(adm);
             setIsFinalizeSummaryOpen(true);
+          }}
+          onOpenSettleBill={(adm) => {
+            setSelectedAdmission(adm);
+            setIsConsolidatedBillingOpen(true);
           }}
         />
       )}
@@ -1498,6 +1553,16 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
         wards={wards}
         tenantId={tenantId}
         partnerId={partnerId}
+      />
+
+      <ConsolidatedIpdBillingDialog
+        isOpen={isConsolidatedBillingOpen}
+        onClose={() => setIsConsolidatedBillingOpen(false)}
+        admission={selectedAdmission}
+        onBillSettled={async () => {
+          showNotification('IPD Consolidated Bill settled and cleared successfully!');
+          await loadData();
+        }}
       />
     </div>
   );

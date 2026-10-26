@@ -24,6 +24,8 @@ import {
   billingPayments,
   billingReceipts,
   encounters,
+  controlledSubstanceRecords,
+  pharmacyControlledSubstances,
   eq,
   and,
   or,
@@ -597,6 +599,59 @@ export interface StoredPrescriptionQueueItem {
     instructions?: string | undefined;
     fulfillmentStatus?: string | undefined;
   }> | undefined;
+}
+
+export interface ControlledSubstanceDispenseInput {
+  tenantId: string;
+  partnerId?: string | undefined;
+  organizationId?: string | undefined;
+  branchId?: string | undefined;
+  dispenseDate?: string | undefined;
+  invoiceNumber: string;
+  prescriptionId?: string | undefined;
+  patientName: string;
+  patientUhid?: string | undefined;
+  patientAddress?: string | undefined;
+  patientPhone: string;
+  doctorName: string;
+  doctorRegNumber: string;
+  hospitalName?: string | undefined;
+  drugName: string;
+  scheduleType?: 'SCHEDULE_H1' | 'SCHEDULE_X' | 'SCHEDULE_H' | string | undefined;
+  batchNumber: string;
+  expiryDate?: string | undefined;
+  quantityDispensed: string;
+  pharmacistLicense?: string | undefined;
+  pharmacistName?: string | undefined;
+  metadata?: Record<string, any> | undefined;
+}
+
+export interface StoredControlledSubstanceRecord {
+  id: string;
+  tenantId: string;
+  partnerId?: string | null | undefined;
+  organizationId?: string | null | undefined;
+  branchId?: string | null | undefined;
+  dispenseDate: string;
+  invoiceNumber: string;
+  prescriptionId?: string | null | undefined;
+  patientName: string;
+  patientUhid?: string | null | undefined;
+  patientAddress: string;
+  patientPhone: string;
+  doctorName: string;
+  doctorRegNumber: string;
+  hospitalName?: string | null | undefined;
+  drugName: string;
+  scheduleType: string;
+  batchNumber: string;
+  expiryDate?: string | null | undefined;
+  quantityDispensed: string;
+  pharmacistLicense?: string | null | undefined;
+  pharmacistName?: string | null | undefined;
+  metadata?: any;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export class PharmacyManagementRepository {
@@ -1304,7 +1359,41 @@ export class PharmacyManagementRepository {
         totalBillAmount = Math.round(totalBillAmount * 100) / 100;
         const dispensingStatus = input.isPartial ? 'PARTIALLY_DISPENSED' : 'DISPENSED';
 
-        // 1. Authoritative Encounter Resolution
+        // 1. Authoritative Patient & Encounter Resolution
+        let resolvedPatientId: string = input.patientId;
+        if (!isUuid(input.patientId)) {
+          const [existingPt] = await tx
+            .select({ id: patients.id })
+            .from(patients)
+            .where(eq(patients.tenantId, input.tenantId))
+            .limit(1);
+          if (existingPt?.id) {
+            resolvedPatientId = existingPt.id;
+          } else {
+            resolvedPatientId = crypto.randomUUID();
+            const ptCode = `WALKIN-${Math.floor(100000 + Math.random() * 900000)}`;
+            try {
+              await tx.insert(patients).values({
+                id: resolvedPatientId,
+                tenantId: input.tenantId,
+                partnerId,
+                organizationId,
+                branchId,
+                mrn: ptCode,
+                patientCode: ptCode,
+                firstName: 'Walk-in',
+                lastName: 'Patient',
+                dateOfBirth: '1990-01-01',
+                gender: 'OTHER',
+                createdAt: now,
+                updatedAt: now
+              } as any);
+            } catch {
+              // ignore
+            }
+          }
+        }
+
         let validEncounterId: string | null = null;
         if (input.encounterId && isUuid(input.encounterId)) {
           validEncounterId = input.encounterId;
@@ -1314,7 +1403,7 @@ export class PharmacyManagementRepository {
             const [enc] = await tx
               .select()
               .from(encounters)
-              .where(and(eq(encounters.tenantId, input.tenantId), eq(encounters.patientId, input.patientId)))
+              .where(and(eq(encounters.tenantId, input.tenantId), eq(encounters.patientId, resolvedPatientId)))
               .orderBy(desc(encounters.createdAt))
               .limit(1);
             if (enc) validEncounterId = enc.id;
@@ -1333,7 +1422,7 @@ export class PharmacyManagementRepository {
               organizationId,
               branchId,
               departmentId: deptId,
-              patientId: input.patientId,
+              patientId: resolvedPatientId,
               encounterNumber: `ENC-PHARM-${Math.floor(100000 + Math.random() * 900000)}`,
               encounterType: 'OPD',
               status: 'COMPLETED',
@@ -1393,7 +1482,7 @@ export class PharmacyManagementRepository {
             organizationId,
             branchId,
             prescriptionNumber: rxNumber,
-            patientId: input.patientId,
+            patientId: resolvedPatientId,
             encounterId: validEncounterId,
             prescribingDoctorId: resolvedDoctorId,
             priority: 'ROUTINE',
@@ -1419,7 +1508,7 @@ export class PharmacyManagementRepository {
           branchId,
           dispensingNumber,
           prescriptionId: resolvedPrescriptionId!,
-          patientId: input.patientId,
+          patientId: resolvedPatientId,
           pharmacistId: input.pharmacistId || 'PHARMACIST-OPD',
           pharmacistName: input.pharmacistName || 'Duty Pharmacist',
           dispensingStatus,
@@ -2902,6 +2991,159 @@ export class PharmacyManagementRepository {
       removedMovementsCount,
       removedMedicationsCount
     };
+  }
+
+  async getPendingPrescriptions(tenantId: string, dbClient = getDatabase()): Promise<StoredPrescriptionQueueItem[]> {
+    const queue = await this.getPrescriptionQueue(tenantId, undefined, dbClient);
+    return queue.filter((item) => item.status === 'PENDING');
+  }
+
+  async recordControlledSubstanceDispense(
+    input: ControlledSubstanceDispenseInput,
+    dbClient = getDatabase()
+  ): Promise<StoredControlledSubstanceRecord> {
+    const db = requireDb(dbClient);
+    const now = new Date();
+    const id = crypto.randomUUID();
+
+    let partnerId = input.partnerId;
+    let organizationId = input.organizationId;
+    try {
+      const resolved = await resolvePartnerAndOrg(db, input.tenantId, input.partnerId, input.organizationId);
+      partnerId = resolved.partnerId;
+      organizationId = resolved.organizationId;
+    } catch {
+      // ignore
+    }
+    let branchId = input.branchId;
+    try {
+      branchId = await resolveBranchId(db, input.tenantId, input.branchId);
+    } catch {
+      // ignore
+    }
+
+    const recordData: any = {
+      id,
+      tenantId: input.tenantId,
+      partnerId: partnerId || null,
+      organizationId: organizationId || null,
+      branchId: branchId || null,
+      dispenseDate: input.dispenseDate || now.toISOString().split('T')[0]!,
+      invoiceNumber: input.invoiceNumber,
+      prescriptionId: input.prescriptionId || null,
+      patientName: input.patientName,
+      patientUhid: input.patientUhid || null,
+      patientAddress: input.patientAddress || 'Hospital OPD Patient',
+      patientPhone: input.patientPhone,
+      doctorName: input.doctorName,
+      doctorRegNumber: input.doctorRegNumber,
+      hospitalName: input.hospitalName || null,
+      drugName: input.drugName,
+      scheduleType: input.scheduleType || 'SCHEDULE_H1',
+      batchNumber: input.batchNumber,
+      expiryDate: input.expiryDate || null,
+      quantityDispensed: input.quantityDispensed,
+      pharmacistLicense: input.pharmacistLicense || null,
+      pharmacistName: input.pharmacistName || null,
+      metadata: input.metadata || {},
+      createdAt: now,
+      updatedAt: now
+    };
+
+    // Ensure table exists in Postgres if not already present
+    try {
+      if (typeof (db as any).execute === 'function') {
+        await (db as any).execute(
+          `CREATE SCHEMA IF NOT EXISTS pharmacy;
+           CREATE TABLE IF NOT EXISTS pharmacy.controlled_substance_records (
+             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+             tenant_id UUID NOT NULL,
+             partner_id UUID,
+             organization_id UUID,
+             branch_id UUID,
+             dispense_date VARCHAR(50) NOT NULL,
+             invoice_number VARCHAR(100) NOT NULL,
+             prescription_id VARCHAR(100),
+             patient_name VARCHAR(255) NOT NULL,
+             patient_uhid VARCHAR(100),
+             patient_address TEXT NOT NULL DEFAULT 'Hospital OPD Patient',
+             patient_phone VARCHAR(50) NOT NULL,
+             doctor_name VARCHAR(255) NOT NULL,
+             doctor_reg_number VARCHAR(100) NOT NULL,
+             hospital_name VARCHAR(255),
+             drug_name VARCHAR(255) NOT NULL,
+             schedule_type VARCHAR(50) NOT NULL DEFAULT 'SCHEDULE_H1',
+             batch_number VARCHAR(100) NOT NULL,
+             expiry_date VARCHAR(50),
+             quantity_dispensed VARCHAR(100) NOT NULL,
+             pharmacist_license VARCHAR(100),
+             pharmacist_name VARCHAR(255),
+             metadata JSONB DEFAULT '{}'::jsonb,
+             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+             updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+           );`
+        );
+      }
+    } catch {
+      // ignore
+    }
+
+    try {
+      const [inserted] = await db
+        .insert(controlledSubstanceRecords)
+        .values(recordData)
+        .returning();
+      if (inserted) return inserted as StoredControlledSubstanceRecord;
+    } catch (insertErr) {
+      try {
+        const [fallback] = await db
+          .insert(pharmacyControlledSubstances)
+          .values(recordData)
+          .returning();
+        if (fallback) return fallback as StoredControlledSubstanceRecord;
+      } catch (err2) {
+        logger.error('Failed to insert controlled substance record into database', { error: String(insertErr), err2: String(err2) });
+        throw insertErr;
+      }
+    }
+
+    return recordData as StoredControlledSubstanceRecord;
+  }
+
+  async getControlledSubstances(
+    tenantId: string,
+    filter?: { scheduleType?: string; fromDate?: string; toDate?: string },
+    dbClient = getDatabase()
+  ): Promise<StoredControlledSubstanceRecord[]> {
+    const db = requireDb(dbClient);
+    try {
+      let conditions = [eq(controlledSubstanceRecords.tenantId, tenantId)];
+      if (filter?.scheduleType) {
+        conditions.push(eq(controlledSubstanceRecords.scheduleType, filter.scheduleType));
+      }
+      const rows = await db
+        .select()
+        .from(controlledSubstanceRecords)
+        .where(and(...conditions))
+        .orderBy(desc(controlledSubstanceRecords.createdAt));
+      return (rows || []) as StoredControlledSubstanceRecord[];
+    } catch {
+      try {
+        let conditions = [eq(pharmacyControlledSubstances.tenantId, tenantId)];
+        if (filter?.scheduleType) {
+          conditions.push(eq(pharmacyControlledSubstances.scheduleType, filter.scheduleType));
+        }
+        const rows = await db
+          .select()
+          .from(pharmacyControlledSubstances)
+          .where(and(...conditions))
+          .orderBy(desc(pharmacyControlledSubstances.createdAt));
+        return (rows || []) as StoredControlledSubstanceRecord[];
+      } catch (err) {
+        logger.warn('Could not query controlled substances', { error: String(err) });
+        return [];
+      }
+    }
   }
 }
 

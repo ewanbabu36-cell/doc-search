@@ -8,6 +8,8 @@
  * With auto-bridging via DocSearch Local Hardware Agent (http://127.0.0.1:18080).
  */
 
+import { getHardwareAgentEndpoint } from './hardware-printer-service.js';
+
 export interface BiometricCaptureResult {
   success: boolean;
   qualityScore: number;
@@ -28,7 +30,9 @@ export interface BiometricDeviceStatus {
 }
 
 class HardwareBiometricService {
-  private agentBaseUrl = 'http://127.0.0.1:18080';
+  private get agentBaseUrl() {
+    return getHardwareAgentEndpoint();
+  }
 
   /**
    * Check status of Biometric RD Service

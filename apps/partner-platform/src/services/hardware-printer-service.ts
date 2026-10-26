@@ -58,6 +58,34 @@ interface Serial {
   requestPort(options?: { filters?: Array<{ usbVendorId?: number | undefined; usbProductId?: number | undefined }> } | undefined): Promise<SerialPort>;
 }
 
+/**
+ * Resolves the active Hardware Agent endpoint:
+ * 1. Checks localStorage['docsearch_hardware_agent_url'] (set per workstation or auto-discovered on LAN)
+ * 2. Checks VITE_HARDWARE_AGENT_URL environment variable
+ * 3. Checks global window.__DOCSEARCH_HARDWARE_AGENT_URL__
+ * 4. Fallback to default localhost 'http://127.0.0.1:18080'
+ */
+export function getHardwareAgentEndpoint(): string {
+  if (typeof window !== 'undefined') {
+    try {
+      const stored = localStorage.getItem('docsearch_hardware_agent_url');
+      if (stored && stored.trim().length > 0) {
+        return stored.trim().replace(/\/+$/, '');
+      }
+    } catch {}
+    if ((window as any).__DOCSEARCH_HARDWARE_AGENT_URL__) {
+      return String((window as any).__DOCSEARCH_HARDWARE_AGENT_URL__).trim().replace(/\/+$/, '');
+    }
+  }
+
+  const envUrl = (import.meta as any)?.env?.['VITE_HARDWARE_AGENT_URL'] || (process.env as any)?.['VITE_HARDWARE_AGENT_URL'];
+  if (envUrl && typeof envUrl === 'string' && envUrl.trim().length > 0) {
+    return envUrl.trim().replace(/\/+$/, '');
+  }
+
+  return 'http://127.0.0.1:18080';
+}
+
 export interface OpdTokenSlipData {
   tokenNumber: string;
   uhid: string;
@@ -186,7 +214,7 @@ export class EscPosBuilder {
   /** Append raw text converted to standard 8-bit ASCII */
   text(str: string): this {
     // Replace rupee symbol and non-ascii with safe representation for standard ESC/POS character tables
-    const safeStr = str.replace(/₹/g, 'Rs.');
+    const safeStr = str.replace(/â‚¹/g, 'Rs.');
     for (let i = 0; i < safeStr.length; i++) {
       const code = safeStr.charCodeAt(i);
       this.buffer.push(code < 256 ? code : 0x3F);
@@ -457,7 +485,7 @@ export function renderPrescriptionSlipToCanvas(
 
   if (data.doctorSpecialty || data.doctorRegNo) {
     ctx.font = '16px "Nirmala UI", "Mangal", "Segoe UI", sans-serif';
-    const docMeta = [data.doctorSpecialty, data.doctorRegNo ? `Reg: ${data.doctorRegNo}` : ''].filter(Boolean).join(' • ');
+    const docMeta = [data.doctorSpecialty, data.doctorRegNo ? `Reg: ${data.doctorRegNo}` : ''].filter(Boolean).join(' â€¢ ');
     ctx.fillText(docMeta, widthPx / 2, y);
     y += 24;
   }
@@ -557,7 +585,7 @@ export function renderPrescriptionSlipToCanvas(
   y += qrSizePx + 16;
   ctx.textAlign = 'center';
   ctx.font = '13px "Nirmala UI", "Segoe UI", sans-serif';
-  ctx.fillText('ABDM 2.0 Patient QR • Scan to Verify Prescription', widthPx / 2, y);
+  ctx.fillText('ABDM 2.0 Patient QR â€¢ Scan to Verify Prescription', widthPx / 2, y);
   y += 20;
 
   // Divider
@@ -576,7 +604,7 @@ export function renderPrescriptionSlipToCanvas(
 
     ctx.font = '16px "Nirmala UI", "Segoe UI", sans-serif';
     data.diagnoses.forEach((diag) => {
-      ctx.fillText(`  • ${diag}`, 20, y);
+      ctx.fillText(`  â€¢ ${diag}`, 20, y);
       y += 22;
     });
 
@@ -591,7 +619,7 @@ export function renderPrescriptionSlipToCanvas(
   // Rx Medications Section
   ctx.textAlign = 'left';
   ctx.font = '900 22px "Nirmala UI", serif';
-  ctx.fillText('℞ PRESCRIBED MEDICINES (GENERIC):', 16, y);
+  ctx.fillText('â„ž PRESCRIBED MEDICINES (GENERIC):', 16, y);
   y += 24;
 
   if (data.medications && data.medications.length > 0) {
@@ -609,7 +637,7 @@ export function renderPrescriptionSlipToCanvas(
       // Vernacular Indic Dosage Instruction Line
       if (med.regionalTiming) {
         ctx.font = 'bold 18px "Nirmala UI", "Mangal", "Noto Sans Devanagari", "Bangla", "Segoe UI", sans-serif';
-        ctx.fillText(`   🇮🇳 खुराक: ${med.regionalTiming}`, 16, y);
+        ctx.fillText(`   ðŸ‡®ðŸ‡³ à¤–à¥à¤°à¤¾à¤•: ${med.regionalTiming}`, 16, y);
         y += 26;
       } else if (med.timing || med.instructions) {
         ctx.font = '16px "Nirmala UI", "Segoe UI", sans-serif';
@@ -658,7 +686,7 @@ export function renderPrescriptionSlipToCanvas(
   y += 10;
   ctx.strokeRect(16, y, widthPx - 32, 54);
   ctx.font = 'bold 13px "Nirmala UI", "Segoe UI", sans-serif';
-  ctx.fillText('⚠️ NMC RMP REGULATIONS 2023 STATUTORY DISCLAIMER:', 24, y + 20);
+  ctx.fillText('âš ï¸ NMC RMP REGULATIONS 2023 STATUTORY DISCLAIMER:', 24, y + 20);
   ctx.font = '12px "Nirmala UI", "Segoe UI", sans-serif';
   ctx.fillText('Prescribed under NMC regulations. In casualty/emergency, visit nearest hospital immediately.', 24, y + 40);
   y += 74;
@@ -677,7 +705,7 @@ export function renderPrescriptionSlipToCanvas(
 
   ctx.textAlign = 'center';
   ctx.font = 'bold 14px "Nirmala UI", "Segoe UI", sans-serif';
-  ctx.fillText('DocSearch Hospital OS • 203 DPI Regional Thermal ESC/POS', widthPx / 2, y);
+  ctx.fillText('DocSearch Hospital OS â€¢ 203 DPI Regional Thermal ESC/POS', widthPx / 2, y);
   y += 20;
   ctx.font = '13px "Nirmala UI", "Segoe UI", sans-serif';
   ctx.fillText('Thank you & Get Well Soon!', widthPx / 2, y);
@@ -693,6 +721,7 @@ export function generateSyntheticRasterEscPos(
   input: ThermalPrescriptionSlipData | HTMLElement | HTMLCanvasElement | string,
   widthPx: number = 576
 ): Uint8Array {
+  void input;
   const bytesWidth = Math.ceil(widthPx / 8);
   const heightDots = 640;
   const pixelBuffer = new Uint8Array(bytesWidth * heightDots);
@@ -1159,10 +1188,10 @@ export class HardwarePrinterService {
   async printOpdTokenSlip(
     slip: OpdTokenSlipData,
     paperWidthCols: number = 32
-  ): Promise<{ success: boolean; method: 'hardware_agent' | 'webusb' | 'webserial' | 'browser_fallback'; message: string }> {
+  ): Promise<{ success: boolean; method: 'hardware_agent' | 'webusb' | 'webserial' | 'webbluetooth' | 'browser_fallback'; message: string }> {
     // 1. Try DocSearch Local Hardware Agent (LHA) silent spool
     try {
-      const resp = await fetch('http://127.0.0.1:18080/api/v1/hardware/print/escpos', {
+      const resp = await fetch(`${getHardwareAgentEndpoint()}/api/v1/hardware/print/escpos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1313,9 +1342,9 @@ export class HardwarePrinterService {
   async printShiftHandoverSlip(
     data: ShiftHandoverSlipData,
     paperWidthCols: number = 32
-  ): Promise<{ success: boolean; method: 'hardware_agent' | 'webusb' | 'webserial' | 'browser_fallback'; message: string }> {
+  ): Promise<{ success: boolean; method: 'hardware_agent' | 'webusb' | 'webserial' | 'webbluetooth' | 'browser_fallback'; message: string }> {
     try {
-      const resp = await fetch('http://127.0.0.1:18080/api/v1/hardware/print/escpos', {
+      const resp = await fetch(`${getHardwareAgentEndpoint()}/api/v1/hardware/print/escpos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1528,7 +1557,7 @@ export class HardwarePrinterService {
           const medName = cells[1]?.querySelector('strong')?.textContent?.trim() || cells[1]?.textContent?.trim() || '';
           const dosage = cells[2]?.textContent?.trim() || '';
           const freqLine = cells[3]?.textContent?.trim() || '';
-          const regionalTiming = cells[3]?.querySelector('div:last-child')?.textContent?.replace(/^🇮🇳\s*/, '').trim();
+          const regionalTiming = cells[3]?.querySelector('div:last-child')?.textContent?.replace(/^ðŸ‡®ðŸ‡³\s*/, '').trim();
           const duration = cells[4]?.textContent?.trim() || '';
           const instructions = cells[5]?.textContent?.trim() || '';
           if (medName) {
@@ -1640,7 +1669,7 @@ export class HardwarePrinterService {
         payload.rawEscPosBase64 = typeof btoa !== 'undefined' ? btoa(binary) : Buffer.from(rasterBytes).toString('base64');
       }
 
-      const resp = await fetch('http://127.0.0.1:18080/api/v1/hardware/print/escpos', {
+      const resp = await fetch(`${getHardwareAgentEndpoint()}/api/v1/hardware/print/escpos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -1710,7 +1739,7 @@ export class HardwarePrinterService {
     admissionDate?: string;
   }): Promise<{ success: boolean; method: string; message: string; zplCode?: string }> {
     try {
-      const resp = await fetch('http://127.0.0.1:18080/api/v1/hardware/print/zpl', {
+      const resp = await fetch(`${getHardwareAgentEndpoint()}/api/v1/hardware/print/zpl`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1734,7 +1763,7 @@ export class HardwarePrinterService {
     return {
       success: false,
       method: 'hardware_offline',
-      message: 'DocSearch Local Hardware Agent offline on 127.0.0.1:18080. Please ensure Zebra printer is connected.'
+      message: `DocSearch Local Hardware Agent offline on ${getHardwareAgentEndpoint()}. Please ensure Zebra printer is connected.`
     };
   }
 
@@ -1749,7 +1778,7 @@ export class HardwarePrinterService {
     tubeColor: string;
   }): Promise<{ success: boolean; method: string; message: string; zplCode?: string }> {
     try {
-      const resp = await fetch('http://127.0.0.1:18080/api/v1/hardware/print/zpl', {
+      const resp = await fetch(`${getHardwareAgentEndpoint()}/api/v1/hardware/print/zpl`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1773,8 +1802,12 @@ export class HardwarePrinterService {
     return {
       success: false,
       method: 'hardware_offline',
-      message: 'DocSearch Local Hardware Agent offline on 127.0.0.1:18080.'
+      message: `DocSearch Local Hardware Agent offline on ${getHardwareAgentEndpoint()}.`
     };
+  }
+
+  public getHardwareAgentEndpoint(): string {
+    return getHardwareAgentEndpoint();
   }
 }
 

@@ -3,6 +3,8 @@ import { getVerifiedRoleProfile } from '../../utils/roleProfileResolver.js';
 import { ProfileUpdateRequiredAlertModal } from '../common/ProfileUpdateRequiredAlertModal.js';
 import { checkPartnerProfileStatus, type MissingProfileField } from '../../utils/partnerProfileGuard.js';
 import { clinicalInvestigationService, ClinicalCalculators } from '../../services/clinical-investigation-service.js';
+import { billingManagementService } from '../../services/billing-management-service.js';
+import { hospitalEventBus } from '../../services/hospital-event-bus.js';
 import {
   MASTER_CLINICAL_TEST_LIBRARY,
   CLINICAL_DEPARTMENTS,
@@ -554,6 +556,64 @@ export const DirectLabWalkInReportModal: React.FC<Props> = ({ isOpen, onClose })
       };
 
       clinicalInvestigationService.registerDirectWalkInOrder(newOrder as any);
+
+      // Map test price
+      const testPriceMap: Record<string, number> = {
+        CBC: 350,
+        LIPID: 650,
+        GLUCOSE: 200,
+        LFT: 750,
+        KFT: 650,
+        THYROID: 450
+      };
+      const testPrice = testPriceMap[selectedPresetKey] || 400;
+
+      // Create official PostgreSQL Invoice & Ledger record!
+      billingManagementService.createInvoice({
+        tenantId: '55555555-5555-4555-8555-555555555555',
+        partnerId: '00000000-0000-4000-8000-000000000001',
+        organizationId: '00000000-0000-4000-8000-000000000002',
+        branchId: '00000000-0000-4000-8000-000000000003',
+        actorId: 'lab-cashier',
+        actorRole: 'CASHIER',
+        justification: 'Direct Walk-In Pathology Billing',
+        patientId: '55555555-5555-4555-8555-555555555501',
+        patientName: patientName || 'Walk-In Patient',
+        patientMrn: patientMrn || `MRN-${Date.now().toString().slice(-5)}`,
+        invoiceType: 'DIAGNOSTICS',
+        paymentMode: 'UPI',
+        paymentStatus: 'PAID',
+        paymentReference: `REC-${Date.now().toString().slice(-6)}`,
+        items: [
+          {
+            serviceCode: selectedPresetKey || 'LAB-TEST',
+            description: `Walk-in Diagnostic: ${testTitle} (${departmentName})`,
+            quantity: 1,
+            unitPrice: testPrice,
+            discountAmount: 0,
+            taxAmount: 0
+          }
+        ]
+      } as any).catch((invErr) => {
+        console.warn('Failed to persist walk-in invoice to server:', invErr);
+      });
+
+      // Broadcast LAB_REPORT_COMPLETED on hospital network so doctor cockpit and front desk catch it in real time
+      hospitalEventBus.publish(
+        'LAB_REPORT_COMPLETED',
+        'DirectLabWalkInReportModal',
+        {
+          orderId,
+          reportId,
+          patientName: patientName || 'Walk-In Patient',
+          patientMrn: patientMrn,
+          uhid: patientMrn,
+          tokenNumber: sampleBarcode,
+          investigationName: testTitle,
+          verifiedAt: new Date().toISOString()
+        },
+        `🧪 Walk-in Lab Report Verified & Billed: ${patientName} - ${testTitle}`
+      );
     } catch (err) {
       console.error('Failed to persist walk-in report:', err);
     }

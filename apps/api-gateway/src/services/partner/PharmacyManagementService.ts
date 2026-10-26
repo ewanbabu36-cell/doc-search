@@ -4,7 +4,8 @@ import {
   type ReceiveStockInput,
   type DispenseInput,
   type CreateReturnInput,
-  type CreateStockAdjustmentInput
+  type CreateStockAdjustmentInput,
+  type ControlledSubstanceDispenseInput
 } from '../../repositories/partner/PharmacyManagementRepository.js';
 import { auditRepository } from '../../repositories/core/AuditRepository.js';
 import { type SessionContext, ScopeGuard } from '@docsearch/auth';
@@ -439,6 +440,71 @@ export class PharmacyManagementService {
       }, session, tx);
 
       return batch;
+    });
+  }
+
+  async getPendingPrescriptions(
+    session: SessionContext,
+    requestedScope?: { tenantId?: string | undefined; branchId?: string | undefined; departmentId?: string | undefined }
+  ) {
+    const scope = ScopeGuard.resolveEffectiveQueryScope(session, requestedScope);
+    return withSecurityContext(getDatabase(), session, async () => {
+      const items = await pharmacyManagementRepository.getPendingPrescriptions(scope.tenantId);
+      return ScopeGuard.filterRecordsByScope(items, scope);
+    });
+  }
+
+  async recordControlledSubstanceDispense(
+    input: Omit<ControlledSubstanceDispenseInput, 'tenantId'> & { tenantId?: string },
+    session: SessionContext
+  ) {
+    const scope = ScopeGuard.resolveEffectiveQueryScope(session, { tenantId: input.tenantId });
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      const record = await pharmacyManagementRepository.recordControlledSubstanceDispense(
+        {
+          ...input,
+          tenantId: scope.tenantId,
+          branchId: input.branchId || scope.branchId || session.branchId,
+          pharmacistName: input.pharmacistName || session.userId
+        },
+        tx
+      );
+
+      await auditRepository.recordEvent(
+        {
+          eventType: 'CONTROLLED_SUBSTANCE_DISPENSED',
+          resourceType: 'pharmacy_controlled_substances',
+          resourceId: record.id,
+          tenantId: scope.tenantId,
+          branchId: session.branchId,
+          metadata: {
+            invoiceNumber: input.invoiceNumber,
+            drugName: input.drugName,
+            scheduleType: input.scheduleType,
+            doctorName: input.doctorName,
+            doctorRegNumber: input.doctorRegNumber,
+            patientName: input.patientName,
+            batchNumber: input.batchNumber,
+            quantity: input.quantityDispensed
+          }
+        },
+        session,
+        tx
+      );
+
+      return record;
+    });
+  }
+
+  async getControlledSubstances(
+    session: SessionContext,
+    filter?: { scheduleType?: string; fromDate?: string; toDate?: string },
+    requestedScope?: { tenantId?: string | undefined; branchId?: string | undefined; departmentId?: string | undefined }
+  ) {
+    const scope = ScopeGuard.resolveEffectiveQueryScope(session, requestedScope);
+    return withSecurityContext(getDatabase(), session, async () => {
+      const records = await pharmacyManagementRepository.getControlledSubstances(scope.tenantId, filter);
+      return ScopeGuard.filterRecordsByScope(records, scope);
     });
   }
 }

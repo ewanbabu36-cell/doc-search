@@ -138,6 +138,9 @@ class HospitalEventBus {
   private legacyChannel: BroadcastChannel | null = null;
   private sseSource: EventSource | null = null;
   private reconnectTimer: any = null;
+  private reconnectAttempts: number = 0;
+  private readonly baseReconnectDelayMs: number = 1000;
+  private readonly maxReconnectDelayMs: number = 30000;
   private recentEventIds: Set<string> = new Set();
   private recentEventRing: string[] = [];
   public readonly tabId: string =
@@ -191,6 +194,7 @@ class HospitalEventBus {
   /**
    * Initialize or reconnect to API Gateway Server-Sent Events (SSE) Stream
    * Enables cross-device real-time sync (Doctor PC <-> Reception Desk <-> Pharmacy <-> TV Display)
+   * with automatic exponential backoff reconnection and Bearer token authentication.
    */
   public initSseBridge(tenantId?: string): void {
     if (typeof window === 'undefined' || typeof EventSource === 'undefined') return;
@@ -210,17 +214,57 @@ class HospitalEventBus {
       params.set('clientId', this.tabId);
       if (tenantId) params.set('tenantId', tenantId);
 
+      // Bearer token authentication for EventSource
+      try {
+        const token =
+          localStorage.getItem('docsearch_auth_token') ||
+          localStorage.getItem('docsearch_partner_token') ||
+          localStorage.getItem('auth_token') ||
+          localStorage.getItem('token') ||
+          '';
+        if (token) {
+          params.set('token', token);
+          params.set('bearer', token);
+        }
+      } catch {}
+
       const sseUrl = `${baseUrl}/api/v1/partner/events/stream?${params.toString()}`;
 
       this.sseSource = new EventSource(sseUrl);
 
-      this.sseSource.addEventListener('hospital-event', (e: MessageEvent) => {
-        try {
-          const payload = JSON.parse(e.data);
-          this.handleInboundSse(payload);
-        } catch (err) {
-          console.warn('[EventBus] Failed to parse inbound SSE hospital-event:', err);
+      this.sseSource.onopen = () => {
+        this.reconnectAttempts = 0;
+        if (this.reconnectTimer) {
+          clearTimeout(this.reconnectTimer);
+          this.reconnectTimer = null;
         }
+      };
+
+      // Direct listeners for core clinic LAN events
+      const coreEvents = [
+        'TOKEN_GENERATED',
+        'PRESCRIPTION_ISSUED',
+        'PAYMENT_RECEIVED',
+        'SOUNDBOX_ALERT',
+        'LAB_RETURN_READY',
+        'PATIENT_CALLED',
+        'TOKEN_COMPLETED',
+        'PATIENT_SELECTED',
+        'PATIENT_CLEARED',
+        'PATIENT_REGISTERED',
+        'PRESCRIPTION_DISPENSED',
+        'hospital-event'
+      ];
+
+      coreEvents.forEach((evtType) => {
+        this.sseSource?.addEventListener(evtType, (e: MessageEvent) => {
+          try {
+            const payload = JSON.parse(e.data);
+            this.handleInboundSse(payload);
+          } catch (err) {
+            console.warn(`[EventBus] Failed to parse inbound SSE event (${evtType}):`, err);
+          }
+        });
       });
 
       this.sseSource.onmessage = (e: MessageEvent) => {
@@ -232,7 +276,7 @@ class HospitalEventBus {
         }
       };
 
-      this.sseSource.onerror = () => {
+      this.sseSource.onerror = (e) => {
         if (this.sseSource) {
           try {
             this.sseSource.close();
@@ -240,12 +284,18 @@ class HospitalEventBus {
           this.sseSource = null;
         }
 
-        // Reconnect after 3 seconds
+        // Exponential backoff auto-reconnect (1s, 2s, 4s, 8s, up to 30s)
         if (!this.reconnectTimer) {
+          const delay = Math.min(
+            this.maxReconnectDelayMs,
+            this.baseReconnectDelayMs * Math.pow(2, this.reconnectAttempts)
+          );
+          this.reconnectAttempts++;
+          console.warn(`[EventBus] SSE connection error. Reconnecting with exponential backoff in ${delay}ms (attempt #${this.reconnectAttempts})...`, e);
           this.reconnectTimer = setTimeout(() => {
             this.reconnectTimer = null;
             this.initSseBridge(tenantId);
-          }, 3000);
+          }, delay);
         }
       };
     } catch (err) {
@@ -389,7 +439,7 @@ class HospitalEventBus {
       } catch {}
     }
 
-    // 3. Mirror to API Gateway SSE stream for real-time cross-device broadcast across clinic
+    // 3. Mirror across physical devices on clinic LAN via API Gateway SSE stream
     if (typeof window !== 'undefined') {
       const baseUrl =
         this.apiBaseUrl ||
@@ -397,9 +447,22 @@ class HospitalEventBus {
         ((import.meta as any)?.env?.VITE_API_URL as string) ||
         '';
 
+      let token = '';
+      try {
+        token =
+          localStorage.getItem('docsearch_auth_token') ||
+          localStorage.getItem('docsearch_partner_token') ||
+          localStorage.getItem('auth_token') ||
+          localStorage.getItem('token') ||
+          '';
+      } catch {}
+
       fetch(`${baseUrl}/api/v1/partner/events/publish`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
         body: JSON.stringify(payload)
       }).catch(() => {
         // Silent catch: network drop or offline mode does not impede local BroadcastChannel sync

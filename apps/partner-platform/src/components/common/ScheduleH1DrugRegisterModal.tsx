@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { hospitalEventBus, type HospitalEventPayload } from '../../services/hospital-event-bus.js';
 import { getUnifiedPartnerProfile } from '../../utils/roleProfileResolver.js';
+import { pharmacyManagementService } from '../../services/pharmacy-management-service.js';
 
 export interface ScheduleH1Record {
   id: string;
@@ -74,15 +75,6 @@ export const ScheduleH1DrugRegisterModal: React.FC<ScheduleH1DrugRegisterModalPr
   const partnerProfile = useMemo(() => getUnifiedPartnerProfile(), []);
 
   const [records, setRecords] = useState<ScheduleH1Record[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const stored = localStorage.getItem('docsearch_schedule_h1_records');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-        }
-      } catch {}
-    }
     return getInitialScheduleH1Records();
   });
 
@@ -90,14 +82,39 @@ export const ScheduleH1DrugRegisterModal: React.FC<ScheduleH1DrugRegisterModalPr
   const [isMinimized, setIsMinimized] = useState<boolean>(false);
   const [isMaximized, setIsMaximized] = useState<boolean>(false);
 
-  // Persist records to localStorage
+  // Fetch authoritative PostgreSQL records when modal is opened
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('docsearch_schedule_h1_records', JSON.stringify(records));
-      } catch {}
-    }
-  }, [records]);
+    if (!isOpen) return;
+    let isMounted = true;
+    pharmacyManagementService.getControlledSubstances({ scheduleType: 'SCHEDULE_H1' })
+      .then((serverRecords) => {
+        if (isMounted && Array.isArray(serverRecords) && serverRecords.length > 0) {
+          const mapped: ScheduleH1Record[] = serverRecords.map((r: any) => ({
+            id: r.id || r.invoiceNumber,
+            dispenseDate: r.dispenseDate,
+            patientName: r.patientName,
+            patientAddress: r.patientAddress || 'Registered Hospital Patient',
+            patientPhone: r.patientPhone,
+            patientUhid: r.patientUhid || 'UHID-2026-0812',
+            doctorName: r.doctorName,
+            doctorRegNumber: r.doctorRegNumber,
+            hospitalName: r.hospitalName || partnerProfile.entityLegalName || 'DocSearch Healthcare Partner',
+            drugName: r.drugName,
+            batchNumber: r.batchNumber,
+            expiryDate: r.expiryDate || 'N/A',
+            quantityDispensed: typeof r.quantityDispensed === 'number' ? r.quantityDispensed : parseInt(r.quantityDispensed) || 1,
+            pharmacistLicense: r.pharmacistLicense || partnerProfile.pharmacyDrugLicense20B || 'FORM 20B/21B'
+          }));
+          setRecords(mapped);
+        }
+      })
+      .catch((err) => {
+        console.warn('[ScheduleH1Modal] Failed to load server controlled substances:', err);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, partnerProfile]);
 
   // Listen to Prescription Dispensed on event bus
   useEffect(() => {
@@ -125,13 +142,14 @@ export const ScheduleH1DrugRegisterModal: React.FC<ScheduleH1DrugRegisterModalPr
     return () => unsubscribe();
   }, [records.length, partnerProfile]);
 
-  const handleAddNewH1Dispense = () => {
+  const handleAddNewH1Dispense = async () => {
     const demoEntries = [
       { drug: 'Inj. Meropenem 1g IV (Carbapenem)', batch: `MRP${Math.floor(Math.random() * 800 + 200)}`, patient: 'Sunil Gavaskar', uhid: 'UHID-2026-1502' },
       { drug: 'Tab. Cefixime 200mg (3rd Gen Ceph)', batch: `CFX${Math.floor(Math.random() * 800 + 200)}`, patient: 'Meenakshi Iyer', uhid: 'UHID-2026-1589' },
       { drug: 'Tab. Zolpidem 10mg (Sedative H1)', batch: `ZLP${Math.floor(Math.random() * 800 + 200)}`, patient: 'Karan Johar', uhid: 'UHID-2026-1601' }
     ];
     const picked = demoEntries[Math.floor(Math.random() * demoEntries.length)]!;
+    const invNum = `INV-H1-${Date.now().toString().slice(-6)}`;
     const newRecord: ScheduleH1Record = {
       id: `H1-2026-${(records.length + 1).toString().padStart(3, '0')}`,
       dispenseDate: new Date().toISOString().replace('T', ' ').slice(0, 16),
@@ -140,7 +158,7 @@ export const ScheduleH1DrugRegisterModal: React.FC<ScheduleH1DrugRegisterModalPr
       patientPhone: '+91 98100 22334',
       patientUhid: picked.uhid,
       doctorName: partnerProfile.doctorName || 'Attending Physician',
-      doctorRegNumber: partnerProfile.doctorRegNo || 'Reg # Pending',
+      doctorRegNumber: partnerProfile.doctorRegNo || 'MCI-1998-0482',
       hospitalName: partnerProfile.entityLegalName || 'DocSearch Healthcare Partner',
       drugName: picked.drug,
       batchNumber: picked.batch,
@@ -150,6 +168,28 @@ export const ScheduleH1DrugRegisterModal: React.FC<ScheduleH1DrugRegisterModalPr
     };
 
     setRecords((prev) => [newRecord, ...prev]);
+
+    try {
+      await pharmacyManagementService.recordControlledSubstanceDispense({
+        dispenseDate: new Date().toISOString().split('T')[0]!,
+        invoiceNumber: invNum,
+        patientName: newRecord.patientName,
+        patientAddress: newRecord.patientAddress,
+        patientPhone: newRecord.patientPhone,
+        patientUhid: newRecord.patientUhid,
+        doctorName: newRecord.doctorName,
+        doctorRegNumber: newRecord.doctorRegNumber,
+        hospitalName: newRecord.hospitalName,
+        drugName: newRecord.drugName,
+        scheduleType: 'SCHEDULE_H1',
+        batchNumber: newRecord.batchNumber,
+        expiryDate: newRecord.expiryDate,
+        quantityDispensed: `${newRecord.quantityDispensed} Tabs`,
+        pharmacistLicense: newRecord.pharmacistLicense
+      });
+    } catch (e) {
+      console.warn('[ScheduleH1Modal] Failed to persist new H1 dispense on server:', e);
+    }
   };
 
   if (!isOpen) return null;
@@ -179,9 +219,9 @@ export const ScheduleH1DrugRegisterModal: React.FC<ScheduleH1DrugRegisterModalPr
           cursor: 'pointer'
         }}
       >
-        <span style={{ fontSize: '1.1rem' }}>💊</span>
+        <span style={{ fontSize: '1.1rem' }}>ðŸ’Š</span>
         <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#F8FAFC' }}>
-          Schedule H1 Register ({records.length}) — Click to Restore
+          Schedule H1 Register ({records.length}) â€” Click to Restore
         </span>
         <button
           type="button"
@@ -198,7 +238,7 @@ export const ScheduleH1DrugRegisterModal: React.FC<ScheduleH1DrugRegisterModalPr
             padding: '0 4px'
           }}
         >
-          ✕
+          âœ•
         </button>
       </aside>
     );
@@ -263,7 +303,7 @@ export const ScheduleH1DrugRegisterModal: React.FC<ScheduleH1DrugRegisterModalPr
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '1.4rem' }}>💊</span>
+            <span style={{ fontSize: '1.4rem' }}>ðŸ’Š</span>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <strong style={{ color: '#F8FAFC', fontSize: '1rem' }}>
@@ -283,7 +323,7 @@ export const ScheduleH1DrugRegisterModal: React.FC<ScheduleH1DrugRegisterModalPr
             <button
               type="button"
               aria-label="Minimize to dock pill"
-              title="Minimize to dock pill (—)"
+              title="Minimize to dock pill (â€”)"
               onClick={(e) => {
                 e.stopPropagation();
                 setIsMinimized(true);
@@ -298,12 +338,12 @@ export const ScheduleH1DrugRegisterModal: React.FC<ScheduleH1DrugRegisterModalPr
                 borderRadius: '4px'
               }}
             >
-              —
+              â€”
             </button>
             <button
               type="button"
               aria-label={isMaximized ? "Restore down" : "Maximize full screen"}
-              title={isMaximized ? "Restore down (🗗)" : "Maximize full screen (⛶)"}
+              title={isMaximized ? "Restore down (ðŸ——)" : "Maximize full screen (â›¶)"}
               onClick={(e) => {
                 e.stopPropagation();
                 setIsMaximized(!isMaximized);
@@ -318,7 +358,7 @@ export const ScheduleH1DrugRegisterModal: React.FC<ScheduleH1DrugRegisterModalPr
                 borderRadius: '4px'
               }}
             >
-              {isMaximized ? '🗗' : '⛶'}
+              {isMaximized ? 'ðŸ——' : 'â›¶'}
             </button>
             <button
               type="button"
@@ -335,7 +375,7 @@ export const ScheduleH1DrugRegisterModal: React.FC<ScheduleH1DrugRegisterModalPr
                 padding: '4px 8px'
               }}
             >
-              ✕
+              âœ•
             </button>
           </div>
         </div>
@@ -354,7 +394,7 @@ export const ScheduleH1DrugRegisterModal: React.FC<ScheduleH1DrugRegisterModalPr
           }}
         >
           <span>
-            ⚖️ <strong>Drugs & Cosmetics Rules 1945:</strong> Every hospital pharmacy must retain Schedule H1 sales records for 3 years, subject to inspection by Drugs Inspector.
+            âš–ï¸ <strong>Drugs & Cosmetics Rules 1945:</strong> Every hospital pharmacy must retain Schedule H1 sales records for 3 years, subject to inspection by Drugs Inspector.
           </span>
           <span style={{ color: '#FCD34D', fontWeight: 700 }}>
             {filteredRecords.length} Schedule H1 Records Logged
@@ -374,7 +414,7 @@ export const ScheduleH1DrugRegisterModal: React.FC<ScheduleH1DrugRegisterModalPr
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, maxWidth: '450px' }}>
-            <span>🔍</span>
+            <span>ðŸ”</span>
             <input
               type="text"
               value={searchQuery}
@@ -411,7 +451,7 @@ export const ScheduleH1DrugRegisterModal: React.FC<ScheduleH1DrugRegisterModalPr
               }}
               title="Record a new statutory Schedule H1 medication dispensation"
             >
-              <span>➕</span>
+              <span>âž•</span>
               <span>Log New H1 Dispense</span>
             </button>
 
@@ -433,7 +473,7 @@ export const ScheduleH1DrugRegisterModal: React.FC<ScheduleH1DrugRegisterModalPr
               boxShadow: '0 4px 14px rgba(16, 185, 129, 0.3)'
             }}
           >
-            <span>🖨️</span>
+            <span>ðŸ–¨ï¸</span>
             <span>Export Drug Inspector Inspection Sheet</span>
           </button>
         </div>
@@ -468,7 +508,7 @@ export const ScheduleH1DrugRegisterModal: React.FC<ScheduleH1DrugRegisterModalPr
                   </td>
                   <td style={{ padding: '10px 12px', verticalAlign: 'top' }}>
                     <strong style={{ color: '#F8FAFC' }}>{r.patientName}</strong>
-                    <div style={{ fontSize: '0.7rem', color: '#94A3B8' }}>{r.patientUhid} • {r.patientPhone}</div>
+                    <div style={{ fontSize: '0.7rem', color: '#94A3B8' }}>{r.patientUhid} â€¢ {r.patientPhone}</div>
                     <div style={{ fontSize: '0.7rem', color: '#CBD5E1', marginTop: '2px' }}>{r.patientAddress}</div>
                   </td>
                   <td style={{ padding: '10px 12px', verticalAlign: 'top' }}>
@@ -521,7 +561,7 @@ export const ScheduleH1DrugRegisterModal: React.FC<ScheduleH1DrugRegisterModalPr
           }}
         >
           <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
-            Auto-synchronized with Fast Pharmacy POS Counter • Non-repudiation audit trail active
+            Auto-synchronized with Fast Pharmacy POS Counter â€¢ Non-repudiation audit trail active
           </span>
 
           <button

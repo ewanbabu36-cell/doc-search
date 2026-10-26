@@ -9,6 +9,7 @@ import {
   inpatientUnits,
   inpatientDoctorRounds,
   inpatientVitalObservations,
+  inpatientBedTurnaround,
   billingInvoices,
   billingInvoiceItems,
   pharmacyDispensing,
@@ -1170,12 +1171,31 @@ export class InpatientManagementRepository {
         await tx
           .update(inpatientBeds)
           .set({
-            status: 'AVAILABLE',
+            status: 'CLEANING',
             currentPatientId: null,
             currentAdmissionId: null,
             updatedAt: now
           })
           .where(and(eq(inpatientBeds.tenantId, input.tenantId), eq(inpatientBeds.id, admission.bedId)));
+
+        try {
+          await tx.insert(inpatientBedTurnaround).values({
+            id: crypto.randomUUID(),
+            tenantId: input.tenantId,
+            partnerId,
+            organizationId,
+            branchId,
+            turnaroundNumber: `CLN-${Math.floor(100000 + Math.random() * 900000)}`,
+            bedId: admission.bedId,
+            bedCode: admission.bedCode || 'BED',
+            wardId: admission.wardId,
+            cleaningType: 'TERMINAL_DISCHARGE_DISINFECTION',
+            status: 'PENDING_CLEANING',
+            requestedAt: now
+          } as unknown as typeof inpatientBedTurnaround.$inferInsert);
+        } catch {
+          // Housekeeping turnaround non-blocking trace
+        }
       }
 
       const admissionResult: StoredAdmission = {

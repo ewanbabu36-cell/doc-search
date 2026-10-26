@@ -2,6 +2,8 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from '@docsearch/ui-kit';
 import { clinicalInvestigationService } from '../../services/clinical-investigation-service.js';
 import { pathologyRevenueService } from '../../services/pathology-revenue-service.js';
+import { billingManagementService } from '../../services/billing-management-service.js';
+import { hospitalEventBus } from '../../services/hospital-event-bus.js';
 import type { InvestigationOrderDto } from '@docsearch/api-contracts';
 
 export interface LabBillingItem {
@@ -126,6 +128,8 @@ export const DirectLabBillingModal: React.FC<Props> = ({
   const [amountPaid, setAmountPaid] = useState<string>('');
 
   const [billNumber] = useState(() => `INV-${Date.now().toString().slice(-6)}`);
+  const [serverInvoiceNumber, setServerInvoiceNumber] = useState<string | null>(null);
+  const [_isCreatingInvoice, setIsCreatingInvoice] = useState<boolean>(false);
   const [accessionNumber] = useState(() => `ACC-${Math.floor(100000 + Math.random() * 900000)}`);
 
   const applyReport = (ord: InvestigationOrderDto) => {
@@ -206,13 +210,53 @@ export const DirectLabBillingModal: React.FC<Props> = ({
     }
   };
 
-  const handleGenerateBill = () => {
+  const handleGenerateBill = async () => {
     if (!linkedReport || selectedCodes.length === 0) return;
+    setIsCreatingInvoice(true);
+
+    let activeInvoiceNumber = billNumber;
+    try {
+      const inv = await billingManagementService.createInvoice({
+        tenantId: (linkedReport as any).tenantId || '55555555-5555-4555-8555-555555555555',
+        partnerId: '00000000-0000-4000-8000-000000000001',
+        organizationId: '00000000-0000-4000-8000-000000000002',
+        branchId: '00000000-0000-4000-8000-000000000003',
+        actorId: 'lab-cashier',
+        actorRole: 'CASHIER',
+        justification: 'Direct Lab Diagnostic Billing',
+        patientId: linkedReport.patientId || '55555555-5555-4555-8555-555555555501',
+        patientName,
+        patientMrn,
+        encounterId: linkedReport.encounterId || undefined,
+        invoiceType: 'DIAGNOSTICS',
+        paymentMode,
+        paymentStatus: balanceDue === 0 ? 'PAID' : 'PARTIAL_DUE',
+        paymentReference: `REC-${Date.now().toString().slice(-6)}`,
+        items: selectedTests.map((t) => ({
+          serviceCode: t.code,
+          description: `${t.name} (${t.department})`,
+          quantity: 1,
+          unitPrice: t.mrp,
+          discountAmount: isPackageApplicable ? Math.round(t.mrp * (discountPercent / 100)) : 0,
+          taxAmount: 0
+        }))
+      } as any);
+
+      if (inv?.invoiceNumber) {
+        activeInvoiceNumber = inv.invoiceNumber;
+        setServerInvoiceNumber(inv.invoiceNumber);
+      }
+    } catch (err) {
+      console.warn('Failed to persist direct lab billing invoice to API Gateway:', err);
+    } finally {
+      setIsCreatingInvoice(false);
+    }
+
     setStep('RECEIPT');
 
     // Update order in clinicalInvestigationService to mark as BILLED!
     clinicalInvestigationService.updateOrderBilling(linkedReport.id, {
-      invoiceNumber: billNumber,
+      invoiceNumber: activeInvoiceNumber,
       billedAmount: netPayable,
       paidAmount: effectivePaid,
       paymentMode,
@@ -221,9 +265,9 @@ export const DirectLabBillingModal: React.FC<Props> = ({
 
     // Record invoice in Pathology Revenue & Daily Collection Ledger!
     pathologyRevenueService.recordInvoice({
-      invoiceNumber: billNumber,
+      invoiceNumber: activeInvoiceNumber,
       orderId: linkedReport.id,
-      orderNumber: linkedReport.orderNumber || billNumber,
+      orderNumber: linkedReport.orderNumber || activeInvoiceNumber,
       patientName,
       patientAge: parseInt(patientAge, 10) || 38,
       patientGender: patientGender === 'Female' ? 'Female' : 'Male',
@@ -248,10 +292,40 @@ export const DirectLabBillingModal: React.FC<Props> = ({
       cashierName: 'Front Desk Cashier'
     });
 
+    // Broadcast on hospital network
+    hospitalEventBus.publish(
+      'BILL_SETTLED',
+      'DirectLabBillingModal',
+      {
+        invoiceNumber: activeInvoiceNumber,
+        orderId: linkedReport.id,
+        patientName,
+        patientMrn,
+        amount: effectivePaid,
+        paymentMode
+      },
+      `💰 Diagnostic Invoice ${activeInvoiceNumber} settled for ${patientName}`
+    );
+
+    if (effectivePaid > 0) {
+      hospitalEventBus.publish(
+        'PAYMENT_RECEIVED',
+        'DirectLabBillingModal',
+        {
+          invoiceNumber: activeInvoiceNumber,
+          amount: effectivePaid,
+          paymentMode,
+          patientName,
+          category: 'DIAGNOSTICS'
+        },
+        `💰 Payment received ₹${effectivePaid} via ${paymentMode}`
+      );
+    }
+
     if (onOrderCreated) {
       onOrderCreated({
         id: linkedReport.id || `ord-${Date.now()}`,
-        orderNumber: billNumber,
+        orderNumber: activeInvoiceNumber,
         patientName,
         patientAge: parseInt(patientAge, 10) || 38,
         patientGender,
@@ -745,7 +819,7 @@ export const DirectLabBillingModal: React.FC<Props> = ({
               </div>
 
               <div style={{ borderBottom: '1px dashed #000', paddingBottom: '6px', marginBottom: '6px' }}>
-                <div>Bill No: <strong>{billNumber}</strong></div>
+                <div>Bill No: <strong>{serverInvoiceNumber || billNumber}</strong></div>
                 <div>Date: {nowFormatted}</div>
                 <div>Patient: <strong>{patientName}</strong> ({patientAge}Y/{patientGender[0]})</div>
                 <div>UHID: <strong>{patientMrn}</strong></div>

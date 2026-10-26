@@ -1,8 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Button } from '@docsearch/ui-kit';
-import type { InpatientNursingAssessmentDto } from '@docsearch/api-contracts';
+import type { InpatientNursingAssessmentDto, InpatientAdmissionDto } from '@docsearch/api-contracts';
 import { hospitalEventBus } from '../../services/hospital-event-bus.js';
 import { BedsideBcmaScannerModal } from '../dialogs/BedsideBcmaScannerModal.js';
+
+export interface MarDoseSlot {
+  given: boolean;
+  administeredAt?: string | undefined;
+  administeredBy?: string | undefined;
+  notes?: string | undefined;
+}
 
 export interface MarScheduleEntry {
   id: string;
@@ -14,6 +21,9 @@ export interface MarScheduleEntry {
   route: 'IV' | 'IM' | 'ORAL' | 'SC' | 'NEBULIZATION';
   scheduledTime: string; // e.g. '08:00 AM'
   status: 'SCHEDULED' | 'GIVEN' | 'HELD' | 'REFUSED';
+  morningDose?: MarDoseSlot | undefined;
+  noonDose?: MarDoseSlot | undefined;
+  nightDose?: MarDoseSlot | undefined;
   pharmacyStatus?: 'ORDERED' | 'DOSE_PACK_DISPENSED' | 'IN_TRANSIT_RUNNER' | 'ARRIVED_AT_BEDSIDE' | 'OUT_OF_STOCK' | undefined;
   runnerName?: string | undefined;
   dispensedAt?: string | undefined;
@@ -51,13 +61,21 @@ export interface SbarHandoverData {
 
 export interface NursingCareViewProps {
   assessments?: InpatientNursingAssessmentDto[];
+  admissions?: InpatientAdmissionDto[];
+  nurseName?: string | undefined;
+  nurseId?: string | undefined;
 }
 
-export const NursingCareView: React.FC<NursingCareViewProps> = ({ assessments = [] }) => {
+export const NursingCareView: React.FC<NursingCareViewProps> = ({
+  assessments = [],
+  admissions: _admissions = [],
+  nurseName = 'Sr. Sunita R.N. [RN-ICU-402]',
+  nurseId: _nurseId = 'NURSE-ICU-01'
+}) => {
   const safeAssessments = Array.isArray(assessments) ? assessments : [];
   const [activeTab, setActiveTab] = useState<'EMAR' | 'FLUID_IO' | 'SBAR' | 'ASSESSMENTS'>('EMAR');
 
-  // e-MAR State
+  // e-MAR State with Morning, Noon, Night Shift Slots
   const [marList, setMarList] = useState<MarScheduleEntry[]>([
     {
       id: 'mar-1',
@@ -69,6 +87,9 @@ export const NursingCareView: React.FC<NursingCareViewProps> = ({ assessments = 
       route: 'IV',
       scheduledTime: '08:00 AM',
       status: 'GIVEN',
+      morningDose: { given: true, administeredAt: '08:05 AM', administeredBy: 'Sr. Sunita R.N.' },
+      noonDose: { given: false },
+      nightDose: { given: false },
       pharmacyStatus: 'ARRIVED_AT_BEDSIDE',
       dispensedAt: '07:45 AM',
       administeredBy: 'Sr. Sunita R.N.',
@@ -85,6 +106,9 @@ export const NursingCareView: React.FC<NursingCareViewProps> = ({ assessments = 
       route: 'IV',
       scheduledTime: '08:00 AM',
       status: 'GIVEN',
+      morningDose: { given: true, administeredAt: '08:12 AM', administeredBy: 'Sr. Sunita R.N.' },
+      noonDose: { given: false },
+      nightDose: { given: false },
       pharmacyStatus: 'ARRIVED_AT_BEDSIDE',
       dispensedAt: '07:48 AM',
       administeredBy: 'Sr. Sunita R.N.',
@@ -101,6 +125,9 @@ export const NursingCareView: React.FC<NursingCareViewProps> = ({ assessments = 
       route: 'SC',
       scheduledTime: '02:00 PM',
       status: 'SCHEDULED',
+      morningDose: { given: false },
+      noonDose: { given: false },
+      nightDose: { given: false },
       pharmacyStatus: 'IN_TRANSIT_RUNNER',
       runnerName: 'Amit K. (ETA 5m)',
       dispensedAt: '01:40 PM'
@@ -115,6 +142,9 @@ export const NursingCareView: React.FC<NursingCareViewProps> = ({ assessments = 
       route: 'IV',
       scheduledTime: '02:00 PM',
       status: 'SCHEDULED',
+      morningDose: { given: false },
+      noonDose: { given: false },
+      nightDose: { given: false },
       pharmacyStatus: 'DOSE_PACK_DISPENSED',
       dispensedAt: '01:50 PM'
     },
@@ -128,9 +158,89 @@ export const NursingCareView: React.FC<NursingCareViewProps> = ({ assessments = 
       route: 'ORAL',
       scheduledTime: '08:00 PM',
       status: 'SCHEDULED',
+      morningDose: { given: false },
+      noonDose: { given: false },
+      nightDose: { given: false },
       pharmacyStatus: 'ORDERED'
     }
   ]);
+
+  // Sync stat inpatient orders dispatched from SoloDoctorOpdCockpitView
+  useEffect(() => {
+    const unsub = hospitalEventBus.subscribe('IPD_ADMISSION_ORDERED', (payload) => {
+      const d = (payload && payload.data) ? payload.data : {};
+      if (d.patientName || d.mrn) {
+        let orderMed = 'Inj Meropenem 1g IV in 100ml NS STAT';
+        if (d.orders && Array.isArray(d.orders) && d.orders[0]) {
+          orderMed = typeof d.orders[0] === 'string' ? d.orders[0] : (d.orders[0].name || d.orders[0].medicationName || orderMed);
+        } else if (typeof d.orders === 'string' && d.orders) {
+          orderMed = d.orders;
+        }
+
+        const newEntry: MarScheduleEntry = {
+          id: `mar-auto-${Date.now()}`,
+          patientName: d.patientName || 'Emergency Admission Patient',
+          patientUhid: d.mrn || d.token || 'UHID-STAT',
+          bedNumber: d.ward ? `${d.ward}-04` : 'ICU-Bed 04',
+          medicationName: orderMed,
+          dosage: '1 Dose IV/Oral',
+          route: 'IV',
+          scheduledTime: '08:00 AM',
+          status: 'SCHEDULED',
+          morningDose: { given: false },
+          noonDose: { given: false },
+          nightDose: { given: false },
+          pharmacyStatus: 'ARRIVED_AT_BEDSIDE'
+        };
+        setMarList((prev) => [newEntry, ...prev.filter((x) => x.id !== newEntry.id)]);
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  // 1-Click Bedside MAR Dose Administration Handler
+  const handleToggleDoseSlot = (marId: string, slot: 'MORNING' | 'NOON' | 'NIGHT') => {
+    const nowTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+    const currentNurse = nurseName || 'Sr. Sunita R.N. [RN-ICU-402]';
+    setMarList((prev) =>
+      prev.map((m) => {
+        if (m.id !== marId) return m;
+        const slotKey = slot === 'MORNING' ? 'morningDose' : slot === 'NOON' ? 'noonDose' : 'nightDose';
+        const currentSlot = m[slotKey] || { given: false };
+        const isNowGiven = !currentSlot.given;
+        const updatedSlot: MarDoseSlot = isNowGiven
+          ? { given: true, administeredAt: nowTime, administeredBy: currentNurse }
+          : { given: false, administeredAt: undefined, administeredBy: undefined };
+
+        const updated: MarScheduleEntry = {
+          ...m,
+          [slotKey]: updatedSlot,
+          status: (isNowGiven || m.morningDose?.given || m.noonDose?.given || m.nightDose?.given) ? 'GIVEN' : 'SCHEDULED',
+          administeredAt: isNowGiven ? nowTime : m.administeredAt,
+          administeredBy: isNowGiven ? currentNurse : m.administeredBy
+        };
+
+        if (isNowGiven) {
+          hospitalEventBus.publish(
+            'MEDICATION_ADMINISTERED',
+            'BedsideMAR',
+            {
+              marId: m.id,
+              medicationName: m.medicationName,
+              slot,
+              patientName: m.patientName,
+              patientUhid: m.patientUhid,
+              bedNumber: m.bedNumber,
+              administeredBy: currentNurse,
+              administeredAt: nowTime
+            },
+            `Bedside MAR ${slot} dose administered: ${m.medicationName} to ${m.patientName} (${m.bedNumber}) by ${currentNurse}`
+          );
+        }
+        return updated;
+      })
+    );
+  };
 
   const handleScanRunnerDelivery = (marId: string) => {
     setMarList((prev) =>
@@ -364,7 +474,7 @@ export const NursingCareView: React.FC<NursingCareViewProps> = ({ assessments = 
             </div>
           </div>
 
-          {/* e-MAR Schedule Table */}
+          {/* Bedside MAR Schedule Table with Morning / Noon / Night Shift Checkboxes */}
           <Card style={{ padding: '0', overflow: 'hidden', backgroundColor: '#0F172A', border: '1px solid rgba(255,255,255,0.1)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
               <thead>
@@ -373,9 +483,11 @@ export const NursingCareView: React.FC<NursingCareViewProps> = ({ assessments = 
                   <th style={{ padding: '10px 14px' }}>Patient / Bed</th>
                   <th style={{ padding: '10px 14px' }}>Medication & Dose</th>
                   <th style={{ padding: '10px 14px' }}>Route</th>
+                  <th style={{ padding: '10px 14px' }}>🌅 Morning (08:00)</th>
+                  <th style={{ padding: '10px 14px' }}>☀️ Noon (13:00)</th>
+                  <th style={{ padding: '10px 14px' }}>🌙 Night (20:00)</th>
                   <th style={{ padding: '10px 14px' }}>Pharmacy Status</th>
-                  <th style={{ padding: '10px 14px' }}>Clinical MAR</th>
-                  <th style={{ padding: '10px 14px' }}>Administered By / Details</th>
+                  <th style={{ padding: '10px 14px' }}>Administration Audit</th>
                   <th style={{ padding: '10px 14px', textAlign: 'right' }}>Action</th>
                 </tr>
               </thead>
@@ -398,6 +510,100 @@ export const NursingCareView: React.FC<NursingCareViewProps> = ({ assessments = 
                         {m.route}
                       </span>
                     </td>
+
+                    {/* MORNING DOSE CHECKBOX (08:00) */}
+                    <td style={{ padding: '10px 14px' }}>
+                      <label
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          cursor: 'pointer',
+                          backgroundColor: m.morningDose?.given ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255,255,255,0.04)',
+                          border: m.morningDose?.given ? '1px solid #10B981' : '1px solid rgba(255,255,255,0.12)',
+                          borderRadius: '6px',
+                          padding: '4px 8px'
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          data-testid={`mar-checkbox-morning-${m.id}`}
+                          checked={Boolean(m.morningDose?.given)}
+                          onChange={() => handleToggleDoseSlot(m.id, 'MORNING')}
+                        />
+                        <span style={{ fontSize: '0.72rem', fontWeight: 700, color: m.morningDose?.given ? '#6EE7B7' : '#94A3B8' }}>
+                          {m.morningDose?.given ? '✓ Given' : 'Dose Given'}
+                        </span>
+                      </label>
+                      {m.morningDose?.given && (
+                        <div style={{ fontSize: '0.65rem', color: '#10B981', marginTop: '2px' }}>
+                          {m.morningDose.administeredAt} • {m.morningDose.administeredBy?.split(' ')[0] || 'Nurse'}
+                        </div>
+                      )}
+                    </td>
+
+                    {/* NOON DOSE CHECKBOX (13:00) */}
+                    <td style={{ padding: '10px 14px' }}>
+                      <label
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          cursor: 'pointer',
+                          backgroundColor: m.noonDose?.given ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255,255,255,0.04)',
+                          border: m.noonDose?.given ? '1px solid #10B981' : '1px solid rgba(255,255,255,0.12)',
+                          borderRadius: '6px',
+                          padding: '4px 8px'
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          data-testid={`mar-checkbox-noon-${m.id}`}
+                          checked={Boolean(m.noonDose?.given)}
+                          onChange={() => handleToggleDoseSlot(m.id, 'NOON')}
+                        />
+                        <span style={{ fontSize: '0.72rem', fontWeight: 700, color: m.noonDose?.given ? '#6EE7B7' : '#94A3B8' }}>
+                          {m.noonDose?.given ? '✓ Given' : 'Dose Given'}
+                        </span>
+                      </label>
+                      {m.noonDose?.given && (
+                        <div style={{ fontSize: '0.65rem', color: '#10B981', marginTop: '2px' }}>
+                          {m.noonDose.administeredAt} • {m.noonDose.administeredBy?.split(' ')[0] || 'Nurse'}
+                        </div>
+                      )}
+                    </td>
+
+                    {/* NIGHT DOSE CHECKBOX (20:00) */}
+                    <td style={{ padding: '10px 14px' }}>
+                      <label
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          cursor: 'pointer',
+                          backgroundColor: m.nightDose?.given ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255,255,255,0.04)',
+                          border: m.nightDose?.given ? '1px solid #10B981' : '1px solid rgba(255,255,255,0.12)',
+                          borderRadius: '6px',
+                          padding: '4px 8px'
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          data-testid={`mar-checkbox-night-${m.id}`}
+                          checked={Boolean(m.nightDose?.given)}
+                          onChange={() => handleToggleDoseSlot(m.id, 'NIGHT')}
+                        />
+                        <span style={{ fontSize: '0.72rem', fontWeight: 700, color: m.nightDose?.given ? '#6EE7B7' : '#94A3B8' }}>
+                          {m.nightDose?.given ? '✓ Given' : 'Dose Given'}
+                        </span>
+                      </label>
+                      {m.nightDose?.given && (
+                        <div style={{ fontSize: '0.65rem', color: '#10B981', marginTop: '2px' }}>
+                          {m.nightDose.administeredAt} • {m.nightDose.administeredBy?.split(' ')[0] || 'Nurse'}
+                        </div>
+                      )}
+                    </td>
+
                     <td style={{ padding: '12px 14px' }}>
                       {m.pharmacyStatus === 'ARRIVED_AT_BEDSIDE' ? (
                         <span style={{ backgroundColor: 'rgba(16, 185, 129, 0.2)', border: '1px solid #10B981', color: '#6EE7B7', padding: '3px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
@@ -435,25 +641,14 @@ export const NursingCareView: React.FC<NursingCareViewProps> = ({ assessments = 
                         </span>
                       )}
                     </td>
-                    <td style={{ padding: '12px 14px' }}>
-                      {m.status === 'GIVEN' ? (
-                        <span style={{ backgroundColor: 'rgba(16, 185, 129, 0.2)', border: '1px solid #10B981', color: '#6EE7B7', padding: '3px 8px', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 800 }}>
-                          ✓ GIVEN
-                        </span>
-                      ) : (
-                        <span style={{ backgroundColor: 'rgba(245, 158, 11, 0.2)', border: '1px solid #F59E0B', color: '#FDE68A', padding: '3px 8px', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 800 }}>
-                          ⏳ DUE NOW
-                        </span>
-                      )}
-                    </td>
                     <td style={{ padding: '12px 14px', fontSize: '0.72rem', color: '#94A3B8' }}>
                       {m.administeredBy ? (
                         <div>
                           <div style={{ color: '#F8FAFC' }}>{m.administeredBy} ({m.administeredAt})</div>
-                          <div style={{ color: '#64748B' }}>Batch: {m.batchNumber}</div>
+                          <div style={{ color: '#64748B' }}>Batch: {m.batchNumber || 'STAT'}</div>
                         </div>
                       ) : (
-                        <span style={{ color: '#64748B' }}>Awaiting Barcode Verification</span>
+                        <span style={{ color: '#64748B' }}>Awaiting Dose Administration</span>
                       )}
                     </td>
                     <td style={{ padding: '12px 14px', textAlign: 'right' }}>

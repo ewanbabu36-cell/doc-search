@@ -33,7 +33,7 @@ export const PrintableBedsideQrCardModal: React.FC<PrintableBedsideQrCardModalPr
 
   const handleTriggerNurseCall = () => {
     hospitalEventBus.publish(
-      'OPTIMISTIC_ACTION_DISPATCHED',
+      'NURSE_CALL_REQUESTED',
       'BedsidePatientConcierge',
       {
         bedId: bed.id,

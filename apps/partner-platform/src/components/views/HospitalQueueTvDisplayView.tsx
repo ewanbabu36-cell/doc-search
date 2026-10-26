@@ -67,46 +67,92 @@ export const playHospitalChimeDingDong = async (): Promise<void> => {
   }
 };
 
-// Bilingual voice announcement (Hindi followed by English)
-export const playBilingualTokenAnnouncement = (
+export type TvAnnouncementLanguage = 'HI' | 'BN' | 'MR' | 'TA' | 'TE' | 'EN';
+
+// Multilingual regional voice announcement (Indic language followed by English)
+export const playRegionalTokenAnnouncement = (
   tokenNumber: string | number,
   patientName: string,
   roomNumber: string,
   doctorName: string,
-  isMuted: boolean
+  isMuted: boolean,
+  primaryLang: TvAnnouncementLanguage = 'HI'
 ) => {
   if (typeof window === 'undefined' || !('speechSynthesis' in window) || isMuted) return;
 
   try {
     window.speechSynthesis.cancel(); // Stop pending speech
 
-    // 1. Hindi Announcement
     const cleanToken = String(tokenNumber).replace(/^#+/, '');
-    const hindiText = `टोकन संख्या ${cleanToken}, ${patientName}. कृपया कमरा नंबर ${roomNumber}, डॉक्टर ${doctorName} के पास पधारें।`;
-    const hindiUtterance = new SpeechSynthesisUtterance(hindiText);
-    hindiUtterance.rate = 0.88;
-    hindiUtterance.pitch = 1.05;
-    hindiUtterance.lang = 'hi-IN';
+    const cleanRoom = String(roomNumber).replace(/^(room|रूम|कमरा)\s*/i, '');
 
-    // 2. English Announcement
-    const englishText = `Token number ${cleanToken}, ${patientName}. Please proceed to Room ${roomNumber}, Dr. ${doctorName}.`;
-    const englishUtterance = new SpeechSynthesisUtterance(englishText);
-    englishUtterance.rate = 0.9;
-    englishUtterance.pitch = 1.0;
-    englishUtterance.lang = 'en-IN';
+    // 1. Primary Indic / Regional Language Announcement
+    let regionalText = '';
+    let regionalVoiceLang = 'hi-IN';
 
-    // Chain announcements
-    hindiUtterance.onend = () => {
-      setTimeout(() => {
-        window.speechSynthesis.speak(englishUtterance);
-      }, 300);
-    };
+    switch (primaryLang) {
+      case 'BN': // Bengali
+        regionalText = `টোকেন নম্বর ${cleanToken}, ${patientName}। অনুগ্রহ করে রুম নম্বর ${cleanRoom}, ডক্টর ${doctorName}-এর কাছে আসুন।`;
+        regionalVoiceLang = 'bn-IN';
+        break;
+      case 'MR': // Marathi
+        regionalText = `टोकन क्रमांक ${cleanToken}, ${patientName}। कृपया खोली क्रमांक ${cleanRoom}, डॉक्टर ${doctorName} यांच्याकडे जावे।`;
+        regionalVoiceLang = 'mr-IN';
+        break;
+      case 'TA': // Tamil
+        regionalText = `டோக்கன் எண் ${cleanToken}, ${patientName}। தயவுசெய்து அறை எண் ${cleanRoom}, மருத்துவர் ${doctorName} அவர்களிடம் செல்லவும்।`;
+        regionalVoiceLang = 'ta-IN';
+        break;
+      case 'TE': // Telugu
+        regionalText = `టోకెన్ సంఖ్య ${cleanToken}, ${patientName}। దయచేసి గది సంఖ్య ${cleanRoom}, డాక్టర్ ${doctorName} వద్దకు వెళ్లండి।`;
+        regionalVoiceLang = 'te-IN';
+        break;
+      case 'EN': // English Only
+        regionalText = `Token number ${cleanToken}, ${patientName}. Please proceed to Room ${cleanRoom}, Dr. ${doctorName}.`;
+        regionalVoiceLang = 'en-IN';
+        break;
+      case 'HI':
+      default: // Hindi
+        regionalText = `टोकन संख्या ${cleanToken}, ${patientName}। कृपया कमरा नंबर ${cleanRoom}, डॉक्टर ${doctorName} के पास पधारें।`;
+        regionalVoiceLang = 'hi-IN';
+        break;
+    }
 
-    window.speechSynthesis.speak(hindiUtterance);
+    const regionalUtterance = new SpeechSynthesisUtterance(regionalText);
+    regionalUtterance.rate = 0.88;
+    regionalUtterance.pitch = 1.05;
+    regionalUtterance.lang = regionalVoiceLang;
+
+    // 2. English Announcement (Secondary Follow-up, unless primary was EN)
+    if (primaryLang !== 'EN') {
+      const englishText = `Token number ${cleanToken}, ${patientName}. Please proceed to Room ${cleanRoom}, Dr. ${doctorName}.`;
+      const englishUtterance = new SpeechSynthesisUtterance(englishText);
+      englishUtterance.rate = 0.9;
+      englishUtterance.pitch = 1.0;
+      englishUtterance.lang = 'en-IN';
+
+      regionalUtterance.onend = () => {
+        setTimeout(() => {
+          window.speechSynthesis.speak(englishUtterance);
+        }, 300);
+      };
+    }
+
+    window.speechSynthesis.speak(regionalUtterance);
   } catch (err) {
     console.warn('Speech synthesis announcement error:', err);
   }
 };
+
+// Backwards-compatible alias
+export const playBilingualTokenAnnouncement = (
+  tokenNumber: string | number,
+  patientName: string,
+  roomNumber: string,
+  doctorName: string,
+  isMuted: boolean,
+  primaryLang: TvAnnouncementLanguage = 'HI'
+) => playRegionalTokenAnnouncement(tokenNumber, patientName, roomNumber, doctorName, isMuted, primaryLang);
 
 export const HospitalQueueTvDisplayView: React.FC<HospitalQueueTvDisplayViewProps> = ({
   hospitalName,
@@ -120,6 +166,7 @@ export const HospitalQueueTvDisplayView: React.FC<HospitalQueueTvDisplayViewProp
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [themeMode] = useState<'OLED_DARK' | 'CYAN_HIGH_CONTRAST'>('OLED_DARK');
+  const [selectedLanguage, setSelectedLanguage] = useState<TvAnnouncementLanguage>('HI');
 
   // Multi-Chamber State
   const [chambers, setChambers] = useState<ChamberStatus[]>([
@@ -305,12 +352,48 @@ export const HospitalQueueTvDisplayView: React.FC<HospitalQueueTvDisplayViewProp
       }
     });
 
+    const unsubTokenGenerated = hospitalEventBus.subscribe('TOKEN_GENERATED', (payload: HospitalEventPayload) => {
+      const data = payload.data || {};
+      const tokenNum = data.tokenNumber || data.token;
+      if (tokenNum) {
+        const formattedToken = String(tokenNum).startsWith('#') ? tokenNum : `#${tokenNum}`;
+        const chamberName = data.chamber || 'Room 101';
+        setChambers((prev) =>
+          prev.map((ch) => {
+            if (
+              ch.roomNumber.toLowerCase() === chamberName.toLowerCase() ||
+              ch.chamberId === chamberName ||
+              ch.doctorName === data.doctorName ||
+              prev.length === 1
+            ) {
+              const alreadyExists = ch.waitingTokens.some((w) => String(w.tokenNumber) === formattedToken);
+              if (alreadyExists) return ch;
+              return {
+                ...ch,
+                waitingTokens: [
+                  ...ch.waitingTokens,
+                  {
+                    tokenNumber: formattedToken,
+                    patientName: data.patientName || 'OPD Patient',
+                    uhid: data.uhid || `UHID-2026-${tokenNum}`,
+                    estWait: '10 mins'
+                  }
+                ]
+              };
+            }
+            return ch;
+          })
+        );
+      }
+    });
+
     return () => {
       unsubCalled();
       unsubChamberCall();
       unsubSelected();
       unsubCompleted();
       unsubRx();
+      unsubTokenGenerated();
     };
   }, [partnerProfile]);
 
@@ -326,12 +409,13 @@ export const HospitalQueueTvDisplayView: React.FC<HospitalQueueTvDisplayViewProp
 
     // 2. Bilingual Voice Callout (Hindi + English)
     setTimeout(() => {
-      playBilingualTokenAnnouncement(
+      playRegionalTokenAnnouncement(
         callData.tokenNumber,
         callData.patientName,
         callData.roomNumber,
         callData.doctorName,
-        isMuted
+        isMuted,
+        selectedLanguage
       );
     }, 600);
 
@@ -478,7 +562,7 @@ export const HospitalQueueTvDisplayView: React.FC<HospitalQueueTvDisplayViewProp
               boxShadow: '0 4px 20px rgba(2, 132, 199, 0.5)'
             }}
           >
-            🏥
+            ðŸ¥
           </div>
           <div>
             <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#F8FAFC', letterSpacing: '-0.02em', textTransform: 'uppercase' }}>
@@ -486,7 +570,7 @@ export const HospitalQueueTvDisplayView: React.FC<HospitalQueueTvDisplayViewProp
             </div>
             <div style={{ fontSize: '0.9375rem', color: '#38BDF8', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ display: 'inline-block', width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#10B981', animation: 'pulse 1.5s infinite' }}></span>
-              <span>LIVE OPD WAITING LOUNGE QUEUE DISPLAY • प्रतिक्षालय टोकन स्क्रीन</span>
+              <span>LIVE OPD WAITING LOUNGE QUEUE DISPLAY • लाइव ओपीडी प्रतीक्षालय टोकन प्रदर्शन</span>
             </div>
           </div>
         </div>
@@ -504,12 +588,37 @@ export const HospitalQueueTvDisplayView: React.FC<HospitalQueueTvDisplayViewProp
 
           {/* Quick TV Control Buttons */}
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            
+            {/* Indic Language Selector */}
+            <div style={{ display: 'flex', backgroundColor: 'rgba(255, 255, 255, 0.06)', borderRadius: '10px', padding: '2px', border: '1px solid rgba(255, 255, 255, 0.12)' }}>
+              {(['HI', 'BN', 'MR', 'TA', 'TE', 'EN'] as const).map((lang) => (
+                <button
+                  key={lang}
+                  type="button"
+                  onClick={() => setSelectedLanguage(lang)}
+                  style={{
+                    backgroundColor: selectedLanguage === lang ? '#0284C7' : 'transparent',
+                    color: selectedLanguage === lang ? '#FFFFFF' : '#94A3B8',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '6px 10px',
+                    fontSize: '0.75rem',
+                    fontWeight: 800,
+                    cursor: 'pointer'
+                  }}
+                  title={`Voice caller in ${lang}`}
+                >
+                  {lang}
+                </button>
+              ))}
+            </div>
+
             <button
               type="button"
               onClick={() => setIsMuted((prev) => !prev)}
               style={{
                 backgroundColor: isMuted ? 'rgba(239, 68, 68, 0.2)' : 'rgba(56, 189, 248, 0.15)',
-                border: `1px solid ${isMuted ? '#EF4444' : '#38BDF8'}`,
+                border: `1px solid ${isMuted ? '🔇 Muted' : '🔊 Chime ON'}`,
                 color: isMuted ? '#EF4444' : '#38BDF8',
                 borderRadius: '10px',
                 padding: '10px 14px',
@@ -536,9 +645,7 @@ export const HospitalQueueTvDisplayView: React.FC<HospitalQueueTvDisplayViewProp
                 cursor: 'pointer'
               }}
               title="Test Ding-Dong Chime & Voice Call"
-            >
-              🔔 Test Chime
-            </button>
+            >🔔 Test Chime</button>
 
             <button
               type="button"
@@ -555,7 +662,7 @@ export const HospitalQueueTvDisplayView: React.FC<HospitalQueueTvDisplayViewProp
               }}
               title="Toggle Fullscreen (F11)"
             >
-              {isFullscreen ? '🗗 Window' : '⛶ Fullscreen'}
+              {isFullscreen ? 'ðŸ—— Window' : 'â›¶ Fullscreen'}
             </button>
 
             {onExit && (
@@ -572,9 +679,7 @@ export const HospitalQueueTvDisplayView: React.FC<HospitalQueueTvDisplayViewProp
                   fontWeight: 700,
                   cursor: 'pointer'
                 }}
-              >
-                ✕ Exit TV
-              </button>
+              >✕ Exit TV</button>
             )}
           </div>
         </div>
@@ -609,7 +714,7 @@ export const HospitalQueueTvDisplayView: React.FC<HospitalQueueTvDisplayViewProp
                 letterSpacing: '0.05em'
               }}
             >
-              NOW CALLING / पधारें ➔
+              NOW CALLING / à¤ªà¤§à¤¾à¤°à¥‡à¤‚ âž”
             </div>
             <div>
               <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#FFFFFF' }}>
@@ -648,7 +753,7 @@ export const HospitalQueueTvDisplayView: React.FC<HospitalQueueTvDisplayViewProp
             key={ch.chamberId}
             style={{
               backgroundColor: ch.isCalling ? 'rgba(2, 132, 199, 0.25)' : '#0F172A',
-              border: `2.5px solid ${ch.isCalling ? '#38BDF8' : 'rgba(255, 255, 255, 0.12)'}`,
+              border: `2.5px solid ${ch.isCalling ? '🔔 CALLING' : '🟢 ACTIVE'}`,
               borderRadius: '20px',
               padding: '24px 20px',
               display: 'flex',
@@ -690,7 +795,7 @@ export const HospitalQueueTvDisplayView: React.FC<HospitalQueueTvDisplayViewProp
                     borderRadius: '6px'
                   }}
                 >
-                  {ch.isCalling ? '● CALLING' : '● ACTIVE'}
+                  {ch.isCalling ? '🔔 CALLING' : '🟢 ACTIVE'}
                 </span>
               </div>
 
@@ -714,7 +819,7 @@ export const HospitalQueueTvDisplayView: React.FC<HospitalQueueTvDisplayViewProp
               }}
             >
               <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
-                NOW SERVING / अंदर हैं
+                NOW SERVING / à¤…à¤‚à¤¦à¤° à¤¹à¥ˆà¤‚
               </div>
               <div
                 style={{
@@ -740,7 +845,7 @@ export const HospitalQueueTvDisplayView: React.FC<HospitalQueueTvDisplayViewProp
             {/* Waiting Queue List */}
             <div>
               <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
-                <span>NEXT WAITING / कतार में</span>
+                <span>NEXT WAITING / आगामी कतार</span>
                 <span>{ch.waitingTokens.length} waiting</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -768,7 +873,7 @@ export const HospitalQueueTvDisplayView: React.FC<HospitalQueueTvDisplayViewProp
                 ))}
                 {ch.waitingTokens.length === 0 && (
                   <div style={{ textAlign: 'center', fontSize: '0.8125rem', color: '#64748B', padding: '10px' }}>
-                    Queue clear / कोई प्रतीक्षा नहीं
+                    Queue clear / à¤•à¥‹à¤ˆ à¤ªà¥à¤°à¤¤à¥€à¤•à¥à¤·à¤¾ à¤¨à¤¹à¥€à¤‚
                   </div>
                 )}
               </div>
@@ -789,7 +894,7 @@ export const HospitalQueueTvDisplayView: React.FC<HospitalQueueTvDisplayViewProp
                   cursor: 'pointer'
                 }}
               >
-                Call Next Token ➔
+                Call Next Token âž”
               </button>
             </div>
           </div>
@@ -821,11 +926,9 @@ export const HospitalQueueTvDisplayView: React.FC<HospitalQueueTvDisplayViewProp
             whiteSpace: 'nowrap'
           }}
         >
-          NOTICE / सूचना
+          NOTICE / à¤¸à¥‚à¤šà¤¨à¤¾
         </span>
-        <div style={{ fontSize: '0.9375rem', color: '#CBD5E1', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          📢 कृपया अपना टोकन नंबर आने पर ही संबंधित परामर्श कक्ष में प्रवेश करें। आपातकालीन सहायता के लिए काउंटर नंबर 1 पर संपर्क करें। Please enter consulting chamber only when your token is called. Keep silence in the waiting area.
-        </div>
+        <div style={{ fontSize: '0.9375rem', color: '#CBD5E1', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>📢 कृपया अपना टोकन नंबर आने पर ही संबंधित परामर्श कक्ष में प्रवेश करें। आपातकालीन सहायता के लिए काउंटर नंबर 1 पर संपर्क करें। Please enter consulting chamber only when your token is called. Keep silence in the waiting area.</div>
       </div>
     </div>
   );

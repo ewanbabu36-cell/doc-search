@@ -8,16 +8,23 @@ export interface DischargeWorkbenchViewProps {
   onOpenApproveDischarge: (adm: InpatientAdmissionDto) => void;
   onOpenCompleteDischarge: (adm: InpatientAdmissionDto) => void;
   onOpenFinalizeSummary: (adm: InpatientAdmissionDto) => void;
+  onOpenSettleBill?: (adm: InpatientAdmissionDto) => void;
 }
 
 export const DischargeWorkbenchView: React.FC<DischargeWorkbenchViewProps> = ({
   admissions = [],
   onOpenApproveDischarge,
   onOpenCompleteDischarge,
-  onOpenFinalizeSummary
+  onOpenFinalizeSummary,
+  onOpenSettleBill
 }) => {
   const safeAdmissions = Array.isArray(admissions) ? admissions : [];
   const planned = safeAdmissions.filter((a) => a?.status === 'DISCHARGE_PLANNED');
+  const allActive = safeAdmissions.filter((a) => a?.status === 'ADMITTED' || a?.status === 'DISCHARGE_PLANNED');
+
+  const [activeTab, setActiveTab] = useState<'PLANNED' | 'ALL_ACTIVE'>('PLANNED');
+
+  const displayList = activeTab === 'PLANNED' ? planned : allActive;
 
   const [activePipelines, setActivePipelines] = useState<Record<string, {
     minutesLeft: number;
@@ -82,7 +89,7 @@ export const DischargeWorkbenchView: React.FC<DischargeWorkbenchViewProps> = ({
             Discharge Velocity & Multi-Clearance Workbench
           </h2>
           <p style={{ margin: '0.25rem 0 0 0', color: '#64748b', fontSize: '0.875rem' }}>
-            60-Minute Predictive Discharge Orchestrator syncing Pharmacy Returns, Lab Dues, TPA Ledger, and Bed Turnaround.
+            60-Minute Predictive Discharge Orchestrator syncing Pharmacy Returns, Lab Dues, TPA Ledger, Bed Turnaround & Consolidated Billing.
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '1px solid #10B981', padding: '6px 12px', borderRadius: '8px' }}>
@@ -93,35 +100,92 @@ export const DischargeWorkbenchView: React.FC<DischargeWorkbenchViewProps> = ({
         </div>
       </div>
 
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
+        <button
+          type="button"
+          onClick={() => setActiveTab('PLANNED')}
+          style={{
+            padding: '6px 14px',
+            borderRadius: '6px',
+            border: 'none',
+            backgroundColor: activeTab === 'PLANNED' ? '#0284c7' : 'transparent',
+            color: activeTab === 'PLANNED' ? '#ffffff' : '#64748b',
+            fontWeight: 700,
+            fontSize: '0.85rem',
+            cursor: 'pointer'
+          }}
+        >
+          ⚡ Discharge Planned ({planned.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('ALL_ACTIVE')}
+          style={{
+            padding: '6px 14px',
+            borderRadius: '6px',
+            border: 'none',
+            backgroundColor: activeTab === 'ALL_ACTIVE' ? '#0284c7' : 'transparent',
+            color: activeTab === 'ALL_ACTIVE' ? '#ffffff' : '#64748b',
+            fontWeight: 700,
+            fontSize: '0.85rem',
+            cursor: 'pointer'
+          }}
+        >
+          🛏️ All Active Census ({allActive.length})
+        </button>
+      </div>
+
       <Card style={{ padding: '0', overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid #e2e8f0', color: '#64748b', textAlign: 'left', backgroundColor: '#f8fafc' }}>
               <th style={{ padding: '0.75rem 1rem' }}>Patient & MRN</th>
               <th style={{ padding: '0.75rem 1rem' }}>Ward & Bed</th>
-              <th style={{ padding: '0.75rem 1rem' }}>60m Velocity Countdown</th>
+              <th style={{ padding: '0.75rem 1rem' }}>Status & Billing</th>
+              <th style={{ padding: '0.75rem 1rem' }}>60m Velocity SLA</th>
               <th style={{ padding: '0.75rem 1rem' }}>Parallel Department Sync</th>
               <th style={{ padding: '0.75rem 1rem' }}>Summary Sealed</th>
               <th style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {planned.length === 0 ? (
+            {displayList.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ padding: '1.5rem', textAlign: 'center', color: '#64748b' }}>
-                  No pending planned discharges found in active census.
+                <td colSpan={7} style={{ padding: '1.5rem', textAlign: 'center', color: '#64748b' }}>
+                  {activeTab === 'PLANNED'
+                    ? 'No pending planned discharges found in active census.'
+                    : 'No active inpatient admissions found.'}
                 </td>
               </tr>
             ) : (
-              planned.map((adm) => {
+              displayList.map((adm) => {
                 const pipe = activePipelines[adm.id] || activePipelines['mock-adm-1'];
                 return (
                   <tr key={adm.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                     <td style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>
-                      {adm.patientName} ({adm.patientMrn})
+                      <div>{adm.patientName}</div>
+                      <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{adm.patientMrn}</div>
                     </td>
                     <td style={{ padding: '0.75rem 1rem' }}>
-                      {adm.wardName} (Bed {adm.bedCode})
+                      <div>{adm.wardName}</div>
+                      <div style={{ fontSize: '0.75rem', color: '#0284c7', fontWeight: 600 }}>Bed {adm.bedCode}</div>
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
+                        <Badge variant={adm.status === 'DISCHARGE_PLANNED' ? 'warning' : 'primary'}>
+                          {adm.status}
+                        </Badge>
+                        {adm.billingCleared ? (
+                          <span style={{ fontSize: '0.72rem', color: '#047857', fontWeight: 700 }}>
+                            ✓ Bill Settled
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: '0.72rem', color: '#b45309', fontWeight: 700 }}>
+                            ⏳ Bill Unsettled
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td style={{ padding: '0.75rem 1rem' }}>
                       {pipe ? (
@@ -154,7 +218,7 @@ export const DischargeWorkbenchView: React.FC<DischargeWorkbenchViewProps> = ({
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                         <span>💊 Pharmacy Return: <strong>{pipe?.pharmacyReturn ? 'Reconciled ✓' : 'Pending'}</strong></span>
                         <span>🧪 Lab Dues: <strong>{pipe?.labDues ? 'Clear ✓' : 'Pending'}</strong></span>
-                        <span>💳 TPA Ledger: <strong>{pipe?.tpaBill ? 'Draft Sealed ✓' : 'Pending'}</strong></span>
+                        <span>💳 TPA / Bill: <strong>{adm.billingCleared || pipe?.tpaBill ? 'Settled ✓' : 'Pending'}</strong></span>
                         <span>🧹 Housekeeping: <strong>{pipe?.sanitizationDispatched ? 'Dispatched 🏃' : 'Queued'}</strong></span>
                       </div>
                     </td>
@@ -164,12 +228,36 @@ export const DischargeWorkbenchView: React.FC<DischargeWorkbenchViewProps> = ({
                       </Badge>
                     </td>
                     <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
-                      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                      <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                        {/* 1-click IPD Bill Settlement */}
+                        <button
+                          type="button"
+                          onClick={() => onOpenSettleBill?.(adm)}
+                          style={{
+                            backgroundColor: adm.billingCleared ? '#f0fdf4' : '#0284c7',
+                            color: adm.billingCleared ? '#166534' : '#ffffff',
+                            border: adm.billingCleared ? '1px solid #86efac' : 'none',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {adm.billingCleared ? '✓ View Bill' : '💳 Settle IPD Bill'}
+                        </button>
+
                         {!adm.dischargeSummaryFinalized && (
-                          <Button variant="outline" size="sm" onClick={() => onOpenFinalizeSummary(adm)}>Seal Summary</Button>
+                          <Button variant="outline" size="sm" onClick={() => onOpenFinalizeSummary(adm)}>
+                            Seal Summary
+                          </Button>
                         )}
-                        <Button variant="outline" size="sm" onClick={() => onOpenApproveDischarge(adm)}>Clearances</Button>
-                        <Button variant="primary" size="sm" onClick={() => onOpenCompleteDischarge(adm)}>Discharge & Release Bed</Button>
+                        <Button variant="outline" size="sm" onClick={() => onOpenApproveDischarge(adm)}>
+                          Clearances
+                        </Button>
+                        <Button variant="primary" size="sm" onClick={() => onOpenCompleteDischarge(adm)}>
+                          Discharge & Release Bed
+                        </Button>
                       </div>
                     </td>
                   </tr>

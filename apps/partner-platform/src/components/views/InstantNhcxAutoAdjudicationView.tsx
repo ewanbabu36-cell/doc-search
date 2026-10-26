@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@docsearch/ui-kit';
 import { getUnifiedPartnerProfile } from '../../utils/roleProfileResolver.js';
+import { hospitalEventBus } from '../../services/hospital-event-bus.js';
 
 export interface NhcxDischargeCase {
   id: string;
@@ -273,6 +274,38 @@ export const InstantNhcxAutoAdjudicationView: React.FC = () => {
       };
       setSettlementDetails(details);
       setSettledClaimsHistory((prev) => ({ ...prev, [activeCase.id]: details }));
+
+      // Broadcast to Hospital Event Bus for Soundbox, Cashless Desk & IPD Billing
+      hospitalEventBus.publish(
+        'NHCX_CLAIM_SANCTIONED',
+        'InstantNhcxAutoAdjudicationView',
+        {
+          ...details,
+          caseId: activeCase.id,
+          uhid: activeCase.uhid,
+          ipdNumber: activeCase.ipdNumber,
+          patientName: activeCase.patientName,
+          payerName: activeCase.payerName,
+          tpaName: activeCase.tpaName,
+          policyNumber: activeCase.policyNumber,
+          totalHospitalBill: activeCase.totalHospitalBill
+        },
+        `⚡ NHCX Zero-Wait Claim Sanctioned for ${activeCase.patientName} (${activeCase.payerName}): ₹${approved.toLocaleString('en-IN')}`
+      );
+
+      hospitalEventBus.publish(
+        'PAYMENT_RECEIVED',
+        'InstantNhcxAutoAdjudicationView',
+        {
+          amount: approved,
+          mode: 'TPA_INSURANCE',
+          reference: details.approvalAuthCode,
+          patientName: activeCase.patientName,
+          invoiceId: details.nhcxClaimId,
+          timestamp: new Date().toISOString()
+        },
+        `💰 NHCX Cashless Settlement: ₹${approved.toLocaleString('en-IN')} approved by ${activeCase.payerName}`
+      );
 
       setNotificationToast(`⚡ NHCX Zero-Wait Settlement Sanctioned in 8.4s! TPA Approved: ₹${approved.toLocaleString('en-IN')}`);
       setTimeout(() => setNotificationToast(null), 8000);

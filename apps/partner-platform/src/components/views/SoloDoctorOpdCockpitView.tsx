@@ -7,6 +7,7 @@ import type {
 } from '@docsearch/api-contracts';
 import { optimisticActionService } from '../../services/optimistic-action-service.js';
 import { hospitalEventBus } from '../../services/hospital-event-bus.js';
+import { encounterService } from '../../services/encounter-service.js';
 import { PrintableDoctorPrescriptionModal } from '../dialogs/PrintableDoctorPrescriptionModal.js';
 import { PatientWhatsAppSmartRxModal } from '../dialogs/PatientWhatsAppSmartRxModal.js';
 import { PrintableMedicalCertificateModal } from '../dialogs/PrintableMedicalCertificateModal.js';
@@ -51,6 +52,7 @@ import {
 } from '../../utils/regional-prescription-translator.js';
 import { ClinicalSparkline } from '@docsearch/ui-kit';
 import { pharmacyStockService } from '../../services/pharmacy-stock-service.js';
+import { abdmFhirService } from '../../services/abdm-fhir-service.js';
 
 export interface ClinicalQuickProtocol {
   id: string;
@@ -795,6 +797,9 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
   const [inChamberId, setInChamberId] = useState<string>(consultation?.id || '');
   const [isQueueCollapsed, setIsQueueCollapsed] = useState<boolean>(false);
   const [sentForLabsPatientIds, setSentForLabsPatientIds] = useState<Set<string>>(() => new Set());
+  const [sentToLabPatientIds, setSentToLabPatientIds] = useState<Set<string>>(() => new Set());
+  const [labReturnReadyPatientIds, setLabReturnReadyPatientIds] = useState<Set<string>>(() => new Set());
+  const [needsInHouseSampling, setNeedsInHouseSampling] = useState<boolean>(true);
   const [chamberSessionState, setChamberSessionState] = useState<'ACTIVE' | 'IN_PROCEDURE' | 'PAUSED'>('ACTIVE');
   const [chronicMedsList, setChronicMedsList] = useState<ChronicMedicationItem[]>([]);
   const [examCategoryTab, setExamCategoryTab] = useState<string>('General');
@@ -2376,10 +2381,34 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
 
     const unsubLabReturn = hospitalEventBus.subscribe('LAB_REPORT_COMPLETED', (payload) => {
       const d = payload.data || {};
-      const targetId = d.encounterId || d.patientId || d.uhid;
+      const targetId = d.encounterId || d.patientId || d.uhid || d.orderId;
       if (targetId) {
-        setSentForLabsPatientIds((prev) => new Set([...prev, targetId]));
-        setStatusMessage(`🧪 LABS READY: ${d.patientName || 'Patient'} auto-inserted for Fast-Track Re-Visit!`);
+        setSentForLabsPatientIds((prev) => {
+          const s = new Set(prev);
+          if (d.encounterId) s.delete(d.encounterId);
+          if (d.patientId) s.delete(d.patientId);
+          return s;
+        });
+        setSentToLabPatientIds((prev) => {
+          const s = new Set(prev);
+          if (d.encounterId) s.delete(d.encounterId);
+          if (d.patientId) s.delete(d.patientId);
+          return s;
+        });
+        setLabReturnReadyPatientIds((prev) => new Set([...prev, targetId, d.encounterId, d.patientId, d.uhid].filter(Boolean)));
+        if (d.encounterId) {
+          encounterService.changeEncounterStatus({
+            tenantId: '55555555-5555-4555-8555-555555555555',
+            partnerId: '00000000-0000-4000-8000-000000000001',
+            organizationId: '00000000-0000-4000-8000-000000000002',
+            encounterId: d.encounterId,
+            newStatus: 'AWAITING_LAB_RETURN' as any,
+            actorId: 'lab',
+            actorRole: 'LAB_TECHNICIAN',
+            reason: 'Lab report authorized, patient returning to chamber'
+          } as any).catch(() => {});
+        }
+        setStatusMessage(`🧪 Lab Report Ready: ${d.patientName || 'Patient'} bumped to top of Chamber Queue!`);
         try {
           playChime(d.tokenNumber, d.patientName, chamberRoom);
         } catch {}
@@ -2389,10 +2418,34 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
 
     const unsubLabReturnReady = hospitalEventBus.subscribe('LAB_RETURN_READY', (payload) => {
       const d = payload.data || {};
-      const targetId = d.encounterId || d.patientId || d.uhid;
+      const targetId = d.encounterId || d.patientId || d.uhid || d.orderId;
       if (targetId) {
-        setSentForLabsPatientIds((prev) => new Set([...prev, targetId]));
-        setStatusMessage(`🧪 RE-VISIT READY: ${d.patientName || 'Patient'} in waiting hall with signed reports!`);
+        setSentForLabsPatientIds((prev) => {
+          const s = new Set(prev);
+          if (d.encounterId) s.delete(d.encounterId);
+          if (d.patientId) s.delete(d.patientId);
+          return s;
+        });
+        setSentToLabPatientIds((prev) => {
+          const s = new Set(prev);
+          if (d.encounterId) s.delete(d.encounterId);
+          if (d.patientId) s.delete(d.patientId);
+          return s;
+        });
+        setLabReturnReadyPatientIds((prev) => new Set([...prev, targetId, d.encounterId, d.patientId, d.uhid].filter(Boolean)));
+        if (d.encounterId) {
+          encounterService.changeEncounterStatus({
+            tenantId: '55555555-5555-4555-8555-555555555555',
+            partnerId: '00000000-0000-4000-8000-000000000001',
+            organizationId: '00000000-0000-4000-8000-000000000002',
+            encounterId: d.encounterId,
+            newStatus: 'AWAITING_LAB_RETURN' as any,
+            actorId: 'lab',
+            actorRole: 'LAB_TECHNICIAN',
+            reason: 'Lab return patient checked in'
+          } as any).catch(() => {});
+        }
+        setStatusMessage(`🧪 Lab Report Ready: ${d.patientName || 'Patient'} in waiting hall with signed reports!`);
         try {
           playChime(d.tokenNumber, d.patientName, chamberRoom);
         } catch {}
@@ -2400,10 +2453,19 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
       }
     });
 
+    const unsubSentForLabs = hospitalEventBus.subscribe('ENCOUNTER_SENT_FOR_LABS', (payload) => {
+      const d = payload.data || {};
+      const targetId = d.encounterId || d.consultationId || d.patientId;
+      if (targetId) {
+        setSentToLabPatientIds((prev) => new Set([...prev, targetId, d.encounterId].filter(Boolean)));
+      }
+    });
+
     return () => {
       unsubTriage();
       unsubLabReturn();
       unsubLabReturnReady();
+      unsubSentForLabs();
     };
   }, [chamberRoom]);
 
@@ -2783,6 +2845,26 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
       return updated;
     });
 
+    setSentToLabPatientIds((prev) => {
+      const updated = new Set(prev);
+      if (consultation?.id) updated.add(consultation?.id);
+      if (consultation?.encounterId) updated.add(consultation.encounterId);
+      return updated;
+    });
+
+    if (consultation?.encounterId) {
+      encounterService.changeEncounterStatus({
+        tenantId: consultation.tenantId || '55555555-5555-4555-8555-555555555555',
+        partnerId: (consultation as any)?.partnerId || '00000000-0000-4000-8000-000000000001',
+        organizationId: (consultation as any)?.organizationId || '00000000-0000-4000-8000-000000000002',
+        encounterId: consultation.encounterId,
+        newStatus: 'SENT_TO_LAB' as any,
+        actorId: chamberDoctor,
+        actorRole: 'DOCTOR',
+        reason: 'Patient sent to laboratory for sampling (Reports Review Queue)'
+      } as any).catch(() => {});
+    }
+
     if (!consultation) return;
     await onSaveDraft(
       {
@@ -3081,20 +3163,43 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
           : `Re-Visit #${repeatIndex + 1} Today`
         : null;
 
-      const isSentForLabs = sentForLabsPatientIds.has(cons ? cons.id : '') || sentForLabsPatientIds.has(enc.id);
-      const computedStatus = isSentForLabs
-        ? 'REPORTS_READY'
+      const isAwaitingLabReturn =
+        (enc.status as any) === 'AWAITING_LAB_RETURN' ||
+        (cons as any)?.consultationStatus === 'AWAITING_LAB_RETURN' ||
+        (cons as any)?.encounterStatus === 'AWAITING_LAB_RETURN' ||
+        labReturnReadyPatientIds.has(enc.id) ||
+        labReturnReadyPatientIds.has(cons?.id || '') ||
+        Boolean(enc.patientId && labReturnReadyPatientIds.has(enc.patientId)) ||
+        Boolean(enc.patientMrn && labReturnReadyPatientIds.has(enc.patientMrn));
+
+      const isSentForLabs =
+        !isAwaitingLabReturn && (
+          sentToLabPatientIds.has(enc.id) ||
+          sentToLabPatientIds.has(cons?.id || '') ||
+          sentForLabsPatientIds.has(cons ? cons.id : '') ||
+          sentForLabsPatientIds.has(enc.id) ||
+          (enc.status as any) === 'SENT_TO_LAB' ||
+          (cons as any)?.consultationStatus === 'SENT_TO_LAB' ||
+          (cons as any)?.encounterStatus === 'SENT_TO_LAB'
+        );
+
+      const computedStatus = isAwaitingLabReturn
+        ? 'AWAITING_LAB_RETURN'
+        : isSentForLabs
+        ? 'SENT_TO_LAB'
         : (isCurrent && isLocalSigned)
         ? 'COMPLETED'
         : (cons?.consultationStatus || enc.status || 'WAITING');
 
-      const customRepeatLabel = isSentForLabs
-        ? '🧪 Reports Awaiting Review'
+      const customRepeatLabel = isAwaitingLabReturn
+        ? '🧪 Lab Report Ready'
+        : isSentForLabs
+        ? '🧪 Sent to Lab'
         : repeatLabel;
 
       // Dynamic Priority Weighting (Gold Standard Pillar 1 with Emergency Auto-Priority)
       let priorityScore = 4000;
-      let priorityTier: 'EMERGENCY_STAT' | 'IN_CHAMBER' | 'CRITICAL_TRIAGE' | 'REPORTS_READY' | 'ROUTINE' | 'COMPLETED' = 'ROUTINE';
+      let priorityTier: 'EMERGENCY_STAT' | 'IN_CHAMBER' | 'AWAITING_LAB_RETURN' | 'CRITICAL_TRIAGE' | 'REPORTS_READY' | 'ROUTINE' | 'SENT_TO_LAB' | 'COMPLETED' = 'ROUTINE';
 
       const isEmergencyVisit =
         (enc as any)?.visitType === 'EMERGENCY' ||
@@ -3106,15 +3211,22 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
         priorityScore = 20000;
         priorityTier = 'EMERGENCY_STAT';
       } else if (isInChamber) {
-        priorityScore = 10000;
+        priorityScore = 15000;
         priorityTier = 'IN_CHAMBER';
+      } else if (isAwaitingLabReturn && computedStatus !== 'COMPLETED') {
+        // BUMP TOKEN TO TOP OF DOCTOR'S CHAMBER QUEUE!
+        priorityScore = 12000;
+        priorityTier = 'AWAITING_LAB_RETURN';
       } else if (computedStatus === 'COMPLETED') {
         priorityScore = 0;
         priorityTier = 'COMPLETED';
       } else if (news2Result.isTriageStatPromoted) {
         priorityScore = 8000;
         priorityTier = 'CRITICAL_TRIAGE';
-      } else if (isSentForLabs || computedStatus === 'REPORTS_READY') {
+      } else if (isSentForLabs || computedStatus === 'SENT_TO_LAB') {
+        priorityScore = 2000;
+        priorityTier = 'SENT_TO_LAB';
+      } else if ((computedStatus as any) === 'REPORTS_READY') {
         priorityScore = 6000;
         priorityTier = 'REPORTS_READY';
       }
@@ -3187,7 +3299,7 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
         isSlaBreached
       };
     });
-  }, [encounters, consultations, consultation, inChamberId, isLocalSigned, sentForLabsPatientIds, realtimeTriageVitals, averageConsultDurationMinutes]);
+  }, [encounters, consultations, consultation, inChamberId, isLocalSigned, sentForLabsPatientIds, sentToLabPatientIds, labReturnReadyPatientIds, realtimeTriageVitals, averageConsultDurationMinutes]);
 
   // Reactively compute next waiting candidate in real-time
   const computedNextWaiting = useMemo(() => {
@@ -3267,7 +3379,7 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
     let done = 0;
     queuePatients.forEach((p) => {
       if (p.status === 'COMPLETED') done++;
-      else if (p.status === 'REPORTS_READY') reportsReady++;
+      else if (p.status === 'AWAITING_LAB_RETURN' || p.status === 'REPORTS_READY') reportsReady++;
       else if (p.isInChamber) inChamber++;
       else waiting++;
     });
@@ -3578,6 +3690,49 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
       priority: t.priority || 'ROUTINE'
     }));
 
+    const hasLabTests = selectedTests.length > 0;
+    const shouldSendToLab = hasLabTests && needsInHouseSampling;
+    const targetEncounterStatus = shouldSendToLab ? 'SENT_TO_LAB' : 'COMPLETED';
+    const targetConsultationStatus = shouldSendToLab ? 'AWAITING_REPORTS' : 'COMPLETED';
+
+    if (shouldSendToLab) {
+      setSentToLabPatientIds((prev) => {
+        const updated = new Set(prev);
+        if (activePatient.encounterId) updated.add(activePatient.encounterId);
+        return updated;
+      });
+
+      hospitalEventBus.publish(
+        'ENCOUNTER_SENT_FOR_LABS',
+        'SoloDoctorOpdCockpitView',
+        {
+          consultationId: consultation?.id || '',
+          encounterId: activePatient.encounterId,
+          patientName: activePatient.name,
+          patientMobile: activePatient.phone,
+          patientMrn: activePatient.mrn,
+          tokenNumber: activePatient.token,
+          token: activePatient.token,
+          doctorName: chamberDoctor,
+          orderedLabs: structuredLabs
+        },
+        `🧪 Token #${activePatient.token} (${activePatient.name}) sent to In-House Lab for ${selectedTests.length} tests.`
+      );
+
+      if (activePatient.encounterId) {
+        encounterService.changeEncounterStatus({
+          tenantId: consultation?.tenantId || '55555555-5555-4555-8555-555555555555',
+          partnerId: (consultation as any)?.partnerId || '00000000-0000-4000-8000-000000000001',
+          organizationId: (consultation as any)?.organizationId || '00000000-0000-4000-8000-000000000002',
+          encounterId: activePatient.encounterId,
+          newStatus: 'SENT_TO_LAB' as any,
+          actorId: chamberDoctor,
+          actorRole: 'DOCTOR',
+          reason: 'Patient ordered in-house investigations, awaiting lab sampling & results'
+        } as any).catch((e: any) => console.warn('Encounter status sync failed:', e));
+      }
+    }
+
     setIsLocalSigned(true);
     const cToken = activePatient.token;
     const cName = activePatient.name;
@@ -3602,7 +3757,9 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
         doctorName: chamberDoctor,
         medications: structuredMeds,
         diagnoses: clinicalAssessment ? [clinicalAssessment] : [],
-        followUpDays: followUpDays
+        followUpDays: followUpDays,
+        encounterStatus: targetEncounterStatus,
+        sentToLab: shouldSendToLab
       },
       `Prescription issued for Token #${activePatient.token} (${activePatient.name}) by ${chamberDoctor}`
     );
@@ -3621,6 +3778,39 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
         },
         `Lab order created for Token #${activePatient.token} (${activePatient.name}): ${selectedTests.map((t) => t.testName).join(', ')}`
       );
+    }
+
+    // 3. ABDM M3 Milestone: Auto-generate & link NRCES FHIR R4 Prescription Bundle if ABHA is linked
+    const targetAbhaAddress = (activePatient as any).abhaAddress || (consultation as any)?.patientAbhaAddress;
+    if (targetAbhaAddress || (activePatient as any).isAbhaLinked) {
+      const effectiveAbha = targetAbhaAddress || 'patient@abdm';
+      const docHprId = 'IN-HPR-2026-9041';
+      abdmFhirService.generateFhirBundle(consultation?.tenantId || '55555555-5555-4555-8555-555555555555', {
+        profileType: 'Prescription',
+        patientAbhaAddress: effectiveAbha,
+        patientMrn: activePatient.mrn || `MRN-${activePatient.token}`,
+        careContextRef: `OPD-TOKEN-${activePatient.token}`,
+        authorPractitionerHprId: docHprId,
+        authorPractitionerName: chamberDoctor,
+        clinicalSummaryText: `OPD Consultation: ${clinicalAssessment || 'Clinical Examination'}. Diagnoses: ${icd10Code ? `${clinicalAssessment} (ICD-10: ${icd10Code})` : (clinicalAssessment || 'Routine Assessment')}. Meds: ${structuredMeds.map((m) => `${m.drugName} ${m.dose || ''} (${m.frequency || 'OD'})`).join(', ')}`
+      }).then((bundleRecord) => {
+        hospitalEventBus.publish(
+          'ABDM_FHIR_BUNDLE_GENERATED',
+          'SoloDoctorOpdCockpitView',
+          {
+            bundleId: bundleRecord.bundleId,
+            profileType: 'Prescription',
+            patientAbhaAddress: effectiveAbha,
+            patientMrn: activePatient.mrn,
+            careContextRef: `OPD-TOKEN-${activePatient.token}`,
+            doctorName: chamberDoctor,
+            medicationsCount: structuredMeds.length
+          },
+          `🇮🇳 ABDM M3 FHIR R4 Prescription (${bundleRecord.bundleId}) linked to ABHA ${effectiveAbha}`
+        );
+      }).catch((err) => {
+        console.warn('ABDM M3 FHIR Bundle auto-linking notice:', err);
+      });
     }
 
     try {
@@ -3642,14 +3832,19 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
 
     setNextWaitingPatient(nextWaiting || null);
     // Smooth zero-popup transition - doctor stays in flow
-    setStatusMessage(`✓ Prescription Signed & Dispatched for ${cToken} (${cName})! ${nextWaiting ? `Next waiting: ${nextWaiting.token} (${nextWaiting.patientName})` : 'Queue complete'}`);
+    if (shouldSendToLab) {
+      setStatusMessage(`🧪 Rx & Lab Orders Signed for ${cToken} (${cName})! Sent to In-House Lab (Awaiting Return). ${nextWaiting ? `Next waiting: ${nextWaiting.token} (${nextWaiting.patientName})` : 'Queue clear'}`);
+    } else {
+      setStatusMessage(`✓ Prescription Signed & Dispatched for ${cToken} (${cName})! ${nextWaiting ? `Next waiting: ${nextWaiting.token} (${nextWaiting.patientName})` : 'Queue complete'}`);
+    }
 
     // Immediate authoritative completion & counter dispatch
     if (onCompleteConsultation && consultation) {
       await onCompleteConsultation(
         {
-          ...(consultation as ConsultationDto),
-          consultationStatus: 'COMPLETED',
+          ...(consultation as any),
+          consultationStatus: targetConsultationStatus as any,
+          encounterStatus: targetEncounterStatus as any,
           patientName: activePatient.name,
           patientMrn: activePatient.mrn,
           patientGender: activePatient.gender,
@@ -4370,22 +4565,58 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
                     <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#10B981' }} />
                     IN CHAMBER
                   </span>
-                ) : pat.status === 'REPORTS_READY' ? (
+                ) : pat.status === 'AWAITING_LAB_RETURN' || pat.priorityTier === 'AWAITING_LAB_RETURN' ? (
                   <span
                     style={{
                       fontSize: '0.625rem',
                       fontWeight: 900,
-                      padding: '2px 6px',
+                      padding: '2px 8px',
                       borderRadius: '4px',
-                      backgroundColor: 'rgba(168, 85, 247, 0.25)',
-                      color: '#C084FC',
-                      border: '1px solid #A855F7',
+                      backgroundColor: 'rgba(56, 189, 248, 0.25)',
+                      color: '#38BDF8',
+                      border: '1px solid #0284C7',
+                      boxShadow: '0 0 10px rgba(56, 189, 248, 0.45)',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '4px'
                     }}
                   >
-                    🧪 LABS READY
+                    🧪 Lab Report Ready
+                  </span>
+                ) : pat.status === 'SENT_TO_LAB' || pat.priorityTier === 'SENT_TO_LAB' ? (
+                  <span
+                    style={{
+                      fontSize: '0.625rem',
+                      fontWeight: 800,
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                      color: '#FBBF24',
+                      border: '1px solid rgba(245, 158, 11, 0.4)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    🧪 Sent to Lab
+                  </span>
+                ) : pat.status === 'REPORTS_READY' ? (
+                  <span
+                    style={{
+                      fontSize: '0.625rem',
+                      fontWeight: 900,
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      backgroundColor: 'rgba(56, 189, 248, 0.25)',
+                      color: '#38BDF8',
+                      border: '1px solid #0284C7',
+                      boxShadow: '0 0 10px rgba(56, 189, 248, 0.45)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    🧪 Lab Report Ready
                   </span>
                 ) : pat.status === 'COMPLETED' ? (
                   <span style={{ fontSize: '0.625rem', color: '#10B981', fontWeight: 700 }}>
@@ -10286,34 +10517,63 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
 
               {/* Active Lab Orders Selected Tags */}
               {selectedTests.length > 0 && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', padding: '6px', borderRadius: '6px', backgroundColor: 'rgba(6, 182, 212, 0.1)', border: '1px solid rgba(6, 182, 212, 0.25)' }}>
-                  {selectedTests.map((t) => (
-                    <span
-                      key={t.investigationCatalogId || t.id || t.testName}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '6px', borderRadius: '6px', backgroundColor: 'rgba(6, 182, 212, 0.1)', border: '1px solid rgba(6, 182, 212, 0.25)' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                    {selectedTests.map((t) => (
+                      <span
+                        key={t.investigationCatalogId || t.id || t.testName}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          fontSize: '0.68rem',
+                          fontWeight: 700,
+                          backgroundColor: 'rgba(6, 182, 212, 0.25)',
+                          color: '#E0F2FE',
+                          padding: '2px 6px',
+                          borderRadius: '4px'
+                        }}
+                      >
+                        <span>{t.testName}</span>
+                        {!isSignedOrCompleted && (
+                          <button
+                            type="button"
+                            onClick={() => toggleInvestigation(t)}
+                            style={{ background: 'none', border: 'none', color: '#F87171', cursor: 'pointer', padding: 0, fontWeight: 900, fontSize: '0.7rem' }}
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </span>
+                    ))}
+                  </div>
+
+                  {!isSignedOrCompleted && (
+                    <label
                       style={{
-                        display: 'flex',
+                        display: 'inline-flex',
                         alignItems: 'center',
-                        gap: '4px',
-                        fontSize: '0.68rem',
+                        gap: '6px',
+                        fontSize: '0.72rem',
                         fontWeight: 700,
-                        backgroundColor: 'rgba(6, 182, 212, 0.25)',
-                        color: '#E0F2FE',
-                        padding: '2px 6px',
-                        borderRadius: '4px'
+                        color: needsInHouseSampling ? '#38BDF8' : '#94A3B8',
+                        cursor: 'pointer',
+                        backgroundColor: needsInHouseSampling ? 'rgba(6, 182, 212, 0.18)' : 'rgba(255, 255, 255, 0.04)',
+                        padding: '4px 8px',
+                        borderRadius: '5px',
+                        border: `1px solid ${needsInHouseSampling ? '#06B6D4' : 'rgba(255, 255, 255, 0.1)'}`
                       }}
+                      title="Hold encounter in SENT_TO_LAB status during phlebotomy, then fast-track return to chamber once reports are verified"
                     >
-                      <span>{t.testName}</span>
-                      {!isSignedOrCompleted && (
-                        <button
-                          type="button"
-                          onClick={() => toggleInvestigation(t)}
-                          style={{ background: 'none', border: 'none', color: '#F87171', cursor: 'pointer', padding: 0, fontWeight: 900, fontSize: '0.7rem' }}
-                        >
-                          ✕
-                        </button>
-                      )}
-                    </span>
-                  ))}
+                      <input
+                        type="checkbox"
+                        checked={needsInHouseSampling}
+                        onChange={(e) => setNeedsInHouseSampling(e.target.checked)}
+                        style={{ accentColor: '#06B6D4', cursor: 'pointer' }}
+                      />
+                      <span>🧪 In-House Sampling (Hold in Lab Queue & Return to Chamber Today)</span>
+                    </label>
+                  )}
                 </div>
               )}
 

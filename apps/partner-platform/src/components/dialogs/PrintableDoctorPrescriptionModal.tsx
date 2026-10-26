@@ -158,7 +158,7 @@ export const PrintableDoctorPrescriptionModal: React.FC<Props> = ({
             duration: `${m.duration} ${m.durationUnit?.toLowerCase() || 'days'}`,
             timing: m.beforeAfterFood?.replace(/_/g, ' '),
             instructions: m.instructions,
-            regionalTiming: bilingual.hindi || m.timing
+            regionalTiming: bilingual.hindi || (m as any).timing || m.beforeAfterFood
           };
         }),
         followUpDays: '7 Days',

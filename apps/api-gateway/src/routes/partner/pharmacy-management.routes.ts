@@ -64,6 +64,27 @@ export const DispenseSchema = z.object({
   items: z.array(DispenseItemSchema).min(1, 'At least one medication item is mandatory for dispensing')
 });
 
+export const ControlledSubstanceDispenseItemSchema = z.object({
+  dispenseDate: z.string().optional(),
+  invoiceNumber: z.string().trim().min(1, 'invoiceNumber is mandatory'),
+  prescriptionId: z.string().optional(),
+  patientName: z.string().trim().min(1, 'patientName is mandatory'),
+  patientUhid: z.string().optional(),
+  patientAddress: z.string().optional().default('Hospital OPD Patient'),
+  patientPhone: z.string().trim().min(1, 'patientPhone is mandatory'),
+  doctorName: z.string().trim().min(1, 'doctorName is mandatory'),
+  doctorRegNumber: z.string().trim().min(1, 'doctorRegNumber (MCI/NMC) is mandatory'),
+  hospitalName: z.string().optional(),
+  drugName: z.string().trim().min(1, 'drugName is mandatory'),
+  scheduleType: z.string().optional().default('SCHEDULE_H1'),
+  batchNumber: z.string().trim().min(1, 'batchNumber is mandatory'),
+  expiryDate: z.string().optional(),
+  quantityDispensed: z.string().trim().min(1, 'quantityDispensed is mandatory'),
+  pharmacistLicense: z.string().optional(),
+  pharmacistName: z.string().optional(),
+  metadata: z.record(z.any()).optional()
+});
+
 export const SyncOfflineInvoicesSchema = z.object({
   invoices: z.array(
     z.object({
@@ -240,6 +261,18 @@ export const pharmacyManagementRoutes: FastifyPluginAsync = async (fastify) => {
     }
   );
 
+  // 1.6 Pending Prescriptions Queue (Doctor Cockpit Live Stream)
+  fastify.get(
+    '/api/v1/partner/pharmacy/prescriptions/pending',
+    {
+      preHandler: [authenticate, requirePermission('pharmacy:orders', 'read')]
+    },
+    async (request) => {
+      const data = await pharmacyManagementService.getPendingPrescriptions(request.session);
+      return { success: true, data };
+    }
+  );
+
   // 2. Batch Inventory & FEFO
   fastify.get(
     '/api/v1/partner/pharmacy/batches',
@@ -320,6 +353,53 @@ export const pharmacyManagementRoutes: FastifyPluginAsync = async (fastify) => {
       const payload = parseResult.data as unknown as Omit<DispenseInput, 'tenantId' | 'pharmacistId' | 'pharmacistName'>;
       const data = await pharmacyManagementService.dispense(payload, request.session);
       reply.status(201);
+      return { success: true, data };
+    }
+  );
+
+  // 4.5 Statutory CDSCO Controlled Substance Register (Schedule H1, X, H - Rules 1945)
+  fastify.post(
+    '/api/v1/partner/pharmacy/controlled-substances/dispense',
+    {
+      preHandler: [authenticate, requirePermission('pharmacy:dispense', 'create')]
+    },
+    async (request, reply) => {
+      const body = request.body as any;
+      const rawRecords: any[] = Array.isArray(body)
+        ? body
+        : Array.isArray(body?.records)
+        ? body.records
+        : [body];
+
+      const savedRecords = [];
+      for (const item of rawRecords) {
+        const parseResult = ControlledSubstanceDispenseItemSchema.safeParse(item);
+        if (!parseResult.success) {
+          throw new AppError({
+            message: 'Invalid controlled substance dispense payload: ' + parseResult.error.issues.map((i) => i.message).join('; '),
+            code: ErrorCode.VALIDATION_ERROR,
+            statusCode: 400,
+            details: parseResult.error.issues.map((i) => ({ field: i.path.join('.'), message: i.message }))
+          });
+        }
+        const saved = await pharmacyManagementService.recordControlledSubstanceDispense(parseResult.data, request.session);
+        savedRecords.push(saved);
+      }
+
+      reply.status(201);
+      const isSingle = !Array.isArray(body) && !Array.isArray(body?.records);
+      return { success: true, data: isSingle ? savedRecords[0] : savedRecords };
+    }
+  );
+
+  fastify.get(
+    '/api/v1/partner/pharmacy/controlled-substances',
+    {
+      preHandler: [authenticate, requirePermission('pharmacy:inventory', 'read')]
+    },
+    async (request) => {
+      const query = request.query as { scheduleType?: string; fromDate?: string; toDate?: string };
+      const data = await pharmacyManagementService.getControlledSubstances(request.session, query);
       return { success: true, data };
     }
   );

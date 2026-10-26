@@ -76,10 +76,14 @@ export interface IPharmacyManagementService {
   createMedication(req: CreateMedicationRequest): Promise<MedicationCatalogDto>;
   updateMedication(req: UpdateCatalogMedicationRequest): Promise<MedicationCatalogDto>;
   getPrescriptionQueue(req: SearchPharmacyOrdersRequest): Promise<PharmacyPrescriptionDto[]>;
+  getPrescriptions(status?: string): Promise<PharmacyPrescriptionDto[]>;
+  getPendingPrescriptions(): Promise<PharmacyPrescriptionDto[]>;
   getPrescriptionById(tenantId: string, prescriptionId: string): Promise<PharmacyPrescriptionDto | null>;
   verifyPrescription(req: VerifyPrescriptionRequest): Promise<PharmacyPrescriptionDto>;
   reserveStock(req: ReserveStockRequest): Promise<PharmacyPrescriptionDto>;
-  dispenseMedication(req: DispenseMedicationRequest): Promise<PharmacyDispensingDto>;
+  dispenseMedication(req: DispenseMedicationRequest | any): Promise<PharmacyDispensingDto>;
+  recordControlledSubstanceDispense(record: any): Promise<any>;
+  getControlledSubstances(query?: { scheduleType?: string; fromDate?: string; toDate?: string }): Promise<any[]>;
   partialDispenseMedication(req: PartialDispenseMedicationRequest): Promise<PharmacyDispensingDto>;
   getInventory(tenantId: string, branchId?: string): Promise<PharmacyInventoryDto[]>;
   getBatches(tenantId: string, branchId?: string, medicationId?: string): Promise<PharmacyBatchDto[]>;
@@ -306,6 +310,27 @@ export class PharmacyManagementService implements IPharmacyManagementService {
     return [];
   }
 
+  async getPrescriptions(status?: string): Promise<PharmacyPrescriptionDto[]> {
+    try {
+      const endpoint = status === 'PENDING'
+        ? '/api/v1/partner/pharmacy/prescriptions/pending'
+        : status
+        ? `/api/v1/partner/pharmacy/prescriptions?status=${encodeURIComponent(status)}`
+        : '/api/v1/partner/pharmacy/prescriptions';
+      const res = await apiRequest<PharmacyPrescriptionDto[]>(endpoint);
+      if (res.success && Array.isArray(res.data)) {
+        return res.data;
+      }
+    } catch (e) {
+      console.warn('[Pharmacy] Failed to fetch prescriptions from server API, using local queue:', e);
+    }
+    return this.prescriptions.filter((p) => !status || p.status === status);
+  }
+
+  async getPendingPrescriptions(): Promise<PharmacyPrescriptionDto[]> {
+    return this.getPrescriptions('PENDING');
+  }
+
   async getPrescriptionById(tenantId: string, prescriptionId: string): Promise<PharmacyPrescriptionDto | null> {
     try {
       const res = await apiRequest<any>(`/api/v1/partner/pharmacy/prescriptions/${encodeURIComponent(prescriptionId)}`);
@@ -413,15 +438,39 @@ export class PharmacyManagementService implements IPharmacyManagementService {
     return rx;
   }
 
-  async dispenseMedication(req: DispenseMedicationRequest): Promise<PharmacyDispensingDto> {
+  async dispenseMedication(req: DispenseMedicationRequest | any): Promise<PharmacyDispensingDto> {
     try {
+      const payload: any = {
+        encounterId: req.encounterId,
+        patientId: req.patientId || (req as any).patientPhone || 'WALKIN-PATIENT',
+        doctorId: (req as any).doctorId,
+        prescriptionId: req.prescriptionId,
+        isPartial: (req as any).isPartial || false,
+        items: req.items.map((it: any) => ({
+          medicationId: it.medicationId,
+          batchId: it.batchId,
+          prescriptionItemId: it.prescriptionItemId,
+          quantity: it.quantity,
+          unitPrice: it.unitPrice
+        }))
+      };
       const res = await apiRequest<PharmacyDispensingDto>('/api/v1/partner/pharmacy/dispense', {
         method: 'POST',
-        body: JSON.stringify(req)
+        body: JSON.stringify(payload)
       });
       if (res.success && res.data) {
         this.dispensing.unshift(res.data);
         saveStored("docsearch_pharmacy_dispensing", this.dispensing);
+
+        // Atomically decrement in-memory batch stock for local reactive UI updates
+        for (const it of req.items) {
+          const b = this.batches.find((batch) => batch.id === it.batchId);
+          if (b) {
+            b.availableQuantity = Math.max(0, b.availableQuantity - it.quantity);
+            b.status = b.availableQuantity === 0 ? 'DEPLETED' : b.status;
+          }
+        }
+
         return res.data;
       }
       if (!isMockFallbackAllowed() && res.error) {
@@ -439,7 +488,7 @@ export class PharmacyManagementService implements IPharmacyManagementService {
     const dispensingId = crypto.randomUUID();
     const dispensingNumber = `DSP-2026-${String(this.dispensing.length + 1).padStart(6, '0')}`;
 
-    const dispensingItems = req.items.map((itemReq) => {
+    const dispensingItems = req.items.map((itemReq: any) => {
       const rxItem = rx.items.find((i) => i.id === itemReq.prescriptionItemId);
       if (!rxItem) throw new Error(`Prescription item ${itemReq.prescriptionItemId} not found`);
 
@@ -571,6 +620,62 @@ export class PharmacyManagementService implements IPharmacyManagementService {
       actorRole: req.actorRole,
       justification: req.justification
     });
+  }
+
+  async recordControlledSubstanceDispense(record: {
+    dispenseDate?: string | undefined;
+    invoiceNumber: string;
+    prescriptionId?: string | undefined;
+    patientName: string;
+    patientUhid?: string | undefined;
+    patientAddress?: string | undefined;
+    patientPhone: string;
+    doctorName: string;
+    doctorRegNumber: string;
+    hospitalName?: string | undefined;
+    drugName: string;
+    scheduleType?: string | undefined;
+    batchNumber: string;
+    expiryDate?: string | undefined;
+    quantityDispensed: string;
+    pharmacistLicense?: string | undefined;
+    pharmacistName?: string | undefined;
+    metadata?: Record<string, any> | undefined;
+  }): Promise<any> {
+    try {
+      const res = await apiRequest<any>('/api/v1/partner/pharmacy/controlled-substances/dispense', {
+        method: 'POST',
+        body: JSON.stringify(record)
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+      if (!isMockFallbackAllowed() && res.error) {
+        throw new Error(res.error.message || 'Failed to persist controlled substance record on server');
+      }
+    } catch (e) {
+      if (!isMockFallbackAllowed()) {
+        throw e;
+      }
+    }
+    return record;
+  }
+
+  async getControlledSubstances(query?: { scheduleType?: string; fromDate?: string; toDate?: string }): Promise<any[]> {
+    try {
+      const q = new URLSearchParams();
+      if (query?.scheduleType) q.set('scheduleType', query.scheduleType);
+      if (query?.fromDate) q.set('fromDate', query.fromDate);
+      if (query?.toDate) q.set('toDate', query.toDate);
+      const queryString = q.toString() ? `?${q.toString()}` : '';
+      const res = await apiRequest<any[]>(`/api/v1/partner/pharmacy/controlled-substances${queryString}`);
+      if (res.success && Array.isArray(res.data)) {
+        return res.data;
+      }
+    } catch (e) {
+      console.warn('[Pharmacy] Failed to query controlled substances from server API:', e);
+    }
+    return [];
   }
 
   async getInventory(tenantId: string, branchId?: string): Promise<PharmacyInventoryDto[]> {
@@ -1356,7 +1461,7 @@ export class PharmacyManagementService implements IPharmacyManagementService {
             prescriptionRequired: false,
             status: 'ACTIVE',
             therapeuticClass: 'Wholesale Formulary',
-            storageConditions: 'Store below 25°C in a dry place',
+            storageConditions: 'Store below 25Â°C in a dry place',
             variants: [],
             createdAt: now,
             updatedAt: now
@@ -1834,7 +1939,7 @@ export class PharmacyManagementService implements IPharmacyManagementService {
           prescriptionRequired: false,
           status: 'ACTIVE',
           therapeuticClass: 'DEVELOPMENT_TEST',
-          storageConditions: 'Store below 25°C',
+          storageConditions: 'Store below 25Â°C',
           variants: [],
           createdAt: now,
           updatedAt: now

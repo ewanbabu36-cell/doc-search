@@ -39,6 +39,53 @@ function saveStored<T>(key: string, data: T[]): void {
   }
 }
 
+export interface IpdBillingSummary {
+  admissionId: string;
+  admissionNumber: string;
+  patientId: string;
+  patientName: string;
+  admissionDate: string;
+  dischargeDate: string | null;
+  totalDays: number;
+  bedCharges: {
+    days: number;
+    dailyRate: number;
+    totalBedAmount: number;
+    bedsOccupied: Array<{
+      bedId: string;
+      bedCode: string;
+      wardName: string;
+      rate: number;
+    }>;
+  };
+  doctorRoundsCharges: {
+    count: number;
+    ratePerRound: number;
+    totalRoundsAmount: number;
+  };
+  nursingCareCharges: {
+    days: number;
+    dailyRate: number;
+    totalNursingAmount: number;
+  };
+  pharmacyCharges: {
+    itemsCount: number;
+    totalPharmacyAmount: number;
+  };
+  labCharges: {
+    ordersCount: number;
+    totalLabAmount: number;
+  };
+  radiologyCharges: {
+    ordersCount: number;
+    totalRadiologyAmount: number;
+  };
+  subtotalAmount: number;
+  taxAmount: number;
+  discountAmount: number;
+  totalPayableAmount: number;
+}
+
 import type {
   InpatientOverviewMetricsDto,
   InpatientAnalyticsDto,
@@ -149,6 +196,8 @@ export interface IInpatientManagementService {
   releaseBed(req: ReleaseBedRequest): Promise<InpatientBedDto>;
   completeCleaning(req: CompleteCleaningRequest & { bedId?: string }): Promise<InpatientBedDto>;
   directAdmitPatient(req: DirectAdmitPatientRequest): Promise<InpatientAdmissionDto>;
+  getIpdBillingSummary(admissionId: string): Promise<IpdBillingSummary>;
+  generateConsolidatedIpdBill(admissionId: string): Promise<{ invoice: any; items: any[]; summary: IpdBillingSummary }>;
 }
 
 export interface DirectAdmitPatientRequest {
@@ -1297,11 +1346,21 @@ export class MockInpatientManagementService implements IInpatientManagementServi
       bed.status = 'OCCUPIED';
       bed.currentPatientName = adm.patientName;
       bed.currentPatientMrn = adm.patientMrn;
+
+      bed.currentPatientId = adm.patientId;
+      bed.currentAdmissionId = adm.id;
+      bed.lastOccupiedAt = new Date().toISOString();
+      bed.updatedAt = new Date().toISOString();
+      broadcastBedState(this.beds);
+
     }
     adm.wardId = req.wardId;
     adm.wardName = ward?.wardName || adm.wardName;
     adm.bedId = req.bedId;
     adm.bedCode = bed?.bedCode || adm.bedCode;
+    adm.status = 'ADMITTED';
+    saveStored("docsearch_inpatient_beds", this.beds);
+    saveStored("docsearch_inpatient_admissions", this.admissions);
     adm.updatedAt = new Date().toISOString();
     this.addTrace(req.allocatedBy, 'NURSE_SUPERVISOR', 'ALLOCATE_BED', 'INPATIENT_ADMISSION', adm.admissionNumber, 'Bed allocated');
     return adm;
@@ -1711,6 +1770,39 @@ export class MockInpatientManagementService implements IInpatientManagementServi
     const adm = this.admissions.find((a) => a.id === req.admissionId);
     if (adm) {
       adm.dischargeSummaryFinalized = true;
+      adm.status = 'DISCHARGED';
+      const bed = this.beds.find((b) => b.id === adm.bedId || b.bedCode === adm.bedCode);
+      if (bed) {
+        bed.status = 'CLEANING';
+        bed.currentPatientName = undefined;
+        bed.currentPatientMrn = undefined;
+        bed.currentAdmissionId = undefined;
+        bed.currentPatientId = undefined;
+        bed.updatedAt = new Date().toISOString();
+
+        const turnaround: InpatientBedTurnaroundDto = {
+          id: 'trn-' + Math.random().toString(36).substring(2, 9),
+          tenantId: req.tenantId,
+          partnerId: req.partnerId,
+          organizationId: req.organizationId,
+          branchId: req.branchId,
+          bedId: bed.id,
+          bedCode: bed.bedCode,
+          wardId: bed.wardId,
+          turnaroundNumber: `CLN-${Date.now().toString().slice(-6)}`,
+          cleaningType: 'TERMINAL_DISCHARGE_DISINFECTION',
+          status: 'PENDING_CLEANING',
+          environmentalInspectionPassed: false,
+          requestedAt: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        this.bedTurnarounds.unshift(turnaround);
+        saveStored("docsearch_inpatient_beds", this.beds);
+        saveStored("docsearch_inpatient_admissions", this.admissions);
+        saveStored("docsearch_inpatient_bed_turnarounds", this.bedTurnarounds);
+        broadcastBedState(this.beds);
+      }
     }
     const summary: InpatientDischargeSummaryDto = {
       id: 'sum-' + Math.random().toString(36).substring(2, 9),
@@ -1915,6 +2007,95 @@ export class MockInpatientManagementService implements IInpatientManagementServi
     this.saveTenantAdmissions(req.tenantId);
     this.addTrace(req.admittingDoctorName, 'PHYSICIAN', 'DIRECT_ADMIT', 'INPATIENT_BED', bed?.bedCode || req.bedId, req.provisionalDiagnosis);
     return newAdmission;
+  }
+
+  async getIpdBillingSummary(admissionId: string): Promise<IpdBillingSummary> {
+    const adm = this.admissions.find((a) => a.id === admissionId);
+    const admittedAt = adm?.admissionDateTime ? new Date(adm.admissionDateTime) : new Date(Date.now() - 3 * 86400000);
+    const totalDays = Math.max(1, Math.ceil((Date.now() - admittedAt.getTime()) / (1000 * 60 * 60 * 24)));
+    const bed = adm?.bedId ? this.beds.find((b) => b.id === adm.bedId) : null;
+    const dailyRate = bed?.dailyChargeRate ? Number(bed.dailyChargeRate) : 1500;
+    const totalBedAmount = totalDays * dailyRate;
+    const ratePerRound = 500;
+    const roundsCount = 2;
+    const totalRoundsAmount = roundsCount * ratePerRound;
+    const nursingDailyRate = 300;
+    const totalNursingAmount = totalDays * nursingDailyRate;
+    const pharmacyCharges = { itemsCount: 3, totalPharmacyAmount: 640 };
+    const labCharges = { ordersCount: 2, totalLabAmount: 750 };
+    const radiologyCharges = { ordersCount: 0, totalRadiologyAmount: 0 };
+    const subtotalAmount = totalBedAmount + totalRoundsAmount + totalNursingAmount + pharmacyCharges.totalPharmacyAmount + labCharges.totalLabAmount;
+    const taxAmount = Number((subtotalAmount * 0.05).toFixed(2));
+    const discountAmount = 0;
+    const totalPayableAmount = Number((subtotalAmount + taxAmount - discountAmount).toFixed(2));
+
+    return {
+      admissionId,
+      admissionNumber: adm?.admissionNumber || `ADM-${admissionId.slice(0, 6)}`,
+      patientId: adm?.patientId || 'pat-demo',
+      patientName: adm?.patientName || 'Inpatient Patient',
+      admissionDate: admittedAt.toISOString(),
+      dischargeDate: null,
+      totalDays,
+      bedCharges: {
+        days: totalDays,
+        dailyRate,
+        totalBedAmount,
+        bedsOccupied: bed ? [{
+          bedId: bed.id,
+          bedCode: bed.bedCode,
+          wardName: bed.wardName || 'Inpatient Ward',
+          rate: dailyRate
+        }] : []
+      },
+      doctorRoundsCharges: {
+        count: roundsCount,
+        ratePerRound,
+        totalRoundsAmount
+      },
+      nursingCareCharges: {
+        days: totalDays,
+        dailyRate: nursingDailyRate,
+        totalNursingAmount
+      },
+      pharmacyCharges,
+      labCharges,
+      radiologyCharges,
+      subtotalAmount,
+      taxAmount,
+      discountAmount,
+      totalPayableAmount
+    };
+  }
+
+  async generateConsolidatedIpdBill(admissionId: string): Promise<{ invoice: any; items: any[]; summary: IpdBillingSummary }> {
+    const summary = await this.getIpdBillingSummary(admissionId);
+    const adm = this.admissions.find((a) => a.id === admissionId);
+    if (adm) {
+      adm.billingCleared = true;
+      this.saveTenantAdmissions(adm.tenantId);
+    }
+    const invoiceId = 'inv-' + Math.random().toString(36).substring(2, 9);
+    const invoiceNumber = `INV-IPD-${Math.floor(100000 + Math.random() * 900000)}`;
+    const invoice = {
+      id: invoiceId,
+      invoiceNumber,
+      status: 'ISSUED',
+      patientId: summary.patientId,
+      subtotal: summary.subtotalAmount,
+      taxTotal: summary.taxAmount,
+      discountTotal: summary.discountAmount,
+      totalAmount: summary.totalPayableAmount,
+      issuedAt: new Date().toISOString()
+    };
+    const items = [
+      { id: 'item-bed', serviceCode: 'IPD_BED', description: `Bed Occupancy (${summary.bedCharges.days} days)`, netAmount: summary.bedCharges.totalBedAmount },
+      { id: 'item-nursing', serviceCode: 'IPD_NURSING', description: `Nursing Care (${summary.nursingCareCharges.days} days)`, netAmount: summary.nursingCareCharges.totalNursingAmount },
+      { id: 'item-rounds', serviceCode: 'IPD_ROUNDS', description: `Doctor Rounds (${summary.doctorRoundsCharges.count} rounds)`, netAmount: summary.doctorRoundsCharges.totalRoundsAmount },
+      { id: 'item-pharmacy', serviceCode: 'IPD_PHARMACY', description: `Pharmacy Medicines`, netAmount: summary.pharmacyCharges.totalPharmacyAmount },
+      { id: 'item-lab', serviceCode: 'IPD_LAB', description: `Pathology Tests`, netAmount: summary.labCharges.totalLabAmount }
+    ];
+    return { invoice, items, summary };
   }
 }
 
@@ -2290,6 +2471,34 @@ export class InpatientManagementService extends MockInpatientManagementService i
     }
     return super.recordNursingNote(req);
   }
+
+  override async getIpdBillingSummary(admissionId: string): Promise<IpdBillingSummary> {
+    try {
+      const res = await apiRequest<IpdBillingSummary>(`/api/v1/partner/inpatient/admissions/${admissionId}/billing-summary`);
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
+    return super.getIpdBillingSummary(admissionId);
+  }
+
+  override async generateConsolidatedIpdBill(admissionId: string): Promise<{ invoice: any; items: any[]; summary: IpdBillingSummary }> {
+    try {
+      const res = await apiRequest<{ invoice: any; items: any[]; summary: IpdBillingSummary }>(
+        `/api/v1/partner/inpatient/admissions/${admissionId}/generate-bill`,
+        { method: 'POST' }
+      );
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
+    }
+    return super.generateConsolidatedIpdBill(admissionId);
+  }
+
 }
 
 export const inpatientManagementService = new InpatientManagementService();

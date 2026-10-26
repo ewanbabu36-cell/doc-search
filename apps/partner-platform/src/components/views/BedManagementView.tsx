@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Button, Input, Select, Badge } from '@docsearch/ui-kit';
-import type { InpatientBedDto, InpatientWardDto } from '@docsearch/api-contracts';
+import type { InpatientBedDto, InpatientWardDto, InpatientAdmissionRequestDto } from '@docsearch/api-contracts';
 import { PrintableBedsideQrCardModal } from '../dialogs/PrintableBedsideQrCardModal.js';
 
 export interface BedManagementViewProps {
@@ -14,12 +14,17 @@ export interface BedManagementViewProps {
   onOpenQuickAdmit?: (bed: InpatientBedDto) => void;
   onCompleteCleaning?: (bed: InpatientBedDto) => void;
   onSelectBed?: (bed: InpatientBedDto) => void;
+  requests?: InpatientAdmissionRequestDto[];
+  admissionRequests?: InpatientAdmissionRequestDto[];
+  onAllocateBedRequest?: (req: InpatientAdmissionRequestDto) => void;
   facilityName?: string | undefined;
 }
 
 export const BedManagementView: React.FC<BedManagementViewProps> = ({
   beds = [],
   wards = [],
+  requests = [],
+  admissionRequests = [],
   onOpenCreateBed,
   onOpenEditBed,
   onOpenBlockBed,
@@ -28,6 +33,7 @@ export const BedManagementView: React.FC<BedManagementViewProps> = ({
   onOpenQuickAdmit,
   onCompleteCleaning,
   onSelectBed,
+  onAllocateBedRequest,
   facilityName
 }) => {
   const [selectedWard, setSelectedWard] = useState('ALL');
@@ -37,6 +43,11 @@ export const BedManagementView: React.FC<BedManagementViewProps> = ({
 
   const safeBeds = Array.isArray(beds) ? beds : [];
   const safeWards = Array.isArray(wards) ? wards : [];
+  const rawRequests = (admissionRequests && admissionRequests.length > 0) ? admissionRequests : requests;
+  const safeRequests = Array.isArray(rawRequests) ? rawRequests : [];
+  const pendingRequests = safeRequests.filter(
+    (r) => r && (String(r.status) === 'PENDING' || r.status === 'SUBMITTED' || r.status === 'BED_PENDING' || r.status === 'UNDER_REVIEW' || !r.status)
+  );
 
   const filtered = safeBeds.filter((b) => {
     if (!b) return false;
@@ -106,6 +117,92 @@ export const BedManagementView: React.FC<BedManagementViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Active Stat Admission Orders from OPD Cockpit */}
+      {pendingRequests.length > 0 && (
+        <div
+          data-testid="admission-requisitions-banner"
+          style={{
+            backgroundColor: 'rgba(239, 68, 68, 0.08)',
+            border: '2px solid rgba(239, 68, 68, 0.4)',
+            borderRadius: '12px',
+            padding: '14px 18px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '1.4rem' }}>🚨</span>
+              <div>
+                <strong style={{ fontSize: '1rem', color: '#F87171' }}>
+                  Active Admission Requisitions from Doctor OPD Cockpit ({pendingRequests.length} Pending)
+                </strong>
+                <p style={{ margin: 0, fontSize: '0.78rem', color: '#94A3B8' }}>
+                  Stat IPD admission orders dispatched from physician chambers awaiting bedside allocation.
+                </p>
+              </div>
+            </div>
+            <span style={{ backgroundColor: '#EF4444', color: '#FFF', fontSize: '0.72rem', fontWeight: 800, padding: '3px 10px', borderRadius: '4px' }}>
+              OPD DISPATCH ACTIVE
+            </span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '12px' }}>
+            {pendingRequests.map((req) => (
+              <Card
+                key={req.id}
+                data-testid={`admission-requisition-card-${req.id}`}
+                style={{
+                  padding: '12px 16px',
+                  backgroundColor: '#0F172A',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <strong style={{ fontSize: '0.95rem', color: '#F8FAFC' }}>
+                    👤 {req.patientName || 'Emergency Patient'}
+                  </strong>
+                  <Badge variant={req.priority === 'EMERGENCY' ? 'danger' : 'warning'}>
+                    {req.priority || 'EMERGENCY'}
+                  </Badge>
+                </div>
+                <div style={{ fontSize: '0.78rem', color: '#94A3B8' }}>
+                  MRN/Token: <span style={{ color: '#38BDF8', fontWeight: 700 }}>{req.patientMrn || (req as any).tokenNumber || 'STAT'}</span>
+                  {' • '}Target: <strong style={{ color: '#E2E8F0' }}>{(req as any).targetWard || req.requestedWardType || 'ICU'}</strong>
+                </div>
+                <div style={{ fontSize: '0.78rem', color: '#CBD5E1', backgroundColor: 'rgba(255,255,255,0.04)', padding: '6px 10px', borderRadius: '6px' }}>
+                  <strong>Dx:</strong> {req.provisionalDiagnosis || 'Acute clinical indication requiring bed'}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '4px' }}>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    data-testid={`allocate-bed-btn-${req.id}`}
+                    onClick={() => onAllocateBedRequest && onAllocateBedRequest(req)}
+                    style={{
+                      backgroundColor: '#10B981',
+                      borderColor: '#10B981',
+                      fontWeight: 800,
+                      fontSize: '0.78rem',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    <span>🛏️</span>
+                    <span>Allocate Bed</span>
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Ward Department Selector Tabs */}
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>

@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { hospitalEventBus } from '../../services/hospital-event-bus.js';
+import { abdmFhirService } from '../../services/abdm-fhir-service.js';
 import { getUnifiedPartnerProfile } from '../../utils/roleProfileResolver.js';
 
 export interface AbdmScanProfile {
@@ -20,7 +21,7 @@ export interface AbdmScanAndShareModalProps {
   isOpen: boolean;
   onClose: () => void;
   hospitalName?: string;
-  onRegisterSuccess?: (tokenNumber: number, patientName: string) => void;
+  onRegisterSuccess?: (tokenNumber: number, patientName: string, profile?: AbdmScanProfile) => void;
 }
 
 export const AbdmScanAndShareModal: React.FC<AbdmScanAndShareModalProps> = ({
@@ -92,7 +93,7 @@ export const AbdmScanAndShareModal: React.FC<AbdmScanAndShareModalProps> = ({
     setTimeout(() => setSuccessToast(null), 4000);
   };
 
-  const handleGenerateTokenForProfile = (profile: AbdmScanProfile) => {
+  const handleGenerateTokenForProfile = async (profile: AbdmScanProfile) => {
     const token = nextTokenNum;
     setNextTokenNum((prev) => prev + 1);
 
@@ -101,19 +102,59 @@ export const AbdmScanAndShareModal: React.FC<AbdmScanAndShareModalProps> = ({
       prev.map((p) => (p.abhaNumber === profile.abhaNumber ? { ...p, status: 'TOKEN_GENERATED', generatedToken: token } : p))
     );
 
-    // Publish to Hospital Event Bus
+    const docName = partnerProfile.doctorName ? `${partnerProfile.doctorName} (OPD)` : 'Consulting Physician';
+    const patientUhid = `UHID-2026-${token.toString().padStart(4, '0')}`;
+    const patientAge = new Date().getFullYear() - new Date(profile.dob).getFullYear();
+
+    // 1. Persist to ABDM M2 Scan & Share tokens and audit logs
+    try {
+      await abdmFhirService.processScanAndShare('default-tenant', {
+        patientAbhaNumber: profile.abhaNumber,
+        patientAbhaAddress: profile.abhaAddress,
+        patientName: profile.name,
+        gender: profile.gender,
+        dob: profile.dob,
+        mobile: profile.mobile,
+        scannedCounterName: 'Counter 01 (Front Desk OPD)',
+        assignedOpdDepartment: 'General Medicine',
+        assignedDoctorName: docName
+      });
+    } catch (e) {
+      console.warn('ABDM Scan & Share token recording fallback:', e);
+    }
+
+    // 2. Link initial ABDM M2 Care Context for OPD encounter
+    try {
+      await abdmFhirService.linkCareContext('default-tenant', {
+        abhaAddress: profile.abhaAddress,
+        patientMrn: patientUhid,
+        patientName: profile.name,
+        careContextType: 'OPD_CONSULTATION',
+        careContextReference: `OPD-TOKEN-${token}`,
+        displayTitle: `OPD Consultation Token #${token}`,
+        doctorName: docName,
+        departmentName: 'General Medicine'
+      });
+    } catch (e) {
+      console.warn('ABDM Care Context linking fallback:', e);
+    }
+
+    // 3. Set Active Patient & publish PATIENT_SELECTED
     const activePatient = {
       id: `pat-abdm-${token}`,
-      uhid: `UHID-2026-${token.toString().padStart(4, '0')}`,
+      uhid: patientUhid,
       name: profile.name,
-      age: new Date().getFullYear() - new Date(profile.dob).getFullYear(),
+      age: patientAge,
       gender: profile.gender,
       phone: profile.mobile,
       bloodGroup: 'B+',
       opdToken: token,
-      doctorName: partnerProfile.doctorName ? `${partnerProfile.doctorName} (OPD)` : 'Consulting Physician',
+      doctorName: docName,
       diagnosis: 'OPD Consultation (ABDM Fast-Track)',
-      insuranceProvider: 'ABHA Linked • PM-JAY Verified'
+      insuranceProvider: 'ABHA Linked • PM-JAY Verified',
+      isAbhaLinked: true,
+      abhaAddress: profile.abhaAddress,
+      abhaNumber: profile.abhaNumber
     };
 
     hospitalEventBus.setActivePatient(activePatient, 'AbdmScanAndShare');
@@ -124,10 +165,35 @@ export const AbdmScanAndShareModal: React.FC<AbdmScanAndShareModalProps> = ({
       `ABDM Fast-Track OPD Token #${token} generated for ${profile.name} (5-Second Check-in)`
     );
 
+    // 4. Emit canonical TOKEN_GENERATED event across Hospital LAN (TV display & Doctor Cockpit)
+    hospitalEventBus.publish(
+      'TOKEN_GENERATED',
+      'AbdmScanAndShare',
+      {
+        token,
+        tokenNumber: token,
+        encounterId: `enc-abdm-${token}`,
+        patientId: activePatient.id,
+        patientName: profile.name,
+        patientMrn: activePatient.uhid,
+        patientMobile: profile.mobile,
+        doctorName: docName,
+        department: 'General Medicine',
+        chamber: 'Room 101',
+        visitType: 'WALK_IN',
+        priorityTier: 'ROUTINE',
+        isAbhaLinked: true,
+        abhaAddress: profile.abhaAddress,
+        abhaNumber: profile.abhaNumber,
+        gender: profile.gender,
+        age: patientAge
+      },
+      `🇮🇳 ABDM Scan & Share Token #${token} generated for ${profile.name} (${profile.abhaAddress})`
+    );
 
     setSuccessToast(`✓ OPD Token #${token} Generated for ${profile.name}! Sent to Doctor Desk & TV Display.`);
     if (onRegisterSuccess) {
-      onRegisterSuccess(token, profile.name);
+      onRegisterSuccess(token, profile.name, profile);
     }
   };
 

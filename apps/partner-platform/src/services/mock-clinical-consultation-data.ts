@@ -21,9 +21,9 @@ export const isProductionClinicPilot = (): boolean => {
     if (override === 'production') return true;
     if (override === 'mock') return false;
   }
-  const appEnv = (import.meta as any)?.env?.VITE_APP_ENV;
-  const mode = (import.meta as any)?.env?.MODE;
-  const nodeEnv = typeof process !== 'undefined' ? process.env?.VITE_APP_ENV || process.env?.NODE_ENV : '';
+  const appEnv = (import.meta as any)?.env?.['VITE_APP_ENV'];
+  const mode = (import.meta as any)?.env?.['MODE'];
+  const nodeEnv = typeof process !== 'undefined' ? (process.env as any)?.['VITE_APP_ENV'] || (process.env as any)?.['NODE_ENV'] : '';
   return appEnv === 'production' || mode === 'production' || nodeEnv === 'production';
 };
 
