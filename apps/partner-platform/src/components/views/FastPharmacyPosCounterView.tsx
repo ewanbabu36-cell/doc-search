@@ -143,14 +143,14 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
   const [isCameraOcrModalOpen, setIsCameraOcrModalOpen] = useState(false);
   const [pendingDoctorRxCount, setPendingDoctorRxCount] = useState<number>(0);
 
-  // âš–ï¸ CDSCO Mandatory Prescriber & Drug Inspector Audit Vault State
+  // ⚖️ CDSCO Mandatory Prescriber & Drug Inspector Audit Vault State
   const [isPrescriberPromptOpen, setIsPrescriberPromptOpen] = useState(false);
   const [prescriberTriggerDrug, setPrescriberTriggerDrug] = useState<string>('Controlled Medication');
   const [prescriberTriggerSchedule, setPrescriberTriggerSchedule] = useState<ControlledScheduleCategory>('SCHEDULE_H1');
   const [isCdscoAuditVaultModalOpen, setIsCdscoAuditVaultModalOpen] = useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
 
-  // ðŸ“¡ Offline-First PWA & Background Sync State
+  // 📡 Offline-First PWA & Background Sync State
   const [isOfflineMode, setIsOfflineMode] = useState<boolean>(() => pharmacyOfflineStorageService.isOffline());
   const [pendingOfflineBillsCount, setPendingOfflineBillsCount] = useState<number>(0);
   const [syncEngineState, setSyncEngineState] = useState<SyncEngineState>('IDLE');
@@ -305,7 +305,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
     setCart(newCartItems);
     setNotification({
       type: 'success',
-      message: `âš¡ Imported ${newCartItems.length} prescribed items from ${payload.doctorName} for ${payload.patientName}!`
+      message: `⚡ Imported ${newCartItems.length} prescribed items from ${payload.doctorName} for ${payload.patientName}!`
     });
     setTimeout(() => setNotification(null), 5000);
   };
@@ -350,7 +350,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
 
     setNotification({
       type: 'success',
-      message: `âš¡ Vision OCR imported ${newCartItems.length} items from Dr. ${payload.doctorName} for ${payload.patientName}! Press Enter to print tax invoice.`
+      message: `⚡ Vision OCR imported ${newCartItems.length} items from Dr. ${payload.doctorName} for ${payload.patientName}! Press Enter to print tax invoice.`
     });
     setTimeout(() => setNotification(null), 5000);
   };
@@ -606,7 +606,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
         setActiveCartItemId(newCartItems[0]!.id);
         setNotification({
           type: 'success',
-          message: `âš¡ Loaded ${newCartItems.length} prescribed medications from ${docName} for ${pName}! Ready for fast checkout.`
+          message: `⚡ Loaded ${newCartItems.length} prescribed medications from ${docName} for ${pName}! Ready for fast checkout.`
         });
         setTimeout(() => setNotification(null), 5000);
       }
@@ -677,7 +677,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
 
     setNotification({
       type: 'success',
-      message: `âœ“ Computer Vision Counted ${res.detectedCount} ${res.isLoose ? 'Loose Tabs' : 'Strip'} for ${med.brandName} (Batch: ${res.batchNumber}) with Zero Human Error!`
+      message: `✓ Computer Vision Counted ${res.detectedCount} ${res.isLoose ? 'Loose Tabs' : 'Strip'} for ${med.brandName} (Batch: ${res.batchNumber}) with Zero Human Error!`
     });
     setTimeout(() => setNotification(null), 4000);
   };
@@ -969,7 +969,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
     if (isLooseItem) {
       setNotification({
         type: 'success',
-        message: `âš¡ Loose Fraction Calculator: Added ${addQty} Tabs of ${med.brandName} @ â‚¹${unitRate.toFixed(2)}/tab (Total â‚¹${(unitRate * addQty).toFixed(2)})`
+        message: `⚡ Loose Fraction Calculator: Added ${addQty} Tabs of ${med.brandName} @ ₹${unitRate.toFixed(2)}/tab (Total ₹${(unitRate * addQty).toFixed(2)})`
       });
       setTimeout(() => setNotification(null), 3000);
     }
@@ -1053,7 +1053,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
             setCart(mappedCartItems);
             setNotification({
               type: 'success',
-              message: `âš¡ Barcode Scanned: Loaded Prescription for ${matchedRx.patientName} (Token #${matchedRx.tokenNumber || cleanToken}) with ${mappedCartItems.length} items!`
+              message: `⚡ Barcode Scanned: Loaded Prescription for ${matchedRx.patientName} (Token #${matchedRx.tokenNumber || cleanToken}) with ${mappedCartItems.length} items!`
             });
             setTimeout(() => setNotification(null), 5000);
             return;
@@ -1061,7 +1061,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
 
           setNotification({
             type: 'success',
-            message: `âš¡ Barcode Scanned: Identified Patient ${matchedRx.patientName} (Token #${cleanToken})!`
+            message: `⚡ Barcode Scanned: Identified Patient ${matchedRx.patientName} (Token #${cleanToken})!`
           });
           setTimeout(() => setNotification(null), 4000);
           return;
@@ -1224,7 +1224,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
 
       setNotification({
         type: 'success',
-        message: `âš¡ Hardware Scanned: ${matchedMed.brandName} (Batch: ${targetBatch.batchNumber}) added to POS cart!`
+        message: `⚡ Hardware Scanned: ${matchedMed.brandName} (Batch: ${targetBatch.batchNumber}) added to POS cart!`
       });
       setTimeout(() => setNotification(null), 4000);
 
@@ -1287,7 +1287,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
 
       setNotification({
         type: 'success',
-        message: `ðŸ’Š Dispensed & Added to POS Cart: ${matchedMed.brandName} (${targetBatch.batchNumber})!`
+        message: `💊 Dispensed & Added to POS Cart: ${matchedMed.brandName} (${targetBatch.batchNumber})!`
       });
       setTimeout(() => setNotification(null), 3500);
     };
@@ -1621,7 +1621,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
       alerts.push({
         id: 'dup-analgesic',
         type: 'DUPLICATE_THERAPY',
-        title: 'âš ï¸ Duplicate Analgesic / NSAID Therapy',
+        title: '⚠️ Duplicate Analgesic / NSAID Therapy',
         message: 'Multiple painkillers/NSAIDs in cart. Confirm cumulative Paracetamol dose <4g/day to prevent hepatotoxicity.'
       });
     }
@@ -1630,7 +1630,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
       alerts.push({
         id: 'dup-antibiotic',
         type: 'DUPLICATE_THERAPY',
-        title: 'âš ï¸ Dual Antibiotic Regimen',
+        title: '⚠️ Dual Antibiotic Regimen',
         message: 'Multiple systemic antimicrobials detected. Verify doctor-prescribed dual coverage indication.'
       });
     }
@@ -1642,7 +1642,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
       alerts.push({
         id: 'ddi-antacid-abx',
         type: 'DDI',
-        title: 'âš¡ Drug Absorption Interaction (Antibiotic + PPI/Antacid)',
+        title: '⚡ Drug Absorption Interaction (Antibiotic + PPI/Antacid)',
         message: 'Antacids/PPIs reduce absorption of fluoroquinolones and cephalosporins. Advise patient to separate by at least 2 hours.'
       });
     }
@@ -1653,7 +1653,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
       alerts.push({
         id: 'ddi-cvd-nsaid',
         type: 'DDI',
-        title: 'âš¡ Antihypertensive Attenuation Warning',
+        title: '⚡ Antihypertensive Attenuation Warning',
         message: 'Co-administration of NSAIDs with Telmisartan/Amlodipine may attenuate antihypertensive efficacy and elevate renal stress.'
       });
     }
@@ -1728,7 +1728,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
       if (limit > 0 && projectedTotal > limit && !khataOverrideApproved) {
         setNotification({
           type: 'error',
-          message: `Credit Limit Exceeded: Bill will bring due to â‚¹${projectedTotal.toFixed(2)}, exceeding limit of â‚¹${limit.toFixed(2)}. Check 'Chemist Authorization' to approve extension.`
+          message: `Credit Limit Exceeded: Bill will bring due to ₹${projectedTotal.toFixed(2)}, exceeding limit of ₹${limit.toFixed(2)}. Check 'Chemist Authorization' to approve extension.`
         });
         return;
       }
@@ -2006,7 +2006,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
 
       // Sub-10ms Optimistic UI + 5-Second Undo Toast (Ctrl+Z)
       optimisticActionService.dispatch({
-        title: `Dispensed to ${patientName || 'Walk-in'} (â‚¹${calculations.grandTotal.toFixed(2)})`,
+        title: `Dispensed to ${patientName || 'Walk-in'} (₹${calculations.grandTotal.toFixed(2)})`,
         category: 'PHARMACY_DISPENSE',
         countdownSeconds: 5,
         onCommit: async () => {
@@ -2027,12 +2027,12 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
       if (isOfflineFallback) {
         setNotification({
           type: 'success',
-          message: `âœ“ OFFLINE INVOICE #${invoiceNum} (â‚¹${calculations.grandTotal.toFixed(2)}) RECORDED IN LOCAL INDEXEDDB! Thermal bill printed. Will auto-sync when online.`
+          message: `✓ OFFLINE INVOICE #${invoiceNum} (₹${calculations.grandTotal.toFixed(2)}) RECORDED IN LOCAL INDEXEDDB! Thermal bill printed. Will auto-sync when online.`
         });
       } else {
         setNotification({
           type: 'success',
-          message: `âœ“ Invoice #${invoiceNum} (â‚¹${calculations.grandTotal.toFixed(2)}) created and recorded in pharmacy ledger!`
+          message: `✓ Invoice #${invoiceNum} (₹${calculations.grandTotal.toFixed(2)}) created and recorded in pharmacy ledger!`
         });
       }
     } catch (err: unknown) {
@@ -2077,7 +2077,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
           handleSetPackMode(targetItem.id, newLooseMode);
           setNotification({
             type: 'success',
-            message: `âš¡ Switched ${targetItem.medication.brandName} to ${newLooseMode ? 'ðŸ’Š Loose Tablets' : 'ðŸ“¦ Full Strip'} [F2]! Type quantity directly on keyboard.`
+            message: `⚡ Switched ${targetItem.medication.brandName} to ${newLooseMode ? '💊 Loose Tablets' : 'ðŸ“¦ Full Strip'} [F2]! Type quantity directly on keyboard.`
           });
           setTimeout(() => setNotification(null), 3500);
         }
@@ -2291,7 +2291,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
   const getScheduleBadge = (type: ScheduleDrugType) => {
     switch (type) {
       case 'SCHEDULE_H1':
-        return <Badge variant="danger">âš ï¸ SCH-H1</Badge>;
+        return <Badge variant="danger">⚠️ SCH-H1</Badge>;
       case 'SCHEDULE_H':
         return <Badge variant="warning">SCH-H</Badge>;
       case 'OTC':
@@ -2361,7 +2361,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
             onClick={() => setNotification(null)}
             style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', fontWeight: 800 }}
           >
-            âœ•
+            ✕
           </button>
         </div>
       )}
@@ -2377,7 +2377,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
         />
       )}
 
-      {/* Top Chemist Command Ribbon â€” Sleek Single-Row Ergonomic POS Terminal */}
+      {/* Top Chemist Command Ribbon — Sleek Single-Row Ergonomic POS Terminal */}
       <div
         style={{
           display: 'flex',
@@ -2427,7 +2427,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
                   borderRadius: '8px'
                 }}
               >
-                â— LIVE
+                ● LIVE
               </span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.7rem', color: 'var(--ds-color-text-muted)' }}>
@@ -2520,7 +2520,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
             </button>
           </div>
 
-          {/* âš¡ Consolidated Clinical Tools Dropdown */}
+          {/* ⚡ Consolidated Clinical Tools Dropdown */}
           <div style={{ position: 'relative' }}>
             <button
               type="button"
@@ -2541,9 +2541,9 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
               }}
               title="Clinical tools: Salt substitute [F3], Rx OCR [F6], CDSCO Vault [F7], Pill Counter"
             >
-              <span>âš¡</span>
+              <span>⚡</span>
               <span>Clinical Tools</span>
-              <span style={{ fontSize: '0.65rem', opacity: 0.7 }}>â–¾</span>
+              <span style={{ fontSize: '0.65rem', opacity: 0.7 }}>▾</span>
             </button>
 
             {isClinicalToolsOpen && (
@@ -2654,7 +2654,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
                   onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                 >
                   <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span>âš–ï¸</span>
+                    <span>⚖️</span>
                     <span>CDSCO Vault (20B/21B)</span>
                   </span>
                   <kbd style={{ backgroundColor: '#1E293B', color: '#FCA5A5', padding: '1px 5px', borderRadius: '4px', border: '1px solid #334155', fontSize: '0.68rem', fontWeight: 800 }}>F7</kbd>
@@ -2786,7 +2786,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
                 : 'Online [F10]'}
             </span>
             <span style={{ opacity: 0.35 }}>â€¢</span>
-            <span style={{ color: '#34D399', fontSize: '0.7rem' }}>âš¡ Scanner</span>
+            <span style={{ color: '#34D399', fontSize: '0.7rem' }}>⚡ Scanner</span>
           </button>
 
           {/* âŒ¨ï¸ 100% Keyboard POS Shortcuts Popover */}
@@ -2834,13 +2834,13 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #1E293B', paddingBottom: '6px' }}>
-                  <span style={{ fontWeight: 800, color: '#38BDF8', fontSize: '0.8rem' }}>âš¡ 100% Keyboard POS Shortcuts</span>
+                  <span style={{ fontWeight: 800, color: '#38BDF8', fontSize: '0.8rem' }}>⚡ 100% Keyboard POS Shortcuts</span>
                   <button
                     type="button"
                     onClick={() => setIsShortcutsOpen(false)}
                     style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 800 }}
                   >
-                    âœ•
+                    ✕
                   </button>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', fontSize: '0.73rem' }}>
@@ -2919,7 +2919,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
             }}
             title={isBrowserFullscreen || isFullPage ? 'Exit fullscreen layout' : 'Enter full screen billing mode'}
           >
-            <span>{isBrowserFullscreen || isFullPage ? 'â†™ Normal' : 'â›¶ Full'}</span>
+            <span>{isBrowserFullscreen || isFullPage ? 'â†™ Normal' : '⛶ Full'}</span>
           </button>
 
           {onClosePos && (
@@ -2942,7 +2942,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
               }}
               title="Exit to Pharmacy Hub"
             >
-              <span>âœ• Exit</span>
+              <span>✕ Exit</span>
             </button>
           )}
         </div>
@@ -2964,7 +2964,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
                     { value: '', label: '-- Select Patient Order to Dispense --' },
                     ...prescriptions.map((p) => ({
                       value: p.id,
-                      label: `${p.prescriptionNumber} â€” ${p.patientName} (${p.items.length} meds) â€¢ Priority: ${p.priority}`
+                      label: `${p.prescriptionNumber} — ${p.patientName} (${p.items.length} meds) â€¢ Priority: ${p.priority}`
                     }))
                   ]}
                 />
@@ -3005,7 +3005,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
               <label style={{ fontSize: '0.74rem', fontWeight: 600, color: containsControlledSchedule ? '#EF4444' : 'var(--ds-color-text-muted)' }}>
-                Doctor Name {containsControlledSchedule && 'âš ï¸ [Mandatory CDSCO]'}
+                Doctor Name {containsControlledSchedule && '⚠️ [Mandatory CDSCO]'}
               </label>
               {containsControlledSchedule && (
                 <button
@@ -3013,7 +3013,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
                   onClick={() => setIsPrescriberPromptOpen(true)}
                   style={{ background: 'none', border: 'none', color: '#38BDF8', fontSize: '0.68rem', cursor: 'pointer', fontWeight: 700 }}
                 >
-                  âš¡ Pick Prescriber
+                  ⚡ Pick Prescriber
                 </button>
               )}
             </div>
@@ -3025,7 +3025,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
           </div>
           <div>
             <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 600, marginBottom: '3px', color: containsControlledSchedule ? '#EF4444' : 'var(--ds-color-text-muted)' }}>
-              Doctor NMC Reg No. {containsControlledSchedule && 'âš ï¸ [Mandatory CDSCO]'}
+              Doctor NMC Reg No. {containsControlledSchedule && '⚠️ [Mandatory CDSCO]'}
             </label>
             <Input
               value={doctorNmcReg}
@@ -3214,16 +3214,16 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
                             âœ‚ï¸ {looseQty}/{packUnits} Tabs ({parsedSearchShorthand.rawShorthand || `${looseQty} tabs`})
                           </span>
                           <span style={{ fontSize: '1.05rem', fontWeight: 900, color: 'var(--ds-color-success, #34D399)' }}>
-                            â‚¹{looseTotal.toFixed(2)}
+                            ₹{looseTotal.toFixed(2)}
                           </span>
                         </div>
                         <div style={{ fontSize: '0.7rem', color: 'var(--ds-color-text-muted)', marginTop: '2px' }}>
-                          â‚¹{unitRate.toFixed(2)}/tab â€¢ Full Strip â‚¹{med.mrp.toFixed(2)}
+                          ₹{unitRate.toFixed(2)}/tab â€¢ Full Strip ₹{med.mrp.toFixed(2)}
                         </div>
                       </div>
                     ) : (
                       <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--ds-color-accent)' }}>
-                        â‚¹{med.mrp.toFixed(2)}
+                        ₹{med.mrp.toFixed(2)}
                       </div>
                     )}
                     <div style={{ fontSize: '0.72rem', color: (bestBatch.daysToExpiry ?? 999) < 60 ? 'var(--ds-color-danger)' : 'var(--ds-color-success)', fontWeight: 700 }}>
@@ -3308,7 +3308,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
 
           {cart.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '56px 0', color: 'var(--ds-color-text-muted)' }}>
-              <div style={{ fontSize: '2.8rem', marginBottom: '10px' }}>ðŸ’Š</div>
+              <div style={{ fontSize: '2.8rem', marginBottom: '10px' }}>💊</div>
               <p style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'var(--ds-color-text-muted)' }}>
                 Cart is Empty
               </p>
@@ -3337,8 +3337,8 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
                       <th style={{ padding: '10px 8px' }}>FEFO Batch & Expiry</th>
                       <th style={{ padding: '10px 8px' }}>Packaging</th>
                       <th style={{ padding: '10px 8px', textAlign: 'center' }}>Quantity</th>
-                      <th style={{ padding: '10px 8px', textAlign: 'right' }}>Rate (â‚¹)</th>
-                      <th style={{ padding: '10px 8px', textAlign: 'right' }}>Total (â‚¹)</th>
+                      <th style={{ padding: '10px 8px', textAlign: 'right' }}>Rate (₹)</th>
+                      <th style={{ padding: '10px 8px', textAlign: 'right' }}>Total (₹)</th>
                       <th style={{ padding: '10px 8px', textAlign: 'center' }}>Actions</th>
                     </tr>
                   </thead>
@@ -3457,7 +3457,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
                                     Exp: {item.selectedBatch.expiryDate}
                                   </div>
                                   <div style={{ fontSize: '0.68rem', color: isLowOrExceeded ? 'var(--ds-color-danger)' : 'var(--ds-color-accent)', fontWeight: isLowOrExceeded ? 700 : 400 }}>
-                                    Avail: {item.selectedBatch.availableQuantity} {isLowOrExceeded ? 'âš ï¸ Low' : ''}
+                                    Avail: {item.selectedBatch.availableQuantity} {isLowOrExceeded ? '⚠️ Low' : ''}
                                   </div>
                                 </div>
                               );
@@ -3472,7 +3472,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
                                   Exp: {item.selectedBatch.expiryDate}
                                 </div>
                                 <div style={{ fontSize: '0.68rem', color: isLowOrExceeded ? 'var(--ds-color-danger)' : 'var(--ds-color-accent)', fontWeight: isLowOrExceeded ? 700 : 400 }}>
-                                  Avail: {item.selectedBatch.availableQuantity} {isLowOrExceeded ? 'âš ï¸ Insufficient' : ''}
+                                  Avail: {item.selectedBatch.availableQuantity} {isLowOrExceeded ? '⚠️ Insufficient' : ''}
                                 </div>
                               </div>
                             );
@@ -3522,7 +3522,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
                                 }}
                                 title="Sell loose tablets - enter quantity and unit rate [F2]"
                               >
-                                ðŸ’Š Loose
+                                💊 Loose
                               </button>
                             </div>
                             <div style={{ fontSize: '0.66rem', color: 'var(--ds-color-text-muted)', textAlign: 'center' }}>
@@ -3728,7 +3728,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
                             <div style={{ fontSize: '0.66rem', color: item.isLoose ? 'var(--ds-color-accent)' : 'var(--ds-color-text-muted)', fontWeight: 700, textAlign: 'center' }}>
                               {item.isLoose ? (
                                 <>
-                                  <span>ðŸ’Š {item.quantity} Loose Tabs</span>
+                                  <span>💊 {item.quantity} Loose Tabs</span>
                                   <span style={{ display: 'block', fontSize: '0.6rem', color: '#94A3B8' }}>
                                     Micro-stock: {(item.quantity / (item.medication.packUnits || 10)).toFixed(2)} strip
                                   </span>
@@ -3743,7 +3743,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
                         <td style={{ padding: '8px 6px', verticalAlign: 'middle', textAlign: 'right', fontWeight: 700 }}>
                           <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '3px' }}>
-                              <span style={{ color: 'var(--ds-color-text-muted)', fontSize: '0.75rem' }}>â‚¹</span>
+                              <span style={{ color: 'var(--ds-color-text-muted)', fontSize: '0.75rem' }}>₹</span>
                               <input
                                 id={`rate-input-${item.id}`}
                                 type="number"
@@ -3770,19 +3770,19 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
                                   textAlign: 'right',
                                   fontWeight: 900
                                 }}
-                                title={item.isLoose ? `Enter loose tablet rate (â‚¹/tab). Printed MRP: â‚¹${(item.isSubstituted && item.medication.janAushadhiEquivalent ? item.medication.janAushadhiEquivalent.unitPrice : item.medication.unitPrice).toFixed(2)}` : `Enter strip rate (â‚¹/strip). Printed MRP: â‚¹${(item.isSubstituted && item.medication.janAushadhiEquivalent ? item.medication.janAushadhiEquivalent.mrp : item.medication.mrp).toFixed(2)}`}
+                                title={item.isLoose ? `Enter loose tablet rate (₹/tab). Printed MRP: ₹${(item.isSubstituted && item.medication.janAushadhiEquivalent ? item.medication.janAushadhiEquivalent.unitPrice : item.medication.unitPrice).toFixed(2)}` : `Enter strip rate (₹/strip). Printed MRP: ₹${(item.isSubstituted && item.medication.janAushadhiEquivalent ? item.medication.janAushadhiEquivalent.mrp : item.medication.mrp).toFixed(2)}`}
                               />
                             </div>
                             <div style={{ fontSize: '0.66rem', color: 'var(--ds-color-text-muted)' }}>
                               {item.isLoose ? (
                                 <span>
-                                  â‚¹{(item.isSubstituted && item.medication.janAushadhiEquivalent ? item.medication.janAushadhiEquivalent.unitPrice : item.medication.unitPrice).toFixed(2)}/tab
+                                  ₹{(item.isSubstituted && item.medication.janAushadhiEquivalent ? item.medication.janAushadhiEquivalent.unitPrice : item.medication.unitPrice).toFixed(2)}/tab
                                   <span style={{ display: 'block', fontSize: '0.61rem', color: 'var(--ds-color-accent)' }}>
-                                    Pack â‚¹{(item.isSubstituted && item.medication.janAushadhiEquivalent ? item.medication.janAushadhiEquivalent.mrp : item.medication.mrp).toFixed(2)} Ã· {item.medication.packUnits || 10}
+                                    Pack ₹{(item.isSubstituted && item.medication.janAushadhiEquivalent ? item.medication.janAushadhiEquivalent.mrp : item.medication.mrp).toFixed(2)} Ã· {item.medication.packUnits || 10}
                                   </span>
                                 </span>
                               ) : (
-                                <span>MRP: â‚¹{(item.isSubstituted && item.medication.janAushadhiEquivalent ? item.medication.janAushadhiEquivalent.mrp : item.medication.mrp).toFixed(2)}/strip</span>
+                                <span>MRP: ₹{(item.isSubstituted && item.medication.janAushadhiEquivalent ? item.medication.janAushadhiEquivalent.mrp : item.medication.mrp).toFixed(2)}/strip</span>
                               )}
                             </div>
                           </div>
@@ -3790,11 +3790,11 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
 
                         <td style={{ padding: '8px 6px', verticalAlign: 'middle', textAlign: 'right', fontWeight: 800, color: 'var(--ds-color-accent)', whiteSpace: 'nowrap' }}>
                           <div style={{ fontSize: '0.95rem' }}>
-                            â‚¹{(item.rate * item.quantity).toFixed(2)}
+                            ₹{(item.rate * item.quantity).toFixed(2)}
                           </div>
                           {item.isLoose && (
                             <div style={{ fontSize: '0.66rem', color: 'var(--ds-color-text-muted)' }}>
-                              ({item.quantity} tabs Ã— â‚¹{item.rate.toFixed(2)})
+                              ({item.quantity} tabs × ₹{item.rate.toFixed(2)})
                             </div>
                           )}
                         </td>
@@ -3859,7 +3859,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
                               style={{ background: 'none', border: 'none', color: 'var(--ds-color-text-muted)', cursor: 'pointer', fontSize: '0.9rem' }}
                               title="Remove item"
                             >
-                              âœ•
+                              ✕
                             </button>
                           </div>
                         </td>
@@ -3906,11 +3906,11 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
                                 <div style={{ fontSize: '0.76rem', color: '#E2E8F0', backgroundColor: '#1E293B', padding: '4px 10px', borderRadius: '6px', border: '1px solid #334155' }}>
                                   {item.isLoose ? (
                                     <span>
-                                      Exact Math: <strong style={{ color: '#38BDF8' }}>{item.quantity} Tabs</strong> @ â‚¹{item.rate.toFixed(2)}/tab = <strong style={{ color: '#34D399' }}>â‚¹{(item.rate * item.quantity).toFixed(2)}</strong> <span style={{ color: '#94A3B8' }}>(from â‚¹{item.medication.mrp.toFixed(2)}/strip of {packUnits})</span>
+                                      Exact Math: <strong style={{ color: '#38BDF8' }}>{item.quantity} Tabs</strong> @ ₹{item.rate.toFixed(2)}/tab = <strong style={{ color: '#34D399' }}>₹{(item.rate * item.quantity).toFixed(2)}</strong> <span style={{ color: '#94A3B8' }}>(from ₹{item.medication.mrp.toFixed(2)}/strip of {packUnits})</span>
                                     </span>
                                   ) : (
                                     <span>
-                                      Exact Math: <strong style={{ color: '#34D399' }}>{item.quantity} Strip{item.quantity > 1 ? 's' : ''}</strong> @ â‚¹{item.rate.toFixed(2)}/strip = <strong style={{ color: '#34D399' }}>â‚¹{(item.rate * item.quantity).toFixed(2)}</strong>
+                                      Exact Math: <strong style={{ color: '#34D399' }}>{item.quantity} Strip{item.quantity > 1 ? 's' : ''}</strong> @ ₹{item.rate.toFixed(2)}/strip = <strong style={{ color: '#34D399' }}>₹{(item.rate * item.quantity).toFixed(2)}</strong>
                                     </span>
                                   )}
                                 </div>
@@ -4084,7 +4084,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
                 <div style={{ display: 'flex', gap: '16px' }}>
                   <span>ðŸ“‹ Meds: <strong style={{ color: 'var(--ds-color-text-primary)' }}>{cart.length}</strong></span>
                   <span>ðŸ“¦ Strips: <strong style={{ color: 'var(--ds-color-success)' }}>{cart.filter((c) => !c.isLoose).reduce((s, c) => s + c.quantity, 0)}</strong></span>
-                  <span>ðŸ’Š Loose Tabs: <strong style={{ color: 'var(--ds-color-accent)' }}>{cart.filter((c) => c.isLoose).reduce((s, c) => s + c.quantity, 0)}</strong></span>
+                  <span>💊 Loose Tabs: <strong style={{ color: 'var(--ds-color-accent)' }}>{cart.filter((c) => c.isLoose).reduce((s, c) => s + c.quantity, 0)}</strong></span>
                 </div>
                 <div style={{ fontSize: '0.72rem', color: 'var(--ds-color-text-muted)' }}>
                   âŒ¨ï¸ [F1] Search | [F2] Loose/Strip | [F4] Disc% | [F8] Mode | [Enter] Bill | [Esc] Clear
@@ -4124,7 +4124,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
                 }}
               >
                 <span>
-                  {containsScheduleX ? 'ðŸ”’ SCHEDULE X IN CART' : containsScheduleH1 ? 'âš ï¸ SCHEDULE H1 IN CART' : 'ðŸ“‹ SCHEDULE H IN CART'}: {doctorNmcReg ? `Dr. Reg #${doctorNmcReg} Verified` : 'Prescriber Required'}
+                  {containsScheduleX ? '🔒 SCHEDULE X IN CART' : containsScheduleH1 ? '⚠️ SCHEDULE H1 IN CART' : 'ðŸ“‹ SCHEDULE H IN CART'}: {doctorNmcReg ? `Dr. Reg #${doctorNmcReg} Verified` : 'Prescriber Required'}
                 </span>
                 <button
                   type="button"
@@ -4149,7 +4149,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
             <div style={{ backgroundColor: 'var(--ds-color-surface)', padding: '12px', borderRadius: '8px', marginBottom: '14px', fontSize: '0.8rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', color: 'var(--ds-color-text-muted)' }}>
                 <span>Gross Subtotal:</span>
-                <span>â‚¹{calculations.subtotal.toFixed(2)}</span>
+                <span>₹{calculations.subtotal.toFixed(2)}</span>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
@@ -4182,11 +4182,11 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
 
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', color: 'var(--ds-color-text-muted)', fontSize: '0.75rem' }}>
                 <span>CGST (6% Inclusive):</span>
-                <span>â‚¹{calculations.cgst.toFixed(2)}</span>
+                <span>₹{calculations.cgst.toFixed(2)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', color: 'var(--ds-color-text-muted)', fontSize: '0.75rem' }}>
                 <span>SGST (6% Inclusive):</span>
-                <span>â‚¹{calculations.sgst.toFixed(2)}</span>
+                <span>₹{calculations.sgst.toFixed(2)}</span>
               </div>
 
               <div
@@ -4201,7 +4201,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
               >
                 <span style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--ds-color-text-secondary)' }}>Net Payable:</span>
                 <span style={{ fontSize: '1.45rem', fontWeight: 900, color: 'var(--ds-color-accent)', letterSpacing: '-0.02em' }}>
-                  â‚¹{calculations.grandTotal.toFixed(2)}
+                  ₹{calculations.grandTotal.toFixed(2)}
                 </span>
               </div>
             </div>
@@ -4250,7 +4250,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
                   Scan to Pay with Any UPI App
                 </div>
                 <div style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--ds-color-primary)', marginBottom: '6px' }}>
-                  â‚¹{calculations.grandTotal.toFixed(2)}
+                  ₹{calculations.grandTotal.toFixed(2)}
                 </div>
                 {/* Dynamic Authentic Indian UPI QR Code */}
                 {(() => {
@@ -4305,7 +4305,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
                 />
                 {changeToReturn > 0 && (
                   <div style={{ marginTop: '8px', padding: '6px', backgroundColor: 'var(--ds-color-success-subtle, rgba(34, 197, 94, 0.15))', borderRadius: '4px', color: 'var(--ds-color-success)', fontWeight: 800 }}>
-                    ðŸ’µ Return Change: â‚¹{changeToReturn.toFixed(2)}
+                    ðŸ’µ Return Change: ₹{changeToReturn.toFixed(2)}
                   </div>
                 )}
               </div>
@@ -4345,20 +4345,20 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
 
                   {!cleanPhone ? (
                     <div style={{ color: '#EF4444', fontWeight: 700, padding: '6px 8px', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: '4px', marginBottom: '8px' }}>
-                      âš ï¸ Customer Mobile Number is required for Khata billing! Please enter mobile number in customer details above.
+                      ⚠️ Customer Mobile Number is required for Khata billing! Please enter mobile number in customer details above.
                     </div>
                   ) : (
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
                       <div style={{ backgroundColor: '#1E293B', padding: '6px 8px', borderRadius: '4px' }}>
                         <span style={{ color: '#94A3B8', fontSize: '0.7rem' }}>Current Due:</span>
                         <div style={{ fontWeight: 800, color: currentDue > 0 ? '#F59E0B' : '#10B981', fontSize: '0.9rem' }}>
-                          â‚¹{currentDue.toFixed(2)}
+                          ₹{currentDue.toFixed(2)}
                         </div>
                       </div>
                       <div style={{ backgroundColor: '#1E293B', padding: '6px 8px', borderRadius: '4px' }}>
                         <span style={{ color: '#94A3B8', fontSize: '0.7rem' }}>Credit Limit:</span>
                         <div style={{ fontWeight: 800, color: '#E2E8F0', fontSize: '0.9rem' }}>
-                          â‚¹{limit.toLocaleString('en-IN')}
+                          ₹{limit.toLocaleString('en-IN')}
                         </div>
                       </div>
                     </div>
@@ -4376,7 +4376,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
                         fontSize: '0.75rem'
                       }}
                     >
-                      <strong>âš ï¸ Credit Limit Breach:</strong> Projected total (â‚¹{projectedTotal.toFixed(2)}) exceeds limit of â‚¹{limit.toFixed(2)} by â‚¹{(projectedTotal - limit).toFixed(2)}.
+                      <strong>⚠️ Credit Limit Breach:</strong> Projected total (₹{projectedTotal.toFixed(2)}) exceeds limit of ₹{limit.toFixed(2)} by ₹{(projectedTotal - limit).toFixed(2)}.
                       <label style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px', cursor: 'pointer', color: '#FEF08A' }}>
                         <input
                           type="checkbox"
@@ -4419,7 +4419,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
                 cursor: isSubmitting || cart.length === 0 ? 'not-allowed' : 'pointer'
               }}
             >
-              {isSubmitting ? 'Generating Invoice...' : `âš¡ Complete Sale & Print (â‚¹${calculations.grandTotal.toFixed(2)}) [F9]`}
+              {isSubmitting ? 'Generating Invoice...' : `⚡ Complete Sale & Print (₹${calculations.grandTotal.toFixed(2)}) [F9]`}
             </Button>
           </Card>
         </div>
@@ -4480,7 +4480,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
         onSelectSubstitute={handleSelectSaltSubstitute}
       />
 
-      {/* âš¡ Doctor e-Prescription Queue Live Importer Modal */}
+      {/* ⚡ Doctor e-Prescription Queue Live Importer Modal */}
       <DoctorPrescriptionQueueImporterModal
         isOpen={isDoctorRxModalOpen}
         onClose={() => setIsDoctorRxModalOpen(false)}
@@ -4504,7 +4504,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
         missingFields={profileMissingFields}
       />
 
-      {/* âš–ï¸ Mandatory Prescriber Compliance Dialog (CDSCO & Rule 65) */}
+      {/* ⚖️ Mandatory Prescriber Compliance Dialog (CDSCO & Rule 65) */}
       <MandatoryPrescriberComplianceModal
         isOpen={isPrescriberPromptOpen}
         onClose={() => setIsPrescriberPromptOpen(false)}
@@ -4517,13 +4517,13 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
           setDoctorNmcReg(dNmc);
           setNotification({
             type: 'success',
-            message: `âœ“ Prescriber Verified: ${dName} (${dNmc}) - CDSCO compliant!`
+            message: `✓ Prescriber Verified: ${dName} (${dNmc}) - CDSCO compliant!`
           });
           setTimeout(() => setNotification(null), 4000);
         }}
       />
 
-      {/* âš–ï¸ Drug Inspector (CDSCO / FDA) 1-Click Audit Vault Modal (F7) */}
+      {/* ⚖️ Drug Inspector (CDSCO / FDA) 1-Click Audit Vault Modal (F7) */}
       {isCdscoAuditVaultModalOpen && (
         <div
           style={{
@@ -4563,7 +4563,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '1.3rem' }}>âš–ï¸</span>
+                <span style={{ fontSize: '1.3rem' }}>⚖️</span>
                 <strong style={{ color: '#F8FAFC', fontSize: '0.95rem' }}>
                   Drug Inspector (CDSCO / FDA) Statutory Audit Vault [F7]
                 </strong>
@@ -4580,7 +4580,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
                   padding: '4px 8px'
                 }}
               >
-                âœ• Close Vault
+                ✕ Close Vault
               </button>
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
@@ -4590,7 +4590,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
         </div>
       )}
 
-      {/* ðŸ“¡ Offline-First PWA & Background Sync Vault Modal */}
+      {/* 📡 Offline-First PWA & Background Sync Vault Modal */}
       <PharmacyOfflineSyncModal
         isOpen={isOfflineSyncModalOpen}
         onClose={() => setIsOfflineSyncModalOpen(false)}

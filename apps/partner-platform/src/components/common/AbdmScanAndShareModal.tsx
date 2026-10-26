@@ -129,7 +129,7 @@ export const AbdmScanAndShareModal: React.FC<AbdmScanAndShareModalProps> = ({
         abhaAddress: profile.abhaAddress,
         patientMrn: patientUhid,
         patientName: profile.name,
-        careContextType: 'OPD_CONSULTATION',
+        careContextType: 'OPD_CONSULTATION_VISIT',
         careContextReference: `OPD-TOKEN-${token}`,
         displayTitle: `OPD Consultation Token #${token}`,
         doctorName: docName,

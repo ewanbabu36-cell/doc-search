@@ -219,9 +219,9 @@ export const ScheduleH1DrugRegisterModal: React.FC<ScheduleH1DrugRegisterModalPr
           cursor: 'pointer'
         }}
       >
-        <span style={{ fontSize: '1.1rem' }}>ðŸ’Š</span>
+        <span style={{ fontSize: '1.1rem' }}>💊</span>
         <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#F8FAFC' }}>
-          Schedule H1 Register ({records.length}) â€” Click to Restore
+          Schedule H1 Register ({records.length}) — Click to Restore
         </span>
         <button
           type="button"
@@ -238,7 +238,7 @@ export const ScheduleH1DrugRegisterModal: React.FC<ScheduleH1DrugRegisterModalPr
             padding: '0 4px'
           }}
         >
-          âœ•
+          ✕
         </button>
       </aside>
     );
@@ -303,7 +303,7 @@ export const ScheduleH1DrugRegisterModal: React.FC<ScheduleH1DrugRegisterModalPr
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '1.4rem' }}>ðŸ’Š</span>
+            <span style={{ fontSize: '1.4rem' }}>💊</span>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <strong style={{ color: '#F8FAFC', fontSize: '1rem' }}>
@@ -323,7 +323,7 @@ export const ScheduleH1DrugRegisterModal: React.FC<ScheduleH1DrugRegisterModalPr
             <button
               type="button"
               aria-label="Minimize to dock pill"
-              title="Minimize to dock pill (â€”)"
+              title="Minimize to dock pill (—)"
               onClick={(e) => {
                 e.stopPropagation();
                 setIsMinimized(true);
@@ -338,12 +338,12 @@ export const ScheduleH1DrugRegisterModal: React.FC<ScheduleH1DrugRegisterModalPr
                 borderRadius: '4px'
               }}
             >
-              â€”
+              —
             </button>
             <button
               type="button"
               aria-label={isMaximized ? "Restore down" : "Maximize full screen"}
-              title={isMaximized ? "Restore down (ðŸ——)" : "Maximize full screen (â›¶)"}
+              title={isMaximized ? "Restore down (🗗)" : "Maximize full screen (⛶)"}
               onClick={(e) => {
                 e.stopPropagation();
                 setIsMaximized(!isMaximized);
@@ -358,7 +358,7 @@ export const ScheduleH1DrugRegisterModal: React.FC<ScheduleH1DrugRegisterModalPr
                 borderRadius: '4px'
               }}
             >
-              {isMaximized ? 'ðŸ——' : 'â›¶'}
+              {isMaximized ? '🗗' : '⛶'}
             </button>
             <button
               type="button"
@@ -375,7 +375,7 @@ export const ScheduleH1DrugRegisterModal: React.FC<ScheduleH1DrugRegisterModalPr
                 padding: '4px 8px'
               }}
             >
-              âœ•
+              ✕
             </button>
           </div>
         </div>
@@ -394,7 +394,7 @@ export const ScheduleH1DrugRegisterModal: React.FC<ScheduleH1DrugRegisterModalPr
           }}
         >
           <span>
-            âš–ï¸ <strong>Drugs & Cosmetics Rules 1945:</strong> Every hospital pharmacy must retain Schedule H1 sales records for 3 years, subject to inspection by Drugs Inspector.
+            ⚖️ <strong>Drugs & Cosmetics Rules 1945:</strong> Every hospital pharmacy must retain Schedule H1 sales records for 3 years, subject to inspection by Drugs Inspector.
           </span>
           <span style={{ color: '#FCD34D', fontWeight: 700 }}>
             {filteredRecords.length} Schedule H1 Records Logged
@@ -473,7 +473,7 @@ export const ScheduleH1DrugRegisterModal: React.FC<ScheduleH1DrugRegisterModalPr
               boxShadow: '0 4px 14px rgba(16, 185, 129, 0.3)'
             }}
           >
-            <span>ðŸ–¨ï¸</span>
+            <span>🖨️</span>
             <span>Export Drug Inspector Inspection Sheet</span>
           </button>
         </div>

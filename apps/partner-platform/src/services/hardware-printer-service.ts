@@ -214,7 +214,7 @@ export class EscPosBuilder {
   /** Append raw text converted to standard 8-bit ASCII */
   text(str: string): this {
     // Replace rupee symbol and non-ascii with safe representation for standard ESC/POS character tables
-    const safeStr = str.replace(/â‚¹/g, 'Rs.');
+    const safeStr = str.replace(/₹/g, 'Rs.');
     for (let i = 0; i < safeStr.length; i++) {
       const code = safeStr.charCodeAt(i);
       this.buffer.push(code < 256 ? code : 0x3F);
@@ -686,7 +686,7 @@ export function renderPrescriptionSlipToCanvas(
   y += 10;
   ctx.strokeRect(16, y, widthPx - 32, 54);
   ctx.font = 'bold 13px "Nirmala UI", "Segoe UI", sans-serif';
-  ctx.fillText('âš ï¸ NMC RMP REGULATIONS 2023 STATUTORY DISCLAIMER:', 24, y + 20);
+  ctx.fillText('⚠️ NMC RMP REGULATIONS 2023 STATUTORY DISCLAIMER:', 24, y + 20);
   ctx.font = '12px "Nirmala UI", "Segoe UI", sans-serif';
   ctx.fillText('Prescribed under NMC regulations. In casualty/emergency, visit nearest hospital immediately.', 24, y + 40);
   y += 74;

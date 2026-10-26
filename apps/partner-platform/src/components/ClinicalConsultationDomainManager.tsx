@@ -483,7 +483,7 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
   }, [consultations, encounters, context, doctors, loadData]);
 
 
-  // âš¡ 1-Click Zero Tab-Switch Walk-In Registration & Instant Consultation Opener
+  // ⚡ 1-Click Zero Tab-Switch Walk-In Registration & Instant Consultation Opener
   const handleQuickRegisterWalkIn = async (patientData: {
     name: string;
     mobile: string;
@@ -955,7 +955,7 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
               boxShadow: '0 2px 8px rgba(2, 132, 199, 0.4)'
             }}
           >
-            ðŸ¥ {facilityName || currentUser?.tenantName || context?.activePartnerName || 'CLINIC'}
+            🏥 {facilityName || currentUser?.tenantName || context?.activePartnerName || 'CLINIC'}
           </span>
 
           <span style={{ color: 'rgba(255, 255, 255, 0.2)', fontSize: '1.25rem', fontWeight: 300 }}>|</span>
@@ -986,10 +986,10 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
               }}
               title="Click to change Chamber or Doctor Profile"
             >
-              <span>ðŸšª {chamberProfile.roomNumber}</span>
-              <span style={{ fontSize: '0.65rem', opacity: 0.7 }}>â–¾</span>
+              <span>🚪 {chamberProfile.roomNumber}</span>
+              <span style={{ fontSize: '0.65rem', opacity: 0.7 }}>▾</span>
             </button>
-            <Badge variant="success">â— Live OPD Connected</Badge>
+            <Badge variant="success">● Live OPD Connected</Badge>
           </div>
         </div>
 
@@ -1001,7 +1001,7 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
             onClick={() => setIsReportsOpen(true)}
             style={{ fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
           >
-            <span>ðŸ“Š</span>
+            <span>📊</span>
             <span>Reports & Audit</span>
           </Button>
 
@@ -1026,7 +1026,7 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
             }}
             title="Configure Doctor Chamber, Fees & Hardware"
           >
-            <span>âš™ï¸</span>
+            <span>⚙️</span>
             <span>Chamber Settings</span>
           </Button>
 
@@ -1051,7 +1051,7 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
             }}
             title="Exit OPD Cockpit and return to Clinic Home"
           >
-            <span>âœ•</span>
+            <span>✕</span>
             <span>Exit Cockpit</span>
           </Button>
         </div>
@@ -1143,14 +1143,14 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
         />
       )}
 
-      {/* âš™ï¸ Chamber & Hardware Setup Modal */}
+      {/* ⚙️ Chamber & Hardware Setup Modal */}
       <Dialog
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         title={
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: '10px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '1.25rem' }}>âš™ï¸</span>
+              <span style={{ fontSize: '1.25rem' }}>⚙️</span>
               <div>
                 <div style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--ds-color-text-primary)' }}>
                   Chamber & Device Setup
@@ -1176,7 +1176,7 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
                   transition: 'all 0.15s ease'
                 }}
               >
-                ðŸ©º Tab 1: Chamber Profile
+                🩺 Tab 1: Chamber Profile
               </button>
               <button
                 type="button"
@@ -1193,7 +1193,7 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
                   transition: 'all 0.15s ease'
                 }}
               >
-                ðŸ”Œ Tab 2: Hardware & Devices
+                🔌 Tab 2: Hardware & Devices
               </button>
               <button
                 type="button"
@@ -1210,7 +1210,7 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
                   transition: 'all 0.15s ease'
                 }}
               >
-                ðŸ¥ Tab 3: Facility / Tenant Scope
+                🏥 Tab 3: Facility / Tenant Scope
               </button>
             </div>
           </div>
@@ -1233,7 +1233,7 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
                 alignItems: 'center',
                 gap: '8px'
               }}>
-                <span>âœ“</span>
+                <span>✓</span>
                 <span>Chamber Profile successfully saved for {chamberProfile.roomNumber}! Changes reflected across OPD Cockpit.</span>
               </div>
             )}
@@ -1249,7 +1249,7 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
               gap: '14px'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '1.2rem' }}>ðŸšª</span>
+                <span style={{ fontSize: '1.2rem' }}>🚪</span>
                 <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: '#38BDF8' }}>
                   Chamber Identification & Consulting Room
                 </h4>
@@ -1376,7 +1376,7 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
               gap: '14px'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '1.2rem' }}>ðŸ’°</span>
+                <span style={{ fontSize: '1.2rem' }}>💰</span>
                 <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: '#38BDF8' }}>
                   OPD Consultation Fees & Follow-up Rules
                 </h4>
@@ -1385,10 +1385,10 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--ds-color-text-muted)', marginBottom: '4px', fontWeight: 600 }}>
-                    First Visit Consultation Fee (â‚¹)
+                    First Visit Consultation Fee (₹)
                   </label>
                   <div style={{ position: 'relative' }}>
-                    <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }}>â‚¹</span>
+                    <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }}>₹</span>
                     <input
                       type="number"
                       min={0}
@@ -1410,10 +1410,10 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
 
                 <div>
                   <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--ds-color-text-muted)', marginBottom: '4px', fontWeight: 600 }}>
-                    Follow-up Visit Fee (â‚¹)
+                    Follow-up Visit Fee (₹)
                   </label>
                   <div style={{ position: 'relative' }}>
-                    <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }}>â‚¹</span>
+                    <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }}>₹</span>
                     <input
                       type="number"
                       min={0}
@@ -1494,7 +1494,7 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
               gap: '14px'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '1.2rem' }}>ðŸ“¢</span>
+                <span style={{ fontSize: '1.2rem' }}>📢</span>
                 <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: '#38BDF8' }}>
                   Queue Calling Chime & Audio Announcement
                 </h4>
@@ -1519,7 +1519,7 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
                     }}
                   >
                     <option value="bilingual">Bilingual (Hindi + English)</option>
-                    <option value="hindi">Hindi Only (à¤Ÿà¥‹à¤•à¤¨ à¤¨à¤‚à¤¬à¤°... à¤•à¤®à¤°à¤¾ à¤®à¥‡à¤‚ à¤ªà¤§à¤¾à¤°à¥‡à¤‚)</option>
+                    <option value="hindi">Hindi Only (टोकन नंबर... कमरा में पधारें)</option>
                     <option value="english">English Only (Token #... please proceed to Room)</option>
                   </select>
                 </div>
@@ -1562,7 +1562,7 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
                 variant="primary"
                 style={{ fontWeight: 700, padding: '8px 24px', backgroundColor: '#0284C7' }}
               >
-                ðŸ’¾ Save Chamber Profile
+                💾 Save Chamber Profile
               </Button>
             </div>
           </form>
@@ -1586,7 +1586,7 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
                 onClick={() => hardwareStatusService.openDrawer()}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem' }}
               >
-                <span>ðŸ› ï¸</span>
+                <span>🛠️</span>
                 <span>Open Diagnostics Console (Alt+H)</span>
               </Button>
             </div>
@@ -1605,7 +1605,7 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '1.25rem' }}>ðŸ–¨ï¸</span>
+                    <span style={{ fontSize: '1.25rem' }}>🖨️</span>
                     <span style={{ fontWeight: 700, fontSize: '0.875rem' }}>TVS 80mm Printer</span>
                   </div>
                   <Badge variant="success">Online</Badge>
@@ -1639,7 +1639,7 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '1.25rem' }}>ðŸ”«</span>
+                    <span style={{ fontSize: '1.25rem' }}>🔫</span>
                     <span style={{ fontWeight: 700, fontSize: '0.875rem' }}>Barcode Scanner Gun</span>
                   </div>
                   <Badge variant="success">Ready</Badge>
@@ -1673,7 +1673,7 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '1.25rem' }}>ðŸ§ª</span>
+                    <span style={{ fontSize: '1.25rem' }}>🧪</span>
                     <span style={{ fontWeight: 700, fontSize: '0.875rem' }}>Mindray Auto-Analyzer</span>
                   </div>
                   <Badge variant="success">Synced</Badge>
@@ -1707,7 +1707,7 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
               gap: '12px'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '1.2rem' }}>ðŸ“¡</span>
+                <span style={{ fontSize: '1.2rem' }}>📡</span>
                 <div>
                   <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#38BDF8' }}>
                     Smart Waiting Room & Bluetooth IoT Vitals Hub
@@ -1733,7 +1733,7 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
               alignItems: 'center',
               gap: '12px'
             }}>
-              <span style={{ fontSize: '1.4rem' }}>ðŸ¥</span>
+              <span style={{ fontSize: '1.4rem' }}>🏥</span>
               <div>
                 <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#38BDF8' }}>
                   Operational Session Scope (Multi-Branch Management)
@@ -1760,13 +1760,13 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
         )}
       </Dialog>
 
-      {/* ðŸ“Š Reports & Audit Modal */}
+      {/* 📊 Reports & Audit Modal */}
       <Dialog
         isOpen={isReportsOpen}
         onClose={() => setIsReportsOpen(false)}
         title={
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span>ðŸ“Š</span>
+            <span>📊</span>
             <span>Clinical Analytics & Compliance Audit Vault</span>
             <div style={{ display: 'flex', gap: '6px', marginLeft: 'auto' }}>
               <button
@@ -1783,7 +1783,7 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
                   color: reportTab === 'overview' ? '#FFFFFF' : '#94A3B8'
                 }}
               >
-                ðŸ“Š Overview & KPIs
+                📊 Overview & KPIs
               </button>
               <button
                 type="button"
@@ -1799,7 +1799,7 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
                   color: reportTab === 'audit' ? '#FFFFFF' : '#94A3B8'
                 }}
               >
-                ðŸ”’ Immutable Audit Vault
+                🔒 Immutable Audit Vault
               </button>
             </div>
           </div>

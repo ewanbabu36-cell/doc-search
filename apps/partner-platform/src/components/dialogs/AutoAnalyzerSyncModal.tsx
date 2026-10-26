@@ -150,7 +150,7 @@ export const AutoAnalyzerSyncModal: React.FC<AutoAnalyzerSyncModalProps> = ({
           patientName: currentOrder.patientName,
           criticalParameters: currentParams.filter((p) => p.isPanic).map((p) => `${p.analyte}: ${p.value} ${p.unit}`)
         },
-        `ðŸš¨ CRITICAL PANIC ANALYTE detected for ${currentOrder.patientName} (${selectedAnalyzer.name})`
+        `🚨 CRITICAL PANIC ANALYTE detected for ${currentOrder.patientName} (${selectedAnalyzer.name})`
       );
     }
 
@@ -203,14 +203,14 @@ export const AutoAnalyzerSyncModal: React.FC<AutoAnalyzerSyncModalProps> = ({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '1.5rem' }}>ðŸ”¬</span>
+            <span style={{ fontSize: '1.5rem' }}>🔬</span>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>
                   Automated Analyzer Machine Interface (ASTM / HL7)
                 </h3>
                 <Badge variant="success" style={{ fontSize: '0.7rem', fontWeight: 800 }}>
-                  â— Hardware Live Feed
+                  ● Hardware Live Feed
                 </Badge>
               </div>
               <p style={{ margin: 0, fontSize: '0.75rem', color: '#94A3B8' }}>
@@ -229,7 +229,7 @@ export const AutoAnalyzerSyncModal: React.FC<AutoAnalyzerSyncModalProps> = ({
               lineHeight: 1
             }}
           >
-            Ã—
+            ×
           </button>
         </div>
 
@@ -307,7 +307,7 @@ export const AutoAnalyzerSyncModal: React.FC<AutoAnalyzerSyncModalProps> = ({
                   setSyncDone(false);
                 }}
               />
-              <span>âš ï¸ Simulate Critical Panic Values</span>
+              <span>⚠️ Simulate Critical Panic Values</span>
             </label>
           </div>
         </div>
@@ -315,9 +315,9 @@ export const AutoAnalyzerSyncModal: React.FC<AutoAnalyzerSyncModalProps> = ({
         {/* Read / Sync Action Strip */}
         <div style={{ padding: '10px 20px', backgroundColor: '#EFF6FF', borderBottom: '1px solid #BFDBFE', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '1.2rem' }}>âš¡</span>
+            <span style={{ fontSize: '1.2rem' }}>⚡</span>
             <span style={{ fontSize: '0.8rem', color: '#1E40AF', fontWeight: 600 }}>
-              Status: {syncDone ? `âœ“ Run ingested from ${selectedAnalyzer.name}` : `Ready to ingest digital run from ${selectedAnalyzer.name}`}
+              Status: {syncDone ? `✓ Run ingested from ${selectedAnalyzer.name}` : `Ready to ingest digital run from ${selectedAnalyzer.name}`}
             </span>
           </div>
 
@@ -336,7 +336,7 @@ export const AutoAnalyzerSyncModal: React.FC<AutoAnalyzerSyncModalProps> = ({
               gap: '6px'
             }}
           >
-            <span>{isReading ? 'â³ Interfacing...' : 'ðŸ“¡ Read Analyzer Serial Feed'}</span>
+            <span>{isReading ? 'â³ Interfacing...' : '📡 Read Analyzer Serial Feed'}</span>
           </Button>
         </div>
 
@@ -375,7 +375,7 @@ export const AutoAnalyzerSyncModal: React.FC<AutoAnalyzerSyncModalProps> = ({
               gap: '6px'
             }}
           >
-            <span>ðŸ“Ÿ Raw ASTM E1381/E1394 Stream</span>
+            <span>📟 Raw ASTM E1381/E1394 Stream</span>
             <span style={{ fontSize: '0.62rem', backgroundColor: '#10B981', color: '#FFF', padding: '1px 5px', borderRadius: '4px', fontWeight: 800 }}>LIVE</span>
           </button>
         </div>
@@ -386,7 +386,7 @@ export const AutoAnalyzerSyncModal: React.FC<AutoAnalyzerSyncModalProps> = ({
             <div style={{ backgroundColor: '#090D16', borderRadius: '8px', border: '1px solid #1E293B', padding: '14px', fontFamily: 'monospace' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #1E293B', paddingBottom: '8px', marginBottom: '10px', fontSize: '0.72rem', color: '#94A3B8' }}>
                 <span>Driver: <strong>ASTM E1381/E1394 Direct Driver</strong> ({selectedAnalyzer.port})</span>
-                <span style={{ color: '#10B981' }}>â— Handshake: &lt;ENQ&gt; &lt;ACK&gt; Synchronized</span>
+                <span style={{ color: '#10B981' }}>● Handshake: &lt;ENQ&gt; &lt;ACK&gt; Synchronized</span>
               </div>
               <pre style={{ margin: 0, fontSize: '0.75rem', color: '#38BDF8', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
                 {getRawAstmFrames()}
@@ -427,11 +427,11 @@ export const AutoAnalyzerSyncModal: React.FC<AutoAnalyzerSyncModalProps> = ({
                     <td style={{ padding: '8px 10px' }}>
                       {p.isPanic ? (
                         <span style={{ backgroundColor: '#EF4444', color: '#FFFFFF', padding: '2px 8px', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 800 }}>
-                          ðŸš¨ CRITICAL PANIC
+                          🚨 CRITICAL PANIC
                         </span>
                       ) : (
                         <span style={{ backgroundColor: '#DCFCE7', color: '#15803D', padding: '2px 8px', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 700 }}>
-                          âœ“ Normal
+                          ✓ Normal
                         </span>
                       )}
                     </td>
@@ -456,7 +456,7 @@ export const AutoAnalyzerSyncModal: React.FC<AutoAnalyzerSyncModalProps> = ({
                 gap: '8px'
               }}
             >
-              <span style={{ fontSize: '1.2rem' }}>âš ï¸</span>
+              <span style={{ fontSize: '1.2rem' }}>⚠️</span>
               <div>
                 <strong>Critical Value Call Desk (Read-Back Logged) Required:</strong> These values breach laboratory critical thresholds. Submitting this run will route the specimen to the Critical Value Call Desk for mandatory verbal read-back telephonic intimation per NABL ISO-15189 clause 5.8.2.
               </div>
@@ -497,7 +497,7 @@ export const AutoAnalyzerSyncModal: React.FC<AutoAnalyzerSyncModalProps> = ({
                   : '0 2px 8px rgba(22, 163, 74, 0.4)'
               }}
             >
-              {hasPanicDetected ? 'âš ï¸ Route to Critical Value Call Desk (Read-Back Logged)' : 'âœ“ Commit Results to LIMS Workbench'}
+              {hasPanicDetected ? '⚠️ Route to Critical Value Call Desk (Read-Back Logged)' : '✓ Commit Results to LIMS Workbench'}
             </Button>
           </div>
         </div>

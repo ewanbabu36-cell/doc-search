@@ -68,9 +68,9 @@ export interface FrontDeskPatientToken {
   blockingReason?: string | null;
   hasVitals?: boolean;
   priorityScore?: number | undefined;
-  isAbhaLinked?: boolean;
-  abhaAddress?: string;
-  abhaNumber?: string;
+  isAbhaLinked?: boolean | undefined;
+  abhaAddress?: string | undefined;
+  abhaNumber?: string | undefined;
 }
 
 export interface InboundAmbulanceAlert {
@@ -4718,7 +4718,7 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
       <AbdmScanAndShareModal
         isOpen={isAbdmScanModalOpen}
         onClose={() => setIsAbdmScanModalOpen(false)}
-        hospitalName={facilityName || partnerProfile.entityLegalName}
+        hospitalName={clinicDisplayName}
         onRegisterSuccess={handleAbdmRegisterSuccess}
       />
 

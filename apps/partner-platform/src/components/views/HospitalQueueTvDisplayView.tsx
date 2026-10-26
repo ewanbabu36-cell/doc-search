@@ -562,7 +562,7 @@ export const HospitalQueueTvDisplayView: React.FC<HospitalQueueTvDisplayViewProp
               boxShadow: '0 4px 20px rgba(2, 132, 199, 0.5)'
             }}
           >
-            ðŸ¥
+            🏥
           </div>
           <div>
             <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#F8FAFC', letterSpacing: '-0.02em', textTransform: 'uppercase' }}>
@@ -662,7 +662,7 @@ export const HospitalQueueTvDisplayView: React.FC<HospitalQueueTvDisplayViewProp
               }}
               title="Toggle Fullscreen (F11)"
             >
-              {isFullscreen ? 'ðŸ—— Window' : 'â›¶ Fullscreen'}
+              {isFullscreen ? '🗗 Window' : '⛶ Fullscreen'}
             </button>
 
             {onExit && (

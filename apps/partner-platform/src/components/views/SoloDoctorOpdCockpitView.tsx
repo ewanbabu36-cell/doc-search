@@ -3786,20 +3786,20 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
       const effectiveAbha = targetAbhaAddress || 'patient@abdm';
       const docHprId = 'IN-HPR-2026-9041';
       abdmFhirService.generateFhirBundle(consultation?.tenantId || '55555555-5555-4555-8555-555555555555', {
-        profileType: 'Prescription',
+        profileType: 'PRESCRIPTION_RECORD',
         patientAbhaAddress: effectiveAbha,
         patientMrn: activePatient.mrn || `MRN-${activePatient.token}`,
         careContextRef: `OPD-TOKEN-${activePatient.token}`,
         authorPractitionerHprId: docHprId,
         authorPractitionerName: chamberDoctor,
-        clinicalSummaryText: `OPD Consultation: ${clinicalAssessment || 'Clinical Examination'}. Diagnoses: ${icd10Code ? `${clinicalAssessment} (ICD-10: ${icd10Code})` : (clinicalAssessment || 'Routine Assessment')}. Meds: ${structuredMeds.map((m) => `${m.drugName} ${m.dose || ''} (${m.frequency || 'OD'})`).join(', ')}`
+        clinicalSummaryText: `OPD Consultation: ${clinicalAssessment || 'Clinical Examination'}. Diagnoses: ${icd10Code ? `${clinicalAssessment} (ICD-10: ${icd10Code})` : (clinicalAssessment || 'Routine Assessment')}. Meds: ${structuredMeds.map((m) => `${m.medicationName} ${m.dosage || m.strength || ''} (${m.frequency || 'OD'})`).join(', ')}`
       }).then((bundleRecord) => {
         hospitalEventBus.publish(
           'ABDM_FHIR_BUNDLE_GENERATED',
           'SoloDoctorOpdCockpitView',
           {
             bundleId: bundleRecord.bundleId,
-            profileType: 'Prescription',
+            profileType: 'PRESCRIPTION_RECORD',
             patientAbhaAddress: effectiveAbha,
             patientMrn: activePatient.mrn,
             careContextRef: `OPD-TOKEN-${activePatient.token}`,
