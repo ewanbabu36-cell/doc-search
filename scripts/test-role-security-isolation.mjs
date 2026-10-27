@@ -11,7 +11,7 @@ import {
   isHospitalExecutive,
   getRoleDefaultPerspective,
   getRoleDefaultHomeModule
-} from '../apps/partner-platform/src/utils/partnerRolePermissions.js';
+} from '../apps/partner-platform/dist/utils/partnerRolePermissions.js';
 
 const API_BASE = process.env.API_GATEWAY_URL || 'http://localhost:4000';
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret-docsearch-jwt-key-2026-production-grade';
