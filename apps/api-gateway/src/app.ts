@@ -80,6 +80,9 @@ import { migrationRoutes } from './routes/partner/migration.routes.js';
 import { telemedicineSignalingRoutes } from './routes/partner/telemedicine-signaling.routes.js';
 import { hospitalEventsRoutes } from './routes/partner/hospital-events.routes.js';
 import { offlineSyncRoutes } from './routes/partner/offline-sync.routes.js';
+import { aiScribeRoutes } from './routes/partner/ai-scribe.routes.js';
+import { nhcxInsuranceRoutes } from './routes/partner/nhcx-insurance.routes.js';
+import { genericArbitrageRoutes } from './routes/partner/generic-arbitrage.routes.js';
 import { distributedLockRoutes } from './routes/locks.routes.js';
 import { commercialOperationsRoutes } from './routes/partner/commercial-operations.routes.js';
 import { AppError, sanitizeObjectPrototype } from '@docsearch/shared-core';
@@ -393,6 +396,9 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(telemedicineSignalingRoutes);
   await app.register(hospitalEventsRoutes);
   await app.register(offlineSyncRoutes);
+  await app.register(aiScribeRoutes);
+  await app.register(nhcxInsuranceRoutes);
+  await app.register(genericArbitrageRoutes);
 
   // Block any direct guessed physical storage URL access (/storage/*)
   app.get('/storage/*', async (_request, reply) => {
