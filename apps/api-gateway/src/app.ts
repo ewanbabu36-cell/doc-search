@@ -87,6 +87,11 @@ import { radiologyAiRoutes } from './routes/partner/radiology-ai.routes.js';
 import { smartIcuRoutes } from './routes/partner/smart-icu.routes.js';
 import { corporateB2bRoutes } from './routes/partner/corporate-b2b.routes.js';
 import { bedTurnaroundRoutes } from './routes/partner/bed-turnaround.routes.js';
+import { otSafetySentinelRoutes } from './routes/partner/ot-safety-sentinel.routes.js';
+import { bedsideConciergeRoutes } from './routes/partner/bedside-concierge.routes.js';
+import { pharmacyPosSentinelRoutes } from './routes/partner/pharmacy-pos-sentinel.routes.js';
+import { pmjaySchemeRoutes } from './routes/partner/pmjay-scheme.routes.js';
+import { bloodBankSentinelRoutes } from './routes/partner/blood-bank-sentinel.routes.js';
 import { distributedLockRoutes } from './routes/locks.routes.js';
 import { commercialOperationsRoutes } from './routes/partner/commercial-operations.routes.js';
 import { AppError, sanitizeObjectPrototype } from '@docsearch/shared-core';
@@ -407,6 +412,11 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(smartIcuRoutes);
   await app.register(corporateB2bRoutes);
   await app.register(bedTurnaroundRoutes);
+  await app.register(otSafetySentinelRoutes);
+  await app.register(bedsideConciergeRoutes);
+  await app.register(pharmacyPosSentinelRoutes);
+  await app.register(pmjaySchemeRoutes);
+  await app.register(bloodBankSentinelRoutes);
 
   // Block any direct guessed physical storage URL access (/storage/*)
   app.get('/storage/*', async (_request, reply) => {
