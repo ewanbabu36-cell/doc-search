@@ -13,6 +13,7 @@ import {
   Input
 } from '@docsearch/ui-kit';
 import { hospitalEventBus } from '../../services/hospital-event-bus.js';
+import { apiRequest } from '../../services/api-client.js';
 
 export interface ClinicalEncounterChargeBinding {
   id: string;
@@ -46,6 +47,50 @@ export const RcmAntiLeakageDeskView: React.FC = () => {
   // Real-Time Auto-Posting Engine Switch
   const [isAutoPostingActive, setIsAutoPostingActive] = useState(true);
   const [filterType, setFilterType] = useState<'ALL' | 'UNBILLED' | 'AUTO_POSTED'>('ALL');
+
+  // IRDAI & NHCX 2.0 45-Rule Pre-Auth Scrubber State
+  const [claimScrubResult, setClaimScrubResult] = useState<any | null>(null);
+  const [isScrubbingClaim, setIsScrubbingClaim] = useState(false);
+  const [hasUltrasoundReport, setHasUltrasoundReport] = useState(false);
+  const [hasNonPayableConsumables, setHasNonPayableConsumables] = useState(true);
+  const [unbilledAuditResult, setUnbilledAuditResult] = useState<any | null>(null);
+
+  const handleRunPreAuthScrub = async () => {
+    setIsScrubbingClaim(true);
+    try {
+      const res = await apiRequest<any>('/api/v1/partner/billing/rcm/scrub-claim', {
+        method: 'POST',
+        body: JSON.stringify({
+          claimNumber: 'CLM-TPA-8821',
+          patientUhid: 'UHID-8821',
+          patientName: 'Rameshwar Dayal',
+          procedureName: 'Laparoscopic Cholecystectomy',
+          proposedClaimAmount: 65000,
+          hasUltrasoundReport,
+          billedNonPayableConsumables: hasNonPayableConsumables,
+          losHours: 18
+        })
+      });
+      if (res.success && res.data) {
+        setClaimScrubResult(res.data);
+      }
+    } catch (err: any) {
+      alert('Claim scrub failed: ' + err?.message);
+    } finally {
+      setIsScrubbingClaim(false);
+    }
+  };
+
+  const handleRunUnbilledAudit = async () => {
+    try {
+      const res = await apiRequest<any>('/api/v1/partner/billing/rcm/unbilled-consumables-audit/adm-8821');
+      if (res.success && res.data) {
+        setUnbilledAuditResult(res.data);
+      }
+    } catch (err: any) {
+      alert('Unbilled audit error: ' + err?.message);
+    }
+  };
 
   // Clinical Encounter Stream (Action-to-Charge Binding Radar)
   const [encounters, setEncounters] = useState<ClinicalEncounterChargeBinding[]>([
@@ -436,6 +481,112 @@ export const RcmAntiLeakageDeskView: React.FC = () => {
           </div>
         </Card>
       </div>
+
+      {/* IRDAI & NHCX 2.0 45-Rule Pre-Auth Scrubber Card */}
+      <Card style={{ backgroundColor: '#0F172A', border: '1.5px solid rgba(56, 189, 248, 0.4)', borderRadius: '16px', padding: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '1.3rem' }}>🛡️</span>
+              <h2 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#38BDF8', margin: 0 }}>
+                IRDAI & NHCX 2.0 Pre-Auth Denial Predictor & 45-Trigger Scrubber
+              </h2>
+              <Badge variant="primary">Epic Resolute Benchmark</Badge>
+            </div>
+            <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#CBD5E1' }}>
+              Pre-screens IPD admission pre-auth files against 45 common rejection triggers before submitting to TPA/NHCX.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <Button
+              variant="secondary"
+              onClick={handleRunUnbilledAudit}
+              style={{ fontSize: '0.8rem', fontWeight: 800 }}
+            >
+              🔍 Audit Bedside Consumables
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleRunPreAuthScrub}
+              disabled={isScrubbingClaim}
+              style={{ backgroundColor: '#0284C7', fontSize: '0.8rem', fontWeight: 800 }}
+            >
+              {isScrubbingClaim ? 'Scrubbing 45 Rules...' : '⚡ Run 45-Rule Claim Pre-Scrub'}
+            </Button>
+          </div>
+        </div>
+
+        {/* Claim Pre-Scrub Controls */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px', marginBottom: '16px', backgroundColor: 'rgba(255,255,255,0.03)', padding: '14px', borderRadius: '10px' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#F8FAFC', cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={hasUltrasoundReport}
+              onChange={(e) => setHasUltrasoundReport(e.target.checked)}
+            />
+            Attach USG / Histopathology Report (Clinical Justification)
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#F8FAFC', cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={hasNonPayableConsumables}
+              onChange={(e) => setHasNonPayableConsumables(e.target.checked)}
+            />
+            Billed Gloves/PPE under Patient Line Items (Consumable Leakage)
+          </label>
+        </div>
+
+        {/* Claim Scrub Result Card */}
+        {claimScrubResult && (
+          <div style={{
+            backgroundColor: claimScrubResult.scrubStatus === 'CLEAN_SUBMIT_APPROVED' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+            border: `1.5px solid ${claimScrubResult.scrubStatus === 'CLEAN_SUBMIT_APPROVED' ? '#10B981' : '#EF4444'}`,
+            borderRadius: '12px',
+            padding: '16px',
+            marginBottom: '16px'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+              <div>
+                <strong style={{ color: claimScrubResult.scrubStatus === 'CLEAN_SUBMIT_APPROVED' ? '#34D399' : '#F87171', fontSize: '1rem' }}>
+                  {claimScrubResult.scrubStatus === 'CLEAN_SUBMIT_APPROVED' ? '✓ NHCX Ready: Clean Pre-Auth Approved' : '⚠️ Blocked: High Denial Probability Detected'}
+                </strong>
+                <div style={{ fontSize: '0.78rem', color: '#CBD5E1', marginTop: '2px' }}>
+                  Scrubber Quality Score: <strong>{claimScrubResult.scrubberScore}/100</strong> · Estimated Denial Risk: <strong>{claimScrubResult.denialProbabilityPct}%</strong> · Leakage Blocked: <strong>₹{claimScrubResult.leakageAmountPrevented}</strong>
+                </div>
+              </div>
+            </div>
+            {claimScrubResult.findings && claimScrubResult.findings.length > 0 && (
+              <ul style={{ margin: '10px 0 0', paddingLeft: '18px', fontSize: '0.78rem', color: '#FECACA', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                {claimScrubResult.findings.map((f: any, idx: number) => (
+                  <li key={idx}>
+                    <strong>[{f.ruleCode}] {f.severity}:</strong> {f.description} <em>(Fix: {f.fix})</em>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
+        {/* Unbilled Consumables Cross-Check Result */}
+        {unbilledAuditResult && (
+          <div style={{ backgroundColor: 'rgba(245, 158, 11, 0.12)', border: '1.5px solid #F59E0B', borderRadius: '12px', padding: '14px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <strong style={{ color: '#FCD34D', fontSize: '0.9rem' }}>
+                ⚡ Bedside EMR Cross-Audit: Recovered ₹{unbilledAuditResult.totalRecoveredRevenue} Unbilled Consumables
+              </strong>
+              <Badge variant="warning">{unbilledAuditResult.status}</Badge>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '8px' }}>
+              {unbilledAuditResult.unbilledItemsFound.map((it: any, idx: number) => (
+                <div key={idx} style={{ backgroundColor: 'rgba(0,0,0,0.3)', padding: '6px 10px', borderRadius: '6px', fontSize: '0.75rem', color: '#CBD5E1' }}>
+                  <strong>{it.item}</strong> (₹{it.amount}) · <span style={{ color: '#38BDF8' }}>Detected via {it.detectedVia}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </Card>
 
       {/* Pillar 12 Component 1: Clinical-Action-to-Charge Binding Radar */}
       <Card style={{ backgroundColor: '#0F172A', border: '1px solid #1E293B', borderRadius: '12px', padding: '20px' }}>

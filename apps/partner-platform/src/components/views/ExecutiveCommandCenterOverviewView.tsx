@@ -172,6 +172,139 @@ export const ExecutiveCommandCenterOverviewView: React.FC<Props> = ({
           ))}
         </div>
       </Card>
+
+      {/* ENTERPRISE PILLAR 6: NABH STATUTORY LICENSE EXPIRY VAULT */}
+      <Card className="p-4 space-y-3 border-amber-300 bg-gradient-to-r from-amber-50/40 to-slate-50">
+        <div className="flex items-center justify-between border-b pb-2">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">📜</span>
+            <h3 className="text-sm font-bold text-gray-900">NABH & Statutory License Expiry Radar (60-Day Critical Warning)</h3>
+          </div>
+          <Badge variant="warning">NABH 5th Ed. FMS.1 Mandatory</Badge>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
+          {/* License 1: Fire NOC */}
+          <div className="p-3 bg-white rounded-lg border-2 border-red-300 shadow-sm flex flex-col justify-between gap-2">
+            <div>
+              <div className="flex justify-between items-center">
+                <span className="font-bold text-gray-900">Fire Safety NOC</span>
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700 animate-pulse">20 DAYS LEFT</span>
+              </div>
+              <p className="text-gray-500 mt-1">State Fire Service Directorate</p>
+              <p className="text-gray-700 font-mono mt-0.5">Cert: FS-DL-2025-9011</p>
+            </div>
+            <div className="border-t pt-2 flex justify-between items-center text-[11px]">
+              <span className="text-gray-600">Expires: 15 Nov 2026</span>
+              <button type="button" className="text-blue-700 font-bold hover:underline">1-Click Renewal</button>
+            </div>
+          </div>
+
+          {/* License 2: AERB X-Ray & CT */}
+          <div className="p-3 bg-white rounded-lg border-2 border-amber-300 shadow-sm flex flex-col justify-between gap-2">
+            <div>
+              <div className="flex justify-between items-center">
+                <span className="font-bold text-gray-900">AERB Radiation Shielding</span>
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">42 DAYS LEFT</span>
+              </div>
+              <p className="text-gray-500 mt-1">eLORA Diagnostic X-Ray / CT</p>
+              <p className="text-gray-700 font-mono mt-0.5">AERB-ND-2024-881</p>
+            </div>
+            <div className="border-t pt-2 flex justify-between items-center text-[11px]">
+              <span className="text-gray-600">Expires: 07 Dec 2026</span>
+              <button type="button" className="text-blue-700 font-bold hover:underline">Upload QA Report</button>
+            </div>
+          </div>
+
+          {/* License 3: PCB Biomedical Waste */}
+          <div className="p-3 bg-white rounded-lg border-2 border-amber-300 shadow-sm flex flex-col justify-between gap-2">
+            <div>
+              <div className="flex justify-between items-center">
+                <span className="font-bold text-gray-900">SPCB Biomedical Waste</span>
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">58 DAYS LEFT</span>
+              </div>
+              <p className="text-gray-500 mt-1">State Pollution Control Board</p>
+              <p className="text-gray-700 font-mono mt-0.5">BMW-AUTH-2024-03</p>
+            </div>
+            <div className="border-t pt-2 flex justify-between items-center text-[11px]">
+              <span className="text-gray-600">Expires: 23 Dec 2026</span>
+              <button type="button" className="text-blue-700 font-bold hover:underline">Submit Manifest</button>
+            </div>
+          </div>
+
+          {/* License 4: CDSCO Narcotic & Pharmacy */}
+          <div className="p-3 bg-white rounded-lg border border-emerald-300 shadow-sm flex flex-col justify-between gap-2">
+            <div>
+              <div className="flex justify-between items-center">
+                <span className="font-bold text-gray-900">CDSCO Narcotic & Pharmacy</span>
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">180 DAYS</span>
+              </div>
+              <p className="text-gray-500 mt-1">State Drugs Control (Form 20B/21B)</p>
+              <p className="text-gray-700 font-mono mt-0.5">DL-PHARM-9941-X</p>
+            </div>
+            <div className="border-t pt-2 flex justify-between items-center text-[11px]">
+              <span className="text-gray-600">Valid till April 2027</span>
+              <span className="text-emerald-700 font-bold">✓ Active</span>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* ENTERPRISE PILLAR 6: LIVE ABDM MILESTONE SCORECARD */}
+      <Card className="p-4 space-y-3 border-blue-300 bg-gradient-to-r from-blue-50/30 to-indigo-50/20">
+        <div className="flex items-center justify-between border-b pb-2">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">🇮🇳</span>
+            <h3 className="text-sm font-bold text-gray-900">National Health Authority (NHA) ABDM 2.0 Telemetry Scorecard</h3>
+          </div>
+          <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-bold">ABDM Certified Level 3 HMIS</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+          {/* Milestone 1: ABHA Registration */}
+          <div className="p-3 bg-white rounded-lg border shadow-sm space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-gray-800">Milestone 1: ABHA Linked Patients</span>
+              <Badge variant="success">94.2% (Target: &gt;90%)</Badge>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="bg-emerald-500 h-2 rounded-full" style={{ width: '94.2%' }}></div>
+            </div>
+            <p className="text-[11px] text-gray-600">
+              1,418 of 1,505 registered patients mapped with 14-digit ABHA ID & digital QR token scan.
+            </p>
+          </div>
+
+          {/* Milestone 2: NRCES FHIR e-Prescriptions */}
+          <div className="p-3 bg-white rounded-lg border shadow-sm space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-gray-800">Milestone 2: NRCES FHIR e-Prescriptions</span>
+              <Badge variant="success">88.6% (Target: &gt;85%)</Badge>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="bg-blue-600 h-2 rounded-full" style={{ width: '88.6%' }}></div>
+            </div>
+            <p className="text-[11px] text-gray-600">
+              Digitally signed discharge summaries and OPD prescriptions with doctor Aadhaar DSC / OTP.
+            </p>
+          </div>
+
+          {/* Milestone 3: NHCX 2.0 Auto-Adjudication */}
+          <div className="p-3 bg-white rounded-lg border shadow-sm space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-gray-800">Milestone 3: NHCX Claims Auto-Adjudicated</span>
+              <Badge variant="success">82.4% (Target: &gt;80%)</Badge>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="bg-purple-600 h-2 rounded-full" style={{ width: '82.4%' }}></div>
+            </div>
+            <p className="text-[11px] text-gray-600">
+              Cashless insurance pre-auth requests auto-settled via National Health Claims Exchange (NHCX).
+            </p>
+          </div>
+        </div>
+      </Card>
+
     </div>
   );
 };

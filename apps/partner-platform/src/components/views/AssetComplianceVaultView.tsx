@@ -51,6 +51,37 @@ export const AssetComplianceVaultView: React.FC = () => {
             </div>
           </div>
         </Card>
+
+        {/* Statutory 60-Day Expiry Vault */}
+        <Card className="p-4 space-y-3 border-amber-300 md:col-span-2">
+          <div className="flex items-center justify-between border-b pb-2">
+            <h3 className="text-sm font-bold text-gray-900">Statutory License Expiry Countdown & Compliance Verification</h3>
+            <span className="text-xs text-amber-700 font-bold">60-Day Warning Horizon</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
+            <div className="p-2.5 bg-red-50 border border-red-200 rounded">
+              <div className="font-bold text-red-900">Fire NOC (FS-DL-9011)</div>
+              <div className="text-red-700 font-bold mt-1">20 Days Remaining</div>
+              <div className="text-gray-500 text-[10px]">Renewal in progress</div>
+            </div>
+            <div className="p-2.5 bg-amber-50 border border-amber-200 rounded">
+              <div className="font-bold text-amber-900">AERB CT/X-Ray Shielding</div>
+              <div className="text-amber-800 font-bold mt-1">42 Days Remaining</div>
+              <div className="text-gray-500 text-[10px]">Survey scheduled</div>
+            </div>
+            <div className="p-2.5 bg-amber-50 border border-amber-200 rounded">
+              <div className="font-bold text-amber-900">SPCB Biomedical Waste</div>
+              <div className="text-amber-800 font-bold mt-1">58 Days Remaining</div>
+              <div className="text-gray-500 text-[10px]">Annual return drafted</div>
+            </div>
+            <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded">
+              <div className="font-bold text-emerald-900">CDSCO Narcotic License</div>
+              <div className="text-emerald-700 font-bold mt-1">180 Days Remaining</div>
+              <div className="text-gray-500 text-[10px]">Current & Certified</div>
+            </div>
+          </div>
+        </Card>
+
       </div>
     </div>
   );

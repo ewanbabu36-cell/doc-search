@@ -72,6 +72,10 @@ export interface StaffPermissions {
   canSignLabReports: boolean;
   canSignPrescriptions: boolean;
   canDispenseRestrictedDrugs: boolean;
+  canApproveDiscountsAbove10?: boolean;
+  canSignDischargeSummary?: boolean;
+  canDispenseScheduleH1?: boolean;
+  canInitiateBreakGlass?: boolean;
 
   // 4. Access & Session Lifecycle
   canAccessAfterHours: boolean;

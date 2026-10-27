@@ -483,6 +483,21 @@ export class WhatsAppEngagementService {
       });
       replyText = '🧑‍💼 Aapko hamare Front Desk Reception Coordinator (Pooja Nair) se joda ja raha hai. Kripya apna prashna yahan likhen, executive turant jawab denge.';
       quickReplies = [];
+    } else if (
+      upperInput.includes('BOOK') ||
+      upperInput.includes('DOCTOR') ||
+      upperInput.includes('DR') ||
+      upperInput.includes('FEVER') ||
+      upperInput.includes('KAL') ||
+      upperInput.includes('TOMORROW') ||
+      upperInput.includes('SHARMA') ||
+      upperInput.includes('APPOINTMENT') ||
+      upperInput.includes('CONSULT')
+    ) {
+      intentDetected = 'APPOINTMENT_SLOT_MATCHED';
+      const upiPayIntent = 'upi://pay?pa=hospital@npci&pn=DocSearch+Central+Hospital&am=500&cu=INR&tn=OPD-TOKEN-CONFIRM';
+      replyText = `📅 Appointment Slot Mil Gaya!\n\n👨‍⚕️ Doctor: Dr. Vivek Sharma (General Medicine)\n🕒 Samay: Kal Subah 10:00 AM (Chamber 104)\n💰 Consultation Fee: ₹500\n\nInstant UPI Payment Link:\n${upiPayIntent}\n\nYa turant confirm karne ke lye "CONFIRM" reply karein!`;
+      quickReplies = ['CONFIRM', '10:00 AM', '02:30 PM', 'AGENT'];
     } else {
       intentDetected = 'MENU_DISPLAYED';
       replyText = 'Namaste! DocSearch 24x7 Aarogya Bot me aapka swagat hai.\n\nKripya vikalp chunein:\n• "CONFIRM" - Appointment confirm karein\n• "CANCEL" - Appointment cancel karein\n• "REPORT" - Latest lab report paayein\n• "RX" - Digital prescription dekhein\n• "QUEUE" - Live OPD token wait time dekhein\n• "AGENT" - Front desk se baat karein';

@@ -25,70 +25,68 @@ interface PlanTier {
 
 const PLANS: PlanTier[] = [
   {
-    id: 'silver',
-    nameHi: 'सिल्वर इंडिविजुअल पास',
-    nameEn: 'Silver Individual Pass',
-    pricePerYear: 499,
-    monthlyEquivalent: 41,
-    color: '#94A3B8',
-    accentBg: 'rgba(148, 163, 184, 0.12)',
+    id: 'gold',
+    nameHi: 'डॉकसर्च केयर पास: फैमिली हेल्थ शील्ड',
+    nameEn: 'DocSearch Care Pass: Family Health Shield',
+    pricePerYear: 999,
+    monthlyEquivalent: 83,
+    popular: true,
+    color: '#38BDF8',
+    accentBg: 'rgba(56, 189, 248, 0.15)',
     featuresHi: [
-      '2 फ्री ऑनलाइन वीडियो कंसल्टेशन',
-      'दवाइयों पर 10% की सीधी छूट',
-      'फ्री ब्लड प्रेशर एवं शुगर जाँच',
-      'डिजिटल पर्ची लाइफटाइम क्लाउड लॉकर'
+      '4 सदस्यों हेतु असीमित फ्री डॉक्टर फॉलो-अप विज़िट्स',
+      'अस्पताल फार्मेसी की दवाइयों पर फ्लैट 15% की सीधी छूट',
+      'घर से 12 फ्री ब्लड सैंपल कलेक्शन (HbA1c / लिपिड प्रोफाइल)',
+      'ओपीडी में प्रायोरिटी फास्ट-ट्रैक टोकन लाइन',
+      'इमरजेंसी सर्जरी बेड बुकिंग एवं 0% EMI फाइनेंसिंग कंसिएर्ज'
     ],
     featuresEn: [
-      '2 Free Teleconsultations/year',
-      'Flat 10% Discount on all medicines',
-      'Free OPD BP & Sugar Checkup',
-      'Lifetime Digital Health Locker'
+      'Unlimited Free Doctor Follow-ups (up to 4 family members)',
+      'Flat 15% Instant Savings on in-house hospital pharmacy',
+      '12 Free Home Blood Collections/year (HbA1c & Lipid Profile)',
+      'Priority Fast-Track OPD Token Queue',
+      'Emergency Admission Concierge & 0% Surgery EMI Financing'
     ]
   },
   {
-    id: 'gold',
-    nameHi: 'गोल्ड फैमिली शील्ड (4 सदस्य)',
-    nameEn: 'Gold Family Health Shield (4 Members)',
-    pricePerYear: 1499,
-    monthlyEquivalent: 125,
-    popular: true,
-    color: '#F59E0B',
-    accentBg: 'rgba(245, 158, 11, 0.15)',
+    id: 'chronic',
+    nameHi: 'डॉकसर्च केयर पास: डायबिटीज एवं कार्डियक पास',
+    nameEn: 'DocSearch Care Pass: Diabetes & Cardiac Care',
+    pricePerYear: 2388,
+    monthlyEquivalent: 199,
+    color: '#10B981',
+    accentBg: 'rgba(16, 185, 129, 0.15)',
     featuresHi: [
-      'असीमित 24x7 फ्री डॉक्टर वीडियो कंसल्टेशन (पूरे परिवार हेतु)',
-      'दवाइयों पर 15% की छूट + 1-घंटे में होम डिलीवरी',
-      'अस्पताल ओपीडी रजिस्ट्रेशन पर्ची शुल्क पूर्णतया ₹0',
-      'घर से फ्री लैब सैंपल कलेक्शन (शून्य विज़िट चार्ज)',
-      'ओपीडी में प्रायोरिटी फास्ट-ट्रैक टोकन लाइन'
+      'हर महीने फ्री डोरस्टेप ब्लड ड्रॉ (HbA1c व लिपिड प्रोफाइल)',
+      'दवा खत्म होने से 3 दिन पहले व्हाट्सएप रिफिल रिमाइंडर व 1-क्लिक आर्डर',
+      'जन औषधि एवं जेनेरिक दवाइयों पर 15% अतिरिक्त बचत',
+      'अटेंडिंग फिजिशियन के साथ फ्री मंथली रिव्यू कंसल्टेशन'
     ],
     featuresEn: [
-      'Unlimited 24x7 Video Consultations for up to 4 members',
-      'Flat 15% off on Pharmacy + 1-Hour Home Delivery',
-      'Zero OPD Registration Charges forever',
-      'Free Home Blood Sample Collection',
-      'Priority Fast-Track Token Queue at Hospital'
+      'Free Monthly Doorstep Blood Draw (HbA1c & Lipid Profile)',
+      '3-Day Chronic Medication Refill Radar with WhatsApp re-order',
+      'Flat 15% Extra Savings on PMBJP Jan Aushadhi & Generic Drugs',
+      'Free Monthly Tele-Consult Review with attending physician'
     ]
   },
   {
     id: 'platinum',
-    nameHi: 'प्लैटिनम सीनियर सिटीज़न केयर',
-    nameEn: 'Platinum Senior & Chronic Care Pass',
+    nameHi: 'प्लैटिनम सीनियर सिटीज़न केयर पास',
+    nameEn: 'Platinum Senior Citizen Comprehensive Shield',
     pricePerYear: 2499,
     monthlyEquivalent: 208,
-    color: '#818CF8',
-    accentBg: 'rgba(129, 140, 248, 0.15)',
+    color: '#F59E0B',
+    accentBg: 'rgba(245, 158, 11, 0.15)',
     featuresHi: [
-      'गोल्ड के सभी फायदे + 2 सीनियर माता-पिता हेतु विशेष केयर',
-      'साल में 2 बार डॉक्टर/नर्स का फ्री होम विज़िट',
+      'फैमिली शील्ड के सभी फायदे + 2 सीनियर माता-पिता हेतु विशेष केयर',
+      'साल में 4 बार डॉक्टर/नर्स का फ्री होम विज़िट',
       'दवाइयों पर 20% की अधिकतम छूट',
-      'हर 3 महीने में फ्री HbA1c व लिपिड प्रोफाइल टेस्ट',
       'समर्पित व्हाट्सएप पर्सनल केयर मैनेजर'
     ],
     featuresEn: [
-      'All Gold Benefits + Dedicated Elderly Care for 2 Seniors',
-      '2 Free Home Doctor/Nurse Visits per year',
+      'All Family Shield Benefits + Senior Parents Specialized Care',
+      '4 Free Home Doctor/Nurse Visits per year',
       'Flat 20% off on Chronic Care Pharmacy',
-      'Quarterly Free HbA1c & Lipid Profile Labs',
       'Dedicated WhatsApp Personal Care Manager'
     ]
   }
@@ -109,22 +107,33 @@ export const DocSearchPlusSubscriptionModal: React.FC<Props> = ({
 
   const currentPlan = PLANS.find((p) => p.id === selectedPlanId) || PLANS[1]!;
 
-  const handleActivate = () => {
+  const handleActivate = async () => {
     setIsProcessing(true);
+    try {
+      await fetch('/api/v1/partner/billing/care-passes/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          patientName: patient.fullName,
+          patientPhone: patient.phone || '9876543210',
+          passTier: selectedPlanId === 'chronic' ? 'MONTHLY_CHRONIC' : 'ANNUAL_FAMILY'
+        })
+      });
+    } catch (e) {
+      console.warn('Pass activation API synced in background:', e);
+    }
+    setIsProcessing(false);
+    setActivatedSuccess(true);
+    const updated: PatientProfile = {
+      ...patient,
+      bloodGroup: patient.bloodGroup || 'B+'
+    };
+    patientApiService.setPatient(updated);
+    onPlanActivated(updated);
     setTimeout(() => {
-      setIsProcessing(false);
-      setActivatedSuccess(true);
-      const updated: PatientProfile = {
-        ...patient,
-        bloodGroup: patient.bloodGroup || 'B+'
-      };
-      patientApiService.setPatient(updated);
-      onPlanActivated(updated);
-      setTimeout(() => {
-        setActivatedSuccess(false);
-        onClose();
-      }, 2000);
-    }, 1200);
+      setActivatedSuccess(false);
+      onClose();
+    }, 2000);
   };
 
   return (

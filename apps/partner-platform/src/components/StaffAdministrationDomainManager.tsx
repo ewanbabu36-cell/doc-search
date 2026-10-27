@@ -33,11 +33,13 @@ import { RoleScopeView } from './views/RoleScopeView.js';
 import { CredentialCenterView } from './views/CredentialCenterView.js';
 import { StaffTransfersView } from './views/StaffTransfersView.js';
 import { StaffAuditVaultView } from './views/StaffAuditVaultView.js';
+import { StaffDutyRosterView } from './views/StaffDutyRosterView.js';
 import { Tabs, Badge, Button, ErrorState, SkeletonPage } from '@docsearch/ui-kit';
 
 type ActiveStaffTab =
   | 'overview'
   | 'directory'
+  | 'roster'
   | 'profile'
   | 'departments'
   | 'roles'
@@ -562,6 +564,7 @@ export const StaffAdministrationDomainManager: React.FC<StaffAdministrationDomai
             tabs={[
               { id: 'overview', label: '📊 Workforce Overview' },
               { id: 'directory', label: '👥 Staff Directory', badge: <Badge variant="neutral">{effectiveStaffList.length}</Badge> },
+              { id: 'roster', label: '🗓️ 3-Shift Duty Roster Master' },
               { id: 'profile', label: '📋 Staff Profile' },
               { id: 'departments', label: '🏛️ Departments', badge: <Badge variant="neutral">{departments.length}</Badge> },
               { id: 'roles', label: '🔑 Role & Scope', badge: <Badge variant="neutral">{roleAssignments.length}</Badge> },
@@ -662,6 +665,16 @@ export const StaffAdministrationDomainManager: React.FC<StaffAdministrationDomai
 
           {activeTab === 'audit' && (
             <StaffAuditVaultView auditTraces={auditTraces} />
+          )}
+
+          {activeTab === 'roster' && (
+            <StaffDutyRosterView
+              staffList={effectiveStaffList}
+              departments={departments}
+              tenantId={effectiveTenantId}
+              organizationId={activeOrgId}
+              facilityId={activeBranchId}
+            />
           )}
         </div>
       )}

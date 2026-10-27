@@ -64,6 +64,7 @@ const PharmacyCustomerKhataDeskView = React.lazy(() => import('./views/PharmacyC
 const EpidemicOutbreakRadarView = React.lazy(() => import('./views/EpidemicOutbreakRadarView.js').then(m => ({ default: m.EpidemicOutbreakRadarView })));
 const CdscoDrugInspectorAuditVaultView = React.lazy(() => import('./views/CdscoDrugInspectorAuditVaultView.js').then(m => ({ default: m.CdscoDrugInspectorAuditVaultView })));
 const B2BWholesaleMarketplaceView = React.lazy(() => import('./views/B2BWholesaleMarketplaceView.js').then(m => ({ default: m.B2BWholesaleMarketplaceView })));
+const PharmacyInventoryView = React.lazy(() => import('./views/PharmacyInventoryView.js').then(m => ({ default: m.PharmacyInventoryView })));
 
 // Lazy-loaded Dialogs
 const PharmacyOfflineSyncModal = React.lazy(() => import('./dialogs/PharmacyOfflineSyncModal.js').then(m => ({ default: m.PharmacyOfflineSyncModal })));
@@ -112,7 +113,8 @@ export type ActivePharmacyTab =
   | 'auditVault'
   | 'narcotics'
   | 'khata'
-  | 'b2bWholesale';
+  | 'b2bWholesale'
+  | 'janAushadhi';
 
 export const PharmacyDomainManager: React.FC<PharmacyDomainManagerProps> = ({
   currentUser,
@@ -1160,6 +1162,7 @@ export const PharmacyDomainManager: React.FC<PharmacyDomainManagerProps> = ({
             <>
               {[
                 { id: 'inventory' as ActivePharmacyTab, label: 'Live Stock & Batches', icon: '📦', badge: `${batches.filter((b) => b.availableQuantity > 0).length} Batches` },
+                { id: 'janAushadhi' as ActivePharmacyTab, label: 'Jan Aushadhi PMBJP & Refill Radar', icon: '💊', badge: 'High Margin (60%+)' },
                 { id: 'b2bWholesale' as ActivePharmacyTab, label: 'DocSearch B2B Wholesale Depot', icon: '🚚', badge: 'Direct Sourcing' },
                 { id: 'catalog' as ActivePharmacyTab, label: 'Master Drug Catalog', icon: '📚', badge: catalog.length > 0 ? `${catalog.length}` : undefined },
                 { id: 'expiry' as ActivePharmacyTab, label: 'Stock Expiry & Reorder', icon: '⚠️', badge: nearExpiryCount > 0 ? `${nearExpiryCount} Near Expiry` : undefined, isAlert: nearExpiryCount > 0 },
@@ -1414,6 +1417,10 @@ export const PharmacyDomainManager: React.FC<PharmacyDomainManagerProps> = ({
 
           {activeTab === 'revenue' && (
             <PharmacyRevenueGallaDeskView />
+          )}
+
+          {activeTab === 'janAushadhi' && (
+            <PharmacyInventoryView />
           )}
 
           {(activeTab === 'auditVault' || activeTab === 'compliance' || activeTab === 'audit' || activeTab === 'narcotics') && (

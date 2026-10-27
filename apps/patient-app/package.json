@@ -25,6 +25,7 @@
     "@capacitor/status-bar": "^6.0.2",
     "@docsearch/api-contracts": "workspace:*",
     "@docsearch/auth": "workspace:*",
+    "@docsearch/consumer-portal": "workspace:*",
     "@docsearch/shared-core": "workspace:*",
     "@docsearch/ui-kit": "workspace:*",
     "react": "^18.3.1",

@@ -88,6 +88,57 @@ export const inpatientManagementRoutes: FastifyPluginAsync = async (fastify) => 
     }
   );
 
+  // 2b. Bed Quota & Hard License Ceiling Check (Pillar 4)
+  fastify.post(
+    '/api/v1/partner/inpatient/quota/check-bed',
+    {
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'create')]
+    },
+    async (request, reply) => {
+      const body = (request.body || {}) as {
+        activeBedsCount?: number;
+        planTier?: string;
+      };
+
+      const planTier = (body.planTier || 'Community').toUpperCase();
+      let maxAllowedBeds = 10;
+      if (planTier.includes('ENTERPRISE')) {
+        maxAllowedBeds = 9999;
+      } else if (planTier.includes('PROFESSIONAL')) {
+        maxAllowedBeds = 35;
+      }
+
+      const currentBeds = body.activeBedsCount !== undefined ? body.activeBedsCount : 10;
+      const isQuotaExceeded = currentBeds >= maxAllowedBeds;
+
+      if (isQuotaExceeded) {
+        return reply.status(403).send({
+          success: false,
+          error: {
+            code: 'LICENSE_QUOTA_EXCEEDED',
+            message: `Hospital bed capacity limit (${maxAllowedBeds} beds) reached for '${planTier}' plan. Expansion requires subscription upgrade to next tier.`,
+            details: {
+              currentCount: currentBeds,
+              maxAllowed: maxAllowedBeds,
+              planTier,
+              upgradeSuggestedTier: planTier.includes('COMMUNITY') ? 'Professional (35 Beds)' : 'Enterprise (Unlimited)'
+            }
+          }
+        });
+      }
+
+      return reply.send({
+        success: true,
+        data: {
+          currentCount: currentBeds,
+          maxAllowed: maxAllowedBeds,
+          remainingSlots: maxAllowedBeds - currentBeds,
+          status: 'WITHIN_QUOTA'
+        }
+      });
+    }
+  );
+
   // 3. IPD Admissions
   fastify.get(
     '/api/v1/partner/inpatient/admissions',

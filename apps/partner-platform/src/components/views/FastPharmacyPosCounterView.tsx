@@ -34,6 +34,7 @@ import {
   cdscoInspectionAuditService,
   type ControlledScheduleCategory
 } from '../../services/cdsco-inspection-audit-service.js';
+import { isHospitalExecutive } from '../../utils/partnerRolePermissions.js';
 import { MandatoryPrescriberComplianceModal } from '../dialogs/MandatoryPrescriberComplianceModal.js';
 import { CdscoDrugInspectorAuditVaultView } from './CdscoDrugInspectorAuditVaultView.js';
 import { pharmacyOfflineStorageService } from '../../services/pharmacy-offline-storage-service.js';
@@ -4159,10 +4160,22 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
                     ref={discountInputRef}
                     type="number"
                     min="0"
-                    max="50"
+                    max={isHospitalExecutive(currentUser?.role) ? 50 : 10}
                     value={discountPercent}
                     onFocus={(e) => e.target.select()}
-                    onChange={(e) => setDiscountPercent(Math.max(0, Math.min(50, Number(e.target.value))))}
+                    onChange={(e) => {
+                      const entered = Number(e.target.value);
+                      const isExec = isHospitalExecutive(currentUser?.role);
+                      if (!isExec && entered > 10) {
+                        setDiscountPercent(10);
+                        setNotification({
+                          type: 'warning',
+                          message: 'Tiered Discount Ceiling: Front Desk / Cashier discount capped at 10%. Overrides 10%–25% require Administrator approval; >25% require Medical Director sign-off.'
+                        });
+                      } else {
+                        setDiscountPercent(Math.max(0, Math.min(50, entered)));
+                      }
+                    }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
@@ -4174,7 +4187,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
                       }
                     }}
                     style={{ width: '52px', padding: '2px 4px', fontSize: '0.78rem', backgroundColor: 'var(--ds-color-surface-subtle)', color: 'white', border: '1px solid var(--ds-color-primary)', borderRadius: '4px', textAlign: 'right', fontWeight: 800 }}
-                    title="Press F4 to focus discount input directly"
+                    title={isHospitalExecutive(currentUser?.role) ? "Executive clearance: Discount up to 50%" : "Front Desk clearance: Capped at 10% (<10% Lead, 10-25% Admin, >25% Director)"}
                   />
                   <span style={{ color: 'var(--ds-color-text-muted)', fontSize: '0.75rem' }}>%</span>
                 </div>

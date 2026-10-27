@@ -89,14 +89,16 @@ import { CancelInvoiceDialog } from './dialogs/CancelInvoiceDialog.js';
 
 export interface BillingDomainManagerProps {
   tenantId: string;
-  initialContext?: PanelContextDto;
-  initialTab?: string;
+  initialContext?: PanelContextDto | undefined;
+  initialTab?: string | undefined;
+  currentUserRole?: string | undefined;
 }
 
 export const BillingDomainManager: React.FC<BillingDomainManagerProps> = ({
   tenantId,
   initialContext,
-  initialTab
+  initialTab,
+  currentUserRole
 }) => {
   const [activeTab, setActiveTab] = useState<string>(initialTab || 'instant-settlement');
 
@@ -739,6 +741,10 @@ export const BillingDomainManager: React.FC<BillingDomainManagerProps> = ({
       {activeTab === 'cash-ledger' && (
         <DailyCounterCashLedgerView
           onOpenShiftHandover={() => setActiveTab('shift-handover')}
+          branchId={context.activeFacilityId}
+          branchName={context.activeFacilityName}
+          tenantId={tenantId}
+          currentUserRole={currentUserRole || context.userRole}
         />
       )}
 

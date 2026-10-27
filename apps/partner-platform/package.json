@@ -15,6 +15,7 @@
   "dependencies": {
     "@docsearch/api-contracts": "workspace:*",
     "@docsearch/auth": "workspace:*",
+    "@docsearch/consumer-portal": "workspace:*",
     "@docsearch/database": "workspace:*",
     "@docsearch/shared-core": "workspace:*",
     "@docsearch/ui-kit": "workspace:*",

@@ -402,11 +402,8 @@ export const PARTNER_ROLE_MODULE_PERMISSIONS: Record<string, PartnerModuleKey[] 
     'ai-chat-assistant',
     'procurement-supply-chain',
     'quality-incident-infection-control',
-    'staff-administration',
-    'organization-foundation',
     'doctor-management',
     'offers-rewards-hub',
-    'account-plan-features',
     'my-smart-desk'
   ],
   LAB_TECHNICIAN: [
@@ -435,11 +432,8 @@ export const PARTNER_ROLE_MODULE_PERMISSIONS: Record<string, PartnerModuleKey[] 
     'procurement-supply-chain',
     'asset-biomedical-maintenance',
     'quality-incident-infection-control',
-    'staff-administration',
-    'organization-foundation',
     'doctor-management',
     'offers-rewards-hub',
-    'account-plan-features',
     'my-smart-desk'
   ],
   RADIOGRAPHER_CT_MRI: [
@@ -461,10 +455,7 @@ export const PARTNER_ROLE_MODULE_PERMISSIONS: Record<string, PartnerModuleKey[] 
     'patient-registration',
     'billing-revenue-cycle',
     'whatsapp-patient-portal',
-    'staff-administration',
-    'organization-foundation',
     'offers-rewards-hub',
-    'account-plan-features',
     'my-smart-desk'
   ],
   DISPENSING_PHARMACIST: [
@@ -480,10 +471,7 @@ export const PARTNER_ROLE_MODULE_PERMISSIONS: Record<string, PartnerModuleKey[] 
     'patient-registration',
     'billing-revenue-cycle',
     'whatsapp-patient-portal',
-    'staff-administration',
-    'organization-foundation',
     'offers-rewards-hub',
-    'account-plan-features',
     'my-smart-desk'
   ],
   JAN_AUSHADHI_OPERATOR: [
@@ -497,8 +485,7 @@ export const PARTNER_ROLE_MODULE_PERMISSIONS: Record<string, PartnerModuleKey[] 
     'billing-revenue-cycle',
     'insurance-claims',
     'patient-registration',
-    'whatsapp-patient-portal',
-    'staff-administration'
+    'whatsapp-patient-portal'
   ],
   BILLING_OFFICER: [
     'billing-revenue-cycle',
@@ -654,7 +641,21 @@ export function isPartnerModuleAllowed(
   userPermissions?: StaffPermissions
 ): boolean {
   if (!role) return false;
-  if (moduleKey === 'offers-rewards-hub' || moduleKey === 'account-plan-features' || moduleKey === 'my-smart-desk' || moduleKey === 'legacy-data-migration') {
+
+  // Strict executive isolation wall: Governance, HR/Staff Administration, Subscription Plans, Data Migration & Hospital Executive Cockpit
+  if (
+    moduleKey === 'staff-administration' ||
+    moduleKey === 'organization-foundation' ||
+    moduleKey === 'account-plan-features' ||
+    moduleKey === 'legacy-data-migration' ||
+    moduleKey === 'executive-command-center'
+  ) {
+    if (!isHospitalExecutive(role)) {
+      return false;
+    }
+  }
+
+  if (moduleKey === 'offers-rewards-hub' || moduleKey === 'my-smart-desk') {
     return true;
   }
 
@@ -912,6 +913,22 @@ export function getRoleDefaultPerspective(userRole?: string): 'DOCTOR' | 'NURSE'
   if (upper.includes('LAB') || upper.includes('PATHO') || upper.includes('RADIO') || upper.includes('PHLEBOTOM')) return 'LAB';
   if (upper.includes('BILL') || upper.includes('CASH') || upper.includes('ACCOUNTS') || upper.includes('FINANCE')) return 'BILLING';
   return 'DOCTOR';
+}
+
+/**
+ * Returns the default home module to safely redirect operational staff when access is denied or navigating home.
+ */
+export function getRoleDefaultHomeModule(userRole?: string): PartnerModuleKey {
+  if (!userRole) return 'my-smart-desk';
+  if (isHospitalExecutive(userRole)) return 'executive-command-center';
+  const upper = userRole.toUpperCase();
+  if (upper.includes('FRONT') || upper.includes('RECEPT') || upper.includes('TOKEN') || upper.includes('CLERK')) return 'patient-registration';
+  if (upper.includes('NURSE')) return 'nurse-triage-station';
+  if (upper.includes('PHARMAC') || upper.includes('AUSHADHI')) return 'pharmacy-medication';
+  if (upper.includes('LAB') || upper.includes('PATHO') || upper.includes('PHLEBOTOM')) return 'clinical-investigation';
+  if (upper.includes('RADIO') || upper.includes('IMAGING')) return 'radiology-imaging';
+  if (upper.includes('BILL') || upper.includes('CASH') || upper.includes('ACCOUNTS') || upper.includes('FINANCE')) return 'billing-revenue-cycle';
+  return 'clinical-consultation';
 }
 
 /**
@@ -1343,12 +1360,25 @@ export function isModuleAllowedForPartnerProfile(
   userPermissions?: StaffPermissions,
   entitledFeatures?: string[]
 ): boolean {
+  // Strict executive isolation wall: Governance, HR/Staff Administration, Subscription Plans, Data Migration & Hospital Executive Cockpit
+  if (
+    moduleKey === 'staff-administration' ||
+    moduleKey === 'organization-foundation' ||
+    moduleKey === 'account-plan-features' ||
+    moduleKey === 'legacy-data-migration' ||
+    moduleKey === 'executive-command-center'
+  ) {
+    if (!isHospitalExecutive(role)) {
+      return false;
+    }
+  }
+
   const roleAllowed = isPartnerModuleAllowed(moduleKey, role, userPermissions);
   if (!roleAllowed) return false;
 
-  // Always allow account plan & organization foundation self-service for authenticated role holders
+  // Account plan & organization foundation self-service exclusively for authorized hospital executives
   if (moduleKey === 'account-plan-features' || moduleKey === 'organization-foundation') {
-    return true;
+    return isHospitalExecutive(role);
   }
 
   const profileKey = resolveCanonicalProfileKey(facilityType);

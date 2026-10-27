@@ -20,6 +20,7 @@ import { executiveCommandService } from '../services/executive-command-service.j
 
 // Views
 import { ExecutiveCommandCenterOverviewView } from './views/ExecutiveCommandCenterOverviewView.js';
+import { GodModeExecutiveDigitalTwinView } from './views/GodModeExecutiveDigitalTwinView.js';
 import { RealtimeHospitalCommandWallView } from './views/RealtimeHospitalCommandWallView.js';
 import { BedCapacityForecastView } from './views/BedCapacityForecastView.js';
 import { EdNedocsSurgeRadarView } from './views/EdNedocsSurgeRadarView.js';
@@ -40,6 +41,7 @@ import { RunWhatIfSimulationDialog } from './dialogs/RunWhatIfSimulationDialog.j
 import { OverrideBedAllocationDialog } from './dialogs/OverrideBedAllocationDialog.js';
 
 type ExecutiveTab =
+  | 'GOD_MODE_DIGITAL_TWIN'
   | 'OVERVIEW'
   | 'COMMAND_WALL'
   | 'BED_FORECASTS'
@@ -163,6 +165,7 @@ export const ExecutiveCommandDomainManager: React.FC<Props> = ({
       >
         {[
           { key: 'OVERVIEW', label: '📊 Executive Overview' },
+          { key: 'GOD_MODE_DIGITAL_TWIN', label: '👑 God-Mode Digital Twin & P&L' },
           { key: 'COMMAND_WALL', label: '🖥️ Command Wall' },
           { key: 'BED_FORECASTS', label: '🛏️ Bed Capacity' },
           { key: 'ED_NEDOCS', label: '🚨 ED NEDOCS' },
@@ -246,6 +249,7 @@ export const ExecutiveCommandDomainManager: React.FC<Props> = ({
         </>
       )}
 
+      {activeTab === 'GOD_MODE_DIGITAL_TWIN' && <GodModeExecutiveDigitalTwinView />}
       {activeTab === 'COMMAND_WALL' && <RealtimeHospitalCommandWallView snapshot={snapshot} />}
 
       {activeTab === 'BED_FORECASTS' && (

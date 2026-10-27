@@ -83,7 +83,7 @@ const CentralHelpDeskExitHubView = React.lazy(() => import('./views/CentralHelpD
 const PreferredPartnerNetworkView = React.lazy(() => import('./views/PreferredPartnerNetworkView.js').then(m => ({ default: m.PreferredPartnerNetworkView })));
 const HospitalInHouseClosedLoopView = React.lazy(() => import('./views/HospitalInHouseClosedLoopView.js').then(m => ({ default: m.HospitalInHouseClosedLoopView })));
 const LegacyDataMigrationWizardView = React.lazy(() => import('./views/LegacyDataMigrationWizardView.js').then(m => ({ default: m.LegacyDataMigrationWizardView })));
-import { isPartnerModuleAllowed, isModuleAllowedForPartnerProfile, isWorkspaceAllowedForPartnerProfile, isDestructiveActionAllowed, isHospitalExecutive, getRoleDefaultPerspective, isVoiceScribeAllowed, isClinicianRole } from '../utils/partnerRolePermissions.js';
+import { isPartnerModuleAllowed, isModuleAllowedForPartnerProfile, isWorkspaceAllowedForPartnerProfile, isDestructiveActionAllowed, isHospitalExecutive, getRoleDefaultPerspective, getRoleDefaultHomeModule, isVoiceScribeAllowed, isClinicianRole } from '../utils/partnerRolePermissions.js';
 import { FrontDeskWorkstationView } from './views/FrontDeskWorkstationView.js';
 const StaffOperationalRoleDashboard = React.lazy(() => import('./dashboard/StaffOperationalRoleDashboard.js').then(m => ({ default: m.StaffOperationalRoleDashboard })));
 const RoleTailoredSmartDeskView = React.lazy(() => import('./views/RoleTailoredSmartDeskView.js').then(m => ({ default: m.RoleTailoredSmartDeskView })));
@@ -4816,7 +4816,10 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
             department={currentUser?.department}
             moduleKey={activeModule}
             onReturn={() =>
-              setActiveModule((currentUser?.defaultModule as PartnerModuleKey) || 'account-plan-features')
+              setActiveModule(
+                (currentUser?.defaultModule as PartnerModuleKey) ||
+                getRoleDefaultHomeModule(currentUser?.role)
+              )
             }
           />
         ) : (isFreeHospital && isHospitalModuleLocked(activeModule, currentPlanTier || currentUser?.planTier)) ? (
@@ -5077,7 +5080,11 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
             {visitedModules.has('billing-revenue-cycle') && (
               <div style={{ display: activeModule === 'billing-revenue-cycle' ? 'block' : 'none' }}>
                 <DomainErrorBoundary domainName="Billing & Revenue Cycle">
-                  <BillingDomainManager tenantId={resolvedTenantId} initialTab={billingTab} />
+                  <BillingDomainManager
+                    tenantId={resolvedTenantId}
+                    initialTab={billingTab}
+                    currentUserRole={currentUser?.role}
+                  />
                 </DomainErrorBoundary>
               </div>
             )}
@@ -5179,7 +5186,10 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
             {visitedModules.has('clinical-investigation') && (
               <div style={{ display: activeModule === 'clinical-investigation' ? 'block' : 'none' }}>
                 <DomainErrorBoundary domainName="Clinical Investigation & LIMS">
-                  <ClinicalInvestigationDomainManager initialTab={investigationTab} />
+                  <ClinicalInvestigationDomainManager
+                    initialTab={investigationTab}
+                    currentUserRole={currentUser?.role}
+                  />
                 </DomainErrorBoundary>
               </div>
             )}

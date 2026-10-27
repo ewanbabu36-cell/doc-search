@@ -12131,4 +12131,346 @@ export type NewSupplyChainStockCountItem = typeof supplyChainStockCountItems.$in
 export type SupplyChainRecall = typeof supplyChainRecalls.$inferSelect;
 export type NewSupplyChainRecall = typeof supplyChainRecalls.$inferInsert;
 
+/**
+ * ============================================================================
+ * COMMERCIAL HEGEMONY & REVENUE GENERATION PILLARS
+ * Standards: Practo / Apollo 24/7 / Tata 1mg / Epic Systems / Bajaj Finserv Health
+ * ============================================================================
+ */
+
+// 1. Surgery Financing & 0% Checkout EMI Engine (vs Practo Care & Bajaj Finserv Health)
+export const surgeryEmiApplications = clinicalSchema.table('surgery_emi_applications', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull(),
+  organizationId: uuid('organization_id'),
+  partnerId: uuid('partner_id'),
+  patientId: uuid('patient_id'),
+  patientName: varchar('patient_name', { length: 255 }).notNull(),
+  patientPhone: varchar('patient_phone', { length: 50 }).notNull(),
+  procedureName: varchar('procedure_name', { length: 255 }).notNull(),
+  packageAmount: numeric('package_amount', { precision: 12, scale: 2 }).notNull(),
+  downPayment: numeric('down_payment', { precision: 12, scale: 2 }).default('0.00'),
+  loanAmount: numeric('loan_amount', { precision: 12, scale: 2 }).notNull(),
+  tenureMonths: integer('tenure_months').notNull(),
+  monthlyEmiAmount: numeric('monthly_emi_amount', { precision: 12, scale: 2 }).notNull(),
+  subventionRatePct: numeric('subvention_rate_pct', { precision: 5, scale: 2 }).default('3.50'),
+  subventionAmount: numeric('subvention_amount', { precision: 12, scale: 2 }).notNull(),
+  financingPartner: varchar('financing_partner', { length: 50 }).notNull().default('BAJAJ_FINSERV'),
+  cibilScoreBand: varchar('cibil_score_band', { length: 50 }).default('750_EXCELLENT'),
+  status: varchar('status', { length: 50 }).notNull().default('PRE_APPROVED'),
+  loanReferenceNumber: varchar('loan_reference_number', { length: 100 }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+});
+
+export const surgeryConciergeLeads = clinicalSchema.table('surgery_concierge_leads', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull(),
+  organizationId: uuid('organization_id'),
+  patientName: varchar('patient_name', { length: 255 }).notNull(),
+  patientPhone: varchar('patient_phone', { length: 50 }).notNull(),
+  procedureName: varchar('procedure_name', { length: 255 }).notNull(),
+  specialty: varchar('specialty', { length: 100 }).notNull(),
+  surgeonName: varchar('surgeon_name', { length: 255 }).notNull(),
+  packageCost: numeric('package_cost', { precision: 12, scale: 2 }).notNull(),
+  stage: varchar('stage', { length: 50 }).notNull().default('CONSULTATION'),
+  emiOpted: boolean('emi_opted').default(false),
+  emiTenureMonths: integer('emi_tenure_months'),
+  monthlyEmiAmount: numeric('monthly_emi_amount', { precision: 12, scale: 2 }),
+  tpaApprovedAmount: numeric('tpa_approved_amount', { precision: 12, scale: 2 }).default('0.00'),
+  otDate: varchar('ot_date', { length: 100 }),
+  otRoom: varchar('ot_room', { length: 100 }),
+  bedAssigned: varchar('bed_assigned', { length: 100 }),
+  careBuddy: varchar('care_buddy', { length: 255 }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+});
+
+// 2. Doctor Revenue Share & NMC-Compliant Split Payout Ledger (vs KareXpert & Practo Ray)
+export const doctorPayoutConfigurations = clinicalSchema.table('doctor_payout_configurations', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull(),
+  organizationId: uuid('organization_id'),
+  doctorId: uuid('doctor_id'),
+  doctorName: varchar('doctor_name', { length: 255 }).notNull(),
+  opdConsultationCutPct: numeric('opd_consultation_cut_pct', { precision: 5, scale: 2 }).default('70.00'),
+  hospitalFacilityUsageCutPct: numeric('hospital_facility_usage_cut_pct', { precision: 5, scale: 2 }).default('30.00'),
+  ipdProcedureCutPct: numeric('ipd_procedure_cut_pct', { precision: 5, scale: 2 }).default('75.00'),
+  emergencyNightSurgeBonusPct: numeric('emergency_night_surge_bonus_pct', { precision: 5, scale: 2 }).default('50.00'),
+  tdsRatePct: numeric('tds_rate_pct', { precision: 5, scale: 2 }).default('10.00'),
+  fixedRoomRentalDeduction: numeric('fixed_room_rental_deduction', { precision: 12, scale: 2 }).default('150.00'),
+  nmcComplianceTag: varchar('nmc_compliance_tag', { length: 100 }).default('CLINICAL_FACILITY_INFRASTRUCTURE_USAGE'),
+  status: varchar('status', { length: 50 }).default('ACTIVE'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow()
+});
+
+export const doctorSettlementVouchers = clinicalSchema.table('doctor_settlement_vouchers', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull(),
+  organizationId: uuid('organization_id'),
+  voucherNumber: varchar('voucher_number', { length: 100 }).notNull().unique(),
+  doctorId: uuid('doctor_id'),
+  doctorName: varchar('doctor_name', { length: 255 }).notNull(),
+  settlementCycle: varchar('settlement_cycle', { length: 50 }).default('EOD_DAILY'),
+  periodStartDate: timestamp('period_start_date', { withTimezone: true }).notNull(),
+  periodEndDate: timestamp('period_end_date', { withTimezone: true }).notNull(),
+  totalConsultationsCount: integer('total_consultations_count').default(0),
+  grossConsultationBilled: numeric('gross_consultation_billed', { precision: 12, scale: 2 }).notNull(),
+  facilityUsageFeeDeducted: numeric('facility_usage_fee_deducted', { precision: 12, scale: 2 }).notNull(),
+  tdsDeducted: numeric('tds_deducted', { precision: 12, scale: 2 }).notNull(),
+  netPayableToDoctor: numeric('net_payable_to_doctor', { precision: 12, scale: 2 }).notNull(),
+  status: varchar('status', { length: 50 }).default('GENERATED'),
+  nmcEthicsDeclaration: text('nmc_ethics_declaration'),
+  transactionReference: varchar('transaction_reference', { length: 100 }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow()
+});
+
+// 3. Recurring Subscription & Chronic Care Pass (vs Apollo Circle & Tata 1mg Care Plan)
+export const patientCarePasses = clinicalSchema.table('patient_care_passes', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull(),
+  patientId: uuid('patient_id'),
+  patientName: varchar('patient_name', { length: 255 }).notNull(),
+  patientPhone: varchar('patient_phone', { length: 50 }).notNull(),
+  passCode: varchar('pass_code', { length: 100 }).notNull(),
+  passTier: varchar('pass_tier', { length: 100 }).notNull(),
+  annualFee: numeric('annual_fee', { precision: 12, scale: 2 }).notNull(),
+  unlimitedOpdFollowupsActive: boolean('unlimited_opd_followups_active').default(true),
+  pharmacyDiscountPct: numeric('pharmacy_discount_pct', { precision: 5, scale: 2 }).default('15.00'),
+  freeHomeCollectionAllowance: integer('free_home_collection_allowance').default(12),
+  freeHomeCollectionUsed: integer('free_home_collection_used').default(0),
+  status: varchar('status', { length: 50 }).default('ACTIVE'),
+  autoDebitWebhookActive: boolean('auto_debit_webhook_active').default(true),
+  churnRisk: varchar('churn_risk', { length: 50 }).default('LOW'),
+  expiryDate: timestamp('expiry_date', { withTimezone: true }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow()
+});
+
+export const patientHealthWallets = clinicalSchema.table('patient_health_wallets', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull(),
+  patientId: uuid('patient_id'),
+  patientPhone: varchar('patient_phone', { length: 50 }).notNull(),
+  walletBalance: numeric('wallet_balance', { precision: 12, scale: 2 }).default('0.00'),
+  bonusCreditBalance: numeric('bonus_credit_balance', { precision: 12, scale: 2 }).default('0.00'),
+  totalSavedLifetime: numeric('total_saved_lifetime', { precision: 12, scale: 2 }).default('0.00'),
+  status: varchar('status', { length: 50 }).default('ACTIVE'),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+});
+
+// 4. Pharmacy Margin Optimization & PMBJP Generic Substitution (vs Tata 1mg & PharmEasy)
+export const pharmacyGenericSubstitutions = clinicalSchema.table('pharmacy_generic_substitutions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull(),
+  brandMedicationName: varchar('brand_medication_name', { length: 255 }).notNull(),
+  brandComposition: varchar('brand_composition', { length: 255 }).notNull(),
+  brandPackSize: varchar('brand_pack_size', { length: 100 }),
+  brandMrp: numeric('brand_mrp', { precision: 12, scale: 2 }).notNull(),
+  pmbjpGenericName: varchar('pmbjp_generic_name', { length: 255 }).notNull(),
+  pmbjpGenericCode: varchar('pmbjp_generic_code', { length: 100 }).notNull(),
+  pmbjpMrp: numeric('pmbjp_mrp', { precision: 12, scale: 2 }).notNull(),
+  patientSavingsPct: numeric('patient_savings_pct', { precision: 5, scale: 2 }).notNull(),
+  hospitalMarginPct: numeric('hospital_margin_pct', { precision: 5, scale: 2 }).notNull(),
+  inStockBatchesCount: integer('in_stock_batches_count').default(4),
+  isActive: boolean('is_active').default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow()
+});
+
+export const pharmacyChronicRefillRadars = clinicalSchema.table('pharmacy_chronic_refill_radars', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull(),
+  patientId: uuid('patient_id'),
+  patientName: varchar('patient_name', { length: 255 }).notNull(),
+  patientPhone: varchar('patient_phone', { length: 50 }).notNull(),
+  medicationName: varchar('medication_name', { length: 255 }).notNull(),
+  dailyDosagePills: integer('daily_dosage_pills').default(1),
+  daysSupplied: integer('days_supplied').default(30),
+  dispensedDate: timestamp('dispensed_date', { withTimezone: true }).notNull(),
+  exhaustionDueDate: timestamp('exhaustion_due_date', { withTimezone: true }).notNull(),
+  daysRemaining: integer('days_remaining').default(3),
+  whatsappRefillDispatched: boolean('whatsapp_refill_dispatched').default(false),
+  reorderStatus: varchar('reorder_status', { length: 50 }).default('RADAR_ACTIVE'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow()
+});
+
+// 5. Home Diagnostics & Phlebotomist Logistics Fleet (vs Apollo 24/7 & Tata 1mg Labs)
+export const phlebotomistFleets = clinicalSchema.table('phlebotomist_fleets', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull(),
+  phlebotomistName: varchar('phlebotomist_name', { length: 255 }).notNull(),
+  mobileNumber: varchar('mobile_number', { length: 50 }).notNull(),
+  currentGeoZone: varchar('current_geo_zone', { length: 100 }).notNull(),
+  assignedVehicle: varchar('assigned_vehicle', { length: 50 }).default('TWO_WHEELER_EV'),
+  dutyStatus: varchar('duty_status', { length: 50 }).default('ON_DUTY'),
+  todayPickupsCompleted: integer('today_pickups_completed').default(0),
+  totalEarningsToday: numeric('total_earnings_today', { precision: 12, scale: 2 }).default('0.00'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow()
+});
+
+export const homeCollectionOrders = clinicalSchema.table('home_collection_orders', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull(),
+  orderNumber: varchar('order_number', { length: 100 }).notNull().unique(),
+  patientName: varchar('patient_name', { length: 255 }).notNull(),
+  patientPhone: varchar('patient_phone', { length: 50 }).notNull(),
+  patientAddress: text('patient_address').notNull(),
+  geoZone: varchar('geo_zone', { length: 100 }).notNull(),
+  testsRequested: text('tests_requested').notNull(),
+  scheduledSlot: varchar('scheduled_slot', { length: 100 }).notNull(),
+  phlebotomistId: uuid('phlebotomist_id'),
+  phlebotomistName: varchar('phlebotomist_name', { length: 255 }),
+  vacutainerBarcode: varchar('vacutainer_barcode', { length: 100 }),
+  coldChainCelsius: numeric('cold_chain_celsius', { precision: 4, scale: 1 }).default('4.0'),
+  coldChainStatus: varchar('cold_chain_status', { length: 50 }).default('OPTIMAL_CHILLED'),
+  convenienceSurchargeFee: numeric('convenience_surcharge_fee', { precision: 12, scale: 2 }).default('150.00'),
+  phlebotomistSplitFee: numeric('phlebotomist_split_fee', { precision: 12, scale: 2 }).default('90.00'),
+  labSplitFee: numeric('lab_split_fee', { precision: 12, scale: 2 }).default('60.00'),
+  status: varchar('status', { length: 50 }).default('SCHEDULED'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow()
+});
+
+// 6. RCM Revenue Cycle Defense & Pre-Auth Scrubber (vs Epic Systems & KareXpert)
+export const rcmPreauthScrubberRules = clinicalSchema.table('rcm_preauth_scrubber_rules', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  ruleCode: varchar('rule_code', { length: 100 }).notNull().unique(),
+  ruleCategory: varchar('rule_category', { length: 100 }).notNull(),
+  severity: varchar('severity', { length: 50 }).notNull().default('CRITICAL_DENIAL_RISK'),
+  description: text('description').notNull(),
+  irdaiNormReference: varchar('irdai_norm_reference', { length: 255 }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow()
+});
+
+export const rcmClaimScrubLogs = clinicalSchema.table('rcm_claim_scrub_logs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull(),
+  claimNumber: varchar('claim_number', { length: 100 }).notNull(),
+  patientUhid: varchar('patient_uhid', { length: 100 }).notNull(),
+  patientName: varchar('patient_name', { length: 255 }).notNull(),
+  procedureName: varchar('procedure_name', { length: 255 }).notNull(),
+  proposedClaimAmount: numeric('proposed_claim_amount', { precision: 12, scale: 2 }).notNull(),
+  scrubberScore: integer('scrubber_score').notNull().default(85),
+  denialProbabilityPct: numeric('denial_probability_pct', { precision: 5, scale: 2 }).notNull().default('12.50'),
+  flaggedViolationsCount: integer('flagged_violations_count').notNull().default(0),
+  detectedLeakageAmount: numeric('detected_leakage_amount', { precision: 12, scale: 2 }).notNull().default('0.00'),
+  findings: jsonb('findings').default([]),
+  scrubStatus: varchar('scrub_status', { length: 50 }).default('CLEAN_SUBMIT_APPROVED'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow()
+});
+
+// Complete Commercial Hegemony Tables
+
+export const doctorVolumePayoutTiers = clinicalSchema.table('doctor_volume_payout_tiers', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull(),
+  doctorId: uuid('doctor_id'),
+  doctorName: varchar('doctor_name', { length: 255 }).notNull(),
+  tierLabel: varchar('tier_label', { length: 100 }).notNull(),
+  minConsultations: integer('min_consultations').notNull(),
+  maxConsultations: integer('max_consultations').notNull(),
+  doctorSplitPct: numeric('doctor_split_pct', { precision: 5, scale: 2 }).notNull(),
+  clinicMarginPct: numeric('clinic_margin_pct', { precision: 5, scale: 2 }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow()
+});
+
+export const patientFamilyHealthMembers = clinicalSchema.table('patient_family_health_members', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull(),
+  primaryPatientId: uuid('primary_patient_id'),
+  primaryPatientPhone: varchar('primary_patient_phone', { length: 50 }).notNull(),
+  memberName: varchar('member_name', { length: 255 }).notNull(),
+  relationship: varchar('relationship', { length: 50 }).notNull(),
+  memberPhone: varchar('member_phone', { length: 50 }),
+  memberAge: integer('member_age'),
+  monthlySpendLimit: numeric('monthly_spend_limit', { precision: 12, scale: 2 }).default('5000.00'),
+  currentMonthSpent: numeric('current_month_spent', { precision: 12, scale: 2 }).default('0.00'),
+  walletSpendingEnabled: boolean('wallet_spending_enabled').default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow()
+});
+
+export const pharmacyB2bPurchaseOrders = clinicalSchema.table('pharmacy_b2b_purchase_orders', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull(),
+  poNumber: varchar('po_number', { length: 100 }).notNull().unique(),
+  vendorName: varchar('vendor_name', { length: 255 }).notNull(),
+  paymentTerms: varchar('payment_terms', { length: 50 }).default('NET_30'),
+  totalItemsCount: integer('total_items_count').default(1),
+  totalAmount: numeric('total_amount', { precision: 12, scale: 2 }).notNull(),
+  gstInputCredit: numeric('gst_input_credit', { precision: 12, scale: 2 }).notNull(),
+  expectedGrossMarginPct: numeric('expected_gross_margin_pct', { precision: 5, scale: 2 }).default('28.50'),
+  status: varchar('status', { length: 50 }).default('PO_GENERATED'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow()
+});
+
+export const pharmacyRtvDebitNotes = clinicalSchema.table('pharmacy_rtv_debit_notes', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull(),
+  debitNoteNumber: varchar('debit_note_number', { length: 100 }).notNull().unique(),
+  vendorName: varchar('vendor_name', { length: 255 }).notNull(),
+  medicationName: varchar('medication_name', { length: 255 }).notNull(),
+  batchNumber: varchar('batch_number', { length: 100 }).notNull(),
+  expiryDate: timestamp('expiry_date', { withTimezone: true }).notNull(),
+  daysToExpiry: integer('days_to_expiry').notNull(),
+  quantity: integer('quantity').notNull(),
+  debitAmount: numeric('debit_amount', { precision: 12, scale: 2 }).notNull(),
+  status: varchar('status', { length: 50 }).default('DEBIT_NOTE_DISPATCHED'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow()
+});
+
+export const diagnosticHealthPackages = clinicalSchema.table('diagnostic_health_packages', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull(),
+  packageCode: varchar('package_code', { length: 100 }).notNull().unique(),
+  packageName: varchar('package_name', { length: 255 }).notNull(),
+  parametersCount: integer('parameters_count').notNull(),
+  packageMrp: numeric('package_mrp', { precision: 12, scale: 2 }).notNull(),
+  bundledTestNames: jsonb('bundled_test_names').default([]),
+  fastingRequired: boolean('fasting_required').default(true),
+  vialsRequired: jsonb('vials_required').default([]),
+  isActive: boolean('is_active').default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow()
+});
+
+export const corporateTpaClients = clinicalSchema.table('corporate_tpa_clients', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull(),
+  clientCode: varchar('client_code', { length: 100 }).notNull().unique(),
+  clientName: varchar('client_name', { length: 255 }).notNull(),
+  clientType: varchar('client_type', { length: 50 }).default('CORPORATE_TPA'),
+  creditLimit: numeric('credit_limit', { precision: 12, scale: 2 }).notNull(),
+  outstandingReceivable: numeric('outstanding_receivable', { precision: 12, scale: 2 }).default('0.00'),
+  aging0To30Days: numeric('aging_0_30_days', { precision: 12, scale: 2 }).default('0.00'),
+  aging31To60Days: numeric('aging_31_60_days', { precision: 12, scale: 2 }).default('0.00'),
+  aging61To90Days: numeric('aging_61_90_days', { precision: 12, scale: 2 }).default('0.00'),
+  aging90PlusDays: numeric('aging_90_plus_days', { precision: 12, scale: 2 }).default('0.00'),
+  nhcxPayerCode: varchar('nhcx_payer_code', { length: 100 }),
+  contractValidUntil: timestamp('contract_valid_until', { withTimezone: true }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow()
+});
+
+export const saasCommunicationWallets = clinicalSchema.table('saas_communication_wallets', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull().unique(),
+  walletBalance: numeric('wallet_balance', { precision: 12, scale: 2 }).default('2500.00'),
+  smsRate: numeric('sms_rate', { precision: 5, scale: 2 }).default('0.20'),
+  whatsappRate: numeric('whatsapp_rate', { precision: 5, scale: 2 }).default('0.75'),
+  totalSmsSent: integer('total_sms_sent').default(1240),
+  totalWhatsappSent: integer('total_whatsapp_sent').default(3410),
+  autoRechargeThreshold: numeric('auto_recharge_threshold', { precision: 12, scale: 2 }).default('500.00'),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+});
+
+export const saasMarketplaceAddons = clinicalSchema.table('saas_marketplace_addons', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull(),
+  addonCode: varchar('addon_code', { length: 100 }).notNull(),
+  addonName: varchar('addon_name', { length: 255 }).notNull(),
+  category: varchar('category', { length: 100 }).notNull(),
+  monthlyFee: numeric('monthly_fee', { precision: 12, scale: 2 }).notNull(),
+  isEnabled: boolean('is_enabled').default(false),
+  description: text('description'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow()
+});
+
+
+
 

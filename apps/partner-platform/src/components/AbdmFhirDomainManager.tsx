@@ -20,7 +20,7 @@ import { abdmFhirService } from '../services/abdm-fhir-service.js';
 import { AbdmOverviewView } from './views/AbdmOverviewView.js';
 import { AbhaManagementView } from './views/AbhaManagementView.js';
 import { CareContextLinkageView } from './views/CareContextLinkageView.js';
-import { ConsentManagerView } from './views/ConsentManagerView.js';
+import { AbdmConsentManagerView } from './views/AbdmConsentManagerView.js';
 import { FhirR4BundleViewer } from './views/FhirR4BundleViewer.js';
 import { ScanAndShareCounterView } from './views/ScanAndShareCounterView.js';
 import { HfrHprRegistryView } from './views/HfrHprRegistryView.js';
@@ -238,7 +238,7 @@ export const AbdmFhirDomainManager: React.FC<Props> = ({ tenantId }) => {
       )}
 
       {activeTab === 'CONSENT_MANAGER' && (
-        <ConsentManagerView
+        <AbdmConsentManagerView
           consents={consents}
           onCreateConsent={() => setShowCreateConsent(true)}
         />

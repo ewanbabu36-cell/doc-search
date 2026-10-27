@@ -36,7 +36,125 @@ export const BedManagementView: React.FC<BedManagementViewProps> = ({
   onAllocateBedRequest,
   facilityName
 }) => {
+  const [activeViewMode, setActiveViewMode] = useState<'BED_CENSUS' | 'WARD_CONFIGURATOR' | 'OT_SCHEDULER'>('BED_CENSUS');
   const [selectedWard, setSelectedWard] = useState('ALL');
+
+  // Dynamic Ward Configurator State
+  const [customWards, setCustomWards] = useState<Array<{
+    id: string;
+    wardName: string;
+    wardType: string;
+    floor: string;
+    totalBeds: number;
+    baseTariffInr: number;
+    equipmentTags: string[];
+  }>>([
+    {
+      id: 'WARD-ICU-01',
+      wardName: 'Medical Intensive Care Unit (MICU)',
+      wardType: 'ICU',
+      floor: '3rd Floor - Critical Wing',
+      totalBeds: 12,
+      baseTariffInr: 6500,
+      equipmentTags: ['Central O2 Pipeline', 'Dedicated Ventilator / BiPAP', '7-Para Cardiac Monitor', '5-Function Motorized Cot']
+    },
+    {
+      id: 'WARD-NICU-01',
+      wardName: 'Neonatal Intensive Care Unit (NICU)',
+      wardType: 'NICU',
+      floor: '2nd Floor - Maternity Wing',
+      totalBeds: 8,
+      baseTariffInr: 5800,
+      equipmentTags: ['Central O2 Pipeline', 'Infant Radiant Warmer', 'LED Phototherapy Unit', 'Neonatal Monitor']
+    },
+    {
+      id: 'WARD-GEN-01',
+      wardName: 'General Inpatient Ward (Male)',
+      wardType: 'GENERAL',
+      floor: '1st Floor - East Wing',
+      totalBeds: 24,
+      baseTariffInr: 1200,
+      equipmentTags: ['Central O2 Pipeline', 'Semi-Fowler Bed', 'Nurse Call Bell']
+    },
+    {
+      id: 'WARD-DLX-01',
+      wardName: 'Deluxe Private Suite Ward',
+      wardType: 'DELUXE',
+      floor: '4th Floor - Executive Wing',
+      totalBeds: 10,
+      baseTariffInr: 4500,
+      equipmentTags: ['Central O2 Pipeline', 'Motorized Cot', 'Attendant Recliner Sofa', 'Multipara Monitor']
+    },
+    {
+      id: 'WARD-ISO-01',
+      wardName: 'Negative-Pressure Airborne Isolation Ward',
+      wardType: 'ISOLATION',
+      floor: 'Ground Floor - Infectious Wing',
+      totalBeds: 6,
+      baseTariffInr: 7200,
+      equipmentTags: ['HEPA Air Filter Negative Pressure', 'Central O2 Pipeline', 'Dedicated Ventilator', 'Isolation Anteroom']
+    }
+  ]);
+  const [isAddWardModalOpen, setIsAddWardModalOpen] = useState(false);
+  const [newWardName, setNewWardName] = useState('');
+  const [newWardType, setNewWardType] = useState('ICU');
+  const [newWardFloor, setNewWardFloor] = useState('2nd Floor');
+  const [newWardBeds, setNewWardBeds] = useState(10);
+  const [newWardTariff, setNewWardTariff] = useState(3500);
+  const [newWardTags] = useState<string[]>(['Central O2 Pipeline', '7-Para Cardiac Monitor']);
+
+  // OT & Cath-Lab Sterilization Scheduler State
+  const [otMaintenanceSchedules, setOtMaintenanceSchedules] = useState<Array<{
+    id: string;
+    roomName: string;
+    roomType: 'OT' | 'CATH_LAB';
+    maintenanceType: 'WEEKLY_FUMIGATION' | 'BIOMEDICAL_CALIBRATION' | 'HEPA_FILTER_AIR_CHANGE';
+    scheduledDate: string;
+    timeWindow: string;
+    engineerName: string;
+    infectionControlSignoff: boolean;
+    status: 'SCHEDULED' | 'IN_PROGRESS' | 'CERTIFIED';
+  }>>([
+    {
+      id: 'OT-CAL-001',
+      roomName: 'Operation Theatre 1 (Cardiothoracic & Neuro)',
+      roomType: 'OT',
+      maintenanceType: 'WEEKLY_FUMIGATION',
+      scheduledDate: 'Every Sunday',
+      timeWindow: '22:00 – 06:00 (8 hrs Blockout)',
+      engineerName: 'Vikas Sharma (Biomedical Lead)',
+      infectionControlSignoff: true,
+      status: 'SCHEDULED'
+    },
+    {
+      id: 'OT-CAL-002',
+      roomName: 'Cath-Lab Suite 1 (Siemens Artis Q)',
+      roomType: 'CATH_LAB',
+      maintenanceType: 'BIOMEDICAL_CALIBRATION',
+      scheduledDate: '28 Oct 2026',
+      timeWindow: '19:00 – 23:00 (4 hrs Blockout)',
+      engineerName: 'Siemens Healthineers Field Service',
+      infectionControlSignoff: true,
+      status: 'SCHEDULED'
+    },
+    {
+      id: 'OT-CAL-003',
+      roomName: 'Operation Theatre 2 (Orthopedics & Joint)',
+      roomType: 'OT',
+      maintenanceType: 'HEPA_FILTER_AIR_CHANGE',
+      scheduledDate: '29 Oct 2026',
+      timeWindow: '20:00 – 02:00 (6 hrs Blockout)',
+      engineerName: 'HVAC Air Systems Engineering',
+      infectionControlSignoff: false,
+      status: 'SCHEDULED'
+    }
+  ]);
+  const [isOtModalOpen, setIsOtModalOpen] = useState(false);
+  const [otRoomName, setOtRoomName] = useState('Operation Theatre 3 (Laparoscopy)');
+  const [otMaintType, setOtMaintType] = useState<'WEEKLY_FUMIGATION' | 'BIOMEDICAL_CALIBRATION' | 'HEPA_FILTER_AIR_CHANGE'>('WEEKLY_FUMIGATION');
+  const [otDate, setOtDate] = useState('30 Oct 2026');
+  const [otTime, setOtTime] = useState('22:00 – 04:00 (6 hrs)');
+  const [otEngineer, setOtEngineer] = useState('Vikas Sharma');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBedForQr, setSelectedBedForQr] = useState<InpatientBedDto | null>(null);
@@ -67,6 +185,38 @@ export const BedManagementView: React.FC<BedManagementViewProps> = ({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+      
+      {/* 3 Infrastructure Pillar Tabs */}
+      <div style={{ display: 'flex', gap: '8px', borderBottom: '2px solid rgba(255, 255, 255, 0.08)', paddingBottom: '10px', flexWrap: 'wrap' }}>
+        {[
+          { id: 'BED_CENSUS' as const, label: `🛏️ Live Ward & Bed Census (${safeBeds.length})`, icon: '🛏️' },
+          { id: 'WARD_CONFIGURATOR' as const, label: `🏛️ Dynamic Ward & Floorplan Configurator (${customWards.length})`, icon: '🏛️' },
+          { id: 'OT_SCHEDULER' as const, label: `🔬 OT & Cath-Lab Sterilization & Calibration (${otMaintenanceSchedules.length})`, icon: '🔬' }
+        ].map((tab) => {
+          const isSelected = activeViewMode === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveViewMode(tab.id)}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '8px',
+                fontSize: '0.8125rem',
+                fontWeight: isSelected ? 800 : 600,
+                backgroundColor: isSelected ? 'rgba(56, 189, 248, 0.15)' : 'rgba(255, 255, 255, 0.04)',
+                border: isSelected ? '1.5px solid #38BDF8' : '1px solid rgba(255, 255, 255, 0.1)',
+                color: isSelected ? '#38BDF8' : '#94A3B8',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -84,7 +234,9 @@ export const BedManagementView: React.FC<BedManagementViewProps> = ({
         <Button variant="primary" onClick={onOpenCreateBed}>+ Register Bed</Button>
       </div>
 
-      {/* Real-time Facility Occupancy Summary Ribbon */}
+      {activeViewMode === 'BED_CENSUS' && (
+        <>
+        {/* Real-time Facility Occupancy Summary Ribbon */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
@@ -505,6 +657,304 @@ export const BedManagementView: React.FC<BedManagementViewProps> = ({
           </Card>
         ))}
       </div>
+
+      
+        </>
+      )}
+
+      {/* PILLAR 4: Dynamic Ward & Floorplan Configurator */}
+      {activeViewMode === 'WARD_CONFIGURATOR' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+            <div>
+              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#F8FAFC' }}>
+                Inpatient Wards & Bed Equipment Master
+              </h3>
+              <p style={{ margin: '2px 0 0 0', fontSize: '0.78rem', color: '#94A3B8' }}>
+                Configure clinical wards, bed capacity, daily base tariff, and tagged biomedical life-support equipment.
+              </p>
+            </div>
+            <Button
+              variant="primary"
+              onClick={() => setIsAddWardModalOpen(true)}
+              style={{ backgroundColor: '#0284C7', fontWeight: 800 }}
+            >
+              ➕ Register Inpatient Ward
+            </Button>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
+            {customWards.map((w) => (
+              <Card
+                key={w.id}
+                style={{
+                  backgroundColor: '#0F172A',
+                  border: '1px solid #1E293B',
+                  borderRadius: '12px',
+                  padding: '18px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '1.2rem' }}>
+                      {w.wardType === 'ICU' ? '🚨' : w.wardType === 'NICU' ? '👶' : w.wardType === 'DELUXE' ? '🌟' : w.wardType === 'ISOLATION' ? '☣️' : '🏥'}
+                    </span>
+                    <div>
+                      <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#F8FAFC' }}>
+                        {w.wardName}
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: '#94A3B8' }}>
+                        {w.floor} • ID: {w.id}
+                      </div>
+                    </div>
+                  </div>
+                  <Badge variant={w.wardType === 'ICU' || w.wardType === 'ISOLATION' ? 'danger' : 'primary'}>
+                    {w.wardType}
+                  </Badge>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(255, 255, 255, 0.03)', padding: '8px 12px', borderRadius: '8px' }}>
+                  <div>
+                    <span style={{ fontSize: '0.7rem', color: '#94A3B8' }}>CAPACITY</span>
+                    <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#38BDF8' }}>{w.totalBeds} Licensed Beds</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <span style={{ fontSize: '0.7rem', color: '#94A3B8' }}>BASE TARIFF</span>
+                    <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#10B981' }}>₹{w.baseTariffInr.toLocaleString('en-IN')}/day</div>
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ fontSize: '0.72rem', color: '#94A3B8', fontWeight: 700, marginBottom: '6px' }}>
+                    TAGGED BED EQUIPMENT & LIFE-SUPPORT:
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {w.equipmentTags.map((t, idx) => (
+                      <span
+                        key={idx}
+                        style={{
+                          fontSize: '0.68rem',
+                          fontWeight: 700,
+                          padding: '3px 8px',
+                          borderRadius: '4px',
+                          backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                          color: '#38BDF8',
+                          border: '1px solid rgba(56, 189, 248, 0.25)'
+                        }}
+                      >
+                        ✓ {t}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* PILLAR 4: OT & Cath-Lab Sterilization Scheduler */}
+      {activeViewMode === 'OT_SCHEDULER' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+            <div>
+              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#F8FAFC' }}>
+                OT & Cath-Lab Sterilization & Calibration Blockout Scheduler
+              </h3>
+              <p style={{ margin: '2px 0 0 0', fontSize: '0.78rem', color: '#94A3B8' }}>
+                Weekly recurring fumigation windows, biomedical equipment calibration, and HEPA air change validation.
+              </p>
+            </div>
+            <Button
+              variant="primary"
+              onClick={() => setIsOtModalOpen(true)}
+              style={{ backgroundColor: '#A855F7', borderColor: '#9333EA', fontWeight: 800 }}
+            >
+              ➕ Schedule Maintenance Blockout
+            </Button>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {otMaintenanceSchedules.map((ot) => (
+              <div
+                key={ot.id}
+                style={{
+                  backgroundColor: '#0F172A',
+                  border: '1px solid #1E293B',
+                  borderRadius: '12px',
+                  padding: '16px 20px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '14px'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ fontSize: '1.5rem' }}>
+                    {ot.roomType === 'CATH_LAB' ? '🩻' : '🔬'}
+                  </span>
+                  <div>
+                    <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#F8FAFC' }}>
+                      {ot.roomName}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '2px' }}>
+                      Maintenance Protocol: <strong>{ot.maintenanceType.replace(/_/g, ' ')}</strong> • Engineer: {ot.engineerName}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#F8FAFC' }}>
+                      {ot.scheduledDate}
+                    </div>
+                    <div style={{ fontSize: '0.72rem', color: '#A855F7', fontFamily: 'monospace' }}>
+                      {ot.timeWindow}
+                    </div>
+                  </div>
+
+                  <span
+                    style={{
+                      padding: '4px 10px',
+                      borderRadius: '6px',
+                      fontSize: '0.72rem',
+                      fontWeight: 800,
+                      backgroundColor: ot.infectionControlSignoff ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                      color: ot.infectionControlSignoff ? '#34D399' : '#FBBF24',
+                      border: ot.infectionControlSignoff ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid rgba(245, 158, 11, 0.4)'
+                    }}
+                  >
+                    {ot.infectionControlSignoff ? '✓ ICN Certified' : '⏳ Pending Signoff'}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Add Ward Modal */}
+      {isAddWardModalOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999, padding: '16px' }}>
+          <div style={{ backgroundColor: '#0F172A', border: '1.5px solid #38BDF8', borderRadius: '16px', padding: '24px', maxWidth: '480px', width: '100%' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ margin: 0, color: '#F8FAFC', fontSize: '1.15rem', fontWeight: 800 }}>Register Inpatient Ward</h3>
+              <button type="button" onClick={() => setIsAddWardModalOpen(false)} style={{ background: 'none', border: 'none', color: '#94A3B8', fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.72rem', color: '#94A3B8', marginBottom: '4px' }}>Ward Name</label>
+                <input type="text" placeholder="e.g. Coronary Care Unit (CCU)" value={newWardName} onChange={(e) => setNewWardName(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', backgroundColor: '#1E293B', border: '1px solid #475569', color: '#FFF' }} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.72rem', color: '#94A3B8', marginBottom: '4px' }}>Ward Category</label>
+                  <select value={newWardType} onChange={(e) => setNewWardType(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', backgroundColor: '#1E293B', border: '1px solid #475569', color: '#FFF' }}>
+                    <option value="ICU">ICU (Intensive Care)</option>
+                    <option value="NICU">NICU (Neonatal)</option>
+                    <option value="GENERAL">General Ward</option>
+                    <option value="DELUXE">Deluxe Room</option>
+                    <option value="ISOLATION">Negative-Pressure Isolation</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.72rem', color: '#94A3B8', marginBottom: '4px' }}>Floor / Wing</label>
+                  <input type="text" value={newWardFloor} onChange={(e) => setNewWardFloor(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', backgroundColor: '#1E293B', border: '1px solid #475569', color: '#FFF' }} />
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.72rem', color: '#94A3B8', marginBottom: '4px' }}>Bed Capacity</label>
+                  <input type="number" value={newWardBeds} onChange={(e) => setNewWardBeds(Number(e.target.value))} style={{ width: '100%', padding: '8px', borderRadius: '6px', backgroundColor: '#1E293B', border: '1px solid #475569', color: '#FFF' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.72rem', color: '#94A3B8', marginBottom: '4px' }}>Base Tariff (₹/day)</label>
+                  <input type="number" value={newWardTariff} onChange={(e) => setNewWardTariff(Number(e.target.value))} style={{ width: '100%', padding: '8px', borderRadius: '6px', backgroundColor: '#1E293B', border: '1px solid #475569', color: '#FFF' }} />
+                </div>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px' }}>
+                <Button variant="outline" onClick={() => setIsAddWardModalOpen(false)}>Cancel</Button>
+                <Button variant="primary" onClick={() => {
+                  if (newWardName.trim()) {
+                    setCustomWards((prev) => [...prev, {
+                      id: `WARD-${Date.now().toString().slice(-4)}`,
+                      wardName: newWardName,
+                      wardType: newWardType,
+                      floor: newWardFloor,
+                      totalBeds: newWardBeds,
+                      baseTariffInr: newWardTariff,
+                      equipmentTags: newWardTags
+                    }]);
+                    setIsAddWardModalOpen(false);
+                    setNewWardName('');
+                  }
+                }}>Save Ward</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Schedule OT Maintenance Modal */}
+      {isOtModalOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999, padding: '16px' }}>
+          <div style={{ backgroundColor: '#0F172A', border: '1.5px solid #A855F7', borderRadius: '16px', padding: '24px', maxWidth: '480px', width: '100%' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ margin: 0, color: '#F8FAFC', fontSize: '1.15rem', fontWeight: 800 }}>Schedule OT Maintenance Blockout</h3>
+              <button type="button" onClick={() => setIsOtModalOpen(false)} style={{ background: 'none', border: 'none', color: '#94A3B8', fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.72rem', color: '#94A3B8', marginBottom: '4px' }}>Theatre / Room</label>
+                <input type="text" value={otRoomName} onChange={(e) => setOtRoomName(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', backgroundColor: '#1E293B', border: '1px solid #475569', color: '#FFF' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.72rem', color: '#94A3B8', marginBottom: '4px' }}>Maintenance Protocol</label>
+                <select value={otMaintType} onChange={(e) => setOtMaintType(e.target.value as any)} style={{ width: '100%', padding: '8px', borderRadius: '6px', backgroundColor: '#1E293B', border: '1px solid #475569', color: '#FFF' }}>
+                  <option value="WEEKLY_FUMIGATION">Weekly Fumigation & Formalin Vaporization</option>
+                  <option value="BIOMEDICAL_CALIBRATION">Biomedical Equipment Calibration</option>
+                  <option value="HEPA_FILTER_AIR_CHANGE">HEPA Filter Air Change Validation</option>
+                </select>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.72rem', color: '#94A3B8', marginBottom: '4px' }}>Date</label>
+                  <input type="text" value={otDate} onChange={(e) => setOtDate(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', backgroundColor: '#1E293B', border: '1px solid #475569', color: '#FFF' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.72rem', color: '#94A3B8', marginBottom: '4px' }}>Time Window</label>
+                  <input type="text" value={otTime} onChange={(e) => setOtTime(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', backgroundColor: '#1E293B', border: '1px solid #475569', color: '#FFF' }} />
+                </div>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.72rem', color: '#94A3B8', marginBottom: '4px' }}>Assigned Engineer</label>
+                <input type="text" value={otEngineer} onChange={(e) => setOtEngineer(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', backgroundColor: '#1E293B', border: '1px solid #475569', color: '#FFF' }} />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px' }}>
+                <Button variant="outline" onClick={() => setIsOtModalOpen(false)}>Cancel</Button>
+                <Button variant="primary" style={{ backgroundColor: '#A855F7', borderColor: '#9333EA' }} onClick={() => {
+                  setOtMaintenanceSchedules((prev) => [...prev, {
+                    id: `OT-CAL-${Date.now().toString().slice(-4)}`,
+                    roomName: otRoomName,
+                    roomType: 'OT',
+                    maintenanceType: otMaintType,
+                    scheduledDate: otDate,
+                    timeWindow: otTime,
+                    engineerName: otEngineer,
+                    infectionControlSignoff: true,
+                    status: 'SCHEDULED'
+                  }]);
+                  setIsOtModalOpen(false);
+                }}>Confirm Blockout</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Bedside Patient Concierge QR Standee Modal */}
       {selectedBedForQr && (

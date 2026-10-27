@@ -42,6 +42,7 @@ export const DirectAdmitBedDialog: React.FC<DirectAdmitBedDialogProps> = ({
   const [provisionalDiagnosis, setProvisionalDiagnosis] = useState('');
   const [admissionType, setAdmissionType] = useState<'EMERGENCY' | 'ELECTIVE'>('EMERGENCY');
   const [expectedStayDays, setExpectedStayDays] = useState('3');
+  const [offerEmiPreApproval, setOfferEmiPreApproval] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -280,6 +281,42 @@ export const DirectAdmitBedDialog: React.FC<DirectAdmitBedDialogProps> = ({
               value={expectedStayDays}
               onChange={(e) => setExpectedStayDays(e.target.value)}
             />
+          </div>
+        </div>
+
+        {/* Instant 0% Medical EMI Financing / Insurance Pre-Approval at Admission */}
+        <div style={{
+          backgroundColor: '#F8FAFC',
+          border: '1px solid #CBD5E1',
+          borderRadius: '8px',
+          padding: '12px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: '1rem' }}>💳</span>
+              <span style={{ fontSize: '0.825rem', fontWeight: 700, color: '#0F172A' }}>
+                Instant 0% Medical EMI & Surgery Financing Pre-Check
+              </span>
+            </div>
+            <span style={{ fontSize: '0.7rem', color: '#10B981', fontWeight: 700, backgroundColor: '#ECFDF5', padding: '2px 8px', borderRadius: '4px' }}>
+              Bajaj / SaveIN 0% Interest
+            </span>
+          </div>
+          <div style={{ fontSize: '0.75rem', color: '#64748B' }}>
+            Pre-qualify patient for zero-downpayment surgical admission financing across 3, 6, or 12 month EMI tenures.
+          </div>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: '#334155', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={offerEmiPreApproval}
+                onChange={(e) => setOfferEmiPreApproval(e.target.checked)}
+              />
+              Enable 0% Surgery EMI Pre-Approval for this admission (CIBIL 780+ Pre-cleared)
+            </label>
           </div>
         </div>
 

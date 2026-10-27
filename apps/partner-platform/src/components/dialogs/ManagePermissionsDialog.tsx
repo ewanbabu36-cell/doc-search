@@ -341,6 +341,66 @@ export const ManagePermissionsDialog: React.FC<ManagePermissionsDialogProps> = (
                 </span>
               </div>
             </label>
+
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer', fontSize: '0.8125rem' }}>
+              <input
+                type="checkbox"
+                checked={Boolean(permissions.canApproveDiscountsAbove10)}
+                onChange={(e) => setPermissions({ ...permissions, canApproveDiscountsAbove10: e.target.checked })}
+                style={{ marginTop: '2px', cursor: 'pointer', accentColor: '#10b981' }}
+              />
+              <div>
+                <strong>Approve Invoices with &gt;10% Discount</strong>
+                <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--ds-color-text-muted, #64748b)' }}>
+                  Higher-tier financial authority to sanction high-value billing concessions.
+                </span>
+              </div>
+            </label>
+
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer', fontSize: '0.8125rem' }}>
+              <input
+                type="checkbox"
+                checked={Boolean(permissions.canSignDischargeSummary)}
+                onChange={(e) => setPermissions({ ...permissions, canSignDischargeSummary: e.target.checked })}
+                style={{ marginTop: '2px', cursor: 'pointer', accentColor: '#38bdf8' }}
+              />
+              <div>
+                <strong>Sign-Off IPD Inpatient Discharge Summaries</strong>
+                <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--ds-color-text-muted, #64748b)' }}>
+                  Permits finalizing clinical discharge and triggering automated bed turnover.
+                </span>
+              </div>
+            </label>
+
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer', fontSize: '0.8125rem' }}>
+              <input
+                type="checkbox"
+                checked={Boolean(permissions.canDispenseScheduleH1)}
+                onChange={(e) => setPermissions({ ...permissions, canDispenseScheduleH1: e.target.checked })}
+                style={{ marginTop: '2px', cursor: 'pointer', accentColor: '#f59e0b' }}
+              />
+              <div>
+                <strong>Dispense CDSCO Schedule H1 / Habit-Forming Drugs</strong>
+                <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--ds-color-text-muted, #64748b)' }}>
+                  Restricted drug dispensation requiring mandatory doctor registration recording.
+                </span>
+              </div>
+            </label>
+
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer', fontSize: '0.8125rem' }}>
+              <input
+                type="checkbox"
+                checked={Boolean(permissions.canInitiateBreakGlass)}
+                onChange={(e) => setPermissions({ ...permissions, canInitiateBreakGlass: e.target.checked })}
+                style={{ marginTop: '2px', cursor: 'pointer', accentColor: '#ef4444' }}
+              />
+              <div>
+                <strong style={{ color: '#ef4444' }}>Authorize Emergency Break-Glass Clinical Access</strong>
+                <span style={{ display: 'block', fontSize: '0.75rem', color: '#f87171' }}>
+                  Critical emergency override bypassing strict department boundary restrictions with immutable audit trail.
+                </span>
+              </div>
+            </label>
           </div>
         </div>
 

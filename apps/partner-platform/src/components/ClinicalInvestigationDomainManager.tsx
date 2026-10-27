@@ -26,6 +26,7 @@ import { hospitalEventBus, type ActivePatientSummary, type HospitalEventPayload 
 
 import { PanelContextSwitcher } from './common/PanelContextSwitcher.js';
 import type { MicroscopeSmearReport } from './dialogs/MicroscopeEyepieceScannerModal.js';
+import { isHospitalExecutive } from '../utils/partnerRolePermissions.js';
 
 // Lazy-loaded Views for granular chunk streaming
 const InvestigationOverviewView = React.lazy(() => import('./views/InvestigationOverviewView.js').then(m => ({ default: m.InvestigationOverviewView })));
@@ -67,7 +68,7 @@ const PathologyReportHistoryBookModal = React.lazy(() => import('./dialogs/Patho
 const DynamicReportCustomizerModal = React.lazy(() => import('./dialogs/DynamicReportCustomizerModal.js').then(m => ({ default: m.DynamicReportCustomizerModal })));
 const CustomTestLibraryManagerModal = React.lazy(() => import('./dialogs/CustomTestLibraryManagerModal.js').then(m => ({ default: m.CustomTestLibraryManagerModal })));
 
-import { ErrorState, DataPulse, Badge, SkeletonPage, SkeletonTable, playAudioFeedback } from '@docsearch/ui-kit';
+import { ErrorState, DataPulse, Badge, SkeletonPage, SkeletonTable, playAudioFeedback, Button } from '@docsearch/ui-kit';
 
 export type ActiveInvestigationTab =
   | 'overview'
@@ -85,11 +86,13 @@ export type ActiveInvestigationTab =
   | 'audit';
 
 export interface ClinicalInvestigationDomainManagerProps {
-  initialTab?: ActiveInvestigationTab;
+  initialTab?: ActiveInvestigationTab | undefined;
+  currentUserRole?: string | undefined;
 }
 
 export const ClinicalInvestigationDomainManager: React.FC<ClinicalInvestigationDomainManagerProps> = ({
-  initialTab
+  initialTab,
+  currentUserRole
 }) => {
   const [activeTab, setActiveTab] = useState<ActiveInvestigationTab>(initialTab || 'specimens');
 
@@ -1493,8 +1496,10 @@ export const ClinicalInvestigationDomainManager: React.FC<ClinicalInvestigationD
                   <>
                     {[
                       { id: 'reports' as ActiveInvestigationTab, label: 'WhatsApp & SMS Delivery', icon: '📲', badge: stage3ReportsCount > 0 ? `${stage3ReportsCount} Reports` : undefined },
-                      { id: 'revenue' as ActiveInvestigationTab, label: 'Cash Collection Ledger', icon: '💰' },
-                      { id: 'referrals' as ActiveInvestigationTab, label: 'Doctor Referral Ledger', icon: '💼' },
+                      ...(isHospitalExecutive(currentUserRole) ? [
+                        { id: 'revenue' as ActiveInvestigationTab, label: 'Cash Collection Ledger', icon: '💰' },
+                        { id: 'referrals' as ActiveInvestigationTab, label: 'Doctor Referral Ledger', icon: '💼' }
+                      ] : []),
                       { id: 'patientHistory' as ActiveInvestigationTab, label: 'Patient Lab History', icon: '📁' },
                       { id: 'audit' as ActiveInvestigationTab, label: 'NABL Audit Vault', icon: '🔒' },
                       { id: 'overview' as ActiveInvestigationTab, label: 'Lab Operations Overview', icon: '📊' }
@@ -1704,11 +1709,33 @@ export const ClinicalInvestigationDomainManager: React.FC<ClinicalInvestigationD
       </div>
 
       <div style={{ display: activeTab === 'revenue' ? 'block' : 'none' }}>
-        <PathologyRevenueCollectionView />
+        {isHospitalExecutive(currentUserRole) ? (
+          <PathologyRevenueCollectionView />
+        ) : (
+          <div style={{ padding: '48px 24px', textAlign: 'center', backgroundColor: '#0F172A', border: '1px solid #EF4444', borderRadius: '12px' }}>
+            <div style={{ fontSize: '2.5rem', marginBottom: '8px' }}>🔒</div>
+            <h3 style={{ color: '#F87171', margin: '0 0 6px 0', fontSize: '1.1rem', fontWeight: 800 }}>Financial Enclave Restricted</h3>
+            <p style={{ color: '#94A3B8', fontSize: '0.85rem', margin: '0 auto 12px auto', maxWidth: '440px' }}>
+              Cash collection turnover is restricted to Hospital Leadership and Authorized Cashier Officers.
+            </p>
+            <Button variant="primary" size="sm" onClick={() => setActiveTab('reports')}>Return to Reports</Button>
+          </div>
+        )}
       </div>
 
       <div style={{ display: activeTab === 'referrals' ? 'block' : 'none' }}>
-        <ReferringDoctorLedgerView />
+        {isHospitalExecutive(currentUserRole) ? (
+          <ReferringDoctorLedgerView />
+        ) : (
+          <div style={{ padding: '48px 24px', textAlign: 'center', backgroundColor: '#0F172A', border: '1px solid #EF4444', borderRadius: '12px' }}>
+            <div style={{ fontSize: '2.5rem', marginBottom: '8px' }}>🔒</div>
+            <h3 style={{ color: '#F87171', margin: '0 0 6px 0', fontSize: '1.1rem', fontWeight: 800 }}>Commercial Doctor Ledger Restricted</h3>
+            <p style={{ color: '#94A3B8', fontSize: '0.85rem', margin: '0 auto 12px auto', maxWidth: '440px' }}>
+              Doctor commission splits and partner agreements are confidential executive records under NMC &amp; RCM regulations.
+            </p>
+            <Button variant="primary" size="sm" onClick={() => setActiveTab('reports')}>Return to Reports</Button>
+          </div>
+        )}
       </div>
 
       <div style={{ display: activeTab === 'doctorReview' ? 'block' : 'none' }}>
