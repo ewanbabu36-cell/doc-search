@@ -83,6 +83,10 @@ import { offlineSyncRoutes } from './routes/partner/offline-sync.routes.js';
 import { aiScribeRoutes } from './routes/partner/ai-scribe.routes.js';
 import { nhcxInsuranceRoutes } from './routes/partner/nhcx-insurance.routes.js';
 import { genericArbitrageRoutes } from './routes/partner/generic-arbitrage.routes.js';
+import { radiologyAiRoutes } from './routes/partner/radiology-ai.routes.js';
+import { smartIcuRoutes } from './routes/partner/smart-icu.routes.js';
+import { corporateB2bRoutes } from './routes/partner/corporate-b2b.routes.js';
+import { bedTurnaroundRoutes } from './routes/partner/bed-turnaround.routes.js';
 import { distributedLockRoutes } from './routes/locks.routes.js';
 import { commercialOperationsRoutes } from './routes/partner/commercial-operations.routes.js';
 import { AppError, sanitizeObjectPrototype } from '@docsearch/shared-core';
@@ -399,6 +403,10 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(aiScribeRoutes);
   await app.register(nhcxInsuranceRoutes);
   await app.register(genericArbitrageRoutes);
+  await app.register(radiologyAiRoutes);
+  await app.register(smartIcuRoutes);
+  await app.register(corporateB2bRoutes);
+  await app.register(bedTurnaroundRoutes);
 
   // Block any direct guessed physical storage URL access (/storage/*)
   app.get('/storage/*', async (_request, reply) => {
