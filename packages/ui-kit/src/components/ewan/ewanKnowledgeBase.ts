@@ -15,7 +15,18 @@ export type EwanPlatform = 'COMPANY_HQ' | 'PARTNER_PLATFORM' | 'LANDING_PAGE';
 export interface EwanKnowledgeTopic {
   id: string;
   title: string;
-  category: 'PATIENT_CARE' | 'HOSPITAL_OPERATIONS' | 'ADMIN_PLANS' | 'ADMIN_KYC' | 'SAFE_CRUD' | 'ARCHITECTURE';
+  category:
+    | 'PATIENT_CARE'
+    | 'HOSPITAL_OPERATIONS'
+    | 'ADMIN_PLANS'
+    | 'ADMIN_KYC'
+    | 'SAFE_CRUD'
+    | 'ARCHITECTURE'
+    | 'CLINICAL_SAFETY'
+    | 'REVENUE_INTEGRITY'
+    | 'GOVERNMENT_SCHEMES'
+    | 'EMERGENCY_ICU'
+    | 'SUPPLY_CHAIN';
   allowedPlatforms: EwanPlatform[];
   summary: string;
   keywords: string[];
@@ -807,6 +818,448 @@ export const EWAN_KNOWLEDGE_TOPICS: EwanKnowledgeTopic[] = [
       routes: ['GET /api/v1/company/partners/verification-queue', 'PATCH /api/v1/company/partners/:id/kyc-status'],
       ports: ['5174 (HQ)', '4000 (API)'],
       actionKey: 'open-partner-verification'
+    }
+  },
+  // =========================================================================
+  // 4. EWAN 2.0 ADVANCED CLINICAL, REVENUE & STATUTORY DOMAINS (15 ENCLAVES)
+  // =========================================================================
+  {
+    id: 'partner-ot-safety-sentinel',
+    title: '🛡️ Autonomous OT Surgical Safety, PAC Clearance & Count Reconciliation',
+    category: 'CLINICAL_SAFETY',
+    allowedPlatforms: ['PARTNER_PLATFORM', 'COMPANY_HQ'],
+    summary: 'Anaesthesia Pre-Op Clearance (PAC), WHO 3-phase checklist aur dual-nurse sponge & needle count reconciliation.',
+    keywords: ['ot', 'surgery', 'pac', 'anaesthesia', 'who checklist', 'sponge count', 'needle count', 'theatre', 'operation', 'sterile'],
+    targetRoles: ['SURGEON', 'ANAESTHETIST', 'OT_NURSE', 'SCRUB_NURSE', 'CIRCULATING_NURSE', 'MEDICAL_DIRECTOR', 'SUPER_ADMIN'],
+    requiredModule: 'ot-safety-sentinel',
+    nextBestStep: 'PAC clearance status verify karein aur incision se pehle mandatory Time-Out sign-off complete karein.',
+    steps: [
+      '1. Step 1 (PAC Sign-off): Anaesthetist PAC desk me NPO fasting status, ASA score aur Mallampati airway grade sign karein.',
+      '2. Step 2 (WHO 3-Phase Checklist): Patient entry par Sign-In, incision se pehle Time-Out, aur closure par Sign-Out sign karein.',
+      '3. Step 3 (Dual-Nurse Count): Scrub Nurse aur Circulating Nurse sponges, needles aur instruments ka count reconcile karein.',
+      '4. Step 4 (Closure Lock): Discrepancy hone par wound closure auto-halt hota hai aur portable X-Ray mandatory trigger hoti hai.'
+    ],
+    hinglishGuide: 'OT Safety Sentinel mein bina PAC clearance ke patient entry freeze rehti hai, Time-Out ke bina incision block hota hai, aur sponge mismatch par closure band ho jata hai.',
+    troubleshooting: [
+      {
+        commonIssue: 'Theatre admission locked dikh raha hai',
+        solution: 'Anaesthetist se confirm karein ki minimum 6 ghante NPO fasting verify karke PAC clearance approve ho chuki hai.'
+      }
+    ],
+    technicalDetails: {
+      routes: [
+        'POST /api/v1/partner/ot-safety/pac/sign-clearance',
+        'POST /api/v1/partner/ot-safety/checklist/phase',
+        'POST /api/v1/partner/ot-safety/reconciliation/count-tray'
+      ],
+      dbTables: ['company.ot_pac_clearances', 'company.ot_who_checklists', 'company.ot_count_reconciliations'],
+      actionKey: 'open-ot-safety-sentinel'
+    }
+  },
+  {
+    id: 'partner-bedside-concierge-callbell',
+    title: '🛎️ Inpatient Bedside Smart Tablet Concierge & 3-Min SLA Call Bell',
+    category: 'HOSPITAL_OPERATIONS',
+    allowedPlatforms: ['PARTNER_PLATFORM', 'COMPANY_HQ'],
+    summary: 'Bedside smart concierge tablet, NFC nurse tap verification, 3-minute SLA escalation, aur IoT IV drip monitoring.',
+    keywords: ['bedside', 'call bell', 'nurse call', 'concierge', 'iv drip', 'sla', 'dietary', 'inpatient', 'ipd'],
+    targetRoles: ['NURSE', 'STAFF_NURSE', 'WARD_INCHARGE', 'HOSPITAL_ADMIN', 'SUPER_ADMIN'],
+    requiredModule: 'bedside-concierge',
+    nextBestStep: 'Active call bell alerts ko 3 minute ke andar bedside NFC tap se resolve karein taaki WhatsApp escalation na ho.',
+    steps: [
+      '1. Step 1 (Patient Trigger): Patient bedside tablet ya QR se nurse assistance ya pain relief trigger karein.',
+      '2. Step 2 (3-Min Countdown): Nursing station screen par 3-minute SLA response timer countdown shuru hota hai.',
+      '3. Step 3 (NFC Tap Sign-off): Ward nurse bedside tablet par ID card tap karke visit physically confirm karein.',
+      '4. Step 4 (Escalation Cron): 3 minute se zyada unanswered calls turant Ward Sister aur Superintendent WhatsApp par escalate hoti hain.'
+    ],
+    hinglishGuide: 'Bedside tablet se call bell dabte hi 3 minute ka timer chalu hota hai. Nurse ko bedside jakar NFC tap karna hota hai warna WhatsApp alert jata hai.',
+    troubleshooting: [
+      {
+        commonIssue: 'Call bell WhatsApp escalation trigger ho gaya',
+        solution: 'Nursing desk par call open rehte hi bedside physically tap karke "RESOLVED" status mark karein.'
+      }
+    ],
+    technicalDetails: {
+      routes: [
+        'POST /api/v1/partner/bedside-concierge/call-bell',
+        'POST /api/v1/partner/bedside-concierge/call-bell/resolve',
+        'POST /api/v1/partner/bedside-concierge/iot/iv-drip-telemetry'
+      ],
+      dbTables: ['company.bedside_call_bells', 'company.bedside_iv_telemetry'],
+      actionKey: 'open-bedside-concierge'
+    }
+  },
+  {
+    id: 'partner-smart-pharmacy-fefo-pos',
+    title: '💊 Smart Pharmacy POS: GS1 2D Barcode, FEFO Expiry Lock & CDSCO H1',
+    category: 'SUPPLY_CHAIN',
+    allowedPlatforms: ['PARTNER_PLATFORM', 'COMPANY_HQ'],
+    summary: 'GS1 2D DataMatrix scanning, First-Expiry-First-Out (FEFO) expiry lock, CDSCO Schedule H1/X narcotics register.',
+    keywords: ['pharmacy', 'pos', 'gs1', 'datamatrix', 'barcode', 'fefo', 'expiry', 'schedule h1', 'narcotics', 'cdsco'],
+    targetRoles: ['PHARMACIST', 'DISPENSING_PHARMACIST', 'CHIEF_PHARMACIST', 'SUPER_ADMIN'],
+    requiredModule: 'pharmacy-medication',
+    nextBestStep: 'Earliest expiring batch scan karein aur Schedule H1 drugs ke liye doctor MCI registration number verify karein.',
+    steps: [
+      '1. Step 1 (GS1 Scan): Pharmacy counter par medicine box ka 2D DataMatrix barcode scan karein (GTIN, Batch, Expiry auto-parse).',
+      '2. Step 2 (FEFO Hard-Lock): System earliest expiring batch mandate karta hai. Baad ka batch lene par 409 Conflict aayega.',
+      '3. Step 3 (CDSCO H1 Register): Schedule H1/X drugs ke liye Prescribing Doctor ka MCI number aur dual digital signature note karein.',
+      '4. Step 4 (Atomic Dispense): Bill settle hote hi PostgreSQL batch inventory se stock instantly reduce hota hai aur ESC/POS receipt print hoti hai.'
+    ],
+    hinglishGuide: 'Barcode scan karte hi GTIN aur batch auto-load hota hai. Earliest batch pehle bechna zaroori hai (FEFO). H1 दवाइयों ke liye doctor ka MCI number statutory mandatory hai.',
+    troubleshooting: [
+      {
+        commonIssue: 'FEFO_BATCH_VIOLATION error aa raha hai',
+        solution: 'Rack se woh batch uthayein jiski expiry sabse pehle hai. System dead-stock rokne ke liye later batch block karta hai.'
+      }
+    ],
+    technicalDetails: {
+      routes: [
+        'POST /api/v1/partner/pharmacy-pos/scan-gs1',
+        'POST /api/v1/partner/pharmacy-pos/validate-fefo',
+        'POST /api/v1/partner/pharmacy-pos/h1-register',
+        'POST /api/v1/partner/pharmacy-pos/settle-bill'
+      ],
+      dbTables: ['company.pharmacy_inventory_batches', 'company.pharmacy_controlled_substances'],
+      actionKey: 'open-pharmacy-pos'
+    }
+  },
+  {
+    id: 'partner-pmjay-government-scheme',
+    title: '🏛️ Ayushman Bharat PM-JAY HBP 2.2 & State Government Scheme Auto-Tariff',
+    category: 'GOVERNMENT_SCHEMES',
+    allowedPlatforms: ['PARTNER_PLATFORM', 'COMPANY_HQ'],
+    summary: 'NHA Health Benefit Packages (HBP 2.2) tariffs, TMS Golden Card verification, pre-auth cashless coverage guarantee.',
+    keywords: ['pmjay', 'ayushman bharat', 'golden card', 'hbp', 'government scheme', 'cashless', 'tms', 'sha'],
+    targetRoles: ['PMJAY_DESK_EXECUTIVE', 'TPA_EXECUTIVE', 'BILLING_MANAGER', 'HOSPITAL_ADMIN', 'SUPER_ADMIN'],
+    requiredModule: 'pmjay-government-scheme',
+    nextBestStep: 'Patient Golden Card balance verify karein aur surgery se pehle State Health Agency pre-auth token generate karein.',
+    steps: [
+      '1. Step 1 (Package Search): PM-JAY master se standardized HBP 2.2 surgery package (e.g. Lap Chole @ ₹32,000) chunein.',
+      '2. Step 2 (TMS Verification): Patient ABHA / Golden Card number se ₹5,00,000 active family balance verify karein.',
+      '3. Step 3 (Pre-Auth Claim): Clinical admission summary aur investigation reports attach karke SHA pre-auth initiate karein.',
+      '4. Step 4 (Zero-Balance Billing): Pre-auth approved hone par 100% cashless zero-balance final invoice generate karein.'
+    ],
+    hinglishGuide: 'Ayushman Bharat desk par Golden Card verify karke NHA package choose karein. Pre-auth aane par patient ka zero-balance bill banta hai aur paise direct SHA se aate hain.',
+    troubleshooting: [
+      {
+        commonIssue: 'TMS portal verification timeout',
+        solution: 'ABDM ABHA verification bypass switch use karein ya patient Ration Card ID se secondary lookup karein.'
+      }
+    ],
+    technicalDetails: {
+      routes: [
+        'GET /api/v1/partner/pmjay/packages/search',
+        'POST /api/v1/partner/pmjay/beneficiary/verify',
+        'POST /api/v1/partner/pmjay/pre-auth/initiate',
+        'POST /api/v1/partner/pmjay/claim/adjudicate'
+      ],
+      dbTables: ['company.pmjay_case_adjudications'],
+      actionKey: 'open-pmjay-desk'
+    }
+  },
+  {
+    id: 'partner-blood-bank-cold-chain',
+    title: '🩸 Cold-Chain Blood Bank IoT Sentinel & 48-Hour Crossmatch Auto-Release',
+    category: 'CLINICAL_SAFETY',
+    allowedPlatforms: ['PARTNER_PLATFORM', 'COMPANY_HQ'],
+    summary: 'PRBC/FFP chiller temperature monitoring (2°C to 6°C), breach alarms, aur 48-ghante baad crossmatch auto-unfreeze.',
+    keywords: ['blood bank', 'cold chain', 'prbc', 'ffp', 'crossmatch', 'temperature', 'blood group', 'transfusion'],
+    targetRoles: ['BLOOD_BANK_OFFICER', 'LAB_TECHNICIAN', 'PATHOLOGIST', 'SUPER_ADMIN'],
+    requiredModule: 'blood-bank-cold-chain',
+    nextBestStep: 'Chiller temperature telemetry status check karein aur unutilized reserved units ko emergency pool me unfreeze karein.',
+    steps: [
+      '1. Step 1 (IoT Telemetry): Blood storage chillers se continuous temperature data (+2°C to +6°C) ingest hota hai.',
+      '2. Step 2 (Breach Alert): Agar temp +6°C se upar jata hai, to audible alarm aur emergency SMS BBO ko jata hai.',
+      '3. Step 3 (Crossmatch Reserve): Surgery ke liye blood unit cross-match karke 48-ghante reservation timer engage karein.',
+      '4. Step 4 (Auto-Expiry Sweep): 48 ghante me unutilized blood units automatic General Emergency Pool me restore ho jati hain.'
+    ],
+    hinglishGuide: 'Blood bank chillers ka temperature 2°C se 6°C me lock rehta hai. Surgery ke liye reserve blood agar 48 ghante me use na ho, to auto-release hokar emergency pool me chala jata hai.',
+    troubleshooting: [
+      {
+        commonIssue: 'Temperature breach alarm trigger hua',
+        solution: 'Immediate backup compressor switch karein aur temperature logs me manual probe calibration note karein.'
+      }
+    ],
+    technicalDetails: {
+      routes: [
+        'POST /api/v1/partner/blood-bank/telemetry/ingest',
+        'POST /api/v1/partner/blood-bank/crossmatch/reserve',
+        'POST /api/v1/partner/blood-bank/crossmatch/auto-expire-sweep',
+        'GET /api/v1/partner/blood-bank/inventory/summary'
+      ],
+      dbTables: ['company.blood_bank_cold_chain_telemetry', 'company.blood_crossmatch_reservations'],
+      actionKey: 'open-blood-bank'
+    }
+  },
+  {
+    id: 'partner-radiology-ecg-ai-cv',
+    title: '🩻 Multi-Modal Radiology & ECG AI Computer Vision Triage (Qure.ai Benchmark)',
+    category: 'CLINICAL_SAFETY',
+    allowedPlatforms: ['PARTNER_PLATFORM', 'COMPANY_HQ'],
+    summary: 'DICOM Chest X-Ray AI (Pneumothorax), Brain CT AI (Subdural Hematoma), aur 12-Lead ECG AI (STEMI / Cath Lab triage).',
+    keywords: ['radiology', 'xray', 'ct scan', 'ecg', 'ai', 'dicom', 'pacs', 'pneumothorax', 'stemi', 'hematoma'],
+    targetRoles: ['RADIOLOGIST', 'CARDIOLOGIST', 'EMERGENCY_PHYSICIAN', 'DOCTOR', 'SUPER_ADMIN'],
+    requiredModule: 'radiology-ai-triage',
+    nextBestStep: 'Critical red-flag queue review karein aur STEMI ECG aate hi 1-click se Cath Lab team activate karein.',
+    steps: [
+      '1. Step 1 (DICOM Ingest): Modality (X-Ray/CT/ECG) scan PACS Server (Port 8042) par auto-push karein.',
+      '2. Step 2 (AI Inference): Deep neural net <4 second me Pneumothorax, Midline Shift ya STEMI flag karta hai.',
+      '3. Step 3 (Heatmap Overlay): Radiologist viewer par red bounding box heatmap aur confidence percentage display hota hai.',
+      '4. Step 4 (ER WhatsApp Alert): Critical finding detect hote hi attending emergency physician ke phone par alert broadcast hota hai.'
+    ],
+    hinglishGuide: 'X-Ray, CT ya ECG aate hi AI 4 second me critical bimari (jaise heart attack ya lung collapse) pehchan kar red flag karta hai aur ER team ko turant alert bhejta hai.',
+    technicalDetails: {
+      routes: [
+        'POST /api/v1/partner/radiology-ai/analyze-scan',
+        'GET /api/v1/partner/radiology-ai/critical-findings/alerts'
+      ],
+      dbTables: ['company.radiology_ai_analyses'],
+      ports: ['8042 (PACS)', '4000 (API)'],
+      actionKey: 'open-radiology-ai'
+    }
+  },
+  {
+    id: 'partner-smart-icu-deterioration',
+    title: '🩺 Smart ICU & Ward Deterioration Early Warning Sentinel (NEWS2 Scoring)',
+    category: 'EMERGENCY_ICU',
+    allowedPlatforms: ['PARTNER_PLATFORM', 'COMPANY_HQ'],
+    summary: 'National Early Warning Score (NEWS2) calculation, septic shock early warning, Rapid Response Team (RRT) crash cart dispatch.',
+    keywords: ['icu', 'news2', 'deterioration', 'vitals', 'sepsis', 'rrt', 'crash cart', 'critical care', 'ward'],
+    targetRoles: ['INTENSIVIST', 'ICU_NURSE', 'CRITICAL_CARE_HEAD', 'DOCTOR', 'SUPER_ADMIN'],
+    requiredModule: 'smart-icu-sentinel',
+    nextBestStep: 'NEWS2 score >= 7 hone par turant Rapid Response Team dispatch karein aur arterial line tray ready karein.',
+    steps: [
+      '1. Step 1 (Telemetry Feed): HR, BP, RR, SpO2, Temp aur AVPU conscious level telemetry stream hoti hai.',
+      '2. Step 2 (NEWS2 Calculation): Algorithm continuous physiological score (0-20) calculate karta hai.',
+      '3. Step 3 (Septic Shock Flag): Score >= 7 aate hi screen par red flashing "CRITICAL DETERIORATION" banner trigger hota hai.',
+      '4. Step 4 (1-Click RRT Dispatch): Crash cart, defibrillator aur airway team ko ETA < 60s ke sath bedside assign karein.'
+    ],
+    hinglishGuide: 'Patient ke vitals se NEWS2 score calculate hota hai. Score 7 se upar aane par sepsic shock alert bajta hai aur 1-click me Rapid Response Team dispatch hoti hai.',
+    technicalDetails: {
+      routes: [
+        'POST /api/v1/partner/smart-icu/telemetry/ingest',
+        'GET /api/v1/partner/smart-icu/radar/active-beds',
+        'POST /api/v1/partner/smart-icu/rrt/dispatch'
+      ],
+      dbTables: ['company.smart_icu_vitals_telemetry', 'company.rapid_response_team_dispatches'],
+      actionKey: 'open-smart-icu'
+    }
+  },
+  {
+    id: 'partner-smart-ambulance-5g',
+    title: '🚑 5G Smart Ambulance Tele-Emergency Hub & Trauma Bay Pre-Staging',
+    category: 'EMERGENCY_ICU',
+    allowedPlatforms: ['PARTNER_PLATFORM', 'COMPANY_HQ'],
+    summary: 'In-transit live vitals stream, green corridor traffic beacon, 1-click Trauma Bay & OT 1 pre-staging.',
+    keywords: ['ambulance', '5g', 'emergency', 'trauma bay', 'green corridor', 'transit', 'casualty', 'ot staging'],
+    targetRoles: ['EMERGENCY_INCHARGE', 'PARAMEDIC', 'TRAUMA_SURGEON', 'HOSPITAL_ADMIN', 'SUPER_ADMIN'],
+    requiredModule: 'smart-ambulance',
+    nextBestStep: 'Ambulance pahunchne se pehle Trauma Bay 1 aur cross-matched O-Negative blood pre-stage karein.',
+    steps: [
+      '1. Step 1 (5G Stream): Paramedic patient ka in-transit ECG, SpO2 aur GPS ETA hospital command center ko stream karein.',
+      '2. Step 2 (Green Corridor): Traffic police integration se ambulance ke route par signal priority request trigger karein.',
+      '3. Step 3 (Trauma Pre-Stage): Hospital desk par "Pre-Stage Trauma Bay" dabayein — OT 1 aur blood bank auto-reserve honge.',
+      '4. Step 4 (Zero-Delay Handover): Ambulance hospital gate par aate hi patient bina casualty paperwork ke direct OT me shift hota hai.'
+    ],
+    hinglishGuide: 'Ambulance se raste mein hi ECG aur vitals hospital screen par dikhte hain. Hospital pahunchne se pehle hi OT aur blood ready kar liya jata hai.',
+    technicalDetails: {
+      routes: [
+        'POST /api/v1/partner/smart-ambulance/telemetry/stream',
+        'POST /api/v1/partner/smart-ambulance/pre-stage-trauma',
+        'GET /api/v1/partner/smart-ambulance/fleet/active'
+      ],
+      dbTables: ['company.emergency_ambulance_missions'],
+      actionKey: 'open-smart-ambulance'
+    }
+  },
+  {
+    id: 'partner-corporate-b2b-saas',
+    title: '🏢 Corporate Enterprise B2B Healthcare & On-Site Dispensary SaaS',
+    category: 'REVENUE_INTEGRITY',
+    allowedPlatforms: ['PARTNER_PLATFORM', 'COMPANY_HQ'],
+    summary: 'Corporate client master (TCS, Infosys), employee bulk health pass, on-site POS, aur monthly consolidated GST invoices.',
+    keywords: ['corporate', 'b2b', 'enterprise', 'employee', 'health pass', 'gst invoice', 'credit limit', 'irn'],
+    targetRoles: ['CORPORATE_RELATIONS_MANAGER', 'BILLING_MANAGER', 'ACCOUNTANT', 'SUPER_ADMIN'],
+    requiredModule: 'corporate-b2b',
+    nextBestStep: 'Monthly corporate consumption audit karein aur Net-30 credit terms par itemized GST invoice dispatch karein.',
+    steps: [
+      '1. Step 1 (Corporate Account): Company credit limit (e.g. ₹50 Lakh) aur agreed OPD/IPD discount master configure karein.',
+      '2. Step 2 (Employee Pass): Employees ko cashless family health pass issue karein on-site clinic access ke sath.',
+      '3. Step 3 (Dispensary POS): Corporate campus dispensary me employee ID tap se cashless दवा provide karein.',
+      '4. Step 4 (Consolidated Billing): Month-end par 1-click se e-invoice IRN aur B2B GSTR-1 compliant invoice generate karein.'
+    ],
+    hinglishGuide: 'B2B कंपनियों (जैसे TCS, Infosys) ke sath tie-up karke unke staff ko cashless treatment dein aur mahine ke aakhiri din single GST invoice bhejein.',
+    technicalDetails: {
+      routes: [
+        'GET /api/v1/partner/corporate-b2b/accounts',
+        'POST /api/v1/partner/corporate-b2b/employees/bulk-enroll',
+        'POST /api/v1/partner/corporate-b2b/invoices/generate'
+      ],
+      dbTables: ['company.corporate_accounts', 'company.corporate_employee_passes', 'company.corporate_b2b_invoices'],
+      actionKey: 'open-corporate-b2b'
+    }
+  },
+  {
+    id: 'partner-bed-turnaround-qr',
+    title: '🧹 Autonomous Bed Turnaround & Housekeeping QR Dispatcher',
+    category: 'HOSPITAL_OPERATIONS',
+    allowedPlatforms: ['PARTNER_PLATFORM', 'COMPANY_HQ'],
+    summary: 'Discharge sign-off par auto-housekeeping mission, headboard QR scan verification, 18.5% IPD bed capacity gain.',
+    keywords: ['housekeeping', 'bed turnaround', 'terminal cleaning', 'qr scan', 'disinfection', 'ward', 'cleaning'],
+    targetRoles: ['HOUSEKEEPING_SUPERVISOR', 'WARD_INCHARGE', 'NURSE', 'HOSPITAL_ADMIN', 'SUPER_ADMIN'],
+    requiredModule: 'bed-turnaround',
+    nextBestStep: 'Discharge hote hi headboard QR scan karein aur terminal sterilization sign-off karke bed available karein.',
+    steps: [
+      '1. Step 1 (Auto-Dispatch): Doctor ke discharge summary seal karte hi housekeeping staff ke PWA par mission trigger hota hai.',
+      '2. Step 2 (QR Scan Start): Housekeeper bed headboard QR scan karke terminal cleaning shuru karein (timer engaged).',
+      '3. Step 3 (Sterilization Protocol): Mattress flip, linen change aur UV surface disinfection complete karein.',
+      '4. Step 4 (QR Scan Done): Sterilization QR scan karte hi bed status instantly "VACANT_READY" ho jata hai (Avg 18 mins vs 150 mins).'
+    ],
+    hinglishGuide: 'Discharge hote hi safai wale ke mobile par mission jata hai. Bed par laga QR code scan karke safai shuru aur khatam hoti hai jisse 2 ghante ka samay bachta hai.',
+    technicalDetails: {
+      routes: [
+        'POST /api/v1/partner/bed-turnaround/dispatch-mission',
+        'POST /api/v1/partner/bed-turnaround/scan-qr',
+        'GET /api/v1/partner/bed-turnaround/metrics'
+      ],
+      dbTables: ['company.housekeeping_bed_missions'],
+      actionKey: 'open-bed-turnaround'
+    }
+  },
+  {
+    id: 'partner-ambient-ai-scribe',
+    title: '🎙️ Ambient Multilingual Clinical AI Scribe & Voice-to-FHIR Workstation',
+    category: 'CLINICAL_SAFETY',
+    allowedPlatforms: ['PARTNER_PLATFORM', 'COMPANY_HQ'],
+    summary: 'Hinglish/Hindi doctor-patient dialogue transcription, structured SOAP notes, ICD-10 coding, ABDM FHIR R4 bundling.',
+    keywords: ['ai scribe', 'ambient', 'voice to rx', 'hinglish', 'speech to text', 'soap note', 'fhir', 'icd10'],
+    targetRoles: ['DOCTOR', 'CONSULTANT_PHYSICIAN', 'SURGEON', 'SUPER_ADMIN'],
+    requiredModule: 'clinical-consultation',
+    nextBestStep: 'Audio stream record karein, generated SOAP note verify karein aur 1-click se prescription sign karein.',
+    steps: [
+      '1. Step 1 (Mic Toggle): Doctor desk par "🎙️ Ambient AI Scribe" widget start karein.',
+      '2. Step 2 (Natural Dialogue): Doctor aur patient aam bhasha (Hindi/English/Hinglish) me baat karein.',
+      '3. Step 3 (SOAP Synthesis): AI chief complaints, vitals, ICD-10 diagnosis aur Rx dosage instantly extract karta hai.',
+      '4. Step 4 (1-Click Sign & FHIR): "Sign & Issue Rx" dabate hi ABDM FHIR R4 document bundle bankar parchi print ho jati hai.'
+    ],
+    hinglishGuide: 'Doctor ko computer dekhne ki zaroorat nahi. Mic on karke patient se baat karein, EWAN AI apne aap poori prescription aur bimari ka code (ICD-10) generate kar dega.',
+    technicalDetails: {
+      routes: [
+        'POST /api/v1/partner/ai-scribe/stream-transcribe',
+        'POST /api/v1/partner/ai-scribe/synthesize-soap',
+        'POST /api/v1/partner/ai-scribe/package-fhir-bundle'
+      ],
+      dbTables: ['company.ai_scribe_sessions'],
+      actionKey: 'open-ai-scribe'
+    }
+  },
+  {
+    id: 'partner-nhcx-cashless-claims',
+    title: '⚡ NHCX 3-Minute Cashless Claim Settlement Engine (IRDAI 2024)',
+    category: 'REVENUE_INTEGRITY',
+    allowedPlatforms: ['PARTNER_PLATFORM', 'COMPANY_HQ'],
+    summary: 'National Health Claims Exchange (NHCX) connector: <60s Pre-Auth approval, <180s discharge settlement.',
+    keywords: ['nhcx', 'insurance', 'cashless', 'claims', 'pre auth', 'settlement', 'irdai', 'tpa'],
+    targetRoles: ['TPA_EXECUTIVE', 'INSURANCE_HEAD', 'BILLING_MANAGER', 'HOSPITAL_ADMIN', 'SUPER_ADMIN'],
+    requiredModule: 'nhcx-insurance',
+    nextBestStep: 'Pre-auth approve hone ke baad patient discharge par 1-click NHCX final settlement submit karein.',
+    steps: [
+      '1. Step 1 (NHCX Pre-Auth): IPD admission clinical summary aur ICD-10 codes se auto-extract karke pre-auth submit karein.',
+      '2. Step 2 (<60s Approval): IRDAI standard guidelines ke tahat insurer system se instant eligibility voucher receive karein.',
+      '3. Step 3 (Discharge Submission): Final hospital bill aur discharge summary NHCX FHIR Claim resource me attach karein.',
+      '4. Step 4 (<180s Settlement): 3 minute ke andar digital settlement voucher aur payout token verify karein.'
+    ],
+    hinglishGuide: 'TPA claim ke liye ghanto wait nahi karna padega. NHCX engine se pre-auth 1 minute me aur final discharge claim 3 minute me cashless approve hota hai.',
+    technicalDetails: {
+      routes: [
+        'POST /api/v1/partner/insurance/nhcx/pre-auth/initiate',
+        'POST /api/v1/partner/insurance/nhcx/claim/settle-discharge',
+        'GET /api/v1/partner/insurance/nhcx/claim/status'
+      ],
+      dbTables: ['company.nhcx_claims'],
+      actionKey: 'open-nhcx-desk'
+    }
+  },
+  {
+    id: 'partner-revenue-leakage-hardgate',
+    title: '🔒 Revenue Hard-Gates: Discharge Interceptor, Doctor Clawback & Blind-Drop',
+    category: 'REVENUE_INTEGRITY',
+    allowedPlatforms: ['PARTNER_PLATFORM', 'COMPANY_HQ'],
+    summary: 'Unbilled items discharge hard-gate, doctor payout clawback on refunds, cashier blind-drop CCTV audit.',
+    keywords: ['revenue', 'leakage', 'discharge gate', 'clawback', 'blind drop', 'cctv audit', 'ebitda', 'unbilled'],
+    targetRoles: ['FINANCE_DIRECTOR', 'CHIEF_ACCOUNTANT', 'BILLING_HEAD', 'MEDICAL_DIRECTOR', 'SUPER_ADMIN'],
+    requiredModule: 'revenue-protection',
+    nextBestStep: 'Discharge audit checklist verify karein aur cashier drawer band karte samay blind cash entry karein.',
+    steps: [
+      '1. Step 1 (Discharge Gate): System OT/ICU ke unbilled items detect hote hi discharge clearance freeze kar deta hai.',
+      '2. Step 2 (Auto-Post / Override): 1-Click se unbilled items invoice me add karein ya Medical Director PIN se override karein.',
+      '3. Step 3 (Doctor Clawback): Patient refund hone par doctor commission ledger se accrued cut automatic deduct hota hai.',
+      '4. Step 4 (Cashier Blind Drop): Cashier bina balance dekhe physical cash enter karta hai. Variance aate hi CCTV camera ref log hota hai.'
+    ],
+    hinglishGuide: 'Discharge Hard-Gate se ek bhi bina bill ki dawai ya item bahar nahi jati. Patient ko refund milne par doctor ka cut auto-reverse hota hai aur cashier ka cash CCTV ke sath match hota hai.',
+    technicalDetails: {
+      routes: [
+        'GET /api/v1/partner/revenue-protection/discharge-audit/:id',
+        'POST /api/v1/partner/revenue-protection/doctor-clawback/apply',
+        'POST /api/v1/partner/revenue-protection/cashier-blind-drop/reconcile',
+        'GET /api/v1/partner/revenue-protection/digital-twin/live'
+      ],
+      dbTables: ['company.billing_invoices', 'company.doctor_payout_clawbacks', 'company.cashier_blind_drops'],
+      actionKey: 'open-revenue-protection'
+    }
+  },
+  {
+    id: 'partner-abdm-m1m3-health-stack',
+    title: '🇮🇳 ABDM Milestones M1, M2 & M3 National Health Stack Compliance',
+    category: 'GOVERNMENT_SCHEMES',
+    allowedPlatforms: ['PARTNER_PLATFORM', 'COMPANY_HQ'],
+    summary: 'Aadhaar OTP ABHA generation (M1), Care Context Discovery & Linking (M2), NRCES FHIR ECDH/AES-GCM encryption (M3).',
+    keywords: ['abdm', 'abha', 'm1', 'm2', 'm3', 'fhir', 'ecdh', 'nha', 'national health stack'],
+    targetRoles: ['RECEPTIONIST', 'MEDICAL_RECORDS_OFFICER', 'HOSPITAL_ADMIN', 'SUPER_ADMIN'],
+    requiredModule: 'abdm-compliance',
+    nextBestStep: 'Patient ka 14-digit ABHA number link karein aur discharge par encrypted FHIR care context NHA ko push karein.',
+    steps: [
+      '1. Step 1 (M1 ABHA Issuance): Aadhaar OTP se patient ka official 14-digit ABHA number aur @abdm address issue karein.',
+      '2. Step 2 (M2 Linkage): Patient ke hospital visit record ko care context ID ke sath ABHA profile se link karein.',
+      '3. Step 3 (M3 FHIR Document): Prescription aur lab report ko NRCES R4 standard JSON bundle me package karein.',
+      '4. Step 4 (M3 ECDH Encryption): Diffie-Hellman / AES-GCM cipher se encrypted data NHA health locker ko exchange karein.'
+    ],
+    hinglishGuide: 'Government ke ABDM 2.0 standards: M1 me ABHA ID banti hai, M2 me hospital record link hota hai, aur M3 me encrypted prescription patient ke Ayushman app me jati hai.',
+    technicalDetails: {
+      routes: [
+        'POST /api/v1/partner/abdm/m1/generate-aadhaar-otp',
+        'POST /api/v1/partner/abdm/m1/verify-aadhaar-otp',
+        'POST /api/v1/partner/abdm/m2/care-context/discover',
+        'POST /api/v1/partner/abdm/m3/fhir-bundle/generate'
+      ],
+      dbTables: ['company.abdm_patient_records'],
+      actionKey: 'open-abdm-compliance'
+    }
+  },
+  {
+    id: 'partner-offline-pwa-resilience',
+    title: '📶 Offline-First PWA Local Storage & Zero-Collision PostgreSQL Replay',
+    category: 'ARCHITECTURE',
+    allowedPlatforms: ['PARTNER_PLATFORM', 'COMPANY_HQ'],
+    summary: 'IndexedDB local buffer, internet cut hone par continuous OPD/billing, aur reconnection par atomic batch replay.',
+    keywords: ['offline', 'indexeddb', 'pwa', 'sync', 'internet down', 'batch replay', 'resilience', 'cache'],
+    targetRoles: ['RECEPTIONIST', 'DOCTOR', 'CASHIER', 'IT_ADMIN', 'SUPER_ADMIN'],
+    requiredModule: 'offline-resilience',
+    nextBestStep: 'Internet disconnected hone par normal kaam jari rakhein; internet aate hi batch replay auto-sync ho jayega.',
+    steps: [
+      '1. Step 1 (Offline Mode): Internet disconnect hote hi PWA automatically local IndexedDB database me switch hota hai.',
+      '2. Step 2 (Zero-Interruption): Doctor prescription likhte rahein, cashier cash receipts print karte rahein.',
+      '3. Step 3 (Sync Engine): Internet aate hi gateway heartbeat detect hoti hai aur sync badge green hota hai.',
+      '4. Step 4 (Atomic Replay): Sabhi offline operations cryptographic audit batch banakar bina ID collision ke PostgreSQL me commit hoti hain.'
+    ],
+    hinglishGuide: 'Internet chala bhi jaye to hospital nahi rukega. Sabhi parchi aur bill local browser me save hote rahenge aur net aate hi bina kisi gadbad ke main database me sync ho jayenge.',
+    technicalDetails: {
+      routes: [
+        'GET /api/v1/partner/offline-resilience/heartbeat',
+        'POST /api/v1/partner/offline-resilience/replay-batch'
+      ],
+      dbTables: ['company.offline_sync_audits'],
+      actionKey: 'open-offline-sync'
     }
   }
 ];

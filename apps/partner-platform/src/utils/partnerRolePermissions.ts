@@ -817,7 +817,8 @@ export function getAllowedModulesForRole(role?: string): PartnerModuleKey[] {
         'whatsapp-patient-portal',
         'billing-revenue-cycle',
         'insurance-claims',
-        'procurement-supply-chain'
+        'procurement-supply-chain',
+        'ewan-super-brain'
       ];
     }
     return permissions as PartnerModuleKey[];
@@ -857,7 +858,8 @@ export function getAllowedModulesForRole(role?: string): PartnerModuleKey[] {
         'whatsapp-patient-portal',
         'billing-revenue-cycle',
         'insurance-claims',
-        'procurement-supply-chain'
+        'procurement-supply-chain',
+        'ewan-super-brain'
       ];
     }
     return tpl.allowedModules as PartnerModuleKey[];
@@ -1152,7 +1154,8 @@ export const PARTNER_PROFILE_ALLOWED_MODULES: Record<string, PartnerModuleKey[]>
     'organization-foundation',
     'account-plan-features',
     'offers-rewards-hub',
-    'my-smart-desk'
+    'my-smart-desk',
+    'ewan-super-brain'
   ],
   PHARMACY: [
     'pharmacy-home',
@@ -1165,7 +1168,8 @@ export const PARTNER_PROFILE_ALLOWED_MODULES: Record<string, PartnerModuleKey[]>
     'organization-foundation',
     'account-plan-features',
     'offers-rewards-hub',
-    'my-smart-desk'
+    'my-smart-desk',
+    'ewan-super-brain'
   ],
   DIAGNOSTIC_CENTRE: [
     'diagnostic-home',
@@ -1184,7 +1188,8 @@ export const PARTNER_PROFILE_ALLOWED_MODULES: Record<string, PartnerModuleKey[]>
     'organization-foundation',
     'account-plan-features',
     'offers-rewards-hub',
-    'my-smart-desk'
+    'my-smart-desk',
+    'ewan-super-brain'
   ],
   CLINIC: [
     'clinic-home',
@@ -1208,7 +1213,8 @@ export const PARTNER_PROFILE_ALLOWED_MODULES: Record<string, PartnerModuleKey[]>
     'organization-foundation',
     'account-plan-features',
     'offers-rewards-hub',
-    'my-smart-desk'
+    'my-smart-desk',
+    'ewan-super-brain'
   ],
   HOSPITAL: [
     'hospital-home',
@@ -1246,7 +1252,8 @@ export const PARTNER_PROFILE_ALLOWED_MODULES: Record<string, PartnerModuleKey[]>
     'organization-foundation',
     'account-plan-features',
     'offers-rewards-hub',
-    'my-smart-desk'
+    'my-smart-desk',
+    'ewan-super-brain'
   ],
   ENTERPRISE_COMMAND: [
     'hospital-home',
@@ -1284,7 +1291,8 @@ export const PARTNER_PROFILE_ALLOWED_MODULES: Record<string, PartnerModuleKey[]>
     'organization-foundation',
     'account-plan-features',
     'offers-rewards-hub',
-    'my-smart-desk'
+    'my-smart-desk',
+    'ewan-super-brain'
   ],
   RESTRICTED: [
     'account-plan-features',

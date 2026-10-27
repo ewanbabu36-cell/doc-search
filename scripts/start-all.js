@@ -258,6 +258,9 @@ async function main() {
     color: '\x1b[36m'
   };
   spawnService(unifiedGateway);
+
+  // Keep supervisor process alive indefinitely
+  setInterval(() => {}, 60000);
 }
 
 const cleanup = () => {

@@ -83,6 +83,7 @@ const CentralHelpDeskExitHubView = React.lazy(() => import('./views/CentralHelpD
 const PreferredPartnerNetworkView = React.lazy(() => import('./views/PreferredPartnerNetworkView.js').then(m => ({ default: m.PreferredPartnerNetworkView })));
 const HospitalInHouseClosedLoopView = React.lazy(() => import('./views/HospitalInHouseClosedLoopView.js').then(m => ({ default: m.HospitalInHouseClosedLoopView })));
 const LegacyDataMigrationWizardView = React.lazy(() => import('./views/LegacyDataMigrationWizardView.js').then(m => ({ default: m.LegacyDataMigrationWizardView })));
+const EwanSuperBrainCommandView = React.lazy(() => import('./views/EwanSuperBrainCommandView.js').then(m => ({ default: m.EwanSuperBrainCommandView })));
 import { isPartnerModuleAllowed, isModuleAllowedForPartnerProfile, isWorkspaceAllowedForPartnerProfile, isDestructiveActionAllowed, isHospitalExecutive, getRoleDefaultPerspective, getRoleDefaultHomeModule, isVoiceScribeAllowed, isClinicianRole } from '../utils/partnerRolePermissions.js';
 import { FrontDeskWorkstationView } from './views/FrontDeskWorkstationView.js';
 const StaffOperationalRoleDashboard = React.lazy(() => import('./dashboard/StaffOperationalRoleDashboard.js').then(m => ({ default: m.StaffOperationalRoleDashboard })));
@@ -172,7 +173,8 @@ export type PartnerModuleKey =
   | 'help-desk-exit-hub'
   | 'preferred-partner-network'
   | 'hospital-closed-loop'
-  | 'legacy-data-migration';
+  | 'legacy-data-migration'
+  | 'ewan-super-brain';
 
 export type RolePerspective = 'AUTO' | 'DOCTOR' | 'NURSE' | 'FRONT_DESK' | 'PHARMACY' | 'LAB' | 'BILLING' | 'ADMIN';
 
@@ -225,6 +227,7 @@ export const MODULE_METADATA: Record<PartnerModuleKey, { title: string; icon: st
   'offers-rewards-hub': { title: 'Partner Rewards & Grants', icon: '🎁' },
   'account-plan-features': { title: 'My Account / Plan & Features', icon: '💳' },
   'legacy-data-migration': { title: 'Legacy Data Migrator', icon: '⚡' },
+  'ewan-super-brain': { title: 'EWAN 2.0 Master Brain', icon: '🧠' },
 };
 
 const getThemeLabel = (t: string) => {
@@ -3175,6 +3178,33 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
           }
           userSlot={
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+              {/* EWAN 2.0 Master Brain Quick Access Pill */}
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveModule('ewan-super-brain');
+                  setVisitedModules((prev) => new Set(prev).add('ewan-super-brain'));
+                }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '5px 12px',
+                  borderRadius: '8px',
+                  background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.2) 0%, rgba(99, 102, 241, 0.25) 100%)',
+                  border: '1px solid rgba(6, 182, 212, 0.5)',
+                  color: '#38BDF8',
+                  fontWeight: 800,
+                  fontSize: '0.8125rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  flexShrink: 0
+                }}
+                title="EWAN 2.0 Master Brain: 15-Domain Matrix, Revenue Leakage Auto-Heal & Bottleneck Radar"
+              >
+                <span style={{ fontSize: '1rem' }}>🧠</span>
+                <span className="ds-hide-on-compact">EWAN 2.0 Brain</span>
+              </button>
               <SoundboxAudioPlayer facilityName={cleanFacilityBrand} />
               {/* DocSearch Offline-First Background Sync Indicator */}
               <OptimisticSyncBadge />
@@ -5293,6 +5323,18 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                   <LegacyDataMigrationWizardView
                     tenantId={resolvedTenantId}
                     onNavigateToModule={(mod) => setActiveModule(mod as any)}
+                  />
+                </DomainErrorBoundary>
+              </div>
+            )}
+            {visitedModules.has('ewan-super-brain') && (
+              <div style={{ display: activeModule === 'ewan-super-brain' ? 'block' : 'none' }}>
+                <DomainErrorBoundary domainName="EWAN 2.0 Master Brain">
+                  <EwanSuperBrainCommandView
+                    onNavigateModule={(mod) => {
+                      setActiveModule(mod as any);
+                      setVisitedModules((prev) => new Set(prev).add(mod as any));
+                    }}
                   />
                 </DomainErrorBoundary>
               </div>

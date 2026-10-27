@@ -489,6 +489,19 @@ server.on('upgrade', (req, socket, head) => {
   });
 });
 
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.warn(`[!] Gateway port ${GATEWAY_PORT} is already bound (e.g. by IDE/Forwarder). Retrying gracefully on 3001...`);
+    try {
+      server.listen(3001, '0.0.0.0', () => {
+        console.log(`[✔] Unified Gateway listening on fallback port 3001 (http://localhost:3001/)`);
+      });
+    } catch {}
+  } else {
+    console.error('[Gateway Server Error]', err.message);
+  }
+});
+
 server.listen(GATEWAY_PORT, '0.0.0.0', () => {
   console.log('\n============================================================');
   console.log(`🌐 DOC SEARCH MASTER UNIFIED GATEWAY IS ONLINE!`);

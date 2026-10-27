@@ -92,6 +92,7 @@ import { bedsideConciergeRoutes } from './routes/partner/bedside-concierge.route
 import { pharmacyPosSentinelRoutes } from './routes/partner/pharmacy-pos-sentinel.routes.js';
 import { pmjaySchemeRoutes } from './routes/partner/pmjay-scheme.routes.js';
 import { bloodBankSentinelRoutes } from './routes/partner/blood-bank-sentinel.routes.js';
+import { ewanSuperBrainRoutes } from './routes/partner/ewan-super-brain.routes.js';
 import { distributedLockRoutes } from './routes/locks.routes.js';
 import { commercialOperationsRoutes } from './routes/partner/commercial-operations.routes.js';
 import { AppError, sanitizeObjectPrototype } from '@docsearch/shared-core';
@@ -417,6 +418,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(pharmacyPosSentinelRoutes);
   await app.register(pmjaySchemeRoutes);
   await app.register(bloodBankSentinelRoutes);
+  await app.register(ewanSuperBrainRoutes);
 
   // Block any direct guessed physical storage URL access (/storage/*)
   app.get('/storage/*', async (_request, reply) => {
