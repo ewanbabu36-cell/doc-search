@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { DocSearchLogo } from '@docsearch/ui-kit';
 import { type Language, translations } from '../i18n.js';
 import { type PatientProfile } from '../services/patient-api.js';
 import { speakAdvice } from '../utils/voice-assistant.js';
@@ -68,7 +69,7 @@ export const PatientHomeScreen: React.FC<Props> = ({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '1.5rem' }}>🏥</span>
+          <DocSearchLogo size="xs" variant="app-icon" clickable={false} />
           <div>
             <div style={{ fontSize: '0.875rem', fontWeight: 800, color: '#F8FAFC' }}>
               {t.hospitalName}

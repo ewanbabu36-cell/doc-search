@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { DocSearchLogo } from '@docsearch/ui-kit';
 import { type Language, translations } from '../i18n.js';
 import { patientApiService, DEMO_FAMILY_MEMBERS, type PatientProfile } from '../services/patient-api.js';
 
@@ -97,10 +98,7 @@ export const PatientLoginScreen: React.FC<Props> = ({ language, onLanguageToggle
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#0B0F19', color: '#F8FAFC', padding: '24px 20px' }}>
       {/* Top Header with Language Pill */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '1.75rem' }}>🏥</span>
-          <span style={{ fontSize: '1.25rem', fontWeight: 900, letterSpacing: '-0.02em', color: '#38BDF8' }}>DOC SEARCH</span>
-        </div>
+        <DocSearchLogo size="md" variant="compact" />
         <button
           type="button"
           onClick={onLanguageToggle}

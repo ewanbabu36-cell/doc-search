@@ -1,15 +1,26 @@
 {
-  "name": "DOC SEARCH — Next-Gen Healthcare Platform",
+  "name": "DOC SEARCH — Next-Gen Intelligent Hospital Platform",
   "short_name": "DOC SEARCH",
-  "description": "Unified Healthcare Ecosystem connecting Patients, Hospitals, Clinics, Pathology Labs & Pharmacies across India",
+  "description": "Next-Gen Intelligent Healthcare Operating System (HOS) & Clinical Telemetry",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#0b0f17",
-  "theme_color": "#0b0f17",
-  "categories": ["medical", "health", "lifestyle"],
+  "background_color": "#070D1A",
+  "theme_color": "#070D1A",
+  "categories": [
+    "medical",
+    "health",
+    "business",
+    "productivity"
+  ],
   "icons": [
+    {
+      "src": "/icons/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
     {
       "src": "/icons/favicon-32x32.png",
       "sizes": "32x32",
