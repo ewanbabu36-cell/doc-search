@@ -202,19 +202,17 @@ class NativeBridgeService {
     };
     window.addEventListener('popstate', handlePopState);
 
-    // If Capacitor App plugin available
+    // If Capacitor App plugin available via runtime bridge
     let removeListener: (() => void) | null = null;
-    if (this.isNative) {
-      // @ts-ignore
-      import('@capacitor/app')
-        .then(({ App }: any) => {
-          App.addListener('backButton', () => {
-            onBack();
-          }).then((handle: any) => {
-            removeListener = () => handle.remove();
-          });
-        })
-        .catch(() => {});
+    if (this.isNative && typeof window !== 'undefined') {
+      const capApp = (window as any).Capacitor?.Plugins?.App;
+      if (capApp && typeof capApp.addListener === 'function') {
+        capApp.addListener('backButton', () => {
+          onBack();
+        }).then((handle: any) => {
+          removeListener = () => handle?.remove?.();
+        }).catch(() => {});
+      }
     }
 
     return () => {
