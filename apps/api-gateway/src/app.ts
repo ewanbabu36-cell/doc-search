@@ -98,6 +98,7 @@ import { bloodBankSentinelRoutes } from './routes/partner/blood-bank-sentinel.ro
 import { ewanSuperBrainRoutes } from './routes/partner/ewan-super-brain.routes.js';
 import { distributedLockRoutes } from './routes/locks.routes.js';
 import { commercialOperationsRoutes } from './routes/partner/commercial-operations.routes.js';
+import { workspaceLayoutRoutes } from './routes/partner/workspace-layout.routes.js';
 import { AppError, sanitizeObjectPrototype } from '@docsearch/shared-core';
 import { ensureDatabaseReady, setTestDatabase } from '@docsearch/database';
 
@@ -425,6 +426,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(pmjaySchemeRoutes);
   await app.register(bloodBankSentinelRoutes);
   await app.register(ewanSuperBrainRoutes);
+  await app.register(workspaceLayoutRoutes);
 
   // Block any direct guessed physical storage URL access (/storage/*)
   app.get('/storage/*', async (_request, reply) => {

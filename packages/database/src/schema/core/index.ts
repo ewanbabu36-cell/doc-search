@@ -13,3 +13,4 @@ export * from './outbox-jobs.js';
 export * from './idempotency-records.js';
 export * from './reliability.js';
 export * from './ai-intelligence.js';
+export * from './workspace-layouts.js';

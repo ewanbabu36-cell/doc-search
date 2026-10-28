@@ -893,6 +893,5 @@ export * from './components/views/HospitalInHouseClosedLoopView.js';
 export * from './services/unique-identifier-service.js';
 export * from './components/views/LiveIcuTelemetryCodeBlueView.js';
 
-
-
-
+// Phase 6.0: Liquid Glass Modular OS & Android-Style Feature Vault
+export * from './components/modular-os/index.js';
