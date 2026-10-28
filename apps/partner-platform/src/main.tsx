@@ -14,6 +14,7 @@ import { ModularOSContainer } from './components/modular-os/ModularOSContainer.j
 import { IOSLockScreen } from './components/modular-os/ios/IOSLockScreen.js';
 import '../../../packages/ui-kit/src/styles/themes.css';
 import '../../../packages/ui-kit/src/styles/base.css';
+import './components/modular-os/modular-os.css';
 
 // Initialize PWA Service Worker for 0ms instant loading and offline outbox
 if (typeof window !== 'undefined') {

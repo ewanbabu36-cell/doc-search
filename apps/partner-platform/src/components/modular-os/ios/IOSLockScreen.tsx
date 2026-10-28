@@ -13,7 +13,7 @@ export const IOSLockScreen: React.FC<IOSLockScreenProps> = ({
   hospitalName = 'DocSearch Apollo Medical Center',
 }) => {
   const [timeStr, setTimeStr] = useState<string>('09:41');
-  const [dateStr, setDateStr] = useState<string>('Tuesday, October 28');
+  const [dateStr, setDateStr] = useState<string>('Wednesday, October 28');
   const [isFaceIdScanning, setIsFaceIdScanning] = useState<boolean>(false);
   const { playClick, triggerHaptic } = useHapticSoundFeedback();
 
@@ -52,7 +52,7 @@ export const IOSLockScreen: React.FC<IOSLockScreenProps> = ({
   const defaultProfiles = [
     {
       id: 'apollo-cmo',
-      name: 'Dr. Apollo (Chief Medical Officer)',
+      name: 'Dr. Apollo',
       role: 'HOSPITAL_EXECUTIVE',
       roleTitle: 'Chief Medical Officer',
       email: 'cmo@apollo.docsearch.internal',
@@ -61,7 +61,7 @@ export const IOSLockScreen: React.FC<IOSLockScreenProps> = ({
     },
     {
       id: 'apollo-nurse',
-      name: 'Sister Nancy (Head Triage Nurse)',
+      name: 'Sister Nancy',
       role: 'HOSPITAL_NURSE',
       roleTitle: 'Head Triage Nurse',
       email: 'nurse@apollo.docsearch.internal',
@@ -70,7 +70,7 @@ export const IOSLockScreen: React.FC<IOSLockScreenProps> = ({
     },
     {
       id: 'apollo-cashier',
-      name: 'Cashier Sharma (Billing Counter)',
+      name: 'Cashier Sharma',
       role: 'HOSPITAL_CASHIER',
       roleTitle: 'Billing Cashier',
       email: 'cashier@apollo.docsearch.internal',
@@ -79,7 +79,7 @@ export const IOSLockScreen: React.FC<IOSLockScreenProps> = ({
     },
     {
       id: 'apollo-pharma',
-      name: 'Dr. Mehta (Chief Pharmacist)',
+      name: 'Dr. Mehta',
       role: 'HOSPITAL_PHARMACIST',
       roleTitle: 'Chief Pharmacist',
       email: 'pharma@apollo.docsearch.internal',
@@ -89,17 +89,63 @@ export const IOSLockScreen: React.FC<IOSLockScreenProps> = ({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-between py-12 px-6 select-none bg-gradient-to-b from-indigo-950 via-slate-950 to-black text-white pointer-events-auto">
-      {/* 1. Top Section: Lock Icon & Face ID scan */}
-      <div className="flex flex-col items-center gap-2 pt-4">
-        <div className="flex items-center gap-1.5 text-white/70 text-xs font-semibold">
-          <span>🏥</span>
+    <div
+      className="fixed inset-0 z-50 flex flex-col justify-between py-10 px-6 select-none bg-gradient-to-b from-indigo-950 via-slate-950 to-black text-white pointer-events-auto"
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '2.5rem 1.5rem',
+        background: 'radial-gradient(circle at 50% 10%, #1e1b4b 0%, #09090b 60%, #000000 100%)',
+        color: '#ffffff',
+        zIndex: 9999,
+        overflowY: 'auto',
+      }}
+    >
+      {/* 1. Top Section: Hospital Brand & Lock Icon */}
+      <div
+        className="flex flex-col items-center gap-2 pt-2"
+        style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}
+      >
+        <div
+          className="flex items-center gap-2 text-white/80 text-sm font-semibold"
+          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'rgba(255,255,255,0.85)' }}
+        >
+          <span style={{ fontSize: '18px' }}>🏥</span>
           <span>{hospitalName}</span>
         </div>
 
-        <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white text-base">
+        <div
+          style={{
+            width: '36px',
+            height: '36px',
+            borderRadius: '50%',
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '16px',
+            border: '1px solid rgba(255,255,255,0.2)',
+          }}
+        >
           {isFaceIdScanning ? (
-            <span className="w-4 h-4 rounded-full border-2 border-emerald-400 border-t-transparent animate-spin" />
+            <span
+              style={{
+                width: '18px',
+                height: '18px',
+                borderRadius: '50%',
+                border: '2px solid #34d399',
+                borderTopColor: 'transparent',
+                display: 'inline-block',
+                animation: 'spin 0.8s linear infinite',
+              }}
+            />
           ) : (
             '🔒'
           )}
@@ -107,25 +153,89 @@ export const IOSLockScreen: React.FC<IOSLockScreenProps> = ({
       </div>
 
       {/* 2. Center: Large iOS Clock & Date */}
-      <div className="flex flex-col items-center text-center space-y-1">
-        <span className="text-sm md:text-base font-medium text-white/80 tracking-wide">
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          textAlign: 'center',
+          margin: '2rem 0',
+        }}
+      >
+        <span
+          style={{
+            fontSize: '18px',
+            fontWeight: 500,
+            color: 'rgba(255, 255, 255, 0.85)',
+            letterSpacing: '0.02em',
+            marginBottom: '0.25rem',
+          }}
+        >
           {dateStr}
         </span>
-        <h1 className="text-7xl md:text-9xl font-extrabold tracking-tighter text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.8)] font-sans">
+
+        <h1
+          style={{
+            fontSize: 'clamp(4.5rem, 12vw, 8.5rem)',
+            fontWeight: 800,
+            lineHeight: 1,
+            letterSpacing: '-0.04em',
+            margin: '0.5rem 0',
+            textShadow: '0 4px 25px rgba(0,0,0,0.8)',
+            fontFamily: 'Inter, -apple-system, sans-serif',
+          }}
+        >
           {timeStr}
         </h1>
 
         {/* Live Triage Notification Banner */}
-        <div className="mt-6 max-w-sm w-full p-3.5 rounded-3xl bg-white/10 backdrop-blur-2xl border border-white/20 shadow-xl flex items-center gap-3 text-left animate-in fade-in zoom-in-95 duration-300">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-red-600 to-rose-700 flex items-center justify-center text-lg flex-shrink-0 shadow">
+        <div
+          style={{
+            marginTop: '1.5rem',
+            maxWidth: '380px',
+            width: '100%',
+            padding: '12px 16px',
+            borderRadius: '20px',
+            backgroundColor: 'rgba(255, 255, 255, 0.08)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.15)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            textAlign: 'left',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+          }}
+        >
+          <div
+            style={{
+              width: '38px',
+              height: '38px',
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, #dc2626, #991b1b)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '18px',
+              flexShrink: 0,
+            }}
+          >
             🚨
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-white">Emergency Center</span>
-              <span className="text-[10px] text-white/50">Live</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '12px', fontWeight: 700, color: '#ffffff' }}>Emergency Center</span>
+              <span style={{ fontSize: '10px', color: '#34d399', fontWeight: 600 }}>● Live</span>
             </div>
-            <p className="text-xs text-white/80 truncate">
+            <p
+              style={{
+                fontSize: '11px',
+                color: 'rgba(255,255,255,0.75)',
+                margin: '2px 0 0 0',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
               Triage Level 2 patient arrived in Red Resuscitation Bay
             </p>
           </div>
@@ -133,25 +243,57 @@ export const IOSLockScreen: React.FC<IOSLockScreenProps> = ({
       </div>
 
       {/* 3. Bottom: Quick Staff Unlock & Traditional Login */}
-      <div className="flex flex-col items-center space-y-4 max-w-md mx-auto w-full pb-4">
-        <div className="text-center">
-          <span className="text-xs font-semibold text-white/60">
-            Select Staff Role to Unlock Workstation
-          </span>
-        </div>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          maxWidth: '440px',
+          width: '100%',
+          gap: '12px',
+          paddingBottom: '1rem',
+        }}
+      >
+        <span style={{ fontSize: '12px', fontWeight: 600, color: 'rgba(255, 255, 255, 0.6)' }}>
+          Select Staff Role to Unlock Workstation
+        </span>
 
-        {/* Quick Staff Profile Buttons */}
-        <div className="grid grid-cols-2 gap-2.5 w-full">
+        {/* Quick Staff Profile Buttons Grid */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            gap: '10px',
+            width: '100%',
+          }}
+        >
           {defaultProfiles.map((p) => (
             <button
               key={p.id}
               onClick={() => handleInstantUnlock(p)}
-              className="p-3 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/15 text-left transition-all active:scale-95 group"
+              style={{
+                padding: '10px 14px',
+                borderRadius: '16px',
+                backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                textAlign: 'left',
+                color: '#ffffff',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.18)';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+              }}
             >
-              <span className="text-xs font-bold text-white block group-hover:text-blue-300 transition-colors truncate">
-                {p.name.split('(')[0]}
+              <span style={{ fontSize: '13px', fontWeight: 700, display: 'block', color: '#60a5fa' }}>
+                {p.name}
               </span>
-              <span className="text-[10px] text-white/60 block truncate">
+              <span style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.65)', display: 'block' }}>
                 {p.roleTitle}
               </span>
             </button>
@@ -161,9 +303,28 @@ export const IOSLockScreen: React.FC<IOSLockScreenProps> = ({
         {/* Primary Unlock Button */}
         <button
           onClick={() => handleInstantUnlock(defaultProfiles[0])}
-          className="w-full py-3.5 rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold text-sm shadow-[0_10px_30px_rgba(37,99,235,0.4)] border border-white/20 transition-all active:scale-95 flex items-center justify-center gap-2"
+          style={{
+            width: '100%',
+            padding: '14px',
+            borderRadius: '9999px',
+            background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
+            color: '#ffffff',
+            fontWeight: 700,
+            fontSize: '14px',
+            border: '1px solid rgba(255, 255, 255, 0.3)',
+            boxShadow: '0 8px 24px rgba(37, 99, 235, 0.45)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            marginTop: '4px',
+            transition: 'transform 0.15s ease',
+          }}
+          onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.97)'; }}
+          onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
         >
-          <span>Tap to Unlock Springboard</span>
+          <span>Tap to Unlock Smartphone OS</span>
           <span>➔</span>
         </button>
 
@@ -174,7 +335,15 @@ export const IOSLockScreen: React.FC<IOSLockScreenProps> = ({
               playClick();
               onOpenTraditionalLogin();
             }}
-            className="text-xs text-white/50 hover:text-white underline transition-colors"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'rgba(255, 255, 255, 0.5)',
+              fontSize: '12px',
+              textDecoration: 'underline',
+              cursor: 'pointer',
+              marginTop: '4px',
+            }}
           >
             Staff Password Login & Registration
           </button>
