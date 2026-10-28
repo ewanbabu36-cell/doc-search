@@ -30,7 +30,7 @@ export const IOSAppWindow: React.FC<IOSAppWindowProps> = ({
   }, [onClose, playClick]);
 
   return (
-    <div className="fixed inset-0 z-30 pt-10 pb-2 px-2 md:px-4 flex flex-col bg-slate-950/90 backdrop-blur-2xl animate-in zoom-in-95 duration-200 select-none pointer-events-auto">
+    <div className="fixed inset-0 z-30 pt-10 pb-14 px-2 md:px-4 flex flex-col bg-slate-950/90 backdrop-blur-2xl animate-in zoom-in-95 duration-200 select-none pointer-events-auto">
       {/* 1. iOS App Window Navigation Bar */}
       <div className="h-11 px-4 rounded-t-2xl bg-slate-900/90 border border-white/15 flex items-center justify-between select-none">
         {/* Left: ‹ Home Springboard Pill */}

@@ -1,6 +1,7 @@
 export * from './registry/feature-registry.js';
 export * from './hooks/useHapticSoundFeedback.js';
 export * from './hooks/useWorkspaceLayout.js';
+export * from './hooks/useSmartphoneOS.js';
 export * from './DynamicIslandHUD.js';
 export * from './ModularDockBar.js';
 export * from './FeatureVaultDrawer.js';
@@ -21,3 +22,6 @@ export * from './ios/IOSAppLibrary.js';
 export * from './ios/IOSAppWindow.js';
 export * from './ios/IOSLockScreen.js';
 export * from './ios/IOSSpringboard.js';
+export * from './smartphone/SmartphoneNavigationBar.js';
+export * from './smartphone/SmartphoneRecentAppsOverview.js';
+export * from './smartphone/SmartphoneDeviceFrame.js';

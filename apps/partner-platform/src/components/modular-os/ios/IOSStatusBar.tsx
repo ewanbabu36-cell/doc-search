@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useHapticSoundFeedback } from '../hooks/useHapticSoundFeedback.js';
 
 export interface IOSStatusBarProps {
-  hospitalName?: string;
+  hospitalName?: string | undefined;
   onOpenControlCenter: () => void;
   onOpenWallpaperModal: () => void;
-  activeContextType?: 'CLINICAL' | 'CASHIER' | 'EMERGENCY';
-  patientName?: string;
-  heartRate?: number;
+  activeContextType?: ('CLINICAL' | 'CASHIER' | 'EMERGENCY') | undefined;
+  patientName?: string | undefined;
+  heartRate?: number | undefined;
+  isPhoneFrameMode?: boolean | undefined;
+  onTogglePhoneFrame?: (() => void) | undefined;
 }
 
 export const IOSStatusBar: React.FC<IOSStatusBarProps> = ({
@@ -17,6 +19,8 @@ export const IOSStatusBar: React.FC<IOSStatusBarProps> = ({
   activeContextType = 'CLINICAL',
   patientName = 'Ramesh Kumar',
   heartRate = 78,
+  isPhoneFrameMode = false,
+  onTogglePhoneFrame,
 }) => {
   const [timeStr, setTimeStr] = useState<string>('9:41');
   const [isDynamicIslandExpanded, setIsDynamicIslandExpanded] = useState<boolean>(false);
@@ -177,6 +181,21 @@ export const IOSStatusBar: React.FC<IOSStatusBarProps> = ({
         >
           🖼️
         </button>
+
+        {/* Smartphone Chassis Viewport Toggle */}
+        {onTogglePhoneFrame && (
+          <button
+            onClick={() => {
+              playClick();
+              triggerHaptic(15);
+              onTogglePhoneFrame();
+            }}
+            className="flex items-center justify-center w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 active:scale-90 border border-white/20 transition-all text-white/90"
+            title={isPhoneFrameMode ? 'Switch to Fullscreen Desktop OS' : 'Switch to Smartphone Frame View'}
+          >
+            {isPhoneFrameMode ? '🖥️' : '📱'}
+          </button>
+        )}
 
         {/* Control Center Pull-Down Pill Trigger */}
         <button
