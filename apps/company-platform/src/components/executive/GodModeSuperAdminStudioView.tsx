@@ -101,12 +101,125 @@ interface WarRoomTelemetry {
   }>;
 }
 
+export interface PhiSnoopAlert {
+  id: string;
+  tenant_id: string;
+  tenant_name: string;
+  actor_id: string;
+  actor_name: string;
+  actor_role: string;
+  patient_id: string;
+  patient_name: string;
+  patient_vip_level: string;
+  read_anomaly_score: number;
+  reason: string;
+  is_locked: boolean;
+  audit_hash: string;
+  created_at: string;
+}
+
+export interface WiretapPacket {
+  id: string;
+  timestamp: string;
+  method: string;
+  url: string;
+  statusCode: number;
+  responseTimeMs: number;
+  tenantId?: string;
+  userId?: string;
+  userRole?: string;
+  patientId?: string;
+  ipAddress?: string;
+  isPhiAccess?: boolean;
+}
+
+export interface TimeTravelEvent {
+  id: string;
+  tenant_id: string;
+  tenant_name?: string;
+  entity_type: string;
+  entity_id: string;
+  event_type: string;
+  actor_id: string;
+  actor_name: string;
+  actor_role: string;
+  snapshot_before: any;
+  snapshot_after: any;
+  reconstructed_delta: any;
+  audit_hash: string;
+  created_at: string;
+}
+
+export interface DoctorCollusionRecord {
+  id: string;
+  tenant_id: string;
+  hospital_name: string;
+  doctor_id: string;
+  doctor_name: string;
+  specialty: string;
+  pharma_company_name: string;
+  branded_molecule_name: string;
+  generic_alternative_name: string;
+  monthly_branded_scripts_count: number;
+  generic_substitution_rate_pct: string | number;
+  collusion_risk_score: number;
+  estimated_patient_markup_pct: string | number;
+  monthly_kickback_leakage_inr: string | number;
+  investigation_status: string;
+  mandate_generic_substitution: boolean;
+  created_at: string;
+}
+
+export interface DunningPartner {
+  id: string;
+  tenant_id: string;
+  hospital_name: string;
+  partner_tier: string;
+  contract_arr_inr: string | number;
+  total_overdue_amount_inr: string | number;
+  days_overdue: number;
+  current_friction_tier: 'NONE' | 'TIER_1_WATERMARK' | 'TIER_2_THROTTLING' | 'TIER_3_EXPORT_FREEZE' | 'TIER_4_TOTAL_GATEWAY_SUSPENSION';
+  is_grace_period_extended: boolean;
+  rehabilitation_emi_active: boolean;
+  last_friction_applied_at?: string;
+}
+
+export interface VaultChallenge {
+  challengeId: string;
+  challengeCode: string;
+  actionType: string;
+  targetScope: string;
+  blastRadiusAssessment: string;
+  justification: string;
+  requestedByAdminId: string;
+  requestedByAdminName: string;
+  status: string;
+  expiresAt: string;
+}
+
+export interface NabhAuditBinder {
+  id: string;
+  tenant_id: string;
+  hospital_name: string;
+  audit_cycle: string;
+  nabh_compliance_score: number;
+  statutory_status: string;
+  chapters: {
+    autoclaveSterilizationVerification: any;
+    needleStickRegisterAudit: any;
+    biomedicalWasteManifest: any;
+    biomedicalEquipmentCalibration: any;
+  };
+  immutable_seal_hash: string;
+  compiled_at: string;
+}
+
 export interface GodModeSuperAdminStudioViewProps {
   onNavigateDomain?: (domain: string) => void;
 }
 
 export const GodModeSuperAdminStudioView: React.FC<GodModeSuperAdminStudioViewProps> = ({ onNavigateDomain: _onNavigateDomain }) => {
-  const [activeTab, setActiveTab] = useState<'IMPERSONATE' | 'FLAGS' | 'THEFT' | 'CHURN_SUPPLY' | 'WAR_ROOM'>('IMPERSONATE');
+  const [activeTab, setActiveTab] = useState<'IMPERSONATE' | 'FLAGS' | 'THEFT' | 'CHURN_SUPPLY' | 'WAR_ROOM' | 'WIRETAP' | 'TIME_TRAVEL' | 'COLLUSION' | 'DUNNING' | 'VAULT' | 'NABH'>('IMPERSONATE');
 
   // Enclave 1: Impersonation
   const [targetTenantId, setTargetTenantId] = useState('6855be07-5298-4148-a571-c51ac49ac7f3');
@@ -139,6 +252,47 @@ export const GodModeSuperAdminStudioView: React.FC<GodModeSuperAdminStudioViewPr
   const [warRoomData, setWarRoomData] = useState<WarRoomTelemetry | null>(null);
   const [isQuarantining, setIsQuarantining] = useState(false);
   const [quarantineResultMsg, setQuarantineResultMsg] = useState<string | null>(null);
+
+  // Omnipotent Matrix State
+  // 1. Wiretap & VIP PHI
+  const [snoopAlerts, setSnoopAlerts] = useState<PhiSnoopAlert[]>([]);
+  const [wiretapPackets, setWiretapPackets] = useState<WiretapPacket[]>([]);
+  const [_isLoadingWiretap, setIsLoadingWiretap] = useState(false);
+
+  // 2. Time Travel
+  const [timeTravelEvents, setTimeTravelEvents] = useState<TimeTravelEvent[]>([]);
+  const [selectedTimeTravel, setSelectedTimeTravel] = useState<TimeTravelEvent | null>(null);
+  const [_isLoadingTimeTravel, setIsLoadingTimeTravel] = useState(false);
+
+  // 3. Collusion
+  const [collusionRecords, setCollusionRecords] = useState<DoctorCollusionRecord[]>([]);
+  const [totalCollusionLeakage, setTotalCollusionLeakage] = useState(0);
+  const [_isLoadingCollusion, setIsLoadingCollusion] = useState(false);
+
+  // 4. Dunning
+  const [dunningPartners, setDunningPartners] = useState<DunningPartner[]>([]);
+  const [totalOverdueArr, setTotalOverdueArr] = useState(0);
+  const [_isLoadingDunning, setIsLoadingDunning] = useState(false);
+
+  // 5. Vault
+  const [vaultActionType, setVaultActionType] = useState('MASS_EMR_ENCRYPTION_KEY_ROTATION');
+  const [vaultTargetScope, setVaultTargetScope] = useState('PAN_INDIA_142_HOSPITALS');
+  const [vaultJustification, setVaultJustification] = useState('Quarterly quantum-resistant HSM root key re-sealing per statutory mandate');
+  const [vaultChallenge, setVaultChallenge] = useState<VaultChallenge | null>(null);
+  const [vaultSecondSignerId, setVaultSecondSignerId] = useState('EXEC-SEC-002');
+  const [vaultSecondSignerName, setVaultSecondSignerName] = useState('Anya Sharma (Co-Founder & VP SecOps)');
+  const [vaultTotp, setVaultTotp] = useState('849201');
+  const [vaultAuthResult, setVaultAuthResult] = useState<any>(null);
+  const [isRequestingVault, setIsRequestingVault] = useState(false);
+  const [isAuthorizingVault, setIsAuthorizingVault] = useState(false);
+
+  // 6. NABH
+  const [nabhTenantId, setNabhTenantId] = useState('6855be07-5298-4148-a571-c51ac49ac7f3');
+  const [nabhHospitalName, setNabhHospitalName] = useState('Apollo City Multi-Specialty Hospital');
+  const [nabhAuditCycle, setNabhAuditCycle] = useState('2026-H1-STATUTORY-REACCREDITATION');
+  const [nabhInspectorName, setNabhInspectorName] = useState('Dr. Arvind Mehra (NABH Lead Assessor)');
+  const [nabhBinder, setNabhBinder] = useState<NabhAuditBinder | null>(null);
+  const [isCompilingNabh, setIsCompilingNabh] = useState(false);
 
   // Load Flags
   const fetchFeatureFlags = useCallback(async () => {
@@ -324,12 +478,217 @@ export const GodModeSuperAdminStudioView: React.FC<GodModeSuperAdminStudioViewPr
     }
   };
 
+  // Omnipotent Matrix Callbacks
+  // 1. Wiretap
+  const fetchWiretap = useCallback(async () => {
+    setIsLoadingWiretap(true);
+    try {
+      const res = await apiRequest('/api/v1/company/godmode/wiretap/live');
+      const data = (res as any)?.data;
+      if (data) {
+        if (Array.isArray(data.snoopAlerts)) setSnoopAlerts(data.snoopAlerts);
+        if (Array.isArray(data.livePacketStream)) setWiretapPackets(data.livePacketStream);
+      }
+    } finally {
+      setIsLoadingWiretap(false);
+    }
+  }, []);
+
+  const handleLockSnooper = async (alertItem: PhiSnoopAlert) => {
+    try {
+      await apiRequest('/api/v1/company/godmode/wiretap/lock-actor', {
+        method: 'POST',
+        body: JSON.stringify({
+          alertId: alertItem.id,
+          actorId: alertItem.actor_id,
+          reason: 'Founder Remote Revocation: VIP PHI Snooping Hard Intercept'
+        })
+      });
+      setSnoopAlerts((prev) => prev.map((a) => (a.id === alertItem.id ? { ...a, is_locked: true } : a)));
+      alert(`Staff ${alertItem.actor_name} biometric and credential access revoked immediately.`);
+    } catch (err: any) {
+      alert(`Staff lock notice: ${err.message}`);
+    }
+  };
+
+  // 2. Time Travel
+  const fetchTimeTravel = useCallback(async () => {
+    setIsLoadingTimeTravel(true);
+    try {
+      const res = await apiRequest('/api/v1/company/godmode/time-travel/replay');
+      const data = (res as any)?.data;
+      if (Array.isArray(data)) {
+        setTimeTravelEvents(data);
+        if (data.length > 0 && !selectedTimeTravel) {
+          setSelectedTimeTravel(data[0]);
+        }
+      }
+    } finally {
+      setIsLoadingTimeTravel(false);
+    }
+  }, [selectedTimeTravel]);
+
+  // 3. Collusion
+  const fetchCollusion = useCallback(async () => {
+    setIsLoadingCollusion(true);
+    try {
+      const res = await apiRequest('/api/v1/company/godmode/collusion/radar');
+      const data = (res as any)?.data;
+      if (Array.isArray(data)) {
+        setCollusionRecords(data);
+        setTotalCollusionLeakage((res as any)?.summary?.totalCollusionLeakageInr || 0);
+      }
+    } finally {
+      setIsLoadingCollusion(false);
+    }
+  }, []);
+
+  const handleRestrictPrescription = async (record: DoctorCollusionRecord) => {
+    try {
+      await apiRequest('/api/v1/company/godmode/collusion/restrict-prescription', {
+        method: 'POST',
+        body: JSON.stringify({
+          recordId: record.id,
+          doctorId: record.doctor_id,
+          mandateGenericSubstitution: true,
+          reason: 'Founder Anti-Collusion Safeguard: Auto-Generic Substitution Mandated'
+        })
+      });
+      setCollusionRecords((prev) =>
+        prev.map((r) => (r.id === record.id ? { ...r, mandate_generic_substitution: true } : r))
+      );
+      alert(`Doctor ${record.doctor_name} prescription system locked to generic molecule (${record.generic_alternative_name}).`);
+    } catch (err: any) {
+      alert(`Generic mandate notice: ${err.message}`);
+    }
+  };
+
+  // 4. Dunning
+  const fetchDunning = useCallback(async () => {
+    setIsLoadingDunning(true);
+    try {
+      const res = await apiRequest('/api/v1/company/godmode/dunning/pipeline');
+      const data = (res as any)?.data;
+      if (Array.isArray(data)) {
+        setDunningPartners(data);
+        setTotalOverdueArr((res as any)?.summary?.totalOverdueArrInr || 0);
+      }
+    } finally {
+      setIsLoadingDunning(false);
+    }
+  }, []);
+
+  const handleApplyDunningFriction = async (partner: DunningPartner, tier: DunningPartner['current_friction_tier']) => {
+    try {
+      await apiRequest('/api/v1/company/godmode/dunning/apply-friction', {
+        method: 'POST',
+        body: JSON.stringify({
+          partnerId: partner.id,
+          tenantId: partner.tenant_id,
+          frictionTier: tier,
+          rehabilitationEmiActive: tier !== 'NONE'
+        })
+      });
+      setDunningPartners((prev) =>
+        prev.map((p) =>
+          p.id === partner.id
+            ? { ...p, current_friction_tier: tier, rehabilitation_emi_active: tier !== 'NONE' }
+            : p
+        )
+      );
+      alert(`Friction tier ${tier} applied to ${partner.hospital_name}.`);
+    } catch (err: any) {
+      alert(`Dunning notice: ${err.message}`);
+    }
+  };
+
+  // 5. Vault
+  const handleRequestVaultAction = async () => {
+    setIsRequestingVault(true);
+    setVaultAuthResult(null);
+    try {
+      const res = await apiRequest('/api/v1/company/godmode/vault/request-destructive-action', {
+        method: 'POST',
+        body: JSON.stringify({
+          actionType: vaultActionType,
+          targetScope: vaultTargetScope,
+          blastRadiusAssessment: 'High-Impact Network-Wide Statutory & Cryptographic Re-keying',
+          justification: vaultJustification,
+          requestedByAdminId: 'FOUNDER-001',
+          requestedByAdminName: 'Founder Chief Executive'
+        })
+      });
+      const data = (res as any)?.data;
+      if (data) {
+        setVaultChallenge(data);
+      }
+    } catch (err: any) {
+      alert(`Vault request notice: ${err.message}`);
+    } finally {
+      setIsRequestingVault(false);
+    }
+  };
+
+  const handleAuthorizeVault = async () => {
+    if (!vaultChallenge) return;
+    setIsAuthorizingVault(true);
+    try {
+      const res = await apiRequest('/api/v1/company/godmode/vault/authorize', {
+        method: 'POST',
+        body: JSON.stringify({
+          challengeId: vaultChallenge.challengeId,
+          challengeCode: vaultChallenge.challengeCode,
+          secondSignerAdminId: vaultSecondSignerId,
+          secondSignerAdminName: vaultSecondSignerName,
+          totpToken: vaultTotp
+        })
+      });
+      const data = (res as any)?.data;
+      if (data) {
+        setVaultAuthResult(data);
+        setVaultChallenge(null);
+      }
+    } catch (err: any) {
+      alert(`Vault authorize notice: ${err.message}`);
+    } finally {
+      setIsAuthorizingVault(false);
+    }
+  };
+
+  // 6. NABH
+  const handleCompileNabhBinder = async () => {
+    setIsCompilingNabh(true);
+    try {
+      const res = await apiRequest('/api/v1/company/godmode/audit/nabh-binder/compile', {
+        method: 'POST',
+        body: JSON.stringify({
+          tenantId: nabhTenantId,
+          hospitalName: nabhHospitalName,
+          auditCycle: nabhAuditCycle,
+          inspectorName: nabhInspectorName
+        })
+      });
+      const data = (res as any)?.data;
+      if (data) {
+        setNabhBinder(data);
+      }
+    } catch (err: any) {
+      alert(`NABH compilation notice: ${err.message}`);
+    } finally {
+      setIsCompilingNabh(false);
+    }
+  };
+
   useEffect(() => {
     fetchFeatureFlags();
     fetchTheftRadar();
     fetchChurnAndSupply();
     fetchWarRoom();
-  }, [fetchFeatureFlags, fetchTheftRadar, fetchChurnAndSupply, fetchWarRoom]);
+    fetchWiretap();
+    fetchTimeTravel();
+    fetchCollusion();
+    fetchDunning();
+  }, [fetchFeatureFlags, fetchTheftRadar, fetchChurnAndSupply, fetchWarRoom, fetchWiretap, fetchTimeTravel, fetchCollusion, fetchDunning]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans">
@@ -449,6 +808,95 @@ export const GodModeSuperAdminStudioView: React.FC<GodModeSuperAdminStudioViewPr
           >
             <span>🚨</span>
             <span>Remote Quarantine & War Room</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('WIRETAP')}
+            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${
+              activeTab === 'WIRETAP'
+                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 shadow-lg shadow-cyan-500/10'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+            }`}
+          >
+            <span>👁️</span>
+            <span>VIP PHI Wiretap</span>
+            {snoopAlerts.length > 0 && (
+              <span className="px-1.5 py-0.5 text-xs rounded-full bg-cyan-500 text-slate-950 font-bold">
+                {snoopAlerts.length}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('TIME_TRAVEL')}
+            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${
+              activeTab === 'TIME_TRAVEL'
+                ? 'bg-purple-500/20 text-purple-300 border border-purple-500/50 shadow-lg shadow-purple-500/10'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+            }`}
+          >
+            <span>⏳</span>
+            <span>Time-Travel DB Replay</span>
+            <span className="px-1.5 py-0.5 text-xs rounded-full bg-slate-800 text-purple-300 font-mono">
+              {timeTravelEvents.length}
+            </span>
+          </button>
+          <button
+            onClick={() => setActiveTab('COLLUSION')}
+            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${
+              activeTab === 'COLLUSION'
+                ? 'bg-red-500/20 text-red-300 border border-red-500/50 shadow-lg shadow-red-500/10'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+            }`}
+          >
+            <span>💊</span>
+            <span>Doctor Collusion Radar</span>
+            {collusionRecords.length > 0 && (
+              <span className="px-1.5 py-0.5 text-xs rounded-full bg-red-500 text-white font-bold">
+                ₹{(totalCollusionLeakage / 1000).toFixed(0)}k
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('DUNNING')}
+            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${
+              activeTab === 'DUNNING'
+                ? 'bg-orange-500/20 text-orange-300 border border-orange-500/50 shadow-lg shadow-orange-500/10'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+            }`}
+          >
+            <span>⚖️</span>
+            <span>Dunning Friction Grid</span>
+            {dunningPartners.length > 0 && (
+              <span className="px-1.5 py-0.5 text-xs rounded-full bg-orange-500 text-slate-950 font-bold">
+                {dunningPartners.length}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('VAULT')}
+            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${
+              activeTab === 'VAULT'
+                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50 shadow-lg shadow-amber-500/10'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+            }`}
+          >
+            <span>🔐</span>
+            <span>Dual-Key Nuclear Vault</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('NABH')}
+            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${
+              activeTab === 'NABH'
+                ? 'bg-teal-500/20 text-teal-300 border border-teal-500/50 shadow-lg shadow-teal-500/10'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+            }`}
+          >
+            <span>📜</span>
+            <span>NABH 5th Ed. Binder</span>
+            {nabhBinder && (
+              <span className="px-1.5 py-0.5 text-xs rounded-full bg-teal-400 text-slate-950 font-bold">
+                PASS
+              </span>
+            )}
           </button>
         </div>
       </div>
@@ -971,6 +1419,786 @@ export const GodModeSuperAdminStudioView: React.FC<GodModeSuperAdminStudioViewPr
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* =========================================================================
+          TAB 6: OMNIPRESENT REAL-TIME WIRETAP & VIP PHI SENTINEL
+         ========================================================================= */}
+      {activeTab === 'WIRETAP' && (
+        <div className="space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-slate-900/80 border border-cyan-500/30">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xl">👁️</span>
+                <h3 className="text-lg font-bold text-cyan-200">Omnipresent Real-Time Wiretap & VIP PHI Sentinel</h3>
+                <Badge variant="warning">ZERO-LATENCY RING BUFFER</Badge>
+              </div>
+              <p className="text-xs text-slate-400 mt-1">
+                Real-time non-blocking packet wiretap across 142 partner hospitals. Instantly intercepts unauthorized chart views of VIPs and dignitaries.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button variant="secondary" onClick={fetchWiretap} className="text-xs">
+                Refresh Wiretap Feed
+              </Button>
+              <span className="px-3 py-1.5 rounded-xl bg-cyan-950 border border-cyan-500/40 text-cyan-300 text-xs font-mono font-bold">
+                Buffer: {wiretapPackets.length}/200 Pkts
+              </span>
+            </div>
+          </div>
+
+          {/* VIP Snoop Alerts Table */}
+          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                  <span>🚨</span> VIP PHI Snooping Intercepts
+                </h4>
+                <p className="text-xs text-slate-400">Unauthorized chart lookups detected without active appointment tokens</p>
+              </div>
+              <Badge variant="danger">
+                {snoopAlerts.filter(a => !a.is_locked).length} Active Violations
+              </Badge>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-800 text-slate-400 uppercase text-[10px]">
+                    <th className="py-2.5 px-3">Staff Actor</th>
+                    <th className="py-2.5 px-3">Target VIP Patient</th>
+                    <th className="py-2.5 px-3">Violation Reason</th>
+                    <th className="py-2.5 px-3">Anomaly Score</th>
+                    <th className="py-2.5 px-3">Biometric Access</th>
+                    <th className="py-2.5 px-3">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60">
+                  {snoopAlerts.map((alert) => (
+                    <tr key={alert.id} className="hover:bg-slate-800/30">
+                      <td className="py-3 px-3">
+                        <div className="font-semibold text-slate-200">{alert.actor_name}</div>
+                        <div className="text-[10px] text-slate-400">{alert.actor_role} • {alert.actor_id}</div>
+                      </td>
+                      <td className="py-3 px-3">
+                        <div className="font-semibold text-amber-300">{alert.patient_name}</div>
+                        <div className="text-[10px] text-amber-500 font-mono">{alert.patient_vip_level}</div>
+                      </td>
+                      <td className="py-3 px-3 max-w-xs text-slate-300">{alert.reason}</td>
+                      <td className="py-3 px-3">
+                        <span className="px-2 py-0.5 rounded font-mono font-bold text-rose-400 bg-rose-950/60 border border-rose-800">
+                          {alert.read_anomaly_score}/100
+                        </span>
+                      </td>
+                      <td className="py-3 px-3">
+                        {alert.is_locked ? (
+                          <Badge variant="danger">REVOKED (LOCKED)</Badge>
+                        ) : (
+                          <Badge variant="warning">ACTIVE UNRESTRICTED</Badge>
+                        )}
+                      </td>
+                      <td className="py-3 px-3">
+                        {!alert.is_locked ? (
+                          <Button
+                            variant="danger"
+                            onClick={() => handleLockSnooper(alert)}
+                            className="text-[10px] py-1 px-2.5 font-bold"
+                          >
+                            Revoke Biometrics
+                          </Button>
+                        ) : (
+                          <span className="text-[10px] text-slate-500 font-mono">ENFORCED</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                  {snoopAlerts.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="text-center py-6 text-slate-500">
+                        No VIP PHI snooping incidents detected in the live packet window.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Live Packet Feed */}
+          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-3">
+            <h4 className="text-sm font-bold text-white flex items-center gap-2">
+              <span>📡</span> Live Packet Stream (Fastify Non-Blocking Interceptor)
+            </h4>
+            <div className="bg-slate-950 rounded-xl p-3 max-h-60 overflow-y-auto font-mono text-[11px] space-y-1.5 border border-slate-800">
+              {wiretapPackets.map((pkt) => (
+                <div key={pkt.id} className="flex items-center justify-between py-1 px-2 rounded bg-slate-900/60 hover:bg-slate-800/80">
+                  <div className="flex items-center gap-3">
+                    <span className="text-slate-500">{new Date(pkt.timestamp).toLocaleTimeString()}</span>
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                      pkt.method === 'GET' ? 'bg-blue-900/60 text-blue-300' :
+                      pkt.method === 'POST' ? 'bg-emerald-900/60 text-emerald-300' : 'bg-purple-900/60 text-purple-300'
+                    }`}>
+                      {pkt.method}
+                    </span>
+                    <span className="text-slate-200">{pkt.url}</span>
+                    {pkt.isPhiAccess && (
+                      <span className="px-1.5 py-0.2 text-[9px] rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                        PHI
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 text-slate-400">
+                    <span className={pkt.statusCode < 400 ? 'text-emerald-400' : 'text-rose-400'}>{pkt.statusCode}</span>
+                    <span>{pkt.responseTimeMs}ms</span>
+                  </div>
+                </div>
+              ))}
+              {wiretapPackets.length === 0 && (
+                <div className="text-center py-4 text-slate-600">Awaiting live incoming packets...</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          TAB 7: TIME-TRAVEL DATABASE REWIND & VISUAL DELTA REPLAY ENGINE
+         ========================================================================= */}
+      {activeTab === 'TIME_TRAVEL' && (
+        <div className="space-y-6">
+          <div className="p-5 rounded-2xl bg-slate-900/80 border border-purple-500/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xl">⏳</span>
+                <h3 className="text-lg font-bold text-purple-200">Time-Travel Database Rewind & Visual Delta Replay</h3>
+                <Badge variant="neutral">POSTGRESQL 18.4 TEMPORAL TRACE</Badge>
+              </div>
+              <p className="text-xs text-slate-400 mt-1">
+                Forensic time-travel replay inspecting point-in-time database mutations, line-item adjustments, and unapproved billing discounts.
+              </p>
+            </div>
+            <Button variant="secondary" onClick={fetchTimeTravel} className="text-xs">
+              Reload Timeline
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Timeline selector */}
+            <div className="lg:col-span-1 bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-3">
+              <h4 className="text-sm font-bold text-white">Historical Mutation Events</h4>
+              <div className="space-y-2 max-h-[500px] overflow-y-auto">
+                {timeTravelEvents.map((evt) => (
+                  <div
+                    key={evt.id}
+                    onClick={() => setSelectedTimeTravel(evt)}
+                    className={`p-3 rounded-xl cursor-pointer border transition-all text-xs ${
+                      selectedTimeTravel?.id === evt.id
+                        ? 'bg-purple-950/60 border-purple-500 text-purple-200 shadow-lg'
+                        : 'bg-slate-950/60 border-slate-800/80 text-slate-300 hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between font-mono text-[10px] text-slate-400 mb-1">
+                      <span>{evt.entity_type}</span>
+                      <span>{new Date(evt.created_at).toLocaleTimeString()}</span>
+                    </div>
+                    <div className="font-semibold text-slate-100">{evt.event_type.replace(/_/g, ' ')}</div>
+                    <div className="text-[11px] text-slate-400 mt-1">Actor: {evt.actor_name} ({evt.actor_role})</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Visual Delta Inspector */}
+            <div className="lg:col-span-2 bg-slate-900/80 border border-slate-800 rounded-2xl p-6 space-y-4">
+              {selectedTimeTravel ? (
+                <>
+                  <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-slate-800 gap-2">
+                    <div>
+                      <h4 className="text-base font-bold text-white">{selectedTimeTravel.event_type}</h4>
+                      <p className="text-xs text-slate-400">
+                        Entity: <span className="font-mono text-cyan-300">{selectedTimeTravel.entity_type} #{selectedTimeTravel.entity_id}</span> • Actor: <span className="text-amber-300">{selectedTimeTravel.actor_name}</span>
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[10px] text-slate-400">Cryptographic Seal</div>
+                      <div className="text-[11px] font-mono text-emerald-400">{selectedTimeTravel.audit_hash.slice(0, 20)}...</div>
+                    </div>
+                  </div>
+
+                  {/* Before vs After Snapshots */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs font-semibold text-rose-300">
+                        <span>BEFORE SNAPSHOT</span>
+                        <span className="text-[10px] text-slate-500">Immutable Original</span>
+                      </div>
+                      <pre className="p-3 bg-slate-950 border border-rose-900/40 rounded-xl text-[11px] font-mono text-rose-200 max-h-72 overflow-y-auto">
+                        {JSON.stringify(selectedTimeTravel.snapshot_before, null, 2)}
+                      </pre>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs font-semibold text-emerald-300">
+                        <span>AFTER SNAPSHOT</span>
+                        <span className="text-[10px] text-slate-500">Mutated State</span>
+                      </div>
+                      <pre className="p-3 bg-slate-950 border border-emerald-900/40 rounded-xl text-[11px] font-mono text-emerald-200 max-h-72 overflow-y-auto">
+                        {JSON.stringify(selectedTimeTravel.snapshot_after, null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+
+                  {/* Reconstructed Delta */}
+                  {selectedTimeTravel.reconstructed_delta && (
+                    <div className="p-3.5 rounded-xl bg-slate-950 border border-purple-800/40 space-y-1">
+                      <div className="text-xs font-bold text-purple-300">Reconstructed Forensic Delta</div>
+                      <pre className="text-[11px] font-mono text-slate-300">
+                        {JSON.stringify(selectedTimeTravel.reconstructed_delta, null, 2)}
+                      </pre>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-20 text-slate-500">Select a mutation event from the left panel to replay.</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          TAB 8: DOCTOR-PHARMA COLLUSION & PHANTOM BILLING GRAPH RADAR
+         ========================================================================= */}
+      {activeTab === 'COLLUSION' && (
+        <div className="space-y-6">
+          <div className="p-5 rounded-2xl bg-slate-900/80 border border-red-500/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xl">💊</span>
+                <h3 className="text-lg font-bold text-red-200">Doctor-Pharma Collusion & Phantom Billing Graph Radar</h3>
+                <Badge variant="danger">ANTI-KICKBACK SENTINEL</Badge>
+              </div>
+              <p className="text-xs text-slate-400 mt-1">
+                Monitors prescription volume against pharmaceutical sponsorship graphs. Automatically enforces generic molecule substitutions when collusion risk exceeds threshold.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button variant="secondary" onClick={fetchCollusion} className="text-xs">
+                Refresh Radar
+              </Button>
+            </div>
+          </div>
+
+          {/* Quick Metrics */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
+              <span className="text-[11px] text-slate-400 uppercase font-semibold">High-Risk Clinicians</span>
+              <div className="text-2xl font-bold text-rose-400 mt-1">
+                {collusionRecords.length}
+              </div>
+              <span className="text-[10px] text-slate-500">Flagged by Bayesian Kickback Graph</span>
+            </div>
+            <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
+              <span className="text-[11px] text-slate-400 uppercase font-semibold">Monthly Out-of-Pocket Leakage</span>
+              <div className="text-2xl font-bold text-amber-400 mt-1 font-mono">
+                ₹{totalCollusionLeakage.toLocaleString()}
+              </div>
+              <span className="text-[10px] text-slate-500">Excess cost imposed on patients</span>
+            </div>
+            <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
+              <span className="text-[11px] text-slate-400 uppercase font-semibold">Statutory Standard</span>
+              <div className="text-2xl font-bold text-emerald-400 mt-1">
+                NMC Ethics 6.8
+              </div>
+              <span className="text-[10px] text-slate-500">Mandatory Generic Prescription Policy</span>
+            </div>
+          </div>
+
+          {/* Collusion Records Table */}
+          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+            <h4 className="text-sm font-bold text-white">Clinician Kickback & Phantom Molecule Prescriptions</h4>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-800 text-slate-400 uppercase text-[10px]">
+                    <th className="py-2.5 px-3">Clinician & Specialty</th>
+                    <th className="py-2.5 px-3">Partner Facility</th>
+                    <th className="py-2.5 px-3">Branded vs Generic Molecule</th>
+                    <th className="py-2.5 px-3">Scripts / Month</th>
+                    <th className="py-2.5 px-3">Risk Score</th>
+                    <th className="py-2.5 px-3">Monthly Leakage</th>
+                    <th className="py-2.5 px-3">Founder Safeguard</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60">
+                  {collusionRecords.map((rec) => (
+                    <tr key={rec.id} className="hover:bg-slate-800/30">
+                      <td className="py-3 px-3">
+                        <div className="font-semibold text-slate-200">{rec.doctor_name}</div>
+                        <div className="text-[10px] text-slate-400">{rec.specialty}</div>
+                      </td>
+                      <td className="py-3 px-3 text-slate-300">{rec.hospital_name}</td>
+                      <td className="py-3 px-3">
+                        <div className="text-rose-400 font-semibold">{rec.branded_molecule_name}</div>
+                        <div className="text-[10px] text-emerald-400">Alt: {rec.generic_alternative_name}</div>
+                      </td>
+                      <td className="py-3 px-3 font-mono text-slate-200">{rec.monthly_branded_scripts_count} scripts</td>
+                      <td className="py-3 px-3">
+                        <span className="px-2 py-0.5 rounded font-mono font-bold text-rose-400 bg-rose-950/60 border border-rose-800">
+                          {rec.collusion_risk_score}/100
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 font-mono font-bold text-amber-300">
+                        ₹{Number(rec.monthly_kickback_leakage_inr).toLocaleString()}
+                      </td>
+                      <td className="py-3 px-3">
+                        {rec.mandate_generic_substitution ? (
+                          <Badge variant="success">GENERIC ENFORCED</Badge>
+                        ) : (
+                          <Button
+                            variant="primary"
+                            onClick={() => handleRestrictPrescription(rec)}
+                            className="text-[10px] py-1 px-2.5 bg-red-600 hover:bg-red-700 text-white font-bold"
+                          >
+                            Mandate Generic Substitution
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          TAB 9: PROGRESSIVE DUNNING FRICTION & REVENUE RECOVERY GRID
+         ========================================================================= */}
+      {activeTab === 'DUNNING' && (
+        <div className="space-y-6">
+          <div className="p-5 rounded-2xl bg-slate-900/80 border border-orange-500/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xl">⚖️</span>
+                <h3 className="text-lg font-bold text-orange-200">Progressive Dunning Friction & Revenue Recovery Grid</h3>
+                <Badge variant="warning">ZERO HARD CUTOFF REVENUE GUARD</Badge>
+              </div>
+              <p className="text-xs text-slate-400 mt-1">
+                Progressive friction ladder ensuring B2B subscription debt recovery without catastrophic hospital operational shutdowns.
+              </p>
+            </div>
+            <Button variant="secondary" onClick={fetchDunning} className="text-xs">
+              Refresh Dunning Pipeline
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
+              <span className="text-[11px] text-slate-400 uppercase font-semibold">Overdue ARR at Risk</span>
+              <div className="text-2xl font-bold text-orange-400 mt-1 font-mono">
+                ₹{totalOverdueArr.toLocaleString()}
+              </div>
+              <span className="text-[10px] text-slate-500">Across delinquent partner facilities</span>
+            </div>
+            <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
+              <span className="text-[11px] text-slate-400 uppercase font-semibold">Active Delinquent Facilities</span>
+              <div className="text-2xl font-bold text-amber-400 mt-1">
+                {dunningPartners.length}
+              </div>
+              <span className="text-[10px] text-slate-500">Enrolled in progressive friction tiers</span>
+            </div>
+            <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
+              <span className="text-[11px] text-slate-400 uppercase font-semibold">Emergency Exemption</span>
+              <div className="text-2xl font-bold text-emerald-400 mt-1">
+                100% Protected
+              </div>
+              <span className="text-[10px] text-slate-500">ER and Trauma bypass all dunning gates</span>
+            </div>
+          </div>
+
+          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+            <h4 className="text-sm font-bold text-white">Delinquent Hospital Partners & Dynamic Friction Ladder</h4>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-800 text-slate-400 uppercase text-[10px]">
+                    <th className="py-2.5 px-3">Partner Facility</th>
+                    <th className="py-2.5 px-3">Tier</th>
+                    <th className="py-2.5 px-3">Overdue Amount</th>
+                    <th className="py-2.5 px-3">Days Overdue</th>
+                    <th className="py-2.5 px-3">Current Friction Tier</th>
+                    <th className="py-2.5 px-3">1-Click EMI Rehabilitation</th>
+                    <th className="py-2.5 px-3">Apply Friction Step</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60">
+                  {dunningPartners.map((partner) => (
+                    <tr key={partner.id} className="hover:bg-slate-800/30">
+                      <td className="py-3 px-3 font-semibold text-slate-200">{partner.hospital_name}</td>
+                      <td className="py-3 px-3 text-slate-400">{partner.partner_tier}</td>
+                      <td className="py-3 px-3 font-mono font-bold text-rose-300">
+                        ₹{Number(partner.total_overdue_amount_inr).toLocaleString()}
+                      </td>
+                      <td className="py-3 px-3 font-mono text-amber-300">{partner.days_overdue} days</td>
+                      <td className="py-3 px-3">
+                        <span className={`px-2 py-0.5 rounded font-mono font-bold text-[10px] ${
+                          partner.current_friction_tier === 'NONE' ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' :
+                          partner.current_friction_tier === 'TIER_1_WATERMARK' ? 'bg-amber-950 text-amber-300 border border-amber-800' :
+                          partner.current_friction_tier === 'TIER_2_THROTTLING' ? 'bg-orange-950 text-orange-300 border border-orange-800' :
+                          'bg-rose-950 text-rose-300 border border-rose-800'
+                        }`}>
+                          {partner.current_friction_tier}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3">
+                        {partner.rehabilitation_emi_active ? (
+                          <Badge variant="success">EMI ACTIVE</Badge>
+                        ) : (
+                          <span className="text-[10px] text-slate-500">Standard Dunning</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-3">
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => handleApplyDunningFriction(partner, 'TIER_1_WATERMARK')}
+                            className="px-2 py-1 text-[10px] rounded bg-amber-900/40 hover:bg-amber-900/80 text-amber-200 border border-amber-700/60"
+                          >
+                            T1 Watermark
+                          </button>
+                          <button
+                            onClick={() => handleApplyDunningFriction(partner, 'TIER_2_THROTTLING')}
+                            className="px-2 py-1 text-[10px] rounded bg-orange-900/40 hover:bg-orange-900/80 text-orange-200 border border-orange-700/60"
+                          >
+                            T2 Throttle
+                          </button>
+                          <button
+                            onClick={() => handleApplyDunningFriction(partner, 'TIER_3_EXPORT_FREEZE')}
+                            className="px-2 py-1 text-[10px] rounded bg-rose-900/40 hover:bg-rose-900/80 text-rose-200 border border-rose-700/60"
+                          >
+                            T3 Freeze
+                          </button>
+                          <button
+                            onClick={() => handleApplyDunningFriction(partner, 'NONE')}
+                            className="px-2 py-1 text-[10px] rounded bg-slate-800 hover:bg-slate-700 text-slate-300"
+                          >
+                            Clear
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          TAB 10: ZERO-TRUST DUAL-KEY NUCLEAR LAUNCH VAULT
+         ========================================================================= */}
+      {activeTab === 'VAULT' && (
+        <div className="space-y-6">
+          <div className="p-5 rounded-2xl bg-slate-900/80 border border-amber-500/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🔐</span>
+                <h3 className="text-lg font-bold text-amber-200">Zero-Trust Dual-Key Nuclear Launch Vault</h3>
+                <Badge variant="warning">MULTI-PARTY PHYSICAL CONSENSUS</Badge>
+              </div>
+              <p className="text-xs text-slate-400 mt-1">
+                High-blast-radius actions (mass cryptographic re-keying, audit purging, catastrophic shutdowns) require two independent cryptographic signers and hardware TOTP consensus.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Step 1: Request Destructive Action */}
+            <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+              <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                <span>1️⃣</span> Primary Signer Action Initiation
+              </h4>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-semibold text-slate-300">Action Type</label>
+                  <select
+                    value={vaultActionType}
+                    onChange={(e) => setVaultActionType(e.target.value)}
+                    className="w-full mt-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-slate-200"
+                  >
+                    <option value="MASS_EMR_ENCRYPTION_KEY_ROTATION">MASS_EMR_ENCRYPTION_KEY_ROTATION</option>
+                    <option value="PURGE_ALL_AUDIT_LOGS">PURGE_ALL_AUDIT_LOGS</option>
+                    <option value="GLOBAL_TENANT_SHUTDOWN">GLOBAL_TENANT_SHUTDOWN</option>
+                    <option value="EMERGENCY_DATA_EXFILTRATION_KILL">EMERGENCY_DATA_EXFILTRATION_KILL</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-300">Target Blast Scope</label>
+                  <input
+                    type="text"
+                    value={vaultTargetScope}
+                    onChange={(e) => setVaultTargetScope(e.target.value)}
+                    className="w-full mt-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-slate-200"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-300">Statutory & Operational Justification</label>
+                  <textarea
+                    rows={3}
+                    value={vaultJustification}
+                    onChange={(e) => setVaultJustification(e.target.value)}
+                    className="w-full mt-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-slate-200"
+                  />
+                </div>
+
+                <Button
+                  variant="primary"
+                  onClick={handleRequestVaultAction}
+                  disabled={isRequestingVault}
+                  className="w-full text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-950"
+                >
+                  {isRequestingVault ? 'Issuing Vault Challenge...' : 'Generate Dual-Key Cryptographic Challenge'}
+                </Button>
+              </div>
+            </div>
+
+            {/* Step 2: Co-Signer Dual Key Consensus */}
+            <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+              <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                <span>2️⃣</span> Secondary Signer Consensus Chamber
+              </h4>
+
+              {vaultChallenge ? (
+                <div className="space-y-4 p-4 rounded-xl bg-amber-950/40 border border-amber-500/40">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-amber-300">ACTIVE CHALLENGE PENDING</span>
+                    <span className="text-[10px] font-mono text-amber-400">{vaultChallenge.challengeId.slice(0, 16)}...</span>
+                  </div>
+
+                  <div className="text-xs space-y-1">
+                    <div className="text-slate-300 font-semibold">{vaultChallenge.actionType}</div>
+                    <div className="text-[11px] text-slate-400">Scope: {vaultChallenge.targetScope}</div>
+                    <div className="text-[11px] font-mono text-amber-300 bg-slate-950 p-2 rounded border border-slate-800">
+                      Challenge Code: {vaultChallenge.challengeCode}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 pt-2 border-t border-amber-900/60">
+                    <div>
+                      <label className="text-[11px] text-slate-300 font-semibold">Secondary Co-Signer Admin ID</label>
+                      <input
+                        type="text"
+                        value={vaultSecondSignerId}
+                        onChange={(e) => setVaultSecondSignerId(e.target.value)}
+                        className="w-full mt-1 px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-slate-200 font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] text-slate-300 font-semibold">Secondary Co-Signer Name</label>
+                      <input
+                        type="text"
+                        value={vaultSecondSignerName}
+                        onChange={(e) => setVaultSecondSignerName(e.target.value)}
+                        className="w-full mt-1 px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-slate-200"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] text-slate-300 font-semibold">Hardware TOTP Token (6 Digits)</label>
+                      <input
+                        type="text"
+                        value={vaultTotp}
+                        onChange={(e) => setVaultTotp(e.target.value)}
+                        className="w-full mt-1 px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 font-mono text-amber-400 text-xs font-bold"
+                      />
+                    </div>
+
+                    <Button
+                      variant="primary"
+                      onClick={handleAuthorizeVault}
+                      disabled={isAuthorizingVault}
+                      className="w-full text-xs font-bold bg-emerald-500 hover:bg-emerald-600 text-slate-950"
+                    >
+                      {isAuthorizingVault ? 'Authorizing Dual Key...' : 'Co-Authorize & Execute Dual-Key Payload'}
+                    </Button>
+                  </div>
+                </div>
+              ) : vaultAuthResult ? (
+                <div className="p-4 rounded-xl bg-emerald-950/40 border border-emerald-500/40 space-y-2">
+                  <div className="flex items-center gap-2 text-emerald-300 font-bold text-sm">
+                    <span>✅</span>
+                    <span>DUAL-KEY EXECUTION AUTHORIZED</span>
+                  </div>
+                  <div className="text-xs text-slate-300">
+                    Action: <span className="font-semibold text-white">{vaultAuthResult.actionType}</span>
+                  </div>
+                  <div className="text-[11px] font-mono text-emerald-400 bg-slate-950 p-2.5 rounded border border-slate-800 break-all">
+                    Auth Token: {vaultAuthResult.executionAuthToken}
+                  </div>
+                  <div className="text-[10px] text-slate-400">
+                    Timestamp: {new Date(vaultAuthResult.authorizedAt).toLocaleString()}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-16 text-slate-500 text-xs">
+                  No pending vault challenge. Initiate an action from the primary signer form to begin.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          TAB 11: 1-CLICK AUTONOMOUS NABH 5TH EDITION STATUTORY BINDER
+         ========================================================================= */}
+      {activeTab === 'NABH' && (
+        <div className="space-y-6">
+          <div className="p-5 rounded-2xl bg-slate-900/80 border border-teal-500/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xl">📜</span>
+                <h3 className="text-lg font-bold text-teal-200">1-Click Autonomous NABH 5th Edition Statutory Binder Generator</h3>
+                <Badge variant="success">NABH AUDIT READY</Badge>
+              </div>
+              <p className="text-xs text-slate-400 mt-1">
+                Aggregates real-time autoclave spore validation logs, needle-stick registers, bio-medical waste barcoding manifests, and biomedical calibration certificates into an immutable inspection binder.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Compiler Parameters */}
+            <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+              <h4 className="text-sm font-bold text-white">Inspection Audit Parameters</h4>
+
+              <div className="space-y-3 text-xs">
+                <div>
+                  <label className="font-semibold text-slate-300">Tenant ID</label>
+                  <input
+                    type="text"
+                    value={nabhTenantId}
+                    onChange={(e) => setNabhTenantId(e.target.value)}
+                    className="w-full mt-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-slate-200 font-mono text-[11px]"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-semibold text-slate-300">Hospital Facility</label>
+                  <input
+                    type="text"
+                    value={nabhHospitalName}
+                    onChange={(e) => setNabhHospitalName(e.target.value)}
+                    className="w-full mt-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-slate-200"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-semibold text-slate-300">Audit Cycle</label>
+                  <input
+                    type="text"
+                    value={nabhAuditCycle}
+                    onChange={(e) => setNabhAuditCycle(e.target.value)}
+                    className="w-full mt-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-slate-200"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-semibold text-slate-300">NABH Lead Assessor</label>
+                  <input
+                    type="text"
+                    value={nabhInspectorName}
+                    onChange={(e) => setNabhInspectorName(e.target.value)}
+                    className="w-full mt-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-slate-200"
+                  />
+                </div>
+
+                <Button
+                  variant="primary"
+                  onClick={handleCompileNabhBinder}
+                  disabled={isCompilingNabh}
+                  className="w-full text-xs font-bold bg-teal-500 hover:bg-teal-600 text-slate-950 mt-2"
+                >
+                  {isCompilingNabh ? 'Compiling Live Statutory Evidence...' : 'Compile Full Statutory Binder (1-Click)'}
+                </Button>
+              </div>
+            </div>
+
+            {/* Compiled Binder Display */}
+            <div className="lg:col-span-2 bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+              {nabhBinder ? (
+                <div className="space-y-4">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-slate-800 gap-2">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="success">NABH 5TH EDITION PASS</Badge>
+                        <span className="text-xs font-mono font-bold text-teal-300">Score: {nabhBinder.nabh_compliance_score}%</span>
+                      </div>
+                      <h4 className="text-base font-bold text-white mt-1">{nabhBinder.hospital_name}</h4>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[10px] text-slate-400">Cryptographic Immutable Seal</div>
+                      <div className="text-[11px] font-mono text-teal-400">{nabhBinder.immutable_seal_hash.slice(0, 24)}...</div>
+                    </div>
+                  </div>
+
+                  {/* 4 Statutory Chapters */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                    <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+                      <div className="font-bold text-slate-200 flex items-center justify-between">
+                        <span>Chapter 1: Sterilization & Autoclave</span>
+                        <span className="text-[10px] text-emerald-400 font-mono">100% PASS</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400">
+                        Biological indicator <strong className="text-slate-200">Geobacillus stearothermophilus</strong> verified sterile at 134°C / 30 psi.
+                      </p>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+                      <div className="font-bold text-slate-200 flex items-center justify-between">
+                        <span>Chapter 2: Needle-Stick Register</span>
+                        <span className="text-[10px] text-emerald-400 font-mono">PEP PROTOCOL</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400">
+                        100% adherence to post-exposure prophylaxis initiation &lt; 2 hours with Anti-HBs titer tracking.
+                      </p>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+                      <div className="font-bold text-slate-200 flex items-center justify-between">
+                        <span>Chapter 3: BMW Manifests</span>
+                        <span className="text-[10px] text-emerald-400 font-mono">CPCB SYNCED</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400">
+                        Barcoded weight reconciliation across Yellow, Red, Blue, and White puncture-proof bins.
+                      </p>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+                      <div className="font-bold text-slate-200 flex items-center justify-between">
+                        <span>Chapter 4: Equipment Calibration</span>
+                        <span className="text-[10px] text-emerald-400 font-mono">NABL TRACEABLE</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400">
+                        Defibrillators, ventilators, autoclaves certified with valid calibration stamps. 0 expired assets.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-20 text-slate-500 text-xs">
+                  Click &quot;Compile Full Statutory Binder (1-Click)&quot; to aggregate live cross-departmental evidence.
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

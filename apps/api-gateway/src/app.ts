@@ -37,6 +37,7 @@ import { founderApprovalRoutes } from './routes/company/founder-approval.routes.
 import { partnerAccessControlRoutes } from './routes/company/partner-access-control.routes.js';
 import { hqCommandCenterRoutes } from './routes/company/hq-command-center.routes.js';
 import { godmodeAdminRoutes } from './routes/company/godmode-admin.routes.js';
+import { phiWiretapPlugin } from './plugins/phi-wiretap.js';
 import { partnerCommandCenterRoutes } from './routes/partner/command-center.routes.js';
 import { radiologyRoutes } from './routes/partner/radiology.routes.js';
 import { dietaryRoutes } from './routes/partner/dietary.routes.js';
@@ -326,6 +327,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
 
   // 3. Register Health & Readiness Routes
   await app.register(healthRoutes);
+  await app.register(phiWiretapPlugin);
   await app.register(authRoutes);
   await app.register(distributedLockRoutes);
 
