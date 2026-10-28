@@ -9,12 +9,6 @@ import type {
   TransitionTicketRequest,
   CreateTicketCommentRequest
 } from '@docsearch/api-contracts';
-import {
-  mockSupportTickets,
-  mockTicketComments,
-  mockPartnerHealth,
-  mockSuccessCheckins
-} from './mock-support-data.js';
 import { apiCall, isMockFallbackAllowed } from './api-client.js';
 
 export interface TicketFilters {
@@ -45,10 +39,10 @@ export interface ISupportService {
 
 export class SupportService implements ISupportService {
   private readonly apiUrl?: string | undefined;
-  private tickets: SupportTicketDto[] = [...mockSupportTickets];
-  private comments: TicketCommentDto[] = [...mockTicketComments];
-  private healthProfiles: PartnerHealthDto[] = [...mockPartnerHealth];
-  private checkins: SuccessCheckinDto[] = [...mockSuccessCheckins];
+  private tickets: SupportTicketDto[] = [];
+  private comments: TicketCommentDto[] = [];
+  private healthProfiles: PartnerHealthDto[] = [];
+  private checkins: SuccessCheckinDto[] = [];
 
   constructor(apiUrl?: string | undefined) {
     this.apiUrl = apiUrl;

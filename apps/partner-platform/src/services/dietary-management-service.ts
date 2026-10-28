@@ -50,30 +50,33 @@ import type {
   CreateDietaryBillingReferenceRequest
 } from '@docsearch/api-contracts';
 
-import {
-  mockDietaryDepartments,
-  mockDietaryKitchens,
-  mockDietaryDietTypes,
-  mockDietaryFoodItems,
-  mockDietaryAssessments,
-  mockDietaryOrders,
-  mockDietaryDietPlans,
-  mockDietaryMenuTemplates,
-  mockDietaryMealSchedules,
-  mockDietaryProductionPlans,
-  mockDietaryPreparationRecords,
-  mockDietaryQualityChecks,
-  mockDietaryTrayAssemblies,
-  mockDietaryMealDispatches,
-  mockDietarySafetyAlerts,
-  mockDietaryWasteRecords,
-  mockDietaryCostRecords,
-  mockDietaryProcurementRefs,
-  mockDietaryBillingRefs,
-  mockDietaryAuditTraces,
-  mockDietaryOverviewMetrics,
-  mockDietaryAnalytics
-} from './mock-dietary-data.js';
+const DEFAULT_DIETARY_OVERVIEW: DietaryOverviewMetricsDto = {
+  totalActiveDietaryPatients: 0,
+  totalActiveDietOrders: 0,
+  mealsDueToday: 0,
+  mealsInPreparation: 0,
+  mealsReadyForDispatch: 0,
+  mealsDeliveredToday: 0,
+  missedOrRefusedMeals: 0,
+  activeSafetyAlerts: 0,
+  npoPatientCount: 0,
+  qualityFailureCount: 0,
+  totalFoodWasteKgToday: 0,
+  totalWasteCostLossToday: 0
+};
+
+const DEFAULT_DIETARY_ANALYTICS: DietaryAnalyticsDto = {
+  mealsServedByDietCategory: {},
+  mealsDeliveredByWard: {},
+  wasteByReasonKg: {},
+  dailyMealDeliverySuccessRatePct: 98.5,
+  averageTurnaroundMins: 35,
+  monthlyExpenditureVsBudget: {
+    ingredientCost: 120000,
+    wasteLoss: 4500,
+    budgetAllocated: 150000
+  }
+};
 
 export interface IDietaryManagementService {
   getOverviewMetrics(tenantId: string): Promise<DietaryOverviewMetricsDto>;
@@ -128,26 +131,26 @@ export interface IDietaryManagementService {
 }
 
 class DietaryManagementService implements IDietaryManagementService {
-  private departments = [...mockDietaryDepartments];
-  private kitchens = [...mockDietaryKitchens];
-  private dietTypes = [...mockDietaryDietTypes];
-  private foodItems = [...mockDietaryFoodItems];
-  private assessments = [...mockDietaryAssessments];
-  private orders = [...mockDietaryOrders];
-  private dietPlans = [...mockDietaryDietPlans];
-  private menuTemplates = [...mockDietaryMenuTemplates];
-  private mealSchedules = [...mockDietaryMealSchedules];
-  private productionPlans = [...mockDietaryProductionPlans];
-  private preparationRecords = [...mockDietaryPreparationRecords];
-  private qualityChecks = [...mockDietaryQualityChecks];
-  private trayAssemblies = [...mockDietaryTrayAssemblies];
-  private mealDispatches = [...mockDietaryMealDispatches];
-  private safetyAlerts = [...mockDietarySafetyAlerts];
-  private wasteRecords = [...mockDietaryWasteRecords];
-  private costRecords = [...mockDietaryCostRecords];
-  private procurementRefs = [...mockDietaryProcurementRefs];
-  private billingRefs = [...mockDietaryBillingRefs];
-  private auditTraces = [...mockDietaryAuditTraces];
+  private departments: DietaryDepartmentDto[] = [];
+  private kitchens: DietaryKitchenDto[] = [];
+  private dietTypes: DietaryDietTypeDto[] = [];
+  private foodItems: DietaryFoodItemDto[] = [];
+  private assessments: DietaryAssessmentDto[] = [];
+  private orders: DietaryOrderDto[] = [];
+  private dietPlans: DietaryDietPlanDto[] = [];
+  private menuTemplates: DietaryMenuTemplateDto[] = [];
+  private mealSchedules: DietaryMealScheduleDto[] = [];
+  private productionPlans: DietaryProductionPlanDto[] = [];
+  private preparationRecords: DietaryPreparationRecordDto[] = [];
+  private qualityChecks: DietaryQualityCheckDto[] = [];
+  private trayAssemblies: DietaryTrayAssemblyDto[] = [];
+  private mealDispatches: DietaryMealDispatchDto[] = [];
+  private safetyAlerts: DietarySafetyAlertDto[] = [];
+  private wasteRecords: DietaryWasteRecordDto[] = [];
+  private costRecords: DietaryCostRecordDto[] = [];
+  private procurementRefs: DietaryProcurementRefDto[] = [];
+  private billingRefs: DietaryBillingRefDto[] = [];
+  private auditTraces: DietaryAuditTraceDto[] = [];
 
   private appendAudit(
     action: string,
@@ -192,7 +195,7 @@ class DietaryManagementService implements IDietaryManagementService {
     }
 
     return {
-      ...mockDietaryOverviewMetrics,
+      ...DEFAULT_DIETARY_OVERVIEW,
       totalActiveDietOrders: this.orders.filter((o) => o.status === 'ACTIVE').length,
       npoPatientCount: this.orders.filter((o) => o.isNpo && o.status === 'ACTIVE').length,
       activeSafetyAlerts: this.safetyAlerts.filter((a) => !a.isResolved).length
@@ -208,7 +211,7 @@ class DietaryManagementService implements IDietaryManagementService {
     } catch (error) {
       if (!isMockFallbackAllowed()) throw error;
     }
-    return { ...mockDietaryAnalytics };
+    return { ...DEFAULT_DIETARY_ANALYTICS };
   }
 
   async getDepartments(_tenantId: string): Promise<DietaryDepartmentDto[]> {

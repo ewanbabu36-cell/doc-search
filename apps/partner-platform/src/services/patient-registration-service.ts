@@ -55,14 +55,15 @@ import type {
   MergePatientRequest,
   QueryPatientAuditRequest
 } from '@docsearch/api-contracts';
-import {
-
-  MOCK_PATIENTS,
-  MOCK_PATIENT_DUPLICATE_CANDIDATES,
-  MOCK_PATIENT_MERGE_EVENTS,
-  MOCK_PATIENT_REGISTRATION_AUDIT_TRACES,
-  MOCK_PATIENT_REGISTRATION_OVERVIEW
-} from './mock-patient-registration-data.js';
+const DEFAULT_PATIENT_REGISTRATION_OVERVIEW: PatientRegistrationOverviewDto = {
+  totalPatientsCount: 0,
+  activePatientsCount: 0,
+  newRegistrationsTodayCount: 0,
+  pendingDuplicateReviewsCount: 0,
+  mergedRecordsCount: 0,
+  insuredPatientsCount: 0,
+  activeConsentsCount: 0
+};
 
 export interface IPatientRegistrationService {
   getOverview(tenantId: string, partnerId?: string, organizationId?: string, branchId?: string): Promise<PatientRegistrationOverviewDto>;
@@ -85,10 +86,10 @@ export interface IPatientRegistrationService {
 }
 
 export class PatientRegistrationService implements IPatientRegistrationService {
-  private patients: PatientDto[] = isMockFallbackAllowed() ? loadStored("docsearch_patients", MOCK_PATIENTS) : [];
-  private duplicateCandidates: PatientDuplicateCandidateDto[] = isMockFallbackAllowed() ? [...MOCK_PATIENT_DUPLICATE_CANDIDATES] : [];
-  private mergeEvents: PatientMergeEventDto[] = isMockFallbackAllowed() ? [...MOCK_PATIENT_MERGE_EVENTS] : [];
-  private auditTraces: PatientRegistrationAuditTraceDto[] = isMockFallbackAllowed() ? [...MOCK_PATIENT_REGISTRATION_AUDIT_TRACES] : [];
+  private patients: PatientDto[] = isMockFallbackAllowed() ? loadStored("docsearch_patients", []) : [];
+  private duplicateCandidates: PatientDuplicateCandidateDto[] = isMockFallbackAllowed() ? [...[]] : [];
+  private mergeEvents: PatientMergeEventDto[] = isMockFallbackAllowed() ? [...[]] : [];
+  private auditTraces: PatientRegistrationAuditTraceDto[] = isMockFallbackAllowed() ? [...[]] : [];
 
   private addAudit(
     tenantId: string,
@@ -140,8 +141,8 @@ export class PatientRegistrationService implements IPatientRegistrationService {
       return true;
     });
 
-    const baseOverview = isMockFallbackAllowed() ? MOCK_PATIENT_REGISTRATION_OVERVIEW : {
-      ...MOCK_PATIENT_REGISTRATION_OVERVIEW,
+    const baseOverview = isMockFallbackAllowed() ? DEFAULT_PATIENT_REGISTRATION_OVERVIEW : {
+      ...DEFAULT_PATIENT_REGISTRATION_OVERVIEW,
       totalPatientsCount: 0,
       activePatientsCount: 0,
       newRegistrationsTodayCount: 0,

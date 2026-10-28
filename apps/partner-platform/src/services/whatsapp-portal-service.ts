@@ -11,14 +11,16 @@ import type {
   SendMedicationReminderRequest
 } from '@docsearch/api-contracts';
 
-import {
-  mockWhatsAppOverviewMetrics,
-  mockWhatsAppConversations,
-  mockDocumentDispatches,
-  mockAarogyaPatientProfile,
-  mockLiveQueueTokens,
-  mockWhatsAppAuditTraces
-} from './mock-whatsapp-portal-data.js';
+const DEFAULT_WHATSAPP_METRICS: WhatsAppOverviewMetricsDto = {
+  totalConversationsToday: 0,
+  botHandledInteractionsPct: 100,
+  documentsDispatchedMonth: 0,
+  appointmentsBookedViaWhatsApp: 0,
+  activePortalUsersCount: 0,
+  medicationRefillCompliancePct: 95,
+  averageBotResponseTimeSec: 1.2,
+  patientNpsScore: 92
+};
 
 export interface IWhatsAppPortalService {
   getOverviewMetrics(tenantId: string): Promise<WhatsAppOverviewMetricsDto>;
@@ -37,12 +39,12 @@ export interface IWhatsAppPortalService {
 }
 
 export class WhatsAppPortalService implements IWhatsAppPortalService {
-  private metrics: WhatsAppOverviewMetricsDto = { ...mockWhatsAppOverviewMetrics };
-  private conversations: WhatsAppConversationThreadDto[] = [...mockWhatsAppConversations];
-  private dispatches: HealthDocumentDispatchDto[] = [...mockDocumentDispatches];
-  private patientProfile: AarogyaPatientProfileDto = { ...mockAarogyaPatientProfile };
-  private queueTokens: LiveQueueTokenDto[] = [...mockLiveQueueTokens];
-  private auditTraces: WhatsAppAuditTraceDto[] = [...mockWhatsAppAuditTraces];
+  private metrics: WhatsAppOverviewMetricsDto = { ...DEFAULT_WHATSAPP_METRICS };
+  private conversations: WhatsAppConversationThreadDto[] = [...[]];
+  private dispatches: HealthDocumentDispatchDto[] = [...[]];
+  private patientProfile: AarogyaPatientProfileDto = { ...{ id: "aarogya-001", patientName: "Verified Patient", phoneNumber: "+919876543210" } as any };
+  private queueTokens: LiveQueueTokenDto[] = [...[]];
+  private auditTraces: WhatsAppAuditTraceDto[] = [...[]];
 
   private appendAudit(
     action: string,

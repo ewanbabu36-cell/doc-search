@@ -7,12 +7,6 @@ import type {
   PaymentRecordDto,
   TransitionSubscriptionRequest
 } from '@docsearch/api-contracts';
-import {
-  mockSubscriptions,
-  mockBillingAccounts,
-  mockInvoices,
-  mockPaymentRecords
-} from './mock-subscription-data.js';
 import { apiCall, isMockFallbackAllowed } from './api-client.js';
 
 export interface SubscriptionFilters {
@@ -44,10 +38,10 @@ export interface ISubscriptionService {
 
 export class SubscriptionService implements ISubscriptionService {
   private readonly apiUrl?: string | undefined;
-  private subscriptions: SubscriptionDto[] = [...mockSubscriptions];
-  private billingAccounts: BillingAccountDto[] = [...mockBillingAccounts];
-  private invoices: InvoiceDto[] = [...mockInvoices];
-  private payments: PaymentRecordDto[] = [...mockPaymentRecords];
+  private subscriptions: SubscriptionDto[] = [];
+  private billingAccounts: BillingAccountDto[] = [];
+  private invoices: InvoiceDto[] = [];
+  private payments: PaymentRecordDto[] = [];
 
   constructor(apiUrl?: string | undefined) {
     this.apiUrl = apiUrl;

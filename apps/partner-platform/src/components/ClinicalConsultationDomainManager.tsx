@@ -29,15 +29,9 @@ import { ConsultationAuditVaultView } from './views/ConsultationAuditVaultView.j
 import { SoloDoctorOpdCockpitView } from './views/SoloDoctorOpdCockpitView.js';
 import { SmartWaitingRoomVitalsGateway } from './views/SmartWaitingRoomVitalsGateway.js';
 import { hardwareStatusService } from '../services/hardware-status-service.js';
-import {
-  MOCK_CONSULTATIONS,
-  MOCK_CONSULTATION_AUDIT_TRACES,
-  MOCK_CONSULTATION_OVERVIEW,
-  isProductionClinicPilot,
-  filterRealClinicalPatients
-} from '../services/mock-clinical-consultation-data.js';
-import { MOCK_ENCOUNTERS } from '../services/mock-encounter-data.js';
-import { MOCK_DOCTOR_PROFILES } from '../services/mock-doctor-roster-data.js';
+
+const isProductionClinicPilot = () => true;
+const filterRealClinicalPatients = <T,>(list: T[]): T[] => list;
 import type { HospitalStaffUser } from './auth/HospitalStaffLogin.js';
 
 import { Badge, Button, Dialog } from '@docsearch/ui-kit';
@@ -99,7 +93,7 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
   const [facilities, setFacilities] = useState<OperationalFacilityDto[]>([]);
 
   const [overview, setOverview] = useState<ConsultationOverviewDto | null>(() => {
-    let initialList = MOCK_CONSULTATIONS;
+    let initialList: any[] = [];
     if (typeof window !== 'undefined') {
       try {
         const item = window.localStorage.getItem('docsearch_consultations');
@@ -109,7 +103,16 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
         }
       } catch {}
     }
-    if (initialList.length === 0) return MOCK_CONSULTATION_OVERVIEW;
+    if (initialList.length === 0) return {
+      totalConsultationsCount: 0,
+      activeConsultationsCount: 0,
+      draftConsultationsCount: 0,
+      inProgressConsultationsCount: 0,
+      completedTodayCount: 0,
+      followUpsRequiredCount: 0,
+      uncompletedNotesCount: 0,
+      amendedCount: 0
+    };
     return {
       totalConsultationsCount: initialList.length,
       activeConsultationsCount: initialList.filter(
@@ -137,7 +140,7 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
         }
       } catch {}
     }
-    return MOCK_CONSULTATIONS;
+    return [];
   });
   const [encounters, setEncounters] = useState<EncounterDto[]>(() => {
     if (typeof window !== 'undefined') {
@@ -151,7 +154,7 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
         }
       } catch {}
     }
-    return MOCK_ENCOUNTERS;
+    return [];
   });
   const [doctors, setDoctors] = useState<DoctorProfileDto[]>(() => {
     if (typeof window !== 'undefined') {
@@ -163,7 +166,7 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
         }
       } catch {}
     }
-    return MOCK_DOCTOR_PROFILES;
+    return [];
   });
   const [auditTraces, setAuditTraces] = useState<ConsultationAuditTraceDto[]>(() => {
     if (typeof window !== 'undefined') {
@@ -175,7 +178,7 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
         }
       } catch {}
     }
-    return MOCK_CONSULTATION_AUDIT_TRACES;
+    return [];
   });
 
   const [selectedConsultationId, setSelectedConsultationId] = useState<string | null>(null);

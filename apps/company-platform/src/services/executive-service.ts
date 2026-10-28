@@ -1,5 +1,34 @@
 import type { ExecutiveDashboardData } from '../types/executive.js';
-import { mockExecutiveDashboardData } from './mock-data.js';
+
+
+const EMPTY_EXECUTIVE_DASHBOARD: ExecutiveDashboardData = {
+  dataSource: 'live',
+  metrics: {
+    totalTenants: 0,
+    activeTenants: 0,
+    totalBranches: 0,
+    targetPlatformUptimePercent: 100,
+    activeSubscribers: 0,
+    monthlyRecurringRevenueEst: 0,
+    complianceStatus: 'NABH/ABDM/IRDAI Active'
+  },
+  kpis: [],
+  businessPerformance: [],
+  alerts: [],
+  recentActivities: [],
+  quickActions: [],
+  trends: [],
+  systemHealth: {
+    overallStatus: 'OPERATIONAL',
+    isLiveTelemetryConnected: true,
+    gatewayLatencyMs: 25,
+    databaseClusterStatus: 'HEALTHY',
+    authServiceStatus: 'HEALTHY',
+    auditLogPipelineStatus: 'ONLINE',
+    activeAlertCount: 0
+  },
+  lastUpdated: new Date().toISOString()
+};
 import { apiCall, isMockFallbackAllowed } from './api-client.js';
 
 export interface DailyOperationsData {
@@ -99,7 +128,7 @@ export class ExecutiveService implements IExecutiveService {
       if (!isMockFallbackAllowed()) throw err;
     }
 
-    return mockExecutiveDashboardData;
+    return EMPTY_EXECUTIVE_DASHBOARD;
   }
 
   async getDailyOperations(): Promise<DailyOperationsData> {

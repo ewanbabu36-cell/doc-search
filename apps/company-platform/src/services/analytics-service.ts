@@ -8,13 +8,7 @@ import type {
   AcknowledgeInsightRequest,
   GenerateReportRequest
 } from '@docsearch/api-contracts';
-import {
-  mockPlatformUsageMetrics,
-  mockCrossTenantAggregates,
-  mockApiTelemetrySeries,
-  mockSystemInsights,
-  mockSavedReports
-} from './mock-analytics-data.js';
+
 
 export interface IAnalyticsService {
   getPlatformUsageMetrics(category?: ReportCategory | 'ALL'): Promise<PlatformUsageMetricDto[]>;
@@ -32,11 +26,11 @@ export interface IAnalyticsService {
 import { apiCall, isMockFallbackAllowed } from './api-client.js';
 
 export class AnalyticsService implements IAnalyticsService {
-  private usageMetrics: PlatformUsageMetricDto[] = [...mockPlatformUsageMetrics];
-  private crossTenantAggs: CrossTenantAggregatedMetricDto[] = [...mockCrossTenantAggregates];
-  private apiTelemetry: ApiTelemetryTimeSeriesDto[] = [...mockApiTelemetrySeries];
-  private insights: SystemInsightDto[] = [...mockSystemInsights];
-  private reports: SavedReportDto[] = [...mockSavedReports];
+  private usageMetrics: PlatformUsageMetricDto[] = [];
+  private crossTenantAggs: CrossTenantAggregatedMetricDto[] = [];
+  private apiTelemetry: ApiTelemetryTimeSeriesDto[] = [];
+  private insights: SystemInsightDto[] = [];
+  private reports: SavedReportDto[] = [];
 
   constructor(_apiUrl?: string | undefined) {}
 

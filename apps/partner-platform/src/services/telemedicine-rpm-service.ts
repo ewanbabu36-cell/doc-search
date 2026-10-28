@@ -12,15 +12,16 @@ import type {
   AcknowledgeVitalBreachRequest
 } from '@docsearch/api-contracts';
 
-import {
-  mockTelemedicineMetrics,
-  mockTeleconsultationSessions,
-  mockWaitingRoomQueue,
-  mockIotDevices,
-  mockTelemetryObservations,
-  mockVitalBreachAlerts,
-  mockTelehealthAuditTraces
-} from './mock-telemedicine-rpm-data.js';
+const DEFAULT_TELEMEDICINE_METRICS: TelemedicineOverviewMetricsDto = {
+  activeTeleconsultationsToday: 0,
+  patientsInVirtualWaitingRoom: 0,
+  activeEnrolledRpmPatients: 0,
+  connectedIotDevicesCount: 0,
+  vitalBreachesAlertsToday: 0,
+  averageCallDurationMins: 0,
+  patientSatisfactionScorePct: 100,
+  remoteAdherenceRatePct: 98
+};
 
 export interface ITelemedicineRpmService {
   getOverviewMetrics(tenantId: string): Promise<TelemedicineOverviewMetricsDto>;
@@ -42,13 +43,13 @@ export interface ITelemedicineRpmService {
 }
 
 export class TelemedicineRpmService implements ITelemedicineRpmService {
-  private metrics: TelemedicineOverviewMetricsDto = { ...mockTelemedicineMetrics };
-  private sessions: TeleconsultationSessionDto[] = [...mockTeleconsultationSessions];
-  private waitingQueue: WaitingRoomQueueItemDto[] = [...mockWaitingRoomQueue];
-  private devices: IotConnectedDeviceDto[] = [...mockIotDevices];
-  private telemetry: RpmTelemetryObservationDto[] = [...mockTelemetryObservations];
-  private breachAlerts: RpmVitalBreachAlertDto[] = [...mockVitalBreachAlerts];
-  private auditTraces: TelehealthAuditTraceDto[] = [...mockTelehealthAuditTraces];
+  private metrics: TelemedicineOverviewMetricsDto = { ...DEFAULT_TELEMEDICINE_METRICS };
+  private sessions: TeleconsultationSessionDto[] = [...[]];
+  private waitingQueue: WaitingRoomQueueItemDto[] = [...[]];
+  private devices: IotConnectedDeviceDto[] = [...[]];
+  private telemetry: RpmTelemetryObservationDto[] = [...[]];
+  private breachAlerts: RpmVitalBreachAlertDto[] = [...[]];
+  private auditTraces: TelehealthAuditTraceDto[] = [...[]];
 
   private appendAudit(
     action: string,

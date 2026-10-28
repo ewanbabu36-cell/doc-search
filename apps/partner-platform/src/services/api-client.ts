@@ -109,17 +109,6 @@ export async function ensureAuthToken(): Promise<string> {
 }
 
 export function isMockFallbackAllowed(): boolean {
-  if (typeof window !== 'undefined') {
-    // Explicit developer/sandbox override only
-    const explicit = window.localStorage?.getItem('docsearch_enable_mock_fallback');
-    if (explicit === 'true') return true;
-    if (explicit === 'false') return false;
-
-    // Vite environment configuration
-    const envFlag = (import.meta as any).env?.VITE_ENABLE_MOCK_FALLBACK;
-    if (envFlag === 'true') return true;
-  }
-  // Default to false: Authoritative clinical, billing, and pharmacy operations must never silently fake success
   return false;
 }
 

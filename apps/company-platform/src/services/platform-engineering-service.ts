@@ -31,25 +31,7 @@ import type {
   AcknowledgePlatformIncidentRequest,
   ResolvePlatformIncidentRequest
 } from '@docsearch/api-contracts';
-import {
-  MOCK_PLATFORM_OVERVIEW,
-  MOCK_PLATFORM_PROJECTS,
-  MOCK_BUILD_PIPELINES,
-  MOCK_BUILD_RUNS,
-  MOCK_CICD_PIPELINES,
-  MOCK_CICD_RUNS,
-  MOCK_ARTIFACT_REPOSITORIES,
-  MOCK_ARTIFACTS,
-  MOCK_PLATFORM_ENVIRONMENTS,
-  MOCK_ENVIRONMENT_CONFIGURATIONS,
-  MOCK_DEPENDENCY_NODES,
-  MOCK_DEPENDENCY_EDGES,
-  MOCK_PACKAGE_RELEASES,
-  MOCK_PLATFORM_DEPLOYMENTS,
-  MOCK_DEVEX_METRICS,
-  MOCK_PLATFORM_INCIDENTS,
-  MOCK_PLATFORM_AUDIT_TRACES
-} from './mock-platform-engineering-data.js';
+
 import { apiCall, isMockFallbackAllowed } from './api-client.js';
 
 export interface IPlatformEngineeringService {
@@ -87,26 +69,25 @@ export interface IPlatformEngineeringService {
 }
 
 export class PlatformEngineeringService implements IPlatformEngineeringService {
-  private projects: PlatformProjectDto[] = [...MOCK_PLATFORM_PROJECTS];
-  private buildPipelines: BuildPipelineDto[] = [...MOCK_BUILD_PIPELINES];
-  private buildRuns: BuildRunDto[] = [...MOCK_BUILD_RUNS];
-  private cicdPipelines: CICDPipelineDto[] = [...MOCK_CICD_PIPELINES];
-  private cicdRuns: CICDRunDto[] = [...MOCK_CICD_RUNS];
-  private artifactRepositories: ArtifactRepositoryDto[] = [...MOCK_ARTIFACT_REPOSITORIES];
-  private artifacts: ArtifactDto[] = [...MOCK_ARTIFACTS];
-  private environments: EnvironmentDto[] = [...MOCK_PLATFORM_ENVIRONMENTS];
-  private environmentConfigurations: EnvironmentConfigurationDto[] = [...MOCK_ENVIRONMENT_CONFIGURATIONS];
-  private dependencyNodes: DependencyNodeDto[] = [...MOCK_DEPENDENCY_NODES];
-  private dependencyEdges: DependencyEdgeDto[] = [...MOCK_DEPENDENCY_EDGES];
-  private packageReleases: PackageReleaseDto[] = [...MOCK_PACKAGE_RELEASES];
-  private deployments: DeploymentDto[] = [...MOCK_PLATFORM_DEPLOYMENTS];
-  private devexMetrics: DeveloperExperienceMetricDto[] = [...MOCK_DEVEX_METRICS];
-  private incidents: PlatformIncidentDto[] = [...MOCK_PLATFORM_INCIDENTS];
-  private auditTraces: PlatformAuditTraceDto[] = [...MOCK_PLATFORM_AUDIT_TRACES];
+  private projects: PlatformProjectDto[] = [];
+  private buildPipelines: BuildPipelineDto[] = [];
+  private buildRuns: BuildRunDto[] = [];
+  private cicdPipelines: CICDPipelineDto[] = [];
+  private cicdRuns: CICDRunDto[] = [];
+  private artifactRepositories: ArtifactRepositoryDto[] = [];
+  private artifacts: ArtifactDto[] = [];
+  private environments: EnvironmentDto[] = [];
+  private environmentConfigurations: EnvironmentConfigurationDto[] = [];
+  private dependencyNodes: DependencyNodeDto[] = [];
+  private dependencyEdges: DependencyEdgeDto[] = [];
+  private packageReleases: PackageReleaseDto[] = [];
+  private deployments: DeploymentDto[] = [];
+  private devexMetrics: DeveloperExperienceMetricDto[] = [];
+  private incidents: PlatformIncidentDto[] = [];
+  private auditTraces: PlatformAuditTraceDto[] = [];
 
   async getPlatformOverview(): Promise<PlatformOverviewDto> {
     return {
-      ...MOCK_PLATFORM_OVERVIEW,
       activeProjectsCount: this.projects.filter((p) => p.status === 'ACTIVE').length,
       buildPipelinesCount: this.buildPipelines.filter((b) => b.status === 'ACTIVE').length,
       recentBuildRunsCount: this.buildRuns.length,
@@ -114,7 +95,8 @@ export class PlatformEngineeringService implements IPlatformEngineeringService {
       artifactRepositoriesCount: this.artifactRepositories.length,
       activeEnvironmentsCount: this.environments.filter((e) => e.status === 'HEALTHY').length,
       pendingReleasesCount: this.packageReleases.filter((r) => r.status === 'CANDIDATE').length,
-      openIncidentsCount: this.incidents.filter((i) => i.status === 'OPEN').length
+      openIncidentsCount: this.incidents.filter((i) => i.status === 'OPEN').length,
+      telemetryStatus: 'Doc Search Enterprise Monorepo Active'
     };
   }
 

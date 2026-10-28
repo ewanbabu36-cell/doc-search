@@ -45,13 +45,15 @@ import type {
   SearchEncounterRequest,
   QueryEncounterAuditRequest
 } from '@docsearch/api-contracts';
-import {
-  MOCK_ENCOUNTERS,
-  MOCK_ENCOUNTER_QUEUES,
-  MOCK_ENCOUNTER_REFERRALS,
-  MOCK_ENCOUNTER_AUDIT_TRACES,
-  MOCK_ENCOUNTER_OVERVIEW
-} from './mock-encounter-data.js';
+const DEFAULT_ENCOUNTER_OVERVIEW: EncounterOverviewDto = {
+  totalEncountersTodayCount: 0,
+  waitingQueueCount: 0,
+  inConsultationCount: 0,
+  completedTodayCount: 0,
+  emergencyEncountersCount: 0,
+  telehealthEncountersCount: 0,
+  cancelledCount: 0
+};
 import { patientRegistrationService } from './patient-registration-service.js';
 import { doctorRosterService } from './doctor-roster-service.js';
 import { staffAdministrationService } from './staff-administration-service.js';
@@ -74,10 +76,10 @@ export interface IEncounterService {
 }
 
 export class EncounterService implements IEncounterService {
-  private encounters: EncounterDto[] = loadStored("docsearch_encounters", MOCK_ENCOUNTERS);
-  private queues: EncounterQueueDto[] = isMockFallbackAllowed() ? [...MOCK_ENCOUNTER_QUEUES] : [];
-  private referrals: EncounterReferralDto[] = isMockFallbackAllowed() ? [...MOCK_ENCOUNTER_REFERRALS] : [];
-  private auditTraces: EncounterAuditTraceDto[] = isMockFallbackAllowed() ? [...MOCK_ENCOUNTER_AUDIT_TRACES] : [];
+  private encounters: EncounterDto[] = loadStored("docsearch_encounters", []);
+  private queues: EncounterQueueDto[] = isMockFallbackAllowed() ? [...[]] : [];
+  private referrals: EncounterReferralDto[] = isMockFallbackAllowed() ? [...[]] : [];
+  private auditTraces: EncounterAuditTraceDto[] = isMockFallbackAllowed() ? [...[]] : [];
   private nextEncounterCounter = 6;
   private nextQueueTokenCounter = 4;
 
@@ -144,7 +146,7 @@ export class EncounterService implements IEncounterService {
     });
 
     return {
-      ...MOCK_ENCOUNTER_OVERVIEW,
+      ...DEFAULT_ENCOUNTER_OVERVIEW,
       totalEncountersTodayCount: filtered.length,
       waitingQueueCount: filtered.filter((e) => e.status === 'WAITING' || e.status === 'CHECKED_IN' || e.status === 'REGISTERED').length,
       inConsultationCount: filtered.filter((e) => e.status === 'IN_CONSULTATION').length,

@@ -48,7 +48,6 @@ export function getClinicalDomainInfo(): {
 }
 
 // Phase 2.1: Partner & Organization Foundation Exports
-export * from './services/mock-partner-foundation-data.js';
 export * from './services/partner-foundation-service.js';
 export * from './components/common/PanelContextSwitcher.js';
 export * from './components/dialogs/PartnerCreateDialog.js';
@@ -67,7 +66,6 @@ export * from './components/PartnerFoundationDomainManager.js';
 export * from './components/PartnerPlatformShell.js';
 
 // Phase 2.2: Staff Administration & Department Hierarchy Exports
-export * from './services/mock-staff-administration-data.js';
 export * from './services/staff-administration-service.js';
 export * from './components/dialogs/CreateDepartmentDialog.js';
 export * from './components/dialogs/EditDepartmentDialog.js';
@@ -91,7 +89,6 @@ export * from './components/views/StaffAuditVaultView.js';
 export * from './components/StaffAdministrationDomainManager.js';
 
 // Phase 2.3: Doctor & OPD Roster Management Exports
-export * from './services/mock-doctor-roster-data.js';
 export * from './services/doctor-roster-service.js';
 export * from './components/dialogs/CreateDoctorProfileDialog.js';
 export * from './components/dialogs/EditDoctorProfileDialog.js';
@@ -113,7 +110,6 @@ export * from './components/views/DoctorAuditVaultView.js';
 export * from './components/DoctorRosterDomainManager.js';
 
 // Phase 2.4: Patient Registration & Master Patient Index (MPI) Exports
-export * from './services/mock-patient-registration-data.js';
 export * from './services/patient-registration-service.js';
 export * from './components/dialogs/CreatePatientDialog.js';
 export * from './components/dialogs/EditPatientDialog.js';
@@ -137,7 +133,6 @@ export * from './components/views/PatientAuditVaultView.js';
 export * from './components/PatientRegistrationDomainManager.js';
 
 // Phase 2.5: Encounter & Visit Management Exports
-export * from './services/mock-encounter-data.js';
 export * from './services/encounter-service.js';
 export * from './components/dialogs/CreateEncounterDialog.js';
 export * from './components/dialogs/CheckInEncounterDialog.js';
@@ -156,7 +151,6 @@ export * from './components/views/EncounterHistoryView.js';
 export * from './components/views/ReferralCenterView.js';
 export * from './components/views/EncounterAuditVaultView.js';
 // Phase 2.6: Clinical Consultation & Medical Documentation (EMR) Exports
-export * from './services/mock-clinical-consultation-data.js';
 export * from './services/clinical-consultation-service.js';
 export * from './components/dialogs/StartConsultationDialog.js';
 export * from './components/dialogs/SaveConsultationDraftDialog.js';
@@ -176,7 +170,6 @@ export * from './components/views/ConsultationAuditVaultView.js';
 export * from './components/ClinicalConsultationDomainManager.js';
 
 // Phase 2.7: Clinical Orders, Laboratory & Diagnostic Investigation Management Exports
-export * from './services/mock-clinical-investigation-data.js';
 export * from './services/clinical-investigation-service.js';
 export * from './components/dialogs/CreateInvestigationOrderDialog.js';
 export * from './components/dialogs/SelectInvestigationDialog.js';
@@ -203,7 +196,6 @@ export * from './components/views/InvestigationAuditVaultView.js';
 export * from './components/ClinicalInvestigationDomainManager.js';
 
 // Phase 2.8: Pharmacy, Medication Dispensing & Inventory Management Exports
-export * from './services/mock-pharmacy-data.js';
 export * from './services/pharmacy-management-service.js';
 export * from './services/wholesale-invoice-parser.js';
 export * from './components/dialogs/CreateMedicationDialog.js';
@@ -242,7 +234,6 @@ export * from './components/dialogs/KhataPaymentCollectionModal.js';
 export * from './components/PharmacyDomainManager.js';
 
 // Phase 2.9: Billing, Charges, Payments & Revenue Cycle Management (RCM) Exports
-export * from './services/mock-billing-data.js';
 export * from './services/billing-management-service.js';
 export * from './components/dialogs/CreateServiceCatalogDialog.js';
 export * from './components/dialogs/CreatePriceListDialog.js';
@@ -279,7 +270,6 @@ export * from './components/BillingDomainManager.js';
 export * from './components/views/RcmAntiLeakageDeskView.js';
 
 // Phase 2.10: Insurance, TPA, Claims & Third-Party Payer Management Exports
-export * from './services/mock-insurance-claims-data.js';
 export * from './services/insurance-claims-management-service.js';
 export * from './components/dialogs/CreatePayerDialog.js';
 export * from './components/dialogs/CreateInsurancePlanDialog.js';
@@ -321,7 +311,6 @@ export * from './components/views/RevenueCycleInsuranceView.js';
 export * from './components/InsuranceClaimsDomainManager.js';
 
 // Phase 2.11: Procurement, Supply Chain & Vendor Management Exports
-export * from './services/mock-procurement-data.js';
 export * from './services/procurement-management-service.js';
 export * from './components/dialogs/CreateVendorDialog.js';
 export * from './components/dialogs/EditVendorDialog.js';
@@ -366,7 +355,6 @@ export * from './components/views/ProcurementControlCenterView.js';
 export * from './components/ProcurementDomainManager.js';
 
 // Phase 2.12: Inpatient (IPD), Ward & Bed Management (ADT) Exports
-export * from './services/mock-inpatient-data.js';
 export * from './services/inpatient-management-service.js';
 export * from './components/dialogs/CreateWardDialog.js';
 export * from './components/dialogs/EditWardDialog.js';
@@ -427,7 +415,6 @@ export * from './components/views/BedOccupancyAnalyticsView.js';
 export * from './components/InpatientDomainManager.js';
 
 // Phase 2.13: Operation Theatre (OT) & Surgery Management Exports
-export * from './services/mock-operation-theatre-data.js';
 export * from './services/operation-theatre-management-service.js';
 export * from './components/dialogs/CreateOperationTheatreDialog.js';
 export * from './components/dialogs/EditOperationTheatreDialog.js';
@@ -489,7 +476,6 @@ export * from './components/views/OTAuditVaultView.js';
 export * from './components/OTDomainManager.js';
 
 // Phase 2.14: Emergency Department (ED) & Trauma Care Exports
-export * from './services/mock-emergency-data.js';
 export * from './services/emergency-management-service.js';
 export * from './components/dialogs/RegisterEmergencyPatientDialog.js';
 export * from './components/dialogs/CreateTriageAssessmentDialog.js';
@@ -534,7 +520,6 @@ export * from './components/views/OfflineMeshDisasterSyncView.js';
 export * from './components/EmergencyDomainManager.js';
 
 // Phase 2.15: Medical Records Department (MRD), HIM & ICD-10 Coding Exports
-export * from './services/mock-mrd-data.js';
 export * from './services/mrd-management-service.js';
 export * from './components/dialogs/CreateRecordCompletionDialog.js';
 export * from './components/dialogs/AssignDiagnosisCodeDialog.js';
@@ -568,7 +553,6 @@ export * from './components/views/MRDAuditVaultView.js';
 export * from './components/MRDDomainManager.js';
 
 // Phase 2.16: Blood Bank & Transfusion Medicine Exports
-export * from './services/mock-blood-bank-data.js';
 export * from './services/blood-bank-management-service.js';
 export * from './components/dialogs/CreateDonorDialog.js';
 export * from './components/dialogs/ScreenDonorDialog.js';
@@ -610,7 +594,6 @@ export * from './components/views/BloodBankAuditVaultView.js';
 export * from './components/BloodBankDomainManager.js';
 
 // Phase 2.17: Radiology, Imaging & PACS / RIS Exports
-export * from './services/mock-radiology-data.js';
 export * from './services/radiology-management-service.js';
 export * from './components/dialogs/CreateRadiologyOrderDialog.js';
 export * from './components/dialogs/ScheduleRadiologyDialog.js';
@@ -644,7 +627,6 @@ export * from './components/views/RadiologyAuditVaultView.js';
 export * from './components/RadiologyDomainManager.js';
 
 // Phase 2.18: Dietary & Kitchen Management Exports
-export * from './services/mock-dietary-data.js';
 export * from './services/dietary-management-service.js';
 export * from './components/dialogs/CreateKitchenDialog.js';
 export * from './components/dialogs/EditKitchenDialog.js';
@@ -700,7 +682,6 @@ export * from './components/views/DietaryAuditVaultView.js';
 export * from './components/DietaryDomainManager.js';
 
 // Phase 2.19: Hospital Asset & Biomedical Equipment Maintenance (HTM) Exports
-export * from './services/mock-asset-biomedical-data.js';
 export * from './services/asset-biomedical-service.js';
 export * from './components/dialogs/RegisterAssetDialog.js';
 export * from './components/dialogs/EditAssetDialog.js';
@@ -739,7 +720,6 @@ export * from './components/views/AssetAuditVaultView.js';
 export * from './components/AssetBiomedicalDomainManager.js';
 
 // Phase 2.20: Hospital Quality, Incident & Infection Control (NABH / JCI) Exports
-export * from './services/mock-quality-infection-data.js';
 export * from './services/quality-infection-service.js';
 export * from './components/dialogs/ReportIncidentDialog.js';
 export * from './components/dialogs/TriageIncidentDialog.js';
@@ -773,7 +753,6 @@ export * from './components/views/QualityAuditVaultView.js';
 export * from './components/QualityInfectionDomainManager.js';
 
 // Phase 3.1: Hospital Executive Command Center & AI Predictive Operations Exports
-export * from './services/mock-executive-command-data.js';
 export * from './services/executive-command-service.js';
 export * from './components/dialogs/DeclareSurgeEventDialog.js';
 export * from './components/dialogs/ResolveSurgeEventDialog.js';
@@ -792,7 +771,6 @@ export * from './components/views/ExecutiveAuditVaultView.js';
 export * from './components/ExecutiveCommandDomainManager.js';
 
 // Phase 3.2: ABDM (Ayushman Bharat Digital Mission) & FHIR R4 National Gateway Exports
-export * from './services/mock-abdm-fhir-data.js';
 export * from './services/abdm-fhir-service.js';
 export * from './components/dialogs/CreateAbhaNumberDialog.js';
 export * from './components/dialogs/LinkCareContextDialog.js';
@@ -810,7 +788,6 @@ export * from './components/views/AbdmGatewayAuditVaultView.js';
 export * from './components/AbdmFhirDomainManager.js';
 
 // Phase 3.3: AI Clinical Co-Pilot, Sepsis & Drug Interaction CDSS Engine Exports
-export * from './services/mock-ai-cdss-data.js';
 export * from './services/ai-cdss-service.js';
 export * from './components/dialogs/AcknowledgeSepsisAlertDialog.js';
 export * from './components/dialogs/EvaluateDdiInteractionsDialog.js';
@@ -828,7 +805,6 @@ export * from './components/views/CdssAuditVaultView.js';
 export * from './components/AiCdssDomainManager.js';
 
 // Phase 3.4: Telemedicine & RPM Exports
-export * from './services/mock-telemedicine-rpm-data.js';
 export * from './services/telemedicine-rpm-service.js';
 export * from './components/dialogs/ScheduleTeleconsultationDialog.js';
 export * from './components/dialogs/RegisterIotDeviceDialog.js';
@@ -844,7 +820,6 @@ export * from './components/views/TelehealthAuditVaultView.js';
 export * from './components/TelemedicineRpmDomainManager.js';
 
 // Phase 3.5: WhatsApp Bot & Patient Self-Service Portal Exports
-export * from './services/mock-whatsapp-portal-data.js';
 export * from './services/whatsapp-portal-service.js';
 export * from './components/dialogs/SendWhatsAppTemplateDialog.js';
 export * from './components/dialogs/DispatchHealthDocumentDialog.js';

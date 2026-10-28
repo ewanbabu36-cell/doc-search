@@ -10,13 +10,6 @@ import type {
   AssignPlanRequest,
   AssignmentStatus
 } from '@docsearch/api-contracts';
-import {
-  mockProducts,
-  mockPlans,
-  mockFeatures,
-  mockPlanEntitlements,
-  mockPartnerAssignments
-} from './mock-product-data.js';
 import { apiCall, isMockFallbackAllowed } from './api-client.js';
 
 export interface ProductFilters {
@@ -58,11 +51,11 @@ export interface IProductService {
 
 export class ProductService implements IProductService {
   private readonly _apiUrl?: string | undefined;
-  private products: ProductDto[] = [...mockProducts];
-  private plans: PlanDto[] = [...mockPlans];
-  private features: FeatureDto[] = [...mockFeatures];
-  private planEntitlements: Record<string, PlanEntitlementDto[]> = { ...mockPlanEntitlements };
-  private assignments: PartnerPlanAssignmentDto[] = [...mockPartnerAssignments];
+  private products: ProductDto[] = [];
+  private plans: PlanDto[] = [];
+  private features: FeatureDto[] = [];
+  private planEntitlements: Record<string, PlanEntitlementDto[]> = {};
+  private assignments: PartnerPlanAssignmentDto[] = [];
 
   constructor(apiUrl?: string | undefined) {
     this._apiUrl = apiUrl;

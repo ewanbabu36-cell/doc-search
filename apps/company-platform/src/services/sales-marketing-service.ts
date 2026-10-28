@@ -11,13 +11,6 @@ import type {
   TransitionLeadRequest,
   TransitionOpportunityRequest
 } from '@docsearch/api-contracts';
-import {
-  mockLeads,
-  mockOpportunities,
-  mockCampaigns,
-  mockMarketingActivities,
-  mockSalesTasks
-} from './mock-sales-marketing-data.js';
 import { apiCall, isMockFallbackAllowed } from './api-client.js';
 
 export interface LeadFilters {
@@ -73,11 +66,11 @@ export interface ISalesMarketingService {
 
 export class SalesMarketingService implements ISalesMarketingService {
   private readonly apiUrl?: string | undefined;
-  private leads: LeadDto[] = [...mockLeads];
-  private opportunities: OpportunityDto[] = [...mockOpportunities];
-  private campaigns: CampaignDto[] = [...mockCampaigns];
-  private activities: MarketingActivityDto[] = [...mockMarketingActivities];
-  private tasks: SalesTaskDto[] = [...mockSalesTasks];
+  private leads: LeadDto[] = [];
+  private opportunities: OpportunityDto[] = [];
+  private campaigns: CampaignDto[] = [];
+  private activities: MarketingActivityDto[] = [];
+  private tasks: SalesTaskDto[] = [];
 
   constructor(apiUrl?: string | undefined) {
     this.apiUrl = apiUrl;

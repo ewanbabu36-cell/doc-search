@@ -24,15 +24,16 @@ import {
   type StaffPermissions,
   getDefaultPermissionsForRole
 } from '../types/partner-staff-rbac.js';
-import {
-  MOCK_OPERATIONAL_DEPARTMENTS,
-  MOCK_OPERATIONAL_STAFF,
-  MOCK_STAFF_ROLE_ASSIGNMENTS,
-  MOCK_STAFF_CREDENTIALS,
-  MOCK_STAFF_TRANSFERS,
-  MOCK_OPERATIONAL_STAFF_AUDIT_TRACES,
-  MOCK_STAFF_ADMIN_OVERVIEW
-} from './mock-staff-administration-data.js';
+const DEFAULT_STAFF_ADMIN_OVERVIEW: StaffAdministrationOverviewDto = {
+  totalStaffCount: 0,
+  activeStaffCount: 0,
+  onLeaveStaffCount: 0,
+  suspendedStaffCount: 0,
+  totalDepartmentsCount: 0,
+  credentialExpiryAlertsCount: 0,
+  pendingVerificationsCount: 0,
+  totalTransfersCount: 0
+};
 
 function loadStored<T>(key: string, fallback: T[]): T[] {
   if (typeof window !== 'undefined' && window.localStorage) {
@@ -89,10 +90,10 @@ export class StaffAdministrationService implements IStaffAdministrationService {
   private auditTraces: OperationalStaffAuditTraceDto[];
 
   constructor() {
-    this.departments = loadStored('docsearch_partner_departments', [...MOCK_OPERATIONAL_DEPARTMENTS]);
+    this.departments = loadStored('docsearch_partner_departments', [...[]]);
 
     // Auto-sanitization: Scrub obsolete static mock staff and deduplicate by staffCode / email
-    const defaultStaff = isMockFallbackAllowed() ? [...MOCK_OPERATIONAL_STAFF] : [];
+    const defaultStaff = isMockFallbackAllowed() ? [...[]] : [];
     const rawStaff = loadStored('docsearch_partner_staff', defaultStaff);
     const customStaff = loadStored('docsearch_custom_staff', []);
     const sourceStaff = [
@@ -195,27 +196,27 @@ export class StaffAdministrationService implements IStaffAdministrationService {
     });
     saveStored('docsearch_partner_staff', this.staffList);
 
-    const rawRoles = loadStored('docsearch_partner_staff_roles', [...MOCK_STAFF_ROLE_ASSIGNMENTS]);
+    const rawRoles = loadStored('docsearch_partner_staff_roles', [...[]]);
     const filteredRoles = Array.isArray(rawRoles)
       ? rawRoles.filter((r: any) => !String(r?.id || '').startsWith('99999999-') && !String(r?.staffId || '').startsWith('88888888-'))
       : [];
-    this.roleAssignments = filteredRoles.length > 0 ? filteredRoles : [...MOCK_STAFF_ROLE_ASSIGNMENTS];
+    this.roleAssignments = filteredRoles.length > 0 ? filteredRoles : [...[]];
     saveStored('docsearch_partner_staff_roles', this.roleAssignments);
 
-    const rawCreds = loadStored('docsearch_partner_staff_credentials', [...MOCK_STAFF_CREDENTIALS]);
+    const rawCreds = loadStored('docsearch_partner_staff_credentials', [...[]]);
     const filteredCreds = Array.isArray(rawCreds)
       ? rawCreds.filter((c: any) => !String(c?.id || '').startsWith('aaaaaaaa-') && !String(c?.staffId || '').startsWith('88888888-'))
       : [];
-    this.credentials = filteredCreds.length > 0 ? filteredCreds : [...MOCK_STAFF_CREDENTIALS];
+    this.credentials = filteredCreds.length > 0 ? filteredCreds : [...[]];
     saveStored('docsearch_partner_staff_credentials', this.credentials);
 
-    const rawTransfers = loadStored('docsearch_partner_staff_transfers', [...MOCK_STAFF_TRANSFERS]);
+    const rawTransfers = loadStored('docsearch_partner_staff_transfers', [...[]]);
     this.transfers = Array.isArray(rawTransfers)
       ? rawTransfers.filter((t: any) => !String(t?.id || '').startsWith('bbbbbbbb-') && !String(t?.staffId || '').startsWith('88888888-'))
       : [];
     saveStored('docsearch_partner_staff_transfers', this.transfers);
 
-    const rawAudits = loadStored('docsearch_partner_staff_audit', [...MOCK_OPERATIONAL_STAFF_AUDIT_TRACES]);
+    const rawAudits = loadStored('docsearch_partner_staff_audit', [...[]]);
     this.auditTraces = Array.isArray(rawAudits)
       ? rawAudits.filter((a: any) => !String(a?.id || '').startsWith('cccccccc-'))
       : [];
@@ -307,7 +308,7 @@ export class StaffAdministrationService implements IStaffAdministrationService {
     });
 
     return {
-      ...MOCK_STAFF_ADMIN_OVERVIEW,
+      ...DEFAULT_STAFF_ADMIN_OVERVIEW,
       totalStaffCount: filteredStaff.length,
       activeStaffCount: filteredStaff.filter((s) => s.employmentStatus === 'ACTIVE').length,
       onLeaveStaffCount: filteredStaff.filter((s) => s.employmentStatus === 'ON_LEAVE').length,

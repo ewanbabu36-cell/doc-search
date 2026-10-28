@@ -8,11 +8,6 @@ import type {
   TransitionContentStatusRequest,
   TriggerDispatchRequest
 } from '@docsearch/api-contracts';
-import {
-  mockContentItems,
-  mockNotificationTemplates,
-  mockDispatchRecords
-} from './mock-communication-data.js';
 import { apiCall, isMockFallbackAllowed } from './api-client.js';
 
 export interface ContentFilters {
@@ -41,9 +36,9 @@ export interface ICommunicationService {
 }
 
 export class CommunicationService implements ICommunicationService {
-  private items: ContentItemDto[] = [...mockContentItems];
-  private templates: NotificationTemplateDto[] = [...mockNotificationTemplates];
-  private dispatches: DispatchRecordDto[] = [...mockDispatchRecords];
+  private items: ContentItemDto[] = [];
+  private templates: NotificationTemplateDto[] = [];
+  private dispatches: DispatchRecordDto[] = [];
 
   constructor(_apiUrl?: string | undefined) {}
 

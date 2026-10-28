@@ -1709,4 +1709,232 @@ export const billingManagementRoutes: FastifyPluginAsync = async (fastify) => {
     }
   );
 
+  // 14. Zero-Mock Service Catalog Direct Management
+  fastify.get(
+    '/api/v1/partner/billing/services',
+    { preHandler: [authenticate] },
+    async (request, reply) => {
+      const { tenantId } = request.session;
+      const query = (request.query || {}) as { category?: string; searchTerm?: string };
+      const db = getDatabase();
+      const res = await (db as any).execute({
+        text: `
+          SELECT * FROM clinical.billing_service_catalog 
+          WHERE tenant_id = $1 
+            AND ($2::text IS NULL OR category = $2)
+            AND ($3::text IS NULL OR service_name ILIKE '%' || $3 || '%' OR service_code ILIKE '%' || $3 || '%')
+          ORDER BY service_name ASC
+        `,
+        values: [tenantId, query.category || null, query.searchTerm || null]
+      });
+      return reply.send({ success: true, data: res.rows || [] });
+    }
+  );
+
+  fastify.post(
+    '/api/v1/partner/billing/services',
+    { preHandler: [authenticate, requirePermission('billing:invoices', 'create')] },
+    async (request, reply) => {
+      const { tenantId } = request.session;
+      const b = request.body as any;
+      const db = getDatabase();
+      const res = await (db as any).execute({
+        text: `
+          INSERT INTO clinical.billing_service_catalog (
+            id, tenant_id, partner_id, organization_id, branch_id,
+            service_code, service_name, description, category, department,
+            service_type, unit, base_price, taxable, tax_code, active, effective_from
+          ) VALUES (
+            gen_random_uuid(), $1, $2, $3, $4,
+            $5, $6, $7, $8, $9,
+            $10, $11, $12, $13, $14, true, NOW()
+          ) RETURNING *
+        `,
+        values: [
+          tenantId, b.partnerId || tenantId, b.organizationId || tenantId, b.branchId || null,
+          (b.serviceCode || 'SRV-' + Date.now()).toUpperCase(), b.serviceName, b.description || '',
+          b.category || 'GENERAL', b.department || 'GENERAL', b.serviceType || 'PROCEDURE',
+          b.unit || 'SESSION', Number(b.basePrice || 0), Boolean(b.taxable), b.taxCode || null
+        ]
+      });
+      return reply.status(201).send({ success: true, data: res.rows?.[0] });
+    }
+  );
+
+  fastify.put(
+    '/api/v1/partner/billing/services/:id',
+    { preHandler: [authenticate, requirePermission('billing:invoices', 'update')] },
+    async (request, reply) => {
+      const { tenantId } = request.session;
+      const { id } = request.params as { id: string };
+      const b = request.body as any;
+      const db = getDatabase();
+      const res = await (db as any).execute({
+        text: `
+          UPDATE clinical.billing_service_catalog
+          SET service_name = COALESCE($3, service_name),
+              description = COALESCE($4, description),
+              base_price = COALESCE($5, base_price),
+              taxable = COALESCE($6, taxable),
+              active = COALESCE($7, active),
+              updated_at = NOW()
+          WHERE id = $1 AND tenant_id = $2
+          RETURNING *
+        `,
+        values: [id, tenantId, b.serviceName || null, b.description || null, b.basePrice !== undefined ? Number(b.basePrice) : null, b.taxable !== undefined ? Boolean(b.taxable) : null, b.active !== undefined ? Boolean(b.active) : null]
+      });
+      return reply.send({ success: true, data: res.rows?.[0] });
+    }
+  );
+
+  // 15. Zero-Mock Charges Direct Management
+  fastify.get(
+    '/api/v1/partner/billing/charges',
+    { preHandler: [authenticate] },
+    async (request, reply) => {
+      const { tenantId } = request.session;
+      const query = (request.query || {}) as { patientId?: string; status?: string };
+      const db = getDatabase();
+      const res = await (db as any).execute({
+        text: `
+          SELECT * FROM clinical.billing_charges 
+          WHERE tenant_id = $1 
+            AND ($2::uuid IS NULL OR patient_id = $2)
+            AND ($3::text IS NULL OR status = $3)
+          ORDER BY created_at DESC
+        `,
+        values: [tenantId, query.patientId || null, query.status || null]
+      });
+      return reply.send({ success: true, data: res.rows || [] });
+    }
+  );
+
+  fastify.post(
+    '/api/v1/partner/billing/charges',
+    { preHandler: [authenticate, requirePermission('billing:invoices', 'create')] },
+    async (request, reply) => {
+      const { tenantId, userId } = request.session;
+      const b = request.body as any;
+      const db = getDatabase();
+      const res = await (db as any).execute({
+        text: `
+          INSERT INTO clinical.billing_charges (
+            id, tenant_id, partner_id, organization_id, branch_id,
+            patient_id, charge_number, source_domain, status,
+            subtotal, discount_total, tax_total, grand_total,
+            captured_by, captured_at
+          ) VALUES (
+            gen_random_uuid(), $1, $2, $3, $4,
+            $5, $6, $7, 'CAPTURED',
+            $8, $9, $10, $11,
+            $12, NOW()
+          ) RETURNING *
+        `,
+        values: [
+          tenantId, b.partnerId || tenantId, b.organizationId || tenantId, b.branchId || tenantId,
+          b.patientId, 'CHG-' + Date.now(), b.sourceDomain || 'MANUAL',
+          Number(b.subtotal || b.amount || 0), Number(b.discount || 0), Number(b.tax || 0), Number(b.grandTotal || b.amount || 0),
+          userId || 'SYSTEM'
+        ]
+      });
+      return reply.status(201).send({ success: true, data: res.rows?.[0] });
+    }
+  );
+
+  // 16. Zero-Mock Cashier Sessions
+  fastify.get(
+    '/api/v1/partner/billing/cashier/sessions',
+    { preHandler: [authenticate] },
+    async (request, reply) => {
+      const { tenantId } = request.session;
+      const query = (request.query || {}) as { status?: string };
+      const db = getDatabase();
+      const res = await (db as any).execute({
+        text: `
+          SELECT * FROM clinical.billing_cashier_sessions 
+          WHERE tenant_id = $1 
+            AND ($2::text IS NULL OR status = $2)
+          ORDER BY opened_at DESC
+        `,
+        values: [tenantId, query.status || null]
+      });
+      return reply.send({ success: true, data: res.rows || [] });
+    }
+  );
+
+  fastify.post(
+    '/api/v1/partner/billing/cashier/sessions/open',
+    { preHandler: [authenticate] },
+    async (request, reply) => {
+      const { tenantId, userId } = request.session;
+      const b = request.body as any;
+      const db = getDatabase();
+      const res = await (db as any).execute({
+        text: `
+          INSERT INTO clinical.billing_cashier_sessions (
+            id, tenant_id, partner_id, organization_id, branch_id,
+            cashier_id, cashier_name, session_number, opening_balance,
+            cash_received, cash_refunded, expected_closing_balance, status, opened_at
+          ) VALUES (
+            gen_random_uuid(), $1, $2, $3, $4,
+            $5, $6, $7, $8,
+            0, 0, $8, 'OPEN', NOW()
+          ) RETURNING *
+        `,
+        values: [
+          tenantId, b.partnerId || tenantId, b.organizationId || tenantId, b.branchId || tenantId,
+          userId || 'CASHIER', b.cashierName || 'Cashier', 'CSH-' + Date.now(),
+          Number(b.openingBalance || 0)
+        ]
+      });
+      return reply.status(201).send({ success: true, data: res.rows?.[0] });
+    }
+  );
+
+  fastify.post(
+    '/api/v1/partner/billing/cashier/sessions/close',
+    { preHandler: [authenticate] },
+    async (request, reply) => {
+      const { tenantId } = request.session;
+      const b = request.body as any;
+      const db = getDatabase();
+      const res = await (db as any).execute({
+        text: `
+          UPDATE clinical.billing_cashier_sessions
+          SET closing_balance = $3,
+              notes = $4,
+              status = 'CLOSED',
+              closed_at = NOW(),
+              updated_at = NOW()
+          WHERE id = $1 AND tenant_id = $2
+          RETURNING *
+        `,
+        values: [b.sessionId, tenantId, Number(b.closingBalance || 0), b.notes || '']
+      });
+      return reply.send({ success: true, data: res.rows?.[0] });
+    }
+  );
+
+  fastify.post(
+    '/api/v1/partner/billing/cashier/sessions/reconcile',
+    { preHandler: [authenticate] },
+    async (request, reply) => {
+      const { tenantId } = request.session;
+      const b = request.body as any;
+      const db = getDatabase();
+      const res = await (db as any).execute({
+        text: `
+          UPDATE clinical.billing_cashier_sessions
+          SET status = 'RECONCILED',
+              notes = COALESCE(notes, '') || ' [Reconciled: ' || $3 || ']',
+              updated_at = NOW()
+          WHERE id = $1 AND tenant_id = $2
+          RETURNING *
+        `,
+        values: [b.sessionId, tenantId, b.reconciliationNotes || 'Verified matching cash drawer']
+      });
+      return reply.send({ success: true, data: res.rows?.[0] });
+    }
+  );
+
 };

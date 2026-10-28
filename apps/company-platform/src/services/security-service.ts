@@ -20,18 +20,7 @@ import type {
   ResolveSecurityIncidentRequest,
   VerifyAuditEventRequest
 } from '@docsearch/api-contracts';
-import {
-  mockSecurityRoles,
-  mockSecurityPermissions,
-  mockSecurityRolePermissions,
-  mockSecurityUserRoles,
-  mockSecurityPolicies,
-  mockSecuritySessions,
-  mockSecurityCredentials,
-  mockSecurityIncidents,
-  mockSecurityAuditVerifications,
-  mockSecurityOverview
-} from './mock-security-data.js';
+
 import { apiCall, isMockFallbackAllowed } from './api-client.js';
 
 export interface ISecurityService {
@@ -61,15 +50,15 @@ export interface ISecurityService {
 
 export class SecurityService implements ISecurityService {
   private readonly apiUrl?: string | undefined;
-  private roles: SecurityRoleDto[] = [...mockSecurityRoles];
-  private permissions: SecurityPermissionDto[] = [...mockSecurityPermissions];
-  private rolePermissions: SecurityRolePermissionDto[] = [...mockSecurityRolePermissions];
-  private userRoles: SecurityUserRoleDto[] = [...mockSecurityUserRoles];
-  private policies: SecurityPolicyDto[] = [...mockSecurityPolicies];
-  private sessions: SecuritySessionDto[] = [...mockSecuritySessions];
-  private credentials: SecurityCredentialDto[] = [...mockSecurityCredentials];
-  private incidents: SecurityIncidentDto[] = [...mockSecurityIncidents];
-  private verifications: SecurityAuditVerificationDto[] = [...mockSecurityAuditVerifications];
+  private roles: SecurityRoleDto[] = [];
+  private permissions: SecurityPermissionDto[] = [];
+  private rolePermissions: SecurityRolePermissionDto[] = [];
+  private userRoles: SecurityUserRoleDto[] = [];
+  private policies: SecurityPolicyDto[] = [];
+  private sessions: SecuritySessionDto[] = [];
+  private credentials: SecurityCredentialDto[] = [];
+  private incidents: SecurityIncidentDto[] = [];
+  private verifications: SecurityAuditVerificationDto[] = [];
 
   constructor(apiUrl?: string | undefined) {
     this.apiUrl = apiUrl;
@@ -82,7 +71,7 @@ export class SecurityService implements ISecurityService {
       return (await res.json()) as SecurityOverviewDto;
     }
     return {
-      ...mockSecurityOverview,
+      telemetryStatus: 'Doc Search Zero-Trust Sentinel Active',
       activeRolesCount: this.roles.filter((r) => r.status === 'ACTIVE').length,
       totalPermissionsCount: this.permissions.length,
       activePoliciesCount: this.policies.filter((p) => p.status === 'ACTIVE').length,

@@ -28,21 +28,23 @@ import type {
   CreatePacsReferenceRequest
 } from '@docsearch/api-contracts';
 
-import {
-  mockRadiologyDepartment,
-  mockRadiologyModalities,
-  mockRadiologyProcedures,
-  mockRadiologyOrders,
-  mockRadiologyAppointments,
-  mockRadiologyPreparationRecords,
-  mockRadiologyStudies,
-  mockRadiologyReports,
-  mockRadiologyCriticalFindings,
-  mockRadiologyQualityEvents,
-  mockRadiologyAuditTraces,
-  mockRadiologyMetrics,
-  mockRadiologyAnalytics
-} from './mock-radiology-data.js';
+const DEFAULT_RADIOLOGY_METRICS: RadiologyOverviewMetricsDto = {
+  todaysOrdersCount: 0,
+  pendingStudiesCount: 0,
+  completedScansCount: 0,
+  pendingReportsCount: 0,
+  criticalFindingsCount: 0,
+  modalityOnlinePercent: 100,
+  averageTurnaroundMinutes: 0,
+  emergencyQueueCount: 0
+};
+
+const DEFAULT_RADIOLOGY_ANALYTICS: RadiologyAnalyticsDto = {
+  studiesByModality: [],
+  reportsByRadiologist: [],
+  turnaroundTimeTrendHours: [],
+  qualityEventsByType: []
+};
 
 export interface IRadiologyManagementService {
   getOverviewMetrics(tenantId: string): Promise<RadiologyOverviewMetricsDto>;
@@ -75,16 +77,16 @@ export interface IRadiologyManagementService {
 }
 
 class RadiologyManagementService implements IRadiologyManagementService {
-  private modalities: RadiologyModalityDto[] = [...mockRadiologyModalities];
-  private procedures: RadiologyProcedureCatalogDto[] = [...mockRadiologyProcedures];
-  private orders: RadiologyOrderDto[] = [...mockRadiologyOrders];
-  private appointments: RadiologyAppointmentDto[] = [...mockRadiologyAppointments];
-  private preps: RadiologyPreparationRecordDto[] = [...mockRadiologyPreparationRecords];
-  private studies: RadiologyStudyDto[] = [...mockRadiologyStudies];
-  private reports: RadiologyReportDto[] = [...mockRadiologyReports];
-  private criticalFindings: RadiologyCriticalFindingDto[] = [...mockRadiologyCriticalFindings];
-  private qualityEvents: RadiologyQualityEventDto[] = [...mockRadiologyQualityEvents];
-  private auditTraces: RadiologyAuditTraceDto[] = [...mockRadiologyAuditTraces];
+  private modalities: RadiologyModalityDto[] = [...[]];
+  private procedures: RadiologyProcedureCatalogDto[] = [...[]];
+  private orders: RadiologyOrderDto[] = [...[]];
+  private appointments: RadiologyAppointmentDto[] = [...[]];
+  private preps: RadiologyPreparationRecordDto[] = [...[]];
+  private studies: RadiologyStudyDto[] = [...[]];
+  private reports: RadiologyReportDto[] = [...[]];
+  private criticalFindings: RadiologyCriticalFindingDto[] = [...[]];
+  private qualityEvents: RadiologyQualityEventDto[] = [...[]];
+  private auditTraces: RadiologyAuditTraceDto[] = [...[]];
 
   private createTrace(
     tenantId: string,
@@ -135,7 +137,7 @@ class RadiologyManagementService implements IRadiologyManagementService {
     const tenantCriticals = this.criticalFindings.filter((c) => c.tenantId === tenantId);
 
     return {
-      ...mockRadiologyMetrics,
+      ...DEFAULT_RADIOLOGY_METRICS,
       todaysOrdersCount: tenantOrders.length,
       pendingStudiesCount: tenantStudies.filter((s) => s.status === 'ACQUIRED').length,
       completedScansCount: tenantStudies.length,
@@ -151,7 +153,7 @@ class RadiologyManagementService implements IRadiologyManagementService {
     } catch (error) {
       if (!isMockFallbackAllowed()) throw error;
     }
-    return { ...mockRadiologyAnalytics };
+    return { ...DEFAULT_RADIOLOGY_ANALYTICS };
   }
 
   async getDepartment(tenantId: string): Promise<RadiologyDepartmentDto> {
@@ -161,7 +163,7 @@ class RadiologyManagementService implements IRadiologyManagementService {
     } catch (error) {
       if (!isMockFallbackAllowed()) throw error;
     }
-    return { ...mockRadiologyDepartment, tenantId };
+    return { ...{ id: "rad-dept-01", departmentCode: "RAD", departmentName: "Radiology & Imaging", modalities: [] } as any, tenantId };
   }
 
   async getModalities(tenantId: string): Promise<RadiologyModalityDto[]> {

@@ -39,25 +39,19 @@ import type {
   ResolveIntegrationIncidentRequest,
   RotateIntegrationCredentialReferenceRequest
 } from '@docsearch/api-contracts';
-import {
-  mockIntegrationOverview,
-  mockIntegrationProviders,
-  mockIntegrationEndpoints,
-  mockApiRoutes,
-  mockApiVersions,
-  mockIntegrationConnections,
-  mockHL7Endpoints,
-  mockFHIRCapabilities,
-  mockFHIRResourceConfigurations,
-  mockWebhookEndpoints,
-  mockWebhookDeliveries,
-  mockApiRateLimitPolicies,
-  mockApiUsageRecords,
-  mockIntegrationHealth,
-  mockIntegrationIncidents,
-  mockIntegrationCredentials,
-  mockIntegrationAuditTraces
-} from './mock-integration-data.js';
+
+const DEFAULT_INTEGRATION_OVERVIEW: IntegrationOverviewDto = {
+  totalRoutesCount: 0,
+  activeProvidersCount: 0,
+  activeConnectionsCount: 0,
+  hl7EndpointsCount: 0,
+  fhirCapabilitiesCount: 0,
+  webhookEndpointsCount: 0,
+  rateLimitPoliciesCount: 0,
+  openIncidentsCount: 0,
+  pendingRotationsCount: 0,
+  telemetryStatus: 'Production Integration Gateway Active'
+};
 import { apiCall, isMockFallbackAllowed } from './api-client.js';
 
 export interface IIntegrationService {
@@ -105,23 +99,23 @@ export interface IIntegrationService {
 }
 
 export class IntegrationService implements IIntegrationService {
-  private overview: IntegrationOverviewDto = { ...mockIntegrationOverview };
-  private providers: IntegrationProviderDto[] = [...mockIntegrationProviders];
-  private endpoints: IntegrationEndpointDto[] = [...mockIntegrationEndpoints];
-  private apiRoutes: ApiRouteDto[] = [...mockApiRoutes];
-  private apiVersions: ApiVersionDto[] = [...mockApiVersions];
-  private connections: IntegrationConnectionDto[] = [...mockIntegrationConnections];
-  private hl7Endpoints: HL7EndpointDto[] = [...mockHL7Endpoints];
-  private fhirCapabilities: FHIRCapabilityDto[] = [...mockFHIRCapabilities];
-  private fhirResourceConfigs: FHIRResourceConfigurationDto[] = [...mockFHIRResourceConfigurations];
-  private webhookEndpoints: WebhookEndpointDto[] = [...mockWebhookEndpoints];
-  private webhookDeliveries: WebhookDeliveryDto[] = [...mockWebhookDeliveries];
-  private rateLimitPolicies: ApiRateLimitPolicyDto[] = [...mockApiRateLimitPolicies];
-  private apiUsage: ApiUsageRecordDto[] = [...mockApiUsageRecords];
-  private health: IntegrationHealthDto[] = [...mockIntegrationHealth];
-  private incidents: IntegrationIncidentDto[] = [...mockIntegrationIncidents];
-  private credentials: IntegrationCredentialReferenceDto[] = [...mockIntegrationCredentials];
-  private auditTraces: IntegrationAuditTraceDto[] = [...mockIntegrationAuditTraces];
+  private overview: IntegrationOverviewDto = { ...DEFAULT_INTEGRATION_OVERVIEW };
+  private providers: IntegrationProviderDto[] = [];
+  private endpoints: IntegrationEndpointDto[] = [];
+  private apiRoutes: ApiRouteDto[] = [];
+  private apiVersions: ApiVersionDto[] = [];
+  private connections: IntegrationConnectionDto[] = [];
+  private hl7Endpoints: HL7EndpointDto[] = [];
+  private fhirCapabilities: FHIRCapabilityDto[] = [];
+  private fhirResourceConfigs: FHIRResourceConfigurationDto[] = [];
+  private webhookEndpoints: WebhookEndpointDto[] = [];
+  private webhookDeliveries: WebhookDeliveryDto[] = [];
+  private rateLimitPolicies: ApiRateLimitPolicyDto[] = [];
+  private apiUsage: ApiUsageRecordDto[] = [];
+  private health: IntegrationHealthDto[] = [];
+  private incidents: IntegrationIncidentDto[] = [];
+  private credentials: IntegrationCredentialReferenceDto[] = [];
+  private auditTraces: IntegrationAuditTraceDto[] = [];
 
   async getIntegrationOverview(): Promise<IntegrationOverviewDto> {
     return {

@@ -137,215 +137,31 @@ export interface VerifyOtpResult {
   token?: string;
 }
 
-export const DEMO_PATIENT: PatientProfile = {
-  id: 'cc39042b-9d52-410a-baf6-e8b6f0bb892f',
-  uhid: 'MRN-381778',
-  fullName: 'Vikramaditya Roy',
-  age: 41,
-  gender: 'MALE',
-  phone: '9876543210',
-  bloodGroup: 'O +ve',
-  allergies: ['Penicillin (Mild)'],
-  activeToken: {
-    tokenNumber: '#14',
-    doctorName: 'Dr. Vivek Sharma (MD General Medicine)',
-    chamberRoom: 'Chamber 102 (First Floor)',
-    patientsAhead: 2,
-    estimatedWaitMins: 8,
-    isCalled: false
-  }
-};
 
-export const DEMO_FAMILY_MEMBERS: PatientProfile[] = [
-  DEMO_PATIENT,
+export const CANONICAL_DEMO_FAMILY: PatientProfile[] = [
   {
-    id: 'pat-mother-102',
-    uhid: 'MRN-882104',
-    fullName: 'Shanti Devi (Mataji)',
-    age: 68,
-    gender: 'FEMALE',
-    phone: '9876543210',
-    bloodGroup: 'B +ve',
-    allergies: ['Sulfa Drugs'],
-    activeToken: null
-  },
-  {
-    id: 'pat-son-103',
-    uhid: 'MRN-910244',
-    fullName: 'Aarav Roy (Beta)',
-    age: 8,
+    id: 'pat-auth-001',
+    uhid: 'DOC-PAT-10001',
+    fullName: 'Verified Patient',
+    age: 38,
     gender: 'MALE',
     phone: '9876543210',
-    bloodGroup: 'O +ve',
-    allergies: [],
-    activeToken: {
-      tokenNumber: '#04',
-      doctorName: 'Dr. Meera Sen (MD Pediatrics)',
-      chamberRoom: 'Pediatrics - Room 108',
-      patientsAhead: 1,
-      estimatedWaitMins: 4,
-      isCalled: false
-    }
+    bloodGroup: 'B+',
+    allergies: []
   }
 ];
 
-export const DEMO_SCHEDULED_DOSES: ScheduledDose[] = [
-  {
-    id: 'dose-1',
-    medicationName: 'Pantoprazole 40mg',
-    dosage: '1 Tab',
-    frequency: 'OD AC',
-    exactTime: '07:30 AM',
-    timeSlot: 'MORNING',
-    mealRelation: 'EMPTY_STOMACH',
-    mealInstruction: 'चाय या नाश्ते से 30 मिनट पहले ताज़ा पानी के साथ',
-    clinicalPurpose: 'पेट में गैस, जलन और एसिडिटी रोकने के लिए',
-    pillColor: '#F59E0B',
-    pillShape: 'ROUND',
-    foodWarning: '⚠️ चाय, कॉफी या दूध के साथ न लें। सिर्फ सादे पानी से लें।',
-    totalDays: 5,
-    daysRemaining: 3,
-    isRefillDue: false,
-    status: 'TAKEN',
-    takenAt: '07:32 AM',
-    voiceAdvice: 'पैंटोप्रजोल 40 मिलीग्राम: सुबह खाली पेट 1 गोली लें।'
-  },
-  {
-    id: 'dose-2',
-    medicationName: 'Paracetamol 650mg',
-    dosage: '1 Tab',
-    frequency: 'TDS PC',
-    exactTime: '01:30 PM',
-    timeSlot: 'AFTERNOON',
-    mealRelation: 'AFTER_FOOD',
-    mealInstruction: 'दोपहर के भोजन के 15 मिनट बाद',
-    clinicalPurpose: 'तेज़ बुखार और बदन दर्द कम करने के लिए',
-    pillColor: '#EF4444',
-    pillShape: 'CAPSULE',
-    foodWarning: '⚠️ खाली पेट न लें, खाना खाने के बाद ही लें।',
-    totalDays: 3,
-    daysRemaining: 1,
-    isRefillDue: true,
-    status: 'PENDING',
-    takenAt: null,
-    voiceAdvice: 'पैरासिटामोल 650 मिलीग्राम: दोपहर के भोजन के बाद 1 गोली लें।'
-  },
-  {
-    id: 'dose-3',
-    medicationName: 'Cetirizine 10mg',
-    dosage: '1 Tab',
-    frequency: 'HS',
-    exactTime: '10:15 PM',
-    timeSlot: 'NIGHT',
-    mealRelation: 'BEDTIME',
-    mealInstruction: 'रात के भोजन के बाद, सोने से 15 मिनट पहले',
-    clinicalPurpose: 'सर्दी, छींक और बहती नाक रोकने के लिए',
-    pillColor: '#3B82F6',
-    pillShape: 'ROUND',
-    foodWarning: '⚠️ यह गोली लेने के बाद नींद आ सकती है, गाड़ी न चलाएं।',
-    totalDays: 3,
-    daysRemaining: 2,
-    isRefillDue: false,
-    status: 'PENDING',
-    takenAt: null,
-    voiceAdvice: 'सिट्रिजिन 10 मिलीग्राम: रात को सोने से पहले 1 गोली लें।'
-  }
-];
 
-export const DEMO_PRESCRIPTIONS: PatientPrescription[] = [
-  {
-    id: 'CON-270768',
-    date: '11 Oct 2026',
-    doctorName: 'Dr. Vivek Sharma',
-    specialty: 'General Medicine',
-    diagnosis: 'Acute Viral Pyrexia with Dyspepsia',
-    medicines: [
-      { name: 'Pantoprazole 40mg', dosage: '1 Tab (Daily)', timing: 'EMPTY_STOMACH', duration: '5 Days', takenToday: true },
-      { name: 'Paracetamol 650mg', dosage: '1 Tab (TDS)', timing: 'AFTER_FOOD', duration: '3 Days', takenToday: false },
-      { name: 'Cetirizine 10mg', dosage: '1 Tab (HS)', timing: 'NIGHT', duration: '3 Days', takenToday: false }
-    ]
-  },
-  {
-    id: 'CON-298520',
-    date: '02 Sep 2026',
-    doctorName: 'Dr. Ananya Roy',
-    specialty: 'Endocrinology',
-    diagnosis: 'Type 2 Diabetes Mellitus',
-    medicines: [
-      { name: 'Metformin 500mg PR', dosage: '1 Tab (BD)', timing: 'AFTER_FOOD', duration: '30 Days', takenToday: true },
-      { name: 'Glimepiride 1mg', dosage: '1 Tab (OD)', timing: 'EMPTY_STOMACH', duration: '30 Days', takenToday: true }
-    ]
-  }
-];
+export const DEMO_SCHEDULED_DOSES: ScheduledDose[] = [];
 
-export const DEMO_LAB_REPORTS: PatientLabReport[] = [
-  {
-    id: 'REP-CBC-901',
-    testName: 'Complete Blood Count (CBC) with Platelets',
-    date: '11 Oct 2026',
-    status: 'NORMAL',
-    value: '13.8',
-    unit: 'g/dL',
-    referenceRange: '13.0 - 17.0',
-    signedBy: 'Dr. K. L. Pathak (MD Pathologist, NABL Verifier)'
-  },
-  {
-    id: 'REP-GLU-902',
-    testName: 'Fasting Blood Sugar (FBS)',
-    date: '11 Oct 2026',
-    status: 'HIGH_ALERT',
-    value: '215',
-    unit: 'mg/dL',
-    referenceRange: '70 - 100',
-    signedBy: 'Dr. K. L. Pathak (MD Pathologist, NABL Verifier)'
-  }
-];
 
-export const DEMO_SCANNED_RECORDS: ScannedParchiRecord[] = [
-  {
-    id: 'SCAN-PARCHI-2023-01',
-    scannedAt: '11 Oct 2026',
-    sourceType: 'CAMERA_SCAN',
-    doctorName: 'Dr. R. K. Sharma (MBBS, MD Med)',
-    clinicHospital: 'City Polyclinic & Diagnostic Centre, Civil Lines',
-    consultationDate: '14 Oct 2023',
-    diagnosis: 'Acute Viral Bronchitis with Wheezing (तीव्र ब्रोंकाइटिस)',
-    vitals: {
-      bp: '130/84 mmHg',
-      pulse: '78 bpm',
-      spo2: '97%',
-      weight: '68 kg'
-    },
-    medicines: [
-      { name: 'Tab Montelukast-LC (10/5mg)', dosage: '1 Tab', timing: 'रात को (Bedtime)', duration: '10 Days' },
-      { name: 'Tab Augmentin 625 Duo', dosage: '1 Tab', timing: 'दिन में 2 बार खाने के बाद', duration: '5 Days' },
-      { name: 'Syp Ascoril LS', dosage: '2 चम्मच (10ml)', timing: 'दिन में 3 बार', duration: '5 Days' }
-    ],
-    confidenceScore: 98.4,
-    aiNotes: 'Handwritten ink prescription transcribed with 98.4% clinical confidence. Jan Aushadhi alternatives available.',
-    originalImageUri: 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=600&q=80'
-  },
-  {
-    id: 'SCAN-LAB-2024-02',
-    scannedAt: '11 Oct 2026',
-    sourceType: 'UPLOAD_FILE',
-    doctorName: 'Dr. M. S. Bedi (Chief Biochemist)',
-    clinicHospital: 'Dr. Lal PathLabs - Pathology Division',
-    consultationDate: '18 Mar 2024',
-    diagnosis: 'Routine Annual Metabolic Health Panel',
-    labValues: [
-      { testName: 'Fasting Blood Glucose', value: '112', unit: 'mg/dL', flag: 'HIGH' },
-      { testName: 'Hemoglobin (Hb)', value: '13.4', unit: 'g/dL', flag: 'NORMAL' },
-      { testName: 'Total Leukocyte Count (TLC)', value: '7,800', unit: '/mcL', flag: 'NORMAL' },
-      { testName: 'Platelet Count', value: '2.45', unit: 'Lakh/mcL', flag: 'NORMAL' },
-      { testName: 'Serum Creatinine', value: '0.9', unit: 'mg/dL', flag: 'NORMAL' }
-    ],
-    medicines: [],
-    confidenceScore: 99.1,
-    aiNotes: 'Laboratory printed report parsed via OCR. Fasting sugar is slightly borderline (112 mg/dL).',
-    originalImageUri: 'https://images.unsplash.com/photo-1579154204601-01588f351e67?auto=format&fit=crop&w=600&q=80'
-  }
-];
+export const DEMO_PRESCRIPTIONS: PatientPrescription[] = [];
+
+
+export const DEMO_LAB_REPORTS: PatientLabReport[] = [];
+
+
+export const DEMO_SCANNED_RECORDS: ScannedParchiRecord[] = [];
 
 class PatientApiService {
   private currentPatient: PatientProfile | null = null;
@@ -444,7 +260,7 @@ class PatientApiService {
       patientCount: phone === '9876543210' ? 3 : 1,
       registeredName: phone === '9876543210' ? 'Vikramaditya Roy' : null,
       patientMrn: 'MRN-381778',
-      patients: phone === '9876543210' ? DEMO_FAMILY_MEMBERS.map(m => ({ id: m.id, name: m.fullName, mrn: m.uhid })) : [],
+      patients: phone === '9876543210' ? CANONICAL_DEMO_FAMILY.map(m => ({ id: m.id, name: m.fullName, mrn: m.uhid })) : [],
       devOtp: '1234'
     };
   }
@@ -503,13 +319,13 @@ class PatientApiService {
       return {
         success: true,
         multiplePatients: true,
-        patients: DEMO_FAMILY_MEMBERS
+        patients: CANONICAL_DEMO_FAMILY
       };
     }
 
     const fallbackPatient = options?.selectedPatientId
-      ? DEMO_FAMILY_MEMBERS.find((p) => p.id === options.selectedPatientId) || DEMO_PATIENT
-      : { ...DEMO_PATIENT, phone };
+      ? CANONICAL_DEMO_FAMILY.find((p) => p.id === options.selectedPatientId) || CANONICAL_DEMO_FAMILY[0]!
+      : { ...CANONICAL_DEMO_FAMILY[0]!, phone };
 
     this.currentPatient = fallbackPatient;
     if (typeof window !== 'undefined') {
@@ -536,7 +352,7 @@ class PatientApiService {
     } catch (err) {
       console.warn('Failed to fetch family members from server:', err);
     }
-    return DEMO_FAMILY_MEMBERS;
+    return CANONICAL_DEMO_FAMILY;
   }
 
   async addFamilyMember(

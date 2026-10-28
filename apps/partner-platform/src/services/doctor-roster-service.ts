@@ -22,16 +22,19 @@ import type {
   AssignDoctorLocationRequest,
   QueryDoctorAuditRequest
 } from '@docsearch/api-contracts';
-import {
-  MOCK_DOCTOR_PROFILES,
-  MOCK_DOCTOR_SPECIALIZATIONS,
-  MOCK_DOCTOR_SCHEDULES,
-  MOCK_DOCTOR_LEAVES,
-  MOCK_OPD_SLOTS,
-  MOCK_CONSULTATION_FEES,
-  MOCK_DOCTOR_OPD_AUDIT_TRACES,
-  MOCK_DOCTOR_ROSTER_OVERVIEW
-} from './mock-doctor-roster-data.js';
+const DEFAULT_DOCTOR_ROSTER_OVERVIEW: DoctorRosterOverviewDto = {
+  totalDoctorsCount: 0,
+  activeDoctorsCount: 0,
+  doctorsOnDutyTodayCount: 0,
+  doctorsOnLeaveCount: 0,
+  totalWeeklySchedulesCount: 0,
+  todaySlotsCount: 0,
+  todayBookedSlotsCount: 0,
+  todayBlockedSlotsCount: 0,
+  todayAvailableSlotsCount: 0,
+  pendingLeaveRequestsCount: 0,
+  scheduleConflictsCount: 0
+};
 
 export interface IDoctorRosterService {
   getOverview(tenantId: string, partnerId?: string, organizationId?: string, branchId?: string): Promise<DoctorRosterOverviewDto>;
@@ -86,13 +89,13 @@ function saveStored<T>(key: string, data: T[]): void {
 }
 
 export class DoctorRosterService implements IDoctorRosterService {
-  private doctors: DoctorProfileDto[] = loadStored('docsearch_doctor_profiles', MOCK_DOCTOR_PROFILES);
-  private specializations: DoctorSpecializationDto[] = loadStored('docsearch_doctor_specializations', MOCK_DOCTOR_SPECIALIZATIONS);
-  private schedules: DoctorScheduleDto[] = loadStored('docsearch_doctor_schedules', MOCK_DOCTOR_SCHEDULES);
-  private leaves: DoctorLeaveDto[] = loadStored('docsearch_doctor_leaves', MOCK_DOCTOR_LEAVES);
-  private slots: OpdSlotDto[] = loadStored('docsearch_opd_slots', MOCK_OPD_SLOTS);
-  private fees: ConsultationFeeMatrixDto[] = loadStored('docsearch_consultation_fees', MOCK_CONSULTATION_FEES);
-  private auditTraces: DoctorOpdAuditTraceDto[] = isMockFallbackAllowed() ? [...MOCK_DOCTOR_OPD_AUDIT_TRACES] : [];
+  private doctors: DoctorProfileDto[] = loadStored('docsearch_doctor_profiles', []);
+  private specializations: DoctorSpecializationDto[] = loadStored('docsearch_doctor_specializations', []);
+  private schedules: DoctorScheduleDto[] = loadStored('docsearch_doctor_schedules', []);
+  private leaves: DoctorLeaveDto[] = loadStored('docsearch_doctor_leaves', []);
+  private slots: OpdSlotDto[] = loadStored('docsearch_opd_slots', []);
+  private fees: ConsultationFeeMatrixDto[] = loadStored('docsearch_consultation_fees', []);
+  private auditTraces: DoctorOpdAuditTraceDto[] = isMockFallbackAllowed() ? [...[]] : [];
 
   private addAudit(
     tenantId: string,
@@ -151,7 +154,7 @@ export class DoctorRosterService implements IDoctorRosterService {
     });
 
     return {
-      ...MOCK_DOCTOR_ROSTER_OVERVIEW,
+      ...DEFAULT_DOCTOR_ROSTER_OVERVIEW,
       totalDoctorsCount: filteredDocs.length,
       activeDoctorsCount: filteredDocs.filter((d) => d.status === 'ACTIVE').length,
       doctorsOnDutyTodayCount: filteredDocs.filter((d) => d.availabilityStatus === 'AVAILABLE').length,

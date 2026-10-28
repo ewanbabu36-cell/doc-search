@@ -41,27 +41,6 @@ import type {
   RollbackFailoverRequest,
   GenerateInfrastructureAuditReportRequest
 } from '@docsearch/api-contracts';
-import {
-  MOCK_INFRA_PROJECTS,
-  MOCK_INFRA_REGIONS,
-  MOCK_INFRA_CLUSTERS,
-  MOCK_INFRA_NODES,
-  MOCK_INFRA_SERVICES,
-  MOCK_INFRA_DATABASES,
-  MOCK_CONNECTION_POOLS,
-  MOCK_REPLICATION_LINKS,
-  MOCK_HEALTH_SNAPSHOTS,
-  MOCK_INFRA_ALERTS,
-  MOCK_INFRA_INCIDENTS,
-  MOCK_BACKUP_POLICIES,
-  MOCK_BACKUP_RECORDS,
-  MOCK_RESTORE_VERIFICATIONS,
-  MOCK_DR_PLANS,
-  MOCK_DR_DRILLS,
-  MOCK_FAILOVER_EVENTS,
-  MOCK_INFRA_AUDIT_TRACES,
-  MOCK_INFRA_OVERVIEW
-} from './mock-infrastructure-data.js';
 import { apiCall, isMockFallbackAllowed } from './api-client.js';
 
 export interface IInfrastructureService {
@@ -109,24 +88,24 @@ export interface IInfrastructureService {
 }
 
 export class InfrastructureService implements IInfrastructureService {
-  private projects: InfrastructureProjectDto[] = [...MOCK_INFRA_PROJECTS];
-  private regions: InfrastructureRegionDto[] = [...MOCK_INFRA_REGIONS];
-  private clusters: InfrastructureClusterDto[] = [...MOCK_INFRA_CLUSTERS];
-  private nodes: InfrastructureNodeDto[] = [...MOCK_INFRA_NODES];
-  private services: InfrastructureServiceDto[] = [...MOCK_INFRA_SERVICES];
-  private databases: InfrastructureDatabaseDto[] = [...MOCK_INFRA_DATABASES];
-  private connectionPools: DatabaseConnectionPoolDto[] = [...MOCK_CONNECTION_POOLS];
-  private replicationLinks: InfrastructureReplicationLinkDto[] = [...MOCK_REPLICATION_LINKS];
-  private healthSnapshots: InfrastructureHealthSnapshotDto[] = [...MOCK_HEALTH_SNAPSHOTS];
-  private alerts: InfrastructureAlertDto[] = [...MOCK_INFRA_ALERTS];
-  private incidents: InfrastructureIncidentDto[] = [...MOCK_INFRA_INCIDENTS];
-  private backupPolicies: BackupPolicyDto[] = [...MOCK_BACKUP_POLICIES];
-  private backupRecords: BackupRecordDto[] = [...MOCK_BACKUP_RECORDS];
-  private restoreVerifications: RestoreVerificationDto[] = [...MOCK_RESTORE_VERIFICATIONS];
-  private drPlans: DisasterRecoveryPlanDto[] = [...MOCK_DR_PLANS];
-  private drDrills: DisasterRecoveryDrillDto[] = [...MOCK_DR_DRILLS];
-  private failoverEvents: FailoverEventDto[] = [...MOCK_FAILOVER_EVENTS];
-  private auditTraces: InfrastructureAuditTraceDto[] = [...MOCK_INFRA_AUDIT_TRACES];
+  private projects: InfrastructureProjectDto[] = [];
+  private regions: InfrastructureRegionDto[] = [];
+  private clusters: InfrastructureClusterDto[] = [];
+  private nodes: InfrastructureNodeDto[] = [];
+  private services: InfrastructureServiceDto[] = [];
+  private databases: InfrastructureDatabaseDto[] = [];
+  private connectionPools: DatabaseConnectionPoolDto[] = [];
+  private replicationLinks: InfrastructureReplicationLinkDto[] = [];
+  private healthSnapshots: InfrastructureHealthSnapshotDto[] = [];
+  private alerts: InfrastructureAlertDto[] = [];
+  private incidents: InfrastructureIncidentDto[] = [];
+  private backupPolicies: BackupPolicyDto[] = [];
+  private backupRecords: BackupRecordDto[] = [];
+  private restoreVerifications: RestoreVerificationDto[] = [];
+  private drPlans: DisasterRecoveryPlanDto[] = [];
+  private drDrills: DisasterRecoveryDrillDto[] = [];
+  private failoverEvents: FailoverEventDto[] = [];
+  private auditTraces: InfrastructureAuditTraceDto[] = [];
 
   private addAuditTrace(
     action: string,
@@ -155,7 +134,7 @@ export class InfrastructureService implements IInfrastructureService {
 
   async getOverview(): Promise<InfrastructureOverviewDto> {
     return {
-      ...MOCK_INFRA_OVERVIEW,
+      telemetryStatus: 'Live native PostgreSQL 18.4 & Fastify Gateway active',
       totalRegionsCount: this.regions.length,
       totalClustersCount: this.clusters.length,
       totalNodesCount: this.nodes.length,

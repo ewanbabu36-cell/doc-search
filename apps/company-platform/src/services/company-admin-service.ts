@@ -26,20 +26,38 @@ import type {
   CompleteGovernanceEventRequest,
   GenerateCompanyAuditReportRequest
 } from '@docsearch/api-contracts';
-import {
-  MOCK_LEGAL_ENTITIES,
-  MOCK_DEPARTMENTS,
-  MOCK_DESIGNATIONS,
-  MOCK_INTERNAL_EMPLOYEES,
-  MOCK_BOARD_MEMBERS,
-  MOCK_GOVERNANCE_COMMITTEES,
-  MOCK_COMMITTEE_MEMBERSHIPS,
-  MOCK_CORPORATE_POLICIES,
-  MOCK_COMPLIANCE_OFFICERS,
-  MOCK_GOVERNANCE_EVENTS,
-  MOCK_COMPANY_AUDIT_TRACES,
-  MOCK_COMPANY_OVERVIEW
-} from './mock-company-admin-data.js';
+
+
+const FOUNDER_CHAIRMAN_EMPLOYEE: InternalEmployeeDto = {
+  id: 'a0000000-0000-0000-0000-000000000001',
+  employeeCode: 'EMP-FOUNDER-001',
+  firstName: 'MERAJ',
+  lastName: 'SHARIF',
+  workEmail: 'founder@docsearch.health',
+  legalEntityId: 'b0000000-0000-0000-0000-000000000001',
+  departmentId: 'c0000000-0000-0000-0000-000000000001',
+  designationId: 'd0000000-0000-0000-0000-000000000001',
+  employmentType: 'FULL_TIME',
+  employmentStatus: 'ACTIVE',
+  startDate: '2024-01-01',
+  metadata: { role: 'FOUNDER_SUPERADMIN' },
+  createdAt: '2024-01-01T00:00:00.000Z',
+  updatedAt: new Date().toISOString()
+};
+
+const FOUNDER_CHAIRMAN_BOARD_MEMBER: BoardMemberDto = {
+  id: 'e0000000-0000-0000-0000-000000000001',
+  memberCode: 'BM-FOUNDER-001',
+  fullName: 'MERAJ SHARIF',
+  roleType: 'CHAIRMAN',
+  representingEntity: 'Doc Search Enterprise Ltd',
+  votingStatus: 'VOTING',
+  termStartDate: '2024-01-01',
+  status: 'ACTIVE',
+  metadata: { votingPowerPct: 100 },
+  createdAt: '2024-01-01T00:00:00.000Z',
+  updatedAt: new Date().toISOString()
+};
 import { apiCall, isMockFallbackAllowed } from './api-client.js';
 
 export interface ICompanyAdminService {
@@ -85,17 +103,17 @@ export class CompanyAdminService implements ICompanyAdminService {
   private auditTraces: CompanyAuditTraceDto[];
 
   constructor(_apiUrl?: string) {
-    this.legalEntities = this.loadStorage('docsearch_company_entities', [...MOCK_LEGAL_ENTITIES]);
-    this.departments = this.loadStorage('docsearch_company_departments', [...MOCK_DEPARTMENTS]);
-    this.designations = this.loadStorage('docsearch_company_designations', [...MOCK_DESIGNATIONS]);
-    this.employees = this.loadStorage('docsearch_company_employees', [...MOCK_INTERNAL_EMPLOYEES]);
-    this.boardMembers = this.loadStorage('docsearch_company_board', [...MOCK_BOARD_MEMBERS]);
-    this.committees = this.loadStorage('docsearch_company_committees', [...MOCK_GOVERNANCE_COMMITTEES]);
-    this.memberships = this.loadStorage('docsearch_company_memberships', [...MOCK_COMMITTEE_MEMBERSHIPS]);
-    this.policies = this.loadStorage('docsearch_company_policies', [...MOCK_CORPORATE_POLICIES]);
-    this.complianceOfficers = this.loadStorage('docsearch_company_officers', [...MOCK_COMPLIANCE_OFFICERS]);
-    this.events = this.loadStorage('docsearch_company_events', [...MOCK_GOVERNANCE_EVENTS]);
-    this.auditTraces = this.loadStorage('docsearch_company_audit', [...MOCK_COMPANY_AUDIT_TRACES]);
+    this.legalEntities = this.loadStorage('docsearch_company_entities', []);
+    this.departments = this.loadStorage('docsearch_company_departments', []);
+    this.designations = this.loadStorage('docsearch_company_designations', []);
+    this.employees = this.loadStorage('docsearch_company_employees', [FOUNDER_CHAIRMAN_EMPLOYEE]);
+    this.boardMembers = this.loadStorage('docsearch_company_board', [FOUNDER_CHAIRMAN_BOARD_MEMBER]);
+    this.committees = this.loadStorage('docsearch_company_committees', []);
+    this.memberships = this.loadStorage('docsearch_company_memberships', []);
+    this.policies = this.loadStorage('docsearch_company_policies', []);
+    this.complianceOfficers = this.loadStorage('docsearch_company_officers', []);
+    this.events = this.loadStorage('docsearch_company_events', []);
+    this.auditTraces = this.loadStorage('docsearch_company_audit', []);
 
     // Sanitize cached employees: Purge obsolete mock accounts and lock in Founder MERAJ SHARIF
     const nonMockEmployees = this.employees.filter((e) => {
@@ -115,7 +133,7 @@ export class CompanyAdminService implements ICompanyAdminService {
              e.workEmail?.toLowerCase() === 'founder@docsearch.health'
     );
     if (!hasFounder) {
-      nonMockEmployees.unshift(MOCK_INTERNAL_EMPLOYEES[0]!);
+      nonMockEmployees.unshift(FOUNDER_CHAIRMAN_EMPLOYEE);
     }
     this.employees = nonMockEmployees;
     this.saveStorage('docsearch_company_employees', this.employees);
@@ -128,7 +146,7 @@ export class CompanyAdminService implements ICompanyAdminService {
               b.fullName?.toUpperCase() !== 'SHAH ALAM')
     );
     if (!nonMockBoard.some((b) => b.fullName?.toUpperCase() === 'MERAJ SHARIF')) {
-      nonMockBoard.unshift(MOCK_BOARD_MEMBERS[0]!);
+      nonMockBoard.unshift(FOUNDER_CHAIRMAN_BOARD_MEMBER);
     }
     this.boardMembers = nonMockBoard;
     this.saveStorage('docsearch_company_board', this.boardMembers);
@@ -179,7 +197,7 @@ export class CompanyAdminService implements ICompanyAdminService {
 
   async getOverview(): Promise<CompanyOverviewDto> {
     return {
-      ...MOCK_COMPANY_OVERVIEW,
+      governancePostureStatus: 'Founder Executive Office Active',
       totalEntitiesCount: this.legalEntities.length,
       totalDepartmentsCount: this.departments.length,
       totalEmployeesCount: this.employees.length,
@@ -372,7 +390,7 @@ export class CompanyAdminService implements ICompanyAdminService {
           );
         });
         if (!cleaned.some((e) => e.workEmail?.toLowerCase() === 'founder@docsearch.health')) {
-          cleaned.unshift(MOCK_INTERNAL_EMPLOYEES[0]!);
+          cleaned.unshift(FOUNDER_CHAIRMAN_EMPLOYEE);
         }
         this.employees = cleaned;
         this.saveStorage('docsearch_company_employees', this.employees);
@@ -394,7 +412,7 @@ export class CompanyAdminService implements ICompanyAdminService {
       );
     });
     if (!cleaned.some((e) => e.workEmail?.toLowerCase() === 'founder@docsearch.health')) {
-      cleaned.unshift(MOCK_INTERNAL_EMPLOYEES[0]!);
+      cleaned.unshift(FOUNDER_CHAIRMAN_EMPLOYEE);
     }
     this.employees = cleaned;
     this.saveStorage('docsearch_company_employees', this.employees);

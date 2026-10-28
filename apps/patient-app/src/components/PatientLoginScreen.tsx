@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { DocSearchLogo } from '@docsearch/ui-kit';
 import { type Language, translations } from '../i18n.js';
-import { patientApiService, DEMO_FAMILY_MEMBERS, type PatientProfile } from '../services/patient-api.js';
+import { patientApiService, CANONICAL_DEMO_FAMILY, type PatientProfile } from '../services/patient-api.js';
 
 interface Props {
   language: Language;
@@ -90,7 +90,7 @@ export const PatientLoginScreen: React.FC<Props> = ({ language, onLanguageToggle
     // Show multi-patient choice so reviewer can inspect both single and multi-patient flows
     setPhone('9876543210');
     setOtp('1234');
-    setMultiPatientsList(DEMO_FAMILY_MEMBERS);
+    setMultiPatientsList(CANONICAL_DEMO_FAMILY);
     setStep('SELECT_PATIENT');
   };
 

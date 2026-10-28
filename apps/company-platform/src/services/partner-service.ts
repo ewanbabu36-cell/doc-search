@@ -6,7 +6,6 @@ import type {
   PartnerType,
   PartnerClassificationDto
 } from '@docsearch/api-contracts';
-import { mockPartnerProfiles, mockPartnerTransitionHistory } from './mock-partner-data.js';
 import { isMockFallbackAllowed } from './api-client.js';
 
 export const CANONICAL_PARTNER_CLASSIFICATIONS: PartnerClassificationDto[] = [
@@ -467,8 +466,8 @@ export interface IPartnerService {
 export class PartnerService implements IPartnerService {
   private readonly apiUrl?: string | undefined;
   private classifications: PartnerClassificationDto[] = [...CANONICAL_PARTNER_CLASSIFICATIONS];
-  private partners: PartnerProfileDto[] = [...mockPartnerProfiles];
-  private history: Record<string, PartnerTransitionHistoryDto[]> = { ...mockPartnerTransitionHistory };
+  private partners: PartnerProfileDto[] = [];
+  private history: Record<string, PartnerTransitionHistoryDto[]> = {};
 
   constructor(apiUrl?: string | undefined) {
     this.apiUrl = apiUrl || '';

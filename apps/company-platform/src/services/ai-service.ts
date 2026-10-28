@@ -13,16 +13,6 @@ import type {
   AcknowledgeSafetyEventRequest,
   ResolveSafetyEventRequest
 } from '@docsearch/api-contracts';
-import {
-  mockAIModels,
-  mockGovernancePolicies,
-  mockPromptTemplates,
-  mockPromptVersions,
-  mockAIUsageQuotas,
-  mockAIUsageRecords,
-  mockAIAuditTraces,
-  mockAISafetyEvents
-} from './mock-ai-data.js';
 
 export interface IAIService {
   getModels(): Promise<AIModelDto[]>;
@@ -64,14 +54,14 @@ export interface IAIService {
 import { apiCall, isMockFallbackAllowed } from './api-client.js';
 
 export class AIService implements IAIService {
-  private models: AIModelDto[] = [...mockAIModels];
-  private policies: AIGovernancePolicyDto[] = [...mockGovernancePolicies];
-  private promptTemplates: AIPromptTemplateDto[] = [...mockPromptTemplates];
-  private promptVersions: AIPromptVersionDto[] = [...mockPromptVersions];
-  private quotas: AIUsageQuotaDto[] = [...mockAIUsageQuotas];
-  private usageRecords: AIUsageRecordDto[] = [...mockAIUsageRecords];
-  private traces: AIAuditTraceDto[] = [...mockAIAuditTraces];
-  private safetyEvents: AISafetyEventDto[] = [...mockAISafetyEvents];
+  private models: AIModelDto[] = [];
+  private policies: AIGovernancePolicyDto[] = [];
+  private promptTemplates: AIPromptTemplateDto[] = [];
+  private promptVersions: AIPromptVersionDto[] = [];
+  private quotas: AIUsageQuotaDto[] = [];
+  private usageRecords: AIUsageRecordDto[] = [];
+  private traces: AIAuditTraceDto[] = [];
+  private safetyEvents: AISafetyEventDto[] = [];
 
   constructor(_apiUrl?: string | undefined) {}
 

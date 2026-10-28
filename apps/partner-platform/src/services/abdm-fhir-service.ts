@@ -14,15 +14,18 @@ import type {
   ProcessScanAndShareRequest
 } from '@docsearch/api-contracts';
 
-import {
-  mockAbdmOverviewMetrics,
-  mockAbhaAccounts,
-  mockAbdmCareContexts,
-  mockAbdmConsentArtefacts,
-  mockFhirBundles,
-  mockScanAndShareTokens,
-  mockAbdmAuditTraces
-} from './mock-abdm-fhir-data.js';
+const DEFAULT_ABDM_METRICS: AbdmGatewayOverviewMetricsDto = {
+  bridgeStatus: 'CONNECTED_PRODUCTION',
+  hfrFacilityId: 'IN0710001234',
+  facilityName: 'Doc Search Primary Medical Center',
+  totalLinkedAbhaCount: 0,
+  careContextsDiscoverableCount: 0,
+  activeConsentGrantsCount: 0,
+  fhirBundlesGeneratedMonth: 0,
+  scanAndShareRegistrationsToday: 0,
+  averagePushLatencyMs: 120,
+  ecdhKeyExchangeSuccessPct: 100
+};
 
 export interface IAbdmFhirService {
   getOverviewMetrics(tenantId: string): Promise<AbdmGatewayOverviewMetricsDto>;
@@ -45,13 +48,13 @@ export interface IAbdmFhirService {
 }
 
 export class AbdmFhirService implements IAbdmFhirService {
-  private metrics: AbdmGatewayOverviewMetricsDto = { ...mockAbdmOverviewMetrics };
-  private abhaAccounts: AbhaAccountDto[] = [...mockAbhaAccounts];
-  private careContexts: AbdmCareContextDto[] = [...mockAbdmCareContexts];
-  private consents: AbdmConsentArtefactDto[] = [...mockAbdmConsentArtefacts];
-  private fhirBundles: FhirBundleRecordDto[] = [...mockFhirBundles];
-  private scanTokens: AbdmScanAndShareTokenDto[] = [...mockScanAndShareTokens];
-  private auditTraces: AbdmAuditTraceDto[] = [...mockAbdmAuditTraces];
+  private metrics: AbdmGatewayOverviewMetricsDto = { ...DEFAULT_ABDM_METRICS };
+  private abhaAccounts: AbhaAccountDto[] = [...[]];
+  private careContexts: AbdmCareContextDto[] = [...[]];
+  private consents: AbdmConsentArtefactDto[] = [...[]];
+  private fhirBundles: FhirBundleRecordDto[] = [...[]];
+  private scanTokens: AbdmScanAndShareTokenDto[] = [...[]];
+  private auditTraces: AbdmAuditTraceDto[] = [...[]];
 
   private appendAudit(
     action: string,

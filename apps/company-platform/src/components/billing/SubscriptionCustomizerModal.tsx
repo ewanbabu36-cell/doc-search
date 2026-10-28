@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Button, Input, Select, Badge } from '@docsearch/ui-kit';
 import type { SubscriptionDto, SubscriptionStatus, BillingCycle, PartnerProfileDto } from '@docsearch/api-contracts';
 import { partnerService } from '../../services/partner-service.js';
-import { mockPartnerProfiles } from '../../services/mock-partner-data.js';
 
 interface PlanTierOption {
   code: string;
@@ -779,7 +778,7 @@ export const SubscriptionCustomizerModal: React.FC<SubscriptionCustomizerModalPr
       .getPartners({ pageSize: 50 })
       .then((res) => {
         if (!isMounted) return;
-        const fetched = res.items && res.items.length > 0 ? res.items : [...mockPartnerProfiles];
+        const fetched = res.items && res.items.length > 0 ? res.items : [];
         const combined = [...fetched];
         CANONICAL_FREE_ONBOARDED_PARTNERS.forEach((canon) => {
           if (!combined.some((item) => item.id === canon.id || item.tenantSlug === canon.tenantSlug)) {
@@ -804,7 +803,7 @@ export const SubscriptionCustomizerModal: React.FC<SubscriptionCustomizerModalPr
       .catch((err) => {
         console.error('Failed to load database partners, falling back to canonical partners:', err);
         if (isMounted) {
-          const fallback = [...mockPartnerProfiles];
+          const fallback: PartnerProfileDto[] = [];
           CANONICAL_FREE_ONBOARDED_PARTNERS.forEach((canon) => {
             if (!fallback.some((item) => item.id === canon.id || item.tenantSlug === canon.tenantSlug)) {
               fallback.push(canon);

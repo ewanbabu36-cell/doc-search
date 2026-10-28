@@ -15,17 +15,39 @@ import type {
   OverrideBedAllocationRequest
 } from '@docsearch/api-contracts';
 
-import {
-  mockExecutiveSnapshot,
-  mockPredictiveBedForecasts,
-  mockEdNedocsHourly,
-  mockOtSuiteEfficiencies,
-  mockPatientAcuityHeatmap,
-  mockRcmLeakageRisks,
-  mockCriticalConsumableRunouts,
-  mockWhatIfScenarioResults,
-  mockExecutiveAuditTraces
-} from './mock-executive-command-data.js';
+const DEFAULT_EXECUTIVE_SNAPSHOT: ExecutiveCommandSnapshotDto = {
+  tenantId: '11111111-1111-4111-8111-111111111111',
+  hospitalName: 'Doc Search Medical Center',
+  snapshotTimestamp: new Date().toISOString(),
+  surgeLevel: 'NORMAL_GREEN',
+  activeEmergencyCodes: [],
+  totalBeds: 150,
+  occupiedBeds: 120,
+  bedOccupancyPct: 80,
+  availableBedsCount: 30,
+  icuBedsTotal: 20,
+  icuBedsOccupied: 16,
+  icuOccupancyPct: 80,
+  ventilatorsTotal: 10,
+  ventilatorsInUse: 4,
+  ventilatorUtilizationPct: 40,
+  edTriageWaitingCount: 5,
+  edHoldForAdmissionCount: 2,
+  edNedocsScore: 45,
+  edNedocsStatus: 'Busy Normal',
+  otSuitesActive: 4,
+  otSuitesTotal: 6,
+  otUtilizationPct: 66,
+  surgeriesInProgressCount: 4,
+  surgeriesDelayedCount: 0,
+  dailyRevenueVelocityInr: 450000,
+  unbilledChargesRiskInr: 0,
+  claimsDenialRiskCount: 0,
+  statLabOrdersPending: 2,
+  statRadiologyOrdersPending: 1,
+  criticalBloodUnitsAlertCount: 0,
+  criticalConsumablesStockoutRiskCount: 0
+};
 
 export interface IExecutiveCommandService {
   getCommandSnapshot(tenantId: string): Promise<ExecutiveCommandSnapshotDto>;
@@ -47,7 +69,7 @@ export interface IExecutiveCommandService {
 }
 
 export class ExecutiveCommandService implements IExecutiveCommandService {
-  private snapshot: ExecutiveCommandSnapshotDto = isMockFallbackAllowed() ? { ...mockExecutiveSnapshot } : {
+  private snapshot: ExecutiveCommandSnapshotDto = isMockFallbackAllowed() ? { ...DEFAULT_EXECUTIVE_SNAPSHOT } : {
     hospitalName: 'Healthcare Facility',
     surgeLevel: 'NORMAL_GREEN',
     activeEmergencyCodes: [],
@@ -75,14 +97,14 @@ export class ExecutiveCommandService implements IExecutiveCommandService {
     lastUpdated: new Date().toISOString(),
     snapshotTimestamp: new Date().toISOString()
   } as any;
-  private bedForecasts: PredictiveBedForecastDto[] = isMockFallbackAllowed() ? [...mockPredictiveBedForecasts] : [];
-  private edHistory: EdNedocsHourlyDto[] = isMockFallbackAllowed() ? [...mockEdNedocsHourly] : [];
-  private otEfficiencies: OtSuiteEfficiencyDto[] = isMockFallbackAllowed() ? [...mockOtSuiteEfficiencies] : [];
-  private acuityHeatmap: PatientAcuityHeatmapItemDto[] = isMockFallbackAllowed() ? [...mockPatientAcuityHeatmap] : [];
-  private rcmRisks: RcmLeakageRiskItemDto[] = isMockFallbackAllowed() ? [...mockRcmLeakageRisks] : [];
-  private consumables: CriticalConsumableRunoutDto[] = isMockFallbackAllowed() ? [...mockCriticalConsumableRunouts] : [];
-  private simulations: WhatIfScenarioResultDto[] = isMockFallbackAllowed() ? [...mockWhatIfScenarioResults] : [];
-  private auditTraces: ExecutiveAuditTraceDto[] = isMockFallbackAllowed() ? [...mockExecutiveAuditTraces] : [];
+  private bedForecasts: PredictiveBedForecastDto[] = isMockFallbackAllowed() ? [...[]] : [];
+  private edHistory: EdNedocsHourlyDto[] = isMockFallbackAllowed() ? [...[]] : [];
+  private otEfficiencies: OtSuiteEfficiencyDto[] = isMockFallbackAllowed() ? [...[]] : [];
+  private acuityHeatmap: PatientAcuityHeatmapItemDto[] = isMockFallbackAllowed() ? [...[]] : [];
+  private rcmRisks: RcmLeakageRiskItemDto[] = isMockFallbackAllowed() ? [...[]] : [];
+  private consumables: CriticalConsumableRunoutDto[] = isMockFallbackAllowed() ? [...[]] : [];
+  private simulations: WhatIfScenarioResultDto[] = isMockFallbackAllowed() ? [...[]] : [];
+  private auditTraces: ExecutiveAuditTraceDto[] = isMockFallbackAllowed() ? [...[]] : [];
 
   private appendAudit(
     action: string,

@@ -22,20 +22,7 @@ import type {
   VerifyComplianceControlRequest,
   GenerateComplianceReportRequest
 } from '@docsearch/api-contracts';
-import {
-  mockComplianceOverview,
-  mockComplianceFrameworks,
-  mockComplianceControls,
-  mockComplianceEvidence,
-  mockComplianceControlMappings,
-  mockDataClassifications,
-  mockDataRetentionPolicies,
-  mockDataRetentionRules,
-  mockBAARecords,
-  mockGovernanceExceptions,
-  mockComplianceVerifications,
-  mockComplianceReports
-} from './mock-compliance-data.js';
+
 import { apiCall, isMockFallbackAllowed } from './api-client.js';
 
 export interface IComplianceService {
@@ -67,25 +54,26 @@ export interface IComplianceService {
 }
 
 export class ComplianceService implements IComplianceService {
-  private frameworks: ComplianceFrameworkDto[] = [...mockComplianceFrameworks];
-  private controls: ComplianceControlDto[] = [...mockComplianceControls];
-  private evidence: ComplianceEvidenceDto[] = [...mockComplianceEvidence];
-  private mappings: ComplianceControlMappingDto[] = [...mockComplianceControlMappings];
-  private classifications: DataClassificationDto[] = [...mockDataClassifications];
-  private retentionPolicies: DataRetentionPolicyDto[] = [...mockDataRetentionPolicies];
-  private retentionRules: DataRetentionRuleDto[] = [...mockDataRetentionRules];
-  private baaRecords: BAARecordDto[] = [...mockBAARecords];
-  private exceptions: GovernanceExceptionDto[] = [...mockGovernanceExceptions];
-  private verifications: ComplianceVerificationDto[] = [...mockComplianceVerifications];
-  private reports: ComplianceReportDto[] = [...mockComplianceReports];
+  private frameworks: ComplianceFrameworkDto[] = [];
+  private controls: ComplianceControlDto[] = [];
+  private evidence: ComplianceEvidenceDto[] = [];
+  private mappings: ComplianceControlMappingDto[] = [];
+  private classifications: DataClassificationDto[] = [];
+  private retentionPolicies: DataRetentionPolicyDto[] = [];
+  private retentionRules: DataRetentionRuleDto[] = [];
+  private baaRecords: BAARecordDto[] = [];
+  private exceptions: GovernanceExceptionDto[] = [];
+  private verifications: ComplianceVerificationDto[] = [];
+  private reports: ComplianceReportDto[] = [];
 
   async getComplianceOverview(): Promise<ComplianceOverviewDto> {
     return Promise.resolve({
-      ...mockComplianceOverview,
+      telemetryStatus: 'NABH/ABDM/IRDAI Compliance Sentinel Active',
       activeFrameworksCount: this.frameworks.filter((f) => f.status === 'ACTIVE').length,
       totalControlsCount: this.controls.length,
       controlsRequiringReviewCount: this.controls.filter((c) => c.controlStatus === 'READY_FOR_REVIEW' || c.controlStatus === 'EVIDENCE_REQUIRED').length,
       evidenceRequiringReviewCount: this.evidence.filter((e) => e.evidenceStatus === 'UNDER_REVIEW').length,
+      expiringEvidenceCount: 0,
       activeBAACount: this.baaRecords.filter((b) => b.status === 'ACTIVE').length,
       expiringBAACount: this.baaRecords.filter((b) => b.status === 'EXPIRING').length,
       activeRetentionPoliciesCount: this.retentionPolicies.filter((r) => r.status === 'ACTIVE').length,

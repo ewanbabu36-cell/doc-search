@@ -17,16 +17,30 @@ import type {
 } from '@docsearch/api-contracts';
 import { apiCall, isMockFallbackAllowed } from './api-client.js';
 import { hospitalEventBus } from './hospital-event-bus.js';
-import {
-  MOCK_OPERATIONAL_PARTNERS,
-  MOCK_OPERATIONAL_ORGANIZATIONS,
-  MOCK_OPERATIONAL_FACILITIES,
-  MOCK_OPERATIONAL_SUBSCRIPTIONS,
-  MOCK_OPERATIONAL_AUDIT_TRACES,
-  MOCK_PANEL_CONTEXT,
-  MOCK_TENANT_ID,
-  MOCK_PARTNER_FOUNDATION_OVERVIEW
-} from './mock-partner-foundation-data.js';
+const DEFAULT_PANEL_CONTEXT: PanelContextDto = {
+  activeTenantId: 'tenant-apollo-delhi',
+  activeTenantName: 'Doc Search Healthcare Partner',
+  activePartnerId: 'partner-apollo-delhi',
+  activePartnerName: 'Doc Search Healthcare Partner',
+  activeOrganizationId: 'org-apollo-delhi',
+  activeOrganizationName: 'Healthcare Facility',
+  activeFacilityId: 'fac-apollo-main',
+  activeFacilityName: 'Primary Facility',
+  userRole: 'HOSPITAL_DIRECTOR',
+  userEmail: 'director@docsearch.health'
+};
+
+const DEFAULT_PARTNER_FOUNDATION_OVERVIEW: PartnerFoundationOverviewDto = {
+  totalPartnersCount: 1,
+  activePartnersCount: 1,
+  totalOrganizationsCount: 1,
+  clinicCount: 0,
+  hospitalCount: 1,
+  totalFacilitiesCount: 1,
+  activeFacilitiesCount: 1,
+  operationalSubscriptionsCount: 1,
+  activeSubscriptionsCount: 1
+};
 
 export interface IPartnerFoundationService {
   getOverview(tenantId: string): Promise<PartnerFoundationOverviewDto>;
@@ -59,7 +73,7 @@ const resolveInitialPanelContext = (): PanelContextDto => {
         if (resolvedTId && typeof resolvedTId === 'string' && resolvedTId.trim().length > 0) {
           return {
             activeTenantId: resolvedTId,
-            activeTenantName: u.tenantName || MOCK_PANEL_CONTEXT.activeTenantName,
+            activeTenantName: u.tenantName || 'Doc Search Healthcare Partner',
             activePartnerId: u.partnerId || resolvedTId,
             activePartnerName: u.tenantName || 'Doc Search Healthcare Partner',
             activeOrganizationId: u.organizationId || '',
@@ -73,15 +87,15 @@ const resolveInitialPanelContext = (): PanelContextDto => {
       }
     } catch {}
   }
-  return { ...MOCK_PANEL_CONTEXT };
+  return { ...DEFAULT_PANEL_CONTEXT };
 };
 
 export class PartnerFoundationService implements IPartnerFoundationService {
-  private partners: OperationalPartnerDto[] = [...MOCK_OPERATIONAL_PARTNERS];
-  private organizations: OperationalOrganizationDto[] = [...MOCK_OPERATIONAL_ORGANIZATIONS];
-  private facilities: OperationalFacilityDto[] = [...MOCK_OPERATIONAL_FACILITIES];
-  private subscriptions: OperationalSubscriptionDto[] = [...MOCK_OPERATIONAL_SUBSCRIPTIONS];
-  private auditTraces: OperationalAuditTraceDto[] = [...MOCK_OPERATIONAL_AUDIT_TRACES];
+  private partners: OperationalPartnerDto[] = [...[]];
+  private organizations: OperationalOrganizationDto[] = [...[]];
+  private facilities: OperationalFacilityDto[] = [...[]];
+  private subscriptions: OperationalSubscriptionDto[] = [...[]];
+  private auditTraces: OperationalAuditTraceDto[] = [...[]];
   private context: PanelContextDto = resolveInitialPanelContext();
   private inMemoryInvitations: Map<string, ClinicInvitationDto[]> = new Map();
   private inMemoryPreferredPartners: Map<string, ClinicPreferredPartnersDto> = new Map();
@@ -126,7 +140,7 @@ export class PartnerFoundationService implements IPartnerFoundationService {
     } catch (error) {
       if (!isMockFallbackAllowed()) throw error;
       return {
-        ...MOCK_PARTNER_FOUNDATION_OVERVIEW,
+        ...DEFAULT_PARTNER_FOUNDATION_OVERVIEW,
         totalPartnersCount: this.partners.filter((p) => p.tenantId === tenantId).length,
         activePartnersCount: this.partners.filter((p) => p.tenantId === tenantId && p.status === 'ACTIVE').length,
         totalOrganizationsCount: this.organizations.filter((o) => o.tenantId === tenantId).length,
@@ -141,9 +155,9 @@ export class PartnerFoundationService implements IPartnerFoundationService {
   }
 
   async getPanelContext(): Promise<PanelContextDto> {
-    if (this.context.activeTenantId === MOCK_TENANT_ID) {
+    if (this.context.activeTenantId === 'tenant-apollo-delhi') {
       const fresh = resolveInitialPanelContext();
-      if (fresh.activeTenantId !== MOCK_TENANT_ID) {
+      if (fresh.activeTenantId !== 'tenant-apollo-delhi') {
         this.context = { ...this.context, ...fresh };
       }
     }
