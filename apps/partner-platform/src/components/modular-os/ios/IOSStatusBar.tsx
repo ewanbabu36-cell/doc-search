@@ -15,8 +15,8 @@ export interface IOSStatusBarProps {
 export const IOSStatusBar: React.FC<IOSStatusBarProps> = ({
   hospitalName = 'DocSearch Apollo 5G',
   onOpenControlCenter,
-  onOpenWallpaperModal,
-  activeContextType = 'CLINICAL',
+  onOpenWallpaperModal: _onOpenWallpaperModal,
+  activeContextType: _activeContextType = 'CLINICAL',
   patientName = 'Ward 4B / Bed 12',
   heartRate = 78,
   isPhoneFrameMode = false,
@@ -59,7 +59,7 @@ export const IOSStatusBar: React.FC<IOSStatusBarProps> = ({
         </div>
 
         <span className="text-[13px] text-white/90 font-medium tracking-tight">
-          DocSearch Apollo 5G
+          {hospitalName}
         </span>
       </div>
 
