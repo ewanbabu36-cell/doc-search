@@ -41,7 +41,7 @@ export function useWorkspaceLayout() {
   const [customFolders, setCustomFolders] = useState<WorkspaceCustomFolder[]>([]);
   const [activePresetId, setActivePresetId] = useState<string>('CLINICAL_DEFAULT');
   const [themeVariant, setThemeVariant] = useState<string>('LIQUID_GLASS_DARK');
-  const [wallpaperId, setWallpaperId] = useState<string>('OLED_COSMIC_BLUE');
+  const [wallpaperId, setWallpaperId] = useState<string>('IOS18_IRIDESCENT_MIDNIGHT');
   const [customWallpaperUrl, setCustomWallpaperUrl] = useState<string | null>(null);
   const [wallpaperBlurPx, setWallpaperBlurPx] = useState<number>(0);
 

@@ -10,6 +10,8 @@ import { HospitalStaffLogin, type HospitalStaffUser } from './components/auth/Ho
 import { getUrlForModule } from './utils/urlRouter.js';
 import { ensureAuthToken, isTokenExpired } from './services/api-client.js';
 import { pwaCompanion } from './services/pwa-companion.js';
+import { ModularOSContainer } from './components/modular-os/ModularOSContainer.js';
+import { IOSLockScreen } from './components/modular-os/ios/IOSLockScreen.js';
 import '../../../packages/ui-kit/src/styles/themes.css';
 import '../../../packages/ui-kit/src/styles/base.css';
 
@@ -338,6 +340,8 @@ const App: React.FC = () => {
   };
 
   const [cloudTheme, setCloudTheme] = useState<ThemeMode | undefined>(undefined);
+  const [isLocked, setIsLocked] = useState<boolean>(false);
+  const [showTraditionalLogin, setShowTraditionalLogin] = useState<boolean>(false);
 
   useEffect(() => {
     const cleanup = setupCrossBrowserThemeSync((newTheme) => {
@@ -348,6 +352,31 @@ const App: React.FC = () => {
 
   const handleThemeChange = (newTheme: ThemeMode) => {
     void persistCloudThemePreference(newTheme);
+  };
+
+  const handleUnlock = (selectedStaff?: any) => {
+    setIsLocked(false);
+    if (!currentUser) {
+      const defaultUser: HospitalStaffUser = {
+        id: selectedStaff?.id || 'apollo-cmo',
+        category: 'HEALTHCARE',
+        name: selectedStaff?.name || 'Dr. Apollo (Chief Medical Officer)',
+        email: selectedStaff?.email || 'cmo@apollo.docsearch.internal',
+        role: selectedStaff?.role || 'HOSPITAL_EXECUTIVE',
+        roleTitle: selectedStaff?.roleTitle || 'Chief Medical Officer',
+        department: 'Executive Medical Administration',
+        tenantName: 'DocSearch Apollo Medical Center',
+        tenantId: '11111111-1111-4111-8111-111111111111',
+        organizationType: (selectedStaff?.organizationType as any) || 'HOSPITAL',
+        allowedWorkspaces: ['HOSPITAL'],
+        defaultModule: selectedStaff?.defaultModule || 'clinical-consultation',
+        planTier: 'Enterprise God Admin',
+        accessibleFeatures: ['Standard Suite', 'All Modules', 'Master Control'],
+        restrictedFeatures: [],
+        kycStatus: 'KYC_VERIFIED',
+      };
+      handleLogin(defaultUser);
+    }
   };
 
   const isTvDisplay = typeof window !== 'undefined' && (
@@ -372,19 +401,52 @@ const App: React.FC = () => {
     );
   }
 
-  if (!currentUser) {
+  if (!currentUser || isLocked) {
+    if (showTraditionalLogin) {
+      return (
+        <ThemeProvider cloudTheme={cloudTheme} onThemeChange={handleThemeChange}>
+          <EffectIntensityProvider initialIntensity="command">
+            <div className="relative">
+              <button
+                onClick={() => setShowTraditionalLogin(false)}
+                className="fixed top-4 left-4 z-50 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-semibold backdrop-blur-md border border-white/20 shadow"
+              >
+                ‹ Back to Lock Screen
+              </button>
+              <HospitalStaffLogin
+                onLoginSuccess={(user) => {
+                  setShowTraditionalLogin(false);
+                  setIsLocked(false);
+                  handleLogin(user);
+                }}
+              />
+            </div>
+          </EffectIntensityProvider>
+        </ThemeProvider>
+      );
+    }
+
     return (
       <ThemeProvider cloudTheme={cloudTheme} onThemeChange={handleThemeChange}>
-        <EffectIntensityProvider initialIntensity="command">
-          <HospitalStaffLogin onLoginSuccess={handleLogin} />
-        </EffectIntensityProvider>
+        <IOSLockScreen
+          hospitalName={currentUser?.tenantName || 'DocSearch Apollo Medical Center'}
+          onUnlock={handleUnlock}
+          onOpenTraditionalLogin={() => setShowTraditionalLogin(true)}
+        />
       </ThemeProvider>
     );
   }
 
   return (
     <ThemeProvider cloudTheme={cloudTheme} onThemeChange={handleThemeChange}>
-      <PartnerPlatformShell currentUser={currentUser} onLogout={handleLogout} />
+      <ModularOSContainer
+        hospitalName={currentUser.tenantName || 'DocSearch Apollo Medical Center'}
+        staffName={currentUser.name}
+        staffRole={currentUser.roleTitle}
+        onLockScreen={() => setIsLocked(true)}
+      >
+        <PartnerPlatformShell currentUser={currentUser} onLogout={handleLogout} />
+      </ModularOSContainer>
     </ThemeProvider>
   );
 };

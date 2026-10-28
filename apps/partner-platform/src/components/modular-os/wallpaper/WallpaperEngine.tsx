@@ -11,6 +11,34 @@ export interface WallpaperPreset {
 
 export const WALLPAPER_PRESETS: WallpaperPreset[] = [
   {
+    id: 'IOS18_IRIDESCENT_MIDNIGHT',
+    name: 'iOS 18 Iridescent Midnight',
+    category: 'DARK_OLED',
+    gradientCss: 'radial-gradient(ellipse at 50% 20%, #312e81 0%, #1e1b4b 35%, #09090b 80%, #000000 100%)',
+    previewColor: '#312e81',
+  },
+  {
+    id: 'IOS18_SOLAR_AMBER',
+    name: 'iOS 18 Solar Radiance',
+    category: 'ABSTRACT',
+    gradientCss: 'radial-gradient(circle at 75% 25%, #9a3412 0%, #451a03 40%, #0c0a09 85%)',
+    previewColor: '#9a3412',
+  },
+  {
+    id: 'IOS18_NEURAL_CYAN',
+    name: 'iOS 18 Cyan Neural',
+    category: 'MEDICAL',
+    gradientCss: 'radial-gradient(circle at 80% 20%, #0e7490 0%, #164e63 45%, #020617 90%)',
+    previewColor: '#0e7490',
+  },
+  {
+    id: 'MACOS_SEQUOIA_DARK',
+    name: 'macOS Sequoia Dusk',
+    category: 'DARK_OLED',
+    gradientCss: 'linear-gradient(135deg, #1e1b4b 0%, #3b0764 40%, #09090b 90%)',
+    previewColor: '#3b0764',
+  },
+  {
     id: 'OLED_COSMIC_BLUE',
     name: 'OLED Cosmic Cobalt',
     category: 'DARK_OLED',
@@ -33,7 +61,7 @@ export const WALLPAPER_PRESETS: WallpaperPreset[] = [
   },
   {
     id: 'OBSIDIAN_MINIMALIST',
-    name: 'Obsidian Titanium',
+    name: 'Apple Obsidian Titanium',
     category: 'DARK_OLED',
     gradientCss: 'linear-gradient(180deg, #18181b 0%, #09090b 60%, #000000 100%)',
     previewColor: '#18181b',
