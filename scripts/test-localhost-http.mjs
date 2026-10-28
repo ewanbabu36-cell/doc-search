@@ -6,7 +6,7 @@ function checkHttp(port) {
       resolve({ status: res.statusCode, ok: true });
     });
     req.on('error', (err) => resolve({ ok: false, error: err.message }));
-    req.setTimeout(2000, () => {
+    req.setTimeout(6000, () => {
       req.destroy();
       resolve({ ok: false, error: 'TIMEOUT' });
     });
