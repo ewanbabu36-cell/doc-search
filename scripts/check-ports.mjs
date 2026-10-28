@@ -1,26 +1,17 @@
-import http from 'node:http';
+import net from 'net';
 
-const endpoints = [
-  { name: 'API Gateway Health', url: 'http://localhost:4000/api/v1/health' },
-  { name: 'Local Hardware Agent', url: 'http://localhost:18080/api/v1/hardware/health' },
-  { name: 'Radiology PACS DICOMweb', url: 'http://localhost:8042/api/v1/pacs/status' },
-  { name: 'Partner Platform', url: 'http://localhost:5173/' },
-  { name: 'Landing Page', url: 'http://localhost:5175/' },
-  { name: 'Company Platform', url: 'http://localhost:5177/' },
-];
-
-async function check(ep) {
+function checkPort(port) {
   return new Promise((resolve) => {
-    const req = http.get(ep.url, (res) => {
-      resolve({ name: ep.name, url: ep.url, status: res.statusCode, ok: res.statusCode >= 200 && res.statusCode < 400 });
+    const s = net.createConnection({ port, host: '127.0.0.1' }, () => {
+      s.end();
+      resolve(true);
     });
-    req.on('error', (err) => resolve({ name: ep.name, url: ep.url, status: 'ERROR', error: err.message, ok: false }));
-    req.setTimeout(10000, () => {
-      req.destroy();
-      resolve({ name: ep.name, url: ep.url, status: 'TIMEOUT', ok: false });
-    });
+    s.on('error', () => resolve(false));
   });
 }
 
-const results = await Promise.all(endpoints.map(check));
-console.table(results);
+const ports = [4000, 5173, 5174, 5177, 5432];
+for (const p of ports) {
+  const active = await checkPort(p);
+  console.log(`Port ${p}: ${active ? 'ACTIVE' : 'IDLE'}`);
+}

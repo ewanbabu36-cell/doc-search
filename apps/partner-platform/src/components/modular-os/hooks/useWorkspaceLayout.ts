@@ -15,6 +15,12 @@ export interface DockSlotItem {
   action?: ModularFeatureAction | undefined;
 }
 
+export interface DesktopIconItem {
+  id: string;
+  gridX?: number | undefined;
+  gridY?: number | undefined;
+}
+
 export interface WorkspaceCustomFolder {
   id: string;
   name: string;
@@ -24,9 +30,23 @@ export interface WorkspaceCustomFolder {
 export function useWorkspaceLayout() {
   const [dockItems, setDockItems] = useState<DockSlotItem[]>([]);
   const [headerItems, setHeaderItems] = useState<ModularFeatureAction[]>([]);
+  const [desktopIcons, setDesktopIcons] = useState<DesktopIconItem[]>([
+    { id: 'clinical_opd_queue' },
+    { id: 'ipd_bed_census' },
+    { id: 'pharmacy_pos_checkout' },
+    { id: 'billing_cashier_desk' },
+    { id: 'clinical_lab_requisitions' },
+    { id: 'emergency_manchester_triage' },
+  ]);
   const [customFolders, setCustomFolders] = useState<WorkspaceCustomFolder[]>([]);
   const [activePresetId, setActivePresetId] = useState<string>('CLINICAL_DEFAULT');
   const [themeVariant, setThemeVariant] = useState<string>('LIQUID_GLASS_DARK');
+  const [wallpaperId, setWallpaperId] = useState<string>('OLED_COSMIC_BLUE');
+  const [customWallpaperUrl, setCustomWallpaperUrl] = useState<string | null>(null);
+  const [wallpaperBlurPx, setWallpaperBlurPx] = useState<number>(0);
+
+  const [isAppDrawerOpen, setIsAppDrawerOpen] = useState<boolean>(false);
+  const [isWallpaperModalOpen, setIsWallpaperModalOpen] = useState<boolean>(false);
   const [isVaultOpen, setIsVaultOpen] = useState<boolean>(false);
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [activeFolderModal, setActiveFolderModal] = useState<WorkspaceCustomFolder | null>(null);
@@ -35,12 +55,12 @@ export function useWorkspaceLayout() {
   const { onDropSuccess, onDragStart, playClick } = useHapticSoundFeedback();
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Helper to resolve an action from the registry
+  // Helper to resolve action
   const resolveAction = useCallback((id: string): ModularFeatureAction | undefined => {
     return FEATURE_REGISTRY.find((a) => a.id === id);
   }, []);
 
-  // Hydrate layout from PostgreSQL API Gateway
+  // Hydrate from PostgreSQL via API Gateway
   const fetchLayout = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -53,9 +73,15 @@ export function useWorkspaceLayout() {
         if (data) {
           setActivePresetId(data.activePresetId || 'CLINICAL_DEFAULT');
           setThemeVariant(data.themeVariant || 'LIQUID_GLASS_DARK');
+          setWallpaperId(data.wallpaperId || 'OLED_COSMIC_BLUE');
+          setCustomWallpaperUrl(data.customWallpaperUrl || null);
+          setWallpaperBlurPx(data.wallpaperBlurPx ?? 0);
           setCustomFolders(data.customFolders || []);
 
-          // Map dock items
+          if (Array.isArray(data.desktopIcons) && data.desktopIcons.length > 0) {
+            setDesktopIcons(data.desktopIcons);
+          }
+
           if (Array.isArray(data.dockSlots) && data.dockSlots.length > 0) {
             const mapped: DockSlotItem[] = data.dockSlots.map((slot: any) => {
               if (slot.isFolder) {
@@ -75,13 +101,12 @@ export function useWorkspaceLayout() {
             });
             setDockItems(mapped);
           } else {
-            // Apply default clinical preset
             applyPreset('CLINICAL_DEFAULT', false);
           }
         }
       }
     } catch (err) {
-      console.warn('Silent fallback to local preset:', err);
+      console.warn('Layout fetch fallback note:', err);
       applyPreset('CLINICAL_DEFAULT', false);
     } finally {
       setIsLoading(false);
@@ -92,139 +117,171 @@ export function useWorkspaceLayout() {
     fetchLayout();
   }, [fetchLayout]);
 
-  // Debounced cloud synchronization
-  const triggerCloudSave = useCallback((newDock: DockSlotItem[], newFolders: WorkspaceCustomFolder[], preset: string) => {
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
+  // Debounced cloud save
+  const triggerCloudSave = useCallback(
+    (
+      newDock: DockSlotItem[],
+      newDesktop: DesktopIconItem[],
+      newFolders: WorkspaceCustomFolder[],
+      preset: string,
+      wId: string,
+      customUrl: string | null,
+      blurPx: number
+    ) => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
 
-    saveTimeoutRef.current = setTimeout(async () => {
-      try {
-        const dockSlotsPayload = newDock.map((d) => {
-          if (d.isFolder) {
+      saveTimeoutRef.current = setTimeout(async () => {
+        try {
+          const dockSlotsPayload = newDock.map((d) => {
+            if (d.isFolder) {
+              return {
+                id: d.id,
+                isFolder: true,
+                folderName: d.folderName,
+                folderItemIds: d.folderItemIds,
+              };
+            }
             return {
-              id: d.id,
-              isFolder: true,
-              folderName: d.folderName,
-              folderItemIds: d.folderItemIds,
+              id: d.action?.id || d.actionId || d.id,
+              label: d.action?.shortLabel || d.action?.label,
             };
-          }
-          return {
-            id: d.action?.id || d.actionId || d.id,
-            label: d.action?.shortLabel || d.action?.label,
-          };
-        });
+          });
 
-        await fetch('/api/v1/partner/workspace/layout', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            activePresetId: preset,
-            dockSlots: dockSlotsPayload,
-            customFolders: newFolders,
-            themeVariant,
-          }),
-        });
-      } catch (err) {
-        console.warn('Layout cloud sync note:', err);
-      }
-    }, 800);
-  }, [themeVariant]);
+          await fetch('/api/v1/partner/workspace/layout', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              activePresetId: preset,
+              dockSlots: dockSlotsPayload,
+              desktopIcons: newDesktop,
+              customFolders: newFolders,
+              wallpaperId: wId,
+              customWallpaperUrl: customUrl,
+              wallpaperBlurPx: blurPx,
+              themeVariant,
+            }),
+          });
+        } catch (err) {
+          console.warn('Layout auto-save note:', err);
+        }
+      }, 800);
+    },
+    [themeVariant]
+  );
 
-  // Add an action into the dock
-  const addToDock = useCallback((action: ModularFeatureAction) => {
-    onDragStart();
-    setDockItems((prev) => {
-      if (prev.some((item) => !item.isFolder && (item.action?.id === action.id || item.actionId === action.id))) {
-        return prev; // already present
-      }
-      if (prev.length >= 7) {
-        // max dock capacity
-        return prev;
-      }
-      const updated: DockSlotItem[] = [...prev, { id: action.id, actionId: action.id, action }];
+  // Add to Dock
+  const addToDock = useCallback(
+    (action: ModularFeatureAction) => {
+      onDragStart();
+      setDockItems((prev) => {
+        if (prev.some((item) => !item.isFolder && (item.action?.id === action.id || item.actionId === action.id))) {
+          return prev;
+        }
+        if (prev.length >= 7) return prev;
+        const updated: DockSlotItem[] = [...prev, { id: action.id, actionId: action.id, action }];
+        onDropSuccess();
+        triggerCloudSave(updated, desktopIcons, customFolders, activePresetId, wallpaperId, customWallpaperUrl, wallpaperBlurPx);
+        return updated;
+      });
+    },
+    [onDragStart, onDropSuccess, triggerCloudSave, desktopIcons, customFolders, activePresetId, wallpaperId, customWallpaperUrl, wallpaperBlurPx]
+  );
+
+  // Remove from Dock
+  const removeFromDock = useCallback(
+    (slotId: string) => {
+      playClick();
+      setDockItems((prev) => {
+        const updated = prev.filter((item) => item.id !== slotId);
+        triggerCloudSave(updated, desktopIcons, customFolders, activePresetId, wallpaperId, customWallpaperUrl, wallpaperBlurPx);
+        return updated;
+      });
+    },
+    [playClick, triggerCloudSave, desktopIcons, customFolders, activePresetId, wallpaperId, customWallpaperUrl, wallpaperBlurPx]
+  );
+
+  // Add to Desktop Home Screen
+  const addToDesktop = useCallback(
+    (action: ModularFeatureAction) => {
       onDropSuccess();
-      triggerCloudSave(updated, customFolders, activePresetId);
-      return updated;
-    });
-  }, [onDragStart, onDropSuccess, triggerCloudSave, customFolders, activePresetId]);
+      setDesktopIcons((prev) => {
+        if (prev.some((item) => item.id === action.id)) return prev;
+        const updated = [...prev, { id: action.id }];
+        triggerCloudSave(dockItems, updated, customFolders, activePresetId, wallpaperId, customWallpaperUrl, wallpaperBlurPx);
+        return updated;
+      });
+    },
+    [onDropSuccess, triggerCloudSave, dockItems, customFolders, activePresetId, wallpaperId, customWallpaperUrl, wallpaperBlurPx]
+  );
 
-  // Remove an item from the dock
-  const removeFromDock = useCallback((slotId: string) => {
-    playClick();
-    setDockItems((prev) => {
-      const updated = prev.filter((item) => item.id !== slotId);
-      triggerCloudSave(updated, customFolders, activePresetId);
-      return updated;
-    });
-  }, [playClick, triggerCloudSave, customFolders, activePresetId]);
+  // Remove from Desktop Home Screen
+  const removeFromDesktop = useCallback(
+    (actionId: string) => {
+      playClick();
+      setDesktopIcons((prev) => {
+        const updated = prev.filter((item) => item.id !== actionId);
+        triggerCloudSave(dockItems, updated, customFolders, activePresetId, wallpaperId, customWallpaperUrl, wallpaperBlurPx);
+        return updated;
+      });
+    },
+    [playClick, triggerCloudSave, dockItems, customFolders, activePresetId, wallpaperId, customWallpaperUrl, wallpaperBlurPx]
+  );
 
-  // Reorder dock items
-  const reorderDock = useCallback((fromIndex: number, toIndex: number) => {
-    setDockItems((prev) => {
-      const cloned = [...prev];
-      const [moved] = cloned.splice(fromIndex, 1);
-      if (!moved) return prev;
-      cloned.splice(toIndex, 0, moved);
-      onDropSuccess();
-      triggerCloudSave(cloned, customFolders, activePresetId);
-      return cloned;
-    });
-  }, [onDropSuccess, triggerCloudSave, customFolders, activePresetId]);
+  // Wallpaper Controls
+  const setWallpaperPreset = useCallback(
+    (id: string) => {
+      setWallpaperId(id);
+      setCustomWallpaperUrl(null);
+      triggerCloudSave(dockItems, desktopIcons, customFolders, activePresetId, id, null, wallpaperBlurPx);
+    },
+    [triggerCloudSave, dockItems, desktopIcons, customFolders, activePresetId, wallpaperBlurPx]
+  );
 
-  // Group two items into a Smart Folder
-  const groupIntoFolder = useCallback((folderName: string, itemIds: string[]) => {
-    const folderId = 'folder_' + Date.now();
-    const newFolder: WorkspaceCustomFolder = {
-      id: folderId,
-      name: folderName,
-      itemIds,
-    };
+  const setCustomWallpaper = useCallback(
+    (url: string) => {
+      setCustomWallpaperUrl(url || null);
+      triggerCloudSave(dockItems, desktopIcons, customFolders, activePresetId, wallpaperId, url || null, wallpaperBlurPx);
+    },
+    [triggerCloudSave, dockItems, desktopIcons, customFolders, activePresetId, wallpaperId, wallpaperBlurPx]
+  );
 
-    setCustomFolders((prev) => [...prev, newFolder]);
-    setDockItems((prev) => {
-      // Remove individual items and insert folder
-      const filtered = prev.filter((item) => !itemIds.includes(item.action?.id || item.actionId || ''));
-      const updated: DockSlotItem[] = [
-        ...filtered,
-        {
-          id: folderId,
-          isFolder: true,
-          folderName,
-          folderItemIds: itemIds,
-        },
-      ];
-      onDropSuccess();
-      triggerCloudSave(updated, [...customFolders, newFolder], activePresetId);
-      return updated;
-    });
-  }, [onDropSuccess, triggerCloudSave, customFolders, activePresetId]);
+  const setWallpaperBlur = useCallback(
+    (blurPx: number) => {
+      setWallpaperBlurPx(blurPx);
+      triggerCloudSave(dockItems, desktopIcons, customFolders, activePresetId, wallpaperId, customWallpaperUrl, blurPx);
+    },
+    [triggerCloudSave, dockItems, desktopIcons, customFolders, activePresetId, wallpaperId, customWallpaperUrl]
+  );
 
-  // Apply a role preset
-  const applyPreset = useCallback((presetKey: keyof typeof ROLE_PRESET_CONFIGURATIONS | string, shouldSync = true) => {
-    const preset = ROLE_PRESET_CONFIGURATIONS[presetKey as keyof typeof ROLE_PRESET_CONFIGURATIONS] || ROLE_PRESET_CONFIGURATIONS.CLINICAL_DEFAULT;
-    setActivePresetId(preset.id);
+  // Apply Role Preset
+  const applyPreset = useCallback(
+    (presetKey: keyof typeof ROLE_PRESET_CONFIGURATIONS | string, shouldSync = true) => {
+      const preset = ROLE_PRESET_CONFIGURATIONS[presetKey as keyof typeof ROLE_PRESET_CONFIGURATIONS] || ROLE_PRESET_CONFIGURATIONS.CLINICAL_DEFAULT;
+      setActivePresetId(preset.id);
 
-    const newDock: DockSlotItem[] = preset.dockIds.map((id) => ({
-      id,
-      actionId: id,
-      action: resolveAction(id),
-    }));
+      const newDock: DockSlotItem[] = preset.dockIds.map((id) => ({
+        id,
+        actionId: id,
+        action: resolveAction(id),
+      }));
 
-    const newHeader = preset.headerIds.map((id) => resolveAction(id)).filter(Boolean) as ModularFeatureAction[];
+      const newDesktop: DesktopIconItem[] = preset.dockIds.map((id) => ({ id }));
+      const newHeader = preset.headerIds.map((id) => resolveAction(id)).filter(Boolean) as ModularFeatureAction[];
 
-    setDockItems(newDock);
-    setHeaderItems(newHeader);
-    playClick();
+      setDockItems(newDock);
+      setDesktopIcons(newDesktop);
+      setHeaderItems(newHeader);
+      playClick();
 
-    if (shouldSync) {
-      triggerCloudSave(newDock, [], preset.id);
-    }
-  }, [resolveAction, playClick, triggerCloudSave]);
+      if (shouldSync) {
+        triggerCloudSave(newDock, newDesktop, [], preset.id, wallpaperId, customWallpaperUrl, wallpaperBlurPx);
+      }
+    },
+    [resolveAction, playClick, triggerCloudSave, wallpaperId, customWallpaperUrl, wallpaperBlurPx]
+  );
 
-  // Restore defaults
   const restoreDefaults = useCallback(() => {
     applyPreset('CLINICAL_DEFAULT', true);
   }, [applyPreset]);
@@ -232,21 +289,31 @@ export function useWorkspaceLayout() {
   return {
     dockItems,
     headerItems,
+    desktopIcons,
     customFolders,
     activePresetId,
     themeVariant,
+    wallpaperId,
+    customWallpaperUrl,
+    wallpaperBlurPx,
+    isAppDrawerOpen,
+    isWallpaperModalOpen,
     isVaultOpen,
     isEditMode,
     activeFolderModal,
     isLoading,
+    setIsAppDrawerOpen,
+    setIsWallpaperModalOpen,
     setIsVaultOpen,
     setIsEditMode,
     setActiveFolderModal,
-    setThemeVariant,
     addToDock,
     removeFromDock,
-    reorderDock,
-    groupIntoFolder,
+    addToDesktop,
+    removeFromDesktop,
+    setWallpaperPreset,
+    setCustomWallpaper,
+    setWallpaperBlur,
     applyPreset,
     restoreDefaults,
   };

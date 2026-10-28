@@ -9,13 +9,32 @@ export const WorkspaceLayoutUpdateSchema = z.object({
   customFolders: z.array(z.any()).optional().default([]),
   drawerPinnedIds: z.array(z.string()).optional().default([]),
   themeVariant: z.string().trim().optional().default('LIQUID_GLASS_DARK'),
+  wallpaperId: z.string().trim().optional().default('OLED_COSMIC_BLUE'),
+  customWallpaperUrl: z.string().trim().optional(),
+  wallpaperBlurPx: z.number().int().min(0).max(40).optional().default(0),
+  desktopIcons: z.array(z.any()).optional().default([]),
+  desktopWidgets: z.array(z.any()).optional().default([]),
 });
 
 const DEFAULT_CLINICAL_DOCK_SLOTS = [
-  { id: 'opd_queue', label: 'OPD Queue', icon: 'Stethoscope', jewelColor: 'sapphire', route: '/partner/clinical/consultations', badgeTelemetryKey: 'waiting_patients' },
-  { id: 'emergency_er', label: 'Emergency ER', icon: 'HeartPulse', jewelColor: 'ruby', route: '/partner/emergency', badgeTelemetryKey: 'critical_triage' },
-  { id: 'pharmacy_pos', label: 'Pharmacy POS', icon: 'Pill', jewelColor: 'emerald', route: '/partner/pharmacy', badgeTelemetryKey: 'schedule_h1' },
-  { id: 'cashier_desk', label: 'Cashier Desk', icon: 'CreditCard', jewelColor: 'amber', route: '/partner/billing', badgeTelemetryKey: 'shift_collection' },
+  { id: 'clinical_opd_queue', label: 'OPD Queue', icon: 'Stethoscope', jewelColor: 'sapphire', route: '/partner/clinical/consultations', badgeTelemetryKey: 'waiting_patients' },
+  { id: 'emergency_manchester_triage', label: 'Emergency ER', icon: 'HeartPulse', jewelColor: 'ruby', route: '/partner/emergency', badgeTelemetryKey: 'critical_triage' },
+  { id: 'pharmacy_pos_checkout', label: 'Pharmacy POS', icon: 'Pill', jewelColor: 'emerald', route: '/partner/pharmacy', badgeTelemetryKey: 'schedule_h1' },
+  { id: 'billing_cashier_desk', label: 'Cashier Desk', icon: 'CreditCard', jewelColor: 'amber', route: '/partner/billing', badgeTelemetryKey: 'shift_collection' },
+];
+
+const DEFAULT_DESKTOP_ICONS = [
+  { id: 'clinical_opd_queue', gridX: 0, gridY: 0 },
+  { id: 'ipd_bed_census', gridX: 0, gridY: 1 },
+  { id: 'pharmacy_pos_checkout', gridX: 0, gridY: 2 },
+  { id: 'billing_cashier_desk', gridX: 0, gridY: 3 },
+  { id: 'clinical_lab_requisitions', gridX: 1, gridY: 0 },
+  { id: 'emergency_manchester_triage', gridX: 1, gridY: 1 },
+];
+
+const DEFAULT_DESKTOP_WIDGETS = [
+  { id: 'widget_clock_shift', type: 'CLOCK_SHIFT', gridX: 2, gridY: 0, spanX: 2, spanY: 2 },
+  { id: 'widget_bed_occupancy', type: 'BED_OCCUPANCY', gridX: 4, gridY: 0, spanX: 2, spanY: 2 },
 ];
 
 export const workspaceLayoutRoutes: FastifyPluginAsync = async (fastify) => {
@@ -55,8 +74,13 @@ export const workspaceLayoutRoutes: FastifyPluginAsync = async (fastify) => {
           { id: 'emergency_broadcast', label: 'Code Red Broadcast', icon: 'AlertTriangle' }
         ],
         customFolders: [],
-        drawerPinnedIds: ['opd_queue', 'emergency_er', 'pharmacy_pos', 'cashier_desk'],
+        drawerPinnedIds: ['clinical_opd_queue', 'emergency_manchester_triage', 'pharmacy_pos_checkout', 'billing_cashier_desk'],
         themeVariant: 'LIQUID_GLASS_DARK',
+        wallpaperId: 'OLED_COSMIC_BLUE',
+        customWallpaperUrl: null,
+        wallpaperBlurPx: 0,
+        desktopIcons: DEFAULT_DESKTOP_ICONS,
+        desktopWidgets: DEFAULT_DESKTOP_WIDGETS,
       };
 
       return {
@@ -104,6 +128,11 @@ export const workspaceLayoutRoutes: FastifyPluginAsync = async (fastify) => {
             customFolders: body.customFolders,
             drawerPinnedIds: body.drawerPinnedIds,
             themeVariant: body.themeVariant,
+            wallpaperId: body.wallpaperId,
+            customWallpaperUrl: body.customWallpaperUrl,
+            wallpaperBlurPx: body.wallpaperBlurPx,
+            desktopIcons: body.desktopIcons,
+            desktopWidgets: body.desktopWidgets,
             updatedAt: new Date(),
           })
           .where(eq(userWorkspaceLayouts.id, current.id))
@@ -121,6 +150,11 @@ export const workspaceLayoutRoutes: FastifyPluginAsync = async (fastify) => {
             customFolders: body.customFolders,
             drawerPinnedIds: body.drawerPinnedIds,
             themeVariant: body.themeVariant,
+            wallpaperId: body.wallpaperId,
+            customWallpaperUrl: body.customWallpaperUrl,
+            wallpaperBlurPx: body.wallpaperBlurPx,
+            desktopIcons: body.desktopIcons,
+            desktopWidgets: body.desktopWidgets,
           })
           .returning();
         savedRecord = inserted[0];

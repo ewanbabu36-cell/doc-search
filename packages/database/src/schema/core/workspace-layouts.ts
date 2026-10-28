@@ -1,4 +1,4 @@
-import { uuid, varchar, timestamp, jsonb, index, uniqueIndex } from 'drizzle-orm/pg-core';
+import { uuid, varchar, timestamp, jsonb, integer, index, uniqueIndex } from 'drizzle-orm/pg-core';
 import { coreSchema } from './tenants.js';
 
 export const userWorkspaceLayouts = coreSchema.table(
@@ -13,6 +13,11 @@ export const userWorkspaceLayouts = coreSchema.table(
     customFolders: jsonb('custom_folders').notNull().default([]),
     drawerPinnedIds: jsonb('drawer_pinned_ids').notNull().default([]),
     themeVariant: varchar('theme_variant', { length: 32 }).notNull().default('LIQUID_GLASS_DARK'),
+    wallpaperId: varchar('wallpaper_id', { length: 64 }).notNull().default('OLED_COSMIC_BLUE'),
+    customWallpaperUrl: varchar('custom_wallpaper_url', { length: 1024 }),
+    wallpaperBlurPx: integer('wallpaper_blur_px').notNull().default(0),
+    desktopIcons: jsonb('desktop_icons').notNull().default([]),
+    desktopWidgets: jsonb('desktop_widgets').notNull().default([]),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
   },

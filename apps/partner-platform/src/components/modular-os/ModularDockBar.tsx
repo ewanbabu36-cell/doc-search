@@ -8,6 +8,7 @@ export interface ModularDockBarProps {
   isEditMode: boolean;
   onToggleEditMode: () => void;
   onOpenVault: () => void;
+  onOpenAppDrawer: () => void;
   onSelectAction: (action: ModularFeatureAction) => void;
   onOpenFolder: (folderId: string, folderName: string, itemIds: string[]) => void;
   onRemoveItem: (id: string) => void;
@@ -18,13 +19,13 @@ export const ModularDockBar: React.FC<ModularDockBarProps> = ({
   isEditMode,
   onToggleEditMode,
   onOpenVault,
+  onOpenAppDrawer,
   onSelectAction,
   onOpenFolder,
   onRemoveItem,
 }) => {
   const { playClick, triggerHaptic } = useHapticSoundFeedback();
 
-  // Mock live telemetry values for dynamic badges
   const getBadgeValue = (telemetryKey?: string): string | null => {
     switch (telemetryKey) {
       case 'waiting_patients':
@@ -46,12 +47,34 @@ export const ModularDockBar: React.FC<ModularDockBarProps> = ({
 
   return (
     <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 select-none">
-      <div
-        className="px-4 py-2.5 rounded-3xl bg-slate-950/75 backdrop-blur-2xl border border-white/20 shadow-[0_16px_50px_rgba(0,0,0,0.7)] flex items-center gap-3 transition-all duration-200"
-      >
+      <div className="px-4 py-2.5 rounded-3xl bg-slate-950/75 backdrop-blur-2xl border border-white/20 shadow-[0_16px_50px_rgba(0,0,0,0.7)] flex items-center gap-3 transition-all duration-200">
+        {/* Core Android 9-Dots App Drawer Launcher Button */}
+        <div className="flex flex-col items-center">
+          <button
+            onClick={() => {
+              playClick();
+              triggerHaptic(20);
+              onOpenAppDrawer();
+            }}
+            className="w-13 h-13 rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 p-0.5 shadow-xl flex items-center justify-center transition-all transform hover:-translate-y-1.5 active:scale-95 group"
+            title="Open Android App Drawer (All 150+ Apps)"
+          >
+            <div className="w-full h-full rounded-[14px] bg-black/25 flex items-center justify-center text-white relative">
+              <span className="font-extrabold text-lg tracking-tighter group-hover:scale-110 transition-transform">
+                ⋮⋮⋮
+              </span>
+            </div>
+          </button>
+          <div className="text-center mt-1">
+            <span className="text-[10px] font-bold text-blue-300">Apps</span>
+          </div>
+        </div>
+
+        <div className="h-9 w-px bg-white/15 my-auto" />
+
+        {/* Pinned Dock Icons */}
         {dockItems.map((slot) => {
           if (slot.isFolder) {
-            // Folder Squircle
             return (
               <div key={slot.id} className="relative group">
                 <button
@@ -108,30 +131,25 @@ export const ModularDockBar: React.FC<ModularDockBarProps> = ({
                 title={`${action.label} - ${action.description}`}
               >
                 <div className="w-full h-full rounded-[14px] bg-black/25 flex flex-col items-center justify-center text-white relative overflow-hidden">
-                  {/* Specular hairline refraction highlight */}
                   <div className="absolute top-0 inset-x-0 h-px bg-white/40" />
-
                   <span className="font-bold text-sm tracking-tight">
                     {action.shortLabel.substring(0, 2).toUpperCase()}
                   </span>
                 </div>
               </button>
 
-              {/* Dynamic Telemetry Badge */}
               {badge && (
                 <span className="absolute -top-1.5 -right-1 px-1.5 py-0.5 rounded-full bg-rose-600 text-white text-[9px] font-mono font-bold shadow-md border border-white/20 animate-in fade-in">
                   {badge}
                 </span>
               )}
 
-              {/* Label */}
               <div className="text-center mt-1">
                 <span className="text-[10px] font-semibold text-slate-300 truncate max-w-[54px] block group-hover:text-white transition-colors">
                   {action.shortLabel}
                 </span>
               </div>
 
-              {/* Delete button in edit mode */}
               {isEditMode && (
                 <button
                   onClick={() => onRemoveItem(slot.id)}
@@ -144,10 +162,9 @@ export const ModularDockBar: React.FC<ModularDockBarProps> = ({
           );
         })}
 
-        {/* Separator */}
         <div className="h-9 w-px bg-white/15 my-auto" />
 
-        {/* Plus / Customize Trigger Slot */}
+        {/* Plus / Add Trigger */}
         <div className="flex flex-col items-center">
           <button
             onClick={() => {
