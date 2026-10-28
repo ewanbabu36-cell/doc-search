@@ -2403,6 +2403,73 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
 
   return (
     <AdaptiveProvider>
+      {/* Persistent Glowing Forensic Watermark Banner for Founder Ghost Impersonation */}
+      {(typeof window !== 'undefined' && (localStorage.getItem('docsearch_ghost_session') || (currentUser as any)?.isGhostImpersonation)) && (
+        <div
+          role="alert"
+          style={{
+            backgroundColor: '#7C2D12',
+            borderBottom: '2px solid #F59E0B',
+            color: '#FEF3C7',
+            padding: '8px 20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            boxShadow: '0 4px 20px rgba(245, 158, 11, 0.4)',
+            zIndex: 99999,
+            position: 'sticky',
+            top: 0
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.8125rem', fontWeight: 800 }}>
+            <span style={{ fontSize: '1.2rem' }}>👑</span>
+            <span style={{ letterSpacing: '0.05em', color: '#FDE68A', textTransform: 'uppercase' }}>
+              ACTIVELY GHOSTED BY FOUNDER • FORENSIC AUDIT ACTIVE
+            </span>
+            <span style={{ backgroundColor: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', color: '#CBD5E1', fontFamily: 'monospace' }}>
+              Acting as: {currentUser?.name || 'Staff User'} ({currentUser?.role})
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                const storedGhost = localStorage.getItem('docsearch_ghost_session');
+                const parsed = storedGhost ? JSON.parse(storedGhost) : null;
+                const sessionId = parsed?.sessionId || (currentUser as any)?.ghostSessionId;
+                if (sessionId) {
+                  await fetch('http://127.0.0.1:4000/api/v1/company/godmode/impersonate/end', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId })
+                  }).catch(() => {});
+                }
+              } catch {}
+              localStorage.removeItem('docsearch_ghost_session');
+              localStorage.removeItem('docsearch_partner_staff_auth');
+              localStorage.removeItem('docsearch_auth_token');
+              window.location.href = 'http://localhost:5174';
+            }}
+            style={{
+              backgroundColor: '#DC2626',
+              color: '#FFFFFF',
+              border: '1px solid #EF4444',
+              borderRadius: '6px',
+              padding: '6px 16px',
+              fontWeight: 900,
+              fontSize: '0.75rem',
+              cursor: 'pointer',
+              boxShadow: '0 0 10px rgba(239, 68, 68, 0.5)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <span>Return to HQ</span>
+            <span>➔</span>
+          </button>
+        </div>
+      )}
       <AppShell
         isMobileDrawerOpen={isMobileDrawerOpen}
         onCloseMobileDrawer={() => setIsMobileDrawerOpen(false)}

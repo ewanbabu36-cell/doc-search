@@ -120,6 +120,34 @@ const App: React.FC = () => {
       // Check for token dispatched from Landing Page SSO Login
       try {
         const urlParams = new URLSearchParams(window.location.search);
+        const ghostParam = urlParams.get('ghostSession');
+        if (ghostParam) {
+          try {
+            const parsedGhost = JSON.parse(decodeURIComponent(ghostParam));
+            localStorage.setItem('docsearch_ghost_session', JSON.stringify(parsedGhost));
+            if (parsedGhost.sessionToken) {
+              localStorage.setItem('docsearch_auth_token', parsedGhost.sessionToken);
+            }
+            localStorage.removeItem('docsearch_logged_out');
+            const ghostStaffObj = {
+              id: parsedGhost.targetUserId,
+              name: parsedGhost.targetUserName,
+              role: parsedGhost.targetUserRole,
+              roleTitle: parsedGhost.targetUserRole,
+              tenantId: parsedGhost.targetTenantId,
+              tenantName: parsedGhost.targetTenantName,
+              email: (parsedGhost.targetUserId?.toLowerCase() || 'staff') + '@' + (parsedGhost.targetTenantId || 'hospital') + '.internal',
+              isGhostImpersonation: true,
+              ghostAdminName: parsedGhost.adminName,
+              ghostSessionId: parsedGhost.sessionId
+            };
+            localStorage.setItem('docsearch_partner_staff_auth', JSON.stringify(ghostStaffObj));
+            window.history.replaceState({}, document.title, window.location.pathname);
+            return ghostStaffObj;
+          } catch (e) {
+            console.error('Error parsing ghostSession param:', e);
+          }
+        }
         const tokenParam = urlParams.get('token');
         if (tokenParam) {
           localStorage.setItem('docsearch_auth_token', tokenParam);

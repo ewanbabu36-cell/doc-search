@@ -36,6 +36,7 @@ import { companyAdminRoutes } from './routes/company/company-admin.routes.js';
 import { founderApprovalRoutes } from './routes/company/founder-approval.routes.js';
 import { partnerAccessControlRoutes } from './routes/company/partner-access-control.routes.js';
 import { hqCommandCenterRoutes } from './routes/company/hq-command-center.routes.js';
+import { godmodeAdminRoutes } from './routes/company/godmode-admin.routes.js';
 import { partnerCommandCenterRoutes } from './routes/partner/command-center.routes.js';
 import { radiologyRoutes } from './routes/partner/radiology.routes.js';
 import { dietaryRoutes } from './routes/partner/dietary.routes.js';
@@ -363,6 +364,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(partnerAccessControlRoutes);
   await app.register(licenseGovernanceRoutes);
   await app.register(hqCommandCenterRoutes);
+  await app.register(godmodeAdminRoutes);
   await app.register(hqReliabilityRoutes);
   await app.register(hqAiIntelligenceRoutes);
 

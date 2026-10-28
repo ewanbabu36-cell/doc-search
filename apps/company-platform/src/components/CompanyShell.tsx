@@ -28,6 +28,7 @@ import { buildPhase1NavSections, PHASE_1_DOMAINS, isDomainAllowedForRole } from 
 // Lazy-loaded domain managers for optimized bundle size & instantaneous initial load
 const ExecutiveCommandCenter = React.lazy(() => import('./executive/ExecutiveCommandCenter.js').then(m => ({ default: m.ExecutiveCommandCenter })));
 const MediSphereCommandCenterDashboard = React.lazy(() => import('./executive/MediSphereCommandCenterDashboard.js').then(m => ({ default: m.MediSphereCommandCenterDashboard })));
+const GodModeSuperAdminStudioView = React.lazy(() => import('./executive/GodModeSuperAdminStudioView.js').then(m => ({ default: m.GodModeSuperAdminStudioView })));
 const PartnerLifecycleManager = React.lazy(() => import('./crm/PartnerLifecycleManager.js').then(m => ({ default: m.PartnerLifecycleManager })));
 const ProductDomainManager = React.lazy(() => import('./product/ProductDomainManager.js').then(m => ({ default: m.ProductDomainManager })));
 const FinanceDomainManager = React.lazy(() => import('./billing/FinanceDomainManager.js').then(m => ({ default: m.FinanceDomainManager })));
@@ -312,7 +313,7 @@ const CompanyShellInner: React.FC<CompanyShellProps> = ({ currentUser, onLogout 
     }
   };
 
-  const isCommandCenter = activeDomainId === 'medisphere-command-center' || activeDomainId === 'executive-command-center';
+  const isCommandCenter = activeDomainId === 'medisphere-command-center' || activeDomainId === 'executive-command-center' || activeDomainId === 'godmode-admin-studio';
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState<boolean>(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState<boolean>(false);
@@ -1105,6 +1106,30 @@ const CompanyShellInner: React.FC<CompanyShellProps> = ({ currentUser, onLogout 
               <span>⚡ Medisphere OS</span>
             </button>
 
+            {/* 2a.1 Founder God-Mode Studio */}
+            {isFounderUser && (
+              <button
+                type="button"
+                onClick={() => setActiveDomainId('godmode-admin-studio')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 14px',
+                  borderRadius: '8px',
+                  fontWeight: 900,
+                  fontSize: '0.8125rem',
+                  cursor: 'pointer',
+                  border: activeDomainId === 'godmode-admin-studio' ? '1.5px solid #F59E0B' : '1px solid rgba(245, 158, 11, 0.4)',
+                  backgroundColor: activeDomainId === 'godmode-admin-studio' ? 'rgba(245, 158, 11, 0.25)' : 'rgba(245, 158, 11, 0.1)',
+                  color: activeDomainId === 'godmode-admin-studio' ? '#FDE68A' : '#FBBF24',
+                  boxShadow: activeDomainId === 'godmode-admin-studio' ? '0 0 12px rgba(245, 158, 11, 0.4)' : 'none'
+                }}
+              >
+                <span>👑 God-Mode Studio</span>
+              </button>
+            )}
+
             {/* 2b. Executive Command Center */}
             <button
               type="button"
@@ -1285,6 +1310,11 @@ const CompanyShellInner: React.FC<CompanyShellProps> = ({ currentUser, onLogout 
                 />
               </div>
             )}
+            {visitedDomains.has('godmode-admin-studio') && (
+              <div style={{ display: activeDomainId === 'godmode-admin-studio' ? 'block' : 'none' }}>
+                <GodModeSuperAdminStudioView onNavigateDomain={setActiveDomainId} />
+              </div>
+            )}
             {visitedDomains.has('executive-command-center') && (
               <div style={{ display: activeDomainId === 'executive-command-center' ? 'block' : 'none' }}>
                 <ExecutiveCommandCenter />
@@ -1382,7 +1412,9 @@ const CompanyShellInner: React.FC<CompanyShellProps> = ({ currentUser, onLogout 
             {/* Fallback for unmounted domains */}
             {![
               'medisphere-command-center',
+              'godmode-admin-studio',
               'executive-command-center',
+              'central-supply-chain',
               'growth-engine',
               'crm-partner-lifecycle',
               'product-plans-entitlements',

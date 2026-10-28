@@ -21,6 +21,14 @@ export const PHASE_1_DOMAINS: Phase1Domain[] = [
     status: 'active'
   },
   {
+    id: 'godmode-admin-studio',
+    title: 'Founder God-Mode Studio & Impersonation',
+    description: 'Zero-password tenant ghosting, 0ms dynamic feature flags, forensic theft radar, churn radar & emergency quarantine',
+    icon: '👑',
+    category: 'core',
+    status: 'active'
+  },
+  {
     id: 'crm-partner-lifecycle',
     title: 'CRM & Healthcare Partner Lifecycle',
     description: 'Healthcare partner onboarding, tier management, and BAA lifecycle',
