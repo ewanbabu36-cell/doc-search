@@ -28,9 +28,10 @@ export function useSmartphoneOS() {
   const [isPhoneFrameMode, setIsPhoneFrameMode] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('docsearch_smartphone_frame_mode');
-      return stored === 'true';
+      if (stored !== null) return stored === 'true';
+      return true; // Default to true so it matches the reference image iPad Pro chassis!
     }
-    return false;
+    return true;
   });
 
   const { playClick, triggerHaptic } = useHapticSoundFeedback();

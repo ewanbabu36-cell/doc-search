@@ -141,6 +141,22 @@
   grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
 }
 
+.grid-cols-5 {
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+}
+
+.grid-cols-6 {
+  grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+}
+
+.grid-cols-7 {
+  grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+}
+
+.grid-cols-8 {
+  grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
+}
+
 @media (min-width: 640px) {
   .sm\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
   .sm\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
@@ -192,6 +208,9 @@
 .max-w-5xl { max-width: 64rem !important; }
 .max-w-6xl { max-width: 72rem !important; }
 .max-w-7xl { max-width: 80rem !important; }
+.max-w-\[1100px\] { max-width: 1100px !important; }
+.max-w-\[1240px\] { max-width: 1240px !important; }
+.min-w-\[270px\] { min-width: 270px !important; }
 
 .mx-auto { margin-left: auto !important; margin-right: auto !important; }
 .my-auto { margin-top: auto !important; margin-bottom: auto !important; }
@@ -365,10 +384,14 @@
 .rounded-full { border-radius: 9999px !important; }
 .rounded-\[12px\] { border-radius: 12px !important; }
 .rounded-\[14px\] { border-radius: 14px !important; }
+.rounded-\[16px\] { border-radius: 16px !important; }
 .rounded-\[18px\] { border-radius: 18px !important; }
 .rounded-\[22px\] { border-radius: 22px !important; }
+.rounded-\[26px\] { border-radius: 26px !important; }
 .rounded-\[28px\] { border-radius: 28px !important; }
+.rounded-\[30px\] { border-radius: 30px !important; }
 .rounded-\[32px\] { border-radius: 32px !important; }
+.rounded-\[44px\] { border-radius: 44px !important; }
 .rounded-\[52px\] { border-radius: 52px !important; }
 
 /* 9. Backdrop Blur & Shadows */

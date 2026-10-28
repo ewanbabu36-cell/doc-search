@@ -73,7 +73,7 @@ export function useWorkspaceLayout() {
         if (data) {
           setActivePresetId(data.activePresetId || 'CLINICAL_DEFAULT');
           setThemeVariant(data.themeVariant || 'LIQUID_GLASS_DARK');
-          setWallpaperId(data.wallpaperId || 'OLED_COSMIC_BLUE');
+          setWallpaperId(data.wallpaperId || 'IOS18_IRIDESCENT_MIDNIGHT');
           setCustomWallpaperUrl(data.customWallpaperUrl || null);
           setWallpaperBlurPx(data.wallpaperBlurPx ?? 0);
           setCustomFolders(data.customFolders || []);

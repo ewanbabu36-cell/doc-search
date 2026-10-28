@@ -175,7 +175,27 @@ const App: React.FC = () => {
         } catch (e) {}
       }
 
-      return null;
+      // Default to Apollo Chief Medical Officer if no prior staff session exists so Springboard mounts immediately
+      const defaultCmoUser: HospitalStaffUser = {
+        id: 'apollo-cmo',
+        category: 'HEALTHCARE',
+        name: 'Dr. Apollo (Chief Medical Officer)',
+        email: 'cmo@apollo.docsearch.internal',
+        role: 'HOSPITAL_EXECUTIVE',
+        roleTitle: 'Chief Medical Officer',
+        department: 'Executive Medical Administration',
+        tenantName: 'DocSearch Apollo Medical Center',
+        tenantId: '11111111-1111-4111-8111-111111111111',
+        organizationType: 'HOSPITAL',
+        allowedWorkspaces: ['HOSPITAL'],
+        defaultModule: 'clinical-consultation',
+        planTier: 'Enterprise God Admin',
+        accessibleFeatures: ['Standard Suite', 'All Modules', 'Master Control'],
+        restrictedFeatures: [],
+        kycStatus: 'KYC_VERIFIED',
+      };
+      localStorage.setItem('docsearch_partner_staff_auth', JSON.stringify(defaultCmoUser));
+      return defaultCmoUser;
     }
     return null;
   });

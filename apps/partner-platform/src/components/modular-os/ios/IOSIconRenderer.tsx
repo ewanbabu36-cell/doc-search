@@ -180,6 +180,138 @@ export const IOSIconRenderer: React.FC<IOSIconRendererProps> = ({
         </svg>
       );
 
+    case 'droplet':
+    case 'water':
+    case 'docsearch_drop':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}>
+          <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+        </svg>
+      );
+
+    case 'heart':
+    case 'heart_filled':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}>
+          <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+        </svg>
+      );
+
+    case 'rx_symbol':
+      return (
+        <div style={{ fontSize: `${size}px`, fontWeight: '900', fontFamily: 'serif', lineHeight: 1 }} className={className}>
+          ℞
+        </div>
+      );
+
+    case 'imaging_scan':
+    case 'viewfinder':
+    case 'dicom':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+          <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+          <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+          <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+          <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+          <circle cx="12" cy="12" r="3.5" />
+          <line x1="12" y1="5" x2="12" y2="7" />
+          <line x1="12" y1="17" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="7" y2="12" />
+          <line x1="17" y1="12" x2="19" y2="12" />
+        </svg>
+      );
+
+    case 'camera':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+          <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+          <circle cx="12" cy="13" r="3" />
+        </svg>
+      );
+
+    case 'cloud_caduceus':
+    case 'ehr_cloud':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+          <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />
+          <path d="M12 11v6" strokeWidth="2.5" />
+          <path d="M10 13h4" strokeWidth="2.5" />
+        </svg>
+      );
+
+    case 'briefcase_medical':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+          <rect width="20" height="14" x="2" y="7" rx="2" />
+          <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+          <polyline points="7 14 10 14 11 11 13 17 14 14 17 14" />
+        </svg>
+      );
+
+    case 'messages':
+    case 'chat':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}>
+          <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+        </svg>
+      );
+
+    case 'mail':
+    case 'envelope':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+          <rect width="20" height="16" x="2" y="4" rx="2" />
+          <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+        </svg>
+      );
+
+    case 'phone':
+    case 'call':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}>
+          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+        </svg>
+      );
+
+    case 'safari':
+    case 'compass':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+          <circle cx="12" cy="12" r="10" />
+          <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="#ef4444" stroke="#ffffff" />
+        </svg>
+      );
+
+    case 'notes':
+      return (
+        <div style={{ width: size, height: size }} className={`flex flex-col rounded-[4px] overflow-hidden bg-white shadow-sm ${className}`}>
+          <div className="h-2 w-full bg-amber-400" />
+          <div className="flex-1 p-0.5 flex flex-col justify-evenly">
+            <div className="h-[1.5px] w-full bg-amber-200/80" />
+            <div className="h-[1.5px] w-full bg-amber-200/80" />
+            <div className="h-[1.5px] w-full bg-amber-200/80" />
+          </div>
+        </div>
+      );
+
+    case 'calendar_badge':
+      return (
+        <div style={{ width: size, height: size }} className={`relative flex items-center justify-center ${className}`}>
+          <svg width={size * 0.9} height={size * 0.9} viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect width="18" height="18" x="3" y="4" rx="2" ry="2" fill="#ffffff" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="3" y1="10" x2="21" y2="10" />
+          </svg>
+          <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-blue-600 border border-white flex items-center justify-center">
+            <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="3">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+          </div>
+        </div>
+      );
+
     case 'applibrary':
     case 'grid':
     case 'apps':

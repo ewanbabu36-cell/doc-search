@@ -12,6 +12,7 @@ import { SmartphoneNavigationBar } from './smartphone/SmartphoneNavigationBar.js
 import { SmartphoneRecentAppsOverview } from './smartphone/SmartphoneRecentAppsOverview.js';
 import { SmartphoneDeviceFrame } from './smartphone/SmartphoneDeviceFrame.js';
 import { WallpaperEngineModal, WALLPAPER_PRESETS } from './wallpaper/WallpaperEngine.js';
+import { IOS18AuroraRibbons } from './wallpaper/IOS18AuroraRibbons.js';
 import { FEATURE_REGISTRY, type ModularFeatureAction } from './registry/feature-registry.js';
 
 export interface ModularOSContainerProps {
@@ -140,6 +141,11 @@ export const ModularOSContainer: React.FC<ModularOSContainerProps> = ({
         className="relative min-h-screen text-slate-100 flex flex-col font-sans select-none overflow-x-hidden transition-all duration-500"
         style={wallpaperBackgroundStyle}
       >
+        {/* Apple iPadOS 18 Aurora Ribbon Wallpaper Layer */}
+        {!customWallpaperUrl && (wallpaperId === 'IOS18_IRIDESCENT_MIDNIGHT' || !wallpaperId) && (
+          <IOS18AuroraRibbons />
+        )}
+
         {/* Acrylic Glass Blur Overlay */}
         {wallpaperBlurPx > 0 && (
           <div
