@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { ThemeProvider, DocSearch3DLogoLoader, type ThemeMode } from '@docsearch/ui-kit';
 import { setupCrossBrowserThemeSync, persistCloudThemePreference } from './services/theme-sync-service.js';
-import { PartnerPlatformShell } from './components/PartnerPlatformShell.js';
+import { DocSearchHealthOSContainer } from './components/health-os/DocSearchHealthOSContainer.js';
 const HospitalQueueTvDisplayView = React.lazy(() =>
   import('./components/views/HospitalQueueTvDisplayView.js').then((m) => ({ default: m.HospitalQueueTvDisplayView }))
 );
@@ -258,10 +258,10 @@ const App: React.FC = () => {
     );
   }
 
-  // 2. Authenticated Staff -> Pure Enterprise Hospital Management Platform Workspace (No Phone/OS Simulator)
+  // 2. Authenticated Staff -> Sovereign Healthcare OS (HealthOS with Pure Android Homescreen & 3-Button Nav)
   return (
     <ThemeProvider cloudTheme={cloudTheme} onThemeChange={handleThemeChange}>
-      <PartnerPlatformShell currentUser={currentUser} onLogout={handleLogout} />
+      <DocSearchHealthOSContainer currentUser={currentUser} onLogout={handleLogout} />
     </ThemeProvider>
   );
 };
