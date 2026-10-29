@@ -4850,6 +4850,43 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                   )}
                 </div>
               )}
+
+              {/* Direct Single-Tap Header Logout Action */}
+              {onLogout && (
+                <button
+                  type="button"
+                  onClick={onLogout}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '6px 14px',
+                    borderRadius: '8px',
+                    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                    border: '1.5px solid rgba(239, 68, 68, 0.45)',
+                    color: '#FCA5A5',
+                    fontSize: '0.78rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    flexShrink: 0
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.3)';
+                    e.currentTarget.style.borderColor = '#EF4444';
+                    e.currentTarget.style.color = '#FFFFFF';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';
+                    e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.45)';
+                    e.currentTarget.style.color = '#FCA5A5';
+                  }}
+                  title="Sign out of hospital terminal"
+                >
+                  <span>🚪</span>
+                  <span>Logout</span>
+                </button>
+              )}
             </div>
           }
         />
