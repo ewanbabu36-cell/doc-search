@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { hospitalEventBus, type HospitalEventPayload } from '../../services/hospital-event-bus.js';
+import { opdVoiceCallerService } from '../../services/opd-voice-caller.service.js';
 import { getUnifiedPartnerProfile } from '../../utils/roleProfileResolver.js';
 
 export interface HospitalQueueTvDisplayViewProps {
@@ -387,6 +388,19 @@ export const HospitalQueueTvDisplayView: React.FC<HospitalQueueTvDisplayViewProp
       }
     });
 
+    const unsubVoiceCaller = opdVoiceCallerService.onTokenCalled((callData) => {
+      const tokenNum = callData.tokenNumber;
+      if (tokenNum) {
+        handleCallEncounter({
+          tokenNumber: String(tokenNum).startsWith('#') ? tokenNum : `#${tokenNum}`,
+          patientName: callData.patientName || 'OPD Patient',
+          uhid: callData.uhid || `UHID-2026-${tokenNum}`,
+          roomNumber: callData.roomNumber || 'ROOM 101',
+          doctorName: callData.doctorName || partnerProfile.doctorName || 'Attending Physician'
+        });
+      }
+    });
+
     return () => {
       unsubCalled();
       unsubChamberCall();
@@ -394,6 +408,7 @@ export const HospitalQueueTvDisplayView: React.FC<HospitalQueueTvDisplayViewProp
       unsubCompleted();
       unsubRx();
       unsubTokenGenerated();
+      unsubVoiceCaller();
     };
   }, [partnerProfile]);
 

@@ -52,6 +52,7 @@ import {
 } from '../../utils/regional-prescription-translator.js';
 import { ClinicalSparkline } from '@docsearch/ui-kit';
 import { pharmacyStockService } from '../../services/pharmacy-stock-service.js';
+import { opdVoiceCallerService } from '../../services/opd-voice-caller.service.js';
 import { abdmFhirService } from '../../services/abdm-fhir-service.js';
 
 export interface ClinicalQuickProtocol {
@@ -518,45 +519,17 @@ export const POPULAR_INVESTIGATION_PILLS = [
 export const COMMON_OPD_DIAGNOSES = INDIAN_100_ICD10_DIAGNOSIS_CATALOG;
 
 // Audio synthesizer for clinical chime & bilingual Hindi/English token announcements
-const playChime = (token?: string, patientName?: string, chamberRoom?: string) => {
-  try {
-    const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
-    osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15); // A5
-    gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.45);
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.45);
-
-    if (patientName && 'speechSynthesis' in window) {
-      setTimeout(() => {
-        try {
-          const langPref = (typeof window !== 'undefined' && localStorage.getItem('docsearch_audio_call_lang')) || 'HI';
-          window.speechSynthesis.cancel();
-          let text = '';
-          let speechLang = 'en-IN';
-          if (langPref === 'HI') {
-            const roomMsg = chamberRoom ? `, कृपया ${chamberRoom} में पधारें` : ', कृपया डॉक्टर चेंबर में पधारें';
-            text = token ? `टोकन नंबर ${token}, ${patientName}${roomMsg}` : `${patientName}${roomMsg}`;
-            speechLang = 'hi-IN';
-          } else {
-            const roomMsg = chamberRoom ? `, please proceed to ${chamberRoom}` : ', please proceed to doctor chamber';
-            text = token ? `Token number ${token}, ${patientName}${roomMsg}` : `${patientName}${roomMsg}`;
-            speechLang = 'en-IN';
-          }
-          const utterance = new SpeechSynthesisUtterance(text);
-          utterance.rate = 0.94;
-          utterance.lang = speechLang;
-          window.speechSynthesis.speak(utterance);
-        } catch {}
-      }, 400);
-    }
-  } catch {}
+const playChime = (token?: string, patientName?: string, chamberRoom?: string, doctorName?: string) => {
+  if (token) {
+    void opdVoiceCallerService.announceToken({
+      tokenNumber: token,
+      patientName: patientName || 'Patient',
+      roomNumber: chamberRoom || 'Chamber 1',
+      doctorName: doctorName || 'Attending Physician'
+    });
+  } else {
+    void opdVoiceCallerService.playChime();
+  }
 };
 
 // Urgent double-tone chime (F5 -> C6) for Emergency STAT triage alerts
@@ -3042,30 +3015,15 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
     const tokenNo = activePatient.token || 14;
     const patName = activePatient.name;
     const room = chamberRoom || 'Chamber 2';
+    const docName = chamberDoctor || 'Attending Physician';
 
-    hospitalEventBus.publish(
-      'PATIENT_CALLED_TO_CHAMBER',
-      'SoloDoctorOpdCockpitView',
-      {
-        tokenNo,
-        patientName: patName,
-        chamber: room
-      },
-      `Calling Token #${tokenNo} (${patName}) to ${room}`
-    );
-
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const langPref = localStorage.getItem('docsearch_audio_call_lang') || 'HI';
-      const text = langPref === 'HI'
-        ? `टोकन नंबर ${tokenNo}, ${patName}, कृपया डॉक्टर ${room} में पधारें।`
-        : `Token number ${tokenNo}, ${patName}, please proceed to doctor ${room}.`;
-      const announcement = new SpeechSynthesisUtterance(text);
-      announcement.rate = 0.95;
-      announcement.pitch = 1.0;
-      announcement.lang = langPref === 'HI' ? 'hi-IN' : 'en-IN';
-      window.speechSynthesis.speak(announcement);
-    }
+    void opdVoiceCallerService.announceToken({
+      tokenNumber: tokenNo,
+      patientName: patName,
+      roomNumber: room,
+      doctorName: docName,
+      uhid: activePatient.mrn
+    });
 
     setStatusMessage(`📢 Audio Call Dispatched: Token #${tokenNo} (${patName})`);
     setTimeout(() => {
@@ -9744,8 +9702,64 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
                         <tr key={med.id || idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                           <td style={{ padding: '6px 10px', color: '#64748B', fontWeight: 800 }}>{idx + 1}</td>
                           <td style={{ padding: '6px 10px' }}>
-                            <div style={{ fontWeight: 800, color: '#F8FAFC' }}>
-                              {med.medicationName} <span style={{ color: '#38BDF8', fontSize: '0.7rem' }}>{med.strength}</span>
+                            <div style={{ fontWeight: 800, color: '#F8FAFC', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                              <span>{med.medicationName}</span>
+                              <span style={{ color: '#38BDF8', fontSize: '0.7rem' }}>{med.strength}</span>
+                              {(() => {
+                                const stockInfo = pharmacyStockService.getPharmacyStock(med.medicationName, med.genericName);
+                                if (stockInfo.status === 'IN_STOCK') {
+                                  return (
+                                    <span
+                                      style={{
+                                        fontSize: '0.625rem',
+                                        color: '#10B981',
+                                        backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                                        border: '1px solid rgba(16, 185, 129, 0.3)',
+                                        padding: '1px 5px',
+                                        borderRadius: '4px',
+                                        fontWeight: 800
+                                      }}
+                                      title={`Pharmacy Dispensary: ${stockInfo.stock} ${stockInfo.unit} in stock`}
+                                    >
+                                      ● {stockInfo.stock} in stock
+                                    </span>
+                                  );
+                                }
+                                if (stockInfo.status === 'LOW_STOCK') {
+                                  return (
+                                    <span
+                                      style={{
+                                        fontSize: '0.625rem',
+                                        color: '#F59E0B',
+                                        backgroundColor: 'rgba(245, 158, 11, 0.12)',
+                                        border: '1px solid rgba(245, 158, 11, 0.3)',
+                                        padding: '1px 5px',
+                                        borderRadius: '4px',
+                                        fontWeight: 800
+                                      }}
+                                      title={`Low Dispensary Stock: ${stockInfo.stock} ${stockInfo.unit} remaining`}
+                                    >
+                                      ● {stockInfo.stock} left
+                                    </span>
+                                  );
+                                }
+                                return (
+                                  <span
+                                    style={{
+                                      fontSize: '0.625rem',
+                                      color: '#EF4444',
+                                      backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                                      border: '1px solid rgba(239, 68, 68, 0.3)',
+                                      padding: '1px 5px',
+                                      borderRadius: '4px',
+                                      fontWeight: 800
+                                    }}
+                                    title={stockInfo.substitute ? `Out of stock. Suggested substitute: ${stockInfo.substitute.name}` : 'Out of stock in clinic pharmacy'}
+                                  >
+                                    ● Out of Stock {stockInfo.substitute ? `(Sub: ${stockInfo.substitute.name})` : ''}
+                                  </span>
+                                );
+                              })()}
                             </div>
                             {/* 🇮🇳 Regional Vernacular Dosage Sub-line */}
                             {(() => {
@@ -9886,8 +9900,86 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
                   gap: '8px'
                 }}
               >
-                <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#38BDF8', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span>➕ Fast Medicine Adder (Type-Ahead Formulary & Jan Aushadhi)</span>
+                <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#38BDF8', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>➕ Fast Medicine Adder (Type-Ahead Formulary & Jan Aushadhi)</span>
+                    {medSearchInput.trim().length > 1 && (() => {
+                      const stockInfo = pharmacyStockService.getPharmacyStock(medSearchInput.trim());
+                      if (stockInfo.status === 'IN_STOCK') {
+                        return (
+                          <span
+                            style={{
+                              fontSize: '0.625rem',
+                              color: '#10B981',
+                              backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                              border: '1px solid rgba(16, 185, 129, 0.35)',
+                              padding: '1px 6px',
+                              borderRadius: '4px',
+                              fontWeight: 800
+                            }}
+                          >
+                            ● {stockInfo.stock} in stock
+                          </span>
+                        );
+                      }
+                      if (stockInfo.status === 'LOW_STOCK') {
+                        return (
+                          <span
+                            style={{
+                              fontSize: '0.625rem',
+                              color: '#F59E0B',
+                              backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                              border: '1px solid rgba(245, 158, 11, 0.35)',
+                              padding: '1px 6px',
+                              borderRadius: '4px',
+                              fontWeight: 800
+                            }}
+                          >
+                            ● Low Stock: {stockInfo.stock} left
+                          </span>
+                        );
+                      }
+                      return (
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                          <span
+                            style={{
+                              fontSize: '0.625rem',
+                              color: '#EF4444',
+                              backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                              border: '1px solid rgba(239, 68, 68, 0.35)',
+                              padding: '1px 6px',
+                              borderRadius: '4px',
+                              fontWeight: 800
+                            }}
+                          >
+                            ● Out of Stock
+                          </span>
+                          {stockInfo.substitute && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setMedSearchInput(stockInfo.substitute!.name);
+                                setAdderStrength(stockInfo.substitute!.strength);
+                              }}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: '#38BDF8',
+                                cursor: 'pointer',
+                                textDecoration: 'underline',
+                                fontWeight: 700,
+                                fontSize: '0.625rem',
+                                padding: 0
+                              }}
+                              title="Click to select generic substitute"
+                            >
+                              ⚡ Suggestion: {stockInfo.substitute.name} ({stockInfo.substitute.stock} in stock)
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
                   {adderGenericSub && (
                     <span style={{ color: '#10B981', fontSize: '0.65rem', fontWeight: 800 }}>
                       ⚡ Jan Aushadhi: {adderGenericSub.name} (Save ₹{adderGenericSub.brandPrice - adderGenericSub.janAushadhiPrice})

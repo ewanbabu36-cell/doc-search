@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useHapticSoundFeedback } from '../hooks/useHapticSoundFeedback.js';
+import { opdVoiceCallerService } from '../../../services/opd-voice-caller.service.js';
 
 export interface HospitalWidgetProps {
   onOpenModule?: (route: string) => void;
@@ -8,17 +9,40 @@ export interface HospitalWidgetProps {
 // ----------------- WIDGET 1: OPD TOKEN QUEUE CALLER -----------------
 export const OpdTokenQueueWidget: React.FC<HospitalWidgetProps> = ({ onOpenModule }) => {
   const [currentToken, setCurrentToken] = useState<number>(42);
+  const [currentPatient, setCurrentPatient] = useState<string>('Amit Verma (34M) • Consult');
   const [waitingCount, setWaitingCount] = useState<number>(18);
   const [isCalling, setIsCalling] = useState<boolean>(false);
   const { playClick, triggerHaptic } = useHapticSoundFeedback();
+
+  useEffect(() => {
+    const unsub = opdVoiceCallerService.onTokenCalled((evt) => {
+      const parsedNum = parseInt(String(evt.tokenNumber).replace(/\D/g, ''), 10);
+      if (!isNaN(parsedNum)) {
+        setCurrentToken(parsedNum);
+      }
+      if (evt.patientName) {
+        setCurrentPatient(`${evt.patientName} • Consult`);
+      }
+      setIsCalling(true);
+      setTimeout(() => setIsCalling(false), 2000);
+    });
+    return unsub;
+  }, []);
 
   const handleCallNext = (e: React.MouseEvent) => {
     e.stopPropagation();
     playClick();
     triggerHaptic(25);
     setIsCalling(true);
-    setCurrentToken((prev) => prev + 1);
+    const nextToken = currentToken + 1;
+    setCurrentToken(nextToken);
     setWaitingCount((prev) => Math.max(0, prev - 1));
+    void opdVoiceCallerService.announceToken({
+      tokenNumber: nextToken,
+      patientName: 'OPD Patient',
+      roomNumber: 'Room 4',
+      doctorName: 'Attending Physician'
+    });
     setTimeout(() => setIsCalling(false), 2000);
   };
 
@@ -61,7 +85,7 @@ export const OpdTokenQueueWidget: React.FC<HospitalWidgetProps> = ({ onOpenModul
             )}
           </div>
           <div className="text-[11px] font-medium text-white/80 truncate max-w-[170px]">
-            Amit Verma (34M) • Consult
+            {currentPatient}
           </div>
         </div>
 

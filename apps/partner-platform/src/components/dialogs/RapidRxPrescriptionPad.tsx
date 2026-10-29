@@ -939,6 +939,44 @@ export const RapidRxPrescriptionPad: React.FC<RapidRxPrescriptionPadProps> = ({
             }}
           />
 
+          {/* Live Pharmacy Stock & Generic Suggestion Pill on Type-ahead */}
+          {searchQuery.trim().length > 1 && (() => {
+            const stock = pharmacyStockService.getPharmacyStock(searchQuery.trim());
+            return (
+              <div style={{ marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.6875rem' }}>
+                {stock.status === 'IN_STOCK' && (
+                  <span style={{ color: '#10B981', backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.35)', padding: '1px 6px', borderRadius: '4px', fontWeight: 800 }}>
+                    ● {stock.stock} in stock
+                  </span>
+                )}
+                {stock.status === 'LOW_STOCK' && (
+                  <span style={{ color: '#F59E0B', backgroundColor: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.35)', padding: '1px 6px', borderRadius: '4px', fontWeight: 800 }}>
+                    ● Low Stock: {stock.stock} left
+                  </span>
+                )}
+                {stock.status === 'OUT_OF_STOCK' && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ color: '#EF4444', backgroundColor: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.35)', padding: '1px 6px', borderRadius: '4px', fontWeight: 800 }}>
+                      ● Out of Stock
+                    </span>
+                    {stock.substitute && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSearchQuery(stock.substitute!.name);
+                          setStrength(stock.substitute!.strength);
+                        }}
+                        style={{ background: 'none', border: 'none', color: '#38BDF8', cursor: 'pointer', textDecoration: 'underline', fontWeight: 700, fontSize: '0.6875rem', padding: 0 }}
+                      >
+                        ⚡ Suggestion: {stock.substitute.name} ({stock.substitute.stock} in stock)
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
           {/* Instant Dropdown (0ms Latency) */}
           {isOpenDropdown && filteredDrugs.length > 0 && (
             <div

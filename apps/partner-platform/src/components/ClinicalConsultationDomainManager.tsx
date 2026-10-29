@@ -22,6 +22,8 @@ import { partnerFoundationService } from '../services/partner-foundation-service
 import { hospitalEventBus, type HospitalEventPayload } from '../services/hospital-event-bus.js';
 import { patientSessionTabService } from '../services/patient-session-tab-service.js';
 import { patientRegistrationService } from '../services/patient-registration-service.js';
+import { opdVoiceCallerService } from '../services/opd-voice-caller.service.js';
+import { pharmacyStockService } from '../services/pharmacy-stock-service.js';
 
 import { PanelContextSwitcher } from './common/PanelContextSwitcher.js';
 import { ConsultationOverviewView } from './views/ConsultationOverviewView.js';
@@ -614,6 +616,16 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
 
     const selected = consultations.find((c) => c.id === id);
     if (selected) {
+      const enc = encounters.find((e) => e.id === selected.encounterId);
+      const tokenNum = enc?.tokenNumber || (selected as any).queueToken || '#01';
+      void opdVoiceCallerService.announceToken({
+        tokenNumber: tokenNum,
+        patientName: selected.patientName,
+        roomNumber: chamberProfile.roomNumber || 'Room 101',
+        doctorName: selected.doctorName || chamberProfile.doctorName,
+        uhid: selected.patientMrn
+      });
+
       hospitalEventBus.publish('PATIENT_SELECTED', 'ClinicalConsultationDomainManager', {
         patientId: selected.patientId,
         name: selected.patientName,
@@ -622,7 +634,6 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
         allergies: ['NKDA'],
         encounterType: 'OPD'
       });
-      const enc = encounters.find((e) => e.id === selected.encounterId);
       patientSessionTabService.openTab({
         id: `opd-${selected.id}`,
         title: selected.patientName,
@@ -638,6 +649,15 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
       const cleanEncId = id.startsWith('draft-') ? id.replace('draft-', '') : id;
       const enc = encounters.find((e) => e.id === cleanEncId || e.id === id);
       if (enc) {
+        const tokenNum = enc.tokenNumber || '#01';
+        void opdVoiceCallerService.announceToken({
+          tokenNumber: tokenNum,
+          patientName: enc.patientName,
+          roomNumber: chamberProfile.roomNumber || 'Room 101',
+          doctorName: chamberProfile.doctorName,
+          uhid: enc.patientMrn
+        });
+
         hospitalEventBus.publish('PATIENT_SELECTED', 'ClinicalConsultationDomainManager', {
           patientId: enc.patientId,
           name: enc.patientName,
@@ -686,6 +706,10 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
   };
 
   const handleAddMedication = async (req: AddMedicationRequest) => {
+    const stockInfo = pharmacyStockService.getPharmacyStock(req.medicationName);
+    if (stockInfo.status === 'OUT_OF_STOCK') {
+      console.info(`Prescribed medication ${req.medicationName} is currently out of stock at pharmacy dispensary.`);
+    }
     await clinicalConsultationService.addMedication(req);
     await loadData();
   };
@@ -858,6 +882,20 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
 
     const nextEnc = waitingList[0];
     if (nextEnc) {
+      const tokenNum = (nextEnc as any).tokenNumber || '#01';
+      const patientName = (nextEnc as any).patientName || 'OPD Patient';
+      const roomNumber = chamberProfile.roomNumber || 'Room 101';
+      const doctorName = chamberProfile.doctorName || currentUser?.name || 'Attending Physician';
+      const uhid = (nextEnc as any).patientMrn;
+
+      void opdVoiceCallerService.announceToken({
+        tokenNumber: tokenNum,
+        patientName,
+        roomNumber,
+        doctorName,
+        uhid
+      });
+
       try {
         const claimRes = await clinicalConsultationService.claimEncounter(nextEnc.id, currentUser?.id);
         if (claimRes?.consultation) {
