@@ -7,7 +7,7 @@ const HospitalQueueTvDisplayView = React.lazy(() =>
   import('./components/views/HospitalQueueTvDisplayView.js').then((m) => ({ default: m.HospitalQueueTvDisplayView }))
 );
 import { HospitalStaffLogin, type HospitalStaffUser } from './components/auth/HospitalStaffLogin.js';
-import { getUrlForModule } from './utils/urlRouter.js';
+import { HospitalPortalLandingPage } from './components/landing/HospitalPortalLandingPage.js';
 import { ensureAuthToken, isTokenExpired } from './services/api-client.js';
 import { pwaCompanion } from './services/pwa-companion.js';
 import { ModularOSContainer } from './components/modular-os/ModularOSContainer.js';
@@ -175,43 +175,40 @@ const App: React.FC = () => {
         } catch (e) {}
       }
 
-      // Default to Apollo Chief Medical Officer if no prior staff session exists so Springboard mounts immediately
-      const defaultCmoUser: HospitalStaffUser = {
-        id: 'apollo-cmo',
-        category: 'HEALTHCARE',
-        name: 'Dr. Apollo (Chief Medical Officer)',
-        email: 'cmo@apollo.docsearch.internal',
-        role: 'HOSPITAL_EXECUTIVE',
-        roleTitle: 'Chief Medical Officer',
-        department: 'Executive Medical Administration',
-        tenantName: 'DocSearch Apollo Medical Center',
-        tenantId: '11111111-1111-4111-8111-111111111111',
-        organizationType: 'HOSPITAL',
-        allowedWorkspaces: ['HOSPITAL'],
-        defaultModule: 'clinical-consultation',
-        planTier: 'Enterprise God Admin',
-        accessibleFeatures: ['Standard Suite', 'All Modules', 'Master Control'],
-        restrictedFeatures: [],
-        kycStatus: 'KYC_VERIFIED',
-      };
-      localStorage.setItem('docsearch_partner_staff_auth', JSON.stringify(defaultCmoUser));
-      return defaultCmoUser;
+      // If no authenticated staff session exists, return null so Public Hospital Landing Page is rendered
+      return null;
     }
     return null;
+  });
+
+  const [isBootstrapping, setIsBootstrapping] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      if (localStorage.getItem('docsearch_logged_out') === 'true') return false;
+      const token = localStorage.getItem('docsearch_auth_token') || localStorage.getItem('auth_token');
+      const stored = localStorage.getItem('docsearch_partner_staff_auth');
+      if (!token && !stored) return false;
+    }
+    return true;
   });
 
   // Verify JWT session on mount; if expired, auto-refresh to keep active staff unblocked
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('docsearch_partner_staff_auth');
-      if (!stored) return;
+      if (!stored) {
+        setIsBootstrapping(false);
+        return;
+      }
 
       let staff: any = null;
       try {
         staff = JSON.parse(stored);
       } catch {}
 
-      if (!staff?.email) return;
+      if (!staff?.email) {
+        setIsBootstrapping(false);
+        return;
+      }
 
       // Active Revocation Check: Immediately terminate session if access was revoked by admin
       try {
@@ -229,6 +226,7 @@ const App: React.FC = () => {
               localStorage.removeItem('docsearch_auth_token');
               localStorage.setItem('docsearch_logged_out', 'true');
               setCurrentUser(null);
+              setIsBootstrapping(false);
               return;
             }
           }
@@ -245,6 +243,7 @@ const App: React.FC = () => {
           localStorage.removeItem('docsearch_partner_staff_auth');
           localStorage.removeItem('docsearch_auth_token');
           setCurrentUser(null);
+          setIsBootstrapping(false);
           return;
         }
 
@@ -292,10 +291,14 @@ const App: React.FC = () => {
           }
         } catch {
           // Backend unreachable or offline, retain active session without disruption
+        } finally {
+          setIsBootstrapping(false);
         }
       };
 
       void verifyOrRefresh();
+    } else {
+      setIsBootstrapping(false);
     }
   }, []);
 
@@ -306,16 +309,28 @@ const App: React.FC = () => {
       setCurrentUser(user);
     });
 
-    // Force synchronize browser address bar to newly authenticated staff's authorized workspace and default module
-    if (typeof window !== 'undefined' && user?.organizationType) {
+    // Dynamic Role-Based Initial Module Route Dispatcher
+    const roleUpper = (user.role || '').toUpperCase();
+    const deptUpper = (user.department || '').toUpperCase();
+    let targetPath = '/partner/clinical/consultations'; // Default Doctor OPD Desk
+
+    if (roleUpper.includes('NURSE') || deptUpper.includes('INPATIENT') || deptUpper.includes('WARD')) {
+      targetPath = '/partner/inpatient';
+    } else if (roleUpper.includes('CASHIER') || roleUpper.includes('FRONT_DESK') || deptUpper.includes('BILLING')) {
+      targetPath = '/partner/billing';
+    } else if (roleUpper.includes('PHARMAC') || deptUpper.includes('PHARMACY')) {
+      targetPath = '/partner/pharmacy';
+    } else if (roleUpper.includes('LAB') || roleUpper.includes('PATHOLOG') || deptUpper.includes('PATHOLOGY')) {
+      targetPath = '/partner/lab';
+    } else if (roleUpper.includes('ADMIN') || roleUpper.includes('EXECUTIVE') || roleUpper.includes('DIRECTOR')) {
+      targetPath = '/partner/executive';
+    }
+
+    if (typeof window !== 'undefined') {
       try {
-        const canonicalUrl = getUrlForModule(
-          user.organizationType,
-          (user.defaultModule as any) || 'clinical-consultation'
-        );
-        window.history.replaceState({ path: canonicalUrl }, '', canonicalUrl);
+        window.history.pushState({ path: targetPath }, '', targetPath);
       } catch (e) {
-        window.history.replaceState({}, document.title, '/');
+        window.history.replaceState({}, document.title, targetPath);
       }
     }
   };
@@ -377,26 +392,8 @@ const App: React.FC = () => {
 
   const handleUnlock = (selectedStaff?: any) => {
     setIsLocked(false);
-    if (!currentUser) {
-      const defaultUser: HospitalStaffUser = {
-        id: selectedStaff?.id || 'apollo-cmo',
-        category: 'HEALTHCARE',
-        name: selectedStaff?.name || 'Dr. Apollo (Chief Medical Officer)',
-        email: selectedStaff?.email || 'cmo@apollo.docsearch.internal',
-        role: selectedStaff?.role || 'HOSPITAL_EXECUTIVE',
-        roleTitle: selectedStaff?.roleTitle || 'Chief Medical Officer',
-        department: 'Executive Medical Administration',
-        tenantName: 'DocSearch Apollo Medical Center',
-        tenantId: '11111111-1111-4111-8111-111111111111',
-        organizationType: (selectedStaff?.organizationType as any) || 'HOSPITAL',
-        allowedWorkspaces: ['HOSPITAL'],
-        defaultModule: selectedStaff?.defaultModule || 'clinical-consultation',
-        planTier: 'Enterprise God Admin',
-        accessibleFeatures: ['Standard Suite', 'All Modules', 'Master Control'],
-        restrictedFeatures: [],
-        kycStatus: 'KYC_VERIFIED',
-      };
-      handleLogin(defaultUser);
+    if (selectedStaff) {
+      handleLogin(selectedStaff);
     }
   };
 
@@ -422,7 +419,37 @@ const App: React.FC = () => {
     );
   }
 
-  if (!currentUser || isLocked) {
+  if (isBootstrapping) {
+    return (
+      <div className="min-h-screen bg-[#070913] flex flex-col items-center justify-center text-white space-y-4 select-none">
+        <div className="relative">
+          <div className="w-16 h-16 rounded-3xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-3xl shadow-xl shadow-blue-500/20 animate-pulse">
+            🏥
+          </div>
+          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-400 animate-ping" />
+        </div>
+        <div className="text-center">
+          <div className="text-sm font-bold tracking-tight text-white">DocSearch Apollo Hospital</div>
+          <div className="text-xs text-slate-400 mt-1 flex items-center gap-1.5 justify-center font-mono">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span>Connecting to PostgreSQL 18.4 Engine...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 1. If user is NOT authenticated: Display Public Hospital Landing Page!
+  if (!currentUser) {
+    return (
+      <ThemeProvider cloudTheme={cloudTheme} onThemeChange={handleThemeChange}>
+        <HospitalPortalLandingPage onLoginSuccess={handleLogin} />
+      </ThemeProvider>
+    );
+  }
+
+  // 2. If terminal was explicitly locked from Control Center by active doctor
+  if (isLocked) {
     if (showTraditionalLogin) {
       return (
         <ThemeProvider cloudTheme={cloudTheme} onThemeChange={handleThemeChange}>
@@ -450,7 +477,7 @@ const App: React.FC = () => {
     return (
       <ThemeProvider cloudTheme={cloudTheme} onThemeChange={handleThemeChange}>
         <IOSLockScreen
-          hospitalName={currentUser?.tenantName || 'DocSearch Apollo Medical Center'}
+          hospitalName={currentUser.tenantName || 'DocSearch Apollo Medical Center'}
           onUnlock={handleUnlock}
           onOpenTraditionalLogin={() => setShowTraditionalLogin(true)}
         />
@@ -464,6 +491,13 @@ const App: React.FC = () => {
         hospitalName={currentUser.tenantName || 'DocSearch Apollo Medical Center'}
         staffName={currentUser.name}
         staffRole={currentUser.roleTitle}
+        activeContextType={
+          currentUser.role?.toUpperCase().includes('CASHIER') || currentUser.role?.toUpperCase().includes('BILLING')
+            ? 'CASHIER'
+            : currentUser.role?.toUpperCase().includes('EMERGENCY')
+              ? 'EMERGENCY'
+              : 'CLINICAL'
+        }
         onLockScreen={() => setIsLocked(true)}
         onLogout={handleLogout}
       >
