@@ -99,6 +99,18 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     description: 'Fast OPD registration, biometric ABHA lookup & photo capture',
   },
   {
+    id: 'patient-portal',
+    label: 'Patient Health 360 & ABHA Locker',
+    shortLabel: 'Patient 360',
+    category: 'CLINICAL',
+    icon: '👤',
+    gradient: 'from-sky-600 to-blue-800',
+    route: '/partner/patient-portal',
+    description: 'Self-service digital health records, active prescriptions, appointments & ABHA',
+    badge: 'ABHA Linked',
+    isCoreHomeApp: true,
+  },
+  {
     id: 'emergency-trauma',
     label: 'Emergency & Manchester Triage',
     shortLabel: 'Emergency',

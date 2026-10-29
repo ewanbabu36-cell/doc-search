@@ -626,11 +626,34 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess, initialMod
 
 
   // 1-Click Role-Isolated Persona Login (Strict Access Separation)
-  const handleRolePersonaLogin = (persona: 'DOCTOR' | 'PHARMACIST' | 'LAB_TECH' | 'NURSE' | 'FRONT_DESK' | 'DIRECTOR') => {
+  const handleRolePersonaLogin = (persona: 'DOCTOR' | 'PATIENT' | 'PHARMACIST' | 'LAB_TECH' | 'NURSE' | 'FRONT_DESK' | 'DIRECTOR') => {
     let personaUser: HospitalStaffUser;
     const resolvedTenantId = (typeof window !== 'undefined' && localStorage.getItem('docsearch_partner_tenant')) || '1e72b864-920a-c07d-98c5-183d3eb50428';
 
     switch (persona) {
+      case 'PATIENT':
+        personaUser = {
+          id: 'usr_persona_patient',
+          category: 'HEALTHCARE',
+          name: 'Priya Sharma (Patient / Health Locker)',
+          email: 'patient@docsearch.health',
+          role: 'PATIENT',
+          roleTitle: 'Verified Citizen & Patient',
+          department: 'Patient Self-Service & ABHA',
+          tenantName: 'DocSearch National Health Network',
+          tenantId: resolvedTenantId,
+          organizationType: 'CLINIC',
+          allowedWorkspaces: ['CLINIC'],
+          defaultModule: 'patient-portal',
+          planTier: HOSPITAL_PRO_TIER_NAME,
+          planExpiryDate: 'Enterprise Active',
+          accessibleFeatures: ['Health Locker', 'Digital Prescriptions', 'Lab QR Reports', 'ABHA Card'],
+          restrictedFeatures: ['Doctor Clinical Workspace', 'Pharmacy Stock Management', 'Cashier Till'],
+          kycStatus: 'KYC_VERIFIED',
+          isProfileCompleted: true
+        };
+        break;
+
       case 'DOCTOR':
         personaUser = {
           id: 'usr_persona_doctor',
@@ -1618,6 +1641,30 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess, initialMod
                   <span style={{ fontSize: '1rem' }}>👑</span>
                   <strong style={{ fontSize: '0.72rem' }}>Director</strong>
                   <span style={{ fontSize: '0.6rem', color: '#C7D2FE' }}>Admin Command</span>
+                </button>
+
+                {/* 7. PATIENT */}
+                <button
+                  type="button"
+                  onClick={() => handleRolePersonaLogin('PATIENT')}
+                  style={{
+                    padding: '8px 6px',
+                    borderRadius: '8px',
+                    backgroundColor: 'rgba(14, 165, 233, 0.15)',
+                    border: '1.5px solid #0EA5E9',
+                    color: '#38BDF8',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '2px',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Login as Patient: Personal Health Locker, Prescriptions & ABHA ID."
+                >
+                  <span style={{ fontSize: '1rem' }}>👤</span>
+                  <strong style={{ fontSize: '0.72rem' }}>Patient</strong>
+                  <span style={{ fontSize: '0.6rem', color: '#BAE6FD' }}>ABHA & EMR</span>
                 </button>
               </div>
             </div>

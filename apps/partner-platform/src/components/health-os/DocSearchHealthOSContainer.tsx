@@ -30,6 +30,7 @@ const AbdmFhirDomainManager = React.lazy(() => import('../AbdmFhirDomainManager.
 const AiCdssDomainManager = React.lazy(() => import('../AiCdssDomainManager.js').then((m) => ({ default: m.AiCdssDomainManager })));
 const ExecutiveCommandDomainManager = React.lazy(() => import('../ExecutiveCommandDomainManager.js').then((m) => ({ default: m.ExecutiveCommandDomainManager })));
 const PatientRegistrationDomainManager = React.lazy(() => import('../PatientRegistrationDomainManager.js').then((m) => ({ default: m.PatientRegistrationDomainManager })));
+const Aarogya360PatientPortalView = React.lazy(() => import('../views/Aarogya360PatientPortalView.js').then((m) => ({ default: m.Aarogya360PatientPortalView })));
 const PartnerOffersRewardsHub = React.lazy(() => import('../offers/PartnerOffersRewardsHub.js').then((m) => ({ default: m.PartnerOffersRewardsHub })));
 
 export interface DocSearchHealthOSContainerProps {
@@ -46,6 +47,9 @@ export const DocSearchHealthOSContainer: React.FC<DocSearchHealthOSContainerProp
     const roleUpper = (currentUser.role || '').toUpperCase();
     const deptUpper = (currentUser.department || '').toUpperCase();
 
+    if (roleUpper.includes('PATIENT')) {
+      return HEALTH_OS_APPS.find((a) => a.id === 'patient-portal') || HEALTH_OS_APPS[0]!;
+    }
     if (roleUpper.includes('NURSE') || deptUpper.includes('INPATIENT') || deptUpper.includes('WARD')) {
       return HEALTH_OS_APPS.find((a) => a.id === 'inpatient-management') || HEALTH_OS_APPS[0]!;
     }
@@ -95,6 +99,7 @@ export const DocSearchHealthOSContainer: React.FC<DocSearchHealthOSContainerProp
       if (path.includes('/lab')) return HEALTH_OS_APPS.find((a) => a.id === 'clinical-investigation') || null;
       if (path.includes('/inpatient')) return HEALTH_OS_APPS.find((a) => a.id === 'inpatient-management') || null;
       if (path.includes('/consultations')) return HEALTH_OS_APPS.find((a) => a.id === 'clinical-consultation') || null;
+      if (path.includes('/patient-portal')) return HEALTH_OS_APPS.find((a) => a.id === 'patient-portal') || null;
       if (path.includes('/encounters')) return HEALTH_OS_APPS.find((a) => a.id === 'encounters-visits') || null;
     }
     // Launch their role-tailored primary app
@@ -318,6 +323,30 @@ export const DocSearchHealthOSContainer: React.FC<DocSearchHealthOSContainerProp
                 <div style={{ display: activeApp.id === 'patient-registration' ? 'block' : 'none' }}>
                   <DomainErrorBoundary domainName="Patient Registration & OPD Desk">
                     <PatientRegistrationDomainManager />
+                  </DomainErrorBoundary>
+                </div>
+              )}
+
+              {visitedModules.has('patient-portal') && (
+                <div style={{ display: activeApp.id === 'patient-portal' ? 'block' : 'none', padding: '16px' }}>
+                  <DomainErrorBoundary domainName="Patient Health 360 & ABHA Locker">
+                    <Aarogya360PatientPortalView
+                      profile={{
+                        id: 'a1b2c3d4-e5f6-4a1b-8c2d-9e0f1a2b3c4d',
+                        patientMrn: 'MRN-2026-9021',
+                        abhaNumber: '91-8842-1094-3321',
+                        abhaAddress: `${(currentUser.name || 'patient').toLowerCase().replace(/[^a-z0-9]/g, '.')}@abdm`,
+                        fullName: currentUser.name || 'Priya Sharma',
+                        mobileNumber: '+91 98765 43210',
+                        dateOfBirth: '1998-05-14',
+                        gender: 'Female',
+                        bloodGroup: 'B+',
+                        activePrescriptionsCount: 3,
+                        upcomingAppointmentsCount: 1,
+                        totalHealthRecordsCount: 12,
+                        portalRole: 'PATIENT_PRIMARY' as const
+                      }}
+                    />
                   </DomainErrorBoundary>
                 </div>
               )}

@@ -16,7 +16,8 @@ export type HealthOSModuleKey =
   | 'whatsapp-portal'
   | 'executive-command-center'
   | 'offers-rewards-hub'
-  | 'patient-registration';
+  | 'patient-registration'
+  | 'patient-portal';
 
 export type HealthOSCategory = 'CORE' | 'CLINICAL' | 'OPERATIONS' | 'DIAGNOSTICS' | 'EXECUTIVE';
 

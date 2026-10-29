@@ -145,7 +145,9 @@ const App: React.FC = () => {
     const deptUpper = (user.department || '').toUpperCase();
     let targetPath = '/partner/clinical/consultations'; // Default Doctor OPD Desk
 
-    if (roleUpper.includes('NURSE') || deptUpper.includes('INPATIENT') || deptUpper.includes('WARD')) {
+    if (roleUpper.includes('PATIENT')) {
+      targetPath = '/partner/patient-portal';
+    } else if (roleUpper.includes('NURSE') || deptUpper.includes('INPATIENT') || deptUpper.includes('WARD')) {
       targetPath = '/partner/inpatient';
     } else if (roleUpper.includes('CASHIER') || roleUpper.includes('FRONT_DESK') || deptUpper.includes('BILLING')) {
       targetPath = '/partner/billing';
