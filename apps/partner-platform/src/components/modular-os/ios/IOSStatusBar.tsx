@@ -3,8 +3,11 @@ import { useHapticSoundFeedback } from '../hooks/useHapticSoundFeedback.js';
 
 export interface IOSStatusBarProps {
   hospitalName?: string | undefined;
-  onOpenControlCenter: () => void;
-  onOpenWallpaperModal: () => void;
+  staffName?: string | undefined;
+  staffRole?: string | undefined;
+  onOpenControlCenter?: (() => void) | undefined;
+  onOpenWallpaperModal?: (() => void) | undefined;
+  onLogout?: (() => void) | undefined;
   activeContextType?: ('CLINICAL' | 'CASHIER' | 'EMERGENCY') | undefined;
   patientName?: string | undefined;
   heartRate?: number | undefined;
@@ -13,16 +16,19 @@ export interface IOSStatusBarProps {
 }
 
 export const IOSStatusBar: React.FC<IOSStatusBarProps> = ({
-  hospitalName = 'DocSearch Apollo 5G',
+  hospitalName = 'DocSearch Apollo Medical Center',
+  staffName = 'Dr. Apollo (Chief Medical Officer)',
+  staffRole = 'Chief Medical Officer',
   onOpenControlCenter,
-  onOpenWallpaperModal: _onOpenWallpaperModal,
+  onOpenWallpaperModal,
+  onLogout,
   activeContextType: _activeContextType = 'CLINICAL',
   patientName = 'Ward 4B / Bed 12',
   heartRate = 78,
-  isPhoneFrameMode = false,
-  onTogglePhoneFrame,
+  isPhoneFrameMode: _isPhoneFrameMode = false,
+  onTogglePhoneFrame: _onTogglePhoneFrame,
 }) => {
-  const [timeStr, setTimeStr] = useState<string>('9:41');
+  const [timeStr, setTimeStr] = useState<string>('09:41');
   const [isDynamicIslandExpanded, setIsDynamicIslandExpanded] = useState<boolean>(false);
   const { playClick, triggerHaptic } = useHapticSoundFeedback();
 
@@ -30,10 +36,10 @@ export const IOSStatusBar: React.FC<IOSStatusBarProps> = ({
     const updateTime = () => {
       const now = new Date();
       setTimeStr(
-        now.toLocaleTimeString('en-US', {
-          hour: 'numeric',
+        now.toLocaleTimeString('en-IN', {
+          hour: '2-digit',
           minute: '2-digit',
-          hour12: false,
+          hour12: true,
         })
       );
     };
@@ -42,28 +48,49 @@ export const IOSStatusBar: React.FC<IOSStatusBarProps> = ({
     return () => clearInterval(interval);
   }, []);
 
-  return (
-    <header className="fixed top-0 inset-x-0 h-11 z-50 px-6 flex items-center justify-between select-none text-[13px] font-semibold text-white pointer-events-auto">
-      {/* 1. Left: 9:41 .ill DocSearch Apollo 5G */}
-      <div className="flex items-center gap-2.5">
-        <span className="font-bold tracking-tight text-white font-sans text-[15px]">
-          {timeStr || '9:41'}
-        </span>
+  const handleLogoutClick = () => {
+    playClick();
+    triggerHaptic(30);
+    if (onLogout) {
+      onLogout();
+    } else {
+      localStorage.removeItem('docsearch_partner_staff_auth');
+      localStorage.removeItem('docsearch_auth_token');
+      localStorage.setItem('docsearch_logged_out', 'true');
+      window.location.href = '/';
+    }
+  };
 
-        {/* 4 Signal Bars */}
-        <div className="flex items-end gap-0.5 h-3.5">
-          <span className="w-1 h-1.5 rounded-[1px] bg-white" />
-          <span className="w-1 h-2 rounded-[1px] bg-white" />
-          <span className="w-1 h-2.5 rounded-[1px] bg-white" />
-          <span className="w-1 h-3.5 rounded-[1px] bg-white" />
+  return (
+    <header className="fixed top-0 inset-x-0 h-12 z-50 px-5 flex items-center justify-between select-none text-[13px] font-semibold text-white pointer-events-auto bg-slate-950/70 backdrop-blur-2xl border-b border-white/10 shadow-lg">
+      {/* 1. Left: Hospital Identity & Active Staff Session */}
+      <div className="flex items-center gap-3">
+        {/* Hospital Brand Badge */}
+        <div className="flex items-center gap-2 px-3 py-1 rounded-xl bg-blue-600/30 border border-blue-400/40 text-blue-300 font-bold shadow-sm">
+          <span className="text-base leading-none">🏥</span>
+          <span className="text-xs font-black tracking-wide text-white">DOC SEARCH</span>
         </div>
 
-        <span className="text-[13px] text-white/90 font-medium tracking-tight">
-          {hospitalName}
-        </span>
+        {/* Tenant Name */}
+        <div className="hidden md:flex flex-col text-left">
+          <span className="text-[12px] font-bold text-white tracking-tight leading-tight">
+            {hospitalName}
+          </span>
+          <span className="text-[10px] font-medium text-emerald-400 flex items-center gap-1 leading-none mt-0.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            PostgreSQL 18.4 Live • Shift: Active
+          </span>
+        </div>
+
+        {/* Active Doctor / Staff Badge */}
+        <div className="hidden lg:flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white/10 border border-white/15 text-xs text-slate-200">
+          <span>👨‍⚕️</span>
+          <span className="font-semibold text-white truncate max-w-[180px]">{staffName}</span>
+          <span className="text-[10px] text-white/50 uppercase">({staffRole})</span>
+        </div>
       </div>
 
-      {/* 2. Center: Apple Dynamic Island (Pitch Black Pill) */}
+      {/* 2. Center: Live Hospital Telemetry Pill (Clinical Heartbeat) */}
       <div className="absolute left-1/2 -translate-x-1/2 top-1.5 z-50">
         <div
           onClick={() => {
@@ -71,51 +98,39 @@ export const IOSStatusBar: React.FC<IOSStatusBarProps> = ({
             triggerHaptic(15);
             setIsDynamicIslandExpanded(!isDynamicIslandExpanded);
           }}
-          className={`cursor-pointer bg-black text-white border border-white/10 shadow-[0_10px_35px_rgba(0,0,0,0.8)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] flex items-center ${
+          className={`cursor-pointer bg-black/90 text-white border border-white/15 shadow-[0_8px_30px_rgba(0,0,0,0.8)] backdrop-blur-2xl transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] flex items-center ${
             isDynamicIslandExpanded
-              ? 'w-[420px] p-4 rounded-[28px]'
-              : 'px-5 py-1.5 rounded-full min-w-[270px] justify-between gap-4 hover:scale-[1.02] active:scale-95'
+              ? 'w-[440px] p-4 rounded-[28px]'
+              : 'px-4 py-1 rounded-full min-w-[280px] justify-between gap-4 hover:scale-[1.02] active:scale-95'
           }`}
         >
           {!isDynamicIslandExpanded ? (
-            // Authentic Dynamic Island compact layout matching reference
+            // Compact telemetry pill
             <>
-              {/* Left inside island: Heart with pulse + 78 bpm & Ward 4B / Bed 12 */}
               <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.4)]">
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                  </svg>
+                <div className="w-6 h-6 rounded-lg bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-500">
+                  <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
                 </div>
-
                 <div className="flex flex-col text-left">
-                  <div className="text-[14px] font-bold text-white tracking-tight leading-tight">
-                    {heartRate} bpm
-                  </div>
-                  <div className="text-[10px] text-white/60 font-medium leading-none mt-0.5">
-                    {patientName}
-                  </div>
+                  <span className="text-[13px] font-bold text-white leading-tight font-mono">{heartRate} bpm</span>
+                  <span className="text-[10px] text-white/60 leading-none">{patientName}</span>
                 </div>
               </div>
 
-              {/* Right inside island: Green dot + Green Wi-Fi waves */}
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] animate-pulse" />
-                <svg className="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 12.55a11 11 0 0 1 14.08 0" />
-                  <path d="M1.42 9a16 16 0 0 1 21.16 0" />
-                  <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
-                  <line x1="12" y1="20" x2="12.01" y2="20" />
-                </svg>
+              <div className="flex items-center gap-2 text-[11px] font-medium text-slate-300">
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">
+                  ICU Normal
+                </span>
+                <span className="text-white/40 font-mono text-[11px]">{timeStr}</span>
               </div>
             </>
           ) : (
-            // Expanded Island view
+            // Expanded Clinical Vitals HUD
             <div className="w-full space-y-3" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between border-b border-white/10 pb-2">
                 <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="font-semibold text-sm text-white">Live Patient Telemetry</span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="font-semibold text-sm text-white">Bedside ICU Telemetry</span>
                   <span className="text-xs text-white/50">({patientName})</span>
                 </div>
                 <button
@@ -145,61 +160,52 @@ export const IOSStatusBar: React.FC<IOSStatusBarProps> = ({
         </div>
       </div>
 
-      {/* 3. Right: Signal bars, 100%, Battery Pill, and Quick Triggers */}
-      <div className="flex items-center gap-3">
-        {/* Signal Bars */}
-        <div className="flex items-end gap-0.5 h-3.5">
-          <span className="w-1 h-1.5 rounded-[1px] bg-white" />
-          <span className="w-1 h-2 rounded-[1px] bg-white" />
-          <span className="w-1 h-2.5 rounded-[1px] bg-white" />
-          <span className="w-1 h-3.5 rounded-[1px] bg-white" />
+      {/* 3. Right: Hospital Quick Tools & Prominent LOGOUT Button */}
+      <div className="flex items-center gap-2.5">
+        {/* System Time Pill */}
+        <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white/5 border border-white/10 text-xs font-mono text-slate-200">
+          <span>🕒</span>
+          <span>{timeStr} IST</span>
         </div>
 
-        {/* 100% and Battery */}
-        <div className="flex items-center gap-1.5">
-          <span className="text-[13px] font-medium text-white">100%</span>
-          <div className="w-6 h-3.5 rounded-[5px] border border-white/80 p-0.5 flex items-center relative">
-            <div className="w-full h-full bg-white rounded-[2px]" />
-            <div className="absolute -right-1 top-1 h-1.5 w-0.5 bg-white/80 rounded-r-sm" />
-          </div>
-        </div>
-
-        {/* Quick Chassis Mode Toggle */}
-        {onTogglePhoneFrame && (
+        {/* Wallpaper engine modal trigger */}
+        {onOpenWallpaperModal && (
           <button
             onClick={() => {
               playClick();
               triggerHaptic(15);
-              onTogglePhoneFrame();
+              onOpenWallpaperModal();
             }}
-            className="flex items-center justify-center w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 active:scale-90 border border-white/20 transition-all text-white/90 text-xs"
-            title={isPhoneFrameMode ? 'Switch to Fullscreen Desktop OS' : 'Switch to iPad Pro Tablet Frame'}
+            className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-white/80 hover:text-white border border-white/15 transition-all text-xs"
+            title="Appearance / Visual Theme"
           >
-            {isPhoneFrameMode ? '🖥️' : '📱'}
+            🖼️
           </button>
         )}
 
-        {/* Control Center Pull-Down Trigger */}
+        {/* Control center trigger */}
+        {onOpenControlCenter && (
+          <button
+            onClick={() => {
+              playClick();
+              triggerHaptic(20);
+              onOpenControlCenter();
+            }}
+            className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-white/80 hover:text-white border border-white/15 transition-all text-xs"
+            title="Hospital Control Panel"
+          >
+            ⚙️
+          </button>
+        )}
+
+        {/* PROMINENT LOGOUT BUTTON (Direct Single-Tap Exit) */}
         <button
-          onClick={() => {
-            playClick();
-            triggerHaptic(20);
-            onOpenControlCenter();
-          }}
-          className="flex items-center justify-center w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 active:scale-90 border border-white/20 transition-all text-white/90"
-          title="Open iOS Control Center"
+          onClick={handleLogoutClick}
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-red-600/80 hover:bg-red-500 text-white font-bold text-xs shadow-md border border-red-400/40 transition-all transform active:scale-95 cursor-pointer ml-1"
+          title="Logout / End Staff Shift"
         >
-          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="4" y1="21" x2="4" y2="14" />
-            <line x1="4" y1="10" x2="4" y2="3" />
-            <line x1="12" y1="21" x2="12" y2="12" />
-            <line x1="12" y1="8" x2="12" y2="3" />
-            <line x1="20" y1="21" x2="20" y2="16" />
-            <line x1="20" y1="12" x2="20" y2="3" />
-            <line x1="1" y1="14" x2="7" y2="14" />
-            <line x1="9" y1="8" x2="15" y2="8" />
-            <line x1="17" y1="16" x2="23" y2="16" />
-          </svg>
+          <span>🚪</span>
+          <span className="tracking-wide">Logout</span>
         </button>
       </div>
     </header>

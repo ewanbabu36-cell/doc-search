@@ -29,9 +29,9 @@ export function useSmartphoneOS() {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('docsearch_smartphone_frame_mode');
       if (stored !== null) return stored === 'true';
-      return true; // Default to true so it matches the reference image iPad Pro chassis!
+      return false; // Default to false: Enterprise Hospital OS opens in pure full-screen mode without mobile frames
     }
-    return true;
+    return false;
   });
 
   const { playClick, triggerHaptic } = useHapticSoundFeedback();

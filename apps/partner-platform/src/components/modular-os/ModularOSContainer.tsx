@@ -22,6 +22,7 @@ export interface ModularOSContainerProps {
   staffName?: string;
   staffRole?: string;
   onLockScreen?: () => void;
+  onLogout?: () => void;
   onSelectModuleRoute?: (route: string) => void;
 }
 
@@ -32,6 +33,7 @@ export const ModularOSContainer: React.FC<ModularOSContainerProps> = ({
   staffName = 'Dr. Apollo (Chief Medical Officer)',
   staffRole = 'Chief Medical Officer',
   onLockScreen,
+  onLogout,
   onSelectModuleRoute,
 }) => {
   const {
@@ -154,9 +156,12 @@ export const ModularOSContainer: React.FC<ModularOSContainerProps> = ({
           />
         )}
 
-        {/* 1. iOS / Smartphone Top Status Bar & Dynamic Island */}
+        {/* 1. Hospital Top Command Header & Dynamic Island */}
         <IOSStatusBar
           hospitalName={hospitalName}
+          staffName={staffName}
+          staffRole={staffRole}
+          onLogout={onLogout}
           onOpenControlCenter={() => setIsControlCenterOpen(true)}
           onOpenWallpaperModal={() => setIsWallpaperModalOpen(true)}
           activeContextType={activeContextType}

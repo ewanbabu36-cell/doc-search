@@ -465,6 +465,7 @@ const App: React.FC = () => {
         staffName={currentUser.name}
         staffRole={currentUser.roleTitle}
         onLockScreen={() => setIsLocked(true)}
+        onLogout={handleLogout}
       >
         <PartnerPlatformShell currentUser={currentUser} onLogout={handleLogout} />
       </ModularOSContainer>

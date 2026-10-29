@@ -307,11 +307,26 @@ export const IOSSpringboard: React.FC<IOSSpringboardProps> = ({
         </div>
       )}
 
-      {/* 2. Top Row: Exactly 3 Apple iOS Smart Glass Widgets side-by-side */}
+      {/* 2. Top Row: Clinical Operational Hospital Glass Widgets */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-[1100px] mx-auto w-full mb-6">
-        <DigitalClockWidget />
-        <CalendarMonthWidget />
-        <BedOccupancyConcentricRingsWidget />
+        <DigitalClockWidget
+          onOpenModule={(route) => {
+            const action = FEATURE_REGISTRY.find((a) => a.route === route || a.id === 'clinical_opd_queue');
+            if (action) onLaunchApp(action);
+          }}
+        />
+        <BedOccupancyConcentricRingsWidget
+          onOpenModule={(route) => {
+            const action = FEATURE_REGISTRY.find((a) => a.route === route || a.id === 'ipd_bed_census');
+            if (action) onLaunchApp(action);
+          }}
+        />
+        <CalendarMonthWidget
+          onOpenModule={(route) => {
+            const action = FEATURE_REGISTRY.find((a) => a.route === route || a.id === 'billing_cashier_desk');
+            if (action) onLaunchApp(action);
+          }}
+        />
       </div>
 
       {/* 3. Center Section: 3 rows x 6 columns Authentic iPadOS App Grid */}

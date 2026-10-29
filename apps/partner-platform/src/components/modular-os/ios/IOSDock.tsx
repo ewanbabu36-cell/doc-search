@@ -12,81 +12,95 @@ export interface IOSDockProps {
   onRemoveFromDock?: (id: string) => void;
 }
 
-// Curated iPadOS Native Dock Apps matching the reference image exactly
-export const IPADOS_REFERENCE_DOCK_APPS: ModularFeatureAction[] = [
+// Curated Hospital Core Dock Apps (Real Clinical Operations)
+export const HOSPITAL_CORE_DOCK_APPS: ModularFeatureAction[] = [
   {
-    id: 'dock_messages',
-    label: 'Messages',
-    shortLabel: 'Messages',
+    id: 'clinical_opd_queue',
+    label: 'OPD Queue',
+    shortLabel: 'OPD Queue',
     category: 'CLINICAL',
-    jewelTheme: 'emerald',
-    gradient: 'from-emerald-400 to-green-500',
-    icon: 'messages',
-    route: '/partner/clinical/whatsapp',
-    description: 'Patient communications & instant clinical notifications',
-    tags: ['messages', 'chat', 'sms']
+    jewelTheme: 'sapphire',
+    gradient: 'from-blue-500 via-indigo-600 to-blue-700',
+    icon: 'calendar_badge',
+    route: '/partner/clinical/consultations',
+    description: 'Active OPD token queue with patient chime',
+    tags: ['opd', 'queue', 'consultation']
   },
   {
-    id: 'dock_mail',
-    label: 'Mail',
-    shortLabel: 'Mail',
+    id: 'clinical_rx_pad',
+    label: 'Smart Rx Pad',
+    shortLabel: 'Rx Pad',
+    category: 'CLINICAL',
+    jewelTheme: 'emerald',
+    gradient: 'from-emerald-400 via-green-500 to-emerald-600',
+    icon: 'rx_symbol',
+    route: '/partner/clinical/consultations/new-rx',
+    description: 'AI-assisted prescription generator with drug interactions',
+    tags: ['rx', 'prescription', 'doctor']
+  },
+  {
+    id: 'ipd_bed_census',
+    label: 'Bed Census',
+    shortLabel: 'Bed Census',
+    category: 'INPATIENT',
+    jewelTheme: 'sapphire',
+    gradient: 'from-blue-500 via-blue-600 to-indigo-600',
+    icon: 'bed',
+    route: '/partner/inpatient',
+    description: 'Real-time ward, bed census & occupancy matrix',
+    tags: ['bed', 'census', 'ward']
+  },
+  {
+    id: 'emergency_manchester_triage',
+    label: 'ER Triage',
+    shortLabel: 'ER Triage',
+    category: 'EMERGENCY',
+    jewelTheme: 'ruby',
+    gradient: 'from-red-500 via-rose-600 to-red-700',
+    icon: 'heart_filled',
+    route: '/partner/emergency',
+    description: 'Emergency Manchester Triage & resuscitation intake',
+    tags: ['emergency', 'triage', 'trauma']
+  },
+  {
+    id: 'billing_cashier_desk',
+    label: 'Billing Desk',
+    shortLabel: 'Billing Desk',
+    category: 'BILLING',
+    jewelTheme: 'teal',
+    gradient: 'from-teal-400 via-emerald-500 to-teal-700',
+    icon: 'creditcard',
+    route: '/partner/billing',
+    description: 'Cashier sessions, instant patient receipts and GST invoicing',
+    tags: ['billing', 'cashier', 'receipts']
+  },
+  {
+    id: 'pharmacy_pos_checkout',
+    label: 'Pharmacy POS',
+    shortLabel: 'Pharmacy POS',
+    category: 'PHARMACY',
+    jewelTheme: 'amber',
+    gradient: 'from-amber-400 via-orange-500 to-amber-600',
+    icon: 'droplet',
+    route: '/partner/pharmacy',
+    description: 'Barcode dispensing POS & generic drug substitutions',
+    tags: ['pharmacy', 'dispense', 'pos']
+  },
+  {
+    id: 'clinical_lab_requisitions',
+    label: 'Lab & Diagnostics',
+    shortLabel: 'LIS Lab',
     category: 'CLINICAL',
     jewelTheme: 'cyan',
-    gradient: 'from-sky-400 to-blue-500',
-    icon: 'mail',
-    route: '/partner/clinical/referrals',
-    description: 'Institutional medical referral dispatches and emails',
-    tags: ['mail', 'email']
-  },
-  {
-    id: 'dock_phone',
-    label: 'Phone',
-    shortLabel: 'Phone',
-    category: 'CLINICAL',
-    jewelTheme: 'emerald',
-    gradient: 'from-green-400 to-emerald-600',
-    icon: 'phone',
-    route: '/partner/telemedicine',
-    description: 'Direct telephony VoIP caller',
-    tags: ['phone', 'call']
-  },
-  {
-    id: 'dock_safari',
-    label: 'Safari',
-    shortLabel: 'Safari',
-    category: 'CLINICAL',
-    jewelTheme: 'sapphire',
-    gradient: 'from-white via-slate-100 to-slate-200',
-    icon: 'safari',
-    route: '/partner/clinical/patients',
-    description: 'Universal medical reference browser',
-    tags: ['safari', 'browser']
-  },
-  {
-    id: 'dock_calendar',
-    label: 'Calendar',
-    shortLabel: 'Calendar',
-    category: 'CLINICAL',
-    jewelTheme: 'sapphire',
-    gradient: 'from-white via-slate-50 to-slate-100',
-    icon: 'calendar',
-    route: '/partner/roster',
-    description: 'Doctor on-call roster and hospital schedules',
-    tags: ['calendar', 'roster']
-  },
-  {
-    id: 'dock_notes',
-    label: 'Notes',
-    shortLabel: 'Notes',
-    category: 'CLINICAL',
-    jewelTheme: 'amber',
-    gradient: 'from-white via-amber-50 to-amber-100',
-    icon: 'notes',
-    route: '/partner/clinical/ai-scribe',
-    description: 'Clinical consultation notes and voice scribe memos',
-    tags: ['notes', 'scribe']
-  },
+    gradient: 'from-cyan-400 via-sky-500 to-blue-600',
+    icon: 'activity',
+    route: '/partner/lab',
+    description: 'LIS pathology, biochemistry & radiology requisitions',
+    tags: ['lab', 'pathology', 'diagnostics']
+  }
 ];
+
+export const IPADOS_REFERENCE_DOCK_APPS = HOSPITAL_CORE_DOCK_APPS;
 
 export const IOSDock: React.FC<IOSDockProps> = ({
   dockActions,
@@ -108,46 +122,21 @@ export const IOSDock: React.FC<IOSDockProps> = ({
         {/* Specular hairline top reflection */}
         <div className="absolute top-0 inset-x-8 h-px bg-white/40 pointer-events-none" />
 
-        {/* Pinned App Icons (No labels in genuine Apple iOS fashion) */}
+        {/* Pinned App Icons (Hospital Modules) */}
         <div className="flex items-center gap-3">
-          {appsToDisplay.map((action, idx) => {
-            // Special custom rendering for Calendar icon: White background, red TUE header, large bold 24
-            if (action.id === 'dock_calendar') {
-              return (
-                <div
-                  key={action.id}
-                  onClick={() => {
-                    playClick();
-                    triggerHaptic(15);
-                    onLaunchApp(action);
-                  }}
-                  className="w-14 h-14 rounded-[16px] bg-white border border-white/40 shadow-[0_6px_16px_rgba(0,0,0,0.35)] flex flex-col items-center justify-between overflow-hidden cursor-pointer transform hover:scale-105 active:scale-95 transition-all"
-                  title="Calendar"
-                >
-                  <div className="w-full bg-[#ef4444] text-[9px] font-bold text-white text-center py-0.5 tracking-wider uppercase">
-                    TUE
-                  </div>
-                  <div className="text-2xl font-black text-slate-900 leading-none pb-2 font-sans">
-                    24
-                  </div>
-                </div>
-              );
-            }
-
-            return (
-              <IOSAppIcon
-                key={action.id}
-                action={action}
-                onLaunch={onLaunchApp}
-                onDelete={onRemoveFromDock}
-                isJiggleMode={isJiggleMode}
-                onStartJiggle={onStartJiggle}
-                hideLabel={true}
-                size="md"
-                index={idx}
-              />
-            );
-          })}
+          {appsToDisplay.map((action, idx) => (
+            <IOSAppIcon
+              key={action.id}
+              action={action}
+              onLaunch={onLaunchApp}
+              onDelete={onRemoveFromDock}
+              isJiggleMode={isJiggleMode}
+              onStartJiggle={onStartJiggle}
+              hideLabel={true}
+              size="md"
+              index={idx}
+            />
+          ))}
         </div>
 
         {/* Subtle vertical divider bar */}
