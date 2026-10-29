@@ -109,7 +109,7 @@ export const HospitalFeatureUpgradeShowcase: React.FC<HospitalFeatureUpgradeShow
           }}
         >
           <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#A5B4FC', marginBottom: '10px', letterSpacing: '0.04em' }}>
-            WHAT UNLOCKS IN COMPLETE ENTERPRISE SUITE (₹4,999/mo):
+            WHAT UNLOCKS IN 100% FREE COMPLETE ENTERPRISE SUITE (₹0 / LIFETIME):
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '8px', fontSize: '0.82rem', color: '#E2E8F0' }}>
             <div>🛏️ 24x7 Inpatient ADT Bed Matrix</div>
@@ -163,7 +163,7 @@ export const HospitalFeatureUpgradeShowcase: React.FC<HospitalFeatureUpgradeShow
             }}
           >
             <span>⚡</span>
-            <span>Upgrade to Complete Suite (₹4,999/mo)</span>
+            <span>Activate Complete Suite (100% Free Lifetime)</span>
           </button>
         </div>
       </div>

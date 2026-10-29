@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { HospitalStaffLogin, type HospitalStaffUser } from '../auth/HospitalStaffLogin.js';
+import { PartnerCampaignShowcasePanel } from '@docsearch/ui-kit';
 import './hospital-portal-landing.css';
 
 export interface HospitalPortalLandingPageProps {
@@ -50,6 +51,7 @@ export const HospitalPortalLandingPage: React.FC<HospitalPortalLandingPageProps>
           <a href="#specialties" className="ds-nav-link">Specialties</a>
           <a href="#opd-status" className="ds-nav-link">OPD Live Desk</a>
           <a href="#bed-census" className="ds-nav-link">Bed Availability</a>
+          <a href="#free-enterprise" className="ds-nav-link" style={{ color: '#34d399', fontWeight: 700 }}>100% Free Lifetime</a>
           <a href="#emergency" className="ds-nav-link">24x7 Emergency</a>
         </nav>
 
@@ -72,7 +74,7 @@ export const HospitalPortalLandingPage: React.FC<HospitalPortalLandingPageProps>
         <div className="ds-hero-center">
           <div className="ds-hero-pill-badge">
             <span className="ds-pulse-dot" />
-            <span>Next-Generation Healthcare Clinical Platform</span>
+            <span>🎁 100% Full Enterprise Free for Lifetime • Zero Software Fees Forever</span>
           </div>
 
           <h1 className="ds-hero-headline">
@@ -81,7 +83,7 @@ export const HospitalPortalLandingPage: React.FC<HospitalPortalLandingPageProps>
           </h1>
 
           <p className="ds-hero-subtext">
-            Autonomous OPD Queue Caller, Smart Prescription Pad, Inpatient Ward Census, Bedside ICU Telemetry, Pharmacy POS, and Integrated TPA Invoicing.
+            Complete Hospital Clinical Operating System — ₹0 / Year Subscription. Autonomous OPD Queue Voice Caller, Smart Prescription Pad, Inpatient Ward Census, Bedside ICU Telemetry, Pharmacy POS, and Integrated TPA Invoicing. Powered sustainably by factory-direct medicine & surgical sourcing economics.
           </p>
 
           {/* Action CTAs */}
@@ -92,7 +94,7 @@ export const HospitalPortalLandingPage: React.FC<HospitalPortalLandingPageProps>
             </button>
 
             <button onClick={handleOpenRegister} className="ds-hero-secondary-btn">
-              <span>🏢 Register New Hospital / Clinic</span>
+              <span>🏢 Register New Hospital / Clinic (100% Free)</span>
             </button>
           </div>
         </div>
@@ -176,7 +178,70 @@ export const HospitalPortalLandingPage: React.FC<HospitalPortalLandingPageProps>
           </div>
         </div>
 
-        {/* 4. Respected Role Capabilities Grid */}
+        {/* 4. 100% Full Enterprise Free for Lifetime & Factory-Direct Sourcing Depot */}
+        <section className="ds-showcase-section" id="free-enterprise">
+          <div className="ds-section-heading">
+            <div className="ds-hero-pill-badge" style={{ marginBottom: '12px' }}>
+              <span className="ds-pulse-dot" />
+              <span>🎁 100% Full Enterprise Free for Lifetime • Zero Software Fees Forever</span>
+            </div>
+            <h2 className="ds-section-title">
+              Complete Hospital OS is 100% Free Forever
+            </h2>
+            <p className="ds-section-subtitle">
+              Unlimited Beds, OPD/IPD, OT, ICU, NABL LIMS, Cloud PACS, and Ambient Voice AI. Completely free forever — sustainably funded by direct factory-rate medicine & pathology chemical supply (saving hospitals 40%–70% on procurement).
+            </p>
+          </div>
+
+          {/* Sourcing & Savings Showcase Container */}
+          <div className="ds-showcase-container">
+            <PartnerCampaignShowcasePanel
+              onClaimOffer={handleOpenRegister}
+              compact={false}
+            />
+          </div>
+
+          {/* Trust Telemetry Highlights Bar */}
+          <div className="ds-trust-telemetry-bar">
+            <div className="ds-trust-item">
+              <span className="ds-trust-icon">🏛️</span>
+              <div>
+                <strong>681+ Facilities Live</strong>
+                <span>National Sourcing Network</span>
+              </div>
+            </div>
+            <div className="ds-trust-item">
+              <span className="ds-trust-icon">⚡</span>
+              <div>
+                <strong>₹0 / Year Forever</strong>
+                <span>Zero Subscription Bills</span>
+              </div>
+            </div>
+            <div className="ds-trust-item">
+              <span className="ds-trust-icon">📦</span>
+              <div>
+                <strong>40%–70% Wholesale</strong>
+                <span>Factory-Direct Depot</span>
+              </div>
+            </div>
+            <div className="ds-trust-item">
+              <span className="ds-trust-icon">🇮🇳</span>
+              <div>
+                <strong>ABDM & NHCX Ready</strong>
+                <span>Govt M1/M2/M3 Certified</span>
+              </div>
+            </div>
+            <div className="ds-trust-item">
+              <span className="ds-trust-icon">🛡️</span>
+              <div>
+                <strong>PostgreSQL 18.4</strong>
+                <span>100% Sovereign & Fail-Closed</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 5. Respected Role Capabilities Grid */}
         <div className="ds-operations-section" id="specialties">
           <div className="ds-section-heading">
             <h2 className="ds-section-title">Hospital Operations Architecture</h2>
@@ -231,12 +296,12 @@ export const HospitalPortalLandingPage: React.FC<HospitalPortalLandingPageProps>
         </div>
       </main>
 
-      {/* 5. Footer */}
+      {/* 6. Footer */}
       <footer className="ds-landing-footer">
         <p>DocSearch Apollo Enterprise Healthcare Suite • Live PostgreSQL 18.4 Sovereign Database • Fail-Closed Architecture</p>
       </footer>
 
-      {/* 6. Active Login / Registration Modal Overlay */}
+      {/* 7. Active Login / Registration Modal Overlay */}
       {activeModal && (
         <div className="ds-modal-overlay" onClick={handleCloseModal}>
           <div className="ds-modal-window" onClick={(e) => e.stopPropagation()}>
@@ -244,8 +309,9 @@ export const HospitalPortalLandingPage: React.FC<HospitalPortalLandingPageProps>
               ✕
             </button>
 
-            {/* Hospital Staff Login & Registration Component */}
+            {/* Clean Minimalist Hospital Staff Login & Registration Component */}
             <HospitalStaffLogin
+              initialMode={activeModal}
               onLoginSuccess={(user) => {
                 handleCloseModal();
                 onLoginSuccess(user);

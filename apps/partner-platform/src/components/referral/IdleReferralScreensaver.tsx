@@ -101,7 +101,7 @@ export const IdleReferralScreensaver: React.FC<IdleReferralScreensaverProps> = (
       subtitle:
         'Your colleagues won’t pay a single rupee. They get 100% Free Lifetime Setup under the Founder Launch 100 Allocation before slots close.',
       rewardAmount: '₹0 / mo',
-      rewardSubtitle: 'Standard ₹4,999/mo fee 100% waived for your invitees',
+      rewardSubtitle: '100% Full Enterprise Free for Lifetime for all invited facilities',
       icon: '🎁',
       highlights: [
         'First 100 Verified Partners Across India Only',

@@ -511,41 +511,106 @@
 .ds-modal-window {
   position: relative;
   width: 100%;
-  max-width: 900px;
-  max-height: 90vh;
-  overflow-y: auto;
-  border-radius: 28px;
-  background: #0b0f19;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.9);
-  padding: 2rem;
+  max-width: 520px;
+  max-height: 92vh;
+  overflow: visible;
+  border-radius: 24px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
   animation: dsZoomIn 0.2s ease-out;
 }
 
 .ds-modal-close-btn {
   position: absolute;
-  top: 1.25rem;
-  right: 1.25rem;
-  z-index: 60;
+  top: 1rem;
+  right: 1rem;
+  z-index: 99;
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   color: #ffffff;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .ds-modal-close-btn:hover {
-  background: rgba(239, 68, 68, 0.8);
+  background: rgba(239, 68, 68, 0.9);
+  border-color: #ef4444;
+  transform: scale(1.05);
+}
+
+/* 100% Free Lifetime Enterprise Showcase Section */
+.ds-showcase-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.ds-showcase-container {
+  background: rgba(11, 19, 43, 0.75);
+  border: 1.5px solid rgba(56, 189, 248, 0.25);
+  border-radius: 24px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+}
+
+.ds-trust-telemetry-bar {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1rem;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 1.25rem;
+}
+
+.ds-trust-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.ds-trust-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.ds-trust-item strong {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.ds-trust-item span {
+  display: block;
+  font-size: 0.75rem;
+  color: #94a3b8;
 }
 
 /* Responsive Breakpoints */
+@media (max-width: 1024px) {
+  .ds-trust-telemetry-bar {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .ds-trust-telemetry-bar {
+    grid-template-columns: 1fr;
+  }
+}
 @media (max-width: 1024px) {
   .ds-nav-links {
     display: none;

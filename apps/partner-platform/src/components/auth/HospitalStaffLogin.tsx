@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { HealthcareNetworkCore3D, ParticleNetwork, PartnerCampaignShowcasePanel, DocSearchLogo, DocSearch3DLogoLoader } from '@docsearch/ui-kit';
+import { DocSearchLogo, DocSearch3DLogoLoader } from '@docsearch/ui-kit';
 import { getUrlForModule } from '../../utils/urlRouter.js';
 import {
   normalizeFacilityProfile,
-  HOSPITAL_FREE_TIER_NAME,
   HOSPITAL_PRO_TIER_NAME,
-  FREE_HOSPITAL_FEATURES,
   PRO_HOSPITAL_FEATURES
 } from '@docsearch/shared-core';
 import {
@@ -398,10 +396,17 @@ export const getHealthcareOrgDetails = (orgType: OrganizationWorkspaceType, _ten
 
 interface Props {
   onLoginSuccess: (user: HospitalStaffUser) => void;
+  initialMode?: 'LOGIN' | 'REGISTER';
 }
 
-export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess }) => {
-  const [authMode, setAuthMode] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
+export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess, initialMode = 'LOGIN' }) => {
+  const [authMode, setAuthMode] = useState<'LOGIN' | 'REGISTER'>(initialMode);
+
+  useEffect(() => {
+    if (initialMode) {
+      setAuthMode(initialMode);
+    }
+  }, [initialMode]);
 
   // Login Form State
   const [emailInput, setEmailInput] = useState('');
@@ -619,42 +624,6 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess }) => {
     void loadLivePartners();
   }, []);
 
-  // 1-Click Quick Demo Login for instant testing of Free vs Paid Hospital Tiers
-  const handleQuickDemoLogin = (tier: 'FREE' | 'PRO') => {
-    const isFree = tier === 'FREE';
-    const planTierName = isFree ? HOSPITAL_FREE_TIER_NAME : HOSPITAL_PRO_TIER_NAME;
-    const resolvedTenantId = (typeof window !== 'undefined' && localStorage.getItem('docsearch_partner_tenant')) || '1e72b864-920a-c07d-98c5-183d3eb50428';
-    const demoUser: HospitalStaffUser = {
-      id: isFree ? 'usr_demo_free_hospital' : 'usr_demo_pro_hospital',
-      category: 'HEALTHCARE',
-      name: isFree ? 'Dr. Vivek Sharma (Medical Director)' : 'Dr. Ewan Babu (Medical Superintendent)',
-      email: isFree ? 'freehospital@docsearch.health' : 'drewan@docsearch.health',
-      role: 'HOSPITAL_DIRECTOR',
-      roleTitle: isFree ? 'Hospital Director (OPD Foundation)' : 'Medical Superintendent & Director',
-      department: isFree ? 'Hospital Administration (Free OPD)' : 'Hospital Administration & Inpatient Governance',
-      tenantName: isFree ? 'CarePlus Community Hospital (Free OPD)' : 'Ewan Multi-Specialty Hospital',
-      tenantId: resolvedTenantId,
-      organizationType: 'HOSPITAL',
-      allowedWorkspaces: ['HOSPITAL', 'CLINIC', 'PHARMACY', 'PATHOLOGY', 'DIAGNOSTIC_CENTRE', 'ENTERPRISE_COMMAND'],
-      defaultModule: isFree ? 'patient-registration' : 'inpatient-management',
-      planTier: planTierName,
-      planExpiryDate: isFree ? 'Free Forever' : 'Enterprise Active',
-      accessibleFeatures: isFree ? (FREE_HOSPITAL_FEATURES as string[]) : (PRO_HOSPITAL_FEATURES as string[]),
-      restrictedFeatures: isFree ? ['Inpatient Bed Matrix', 'Operation Theatre Rostering', 'TPA Cashless Claims'] : ['None (Full Hospital Scope)'],
-      kycStatus: 'KYC_VERIFIED',
-      isProfileCompleted: true
-    };
-
-    localStorage.setItem('docsearch_partner_staff_auth', JSON.stringify(demoUser));
-    localStorage.removeItem('docsearch_logged_out');
-    if (typeof window !== 'undefined') {
-      try {
-        const targetPath = getUrlForModule('HOSPITAL', demoUser.defaultModule as any);
-        window.history.replaceState({ path: targetPath }, '', targetPath);
-      } catch {}
-    }
-    onLoginSuccess(demoUser);
-  };
 
   // 1-Click Role-Isolated Persona Login (Strict Access Separation)
   const handleRolePersonaLogin = (persona: 'DOCTOR' | 'PHARMACIST' | 'LAB_TECH' | 'NURSE' | 'FRONT_DESK' | 'DIRECTOR') => {
@@ -1167,92 +1136,13 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      backgroundColor: '#070C16',
-      backgroundImage: 'radial-gradient(ellipse at 50% 20%, rgba(6, 182, 212, 0.12), transparent 70%)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '24px 16px',
-      position: 'relative',
-      overflowX: 'hidden',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
-      boxSizing: 'border-box'
-    }}>
-      <style>{`
-        @media (max-width: 1080px) {
-          .ds-auth-split-grid {
-            grid-template-columns: 1fr !important;
-            max-width: 640px !important;
-          }
-        }
-      `}</style>
-
-      {/* Subtle Background Particle Network */}
-      <ParticleNetwork particleCount={32} speed={0.2} />
-
-      {/* Ambient 3D Healthcare Core */}
+    <>
       <div
-        style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: '800px',
-          maxWidth: '100vw',
-          height: '520px',
-          opacity: 0.25,
-          pointerEvents: 'none',
-          zIndex: 1
-        }}
-      >
-        <HealthcareNetworkCore3D mode="ambient" height={520} interactive={false} />
-      </div>
-
-      {/* Master 2-Column Split-Screen Container */}
-      <div
-        className="ds-auth-split-grid"
+        className="ds-auth-card"
         style={{
           width: '100%',
-          maxWidth: '1540px',
-          minHeight: '86vh',
-          display: 'grid',
-          gridTemplateColumns: 'minmax(0, 1.25fr) minmax(0, 1fr)',
-          gap: '24px',
-          position: 'relative',
-          zIndex: 10,
-          alignItems: 'stretch',
-          margin: 'auto'
-        }}
-      >
-        {/* LEFT COLUMN: MARKETING, PARTNER OFFERS, INCENTIVES & REFERRAL CALCULATOR */}
-        <div
-          style={{
-            backgroundColor: 'rgba(11, 19, 43, 0.75)',
-            border: '1.5px solid rgba(56, 189, 248, 0.25)',
-            borderRadius: '24px',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden'
-          }}
-        >
-          <PartnerCampaignShowcasePanel
-            onClaimOffer={() => {
-              setAuthMode('REGISTER');
-              setAuthError(null);
-              setRegError(null);
-            }}
-          />
-        </div>
-
-        {/* RIGHT COLUMN: LOGIN & REGISTRATION CARD */}
-        <div style={{
-          width: '100%',
-          maxWidth: '100%',
+          maxWidth: '520px',
+          margin: '0 auto',
           backgroundColor: '#0B132B',
           border: '1.5px solid rgba(6, 182, 212, 0.35)',
           borderRadius: '24px',
@@ -1261,14 +1151,16 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess }) => {
           display: 'flex',
           flexDirection: 'column',
           position: 'relative',
-          maxHeight: '92vh',
-          overflowY: 'auto'
-        }}>
-        
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+          boxSizing: 'border-box'
+        }}
+      >
         {/* Header Branding - Canonical Futuristic DocSearch Logo */}
         <div style={{
           backgroundColor: '#0F172A',
-          padding: '28px 24px 20px',
+          padding: '24px 24px 18px',
           borderBottom: '1px solid rgba(255,255,255,0.08)',
           display: 'flex',
           flexDirection: 'column',
@@ -1282,14 +1174,14 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess }) => {
             redirectUrl="/"
             clickable={true}
           />
-          <p style={{ fontSize: '0.8125rem', color: '#94A3B8', margin: '12px 0 0 0' }}>
+          <p style={{ fontSize: '0.8125rem', color: '#94A3B8', margin: '10px 0 0 0' }}>
             {authMode === 'REGISTER'
-              ? 'Register your healthcare facility in 60 seconds and launch your clinical workspace'
+              ? 'Register your healthcare facility in 60 seconds — 100% Free Lifetime Activation'
               : 'Healthcare Partner & Clinical Staff Login Portal'}
           </p>
 
           {/* Mode Switcher Tabs */}
-          <div style={{ marginTop: '14px', display: 'inline-flex', backgroundColor: 'rgba(30, 41, 59, 0.7)', padding: '4px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }}>
+          <div style={{ marginTop: '12px', display: 'inline-flex', backgroundColor: 'rgba(30, 41, 59, 0.7)', padding: '4px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }}>
             <button
               type="button"
               onClick={() => {
@@ -1332,6 +1224,33 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess }) => {
             >
               ✨ Register Facility
             </button>
+          </div>
+
+          {/* 100% Full Enterprise Free for Lifetime Banner */}
+          <div
+            style={{
+              marginTop: '14px',
+              padding: '10px 14px',
+              borderRadius: '10px',
+              backgroundColor: 'rgba(16, 185, 129, 0.12)',
+              border: '1px solid rgba(16, 185, 129, 0.35)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              textAlign: 'left',
+              width: '100%',
+              boxSizing: 'border-box'
+            }}
+          >
+            <span style={{ fontSize: '1.25rem' }}>🎁</span>
+            <div>
+              <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#34D399', letterSpacing: '0.02em' }}>
+                100% Full Enterprise Free for Lifetime
+              </div>
+              <div style={{ fontSize: '0.6875rem', color: '#94A3B8', marginTop: '1px' }}>
+                Zero Software Fees Forever • All 13+ Hospital Departments Unlocked
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1703,74 +1622,7 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess }) => {
               </div>
             </div>
 
-            {/* Quick 1-Click Hospital Plan Testing Buttons (Free OPD vs Pro Suite) */}
-            <div
-              style={{
-                marginTop: '6px',
-                padding: '12px',
-                borderRadius: '10px',
-                backgroundColor: 'rgba(15, 23, 42, 0.85)',
-                border: '1.5px solid rgba(56, 189, 248, 0.25)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '8px'
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#38BDF8', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-                  ⚡ Quick Live Plan Demo (1-Click Switch)
-                </span>
-                <span style={{ fontSize: '0.625rem', color: '#94A3B8' }}>Instant Verification</span>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                <button
-                  type="button"
-                  onClick={() => handleQuickDemoLogin('FREE')}
-                  style={{
-                    padding: '8px 10px',
-                    borderRadius: '8px',
-                    backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                    border: '1.5px solid #10B981',
-                    color: '#34D399',
-                    fontSize: '0.75rem',
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '2px',
-                    transition: 'all 0.15s ease'
-                  }}
-                  title="Test Free Hospital plan with 🔒 PRO locked badges & upgrade modal"
-                >
-                  <span style={{ fontSize: '0.9rem' }}>🟢 Free OPD Plan</span>
-                  <span style={{ fontSize: '0.625rem', color: '#A7F3D0', fontWeight: 600 }}>₹0 Forever • Locked PRO</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickDemoLogin('PRO')}
-                  style={{
-                    padding: '8px 10px',
-                    borderRadius: '8px',
-                    backgroundColor: 'rgba(124, 58, 237, 0.2)',
-                    border: '1.5px solid #8B5CF6',
-                    color: '#C4B5FD',
-                    fontSize: '0.75rem',
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '2px',
-                    transition: 'all 0.15s ease'
-                  }}
-                  title="Test Paid Complete Suite with all 13 hospital departments unlocked"
-                >
-                  <span style={{ fontSize: '0.9rem' }}>🟣 Pro Complete Suite</span>
-                  <span style={{ fontSize: '0.625rem', color: '#DDD6FE', fontWeight: 600 }}>₹4,999/mo • All Unlocked</span>
-                </button>
-              </div>
-            </div>
+
 
             {/* Quick Registration Banner */}
             <div style={{ marginTop: '8px', textAlign: 'center', paddingTop: '14px', borderTop: '1px dashed rgba(255,255,255,0.1)' }}>
@@ -2509,8 +2361,6 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess }) => {
 
       </div>
 
-      </div>
-
       {/* Support / Help Modal */}
       {showHelpModal && (
         <div style={{
@@ -2578,6 +2428,6 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess }) => {
         </div>
       )}
 
-    </div>
+    </>
   );
 };
