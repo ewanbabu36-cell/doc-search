@@ -1,0 +1,591 @@
+/**
+ * DocSearch Sovereign Hospital Portal Landing Page Styles
+ * 100% Self-Contained Standalone CSS — Zero Tailwind Dependency
+ */
+
+/* 1. Main Page Container */
+.ds-landing-container {
+  min-height: 100vh;
+  width: 100%;
+  background-color: #070913;
+  color: #f1f5f9;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.ds-landing-container *,
+.ds-landing-container *::before,
+.ds-landing-container *::after {
+  box-sizing: border-box;
+}
+
+/* 2. Ambient Lighting Glow */
+.ds-ambient-glow {
+  position: absolute;
+  top: 15%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 700px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.15) 0%, rgba(13, 148, 136, 0.1) 40%, transparent 70%);
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 3. Header & Navigation */
+.ds-landing-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  height: 64px;
+  background: rgba(7, 9, 19, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.ds-brand-block {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.ds-brand-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 12px;
+  background: rgba(37, 99, 235, 0.25);
+  border: 1px solid rgba(96, 165, 250, 0.4);
+  color: #93c5fd;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  font-size: 0.85rem;
+}
+
+.ds-brand-badge-icon {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.ds-brand-subtitle-block {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+  padding-left: 0.85rem;
+}
+
+.ds-brand-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.2;
+}
+
+.ds-brand-status-pill {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #34d399;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.15rem;
+}
+
+.ds-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #34d399;
+  box-shadow: 0 0 8px #34d399;
+}
+
+/* Nav Links */
+.ds-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 1.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.ds-nav-link {
+  color: #94a3b8;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.ds-nav-link:hover {
+  color: #ffffff;
+}
+
+/* Header CTAs */
+.ds-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.ds-btn-login {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1.1rem;
+  border-radius: 12px;
+  background: #2563eb;
+  border: 1px solid #60a5fa;
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+}
+
+.ds-btn-login:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.ds-btn-register {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #e2e8f0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ds-btn-register:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
+/* 4. Hero Section */
+.ds-hero-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 3rem 1.5rem;
+  position: relative;
+  z-index: 10;
+}
+
+.ds-hero-center {
+  text-align: center;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.ds-hero-pill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 1rem;
+  border-radius: 9999px;
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(96, 165, 250, 0.25);
+  color: #93c5fd;
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+}
+
+.ds-hero-headline {
+  font-size: clamp(2.2rem, 5vw, 3.8rem);
+  font-weight: 900;
+  line-height: 1.15;
+  color: #ffffff;
+  margin: 0 0 1.25rem 0;
+  letter-spacing: -0.03em;
+}
+
+.ds-hero-gradient-text {
+  background: linear-gradient(135deg, #60a5fa 0%, #38bdf8 50%, #2dd4bf 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+}
+
+.ds-hero-subtext {
+  font-size: clamp(0.95rem, 1.8vw, 1.12rem);
+  color: #cbd5e1;
+  line-height: 1.6;
+  max-width: 680px;
+  margin: 0 auto 2rem auto;
+  font-weight: 400;
+}
+
+.ds-hero-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 3rem;
+}
+
+.ds-hero-primary-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.85rem 1.85rem;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+  border: 1px solid #60a5fa;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 10px 30px rgba(37, 99, 235, 0.45);
+}
+
+.ds-hero-primary-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 35px rgba(37, 99, 235, 0.6);
+}
+
+.ds-hero-secondary-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.85rem 1.6rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #e2e8f0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+}
+
+.ds-hero-secondary-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  transform: translateY(-2px);
+}
+
+/* 5. Telemetry Pulse Cards (3 Columns) */
+.ds-telemetry-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.ds-telemetry-card {
+  background: rgba(18, 24, 43, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 24px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.5);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.ds-telemetry-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(96, 165, 250, 0.35);
+}
+
+.ds-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 0.85rem;
+}
+
+.ds-card-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ds-card-title {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #f8fafc;
+}
+
+.ds-card-badge {
+  font-size: 0.65rem;
+  font-family: monospace;
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(52, 211, 153, 0.3);
+  color: #6ee7b7;
+  font-weight: 700;
+}
+
+.ds-card-badge-red {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  color: #fca5a5;
+}
+
+.ds-card-body {
+  margin: 1.25rem 0;
+}
+
+.ds-card-caption {
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+.ds-card-number {
+  font-size: 1.85rem;
+  font-weight: 900;
+  font-family: monospace;
+  color: #ffffff;
+  margin: 0.25rem 0;
+  letter-spacing: -0.02em;
+}
+
+.ds-card-subinfo {
+  font-size: 0.78rem;
+  color: #cbd5e1;
+}
+
+.ds-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 0.75rem;
+  font-size: 0.72rem;
+  color: #94a3b8;
+  font-family: monospace;
+}
+
+.ds-card-link {
+  color: #38bdf8;
+  font-weight: 700;
+}
+
+/* Bed Row Items */
+.ds-bed-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.4rem;
+  font-size: 0.78rem;
+}
+
+.ds-bed-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #cbd5e1;
+}
+
+.ds-bed-dot-red { width: 6px; height: 6px; border-radius: 50%; background-color: #ef4444; }
+.ds-bed-dot-amber { width: 6px; height: 6px; border-radius: 50%; background-color: #f59e0b; }
+.ds-bed-dot-cyan { width: 6px; height: 6px; border-radius: 50%; background-color: #06b6d4; }
+
+.ds-bed-val-red { font-family: monospace; font-weight: 700; color: #f87171; }
+.ds-bed-val-amber { font-family: monospace; font-weight: 700; color: #fbbf24; }
+.ds-bed-val-cyan { font-family: monospace; font-weight: 700; color: #22d3ee; }
+
+/* 6. Operations Architecture (6 Columns) */
+.ds-operations-section {
+  margin-top: 4.5rem;
+}
+
+.ds-section-heading {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.ds-section-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.ds-section-subtitle {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  margin-top: 0.35rem;
+}
+
+.ds-operations-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 1rem;
+}
+
+.ds-operation-card {
+  background: rgba(18, 24, 43, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 18px;
+  padding: 1.25rem 0.85rem;
+  text-align: center;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.ds-operation-card:hover {
+  background: rgba(30, 41, 69, 0.7);
+  transform: translateY(-2px);
+  border-color: rgba(96, 165, 250, 0.3);
+}
+
+.ds-op-icon {
+  font-size: 1.75rem;
+  margin-bottom: 0.5rem;
+  line-height: 1;
+}
+
+.ds-op-title {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 0.2rem;
+}
+
+.ds-op-desc {
+  font-size: 0.68rem;
+  color: #94a3b8;
+  line-height: 1.3;
+}
+
+/* 7. Footer */
+.ds-landing-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 1.75rem 2rem;
+  text-align: center;
+  font-size: 0.75rem;
+  color: #64748b;
+  background: #05070d;
+}
+
+/* 8. Authentication Modal Overlay & Window */
+.ds-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  animation: dsFadeIn 0.2s ease-out;
+}
+
+.ds-modal-window {
+  position: relative;
+  width: 100%;
+  max-width: 900px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 28px;
+  background: #0b0f19;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.9);
+  padding: 2rem;
+  animation: dsZoomIn 0.2s ease-out;
+}
+
+.ds-modal-close-btn {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  z-index: 60;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #ffffff;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.ds-modal-close-btn:hover {
+  background: rgba(239, 68, 68, 0.8);
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 1024px) {
+  .ds-nav-links {
+    display: none;
+  }
+  .ds-telemetry-grid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+  .ds-operations-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .ds-landing-header {
+    padding: 0 1rem;
+  }
+  .ds-brand-subtitle-block {
+    display: none;
+  }
+  .ds-operations-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .ds-hero-ctas {
+    flex-direction: column;
+    width: 100%;
+  }
+  .ds-hero-primary-btn,
+  .ds-hero-secondary-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@keyframes dsFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes dsZoomIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}

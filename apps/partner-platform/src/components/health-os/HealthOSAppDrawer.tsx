@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { type HealthOSAppItem } from './health-os-types.js';
 import { HEALTH_OS_APPS } from './health-os-registry.js';
+import './health-os.css';
 
 export interface HealthOSAppDrawerProps {
   isOpen: boolean;
@@ -24,50 +25,36 @@ export const HealthOSAppDrawer: React.FC<HealthOSAppDrawerProps> = ({
   );
 
   return (
-    <div
-      className="fixed inset-0 z-45 pt-16 pb-20 px-4 md:px-8 bg-slate-950/90 backdrop-blur-3xl animate-in fade-in duration-200 select-none overflow-y-auto"
-      onClick={onClose}
-    >
-      <div
-        className="max-w-4xl mx-auto w-full py-4 space-y-6"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div className="hos-drawer-overlay" onClick={onClose}>
+      <div className="hos-drawer-window" onClick={(e) => e.stopPropagation()}>
         {/* Header & Search */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-blue-600/30 border border-blue-500/40 flex items-center justify-center text-xl text-blue-400">
+        <div className="hos-drawer-top">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(37,99,235,0.25)', border: '1px solid rgba(96,165,250,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem' }}>
               📱
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white tracking-tight">DocSearch Master App Drawer</h2>
-              <p className="text-xs text-slate-400">All clinical, pharmacy, diagnostic & hospital operations tools</p>
+              <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>DocSearch Master App Drawer</h2>
+              <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0.15rem 0 0 0' }}>All clinical, pharmacy, diagnostic & hospital operations tools</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="relative">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div className="hos-drawer-search-wrap">
+              <span className="hos-drawer-search-icon">🔍</span>
               <input
                 type="text"
                 placeholder="Search hospital app..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 autoFocus
-                className="w-full sm:w-64 px-3.5 py-1.5 pl-9 rounded-xl bg-white/10 border border-white/15 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-blue-400"
+                className="hos-drawer-search-input"
               />
-              <span className="absolute left-3 top-2 text-xs text-slate-400">🔍</span>
-              {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm('')}
-                  className="absolute right-2.5 top-1.5 text-xs text-slate-400 hover:text-white"
-                >
-                  ✕
-                </button>
-              )}
             </div>
 
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center text-xs transition-colors cursor-pointer"
+              style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#ffffff', cursor: 'pointer' }}
               title="Close Drawer"
             >
               ✕
@@ -76,26 +63,44 @@ export const HealthOSAppDrawer: React.FC<HealthOSAppDrawerProps> = ({
         </div>
 
         {/* All Apps Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        <div className="hos-drawer-grid">
           {filteredApps.map((app) => (
             <button
               key={app.id}
               onClick={() => onSelectApp(app)}
-              className="flex flex-col items-center p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-400/50 transition-all text-center group cursor-pointer active:scale-95"
+              className="hos-drawer-card"
             >
               <div
-                className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${app.gradient} flex items-center justify-center text-2xl text-white shadow-lg group-hover:scale-105 transition-transform`}
+                className="hos-app-squircle"
+                style={{
+                  width: 52,
+                  height: 52,
+                  fontSize: '1.5rem',
+                  background: app.id === 'billing-revenue-cycle'
+                    ? 'linear-gradient(135deg, #2563eb, #4338ca)'
+                    : app.id === 'encounters-visits'
+                    ? 'linear-gradient(135deg, #0284c7, #2563eb)'
+                    : app.id === 'clinical-consultation'
+                    ? 'linear-gradient(135deg, #10b981, #0f766e)'
+                    : app.id === 'pharmacy-medication'
+                    ? 'linear-gradient(135deg, #9333ea, #4f46e5)'
+                    : app.id === 'clinical-investigation'
+                    ? 'linear-gradient(135deg, #f59e0b, #ea580c)'
+                    : app.id === 'inpatient-management'
+                    ? 'linear-gradient(135deg, #f43f5e, #be123c)'
+                    : 'linear-gradient(135deg, #334155, #0f172a)'
+                }}
               >
                 {app.icon}
               </div>
-              <span className="mt-2.5 text-xs font-bold text-white group-hover:text-blue-300 line-clamp-1">
+              <span style={{ marginTop: '0.5rem', fontSize: '0.75rem', fontWeight: 800, color: '#ffffff' }}>
                 {app.shortLabel}
               </span>
-              <span className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">
+              <span style={{ fontSize: '0.65rem', color: '#94a3b8', marginTop: '0.15rem' }}>
                 {app.category}
               </span>
               {app.badge && (
-                <span className="mt-1 text-[9px] font-semibold px-2 py-0.5 rounded-full bg-white/10 text-emerald-400">
+                <span style={{ marginTop: '0.35rem', fontSize: '0.6rem', fontWeight: 700, padding: '0.15rem 0.45rem', borderRadius: 9999, background: 'rgba(255,255,255,0.08)', color: '#34d399' }}>
                   {app.badge}
                 </span>
               )}

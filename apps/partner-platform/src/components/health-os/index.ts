@@ -1,3 +1,5 @@
+import './health-os.css';
+
 export * from './health-os-types.js';
 export * from './health-os-registry.js';
 export * from './HealthOSTopSystemChrome.js';

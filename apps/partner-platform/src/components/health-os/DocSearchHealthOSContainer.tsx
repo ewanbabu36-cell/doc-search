@@ -10,6 +10,7 @@ import { HealthOSRecentsDeck } from './HealthOSRecentsDeck.js';
 import { HealthOSNavigationBar } from './HealthOSNavigationBar.js';
 import { DocSearch3DLogoLoader } from '@docsearch/ui-kit';
 import { DomainErrorBoundary } from '../common/DomainErrorBoundary.js';
+import './health-os.css';
 
 // Lazy-loaded Enterprise Hospital Domain Managers
 const BillingDomainManager = React.lazy(() => import('../BillingDomainManager.js').then((m) => ({ default: m.BillingDomainManager })));
@@ -40,16 +41,40 @@ export const DocSearchHealthOSContainer: React.FC<DocSearchHealthOSContainerProp
   currentUser,
   onLogout,
 }) => {
-  // Pre-seed default warm tasks based on user role
+  // Resolve Role-Based Default Primary App
+  const resolveRoleDefaultApp = useCallback((): HealthOSAppItem => {
+    const roleUpper = (currentUser.role || '').toUpperCase();
+    const deptUpper = (currentUser.department || '').toUpperCase();
+
+    if (roleUpper.includes('NURSE') || deptUpper.includes('INPATIENT') || deptUpper.includes('WARD')) {
+      return HEALTH_OS_APPS.find((a) => a.id === 'inpatient-management') || HEALTH_OS_APPS[0]!;
+    }
+    if (roleUpper.includes('CASHIER') || roleUpper.includes('FRONT_DESK') || deptUpper.includes('BILLING')) {
+      return HEALTH_OS_APPS.find((a) => a.id === 'billing-revenue-cycle') || HEALTH_OS_APPS[0]!;
+    }
+    if (roleUpper.includes('PHARMAC') || deptUpper.includes('PHARMACY')) {
+      return HEALTH_OS_APPS.find((a) => a.id === 'pharmacy-medication') || HEALTH_OS_APPS[0]!;
+    }
+    if (roleUpper.includes('LAB') || roleUpper.includes('PATHOLOG') || deptUpper.includes('PATHOLOGY')) {
+      return HEALTH_OS_APPS.find((a) => a.id === 'clinical-investigation') || HEALTH_OS_APPS[0]!;
+    }
+    if (roleUpper.includes('ADMIN') || roleUpper.includes('EXECUTIVE') || roleUpper.includes('DIRECTOR')) {
+      return HEALTH_OS_APPS.find((a) => a.id === 'executive-command-center') || HEALTH_OS_APPS[0]!;
+    }
+    // Default Clinician Doctor Desk
+    return HEALTH_OS_APPS.find((a) => a.id === 'clinical-consultation') || HEALTH_OS_APPS[0]!;
+  }, [currentUser]);
+
+  // Pre-seed default warm tasks
   const [recentTasks, setRecentTasks] = useState<HealthOSRecentTask[]>(() => {
-    const defaultApp = HEALTH_OS_APPS.find((a) => a.id === 'clinical-consultation') || HEALTH_OS_APPS[0]!;
+    const initialApp = resolveRoleDefaultApp();
     const billingApp = HEALTH_OS_APPS.find((a) => a.id === 'billing-revenue-cycle') || HEALTH_OS_APPS[1]!;
     return [
       {
-        id: defaultApp.id,
-        app: defaultApp,
-        lastActiveTime: '2m ago',
-        timestamp: Date.now() - 1000 * 60 * 2,
+        id: initialApp.id,
+        app: initialApp,
+        lastActiveTime: 'Active now',
+        timestamp: Date.now(),
       },
       {
         id: billingApp.id,
@@ -60,8 +85,29 @@ export const DocSearchHealthOSContainer: React.FC<DocSearchHealthOSContainerProp
     ];
   });
 
-  const [activeApp, setActiveApp] = useState<HealthOSAppItem | null>(null);
-  const [visitedModules, setVisitedModules] = useState<Set<HealthOSModuleKey>>(new Set());
+  // Start with Role-Based Active Workspace or Homescreen
+  const [activeApp, setActiveApp] = useState<HealthOSAppItem | null>(() => {
+    // Check if user came via a specific deep link route
+    if (typeof window !== 'undefined') {
+      const path = window.location.pathname;
+      if (path.includes('/billing')) return HEALTH_OS_APPS.find((a) => a.id === 'billing-revenue-cycle') || null;
+      if (path.includes('/pharmacy')) return HEALTH_OS_APPS.find((a) => a.id === 'pharmacy-medication') || null;
+      if (path.includes('/lab')) return HEALTH_OS_APPS.find((a) => a.id === 'clinical-investigation') || null;
+      if (path.includes('/inpatient')) return HEALTH_OS_APPS.find((a) => a.id === 'inpatient-management') || null;
+      if (path.includes('/consultations')) return HEALTH_OS_APPS.find((a) => a.id === 'clinical-consultation') || null;
+      if (path.includes('/encounters')) return HEALTH_OS_APPS.find((a) => a.id === 'encounters-visits') || null;
+    }
+    // Launch their role-tailored primary app
+    return resolveRoleDefaultApp();
+  });
+
+  const [visitedModules, setVisitedModules] = useState<Set<HealthOSModuleKey>>(() => {
+    const initial = new Set<HealthOSModuleKey>();
+    const defApp = resolveRoleDefaultApp();
+    initial.add(defApp.id);
+    return initial;
+  });
+
   const [isRecentsOpen, setIsRecentsOpen] = useState<boolean>(false);
   const [isAppDrawerOpen, setIsAppDrawerOpen] = useState<boolean>(false);
 
@@ -164,7 +210,7 @@ export const DocSearchHealthOSContainer: React.FC<DocSearchHealthOSContainerProp
   }, [handlePressBack]);
 
   return (
-    <div className="relative min-h-screen bg-[#070913] text-slate-100 flex flex-col font-sans select-none overflow-x-hidden">
+    <div className="hos-master-container">
       {/* 1. Android Top System Chrome */}
       <HealthOSTopSystemChrome
         hospitalName={facilityBrand}
@@ -174,7 +220,7 @@ export const DocSearchHealthOSContainer: React.FC<DocSearchHealthOSContainerProp
       />
 
       {/* 2. Main Content Canvas */}
-      <main className="relative z-10 flex-1 flex flex-col pt-13 pb-13">
+      <main className="hos-main-canvas">
         {/* Android Hospital Homescreen (Visible when no app window is open and not in recents) */}
         {!activeApp && !isRecentsOpen && (
           <HealthOSHomescreen
@@ -193,9 +239,9 @@ export const DocSearchHealthOSContainer: React.FC<DocSearchHealthOSContainerProp
           >
             <React.Suspense
               fallback={
-                <div className="min-h-[60vh] flex flex-col items-center justify-center p-8 space-y-4">
+                <div style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', gap: '1rem' }}>
                   <DocSearch3DLogoLoader mode="download" size="lg" />
-                  <span className="text-xs font-mono text-slate-400 animate-pulse">
+                  <span style={{ fontSize: '0.8rem', fontFamily: 'monospace', color: '#94a3b8' }}>
                     Loading {activeApp.label}...
                   </span>
                 </div>

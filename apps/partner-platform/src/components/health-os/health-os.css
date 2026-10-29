@@ -1,0 +1,845 @@
+/**
+ * DocSearch Sovereign Healthcare OS (HealthOS) Styles
+ * 100% Standalone CSS — Pure Android Homescreen & 3-Button Navigation
+ */
+
+/* 1. HealthOS Master Container */
+.hos-master-container {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  background-color: #070913;
+  color: #f1f5f9;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.hos-master-container *,
+.hos-master-container *::before,
+.hos-master-container *::after {
+  box-sizing: border-box;
+}
+
+/* 2. Top System Chrome */
+.hos-top-chrome {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 52px;
+  z-index: 40;
+  background: rgba(7, 9, 19, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+.hos-chrome-left {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.hos-brand-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 10px;
+  background: rgba(37, 99, 235, 0.25);
+  border: 1px solid rgba(96, 165, 250, 0.4);
+  color: #93c5fd;
+  font-weight: 800;
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+.hos-facility-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.hos-facility-name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 280px;
+}
+
+.hos-facility-status {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #34d399;
+}
+
+.hos-active-module-pill {
+  color: #93c5fd;
+  font-weight: 700;
+}
+
+.hos-chrome-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.hos-user-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.hos-user-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  background: rgba(37, 99, 235, 0.4);
+  border: 1px solid rgba(96, 165, 250, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+}
+
+.hos-user-details {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.hos-user-name {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.2;
+}
+
+.hos-user-role {
+  font-size: 0.65rem;
+  color: #94a3b8;
+  line-height: 1;
+}
+
+.hos-clock-pill {
+  font-size: 0.75rem;
+  font-family: monospace;
+  font-weight: 700;
+  color: #e2e8f0;
+  padding: 0.3rem 0.65rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.hos-logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 12px;
+  background: rgba(244, 63, 94, 0.18);
+  border: 1px solid rgba(244, 63, 94, 0.4);
+  color: #fca5a5;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.hos-logout-btn:hover {
+  background: rgba(244, 63, 94, 0.35);
+  color: #ffffff;
+}
+
+/* 3. Main Body Canvas */
+.hos-main-canvas {
+  position: relative;
+  z-index: 10;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding-top: 52px;
+  padding-bottom: 54px;
+}
+
+/* 4. Homescreen */
+.hos-homescreen-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  max-width: 1080px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 1.5rem 1.25rem 2rem 1.25rem;
+}
+
+.hos-hud-date {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #60a5fa;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.25rem;
+}
+
+.hos-hud-facility {
+  font-size: 1.45rem;
+  font-weight: 900;
+  color: #ffffff;
+  margin: 0 0 1rem 0;
+  letter-spacing: -0.02em;
+}
+
+/* 3 Widgets Grid */
+.hos-widgets-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.hos-widget-card {
+  background: rgba(18, 24, 43, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 1rem 1.15rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+}
+
+.hos-widget-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(96, 165, 250, 0.4);
+}
+
+.hos-widget-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #94a3b8;
+  margin-bottom: 0.65rem;
+}
+
+.hos-widget-header-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.hos-widget-status {
+  font-size: 0.68rem;
+  font-family: monospace;
+}
+
+.hos-widget-body {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.hos-widget-caption {
+  font-size: 0.7rem;
+  color: #94a3b8;
+}
+
+.hos-widget-val {
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #ffffff;
+  line-height: 1.15;
+}
+
+.hos-widget-sub {
+  font-size: 0.72rem;
+  color: #cbd5e1;
+  margin-top: 0.2rem;
+}
+
+.hos-widget-action-pill {
+  padding: 0.35rem 0.65rem;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  background: rgba(37, 99, 235, 0.25);
+  color: #93c5fd;
+  transition: background 0.2s ease;
+}
+
+.hos-widget-card:hover .hos-widget-action-pill {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+/* 7 Core Apps Grid */
+.hos-apps-section {
+  margin: 2.25rem 0;
+}
+
+.hos-apps-heading {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+  margin-bottom: 1.25rem;
+  padding-left: 0.25rem;
+}
+
+.hos-apps-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1.15rem;
+}
+
+.hos-app-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.75rem 0.5rem;
+  border-radius: 20px;
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.hos-app-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-3px);
+}
+
+.hos-app-squircle {
+  width: 64px;
+  height: 64px;
+  border-radius: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.85rem;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  transition: transform 0.2s ease;
+}
+
+.hos-app-btn:hover .hos-app-squircle {
+  transform: scale(1.08);
+  box-shadow: 0 12px 30px rgba(37, 99, 235, 0.4);
+}
+
+.hos-app-label {
+  margin-top: 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #f1f5f9;
+  text-align: center;
+  line-height: 1.25;
+}
+
+.hos-app-btn:hover .hos-app-label {
+  color: #60a5fa;
+}
+
+.hos-app-badge {
+  font-size: 0.65rem;
+  color: #94a3b8;
+  margin-top: 0.2rem;
+}
+
+/* Master App Drawer Button */
+.hos-drawer-pill-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.hos-drawer-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.7rem 1.6rem;
+  border-radius: 9999px;
+  background: rgba(18, 24, 43, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+}
+
+.hos-drawer-pill-btn:hover {
+  background: rgba(30, 41, 69, 0.95);
+  border-color: rgba(96, 165, 250, 0.4);
+  transform: translateY(-1px);
+}
+
+/* 5. 3-Button Android System Navigation Bar (Bottom) */
+.hos-nav-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 54px;
+  z-index: 50;
+  background: rgba(5, 7, 14, 0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 1.5rem;
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.7);
+}
+
+.hos-nav-btn {
+  width: 70px;
+  height: 40px;
+  border-radius: 14px;
+  background: transparent;
+  border: none;
+  color: #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.hos-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.hos-nav-btn-active {
+  background: rgba(37, 99, 235, 0.3) !important;
+  border: 1px solid rgba(96, 165, 250, 0.5) !important;
+  color: #60a5fa !important;
+}
+
+.hos-nav-recents-icon {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.hos-nav-recents-bar {
+  width: 3.5px;
+  height: 16px;
+  border-radius: 9999px;
+  background-color: currentColor;
+}
+
+.hos-nav-home-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hos-nav-home-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #60a5fa;
+}
+
+.hos-nav-back-icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* 6. Recents Multitasking Deck */
+.hos-recents-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  background: rgba(5, 7, 14, 0.82);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  padding: 4rem 1.5rem 5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  animation: dsFadeIn 0.2s ease-out;
+}
+
+.hos-recents-header {
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 0.75rem;
+}
+
+.hos-recents-carousel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-x: auto;
+  gap: 1.5rem;
+  padding: 1.5rem 0;
+}
+
+.hos-recent-card {
+  position: relative;
+  width: 280px;
+  height: 400px;
+  border-radius: 28px;
+  background: rgba(18, 24, 43, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.hos-recent-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  border-color: rgba(96, 165, 250, 0.5);
+}
+
+.hos-recent-card-active {
+  border: 2px solid #38bdf8 !important;
+  box-shadow: 0 20px 60px rgba(56, 189, 248, 0.25) !important;
+}
+
+.hos-recent-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 0.75rem;
+}
+
+.hos-recent-app-identity {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.hos-recent-app-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+}
+
+.hos-recent-kill-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.hos-recent-kill-btn:hover {
+  background: #ef4444;
+}
+
+.hos-recent-body {
+  flex: 1;
+  margin: 1rem 0;
+  border-radius: 18px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.hos-clear-all-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+.hos-clear-all-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.6rem;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.hos-clear-all-btn:hover {
+  background: rgba(255, 255, 255, 0.22);
+  transform: translateY(-1px);
+}
+
+/* 7. Master App Drawer */
+.hos-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  background: rgba(5, 7, 14, 0.9);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  padding: 4.5rem 1.5rem 5rem 1.5rem;
+  overflow-y: auto;
+  animation: dsFadeIn 0.2s ease-out;
+}
+
+.hos-drawer-window {
+  max-width: 960px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.hos-drawer-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+}
+
+.hos-drawer-search-wrap {
+  position: relative;
+  width: 280px;
+}
+
+.hos-drawer-search-input {
+  width: 100%;
+  padding: 0.5rem 1rem 0.5rem 2.2rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  font-size: 0.8rem;
+  outline: none;
+}
+
+.hos-drawer-search-input:focus {
+  border-color: #60a5fa;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.hos-drawer-search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.hos-drawer-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1.25rem;
+}
+
+.hos-drawer-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem 0.65rem;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.hos-drawer-card:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(96, 165, 250, 0.4);
+  transform: translateY(-2px);
+}
+
+/* 8. Fullscreen Focused App Window Runner */
+.hos-window-container {
+  position: fixed;
+  top: 52px;
+  bottom: 54px;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  background: #070913;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: dsFadeIn 0.15s ease-out;
+}
+
+.hos-window-header {
+  height: 44px;
+  padding: 0 1.25rem;
+  background: #0f172a;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.hos-window-left {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.hos-window-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #f1f5f9;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.hos-window-back-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.hos-window-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.hos-window-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.hos-window-ctrl-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.hos-window-ctrl-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+.hos-window-ctrl-btn-close:hover {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.hos-window-body {
+  flex: 1;
+  overflow-y: auto;
+  background: #070913;
+  color: #f1f5f9;
+}
+
+/* Responsive Rules */
+@media (max-width: 1024px) {
+  .hos-widgets-grid {
+    grid-template-columns: 1fr;
+  }
+  .hos-apps-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .hos-drawer-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .hos-facility-name,
+  .hos-user-role {
+    display: none;
+  }
+  .hos-apps-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .hos-drawer-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .hos-top-chrome {
+    padding: 0 0.85rem;
+  }
+  .hos-recents-carousel {
+    flex-direction: column;
+    align-items: center;
+  }
+  .hos-recent-card {
+    width: 100%;
+    max-width: 300px;
+    height: 320px;
+  }
+}

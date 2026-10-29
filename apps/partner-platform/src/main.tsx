@@ -231,18 +231,37 @@ const App: React.FC = () => {
   // Initializing secure session
   if (isBootstrapping) {
     return (
-      <div className="min-h-screen bg-[#070913] flex flex-col items-center justify-center text-white space-y-4 select-none">
-        <div className="relative">
-          <div className="w-16 h-16 rounded-3xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-3xl shadow-xl shadow-blue-500/20 animate-pulse">
-            🏥
-          </div>
-          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-400 animate-ping" />
+      <div style={{
+        minHeight: '100vh',
+        backgroundColor: '#070913',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: '#ffffff',
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+        userSelect: 'none',
+        gap: '1rem',
+      }}>
+        <div style={{
+          width: 64,
+          height: 64,
+          borderRadius: 20,
+          backgroundColor: 'rgba(37, 99, 235, 0.25)',
+          border: '1px solid rgba(96, 165, 250, 0.4)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '2rem',
+          boxShadow: '0 10px 25px rgba(37, 99, 235, 0.2)',
+        }}>
+          🏥
         </div>
-        <div className="text-center">
-          <div className="text-sm font-bold tracking-tight text-white">DocSearch Apollo Hospital</div>
-          <div className="text-xs text-slate-400 mt-1 flex items-center gap-1.5 justify-center font-mono">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Connecting to PostgreSQL 18.4 Engine...</span>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '0.95rem', fontWeight: 800, letterSpacing: '-0.02em', color: '#ffffff' }}>DocSearch Sovereign HealthOS</div>
+          <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.4rem', justifyContent: 'center', fontFamily: 'monospace' }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#34d399', display: 'inline-block' }} />
+            <span>Authenticating Session • PostgreSQL 18.4 Engine</span>
           </div>
         </div>
       </div>
