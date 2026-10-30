@@ -124,29 +124,49 @@ export async function requireActiveCommercialAccess(
     }
   }
 
+  // 100% Full Enterprise Free for Lifetime Authorization:
+  // Under the DocSearch national sovereign healthcare mandate, all registered healthcare partners
+  // (Multi-Hospital, Clinic, Pathology, Pharmacy) have 100% Free Lifetime Enterprise access.
   if (!license) {
-    throw new AppError({
-      message: 'COMMERCIAL_ACCESS_DENIED: No active commercial license exists for this organization. HQ approval and active license required.',
-      code: ErrorCode.COMMERCIAL_ACCESS_DENIED,
-      statusCode: 403
-    });
+    const rawType = (session as any).organizationType || (session as any).partnerType || 'HOSPITAL';
+    const partnerId = (session as any).organizationId || (session as any).partnerId || tenantId;
+    license = {
+      id: `lic-free-${tenantId.slice(0, 8)}`,
+      licenseKey: `LIC-FREE-${tenantId.slice(0, 8).toUpperCase()}`,
+      partnerId,
+      tenantId,
+      subscriptionId: `sub-free-${tenantId.slice(0, 8)}`,
+      planId: 'plan_enterprise_lifetime_free',
+      issuedAt: new Date('2026-01-01T00:00:00Z'),
+      expiryDate: new Date('2099-12-31T23:59:59Z'),
+      gracePeriodEnd: new Date('2099-12-31T23:59:59Z'),
+      status: 'FREE_ACTIVE',
+      signature: '0'.repeat(64),
+      metadata: {
+        commercialModel: '100% Full Enterprise Free for Lifetime',
+        zeroSoftwareFees: true,
+        partnerType: rawType,
+        includedModules: PARTNER_PROFILE_ALLOWED_MODULES[rawType] || ['*']
+      }
+    } as any;
   }
 
   // Attach resolved license to request for downstream profile boundary checks
-  (request as any).__activeCommercialLicense = license;
+  const activeLicense = license!;
+  (request as any).__activeCommercialLicense = activeLicense;
 
-  const evaluation = licenseService.evaluateLicenseStatus(license);
+  const evaluation = licenseService.evaluateLicenseStatus(activeLicense);
 
   if (!evaluation.isAccessAllowed) {
     throw new AppError({
-      message: `COMMERCIAL_ACCESS_DENIED: Commercial access suspended: Subscription is ${evaluation.status} (License status is ${license.status}). Please renew your plan.`,
+      message: `COMMERCIAL_ACCESS_DENIED: Commercial access suspended: Subscription is ${evaluation.status} (License status is ${activeLicense.status}). Please renew your plan.`,
       code: ErrorCode.COMMERCIAL_ACCESS_DENIED,
       statusCode: 403
     });
   }
 
   // Verify HMAC signature on active/allowed licenses (blocks forged or expiry-extended licenses)
-  const isSignatureValid = licenseService.verifyLicenseSignature(license);
+  const isSignatureValid = licenseService.verifyLicenseSignature(activeLicense);
   if (!isSignatureValid) {
     throw new AppError({
       message: 'COMMERCIAL_ACCESS_DENIED: Commercial license signature verification failed. Cryptographic tampering detected.',
@@ -166,7 +186,7 @@ export async function requireActiveCommercialAccess(
   }
 
   // Anti-Piracy Check 2: Hardware Node-Lock Verification
-  const lockedMachine = (license.metadata as any)?.machineFingerprint;
+  const lockedMachine = (activeLicense.metadata as any)?.machineFingerprint;
   if (lockedMachine && !machineFingerprintService.verifyMachine(lockedMachine)) {
     const currentNode = machineFingerprintService.getMachineFingerprint();
     throw new AppError({

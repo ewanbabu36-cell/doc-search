@@ -46,21 +46,25 @@ export const DocSearchHealthOSContainer: React.FC<DocSearchHealthOSContainerProp
   const resolveRoleDefaultApp = useCallback((): HealthOSAppItem => {
     const roleUpper = (currentUser.role || '').toUpperCase();
     const deptUpper = (currentUser.department || '').toUpperCase();
+    const orgType = currentUser.organizationType || 'HOSPITAL';
 
     if (roleUpper.includes('PATIENT')) {
       return HEALTH_OS_APPS.find((a) => a.id === 'patient-portal') || HEALTH_OS_APPS[0]!;
+    }
+    if (orgType === 'PHARMACY' || roleUpper.includes('PHARMAC') || deptUpper.includes('PHARMACY')) {
+      return HEALTH_OS_APPS.find((a) => a.id === 'pharmacy-medication') || HEALTH_OS_APPS[0]!;
+    }
+    if (orgType === 'PATHOLOGY' || roleUpper.includes('LAB') || roleUpper.includes('PATHOLOG') || deptUpper.includes('PATHOLOGY')) {
+      return HEALTH_OS_APPS.find((a) => a.id === 'clinical-investigation') || HEALTH_OS_APPS[0]!;
+    }
+    if (orgType === 'CLINIC') {
+      return HEALTH_OS_APPS.find((a) => a.id === 'clinical-consultation') || HEALTH_OS_APPS[0]!;
     }
     if (roleUpper.includes('NURSE') || deptUpper.includes('INPATIENT') || deptUpper.includes('WARD')) {
       return HEALTH_OS_APPS.find((a) => a.id === 'inpatient-management') || HEALTH_OS_APPS[0]!;
     }
     if (roleUpper.includes('CASHIER') || roleUpper.includes('FRONT_DESK') || deptUpper.includes('BILLING')) {
       return HEALTH_OS_APPS.find((a) => a.id === 'billing-revenue-cycle') || HEALTH_OS_APPS[0]!;
-    }
-    if (roleUpper.includes('PHARMAC') || deptUpper.includes('PHARMACY')) {
-      return HEALTH_OS_APPS.find((a) => a.id === 'pharmacy-medication') || HEALTH_OS_APPS[0]!;
-    }
-    if (roleUpper.includes('LAB') || roleUpper.includes('PATHOLOG') || deptUpper.includes('PATHOLOGY')) {
-      return HEALTH_OS_APPS.find((a) => a.id === 'clinical-investigation') || HEALTH_OS_APPS[0]!;
     }
     if (roleUpper.includes('ADMIN') || roleUpper.includes('EXECUTIVE') || roleUpper.includes('DIRECTOR')) {
       return HEALTH_OS_APPS.find((a) => a.id === 'executive-command-center') || HEALTH_OS_APPS[0]!;
@@ -232,6 +236,8 @@ export const DocSearchHealthOSContainer: React.FC<DocSearchHealthOSContainerProp
             onLaunchApp={handleLaunchApp}
             onOpenAppDrawer={() => setIsAppDrawerOpen(true)}
             hospitalName={facilityBrand}
+            profile={currentUser.organizationType || 'HOSPITAL'}
+            currentUser={currentUser}
           />
         )}
 
@@ -443,6 +449,7 @@ export const DocSearchHealthOSContainer: React.FC<DocSearchHealthOSContainerProp
         isOpen={isAppDrawerOpen}
         onSelectApp={handleLaunchApp}
         onClose={() => setIsAppDrawerOpen(false)}
+        profile={currentUser.organizationType || 'HOSPITAL'}
       />
 
       {/* 4. Multitasking Recent Apps Switcher [ ||| ] */}

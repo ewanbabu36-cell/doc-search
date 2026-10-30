@@ -1,3 +1,5 @@
+import type { OrganizationWorkspaceType } from '../auth/HospitalStaffLogin.js';
+
 export type HealthOSModuleKey =
   | 'billing-revenue-cycle'
   | 'encounters-visits'
@@ -32,6 +34,7 @@ export interface HealthOSAppItem {
   description: string;
   badge?: string;
   isCoreHomeApp?: boolean;
+  applicableProfiles: OrganizationWorkspaceType[];
 }
 
 export interface HealthOSRecentTask {

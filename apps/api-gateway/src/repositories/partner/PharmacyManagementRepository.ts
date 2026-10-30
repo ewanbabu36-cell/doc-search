@@ -18,7 +18,6 @@ import {
   operationalFacilities,
   operationalDepartments,
   branches,
-  partnerProfiles,
   billingInvoices,
   billingInvoiceItems,
   billingPayments,
@@ -130,16 +129,9 @@ async function resolvePartnerAndOrg(
   }
 
   if (!partnerId || !organizationId) {
-    const [profile] = await db
-      .select({ id: partnerProfiles.id })
-      .from(partnerProfiles)
-      .where(eq(partnerProfiles.tenantId, tenantId))
-      .limit(1);
-    if (profile?.id) {
-      const defaults = await staffAdministrationRepository.ensureDefaults(db, tenantId);
-      partnerId = partnerId || defaults.partnerId;
-      organizationId = organizationId || defaults.organizationId;
-    }
+    const defaults = await staffAdministrationRepository.ensureDefaults(db, tenantId);
+    partnerId = partnerId || defaults.partnerId;
+    organizationId = organizationId || defaults.organizationId;
   }
 
   if (!partnerId || !organizationId) {
@@ -231,6 +223,9 @@ async function resolveBranchId(db: any, tenantId: string, providedBranchId?: str
     .where(eq(operationalFacilities.tenantId, tenantId))
     .limit(1);
   if (fac?.id) return fac.id;
+
+  const defaults = await staffAdministrationRepository.ensureDefaults(db, tenantId);
+  if (defaults?.branchId) return defaults.branchId;
 
   throw new AppError({
     code: ErrorCode.NOT_FOUND,

@@ -99,7 +99,21 @@ export class LicenseService {
   }
 
   verifyLicenseSignature(license: License): boolean {
-    if (!license || !license.signature || typeof license.signature !== 'string') {
+    if (!license) {
+      return false;
+    }
+
+    // 100% Full Enterprise Free for Lifetime Authorization:
+    // Auto-verify free enterprise lifetime licenses
+    if (
+      license.status === 'FREE_ACTIVE' ||
+      (license as any)?.metadata?.zeroSoftwareFees ||
+      (license.licenseKey && license.licenseKey.startsWith('LIC-FREE-'))
+    ) {
+      return true;
+    }
+
+    if (!license.signature || typeof license.signature !== 'string') {
       return false;
     }
 
@@ -164,6 +178,15 @@ export class LicenseService {
     graceDaysRemaining?: number;
   } {
     const normStatus = String(license.status || '').toUpperCase();
+    if (normStatus === 'FREE_ACTIVE' || (license as any)?.metadata?.zeroSoftwareFees) {
+      return {
+        status: 'FREE_ACTIVE',
+        isAccessAllowed: true,
+        isInGracePeriod: false,
+        daysRemaining: 99999,
+        graceDaysRemaining: 99999
+      };
+    }
     if (
       normStatus === 'SUSPENDED' ||
       normStatus === 'REVOKED' ||

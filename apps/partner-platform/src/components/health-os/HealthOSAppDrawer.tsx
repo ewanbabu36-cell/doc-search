@@ -1,28 +1,48 @@
 import React, { useState } from 'react';
 import { type HealthOSAppItem } from './health-os-types.js';
-import { HEALTH_OS_APPS } from './health-os-registry.js';
+import { getAppsForProfile } from './health-os-registry.js';
+import type { OrganizationWorkspaceType } from '../auth/HospitalStaffLogin.js';
 import './health-os.css';
 
 export interface HealthOSAppDrawerProps {
   isOpen: boolean;
   onSelectApp: (app: HealthOSAppItem) => void;
   onClose: () => void;
+  profile?: OrganizationWorkspaceType | undefined;
 }
 
 export const HealthOSAppDrawer: React.FC<HealthOSAppDrawerProps> = ({
   isOpen,
   onSelectApp,
   onClose,
+  profile = 'HOSPITAL',
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
   if (!isOpen) return null;
 
-  const filteredApps = HEALTH_OS_APPS.filter((app) =>
+  const profileApps = getAppsForProfile(profile);
+
+  const filteredApps = profileApps.filter((app) =>
     app.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
     app.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    app.category.toLowerCase().includes(searchTerm.toLowerCase())
+    app.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    app.shortLabel.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const drawerSubtitle = (() => {
+    switch (profile) {
+      case 'CLINIC':
+        return 'All OPD consultation, token queue, ABHA & clinic tools';
+      case 'PATHOLOGY':
+        return 'All LIMS, accessioning, analyzer & diagnostic tools';
+      case 'PHARMACY':
+        return 'All retail pharmacy POS, inventory & chemist tools';
+      case 'HOSPITAL':
+      default:
+        return 'All clinical, pharmacy, diagnostic & hospital operations tools';
+    }
+  })();
 
   return (
     <div className="hos-drawer-overlay" onClick={onClose}>
@@ -35,7 +55,7 @@ export const HealthOSAppDrawer: React.FC<HealthOSAppDrawerProps> = ({
             </div>
             <div>
               <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>DocSearch Master App Drawer</h2>
-              <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0.15rem 0 0 0' }}>All clinical, pharmacy, diagnostic & hospital operations tools</p>
+              <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0.15rem 0 0 0' }}>{drawerSubtitle}</p>
             </div>
           </div>
 
@@ -44,7 +64,7 @@ export const HealthOSAppDrawer: React.FC<HealthOSAppDrawerProps> = ({
               <span className="hos-drawer-search-icon">🔍</span>
               <input
                 type="text"
-                placeholder="Search hospital app..."
+                placeholder="Search tools & apps..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 autoFocus
@@ -62,7 +82,7 @@ export const HealthOSAppDrawer: React.FC<HealthOSAppDrawerProps> = ({
           </div>
         </div>
 
-        {/* All Apps Grid */}
+        {/* All Profile-Scoped Apps Grid */}
         <div className="hos-drawer-grid">
           {filteredApps.map((app) => (
             <button
@@ -99,11 +119,6 @@ export const HealthOSAppDrawer: React.FC<HealthOSAppDrawerProps> = ({
               <span style={{ fontSize: '0.65rem', color: '#94a3b8', marginTop: '0.15rem' }}>
                 {app.category}
               </span>
-              {app.badge && (
-                <span style={{ marginTop: '0.35rem', fontSize: '0.6rem', fontWeight: 700, padding: '0.15rem 0.45rem', borderRadius: 9999, background: 'rgba(255,255,255,0.08)', color: '#34d399' }}>
-                  {app.badge}
-                </span>
-              )}
             </button>
           ))}
         </div>

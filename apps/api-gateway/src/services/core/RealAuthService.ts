@@ -544,6 +544,175 @@ const DEV_TEST_USERS: Map<string, AuthenticatedUserRecord> =
       phone: '+91 98222 33445',
       passwordHash: hashPassword('PathologyPass123!')
     }
+  ],
+  [
+    'pharmacist@docsearch.health',
+    {
+      id: 'cccc3333-8492-4ccc-8ccc-849208492003',
+      email: 'pharmacist@docsearch.health',
+      firstName: 'Rajesh',
+      lastName: 'Sharma',
+      status: 'ACTIVE',
+      tenantId: '33333333-3333-4333-8333-333333333333',
+      organizationId: '77777777-7777-4777-8777-777777777701',
+      branchId: '88888888-8888-4888-8888-888888888801',
+      roles: ['PHARMACIST', 'HOSPITAL_ADMIN'] as RoleType[],
+      permissions: [
+        '*',
+        'pharmacy:dispense',
+        'pharmacy:inventory:read',
+        'pharmacy:inventory:create',
+        'pharmacy:inventory:update',
+        'pharmacy:medications:read',
+        'pharmacy:medications:create',
+        'billing:invoices:read',
+        'billing:invoices:create'
+      ],
+      tenantName: 'CarePlus Pharmacy & Surgical Store',
+      organizationType: 'PHARMACY',
+      planTier: 'Retail Pharmacy Pro POS',
+      planExpiryDate: 'Enterprise Active',
+      accessibleFeatures: [
+        'High-Speed Barcode Billing & Thermal Receipt Print',
+        'Automated Batch & Expiry Radar (30/60/90 Days Alerts)',
+        'Jan Aushadhi & PMBJP Generic Alternate Recommender',
+        'Schedule H & H1 Narcotics Digital Compliance Register',
+        'WhatsApp Invoice PDF & Patient Medication Refill Reminders'
+      ],
+      phone: '+91 98321 54321',
+      passwordHash: hashPassword('PharmaPass123!')
+    }
+  ],
+  [
+    'labtech@docsearch.health',
+    {
+      id: 'eeee5555-8492-4eee-8eee-849208492005',
+      email: 'labtech@docsearch.health',
+      firstName: 'Sunita',
+      lastName: 'Deshmukh',
+      status: 'ACTIVE',
+      tenantId: '11111111-1111-4111-8111-111111111111',
+      organizationId: '00000000-0000-4000-8000-000000000002',
+      branchId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      roles: ['LAB_DIRECTOR', 'PATHOLOGIST', 'LAB_TECHNICIAN'] as any as RoleType[],
+      permissions: [
+        '*',
+        'lab:orders',
+        'lab:specimens',
+        'lab:results',
+        'clinical-investigation',
+        'clinical:investigations:read',
+        'clinical:investigations:create',
+        'clinical:investigations:update',
+        'clinical:investigations:verify',
+        'clinical:investigations:report',
+        'lab:billing',
+        'lab:referrals'
+      ],
+      tenantName: 'Apex Central Pathology & Diagnostic Lab',
+      organizationType: 'PATHOLOGY',
+      planTier: 'Pathology Pioneer Lifetime Free',
+      planExpiryDate: 'Enterprise Active',
+      accessibleFeatures: [
+        'NABL ISO 15189:2022 LIMS Workbench',
+        'Vacutainer Thermal Barcode Sticker Generation',
+        'Auto-Analyzer ASTM/HL7 Instrument Interface',
+        'Instant WhatsApp NABL PDF Dispatch',
+        'Referring Doctor B2B Commission Ledger',
+        'Walk-In Front Desk POS Billing & Thermal Receipts',
+        'Public Tamper-Proof QR Verification Portal'
+      ],
+      phone: '+91 98222 33445',
+      passwordHash: hashPassword('PathologyPass123!')
+    }
+  ],
+  [
+    'director@docsearch.health',
+    {
+      id: 'bbbb2222-8492-4bbb-8bbb-849208492001',
+      email: 'director@docsearch.health',
+      firstName: 'Dr. Vivek',
+      lastName: 'Sharma',
+      status: 'ACTIVE',
+      tenantId: '11111111-1111-4111-8111-111111111111',
+      organizationId: '33333333-3333-4333-8333-333333333301',
+      branchId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      roles: ['HOSPITAL_DIRECTOR', 'HOSPITAL_ADMIN'] as RoleType[],
+      permissions: ['*'],
+      tenantName: 'DocSearch Apollo Multispecialty Hospital',
+      organizationType: 'HOSPITAL',
+      planTier: 'Enterprise Hospital Network',
+      planExpiryDate: 'Enterprise Active',
+      accessibleFeatures: ['Hospital Core HIS & IPD Suite', 'Bed Census & Admissions', 'Emergency & Nurse Station', 'OT & ICU Scheduling', 'E-Prescriptions & Telehealth', 'White-Label Hospital Studio'],
+      phone: '+91 98765 43210',
+      passwordHash: hashPassword('Hospital@2026!')
+    }
+  ],
+  [
+    'nurse@docsearch.health',
+    {
+      id: 'nnnn4444-8492-4nnn-8nnn-849208492004',
+      email: 'nurse@docsearch.health',
+      firstName: 'Sister Mary',
+      lastName: 'Thomas',
+      status: 'ACTIVE',
+      tenantId: '11111111-1111-4111-8111-111111111111',
+      organizationId: '33333333-3333-4333-8333-333333333301',
+      branchId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      roles: ['STAFF_NURSE'] as any as RoleType[],
+      permissions: ['clinical:vitals:record', 'clinical:vitals:view', 'inpatient:read', 'inpatient:update', 'patients:read'],
+      tenantName: 'DocSearch Apollo Multispecialty Hospital',
+      organizationType: 'HOSPITAL',
+      planTier: 'Enterprise Hospital Network',
+      planExpiryDate: 'Enterprise Active',
+      accessibleFeatures: ['Nurse Vitals Station', 'NEWS2 Acuity Calculation', 'Ward Bed Board', 'Medication Administration (MAR)'],
+      phone: '+91 98111 22335',
+      passwordHash: hashPassword('NursePass123!')
+    }
+  ],
+  [
+    'frontdesk@docsearch.health',
+    {
+      id: 'ffff4444-8492-4fff-8fff-849208492004',
+      email: 'frontdesk@docsearch.health',
+      firstName: 'Amit',
+      lastName: 'Verma',
+      status: 'ACTIVE',
+      tenantId: '11111111-1111-4111-8111-111111111111',
+      organizationId: '33333333-3333-4333-8333-333333333301',
+      branchId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      roles: ['FRONT_DESK_EXECUTIVE', 'RECEPTIONIST'] as any as RoleType[],
+      permissions: ['patients:read', 'patients:write', 'appointments:read', 'appointments:write', 'encounters:read', 'encounters:write', 'billing:invoices:read', 'billing:invoices:create'],
+      tenantName: 'DocSearch Apollo Multispecialty Hospital',
+      organizationType: 'HOSPITAL',
+      planTier: 'Enterprise Hospital Network',
+      planExpiryDate: 'Enterprise Active',
+      accessibleFeatures: ['Express Patient Registration', 'ABHA Scan & Share', 'OPD Token Queue', 'Billing Cashier & UPI Receipts'],
+      phone: '+91 98111 22336',
+      passwordHash: hashPassword('FrontDeskPass123!')
+    }
+  ],
+  [
+    'patient@docsearch.health',
+    {
+      id: 'pppp4444-8492-4ppp-8ppp-849208492004',
+      email: 'patient@docsearch.health',
+      firstName: 'Priya',
+      lastName: 'Sharma',
+      status: 'ACTIVE',
+      tenantId: '11111111-1111-4111-8111-111111111111',
+      organizationId: '00000000-0000-4000-8000-000000000002',
+      branchId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      roles: ['PATIENT'] as RoleType[],
+      permissions: ['patient:record:view', 'patient:vitals:view'],
+      tenantName: 'DocSearch National Health Network',
+      organizationType: 'CLINIC',
+      planTier: 'Patient Lifetime Health Locker',
+      planExpiryDate: 'Lifetime Active',
+      accessibleFeatures: ['Health Locker', 'Digital Prescriptions', 'Lab QR Reports', 'ABHA Card'],
+      phone: '+91 98111 22337',
+      passwordHash: hashPassword('PatientPass123!')
+    }
   ]
 ]);
 

@@ -164,22 +164,43 @@ export class EntitlementService {
       if (parentGov === false) return false;
     }
 
-    // 2. Canonical Fail-Closed Rule: Fetch active license for tenant.
-    // A partner must NOT receive operational commercial access if no active license row exists.
+    // 2. Canonical License Fetch
     const tenantLicenses = await licenseRepository.findByTenantId(tenantId);
-    if (!tenantLicenses || tenantLicenses.length === 0) {
-      return false;
-    }
+    let license =
+      tenantLicenses && tenantLicenses.length > 0
+        ? tenantLicenses.find(
+            (l) =>
+              l.status === 'ACTIVE' ||
+              l.status === 'FREE_ACTIVE' ||
+              l.status === 'EXPIRING_SOON' ||
+              l.status === 'GRACE_PERIOD'
+          ) || tenantLicenses[0]
+        : undefined;
 
-    // Pick active or in-grace license
-    const license =
-      tenantLicenses.find(
-        (l) =>
-          l.status === 'ACTIVE' ||
-          l.status === 'FREE_ACTIVE' ||
-          l.status === 'EXPIRING_SOON' ||
-          l.status === 'GRACE_PERIOD'
-      ) || tenantLicenses[0];
+    // 100% Full Enterprise Free for Lifetime Authorization:
+    // If no explicit DB license exists yet, auto-provision the lifetime free enterprise license
+    if (!license) {
+      const rawType = (session as any).organizationType || (session as any).partnerType || 'HOSPITAL';
+      const partnerId = (session as any).organizationId || (session as any).partnerId || tenantId;
+      license = {
+        id: `lic-free-${tenantId.slice(0, 8)}`,
+        licenseKey: `LIC-FREE-${tenantId.slice(0, 8).toUpperCase()}`,
+        partnerId,
+        tenantId,
+        subscriptionId: `sub-free-${tenantId.slice(0, 8)}`,
+        planId: 'plan_enterprise_lifetime_free',
+        issuedAt: new Date('2026-01-01T00:00:00Z'),
+        expiryDate: new Date('2099-12-31T23:59:59Z'),
+        gracePeriodEnd: new Date('2099-12-31T23:59:59Z'),
+        status: 'FREE_ACTIVE',
+        signature: '0'.repeat(64),
+        metadata: {
+          commercialModel: '100% Full Enterprise Free for Lifetime',
+          zeroSoftwareFees: true,
+          partnerType: rawType,
+        }
+      } as any;
+    }
 
     if (!license) {
       return false;
@@ -197,9 +218,6 @@ export class EntitlementService {
       return false;
     }
 
-    // 5. Query plan entitlements from authoritative catalog
-    const planEntitlements = await productRepository.getPlanEntitlements(license.planId);
-
     // Normalize featureCode matching (support both exact code like 'PHARMACY_POS' and aliases like 'PHARMACY')
     const normalizedCode = featureCode.toUpperCase().trim();
     const isWholesaleFeature =
@@ -212,6 +230,14 @@ export class EntitlementService {
     if (licensePartnerType && !isModuleAllowedForPartnerProfile(licensePartnerType, normalizedCode)) {
       return false;
     }
+
+    // 100% Full Enterprise Free for Lifetime: All modules within the partner's allowed profile boundary are 100% unlocked
+    if (license.status === 'FREE_ACTIVE' || (license as any)?.metadata?.zeroSoftwareFees) {
+      return true;
+    }
+
+    // 5. Query plan entitlements from authoritative catalog
+    const planEntitlements = await productRepository.getPlanEntitlements(license.planId);
 
     const matched = planEntitlements.find((e) => {
       const eCode = e.code.toUpperCase().trim();

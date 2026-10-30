@@ -1,7 +1,8 @@
 import { type HealthOSAppItem } from './health-os-types.js';
+import type { OrganizationWorkspaceType } from '../auth/HospitalStaffLogin.js';
 
 export const HEALTH_OS_APPS: HealthOSAppItem[] = [
-  // --- 7 CORE HOMESCREEN APPS ---
+  // --- 1. BILLING & COLLECTIONS ---
   {
     id: 'billing-revenue-cycle',
     label: 'Billing & Cashier Collections',
@@ -13,7 +14,10 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     description: 'OPD receipt billing, cashier counter collections, refunds & TPA claims',
     badge: '₹1.48L Today',
     isCoreHomeApp: true,
+    applicableProfiles: ['HOSPITAL', 'CLINIC', 'PATHOLOGY', 'PHARMACY', 'DIAGNOSTIC_CENTRE', 'ENTERPRISE_COMMAND'],
   },
+
+  // --- 2. APPOINTMENTS & OPD QUEUE ---
   {
     id: 'encounters-visits',
     label: 'Appointments & OPD Queue',
@@ -25,7 +29,10 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     description: 'Token calling system, patient check-in & waiting room TV sync',
     badge: 'Token #42',
     isCoreHomeApp: true,
+    applicableProfiles: ['HOSPITAL', 'CLINIC', 'ENTERPRISE_COMMAND'],
   },
+
+  // --- 3. CLINICAL CONSULTATION & SMART RX PAD ---
   {
     id: 'clinical-consultation',
     label: 'Clinical Consultation & Smart Rx Pad',
@@ -37,11 +44,14 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     description: 'Digital EMR desk, voice scribe, ICD-10 notes & rapid prescription pad',
     badge: 'Active Desk',
     isCoreHomeApp: true,
+    applicableProfiles: ['HOSPITAL', 'CLINIC', 'ENTERPRISE_COMMAND'],
   },
+
+  // --- 4. PHARMACY DISPENSARY & LIVE STOCK ---
   {
     id: 'pharmacy-medication',
     label: 'Pharmacy Dispensary & Live Stock',
-    shortLabel: 'Pharmacy',
+    shortLabel: 'Pharmacy POS',
     category: 'CORE',
     icon: '💊',
     gradient: 'from-purple-600 to-indigo-800',
@@ -49,7 +59,10 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     description: 'Real-time medicine batch stock, Schedule H1 drug register & dispensing',
     badge: 'Stock Live',
     isCoreHomeApp: true,
+    applicableProfiles: ['HOSPITAL', 'PHARMACY', 'ENTERPRISE_COMMAND'],
   },
+
+  // --- 5. DIAGNOSTIC PATHOLOGY & LIMS ---
   {
     id: 'clinical-investigation',
     label: 'Diagnostic Pathology & Lab',
@@ -61,7 +74,10 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     description: 'Diagnostic specimen collection, barcode accession & verified lab reports',
     badge: '18 Orders',
     isCoreHomeApp: true,
+    applicableProfiles: ['HOSPITAL', 'PATHOLOGY', 'DIAGNOSTIC_CENTRE', 'ENTERPRISE_COMMAND'],
   },
+
+  // --- 6. INPATIENT WARD & BED CENSUS ---
   {
     id: 'inpatient-management',
     label: 'Inpatient Ward & Bed Census',
@@ -73,10 +89,13 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     description: 'Bed census HUD, nurse rounds, admission-discharge-transfer (ADT) & ICU',
     badge: '82% Occupied',
     isCoreHomeApp: true,
+    applicableProfiles: ['HOSPITAL', 'ENTERPRISE_COMMAND'],
   },
+
+  // --- 7. SETTINGS & ADMINISTRATION ---
   {
     id: 'staff-administration',
-    label: 'Hospital Settings & Staff Roster',
+    label: 'Facility Settings & Staff Roster',
     shortLabel: 'Settings & Admin',
     category: 'CORE',
     icon: '⚙️',
@@ -85,9 +104,10 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     description: 'Doctor duty scheduling, department configuration & role security',
     badge: 'Config',
     isCoreHomeApp: true,
+    applicableProfiles: ['HOSPITAL', 'CLINIC', 'PATHOLOGY', 'PHARMACY', 'DIAGNOSTIC_CENTRE', 'ENTERPRISE_COMMAND'],
   },
 
-  // --- SECONDARY HOSPITAL MODULES (IN MASTER APP DRAWER) ---
+  // --- 8. PATIENT REGISTRATION & FRONT DESK ---
   {
     id: 'patient-registration',
     label: 'Patient Registration & Front Desk',
@@ -97,7 +117,10 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     gradient: 'from-teal-600 to-emerald-800',
     route: '/partner/registration',
     description: 'Fast OPD registration, biometric ABHA lookup & photo capture',
+    applicableProfiles: ['HOSPITAL', 'CLINIC', 'PATHOLOGY', 'ENTERPRISE_COMMAND'],
   },
+
+  // --- 9. PATIENT HEALTH 360 & ABHA LOCKER ---
   {
     id: 'patient-portal',
     label: 'Patient Health 360 & ABHA Locker',
@@ -109,7 +132,10 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     description: 'Self-service digital health records, active prescriptions, appointments & ABHA',
     badge: 'ABHA Linked',
     isCoreHomeApp: true,
+    applicableProfiles: ['HOSPITAL', 'CLINIC', 'PATHOLOGY', 'PHARMACY', 'ENTERPRISE_COMMAND'],
   },
+
+  // --- 10. EMERGENCY & MANCHESTER TRIAGE ---
   {
     id: 'emergency-trauma',
     label: 'Emergency & Manchester Triage',
@@ -120,7 +146,10 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     route: '/partner/emergency',
     description: '5-level Manchester triage, trauma resuscitation & red-alert bed sync',
     badge: 'Code Blue Ready',
+    applicableProfiles: ['HOSPITAL', 'ENTERPRISE_COMMAND'],
   },
+
+  // --- 11. RADIOLOGY IMAGING & DICOM PACS ---
   {
     id: 'radiology-pacs',
     label: 'Radiology Imaging & DICOM PACS',
@@ -130,7 +159,10 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     gradient: 'from-cyan-600 to-blue-800',
     route: '/partner/radiology',
     description: 'X-Ray, CT, MRI study viewer with web DICOM zero-footprint viewer',
+    applicableProfiles: ['HOSPITAL', 'DIAGNOSTIC_CENTRE', 'ENTERPRISE_COMMAND'],
   },
+
+  // --- 12. OPERATION THEATRE SUITES ---
   {
     id: 'ot-management',
     label: 'Operation Theatre & Surgery Suites',
@@ -140,7 +172,10 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     gradient: 'from-violet-600 to-purple-800',
     route: '/partner/ot',
     description: 'Surgical scheduling, anaesthesia charts, PAC clearances & post-op recovery',
+    applicableProfiles: ['HOSPITAL', 'ENTERPRISE_COMMAND'],
   },
+
+  // --- 13. BLOOD BANK & DONOR TRANSFUSION ---
   {
     id: 'blood-bank',
     label: 'Blood Bank & Donor Transfusion',
@@ -150,7 +185,10 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     gradient: 'from-red-700 to-rose-950',
     route: '/partner/blood-bank',
     description: 'Cross-matching, component inventory (PRBC, FFP, Platelets) & transfusion safety',
+    applicableProfiles: ['HOSPITAL', 'ENTERPRISE_COMMAND'],
   },
+
+  // --- 14. TELEMEDICINE & REMOTE CLINIC ---
   {
     id: 'telemedicine-rpm',
     label: 'Telemedicine & Remote Monitoring',
@@ -160,7 +198,10 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     gradient: 'from-blue-500 to-indigo-600',
     route: '/partner/telemedicine',
     description: 'Encrypted HD video consultations with real-time patient vitals HUD',
+    applicableProfiles: ['HOSPITAL', 'CLINIC', 'ENTERPRISE_COMMAND'],
   },
+
+  // --- 15. ABDM AYUSHMAN BHARAT GATEWAY ---
   {
     id: 'abdm-fhir',
     label: 'ABDM Ayushman Bharat & FHIR Gate',
@@ -170,7 +211,10 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     gradient: 'from-orange-500 to-amber-700',
     route: '/partner/abdm',
     description: 'ABHA creation, Scan & Share counter QR and Ayushman PM-JAY claims',
+    applicableProfiles: ['HOSPITAL', 'CLINIC', 'PATHOLOGY', 'ENTERPRISE_COMMAND'],
   },
+
+  // --- 16. AI CLINICAL COPILOT & CDSS ---
   {
     id: 'ai-cdss',
     label: 'AI Clinical Decision Support (CDSS)',
@@ -180,7 +224,10 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     gradient: 'from-indigo-600 to-purple-800',
     route: '/partner/ai-cdss',
     description: 'Evidence-based differential diagnoses, antibiotic stewardship & drug interactions',
+    applicableProfiles: ['HOSPITAL', 'CLINIC', 'ENTERPRISE_COMMAND'],
   },
+
+  // --- 17. WHATSAPP PATIENT AUTOMATED DISPATCH ---
   {
     id: 'whatsapp-portal',
     label: 'WhatsApp Patient Automated Dispatch',
@@ -190,7 +237,10 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     gradient: 'from-emerald-600 to-green-700',
     route: '/partner/whatsapp',
     description: 'Instant PDF prescriptions, lab result dispatch & appointment reminders',
+    applicableProfiles: ['HOSPITAL', 'CLINIC', 'PATHOLOGY', 'PHARMACY', 'ENTERPRISE_COMMAND'],
   },
+
+  // --- 18. EXECUTIVE COMMAND & ANALYTICS ---
   {
     id: 'executive-command-center',
     label: 'Executive Command & Operations Analytics',
@@ -199,16 +249,60 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     icon: '📊',
     gradient: 'from-slate-800 to-zinc-950',
     route: '/partner/analytics',
-    description: 'Hospital EBITDA, bed turnaround times, average OPD wait times & doctor occupancy',
+    description: 'Facility EBITDA, turnaround times, average wait times & doctor occupancy',
+    applicableProfiles: ['HOSPITAL', 'PATHOLOGY', 'ENTERPRISE_COMMAND'],
   },
+
+  // --- 19. FACTORY-DIRECT WHOLESALE SOURCING DEPOT ---
   {
     id: 'offers-rewards-hub',
-    label: 'Partner Cash Rewards & Tier Benefits',
-    shortLabel: 'Rewards Hub',
+    label: 'Factory-Direct Sourcing Depot (40%-70% Off)',
+    shortLabel: 'Sourcing Depot',
     category: 'EXECUTIVE',
     icon: '🎁',
     gradient: 'from-amber-600 to-yellow-700',
     route: '/partner/rewards',
-    description: 'Hospital license tier benefits, subscription status & operational incentives',
+    description: 'Wholesale factory-rate medicine, pathology reagents and surgical replenishment',
+    applicableProfiles: ['HOSPITAL', 'CLINIC', 'PATHOLOGY', 'PHARMACY', 'ENTERPRISE_COMMAND'],
   },
 ];
+
+/**
+ * Filter all applications strictly matching the active organization profile.
+ * Prevents cross-contamination between Hospital, Clinic, Pathology, and Pharmacy.
+ */
+export function getAppsForProfile(profile: OrganizationWorkspaceType = 'HOSPITAL'): HealthOSAppItem[] {
+  const normalized = profile.toUpperCase() as OrganizationWorkspaceType;
+  return HEALTH_OS_APPS.filter((app) => app.applicableProfiles.includes(normalized));
+}
+
+/**
+ * Filter profile-specific core homescreen applications.
+ */
+export function getCoreAppsForProfile(profile: OrganizationWorkspaceType = 'HOSPITAL'): HealthOSAppItem[] {
+  const apps = getAppsForProfile(profile);
+
+  // Profile-specific home application layouts
+  switch (profile) {
+    case 'CLINIC':
+      return apps.filter((a) =>
+        ['clinical-consultation', 'encounters-visits', 'patient-portal', 'billing-revenue-cycle', 'abdm-fhir', 'telemedicine-rpm', 'staff-administration'].includes(a.id)
+      );
+
+    case 'PATHOLOGY':
+      return apps.filter((a) =>
+        ['clinical-investigation', 'patient-registration', 'billing-revenue-cycle', 'whatsapp-portal', 'abdm-fhir', 'staff-administration', 'offers-rewards-hub'].includes(a.id)
+      );
+
+    case 'PHARMACY':
+      return apps.filter((a) =>
+        ['pharmacy-medication', 'billing-revenue-cycle', 'whatsapp-portal', 'staff-administration', 'offers-rewards-hub', 'patient-portal'].includes(a.id)
+      );
+
+    case 'HOSPITAL':
+    default:
+      return apps.filter((a) =>
+        ['inpatient-management', 'encounters-visits', 'clinical-consultation', 'billing-revenue-cycle', 'pharmacy-medication', 'clinical-investigation', 'staff-administration'].includes(a.id)
+      );
+  }
+}
