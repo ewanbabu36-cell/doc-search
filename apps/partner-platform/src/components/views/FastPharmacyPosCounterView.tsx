@@ -1747,16 +1747,20 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
     try {
       if (!isCurrentlyOffline) {
         try {
-          const effectiveTenantId = (currentUser as any)?.tenantId || '55555555-5555-4555-8555-555555555555';
-          const effectivePartnerId = (currentUser as any)?.partnerId || '00000000-0000-4000-8000-000000000001';
-          const effectiveOrgId = (currentUser as any)?.organizationId || '00000000-0000-4000-8000-000000000002';
+          const effectiveTenantId =
+            (currentUser as any)?.tenantId ||
+            (typeof window !== 'undefined' && localStorage.getItem('docsearch_partner_tenant')) ||
+            '33333333-3333-4333-8333-333333333333';
+          const effectivePartnerId = (currentUser as any)?.partnerId || 'partner-pharma-01';
+          const effectiveOrgId = (currentUser as any)?.organizationId || '77777777-7777-4777-8777-777777777701';
+          const effectiveBranchId = (currentUser as any)?.branchId || '88888888-8888-4888-8888-888888888801';
 
           // 1. Submit through authoritative backend dispensing service to atomically decrement PostgreSQL inventory
           await pharmacyManagementService.dispenseMedication({
             tenantId: effectiveTenantId,
             partnerId: effectivePartnerId,
             organizationId: effectiveOrgId,
-            branchId: (currentUser as any)?.branchId,
+            branchId: effectiveBranchId,
             patientId: patientPhone || 'WALKIN-PATIENT',
             prescriptionId: billingMode === 'HOSPITAL_RX' && selectedRxId ? selectedRxId : undefined,
             doctorId: doctorNmcReg || undefined,
@@ -2812,7 +2816,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
               }}
               title="Keyboard Shortcuts Quick Reference Matrix [F1-F10]"
             >
-              <span>âŒ¨ï¸</span>
+              <span>⌨️</span>
               <span>Keys</span>
             </button>
 
@@ -2920,7 +2924,7 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
             }}
             title={isBrowserFullscreen || isFullPage ? 'Exit fullscreen layout' : 'Enter full screen billing mode'}
           >
-            <span>{isBrowserFullscreen || isFullPage ? 'â†™ Normal' : '⛶ Full'}</span>
+            <span>{isBrowserFullscreen || isFullPage ? '↙ Normal' : '⛶ Full'}</span>
           </button>
 
           {onClosePos && (

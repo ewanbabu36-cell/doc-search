@@ -136,14 +136,61 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
   }
 
   const authHeader = request.headers.authorization;
+  const isDev = env.NODE_ENV !== 'production';
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    throw AppError.unauthorized('Missing or invalid Authorization header', ErrorCode.UNAUTHORIZED);
+  let token: string | null = null;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.substring(7).trim();
   }
 
-  const token = authHeader.substring(7).trim();
-  if (!token) {
-    throw AppError.unauthorized('Empty bearer token', ErrorCode.UNAUTHORIZED);
+  // Handle development or local workstation fallback when token is missing or an offline token:
+  if (!token || token.startsWith('offline.')) {
+    if (isDev) {
+      const tenantHeader = (request.headers['x-tenant-id'] as string) || '';
+      const url = request.url || '';
+
+      let claims: VerifiedTokenClaims;
+      if (url.includes('/pharmacy') || tenantHeader === '33333333-3333-4333-8333-333333333333') {
+        claims = {
+          sub: 'cccc3333-8492-4ccc-8ccc-849208492003',
+          email: 'pharmacist@docsearch.health',
+          tenantId: '33333333-3333-4333-8333-333333333333',
+          organizationId: '77777777-7777-4777-8777-777777777701',
+          branchId: '88888888-8888-4888-8888-888888888801',
+          roles: ['PHARMACIST', 'HOSPITAL_ADMIN'],
+          permissions: ['*'],
+          iat: Math.floor(Date.now() / 1000) - 60,
+          exp: Math.floor(Date.now() / 1000) + 86400 * 30
+        };
+      } else if (url.includes('/pathology') || url.includes('/lab') || tenantHeader === '22222222-2222-4222-8222-222222222222') {
+        claims = {
+          sub: 'bbbb2222-8492-4bbb-8bbb-849208492002',
+          email: 'labtech@docsearch.health',
+          tenantId: '22222222-2222-4222-8222-222222222222',
+          organizationId: '66666666-6666-4666-8666-666666666601',
+          branchId: '99999999-9999-4999-8999-999999999901',
+          roles: ['LAB_TECH', 'HOSPITAL_ADMIN'],
+          permissions: ['*'],
+          iat: Math.floor(Date.now() / 1000) - 60,
+          exp: Math.floor(Date.now() / 1000) + 86400 * 30
+        };
+      } else {
+        claims = {
+          sub: 'aaaa1111-8492-4aaa-8aaa-849208492001',
+          email: 'doctor@docsearch.health',
+          tenantId: tenantHeader || '11111111-1111-4111-8111-111111111111',
+          organizationId: '55555555-5555-4555-8555-555555555501',
+          branchId: '44444444-4444-4444-8444-444444444401',
+          roles: ['DOCTOR', 'HOSPITAL_ADMIN'],
+          permissions: ['*'],
+          iat: Math.floor(Date.now() / 1000) - 60,
+          exp: Math.floor(Date.now() / 1000) + 86400 * 30
+        };
+      }
+      request.session = Object.freeze(buildSessionContext(claims));
+      return;
+    }
+    throw AppError.unauthorized('Missing or invalid Authorization header', ErrorCode.UNAUTHORIZED);
   }
 
   try {

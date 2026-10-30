@@ -19,32 +19,24 @@ export const HealthOSAppWindow: React.FC<HealthOSAppWindowProps> = ({
     <div className="hos-window-container">
       {/* Window Top Control Bar */}
       <div className="hos-window-header">
-        {/* Left: Back Key & Module Identity */}
+        {/* Left: Module Identity & Category Tag */}
         <div className="hos-window-left">
-          <button
-            onClick={onClose}
-            className="hos-window-back-btn"
-            title="Exit to Homescreen (Back)"
-          >
-            <span>◂</span>
-            <span>Back</span>
-          </button>
-
           <div className="hos-window-title">
-            <span>{app.icon}</span>
-            <span>{app.label}</span>
-            <span style={{ fontSize: '0.65rem', color: '#94a3b8', background: 'rgba(255,255,255,0.06)', padding: '0.15rem 0.45rem', borderRadius: 6, fontFamily: 'monospace' }}>
+            <span style={{ fontSize: '1.1rem' }}>{app.icon}</span>
+            <span style={{ fontWeight: 700, letterSpacing: '-0.01em' }}>{app.label}</span>
+            <span style={{ fontSize: '0.65rem', color: '#94a3b8', background: 'rgba(255,255,255,0.06)', padding: '0.15rem 0.5rem', borderRadius: 6, fontFamily: 'monospace', fontWeight: 600 }}>
               {app.category}
             </span>
           </div>
         </div>
 
-        {/* Right: Window Controls */}
+        {/* Right: Window Controls (Minimize & Close) */}
         <div className="hos-window-controls">
           <button
             onClick={onMinimize}
             className="hos-window-ctrl-btn"
             title="Minimize to Homescreen [ 🗕 ]"
+            aria-label="Minimize application"
           >
             🗕
           </button>
@@ -52,6 +44,7 @@ export const HealthOSAppWindow: React.FC<HealthOSAppWindowProps> = ({
             onClick={onClose}
             className="hos-window-ctrl-btn hos-window-ctrl-btn-close"
             title="Close Application [ ✕ ]"
+            aria-label="Close application"
           >
             ✕
           </button>

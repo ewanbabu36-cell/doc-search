@@ -628,25 +628,25 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess, initialMod
   // 1-Click Role-Isolated Persona Login (Strict Access Separation & Authoritative JWT Minting)
   const handleRolePersonaLogin = async (persona: 'DOCTOR' | 'PATIENT' | 'PHARMACIST' | 'LAB_TECH' | 'NURSE' | 'FRONT_DESK' | 'DIRECTOR') => {
     let personaUser: HospitalStaffUser;
-    const resolvedTenantId = (typeof window !== 'undefined' && localStorage.getItem('docsearch_partner_tenant')) || '1e72b864-920a-c07d-98c5-183d3eb50428';
 
-    const personaCredentials: Record<string, { email: string; password: string }> = {
-      DOCTOR: { email: 'doctor@docsearch.health', password: 'DoctorPass123!' },
-      PHARMACIST: { email: 'pharmacist@docsearch.health', password: 'PharmaPass123!' },
-      LAB_TECH: { email: 'labtech@docsearch.health', password: 'PathologyPass123!' },
-      DIRECTOR: { email: 'director@docsearch.health', password: 'Hospital@2026!' },
-      NURSE: { email: 'nurse@docsearch.health', password: 'NursePass123!' },
-      FRONT_DESK: { email: 'frontdesk@docsearch.health', password: 'FrontDeskPass123!' },
-      PATIENT: { email: 'patient@docsearch.health', password: 'PatientPass123!' },
+    const personaCredentials: Record<string, { email: string; password: string; defaultTenantId: string }> = {
+      DOCTOR: { email: 'doctor@docsearch.health', password: 'DoctorPass123!', defaultTenantId: '11111111-1111-4111-8111-111111111111' },
+      PHARMACIST: { email: 'pharmacist@docsearch.health', password: 'PharmaPass123!', defaultTenantId: '33333333-3333-4333-8333-333333333333' },
+      LAB_TECH: { email: 'labtech@docsearch.health', password: 'PathologyPass123!', defaultTenantId: '22222222-2222-4222-8222-222222222222' },
+      DIRECTOR: { email: 'director@docsearch.health', password: 'Hospital@2026!', defaultTenantId: '11111111-1111-4111-8111-111111111111' },
+      NURSE: { email: 'nurse@docsearch.health', password: 'NursePass123!', defaultTenantId: '11111111-1111-4111-8111-111111111111' },
+      FRONT_DESK: { email: 'frontdesk@docsearch.health', password: 'FrontDeskPass123!', defaultTenantId: '11111111-1111-4111-8111-111111111111' },
+      PATIENT: { email: 'patient@docsearch.health', password: 'PatientPass123!', defaultTenantId: '11111111-1111-4111-8111-111111111111' },
     };
 
     const creds = personaCredentials[persona];
+    let liveAuthUser: any = null;
     if (creds) {
       try {
         const res = await fetch('/api/v1/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(creds)
+          body: JSON.stringify({ email: creds.email, password: creds.password })
         });
         const json = await res.json();
         if (res.ok && json.success && json.data?.accessToken) {
@@ -655,6 +655,7 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess, initialMod
             localStorage.setItem('docsearch_refresh_token', json.data.refreshToken);
           }
           if (json.data?.user) {
+            liveAuthUser = json.data.user;
             localStorage.setItem('docsearch_user_session', JSON.stringify(json.data.user));
           }
         }
@@ -663,12 +664,14 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess, initialMod
       }
     }
 
+    const resolvedTenantId = liveAuthUser?.tenantId || creds?.defaultTenantId || '11111111-1111-4111-8111-111111111111';
+
     switch (persona) {
       case 'PATIENT':
         personaUser = {
-          id: 'usr_persona_patient',
+          id: liveAuthUser?.id || 'usr_persona_patient',
           category: 'HEALTHCARE',
-          name: 'Priya Sharma (Patient / Health Locker)',
+          name: liveAuthUser ? `${liveAuthUser.firstName} ${liveAuthUser.lastName}` : 'Priya Sharma (Patient / Health Locker)',
           email: 'patient@docsearch.health',
           role: 'PATIENT',
           roleTitle: 'Verified Citizen & Patient',
@@ -689,9 +692,9 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess, initialMod
 
       case 'DOCTOR':
         personaUser = {
-          id: 'usr_persona_doctor',
+          id: liveAuthUser?.id || 'usr_persona_doctor',
           category: 'HEALTHCARE',
-          name: 'Dr. Ewan Babu (Consultant Physician)',
+          name: liveAuthUser ? `${liveAuthUser.firstName} ${liveAuthUser.lastName}` : 'Dr. Ewan Babu (Consultant Physician)',
           email: 'doctor@docsearch.health',
           role: 'DOCTOR',
           roleTitle: 'Consultant Physician & OPD Specialist',
@@ -712,14 +715,14 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess, initialMod
 
       case 'PHARMACIST':
         personaUser = {
-          id: 'usr_persona_pharmacist',
+          id: liveAuthUser?.id || 'cccc3333-8492-4ccc-8ccc-849208492003',
           category: 'HEALTHCARE',
-          name: 'Rajesh Sharma (Chief Chemist)',
+          name: liveAuthUser ? `${liveAuthUser.firstName} ${liveAuthUser.lastName}` : 'Rajesh Sharma (Chief Chemist)',
           email: 'pharmacist@docsearch.health',
           role: 'PHARMACIST',
           roleTitle: 'Chief Pharmacist & Chemist In-Charge',
           department: 'Hospital Pharmacy & Dispensing',
-          tenantName: 'CarePlus Pharmacy & Surgical Store',
+          tenantName: liveAuthUser?.tenantName || 'CarePlus Pharmacy & Surgical Store',
           tenantId: resolvedTenantId,
           organizationType: 'PHARMACY',
           allowedWorkspaces: ['PHARMACY'],
@@ -735,9 +738,9 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess, initialMod
 
       case 'LAB_TECH':
         personaUser = {
-          id: 'usr_persona_lab_tech',
+          id: liveAuthUser?.id || 'usr_persona_lab_tech',
           category: 'HEALTHCARE',
-          name: 'Sunita Deshmukh (Senior Lab Tech)',
+          name: liveAuthUser ? `${liveAuthUser.firstName} ${liveAuthUser.lastName}` : 'Sunita Deshmukh (Senior Lab Tech)',
           email: 'labtech@docsearch.health',
           role: 'LAB_TECHNICIAN',
           roleTitle: 'Senior Medical Laboratory Technologist',
@@ -758,9 +761,9 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess, initialMod
 
       case 'NURSE':
         personaUser = {
-          id: 'usr_persona_nurse',
+          id: liveAuthUser?.id || 'usr_persona_nurse',
           category: 'HEALTHCARE',
-          name: 'Sister Mary Thomas (Triage & Ward Nurse)',
+          name: liveAuthUser ? `${liveAuthUser.firstName} ${liveAuthUser.lastName}` : 'Sister Mary Thomas (Triage & Ward Nurse)',
           email: 'nurse@docsearch.health',
           role: 'STAFF_NURSE',
           roleTitle: 'Inpatient Charge Nurse & Triage Officer',
@@ -781,9 +784,9 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess, initialMod
 
       case 'FRONT_DESK':
         personaUser = {
-          id: 'usr_persona_front_desk',
+          id: liveAuthUser?.id || 'usr_persona_front_desk',
           category: 'HEALTHCARE',
-          name: 'Amit Verma (Front Desk Lead)',
+          name: liveAuthUser ? `${liveAuthUser.firstName} ${liveAuthUser.lastName}` : 'Amit Verma (Front Desk Lead)',
           email: 'frontdesk@docsearch.health',
           role: 'FRONT_DESK_RECEPTIONIST',
           roleTitle: 'Front Desk Receptionist & OPD Cashier',
@@ -805,15 +808,15 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess, initialMod
       case 'DIRECTOR':
       default:
         personaUser = {
-          id: 'usr_persona_director',
+          id: liveAuthUser?.id || 'usr_persona_director',
           category: 'HEALTHCARE',
-          name: 'Dr. Vivek Sharma (Medical Director)',
+          name: liveAuthUser ? `${liveAuthUser.firstName} ${liveAuthUser.lastName}` : 'Dr. Vivek Sharma (Medical Director)',
           email: 'director@docsearch.health',
           role: 'HOSPITAL_DIRECTOR',
           roleTitle: 'Medical Superintendent & Director',
           department: 'Hospital Administration & Governance',
           tenantName: 'Ewan Multi-Specialty Hospital',
-          tenantId: '11111111-1111-4111-8111-111111111111',
+          tenantId: resolvedTenantId,
           organizationType: 'HOSPITAL',
           allowedWorkspaces: ['HOSPITAL', 'CLINIC', 'PHARMACY', 'PATHOLOGY', 'DIAGNOSTIC_CENTRE', 'ENTERPRISE_COMMAND'],
           defaultModule: 'executive-command-center',
@@ -825,20 +828,6 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess, initialMod
           isProfileCompleted: true
         };
         break;
-    }
-
-    // Fallback emergency token if offline
-    if (!localStorage.getItem('docsearch_auth_token')) {
-      const fallbackClaims = {
-        sub: personaUser.id,
-        email: personaUser.email,
-        tenantId: personaUser.tenantId,
-        roles: [personaUser.role],
-        exp: Math.floor(Date.now() / 1000) + 86400,
-        iss: 'docsearch-api',
-        aud: 'docsearch-platform'
-      };
-      localStorage.setItem('docsearch_auth_token', `offline.${btoa(JSON.stringify(fallbackClaims))}.mock`);
     }
 
     localStorage.setItem('docsearch_partner_staff_auth', JSON.stringify(personaUser));
