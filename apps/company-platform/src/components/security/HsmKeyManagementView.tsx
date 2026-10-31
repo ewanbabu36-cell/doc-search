@@ -11,35 +11,7 @@ interface HsmKey {
   status: 'ACTIVE_PRIMARY' | 'IN_ROTATION' | 'ARCHIVED';
 }
 
-const INITIAL_KEYS: HsmKey[] = [
-  {
-    keyId: 'kms-key-aes-emr-master',
-    keyAlias: 'DocSearch Patient EMR Column-Level Master Key',
-    algorithm: 'AES-256 GCM (Authenticated Encryption)',
-    hsmModule: 'AWS CloudHSM FIPS 140-3 Level 3 Cluster',
-    creationDate: '2026-01-01',
-    rotationSchedule: 'Every 90 Days (Auto-Rotate)',
-    status: 'ACTIVE_PRIMARY'
-  },
-  {
-    keyId: 'kms-key-merkle-sign',
-    keyAlias: 'Audit Trail SHA-256 Merkle Root Signing Key',
-    algorithm: 'ECDSA SECP256K1 Digital Signatures',
-    hsmModule: 'Dedicated Hardware Security Module (Mumbai)',
-    creationDate: '2026-01-01',
-    rotationSchedule: 'Every 180 Days',
-    status: 'ACTIVE_PRIMARY'
-  },
-  {
-    keyId: 'kms-key-dicom-s3',
-    keyAlias: 'PACS / DICOM Radiological Imaging Storage Key',
-    algorithm: 'AES-256 SSE-KMS',
-    hsmModule: 'AWS Key Management Service (ap-south-1)',
-    creationDate: '2026-03-15',
-    rotationSchedule: 'Annual (365 Days)',
-    status: 'ACTIVE_PRIMARY'
-  }
-];
+const INITIAL_KEYS: HsmKey[] = [];
 
 export const HsmKeyManagementView: React.FC = () => {
   const [keys, setKeys] = useState<HsmKey[]>(INITIAL_KEYS);
@@ -89,7 +61,36 @@ export const HsmKeyManagementView: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {keys.map((k) => (
+              {keys.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} style={{ textAlign: 'center', padding: '48px 24px', color: '#94A3B8' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '12px' }}>🔑</div>
+                    <strong style={{ color: '#F8FAFC', fontSize: '0.9375rem', display: 'block', marginBottom: '6px' }}>
+                      No HSM Cryptographic Keys Registered
+                    </strong>
+                    <span style={{ fontSize: '0.8125rem', color: '#94A3B8', display: 'block', maxWidth: '440px', margin: '0 auto 16px' }}>
+                      FIPS 140-3 Level 4 hardware security keys for patient data encryption and ABDM digital signing appear here.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {}}
+                      style={{
+                        backgroundColor: '#1E293B',
+                        border: '1px solid #334155',
+                        color: '#38BDF8',
+                        borderRadius: '6px',
+                        padding: '6px 14px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      + Provision HSM Key
+                    </button>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                keys.map((k) => (
                 <TableRow key={k.keyId}>
                   <TableCell>
                     <strong style={{ color: 'var(--ds-color-text-primary)' }}>{k.keyAlias}</strong>
@@ -117,7 +118,8 @@ export const HsmKeyManagementView: React.FC = () => {
                     </button>
                   </TableCell>
                 </TableRow>
-              ))}
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>

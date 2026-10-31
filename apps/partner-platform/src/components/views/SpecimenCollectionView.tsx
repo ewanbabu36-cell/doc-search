@@ -119,6 +119,21 @@ export const SpecimenCollectionView: React.FC<SpecimenCollectionViewProps> = ({
   onRejectSpecimen,
   onPrintSticker
 }) => {
+  
+  // Dynamic Vacutainer Tube Master from live Database API
+  const [tubes, setTubes] = useState<VacutainerTubeConfig[]>(CRELIO_VACUTAINER_TUBES);
+
+  React.useEffect(() => {
+    fetch('/api/v1/laboratory/vacutainer-tubes')
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+          setTubes(res.data);
+        }
+      })
+      .catch((err) => console.warn('Failed to load vacutainer tubes:', err));
+  }, []);
+
   const [activeSection, setActiveSection] = useState<'IN_CLINIC' | 'HOME_COLLECTION'>('IN_CLINIC');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTubeFilter, setSelectedTubeFilter] = useState<string>('ALL');
@@ -392,7 +407,7 @@ export const SpecimenCollectionView: React.FC<SpecimenCollectionViewProps> = ({
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '10px' }}>
-              {CRELIO_VACUTAINER_TUBES.map((tube) => {
+              {tubes.map((tube) => {
                 const isSelected = selectedTubeFilter === tube.key;
                 const matchCount = collectionQueue.filter((ord) => {
                   const t = (ord.investigationName + ' ' + ord.specimenType).toLowerCase();

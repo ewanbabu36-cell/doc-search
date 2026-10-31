@@ -12,38 +12,7 @@ interface HospitalLeadScore {
   leadStatus: 'HIGH_INTENT_LEAD' | 'ASSIGNED_TO_BDM';
 }
 
-const INITIAL_LEADS: HospitalLeadScore[] = [
-  {
-    id: 'LEAD-AI-901',
-    hospitalName: 'Medanta - The Medicity (Gurugram)',
-    cityTerritory: 'North Zone (Delhi-NCR)',
-    bedCapacity: 1250,
-    nabhAccredited: true,
-    aiConversionScore: 98,
-    assignedBdm: 'Vikram Sethi (Senior Enterprise BDM)',
-    leadStatus: 'HIGH_INTENT_LEAD'
-  },
-  {
-    id: 'LEAD-AI-902',
-    hospitalName: 'Narayana Health City (Bengaluru)',
-    cityTerritory: 'South Zone (Bengaluru)',
-    bedCapacity: 800,
-    nabhAccredited: true,
-    aiConversionScore: 94,
-    assignedBdm: 'Pooja Hegde (Regional Sales Lead)',
-    leadStatus: 'HIGH_INTENT_LEAD'
-  },
-  {
-    id: 'LEAD-AI-903',
-    hospitalName: 'Kokilaben Dhirubhai Ambani Hospital',
-    cityTerritory: 'West Zone (Mumbai)',
-    bedCapacity: 750,
-    nabhAccredited: true,
-    aiConversionScore: 91,
-    assignedBdm: 'Rohit Kulkarni (Enterprise Lead)',
-    leadStatus: 'ASSIGNED_TO_BDM'
-  }
-];
+const INITIAL_LEADS: HospitalLeadScore[] = [];
 
 export const HospitalLeadScoringRadarView: React.FC = () => {
   const [leads, setLeads] = useState<HospitalLeadScore[]>(INITIAL_LEADS);
@@ -124,7 +93,36 @@ export const HospitalLeadScoringRadarView: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {leads.map((l) => (
+              {leads.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} style={{ textAlign: 'center', padding: '48px 24px', color: '#94A3B8' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '12px' }}>🎯</div>
+                    <strong style={{ color: '#F8FAFC', fontSize: '0.9375rem', display: 'block', marginBottom: '6px' }}>
+                      No Inbound Hospital Leads in Pipeline
+                    </strong>
+                    <span style={{ fontSize: '0.8125rem', color: '#94A3B8', display: 'block', maxWidth: '440px', margin: '0 auto 16px' }}>
+                      Inbound prospective hospital chains, nursing homes, and diagnostic centers will appear here for automated qualification.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {}}
+                      style={{
+                        backgroundColor: '#1E293B',
+                        border: '1px solid #334155',
+                        color: '#38BDF8',
+                        borderRadius: '6px',
+                        padding: '6px 14px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      + Add Inbound Lead
+                    </button>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                leads.map((l) => (
                 <TableRow key={l.id}>
                   <TableCell>
                     <strong style={{ color: 'var(--ds-color-text-primary)' }}>{l.hospitalName}</strong>
@@ -153,7 +151,8 @@ export const HospitalLeadScoringRadarView: React.FC = () => {
                     </Badge>
                   </TableCell>
                 </TableRow>
-              ))}
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>

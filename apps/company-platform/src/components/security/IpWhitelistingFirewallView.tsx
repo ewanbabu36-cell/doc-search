@@ -11,12 +11,7 @@ export interface IpRule {
   lastTraffic: string;
 }
 
-const INITIAL_RULES: IpRule[] = [
-  { id: 'IPR-1', partnerName: 'Apex Multi-Specialty Hospital', cidrBlock: '103.24.120.0/24', description: 'Main Hospital Campus Static Gateway', status: 'ALLOWED', geoRegion: 'Mumbai, IN', lastTraffic: '2 mins ago' },
-  { id: 'IPR-2', partnerName: 'Metropolis Bio-Pathology Diagnostics', cidrBlock: '49.207.54.12/32', description: 'Central LIMS Lab Interface IP', status: 'ALLOWED', geoRegion: 'Delhi NCR, IN', lastTraffic: 'Just now' },
-  { id: 'IPR-3', partnerName: 'CarePlus Surgical Center', cidrBlock: '182.73.19.45/32', description: 'OPD Terminal Static Lease', status: 'ALLOWED', geoRegion: 'Bengaluru, IN', lastTraffic: '15 mins ago' },
-  { id: 'IPR-4', partnerName: 'Global Threat Watchlist', cidrBlock: '185.220.101.0/24', description: 'Tor Exit Nodes / Malicious Scanners', status: 'BLOCKED', geoRegion: 'International (Blocked)', lastTraffic: '1 hr ago (DDoS Drop)' }
-];
+const INITIAL_RULES: IpRule[] = [];
 
 export const IpWhitelistingFirewallView: React.FC = () => {
   const [rules, setRules] = useState<IpRule[]>(INITIAL_RULES);
@@ -139,7 +134,36 @@ export const IpWhitelistingFirewallView: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rules.map((r) => (
+              {rules.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={9} style={{ textAlign: 'center', padding: '48px 24px', color: '#94A3B8' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '12px' }}>🌐</div>
+                    <strong style={{ color: '#F8FAFC', fontSize: '0.9375rem', display: 'block', marginBottom: '6px' }}>
+                      No IP Whitelist Firewall Rules Configured
+                    </strong>
+                    <span style={{ fontSize: '0.8125rem', color: '#94A3B8', display: 'block', maxWidth: '440px', margin: '0 auto 16px' }}>
+                      Secure your hospital gateway by restricting enterprise API access to authorized static IP ranges.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {}}
+                      style={{
+                        backgroundColor: '#1E293B',
+                        border: '1px solid #334155',
+                        color: '#38BDF8',
+                        borderRadius: '6px',
+                        padding: '6px 14px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      + Add Firewall Rule
+                    </button>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                rules.map((r) => (
                 <TableRow key={r.id}>
                   <TableCell>
                     <strong style={{ fontFamily: 'monospace', color: '#38BDF8' }}>{r.id}</strong>
@@ -170,7 +194,8 @@ export const IpWhitelistingFirewallView: React.FC = () => {
                     </Button>
                   </TableCell>
                 </TableRow>
-              ))}
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>

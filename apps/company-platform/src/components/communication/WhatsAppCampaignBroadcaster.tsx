@@ -13,41 +13,7 @@ export interface WhatsAppCampaign {
   scheduledTime: string;
 }
 
-const INITIAL_CAMPAIGNS: WhatsAppCampaign[] = [
-  {
-    id: 'WAC-801',
-    campaignName: 'NABL Diagnostic Report Auto-Delivery (Aug)',
-    targetAudience: 'Metropolis & Lab Walk-in Patients (14,250 Patients)',
-    templateCategory: 'NABL_REPORT',
-    deliveredCount: 14210,
-    readRatePct: 94.8,
-    clickThroughPct: 68.4,
-    status: 'COMPLETED',
-    scheduledTime: '2026-08-30 10:00 AM'
-  },
-  {
-    id: 'WAC-802',
-    campaignName: 'Apex Hospital OPD Appointment Follow-Up & Review',
-    targetAudience: 'Apex Hospital Consulted Patients (4,800 Patients)',
-    templateCategory: 'OPD_REMINDER',
-    deliveredCount: 4780,
-    readRatePct: 91.2,
-    clickThroughPct: 52.6,
-    status: 'COMPLETED',
-    scheduledTime: '2026-08-31 02:30 PM'
-  },
-  {
-    id: 'WAC-803',
-    campaignName: 'Senior Citizen Free Cardiac Health Camp Alert',
-    targetAudience: 'Age 50+ Regional Registry (8,500 Patients)',
-    templateCategory: 'VACCINATION_CAMP',
-    deliveredCount: 8490,
-    readRatePct: 88.5,
-    clickThroughPct: 41.2,
-    status: 'COMPLETED',
-    scheduledTime: '2026-09-01 09:00 AM'
-  }
-];
+const INITIAL_CAMPAIGNS: WhatsAppCampaign[] = [];
 
 export const WhatsAppCampaignBroadcaster: React.FC = () => {
   const [campaigns, setCampaigns] = useState<WhatsAppCampaign[]>(INITIAL_CAMPAIGNS);
@@ -148,37 +114,67 @@ export const WhatsAppCampaignBroadcaster: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {campaigns.map((c) => (
-                <TableRow key={c.id}>
-                  <TableCell>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <strong style={{ color: 'var(--ds-color-text-primary)' }}>{c.campaignName}</strong>
-                      <span style={{ fontFamily: 'monospace', fontSize: '0.6875rem', color: '#94A3B8' }}>{c.id}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span style={{ fontSize: '0.8125rem' }}>{c.targetAudience}</span>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="primary">{c.templateCategory.replace(/_/g, ' ')}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <strong style={{ color: '#F8FAFC' }}>{c.deliveredCount.toLocaleString()}</strong>
-                  </TableCell>
-                  <TableCell>
-                    <span style={{ color: '#25D366', fontWeight: 700 }}>{c.readRatePct}%</span>
-                  </TableCell>
-                  <TableCell>
-                    <span style={{ color: '#38BDF8', fontWeight: 700 }}>{c.clickThroughPct}%</span>
-                  </TableCell>
-                  <TableCell>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--ds-color-text-muted)' }}>{c.scheduledTime}</span>
-                  </TableCell>
-                  <TableCell style={{ textAlign: 'right' }}>
-                    <Badge variant="success">● {c.status}</Badge>
+              {campaigns.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} style={{ textAlign: 'center', padding: '48px 24px', color: '#94A3B8' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '12px' }}>💬</div>
+                    <strong style={{ color: '#F8FAFC', fontSize: '0.9375rem', display: 'block', marginBottom: '6px' }}>
+                      No WhatsApp Broadcast Campaigns Active
+                    </strong>
+                    <span style={{ fontSize: '0.8125rem', color: '#94A3B8', display: 'block', maxWidth: '440px', margin: '0 auto 16px' }}>
+                      Engage OPD patients, broadcast NABL diagnostic report links, or alert diabetic cohorts with official Meta WhatsApp templates.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsComposerOpen(true)}
+                      style={{
+                        backgroundColor: '#25D366',
+                        color: '#070C16',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '6px 14px',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      + Create WhatsApp Broadcast
+                    </button>
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                campaigns.map((c) => (
+                  <TableRow key={c.id}>
+                    <TableCell>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <strong style={{ color: 'var(--ds-color-text-primary)' }}>{c.campaignName}</strong>
+                        <span style={{ fontFamily: 'monospace', fontSize: '0.6875rem', color: '#94A3B8' }}>{c.id}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span style={{ fontSize: '0.8125rem' }}>{c.targetAudience}</span>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="primary">{c.templateCategory.replace(/_/g, ' ')}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <strong style={{ color: '#F8FAFC' }}>{c.deliveredCount.toLocaleString()}</strong>
+                    </TableCell>
+                    <TableCell>
+                      <span style={{ color: '#25D366', fontWeight: 700 }}>{c.readRatePct}%</span>
+                    </TableCell>
+                    <TableCell>
+                      <span style={{ color: '#38BDF8', fontWeight: 700 }}>{c.clickThroughPct}%</span>
+                    </TableCell>
+                    <TableCell>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--ds-color-text-muted)' }}>{c.scheduledTime}</span>
+                    </TableCell>
+                    <TableCell style={{ textAlign: 'right' }}>
+                      <Badge variant="success">● {c.status}</Badge>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>

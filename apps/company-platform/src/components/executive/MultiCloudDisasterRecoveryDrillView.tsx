@@ -12,28 +12,7 @@ export interface CloudRegionState {
   activeQps: number;
 }
 
-const INITIAL_REGIONS: CloudRegionState[] = [
-  {
-    id: 'REGION-AWS-MUM',
-    provider: 'AWS',
-    regionName: 'AWS Mumbai (ap-south-1)',
-    role: 'PRIMARY_MASTER',
-    replicationLagMs: 0,
-    status: 'HEALTHY',
-    connectedHospitalNodes: 486,
-    activeQps: 18450
-  },
-  {
-    id: 'REGION-GCP-DEL',
-    provider: 'GCP',
-    regionName: 'GCP Delhi (asia-south2)',
-    role: 'STANDBY_REPLICA',
-    replicationLagMs: 12,
-    status: 'HEALTHY',
-    connectedHospitalNodes: 486,
-    activeQps: 0
-  }
-];
+const INITIAL_REGIONS: CloudRegionState[] = [];
 
 export const MultiCloudDisasterRecoveryDrillView: React.FC = () => {
   const [regions, setRegions] = useState<CloudRegionState[]>(INITIAL_REGIONS);
@@ -184,7 +163,36 @@ export const MultiCloudDisasterRecoveryDrillView: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {regions.map((r) => (
+              {regions.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} style={{ textAlign: 'center', padding: '48px 24px', color: '#94A3B8' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '12px' }}>☁️</div>
+                    <strong style={{ color: '#F8FAFC', fontSize: '0.9375rem', display: 'block', marginBottom: '6px' }}>
+                      No Disaster Recovery Regions Configured
+                    </strong>
+                    <span style={{ fontSize: '0.8125rem', color: '#94A3B8', display: 'block', maxWidth: '440px', margin: '0 auto 16px' }}>
+                      Cross-region PostgreSQL and storage replication nodes for automated disaster recovery drills will be displayed here.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {}}
+                      style={{
+                        backgroundColor: '#1E293B',
+                        border: '1px solid #334155',
+                        color: '#38BDF8',
+                        borderRadius: '6px',
+                        padding: '6px 14px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      + Configure DR Region
+                    </button>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                regions.map((r) => (
                 <TableRow key={r.id}>
                   <TableCell>
                     <strong style={{ color: '#F8FAFC' }}>{r.regionName}</strong>
@@ -207,7 +215,8 @@ export const MultiCloudDisasterRecoveryDrillView: React.FC = () => {
                     <Badge variant="success">✓ {r.status}</Badge>
                   </TableCell>
                 </TableRow>
-              ))}
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>

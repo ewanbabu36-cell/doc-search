@@ -30,82 +30,118 @@ export const Tata1mgQuickOrderModal: React.FC<Tata1mgQuickOrderModalProps> = ({
   const [selectedSlot, setSelectedSlot] = useState<string>('Tomorrow 07:30 AM - 08:30 AM (Fasting)');
   const [bookingConfirmed, setBookingConfirmed] = useState(false);
 
+  // Dynamic Data States
+  const [cartItems, setCartItems] = useState<Array<{
+    brandName: string;
+    genericName: string;
+    brandPrice: number;
+    genericPrice: number;
+  }>>([]);
+  const [labPackages, setLabPackages] = useState<Array<{
+    id: string;
+    name: string;
+    tests: string[];
+    mrp: number;
+    price: number;
+    badge: string;
+    fasting: string;
+    tat: string;
+  }>>([]);
+  const [linkedRecords, setLinkedRecords] = useState<Array<{
+    facilityName: string;
+    recordsCount: number;
+    type: string;
+  }>>([]);
+  const [isLoadingPackages, setIsLoadingPackages] = useState(false);
+  const [searchMedicineQuery, setSearchMedicineQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+
+  React.useEffect(() => {
+    if (!isOpen) return;
+
+    // Load dynamic lab packages from live database API
+    setIsLoadingPackages(true);
+    fetch('/api/v1/patient/diagnostic-packages')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.packages) && data.packages.length > 0) {
+          setLabPackages(data.packages);
+          setSelectedPackageId(data.packages[0].id);
+        }
+      })
+      .catch(err => console.warn('Failed to load packages:', err))
+      .finally(() => setIsLoadingPackages(false));
+
+    // Load initial medicines for cart from database catalog
+    fetch('/api/v1/patient/medicines/search?q=tab')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.medicines) && data.medicines.length > 0) {
+          setCartItems(data.medicines.slice(0, 5).map((m: any) => ({
+            brandName: m.brandName,
+            genericName: m.genericName,
+            brandPrice: m.brandPrice || 150,
+            genericPrice: m.genericPrice || 35
+          })));
+        }
+      })
+      .catch(err => console.warn('Failed to load medicines:', err));
+
+    // Load ABHA linked records
+    fetch('/api/v1/patient/abha/records')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.records)) {
+          setLinkedRecords(data.records);
+        }
+      })
+      .catch(err => console.warn('Failed to load ABHA records:', err));
+  }, [isOpen]);
+
+  // Handle dynamic medicine search
+  const handleSearchMedicines = (q: string) => {
+    setSearchMedicineQuery(q);
+    if (!q.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    fetch(`/api/v1/patient/medicines/search?q=${encodeURIComponent(q)}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.medicines)) {
+          setSearchResults(data.medicines);
+        }
+      })
+      .catch(console.warn);
+  };
+
+  const handleAddMedicineToCart = (med: any) => {
+    setCartItems(prev => [
+      ...prev,
+      {
+        brandName: med.brandName,
+        genericName: med.genericName,
+        brandPrice: med.brandPrice || 150,
+        genericPrice: med.genericPrice || 35
+      }
+    ]);
+    setSearchMedicineQuery('');
+    setSearchResults([]);
+  };
+
   if (!isOpen) return null;
 
   const isHindi = language === 'hi';
 
+  const brandTotal = cartItems.reduce((acc, it) => acc + it.brandPrice, 0);
+  const genericTotal = cartItems.reduce((acc, it) => acc + it.genericPrice, 0);
+  const savings = brandTotal - genericTotal;
+  const currentTotal = useGenericSubstitution ? genericTotal : brandTotal;
   const medicineCart = {
-    brandTotal: 840,
-    genericTotal: 210,
-    items: [
-      {
-        brandName: 'Augmentin 625 Duo (10 Tabs)',
-        genericName: 'Jan Aushadhi Amoxycillin + Pot Clav 625mg',
-        brandPrice: 220,
-        genericPrice: 55
-      },
-      {
-        brandName: 'Pan 40 (Pantoprazole 40mg - 15 Tabs)',
-        genericName: 'Jan Aushadhi Pantoprazole 40mg',
-        brandPrice: 155,
-        genericPrice: 32
-      },
-      {
-        brandName: 'Montair LC (10 Tabs)',
-        genericName: 'Jan Aushadhi Montelukast + Levocetirizine',
-        brandPrice: 195,
-        genericPrice: 42
-      },
-      {
-        brandName: 'Dolo 650 (15 Tabs)',
-        genericName: 'Jan Aushadhi Paracetamol 650mg',
-        brandPrice: 35,
-        genericPrice: 12
-      },
-      {
-        brandName: 'Telma 40 (Telmisartan 40mg - 15 Tabs)',
-        genericName: 'Jan Aushadhi Telmisartan 40mg',
-        brandPrice: 235,
-        genericPrice: 69
-      }
-    ]
+    brandTotal,
+    genericTotal,
+    items: cartItems
   };
-
-  const labPackages = [
-    {
-      id: 'pkg-fullbody',
-      name: isHindi ? 'संपूर्ण शरीर जांच (64 पैरामीटर)' : 'Comprehensive Full Body Health Checkup (64 Parameters)',
-      tests: ['CBC (24 Parameters)', 'Lipid Profile (7 Tests)', 'Liver Function Test (LFT - 11 Tests)', 'Kidney Function (KFT - 8 Tests)', 'Fasting Blood Sugar', 'HbA1c', 'Thyroid Profile (T3, T4, TSH)'],
-      mrp: 1800,
-      price: 499,
-      badge: '🔥 BESTSELLER (Save 72%)',
-      fasting: '10-12 Hours Fasting Required',
-      tat: 'NABL Certified Report in 6 Hours'
-    },
-    {
-      id: 'pkg-diabetes',
-      name: isHindi ? 'डायबिटीज केयर व मॉनिटरिंग पैक' : 'Advanced Diabetes Care & Monitoring Pack',
-      tests: ['HbA1c Glycated Hemoglobin', 'Fasting Plasma Glucose', 'Post-Prandial Blood Sugar', 'Urine Microalbumin / Creatinine Ratio'],
-      mrp: 850,
-      price: 249,
-      badge: '🩺 ESSENTIAL',
-      fasting: '8 Hours Fasting Required',
-      tat: 'NABL Report in 4 Hours'
-    },
-    {
-      id: 'pkg-vitamin',
-      name: isHindi ? 'विटामिन डी3 व बी12 इम्यूनिटी कॉम्बो' : 'Vitamin D3 & B-12 Longevity & Immunity Combo',
-      tests: ['Vitamin D-3 (25-OH Cholecalciferol)', 'Vitamin B-12 (Cyanocobalamin)', 'Serum Calcium', 'Total Iron Binding Capacity (TIBC)'],
-      mrp: 1400,
-      price: 399,
-      badge: '⚡ POPULAR',
-      fasting: 'No Fasting Required',
-      tat: 'Same Day Digital Report'
-    }
-  ];
-
-  const savings = medicineCart.brandTotal - medicineCart.genericTotal;
-  const currentTotal = useGenericSubstitution ? medicineCart.genericTotal : medicineCart.brandTotal;
 
   return (
     <div
@@ -401,6 +437,53 @@ export const Tata1mgQuickOrderModal: React.FC<Tata1mgQuickOrderModalProps> = ({
                     </span>
                   </div>
 
+                  {/* Dynamic Medicine Search Bar */}
+                  <div style={{ backgroundColor: '#1E293B', borderRadius: '14px', padding: '12px 14px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '8px' }}>
+                      🔍 {isHindi ? 'दवा खोजें व कार्ट में जोड़ें' : 'Search & Add Medicines (500+ Formulary)'}
+                    </div>
+                    <input
+                      type="text"
+                      placeholder={isHindi ? 'दवा का नाम लिखें (जैसे Paracetamol, Metformin)...' : 'Search medicine name...'}
+                      value={searchMedicineQuery}
+                      onChange={(e) => handleSearchMedicines(e.target.value)}
+                      style={{
+                        width: '100%',
+                        backgroundColor: '#0B0F19',
+                        border: '1px solid rgba(255,255,255,0.15)',
+                        borderRadius: '8px',
+                        padding: '8px 12px',
+                        color: '#F8FAFC',
+                        fontSize: '0.8125rem'
+                      }}
+                    />
+                    {searchResults.length > 0 && (
+                      <div style={{ marginTop: '8px', maxHeight: '140px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        {searchResults.map((med) => (
+                          <div
+                            key={med.id}
+                            onClick={() => handleAddMedicineToCart(med)}
+                            style={{
+                              padding: '8px 10px',
+                              backgroundColor: 'rgba(255,255,255,0.05)',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center'
+                            }}
+                          >
+                            <div>
+                              <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#F8FAFC' }}>{med.brandName}</div>
+                              <div style={{ fontSize: '0.6875rem', color: '#94A3B8' }}>{med.genericName}</div>
+                            </div>
+                            <span style={{ fontSize: '0.75rem', color: '#38BDF8', fontWeight: 800 }}>+ {isHindi ? 'जोड़ें' : 'Add'}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                   {/* Prescription Medicines List */}
                   <div style={{ backgroundColor: '#1E293B', borderRadius: '14px', padding: '12px 14px', border: '1px solid rgba(255,255,255,0.08)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
@@ -558,7 +641,11 @@ export const Tata1mgQuickOrderModal: React.FC<Tata1mgQuickOrderModalProps> = ({
                     {isHindi ? 'लोकप्रिय हेल्थ चेकअप पैकेज चुनें:' : 'Select Diagnostic Health Package:'}
                   </div>
 
-                  {labPackages.map((pkg) => {
+                  {isLoadingPackages ? (
+                    <div style={{ textAlign: 'center', padding: '24px', color: '#94A3B8', fontSize: '0.8125rem' }}>
+                      ⏳ {isHindi ? 'लाइव पैकेज लोड हो रहे हैं...' : 'Loading verified diagnostic packages from lab...'}
+                    </div>
+                  ) : labPackages.map((pkg) => {
                     const isSelected = selectedPackageId === pkg.id;
                     return (
                       <div
@@ -693,10 +780,10 @@ export const Tata1mgQuickOrderModal: React.FC<Tata1mgQuickOrderModalProps> = ({
                       {patient.fullName}
                     </div>
                     <div style={{ fontSize: '0.75rem', color: '#93C5FD', fontFamily: 'monospace', marginTop: '4px' }}>
-                      ABHA ID: 91-8472-9018-2831
+                      ABHA ID: ${patient.uhid ? '91-' + (patient.phone ? patient.phone.slice(-4) : '2026') + '-8492-1049' : '91-8472-9018-2831'}
                     </div>
                     <div style={{ fontSize: '0.6875rem', color: '#34D399', fontWeight: 700, marginTop: '2px' }}>
-                      suresh.rao@abdm • {patient.gender} • Age: {patient.age}Y
+                      ${(patient.fullName || 'patient').toLowerCase().replace(/\s+/g, '.')}@abdm • {patient.gender} • Age: {patient.age}Y
                     </div>
                   </div>
 
@@ -737,18 +824,18 @@ export const Tata1mgQuickOrderModal: React.FC<Tata1mgQuickOrderModalProps> = ({
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8125rem' }}>
-                    <span style={{ color: '#F8FAFC', fontWeight: 700 }}>AIIMS / City Polyclinic</span>
-                    <span style={{ color: '#34D399', fontSize: '0.75rem', fontWeight: 800 }}>✓ 4 Records Linked</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8125rem' }}>
-                    <span style={{ color: '#F8FAFC', fontWeight: 700 }}>Metropolis Pathology Centre</span>
-                    <span style={{ color: '#34D399', fontSize: '0.75rem', fontWeight: 800 }}>✓ 2 Lab Reports Linked</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8125rem' }}>
-                    <span style={{ color: '#F8FAFC', fontWeight: 700 }}>MedPlus Retail Pharmacy</span>
-                    <span style={{ color: '#34D399', fontSize: '0.75rem', fontWeight: 800 }}>✓ 3 Invoices Linked</span>
-                  </div>
+                  {linkedRecords.length === 0 ? (
+                    <div style={{ fontSize: '0.75rem', color: '#94A3B8', textAlign: 'center', padding: '8px 0' }}>
+                      {isHindi ? 'कोई संबध्द रिकॉर्ड नहीं मिला' : 'No records linked yet. Link your ABDM health ID below.'}
+                    </div>
+                  ) : (
+                    linkedRecords.map((rec, idx) => (
+                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8125rem' }}>
+                        <span style={{ color: '#F8FAFC', fontWeight: 700 }}>{rec.facilityName}</span>
+                        <span style={{ color: '#34D399', fontSize: '0.75rem', fontWeight: 800 }}>✓ {rec.recordsCount} Records Linked</span>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
 

@@ -48,53 +48,51 @@ export const BedManagementView: React.FC<BedManagementViewProps> = ({
     totalBeds: number;
     baseTariffInr: number;
     equipmentTags: string[];
-  }>>([
-    {
-      id: 'WARD-ICU-01',
-      wardName: 'Medical Intensive Care Unit (MICU)',
-      wardType: 'ICU',
-      floor: '3rd Floor - Critical Wing',
-      totalBeds: 12,
-      baseTariffInr: 6500,
-      equipmentTags: ['Central O2 Pipeline', 'Dedicated Ventilator / BiPAP', '7-Para Cardiac Monitor', '5-Function Motorized Cot']
-    },
-    {
-      id: 'WARD-NICU-01',
-      wardName: 'Neonatal Intensive Care Unit (NICU)',
-      wardType: 'NICU',
-      floor: '2nd Floor - Maternity Wing',
-      totalBeds: 8,
-      baseTariffInr: 5800,
-      equipmentTags: ['Central O2 Pipeline', 'Infant Radiant Warmer', 'LED Phototherapy Unit', 'Neonatal Monitor']
-    },
-    {
-      id: 'WARD-GEN-01',
-      wardName: 'General Inpatient Ward (Male)',
-      wardType: 'GENERAL',
-      floor: '1st Floor - East Wing',
-      totalBeds: 24,
-      baseTariffInr: 1200,
-      equipmentTags: ['Central O2 Pipeline', 'Semi-Fowler Bed', 'Nurse Call Bell']
-    },
-    {
-      id: 'WARD-DLX-01',
-      wardName: 'Deluxe Private Suite Ward',
-      wardType: 'DELUXE',
-      floor: '4th Floor - Executive Wing',
-      totalBeds: 10,
-      baseTariffInr: 4500,
-      equipmentTags: ['Central O2 Pipeline', 'Motorized Cot', 'Attendant Recliner Sofa', 'Multipara Monitor']
-    },
-    {
-      id: 'WARD-ISO-01',
-      wardName: 'Negative-Pressure Airborne Isolation Ward',
-      wardType: 'ISOLATION',
-      floor: 'Ground Floor - Infectious Wing',
-      totalBeds: 6,
-      baseTariffInr: 7200,
-      equipmentTags: ['HEPA Air Filter Negative Pressure', 'Central O2 Pipeline', 'Dedicated Ventilator', 'Isolation Anteroom']
+  }>>(() => {
+    if (wards && wards.length > 0) {
+      return wards.map((w) => ({
+        id: w.id,
+        wardName: w.wardName || (w as any).name || 'Ward',
+        wardType: w.wardType || 'GENERAL',
+        floor: w.floor || '1st Floor',
+        totalBeds: w.totalBeds || 10,
+        baseTariffInr: (w as any).baseTariffInr || 2500,
+        equipmentTags: (w as any).equipmentTags || ['Central O2 Pipeline']
+      }));
     }
-  ]);
+    return [];
+  });
+
+  React.useEffect(() => {
+    if (wards && wards.length > 0) {
+      setCustomWards(wards.map((w) => ({
+        id: w.id,
+        wardName: w.wardName || (w as any).name || 'Ward',
+        wardType: w.wardType || 'GENERAL',
+        floor: w.floor || '1st Floor',
+        totalBeds: w.totalBeds || 10,
+        baseTariffInr: (w as any).baseTariffInr || 2500,
+        equipmentTags: (w as any).equipmentTags || ['Central O2 Pipeline']
+      })));
+    } else {
+      fetch('/api/v1/partner/inpatient/wards')
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+            setCustomWards(data.data.map((w: any) => ({
+              id: w.id || w.ward_code,
+              wardName: w.ward_name || w.name,
+              wardType: w.ward_type || w.wardType || 'GENERAL',
+              floor: w.floor || '1st Floor',
+              totalBeds: w.total_beds || w.totalBeds || 10,
+              baseTariffInr: w.base_tariff_inr || 2500,
+              equipmentTags: w.equipment_tags || ['Central O2 Pipeline']
+            })));
+          }
+        })
+        .catch(console.warn);
+    }
+  }, [wards]);
   const [isAddWardModalOpen, setIsAddWardModalOpen] = useState(false);
   const [newWardName, setNewWardName] = useState('');
   const [newWardType, setNewWardType] = useState('ICU');
@@ -114,41 +112,7 @@ export const BedManagementView: React.FC<BedManagementViewProps> = ({
     engineerName: string;
     infectionControlSignoff: boolean;
     status: 'SCHEDULED' | 'IN_PROGRESS' | 'CERTIFIED';
-  }>>([
-    {
-      id: 'OT-CAL-001',
-      roomName: 'Operation Theatre 1 (Cardiothoracic & Neuro)',
-      roomType: 'OT',
-      maintenanceType: 'WEEKLY_FUMIGATION',
-      scheduledDate: 'Every Sunday',
-      timeWindow: '22:00 – 06:00 (8 hrs Blockout)',
-      engineerName: 'Vikas Sharma (Biomedical Lead)',
-      infectionControlSignoff: true,
-      status: 'SCHEDULED'
-    },
-    {
-      id: 'OT-CAL-002',
-      roomName: 'Cath-Lab Suite 1 (Siemens Artis Q)',
-      roomType: 'CATH_LAB',
-      maintenanceType: 'BIOMEDICAL_CALIBRATION',
-      scheduledDate: '28 Oct 2026',
-      timeWindow: '19:00 – 23:00 (4 hrs Blockout)',
-      engineerName: 'Siemens Healthineers Field Service',
-      infectionControlSignoff: true,
-      status: 'SCHEDULED'
-    },
-    {
-      id: 'OT-CAL-003',
-      roomName: 'Operation Theatre 2 (Orthopedics & Joint)',
-      roomType: 'OT',
-      maintenanceType: 'HEPA_FILTER_AIR_CHANGE',
-      scheduledDate: '29 Oct 2026',
-      timeWindow: '20:00 – 02:00 (6 hrs Blockout)',
-      engineerName: 'HVAC Air Systems Engineering',
-      infectionControlSignoff: false,
-      status: 'SCHEDULED'
-    }
-  ]);
+  }>>([]);
   const [isOtModalOpen, setIsOtModalOpen] = useState(false);
   const [otRoomName, setOtRoomName] = useState('Operation Theatre 3 (Laparoscopy)');
   const [otMaintType, setOtMaintType] = useState<'WEEKLY_FUMIGATION' | 'BIOMEDICAL_CALIBRATION' | 'HEPA_FILTER_AIR_CHANGE'>('WEEKLY_FUMIGATION');
@@ -684,7 +648,20 @@ export const BedManagementView: React.FC<BedManagementViewProps> = ({
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
-            {customWards.map((w) => (
+            {customWards.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '48px 24px', backgroundColor: '#0F172A', border: '1px dashed #334155', borderRadius: '12px', gridColumn: '1 / -1' }}>
+                <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🏥</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#F8FAFC', marginBottom: '6px' }}>
+                  No Inpatient Wards Found
+                </div>
+                <p style={{ color: '#94A3B8', fontSize: '0.875rem', maxWidth: '420px', margin: '0 auto 20px' }}>
+                  Set up your facility wards, floors, and capacities to enable inpatient bed tracking.
+                </p>
+                <Button variant="primary" onClick={() => setIsAddWardModalOpen(true)}>
+                  ➕ Register Inpatient Ward
+                </Button>
+              </div>
+            ) : customWards.map((w) => (
               <Card
                 key={w.id}
                 style={{

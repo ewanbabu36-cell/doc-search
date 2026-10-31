@@ -10,32 +10,7 @@ interface BoardResolution {
   dscSealStatus: 'SEALED_WITH_DSC' | 'PENDING_DIRECTOR_SIGNATURE';
 }
 
-const INITIAL_RESOLUTIONS: BoardResolution[] = [
-  {
-    resolutionId: 'RES-BRD-2026-01',
-    resolutionTitle: 'Adoption of Annual Audited Healthcare Financial Statements & GSTR-9 Filing',
-    mcaFormReference: 'MCA e-Form AOC-4 (XBRL Format)',
-    directorDinSignatory: 'DIN 08429102 (Managing Director & CEO)',
-    passedDate: 'Aug 14, 2026',
-    dscSealStatus: 'SEALED_WITH_DSC'
-  },
-  {
-    resolutionId: 'RES-BRD-2026-02',
-    resolutionTitle: 'Issuance of Series B ESOP Pool Allocation & ABDM Interoperability R&D Grants',
-    mcaFormReference: 'MCA e-Form PAS-3 (Return of Allotment)',
-    directorDinSignatory: 'DIN 07914820 (Whole-time Director & CTO)',
-    passedDate: 'Aug 28, 2026',
-    dscSealStatus: 'SEALED_WITH_DSC'
-  },
-  {
-    resolutionId: 'RES-BRD-2026-03',
-    resolutionTitle: 'Appointment of Chief Compliance & DPDP 2023 Data Protection Officer',
-    mcaFormReference: 'MCA e-Form DIR-12 (Key Managerial Personnel)',
-    directorDinSignatory: 'DIN 08429102 (Managing Director)',
-    passedDate: 'Today, 10:00 AM',
-    dscSealStatus: 'PENDING_DIRECTOR_SIGNATURE'
-  }
-];
+const INITIAL_RESOLUTIONS: BoardResolution[] = [];
 
 export const McaStatutoryRegisterVaultView: React.FC = () => {
   const [resolutions, setResolutions] = useState<BoardResolution[]>(INITIAL_RESOLUTIONS);
@@ -108,40 +83,70 @@ export const McaStatutoryRegisterVaultView: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {resolutions.map((r) => (
-                <TableRow key={r.resolutionId}>
-                  <TableCell>
-                    <strong style={{ color: 'var(--ds-color-text-primary)' }}>{r.resolutionTitle}</strong>
-                    <span style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#38BDF8', display: 'block' }}>{r.resolutionId}</span>
-                  </TableCell>
-                  <TableCell style={{ fontSize: '0.8125rem', fontWeight: 700 }}>
-                    {r.mcaFormReference}
-                  </TableCell>
-                  <TableCell style={{ fontSize: '0.8125rem', color: '#CBD5E1' }}>
-                    {r.directorDinSignatory}
-                  </TableCell>
-                  <TableCell style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
-                    {r.passedDate}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={r.dscSealStatus === 'SEALED_WITH_DSC' ? 'success' : 'warning'}>
-                      {r.dscSealStatus.replace(/_/g, ' ')}
-                    </Badge>
-                  </TableCell>
-                  <TableCell style={{ textAlign: 'right' }}>
-                    {r.dscSealStatus === 'PENDING_DIRECTOR_SIGNATURE' ? (
-                      <button
-                        type="button"
-                        onClick={() => handleSealDsc(r.resolutionId)}
-                      >
-                        📜 Seal with DSC
-                      </button>
-                    ) : (
-                      <span style={{ color: '#10B981', fontSize: '0.75rem', fontWeight: 700 }}>✓ Digitally Signed</span>
-                    )}
+              {resolutions.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} style={{ textAlign: 'center', padding: '48px 24px', color: '#94A3B8' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '12px' }}>📜</div>
+                    <strong style={{ color: '#F8FAFC', fontSize: '0.9375rem', display: 'block', marginBottom: '6px' }}>
+                      No MCA Statutory Resolutions Archived
+                    </strong>
+                    <span style={{ fontSize: '0.8125rem', color: '#94A3B8', display: 'block', maxWidth: '440px', margin: '0 auto 16px' }}>
+                      All corporate board resolutions, MCA V3 filings, AOC-4, and MGT-7 statutory registers will be cryptographically vaulted here.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {}}
+                      style={{
+                        backgroundColor: '#1E293B',
+                        border: '1px solid #334155',
+                        color: '#38BDF8',
+                        borderRadius: '6px',
+                        padding: '6px 14px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      + File Board Resolution
+                    </button>
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                resolutions.map((r) => (
+                  <TableRow key={r.resolutionId}>
+                    <TableCell>
+                      <strong style={{ color: 'var(--ds-color-text-primary)' }}>{r.resolutionTitle}</strong>
+                      <span style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#38BDF8', display: 'block' }}>{r.resolutionId}</span>
+                    </TableCell>
+                    <TableCell style={{ fontSize: '0.8125rem', fontWeight: 700 }}>
+                      {r.mcaFormReference}
+                    </TableCell>
+                    <TableCell style={{ fontSize: '0.8125rem', color: '#CBD5E1' }}>
+                      {r.directorDinSignatory}
+                    </TableCell>
+                    <TableCell style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
+                      {r.passedDate}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={r.dscSealStatus === 'SEALED_WITH_DSC' ? 'success' : 'warning'}>
+                        {r.dscSealStatus.replace(/_/g, ' ')}
+                      </Badge>
+                    </TableCell>
+                    <TableCell style={{ textAlign: 'right' }}>
+                      {r.dscSealStatus === 'PENDING_DIRECTOR_SIGNATURE' ? (
+                        <button
+                          type="button"
+                          onClick={() => handleSealDsc(r.resolutionId)}
+                        >
+                          📜 Seal with DSC
+                        </button>
+                      ) : (
+                        <span style={{ color: '#10B981', fontSize: '0.75rem', fontWeight: 700 }}>✓ Digitally Signed</span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>

@@ -11,35 +11,7 @@ interface ErasureRequest {
   statutoryRetentionLock: string;
 }
 
-const INITIAL_REQUESTS: ErasureRequest[] = [
-  {
-    id: 'DPDP-REQ-101',
-    patientName: 'Rameshwar Sharma',
-    patientAbhaId: '91-4829-1029-8472@abdm',
-    requestDate: 'Today, 08:30 AM',
-    requestType: 'FULL_PII_ERASURE',
-    piiStatus: 'PENDING_STATUTORY_REVIEW',
-    statutoryRetentionLock: 'Retain anonymized vitals for 3 years (MOHFW Rule 14)'
-  },
-  {
-    id: 'DPDP-REQ-102',
-    patientName: 'Sunita Mehra',
-    patientAbhaId: '91-3829-5519-9021@abdm',
-    requestDate: 'Yesterday',
-    requestType: 'WITHDRAW_MARKETING_CONSENT',
-    piiStatus: 'ANONYMIZED_COMPLETED',
-    statutoryRetentionLock: 'Marketing SMS & WhatsApp Opted Out'
-  },
-  {
-    id: 'DPDP-REQ-103',
-    patientName: 'Pooja Varma',
-    patientAbhaId: '91-8842-1920-4491@abdm',
-    requestDate: '2 days ago',
-    requestType: 'FULL_PII_ERASURE',
-    piiStatus: 'ANONYMIZED_COMPLETED',
-    statutoryRetentionLock: 'PII wiped; de-identified clinical history sealed'
-  }
-];
+const INITIAL_REQUESTS: ErasureRequest[] = [];
 
 export const DpdpConsentErasureView: React.FC = () => {
   const [requests, setRequests] = useState<ErasureRequest[]>(INITIAL_REQUESTS);
@@ -110,41 +82,71 @@ export const DpdpConsentErasureView: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {requests.map((r) => (
-                <TableRow key={r.id}>
-                  <TableCell>
-                    <strong style={{ color: 'var(--ds-color-text-primary)' }}>{r.patientName}</strong>
-                    <span style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#38BDF8', display: 'block' }}>{r.patientAbhaId}</span>
-                  </TableCell>
-                  <TableCell style={{ fontSize: '0.8125rem' }}>
-                    {r.requestType.replace(/_/g, ' ')}
-                  </TableCell>
-                  <TableCell style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
-                    {r.requestDate}
-                  </TableCell>
-                  <TableCell style={{ fontSize: '0.75rem', color: '#FCD34D' }}>
-                    {r.statutoryRetentionLock}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={r.piiStatus === 'ANONYMIZED_COMPLETED' ? 'success' : 'warning'}>
-                      {r.piiStatus.replace(/_/g, ' ')}
-                    </Badge>
-                  </TableCell>
-                  <TableCell style={{ textAlign: 'right' }}>
-                    {r.piiStatus === 'PENDING_STATUTORY_REVIEW' ? (
-                      <button
-                        type="button"
-                        onClick={() => handleExecuteErasure(r.id)}
-                        style={{ backgroundColor: '#EF4444', color: '#FFF', border: 'none', borderRadius: '6px', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer' }}
-                      >
-                        🔒 Anonymize PII
-                      </button>
-                    ) : (
-                      <span style={{ fontSize: '0.75rem', color: '#10B981', fontWeight: 700 }}>✓ Completed</span>
-                    )}
+              {requests.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} style={{ textAlign: 'center', padding: '48px 24px', color: '#94A3B8' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '12px' }}>🛡️</div>
+                    <strong style={{ color: '#F8FAFC', fontSize: '0.9375rem', display: 'block', marginBottom: '6px' }}>
+                      Zero Pending DPDP Consent Erasure Requests
+                    </strong>
+                    <span style={{ fontSize: '0.8125rem', color: '#94A3B8', display: 'block', maxWidth: '440px', margin: '0 auto 16px' }}>
+                      All patient right-to-be-forgotten requests, consent revocations, and statutory retention overrides are fully arbitrated.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {}}
+                      style={{
+                        backgroundColor: '#1E293B',
+                        border: '1px solid #334155',
+                        color: '#38BDF8',
+                        borderRadius: '6px',
+                        padding: '6px 14px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      + Log DPDP Request
+                    </button>
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                requests.map((r) => (
+                  <TableRow key={r.id}>
+                    <TableCell>
+                      <strong style={{ color: 'var(--ds-color-text-primary)' }}>{r.patientName}</strong>
+                      <span style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#38BDF8', display: 'block' }}>{r.patientAbhaId}</span>
+                    </TableCell>
+                    <TableCell style={{ fontSize: '0.8125rem' }}>
+                      {r.requestType.replace(/_/g, ' ')}
+                    </TableCell>
+                    <TableCell style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
+                      {r.requestDate}
+                    </TableCell>
+                    <TableCell style={{ fontSize: '0.75rem', color: '#FCD34D' }}>
+                      {r.statutoryRetentionLock}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={r.piiStatus === 'ANONYMIZED_COMPLETED' ? 'success' : 'warning'}>
+                        {r.piiStatus.replace(/_/g, ' ')}
+                      </Badge>
+                    </TableCell>
+                    <TableCell style={{ textAlign: 'right' }}>
+                      {r.piiStatus === 'PENDING_STATUTORY_REVIEW' ? (
+                        <button
+                          type="button"
+                          onClick={() => handleExecuteErasure(r.id)}
+                          style={{ backgroundColor: '#EF4444', color: '#FFF', border: 'none', borderRadius: '6px', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer' }}
+                        >
+                          🔒 Anonymize PII
+                        </button>
+                      ) : (
+                        <span style={{ fontSize: '0.75rem', color: '#10B981', fontWeight: 700 }}>✓ Completed</span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>

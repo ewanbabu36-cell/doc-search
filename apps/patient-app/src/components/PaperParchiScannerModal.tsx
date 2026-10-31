@@ -21,23 +21,19 @@ export const PaperParchiScannerModal: React.FC<PaperParchiScannerModalProps> = (
   const [scanProgressText, setScanProgressText] = useState<string>('');
 
   // Extracted record state for doctor/patient review & correction
-  const [extractedDoctor, setExtractedDoctor] = useState('Dr. R. K. Sharma (MBBS, MD Med)');
-  const [extractedClinic, setExtractedClinic] = useState('City Polyclinic & Diagnostic Centre');
-  const [extractedDate, setExtractedDate] = useState('14 Oct 2023');
-  const [extractedDiagnosis, setExtractedDiagnosis] = useState('Acute Viral Bronchitis with Wheezing');
-  const [extractedBp, setExtractedBp] = useState('130/84 mmHg');
-  const [extractedPulse] = useState('78 bpm');
-  const [extractedSpo2] = useState('97%');
-  const [extractedWeight] = useState('68 kg');
-  const [confidenceScore, setConfidenceScore] = useState(98.4);
+  const [extractedDoctor, setExtractedDoctor] = useState('');
+  const [extractedClinic, setExtractedClinic] = useState('');
+  const [extractedDate, setExtractedDate] = useState('');
+  const [extractedDiagnosis, setExtractedDiagnosis] = useState('');
+  const [extractedBp, setExtractedBp] = useState('');
+  const [extractedPulse] = useState('');
+  const [extractedSpo2] = useState('');
+  const [extractedWeight] = useState('');
+  const [confidenceScore, setConfidenceScore] = useState(0);
 
   const [extractedMedicines, setExtractedMedicines] = useState<
     Array<{ name: string; dosage: string; timing: string; duration: string }>
-  >([
-    { name: 'Tab Montelukast-LC (10/5mg)', dosage: '1 Tab', timing: 'रात को (Bedtime)', duration: '10 Days' },
-    { name: 'Tab Augmentin 625 Duo', dosage: '1 Tab', timing: 'दिन में 2 बार (BD) खाने के बाद', duration: '5 Days' },
-    { name: 'Syp Ascoril LS', dosage: '2 चम्मच (10ml)', timing: 'दिन में 3 बार (TDS)', duration: '5 Days' }
-  ]);
+  >([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);

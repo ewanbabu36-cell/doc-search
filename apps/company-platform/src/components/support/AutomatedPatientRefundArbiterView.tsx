@@ -12,38 +12,7 @@ interface RefundDispute {
   disputedDate: string;
 }
 
-const INITIAL_DISPUTES: RefundDispute[] = [
-  {
-    disputeId: 'DISP-REF-801',
-    patientName: 'Vikas Malhotra',
-    doctorHospitalName: 'Dr. R. K. Singhal (Apollo OPD)',
-    consultationFee: '₹ 1,200',
-    disputeReason: 'Doctor emergency surgery delay (>60 mins); patient could not attend',
-    aiEligibilityVerdict: '100% Eligible (Verified via Doctor OPD Schedule Log)',
-    refundStatus: 'ELIGIBLE_FOR_INSTANT_REFUND',
-    disputedDate: 'Today, 11:10 AM'
-  },
-  {
-    disputeId: 'DISP-REF-802',
-    patientName: 'Priyanka Ghosh',
-    doctorHospitalName: 'Care Diagnostics (Thyroid Profile)',
-    consultationFee: '₹ 850',
-    disputeReason: 'Phlebotomist arrived 3 hours late for home sample collection',
-    aiEligibilityVerdict: '100% Eligible (Phlebotomist GPS Delay Verified)',
-    refundStatus: 'REFUND_SETTLED_UPI',
-    disputedDate: 'Yesterday'
-  },
-  {
-    disputeId: 'DISP-REF-803',
-    patientName: 'Devendra Patil',
-    doctorHospitalName: 'Dr. Meera Nambiar (Teleconsultation)',
-    consultationFee: '₹ 600',
-    disputeReason: 'Audio/Video call dropped due to clinic internet severance',
-    aiEligibilityVerdict: '100% Eligible (WebRTC Severance Telemetry Logged)',
-    refundStatus: 'REFUND_SETTLED_UPI',
-    disputedDate: '2 days ago'
-  }
-];
+const INITIAL_DISPUTES: RefundDispute[] = [];
 
 export const AutomatedPatientRefundArbiterView: React.FC = () => {
   const [disputes, setDisputes] = useState<RefundDispute[]>(INITIAL_DISPUTES);
@@ -116,7 +85,36 @@ export const AutomatedPatientRefundArbiterView: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {disputes.map((d) => (
+              {disputes.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} style={{ textAlign: 'center', padding: '48px 24px', color: '#94A3B8' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '12px' }}>⚖️</div>
+                    <strong style={{ color: '#F8FAFC', fontSize: '0.9375rem', display: 'block', marginBottom: '6px' }}>
+                      Zero Unresolved Patient Billing Disputes
+                    </strong>
+                    <span style={{ fontSize: '0.8125rem', color: '#94A3B8', display: 'block', maxWidth: '440px', margin: '0 auto 16px' }}>
+                      All consultation cancellations, UPI chargebacks, and refund requests have been settled within SLA.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {}}
+                      style={{
+                        backgroundColor: '#1E293B',
+                        border: '1px solid #334155',
+                        color: '#38BDF8',
+                        borderRadius: '6px',
+                        padding: '6px 14px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      ↻ Query Payment Gateway
+                    </button>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                disputes.map((d) => (
                 <TableRow key={d.disputeId}>
                   <TableCell>
                     <strong style={{ color: 'var(--ds-color-text-primary)' }}>{d.patientName}</strong>
@@ -148,7 +146,8 @@ export const AutomatedPatientRefundArbiterView: React.FC = () => {
                     )}
                   </TableCell>
                 </TableRow>
-              ))}
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>

@@ -13,41 +13,7 @@ interface DicomStudy {
   radiologistStatus: 'VERIFIED_REPORT' | 'PENDING_READ';
 }
 
-const SAMPLE_STUDIES: DicomStudy[] = [
-  {
-    accessionNumber: 'DICOM-ACC-9041',
-    patientName: 'Rahul Sharma (42M)',
-    modality: 'MR',
-    studyDescription: 'MRI Brain with Contrast (3.0 Tesla Protocol)',
-    seriesCount: 6,
-    sliceCount: 240,
-    studyDate: '2026-08-31 10:15 AM',
-    pacsServerNode: 'PACS-NODE-SARITA-VIHAR (Port 104)',
-    radiologistStatus: 'VERIFIED_REPORT'
-  },
-  {
-    accessionNumber: 'DICOM-ACC-9042',
-    patientName: 'Sunita Kapoor (56F)',
-    modality: 'CT',
-    studyDescription: 'High-Resolution Computed Tomography (HRCT Chest 128 Slice)',
-    seriesCount: 4,
-    sliceCount: 380,
-    studyDate: '2026-08-31 11:00 AM',
-    pacsServerNode: 'PACS-NODE-DELHI-SOUTH (Port 104)',
-    radiologistStatus: 'VERIFIED_REPORT'
-  },
-  {
-    accessionNumber: 'DICOM-ACC-9043',
-    patientName: 'Devansh Roy (12M)',
-    modality: 'DX',
-    studyDescription: 'Digital Chest X-Ray (PA View)',
-    seriesCount: 1,
-    sliceCount: 1,
-    studyDate: '2026-08-31 11:30 AM',
-    pacsServerNode: 'PACS-NODE-NOIDA-HUB (Port 104)',
-    radiologistStatus: 'PENDING_READ'
-  }
-];
+const SAMPLE_STUDIES: DicomStudy[] = [];
 
 export const DicomPacsGatewayView: React.FC = () => {
   const [studies] = useState<DicomStudy[]>(SAMPLE_STUDIES);
@@ -84,7 +50,36 @@ export const DicomPacsGatewayView: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {studies.map((s) => (
+              {studies.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} style={{ textAlign: 'center', padding: '48px 24px', color: '#94A3B8' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '12px' }}>🩻</div>
+                    <strong style={{ color: '#F8FAFC', fontSize: '0.9375rem', display: 'block', marginBottom: '6px' }}>
+                      No Active DICOM/PACS Imaging Studies
+                    </strong>
+                    <span style={{ fontSize: '0.8125rem', color: '#94A3B8', display: 'block', maxWidth: '440px', margin: '0 auto 16px' }}>
+                      Modalities broadcasting to DICOM C-STORE daemon port 104 will display studies here for diagnostic routing.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {}}
+                      style={{
+                        backgroundColor: '#1E293B',
+                        border: '1px solid #334155',
+                        color: '#38BDF8',
+                        borderRadius: '6px',
+                        padding: '6px 14px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      ↻ Scan Ingress Queue
+                    </button>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                studies.map((s) => (
                 <TableRow key={s.accessionNumber}>
                   <TableCell style={{ fontFamily: 'monospace', color: '#38BDF8', fontWeight: 700 }}>
                     {s.accessionNumber}
@@ -120,7 +115,8 @@ export const DicomPacsGatewayView: React.FC = () => {
                     </button>
                   </TableCell>
                 </TableRow>
-              ))}
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>

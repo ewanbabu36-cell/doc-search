@@ -12,38 +12,7 @@ export interface AbhaRecord {
   lastSyncedTimestamp: string;
 }
 
-const INITIAL_ABHA_RECORDS: AbhaRecord[] = [
-  {
-    abhaId: '91-4289-7102-5814',
-    abhaAddress: 'rahul.sharma@abdm',
-    patientName: 'Rahul Sharma (38/M)',
-    aadhaarAuthStatus: 'VERIFIED_AADHAAR',
-    linkedHospitalHip: 'AIIMS New Delhi (HIP-DEL-01)',
-    consentState: 'GRANTED',
-    fhirRecordsCount: 14,
-    lastSyncedTimestamp: '2 mins ago'
-  },
-  {
-    abhaId: '91-8841-2093-6172',
-    abhaAddress: 'priya.nair@abdm',
-    patientName: 'Priya Nair (29/F)',
-    aadhaarAuthStatus: 'VERIFIED_AADHAAR',
-    linkedHospitalHip: 'Apollo Hospitals Chennai (HIP-CHE-04)',
-    consentState: 'GRANTED',
-    fhirRecordsCount: 8,
-    lastSyncedTimestamp: '14 mins ago'
-  },
-  {
-    abhaId: '91-1049-3829-4450',
-    abhaAddress: 'vikram.singh@abdm',
-    patientName: 'Vikram Singh (52/M)',
-    aadhaarAuthStatus: 'VERIFIED_AADHAAR',
-    linkedHospitalHip: 'Max Super Speciality Saket (HIP-DEL-09)',
-    consentState: 'GRANTED',
-    fhirRecordsCount: 22,
-    lastSyncedTimestamp: '1 hour ago'
-  }
-];
+const INITIAL_ABHA_RECORDS: AbhaRecord[] = [];
 
 export const AbdmNationalHealthStackConsoleView: React.FC = () => {
   const [records, setRecords] = useState<AbhaRecord[]>(INITIAL_ABHA_RECORDS);
@@ -270,7 +239,36 @@ export const AbdmNationalHealthStackConsoleView: React.FC = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {records.map((r) => (
+                  {records.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} style={{ textAlign: 'center', padding: '48px 24px', color: '#94A3B8' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '12px' }}>🆔</div>
+                    <strong style={{ color: '#F8FAFC', fontSize: '0.9375rem', display: 'block', marginBottom: '6px' }}>
+                      No ABDM Transactions Logged in Buffer
+                    </strong>
+                    <span style={{ fontSize: '0.8125rem', color: '#94A3B8', display: 'block', maxWidth: '440px', margin: '0 auto 16px' }}>
+                      ABHA registrations, M1 milestone consents, and health information exchange transactions will stream here live.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {}}
+                      style={{
+                        backgroundColor: '#1E293B',
+                        border: '1px solid #334155',
+                        color: '#38BDF8',
+                        borderRadius: '6px',
+                        padding: '6px 14px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      + Register ABDM Facility
+                    </button>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                records.map((r) => (
                     <TableRow key={r.abhaId}>
                       <TableCell style={{ fontWeight: 900, color: '#10B981', fontFamily: 'monospace' }}>
                         {r.abhaId}
@@ -294,8 +292,9 @@ export const AbdmNationalHealthStackConsoleView: React.FC = () => {
                         <Badge variant="primary">● {r.consentState}</Badge>
                       </TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
+                ))
+              )}
+            </TableBody>
               </Table>
             </TableContainer>
           </Card>

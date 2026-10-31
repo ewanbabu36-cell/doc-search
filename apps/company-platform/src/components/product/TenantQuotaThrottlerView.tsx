@@ -11,35 +11,7 @@ interface TenantQuota {
   throttlingState: 'NORMAL' | 'SOFT_WARNING_85%' | 'HARD_THROTTLED';
 }
 
-const INITIAL_QUOTAS: TenantQuota[] = [
-  {
-    id: 'QUOTA-01',
-    tenantName: 'Apollo Hospitals (Delhi-NCR)',
-    planTier: 'ENTERPRISE',
-    smsQuotaUsage: '84,200 / 1,00,000 (84.2%)',
-    aiInferenceUsage: '42,100 / 1,00,000 (42.1%)',
-    pacsStorageUsage: '1.4 TB / 2.0 TB (70.0%)',
-    throttlingState: 'NORMAL'
-  },
-  {
-    id: 'QUOTA-02',
-    tenantName: 'Max Super Speciality Hospital (Saket)',
-    planTier: 'ENTERPRISE',
-    smsQuotaUsage: '94,800 / 1,00,000 (94.8%)',
-    aiInferenceUsage: '89,200 / 1,00,000 (89.2%)',
-    pacsStorageUsage: '1.9 TB / 2.0 TB (95.0%)',
-    throttlingState: 'SOFT_WARNING_85%'
-  },
-  {
-    id: 'QUOTA-03',
-    tenantName: 'Fortis Memorial Research Institute',
-    planTier: 'GROWTH',
-    smsQuotaUsage: '49,950 / 50,000 (99.9%)',
-    aiInferenceUsage: '24,800 / 25,000 (99.2%)',
-    pacsStorageUsage: '490 GB / 500 GB (98.0%)',
-    throttlingState: 'HARD_THROTTLED'
-  }
-];
+const INITIAL_QUOTAS: TenantQuota[] = [];
 
 export const TenantQuotaThrottlerView: React.FC = () => {
   const [quotas, setQuotas] = useState<TenantQuota[]>(INITIAL_QUOTAS);
@@ -119,7 +91,36 @@ export const TenantQuotaThrottlerView: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {quotas.map((q) => (
+              {quotas.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} style={{ textAlign: 'center', padding: '48px 24px', color: '#94A3B8' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '12px' }}>⚖️</div>
+                    <strong style={{ color: '#F8FAFC', fontSize: '0.9375rem', display: 'block', marginBottom: '6px' }}>
+                      No Tenant Quota Overrides Active
+                    </strong>
+                    <span style={{ fontSize: '0.8125rem', color: '#94A3B8', display: 'block', maxWidth: '440px', margin: '0 auto 16px' }}>
+                      All hospital and lab partner tenants are adhering to default tier resource and rate limits.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {}}
+                      style={{
+                        backgroundColor: '#1E293B',
+                        border: '1px solid #334155',
+                        color: '#38BDF8',
+                        borderRadius: '6px',
+                        padding: '6px 14px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      + Add Quota Override
+                    </button>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                quotas.map((q) => (
                 <TableRow key={q.id}>
                   <TableCell>
                     <strong style={{ color: 'var(--ds-color-text-primary)' }}>{q.tenantName}</strong>
@@ -153,7 +154,8 @@ export const TenantQuotaThrottlerView: React.FC = () => {
                     </button>
                   </TableCell>
                 </TableRow>
-              ))}
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>

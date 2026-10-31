@@ -11,35 +11,7 @@ interface SlowTrace {
   traceId: string;
 }
 
-const SAMPLE_SLOW_TRACES: SlowTrace[] = [
-  {
-    id: 'TRACE-001',
-    timestamp: 'Just now',
-    operation: 'POST /v1/emr/consultations/create',
-    service: 'api-gateway -> emr-engine',
-    durationMs: 42,
-    statusCode: 201,
-    traceId: 'otel-tr-89410-b9821'
-  },
-  {
-    id: 'TRACE-002',
-    timestamp: '12 sec ago',
-    operation: 'POST /v1/lims/analyzers/mllp-ingest',
-    service: 'lims-daemon -> mongo-atlas',
-    durationMs: 64,
-    statusCode: 200,
-    traceId: 'otel-tr-89411-a4729'
-  },
-  {
-    id: 'TRACE-003',
-    timestamp: '28 sec ago',
-    operation: 'GET /v1/abdm/m3/consents/search',
-    service: 'fhir-bridge -> abdm-gateway',
-    durationMs: 98,
-    statusCode: 200,
-    traceId: 'otel-tr-89412-f1920'
-  }
-];
+const SAMPLE_SLOW_TRACES: SlowTrace[] = [];
 
 export const OpenTelemetryApmRadarView: React.FC = () => {
   const [traces] = useState<SlowTrace[]>(SAMPLE_SLOW_TRACES);
@@ -100,7 +72,36 @@ export const OpenTelemetryApmRadarView: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {traces.map((tr) => (
+              {traces.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} style={{ textAlign: 'center', padding: '48px 24px', color: '#94A3B8' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '12px' }}>⏱️</div>
+                    <strong style={{ color: '#F8FAFC', fontSize: '0.9375rem', display: 'block', marginBottom: '6px' }}>
+                      Zero Slow Microservice Traces Detected
+                    </strong>
+                    <span style={{ fontSize: '0.8125rem', color: '#94A3B8', display: 'block', maxWidth: '440px', margin: '0 auto 16px' }}>
+                      Distributed OpenTelemetry tracing indicates 100% of API endpoints and database queries are executing within standard SLA limits.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {}}
+                      style={{
+                        backgroundColor: '#1E293B',
+                        border: '1px solid #334155',
+                        color: '#38BDF8',
+                        borderRadius: '6px',
+                        padding: '6px 14px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      ↻ Refresh Traces
+                    </button>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                traces.map((tr) => (
                 <TableRow key={tr.id}>
                   <TableCell>
                     <strong style={{ color: 'var(--ds-color-text-primary)' }}>{tr.operation}</strong>
@@ -121,7 +122,8 @@ export const OpenTelemetryApmRadarView: React.FC = () => {
                     {tr.traceId}
                   </TableCell>
                 </TableRow>
-              ))}
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>

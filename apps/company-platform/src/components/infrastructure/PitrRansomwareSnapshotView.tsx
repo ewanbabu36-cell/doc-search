@@ -10,32 +10,7 @@ interface SnapshotRecord {
   storageTier: string;
 }
 
-const SAMPLE_SNAPSHOTS: SnapshotRecord[] = [
-  {
-    snapshotId: 'SNAP-WORM-20260831-1100',
-    timestamp: '2026-08-31 11:00:00 UTC',
-    sizeGb: '48.2 GB',
-    wormLockStatus: 'IMMUTABLE_LOCKED',
-    sha256Digest: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
-    storageTier: 'AWS S3 Glacier Instant Retrieval'
-  },
-  {
-    snapshotId: 'SNAP-WORM-20260831-0500',
-    timestamp: '2026-08-31 05:00:00 UTC',
-    sizeGb: '47.9 GB',
-    wormLockStatus: 'IMMUTABLE_LOCKED',
-    sha256Digest: '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08',
-    storageTier: 'AWS S3 Glacier Instant Retrieval'
-  },
-  {
-    snapshotId: 'SNAP-WORM-20260830-2300',
-    timestamp: '2026-08-30 23:00:00 UTC',
-    sizeGb: '47.5 GB',
-    wormLockStatus: 'IMMUTABLE_LOCKED',
-    sha256Digest: '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
-    storageTier: 'AWS S3 Glacier Instant Retrieval'
-  }
-];
+const SAMPLE_SNAPSHOTS: SnapshotRecord[] = [];
 
 export const PitrRansomwareSnapshotView: React.FC = () => {
   const [snapshots] = useState<SnapshotRecord[]>(SAMPLE_SNAPSHOTS);
@@ -108,7 +83,36 @@ export const PitrRansomwareSnapshotView: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {snapshots.map((s) => (
+              {snapshots.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} style={{ textAlign: 'center', padding: '48px 24px', color: '#94A3B8' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '12px' }}>🔒</div>
+                    <strong style={{ color: '#F8FAFC', fontSize: '0.9375rem', display: 'block', marginBottom: '6px' }}>
+                      No PITR Ransomware Recovery Snapshots In Retention
+                    </strong>
+                    <span style={{ fontSize: '0.8125rem', color: '#94A3B8', display: 'block', maxWidth: '440px', margin: '0 auto 16px' }}>
+                      Continuous WAL archiving and immutable ZFS/S3 backup snapshots are captured and verified automatically.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {}}
+                      style={{
+                        backgroundColor: '#1E293B',
+                        border: '1px solid #334155',
+                        color: '#38BDF8',
+                        borderRadius: '6px',
+                        padding: '6px 14px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      + Create Backup Snapshot
+                    </button>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                snapshots.map((s) => (
                 <TableRow key={s.snapshotId}>
                   <TableCell>
                     <strong style={{ color: 'var(--ds-color-text-primary)' }}>{s.snapshotId}</strong>
@@ -135,7 +139,8 @@ export const PitrRansomwareSnapshotView: React.FC = () => {
                     </button>
                   </TableCell>
                 </TableRow>
-              ))}
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>

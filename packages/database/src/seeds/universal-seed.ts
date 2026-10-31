@@ -1358,4 +1358,203 @@ export async function seedUniversalDatabase(db: NodePgDatabase<typeof schema>): 
       ])
       .onConflictDoNothing();
   } catch {}
+
+  // 18. Master Clinical Catalogs (Vacutainers, Prescription Templates, Diagnostic Packages)
+  try {
+    await db
+      .insert(schema.vacutainerTubeCatalog)
+      .values([
+        {
+          tubeKey: 'LAVENDER',
+          name: 'Lavender / Purple',
+          additive: 'K2 / K3 EDTA',
+          colorName: 'Lavender EDTA',
+          capHex: '#9333EA',
+          glowHex: '#C084FC',
+          volume: '2.0 mL',
+          inversions: '8-10x gentle',
+          commonTests: ['CBC', 'ESR', 'HbA1c', 'Blood Group', 'Peripheral Smear'],
+          keywords: ['cbc', 'edta', 'hba1c', 'esr', 'hemoglobin', 'blood count', 'smear', 'platelet', 'wbc'],
+          isActive: true
+        },
+        {
+          tubeKey: 'RED_GOLD',
+          name: 'Gold SST / Red',
+          additive: 'Clot Activator / Silica Gel',
+          colorName: 'Serum SST',
+          capHex: '#EF4444',
+          glowHex: '#F87171',
+          volume: '3.5 mL',
+          inversions: '5x gentle',
+          commonTests: ['LFT', 'KFT', 'Lipid', 'Thyroid', 'Serology', 'Troponin'],
+          keywords: ['lft', 'kft', 'lipid', 'thyroid', 'serum', 'creatinine', 'urea', 'liver', 'kidney', 'sgpt', 'sgot', 'cholesterol', 'tsh', 'hiv', 'hbsag', 'hcv', 'crp', 'troponin', 'ferritin', 'vitamin', 'calcium'],
+          isActive: true
+        },
+        {
+          tubeKey: 'LIGHT_BLUE',
+          name: 'Light Blue',
+          additive: 'Sodium Citrate 3.2%',
+          colorName: 'Coagulation Citrate',
+          capHex: '#0EA5E9',
+          glowHex: '#38BDF8',
+          volume: '2.7 mL',
+          inversions: '3-4x gentle',
+          commonTests: ['PT/INR', 'APTT', 'D-Dimer', 'Fibrinogen'],
+          keywords: ['pt', 'inr', 'aptt', 'citrate', 'd-dimer', 'coagulation', 'clotting'],
+          isActive: true
+        },
+        {
+          tubeKey: 'GREY',
+          name: 'Grey',
+          additive: 'Sodium Fluoride / Potassium Oxalate',
+          colorName: 'Glucose Fluoride',
+          capHex: '#64748B',
+          glowHex: '#94A3B8',
+          volume: '2.0 mL',
+          inversions: '8-10x gentle',
+          commonTests: ['Fasting Blood Sugar', 'PP Blood Sugar', 'OGTT'],
+          keywords: ['glucose', 'sugar', 'fluoride', 'fasting', 'pp', 'ogtt', 'gtt'],
+          isActive: true
+        },
+        {
+          tubeKey: 'GREEN',
+          name: 'Green',
+          additive: 'Lithium Heparin',
+          colorName: 'Heparin Plasma',
+          capHex: '#10B981',
+          glowHex: '#34D399',
+          volume: '3.0 mL',
+          inversions: '8-10x gentle',
+          commonTests: ['Electrolytes', 'Blood Gas', 'Ammonia', 'HLA B27'],
+          keywords: ['heparin', 'electrolyte', 'sodium', 'potassium', 'ammonia', 'gas', 'abg'],
+          isActive: true
+        },
+        {
+          tubeKey: 'BLACK',
+          name: 'Black',
+          additive: 'Sodium Citrate 4:1 (Westergren)',
+          colorName: 'ESR Citrate',
+          capHex: '#1E293B',
+          glowHex: '#475569',
+          volume: '1.6 mL',
+          inversions: '8-10x gentle',
+          commonTests: ['Automated Westergren ESR'],
+          keywords: ['black', 'westergren', 'sedimentation'],
+          isActive: true
+        }
+      ])
+      .onConflictDoNothing();
+
+    await db
+      .insert(schema.prescriptionTemplates)
+      .values([
+        {
+          tenantId: TENANT_ID,
+          templateCode: 'viral-fever-uri',
+          name: 'Viral Fever & URI Kit',
+          icon: '🌡️',
+          category: 'General Medicine',
+          chiefComplaint: 'High grade fever for 3 days with chills, runny nose, sore throat and generalized myalgia.',
+          diagnosis: 'Acute Viral Upper Respiratory Infection with Pyrexia',
+          icd10Code: 'J06.9',
+          treatmentPlan: '• Steam inhalation twice daily for 5 days\n• Plentiful warm oral fluids (>2.5L/day)\n• Avoid cold beverages, oily foods\n• Review after 3 days if fever >101°F persists',
+          medications: [
+            {
+              id: 'tmpl-pcm',
+              medicationName: 'Tab Paracetamol',
+              strength: '650mg',
+              dosage: '1 Tab',
+              frequency: '1 - 0 - 1',
+              duration: 3,
+              durationUnit: 'DAYS',
+              beforeAfterFood: 'AFTER_FOOD',
+              instructions: 'After meals if temperature > 100°F',
+              genericSubstitute: { name: 'Jan Aushadhi Paracetamol 650mg', janAushadhiPrice: 12, brandPrice: 45 }
+            },
+            {
+              id: 'tmpl-levo',
+              medicationName: 'Tab Levocetirizine',
+              strength: '5mg',
+              dosage: '1 Tab',
+              frequency: '0 - 0 - 1',
+              duration: 5,
+              durationUnit: 'DAYS',
+              beforeAfterFood: 'BEDTIME',
+              instructions: 'At bedtime with warm water',
+              genericSubstitute: { name: 'Jan Aushadhi Levocetirizine 5mg', janAushadhiPrice: 8, brandPrice: 52 }
+            },
+            {
+              id: 'tmpl-panto',
+              medicationName: 'Tab Pantoprazole',
+              strength: '40mg',
+              dosage: '1 Tab',
+              frequency: '1 - 0 - 0',
+              duration: 5,
+              durationUnit: 'DAYS',
+              beforeAfterFood: 'BEFORE_FOOD',
+              instructions: 'Morning empty stomach 30 mins before breakfast',
+              genericSubstitute: { name: 'Jan Aushadhi Pantoprazole 40mg', janAushadhiPrice: 15, brandPrice: 110 }
+            }
+          ],
+          labTests: ['CBC (Complete Blood Count)'],
+          isActive: true
+        },
+        {
+          tenantId: TENANT_ID,
+          templateCode: 'hypertension-starter',
+          name: 'Hypertension Starter',
+          icon: '❤️',
+          category: 'Cardiology / Medicine',
+          chiefComplaint: 'Occipital morning headache, dizziness, recorded BP 148/92 mmHg on two visits.',
+          diagnosis: 'Essential Primary Hypertension (Stage 1)',
+          icd10Code: 'I10',
+          treatmentPlan: '• Dietary Sodium restriction (<5g salt/day)\n• Brisk morning walk 35-40 mins daily\n• Maintain daily home BP monitoring chart\n• Avoid NSAIDs and decongestants',
+          medications: [
+            {
+              id: 'tmpl-telmi',
+              medicationName: 'Tab Telmisartan',
+              strength: '40mg',
+              dosage: '1 Tab',
+              frequency: '1 - 0 - 0',
+              duration: 30,
+              durationUnit: 'DAYS',
+              beforeAfterFood: 'AFTER_FOOD',
+              instructions: 'Every morning at fixed time after breakfast',
+              genericSubstitute: { name: 'Jan Aushadhi Telmisartan 40mg', janAushadhiPrice: 22, brandPrice: 135 }
+            }
+          ],
+          labTests: ['Serum Creatinine & Electrolytes', 'Lipid Profile', 'ECG (12-Lead)'],
+          isActive: true
+        }
+      ])
+      .onConflictDoNothing();
+
+    await db
+      .insert(schema.diagnosticHealthPackages)
+      .values([
+        {
+          tenantId: TENANT_ID,
+          packageCode: 'PKG-FULLBODY-64',
+          packageName: 'Comprehensive Full Body Health Checkup (64 Parameters)',
+          parametersCount: 64,
+          packageMrp: '1800.00',
+          bundledTestNames: ['CBC (24 Parameters)', 'Lipid Profile (7 Tests)', 'Liver Function Test (LFT - 11 Tests)', 'Kidney Function (KFT - 8 Tests)', 'Fasting Blood Sugar', 'HbA1c', 'Thyroid Profile (T3, T4, TSH)'],
+          fastingRequired: true,
+          vialsRequired: ['LAVENDER', 'RED_GOLD', 'GREY'],
+          isActive: true
+        },
+        {
+          tenantId: TENANT_ID,
+          packageCode: 'PKG-CARDIAC-48',
+          packageName: 'Executive Cardiac & Diabetic Risk Wellness (48 Parameters)',
+          parametersCount: 48,
+          packageMrp: '2400.00',
+          bundledTestNames: ['High-Sensitivity CRP (hs-CRP)', 'Lipid Profile Extended', 'HbA1c Glycated Hemoglobin', 'Serum Homocysteine', 'Apo-A1 / Apo-B Ratio', 'Kidney Function Panel'],
+          fastingRequired: true,
+          vialsRequired: ['LAVENDER', 'RED_GOLD'],
+          isActive: true
+        }
+      ])
+      .onConflictDoNothing();
+  } catch {}
 }

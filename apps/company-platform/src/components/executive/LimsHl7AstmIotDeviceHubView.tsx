@@ -13,41 +13,7 @@ export interface AnalyzerDevice {
   lastPacketTimestamp: string;
 }
 
-const INITIAL_ANALYZERS: AnalyzerDevice[] = [
-  {
-    id: 'DEV-ROCHE-01',
-    analyzerName: 'Roche Cobas 8000 Modular',
-    manufacturer: 'Roche Diagnostics',
-    protocol: 'HL7_V2_5',
-    hospitalLabLocation: 'AIIMS Delhi Central Pathology',
-    testsProcessedToday: 3840,
-    connectionStatus: 'ONLINE_STREAMING',
-    panicAlertsTriggered: 14,
-    lastPacketTimestamp: '3 seconds ago'
-  },
-  {
-    id: 'DEV-BECK-02',
-    analyzerName: 'Beckman Coulter AU5800',
-    manufacturer: 'Beckman Coulter',
-    protocol: 'ASTM_E1381',
-    hospitalLabLocation: 'Apollo Main Lab Chennai',
-    testsProcessedToday: 4120,
-    connectionStatus: 'ONLINE_STREAMING',
-    panicAlertsTriggered: 9,
-    lastPacketTimestamp: '1 second ago'
-  },
-  {
-    id: 'DEV-MIND-03',
-    analyzerName: 'Mindray BC-6800 Plus',
-    manufacturer: 'Mindray Medical',
-    protocol: 'HL7_V2_5',
-    hospitalLabLocation: 'Max Hospital Saket Lab',
-    testsProcessedToday: 2190,
-    connectionStatus: 'ONLINE_STREAMING',
-    panicAlertsTriggered: 6,
-    lastPacketTimestamp: '5 seconds ago'
-  }
-];
+const INITIAL_ANALYZERS: AnalyzerDevice[] = [];
 
 export const LimsHl7AstmIotDeviceHubView: React.FC = () => {
   const [analyzers] = useState<AnalyzerDevice[]>(INITIAL_ANALYZERS);
@@ -150,7 +116,36 @@ export const LimsHl7AstmIotDeviceHubView: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {analyzers.map((dev) => (
+              {analyzers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} style={{ textAlign: 'center', padding: '48px 24px', color: '#94A3B8' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '12px' }}>🔬</div>
+                    <strong style={{ color: '#F8FAFC', fontSize: '0.9375rem', display: 'block', marginBottom: '6px' }}>
+                      No Lab Analyzers Connected to IoT Hub
+                    </strong>
+                    <span style={{ fontSize: '0.8125rem', color: '#94A3B8', display: 'block', maxWidth: '440px', margin: '0 auto 16px' }}>
+                      Biochemistry, hematology, and immunoassay analyzers interfacing over ASTM E1381 or HL7 v2.5 will appear here.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {}}
+                      style={{
+                        backgroundColor: '#1E293B',
+                        border: '1px solid #334155',
+                        color: '#38BDF8',
+                        borderRadius: '6px',
+                        padding: '6px 14px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      + Connect Lab Analyzer
+                    </button>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                analyzers.map((dev) => (
                 <TableRow key={dev.id}>
                   <TableCell>
                     <div>
@@ -179,7 +174,8 @@ export const LimsHl7AstmIotDeviceHubView: React.FC = () => {
                     <Badge variant="success">● {dev.connectionStatus.replace(/_/g, ' ')}</Badge>
                   </TableCell>
                 </TableRow>
-              ))}
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>

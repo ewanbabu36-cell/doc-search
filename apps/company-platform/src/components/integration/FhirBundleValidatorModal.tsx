@@ -48,7 +48,7 @@ const SAMPLE_FHIR_BUNDLE = `{
 }`;
 
 export const FhirBundleValidatorModal: React.FC<Props> = ({ isOpen, onClose }) => {
-  const [fhirJson, setFhirJson] = useState(SAMPLE_FHIR_BUNDLE);
+  const [fhirJson, setFhirJson] = useState('');
   const [isValidating, setIsValidating] = useState(false);
   const [validationResult, setValidationResult] = useState<{
     status: 'VALID' | 'WARNINGS';

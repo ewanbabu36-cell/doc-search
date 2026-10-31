@@ -256,254 +256,7 @@ export interface ClinicalTemplatePreset {
   labTests: string[];
 }
 
-const CLINICAL_COCKPIT_TEMPLATES: ClinicalTemplatePreset[] = [
-  {
-    id: 'viral-fever-uri',
-    name: 'Viral Fever & URI Kit',
-    icon: '🌡️',
-    category: 'General Medicine',
-    chiefComplaint: 'High grade fever for 3 days with chills, runny nose, sore throat and generalized myalgia.',
-    diagnosis: 'Acute Viral Upper Respiratory Infection with Pyrexia',
-    icd10Code: 'J06.9',
-    treatmentPlan: '• Steam inhalation twice daily for 5 days\n• Plentiful warm oral fluids (>2.5L/day)\n• Avoid cold beverages, oily foods\n• Review after 3 days if fever >101°F persists',
-    medications: [
-      {
-        id: 'tmpl-pcm',
-        medicationName: 'Tab Paracetamol',
-        strength: '650mg',
-        dosage: '1 Tab',
-        frequency: '1 - 0 - 1',
-        duration: 3,
-        durationUnit: 'DAYS',
-        beforeAfterFood: 'AFTER_FOOD',
-        instructions: 'After meals if temperature > 100°F',
-        genericSubstitute: { name: 'Jan Aushadhi Paracetamol 650mg', janAushadhiPrice: 12, brandPrice: 45 }
-      },
-      {
-        id: 'tmpl-levo',
-        medicationName: 'Tab Levocetirizine',
-        strength: '5mg',
-        dosage: '1 Tab',
-        frequency: '0 - 0 - 1',
-        duration: 5,
-        durationUnit: 'DAYS',
-        beforeAfterFood: 'BEDTIME',
-        instructions: 'At bedtime with warm water',
-        genericSubstitute: { name: 'Jan Aushadhi Levocetirizine 5mg', janAushadhiPrice: 8, brandPrice: 52 }
-      },
-      {
-        id: 'tmpl-panto',
-        medicationName: 'Tab Pantoprazole',
-        strength: '40mg',
-        dosage: '1 Tab',
-        frequency: '1 - 0 - 0',
-        duration: 5,
-        durationUnit: 'DAYS',
-        beforeAfterFood: 'BEFORE_FOOD',
-        instructions: 'Morning empty stomach 30 mins before breakfast',
-        genericSubstitute: { name: 'Jan Aushadhi Pantoprazole 40mg', janAushadhiPrice: 15, brandPrice: 110 }
-      }
-    ],
-    labTests: ['CBC (Complete Blood Count)']
-  },
-  {
-    id: 'hypertension-starter',
-    name: 'Hypertension Starter',
-    icon: '❤️',
-    category: 'Cardiology / Medicine',
-    chiefComplaint: 'Occipital morning headache, dizziness, recorded BP 148/92 mmHg on two visits.',
-    diagnosis: 'Essential Primary Hypertension (Stage 1)',
-    icd10Code: 'I10',
-    treatmentPlan: '• Dietary Sodium restriction (<5g salt/day)\n• Brisk morning walk 35-40 mins daily\n• Maintain daily home BP monitoring chart\n• Avoid NSAIDs and decongestants',
-    medications: [
-      {
-        id: 'tmpl-telmi',
-        medicationName: 'Tab Telmisartan',
-        strength: '40mg',
-        dosage: '1 Tab',
-        frequency: '1 - 0 - 0',
-        duration: 30,
-        durationUnit: 'DAYS',
-        beforeAfterFood: 'AFTER_FOOD',
-        instructions: 'Fixed morning time daily with water',
-        genericSubstitute: { name: 'Jan Aushadhi Telmisartan 40mg', janAushadhiPrice: 22, brandPrice: 140 }
-      },
-      {
-        id: 'tmpl-amlo',
-        medicationName: 'Tab Amlodipine',
-        strength: '5mg',
-        dosage: '1 Tab',
-        frequency: '0 - 0 - 1',
-        duration: 30,
-        durationUnit: 'DAYS',
-        beforeAfterFood: 'BEDTIME',
-        instructions: 'Take daily at night',
-        genericSubstitute: { name: 'Jan Aushadhi Amlodipine 5mg', janAushadhiPrice: 10, brandPrice: 48 }
-      }
-    ],
-    labTests: ['Lipid Profile', 'KFT / Serum Creatinine', 'ECG 12-Lead']
-  },
-  {
-    id: 'type2-diabetes',
-    name: 'Type-2 Diabetes Protocol',
-    icon: '🩸',
-    category: 'Endocrinology',
-    chiefComplaint: 'Polyuria, polydipsia, fatigue. Fasting sugar 154 mg/dL, PP sugar 224 mg/dL.',
-    diagnosis: 'Type 2 Diabetes Mellitus without Complications',
-    icd10Code: 'E11.9',
-    treatmentPlan: '• Low glycemic index, high fiber diet\n• Zero refined sugar, sweets, or aerated drinks\n• Regular foot care and inspection\n• Check HbA1c every 90 days',
-    medications: [
-      {
-        id: 'tmpl-metformin',
-        medicationName: 'Tab Metformin HCl PR',
-        strength: '500mg',
-        dosage: '1 Tab',
-        frequency: '1 - 0 - 1',
-        duration: 30,
-        durationUnit: 'DAYS',
-        beforeAfterFood: 'WITH_FOOD',
-        instructions: 'Immediately after meals with water',
-        genericSubstitute: { name: 'Jan Aushadhi Metformin 500mg', janAushadhiPrice: 14, brandPrice: 65 }
-      },
-      {
-        id: 'tmpl-glimepiride',
-        medicationName: 'Tab Glimepiride',
-        strength: '1mg',
-        dosage: '1 Tab',
-        frequency: '1 - 0 - 0',
-        duration: 30,
-        durationUnit: 'DAYS',
-        beforeAfterFood: 'BEFORE_FOOD',
-        instructions: 'Immediately before breakfast',
-        genericSubstitute: { name: 'Jan Aushadhi Glimepiride 1mg', janAushadhiPrice: 12, brandPrice: 58 }
-      }
-    ],
-    labTests: ['HbA1c (Glycated Hemoglobin)', 'Urine Microalbumin', 'Lipid Profile']
-  },
-  {
-    id: 'acute-gastro',
-    name: 'Acute Gastroenteritis Pack',
-    icon: '💧',
-    category: 'Gastroenterology',
-    chiefComplaint: 'Watery diarrhea 5-6 episodes since morning, nausea, vomiting, mild abdominal cramping.',
-    diagnosis: 'Acute Infective Gastroenteritis with Dehydration',
-    icd10Code: 'A09',
-    treatmentPlan: '• Strict hydration: sip ORS water continuously\n• Khichdi, curd, banana, coconut water diet\n• Avoid spicy, oily food, milk, raw salads\n• Return immediately if decreased urination or blood in stool',
-    medications: [
-      {
-        id: 'tmpl-ors',
-        medicationName: 'Sachet Electral ORS',
-        strength: '21.8g',
-        dosage: '1 Sachet in 1L Boiled Water',
-        frequency: 'SOS / Sip-by-sip',
-        duration: 3,
-        durationUnit: 'DAYS',
-        beforeAfterFood: 'AFTER_FOOD',
-        instructions: 'Drink frequently throughout the day',
-        genericSubstitute: { name: 'Jan Aushadhi ORS 21.8g', janAushadhiPrice: 10, brandPrice: 24 }
-      },
-      {
-        id: 'tmpl-ondan',
-        medicationName: 'Tab Ondansetron MD',
-        strength: '4mg',
-        dosage: '1 Tab (Mouth Dissolving)',
-        frequency: '1 - 0 - 1',
-        duration: 2,
-        durationUnit: 'DAYS',
-        beforeAfterFood: 'BEFORE_FOOD',
-        instructions: 'Melt on tongue 20 mins before food',
-        genericSubstitute: { name: 'Jan Aushadhi Ondansetron 4mg', janAushadhiPrice: 8, brandPrice: 42 }
-      },
-      {
-        id: 'tmpl-raceca',
-        medicationName: 'Cap Racecadotril',
-        strength: '100mg',
-        dosage: '1 Cap',
-        frequency: '1 - 1 - 1',
-        duration: 3,
-        durationUnit: 'DAYS',
-        beforeAfterFood: 'AFTER_FOOD',
-        instructions: 'Three times daily until stools form',
-        genericSubstitute: { name: 'Jan Aushadhi Racecadotril 100mg', janAushadhiPrice: 35, brandPrice: 140 }
-      }
-    ],
-    labTests: ['Serum Electrolytes (Na+, K+, Cl-)', 'Stool Routine & Microscopic']
-  },
-  {
-    id: 'allergic-cough',
-    name: 'Bronchitis & Allergic Cough',
-    icon: '🫁',
-    category: 'Pulmonology',
-    chiefComplaint: 'Dry hacking nocturnal cough for 5 days, post-nasal drip, chest tightness.',
-    diagnosis: 'Acute Bronchitis with Allergic Airway Reactivity',
-    icd10Code: 'J20.9',
-    treatmentPlan: '• Steam inhalation morning & evening\n• Avoid cold air exposure, dust, pets, smoke\n• Lukewarm water sips throughout the day\n• Review after 5 days',
-    medications: [
-      {
-        id: 'tmpl-acebro',
-        medicationName: 'Cap Acebrophylline',
-        strength: '100mg',
-        dosage: '1 Cap',
-        frequency: '1 - 0 - 1',
-        duration: 5,
-        durationUnit: 'DAYS',
-        beforeAfterFood: 'AFTER_FOOD',
-        instructions: 'After breakfast and dinner with water',
-        genericSubstitute: { name: 'Jan Aushadhi Acebrophylline 100mg', janAushadhiPrice: 28, brandPrice: 120 }
-      },
-      {
-        id: 'tmpl-montelc',
-        medicationName: 'Tab Montelukast + Levocetirizine',
-        strength: '10mg+5mg',
-        dosage: '1 Tab',
-        frequency: '0 - 0 - 1',
-        duration: 7,
-        durationUnit: 'DAYS',
-        beforeAfterFood: 'BEDTIME',
-        instructions: 'Night at bedtime',
-        genericSubstitute: { name: 'Jan Aushadhi Montelukast+Levo', janAushadhiPrice: 24, brandPrice: 110 }
-      }
-    ],
-    labTests: ['Chest X-Ray PA View', 'Absolute Eosinophil Count (AEC)']
-  },
-  {
-    id: 'gerd-gastritis',
-    name: 'GERD & Acid Peptic Pack',
-    icon: '🔥',
-    category: 'Gastroenterology',
-    chiefComplaint: 'Retrosternal burning, acid regurgitation after meals, epigastric discomfort.',
-    diagnosis: 'Gastroesophageal Reflux Disease (GERD) with Acute Gastritis',
-    icd10Code: 'K21.9',
-    treatmentPlan: '• Elevate head of bed by 6 inches during sleep\n• Do not lie down within 2 hours of dinner\n• Avoid tea, coffee, chocolate, mint, carbonated drinks\n• Small, frequent, low-fat meals',
-    medications: [
-      {
-        id: 'tmpl-rabeprazole',
-        medicationName: 'Cap Rabeprazole + Domperidone SR',
-        strength: '20mg+30mg',
-        dosage: '1 Cap',
-        frequency: '1 - 0 - 0',
-        duration: 14,
-        durationUnit: 'DAYS',
-        beforeAfterFood: 'EMPTY_STOMACH',
-        instructions: 'Morning empty stomach with plain water',
-        genericSubstitute: { name: 'Jan Aushadhi Rabeprazole+Dom', janAushadhiPrice: 20, brandPrice: 155 }
-      },
-      {
-        id: 'tmpl-sucralfate',
-        medicationName: 'Syp Sucralfate + Oxetacaine',
-        strength: '1000mg/10ml',
-        dosage: '10ml',
-        frequency: '1 - 1 - 1',
-        duration: 7,
-        durationUnit: 'DAYS',
-        beforeAfterFood: 'BEFORE_FOOD',
-        instructions: 'Take 1 hour before meals, shake well',
-        genericSubstitute: { name: 'Jan Aushadhi Sucralfate Syp', janAushadhiPrice: 38, brandPrice: 160 }
-      }
-    ],
-    labTests: ['H. Pylori Antigen / Stool', 'Ultrasound Abdomen']
-  }
-];
+export const CLINICAL_COCKPIT_TEMPLATES: ClinicalTemplatePreset[] = [];
 
 export const POPULAR_INVESTIGATION_PILLS = [
   { id: 'cbc', label: 'CBC', name: 'Complete Blood Count (CBC)' },
@@ -766,6 +519,21 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
   onOpenSettings: _onOpenSettings,
   onQuickRegisterWalkIn
 }) => {
+  
+  // Dynamic Clinical Templates loaded from live Database API
+  const [cockpitTemplates, setCockpitTemplates] = useState<ClinicalTemplatePreset[]>([]);
+
+  React.useEffect(() => {
+    fetch('/api/v1/clinical/prescription-templates')
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+          setCockpitTemplates(res.data);
+        }
+      })
+      .catch((err) => console.warn('Failed to load clinical templates:', err));
+  }, []);
+
   const [queueSearch, setQueueSearch] = useState('');
   const [queueFilter, setQueueFilter] = useState<'ALL' | 'WAITING' | 'REPORTS_READY' | 'TRIAGED' | 'COMPLETED'>('ALL');
   const [inChamberId, setInChamberId] = useState<string>(consultation?.id || '');
@@ -1910,7 +1678,7 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
     }> = [];
 
     // 1. Clinical Protocols
-    CLINICAL_COCKPIT_TEMPLATES.forEach((tmpl) => {
+    cockpitTemplates.forEach((tmpl) => {
       if (!q || tmpl.name.toLowerCase().includes(q) || tmpl.category.toLowerCase().includes(q) || tmpl.diagnosis.toLowerCase().includes(q)) {
         list.push({
           id: `proto-${tmpl.id}`,
@@ -7891,7 +7659,7 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
             {/* Quick 1-Click Omni Chips */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
               <span style={{ fontSize: '0.6875rem', color: '#64748B', fontWeight: 800 }}>⚡ 1-Click Protocols:</span>
-              {CLINICAL_COCKPIT_TEMPLATES.map((tmpl) => (
+              {cockpitTemplates.map((tmpl) => (
                 <button
                   key={tmpl.id}
                   type="button"

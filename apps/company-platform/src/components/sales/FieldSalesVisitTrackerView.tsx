@@ -12,28 +12,7 @@ interface FieldVisit {
   visitTimestamp: string;
 }
 
-const INITIAL_VISITS: FieldVisit[] = [
-  {
-    visitId: 'VISIT-GPS-101',
-    bdmName: 'Vikram Sethi (Senior BDM)',
-    visitedEntity: 'Medanta - The Medicity (Sector 38, Gurugram)',
-    gpsCoordinates: '28.4392° N, 77.0428° E (Hospital OPD Lobby)',
-    gpsVerified: true,
-    meetingKeyPersonnel: 'Dr. A. K. Dubey (Medical Superintendent)',
-    clinicalDiscussionNotes: 'Demonstrated SNOMED CT Rx auto-complete & ABDM 2.0 gateway. MS requested formal pricing proposal for 850 OPD doctor licenses.',
-    visitTimestamp: 'Today, 11:30 AM'
-  },
-  {
-    visitId: 'VISIT-GPS-102',
-    bdmName: 'Pooja Hegde (Regional Lead)',
-    visitedEntity: 'Manipal Hospital (Old Airport Road, Bengaluru)',
-    gpsCoordinates: '12.9592° N, 77.6499° E (Radiology Dept Block)',
-    gpsVerified: true,
-    meetingKeyPersonnel: 'HOD Radiology & PACS Admin',
-    clinicalDiscussionNotes: 'Reviewed 3D DICOM Web PACS viewer load times across CT scan volumes. Radiologist team gave 100% technical approval.',
-    visitTimestamp: 'Yesterday'
-  }
-];
+const INITIAL_VISITS: FieldVisit[] = [];
 
 export const FieldSalesVisitTrackerView: React.FC = () => {
   const [visits, setVisits] = useState<FieldVisit[]>(INITIAL_VISITS);
@@ -121,7 +100,36 @@ export const FieldSalesVisitTrackerView: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {visits.map((v) => (
+              {visits.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} style={{ textAlign: 'center', padding: '48px 24px', color: '#94A3B8' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '12px' }}>🗺️</div>
+                    <strong style={{ color: '#F8FAFC', fontSize: '0.9375rem', display: 'block', marginBottom: '6px' }}>
+                      No Field Sales Visits Logged
+                    </strong>
+                    <span style={{ fontSize: '0.8125rem', color: '#94A3B8', display: 'block', maxWidth: '440px', margin: '0 auto 16px' }}>
+                      On-site hospital pitches, doctor demonstrations, and clinic onboarding visits will appear here.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {}}
+                      style={{
+                        backgroundColor: '#1E293B',
+                        border: '1px solid #334155',
+                        color: '#38BDF8',
+                        borderRadius: '6px',
+                        padding: '6px 14px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      + Log Hospital Visit
+                    </button>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                visits.map((v) => (
                 <TableRow key={v.visitId}>
                   <TableCell>
                     <strong style={{ color: 'var(--ds-color-text-primary)' }}>{v.visitedEntity}</strong>
@@ -144,7 +152,8 @@ export const FieldSalesVisitTrackerView: React.FC = () => {
                     {v.visitTimestamp}
                   </TableCell>
                 </TableRow>
-              ))}
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>

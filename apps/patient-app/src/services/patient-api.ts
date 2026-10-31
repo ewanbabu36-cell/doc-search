@@ -106,7 +106,7 @@ export interface MedicationScheduleResponse {
   streakDays: number;
   caregiverAlertContact: string;
   scheduledDoses: ScheduledDose[];
-  nextDueDose: {
+  nextDueDose?: {
     id: string;
     medicationName: string;
     exactTime: string;
@@ -114,7 +114,7 @@ export interface MedicationScheduleResponse {
     instruction: string;
     pillColor: string;
     voiceAdvice: string;
-  };
+  } | null;
 }
 
 export interface OtpRequestResult {
@@ -131,6 +131,7 @@ export interface OtpRequestResult {
 
 export interface VerifyOtpResult {
   success: boolean;
+  message?: string;
   multiplePatients?: boolean;
   patients?: PatientProfile[];
   patient?: PatientProfile;
@@ -138,18 +139,7 @@ export interface VerifyOtpResult {
 }
 
 
-export const CANONICAL_DEMO_FAMILY: PatientProfile[] = [
-  {
-    id: 'pat-auth-001',
-    uhid: 'DOC-PAT-10001',
-    fullName: 'Verified Patient',
-    age: 38,
-    gender: 'MALE',
-    phone: '9876543210',
-    bloodGroup: 'B+',
-    allergies: []
-  }
-];
+export const CANONICAL_DEMO_FAMILY: PatientProfile[] = [];
 
 
 export const DEMO_SCHEDULED_DOSES: ScheduledDose[] = [];
@@ -253,15 +243,15 @@ class PatientApiService {
     }
 
     return {
-      success: true,
-      message: 'Demo OTP: 1234 (Enter to continue)',
-      isRegistered: phone === '9876543210',
-      multiplePatients: phone === '9876543210',
-      patientCount: phone === '9876543210' ? 3 : 1,
-      registeredName: phone === '9876543210' ? 'Vikramaditya Roy' : null,
-      patientMrn: 'MRN-381778',
-      patients: phone === '9876543210' ? CANONICAL_DEMO_FAMILY.map(m => ({ id: m.id, name: m.fullName, mrn: m.uhid })) : [],
-      devOtp: '1234'
+      success: false,
+      message: 'Could not contact healthcare gateway. Please check your network connection.',
+      isRegistered: false,
+      multiplePatients: false,
+      patientCount: 0,
+      registeredName: null,
+      patientMrn: null,
+      patients: [],
+      devOtp: ''
     };
   }
 
@@ -315,26 +305,10 @@ class PatientApiService {
       console.warn('API Gateway offline, using demo verification fallback:', err);
     }
 
-    if (phone === '9876543210' && !options?.selectedPatientId) {
-      return {
-        success: true,
-        multiplePatients: true,
-        patients: CANONICAL_DEMO_FAMILY
-      };
-    }
-
-    const fallbackPatient = options?.selectedPatientId
-      ? CANONICAL_DEMO_FAMILY.find((p) => p.id === options.selectedPatientId) || CANONICAL_DEMO_FAMILY[0]!
-      : { ...CANONICAL_DEMO_FAMILY[0]!, phone };
-
-    this.currentPatient = fallbackPatient;
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('docsearch_patient_profile', JSON.stringify(this.currentPatient));
-    }
     return {
-      success: true,
-      multiplePatients: false,
-      patient: this.currentPatient
+      success: false,
+      message: 'Verification failed. Please enter the valid OTP received on your mobile.',
+      multiplePatients: false
     };
   }
 
@@ -352,7 +326,7 @@ class PatientApiService {
     } catch (err) {
       console.warn('Failed to fetch family members from server:', err);
     }
-    return CANONICAL_DEMO_FAMILY;
+    return [];
   }
 
   async addFamilyMember(
@@ -382,18 +356,7 @@ class PatientApiService {
       console.warn('Failed to add family member to server:', err);
     }
 
-    const fallback: PatientProfile = {
-      id: `pat-fam-${Date.now()}`,
-      uhid: `MRN-${Math.floor(600000 + Math.random() * 300000)}`,
-      fullName: member.fullName,
-      age: member.age,
-      gender: member.gender,
-      phone,
-      bloodGroup: member.bloodGroup || 'B +ve',
-      allergies: [],
-      activeToken: null
-    };
-    return fallback;
+    return null;
   }
 
   getCurrentPatient(): PatientProfile | null {
@@ -447,42 +410,40 @@ class PatientApiService {
 
   async getPrescriptions(phone?: string): Promise<PatientPrescription[]> {
     const targetPhone = phone || this.currentPatient?.phone;
-    if (!targetPhone) return DEMO_PRESCRIPTIONS;
-
+    if (!targetPhone) return [];
     try {
       const res = await fetch(`/api/v1/patient/prescriptions?phone=${encodeURIComponent(targetPhone)}`, {
         headers: this.getAuthHeaders()
       });
       if (res.ok) {
         const data = await res.json();
-        if (data.success && Array.isArray(data.prescriptions) && data.prescriptions.length > 0) {
+        if (data.success && Array.isArray(data.prescriptions)) {
           return data.prescriptions;
         }
       }
     } catch (err) {
-      console.warn('Prescriptions fetch offline, using demo fallback:', err);
+      console.warn('Prescriptions fetch failed:', err);
     }
-    return DEMO_PRESCRIPTIONS;
+    return [];
   }
 
   async getLabReports(phone?: string): Promise<PatientLabReport[]> {
     const targetPhone = phone || this.currentPatient?.phone;
-    if (!targetPhone) return DEMO_LAB_REPORTS;
-
+    if (!targetPhone) return [];
     try {
       const res = await fetch(`/api/v1/patient/lab-reports?phone=${encodeURIComponent(targetPhone)}`, {
         headers: this.getAuthHeaders()
       });
       if (res.ok) {
         const data = await res.json();
-        if (data.success && Array.isArray(data.reports) && data.reports.length > 0) {
+        if (data.success && Array.isArray(data.reports)) {
           return data.reports;
         }
       }
     } catch (err) {
-      console.warn('Lab reports fetch offline, using demo fallback:', err);
+      console.warn('Lab reports fetch failed:', err);
     }
-    return DEMO_LAB_REPORTS;
+    return [];
   }
 
   async sendDelayAlert(phone: string, delayMinutes: number = 5): Promise<boolean> {
@@ -517,29 +478,21 @@ class PatientApiService {
 
   async getMedicationSchedule(phone?: string): Promise<MedicationScheduleResponse> {
     const targetPhone = phone || this.currentPatient?.phone;
-    if (!targetPhone) {
-      return {
-        success: true,
-        patientName: 'Vikramaditya Roy',
-        doctorName: 'Dr. Vivek Sharma (MD General Medicine)',
-        prescriptionId: 'CON-270768',
-        prescribedDate: '11 Oct 2026',
-        diagnosis: 'Acute Viral Pyrexia with Dyspepsia',
-        adherenceScore: 33,
-        streakDays: 4,
-        caregiverAlertContact: 'Amit Kumar (Beta) • +91 98765 00000',
-        scheduledDoses: DEMO_SCHEDULED_DOSES,
-        nextDueDose: {
-          id: 'dose-2',
-          medicationName: 'Paracetamol 650mg',
-          exactTime: '01:30 PM',
-          minsRemaining: 18,
-          instruction: 'दोपहर के भोजन के बाद 1 गोली',
-          pillColor: '#EF4444',
-          voiceAdvice: 'पैरासिटामोल 650 मिलीग्राम: दोपहर के भोजन के बाद 1 गोली लें।'
-        }
-      };
-    }
+    const emptyResponse: MedicationScheduleResponse = {
+      success: true,
+      patientName: this.currentPatient?.fullName || '',
+      doctorName: '',
+      prescriptionId: '',
+      prescribedDate: '',
+      diagnosis: '',
+      adherenceScore: 100,
+      streakDays: 0,
+      caregiverAlertContact: '',
+      scheduledDoses: [],
+      nextDueDose: null
+    };
+
+    if (!targetPhone) return emptyResponse;
 
     try {
       const res = await fetch(`/api/v1/patient/medications/schedule?phone=${encodeURIComponent(targetPhone)}`, {
@@ -552,30 +505,10 @@ class PatientApiService {
         }
       }
     } catch (err) {
-      console.warn('Medication schedule API offline, using fallback:', err);
+      console.warn('Medication schedule API offline:', err);
     }
 
-    return {
-      success: true,
-      patientName: this.currentPatient?.fullName || 'Vikramaditya Roy',
-      doctorName: 'Dr. Vivek Sharma (MD General Medicine)',
-      prescriptionId: 'CON-270768',
-      prescribedDate: '11 Oct 2026',
-      diagnosis: 'Acute Viral Pyrexia with Dyspepsia',
-      adherenceScore: 33,
-      streakDays: 4,
-      caregiverAlertContact: 'Amit Kumar (Beta) • +91 98765 00000',
-      scheduledDoses: DEMO_SCHEDULED_DOSES,
-      nextDueDose: {
-        id: 'dose-2',
-        medicationName: 'Paracetamol 650mg',
-        exactTime: '01:30 PM',
-        minsRemaining: 18,
-        instruction: 'दोपहर के भोजन के बाद 1 गोली',
-        pillColor: '#EF4444',
-        voiceAdvice: 'पैरासिटामोल 650 मिलीग्राम: दोपहर के भोजन के बाद 1 गोली लें।'
-      }
-    };
+    return emptyResponse;
   }
 
   async logMedicationDose(

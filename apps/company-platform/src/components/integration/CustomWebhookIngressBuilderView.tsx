@@ -24,35 +24,7 @@ interface DispatchResult {
   responseSnippet?: string;
 }
 
-const INITIAL_WEBHOOKS: WebhookConnector[] = [
-  {
-    id: 'WH-ZAP-01',
-    name: 'Zapier High-Priority Emergency Triage Hub',
-    targetPlatform: 'ZAPIER',
-    targetUrl: 'https://hooks.zapier.com/hooks/catch/948102/bdocsearch108',
-    subscribedEvents: ['appointment.emergency_triage_alert', 'patient.vitals_critical_icu'],
-    lastDeliveryStatus: 'DELIVERED_200_OK',
-    hmacSignatureVerified: true
-  },
-  {
-    id: 'WH-SLACK-02',
-    name: 'Slack #hospital-revenue-ops Alerts',
-    targetPlatform: 'SLACK',
-    targetUrl: 'https://hooks.slack.com/services/T00/B00/DocSearchRevenueSec',
-    subscribedEvents: ['invoice.payment_settled_escrow', 'subscription.plan_upgraded_enterprise'],
-    lastDeliveryStatus: 'DELIVERED_200_OK',
-    hmacSignatureVerified: true
-  },
-  {
-    id: 'WH-SFDC-03',
-    name: 'Salesforce Health Cloud Provider Sync',
-    targetPlatform: 'SALESFORCE_HEALTH',
-    targetUrl: 'https://healthcare-prod.my.salesforce.com/services/apexrest/DocSearchEHR',
-    subscribedEvents: ['partner.doctor_nmc_verified', 'partner.mou_signed_active'],
-    lastDeliveryStatus: 'DELIVERED_200_OK',
-    hmacSignatureVerified: true
-  }
-];
+const INITIAL_WEBHOOKS: WebhookConnector[] = [];
 
 export const CustomWebhookIngressBuilderView: React.FC = () => {
   const [webhooks] = useState<WebhookConnector[]>(INITIAL_WEBHOOKS);
@@ -220,7 +192,36 @@ export const CustomWebhookIngressBuilderView: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {webhooks.map((w) => (
+              {webhooks.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} style={{ textAlign: 'center', padding: '48px 24px', color: '#94A3B8' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '12px' }}>🪝</div>
+                    <strong style={{ color: '#F8FAFC', fontSize: '0.9375rem', display: 'block', marginBottom: '6px' }}>
+                      No Ingress Webhooks Configured
+                    </strong>
+                    <span style={{ fontSize: '0.8125rem', color: '#94A3B8', display: 'block', maxWidth: '440px', margin: '0 auto 16px' }}>
+                      Define inbound webhook endpoints for third-party hospital management systems, pharmacy ERPs, and lab systems.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {}}
+                      style={{
+                        backgroundColor: '#1E293B',
+                        border: '1px solid #334155',
+                        color: '#38BDF8',
+                        borderRadius: '6px',
+                        padding: '6px 14px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      + Add Webhook Ingress
+                    </button>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                webhooks.map((w) => (
                 <TableRow key={w.id}>
                   <TableCell>
                     <strong style={{ color: 'var(--ds-color-text-primary)' }}>{w.name}</strong>
@@ -252,7 +253,8 @@ export const CustomWebhookIngressBuilderView: React.FC = () => {
                     </button>
                   </TableCell>
                 </TableRow>
-              ))}
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>

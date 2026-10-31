@@ -40,80 +40,7 @@ export interface CustomizerModuleItem {
   isCustom?: boolean;
 }
 
-const INITIAL_DEFAULT_MODULES: CustomizerModuleItem[] = [
-  {
-    id: 'mod-ai-voice',
-    key: 'enableAiVoiceScribe',
-    title: 'AI Clinical Voice Scribe',
-    desc: 'Ambient SOAP notes transcription with NMC compliance',
-    icon: '🤖',
-    annualFeeInr: 20000,
-    enabled: true
-  },
-  {
-    id: 'mod-abdm',
-    key: 'enableAbdmGateway',
-    title: 'ABDM 2.0 Health Locker',
-    desc: 'ABHA creation, consent manager & M1/M2/M3 milestone relay',
-    icon: '🇮🇳',
-    annualFeeInr: 15000,
-    enabled: true
-  },
-  {
-    id: 'mod-tpa',
-    key: 'enableTpaClaims',
-    title: 'Cashless TPA & PMJAY Adjudicator',
-    desc: 'Instant pre-auth & claim submission to 35+ insurance TPAs',
-    icon: '🏥',
-    annualFeeInr: 15000,
-    enabled: true
-  },
-  {
-    id: 'mod-pharmacy',
-    key: 'enablePharmacyInventory',
-    title: 'In-House Pharmacy & POS Suite',
-    desc: 'Batch tracking, expiry alerts, barcode dispensing',
-    icon: '💊',
-    annualFeeInr: 20000,
-    enabled: true
-  },
-  {
-    id: 'mod-pacs',
-    key: 'enableDicomPacs',
-    title: 'Diagnostic Pathology & Cloud PACS',
-    desc: 'Bidirectional analyzer interfacing & web DICOM viewer',
-    icon: '🔬',
-    annualFeeInr: 25000,
-    enabled: false
-  },
-  {
-    id: 'mod-telemetry',
-    key: 'enableEmergencyTelemetry',
-    title: '24/7 Emergency & ICU Gateway',
-    desc: 'Resuscitation bays, ventilator metrics & acute alerts',
-    icon: '🚑',
-    annualFeeInr: 15000,
-    enabled: true
-  },
-  {
-    id: 'mod-whitelabel',
-    key: 'enableWhiteLabelApps',
-    title: 'Hospital White-Label Suite',
-    desc: 'Dedicated custom domain CNAME & branded Android/iOS apps',
-    icon: '🎨',
-    annualFeeInr: 20000,
-    enabled: true
-  },
-  {
-    id: 'mod-sso',
-    key: 'enableSsoSaml',
-    title: 'Enterprise SSO & SAML 2.0',
-    desc: 'Active Directory, Okta & Multi-Factor authentication',
-    icon: '🔐',
-    annualFeeInr: 15000,
-    enabled: false
-  }
-];
+const INITIAL_DEFAULT_MODULES: CustomizerModuleItem[] = [];
 
 const ORGANIZATION_CONFIG: Record<string, OrgTypeConfig> = {
   HOSPITAL_CHAIN: {
@@ -2365,8 +2292,15 @@ export const SubscriptionCustomizerModal: React.FC<SubscriptionCustomizerModalPr
                 )}
 
                 {/* Modules Grid with Toggle and Remove Button */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  {modulesList.map((mod) => (
+                <div style={{ display: 'grid', gridTemplateColumns: modulesList.length === 0 ? '1fr' : '1fr 1fr', gap: '10px' }}>
+                  {modulesList.length === 0 ? (
+                    <div style={{ padding: '36px 20px', textAlign: 'center', color: '#94A3B8', border: '1px dashed #334155', borderRadius: '12px' }}>
+                      <div style={{ fontSize: '1.5rem', marginBottom: '8px' }}>🧩</div>
+                      <strong style={{ color: '#F8FAFC', display: 'block', marginBottom: '4px' }}>No Subscription Modules Attached</strong>
+                      <span style={{ fontSize: '0.75rem', display: 'block' }}>Use "+ Add Custom Module" below to configure specialized hospital add-ons.</span>
+                    </div>
+                  ) : (
+                    modulesList.map((mod) => (
                     <div
                       key={mod.id}
                       style={{
@@ -2425,7 +2359,8 @@ export const SubscriptionCustomizerModal: React.FC<SubscriptionCustomizerModalPr
                         </p>
                       </div>
                     </div>
-                  ))}
+                  ))
+                )}
                 </div>
               </div>
             )}

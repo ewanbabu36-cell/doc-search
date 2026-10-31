@@ -11,44 +11,7 @@ interface ClinicalAddon {
   isActivated: boolean;
 }
 
-const INITIAL_ADDONS: ClinicalAddon[] = [
-  {
-    id: 'ADDON-ICU-01',
-    name: 'ICU Bed Real-Time Vital Telemetry Streamer',
-    category: 'ICU_CRITICAL',
-    monthlyPrice: '₹ 15,000 / month',
-    description: 'Direct IoT streaming from Mindray / Philips patient monitors to Doctor Tablet & Central Nursing Station',
-    activeHospitals: 24,
-    isActivated: true
-  },
-  {
-    id: 'ADDON-ONCO-02',
-    name: 'Oncology Multi-Disciplinary Tumor Board Collaboration Suite',
-    category: 'ONCOLOGY',
-    monthlyPrice: '₹ 25,000 / month',
-    description: 'Shared cancer case presentations, pathology slide viewer, and consensus radiation voting workspace',
-    activeHospitals: 18,
-    isActivated: true
-  },
-  {
-    id: 'ADDON-RAD-03',
-    name: 'AI Chest X-Ray & CT Scan Auto-Lesion Detector',
-    category: 'RADIOLOGY_AI',
-    monthlyPrice: '₹ 20,000 / month',
-    description: 'Instant radiologist AI second-opinion for pneumonia, tuberculosis nodules, and intracranial hemorrhage',
-    activeHospitals: 32,
-    isActivated: false
-  },
-  {
-    id: 'ADDON-NICU-04',
-    name: 'NICU Smart Infant Incubator Sensor Sync',
-    category: 'NEONATAL',
-    monthlyPrice: '₹ 18,000 / month',
-    description: 'Continuous temperature, phototherapy duration, and apnoea alarm routing to On-Duty Paediatrician',
-    activeHospitals: 14,
-    isActivated: false
-  }
-];
+const INITIAL_ADDONS: ClinicalAddon[] = [];
 
 export const ClinicalAddonMarketplaceView: React.FC = () => {
   const [addons, setAddons] = useState<ClinicalAddon[]>(INITIAL_ADDONS);
@@ -121,7 +84,36 @@ export const ClinicalAddonMarketplaceView: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {addons.map((a) => (
+              {addons.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} style={{ textAlign: 'center', padding: '48px 24px', color: '#94A3B8' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '12px' }}>🧩</div>
+                    <strong style={{ color: '#F8FAFC', fontSize: '0.9375rem', display: 'block', marginBottom: '6px' }}>
+                      No Clinical Add-Ons Published
+                    </strong>
+                    <span style={{ fontSize: '0.8125rem', color: '#94A3B8', display: 'block', maxWidth: '440px', margin: '0 auto 16px' }}>
+                      Enterprise clinical modules (AI Voice Scribe, ABDM Locker, Cashless TPA) can be provisioned from this catalog.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {}}
+                      style={{
+                        backgroundColor: '#1E293B',
+                        border: '1px solid #334155',
+                        color: '#38BDF8',
+                        borderRadius: '6px',
+                        padding: '6px 14px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      + Publish Add-On
+                    </button>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                addons.map((a) => (
                 <TableRow key={a.id}>
                   <TableCell>
                     <strong style={{ color: 'var(--ds-color-text-primary)' }}>{a.name}</strong>
@@ -163,7 +155,8 @@ export const ClinicalAddonMarketplaceView: React.FC = () => {
                     </button>
                   </TableCell>
                 </TableRow>
-              ))}
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>

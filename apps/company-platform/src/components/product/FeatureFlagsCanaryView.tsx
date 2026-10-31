@@ -12,48 +12,7 @@ interface FeatureFlag {
   circuitBreakerStatus: 'HEALTHY' | 'TRIPPED';
 }
 
-const INITIAL_FLAGS: FeatureFlag[] = [
-  {
-    flagKey: 'ai_rx_autocomplete_snomed',
-    flagName: 'AI Prescription SNOMED CT Auto-Complete',
-    description: 'Real-time drug dosage recommendations and contraindication alerts in Doctor EMR',
-    rolloutPercentage: 100,
-    targetedTenants: ['All Active Hospital Partners'],
-    minimumTier: 'GROWTH',
-    isEnabled: true,
-    circuitBreakerStatus: 'HEALTHY'
-  },
-  {
-    flagKey: 'dicom_web_pacs_3d_viewer',
-    flagName: 'Web-Based PACS 3D DICOM X-Ray & MRI Viewer',
-    description: 'High-speed zero-footprint radiology viewer rendered in WebAssembly',
-    rolloutPercentage: 35,
-    targetedTenants: ['Apollo Hospitals (Delhi)', 'Max Healthcare (Saket)'],
-    minimumTier: 'ENTERPRISE',
-    isEnabled: true,
-    circuitBreakerStatus: 'HEALTHY'
-  },
-  {
-    flagKey: 'telemedicine_4k_webrtc_mesh',
-    flagName: 'Ultra-Low Latency 4K WebRTC Video Consults',
-    description: 'Mesh peer-to-peer clinical consultation with noise cancellation',
-    rolloutPercentage: 50,
-    targetedTenants: ['Manipal Hospitals', 'Fortis Healthcare'],
-    minimumTier: 'GROWTH',
-    isEnabled: true,
-    circuitBreakerStatus: 'HEALTHY'
-  },
-  {
-    flagKey: 'abdm_milestone_3_consent_auto_pull',
-    flagName: 'ABDM 2.0 Real-Time Health Records Auto-Fetch',
-    description: 'Automatic patient medical records pull across Indian health networks',
-    rolloutPercentage: 100,
-    targetedTenants: ['All Active Hospital Partners'],
-    minimumTier: 'STARTER',
-    isEnabled: true,
-    circuitBreakerStatus: 'HEALTHY'
-  }
-];
+const INITIAL_FLAGS: FeatureFlag[] = [];
 
 export const FeatureFlagsCanaryView: React.FC = () => {
   const [flags, setFlags] = useState<FeatureFlag[]>(INITIAL_FLAGS);
@@ -126,7 +85,36 @@ export const FeatureFlagsCanaryView: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {flags.map((f) => (
+              {flags.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} style={{ textAlign: 'center', padding: '48px 24px', color: '#94A3B8' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '12px' }}>🚩</div>
+                    <strong style={{ color: '#F8FAFC', fontSize: '0.9375rem', display: 'block', marginBottom: '6px' }}>
+                      No Canary Feature Flags Deployed
+                    </strong>
+                    <span style={{ fontSize: '0.8125rem', color: '#94A3B8', display: 'block', maxWidth: '440px', margin: '0 auto 16px' }}>
+                      Manage progressive rollouts, feature toggles, and tenant percentage-based canary releases safely.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {}}
+                      style={{
+                        backgroundColor: '#1E293B',
+                        border: '1px solid #334155',
+                        color: '#38BDF8',
+                        borderRadius: '6px',
+                        padding: '6px 14px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      + Create Feature Flag
+                    </button>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                flags.map((f) => (
                 <TableRow key={f.flagKey}>
                   <TableCell>
                     <strong style={{ color: 'var(--ds-color-text-primary)' }}>{f.flagName}</strong>
@@ -168,7 +156,8 @@ export const FeatureFlagsCanaryView: React.FC = () => {
                     </button>
                   </TableCell>
                 </TableRow>
-              ))}
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>

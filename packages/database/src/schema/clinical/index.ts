@@ -12471,6 +12471,49 @@ export const saasMarketplaceAddons = clinicalSchema.table('saas_marketplace_addo
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow()
 });
 
+export const prescriptionTemplates = clinicalSchema.table('prescription_templates', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull(),
+  doctorId: uuid('doctor_id'),
+  templateCode: varchar('template_code', { length: 100 }).notNull().unique(),
+  name: varchar('name', { length: 255 }).notNull(),
+  icon: varchar('icon', { length: 50 }).default('🩺'),
+  category: varchar('category', { length: 100 }).notNull(),
+  chiefComplaint: text('chief_complaint'),
+  diagnosis: varchar('diagnosis', { length: 255 }).notNull(),
+  icd10Code: varchar('icd10_code', { length: 50 }),
+  treatmentPlan: text('treatment_plan'),
+  medications: jsonb('medications').default([]),
+  labTests: jsonb('lab_tests').default([]),
+  isActive: boolean('is_active').default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+});
+
+export type PrescriptionTemplate = typeof prescriptionTemplates.$inferSelect;
+export type NewPrescriptionTemplate = typeof prescriptionTemplates.$inferInsert;
+
+export const vacutainerTubeCatalog = clinicalSchema.table('vacutainer_tube_catalog', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tubeKey: varchar('tube_key', { length: 50 }).notNull().unique(),
+  name: varchar('name', { length: 100 }).notNull(),
+  additive: varchar('additive', { length: 100 }).notNull(),
+  colorName: varchar('color_name', { length: 100 }).notNull(),
+  capHex: varchar('cap_hex', { length: 50 }).notNull(),
+  glowHex: varchar('glow_hex', { length: 50 }).notNull(),
+  volume: varchar('volume', { length: 50 }).notNull(),
+  inversions: varchar('inversions', { length: 50 }).notNull(),
+  commonTests: jsonb('common_tests').default([]),
+  keywords: jsonb('keywords').default([]),
+  isActive: boolean('is_active').default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+});
+
+export type VacutainerTubeCatalogItem = typeof vacutainerTubeCatalog.$inferSelect;
+export type NewVacutainerTubeCatalogItem = typeof vacutainerTubeCatalog.$inferInsert;
+
+
 
 
 

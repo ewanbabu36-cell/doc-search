@@ -17,68 +17,7 @@ export interface AnomalyAlertItem {
   status: 'ACTIVE_INVESTIGATION' | 'ACKNOWLEDGED' | 'RESOLVED_LOCKED';
 }
 
-const INITIAL_ALERTS: AnomalyAlertItem[] = [
-  {
-    id: 'ALT-OUTBREAK-01',
-    type: 'CLINICAL_OUTBREAK',
-    severity: 'CRITICAL',
-    title: '🦟 Regional Dengue & Typhoid NS1 Positivity Surge',
-    entityOrLocation: 'Kolkata Metro & Eastern Hub (62 Hospitals)',
-    detectedMetric: '38.6% Test Positivity Rate (1,120 positive / 2,900 tests)',
-    baselineMetric: '8.4% 30-Day Historical Average',
-    anomalyDelta: '+ 30.2% Spike (>30% Threshold Exceeded)',
-    confidenceScore: '99.2% Outbreak Probability',
-    detectedTime: '12 mins ago',
-    riskDescription: 'Severe cluster of acute thrombocytopenia and NS1 antigen positivity detected across 14 connected pathology labs in Kolkata.',
-    recommendedAction: 'Dispatch 5,000 rapid NS1 test kits, notify State Health Mission, and route critical platelet transfusions.',
-    status: 'ACTIVE_INVESTIGATION'
-  },
-  {
-    id: 'ALT-BILLING-02',
-    type: 'BILLING_FRAUD_RISK',
-    severity: 'CRITICAL',
-    title: '💸 Unusual 45% Manual Discount Override on Inpatient Invoice',
-    entityOrLocation: 'Apollo Indraprastha — Cashier Desk #4 (New Delhi)',
-    detectedMetric: '45.0% Discount (₹ 1,12,500 written off on ₹ 2,50,000 bill)',
-    baselineMetric: 'Max Allowed: 15.0% without CFO 2FA Approval',
-    anomalyDelta: '+ 30.0% Unapproved Revenue Write-down',
-    confidenceScore: '97.8% Compliance Violation Flag',
-    detectedTime: '24 mins ago',
-    riskDescription: 'Cashier manual override applied on Inpatient Surgical Invoice #INV-2026-89410 without dual-signature authorization.',
-    recommendedAction: 'Freeze invoice settlement, lock cashier discount override token, and require CFO 2FA digital signature.',
-    status: 'ACTIVE_INVESTIGATION'
-  },
-  {
-    id: 'ALT-OUTBREAK-03',
-    type: 'CLINICAL_OUTBREAK',
-    severity: 'HIGH',
-    title: '🦠 H1N1 & Upper Respiratory Triage Load Surge',
-    entityOrLocation: 'Guwahati & North-East Cluster (28 Hospitals)',
-    detectedMetric: '27.4% Respiratory Triage Positivity (480 cases / day)',
-    baselineMetric: '6.1% 30-Day Historical Average',
-    anomalyDelta: '+ 21.3% Cluster Elevation',
-    confidenceScore: '94.5% Cluster Elevation',
-    detectedTime: '1 hour ago',
-    riskDescription: 'Rapid increase in fever and dry cough admissions coinciding with monsoon waterlogging triage.',
-    recommendedAction: 'Stockpile nebulizers and activate isolation ward triage protocol.',
-    status: 'ACTIVE_INVESTIGATION'
-  },
-  {
-    id: 'ALT-BILLING-04',
-    type: 'BILLING_FRAUD_RISK',
-    severity: 'HIGH',
-    title: '💳 Rapid Duplicate POS Swipe Attempt Blocked by Idempotency',
-    entityOrLocation: 'Lilavati Hospital & Research Centre — Counter #2 (Mumbai)',
-    detectedMetric: '2 Duplicate Charges of ₹ 24,500 within 1.1 seconds',
-    baselineMetric: 'Idempotency Key Protected',
-    anomalyDelta: 'Zero Leakage (Second request rejected with 409 Conflict)',
-    confidenceScore: '100% Deterministic Engine Proof',
-    detectedTime: '2 hours ago',
-    riskDescription: 'Double-click POS swipe attempt was successfully blocked by backend idempotency lock, saving patient from double debit.',
-    recommendedAction: 'Terminal verified secure. Zero financial dispute registered.',
-    status: 'RESOLVED_LOCKED'
-  }
-];
+const INITIAL_ALERTS: AnomalyAlertItem[] = [];
 
 export const AiOutbreakBillingAnomalyCenterView: React.FC = () => {
   const [alerts, setAlerts] = useState<AnomalyAlertItem[]>(INITIAL_ALERTS);
@@ -211,7 +150,34 @@ export const AiOutbreakBillingAnomalyCenterView: React.FC = () => {
 
       {/* Anomaly Alerts Cards Stream */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-        {filteredAlerts.map((alert) => {
+        {filteredAlerts.length === 0 ? (
+          <div style={{ padding: '48px 24px', textAlign: 'center', color: '#94A3B8' }}>
+            <div style={{ fontSize: '2rem', marginBottom: '12px' }}>🤖</div>
+            <strong style={{ color: '#F8FAFC', fontSize: '0.9375rem', display: 'block', marginBottom: '6px' }}>
+              Zero Clinical or Financial Anomalies Detected
+            </strong>
+            <p style={{ fontSize: '0.8125rem', color: '#94A3B8', maxWidth: '440px', margin: '0 auto 16px' }}>
+              DocSearch Autonomous Sentinel AI has audited all recent prescriptions and billing claims. No anomalies or fraud flagged.
+            </p>
+            <button
+              type="button"
+              onClick={() => {}}
+              style={{
+                backgroundColor: '#1E293B',
+                border: '1px solid #334155',
+                color: '#38BDF8',
+                borderRadius: '6px',
+                padding: '6px 14px',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                cursor: 'pointer'
+              }}
+            >
+              ↻ Run Sentinel Audit
+            </button>
+          </div>
+        ) : (
+          filteredAlerts.map((alert) => {
           const isCritical = alert.severity === 'CRITICAL';
           const isClinical = alert.type === 'CLINICAL_OUTBREAK';
           const isResolved = alert.status === 'RESOLVED_LOCKED';
@@ -328,7 +294,7 @@ export const AiOutbreakBillingAnomalyCenterView: React.FC = () => {
               )}
             </div>
           );
-        })}
+        }))}
       </div>
     </div>
   );

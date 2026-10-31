@@ -12,38 +12,7 @@ interface AnalyzerFeed {
   accessionStatus: 'AUTO_ACCESSIONED' | 'PROCESSING' | 'FLAGGED_ANOMALY';
 }
 
-const INITIAL_FEEDS: AnalyzerFeed[] = [
-  {
-    id: 'LIMS-PKT-401',
-    timestamp: 'Just now',
-    analyzerModel: 'Mindray BC-5150 (5-Part Hematology)',
-    sampleBarcode: 'LAB-BAR-89214',
-    patientName: 'Rahul Sharma (42M)',
-    testPanel: 'Complete Blood Count (CBC + Platelets)',
-    rawHl7Segment: 'OBR|1|LAB89214|CBC^Mindray|202608311142\nOBX|1|NM|WBC^White Blood Count||7.8|10^3/uL|4.0-11.0|N\nOBX|2|NM|PLT^Platelets||245|10^3/uL|150-450|N',
-    accessionStatus: 'AUTO_ACCESSIONED'
-  },
-  {
-    id: 'LIMS-PKT-402',
-    timestamp: '4 sec ago',
-    analyzerModel: 'Roche Cobas 6000 (Clinical Chemistry)',
-    sampleBarcode: 'LAB-BAR-89215',
-    patientName: 'Pooja Verma (36F)',
-    testPanel: 'Lipid Profile & Liver Function (LFT)',
-    rawHl7Segment: 'OBR|2|LAB89215|LIPID^Roche|202608311141\nOBX|1|NM|CHOL^Total Cholesterol||192|mg/dL|<200|N\nOBX|2|NM|SGPT^Alanine Transaminase||32|U/L|7-56|N',
-    accessionStatus: 'AUTO_ACCESSIONED'
-  },
-  {
-    id: 'LIMS-PKT-403',
-    timestamp: '9 sec ago',
-    analyzerModel: 'Sysmex XN-1000 (Automated Hematology)',
-    sampleBarcode: 'LAB-BAR-89216',
-    patientName: 'Amit Saxena (58M)',
-    testPanel: 'HbA1c & Fasting Plasma Glucose',
-    rawHl7Segment: 'OBR|3|LAB89216|DIAB^Sysmex|202608311140\nOBX|1|NM|HBA1C^Glycated Hemoglobin||7.4|%|<5.7|H\nOBX|2|NM|GLU^Fasting Blood Sugar||148|mg/dL|70-100|H',
-    accessionStatus: 'AUTO_ACCESSIONED'
-  }
-];
+const INITIAL_FEEDS: AnalyzerFeed[] = [];
 
 export const LimsAnalyzerSimulatorView: React.FC = () => {
   const [feeds] = useState<AnalyzerFeed[]>(INITIAL_FEEDS);
@@ -99,7 +68,36 @@ export const LimsAnalyzerSimulatorView: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {feeds.map((f) => (
+                {feeds.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} style={{ textAlign: 'center', padding: '48px 24px', color: '#94A3B8' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '12px' }}>🧪</div>
+                    <strong style={{ color: '#F8FAFC', fontSize: '0.9375rem', display: 'block', marginBottom: '6px' }}>
+                      No LIMS Analyzer Simulators Running
+                    </strong>
+                    <span style={{ fontSize: '0.8125rem', color: '#94A3B8', display: 'block', maxWidth: '440px', margin: '0 auto 16px' }}>
+                      Spawn synthetic HL7 v2.5 or ASTM E1381 specimen streams to stress-test high-throughput hospital lab workflows.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {}}
+                      style={{
+                        backgroundColor: '#1E293B',
+                        border: '1px solid #334155',
+                        color: '#38BDF8',
+                        borderRadius: '6px',
+                        padding: '6px 14px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      + Start Simulator Feed
+                    </button>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                feeds.map((f) => (
                   <TableRow
                     key={f.id}
                     onClick={() => setSelectedFeed(f)}
@@ -121,8 +119,9 @@ export const LimsAnalyzerSimulatorView: React.FC = () => {
                       <Badge variant="success">● AUTO-ACCESSIONED</Badge>
                     </TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
+                ))
+              )}
+            </TableBody>
             </Table>
           </TableContainer>
         </Card>

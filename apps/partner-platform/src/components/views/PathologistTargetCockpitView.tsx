@@ -66,663 +66,10 @@ export interface RichSpecimenRecord {
   reflexOptions: string[];
 }
 
-export const TARGET_SPECIMENS: RichSpecimenRecord[] = [
-  // 1. Critical First - Serum Potassium Hyperkalemia (Biochemistry)
-  {
-    id: 'SPEC-90414',
-    orderNumber: 'ORD-LAB-90414',
-    accessionNumber: 'LAB-2026-90414',
-    barcode: 'BC-90414-POT',
-    patientId: 'PAT-33019',
-    patientName: 'Deepak Gupta',
-    patientMrn: 'MRN-33019',
-    patientAge: '62 Y',
-    patientGender: 'MALE',
-    department: 'BIOCHEMISTRY',
-    filterCategory: 'CRITICAL',
-    priority: 'STAT',
-    isCritical: true,
-    status: 'RESULT_READY',
-    statusLabel: 'CRITICAL PANIC (Call Desk Required)',
-    orderingDoctorName: 'Dr. Vivek Sharma, MD (Cardiology)',
-    wardOrLocation: 'Coronary Care Unit (CCU - Bed 3)',
-    specimenType: 'Venous Blood (Serum)',
-    tubeType: 'Gold SST Vacutainer (Gel Separator)',
-    collectionTime: 'Today 08:30 AM',
-    intakeTime: 'Today 08:52 AM',
-    analyzerMachine: 'Roche Cobas 6000 (ISE + c501 Chemistry)',
-    clinicalHistory: '62M with ischemic cardiomyopathy, Left Ventricular Ejection Fraction 35%, admitted with sudden palpitations, profound lethargy. Current medications: Spironolactone 25mg, Enalapril 10mg, Digoxin 0.125mg. Indication: Emergent Electrolyte Assessment.',
-    parameters: [
-      {
-        name: 'Serum Potassium (ISE Direct)',
-        value: '6.80',
-        unit: 'mEq/L',
-        refRange: '3.50 - 5.10',
-        flag: 'CRITICAL',
-        machineFlag: 'CRIT-HIGH [Cobas ISE Rack 2, Slot 4]',
-        serumIndices: 'Lipemia: 0, Icterus: 0, Hemolysis: Absent (H:0)'
-      },
-      {
-        name: 'Serum Sodium (ISE Direct)',
-        value: '132.0',
-        unit: 'mEq/L',
-        refRange: '135.0 - 145.0',
-        flag: 'LOW',
-        machineFlag: 'L [Cobas ISE]',
-        serumIndices: 'Normal'
-      },
-      {
-        name: 'Serum Creatinine (Jaffe)',
-        value: '2.10',
-        unit: 'mg/dL',
-        refRange: '0.70 - 1.20',
-        flag: 'HIGH',
-        machineFlag: 'H [Roche c501]',
-        serumIndices: 'Normal'
-      },
-      {
-        name: 'Blood Urea Nitrogen (BUN)',
-        value: '48.0',
-        unit: 'mg/dL',
-        refRange: '8.0 - 20.0',
-        flag: 'HIGH',
-        machineFlag: 'H [Roche c501]',
-        serumIndices: 'Normal'
-      },
-      {
-        name: 'Estimated GFR (CKD-EPI)',
-        value: '32.0',
-        unit: 'mL/min/1.73m²',
-        refRange: '> 60.0',
-        flag: 'LOW',
-        machineFlag: 'L [Calculated Parameter]',
-        serumIndices: 'Stage 3b CKD'
-      }
-    ],
-    deltaCheck: {
-      biomarker: 'Serum Potassium (mEq/L)',
-      unit: 'mEq/L',
-      alertMessage: 'CRITICAL PANIC VALUE: Potassium > 6.5 mEq/L poses imminent risk of ventricular fibrillation/asystole. Mandatory telephonic read-back required per NABL ISO-15189 clause 5.8.2.',
-      isViolation: true,
-      visits: [
-        { visitLabel: 'Visit 1 (2 months ago)', date: '04 Aug 2026', value: 4.20, displayValue: '4.20 mEq/L' },
-        { visitLabel: 'Visit 2 (2 weeks ago)', date: '18 Sep 2026', value: 4.80, displayValue: '4.80 mEq/L', deltaPercent: '+14.3%' },
-        { visitLabel: 'Visit 3 (Today)', date: '04 Oct 2026', value: 6.80, displayValue: '6.80 mEq/L', deltaPercent: '+41.7% surge' }
-      ]
-    },
-    auditHistory: [
-      { time: '08:30 AM', action: 'Venipuncture Draw', actor: 'Phlebotomist Anita V.', details: 'Vacutainer Gold SST barcode BC-90414-POT scanned' },
-      { time: '08:52 AM', action: 'Centrifugation', actor: 'Technician Suresh K.', details: 'Centrifuged at 3000 RPM (Zero hemolysis confirmed)' },
-      { time: '09:14 AM', action: 'Cobas 6000 ISE Run', actor: 'Host Query ASTM', details: 'Dual ISE electrode test confirmed 6.80 mEq/L' },
-      { time: '09:16 AM', action: 'LIMS Panic Flagging', actor: 'Rules Engine v2.4', details: 'Critical Panic limit (>6.5) triggered call desk workflow' },
-      { time: '09:18 AM', action: 'Pathologist Intake', actor: 'Dr. Shahab (MD)', details: 'Awaiting telephonic read-back log & digital sign-off' }
-    ],
-    pathologistImpression: 'Marked life-threatening hyperkalemia (6.8 mEq/L) with moderate azotemia in a patient on potassium-sparing medications. Telephonic verbal notification logged to CCU. Immediate ECG and anti-hyperkalemic measures advised.',
-    reflexOptions: [
-      'Reflex Serum Calcium (Ionized & Total)',
-      'Reflex High-Sensitivity Troponin-I STAT',
-      'Reflex Arterial Blood Gas (ABG Electrolytes)'
-    ]
-  },
-
-  // 2. Abnormal / Delta Check Surge - Serum Creatinine (Biochemistry)
-  {
-    id: 'SPEC-90413',
-    orderNumber: 'ORD-LAB-90413',
-    accessionNumber: 'LAB-2026-90413',
-    barcode: 'BC-90413-CRE',
-    patientId: 'PAT-77341',
-    patientName: 'Mohammad Rizwan',
-    patientMrn: 'MRN-77341',
-    patientAge: '58 Y',
-    patientGender: 'MALE',
-    department: 'BIOCHEMISTRY',
-    filterCategory: 'ABNORMAL',
-    priority: 'STAT',
-    isCritical: false,
-    status: 'RESULT_READY',
-    statusLabel: 'DELTA CHECK EXCEPTION (+209% Surge)',
-    orderingDoctorName: 'Dr. Neha Gupta, MD (Nephrology)',
-    wardOrLocation: 'Cardiothoracic ICU (CTICU - Bed 4)',
-    specimenType: 'Serum Clot Activator',
-    tubeType: 'Plain Red Top Vacutainer',
-    collectionTime: 'Today 08:15 AM',
-    intakeTime: 'Today 08:40 AM',
-    analyzerMachine: 'Roche Cobas c311 Clinical Chemistry',
-    clinicalHistory: '58M, Type-2 Diabetes Mellitus x 12 yrs, Hypertension. Day 3 post-CABG. Oliguria (urine output <25 mL/hr over past 8 hours). Indication: Evaluate sudden deterioration of renal function.',
-    parameters: [
-      {
-        name: 'Serum Creatinine (Enzymatic)',
-        value: '3.40',
-        unit: 'mg/dL',
-        refRange: '0.70 - 1.20',
-        flag: 'HIGH',
-        machineFlag: 'H [Cobas c311 Channel 4]',
-        serumIndices: 'H:0, I:0, L:0'
-      },
-      {
-        name: 'Blood Urea Nitrogen',
-        value: '78.0',
-        unit: 'mg/dL',
-        refRange: '8.0 - 20.0',
-        flag: 'HIGH',
-        machineFlag: 'H [Cobas c311]',
-        serumIndices: 'Normal'
-      },
-      {
-        name: 'Serum Uric Acid',
-        value: '9.40',
-        unit: 'mg/dL',
-        refRange: '3.50 - 7.20',
-        flag: 'HIGH',
-        machineFlag: 'H [Cobas c311]',
-        serumIndices: 'Normal'
-      },
-      {
-        name: 'Serum Phosphorus',
-        value: '5.80',
-        unit: 'mg/dL',
-        refRange: '2.50 - 4.50',
-        flag: 'HIGH',
-        machineFlag: 'H [Cobas c311]',
-        serumIndices: 'Normal'
-      },
-      {
-        name: 'eGFR (CKD-EPI 2021)',
-        value: '17.0',
-        unit: 'mL/min/1.73m²',
-        refRange: '> 90.0',
-        flag: 'CRITICAL',
-        machineFlag: 'CRIT-LOW [Calculated]',
-        serumIndices: 'KDIGO Stage 3 AKI'
-      }
-    ],
-    deltaCheck: {
-      biomarker: 'Serum Creatinine (mg/dL)',
-      unit: 'mg/dL',
-      alertMessage: 'DELTA CHECK RULE VIOLATION: >200% acute surge within 30 days (0.90 -> 3.40 mg/dL). Analyzer rerun on second channel confirmed 3.39 mg/dL. Genuine Acute Kidney Injury (AKI).',
-      isViolation: true,
-      visits: [
-        { visitLabel: 'Visit 1 (3 months ago)', date: '08 Jul 2026', value: 0.90, displayValue: '0.90 mg/dL' },
-        { visitLabel: 'Visit 2 (1 month ago)', date: '02 Sep 2026', value: 1.10, displayValue: '1.10 mg/dL', deltaPercent: '+22.2%' },
-        { visitLabel: 'Visit 3 (Today)', date: '04 Oct 2026', value: 3.40, displayValue: '3.40 mg/dL', deltaPercent: '+209.1% surge' }
-      ]
-    },
-    auditHistory: [
-      { time: '08:15 AM', action: 'Sample Collection', actor: 'Phlebotomist Rajesh K.', details: 'Drawn from central venous catheter in CTICU' },
-      { time: '08:42 AM', action: 'Accession Intake', actor: 'Reception Desk', details: 'Barcode verified and logged into LIMS queue' },
-      { time: '09:02 AM', action: 'Roche c311 Primary Run', actor: 'Automated Analyzer', details: 'Measured 3.40 mg/dL Creatinine' },
-      { time: '09:08 AM', action: 'Automated Delta Check', actor: 'Rules Engine v2.4', details: 'Acute shift flagged vs Sep 02 baseline (1.10 mg/dL)' },
-      { time: '09:12 AM', action: 'Duplicate Machine Rerun', actor: 'Cobas Auto-Dilution', details: 'Channel 2 duplicate confirmed 3.39 mg/dL' }
-    ],
-    pathologistImpression: 'Severe acute azotemia consistent with post-operative Acute Kidney Injury (KDIGO Stage 3) superimposed on diabetic nephropathy. Pre-analytical artifact excluded by rerun. Nephrology consult recommended.',
-    reflexOptions: [
-      'Reflex Spot Urine Protein/Creatinine Ratio',
-      'Reflex Urine Microscopic Examination (Casts & Sediment)',
-      'Reflex Serum Cystatin C (Confirmatory GFR)'
-    ]
-  },
-
-  // 3. Biopsy - Squamous Cell Carcinoma (Histopathology)
-  {
-    id: 'SPEC-90417',
-    orderNumber: 'ORD-LAB-90417',
-    accessionNumber: 'LAB-2026-90417',
-    barcode: 'BC-90417-BIO',
-    patientId: 'PAT-92014',
-    patientName: 'Rameshwar Nath',
-    patientMrn: 'MRN-92014',
-    patientAge: '64 Y',
-    patientGender: 'MALE',
-    department: 'HISTOPATHOLOGY',
-    filterCategory: 'BIOPSY',
-    priority: 'STAT',
-    isCritical: false,
-    status: 'RESULT_READY',
-    statusLabel: 'BIOPSY HISTOPATHOLOGY (Malignancy Staged)',
-    orderingDoctorName: 'Dr. Arvind Saxena, MS, MCh (Oncology)',
-    wardOrLocation: 'Surgical Oncology OT-2 / Day Care',
-    specimenType: 'Tissue Biopsy (Tongue Wedge)',
-    tubeType: '10% Neutral Buffered Formalin Container',
-    collectionTime: 'Yesterday 04:30 PM',
-    intakeTime: 'Yesterday 05:10 PM',
-    analyzerMachine: 'Digital Pathology / WSI Slide Scanner (40x Leica)',
-    clinicalHistory: '64M, Chronic beedi smoker (40 pack-years). Non-healing indurated ulcerated lesion (2.2 x 1.6 cm) over left lateral border of anterior tongue x 3 months. No palpable cervical lymphadenopathy. Indication: Incisional Diagnostic Biopsy.',
-    parameters: [
-      {
-        name: 'Specimen Gross Dimensions',
-        value: '1.2 x 0.8 x 0.5 cm',
-        unit: 'cm',
-        refRange: 'Gross Tissue Description',
-        flag: 'BIOPSY',
-        machineFlag: 'Cassette #H-26-90417 (Blocks B1, B2)',
-        serumIndices: 'Formalin Fixed'
-      },
-      {
-        name: 'Histological Type',
-        value: 'Invasive Squamous Cell Carcinoma',
-        unit: 'WHO Grade II',
-        refRange: 'Normal Squamous Mucosa',
-        flag: 'ABNORMAL',
-        machineFlag: 'Moderately Differentiated (Keratinizing)',
-        serumIndices: 'Malignancy Confirmed'
-      },
-      {
-        name: 'Mitotic Count',
-        value: '6',
-        unit: '/ 10 HPF',
-        refRange: '0 - 1 / 10 HPF',
-        flag: 'HIGH',
-        machineFlag: 'Atypical Tri-polar Mitoses Seen',
-        serumIndices: 'High Proliferation'
-      },
-      {
-        name: 'Perineural Invasion (PNI)',
-        value: 'Present (Positive)',
-        unit: 'Status',
-        refRange: 'Absent',
-        flag: 'HIGH',
-        machineFlag: 'Tumor Nests Abutting Nerve Fibers',
-        serumIndices: 'High-Risk Factor'
-      },
-      {
-        name: 'Deep Surgical Margin',
-        value: 'Involved (Incisional Biopsy)',
-        unit: 'Clearance',
-        refRange: 'Clear (> 0.5 cm)',
-        flag: 'HIGH',
-        machineFlag: 'Subepithelial Stroma Infiltrated',
-        serumIndices: 'Wide Excision Required'
-      }
-    ],
-    deltaCheck: {
-      biomarker: 'Histopathological Stage Progression',
-      unit: 'Stage',
-      alertMessage: 'MALIGNANT TRANSFORMATION DETECTED: Patient progressed from Severe Dysplasia / CIS (April 2026 biopsy) to Invasive Moderately Differentiated Squamous Cell Carcinoma.',
-      isViolation: true,
-      visits: [
-        { visitLabel: 'Visit 1 (1 year ago)', date: '12 Nov 2025', value: 1.0, displayValue: 'Mild Dysplasia' },
-        { visitLabel: 'Visit 2 (6 months ago)', date: '15 Apr 2026', value: 2.0, displayValue: 'Severe Dysplasia / CIS', deltaPercent: 'Progression' },
-        { visitLabel: 'Visit 3 (Today)', date: '04 Oct 2026', value: 3.0, displayValue: 'Invasive SCC pT2', deltaPercent: 'Malignant' }
-      ]
-    },
-    auditHistory: [
-      { time: 'Yesterday 04:30 PM', action: 'Tissue Excision', actor: 'Dr. Arvind Saxena', details: 'Incisional wedge placed in 10% neutral buffered formalin' },
-      { time: 'Yesterday 05:30 PM', action: 'Gross Accessioning', actor: 'Dr. Shahab (MD)', details: 'Cassette #H-26-90417 prepared (2 blocks)' },
-      { time: 'Today 06:00 AM', action: 'Microtomy & Staining', actor: 'Technician Ramesh B.', details: 'Sectioned at 4 microns & stained with Hematoxylin-Eosin' },
-      { time: 'Today 08:30 AM', action: 'Whole Slide Imaging (WSI)', actor: 'Digital WSI Scanner', details: 'Digitized at 40x magnification (0.25 µm/pixel resolution)' },
-      { time: 'Today 09:30 AM', action: 'Microscopic Diagnosis', actor: 'Dr. Shahab (MD)', details: 'Diagnostic sign-off ready with Class-3 DSC Token' }
-    ],
-    pathologistImpression: 'MODERATELY DIFFERENTIATED SQUAMOUS CELL CARCINOMA (INVASIVE), LEFT LATERAL BORDER OF TONGUE. Perineural invasion identified. Staging correlate: pT2. Immediate tumor board review and wide local excision with ipsilateral neck dissection advised.',
-    reflexOptions: [
-      'Reflex IHC: p16 (HPV Surrogate Marker)',
-      'Reflex IHC: Ki-67 Proliferation Index',
-      'Reflex IHC: p53 / Cyclin D1 Oncoprotein Panel'
-    ]
-  },
-
-  // 4. Abnormal - Severe Thrombocytopenia with PBS Review (Hematology)
-  {
-    id: 'SPEC-90410',
-    orderNumber: 'ORD-LAB-90410',
-    accessionNumber: 'LAB-2026-90410',
-    barcode: 'BC-90410-PLT',
-    patientId: 'PAT-41029',
-    patientName: 'Suresh Rao',
-    patientMrn: 'MRN-41029',
-    patientAge: '54 Y',
-    patientGender: 'MALE',
-    department: 'HEMATOLOGY',
-    filterCategory: 'ABNORMAL',
-    priority: 'STAT',
-    isCritical: true,
-    status: 'RESULT_READY',
-    statusLabel: 'SEVERE THROMBOCYTOPENIA (Smear Verified)',
-    orderingDoctorName: 'Dr. Rajesh Sharma, MD (Internal Medicine)',
-    wardOrLocation: 'Medical Ward A - Bed 12',
-    specimenType: 'Whole Blood (Venous)',
-    tubeType: 'Lavender EDTA K2 Vacutainer',
-    collectionTime: 'Today 08:00 AM',
-    intakeTime: 'Today 08:20 AM',
-    analyzerMachine: 'Sysmex XN-550 Automated Hematology System',
-    clinicalHistory: '54M, Marked fatigue, progressive pallor, lower limb petechiae x 2 weeks. Epistaxis 2 days ago. No splenomegaly. Indication: CBC, ESR, and Peripheral Blood Smear Examination.',
-    parameters: [
-      {
-        name: 'Hemoglobin (Hb)',
-        value: '7.80',
-        unit: 'g/dL',
-        refRange: '13.0 - 17.0',
-        flag: 'LOW',
-        machineFlag: 'L [Sysmex SLS-Hb]',
-        serumIndices: 'Microcytic Hypochromic'
-      },
-      {
-        name: 'Total Leukocyte Count (TLC)',
-        value: '2,800',
-        unit: '/µL',
-        refRange: '4,000 - 11,000',
-        flag: 'LOW',
-        machineFlag: 'L [Sysmex Flow Cytometry]',
-        serumIndices: 'Leukopenia'
-      },
-      {
-        name: 'Platelet Count (PLT)',
-        value: '28,000',
-        unit: '/µL',
-        refRange: '150,000 - 450,000',
-        flag: 'CRITICAL',
-        machineFlag: 'CRIT-LOW [Sysmex Optical PLT-F]',
-        serumIndices: 'No Platelet Clumping'
-      },
-      {
-        name: 'Mean Corpuscular Volume (MCV)',
-        value: '72.4',
-        unit: 'fL',
-        refRange: '80.0 - 96.0',
-        flag: 'LOW',
-        machineFlag: 'L [Sysmex Impedance]',
-        serumIndices: 'Microcytosis'
-      },
-      {
-        name: 'Peripheral Blood Smear (PBS)',
-        value: 'Bicytopenia, Marked PLT Depletion',
-        unit: 'Microscopy',
-        refRange: 'Normal Trilineage Morphology',
-        flag: 'ABNORMAL',
-        machineFlag: 'Eyepiece 100x Oil Immersion Verified',
-        serumIndices: '1-2 PLT / Oil Immersion Field'
-      }
-    ],
-    deltaCheck: {
-      biomarker: 'Platelet Count (/µL)',
-      unit: '/µL',
-      alertMessage: 'STEEP PLATELET DROP: Platelet count fell from 185,000 to 28,000 /µL over 6 months (-84.9% decline). Sysmex Optical PLT-F channel excludes EDTA-dependent pseudo-thrombocytopenia.',
-      isViolation: true,
-      visits: [
-        { visitLabel: 'Visit 1 (6 months ago)', date: '10 Apr 2026', value: 185000, displayValue: '185,000 /µL' },
-        { visitLabel: 'Visit 2 (2 months ago)', date: '12 Aug 2026', value: 92000, displayValue: '92,000 /µL', deltaPercent: '-50.3%' },
-        { visitLabel: 'Visit 3 (Today)', date: '04 Oct 2026', value: 28000, displayValue: '28,000 /µL', deltaPercent: '-69.6% drop' }
-      ]
-    },
-    auditHistory: [
-      { time: '08:00 AM', action: 'Phlebotomy Venipuncture', actor: 'Phlebotomist Anita V.', details: 'EDTA tube inverted 8 times (No microclots detected)' },
-      { time: '08:22 AM', action: 'Sysmex XN-550 Run', actor: 'Sysmex ASTM Link', details: 'Automated flags: Leukopenia, Thrombocytopenia' },
-      { time: '08:35 AM', action: 'Optical PLT-F Rerun', actor: 'Automated Analyzer', details: 'Fluorescence channel confirmed 28,000 /µL' },
-      { time: '08:45 AM', action: 'Leishman Stained Smear', actor: 'Technician Suresh K.', details: 'Thin peripheral film prepared and stained' },
-      { time: '09:10 AM', action: 'Microscopic Examination', actor: 'Dr. Shahab (MD)', details: 'True thrombocytopenia confirmed on 100x oil immersion' }
-    ],
-    pathologistImpression: 'Severe thrombocytopenia with moderate microcytic anemia (Bicytopenia). True platelet depletion confirmed on peripheral smear examination. Bone marrow examination and urgent hematology consultation advised.',
-    reflexOptions: [
-      'Reflex Reticulocyte Count & Immature Reticulocyte Fraction (IRF)',
-      'Reflex Serum Ferritin & Total Iron Binding Capacity',
-      'Reflex Direct Antiglobulin Test (Coombs Test)'
-    ]
-  },
-
-  // 5. Abnormal - Urine Culture E. coli (Microbiology)
-  {
-    id: 'SPEC-90418',
-    orderNumber: 'ORD-LAB-90418',
-    accessionNumber: 'LAB-2026-90418',
-    barcode: 'BC-90418-MIC',
-    patientId: 'PAT-55102',
-    patientName: 'Pooja Sharma',
-    patientMrn: 'MRN-55102',
-    patientAge: '34 Y',
-    patientGender: 'FEMALE',
-    department: 'MICROBIOLOGY',
-    filterCategory: 'ABNORMAL',
-    priority: 'ROUTINE',
-    isCritical: false,
-    status: 'RESULT_READY',
-    statusLabel: 'BACTERIURIA (>10^5 CFU/mL E. coli)',
-    orderingDoctorName: 'Dr. Sunita Kapoor, MD (OBGYN)',
-    wardOrLocation: 'Antenatal OPD Clinic #2',
-    specimenType: 'Midstream Clean Catch Urine',
-    tubeType: 'Sterile Urine Container (Boricon)',
-    collectionTime: 'Yesterday 10:30 AM',
-    intakeTime: 'Yesterday 11:00 AM',
-    analyzerMachine: 'BioMérieux VITEK-2 Automated ID & AST System',
-    clinicalHistory: '34F, Gravida 2 Para 1 at 28 weeks gestation. Dysuria, suprapubic cramping, increased frequency x 4 days. Dipstick: Nitrite Positive, Leukocyte Esterase 2+. Indication: Urine Culture & Antimicrobial Susceptibility Testing.',
-    parameters: [
-      {
-        name: 'Urine Gram Stain Smear',
-        value: 'Gram-Negative Bacilli (3+)',
-        unit: 'Microscopy',
-        refRange: 'No Bacteria Seen',
-        flag: 'HIGH',
-        machineFlag: 'Pus Cells: 25-30/HPF, RBCs: 6-8/HPF',
-        serumIndices: 'Active Infection'
-      },
-      {
-        name: 'Colony Count (CLED Agar)',
-        value: '> 100,000',
-        unit: 'CFU/mL',
-        refRange: '< 10,000 CFU/mL',
-        flag: 'HIGH',
-        machineFlag: 'Significant Bacteriuria (Pure Growth)',
-        serumIndices: 'Lactose Fermenter'
-      },
-      {
-        name: 'Organism Identification',
-        value: 'Escherichia coli (99% ID)',
-        unit: 'Pathogen',
-        refRange: 'Sterile',
-        flag: 'ABNORMAL',
-        machineFlag: 'VITEK-2 GN Card Identification',
-        serumIndices: 'Uropathogen'
-      },
-      {
-        name: 'Nitrofurantoin Susceptibility',
-        value: 'Sensitive (MIC <= 16)',
-        unit: 'CLSI M100',
-        refRange: 'Sensitive',
-        flag: 'NORMAL',
-        machineFlag: 'Pregnancy Category B Safe',
-        serumIndices: 'First-Line Oral'
-      },
-      {
-        name: 'Fosfomycin Susceptibility',
-        value: 'Sensitive (MIC <= 32)',
-        unit: 'CLSI M100',
-        refRange: 'Sensitive',
-        flag: 'NORMAL',
-        machineFlag: 'Single Dose Oral Sachet Safe',
-        serumIndices: 'Oral Option'
-      }
-    ],
-    deltaCheck: {
-      biomarker: 'Urine Colony Count (CFU/mL)',
-      unit: 'CFU/mL',
-      alertMessage: 'NEW SIGNIFICANT INFECTION: Prior antenatal urine cultures were sterile (<1,000 CFU/mL). Acute symptomatic gestational urinary tract infection.',
-      isViolation: true,
-      visits: [
-        { visitLabel: 'Visit 1 (6 months ago)', date: '14 Apr 2026', value: 0, displayValue: '0 CFU/mL (Sterile)' },
-        { visitLabel: 'Visit 2 (3 months ago)', date: '20 Jul 2026', value: 500, displayValue: '500 CFU/mL (Normal)' },
-        { visitLabel: 'Visit 3 (Today)', date: '04 Oct 2026', value: 120000, displayValue: '>100,000 CFU/mL', deltaPercent: 'Active Growth' }
-      ]
-    },
-    auditHistory: [
-      { time: 'Yesterday 10:30 AM', action: 'Clean Catch Collection', actor: 'Nurse Sunita D.', details: 'Midstream clean catch urine collected' },
-      { time: 'Yesterday 11:15 AM', action: 'Agar Inoculation', actor: 'Technician Rohit S.', details: 'Calibrated loop inoculated on CLED & MacConkey agar' },
-      { time: 'Today 07:30 AM', action: 'Colony Inspection', actor: 'Microbiologist Dr. P.', details: 'Significant yellow lactose-fermenting colonies noted' },
-      { time: 'Today 08:00 AM', action: 'VITEK-2 AST Run', actor: 'Automated VITEK-2', details: 'GN & AST-N280 cards evaluated per CLSI guidelines' },
-      { time: 'Today 09:45 AM', action: 'Susceptibility Sign-Off', actor: 'Dr. Shahab (MD)', details: 'Antimicrobial guide tailored for pregnancy' }
-    ],
-    pathologistImpression: 'Significant growth of Escherichia coli (>100,000 CFU/mL) in pregnancy. Sensitive to oral Nitrofurantoin and Fosfomycin (Pregnancy Category B). Fluoroquinolones resistant. Obstetrician advised to initiate safe antimicrobial therapy.',
-    reflexOptions: [
-      'Reflex Extended Spectrum Beta-Lactamase (ESBL) Phenotypic Confirmation',
-      'Reflex Repeat Urine Culture (Post-Therapy Test of Cure)'
-    ]
-  },
-
-  // 6. Routine - Normal Thyroid Profile (Biochemistry)
-  {
-    id: 'SPEC-90415',
-    orderNumber: 'ORD-LAB-90415',
-    accessionNumber: 'LAB-2026-90415',
-    barcode: 'BC-90415-THY',
-    patientId: 'PAT-66120',
-    patientName: 'Sunita Devi',
-    patientMrn: 'MRN-66120',
-    patientAge: '46 Y',
-    patientGender: 'FEMALE',
-    department: 'BIOCHEMISTRY',
-    filterCategory: 'ROUTINE',
-    priority: 'ROUTINE',
-    isCritical: false,
-    status: 'RESULT_READY',
-    statusLabel: 'NORMAL THYROID PANEL (Sign-Off Ready)',
-    orderingDoctorName: 'Dr. Alok Nath, MD (Endocrinology)',
-    wardOrLocation: 'Endocrine OPD Room 104',
-    specimenType: 'Venous Blood (Serum)',
-    tubeType: 'Serum SST Gold Top Vacutainer',
-    collectionTime: 'Today 07:45 AM',
-    intakeTime: 'Today 08:15 AM',
-    analyzerMachine: 'Roche Cobas e411 Chemiluminescence Immunoassay (ECLIA)',
-    clinicalHistory: '46F, Known case of primary hypothyroidism on Levothyroxine 75 mcg daily x 2 years. Asymptomatic, good medication compliance. Indication: Annual thyroid replacement monitoring.',
-    parameters: [
-      {
-        name: 'TSH - Ultrasensitive 3rd Gen',
-        value: '2.14',
-        unit: 'µIU/mL',
-        refRange: '0.45 - 4.50',
-        flag: 'NORMAL',
-        machineFlag: 'NORMAL [Cobas e411 ECLIA]',
-        serumIndices: 'H:0, I:0, L:0'
-      },
-      {
-        name: 'Total Triiodothyronine (T3)',
-        value: '1.20',
-        unit: 'ng/mL',
-        refRange: '0.80 - 2.00',
-        flag: 'NORMAL',
-        machineFlag: 'NORMAL [Cobas e411]',
-        serumIndices: 'Normal'
-      },
-      {
-        name: 'Total Thyroxine (T4)',
-        value: '8.40',
-        unit: 'µg/dL',
-        refRange: '5.10 - 14.10',
-        flag: 'NORMAL',
-        machineFlag: 'NORMAL [Cobas e411]',
-        serumIndices: 'Normal'
-      },
-      {
-        name: 'Anti-Thyroid Peroxidase (Anti-TPO)',
-        value: '16.4',
-        unit: 'IU/mL',
-        refRange: '< 34.0',
-        flag: 'NORMAL',
-        machineFlag: 'NORMAL [ECLIA]',
-        serumIndices: 'Non-reactive'
-      }
-    ],
-    deltaCheck: {
-      biomarker: 'Serum TSH (µIU/mL)',
-      unit: 'µIU/mL',
-      alertMessage: 'EUTHYROID STABILIZATION: Stable euthyroid hormone levels maintained on current replacement therapy.',
-      isViolation: false,
-      visits: [
-        { visitLabel: 'Visit 1 (1 year ago)', date: '18 Sep 2025', value: 8.40, displayValue: '8.40 µIU/mL (Hypothyroid)' },
-        { visitLabel: 'Visit 2 (6 months ago)', date: '22 Mar 2026', value: 3.60, displayValue: '3.60 µIU/mL (Improving)' },
-        { visitLabel: 'Visit 3 (Today)', date: '04 Oct 2026', value: 2.14, displayValue: '2.14 µIU/mL (Euthyroid)' }
-      ]
-    },
-    auditHistory: [
-      { time: '07:45 AM', action: 'Venipuncture Draw', actor: 'Phlebotomist Anita V.', details: 'Fasting venous blood drawn in Gold SST tube' },
-      { time: '08:20 AM', action: 'Centrifugation', actor: 'Technician Suresh K.', details: 'Centrifuged at 3000 RPM (Clear serum)' },
-      { time: '08:50 AM', action: 'Cobas e411 ECLIA Run', actor: 'Chemiluminescence Link', details: 'All calibrators and controls within ±1.0 SD' },
-      { time: '09:15 AM', action: 'Delta Check Check', actor: 'LIMS Engine', details: 'Delta within acceptable biological variation' },
-      { time: '09:20 AM', action: 'Sign-Off Ready', actor: 'Dr. Shahab (MD)', details: 'Ready for Class-3 DSC digital sign-off' }
-    ],
-    pathologistImpression: 'Normal thyroid profile indicating optimal Levothyroxine substitution therapy. Continue current 75 mcg daily dosage and repeat in 12 months.',
-    reflexOptions: [
-      'Reflex Free T4 & Free T3 (if clinically indicated)'
-    ]
-  },
-
-  // 7. Routine - Glycated Hemoglobin HbA1c (Biochemistry)
-  {
-    id: 'SPEC-90408',
-    orderNumber: 'ORD-LAB-90408',
-    accessionNumber: 'LAB-2026-90408',
-    barcode: 'BC-90408-A1C',
-    patientId: 'PAT-21098',
-    patientName: 'Vikram Singh',
-    patientMrn: 'MRN-21098',
-    patientAge: '51 Y',
-    patientGender: 'MALE',
-    department: 'BIOCHEMISTRY',
-    filterCategory: 'ROUTINE',
-    priority: 'ROUTINE',
-    isCritical: false,
-    status: 'VERIFIED',
-    statusLabel: 'AUTO-DISPATCHED (WhatsApp & Portal QR)',
-    orderingDoctorName: 'Dr. Rajesh Sharma, MD (Internal Med)',
-    wardOrLocation: 'General Medicine OPD Room 12',
-    specimenType: 'Whole Blood (Venous)',
-    tubeType: 'Whole Blood EDTA K2 Vacutainer',
-    collectionTime: 'Today 07:30 AM',
-    intakeTime: 'Today 08:00 AM',
-    analyzerMachine: 'Bio-Rad D-10 Automated HPLC Analyzer',
-    clinicalHistory: '51M, Known Type 2 Diabetes Mellitus x 5 yrs on Metformin 1000mg BD. Routine quarterly glycemic review.',
-    parameters: [
-      {
-        name: 'HbA1c (Glycated Hemoglobin)',
-        value: '6.40',
-        unit: '%',
-        refRange: '4.00 - 5.60 Non-Diabetic, <7.00 Target',
-        flag: 'NORMAL',
-        machineFlag: 'NORMAL [Bio-Rad D-10 HPLC]',
-        serumIndices: 'NGSP Certified'
-      },
-      {
-        name: 'Estimated Average Glucose (eAG)',
-        value: '137.0',
-        unit: 'mg/dL',
-        refRange: '70.0 - 140.0',
-        flag: 'NORMAL',
-        machineFlag: 'Calculated (ADA Formula)',
-        serumIndices: 'Optimal Target'
-      },
-      {
-        name: 'Fasting Blood Sugar (FBS)',
-        value: '112.0',
-        unit: 'mg/dL',
-        refRange: '70.0 - 100.0',
-        flag: 'HIGH',
-        machineFlag: 'H [Roche Hexokinase]',
-        serumIndices: 'Impaired Fasting'
-      }
-    ],
-    deltaCheck: {
-      biomarker: 'HbA1c (%)',
-      unit: '%',
-      alertMessage: 'PROGRESSIVE GLYCEMIC IMPROVEMENT: Sustained decline from 7.6% -> 6.9% -> 6.4% over past 6 months.',
-      isViolation: false,
-      visits: [
-        { visitLabel: 'Visit 1 (6 months ago)', date: '12 Apr 2026', value: 7.60, displayValue: '7.60%' },
-        { visitLabel: 'Visit 2 (3 months ago)', date: '15 Jul 2026', value: 6.90, displayValue: '6.90%' },
-        { visitLabel: 'Visit 3 (Today)', date: '04 Oct 2026', value: 6.40, displayValue: '6.40%' }
-      ]
-    },
-    auditHistory: [
-      { time: '07:30 AM', action: 'Phlebotomy Intake', actor: 'Phlebotomist Anita V.', details: 'EDTA tube collected and inverted' },
-      { time: '08:10 AM', action: 'Bio-Rad D-10 Run', actor: 'HPLC Ion-Exchange', details: 'HbA1c chromatogram sharp without variant hemoglobin' },
-      { time: '08:45 AM', action: 'Digital Sign-Off', actor: 'Dr. Shahab (MD)', details: 'Class-3 DSC Token applied' },
-      { time: '08:46 AM', action: 'Multi-Channel Dispatch', actor: 'Automated Dispatcher', details: 'WhatsApp PDF, Portal sync, SMS with NABL verification QR sent' }
-    ],
-    pathologistImpression: 'Good glycemic control achieved on current therapeutic regimen. Continue current management and monitor quarterly.',
-    reflexOptions: [
-      'Reflex Lipid Profile STAT',
-      'Reflex Urine Microalbumin/Creatinine Ratio'
-    ]
-  }
-];
+export const TARGET_SPECIMENS: RichSpecimenRecord[] = [];
 
 export interface PathologistTargetCockpitViewProps {
+  specimens?: RichSpecimenRecord[];
   facilityName?: string;
   staffName?: string;
   qcApproved: boolean;
@@ -739,7 +86,40 @@ export interface PathologistTargetCockpitViewProps {
   onChangeRolePerspective: (role: 'PATHOLOGIST' | 'TECHNICIAN' | 'PHLEBOTOMIST') => void;
 }
 
+
+const EMPTY_SPECIMEN: RichSpecimenRecord = {
+  id: '',
+  orderNumber: '',
+  accessionNumber: 'NO SPECIMEN SELECTED',
+  barcode: '',
+  patientId: '',
+  patientName: 'No Specimen Selected',
+  patientMrn: '',
+  patientAge: '',
+  patientGender: 'OTHER',
+  department: 'BIOCHEMISTRY',
+  filterCategory: 'ROUTINE',
+  priority: 'ROUTINE',
+  isCritical: false,
+  status: 'SAMPLE_COLLECTED',
+  statusLabel: 'NO ACTIVE SPECIMENS',
+  orderingDoctorName: '',
+  wardOrLocation: '',
+  specimenType: '',
+  tubeType: '',
+  collectionTime: '',
+  intakeTime: '',
+  analyzerMachine: '',
+  clinicalHistory: '',
+  parameters: [],
+  deltaCheck: { biomarker: '', unit: '', alertMessage: '', isViolation: false, visits: [] },
+  auditHistory: [],
+  pathologistImpression: '',
+  reflexOptions: []
+};
+
 export const PathologistTargetCockpitView: React.FC<PathologistTargetCockpitViewProps> = ({
+  specimens,
   facilityName = 'Apex PathLabs & Molecular Diagnostics',
   staffName = 'Dr. Shahab (MD Pathologist, Lab Director)',
   qcApproved,
@@ -757,7 +137,27 @@ export const PathologistTargetCockpitView: React.FC<PathologistTargetCockpitView
   const [selectedDept, setSelectedDept] = useState<DepartmentKey>('ALL');
   const [worklistFilter, setWorklistFilter] = useState<WorklistFilterKey>('CRITICAL_FIRST');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedSpecimenId, setSelectedSpecimenId] = useState<string>('SPEC-90414');
+  const [selectedSpecimenId, setSelectedSpecimenId] = useState<string>('');
+
+  // Dynamic Specimens State from props or live Database API
+  const [liveSpecimens, setLiveSpecimens] = useState<RichSpecimenRecord[]>(specimens || []);
+
+  React.useEffect(() => {
+    if (specimens && specimens.length > 0) {
+      setLiveSpecimens(specimens);
+    } else {
+      fetch('/api/v1/laboratory/specimens/cockpit')
+        .then((r) => r.json())
+        .then((res) => {
+          if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+            setLiveSpecimens(res.data);
+            setSelectedSpecimenId(res.data[0].id);
+          }
+        })
+        .catch((err) => console.warn('Failed to load cockpit specimens:', err));
+    }
+  }, [specimens]);
+
 
   // Modals for Bottom Action Bar
   const [isReflexModalOpen, setIsReflexModalOpen] = useState(false);
@@ -773,7 +173,7 @@ export const PathologistTargetCockpitView: React.FC<PathologistTargetCockpitView
 
   // Filtered Specimen Worklist
   const filteredWorklist = useMemo(() => {
-    return TARGET_SPECIMENS.filter((specimen) => {
+    return liveSpecimens.filter((specimen) => {
       // Department Filter
       if (selectedDept !== 'ALL' && specimen.department !== selectedDept) {
         return false;
@@ -813,10 +213,10 @@ export const PathologistTargetCockpitView: React.FC<PathologistTargetCockpitView
 
   // Active Selected Specimen
   const activeSpecimen: RichSpecimenRecord = useMemo(() => {
-    const found = TARGET_SPECIMENS.find((s) => s.id === selectedSpecimenId);
+    const found = liveSpecimens.find((s) => s.id === selectedSpecimenId);
     if (found) return found;
     if (filteredWorklist[0]) return filteredWorklist[0];
-    return TARGET_SPECIMENS[0]!;
+    return liveSpecimens[0] || EMPTY_SPECIMEN;
   }, [selectedSpecimenId, filteredWorklist]);
 
   // Current Impression for Active Specimen
@@ -827,13 +227,13 @@ export const PathologistTargetCockpitView: React.FC<PathologistTargetCockpitView
   // Department counts
   const deptCounts = useMemo(() => {
     return {
-      ALL: TARGET_SPECIMENS.length,
-      HEMATOLOGY: TARGET_SPECIMENS.filter((s) => s.department === 'HEMATOLOGY').length,
-      BIOCHEMISTRY: TARGET_SPECIMENS.filter((s) => s.department === 'BIOCHEMISTRY').length,
-      MICROBIOLOGY: TARGET_SPECIMENS.filter((s) => s.department === 'MICROBIOLOGY').length,
-      HISTOPATHOLOGY: TARGET_SPECIMENS.filter((s) => s.department === 'HISTOPATHOLOGY').length
+      ALL: liveSpecimens.length,
+      HEMATOLOGY: liveSpecimens.filter((s) => s.department === 'HEMATOLOGY').length,
+      BIOCHEMISTRY: liveSpecimens.filter((s) => s.department === 'BIOCHEMISTRY').length,
+      MICROBIOLOGY: liveSpecimens.filter((s) => s.department === 'MICROBIOLOGY').length,
+      HISTOPATHOLOGY: liveSpecimens.filter((s) => s.department === 'HISTOPATHOLOGY').length
     };
-  }, []);
+  }, [liveSpecimens]);
 
   // Handlers for Bottom Action Bar
   const handleConfirmReflex = () => {
@@ -1150,7 +550,7 @@ export const PathologistTargetCockpitView: React.FC<PathologistTargetCockpitView
             background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(15, 23, 42, 0.85) 100%)',
             transition: 'all 0.15s ease'
           }}
-          onClick={() => onOpenRejectModal(TARGET_SPECIMENS[0]!)}
+          onClick={() => onOpenRejectModal(activeSpecimen)}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '0.72rem', color: '#FCD34D', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
@@ -1181,7 +581,7 @@ export const PathologistTargetCockpitView: React.FC<PathologistTargetCockpitView
             boxShadow: '0 4px 18px rgba(239, 68, 68, 0.2)',
             transition: 'all 0.15s ease'
           }}
-          onClick={() => onOpenPanicModal(TARGET_SPECIMENS[0]!)}
+          onClick={() => onOpenPanicModal(activeSpecimen)}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '0.72rem', color: '#FCA5A5', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>

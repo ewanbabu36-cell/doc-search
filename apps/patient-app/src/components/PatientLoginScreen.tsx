@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { DocSearchLogo } from '@docsearch/ui-kit';
 import { type Language, translations } from '../i18n.js';
-import { patientApiService, CANONICAL_DEMO_FAMILY, type PatientProfile } from '../services/patient-api.js';
+import { patientApiService, type PatientProfile } from '../services/patient-api.js';
 
 interface Props {
   language: Language;
@@ -86,12 +86,27 @@ export const PatientLoginScreen: React.FC<Props> = ({ language, onLanguageToggle
     }
   };
 
-  const handleQuickDemo = () => {
-    // Show multi-patient choice so reviewer can inspect both single and multi-patient flows
+  const handleQuickDemo = async () => {
     setPhone('9876543210');
     setOtp('1234');
-    setMultiPatientsList(CANONICAL_DEMO_FAMILY);
-    setStep('SELECT_PATIENT');
+    setIsLoading(true);
+    const res = await patientApiService.requestOtp('9876543210');
+    setIsLoading(false);
+    if (res.patients && res.patients.length > 0) {
+      setMultiPatientsList(res.patients.map((p) => ({
+        id: p.id,
+        uhid: p.mrn || 'DOC-PAT-10001',
+        fullName: p.name,
+        age: 38,
+        gender: 'MALE' as const,
+        phone: '9876543210',
+        bloodGroup: 'B+',
+        allergies: []
+      })));
+      setStep('SELECT_PATIENT');
+    } else {
+      setStep('OTP');
+    }
   };
 
   return (

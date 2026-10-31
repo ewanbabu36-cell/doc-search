@@ -12,38 +12,7 @@ interface SecurityThreat {
   mitigationStatus: 'ACTIVE_BLOCKED' | 'PENDING_REVIEW' | 'AUTO_CONTAINED';
 }
 
-const INITIAL_THREATS: SecurityThreat[] = [
-  {
-    id: 'THREAT-901',
-    threatType: 'IMPOSSIBLE_TRAVEL',
-    severity: 'CRITICAL',
-    actorEmail: 'dr.anil.kapoor@apollo.com',
-    sourceIp: '185.220.101.42',
-    geoLocation: 'Frankfurt, Germany (2 min after Delhi login)',
-    detectionDetails: 'Velocity anomaly: 6,800 km distance traversed in 118 seconds. Session immediately quarantined.',
-    mitigationStatus: 'ACTIVE_BLOCKED'
-  },
-  {
-    id: 'THREAT-902',
-    threatType: 'BULK_EMR_EXPORT',
-    severity: 'HIGH',
-    actorEmail: 'nurse.reception@delhi-south.docsearch',
-    sourceIp: '103.21.244.18',
-    geoLocation: 'New Delhi, India',
-    detectionDetails: 'Exceeded rate threshold: 1,420 patient records queried within 60 seconds (Standard quota: 25/min).',
-    mitigationStatus: 'AUTO_CONTAINED'
-  },
-  {
-    id: 'THREAT-903',
-    threatType: 'BRUTE_FORCE_BURST',
-    severity: 'HIGH',
-    actorEmail: 'root@docsearch.internal (targeted)',
-    sourceIp: '45.154.255.89',
-    geoLocation: 'Bucharest, Romania',
-    detectionDetails: 'Failed authentication burst: 450 attempts in 3 seconds. WAF Rate Limiter engaged.',
-    mitigationStatus: 'ACTIVE_BLOCKED'
-  }
-];
+const INITIAL_THREATS: SecurityThreat[] = [];
 
 export const AiThreatSiemEngineView: React.FC = () => {
   const [threats, setThreats] = useState<SecurityThreat[]>(INITIAL_THREATS);
@@ -114,7 +83,36 @@ export const AiThreatSiemEngineView: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {threats.map((t) => (
+              {threats.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} style={{ textAlign: 'center', padding: '48px 24px', color: '#94A3B8' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '12px' }}>🛡️</div>
+                    <strong style={{ color: '#F8FAFC', fontSize: '0.9375rem', display: 'block', marginBottom: '6px' }}>
+                      Zero SIEM Threat Alerts Detected
+                    </strong>
+                    <span style={{ fontSize: '0.8125rem', color: '#94A3B8', display: 'block', maxWidth: '440px', margin: '0 auto 16px' }}>
+                      Zero-Trust SIEM anomaly detector has not detected any brute force, privilege escalation, or unauthorized data exports.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {}}
+                      style={{
+                        backgroundColor: '#1E293B',
+                        border: '1px solid #334155',
+                        color: '#38BDF8',
+                        borderRadius: '6px',
+                        padding: '6px 14px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      ↻ Run Threat Scan
+                    </button>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                threats.map((t) => (
                 <TableRow key={t.id}>
                   <TableCell>
                     <Badge variant={t.severity === 'CRITICAL' ? 'danger' : 'warning'}>
@@ -146,7 +144,8 @@ export const AiThreatSiemEngineView: React.FC = () => {
                     </button>
                   </TableCell>
                 </TableRow>
-              ))}
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>

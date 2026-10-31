@@ -11,13 +11,7 @@ export interface UserMfaRecord {
   lastMfaAuth: string;
 }
 
-const INITIAL_USERS: UserMfaRecord[] = [
-  { id: '1', userName: 'Dr. Vikram Seth', email: 'vikram.seth@docsearch.internal', role: 'SUPER_ADMIN', mfaMethod: 'FIDO2_HARDWARE_KEY', mfaStatus: 'ENFORCED', lastMfaAuth: 'Today 11:15 AM' },
-  { id: '2', userName: 'Ananya Sharma', email: 'ananya.sharma@docsearch.internal', role: 'SECURITY_OFFICER', mfaMethod: 'TOTP_AUTHENTICATOR', mfaStatus: 'ENFORCED', lastMfaAuth: 'Today 10:40 AM' },
-  { id: '3', userName: 'Dr. Suresh Mehta', email: 'suresh.mehta@apexhospital.in', role: 'HOSPITAL_ADMIN', mfaMethod: 'TOTP_AUTHENTICATOR', mfaStatus: 'ENFORCED', lastMfaAuth: 'Today 09:20 AM' },
-  { id: '4', userName: 'Pooja Verma', email: 'pooja.verma@metropolis.in', role: 'CHIEF_PATHOLOGIST', mfaMethod: 'SMS_OTP', mfaStatus: 'PENDING_SETUP', lastMfaAuth: 'Yesterday 04:30 PM' },
-  { id: '5', userName: 'Karan Mehra', email: 'karan.mehra@careplus.in', role: 'BILLING_CLERK', mfaMethod: 'TOTP_AUTHENTICATOR', mfaStatus: 'ENFORCED', lastMfaAuth: 'Today 08:50 AM' }
-];
+const INITIAL_USERS: UserMfaRecord[] = [];
 
 export const ZeroTrustMfaPolicyController: React.FC = () => {
   const [users, setUsers] = useState<UserMfaRecord[]>(INITIAL_USERS);
@@ -135,7 +129,36 @@ export const ZeroTrustMfaPolicyController: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((u) => (
+              {users.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} style={{ textAlign: 'center', padding: '48px 24px', color: '#94A3B8' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '12px' }}>🔐</div>
+                    <strong style={{ color: '#F8FAFC', fontSize: '0.9375rem', display: 'block', marginBottom: '6px' }}>
+                      No Accounts Requiring MFA Intervention
+                    </strong>
+                    <span style={{ fontSize: '0.8125rem', color: '#94A3B8', display: 'block', maxWidth: '440px', margin: '0 auto 16px' }}>
+                      All healthcare staff, doctors, and company administrators have enrolled in mandatory FIDO2/TOTP multi-factor authentication.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {}}
+                      style={{
+                        backgroundColor: '#1E293B',
+                        border: '1px solid #334155',
+                        color: '#38BDF8',
+                        borderRadius: '6px',
+                        padding: '6px 14px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      ↻ Audit MFA Compliance
+                    </button>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                users.map((u) => (
                 <TableRow key={u.id}>
                   <TableCell>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -165,7 +188,8 @@ export const ZeroTrustMfaPolicyController: React.FC = () => {
                     </Button>
                   </TableCell>
                 </TableRow>
-              ))}
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>

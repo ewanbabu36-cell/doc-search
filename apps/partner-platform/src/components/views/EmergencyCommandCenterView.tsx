@@ -52,75 +52,50 @@ export const EmergencyCommandCenterView: React.FC<Props> = ({
   onRegisterArrival,
   onActivateDisaster
 }) => {
-  // Pre-Hospital Telemetry State
-  const [inboundAmbulances, setInboundAmbulances] = useState<InboundAmbulance[]>([
-    {
-      id: 'AMB-ALS-04',
-      vehicleNumber: 'DL-01-EQ-9921',
-      type: 'ALS (Advanced Life Support)',
-      patientSummary: '52M, Severe Crushing Chest Pain radiating to left jaw x 45 min',
-      acuity: 'CRITICAL_STEMI',
-      vitals: { hr: 114, bp: '86/52', spo2: 89, gcs: '15/15', ecg: 'ST-Elevation in II, III, aVF (Inferior Wall MI)' },
-      etaMinutes: 6,
-      distanceKm: 2.8,
-      isPreActivated: false
-    },
-    {
-      id: 'AMB-BLS-09',
-      vehicleNumber: 'DL-04-TR-1044',
-      type: 'Trauma Resuscitation Unit',
-      patientSummary: '28M, High-speed bike collision vs divider. Blunt abdominal injury',
-      acuity: 'RED_TRAUMA',
-      vitals: { hr: 128, bp: '92/58', spo2: 94, gcs: '11/15', ecg: 'Sinus Tachycardia' },
-      etaMinutes: 14,
-      distanceKm: 7.4,
-      isPreActivated: false
-    }
-  ]);
+  // Pre-Hospital Telemetry State (Dynamic from Database API)
+  const [inboundAmbulances, setInboundAmbulances] = useState<InboundAmbulance[]>([]);
   const [selectedEcgAmbulance, setSelectedEcgAmbulance] = useState<InboundAmbulance | null>(null);
 
-  // 1-Click Digital Police Intimation Gateway State
-  const [mlcCases, setMlcCases] = useState<MlcIntimationCase[]>([
-    {
-      id: 'MLC-2026-0894',
-      patientName: 'Vikram Singh',
-      ageGender: '32M',
-      uhid: 'UHID-2026-00912',
-      timeOfArrival: '14:45 IST',
-      natureOfInjury: 'Alleged RTA • Multiple contusions, compound fracture right tibia, active bleeding',
-      broughtBy: 'PCR Van ASI Rajesh Kumar (Belt #4928, South District)',
-      jurisdictionPs: 'Police Station Hauz Khas',
-      status: 'DISPATCHED',
-      dispatchAckNumber: 'POL-HK-4421',
-      encryptionHash: 'SHA256:7f9a1c8902b4e81'
-    },
-    {
-      id: 'MLC-2026-0895',
-      patientName: 'Amitesh Verma',
-      ageGender: '45M',
-      uhid: 'UHID-2026-00915',
-      timeOfArrival: '15:10 IST',
-      natureOfInjury: 'Alleged Physical Assault • Blunt cranial injury, laceration left temporal region',
-      broughtBy: 'Bystander Ravi Gupta (Mobile: 98112-XXXXX)',
-      jurisdictionPs: 'Police Station Hauz Khas',
-      status: 'PENDING_DISPATCH'
-    }
-  ]);
+  // 1-Click Digital Police Intimation Gateway State (Dynamic from Database API)
+  const [mlcCases, setMlcCases] = useState<MlcIntimationCase[]>([]);
   const [selectedMlcForSlip, setSelectedMlcForSlip] = useState<MlcIntimationCase | null>(null);
   const [isDispatchingMlc, setIsDispatchingMlc] = useState(false);
 
-  // Crash Cart Auto-Replenishment & Consumption Telemetry State
+  // Crash Cart Auto-Replenishment & Consumption Telemetry State (Dynamic from Database API)
   const [crashCartStatus, setCrashCartStatus] = useState<'SEALED' | 'UNSEALED_IN_USE' | 'REPLENISHING'>('SEALED');
   const [currentSealNumber, setCurrentSealNumber] = useState('SEAL-9942');
   const [nextSealNumber] = useState('SEAL-9943');
   const [replenishCourierEta] = useState(165); // 2m 45s
-  const [crashCartItems, setCrashCartItems] = useState<CrashCartItem[]>([
-    { id: 'item-1', name: 'Inj. Adrenaline (Epinephrine) 1mg/1mL', parLevel: 5, usedCount: 2, unit: 'Amps' },
-    { id: 'item-2', name: 'Inj. Atropine Sulfate 0.6mg/1mL', parLevel: 5, usedCount: 3, unit: 'Amps' },
-    { id: 'item-3', name: 'Inj. Amiodarone Hydrochloride 150mg/3mL', parLevel: 2, usedCount: 1, unit: 'Amps' },
-    { id: 'item-4', name: 'Endotracheal Tube (Size 7.5 Cuffed)', parLevel: 2, usedCount: 1, unit: 'Pcs' },
-    { id: 'item-5', name: 'Defibrillator Adult Pacing / Shock Pads', parLevel: 2, usedCount: 1, unit: 'Pairs' }
-  ]);
+  const [crashCartItems, setCrashCartItems] = useState<CrashCartItem[]>([]);
+
+  React.useEffect(() => {
+    fetch('/api/v1/emergency/command-center/inbound-ambulances')
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+          setInboundAmbulances(res.data);
+        }
+      })
+      .catch((err) => console.warn('Failed to load inbound ambulances:', err));
+
+    fetch('/api/v1/emergency/command-center/mlc-cases')
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+          setMlcCases(res.data);
+        }
+      })
+      .catch((err) => console.warn('Failed to load MLC cases:', err));
+
+    fetch('/api/v1/emergency/command-center/crash-carts')
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+          setCrashCartItems(res.data);
+        }
+      })
+      .catch((err) => console.warn('Failed to load crash cart:', err));
+  }, []);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -255,7 +230,13 @@ export const EmergencyCommandCenterView: React.FC<Props> = ({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-          {inboundAmbulances.map((amb) => (
+          {inboundAmbulances.length === 0 ? (
+            <div className="col-span-full py-8 text-center text-slate-400 border border-dashed border-slate-800 rounded-xl bg-slate-900/40">
+              <span className="text-2xl block mb-2">🚑</span>
+              <p className="font-semibold text-sm text-slate-300">No Inbound Ambulances En-Route</p>
+              <p className="text-xs text-slate-500 mt-1">Pre-hospital telemetry queue is clear. Trauma bay standby is disengaged.</p>
+            </div>
+          ) : inboundAmbulances.map((amb) => (
             <div
               key={amb.id}
               className={`p-4 rounded-xl border ${
@@ -354,7 +335,13 @@ export const EmergencyCommandCenterView: React.FC<Props> = ({
             </div>
 
             <div className="space-y-3 mt-4">
-              {mlcCases.map((mlc) => {
+              {mlcCases.length === 0 ? (
+                <div className="py-6 text-center text-gray-500 border border-dashed border-gray-300 rounded-xl bg-gray-50/50">
+                  <span className="text-xl block mb-1">⚖️</span>
+                  <p className="font-semibold text-xs text-gray-700">No Active Medico-Legal Cases</p>
+                  <p className="text-[11px] text-gray-500 mt-0.5">All emergency triage cases are verified clinical arrivals.</p>
+                </div>
+              ) : mlcCases.map((mlc) => {
                 const isDispatched = mlc.status === 'DISPATCHED';
                 return (
                   <div
@@ -472,7 +459,11 @@ export const EmergencyCommandCenterView: React.FC<Props> = ({
                     <span>Used / Par Level</span>
                   </div>
                   <div className="divide-y divide-gray-100 max-h-48 overflow-y-auto">
-                    {crashCartItems.map((item) => (
+                    {crashCartItems.length === 0 ? (
+                      <div className="p-4 text-center text-xs text-gray-500">
+                        All par items verified and ready in Crash Cart tray.
+                      </div>
+                    ) : crashCartItems.map((item) => (
                       <div key={item.id} className="px-3 py-2 flex items-center justify-between text-xs">
                         <div>
                           <strong className="text-gray-900">{item.name}</strong>

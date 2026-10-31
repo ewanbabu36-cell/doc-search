@@ -14,44 +14,7 @@ interface InsuranceClaim {
   claimDate: string;
 }
 
-const INITIAL_CLAIMS: InsuranceClaim[] = [
-  {
-    claimId: 'CLM-TPA-901',
-    patientName: 'Gurpreet Singh',
-    policyNumber: 'STAR-HEALTH-FLOATER-99120',
-    tpaProvider: 'Star Health & Allied Insurance',
-    hospitalName: 'Apollo Hospitals (New Delhi)',
-    claimedAmount: '₹ 85,000',
-    approvedAmount: '₹ 80,000',
-    copayDeductible: '₹ 5,000',
-    claimStatus: 'PRE_AUTH_APPROVED',
-    claimDate: 'Today, 10:00 AM'
-  },
-  {
-    claimId: 'CLM-TPA-902',
-    patientName: 'Kavita Joshi',
-    policyNumber: 'PMJAY-ABHA-882910',
-    tpaProvider: 'Ayushman Bharat (PMJAY)',
-    hospitalName: 'Max Super Speciality (Saket)',
-    claimedAmount: '₹ 45,000',
-    approvedAmount: '₹ 45,000',
-    copayDeductible: '₹ 0 (100% Cashless)',
-    claimStatus: 'SETTLED_DISBURSED',
-    claimDate: 'Yesterday'
-  },
-  {
-    claimId: 'CLM-TPA-903',
-    patientName: 'Arun Kumar Nambiar',
-    policyNumber: 'HDFC-ERGO-MEDICLAIM-4192',
-    tpaProvider: 'Medi Assist TPA / HDFC ERGO',
-    hospitalName: 'Manipal Hospital (Bengaluru)',
-    claimedAmount: '₹ 1,20,000',
-    approvedAmount: '₹ 1,12,000',
-    copayDeductible: '₹ 8,000',
-    claimStatus: 'SETTLED_DISBURSED',
-    claimDate: '2 days ago'
-  }
-];
+const INITIAL_CLAIMS: InsuranceClaim[] = [];
 
 export const TpaInsuranceClaimsSettlementView: React.FC = () => {
   const [claims, setClaims] = useState<InsuranceClaim[]>(INITIAL_CLAIMS);
@@ -125,46 +88,76 @@ export const TpaInsuranceClaimsSettlementView: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {claims.map((c) => (
-                <TableRow key={c.claimId}>
-                  <TableCell>
-                    <strong style={{ color: 'var(--ds-color-text-primary)' }}>{c.patientName}</strong>
-                    <span style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#38BDF8', display: 'block' }}>{c.claimId}</span>
-                  </TableCell>
-                  <TableCell style={{ fontSize: '0.8125rem' }}>
-                    <strong>{c.tpaProvider}</strong>
-                    <span style={{ display: 'block', fontSize: '0.6875rem', color: '#94A3B8' }}>{c.policyNumber}</span>
-                  </TableCell>
-                  <TableCell style={{ fontSize: '0.8125rem', color: '#CBD5E1' }}>
-                    {c.hospitalName}
-                  </TableCell>
-                  <TableCell style={{ fontWeight: 700 }}>
-                    {c.claimedAmount}
-                  </TableCell>
-                  <TableCell style={{ fontWeight: 800, color: '#10B981' }}>
-                    {c.approvedAmount}
-                    <span style={{ display: 'block', fontSize: '0.6875rem', color: '#94A3B8' }}>Co-Pay: {c.copayDeductible}</span>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={c.claimStatus === 'SETTLED_DISBURSED' ? 'success' : 'primary'}>
-                      {c.claimStatus.replace(/_/g, ' ')}
-                    </Badge>
-                  </TableCell>
-                  <TableCell style={{ textAlign: 'right' }}>
-                    {c.claimStatus === 'PRE_AUTH_APPROVED' ? (
-                      <button
-                        type="button"
-                        onClick={() => handleSettleClaim(c.claimId)}
-                        style={{ backgroundColor: '#10B981', color: '#070C16', border: 'none', borderRadius: '6px', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer' }}
-                      >
-                        ⚡ Settle Payout
-                      </button>
-                    ) : (
-                      <span style={{ color: '#10B981', fontSize: '0.75rem', fontWeight: 700 }}>✓ Disbursed</span>
-                    )}
+              {claims.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} style={{ textAlign: 'center', padding: '48px 24px', color: '#94A3B8' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '12px' }}>🏥</div>
+                    <strong style={{ color: '#F8FAFC', fontSize: '0.9375rem', display: 'block', marginBottom: '6px' }}>
+                      No TPA Cashless Insurance Claims Pending Settlement
+                    </strong>
+                    <span style={{ fontSize: '0.8125rem', color: '#94A3B8', display: 'block', maxWidth: '440px', margin: '0 auto 16px' }}>
+                      All institutional NHCX, Star Health, Medi Assist, and Ayushman Bharat PMJAY claim pre-authorizations are settled.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {}}
+                      style={{
+                        backgroundColor: '#1E293B',
+                        border: '1px solid #334155',
+                        color: '#38BDF8',
+                        borderRadius: '6px',
+                        padding: '6px 14px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      ↻ Query NHCX Gateway
+                    </button>
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                claims.map((c) => (
+                  <TableRow key={c.claimId}>
+                    <TableCell>
+                      <strong style={{ color: 'var(--ds-color-text-primary)' }}>{c.patientName}</strong>
+                      <span style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#38BDF8', display: 'block' }}>{c.claimId}</span>
+                    </TableCell>
+                    <TableCell style={{ fontSize: '0.8125rem' }}>
+                      <strong>{c.tpaProvider}</strong>
+                      <span style={{ display: 'block', fontSize: '0.6875rem', color: '#94A3B8' }}>{c.policyNumber}</span>
+                    </TableCell>
+                    <TableCell style={{ fontSize: '0.8125rem', color: '#CBD5E1' }}>
+                      {c.hospitalName}
+                    </TableCell>
+                    <TableCell style={{ fontWeight: 700 }}>
+                      {c.claimedAmount}
+                    </TableCell>
+                    <TableCell style={{ fontWeight: 800, color: '#10B981' }}>
+                      {c.approvedAmount}
+                      <span style={{ display: 'block', fontSize: '0.6875rem', color: '#94A3B8' }}>Co-Pay: {c.copayDeductible}</span>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={c.claimStatus === 'SETTLED_DISBURSED' ? 'success' : 'primary'}>
+                        {c.claimStatus.replace(/_/g, ' ')}
+                      </Badge>
+                    </TableCell>
+                    <TableCell style={{ textAlign: 'right' }}>
+                      {c.claimStatus === 'PRE_AUTH_APPROVED' ? (
+                        <button
+                          type="button"
+                          onClick={() => handleSettleClaim(c.claimId)}
+                          style={{ backgroundColor: '#10B981', color: '#070C16', border: 'none', borderRadius: '6px', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer' }}
+                        >
+                          ⚡ Settle Payout
+                        </button>
+                      ) : (
+                        <span style={{ color: '#10B981', fontSize: '0.75rem', fontWeight: 700 }}>✓ Disbursed</span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>

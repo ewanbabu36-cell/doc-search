@@ -12,68 +12,7 @@ interface MicroservicePodNode {
   status: 'RUNNING_HEALTHY' | 'SCALING' | 'DEGRADED';
 }
 
-const INITIAL_SERVICES: MicroservicePodNode[] = [
-  {
-    serviceName: 'api-gateway-service',
-    namespace: 'docsearch-prod',
-    replicasRunning: '6/6',
-    cpuUsagePct: 28,
-    memoryUsage: '340 MB / 1 GB',
-    restartsCount: 0,
-    uptime: '18d 6h',
-    status: 'RUNNING_HEALTHY'
-  },
-  {
-    serviceName: 'company-platform-spa',
-    namespace: 'docsearch-prod',
-    replicasRunning: '4/4',
-    cpuUsagePct: 18,
-    memoryUsage: '180 MB / 512 MB',
-    restartsCount: 0,
-    uptime: '18d 6h',
-    status: 'RUNNING_HEALTHY'
-  },
-  {
-    serviceName: 'partner-platform-spa',
-    namespace: 'docsearch-prod',
-    replicasRunning: '4/4',
-    cpuUsagePct: 22,
-    memoryUsage: '195 MB / 512 MB',
-    restartsCount: 0,
-    uptime: '18d 6h',
-    status: 'RUNNING_HEALTHY'
-  },
-  {
-    serviceName: 'fhir-abdm-gateway-daemon',
-    namespace: 'docsearch-prod',
-    replicasRunning: '8/8',
-    cpuUsagePct: 42,
-    memoryUsage: '780 MB / 2 GB',
-    restartsCount: 0,
-    uptime: '12d 3h',
-    status: 'RUNNING_HEALTHY'
-  },
-  {
-    serviceName: 'lims-mllp-socket-engine',
-    namespace: 'docsearch-prod',
-    replicasRunning: '4/4',
-    cpuUsagePct: 31,
-    memoryUsage: '420 MB / 1 GB',
-    restartsCount: 0,
-    uptime: '24d 1h',
-    status: 'RUNNING_HEALTHY'
-  },
-  {
-    serviceName: 'ai-clinical-inference-worker',
-    namespace: 'docsearch-prod',
-    replicasRunning: '12/12',
-    cpuUsagePct: 68,
-    memoryUsage: '3.4 GB / 8 GB',
-    restartsCount: 0,
-    uptime: '8d 14h',
-    status: 'RUNNING_HEALTHY'
-  }
-];
+const INITIAL_SERVICES: MicroservicePodNode[] = [];
 
 export const KubernetesPodMeshRadarView: React.FC = () => {
   const [services, setServices] = useState<MicroservicePodNode[]>(INITIAL_SERVICES);
@@ -149,7 +88,36 @@ export const KubernetesPodMeshRadarView: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {services.map((s) => (
+              {services.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} style={{ textAlign: 'center', padding: '48px 24px', color: '#94A3B8' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '12px' }}>☸️</div>
+                    <strong style={{ color: '#F8FAFC', fontSize: '0.9375rem', display: 'block', marginBottom: '6px' }}>
+                      No Kubernetes Mesh Pods Reporting
+                    </strong>
+                    <span style={{ fontSize: '0.8125rem', color: '#94A3B8', display: 'block', maxWidth: '440px', margin: '0 auto 16px' }}>
+                      Cluster microservices (API gateway, clinical core, auth service, background workers) will appear here once connected.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {}}
+                      style={{
+                        backgroundColor: '#1E293B',
+                        border: '1px solid #334155',
+                        color: '#38BDF8',
+                        borderRadius: '6px',
+                        padding: '6px 14px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      ↻ Discover Pods
+                    </button>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                services.map((s) => (
                 <TableRow key={s.serviceName}>
                   <TableCell>
                     <strong style={{ color: 'var(--ds-color-text-primary)' }}>{s.serviceName}</strong>
@@ -181,7 +149,8 @@ export const KubernetesPodMeshRadarView: React.FC = () => {
                     </button>
                   </TableCell>
                 </TableRow>
-              ))}
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>

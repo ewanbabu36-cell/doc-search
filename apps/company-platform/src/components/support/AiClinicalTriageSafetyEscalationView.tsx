@@ -12,38 +12,7 @@ interface TriageTicket {
   loggedAt: string;
 }
 
-const INITIAL_TRIAGE_TICKETS: TriageTicket[] = [
-  {
-    id: 'TRG-EMERG-01',
-    patientName: 'Kishore Sengupta (Age 58)',
-    ticketSubject: 'Doctor delayed by 40 mins, feeling severe sudden crushing chest pain and left arm numbness',
-    detectedEmergencyKeywords: ['crushing chest pain', 'left arm numbness', 'acute cardiac risk'],
-    severityLevel: 'P1_CRITICAL_EMERGENCY',
-    aiRecommendation: 'Immediate 108 Ambulance Dispatch + Alert On-Duty Saket ER Resuscitation Bay',
-    status: 'ESCALATED_ER_DISPATCH',
-    loggedAt: '2 mins ago'
-  },
-  {
-    id: 'TRG-EMERG-02',
-    patientName: 'Baby Aarav (Age 2)',
-    ticketSubject: 'High fever 104F after vaccination, breathing very fast and refusing liquids',
-    detectedEmergencyKeywords: ['fever 104F', 'breathing fast', 'pediatric tachypnea'],
-    severityLevel: 'P1_CRITICAL_EMERGENCY',
-    aiRecommendation: 'Direct Pediatrician Emergency Hotline Voice Siren triggered',
-    status: 'ESCALATED_ER_DISPATCH',
-    loggedAt: '14 mins ago'
-  },
-  {
-    id: 'TRG-EMERG-03',
-    patientName: 'Shalini Mathur',
-    ticketSubject: 'Prescription typo: Pharmacist says dosage is 10x higher than normal blood thinner',
-    detectedEmergencyKeywords: ['dosage 10x', 'blood thinner overdose risk'],
-    severityLevel: 'P2_HIGH_URGENCY',
-    aiRecommendation: 'Pharmacy Dispense Lock Engaged; Doctor Callback Requested',
-    status: 'MONITORING',
-    loggedAt: '28 mins ago'
-  }
-];
+const INITIAL_TRIAGE_TICKETS: TriageTicket[] = [];
 
 export const AiClinicalTriageSafetyEscalationView: React.FC = () => {
   const [tickets] = useState<TriageTicket[]>(INITIAL_TRIAGE_TICKETS);
@@ -110,7 +79,36 @@ export const AiClinicalTriageSafetyEscalationView: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {tickets.map((t) => (
+              {tickets.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} style={{ textAlign: 'center', padding: '48px 24px', color: '#94A3B8' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '12px' }}>⚠️</div>
+                    <strong style={{ color: '#F8FAFC', fontSize: '0.9375rem', display: 'block', marginBottom: '6px' }}>
+                      Zero Critical Clinical Safety Escalations
+                    </strong>
+                    <span style={{ fontSize: '0.8125rem', color: '#94A3B8', display: 'block', maxWidth: '440px', margin: '0 auto 16px' }}>
+                      Autonomous AI Clinical Copilot is monitoring prescriptions. No drug-drug interactions or emergency contraindications flagged.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {}}
+                      style={{
+                        backgroundColor: '#1E293B',
+                        border: '1px solid #334155',
+                        color: '#38BDF8',
+                        borderRadius: '6px',
+                        padding: '6px 14px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      ↻ Refresh Triage Queue
+                    </button>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                tickets.map((t) => (
                 <TableRow key={t.id}>
                   <TableCell>
                     <strong style={{ color: 'var(--ds-color-text-primary)' }}>{t.patientName}</strong>
@@ -144,7 +142,8 @@ export const AiClinicalTriageSafetyEscalationView: React.FC = () => {
                     </button>
                   </TableCell>
                 </TableRow>
-              ))}
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>

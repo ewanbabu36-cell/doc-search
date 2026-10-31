@@ -14,32 +14,7 @@ export interface BreakGlassSession {
   cisoAlertSent: boolean;
 }
 
-const INITIAL_SESSIONS: BreakGlassSession[] = [
-  {
-    id: 'BG-801',
-    doctorName: 'Dr. Anand Joshi (Lead Trauma Surgeon)',
-    department: 'Critical Care & Trauma ICU',
-    patientName: 'Sunil Kumar',
-    patientUhid: 'UHID-2026-9011',
-    emergencyJustification: 'Severe polytrauma road accident case; unconscious patient requiring immediate neurosurgery access without consent OTP.',
-    grantedAt: '2026-09-01 10:15 AM',
-    expiresIn: '2h 45m remaining',
-    status: 'ACTIVE_EMERGENCY',
-    cisoAlertSent: true
-  },
-  {
-    id: 'BG-800',
-    doctorName: 'Dr. Priya Desai (Cardiothoracic Surgeon)',
-    department: 'Emergency Coronary Care Unit',
-    patientName: 'Geeta Devi',
-    patientUhid: 'UHID-2026-8742',
-    emergencyJustification: 'Acute STEMI cardiac arrest in ER bay; immediate stent history retrieval needed.',
-    grantedAt: '2026-08-31 08:30 PM',
-    expiresIn: 'Expired',
-    status: 'EXPIRED',
-    cisoAlertSent: true
-  }
-];
+const INITIAL_SESSIONS: BreakGlassSession[] = [];
 
 export const EmergencyBreakGlassProtocolView: React.FC = () => {
   const [sessions, setSessions] = useState<BreakGlassSession[]>(INITIAL_SESSIONS);
@@ -140,7 +115,36 @@ export const EmergencyBreakGlassProtocolView: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sessions.map((s) => (
+              {sessions.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} style={{ textAlign: 'center', padding: '48px 24px', color: '#94A3B8' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '12px' }}>🚨</div>
+                    <strong style={{ color: '#F8FAFC', fontSize: '0.9375rem', display: 'block', marginBottom: '6px' }}>
+                      Zero Active Emergency Break-Glass Sessions
+                    </strong>
+                    <span style={{ fontSize: '0.8125rem', color: '#94A3B8', display: 'block', maxWidth: '440px', margin: '0 auto 16px' }}>
+                      Standard role-based access control is enforced for all patient records. No emergency overrides active.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {}}
+                      style={{
+                        backgroundColor: '#1E293B',
+                        border: '1px solid #334155',
+                        color: '#38BDF8',
+                        borderRadius: '6px',
+                        padding: '6px 14px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      ↻ Audit Access Logs
+                    </button>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                sessions.map((s) => (
                 <TableRow key={s.id}>
                   <TableCell>
                     <strong style={{ fontFamily: 'monospace', color: '#EF4444' }}>{s.id}</strong>
@@ -185,7 +189,8 @@ export const EmergencyBreakGlassProtocolView: React.FC = () => {
                     )}
                   </TableCell>
                 </TableRow>
-              ))}
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>
