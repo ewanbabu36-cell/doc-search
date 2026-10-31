@@ -3311,6 +3311,107 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
             </div>
           )}
 
+          {/* 🌟 Vyapar Gold Standard: 1-Click Generic Substitution Savings Card */}
+          {(() => {
+            const substitutableItems = cart.filter((item) => !item.isSubstituted && !!item.medication.janAushadhiEquivalent);
+            if (substitutableItems.length === 0) return null;
+            const totalPotentialSavings = substitutableItems.reduce((acc, item) => {
+              const ja = item.medication.janAushadhiEquivalent!;
+              const origRate = item.rate;
+              const jaRate = item.isLoose ? ja.unitPrice : ja.mrp;
+              const savingPerUnit = Math.max(0, origRate - jaRate);
+              return acc + (savingPerUnit * item.quantity);
+            }, 0);
+
+            return (
+              <div
+                style={{
+                  background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.16) 0%, rgba(6, 182, 212, 0.12) 100%)',
+                  border: '1.5px solid #10B981',
+                  borderRadius: '10px',
+                  padding: '10px 14px',
+                  marginBottom: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '10px',
+                  boxShadow: '0 4px 15px rgba(16, 185, 129, 0.15)'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div
+                    style={{
+                      width: '34px',
+                      height: '34px',
+                      borderRadius: '8px',
+                      backgroundColor: '#10B981',
+                      color: '#022C22',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '1.15rem',
+                      fontWeight: 900
+                    }}
+                  >
+                    💰
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.8125rem', fontWeight: 900, color: '#34D399', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>PMBJP Jan Aushadhi Savings Available! (Vyapar Standard)</span>
+                      <span style={{ fontSize: '0.625rem', backgroundColor: 'rgba(16, 185, 129, 0.25)', color: '#A7F3D0', padding: '1px 6px', borderRadius: '4px', fontWeight: 800 }}>
+                        Save ₹{totalPotentialSavings.toFixed(2)}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '0.72rem', color: '#CBD5E1', marginTop: '1px' }}>
+                      {substitutableItems.length} brand medicine{substitutableItems.length > 1 ? 's have' : ' has'} direct Jan Aushadhi generic equivalent in stock!
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCart((prev) =>
+                      prev.map((item) => {
+                        if (!item.isSubstituted && item.medication.janAushadhiEquivalent) {
+                          const ja = item.medication.janAushadhiEquivalent;
+                          return {
+                            ...item,
+                            isSubstituted: true,
+                            rate: item.isLoose ? ja.unitPrice : ja.mrp
+                          };
+                        }
+                        return item;
+                      })
+                    );
+                    setNotification({
+                      type: 'success',
+                      message: `⚡ Switched ${substitutableItems.length} medicines to PMBJP Jan Aushadhi generics. Saved patient ₹${totalPotentialSavings.toFixed(2)}!`
+                    });
+                    setTimeout(() => setNotification(null), 4000);
+                  }}
+                  style={{
+                    padding: '7px 16px',
+                    borderRadius: '8px',
+                    background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                    border: 'none',
+                    color: '#FFFFFF',
+                    fontSize: '0.78rem',
+                    fontWeight: 900,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: '0 2px 10px rgba(16, 185, 129, 0.4)'
+                  }}
+                >
+                  <span>⚡ Switch All to Generic (Save ₹{totalPotentialSavings.toFixed(0)})</span>
+                </button>
+              </div>
+            );
+          })()}
+
           {cart.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '56px 0', color: 'var(--ds-color-text-muted)' }}>
               <div style={{ fontSize: '2.8rem', marginBottom: '10px' }}>💊</div>
@@ -4612,6 +4713,65 @@ export const FastPharmacyPosCounterView: React.FC<FastPharmacyPosCounterViewProp
         isOpen={isOfflineSyncModalOpen}
         onClose={() => setIsOfflineSyncModalOpen(false)}
       />
+
+      {/* ⌨️ Marg ERP Gold Standard: Permanent High-Contrast Keyboard Accelerator Ribbon */}
+      <div
+        style={{
+          marginTop: '16px',
+          padding: '10px 16px',
+          backgroundColor: '#0F172A',
+          border: '1.5px solid rgba(56, 189, 248, 0.35)',
+          borderRadius: '12px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '10px',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5), 0 0 15px rgba(56, 189, 248, 0.15)'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '0.8rem', fontWeight: 900, color: '#38BDF8', letterSpacing: '0.04em' }}>
+            ⚡ MARG TURBO ACCELERATORS:
+          </span>
+          <span style={{ fontSize: '0.6875rem', color: '#94A3B8' }}>
+            Zero-mouse instant counter keyboard workflow
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          {[
+            { key: 'F1', label: 'Search Item', bg: '#334155', color: '#F8FAFC' },
+            { key: 'F2', label: 'Strip ⟷ Loose', bg: '#0284C7', color: '#FFFFFF' },
+            { key: 'F3', label: 'Generic Salt', bg: '#10B981', color: '#FFFFFF' },
+            { key: 'F4', label: 'Discount %', bg: '#F59E0B', color: '#070C16' },
+            { key: 'F5', label: 'Doctor e-Rx', bg: '#6366F1', color: '#FFFFFF' },
+            { key: 'F6', label: 'Camera OCR', bg: '#9333EA', color: '#FFFFFF' },
+            { key: 'F7', label: 'CDSCO Vault', bg: '#EF4444', color: '#FFFFFF' },
+            { key: 'F8', label: 'Cash / UPI', bg: '#06B6D4', color: '#070C16' },
+            { key: 'F9', label: 'Bill History', bg: '#475569', color: '#F8FAFC' },
+            { key: 'Enter', label: 'Complete Bill', bg: '#16A34A', color: '#FFFFFF' }
+          ].map((sc) => (
+            <div key={sc.key} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.72rem' }}>
+              <kbd
+                style={{
+                  backgroundColor: sc.bg,
+                  color: sc.color,
+                  padding: '2px 7px',
+                  borderRadius: '4px',
+                  fontWeight: 900,
+                  fontSize: '0.68rem',
+                  border: '1px solid rgba(255, 255, 255, 0.25)',
+                  boxShadow: '0 2px 5px rgba(0,0,0,0.4)'
+                }}
+              >
+                {sc.key}
+              </kbd>
+              <span style={{ color: '#E2E8F0', fontWeight: 700 }}>{sc.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };

@@ -20,6 +20,92 @@ import {
   type ScannedBarcodePayload
 } from '../../services/hardware-barcode-listener.js';
 
+export interface VacutainerTubeConfig {
+  key: string;
+  name: string;
+  additive: string;
+  colorName: string;
+  capHex: string;
+  glowHex: string;
+  volume: string;
+  inversions: string;
+  commonTests: string[];
+  keywords: string[];
+}
+
+export const CRELIO_VACUTAINER_TUBES: VacutainerTubeConfig[] = [
+  {
+    key: 'LAVENDER',
+    name: 'Lavender / Purple',
+    additive: 'K2 / K3 EDTA',
+    colorName: 'Lavender EDTA',
+    capHex: '#9333EA',
+    glowHex: '#C084FC',
+    volume: '2.0 mL',
+    inversions: '8–10x gentle',
+    commonTests: ['CBC', 'ESR', 'HbA1c', 'Blood Group', 'Peripheral Smear'],
+    keywords: ['cbc', 'edta', 'hba1c', 'esr', 'hemoglobin', 'blood count', 'smear', 'platelet', 'wbc']
+  },
+  {
+    key: 'RED_GOLD',
+    name: 'Gold SST / Red',
+    additive: 'Clot Activator / Silica Gel',
+    colorName: 'Serum SST',
+    capHex: '#EF4444',
+    glowHex: '#F87171',
+    volume: '3.5 mL',
+    inversions: '5x gentle',
+    commonTests: ['LFT', 'KFT', 'Lipid', 'Thyroid', 'Serology', 'Troponin'],
+    keywords: ['lft', 'kft', 'lipid', 'thyroid', 'serum', 'creatinine', 'urea', 'liver', 'kidney', 'sgpt', 'sgot', 'cholesterol', 'tsh', 'hiv', 'hbsag', 'hcv', 'crp', 'troponin', 'ferritin', 'vitamin', 'calcium']
+  },
+  {
+    key: 'GREY',
+    name: 'Grey Stopper',
+    additive: 'Sodium Fluoride + Oxalate',
+    colorName: 'Fluoride',
+    capHex: '#64748B',
+    glowHex: '#94A3B8',
+    volume: '2.0 mL',
+    inversions: '8–10x gentle',
+    commonTests: ['Fasting Sugar (FBS)', 'PPBS', 'GTT', 'Lactate'],
+    keywords: ['glucose', 'sugar', 'fbs', 'ppbs', 'fluoride', 'gtt', 'lactate']
+  },
+  {
+    key: 'BLUE',
+    name: 'Light Blue',
+    additive: 'Sodium Citrate 3.2%',
+    colorName: 'Citrate',
+    capHex: '#0284C7',
+    glowHex: '#38BDF8',
+    volume: '2.7 mL',
+    inversions: '3–4x gentle',
+    commonTests: ['PT / INR', 'APTT', 'D-Dimer', 'Coagulation'],
+    keywords: ['pt', 'inr', 'aptt', 'citrate', 'coag', 'dimer', 'fibrinogen', 'prothrombin']
+  },
+  {
+    key: 'GREEN',
+    name: 'Green Stopper',
+    additive: 'Sodium / Lithium Heparin',
+    colorName: 'Heparin',
+    capHex: '#059669',
+    glowHex: '#34D399',
+    volume: '3.0 mL',
+    inversions: '8–10x gentle',
+    commonTests: ['STAT Electrolytes', 'ABG', 'Ammonia'],
+    keywords: ['heparin', 'green', 'electrolytes', 'abg', 'ammonia', 'stat chem']
+  }
+];
+
+export const getVacutainerForTest = (testName: string, specimenType: string): VacutainerTubeConfig => {
+  const t = (testName + ' ' + specimenType).toLowerCase();
+  for (const tube of CRELIO_VACUTAINER_TUBES) {
+    if (tube.keywords.some((kw) => t.includes(kw))) {
+      return tube;
+    }
+  }
+  return CRELIO_VACUTAINER_TUBES[1]!; // Default to SST Red
+};
+
 export interface SpecimenCollectionViewProps {
   orders: InvestigationOrderDto[];
   onCollectSpecimen: (order: InvestigationOrderDto) => void;
@@ -35,6 +121,8 @@ export const SpecimenCollectionView: React.FC<SpecimenCollectionViewProps> = ({
 }) => {
   const [activeSection, setActiveSection] = useState<'IN_CLINIC' | 'HOME_COLLECTION'>('IN_CLINIC');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTubeFilter, setSelectedTubeFilter] = useState<string>('ALL');
+  const [thermalStickerOrder, setThermalStickerOrder] = useState<InvestigationOrderDto | null>(null);
   const [scanNotification, setScanNotification] = useState<{
     type: 'success' | 'warning' | 'error';
     message: string;
@@ -152,13 +240,21 @@ export const SpecimenCollectionView: React.FC<SpecimenCollectionViewProps> = ({
   const filtered = collectionQueue.filter((ord) => {
     if (searchTerm) {
       const q = searchTerm.toLowerCase();
-      return (
+      const matchSearch =
         ord.orderNumber.toLowerCase().includes(q) ||
         ord.patientName.toLowerCase().includes(q) ||
         ord.patientMrn.toLowerCase().includes(q) ||
         ord.investigationName.toLowerCase().includes(q) ||
-        ord.specimens.some((s) => s.accessionNumber.toLowerCase().includes(q))
-      );
+        ord.specimens.some((s) => s.accessionNumber.toLowerCase().includes(q));
+      if (!matchSearch) return false;
+    }
+    if (selectedTubeFilter !== 'ALL') {
+      const tubeConfig = CRELIO_VACUTAINER_TUBES.find((t) => t.key === selectedTubeFilter);
+      if (tubeConfig) {
+        const testLower = (ord.investigationName + ' ' + ord.specimenType).toLowerCase();
+        const matchesTube = tubeConfig.keywords.some((kw) => testLower.includes(kw));
+        if (!matchesTube) return false;
+      }
     }
     return true;
   });
@@ -264,35 +360,116 @@ export const SpecimenCollectionView: React.FC<SpecimenCollectionViewProps> = ({
 
       {activeSection === 'IN_CLINIC' && (
         <>
-          {/* Visual Vacuum Tube Color Reference Guide */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '10px' }}>
-            <div style={{ backgroundColor: 'rgba(168, 85, 247, 0.12)', border: '1.5px solid #A855F7', borderRadius: '10px', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '1.5rem' }}>💜</span>
-              <div>
-                <strong style={{ color: '#C084FC', fontSize: '0.8125rem', display: 'block' }}>Lavender (K2/K3 EDTA)</strong>
-                <span style={{ fontSize: '0.6875rem', color: '#E9D5FF' }}>CBC, ESR, HbA1c, Blood Group</span>
+          {/* 🌟 CrelioHealth Gold Standard: Interactive Vacutainer Tube Station */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '0.9rem', fontWeight: 900, color: '#38BDF8', letterSpacing: '0.03em' }}>
+                  🧪 VACUTAINER SPECIMEN TUBE STATION
+                </span>
+                <span style={{ fontSize: '0.72rem', color: '#94A3B8' }}>
+                  (Click any tube to isolate collection queue)
+                </span>
               </div>
+              {selectedTubeFilter !== 'ALL' && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedTubeFilter('ALL')}
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    color: '#CBD5E1',
+                    borderRadius: '6px',
+                    padding: '3px 10px',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                >
+                  ✕ Clear Filter (Show All)
+                </button>
+              )}
             </div>
-            <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.12)', border: '1.5px solid #EF4444', borderRadius: '10px', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '1.5rem' }}>🔴</span>
-              <div>
-                <strong style={{ color: '#F87171', fontSize: '0.8125rem', display: 'block' }}>Gold SST / Red (Serum)</strong>
-                <span style={{ fontSize: '0.6875rem', color: '#FECACA' }}>LFT, KFT, Lipid, Thyroid, Serology</span>
-              </div>
-            </div>
-            <div style={{ backgroundColor: 'rgba(148, 163, 184, 0.12)', border: '1.5px solid #94A3B8', borderRadius: '10px', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '1.5rem' }}>⚪</span>
-              <div>
-                <strong style={{ color: '#CBD5E1', fontSize: '0.8125rem', display: 'block' }}>Grey (Sodium Fluoride)</strong>
-                <span style={{ fontSize: '0.6875rem', color: '#E2E8F0' }}>Fasting Blood Sugar, PPBS, GTT</span>
-              </div>
-            </div>
-            <div style={{ backgroundColor: 'rgba(56, 189, 248, 0.12)', border: '1.5px solid #38BDF8', borderRadius: '10px', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '1.5rem' }}>🔵</span>
-              <div>
-                <strong style={{ color: '#38BDF8', fontSize: '0.8125rem', display: 'block' }}>Light Blue (Citrate 3.2%)</strong>
-                <span style={{ fontSize: '0.6875rem', color: '#BAE6FD' }}>PT/INR, APTT, D-Dimer, Coag</span>
-              </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '10px' }}>
+              {CRELIO_VACUTAINER_TUBES.map((tube) => {
+                const isSelected = selectedTubeFilter === tube.key;
+                const matchCount = collectionQueue.filter((ord) => {
+                  const t = (ord.investigationName + ' ' + ord.specimenType).toLowerCase();
+                  return tube.keywords.some((kw) => t.includes(kw));
+                }).length;
+
+                return (
+                  <div
+                    key={tube.key}
+                    onClick={() => setSelectedTubeFilter(isSelected ? 'ALL' : tube.key)}
+                    style={{
+                      backgroundColor: isSelected ? `${tube.capHex}25` : 'rgba(15, 23, 42, 0.7)',
+                      border: isSelected ? `2px solid ${tube.glowHex}` : `1px solid ${tube.capHex}40`,
+                      borderRadius: '12px',
+                      padding: '10px 14px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      cursor: 'pointer',
+                      boxShadow: isSelected ? `0 0 16px ${tube.capHex}60` : 'none',
+                      transition: 'all 0.15s ease'
+                    }}
+                    title={`Click to filter by ${tube.name} tests (${tube.commonTests.join(', ')})`}
+                  >
+                    {/* Realistic 3D Cylindrical Tube Icon */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <div
+                        style={{
+                          width: '18px',
+                          height: '14px',
+                          borderRadius: '4px 4px 1px 1px',
+                          backgroundColor: tube.capHex,
+                          boxShadow: `0 0 8px ${tube.glowHex}, inset 0 2px 2px rgba(255,255,255,0.4)`
+                        }}
+                      />
+                      <div
+                        style={{
+                          width: '14px',
+                          height: '24px',
+                          borderRadius: '0 0 7px 7px',
+                          background: 'linear-gradient(180deg, rgba(255,255,255,0.3) 0%, rgba(220,38,38,0.7) 40%, rgba(185,28,28,0.9) 100%)',
+                          border: '1px solid rgba(255,255,255,0.3)',
+                          borderTop: 'none'
+                        }}
+                      />
+                    </div>
+
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
+                        <strong style={{ color: tube.glowHex, fontSize: '0.8rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {tube.colorName}
+                        </strong>
+                        <span
+                          style={{
+                            fontSize: '0.625rem',
+                            fontWeight: 900,
+                            padding: '1px 5px',
+                            borderRadius: '4px',
+                            backgroundColor: `${tube.capHex}35`,
+                            color: tube.glowHex
+                          }}
+                        >
+                          {matchCount}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '0.6875rem', color: '#CBD5E1', marginTop: '2px' }}>
+                        {tube.additive}
+                      </div>
+                      <div style={{ fontSize: '0.625rem', color: '#94A3B8', marginTop: '2px', display: 'flex', gap: '6px' }}>
+                        <span>Vol: {tube.volume}</span>
+                        <span>•</span>
+                        <span>{tube.inversions}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -328,15 +505,39 @@ export const SpecimenCollectionView: React.FC<SpecimenCollectionViewProps> = ({
                   const hasCollectedSpecimen = ord.specimens.length > 0 && ord.specimens.some((s) => !s.rejectionStatus);
                   const activeSpecimen = ord.specimens[0];
 
-                  const testLower = (ord.investigationName + ' ' + ord.specimenType).toLowerCase();
-                  let tubeTag = <span style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #EF4444', color: '#FCA5A5', padding: '2px 8px', borderRadius: '6px', fontSize: '0.6875rem', fontWeight: 700 }}>🔴 SST/Red (Serum)</span>;
-                  if (testLower.includes('cbc') || testLower.includes('edta') || testLower.includes('hba1c') || testLower.includes('blood count')) {
-                    tubeTag = <span style={{ backgroundColor: 'rgba(168, 85, 247, 0.2)', border: '1px solid #A855F7', color: '#D8B4FE', padding: '2px 8px', borderRadius: '6px', fontSize: '0.6875rem', fontWeight: 700 }}>💜 EDTA (Lavender)</span>;
-                  } else if (testLower.includes('glucose') || testLower.includes('sugar') || testLower.includes('ppbs') || testLower.includes('fluoride')) {
-                    tubeTag = <span style={{ backgroundColor: 'rgba(148, 163, 184, 0.2)', border: '1px solid #94A3B8', color: '#E2E8F0', padding: '2px 8px', borderRadius: '6px', fontSize: '0.6875rem', fontWeight: 700 }}>⚪ Fluoride (Grey)</span>;
-                  } else if (testLower.includes('pt') || testLower.includes('inr') || testLower.includes('citrate') || testLower.includes('coag')) {
-                    tubeTag = <span style={{ backgroundColor: 'rgba(56, 189, 248, 0.2)', border: '1px solid #38BDF8', color: '#7DD3FC', padding: '2px 8px', borderRadius: '6px', fontSize: '0.6875rem', fontWeight: 700 }}>🔵 Citrate (Blue)</span>;
-                  }
+                  const tube = getVacutainerForTest(ord.investigationName, ord.specimenType);
+                  const tubeTag = (
+                    <div
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        backgroundColor: `${tube.capHex}20`,
+                        border: `1.5px solid ${tube.capHex}`,
+                        color: tube.glowHex,
+                        padding: '3px 8px',
+                        borderRadius: '6px',
+                        fontSize: '0.7rem',
+                        fontWeight: 800
+                      }}
+                      title={`${tube.name} (${tube.additive})\nDraw Volume: ${tube.volume} • Inversions: ${tube.inversions}`}
+                    >
+                      <span
+                        style={{
+                          display: 'inline-block',
+                          width: '9px',
+                          height: '9px',
+                          borderRadius: '50%',
+                          backgroundColor: tube.capHex,
+                          boxShadow: `0 0 6px ${tube.glowHex}`
+                        }}
+                      />
+                      <span>{tube.colorName}</span>
+                      <span style={{ fontSize: '0.625rem', opacity: 0.8, borderLeft: `1px solid ${tube.capHex}50`, paddingLeft: '4px' }}>
+                        {tube.volume}
+                      </span>
+                    </div>
+                  );
 
                     const isDoctorOpd = Boolean((ord.metadata as any)?.isDoctorOpdOrder);
 
@@ -404,9 +605,12 @@ export const SpecimenCollectionView: React.FC<SpecimenCollectionViewProps> = ({
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => onPrintSticker?.(ord)}
+                              onClick={() => {
+                                if (onPrintSticker) onPrintSticker(ord);
+                                setThermalStickerOrder(ord);
+                              }}
                               style={{ borderColor: 'rgba(56, 189, 248, 0.4)', color: '#38BDF8', fontWeight: 700, minHeight: '38px' }}
-                              title="Print 50x25mm / 50x30mm thermal barcode sticker for vacutainer tube"
+                              title="Print 50x30mm thermal barcode sticker for vacutainer tube (CrelioHealth standard)"
                             >
                               🖨️ Sticker
                             </Button>
@@ -583,6 +787,169 @@ export const SpecimenCollectionView: React.FC<SpecimenCollectionViewProps> = ({
               </Table>
             </TableContainer>
           </Card>
+        </div>
+      )}
+
+      {/* 🏷️ CrelioHealth Gold Standard: 50x30mm Thermal Barcode Label Modal */}
+      {thermalStickerOrder && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 100,
+            padding: '16px'
+          }}
+          onClick={() => setThermalStickerOrder(null)}
+        >
+          <div
+            style={{
+              backgroundColor: '#0F172A',
+              border: '1.5px solid #38BDF8',
+              borderRadius: '16px',
+              padding: '24px',
+              maxWidth: '460px',
+              width: '100%',
+              boxShadow: '0 20px 50px rgba(0,0,0,0.8), 0 0 25px rgba(56, 189, 248, 0.25)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '1.4rem' }}>🏷️</span>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 900, color: '#F8FAFC' }}>
+                    Thermal Vacutainer Barcode Label
+                  </h4>
+                  <span style={{ fontSize: '0.72rem', color: '#94A3B8' }}>
+                    CrelioHealth 50x30mm High-Resolution Specimen Label
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setThermalStickerOrder(null)}
+                style={{ background: 'none', border: 'none', color: '#94A3B8', fontSize: '1.2rem', cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* 50x30mm Physical Label Replica Preview */}
+            <div
+              style={{
+                backgroundColor: '#FFFFFF',
+                color: '#000000',
+                borderRadius: '8px',
+                padding: '14px 16px',
+                border: '2px solid #CBD5E1',
+                boxShadow: '0 4px 15px rgba(255,255,255,0.1)',
+                fontFamily: 'monospace',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #000', paddingBottom: '4px' }}>
+                <strong style={{ fontSize: '0.85rem', letterSpacing: '0.5px' }}>DOCSEARCH LIMS</strong>
+                <span style={{ fontSize: '0.7rem', fontWeight: 700 }}>
+                  {new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })} {new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: '2px' }}>
+                <div>
+                  <div style={{ fontSize: '0.9rem', fontWeight: 900 }}>{thermalStickerOrder.patientName}</div>
+                  <div style={{ fontSize: '0.72rem' }}>
+                    MRN: {thermalStickerOrder.patientMrn} | {thermalStickerOrder.patientDob || 'Adult'}
+                  </div>
+                </div>
+                {thermalStickerOrder.fastingConfirmed && (
+                  <span style={{ fontSize: '0.65rem', border: '1px solid #000', padding: '1px 4px', fontWeight: 900 }}>
+                    FASTING [YES]
+                  </span>
+                )}
+              </div>
+
+              {/* Barcode Graphic Stripes */}
+              <div style={{ margin: '8px 0', textAlign: 'center' }}>
+                <div
+                  style={{
+                    height: '38px',
+                    background: 'repeating-linear-gradient(90deg, #000 0px, #000 2px, transparent 2px, transparent 4px, #000 4px, #000 7px, transparent 7px, transparent 9px, #000 9px, #000 13px, transparent 13px, transparent 15px)',
+                    width: '100%',
+                    margin: '0 auto'
+                  }}
+                />
+                <div style={{ fontSize: '0.75rem', fontWeight: 900, letterSpacing: '2px', marginTop: '2px' }}>
+                  *{thermalStickerOrder.orderNumber}*
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #000', paddingTop: '4px', fontSize: '0.72rem' }}>
+                <div>
+                  <strong>Test:</strong> {thermalStickerOrder.investigationName}
+                </div>
+                <div style={{ fontWeight: 900 }}>
+                  {thermalStickerOrder.specimenType}
+                </div>
+              </div>
+            </div>
+
+            {/* Print Controls */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setThermalStickerOrder(null)}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  backgroundColor: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  color: '#CBD5E1',
+                  fontSize: '0.8rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (onPrintSticker) onPrintSticker(thermalStickerOrder);
+                  setScanNotification({
+                    type: 'success',
+                    message: `🖨️ Thermal sticker dispatched to Zebra/TSC 50x30mm thermal printer for Order #${thermalStickerOrder.orderNumber}!`
+                  });
+                  setThermalStickerOrder(null);
+                  setTimeout(() => setScanNotification(null), 4000);
+                }}
+                style={{
+                  padding: '8px 18px',
+                  borderRadius: '8px',
+                  background: 'linear-gradient(135deg, #0284C7 0%, #0369A1 100%)',
+                  border: 'none',
+                  color: '#FFFFFF',
+                  fontSize: '0.8rem',
+                  fontWeight: 900,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  boxShadow: '0 4px 15px rgba(2, 132, 199, 0.4)'
+                }}
+              >
+                <span>🖨️</span>
+                <span>Print 50x30mm Sticker (ESC/POS)</span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
