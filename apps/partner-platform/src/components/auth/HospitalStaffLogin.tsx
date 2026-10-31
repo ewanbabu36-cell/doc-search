@@ -1536,7 +1536,7 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess, initialMod
 
               {/* 4 Core Profiles Grid (2x2) */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
-                {/* 1. SINGLE DOCTOR CLINIC */}
+                {/* 1. SINGLE DOCTOR CLINIC (EKA CARE BENCHMARK) */}
                 <button
                   type="button"
                   onClick={() => handleRolePersonaLogin('DOCTOR')}
@@ -1553,14 +1553,17 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess, initialMod
                     gap: '3px',
                     transition: 'all 0.15s ease'
                   }}
-                  title="Single Doctor Clinic: Smart Rx Pad, OPD Token Queue, Voice AI Scribe & Consultation Fee Till."
+                  title="Single Doctor Clinic: Eka Care Benchmark (9.2/10) - 1-Tap Dosing, Alt+R Repeat Rx Pad, OPD Token Queue & ABDM ABHA."
                 >
                   <span style={{ fontSize: '1.25rem' }}>🩺</span>
-                  <strong style={{ fontSize: '0.78rem' }}>Single Doctor Clinic</strong>
-                  <span style={{ fontSize: '0.625rem', color: '#A7F3D0' }}>Smart Rx • OPD Queue</span>
+                  <strong style={{ fontSize: '0.78rem' }}>Doctor OPD Chamber</strong>
+                  <span style={{ fontSize: '0.625rem', backgroundColor: '#10B981', color: '#070C16', padding: '1px 5px', borderRadius: '4px', fontWeight: 900 }}>
+                    Eka Care 9.2★
+                  </span>
+                  <span style={{ fontSize: '0.625rem', color: '#A7F3D0' }}>1-Tap Dosing • Alt+R Repeat</span>
                 </button>
 
-                {/* 2. RETAIL & HOSPITAL PHARMACY */}
+                {/* 2. RETAIL & HOSPITAL PHARMACY (MARG ERP + VYAPAR BENCHMARK) */}
                 <button
                   type="button"
                   onClick={() => handleRolePersonaLogin('PHARMACIST')}
@@ -1577,14 +1580,17 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess, initialMod
                     gap: '3px',
                     transition: 'all 0.15s ease'
                   }}
-                  title="Retail & Hospital Pharmacy: High-Speed POS Counter, FEFO Batch Selection, Wholesale GRN & Schedule H1 Register."
+                  title="Retail & Hospital Pharmacy: Marg ERP + Vyapar Benchmark (9.2/10) - F1-F10 Keyboard Shortcuts & Jan Aushadhi Generic Swap."
                 >
                   <span style={{ fontSize: '1.25rem' }}>💊</span>
                   <strong style={{ fontSize: '0.78rem' }}>Pharmacy Counter</strong>
-                  <span style={{ fontSize: '0.625rem', color: '#E9D5FF' }}>Chemist POS • H1 Stock</span>
+                  <span style={{ fontSize: '0.625rem', backgroundColor: '#A855F7', color: '#070C16', padding: '1px 5px', borderRadius: '4px', fontWeight: 900 }}>
+                    Marg + Vyapar 9.2★
+                  </span>
+                  <span style={{ fontSize: '0.625rem', color: '#E9D5FF' }}>F1-F10 Keys • Generic Swap</span>
                 </button>
 
-                {/* 3. DIAGNOSTIC PATHOLOGY & LAB LIMS */}
+                {/* 3. DIAGNOSTIC PATHOLOGY & LAB LIMS (CRELIOHEALTH BENCHMARK) */}
                 <button
                   type="button"
                   onClick={() => handleRolePersonaLogin('LAB_TECH')}
@@ -1601,14 +1607,17 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess, initialMod
                     gap: '3px',
                     transition: 'all 0.15s ease'
                   }}
-                  title="Diagnostic Pathology: NABL LIMS, Specimen Barcoding, Analyzer Workbenches, Panic Alerts & QR PDF."
+                  title="Diagnostic Pathology: CrelioHealth Benchmark (9.1/10) - 6 ISO Vacutainer Color Caps, Tri-Color Biological Gauge & 1-Click Panic Alert."
                 >
                   <span style={{ fontSize: '1.25rem' }}>🔬</span>
                   <strong style={{ fontSize: '0.78rem' }}>Pathology & Lab LIMS</strong>
-                  <span style={{ fontSize: '0.625rem', color: '#FDE68A' }}>Analyzers • QR Reports</span>
+                  <span style={{ fontSize: '0.625rem', backgroundColor: '#F59E0B', color: '#070C16', padding: '1px 5px', borderRadius: '4px', fontWeight: 900 }}>
+                    CrelioHealth 9.1★
+                  </span>
+                  <span style={{ fontSize: '0.625rem', color: '#FDE68A' }}>Vacutainers • Panic Alert</span>
                 </button>
 
-                {/* 4. MULTI-SPECIALTY HOSPITAL */}
+                {/* 4. MULTI-SPECIALTY HOSPITAL (KAREXPERT BENCHMARK) */}
                 <button
                   type="button"
                   onClick={() => handleRolePersonaLogin('DIRECTOR')}
@@ -1625,15 +1634,18 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess, initialMod
                     gap: '3px',
                     transition: 'all 0.15s ease'
                   }}
-                  title="Multi-Specialty Hospital: Full Inpatient HIS, Bed Census HUD, ICU, OT Suites, Central Cashier & Emergency Triage."
+                  title="Multi-Specialty Hospital: KareXpert Benchmark (8.9/10) - Full Inpatient HIS, Ward Bed Census HUD, ICU & Stat Admission."
                 >
                   <span style={{ fontSize: '1.25rem' }}>🏥</span>
                   <strong style={{ fontSize: '0.78rem' }}>Multi-Hospital HIS</strong>
-                  <span style={{ fontSize: '0.625rem', color: '#7DD3FC' }}>Beds • OT • Inpatient</span>
+                  <span style={{ fontSize: '0.625rem', backgroundColor: '#0284C7', color: '#FFFFFF', padding: '1px 5px', borderRadius: '4px', fontWeight: 900 }}>
+                    KareXpert 8.9★
+                  </span>
+                  <span style={{ fontSize: '0.625rem', color: '#7DD3FC' }}>Bed Board • ICU • Stat Admit</span>
                 </button>
               </div>
 
-              {/* Sub-Roles & Citizen Health Locker */}
+              {/* Sub-Roles & Citizen Health Locker (Tata 1mg & Apollo 24/7 Benchmark) */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', paddingTop: '6px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
                 <button
                   type="button"
@@ -1674,7 +1686,7 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess, initialMod
                     fontSize: '0.6875rem',
                     fontWeight: 700
                   }}
-                  title="Front Desk Cashier: Patient Registration, ABHA Tokens & Cashier Till"
+                  title="Front Desk Cashier: Practo Ray Benchmark - 20-Sec Registration, ABHA Tokens & Thermal Slip"
                 >
                   <span>💳</span> Cashier
                 </button>
@@ -1696,9 +1708,9 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess, initialMod
                     fontSize: '0.6875rem',
                     fontWeight: 700
                   }}
-                  title="Patient Health Locker: Personal Prescriptions, Lab Reports & ABHA"
+                  title="Patient Health Locker: Tata 1mg + Apollo 24/7 Benchmark (9.3/10) - 1-Tap Rx Order, Home Lab Pickup & ABHA"
                 >
-                  <span>👤</span> Patient
+                  <span>👤</span> Patient (1mg★)
                 </button>
               </div>
             </div>
