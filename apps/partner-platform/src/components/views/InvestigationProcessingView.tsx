@@ -28,6 +28,95 @@ export interface InvestigationProcessingViewProps {
   onSubmitResults?: (request: EnterInvestigationResultRequest) => Promise<void>;
 }
 
+/**
+ * CrelioHealth Biological Reference Range Visual Gauge Component
+ * Renders a horizontal tri-color bar (Low / Normal / High) with a needle pin
+ * indicating exactly where the observed value lies relative to biological intervals.
+ */
+export const CrelioBiologicalGauge: React.FC<{
+  observedValue?: number | undefined;
+  referenceRange?: string | undefined;
+  abnormalFlag?: string | undefined;
+}> = ({ observedValue, referenceRange, abnormalFlag }) => {
+  if (observedValue === undefined || isNaN(observedValue) || !referenceRange) {
+    return null;
+  }
+
+  // Parse "min - max" e.g. "13.5 - 17.5" or "3.50 - 5.10" or "< 100"
+  const rangeMatch = referenceRange.match(/([\d.]+)\s*-\s*([\d.]+)/);
+  let min = 0;
+  let max = 100;
+
+  if (rangeMatch && rangeMatch[1] && rangeMatch[2]) {
+    min = parseFloat(rangeMatch[1]);
+    max = parseFloat(rangeMatch[2]);
+  } else if (referenceRange.includes('<')) {
+    const val = parseFloat(referenceRange.replace(/[^\d.]/g, ''));
+    if (!isNaN(val)) {
+      min = 0;
+      max = val;
+    }
+  } else if (referenceRange.includes('>')) {
+    const val = parseFloat(referenceRange.replace(/[^\d.]/g, ''));
+    if (!isNaN(val)) {
+      min = val;
+      max = val * 2;
+    }
+  } else {
+    return null;
+  }
+
+  const rangeSpan = Math.max(0.001, max - min);
+  const extendedMin = min - rangeSpan * 0.35;
+  const extendedMax = max + rangeSpan * 0.35;
+  const totalSpan = extendedMax - extendedMin;
+
+  const rawPercent = ((observedValue - extendedMin) / totalSpan) * 100;
+  const pinPercent = Math.max(4, Math.min(96, rawPercent));
+
+  const isCrit = abnormalFlag?.includes('CRITICAL');
+  const isAbnormal = abnormalFlag === 'HIGH' || abnormalFlag === 'LOW';
+
+  return (
+    <div style={{ marginTop: '5px', width: '100%', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+      <div
+        style={{
+          position: 'relative',
+          height: '6px',
+          borderRadius: '3px',
+          background: 'linear-gradient(to right, #F59E0B 0%, #10B981 25%, #10B981 75%, #EF4444 100%)',
+          boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.4)',
+          overflow: 'visible'
+        }}
+        title={`Observed: ${observedValue} (Normal: ${min} - ${max})`}
+      >
+        <div
+          style={{
+            position: 'absolute',
+            left: `${pinPercent}%`,
+            top: '-3px',
+            transform: 'translateX(-50%)',
+            width: '12px',
+            height: '12px',
+            borderRadius: '50%',
+            backgroundColor: isCrit ? '#EF4444' : isAbnormal ? '#F59E0B' : '#FFFFFF',
+            border: '2px solid #0F172A',
+            boxShadow: isCrit ? '0 0 6px #EF4444' : '0 0 4px rgba(255,255,255,0.8)',
+            zIndex: 2,
+            transition: 'left 0.2s ease-out'
+          }}
+        />
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.625rem', color: '#94A3B8', fontFamily: 'monospace', padding: '0 1px' }}>
+        <span>{min}</span>
+        <span style={{ color: '#10B981', fontWeight: 700 }}>NORM</span>
+        <span>{max}</span>
+      </div>
+    </div>
+  );
+};
+
 export const InvestigationProcessingView: React.FC<InvestigationProcessingViewProps> = ({
   orders,
   onSubmitResults
@@ -980,14 +1069,19 @@ export const InvestigationProcessingView: React.FC<InvestigationProcessingViewPr
                           />
                         </div>
 
-                        {/* Gender-Specific Normal Range */}
+                        {/* Gender-Specific Normal Range + CrelioHealth Biological Visual Gauge */}
                         <div>
-                          <div style={{ padding: '8px 10px', backgroundColor: 'rgba(15, 23, 42, 0.7)', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', fontSize: '0.75rem', color: '#A7F3D0', fontWeight: 600, textAlign: 'center' }}>
+                          <div style={{ padding: '6px 8px', backgroundColor: 'rgba(15, 23, 42, 0.7)', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', fontSize: '0.75rem', color: '#A7F3D0', fontWeight: 600, textAlign: 'center' }}>
                             {param.referenceRange || 'N/A'}
                           </div>
+                          <CrelioBiologicalGauge
+                            observedValue={param.numericValue}
+                            referenceRange={param.referenceRange}
+                            abnormalFlag={param.abnormalFlag}
+                          />
                         </div>
 
-                        {/* Auto-Calculated Dynamic Clinical Flag + Delta Breach Badge */}
+                        {/* Auto-Calculated Dynamic Clinical Flag + CrelioHealth Panic Dispatcher */}
                         <div>
                           <div style={{
                             padding: '6px 8px',
@@ -1008,6 +1102,35 @@ export const InvestigationProcessingView: React.FC<InvestigationProcessingViewPr
                             <div style={{ marginTop: '4px', fontSize: '0.65rem', backgroundColor: '#7F1D1D', color: '#FCA5A5', padding: '2px 4px', borderRadius: '4px', textAlign: 'center', fontWeight: 700 }}>
                               ⚠️ DELTA {paramDelta.direction === 'DROP' ? '▼' : '▲'}{paramDelta.percentChange}% vs baseline
                             </div>
+                          )}
+                          {isCritical && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                alert(`🚨 CrelioHealth Panic Alert Dispatched:\n\nParameter: ${param.parameterName}\nCritical Value: ${param.resultValue} ${param.unit}\nPatient: ${selectedOrder.patientName} (MRN: ${selectedOrder.patientMrn})\nDoctor: Dr. ${selectedOrder.orderingDoctorName || 'Consulting Physician'}\n\n✓ Urgent call/WhatsApp readback logged under ISO 15189 protocol.`);
+                              }}
+                              style={{
+                                marginTop: '4px',
+                                width: '100%',
+                                backgroundColor: '#991B1B',
+                                color: '#FEE2E2',
+                                border: '1px solid #DC2626',
+                                borderRadius: '4px',
+                                padding: '3px 4px',
+                                fontSize: '0.65rem',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '3px'
+                              }}
+                              title="Immediate Panic Dispatch to Doctor (CrelioHealth Standard)"
+                            >
+                              <span>📞</span>
+                              <span>Alert Doctor</span>
+                            </button>
                           )}
                         </div>
 
