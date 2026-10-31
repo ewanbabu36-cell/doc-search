@@ -10,6 +10,7 @@ import { DigitalReceiptModal } from './DigitalReceiptModal.js';
 import { PaperParchiScannerModal } from './PaperParchiScannerModal.js';
 import { DocSearchPlusSubscriptionModal } from './DocSearchPlusSubscriptionModal.js';
 import { PaperlessPreArrivalIntakeModal } from './PaperlessPreArrivalIntakeModal.js';
+import { Tata1mgQuickOrderModal } from './Tata1mgQuickOrderModal.js';
 
 interface Props {
   language: Language;
@@ -35,6 +36,8 @@ export const PatientHomeScreen: React.FC<Props> = ({
   const [showPaperScanner, setShowPaperScanner] = useState(false);
   const [showPlusModal, setShowPlusModal] = useState(false);
   const [showIntakeModal, setShowIntakeModal] = useState(false);
+  const [showTata1mgModal, setShowTata1mgModal] = useState(false);
+  const [tata1mgInitialTab, setTata1mgInitialTab] = useState<'MEDICINE' | 'LAB_TEST' | 'ABHA_CARD'>('MEDICINE');
   const [isSpeaking, setIsSpeaking] = useState(false);
 
   // Clean format token number to prevent ##14 bug
@@ -125,8 +128,28 @@ export const PatientHomeScreen: React.FC<Props> = ({
             <span>{patient.fullName}</span>
             <span style={{ fontSize: '0.75rem', color: '#38BDF8' }}>▼</span>
           </button>
-          <div style={{ fontSize: '0.6875rem', color: '#38BDF8', fontWeight: 700, fontFamily: 'monospace', marginTop: '2px' }}>
-            {patient.uhid} • {patient.bloodGroup}
+          <div
+            onClick={() => {
+              setTata1mgInitialTab('ABHA_CARD');
+              setShowTata1mgModal(true);
+            }}
+            style={{
+              fontSize: '0.6875rem',
+              color: '#38BDF8',
+              fontWeight: 700,
+              fontFamily: 'monospace',
+              marginTop: '2px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+            title="Click to view official ABDM ABHA Digital Card"
+          >
+            <span>{patient.uhid} • {patient.bloodGroup}</span>
+            <span style={{ backgroundColor: 'rgba(56, 189, 248, 0.18)', color: '#38BDF8', padding: '1px 6px', borderRadius: '4px', fontSize: '0.625rem', fontWeight: 800 }}>
+              🛡️ ABHA Card ➔
+            </span>
           </div>
         </div>
 
@@ -338,7 +361,7 @@ export const PatientHomeScreen: React.FC<Props> = ({
           border: '1px solid rgba(16, 185, 129, 0.25)',
           borderRadius: '14px',
           padding: '10px 14px',
-          marginBottom: '20px',
+          marginBottom: '14px',
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
@@ -352,6 +375,86 @@ export const PatientHomeScreen: React.FC<Props> = ({
           </div>
         </div>
         <span style={{ fontSize: '0.75rem', color: '#34D399', fontWeight: 800 }}>View ➔</span>
+      </div>
+
+      {/* 5b-1. Tata 1mg Benchmark: 1-Tap Order Medicines with Prescription & Jan Aushadhi Savings */}
+      <div
+        onClick={() => {
+          setTata1mgInitialTab('MEDICINE');
+          setShowTata1mgModal(true);
+        }}
+        style={{
+          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.18) 0%, rgba(2, 132, 199, 0.18) 100%)',
+          border: '1.5px solid #10B981',
+          borderRadius: '16px',
+          padding: '12px 16px',
+          marginBottom: '12px',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          boxShadow: '0 4px 16px rgba(16, 185, 129, 0.18)'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span style={{ fontSize: '1.6rem' }}>💊</span>
+          <div>
+            <div style={{ fontSize: '0.875rem', fontWeight: 900, color: '#F8FAFC', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>{language === 'hi' ? 'दवा ऑर्डर करें (पर्ची से 1-टैप)' : 'Order Medicines with Prescription'}</span>
+              <span style={{ fontSize: '0.625rem', backgroundColor: '#10B981', color: '#070C16', padding: '1px 6px', borderRadius: '4px', fontWeight: 900 }}>
+                75% SAVE
+              </span>
+            </div>
+            <div style={{ fontSize: '0.6875rem', color: '#6EE7B7' }}>
+              {language === 'hi'
+                ? 'पीएम जन औषधि जेनेरिक विकल्प • 2 घंटे में फ्री होम डिलीवरी'
+                : 'PMBJP Jan Aushadhi Swap • 2-Hour Express Doorstep Delivery'}
+            </div>
+          </div>
+        </div>
+        <span style={{ backgroundColor: '#10B981', color: '#070C16', padding: '5px 10px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 900 }}>
+          Order ➔
+        </span>
+      </div>
+
+      {/* 5b-2. Tata 1mg & Apollo 24|7 Benchmark: 1-Tap Book Lab Tests @ Home */}
+      <div
+        onClick={() => {
+          setTata1mgInitialTab('LAB_TEST');
+          setShowTata1mgModal(true);
+        }}
+        style={{
+          background: 'linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(99, 102, 241, 0.15) 100%)',
+          border: '1.5px solid #0EA5E9',
+          borderRadius: '16px',
+          padding: '12px 16px',
+          marginBottom: '14px',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          boxShadow: '0 4px 16px rgba(14, 165, 233, 0.15)'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span style={{ fontSize: '1.6rem' }}>🧪</span>
+          <div>
+            <div style={{ fontSize: '0.875rem', fontWeight: 900, color: '#F8FAFC', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>{language === 'hi' ? 'घर बैठे लैब टेस्ट बुक करें' : 'Book Lab Tests @ Home (Free Pickup)'}</span>
+              <span style={{ fontSize: '0.625rem', backgroundColor: '#0EA5E9', color: '#FFFFFF', padding: '1px 6px', borderRadius: '4px', fontWeight: 900 }}>
+                NABL 15189
+              </span>
+            </div>
+            <div style={{ fontSize: '0.6875rem', color: '#7DD3FC' }}>
+              {language === 'hi'
+                ? 'प्रमाणित फ्लेबोटोमिस्ट घर आएगा • 6 घंटे में NABL रिपोर्ट'
+                : 'Certified Phlebotomist Home Visit • 6-Hour Smart PDF Reports'}
+            </div>
+          </div>
+        </div>
+        <span style={{ backgroundColor: '#0EA5E9', color: '#FFFFFF', padding: '5px 10px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 900 }}>
+          Book ➔
+        </span>
       </div>
 
       {/* 5b. Eka Care Killer: 1-Click Scan Old Paper Parchi Banner */}
@@ -660,6 +763,15 @@ export const PatientHomeScreen: React.FC<Props> = ({
       <PaperlessPreArrivalIntakeModal
         isOpen={showIntakeModal}
         onClose={() => setShowIntakeModal(false)}
+      />
+
+      {/* Tata 1mg & Apollo 24|7 Benchmark: 1-Tap Quick Order & Home Lab Booking Modal */}
+      <Tata1mgQuickOrderModal
+        isOpen={showTata1mgModal}
+        onClose={() => setShowTata1mgModal(false)}
+        language={language}
+        patient={patient}
+        initialTab={tata1mgInitialTab}
       />
     </div>
   );
