@@ -27,6 +27,7 @@ import { hospitalEventBus, type ActivePatientSummary, type HospitalEventPayload 
 import { PanelContextSwitcher } from './common/PanelContextSwitcher.js';
 import type { MicroscopeSmearReport } from './dialogs/MicroscopeEyepieceScannerModal.js';
 import { isHospitalExecutive } from '../utils/partnerRolePermissions.js';
+import { platformModeService, type PlatformOperatingMode } from '../services/platform-mode-service.js';
 
 // Lazy-loaded Views for granular chunk streaming
 const InvestigationOverviewView = React.lazy(() => import('./views/InvestigationOverviewView.js').then(m => ({ default: m.InvestigationOverviewView })));
@@ -95,6 +96,14 @@ export const ClinicalInvestigationDomainManager: React.FC<ClinicalInvestigationD
   currentUserRole
 }) => {
   const [activeTab, setActiveTab] = useState<ActiveInvestigationTab>(initialTab || 'specimens');
+  const [operatingMode, setOperatingMode] = useState<PlatformOperatingMode>(() => platformModeService.getMode());
+
+  useEffect(() => {
+    const unsubscribe = platformModeService.subscribe((mode) => {
+      setOperatingMode(mode);
+    });
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
     if (initialTab) {
@@ -1252,8 +1261,7 @@ export const ClinicalInvestigationDomainManager: React.FC<ClinicalInvestigationD
         </div>
 
         {/* ========================================================================= */}
-        {/* 3-STAGE DIAGNOSTIC & PATHOLOGY PIPELINE                                   */}
-        {/* Stage 1: Phlebotomy | Stage 2: Analyzer & Sign-Off | Stage 3: Delivery    */}
+        {/* OPERATIONAL MODE: DAILY EXPRESS VS ADVANCE PRO LIMS PIPELINE                */}
         {/* ========================================================================= */}
         {(() => {
           const stage1PendingCount = orders.filter((o) => o.status === 'SAMPLE_REQUIRED' || o.status === 'ORDERED').length;
@@ -1262,16 +1270,137 @@ export const ClinicalInvestigationDomainManager: React.FC<ClinicalInvestigationD
           const criticalPanicCount = orders.filter((o) => o.isCritical).length;
           const stage3ReportsCount = orders.filter((o) => o.report || o.status === 'VERIFIED' || o.status === 'REVIEWED').length;
 
+          if (operatingMode === 'EXPRESS') {
+            return (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '10px',
+                  padding: '10px 14px',
+                  backgroundColor: '#090E1A',
+                  borderRadius: '10px',
+                  border: '1px solid #1E293B',
+                  borderTop: '1px solid #1E293B'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  {[
+                    { id: 'specimens' as ActiveInvestigationTab, label: '1. Phlebotomy & Vacutainers', icon: '🩸', badge: stage1PendingCount > 0 ? `${stage1PendingCount} Samples` : undefined, isPrimary: stage1PendingCount > 0, color: '#0284C7' },
+                    { id: 'processing' as ActiveInvestigationTab, label: '2. Analyzer Workbench', icon: '🔬', badge: stage2ProcessingCount > 0 ? `${stage2ProcessingCount} In Run` : undefined, color: '#A855F7' },
+                    { id: 'results' as ActiveInvestigationTab, label: '3. NABL Pathologist Sign-Off', icon: '✍️', badge: criticalPanicCount > 0 ? `🚨 ${criticalPanicCount} Panic` : stage2ReadyCount > 0 ? `${stage2ReadyCount} Ready` : undefined, isAlert: criticalPanicCount > 0, color: criticalPanicCount > 0 ? '#EF4444' : '#10B981' },
+                    { id: 'reports' as ActiveInvestigationTab, label: '4. WhatsApp & Dispatch', icon: '📲', badge: stage3ReportsCount > 0 ? `${stage3ReportsCount} Reports` : undefined, color: '#34D399' }
+                  ].map((tab) => {
+                    const isActive = activeTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setActiveTab(tab.id)}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '7px',
+                          padding: '8px 14px',
+                          borderRadius: '8px',
+                          border: isActive ? `1.5px solid ${tab.color}` : '1px solid #1E293B',
+                          backgroundColor: isActive ? `${tab.color}22` : '#0E162B',
+                          color: isActive ? tab.color : '#94A3B8',
+                          fontSize: '0.8125rem',
+                          fontWeight: isActive ? 800 : 600,
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                          boxShadow: isActive ? `0 0 12px ${tab.color}33` : 'none'
+                        }}
+                      >
+                        <span style={{ fontSize: '1.05rem', lineHeight: 1 }}>{tab.icon}</span>
+                        <span>{tab.label}</span>
+                        {tab.badge && (
+                          <span
+                            style={{
+                              backgroundColor: tab.isAlert ? '#DC2626' : isActive ? tab.color : '#1E293B',
+                              color: isActive && !tab.isAlert ? '#021D12' : '#F8FAFC',
+                              fontSize: '0.65rem',
+                              fontWeight: 800,
+                              padding: '1px 6px',
+                              borderRadius: '999px'
+                            }}
+                          >
+                            {tab.badge}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Advance Pro Tools Trigger */}
+                <button
+                  type="button"
+                  onClick={() => platformModeService.setMode('ADVANCED')}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '7px 14px',
+                    borderRadius: '8px',
+                    border: '1px dashed rgba(99, 102, 241, 0.45)',
+                    backgroundColor: 'rgba(99, 102, 241, 0.12)',
+                    color: '#C7D2FE',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Unlock Orders Directory, Test Catalog, Doctor Referral Ledger, NABL Audit Vault & QC Calibration (Alt+A)"
+                >
+                  <span>⚙️</span>
+                  <span>+8 Advance Pro Tools</span>
+                  <kbd style={{ backgroundColor: '#1E293B', padding: '1px 5px', borderRadius: '4px', fontSize: '0.625rem', border: '1px solid #334155', color: '#818CF8' }}>Alt+A</kbd>
+                </button>
+              </div>
+            );
+          }
+
           return (
             <>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '6px', borderTop: '1px solid #1E293B', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: '#A5B4FC', fontWeight: 800 }}>
+                  <span>⚙️</span>
+                  <span>ADVANCE PRO MODE ACTIVE — ALL LIMS PIPELINE STAGES, NABL VAULT & QC TOOLS REVEALED</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => platformModeService.setMode('EXPRESS')}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    padding: '4px 10px',
+                    borderRadius: '6px',
+                    backgroundColor: 'rgba(2, 132, 199, 0.15)',
+                    border: '1px solid rgba(56, 189, 248, 0.35)',
+                    color: '#38BDF8',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                  title="Switch back to Daily Express Mode (Alt+A)"
+                >
+                  <span>⚡</span>
+                  <span>Switch to Daily Express Mode</span>
+                  <kbd style={{ backgroundColor: '#1E293B', padding: '1px 4px', borderRadius: '3px', fontSize: '0.6rem' }}>Alt+A</kbd>
+                </button>
+              </div>
+
               <div
                 style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
                   gap: '10px',
                   width: '100%',
-                  paddingTop: '8px',
-                  borderTop: '1px solid #1E293B',
                   marginBottom: '6px'
                 }}
               >

@@ -123,6 +123,7 @@ import { OwnerPulseCockpit } from './common/OwnerPulseCockpit.js';
 import { adaptSidebarLabel } from '../utils/industryUiAdapter.js';
 const PartnerOffersRewardsHub = React.lazy(() => import('./offers/PartnerOffersRewardsHub.js').then(m => ({ default: m.PartnerOffersRewardsHub })));
 import type { ActivePatientSummary } from '../services/hospital-event-bus.js';
+import { platformModeService, type PlatformOperatingMode } from '../services/platform-mode-service.js';
 
 export type OrganizationWorkspaceType =
   | 'HOSPITAL'
@@ -427,6 +428,16 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
   const [investigationTab, setInvestigationTab] = useState<ActiveInvestigationTab>('specimens');
   const [radiologyTab, setRadiologyTab] = useState<any>('overview');
   const [billingTab, setBillingTab] = useState<string>('invoices');
+
+  // Universal Operating Mode: Daily Express vs Advance Pro
+  const [operatingMode, setOperatingMode] = useState<PlatformOperatingMode>(() => platformModeService.getMode());
+
+  useEffect(() => {
+    const unsubscribe = platformModeService.subscribe((mode) => {
+      setOperatingMode(mode);
+    });
+    return unsubscribe;
+  }, []);
 
   // Navigation History and Keep-Alive Visited Modules
   const [navHistory, setNavHistory] = useState<PartnerModuleKey[]>([]);
@@ -3244,7 +3255,68 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
             </div>
           }
           userSlot={
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+              {/* Universal Daily Express ⟷ Advance Pro Mode Switcher */}
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  background: 'rgba(15, 23, 42, 0.85)',
+                  border: '1px solid rgba(255, 255, 255, 0.14)',
+                  borderRadius: '10px',
+                  padding: '2px',
+                  gap: '2px',
+                  flexShrink: 0
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => platformModeService.setMode('EXPRESS')}
+                  style={{
+                    padding: '4px 10px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: operatingMode === 'EXPRESS' ? 'linear-gradient(135deg, #0284C7, #0EA5E9)' : 'transparent',
+                    color: operatingMode === 'EXPRESS' ? '#FFFFFF' : '#94A3B8',
+                    fontWeight: 800,
+                    fontSize: '0.74rem',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    boxShadow: operatingMode === 'EXPRESS' ? '0 2px 8px rgba(2, 132, 199, 0.4)' : 'none',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Daily Express: Only primary daily workflows on-screen (Alt+A to switch)"
+                >
+                  <span style={{ fontSize: '0.85rem' }}>⚡</span>
+                  <span className="ds-hide-on-compact">Daily Express</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => platformModeService.setMode('ADVANCED')}
+                  style={{
+                    padding: '4px 10px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: operatingMode === 'ADVANCED' ? 'linear-gradient(135deg, #6366F1, #8B5CF6)' : 'transparent',
+                    color: operatingMode === 'ADVANCED' ? '#FFFFFF' : '#94A3B8',
+                    fontWeight: 800,
+                    fontSize: '0.74rem',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    boxShadow: operatingMode === 'ADVANCED' ? '0 2px 8px rgba(99, 102, 241, 0.4)' : 'none',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Advance Pro: Deep enterprise tooling, regulatory vaults, analytics & wholesale sync (Alt+A)"
+                >
+                  <span style={{ fontSize: '0.85rem' }}>⚙️</span>
+                  <span className="ds-hide-on-compact">Advance Pro</span>
+                </button>
+              </div>
+
               {/* EWAN 2.0 Master Brain Quick Access Pill */}
               <button
                 type="button"

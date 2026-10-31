@@ -54,6 +54,7 @@ import { ClinicalSparkline } from '@docsearch/ui-kit';
 import { pharmacyStockService } from '../../services/pharmacy-stock-service.js';
 import { opdVoiceCallerService } from '../../services/opd-voice-caller.service.js';
 import { abdmFhirService } from '../../services/abdm-fhir-service.js';
+import { platformModeService, type PlatformOperatingMode } from '../../services/platform-mode-service.js';
 
 export interface ClinicalQuickProtocol {
   id: string;
@@ -778,6 +779,16 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
   const [examCategoryTab, setExamCategoryTab] = useState<string>('General');
   const [realtimeTriageVitals, setRealtimeTriageVitals] = useState<Record<string, any>>({});
   const [averageConsultDurationMinutes] = useState<number>(3.8);
+
+  // Platform Operating Mode: Daily Express vs Advance Pro
+  const [operatingMode, setOperatingMode] = useState<PlatformOperatingMode>(() => platformModeService.getMode());
+
+  useEffect(() => {
+    const unsubscribe = platformModeService.subscribe((mode) => {
+      setOperatingMode(mode);
+    });
+    return unsubscribe;
+  }, []);
 
   // Emergency IPD Admission Modal State
   // ⚡ Quick Walk-In State
@@ -11211,6 +11222,80 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
               </button>
             )}
 
+            {/* Advance Pro Mode Direct Action Chips (Only exposed on-screen in Advance Pro Mode) */}
+            {operatingMode === 'ADVANCED' && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setIsAdmissionModalOpen(true)}
+                  style={{
+                    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                    border: '1px solid #EF4444',
+                    color: '#F87171',
+                    borderRadius: '8px',
+                    padding: '8px 12px',
+                    fontSize: '0.75rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Direct 1-Click Emergency IPD Admission Order (Pro Mode)"
+                >
+                  <span>🚨</span>
+                  <span>STAT Admission</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsDaycareModalOpen(true)}
+                  style={{
+                    backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                    border: '1px solid #38BDF8',
+                    color: '#38BDF8',
+                    borderRadius: '8px',
+                    padding: '8px 12px',
+                    fontSize: '0.75rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Direct 1-Click Daycare Minor Procedures Order (Pro Mode)"
+                >
+                  <span>💉</span>
+                  <span>Daycare</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsDicomViewerOpen(true)}
+                  style={{
+                    backgroundColor: 'rgba(168, 85, 247, 0.15)',
+                    border: '1px solid #A855F7',
+                    color: '#C084FC',
+                    borderRadius: '8px',
+                    padding: '8px 12px',
+                    fontSize: '0.75rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Direct 1-Click PACS 3D DICOM AI Heatmap (Pro Mode)"
+                >
+                  <span>☢️</span>
+                  <span>3D DICOM</span>
+                </button>
+              </>
+            )}
+
             {/* 3-Zone Ergonomics: Advanced Actions Tucked into [··· More Actions ▾] */}
             <div style={{ position: 'relative' }}>
               <button
@@ -11233,7 +11318,7 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
                 title="Open secondary clinical and administrative workflows"
               >
                 <span>···</span>
-                <span>More Actions</span>
+                <span>{operatingMode === 'EXPRESS' ? 'More Actions' : 'Pro Workflows'}</span>
                 <span style={{ fontSize: '0.625rem', opacity: 0.7 }}>▾</span>
               </button>
 
@@ -11260,6 +11345,34 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
                       gap: '4px'
                     }}
                   >
+                    {/* Mode Toggle Switcher inside Menu */}
+                    <div style={{ padding: '4px 6px 8px 6px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          platformModeService.toggleMode();
+                          setIsMoreActionsOpen(false);
+                        }}
+                        style={{
+                          width: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '6px 10px',
+                          borderRadius: '6px',
+                          backgroundColor: operatingMode === 'EXPRESS' ? 'rgba(99, 102, 241, 0.15)' : 'rgba(2, 132, 199, 0.15)',
+                          border: operatingMode === 'EXPRESS' ? '1px solid rgba(99, 102, 241, 0.4)' : '1px solid rgba(56, 189, 248, 0.4)',
+                          color: operatingMode === 'EXPRESS' ? '#C7D2FE' : '#38BDF8',
+                          fontSize: '0.75rem',
+                          fontWeight: 800,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <span>{operatingMode === 'EXPRESS' ? '⚙️ Enable Advance Pro Mode' : '⚡ Enable Daily Express Mode'}</span>
+                        <kbd style={{ backgroundColor: '#1E293B', padding: '1px 5px', borderRadius: '3px', fontSize: '0.625rem' }}>Alt+A</kbd>
+                      </button>
+                    </div>
+
                     <div
                       style={{
                         padding: '4px 8px 6px 8px',

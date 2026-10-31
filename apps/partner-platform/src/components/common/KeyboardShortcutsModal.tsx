@@ -37,6 +37,12 @@ const SHORTCUTS: ShortcutItem[] = [
     action: 'Instant Quick Save & Commit current clinical form or bill',
     category: 'GLOBAL'
   },
+  {
+    keys: ['Alt', 'A'],
+    action: 'Toggle Daily Express ⟷ Advance Pro Mode (Focus vs Full Enterprise)',
+    category: 'GLOBAL',
+    badge: 'ERGONOMICS'
+  },
 
   // Function Keys
   {

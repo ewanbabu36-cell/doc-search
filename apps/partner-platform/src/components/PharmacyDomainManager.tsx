@@ -43,6 +43,7 @@ import { cdscoInspectionAuditService } from '../services/cdsco-inspection-audit-
 import { pharmacyOfflineStorageService } from '../services/pharmacy-offline-storage-service.js';
 import { pharmacySyncEngine } from '../services/pharmacy-sync-engine.js';
 import { serviceWorkerCompanion } from '../services/service-worker-companion.js';
+import { platformModeService, type PlatformOperatingMode } from '../services/platform-mode-service.js';
 import type { HospitalStaffUser } from './auth/HospitalStaffLogin.js';
 import { hospitalEventBus, type ActivePatientSummary, type HospitalEventPayload } from '../services/hospital-event-bus.js';
 import type { ParsedWholesaleInvoice } from '../services/wholesale-invoice-parser.js';
@@ -124,6 +125,14 @@ export const PharmacyDomainManager: React.FC<PharmacyDomainManagerProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<ActivePharmacyTab>(initialTab || 'pos');
   const [isScopeExpanded, setIsScopeExpanded] = useState(false);
+  const [operatingMode, setOperatingMode] = useState<PlatformOperatingMode>(() => platformModeService.getMode());
+
+  useEffect(() => {
+    const unsubscribe = platformModeService.subscribe((mode) => {
+      setOperatingMode(mode);
+    });
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
     if (initialTab && initialTab !== activeTab) {
@@ -1026,158 +1035,29 @@ export const PharmacyDomainManager: React.FC<PharmacyDomainManagerProps> = ({
         </div>
 
         {/* ========================================================================= */}
-        {/* PHARMACY 3-STAGE OPERATIONAL PIPELINE                                      */}
-        {/* 1. 🛒 Dispense & POS  |  2. 📦 Inventory & Batches  |  3. 📊 Regulatory & Galla */}
+        {/* OPERATIONAL MODE: DAILY EXPRESS VS ADVANCE PRO PIPELINE                     */}
         {/* ========================================================================= */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-            gap: '10px',
-            width: '100%',
-            paddingTop: '8px',
-            borderTop: '1px solid #1E293B',
-            marginBottom: '6px'
-          }}
-        >
-          {/* Mode 1: Dispense & POS */}
-          <button
-            type="button"
-            onClick={() => handleSelectMode('dispense')}
+        {operatingMode === 'EXPRESS' ? (
+          <div
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '10px',
               padding: '10px 14px',
+              backgroundColor: '#090E1A',
               borderRadius: '10px',
-              backgroundColor: activeMode === 'dispense' ? 'rgba(16, 185, 129, 0.15)' : '#0E162B',
-              border: activeMode === 'dispense' ? '1.5px solid #10B981' : '1px solid #1E293B',
-              cursor: 'pointer',
-              textAlign: 'left',
-              transition: 'all 0.15s ease',
-              boxShadow: activeMode === 'dispense' ? '0 0 16px rgba(16, 185, 129, 0.15)' : 'none'
+              border: '1px solid #1E293B',
+              borderTop: '1px solid #1E293B'
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '1.35rem' }}>🛒</span>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ fontSize: '0.85rem', fontWeight: 800, color: activeMode === 'dispense' ? '#34D399' : '#F8FAFC' }}>
-                    1. Dispense & POS
-                  </span>
-                  <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#94A3B8', backgroundColor: '#1E293B', padding: '1px 5px', borderRadius: '4px', border: '1px solid #334155' }}>
-                    Alt+1
-                  </span>
-                </div>
-                <div style={{ fontSize: '0.68rem', color: '#94A3B8' }}>
-                  Walk-in counter, e-Rx queue & khata
-                </div>
-              </div>
-            </div>
-            <Badge variant={pendingRxCount > 0 ? 'primary' : 'success'} style={{ fontSize: '0.65rem' }}>
-              {pendingRxCount > 0 ? `${pendingRxCount} Rx Pending` : 'Counter Ready'}
-            </Badge>
-          </button>
-
-          {/* Mode 2: Inventory & Stock */}
-          <button
-            type="button"
-            onClick={() => handleSelectMode('inventory')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '10px 14px',
-              borderRadius: '10px',
-              backgroundColor: activeMode === 'inventory' ? 'rgba(2, 132, 199, 0.15)' : '#0E162B',
-              border: activeMode === 'inventory' ? '1.5px solid #0284C7' : '1px solid #1E293B',
-              cursor: 'pointer',
-              textAlign: 'left',
-              transition: 'all 0.15s ease',
-              boxShadow: activeMode === 'inventory' ? '0 0 16px rgba(2, 132, 199, 0.15)' : 'none'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '1.35rem' }}>📦</span>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ fontSize: '0.85rem', fontWeight: 800, color: activeMode === 'inventory' ? '#38BDF8' : '#F8FAFC' }}>
-                    2. Inventory & Stock
-                  </span>
-                  <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#94A3B8', backgroundColor: '#1E293B', padding: '1px 5px', borderRadius: '4px', border: '1px solid #334155' }}>
-                    Alt+2
-                  </span>
-                </div>
-                <div style={{ fontSize: '0.68rem', color: '#94A3B8' }}>
-                  Batches, Inward, Low Stock & Expiry
-                </div>
-              </div>
-            </div>
-            <Badge variant={nearExpiryCount > 0 ? 'warning' : 'neutral'} style={{ fontSize: '0.65rem' }}>
-              {nearExpiryCount > 0 ? `${nearExpiryCount} Near Expiry` : `${batches.filter((b) => b.availableQuantity > 0).length} Batches`}
-            </Badge>
-          </button>
-
-          {/* Mode 3: Regulatory & Ledger */}
-          <button
-            type="button"
-            onClick={() => handleSelectMode('regulatory')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '10px 14px',
-              borderRadius: '10px',
-              backgroundColor: activeMode === 'regulatory' ? 'rgba(168, 85, 247, 0.15)' : '#0E162B',
-              border: activeMode === 'regulatory' ? '1.5px solid #A855F7' : '1px solid #1E293B',
-              cursor: 'pointer',
-              textAlign: 'left',
-              transition: 'all 0.15s ease',
-              boxShadow: activeMode === 'regulatory' ? '0 0 16px rgba(168, 85, 247, 0.15)' : 'none'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '1.35rem' }}>📊</span>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ fontSize: '0.85rem', fontWeight: 800, color: activeMode === 'regulatory' ? '#C084FC' : '#F8FAFC' }}>
-                    3. Regulatory & Ledger
-                  </span>
-                  <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#94A3B8', backgroundColor: '#1E293B', padding: '1px 5px', borderRadius: '4px', border: '1px solid #334155' }}>
-                    Alt+3
-                  </span>
-                </div>
-                <div style={{ fontSize: '0.68rem', color: '#94A3B8' }}>
-                  Schedule H1, Cash Galla & Reports
-                </div>
-              </div>
-            </div>
-            <Badge variant="neutral" style={{ fontSize: '0.65rem', color: todayRevenue > 0 ? '#34D399' : undefined }}>
-              {todayRevenue > 0 ? `₹${todayRevenue.toLocaleString('en-IN')}` : 'CDSCO Compliant'}
-            </Badge>
-          </button>
-        </div>
-
-        {/* Contextual Sub-Pills for the Selected Mode */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            flexWrap: 'wrap',
-            padding: '8px 12px',
-            backgroundColor: '#090E1A',
-            borderRadius: '10px',
-            border: '1px solid #1E293B'
-          }}
-        >
-          {activeMode === 'dispense' && (
-            <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
               {[
-                { id: 'pos' as ActivePharmacyTab, label: 'Fast POS Counter', icon: '🛒', badge: todayRevenue > 0 ? `₹${todayRevenue.toLocaleString('en-IN')}` : undefined },
-                { id: 'prescriptions' as ActivePharmacyTab, label: 'Doctor Rx Queue', icon: '📋', badge: pendingRxCount > 0 ? `${pendingRxCount} Pending` : undefined, isPrimary: pendingRxCount > 0 },
-                { id: 'khata' as ActivePharmacyTab, label: 'Customer Credit Khata', icon: '📒' },
-                { id: 'patientHistory' as ActivePharmacyTab, label: 'Patient Rx History', icon: '👤' }
+                { id: 'pos' as ActivePharmacyTab, label: '1. Fast POS Counter', icon: '🛒', badge: todayRevenue > 0 ? `₹${todayRevenue.toLocaleString('en-IN')}` : undefined, color: '#10B981', hotkey: 'Alt+1' },
+                { id: 'prescriptions' as ActivePharmacyTab, label: '2. Doctor Rx Queue', icon: '📋', badge: pendingRxCount > 0 ? `${pendingRxCount} Rx Pending` : undefined, isPrimary: pendingRxCount > 0, color: '#0284C7', hotkey: 'Alt+P' },
+                { id: 'inventory' as ActivePharmacyTab, label: '3. Live Batches & Stock', icon: '📦', badge: `${batches.filter((b) => b.availableQuantity > 0).length} Batches`, color: '#38BDF8', hotkey: 'Alt+2' },
+                { id: 'revenue' as ActivePharmacyTab, label: '4. Aaj Ka Galla', icon: '💰', badge: todayRevenue > 0 ? `₹${todayRevenue.toLocaleString('en-IN')}` : 'Daily Galla', color: '#34D399', hotkey: 'Alt+3' }
               ].map((tab) => {
                 const isActive = activeTab === tab.id;
                 return (
@@ -1188,25 +1068,26 @@ export const PharmacyDomainManager: React.FC<PharmacyDomainManagerProps> = ({
                     style={{
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: '6px',
-                      padding: '6px 12px',
+                      gap: '7px',
+                      padding: '8px 14px',
                       borderRadius: '8px',
-                      border: isActive ? '1.5px solid #10B981' : '1px solid #1E293B',
-                      backgroundColor: isActive ? 'rgba(16, 185, 129, 0.2)' : '#0E162B',
-                      color: isActive ? '#6EE7B7' : '#94A3B8',
-                      fontSize: '0.78rem',
-                      fontWeight: isActive ? 700 : 500,
+                      border: isActive ? `1.5px solid ${tab.color}` : '1px solid #1E293B',
+                      backgroundColor: isActive ? `${tab.color}22` : '#0E162B',
+                      color: isActive ? tab.color : '#94A3B8',
+                      fontSize: '0.8125rem',
+                      fontWeight: isActive ? 800 : 600,
                       cursor: 'pointer',
-                      transition: 'all 0.15s ease'
+                      transition: 'all 0.15s ease',
+                      boxShadow: isActive ? `0 0 12px ${tab.color}33` : 'none'
                     }}
                   >
-                    <span>{tab.icon}</span>
+                    <span style={{ fontSize: '1.05rem', lineHeight: 1 }}>{tab.icon}</span>
                     <span>{tab.label}</span>
                     {tab.badge && (
                       <span
                         style={{
-                          backgroundColor: isActive ? '#10B981' : tab.isPrimary ? '#0284C7' : '#1E293B',
-                          color: isActive ? '#064E3B' : '#F8FAFC',
+                          backgroundColor: isActive ? tab.color : tab.isPrimary ? '#0284C7' : '#1E293B',
+                          color: isActive ? '#021D12' : '#F8FAFC',
                           fontSize: '0.65rem',
                           fontWeight: 800,
                           padding: '1px 6px',
@@ -1219,140 +1100,389 @@ export const PharmacyDomainManager: React.FC<PharmacyDomainManagerProps> = ({
                   </button>
                 );
               })}
-            </>
-          )}
+            </div>
 
-          {activeMode === 'inventory' && (
-            <>
-              {[
-                { id: 'inventory' as ActivePharmacyTab, label: 'Live Stock & Batches', icon: '📦', badge: `${batches.filter((b) => b.availableQuantity > 0).length} Batches` },
-                { id: 'janAushadhi' as ActivePharmacyTab, label: 'Jan Aushadhi PMBJP & Refill Radar', icon: '💊', badge: 'High Margin (60%+)' },
-                { id: 'b2bWholesale' as ActivePharmacyTab, label: 'DocSearch B2B Wholesale Depot', icon: '🚚', badge: 'Direct Sourcing' },
-                { id: 'catalog' as ActivePharmacyTab, label: 'Master Drug Catalog', icon: '📚', badge: catalog.length > 0 ? `${catalog.length}` : undefined },
-                { id: 'expiry' as ActivePharmacyTab, label: 'Stock Expiry & Reorder', icon: '⚠️', badge: nearExpiryCount > 0 ? `${nearExpiryCount} Near Expiry` : undefined, isAlert: nearExpiryCount > 0 },
-                { id: 'outbreakRadar' as ActivePharmacyTab, label: 'Epidemic Outbreak Radar', icon: '📡' },
-                { id: 'movements' as ActivePharmacyTab, label: 'Stock Movements', icon: '🚚' },
-                { id: 'returns' as ActivePharmacyTab, label: 'Returns & Adjustments', icon: '🔄' }
-              ].map((tab) => {
-                const isActive = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => handleSelectTab(tab.id)}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      padding: '6px 12px',
-                      borderRadius: '8px',
-                      border: isActive ? '1.5px solid #0284C7' : tab.isAlert ? '1px solid #F59E0B' : '1px solid #1E293B',
-                      backgroundColor: isActive ? 'rgba(2, 132, 199, 0.2)' : '#0E162B',
-                      color: isActive ? '#38BDF8' : tab.isAlert ? '#FBBF24' : '#94A3B8',
-                      fontSize: '0.78rem',
-                      fontWeight: isActive ? 700 : 500,
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease'
-                    }}
-                  >
-                    <span>{tab.icon}</span>
-                    <span>{tab.label}</span>
-                    {tab.badge && (
-                      <span
-                        style={{
-                          backgroundColor: isActive ? '#0284C7' : tab.isAlert ? '#D97706' : '#1E293B',
-                          color: '#F8FAFC',
-                          fontSize: '0.65rem',
-                          fontWeight: 800,
-                          padding: '1px 6px',
-                          borderRadius: '999px'
-                        }}
-                      >
-                        {tab.badge}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-
+            {/* Toggle into Advance Pro Tools */}
+            <button
+              type="button"
+              onClick={() => platformModeService.setMode('ADVANCED')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '7px 14px',
+                borderRadius: '8px',
+                border: '1px dashed rgba(99, 102, 241, 0.45)',
+                backgroundColor: 'rgba(99, 102, 241, 0.12)',
+                color: '#C7D2FE',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              title="Unlock Wholesale Inwarding, Marg ERP CSV, CDSCO Vault, PMBJP Jan Aushadhi, Outbreak Radar (Alt+A)"
+            >
+              <span>⚙️</span>
+              <span>+18 Advance Pro Tools</span>
+              <kbd style={{ backgroundColor: '#1E293B', padding: '1px 5px', borderRadius: '4px', fontSize: '0.625rem', border: '1px solid #334155', color: '#818CF8' }}>Alt+A</kbd>
+            </button>
+          </div>
+        ) : (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '6px', borderTop: '1px solid #1E293B', marginBottom: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: '#A5B4FC', fontWeight: 800 }}>
+                <span>⚙️</span>
+                <span>ADVANCE PRO MODE ACTIVE — ALL 22 DOMAIN MODULES & REGULATORY TOOLS REVEALED</span>
+              </div>
               <button
                 type="button"
-                onClick={() => setIsWholesaleUploadOpen(true)}
+                onClick={() => platformModeService.setMode('EXPRESS')}
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '6px',
-                  padding: '6px 14px',
-                  borderRadius: '8px',
-                  border: '1.5px solid #10B981',
-                  backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                  color: '#34D399',
-                  fontSize: '0.78rem',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                  boxShadow: '0 2px 8px rgba(16, 185, 129, 0.2)'
+                  gap: '5px',
+                  padding: '4px 10px',
+                  borderRadius: '6px',
+                  backgroundColor: 'rgba(2, 132, 199, 0.15)',
+                  border: '1px solid rgba(56, 189, 248, 0.35)',
+                  color: '#38BDF8',
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  cursor: 'pointer'
                 }}
-                title="Import Marg ERP / Vyapar / Busy CSV Invoice with 1-Click Batch Inwarding"
+                title="Switch back to Daily Express Mode (Alt+A)"
               >
                 <span>⚡</span>
-                <span>1-Click Marg CSV Ingestion</span>
+                <span>Switch to Daily Express Mode</span>
+                <kbd style={{ backgroundColor: '#1E293B', padding: '1px 4px', borderRadius: '3px', fontSize: '0.6rem' }}>Alt+A</kbd>
               </button>
-            </>
-          )}
+            </div>
 
-          {activeMode === 'regulatory' && (
-            <>
-              {[
-                { id: 'revenue' as ActivePharmacyTab, label: 'Daily Galla & Collections', icon: '💰', badge: todayRevenue > 0 ? `₹${todayRevenue.toLocaleString('en-IN')}` : undefined },
-                { id: 'auditVault' as ActivePharmacyTab, label: 'CDSCO Regulatory Vault', icon: '⚖️', badge: 'Form 20B/21B' },
-                { id: 'narcotics' as ActivePharmacyTab, label: 'Schedule H / Narcotics', icon: '💊', badge: 'CDSCO H1', isAlert: true },
-                { id: 'reports' as ActivePharmacyTab, label: 'MIS & Regulatory Reports', icon: '📊' },
-                { id: 'overview' as ActivePharmacyTab, label: 'Operations Overview', icon: '📈' }
-              ].map((tab) => {
-                const isActive = activeTab === tab.id || (tab.id === 'auditVault' && (activeTab === 'compliance' || activeTab === 'audit'));
-                return (
+            {/* 1. 🛒 Dispense & POS  |  2. 📦 Inventory & Batches  |  3. 📊 Regulatory & Galla */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                gap: '10px',
+                width: '100%',
+                marginBottom: '6px'
+              }}
+            >
+              {/* Mode 1: Dispense & POS */}
+              <button
+                type="button"
+                onClick={() => handleSelectMode('dispense')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '10px 14px',
+                  borderRadius: '10px',
+                  backgroundColor: activeMode === 'dispense' ? 'rgba(16, 185, 129, 0.15)' : '#0E162B',
+                  border: activeMode === 'dispense' ? '1.5px solid #10B981' : '1px solid #1E293B',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all 0.15s ease',
+                  boxShadow: activeMode === 'dispense' ? '0 0 16px rgba(16, 185, 129, 0.15)' : 'none'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '1.35rem' }}>🛒</span>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 800, color: activeMode === 'dispense' ? '#34D399' : '#F8FAFC' }}>
+                        1. Dispense & POS
+                      </span>
+                      <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#94A3B8', backgroundColor: '#1E293B', padding: '1px 5px', borderRadius: '4px', border: '1px solid #334155' }}>
+                        Alt+1
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '0.68rem', color: '#94A3B8' }}>
+                      Walk-in counter, e-Rx queue & khata
+                    </div>
+                  </div>
+                </div>
+                <Badge variant={pendingRxCount > 0 ? 'primary' : 'success'} style={{ fontSize: '0.65rem' }}>
+                  {pendingRxCount > 0 ? `${pendingRxCount} Rx Pending` : 'Counter Ready'}
+                </Badge>
+              </button>
+
+              {/* Mode 2: Inventory & Stock */}
+              <button
+                type="button"
+                onClick={() => handleSelectMode('inventory')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '10px 14px',
+                  borderRadius: '10px',
+                  backgroundColor: activeMode === 'inventory' ? 'rgba(2, 132, 199, 0.15)' : '#0E162B',
+                  border: activeMode === 'inventory' ? '1.5px solid #0284C7' : '1px solid #1E293B',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all 0.15s ease',
+                  boxShadow: activeMode === 'inventory' ? '0 0 16px rgba(2, 132, 199, 0.15)' : 'none'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '1.35rem' }}>📦</span>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 800, color: activeMode === 'inventory' ? '#38BDF8' : '#F8FAFC' }}>
+                        2. Inventory & Stock
+                      </span>
+                      <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#94A3B8', backgroundColor: '#1E293B', padding: '1px 5px', borderRadius: '4px', border: '1px solid #334155' }}>
+                        Alt+2
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '0.68rem', color: '#94A3B8' }}>
+                      Batches, Inward, Low Stock & Expiry
+                    </div>
+                  </div>
+                </div>
+                <Badge variant={nearExpiryCount > 0 ? 'warning' : 'neutral'} style={{ fontSize: '0.65rem' }}>
+                  {nearExpiryCount > 0 ? `${nearExpiryCount} Near Expiry` : `${batches.filter((b) => b.availableQuantity > 0).length} Batches`}
+                </Badge>
+              </button>
+
+              {/* Mode 3: Regulatory & Ledger */}
+              <button
+                type="button"
+                onClick={() => handleSelectMode('regulatory')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '10px 14px',
+                  borderRadius: '10px',
+                  backgroundColor: activeMode === 'regulatory' ? 'rgba(168, 85, 247, 0.15)' : '#0E162B',
+                  border: activeMode === 'regulatory' ? '1.5px solid #A855F7' : '1px solid #1E293B',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all 0.15s ease',
+                  boxShadow: activeMode === 'regulatory' ? '0 0 16px rgba(168, 85, 247, 0.15)' : 'none'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '1.35rem' }}>📊</span>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 800, color: activeMode === 'regulatory' ? '#C084FC' : '#F8FAFC' }}>
+                        3. Regulatory & Ledger
+                      </span>
+                      <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#94A3B8', backgroundColor: '#1E293B', padding: '1px 5px', borderRadius: '4px', border: '1px solid #334155' }}>
+                        Alt+3
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '0.68rem', color: '#94A3B8' }}>
+                      Schedule H1, Cash Galla & Reports
+                    </div>
+                  </div>
+                </div>
+                <Badge variant="neutral" style={{ fontSize: '0.65rem', color: todayRevenue > 0 ? '#34D399' : undefined }}>
+                  {todayRevenue > 0 ? `₹${todayRevenue.toLocaleString('en-IN')}` : 'CDSCO Compliant'}
+                </Badge>
+              </button>
+            </div>
+
+            {/* Contextual Sub-Pills for the Selected Mode */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                flexWrap: 'wrap',
+                padding: '8px 12px',
+                backgroundColor: '#090E1A',
+                borderRadius: '10px',
+                border: '1px solid #1E293B'
+              }}
+            >
+              {activeMode === 'dispense' && (
+                <>
+                  {[
+                    { id: 'pos' as ActivePharmacyTab, label: 'Fast POS Counter', icon: '🛒', badge: todayRevenue > 0 ? `₹${todayRevenue.toLocaleString('en-IN')}` : undefined },
+                    { id: 'prescriptions' as ActivePharmacyTab, label: 'Doctor Rx Queue', icon: '📋', badge: pendingRxCount > 0 ? `${pendingRxCount} Pending` : undefined, isPrimary: pendingRxCount > 0 },
+                    { id: 'khata' as ActivePharmacyTab, label: 'Customer Credit Khata', icon: '📒' },
+                    { id: 'patientHistory' as ActivePharmacyTab, label: 'Patient Rx History', icon: '👤' }
+                  ].map((tab) => {
+                    const isActive = activeTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => handleSelectTab(tab.id)}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '6px 12px',
+                          borderRadius: '8px',
+                          border: isActive ? '1.5px solid #10B981' : '1px solid #1E293B',
+                          backgroundColor: isActive ? 'rgba(16, 185, 129, 0.2)' : '#0E162B',
+                          color: isActive ? '#6EE7B7' : '#94A3B8',
+                          fontSize: '0.78rem',
+                          fontWeight: isActive ? 700 : 500,
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        <span>{tab.icon}</span>
+                        <span>{tab.label}</span>
+                        {tab.badge && (
+                          <span
+                            style={{
+                              backgroundColor: isActive ? '#10B981' : tab.isPrimary ? '#0284C7' : '#1E293B',
+                              color: isActive ? '#064E3B' : '#F8FAFC',
+                              fontSize: '0.65rem',
+                              fontWeight: 800,
+                              padding: '1px 6px',
+                              borderRadius: '999px'
+                            }}
+                          >
+                            {tab.badge}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </>
+              )}
+
+              {activeMode === 'inventory' && (
+                <>
+                  {[
+                    { id: 'inventory' as ActivePharmacyTab, label: 'Live Stock & Batches', icon: '📦', badge: `${batches.filter((b) => b.availableQuantity > 0).length} Batches` },
+                    { id: 'janAushadhi' as ActivePharmacyTab, label: 'Jan Aushadhi PMBJP & Refill Radar', icon: '💊', badge: 'High Margin (60%+)' },
+                    { id: 'b2bWholesale' as ActivePharmacyTab, label: 'DocSearch B2B Wholesale Depot', icon: '🚚', badge: 'Direct Sourcing' },
+                    { id: 'catalog' as ActivePharmacyTab, label: 'Master Drug Catalog', icon: '📚', badge: catalog.length > 0 ? `${catalog.length}` : undefined },
+                    { id: 'expiry' as ActivePharmacyTab, label: 'Stock Expiry & Reorder', icon: '⚠️', badge: nearExpiryCount > 0 ? `${nearExpiryCount} Near Expiry` : undefined, isAlert: nearExpiryCount > 0 },
+                    { id: 'outbreakRadar' as ActivePharmacyTab, label: 'Epidemic Outbreak Radar', icon: '📡' },
+                    { id: 'movements' as ActivePharmacyTab, label: 'Stock Movements', icon: '🚚' },
+                    { id: 'returns' as ActivePharmacyTab, label: 'Returns & Adjustments', icon: '🔄' }
+                  ].map((tab) => {
+                    const isActive = activeTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => handleSelectTab(tab.id)}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '6px 12px',
+                          borderRadius: '8px',
+                          border: isActive ? '1.5px solid #0284C7' : tab.isAlert ? '1px solid #F59E0B' : '1px solid #1E293B',
+                          backgroundColor: isActive ? 'rgba(2, 132, 199, 0.2)' : '#0E162B',
+                          color: isActive ? '#38BDF8' : tab.isAlert ? '#FBBF24' : '#94A3B8',
+                          fontSize: '0.78rem',
+                          fontWeight: isActive ? 700 : 500,
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        <span>{tab.icon}</span>
+                        <span>{tab.label}</span>
+                        {tab.badge && (
+                          <span
+                            style={{
+                              backgroundColor: isActive ? '#0284C7' : tab.isAlert ? '#D97706' : '#1E293B',
+                              color: '#F8FAFC',
+                              fontSize: '0.65rem',
+                              fontWeight: 800,
+                              padding: '1px 6px',
+                              borderRadius: '999px'
+                            }}
+                          >
+                            {tab.badge}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+
                   <button
-                    key={tab.id}
                     type="button"
-                    onClick={() => handleSelectTab(tab.id)}
+                    onClick={() => setIsWholesaleUploadOpen(true)}
                     style={{
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: '6px',
-                      padding: '6px 12px',
+                      padding: '6px 14px',
                       borderRadius: '8px',
-                      border: isActive ? '1.5px solid #A855F7' : '1px solid #1E293B',
-                      backgroundColor: isActive ? 'rgba(168, 85, 247, 0.2)' : '#0E162B',
-                      color: isActive ? '#C084FC' : '#94A3B8',
+                      border: '1.5px solid #10B981',
+                      backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                      color: '#34D399',
                       fontSize: '0.78rem',
-                      fontWeight: isActive ? 700 : 500,
+                      fontWeight: 800,
                       cursor: 'pointer',
-                      transition: 'all 0.15s ease'
+                      transition: 'all 0.15s ease',
+                      boxShadow: '0 2px 8px rgba(16, 185, 129, 0.2)'
                     }}
+                    title="Import Marg ERP / Vyapar / Busy CSV Invoice with 1-Click Batch Inwarding"
                   >
-                    <span>{tab.icon}</span>
-                    <span>{tab.label}</span>
-                    {tab.badge && (
-                      <span
+                    <span>⚡</span>
+                    <span>1-Click Marg CSV Ingestion</span>
+                  </button>
+                </>
+              )}
+
+              {activeMode === 'regulatory' && (
+                <>
+                  {[
+                    { id: 'revenue' as ActivePharmacyTab, label: 'Daily Galla & Collections', icon: '💰', badge: todayRevenue > 0 ? `₹${todayRevenue.toLocaleString('en-IN')}` : undefined },
+                    { id: 'auditVault' as ActivePharmacyTab, label: 'CDSCO Regulatory Vault', icon: '⚖️', badge: 'Form 20B/21B' },
+                    { id: 'narcotics' as ActivePharmacyTab, label: 'Schedule H / Narcotics', icon: '💊', badge: 'CDSCO H1', isAlert: true },
+                    { id: 'reports' as ActivePharmacyTab, label: 'MIS & Regulatory Reports', icon: '📊' },
+                    { id: 'overview' as ActivePharmacyTab, label: 'Operations Overview', icon: '📈' }
+                  ].map((tab) => {
+                    const isActive = activeTab === tab.id || (tab.id === 'auditVault' && (activeTab === 'compliance' || activeTab === 'audit'));
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => handleSelectTab(tab.id)}
                         style={{
-                          backgroundColor: isActive ? '#A855F7' : tab.isAlert ? '#DC2626' : '#1E293B',
-                          color: '#F8FAFC',
-                          fontSize: '0.65rem',
-                          fontWeight: 800,
-                          padding: '1px 6px',
-                          borderRadius: '999px'
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '6px 12px',
+                          borderRadius: '8px',
+                          border: isActive ? '1.5px solid #A855F7' : '1px solid #1E293B',
+                          backgroundColor: isActive ? 'rgba(168, 85, 247, 0.2)' : '#0E162B',
+                          color: isActive ? '#C084FC' : '#94A3B8',
+                          fontSize: '0.78rem',
+                          fontWeight: isActive ? 700 : 500,
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease'
                         }}
                       >
-                        {tab.badge}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </>
-          )}
-        </div>
+                        <span>{tab.icon}</span>
+                        <span>{tab.label}</span>
+                        {tab.badge && (
+                          <span
+                            style={{
+                              backgroundColor: isActive ? '#A855F7' : tab.isAlert ? '#DC2626' : '#1E293B',
+                              color: '#F8FAFC',
+                              fontSize: '0.65rem',
+                              fontWeight: 800,
+                              padding: '1px 6px',
+                              borderRadius: '999px'
+                            }}
+                          >
+                            {tab.badge}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Contextual Sub-Tab Navigation Ribbon for Drilldown Views */}
