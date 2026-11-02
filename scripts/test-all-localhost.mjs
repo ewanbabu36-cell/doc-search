@@ -27,7 +27,7 @@ async function testAll() {
 
   // 3. Partner Platform
   try {
-    const r = await fetch('http://127.0.0.1:5173');
+    const r = await fetch('http://localhost:5173');
     console.log(`✔ [PORT 5173] Partner Platform: ONLINE (HTTP ${r.status})`);
   } catch (e) {
     console.error('✘ [PORT 5173] Partner Platform error:', e.message);
@@ -35,7 +35,7 @@ async function testAll() {
 
   // 4. Patient App
   try {
-    const r = await fetch('http://127.0.0.1:5174');
+    const r = await fetch('http://localhost:5174');
     console.log(`✔ [PORT 5174] Patient App: ONLINE (HTTP ${r.status})`);
   } catch (e) {
     console.error('✘ [PORT 5174] Patient App error:', e.message);
@@ -43,7 +43,7 @@ async function testAll() {
 
   // 5. Company Platform
   try {
-    const r = await fetch('http://127.0.0.1:5177');
+    const r = await fetch('http://localhost:5177');
     console.log(`✔ [PORT 5177] Company Platform: ONLINE (HTTP ${r.status})`);
   } catch (e) {
     console.error('✘ [PORT 5177] Company Platform error:', e.message);

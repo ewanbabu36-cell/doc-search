@@ -97,47 +97,13 @@ const INITIAL_DOCTORS: ReferringDoctor[] = [
 const INITIAL_TRANSACTIONS: ReferralTransaction[] = [];
 
 export const ReferringDoctorLedgerView: React.FC = () => {
-  const [doctors, setDoctors] = useState<ReferringDoctor[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const stored = window.localStorage.getItem('docsearch_referral_doctors');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-        }
-      } catch {}
-    }
-    return INITIAL_DOCTORS;
-  });
+  const [doctors, setDoctors] = useState<ReferringDoctor[]>(INITIAL_DOCTORS);
 
-  const [transactions, setTransactions] = useState<ReferralTransaction[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const stored = window.localStorage.getItem('docsearch_referral_transactions');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed)) return parsed;
-        }
-      } catch {}
-    }
-    return INITIAL_TRANSACTIONS;
-  });
+  const [transactions, setTransactions] = useState<ReferralTransaction[]>(INITIAL_TRANSACTIONS);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        window.localStorage.setItem('docsearch_referral_doctors', JSON.stringify(doctors));
-      } catch {}
-    }
-  }, [doctors]);
+  // Authoritative in-memory state backed by live ledger services
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        window.localStorage.setItem('docsearch_referral_transactions', JSON.stringify(transactions));
-      } catch {}
-    }
-  }, [transactions]);
+  // Authoritative in-memory state backed by live ledger services
   const [activeSubTab, setActiveSubTab] = useState<'DIRECTORY' | 'TRANSACTIONS' | 'SETTLEMENTS' | 'NMC_PAYOUT_MATRIX'>('NMC_PAYOUT_MATRIX');
   const [searchTerm, setSearchTerm] = useState('');
   

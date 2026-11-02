@@ -34,10 +34,20 @@ import { PoshEthicsVigilanceView } from './PoshEthicsVigilanceView.js';
 import { SubsidiaryTransferEscrowView } from './SubsidiaryTransferEscrowView.js';
 import { FounderApprovalGovernanceView } from './FounderApprovalGovernanceView.js';
 
+// Enterprise Clinical & Diagnostic Master Catalog Consoles
+import { ClinicalWardMasterView } from './ClinicalWardMasterView.js';
+import { PrescriptionTemplateMasterView } from './PrescriptionTemplateMasterView.js';
+import { VacutainerCatalogMasterView } from './VacutainerCatalogMasterView.js';
+import { DiagnosticPackageMasterView } from './DiagnosticPackageMasterView.js';
+
 import { Tabs, Badge, Spinner, ErrorState } from '@docsearch/ui-kit';
 
 type ActiveTab =
   | 'founder-approvals'
+  | 'ward-master'
+  | 'rx-templates'
+  | 'vacutainers'
+  | 'diag-packages'
   | 'role-matrix'
   | 'overview'
   | 'mca-vault'
@@ -277,6 +287,26 @@ export const CompanyAdminDomainManager: React.FC<CompanyAdminDomainManagerProps>
             badge: <Badge variant="warning">Mandatory Sign-off</Badge>
           },
           {
+            id: 'ward-master',
+            label: '🏥 Clinical Wards & Tariffs',
+            badge: <Badge variant="primary">IPD Master</Badge>
+          },
+          {
+            id: 'rx-templates',
+            label: '🩺 Rx Prescription Templates',
+            badge: <Badge variant="success">OPD Master</Badge>
+          },
+          {
+            id: 'vacutainers',
+            label: '🧪 Vacutainer Tubes',
+            badge: <Badge variant="neutral">Lab Spec</Badge>
+          },
+          {
+            id: 'diag-packages',
+            label: '📦 Diagnostic Packages',
+            badge: <Badge variant="warning">Commercial</Badge>
+          },
+          {
             id: 'overview',
             label: '📊 Overview'
           },
@@ -356,6 +386,22 @@ export const CompanyAdminDomainManager: React.FC<CompanyAdminDomainManagerProps>
           currentRoleCode={currentUserRole}
           currentUserEmail={currentUserEmail}
         />
+      )}
+
+      {activeTab === 'ward-master' && (
+        <ClinicalWardMasterView />
+      )}
+
+      {activeTab === 'rx-templates' && (
+        <PrescriptionTemplateMasterView />
+      )}
+
+      {activeTab === 'vacutainers' && (
+        <VacutainerCatalogMasterView />
+      )}
+
+      {activeTab === 'diag-packages' && (
+        <DiagnosticPackageMasterView />
       )}
 
       {activeTab === 'overview' && overview && (

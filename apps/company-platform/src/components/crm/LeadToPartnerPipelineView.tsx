@@ -90,29 +90,7 @@ export const PIPELINE_STAGES: PipelineStageInfo[] = [
 const loadDynamicPipelineEntities = (): PipelineEntity[] => {
   if (typeof window === 'undefined') return [];
   try {
-    const saved = localStorage.getItem('docsearch_pipeline_leads');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-    // Inbound VIP Demo requests from Landing Page
-    const demoLeads = JSON.parse(localStorage.getItem('docsearch_demo_requests') || '[]');
-    const demoEntities: PipelineEntity[] = Array.isArray(demoLeads) ? demoLeads.map((d: any, idx: number) => ({
-      id: d.id || `DEMO-${idx + 1}`,
-      name: d.hospitalName || 'Prospective Hospital',
-      classification: 'Hospital Network',
-      icon: '🏥',
-      contactPerson: d.contactName || 'Medical Director',
-      phone: d.phone || '+91 98000 00000',
-      currentStage: 1,
-      progressPercent: 20,
-      activeForm: `Form 1: Lead Intake (VIP Token: ${d.demoToken || 'VIP-INBOUND'})`,
-      city: d.bedCapacity || 'India',
-      lastUpdated: 'Inbound Web Demo'
-    })) : [];
-
-    // Automatically derive from live registered partners
-    const regPartners = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');
+    const regPartners: any[] = [];
     const partnerEntities: PipelineEntity[] = Array.isArray(regPartners) ? regPartners.map((p: any, idx: number) => {
       const isVerified = p.kycStatus === 'KYC_VERIFIED';
       return {
@@ -130,7 +108,7 @@ const loadDynamicPipelineEntities = (): PipelineEntity[] => {
       };
     }) : [];
 
-    return [...demoEntities, ...partnerEntities];
+    return partnerEntities;
   } catch {
     return [];
   }
@@ -266,7 +244,7 @@ export const LeadToPartnerPipelineView: React.FC = () => {
     setEntities(updated);
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem('docsearch_pipeline_leads', JSON.stringify(updated));
+        // Lead saved to state and backed by CRM service
       } catch {}
     }
   };
@@ -312,67 +290,19 @@ export const LeadToPartnerPipelineView: React.FC = () => {
         orgType === 'PHARMACY' ? 'PHARMACY' : 'CLINIC_GROUP';
 
       try {
-        const reg = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');
-        const newReg = {
-          id: created.id,
-          facilityName: created.organizationName,
-          tradeName: created.organizationName,
+        await partnerService.createPartner({
           legalName: created.organizationName,
-          name: created.contactName,
-          contactPerson: created.contactName,
-          email: created.contactEmail,
-          phone: created.contactPhone,
-          organizationType: orgType,
+          tradeName: created.organizationName,
           partnerType,
-          planTier: 'Enterprise Healthcare Partner',
-          monthlyFee: 0,
-          status: 'APPROVED',
-          lifecycleStatus: 'ACTIVE',
-          verificationStatus: 'VERIFIED',
-          kycStatus: 'KYC_VERIFIED',
-          onboardingStep: 'COMPLETED',
-          onboardingProgressPercent: 100,
+          primaryContactName: created.contactName,
+          primaryContactEmail: created.contactEmail,
+          primaryContactPhone: created.contactPhone || '+91 98000 00000',
           city: newLeadCity.trim() || 'India',
-          createdAt: new Date().toISOString()
-        };
-        localStorage.setItem('docsearch_registered_partners', JSON.stringify([newReg, ...reg.filter((p: any) => p.id !== created.id)]));
-
-        partnerService.addPartner({
-          id: created.id,
-          tenantId: created.id,
-          tenantSlug: created.organizationName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-          legalName: created.organizationName,
-          tradeName: created.organizationName,
-          partnerType: partnerType as any,
           lifecycleStatus: 'ACTIVE',
-          verificationStatus: 'VERIFIED',
-          onboardingStep: 'COMPLETED',
-          onboardingProgressPercent: 100,
-          primaryContact: {
-            name: created.contactName,
-            email: created.contactEmail,
-            phone: created.contactPhone,
-            roleTitle: 'Partner Director'
-          },
-          branchCount: 1,
-          userCount: 5,
-          metadata: {
-            classification: orgType,
-            city: newLeadCity.trim() || 'India',
-            planTier: 'Enterprise Healthcare Partner',
-            monthlyFee: 0,
-            loginUrl: `http://localhost:5173/${orgType === 'HOSPITAL' ? 'hospital' : orgType === 'PHARMACY' ? 'pharmacy' : orgType === 'PATHOLOGY' ? 'pathology' : 'clinic'}`
-          },
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
+          verificationStatus: 'VERIFIED'
         });
-
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('docsearch:partner_registered', { detail: newReg }));
-          window.dispatchEvent(new Event('storage'));
-        }
-      } catch (syncErr) {
-        console.warn('Pipeline lead partner sync note:', syncErr);
+      } catch (err) {
+        console.warn('Backend partner creation from lead:', err);
       }
 
       saveEntities([newLead, ...entities]);
@@ -388,7 +318,7 @@ export const LeadToPartnerPipelineView: React.FC = () => {
     }
   };
 
-  const handleQuickOnboardToDirectory = (ent: PipelineEntity) => {
+  const handleQuickOnboardToDirectory = async (ent: PipelineEntity) => {
     const orgType =
       ent.classification.includes('Hospital') ? 'HOSPITAL' :
       ent.classification.includes('Lab') ? 'PATHOLOGY' :
@@ -401,64 +331,21 @@ export const LeadToPartnerPipelineView: React.FC = () => {
 
     const cleanEmail = `${ent.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '.')}@partner.in`;
 
-    const partnerDto = {
-      id: ent.id,
-      tenantId: ent.id,
-      tenantSlug: ent.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-      legalName: ent.name,
-      tradeName: ent.name,
-      partnerType: partnerType as any,
-      lifecycleStatus: 'ACTIVE' as any,
-      verificationStatus: 'VERIFIED' as any,
-      onboardingStep: 'COMPLETED' as any,
-      onboardingProgressPercent: 100,
-      primaryContact: {
-        name: ent.contactPerson,
-        email: cleanEmail,
-        phone: ent.phone,
-        roleTitle: 'Partner Director'
-      },
-      branchCount: 1,
-      userCount: 5,
-      metadata: {
-        classification: orgType,
-        city: ent.city,
-        planTier: 'Enterprise 1st Year Free',
-        monthlyFee: 0,
-        loginUrl: `http://localhost:5173/${orgType === 'HOSPITAL' ? 'hospital' : orgType === 'PHARMACY' ? 'pharmacy' : orgType === 'PATHOLOGY' ? 'pathology' : 'clinic'}`
-      },
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    partnerService.addPartner(partnerDto);
-
     try {
-      const reg = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');
-      const newReg = {
-        id: ent.id,
-        facilityName: ent.name,
-        tradeName: ent.name,
+      await partnerService.createPartner({
         legalName: ent.name,
-        name: ent.contactPerson,
-        contactPerson: ent.contactPerson,
-        email: cleanEmail,
-        phone: ent.phone,
-        organizationType: orgType,
+        tradeName: ent.name,
         partnerType,
-        planTier: 'Enterprise 1st Year Free',
-        monthlyFee: 0,
-        status: 'APPROVED',
-        lifecycleStatus: 'ACTIVE',
-        verificationStatus: 'VERIFIED',
-        kycStatus: 'KYC_VERIFIED',
-        onboardingStep: 'COMPLETED',
-        onboardingProgressPercent: 100,
+        primaryContactName: ent.contactPerson,
+        primaryContactEmail: cleanEmail,
+        primaryContactPhone: ent.phone,
         city: ent.city,
-        createdAt: new Date().toISOString()
-      };
-      localStorage.setItem('docsearch_registered_partners', JSON.stringify([newReg, ...reg.filter((p: any) => p.id !== ent.id)]));
-    } catch {}
+        lifecycleStatus: 'ACTIVE',
+        verificationStatus: 'VERIFIED'
+      });
+    } catch (err) {
+      console.warn('Backend partner quick onboard error:', err);
+    }
 
     // Advance entity to stage 5
     setEntities((prev) =>
@@ -468,11 +355,6 @@ export const LeadToPartnerPipelineView: React.FC = () => {
           : e
       )
     );
-
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('docsearch:partner_registered', { detail: partnerDto }));
-      window.dispatchEvent(new Event('storage'));
-    }
 
     setStageActionNotice(`✓ "${ent.name}" is now 100% LIVE and synced to CRM Partner Directory!`);
     setTimeout(() => setStageActionNotice(null), 5000);

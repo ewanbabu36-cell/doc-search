@@ -1,6 +1,7 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { partnerAccountService } from '../../services/partner/PartnerAccountService.js';
 import { authenticate } from '../../plugins/auth-guard.js';
+import { horizontalSocketGateway } from '../../services/realtime/HorizontalSocketGateway.js';
 
 export const partnerAccountRoutes: FastifyPluginAsync = async (fastify) => {
   /**
@@ -210,6 +211,91 @@ export const partnerAccountRoutes: FastifyPluginAsync = async (fastify) => {
     async (request) => {
       const { ewanAssistantService } = await import('../../services/ai/EwanAssistantService.js');
       const data = await ewanAssistantService.verifyAndSettleRenewalPayment(request.session, (request.body as any) || {});
+      return { success: true, data };
+    }
+  );
+
+  /**
+   * Phase 1: Operational Settings & Facility Branding Vault Endpoints
+   * GET /api/v1/partner/settings
+   * GET /api/v1/partner/account/settings
+   */
+  fastify.get(
+    '/api/v1/partner/settings',
+    {
+      preHandler: [authenticate]
+    },
+    async (request) => {
+      const data = await partnerAccountService.getOperationalSettings(request.session);
+      return { success: true, data };
+    }
+  );
+
+  fastify.get(
+    '/api/v1/partner/account/settings',
+    {
+      preHandler: [authenticate]
+    },
+    async (request) => {
+      const data = await partnerAccountService.getOperationalSettings(request.session);
+      return { success: true, data };
+    }
+  );
+
+  /**
+   * PUT /api/v1/partner/settings
+   * PUT /api/v1/partner/account/settings
+   * PATCH /api/v1/partner/settings
+   * Authoritatively updates clinic operational settings, Rx letterhead pads,
+   * logos, stamps, margins, and printer/call configs in PostgreSQL
+   */
+  fastify.put(
+    '/api/v1/partner/settings',
+    {
+      preHandler: [authenticate]
+    },
+    async (request) => {
+      const data = await partnerAccountService.updateOperationalSettings(request.session, request.body as any);
+      const tenantId = request.session?.tenantId || '*';
+      void horizontalSocketGateway.broadcast(tenantId, 'PARTNER_CONFIG_MUTATED', {
+        type: 'SETTINGS_UPDATED',
+        tenantId,
+        timestamp: new Date().toISOString()
+      });
+      return { success: true, data };
+    }
+  );
+
+  fastify.put(
+    '/api/v1/partner/account/settings',
+    {
+      preHandler: [authenticate]
+    },
+    async (request) => {
+      const data = await partnerAccountService.updateOperationalSettings(request.session, request.body as any);
+      const tenantId = request.session?.tenantId || '*';
+      void horizontalSocketGateway.broadcast(tenantId, 'PARTNER_CONFIG_MUTATED', {
+        type: 'SETTINGS_UPDATED',
+        tenantId,
+        timestamp: new Date().toISOString()
+      });
+      return { success: true, data };
+    }
+  );
+
+  fastify.patch(
+    '/api/v1/partner/settings',
+    {
+      preHandler: [authenticate]
+    },
+    async (request) => {
+      const data = await partnerAccountService.updateOperationalSettings(request.session, request.body as any);
+      const tenantId = request.session?.tenantId || '*';
+      void horizontalSocketGateway.broadcast(tenantId, 'PARTNER_CONFIG_MUTATED', {
+        type: 'SETTINGS_UPDATED',
+        tenantId,
+        timestamp: new Date().toISOString()
+      });
       return { success: true, data };
     }
   );

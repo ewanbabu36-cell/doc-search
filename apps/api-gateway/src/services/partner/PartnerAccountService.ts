@@ -3,6 +3,7 @@ import {
   getDatabase,
   partnerProfiles,
   operationalPartners,
+  partnerOperationalSettings,
   tenants,
   eq
 } from '@docsearch/database';
@@ -1025,6 +1026,199 @@ export class PartnerAccountService {
 
     return newPreferences;
   }
+  async getOperationalSettings(session: SessionContext) {
+    const tenantId = session.tenantId;
+    if (!tenantId) {
+      throw AppError.unauthorized('Tenant context required for operational settings');
+    }
+    const db = getDatabase();
+    if (!db) {
+      throw AppError.internal('Database connection unavailable');
+    }
+
+    const rows = await db
+      .select()
+      .from(partnerOperationalSettings)
+      .where(eq(partnerOperationalSettings.tenantId, tenantId))
+      .limit(1);
+
+    if (rows.length > 0) {
+      return rows[0];
+    }
+
+    // Hydrate default from partnerProfiles metadata
+    const profileRows = await db
+      .select()
+      .from(partnerProfiles)
+      .where(eq(partnerProfiles.tenantId, tenantId))
+      .limit(1);
+
+    const prof = profileRows[0];
+    const meta = (prof?.metadata as Record<string, any>) || {};
+    const branding = meta['branding'] || {};
+    const certs = meta['certificates'] || {};
+    const address = meta['address'] || {};
+
+    return {
+      tenantId,
+      partnerId: prof?.id || null,
+      logoUrl: branding.logoUrl || null,
+      stampSealUrl: branding.stampSealUrl || null,
+      signatureUrl: branding.signatureUrl || null,
+      letterheadMode: branding.letterheadMode || 'FULL_DIGITAL',
+      headerMargins: branding.headerMargins || { top: 20, bottom: 20, left: 15, right: 15 },
+      footerNotes: branding.rxFooterDisclaimer || 'Digitally Signed & Authenticated under IT Act 2000 & NMC Guidelines. Valid for 30 days.',
+      reportFooterDisclaimer: branding.reportFooterDisclaimer || 'This electronic laboratory report is validated against standard reference ranges and certified by authorized medical specialists.',
+      medicoLegalNotice: branding.medicoLegalNotice || 'Note:- Here all types of Blood and urine tests are done through automated machines. Results must be correlated clinically with medical history. Not Valid for Medico-Legal Purpose.',
+      officialHelpline: address.emergencyHelpline || address.officialPhone || null,
+      googleReviewUrl: meta['googleReviewUrl'] || null,
+      autoGoogleReviewEnabled: meta['autoGoogleReviewEnabled'] !== false,
+      audioCallLang: meta['audioCallLang'] || 'HI',
+      referralCommissionPolicy: meta['referralCommissionPolicy'] || {},
+      doctorHeader: certs.doctorName ? {
+        doctorName: certs.doctorName,
+        doctorDegree: certs.doctorDegreeName || 'MBBS',
+        doctorSpecialty: certs.doctorSpecialty || 'General Medicine',
+        doctorRegNo: certs.doctorRegNo || 'Reg # Verified',
+        doctorCouncilName: certs.doctorCouncilName || 'State Medical Council'
+      } : {
+        doctorName: prof?.primaryContactName || 'Authorized Physician',
+        doctorDegree: 'MBBS, MD',
+        doctorSpecialty: 'General Medicine',
+        doctorRegNo: 'DMC-2024-8841',
+        doctorCouncilName: 'Delhi Medical Council'
+      },
+      technologistHeader: certs.technologistName ? {
+        technologistName: certs.technologistName,
+        technologistDegree: certs.technologistDegree || 'D.M.L.T',
+        technologistRegNo: certs.technologistRegNo || 'Reg # 26534/10'
+      } : {
+        technologistName: 'MD. SANJAR ALAM',
+        technologistDegree: 'D.M.L.T',
+        technologistRegNo: 'Registration No. - 26534/10'
+      },
+      pathologistHeader: certs.pathologistName ? {
+        pathologistName: certs.pathologistName,
+        pathologistDegree: certs.pathologistDegree || 'MBBS (DMCH)',
+        pathologistRegNo: certs.pathologistRegNo || 'Registration No. - 47684'
+      } : {
+        pathologistName: 'DR. VIKRAM KUMAR',
+        pathologistDegree: 'MBBS (DMCH)',
+        pathologistRegNo: 'Registration No. - 47684'
+      },
+      statutory: meta['statutory'] || {},
+      bank: meta['bank'] || {},
+      clinicalCapacity: meta['clinical'] || {},
+      hardwareConfig: meta['hardware'] || {},
+      metadata: meta
+    };
+  }
+
+  async updateOperationalSettings(session: SessionContext, input: any) {
+    const tenantId = session.tenantId;
+    if (!tenantId) {
+      throw AppError.unauthorized('Tenant context required for operational settings');
+    }
+    const db = getDatabase();
+    if (!db) {
+      throw AppError.internal('Database connection unavailable');
+    }
+
+    const existing = await db
+      .select()
+      .from(partnerOperationalSettings)
+      .where(eq(partnerOperationalSettings.tenantId, tenantId))
+      .limit(1);
+
+    const now = new Date();
+    const updatePayload = {
+      partnerId: input.partnerId || existing[0]?.partnerId || undefined,
+      logoUrl: input.logoUrl !== undefined ? input.logoUrl : existing[0]?.logoUrl,
+      stampSealUrl: input.stampSealUrl !== undefined ? input.stampSealUrl : existing[0]?.stampSealUrl,
+      signatureUrl: input.signatureUrl !== undefined ? input.signatureUrl : existing[0]?.signatureUrl,
+      letterheadMode: input.letterheadMode || existing[0]?.letterheadMode || 'FULL_DIGITAL',
+      headerMargins: input.headerMargins || existing[0]?.headerMargins || { top: 20, bottom: 20, left: 15, right: 15 },
+      footerNotes: input.footerNotes !== undefined ? input.footerNotes : existing[0]?.footerNotes,
+      reportFooterDisclaimer: input.reportFooterDisclaimer !== undefined ? input.reportFooterDisclaimer : existing[0]?.reportFooterDisclaimer,
+      medicoLegalNotice: input.medicoLegalNotice !== undefined ? input.medicoLegalNotice : existing[0]?.medicoLegalNotice,
+      officialHelpline: input.officialHelpline !== undefined ? input.officialHelpline : existing[0]?.officialHelpline,
+      googleReviewUrl: input.googleReviewUrl !== undefined ? input.googleReviewUrl : existing[0]?.googleReviewUrl,
+      autoGoogleReviewEnabled: input.autoGoogleReviewEnabled !== undefined ? input.autoGoogleReviewEnabled : (existing[0]?.autoGoogleReviewEnabled ?? true),
+      audioCallLang: input.audioCallLang || existing[0]?.audioCallLang || 'HI',
+      referralCommissionPolicy: input.referralCommissionPolicy || existing[0]?.referralCommissionPolicy || {},
+      doctorHeader: input.doctorHeader || existing[0]?.doctorHeader || {},
+      technologistHeader: input.technologistHeader || existing[0]?.technologistHeader || {},
+      pathologistHeader: input.pathologistHeader || existing[0]?.pathologistHeader || {},
+      statutory: input.statutory || existing[0]?.statutory || {},
+      bank: input.bank || existing[0]?.bank || {},
+      clinicalCapacity: input.clinicalCapacity || existing[0]?.clinicalCapacity || {},
+      hardwareConfig: input.hardwareConfig || existing[0]?.hardwareConfig || {},
+      metadata: input.metadata || existing[0]?.metadata || {},
+      updatedAt: now
+    };
+
+    if (existing.length > 0) {
+      await db
+        .update(partnerOperationalSettings)
+        .set(updatePayload)
+        .where(eq(partnerOperationalSettings.tenantId, tenantId));
+    } else {
+      await db.insert(partnerOperationalSettings).values({
+        tenantId,
+        ...updatePayload,
+        createdAt: now
+      });
+    }
+
+    // Mirror updates to partnerProfiles.metadata for unified legacy profile compatibility
+    try {
+      const prof = await db
+        .select({ metadata: partnerProfiles.metadata })
+        .from(partnerProfiles)
+        .where(eq(partnerProfiles.tenantId, tenantId))
+        .limit(1);
+
+      if (prof.length > 0) {
+        const firstProf = prof[0];
+        const currentMeta = ((firstProf ? firstProf.metadata : null) as Record<string, any>) || {};
+        await db
+          .update(partnerProfiles)
+          .set({
+            metadata: {
+              ...currentMeta,
+              branding: {
+                ...(currentMeta['branding'] || {}),
+                logoUrl: updatePayload.logoUrl,
+                stampSealUrl: updatePayload.stampSealUrl,
+                signatureUrl: updatePayload.signatureUrl,
+                letterheadMode: updatePayload.letterheadMode,
+                headerMargins: updatePayload.headerMargins,
+                rxFooterDisclaimer: updatePayload.footerNotes,
+                reportFooterDisclaimer: updatePayload.reportFooterDisclaimer,
+                medicoLegalNotice: updatePayload.medicoLegalNotice
+              },
+              certificates: {
+                ...(currentMeta['certificates'] || {}),
+                ...(updatePayload.doctorHeader?.doctorName ? { doctorName: updatePayload.doctorHeader.doctorName } : {}),
+                ...(updatePayload.doctorHeader?.doctorRegNo ? { doctorRegNo: updatePayload.doctorHeader.doctorRegNo } : {}),
+                ...(updatePayload.pathologistHeader?.pathologistName ? { pathologistName: updatePayload.pathologistHeader.pathologistName } : {}),
+                ...(updatePayload.technologistHeader?.technologistName ? { technologistName: updatePayload.technologistHeader.technologistName } : {})
+              },
+              googleReviewUrl: updatePayload.googleReviewUrl,
+              autoGoogleReviewEnabled: updatePayload.autoGoogleReviewEnabled,
+              audioCallLang: updatePayload.audioCallLang
+            },
+            updatedAt: now
+          })
+          .where(eq(partnerProfiles.tenantId, tenantId));
+      }
+    } catch (metaErr) {
+      console.warn('Non-fatal metadata mirror sync warning:', metaErr);
+    }
+
+    return updatePayload;
+  }
+
 }
 
 export const partnerAccountService = new PartnerAccountService();

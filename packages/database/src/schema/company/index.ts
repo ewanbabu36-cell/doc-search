@@ -4344,4 +4344,78 @@ export const partnerConfigurationVersions = companySchema.table(
 export type PartnerConfigurationVersion = typeof partnerConfigurationVersions.$inferSelect;
 export type NewPartnerConfigurationVersion = typeof partnerConfigurationVersions.$inferInsert;
 
+/**
+ * Phase 1: Partner Operational Settings & Facility Self-Service
+ * Persists local clinic, hospital, lab, and pharmacy settings directly to PostgreSQL
+ * Eradicates volatile browser-only localStorage caching.
+ */
+export const partnerOperationalSettings = companySchema.table(
+  'partner_operational_settings',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    partnerId: varchar('partner_id', { length: 100 }),
+    logoUrl: text('logo_url'),
+    stampSealUrl: text('stamp_seal_url'),
+    signatureUrl: text('signature_url'),
+    letterheadMode: varchar('letterhead_mode', { length: 50 }).notNull().default('FULL_DIGITAL'), // FULL_DIGITAL, PREPRINTED_PAD, PLAIN_A4
+    headerMargins: jsonb('header_margins').default({ top: 20, bottom: 20, left: 15, right: 15 }),
+    footerNotes: text('footer_notes'),
+    reportFooterDisclaimer: text('report_footer_disclaimer'),
+    medicoLegalNotice: text('medico_legal_notice'),
+    officialHelpline: varchar('official_helpline', { length: 100 }),
+    googleReviewUrl: text('google_review_url'),
+    autoGoogleReviewEnabled: boolean('auto_google_review_enabled').default(true),
+    audioCallLang: varchar('audio_call_lang', { length: 10 }).notNull().default('HI'), // HI, EN
+    referralCommissionPolicy: jsonb('referral_commission_policy').default({}),
+    doctorHeader: jsonb('doctor_header').default({}),
+    technologistHeader: jsonb('technologist_header').default({}),
+    pathologistHeader: jsonb('pathologist_header').default({}),
+    statutory: jsonb('statutory').default({}),
+    bank: jsonb('bank').default({}),
+    clinicalCapacity: jsonb('clinical_capacity').default({}),
+    hardwareConfig: jsonb('hardware_config').default({}),
+    metadata: jsonb('metadata').default({}),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex('uq_partner_op_settings_tenant').on(table.tenantId),
+    index('idx_partner_op_settings_partner').on(table.partnerId)
+  ]
+);
+
+export type PartnerOperationalSetting = typeof partnerOperationalSettings.$inferSelect;
+export type NewPartnerOperationalSetting = typeof partnerOperationalSettings.$inferInsert;
+
+/**
+ * Phase 1: Facility Branding Vault
+ * Stores high-resolution multi-media headers, letterhead pads, digital seals and signatures
+ */
+export const facilityBrandingVault = companySchema.table(
+  'facility_branding_vault',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    brandingType: varchar('branding_type', { length: 50 }).notNull().default('PRESCRIPTION'), // PRESCRIPTION, LAB_REPORT, INVOICE, DISCHARGE_SUMMARY
+    brandPayload: jsonb('brand_payload').notNull(),
+    approvedBy: varchar('approved_by', { length: 255 }),
+    approvalStatus: varchar('approval_status', { length: 50 }).notNull().default('APPROVED'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    index('idx_branding_vault_tenant').on(table.tenantId),
+    index('idx_branding_vault_type').on(table.brandingType)
+  ]
+);
+
+export type FacilityBrandingVaultEntry = typeof facilityBrandingVault.$inferSelect;
+export type NewFacilityBrandingVaultEntry = typeof facilityBrandingVault.$inferInsert;
+
+
 

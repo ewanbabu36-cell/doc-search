@@ -1,3 +1,5 @@
+import { masterCatalogsRoutes } from './routes/company/master-catalogs.routes.js';
+import { configStreamRoutes } from './routes/realtime/config-stream.routes.js';
 import { partnerFoundationRoutes } from './routes/partner/foundation.routes.js';
 import { clinicalWorkflowRoutes } from './routes/partner/clinical-workflow.routes.js';
 import { granularSyncRoutes } from './routes/partner/granular-sync.routes.js';
@@ -351,6 +353,8 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(paymentWebhookRoutes);
   await app.register(notificationWebhookRoutes);
   await app.register(mrdManagementRoutes);
+  await app.register(masterCatalogsRoutes);
+  await app.register(configStreamRoutes);
   await app.register(productRoutes);
   await app.register(subscriptionRoutes);
   await app.register(commercialRoutes);

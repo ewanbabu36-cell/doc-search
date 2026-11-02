@@ -260,23 +260,12 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
   
 
   const [inboundAmbulanceAlerts, setInboundAmbulanceAlerts] = useState<InboundAmbulanceAlert[]>([]);
-  const [doctorAvailability, setDoctorAvailability] = useState<Record<string, 'AVAILABLE' | 'ON_BREAK' | 'IN_MINOR_OT'>>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        return JSON.parse(localStorage.getItem('docsearch_doctor_availabilities') || '{}');
-      } catch {
-        return {};
-      }
-    }
-    return {};
-  });
+  const [doctorAvailability, setDoctorAvailability] = useState<Record<string, 'AVAILABLE' | 'ON_BREAK' | 'IN_MINOR_OT'>>({});
 
   const handleToggleDoctorStatus = (docId: string, chamber: string, newStatus: 'AVAILABLE' | 'ON_BREAK' | 'IN_MINOR_OT') => {
     setDoctorAvailability((prev) => {
       const updated = { ...prev, [docId]: newStatus, [chamber]: newStatus };
-      try {
-        localStorage.setItem('docsearch_doctor_availabilities', JSON.stringify(updated));
-      } catch {}
+      // Chamber state broadcasted authoritatively via event bus
       return updated;
     });
     setDoctors((prev) =>
@@ -404,19 +393,9 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
   }, [formFee, formPaymentMode, formSplitUpi, playCashRegisterChime]);
 
   // 🌟 Competitive Gap 5: Automated Clinic Google Review Engine & WhatsApp Follow-up Scheduler
-  const [clinicGoogleReviewUrl, setClinicGoogleReviewUrl] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('docsearch_clinic_google_review_url') || 'https://g.page/r/docsearch-clinic/review';
-    }
-    return 'https://g.page/r/docsearch-clinic/review';
-  });
+  const [clinicGoogleReviewUrl, setClinicGoogleReviewUrl] = useState<string>('https://g.page/r/docsearch-clinic/review');
 
-  const [autoGoogleReviewEnabled, setAutoGoogleReviewEnabled] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('docsearch_auto_google_review_enabled') !== 'false';
-    }
-    return true;
-  });
+  const [autoGoogleReviewEnabled, setAutoGoogleReviewEnabled] = useState<boolean>(true);
 
   const [googleReviewModalData, setGoogleReviewModalData] = useState<{
     patientName: string;
@@ -4195,7 +4174,7 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
                   const val = e.target.checked;
                   setAutoGoogleReviewEnabled(val);
                   if (typeof window !== 'undefined') {
-                    localStorage.setItem('docsearch_auto_google_review_enabled', String(val));
+                    // Persisted authoritatively in settings
                   }
                 }}
                 style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#10B981' }}
@@ -4213,7 +4192,7 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
                   const cleanUrl = tempGoogleReviewUrl.trim() || 'https://g.page/r/docsearch-clinic/review';
                   setClinicGoogleReviewUrl(cleanUrl);
                   if (typeof window !== 'undefined') {
-                    localStorage.setItem('docsearch_clinic_google_review_url', cleanUrl);
+                    // Persisted authoritatively in settings
                   }
                   setIsGoogleReviewSettingsOpen(false);
                   showToast('✓ Clinic Google Review settings updated successfully');

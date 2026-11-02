@@ -841,6 +841,54 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
     };
   }, [currentUser?.tenantId]);
 
+  // Real-time SSE configuration stream listener (PARTNER_CONFIG_MUTATED)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    let eventSource: EventSource | null = null;
+    let reconnectTimeout: any = null;
+
+    const connectConfigStream = () => {
+      try {
+        const effectiveTenantId = currentUser?.tenantId || (currentUser as any)?.partnerId || '';
+        const url = `/api/v1/realtime/config-stream?tenantId=${encodeURIComponent(effectiveTenantId)}`;
+        eventSource = new EventSource(url);
+
+        eventSource.addEventListener('config_mutation', (e: MessageEvent) => {
+          try {
+            const data = JSON.parse(e.data);
+            console.log('[SSE Config Stream] Real-time mutation received from Admin:', data);
+
+            // Dispatch global events for views to re-hydrate from database without hard page reload
+            window.dispatchEvent(new CustomEvent('docsearch:config_mutated', { detail: data }));
+            window.dispatchEvent(new CustomEvent('docsearch:settings_updated', { detail: data }));
+            window.dispatchEvent(new CustomEvent('docsearch:plan_updated', { detail: data }));
+            window.dispatchEvent(new CustomEvent('docsearch:catalogs_mutated', { detail: data }));
+          } catch (err) {
+            console.warn('[SSE Config Stream] Failed to parse event payload:', err);
+          }
+        });
+
+        eventSource.onerror = () => {
+          if (eventSource) {
+            eventSource.close();
+            eventSource = null;
+          }
+          reconnectTimeout = setTimeout(connectConfigStream, 5000);
+        };
+      } catch (err) {
+        console.warn('[SSE Config Stream] Initialization error:', err);
+      }
+    };
+
+    connectConfigStream();
+
+    return () => {
+      if (eventSource) eventSource.close();
+      if (reconnectTimeout) clearTimeout(reconnectTimeout);
+    };
+  }, [currentUser?.tenantId]);
+
   const isFreeHospital = normalizeFacilityProfile(workspace).workspace === 'HOSPITAL' && isHospitalFreeTier(currentPlanTier || currentUser?.planTier);
 
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);

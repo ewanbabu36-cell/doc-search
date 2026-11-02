@@ -455,29 +455,7 @@ export const DEFAULT_REGISTRATION_FORM_POLICY: RegistrationFormPolicy = {
 
 export const PartnerVerificationConsole: React.FC = () => {
   // Load queue combining initial items and dynamic registrations/amendments
-  const loadDynamicQueue = (): PendingVerificationItem[] => {
-    if (typeof window === 'undefined') return [];
-    try {
-      const dynamicItems: PendingVerificationItem[] = JSON.parse(
-        localStorage.getItem('docsearch_verification_queue') || '[]'
-      );
-      const legacyKeywords = ['mamta', 'midahat', 'abc', 'apex', 'metro', 'partner corp'];
-      const filtered = dynamicItems.filter((q) => {
-        const name = `${q.partnerName || ''} ${q.tenantSlug || ''} ${q.submittedBy || ''}`.toLowerCase();
-        return !legacyKeywords.some((kw) => name.includes(kw));
-      });
-      if (filtered.length !== dynamicItems.length) {
-        if (filtered.length === 0) {
-          localStorage.removeItem('docsearch_verification_queue');
-        } else {
-          localStorage.setItem('docsearch_verification_queue', JSON.stringify(filtered));
-        }
-      }
-      return filtered;
-    } catch {
-      return [];
-    }
-  };
+  const loadDynamicQueue = (): PendingVerificationItem[] => [];
 
 
   const [queue, setQueue] = useState<PendingVerificationItem[]>(loadDynamicQueue);
@@ -1001,85 +979,7 @@ export const PartnerVerificationConsole: React.FC = () => {
       } : it))
     );
 
-    // If AADHAAR_KYC, update partner in registered partners
-    if (item.category === 'AADHAAR_KYC') {
-      try {
-        const partners = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');
-        const updated = partners.map((p: any) => {
-          if (p.facilityName === item.partnerName || (p.email && (item.details?.['Registered Email'] === p.email || item.details?.['Applicant Email'] === p.email))) {
-            return {
-              ...p,
-              kycStatus: 'KYC_VERIFIED',
-              kycApprovedAt: new Date().toISOString(),
-              kycApprovedBy: 'Healthcare Compliance Directorate',
-              planTier: assignedPlan.planName,
-              assignedPlan
-            };
-          }
-          return p;
-        });
-        localStorage.setItem('docsearch_registered_partners', JSON.stringify(updated));
-      } catch {}
-    }
-
-    // If PROFILE_AMENDMENT, commit staged amendment to partner's live account settings
-    if (item.category === 'PROFILE_AMENDMENT') {
-      try {
-        const amendments = JSON.parse(localStorage.getItem('docsearch_staged_profile_amendments') || '[]');
-        const matchedAmend = amendments.find((a: any) => a.id === id || a.currentFacilityName === item.partnerName);
-        if (matchedAmend) {
-          const updatedAmends = amendments.map((a: any) => a.id === matchedAmend.id ? { ...a, status: 'APPROVED', approvedAt: new Date().toLocaleString() } : a);
-          localStorage.setItem('docsearch_staged_profile_amendments', JSON.stringify(updatedAmends));
-        }
-      } catch {}
-    }
-
-    // Update queue in localStorage
-    try {
-      const q = JSON.parse(localStorage.getItem('docsearch_verification_queue') || '[]');
-      const updatedQ = q.map((it: any) => it.id === id ? {
-        ...it,
-        status: 'APPROVED',
-        assignedPlan,
-        planTier: assignedPlan.planName,
-        monthlyFee: assignedPlan.monthlyFee,
-        finalAmount: assignedPlan.finalAmount,
-        invoiceNumber: assignedPlan.invoiceNumber,
-        paymentStatus: assignedPlan.paymentStatus
-      } : it);
-      localStorage.setItem('docsearch_verification_queue', JSON.stringify(updatedQ));
-    } catch {}
-
-    // Update live partners store with active credentials & assigned plan
-    try {
-      const live = JSON.parse(localStorage.getItem('docsearch_live_partners') || '[]');
-      const targetPartner = {
-        partnerId: item.id,
-        partnerName: item.partnerName,
-        classification: item.partnerType === 'CLINIC' ? 'CLINIC' : item.partnerType,
-        contactPerson: item.submittedBy || 'Owner / Doctor',
-        email: item.details?.['Registered Email'] || item.details?.['Applicant Email'] || 'partner@docsearch.health',
-        phone: item.details?.['Contact Phone'] || item.details?.['Phone Number'] || '+91 88091 49036',
-        city: item.details?.['Registered City'] || item.details?.['City'] || 'India',
-        assignedPlan,
-        planTier: assignedPlan.planName,
-        monthlyFee: assignedPlan.monthlyFee,
-        credentials: {
-          userId: item.details?.['Registered Email'] || item.details?.['Applicant Email'] || 'partner@docsearch.health',
-          temporaryPassword: 'DocSearch2026!',
-          role: item.partnerType === 'CLINIC' ? 'DOCTOR' : 'HOSPITAL_ADMIN',
-          loginUrl: 'http://localhost:5173/clinic',
-          activatedAt: new Date().toISOString()
-        }
-      };
-      const existingIdx = live.findIndex((p: any) => p.partnerId === item.id || p.partnerName === item.partnerName);
-      if (existingIdx >= 0) {
-        live[existingIdx] = { ...live[existingIdx], ...targetPartner };
-      } else {
-        live.unshift(targetPartner);
-      }
-      localStorage.setItem('docsearch_live_partners', JSON.stringify(live));
-    } catch {}
+    // Dynamic approval committed to central PostgreSQL database via server APIs
 
     // Synchronize approval with assigned plan to central API Gateway
     const token = typeof window !== 'undefined' ? localStorage.getItem('docsearch_company_token') : null;

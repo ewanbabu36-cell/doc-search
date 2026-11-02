@@ -252,6 +252,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
     // Doctor Fields
     doctorName: (currentUser?.name && currentUser.name.toLowerCase() !== 'verified user' && currentUser.name.toLowerCase() !== 'verified') ? currentUser.name : '',
     doctorDegreeName: currentUser?.roleTitle || (roleCategory === 'DOCTOR' ? 'MBBS' : ''),
+    doctorSpecialty: '',
     doctorDegreeFile: '',
     doctorCouncilName: '',
     doctorRegNo: userAny?.clinicalLicense || '',
@@ -264,6 +265,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
     nablCertFile: '',
     pathologistName: '',
     pathologistDegree: 'MD (Pathology), DCP',
+    pathologistRegNo: '',
     pathologistDegreeFile: '',
     technologistName: '',
     technologistDegree: 'B.Sc (MLT), DMLT',
@@ -317,62 +319,56 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
   // Load persistent settings if available
   useEffect(() => {
     if (typeof window !== 'undefined' && isOpen) {
-      let savedParsed: any = null;
-      const saved = localStorage.getItem(storageKey);
-      if (saved) {
-        try {
-          savedParsed = JSON.parse(saved);
-          if (savedParsed.bank) setBankData(savedParsed.bank);
-          if (savedParsed.address) setAddressData((prev) => ({ ...prev, ...savedParsed.address }));
-          if (savedParsed.certificates) setCertData((prev) => ({ ...prev, ...savedParsed.certificates }));
-          if (savedParsed.clinical) setClinicalData((prev) => ({ ...prev, ...savedParsed.clinical }));
-          if (savedParsed.branding) setBrandingData((prev) => ({ ...prev, ...savedParsed.branding }));
-          if (savedParsed.branches && Array.isArray(savedParsed.branches)) setBranchesData(savedParsed.branches);
-          if (savedParsed.bankApprovalStatus) setBankApprovalStatus(savedParsed.bankApprovalStatus);
-          if (savedParsed.addressApprovalStatus) setAddressApprovalStatus(savedParsed.addressApprovalStatus);
-          if (savedParsed.certApprovalStatus) setCertApprovalStatus(savedParsed.certApprovalStatus);
-          if (savedParsed.lastSubmittedAt) setLastSubmittedAt(savedParsed.lastSubmittedAt);
-          if (savedParsed.security) setSecurityData((prev) => ({ ...prev, twoFactorEnabled: savedParsed.security.twoFactorEnabled, autoLockMinutes: savedParsed.security.autoLockMinutes }));
-        } catch {}
-      }
-
-      try {
-        const partners = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');
-        const matched = partners.find((p: any) =>
-          (p.email && p.email.toLowerCase().trim() === currentUser?.email?.toLowerCase().trim()) ||
-          (p.phone && userAny?.phone && p.phone === userAny.phone)
-        );
-        if (matched) {
-          setDynamicPartner(matched);
-          if (!savedParsed) {
-            setAddressData((prev) => ({
-              ...prev,
-              legalName: matched.facilityName || prev.legalName || currentUser?.tenantName || '',
-              addressLine1: matched.address || matched.addressLine1 || prev.addressLine1,
-              city: matched.city || prev.city,
-              state: matched.state || prev.state,
-              pincode: matched.pincode || prev.pincode,
-              officialPhone: matched.phone || prev.officialPhone || userAny?.phone || '',
-              emergencyHelpline: matched.emergencyHelpline || prev.emergencyHelpline,
-              panNumber: matched.panNumber || prev.panNumber,
-              supportEmail: matched.email || prev.supportEmail || currentUser?.email || '',
-              gstin: matched.gstin || prev.gstin
-            }));
-            setCertData((prev) => ({
-              ...prev,
-              doctorRegNo: matched.clinicalLicense || prev.doctorRegNo,
-              hospitalCeaRegNo: matched.clinicalLicense || prev.hospitalCeaRegNo,
-              abdmFacilityId: matched.abdmFacilityId || prev.abdmFacilityId,
-              pharmacyDrugLicense20B: matched.clinicalLicense || prev.pharmacyDrugLicense20B,
-              nablCertificateNo: matched.nablCertNo || prev.nablCertificateNo
-            }));
+      // Phase 1: Authoritative Database Hydration from PostgreSQL
+      apiRequest<any>('/api/v1/partner/settings')
+        .then((res: any) => {
+          const s = res?.data || res;
+          if (s) {
+            if (s.branding || s.logoUrl || s.signatureUrl || s.stampSealUrl) {
+              setBrandingData((prev) => ({
+                ...prev,
+                logoUrl: s.logoUrl || prev.logoUrl,
+                stampSealUrl: s.stampSealUrl || prev.stampSealUrl,
+                signatureUrl: s.signatureUrl || prev.signatureUrl,
+                letterheadMode: s.letterheadMode || prev.letterheadMode,
+                rxFooterDisclaimer: s.footerNotes || prev.rxFooterDisclaimer,
+                reportFooterDisclaimer: s.reportFooterDisclaimer || prev.reportFooterDisclaimer,
+                medicoLegalNotice: s.medicoLegalNotice || prev.medicoLegalNotice
+              }));
+            }
+            if (s.doctorHeader?.doctorName) {
+              setCertData((prev) => ({
+                ...prev,
+                doctorName: s.doctorHeader.doctorName,
+                doctorDegreeName: s.doctorHeader.doctorDegree || prev.doctorDegreeName,
+                doctorSpecialty: s.doctorHeader.doctorSpecialty || prev.doctorSpecialty,
+                doctorRegNo: s.doctorHeader.doctorRegNo || prev.doctorRegNo,
+                doctorCouncilName: s.doctorHeader.doctorCouncilName || prev.doctorCouncilName
+              }));
+            }
+            if (s.pathologistHeader?.pathologistName) {
+              setCertData((prev) => ({
+                ...prev,
+                pathologistName: s.pathologistHeader.pathologistName,
+                pathologistDegree: s.pathologistHeader.pathologistDegree || prev.pathologistDegree,
+                pathologistRegNo: s.pathologistHeader.pathologistRegNo || prev.pathologistRegNo
+              }));
+            }
+            if (s.technologistHeader?.technologistName) {
+              setCertData((prev) => ({
+                ...prev,
+                technologistName: s.technologistHeader.technologistName,
+                technologistDegree: s.technologistHeader.technologistDegree || prev.technologistDegree,
+                technologistRegNo: s.technologistHeader.technologistRegNo || prev.technologistRegNo
+              }));
+            }
+            if (s.bank?.accountNumber) setBankData((prev) => ({ ...prev, ...s.bank }));
+            if (s.statutory?.panNumber) setAddressData((prev) => ({ ...prev, ...s.statutory }));
           }
-        }
+        })
+        .catch(() => {});
 
-        const amendments = JSON.parse(localStorage.getItem('docsearch_staged_profile_amendments') || '[]');
-        const existing = amendments.find((a: any) => a.userEmail?.toLowerCase() === currentUser?.email?.toLowerCase() && a.status === 'PENDING_ADMIN_APPROVAL');
-        if (existing) setStagedAmendment(existing);
-      } catch {}
+
 
       // Hydrate profile amendment status from backend PostgreSQL
       apiRequest<any>('/api/v1/approvals')
@@ -632,65 +628,46 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
       const stampSealUrl = effectiveBranding?.stampSealUrl || '';
       const logoUrl = effectiveBranding?.logoUrl || '';
 
-      // 1. Immediately persist branding and letterhead configuration to universal print media cache
+      // Phase 1: Authoritative Database Persistence to PostgreSQL via /api/v1/partner/settings
       try {
-        localStorage.setItem('docsearch_custom_rx_letterhead', JSON.stringify({
-          doctorName: updatedPayload.certificates?.doctorName || effectiveBranding?.pathologistName || (currentUser?.name && currentUser.name.toLowerCase() !== 'verified user' ? currentUser.name : '') || 'Authorized Consultant',
-          doctorDegree: updatedPayload.certificates?.doctorDegreeName || effectiveBranding?.pathologistDegree || (roleCategory === 'DOCTOR' ? 'MBBS' : 'Chief Medical Superintendent'),
-          doctorSpecialty: updatedPayload.certificates?.doctorSpecialty || 'General Medicine & Clinical Care',
-          doctorCouncilName: updatedPayload.certificates?.doctorCouncilName || 'State Medical Council',
-          doctorRegNo: updatedPayload.certificates?.doctorRegNo || effectiveBranding?.pathologistRegNo || updatedPayload.certificates?.hospitalCeaRegNo || 'Reg # Verified',
-          technologistName: effectiveBranding?.technologistName || updatedPayload.certificates?.technologistName || 'MD. SANJAR ALAM',
-          technologistDegree: effectiveBranding?.technologistDegree || updatedPayload.certificates?.technologistDegree || 'D.M.L.T',
-          technologistRegNo: effectiveBranding?.technologistRegNo || updatedPayload.certificates?.technologistRegNo || 'Registration No. - 26534/10',
-          technologistSignatureUrl,
-          pathologistName: effectiveBranding?.pathologistName || updatedPayload.certificates?.pathologistName || updatedPayload.certificates?.doctorName || currentUser?.name || 'DR. VIKRAM KUMAR',
-          pathologistDegree: effectiveBranding?.pathologistDegree || updatedPayload.certificates?.pathologistDegree || 'MBBS (DMCH)',
-          pathologistRegNo: effectiveBranding?.pathologistRegNo || updatedPayload.certificates?.doctorRegNo || 'Registration No. - 47684',
-          pathologistSignatureUrl,
-          entityLegalName: updatedPayload.address?.legalName || currentUser?.tenantName || 'Healthcare Facility',
-          officialAddress: `${updatedPayload.address?.addressLine1 || ''}${updatedPayload.address?.addressLine2 ? ', ' + updatedPayload.address.addressLine2 : ''}, ${updatedPayload.address?.city || ''}, ${updatedPayload.address?.state || ''} - ${updatedPayload.address?.pincode || ''}`.trim(),
-          contactPhone: updatedPayload.address?.officialPhone || '',
-          emergencyHelpline: updatedPayload.address?.emergencyHelpline || '',
-          supportEmail: updatedPayload.address?.supportEmail || '',
-          footerNotes: effectiveBranding?.rxFooterDisclaimer || 'Digitally Signed & Authenticated under IT Act 2000 & NMC Guidelines. Valid for 30 days.',
-          reportFooterDisclaimer: effectiveBranding?.reportFooterDisclaimer || 'This electronic laboratory report is validated against standard reference ranges and certified by authorized medical specialists.',
-          medicoLegalNotice: effectiveBranding?.medicoLegalNotice || 'Note:- Here all types of Blood and urine tests are done through automated machines. Results must be correlated clinically with medical history. Not Valid for Medico-Legal Purpose.',
-          showWatermark: true,
-          themeColor: '#0284C7',
-          logoUrl,
-          stampSealUrl,
-          signatureUrl,
-          letterheadMode: effectiveBranding?.letterheadMode || 'FULL_DIGITAL',
-          signatureApprovalStatus: 'APPROVED'
-        }));
-        localStorage.setItem('docsearch_prescription_letterhead_mode', effectiveBranding?.letterheadMode === 'PRE_PRINTED_PAD' ? 'PREPRINTED_PAD' : 'PLAIN_A4');
-
-        // 2. Also synchronize dedicated pathology lab header cache for PrintablePathologyReportModal
-        localStorage.setItem('docsearch_lab_header_settings', JSON.stringify({
-          labName: (updatedPayload.address?.legalName || currentUser?.tenantName || 'DOC SEARCH CLINICAL PATHOLOGY LABORATORY').toUpperCase(),
-          labTagline: effectiveBranding?.rxHeaderNotes || 'CLINICAL PATHOLOGY, HAEMATOLOGY & DIAGNOSTIC MEDICINE',
-          labAddress: `📍 ${updatedPayload.address?.addressLine1 || ''} | 📞 ${updatedPayload.address?.officialPhone || ''}`,
-          certificateNo: updatedPayload.certificates?.nablCertificateNo || 'ISO 9001:2015 CERTIFIED COMPANY / NABL Standard',
-          technicianName: effectiveBranding?.technologistName || updatedPayload.certificates?.technologistName || 'MD. SANJAR ALAM',
-          technicianTitle: effectiveBranding?.technologistDegree || 'D.M.L.T',
-          technicianRegNo: effectiveBranding?.technologistRegNo || 'Registration No. - 26534/10',
-          pathologistName: effectiveBranding?.pathologistName || updatedPayload.certificates?.pathologistName || updatedPayload.certificates?.doctorName || 'DR. VIKRAM KUMAR',
-          pathologistTitle: effectiveBranding?.pathologistDegree || 'MBBS (DMCH)',
-          pathologistRegNo: effectiveBranding?.pathologistRegNo || updatedPayload.certificates?.doctorRegNo || 'Registration No. - 47684',
-          medicoLegalNotice: effectiveBranding?.medicoLegalNotice || 'Note:- Here all types of Blood and urine tests are done through automated machines. Results must be correlated clinically with medical history. Not Valid for Medico-Legal Purpose.',
-          signatureUrl,
-          pathologistSignatureUrl,
-          technologistSignatureUrl,
-          stampSealUrl,
-          logoUrl,
-          signatureApprovalStatus: 'APPROVED',
-          digitalSignatureApproved: true,
-          approvalTimestamp: new Date().toISOString(),
-          approverName: effectiveBranding?.pathologistName || 'Authorized Signatory'
-        }));
-      } catch (cacheErr) {
-        console.warn('Failed to cache letterhead settings to localStorage:', cacheErr);
+        await apiRequest('/api/v1/partner/settings', {
+          method: 'PUT',
+          body: JSON.stringify({
+            logoUrl,
+            stampSealUrl,
+            signatureUrl,
+            letterheadMode: effectiveBranding?.letterheadMode || 'FULL_DIGITAL',
+            footerNotes: effectiveBranding?.rxFooterDisclaimer || 'Digitally Signed & Authenticated under IT Act 2000 & NMC Guidelines. Valid for 30 days.',
+            reportFooterDisclaimer: effectiveBranding?.reportFooterDisclaimer || 'This electronic laboratory report is validated against standard reference ranges and certified by authorized medical specialists.',
+            medicoLegalNotice: effectiveBranding?.medicoLegalNotice || 'Note:- Here all types of Blood and urine tests are done through automated machines. Results must be correlated clinically with medical history. Not Valid for Medico-Legal Purpose.',
+            officialHelpline: updatedPayload.address?.emergencyHelpline || updatedPayload.address?.officialPhone,
+            doctorHeader: {
+              doctorName: updatedPayload.certificates?.doctorName || effectiveBranding?.pathologistName || currentUser?.name || 'Authorized Physician',
+              doctorDegree: updatedPayload.certificates?.doctorDegreeName || effectiveBranding?.pathologistDegree || (roleCategory === 'DOCTOR' ? 'MBBS, MD' : 'Chief Medical Superintendent'),
+              doctorSpecialty: updatedPayload.certificates?.doctorSpecialty || 'General Medicine & Clinical Care',
+              doctorCouncilName: updatedPayload.certificates?.doctorCouncilName || 'State Medical Council',
+              doctorRegNo: updatedPayload.certificates?.doctorRegNo || effectiveBranding?.pathologistRegNo || 'Reg # Verified'
+            },
+            technologistHeader: {
+              technologistName: effectiveBranding?.technologistName || updatedPayload.certificates?.technologistName || 'MD. SANJAR ALAM',
+              technologistDegree: effectiveBranding?.technologistDegree || updatedPayload.certificates?.technologistDegree || 'D.M.L.T',
+              technologistRegNo: effectiveBranding?.technologistRegNo || updatedPayload.certificates?.technologistRegNo || 'Registration No. - 26534/10',
+              technologistSignatureUrl
+            },
+            pathologistHeader: {
+              pathologistName: effectiveBranding?.pathologistName || updatedPayload.certificates?.pathologistName || 'DR. VIKRAM KUMAR',
+              pathologistDegree: effectiveBranding?.pathologistDegree || updatedPayload.certificates?.pathologistDegree || 'MBBS (DMCH)',
+              pathologistRegNo: effectiveBranding?.pathologistRegNo || updatedPayload.certificates?.doctorRegNo || 'Registration No. - 47684',
+              pathologistSignatureUrl
+            },
+            statutory: updatedPayload.certificates || {},
+            bank: updatedPayload.bank || {},
+            clinicalCapacity: updatedPayload.clinical || clinicalData,
+            hardwareConfig: {}
+          })
+        });
+      } catch (dbErr) {
+        console.warn('Operational settings sync to PostgreSQL warning:', dbErr);
       }
 
       // 3. Save full account settings payload with approval flags

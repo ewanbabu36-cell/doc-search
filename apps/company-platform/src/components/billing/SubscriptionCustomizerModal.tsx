@@ -1018,8 +1018,6 @@ export const SubscriptionCustomizerModal: React.FC<SubscriptionCustomizerModalPr
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-
-    setTimeout(() => {
       const now = new Date();
       const renewal = new Date();
       renewal.setMonth(now.getMonth() + formData.renewalMonths);
@@ -1122,7 +1120,6 @@ export const SubscriptionCustomizerModal: React.FC<SubscriptionCustomizerModalPr
       setIsSubmitting(false);
       onSuccess(saved);
       onClose();
-    }, 450);
   };
 
   return (

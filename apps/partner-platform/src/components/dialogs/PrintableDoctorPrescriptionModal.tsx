@@ -1,3 +1,4 @@
+import { apiRequest } from '../../services/api-client.js';
 import React, { useState, useEffect } from 'react';
 import type { ConsultationDto } from '@docsearch/api-contracts';
 import { getVerifiedRoleProfile } from '../../utils/roleProfileResolver.js';
@@ -73,6 +74,25 @@ export const PrintableDoctorPrescriptionModal: React.FC<Props> = ({
     if (isOpen) {
       setProfile(getVerifiedRoleProfile());
       setHeaderConfig(getActiveHeaderConfig());
+
+      apiRequest<any>('/api/v1/partner/settings')
+        .then((res: any) => {
+          const s = res?.data || res;
+          if (s) {
+            setHeaderConfig((prev) => ({
+              ...prev,
+              doctorName: s.doctorHeader?.doctorName || prev.doctorName,
+              doctorDegree: s.doctorHeader?.doctorDegree || prev.doctorDegree,
+              doctorSpecialty: s.doctorHeader?.doctorSpecialty || prev.doctorSpecialty,
+              doctorCouncilName: s.doctorHeader?.doctorCouncilName || prev.doctorCouncilName,
+              doctorRegNo: s.doctorHeader?.doctorRegNo || prev.doctorRegNo,
+              footerNotes: s.footerNotes || prev.footerNotes,
+              signatureUrl: s.signatureUrl || prev.signatureUrl,
+              stampSealUrl: s.stampSealUrl || prev.stampSealUrl
+            }));
+          }
+        })
+        .catch(() => {});
     }
   }, [isOpen]);
 

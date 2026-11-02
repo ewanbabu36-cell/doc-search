@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { apiRequest } from '../../services/api-client.js';
+import React, { useState, useEffect } from 'react';
 import { Card, Badge } from '@docsearch/ui-kit';
 
 export type FacilityTemplateType =
@@ -32,6 +33,25 @@ export const FacilityTemplateConfiguratorStudio: React.FC<Props> = ({
 }) => {
   const [selectedTemplate, setSelectedTemplate] = useState<FacilityTemplateType>(currentTemplate);
   const [appliedMsg, setAppliedMsg] = useState<string | null>(null);
+  const [livePlans, setLivePlans] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    apiRequest<any>('/api/v1/partner/account/plan-and-features')
+      .then((res: any) => {
+        const d = res?.data || res;
+        if (d?.currentPlan) {
+          const cp = d.currentPlan;
+          setLivePlans((prev) => {
+            const next = { ...prev };
+            if (cp.basePrice) {
+              next['HOSPITAL_UNIFIED'] = `₹${Number(cp.basePrice).toLocaleString()} / mo (${cp.name})`;
+            }
+            return next;
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const templates: Record<FacilityTemplateType, FacilityTemplateDefinition> = {
     HOSPITAL_UNIFIED: {
@@ -210,7 +230,7 @@ export const FacilityTemplateConfiguratorStudio: React.FC<Props> = ({
               </div>
 
               <div style={{ marginTop: '8px', fontSize: '0.6875rem', color: '#38BDF8', fontWeight: 700 }}>
-                {t.pricingPlan}
+                {livePlans[t.id] || t.pricingPlan}
               </div>
             </div>
           );

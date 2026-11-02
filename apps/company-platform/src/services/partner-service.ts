@@ -646,7 +646,7 @@ export class PartnerService implements IPartnerService {
     return partner;
   }
 
-  private mapRawToPartnerProfileDto(item: any): PartnerProfileDto {
+  public mapRawToPartnerProfileDto(item: any): PartnerProfileDto {
     const id = item.id || item.partnerId || `PRT-${Date.now().toString().slice(-6)}`;
     const name = item.tradeName || item.facilityName || item.partnerName || item.legalName || 'Healthcare Facility';
     const email = item.credentials?.userId || item.email || item.primaryContact?.email || 'admin@docsearch.health';
@@ -715,7 +715,7 @@ export class PartnerService implements IPartnerService {
     };
   }
 
-  private matchesFilters(p: PartnerProfileDto, filters?: PartnerListFilters): boolean {
+  public matchesFilters(p: PartnerProfileDto, filters?: PartnerListFilters): boolean {
     if (!filters) return true;
 
     // 1. Search Query
@@ -834,237 +834,75 @@ export class PartnerService implements IPartnerService {
   }
 
   async getPartners(filters?: PartnerListFilters): Promise<PartnerListResponse> {
-    // 0. Load purged tombstones blacklist from localStorage
-    const purgedBlacklist: string[] = typeof window !== 'undefined'
-      ? JSON.parse(localStorage.getItem('docsearch_purged_partners') || '[]').map((s: string) => String(s).toLowerCase().trim())
-      : [];
-
-    const isPurgedCandidate = (p: any): boolean => {
-      if (!purgedBlacklist.length || !p) return false;
-      const pid = String(p?.id || p?.partnerId || '').toLowerCase().trim();
-      const pemail = String(p?.primaryContact?.email || p?.email || '').toLowerCase().trim();
-      const pname = String(p?.tradeName || p?.legalName || p?.facilityName || '').toLowerCase().trim();
-      const pslug = String(p?.tenantSlug || p?.slug || '').toLowerCase().trim();
-
-      return Boolean(
-        (pid && purgedBlacklist.includes(pid)) ||
-        (pemail && purgedBlacklist.includes(pemail)) ||
-        (pname && purgedBlacklist.includes(pname)) ||
-        (pslug && purgedBlacklist.includes(pslug))
-      );
-    };
-
-    // 1. Gather all local candidates from in-memory cache and localStorage (omitting any purged records)
-    const localCandidates: PartnerProfileDto[] = this.partners.filter((p) => !isPurgedCandidate(p));
-    if (typeof window !== 'undefined') {
-      try {
-        const live = JSON.parse(localStorage.getItem('docsearch_live_partners') || '[]');
-        if (Array.isArray(live)) {
-          for (const l of live) {
-            if (!isPurgedCandidate(l)) {
-              localCandidates.push(this.mapRawToPartnerProfileDto(l));
-            }
-          }
-        }
-      } catch {}
-      try {
-        const reg = JSON.parse(localStorage.getItem('docsearch_registered_partners') || '[]');
-        if (Array.isArray(reg)) {
-          for (const r of reg) {
-            if (!isPurgedCandidate(r)) {
-              localCandidates.push(this.mapRawToPartnerProfileDto(r));
-            }
-          }
-        }
-      } catch {}
-    }
-
-    let combined: PartnerProfileDto[] = [];
-    let serverSuccess = false;
-
-    // 2. Try real server-side multi-filter directory
-    let unmergedLocals: PartnerProfileDto[] = [];
-    try {
-      const dir = await this.getDirectory({
-        search: filters?.search,
-        partnerType: filters?.partnerType,
-        lifecycleStatus: filters?.status,
-        kycStatus: filters?.kycStatus,
-        queue: filters?.queue,
-        slaStatus: filters?.slaStatus,
-        aging: filters?.aging,
-        duplicateRisk: filters?.duplicateRisk,
-        registrationSource: filters?.registrationSource,
-        branchId: filters?.branchId,
-        dateRange: filters?.dateRange as any,
-        startDate: filters?.startDate,
-        endDate: filters?.endDate,
-        onboardingStatus: filters?.onboardingStatus,
-        accountStatus: filters?.accountStatus,
-        pricingTier: filters?.pricingTier !== 'ALL' ? filters?.pricingTier : undefined,
-        page: 1,
-        pageSize: 1000
-      });
-
-      if (dir && Array.isArray(dir.items)) {
-        serverSuccess = true;
-        const serverDtos: PartnerProfileDto[] = dir.items
-          .filter((item) => !isPurgedCandidate(item))
-          .map((item) => ({
-            id: item.id,
-            tenantId: item.tenantId,
-            tenantSlug: item.tenantSlug,
-            legalName: item.legalName,
-            tradeName: item.tradeName,
-            partnerType: item.partnerType as any,
-            lifecycleStatus: item.lifecycleStatus as any,
-            verificationStatus: item.verificationStatus as any,
-            onboardingStep: (item.kycStatus === 'APPROVED' ? 'COMPLETED' : 'SECURITY_VERIFICATION') as any,
-            onboardingProgressPercent: item.kycCompletionPercent,
-            primaryContact: {
-              name: item.primaryContact.name,
-              email: item.primaryContact.email,
-              phone: item.primaryContact.phone,
-              roleTitle: item.primaryContact.roleTitle
-            },
-            branchCount: item.branchCount,
-            userCount: item.userCount,
-            metadata: {
-              classification: item.partnerType,
-              city: item.city,
-              state: item.state,
-              kycStatus: item.kycStatus,
-              planTier: item.planTier || 'Free OPD Core',
-              monthlyFee: typeof item.monthlyFee === 'number' ? item.monthlyFee : 0,
-              slaStatus: item.slaStatus,
-              ageHours: item.ageHours,
-              registeredBy: item.registeredBy,
-              assignedReviewer: item.assignedReviewer,
-              stagedRegistrationId: item.stagedRegistrationId,
-              documentsCount: item.documentsCount,
-              profileCompletionPercent: item.profileCompletionPercent,
-              kycCompletionPercent: item.kycCompletionPercent,
-              duplicateRisk: item.duplicateRisk,
-              onboardingStatus: item.onboardingStatus,
-              accountStatus: item.accountStatus,
-              leadId: item.leadId
-            },
-            createdAt: item.createdAt,
-            updatedAt: item.updatedAt
-          }));
-
-        // Merge: Seed with server items, then append any local candidates not in server
-        const seenIds = new Set<string>();
-        const seenEmails = new Set<string>();
-        const seenNames = new Set<string>();
-
-        serverDtos.forEach((s) => {
-          if (s.id) seenIds.add(s.id.toLowerCase());
-          const email = s.primaryContact?.email?.toLowerCase().trim();
-          if (email && !email.includes('docsearch.health') && !email.includes('example.com')) {
-            seenEmails.add(email);
-          }
-          const name = s.tradeName?.toLowerCase().trim();
-          if (name && name !== 'healthcare facility') {
-            seenNames.add(name);
-          }
-        });
-
-        if (isMockFallbackAllowed()) {
-          for (const loc of localCandidates) {
-            if (isPurgedCandidate(loc)) continue;
-            // Local candidate MUST also pass the active filter!
-            if (!this.matchesFilters(loc, filters)) continue;
-
-            const locId = loc.id?.toLowerCase();
-            const email = loc.primaryContact?.email?.toLowerCase().trim();
-            const name = loc.tradeName?.toLowerCase().trim();
-            const isGenericEmail = !email || email.includes('docsearch.health') || email.includes('example.com');
-            const isGenericName = !name || name === 'healthcare facility';
-
-            const matchesId = locId && seenIds.has(locId);
-            const matchesEmail = !isGenericEmail && seenEmails.has(email);
-            const matchesName = !isGenericName && seenNames.has(name);
-
-            if (!matchesId && !matchesEmail && !matchesName) {
-              unmergedLocals.push(loc);
-              if (locId) seenIds.add(locId);
-              if (!isGenericEmail) seenEmails.add(email);
-              if (!isGenericName) seenNames.add(name);
-            }
-          }
-        }
-
-        combined = isMockFallbackAllowed() ? [...serverDtos, ...unmergedLocals] : serverDtos;
-      }
-    } catch (serverErr) {
-      if (!isMockFallbackAllowed()) throw serverErr;
-      console.warn('Real directory query fallback:', serverErr);
-    }
-
-    if (!serverSuccess) {
-      // Deduplicate local candidates
-      const seen = new Set<string>();
-      combined = localCandidates.filter((p) => {
-        if (isPurgedCandidate(p)) return false;
-        if (seen.has(p.id)) return false;
-        seen.add(p.id);
-        return true;
-      });
-    }
-
-    // 3. Apply comprehensive filter over combined list
-    let filtered = combined.filter((p) => this.matchesFilters(p, filters));
-
-    // 4. Default Sort: Newest created partners first (ensures freshly registered partners are prominently on Page 1)
-    filtered.sort((a, b) => {
-      const dateA = new Date(a.createdAt || 0).getTime();
-      const dateB = new Date(b.createdAt || 0).getTime();
-      return dateB - dateA;
+    const dir = await this.getDirectory({
+      search: filters?.search,
+      partnerType: filters?.partnerType,
+      lifecycleStatus: filters?.status,
+      kycStatus: filters?.kycStatus,
+      queue: filters?.queue,
+      slaStatus: filters?.slaStatus,
+      aging: filters?.aging,
+      duplicateRisk: filters?.duplicateRisk,
+      registrationSource: filters?.registrationSource,
+      branchId: filters?.branchId,
+      dateRange: filters?.dateRange as any,
+      startDate: filters?.startDate,
+      endDate: filters?.endDate,
+      onboardingStatus: filters?.onboardingStatus,
+      accountStatus: filters?.accountStatus,
+      pricingTier: filters?.pricingTier !== 'ALL' ? filters?.pricingTier : undefined,
+      page: filters?.page || 1,
+      pageSize: filters?.pageSize || 20
     });
 
-    // 5. Uniform Client-Side Pagination over the complete merged dataset
-    const total = filtered.length;
-    const pageSize = Math.max(1, filters?.pageSize ?? 10);
-    const maxPage = Math.max(1, Math.ceil(total / pageSize));
-    const page = Math.min(Math.max(1, filters?.page ?? 1), maxPage);
-    const startIdx = (page - 1) * pageSize;
-    const items = filtered.slice(startIdx, startIdx + pageSize);
-
-    // 6. Background auto-sync for unmerged local candidates to database (NEVER sync purged partners)
-    if (serverSuccess && unmergedLocals.length > 0 && typeof window !== 'undefined') {
-      setTimeout(() => {
-        unmergedLocals.forEach(async (loc) => {
-          if (isPurgedCandidate(loc)) return;
-          try {
-            await fetch(`${this.apiUrl}/api/v1/auth/self-register`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                partner: {
-                  id: loc.id,
-                  name: loc.primaryContact?.name || loc.tradeName,
-                  email: loc.primaryContact?.email,
-                  phone: loc.primaryContact?.phone,
-                  facilityName: loc.tradeName,
-                  organizationType: loc.partnerType,
-                  city: (loc.metadata as any)?.city || 'New Delhi',
-                  state: (loc.metadata as any)?.state || 'Delhi',
-                  planTier: (loc.metadata as any)?.planTier || 'Standard Tier',
-                  status: loc.lifecycleStatus === 'ACTIVE' ? 'APPROVED' : 'PENDING'
-                }
-              })
-            }).catch(() => {});
-          } catch {}
-        });
-      }, 200);
-    }
+    const items: PartnerProfileDto[] = (dir.items || []).map((item) => ({
+      id: item.id,
+      tenantId: item.tenantId,
+      tenantSlug: item.tenantSlug,
+      legalName: item.legalName,
+      tradeName: item.tradeName,
+      partnerType: item.partnerType as any,
+      lifecycleStatus: item.lifecycleStatus as any,
+      verificationStatus: item.verificationStatus as any,
+      onboardingStep: (item.kycStatus === 'APPROVED' ? 'COMPLETED' : 'SECURITY_VERIFICATION') as any,
+      onboardingProgressPercent: item.kycCompletionPercent,
+      primaryContact: {
+        name: item.primaryContact.name,
+        email: item.primaryContact.email,
+        phone: item.primaryContact.phone,
+        roleTitle: item.primaryContact.roleTitle
+      },
+      branchCount: item.branchCount,
+      userCount: item.userCount,
+      metadata: {
+        classification: item.partnerType,
+        city: item.city,
+        state: item.state,
+        kycStatus: item.kycStatus,
+        planTier: item.planTier || 'Free OPD Core',
+        monthlyFee: typeof item.monthlyFee === 'number' ? item.monthlyFee : 0,
+        slaStatus: item.slaStatus,
+        ageHours: item.ageHours,
+        registeredBy: item.registeredBy,
+        assignedReviewer: item.assignedReviewer,
+        stagedRegistrationId: item.stagedRegistrationId,
+        documentsCount: item.documentsCount,
+        profileCompletionPercent: item.profileCompletionPercent,
+        kycCompletionPercent: item.kycCompletionPercent,
+        duplicateRisk: item.duplicateRisk,
+        onboardingStatus: item.onboardingStatus,
+        accountStatus: item.accountStatus,
+        leadId: item.leadId
+      },
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt
+    }));
 
     return {
       items,
-      total,
-      page,
-      pageSize
+      total: dir.total,
+      page: dir.page,
+      pageSize: dir.pageSize
     };
   }
 
