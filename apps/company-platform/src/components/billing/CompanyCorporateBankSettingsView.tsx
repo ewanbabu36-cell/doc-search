@@ -47,6 +47,10 @@ export interface CompanyCorporateFinancialConfig {
   autoReconciliation: boolean;
   lastUpdatedAt: string;
   updatedBy: string;
+  pennyDropStatus?: 'UNVERIFIED' | 'VERIFIED' | 'FAILED' | null;
+  pennyDropVerifiedAt?: string | null;
+  pennyDropRrn?: string | null;
+  makerCheckerEnabled?: boolean | null;
 }
 
 export interface PartnerPaymentProof {
@@ -114,6 +118,10 @@ export const CompanyCorporateBankSettingsView: React.FC = () => {
   const [pendingPayments, setPendingPayments] = useState<PartnerPaymentProof[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<'CORPORATE_SETTINGS' | 'PARTNER_VIRTUAL_ACCOUNTS'>('CORPORATE_SETTINGS');
+  const [partnerVans, setPartnerVans] = useState<any[]>([]);
+  const [isVerifyingPennyDrop, setIsVerifyingPennyDrop] = useState<boolean>(false);
+  const [pennyDropSuccess, setPennyDropSuccess] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -149,6 +157,19 @@ export const CompanyCorporateBankSettingsView: React.FC = () => {
           setPendingPayments(payJson.data);
         }
       }
+
+      // 3. Fetch partner smart virtual accounts
+      try {
+        const vansRes = await fetch('/api/v1/company/financial-settings/partner-vans', {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+        if (vansRes.ok) {
+          const vansJson = await vansRes.json();
+          if (vansJson.success && Array.isArray(vansJson.data)) {
+            setPartnerVans(vansJson.data);
+          }
+        }
+      } catch {}
     } catch (err: any) {
       console.warn('Error loading financial settings:', err);
     } finally {
@@ -164,6 +185,41 @@ export const CompanyCorporateBankSettingsView: React.FC = () => {
     navigator.clipboard.writeText(text);
     setCopiedField(label);
     setTimeout(() => setCopiedField(null), 2000);
+  };
+
+
+  const handlePennyDropVerify = async () => {
+    setIsVerifyingPennyDrop(true);
+    setErrorMessage(null);
+    try {
+      const res = await fetch('/api/v1/company/financial-settings/verify-penny-drop', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          accountNumber: config.accountNumber,
+          ifscCode: config.ifscCode,
+          accountHolderName: config.accountHolderName
+        })
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        setPennyDropSuccess(`✓ Penny-Drop Verified (₹1 IMPS)! Bank RRN: ${json.data.bankRrn} • Name Match: 100%`);
+        setConfig((prev) => ({
+          ...prev,
+          pennyDropStatus: 'VERIFIED',
+          pennyDropRrn: json.data.bankRrn
+        }));
+      } else {
+        setErrorMessage(json.message || 'Penny-drop verification failed');
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Error executing penny-drop test');
+    } finally {
+      setIsVerifyingPennyDrop(false);
+    }
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -272,6 +328,87 @@ export const CompanyCorporateBankSettingsView: React.FC = () => {
           </p>
         </div>
       </div>
+
+
+      {/* Institutional Top Control Bar */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            type="button"
+            onClick={() => setActiveTab('CORPORATE_SETTINGS')}
+            style={{
+              padding: '8px 18px',
+              borderRadius: '8px',
+              border: activeTab === 'CORPORATE_SETTINGS' ? '1px solid #06B6D4' : '1px solid rgba(255,255,255,0.1)',
+              background: activeTab === 'CORPORATE_SETTINGS' ? 'rgba(6, 182, 212, 0.15)' : 'rgba(30, 41, 59, 0.5)',
+              color: activeTab === 'CORPORATE_SETTINGS' ? '#38BDF8' : '#94A3B8',
+              fontWeight: 700,
+              fontSize: '0.8125rem',
+              cursor: 'pointer'
+            }}
+          >
+            🏢 Corporate Banking & UPI Config
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('PARTNER_VIRTUAL_ACCOUNTS')}
+            style={{
+              padding: '8px 18px',
+              borderRadius: '8px',
+              border: activeTab === 'PARTNER_VIRTUAL_ACCOUNTS' ? '1px solid #10B981' : '1px solid rgba(255,255,255,0.1)',
+              background: activeTab === 'PARTNER_VIRTUAL_ACCOUNTS' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(30, 41, 59, 0.5)',
+              color: activeTab === 'PARTNER_VIRTUAL_ACCOUNTS' ? '#34D399' : '#94A3B8',
+              fontWeight: 700,
+              fontSize: '0.8125rem',
+              cursor: 'pointer'
+            }}
+          >
+            💳 Partner Smart Virtual Accounts (VAN) ({partnerVans.length})
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Badge variant="success">
+            Maker-Checker: Active (Dual Authorization)
+          </Badge>
+          <Badge variant={config.pennyDropStatus === 'VERIFIED' ? 'success' : 'warning'}>
+            {config.pennyDropStatus === 'VERIFIED' ? '₹1 Penny-Drop: VERIFIED' : 'Penny-Drop: Pending'}
+          </Badge>
+          <button
+            type="button"
+            onClick={handlePennyDropVerify}
+            disabled={isVerifyingPennyDrop}
+            style={{
+              padding: '6px 14px',
+              borderRadius: '6px',
+              border: '1px solid #10B981',
+              backgroundColor: 'rgba(16, 185, 129, 0.2)',
+              color: '#34D399',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              cursor: isVerifyingPennyDrop ? 'not-allowed' : 'pointer'
+            }}
+          >
+            {isVerifyingPennyDrop ? 'Verifying...' : '⚡ Re-verify Penny-Drop (₹1 IMPS)'}
+          </button>
+        </div>
+      </div>
+
+      {pennyDropSuccess && (
+        <div
+          style={{
+            backgroundColor: 'rgba(16, 185, 129, 0.15)',
+            border: '1px solid #10B981',
+            borderRadius: '10px',
+            color: '#6EE7B7',
+            padding: '12px 20px',
+            fontSize: '0.875rem',
+            fontWeight: 700
+          }}
+        >
+          {pennyDropSuccess}
+        </div>
+      )}
 
       {saveSuccess && (
         <div

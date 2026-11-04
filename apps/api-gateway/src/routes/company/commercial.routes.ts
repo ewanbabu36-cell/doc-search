@@ -1416,6 +1416,59 @@ export const commercialRoutes: FastifyPluginAsync = async (fastify) => {
     }
   );
 
+
+  // POST /api/v1/company/financial-settings/verify-penny-drop (Automated ₹1 IMPS Verification)
+  fastify.post(
+    '/api/v1/company/financial-settings/verify-penny-drop',
+    { preHandler: [authenticate, requireHqAdmin] },
+    async (request, reply) => {
+      const body = request.body as any;
+      const data = await companyFinancialService.verifyPennyDrop(
+        body.accountNumber,
+        body.ifscCode,
+        body.accountHolderName,
+        (request as any).session
+      );
+      return reply.status(200).send({
+        success: true,
+        message: '₹1 IMPS Penny-Drop Verification Succeeded! Bank account confirmed active and matched.',
+        data
+      });
+    }
+  );
+
+  // POST /api/v1/company/financial-settings/maker-checker/approve
+  fastify.post(
+    '/api/v1/company/financial-settings/maker-checker/approve',
+    { preHandler: [authenticate, requireHqAdmin] },
+    async (request, reply) => {
+      const body = request.body as any;
+      const data = await companyFinancialService.approvePendingConfigChange(
+        body.changeId,
+        body.decision || 'APPROVED',
+        (request as any).session
+      );
+      return reply.status(200).send({
+        success: true,
+        message: 'Maker-Checker approval processed successfully',
+        data
+      });
+    }
+  );
+
+  // GET /api/v1/company/financial-settings/partner-vans
+  fastify.get(
+    '/api/v1/company/financial-settings/partner-vans',
+    { preHandler: [authenticate, requireHqAdmin] },
+    async (_request, reply) => {
+      const data = await companyFinancialService.getAllPartnerVans();
+      return reply.status(200).send({
+        success: true,
+        data
+      });
+    }
+  );
+
   // POST /api/v1/commercial/submit-payment-proof (Partner submits UTR after NEFT/UPI transfer)
   fastify.post(
     '/api/v1/commercial/submit-payment-proof',

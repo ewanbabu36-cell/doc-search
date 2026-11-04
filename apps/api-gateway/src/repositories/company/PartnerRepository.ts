@@ -20,6 +20,7 @@ import {
 } from '@docsearch/database';
 import { AppError, createLogger } from '@docsearch/shared-core';
 import { partnerOnboardingRepository, toDeterministicUuid } from './PartnerOnboardingRepository.js';
+import { isValidUuid } from '../../utils/uuid-guard.js';
 import { partnerTombstoneService } from '../../services/company/PartnerTombstoneService.js';
 
 const logger = createLogger('partner-repository');
@@ -1730,7 +1731,7 @@ export class PartnerRepository {
           .where(
             or(
               eq(partnerOnboardingStagedRegistrations.id, targetUuid),
-              eq(partnerOnboardingStagedRegistrations.id, partnerId)
+              ...(isValidUuid(partnerId) ? [eq(partnerOnboardingStagedRegistrations.id, partnerId)] : [])
             )
           )
           .limit(1);

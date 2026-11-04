@@ -20,6 +20,7 @@ import { resolvePartnerLocation } from '../../repositories/company/PartnerReposi
 import { partnerTombstoneService } from './PartnerTombstoneService.js';
 import { entitlementService } from './EntitlementService.js';
 import { licenseService } from './LicenseService.js';
+import { isValidUuid } from '../../utils/uuid-guard.js';
 
 const logger = createLogger('partner-sync-service');
 
@@ -1016,10 +1017,10 @@ export class PartnerSyncService {
               .from(partnerProfiles)
               .where(
                 or(
-                  eq(partnerProfiles.id, partner.id),
-                  eq(partnerProfiles.id, partnerId),
                   eq(partnerProfiles.primaryContactEmail, email),
-                  ...(partner.tenantDraftId ? [eq(partnerProfiles.tenantId, partner.tenantDraftId)] : [])
+                  ...(isValidUuid(partner.id) ? [eq(partnerProfiles.id, partner.id)] : []),
+                  ...(isValidUuid(partnerId) ? [eq(partnerProfiles.id, partnerId)] : []),
+                  ...(partner.tenantDraftId && isValidUuid(partner.tenantDraftId) ? [eq(partnerProfiles.tenantId, partner.tenantDraftId)] : [])
                 )
               )
               .limit(1);

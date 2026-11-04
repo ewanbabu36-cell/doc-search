@@ -40,7 +40,9 @@ export const UNIVERSAL_SEED_IDS = {
  *   are SKIPPED in production (NODE_ENV=production) unless explicitly enabled via SEED_DEMO_FIXTURES=true.
  */
 export async function seedUniversalDatabase(db: NodePgDatabase<typeof schema>): Promise<void> {
-  const allowDemo = process.env['SEED_DEMO_FIXTURES'] === 'true' || process.env['FORCE_DEMO_SEEDS'] === 'true';
+  const allowDemo =
+    (process.env['SEED_DEMO_FIXTURES'] === 'true' || process.env['FORCE_DEMO_SEEDS'] === 'true') &&
+    process.env['DAY_ZERO_MODE'] !== 'true';
 
   const {
     TENANT_ID,

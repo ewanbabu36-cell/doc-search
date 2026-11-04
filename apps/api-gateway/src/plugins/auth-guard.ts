@@ -16,6 +16,7 @@ import { sessionRevocationService } from '../services/core/SessionRevocationServ
 import { staffAdministrationRepository } from '../repositories/partner/StaffAdministrationRepository.js';
 import { auditRepository } from '../repositories/core/AuditRepository.js';
 import { toDeterministicUuid } from '../repositories/company/PartnerOnboardingRepository.js';
+import { isValidUuid } from '../utils/uuid-guard.js';
 import { identitySecurityFoundationService } from '../services/security/IdentitySecurityFoundationService.js';
 
 const logger = createLogger('auth-guard');
@@ -449,7 +450,7 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
             .limit(1);
           if (opP) {
             isPartnerOfTenant = true;
-          } else {
+          } else if (isValidUuid(clientPartnerId)) {
             const [pp] = await db
               .select({ id: partnerProfiles.id })
               .from(partnerProfiles)

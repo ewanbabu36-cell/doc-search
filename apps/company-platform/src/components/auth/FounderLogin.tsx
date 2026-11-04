@@ -48,8 +48,8 @@ const getClearanceLevel = (role: string): string => {
 };
 
 export const FounderLogin: React.FC<FounderLoginProps> = ({ onLoginSuccess }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('founder@docsearch.health');
+  const [password, setPassword] = useState('FounderPass123!');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);

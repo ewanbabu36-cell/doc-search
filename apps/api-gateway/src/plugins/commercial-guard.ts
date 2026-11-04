@@ -14,6 +14,7 @@ import {
   isModuleAllowedForPartnerProfile
 } from '@docsearch/shared-core';
 import { getDatabase, partnerProfiles, eq, or } from '@docsearch/database';
+import { isValidUuid } from '../utils/uuid-guard.js';
 
 export { PARTNER_PROFILE_ALLOWED_MODULES, isModuleAllowedForPartnerProfile };
 
@@ -98,10 +99,14 @@ export async function requireActiveCommercialAccess(
     try {
       const db = getDatabase();
       if (db) {
+        const whereConditions = [eq(partnerProfiles.tenantId, tenantId)];
+        if (isValidUuid(tenantId)) {
+          whereConditions.push(eq(partnerProfiles.id, tenantId));
+        }
         const [profile] = await db
           .select()
           .from(partnerProfiles)
-          .where(or(eq(partnerProfiles.tenantId, tenantId), eq(partnerProfiles.id, tenantId)))
+          .where(whereConditions.length > 1 ? or(...whereConditions) : whereConditions[0]!)
           .limit(1);
 
         if (profile && (profile.lifecycleStatus === 'ACTIVE' || profile.verificationStatus === 'VERIFIED')) {
