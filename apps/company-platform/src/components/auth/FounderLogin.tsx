@@ -363,7 +363,7 @@ export const FounderLogin: React.FC<FounderLoginProps> = ({ onLoginSuccess }) =>
         >
           <span>Looking for Hospital Platform?</span>
           <a
-            href="http://localhost:5173"
+            href={typeof window !== 'undefined' && window.location.hostname !== 'localhost' ? 'https://partner.docsearch.health' : 'http://localhost:5173'}
             target="_blank"
             rel="noopener noreferrer"
             style={{ color: '#38BDF8', textDecoration: 'none', fontWeight: 600 }}

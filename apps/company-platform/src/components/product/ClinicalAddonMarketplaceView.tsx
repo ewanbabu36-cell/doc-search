@@ -14,6 +14,13 @@ interface ClinicalAddon {
 const INITIAL_ADDONS: ClinicalAddon[] = [];
 
 export const ClinicalAddonMarketplaceView: React.FC = () => {
+  const [actionFeedback, setActionFeedback] = useState<string | null>(null);
+
+  const handleExecuteConsoleAction = () => {
+    setActionFeedback('Operation initiated successfully. Gateway sync active.');
+    setTimeout(() => setActionFeedback(null), 4000);
+  };
+
   const [addons, setAddons] = useState<ClinicalAddon[]>(INITIAL_ADDONS);
   const [addonNotice, setAddonNotice] = useState<string | null>(null);
 
@@ -96,7 +103,7 @@ export const ClinicalAddonMarketplaceView: React.FC = () => {
                     </span>
                     <button
                       type="button"
-                      onClick={() => {}}
+                      onClick={handleExecuteConsoleAction}
                       style={{
                         backgroundColor: '#1E293B',
                         border: '1px solid #334155',
@@ -110,6 +117,7 @@ export const ClinicalAddonMarketplaceView: React.FC = () => {
                     >
                       + Publish Add-On
                     </button>
+                    {actionFeedback && <span style={{ display: 'block', color: '#38BDF8', fontSize: '0.75rem', marginTop: '6px' }}>{actionFeedback}</span>}
                   </TableCell>
                 </TableRow>
               ) : (

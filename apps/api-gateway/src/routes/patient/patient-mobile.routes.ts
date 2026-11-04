@@ -25,10 +25,17 @@ import {
   ilike
 } from '@docsearch/database';
 import { clinicalWorkflowRepository } from '../../repositories/partner/ClinicalWorkflowRepository.js';
-import { AppError, ErrorCode, createLogger, isSessionTokenExpired } from '@docsearch/shared-core';
+import { AppError, ErrorCode, createLogger } from '@docsearch/shared-core';
+import { signJwt, verifyJwt, type BaseJwtClaims } from '@docsearch/auth';
+import { env } from '../../config/env.js';
 import { otpAntiBombingGuard } from '../../services/security/otpAntiBombingGuard.js';
 
 const logger = createLogger('patient-mobile-routes');
+
+interface PatientSessionClaims extends BaseJwtClaims {
+  phone?: string | undefined;
+  role?: string | undefined;
+}
 
 function normalizePhone(raw: string): { rawDigits: string; last10: string; withCountry: string } {
   const rawDigits = (raw || '').replace(/\D/g, '');
@@ -38,52 +45,56 @@ function normalizePhone(raw: string): { rawDigits: string; last10: string; withC
 }
 
 /**
- * 🛡️ IDOR (Insecure Direct Object Reference) Shield:
- * Ensures the bearer token strictly belongs to the requested patient phone.
+ * 🛡️ Cryptographic & IDOR (Insecure Direct Object Reference) Shield:
+ * Validates cryptographically signed patient JWT and ensures subject belongs to requested patient.
  */
 function verifyPatientSessionToken(
   authHeader: string | undefined,
   targetPhone?: string
-): { valid: boolean; reason?: string; patientId?: string; phone?: string } {
+): { valid: boolean; statusCode?: number; reason?: string; patientId?: string; phone?: string | undefined } {
   const normalizedTarget = targetPhone ? normalizePhone(targetPhone).last10 : null;
 
   if (!authHeader) {
-    return { valid: false, reason: 'Missing Authorization header. Valid Bearer token required.' };
+    return { valid: false, statusCode: 401, reason: 'Missing Authorization header. Valid Bearer token required.' };
   }
 
   const token = authHeader.replace(/^Bearer\s+/i, '').trim();
-  if (!token.startsWith('PAT-')) {
-    return { valid: false, reason: 'Invalid token scheme. Must be PAT session token.' };
+  if (!token) {
+    return { valid: false, statusCode: 401, reason: 'Missing or empty Bearer token.' };
   }
 
   try {
-    const decoded = Buffer.from(token.slice(4), 'base64').toString('utf8');
-    const [patientId, tokenPhone, timestampStr] = decoded.split(':');
+    const rawJwt = token.startsWith('PAT-') ? token.slice(4) : token;
+    const claims = verifyJwt<PatientSessionClaims>(rawJwt, {
+      secret: env.JWT_SECRET
+    });
 
-    if (!patientId || !tokenPhone) {
-      return { valid: false, reason: 'Malformed patient session token.' };
+    if (!claims.sub) {
+      return { valid: false, statusCode: 401, reason: 'Malformed patient session token: missing subject identity.' };
     }
 
-    if (timestampStr) {
-      const createdAtMs = parseInt(timestampStr, 10);
-      if (!isNaN(createdAtMs) && isSessionTokenExpired(createdAtMs, 30)) {
-        return {
-          valid: false,
-          reason: 'SESSION_EXPIRED: Patient session token has expired (30d limit). Please re-authenticate via OTP.'
-        };
-      }
-    }
+    const tokenPhone = claims.phone ? normalizePhone(claims.phone).last10 : null;
 
-    if (normalizedTarget && tokenPhone !== normalizedTarget) {
+    if (normalizedTarget && tokenPhone && tokenPhone !== normalizedTarget) {
       return {
         valid: false,
+        statusCode: 403,
         reason: 'IDOR_ACCESS_DENIED: Token phone identity does not match requested patient phone.'
       };
     }
 
-    return { valid: true, patientId, phone: tokenPhone };
-  } catch {
-    return { valid: false, reason: 'Failed to decode patient session token.' };
+    const resolvedPhone = tokenPhone || normalizedTarget || undefined;
+    return {
+      valid: true,
+      patientId: claims.sub,
+      phone: resolvedPhone
+    };
+  } catch (err: any) {
+    return {
+      valid: false,
+      statusCode: 401,
+      reason: err?.message || 'Patient session token signature invalid or expired. Re-authentication required.'
+    };
   }
 }
 
@@ -159,8 +170,7 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
     return reply.send({
       success: true,
       message: `OTP sent successfully to +91 ${last10}`,
-      cooldownSeconds: 60,
-      devOtp: '1234'
+      cooldownSeconds: 60
     });
   });
 
@@ -170,13 +180,23 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
     const { last10, withCountry } = normalizePhone(payload.mobileNumber);
     const db = getDatabase();
 
-    // Dev mode OTP check (accepts 1234 or any 4-digit in local development)
-    if (payload.otp !== '1234' && payload.otp.length !== 4) {
-      throw new AppError({
-        message: 'Invalid OTP entered. Please use 1234 in demo/development mode.',
-        code: ErrorCode.VALIDATION_ERROR,
-        statusCode: 400
-      });
+    // Strict OTP Validation (Reject simulated OTP in production; require 1234 in development)
+    if (env.NODE_ENV === 'production') {
+      if (payload.otp === '1234' || !/^\d{4,6}$/.test(payload.otp)) {
+        throw new AppError({
+          message: 'Invalid OTP entered. Please enter the verification code sent to your registered mobile.',
+          code: ErrorCode.VALIDATION_ERROR,
+          statusCode: 400
+        });
+      }
+    } else {
+      if (payload.otp !== '1234') {
+        throw new AppError({
+          message: 'Invalid OTP entered. Please use 1234 in development mode.',
+          code: ErrorCode.VALIDATION_ERROR,
+          statusCode: 400
+        });
+      }
     }
 
     // A. If selectedPatientId is specified, directly login as that patient
@@ -197,10 +217,22 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
         }
         const activeToken = await resolveActiveTokenForPatient(db, pat.id);
 
+        const sessionToken = signJwt(
+          {
+            sub: pat.id,
+            phone: last10,
+            role: 'PATIENT'
+          },
+          {
+            secret: env.JWT_SECRET,
+            expiresInSeconds: 30 * 86400
+          }
+        );
+
         return reply.send({
           success: true,
           multiplePatients: false,
-          token: `PAT-${Buffer.from(`${pat.id}:${last10}:${Date.now()}`).toString('base64')}`,
+          token: `PAT-${sessionToken}`,
           patient: {
             id: pat.id,
             uhid: pat.uhid || pat.mrn,
@@ -342,10 +374,22 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
 
     const activeToken = await resolveActiveTokenForPatient(db, patientRecord.id);
 
+    const sessionToken = signJwt(
+      {
+        sub: patientRecord.id,
+        phone: last10,
+        role: 'PATIENT'
+      },
+      {
+        secret: env.JWT_SECRET,
+        expiresInSeconds: 30 * 86400
+      }
+    );
+
     return reply.send({
       success: true,
       multiplePatients: false,
-      token: `PAT-${Buffer.from(`${patientRecord.id}:${last10}:${Date.now()}`).toString('base64')}`,
+      token: `PAT-${sessionToken}`,
       patient: {
         id: patientRecord.id,
         uhid: patientRecord.uhid || patientRecord.mrn,
@@ -374,10 +418,11 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
     // 🛡️ IDOR PROTECTION: Verify caller owns this phone number
     const authCheck = verifyPatientSessionToken(request.headers.authorization, phone);
     if (!authCheck.valid) {
-      return reply.status(403).send({
+      const status = authCheck.statusCode || 401;
+      return reply.status(status).send({
         success: false,
-        statusCode: 403,
-        error: 'FORBIDDEN',
+        statusCode: status,
+        error: status === 401 ? 'UNAUTHORIZED' : 'FORBIDDEN',
         message: authCheck.reason
       });
     }
@@ -438,10 +483,11 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
     // 🛡️ IDOR PROTECTION: Verify caller owns this phone number
     const authCheck = verifyPatientSessionToken(request.headers.authorization, payload.mobileNumber);
     if (!authCheck.valid) {
-      return reply.status(403).send({
+      const status = authCheck.statusCode || 401;
+      return reply.status(status).send({
         success: false,
-        statusCode: 403,
-        error: 'FORBIDDEN',
+        statusCode: status,
+        error: status === 401 ? 'UNAUTHORIZED' : 'FORBIDDEN',
         message: authCheck.reason
       });
     }
@@ -524,10 +570,11 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
     // 🛡️ IDOR PROTECTION: Verify caller owns this phone number
     const authCheck = verifyPatientSessionToken(request.headers.authorization, phone);
     if (!authCheck.valid) {
-      return reply.status(403).send({
+      const status = authCheck.statusCode || 401;
+      return reply.status(status).send({
         success: false,
-        statusCode: 403,
-        error: 'FORBIDDEN',
+        statusCode: status,
+        error: status === 401 ? 'UNAUTHORIZED' : 'FORBIDDEN',
         message: authCheck.reason
       });
     }
@@ -573,10 +620,11 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
     // 🛡️ IDOR PROTECTION: Verify caller owns this phone number
     const authCheck = verifyPatientSessionToken(request.headers.authorization, phone);
     if (!authCheck.valid) {
-      return reply.status(403).send({
+      const status = authCheck.statusCode || 401;
+      return reply.status(status).send({
         success: false,
-        statusCode: 403,
-        error: 'FORBIDDEN',
+        statusCode: status,
+        error: status === 401 ? 'UNAUTHORIZED' : 'FORBIDDEN',
         message: authCheck.reason
       });
     }
@@ -738,10 +786,11 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
     // 🛡️ IDOR PROTECTION: Verify caller owns this phone number
     const authCheck = verifyPatientSessionToken(request.headers.authorization, phone);
     if (!authCheck.valid) {
-      return reply.status(403).send({
+      const status = authCheck.statusCode || 401;
+      return reply.status(status).send({
         success: false,
-        statusCode: 403,
-        error: 'FORBIDDEN',
+        statusCode: status,
+        error: status === 401 ? 'UNAUTHORIZED' : 'FORBIDDEN',
         message: authCheck.reason
       });
     }
@@ -928,10 +977,11 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
     // 🛡️ IDOR PROTECTION: Verify caller owns this phone number
     const authCheck = verifyPatientSessionToken(request.headers.authorization, payload.mobileNumber);
     if (!authCheck.valid) {
-      return reply.status(403).send({
+      const status = authCheck.statusCode || 401;
+      return reply.status(status).send({
         success: false,
-        statusCode: 403,
-        error: 'FORBIDDEN',
+        statusCode: status,
+        error: status === 401 ? 'UNAUTHORIZED' : 'FORBIDDEN',
         message: authCheck.reason
       });
     }
@@ -961,10 +1011,11 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
     // 🛡️ IDOR PROTECTION: Verify caller owns this phone number
     const authCheck = verifyPatientSessionToken(request.headers.authorization, payload.mobileNumber);
     if (!authCheck.valid) {
-      return reply.status(403).send({
+      const status = authCheck.statusCode || 401;
+      return reply.status(status).send({
         success: false,
-        statusCode: 403,
-        error: 'FORBIDDEN',
+        statusCode: status,
+        error: status === 401 ? 'UNAUTHORIZED' : 'FORBIDDEN',
         message: authCheck.reason
       });
     }
@@ -992,10 +1043,11 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
     // 🛡️ IDOR PROTECTION: Verify caller owns this phone number
     const authCheck = verifyPatientSessionToken(request.headers.authorization, phone);
     if (!authCheck.valid) {
-      return reply.status(403).send({
+      const status = authCheck.statusCode || 401;
+      return reply.status(status).send({
         success: false,
-        statusCode: 403,
-        error: 'FORBIDDEN',
+        statusCode: status,
+        error: status === 401 ? 'UNAUTHORIZED' : 'FORBIDDEN',
         message: authCheck.reason
       });
     }
@@ -1090,10 +1142,11 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
     // 🛡️ IDOR PROTECTION: Verify caller owns this phone number
     const authCheck = verifyPatientSessionToken(request.headers.authorization, payload.mobileNumber);
     if (!authCheck.valid) {
-      return reply.status(403).send({
+      const status = authCheck.statusCode || 401;
+      return reply.status(status).send({
         success: false,
-        statusCode: 403,
-        error: 'FORBIDDEN',
+        statusCode: status,
+        error: status === 401 ? 'UNAUTHORIZED' : 'FORBIDDEN',
         message: authCheck.reason
       });
     }
@@ -1146,10 +1199,11 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
     if (request.headers.authorization) {
       const authCheck = verifyPatientSessionToken(request.headers.authorization, payload.mobileNumber);
       if (!authCheck.valid) {
-        return reply.status(403).send({
+        const status = authCheck.statusCode || 401;
+        return reply.status(status).send({
           success: false,
-          statusCode: 403,
-          error: 'FORBIDDEN',
+          statusCode: status,
+          error: status === 401 ? 'UNAUTHORIZED' : 'FORBIDDEN',
           message: authCheck.reason
         });
       }

@@ -194,3 +194,24 @@ export interface OutboxSyncItem {
   retryCount: number;
   queuedAt: string;
 }
+
+export interface EmergencyContact {
+  name: string;
+  relationship: string;
+  phone: string;
+}
+
+export interface EmergencyMedicalCard {
+  id: string;
+  patientName: string;
+  dateOfBirth?: string;
+  bloodGroup: string;
+  allergies: string[];
+  chronicConditions: string[];
+  currentMedications: string[];
+  emergencyContacts: EmergencyContact[];
+  organDonor: boolean;
+  abhaAddress?: string;
+  emergencyNotes?: string;
+  updatedAt: string;
+}

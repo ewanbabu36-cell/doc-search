@@ -39,11 +39,21 @@ import { ClinicalWardMasterView } from './ClinicalWardMasterView.js';
 import { PrescriptionTemplateMasterView } from './PrescriptionTemplateMasterView.js';
 import { VacutainerCatalogMasterView } from './VacutainerCatalogMasterView.js';
 import { DiagnosticPackageMasterView } from './DiagnosticPackageMasterView.js';
+import { NationalFormularyMasterView } from './NationalFormularyMasterView.js';
+import { InvestigationCatalogMasterView } from './InvestigationCatalogMasterView.js';
+import { InsurancePayerMasterView } from './InsurancePayerMasterView.js';
+import { DaycareProcedureMasterView } from './DaycareProcedureMasterView.js';
+import { ClinicalOrderSetPublisherView } from './ClinicalOrderSetPublisherView.js';
 
 import { Tabs, Badge, Spinner, ErrorState } from '@docsearch/ui-kit';
 
 type ActiveTab =
   | 'founder-approvals'
+  | 'clinical-order-sets'
+  | 'national-formulary'
+  | 'investigations-master'
+  | 'insurance-payers'
+  | 'daycare-procedures'
   | 'ward-master'
   | 'rx-templates'
   | 'vacutainers'
@@ -287,6 +297,31 @@ export const CompanyAdminDomainManager: React.FC<CompanyAdminDomainManagerProps>
             badge: <Badge variant="warning">Mandatory Sign-off</Badge>
           },
           {
+            id: 'clinical-order-sets',
+            label: '📋 Clinical Order Sets Studio',
+            badge: <Badge variant="success">Epic Standard</Badge>
+          },
+          {
+            id: 'national-formulary',
+            label: '💊 National Formulary',
+            badge: <Badge variant="success">CDSCO 500+</Badge>
+          },
+          {
+            id: 'investigations-master',
+            label: '🔬 Lab Investigation Master',
+            badge: <Badge variant="primary">LOINC 120+</Badge>
+          },
+          {
+            id: 'insurance-payers',
+            label: '🛡️ Payers & Ayushman PM-JAY',
+            badge: <Badge variant="warning">NHCX</Badge>
+          },
+          {
+            id: 'daycare-procedures',
+            label: '🩺 Daycare & Minor OT',
+            badge: <Badge variant="neutral">OPD Tariff</Badge>
+          },
+          {
             id: 'ward-master',
             label: '🏥 Clinical Wards & Tariffs',
             badge: <Badge variant="primary">IPD Master</Badge>
@@ -386,6 +421,26 @@ export const CompanyAdminDomainManager: React.FC<CompanyAdminDomainManagerProps>
           currentRoleCode={currentUserRole}
           currentUserEmail={currentUserEmail}
         />
+      )}
+
+      {activeTab === 'clinical-order-sets' && (
+        <ClinicalOrderSetPublisherView />
+      )}
+
+      {activeTab === 'national-formulary' && (
+        <NationalFormularyMasterView />
+      )}
+
+      {activeTab === 'investigations-master' && (
+        <InvestigationCatalogMasterView />
+      )}
+
+      {activeTab === 'insurance-payers' && (
+        <InsurancePayerMasterView />
+      )}
+
+      {activeTab === 'daycare-procedures' && (
+        <DaycareProcedureMasterView />
       )}
 
       {activeTab === 'ward-master' && (

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { MultiFacilityBedTransferDeskView } from './MultiFacilityBedTransferDeskView.js';
 import { MediSphereAiCopilotModal } from './MediSphereAiCopilotModal.js';
 import { DailyOperationsBar } from './DailyOperationsBar.js';
 import { CommandCenterDetailModal, type ActiveDetailModalType } from './CommandCenterDetailModal.js';
@@ -54,6 +55,7 @@ export const CommandCenterDashboard: React.FC<CommandCenterDashboardProps> = ({
   const [copilotTopic, setCopilotTopic] = useState<string | undefined>(undefined);
   const [quickNotification, setQuickNotification] = useState<string | null>(null);
   const [activeDetailModal, setActiveDetailModal] = useState<ActiveDetailModalType | null>(null);
+  const [isBedGridOpen, setIsBedGridOpen] = useState(false);
 
   // Layout Customization State (Persistent via LocalStorage)
   const LAYOUT_STORAGE_KEY = 'docsearch_command_center_layout_v2';
@@ -455,10 +457,18 @@ export const CommandCenterDashboard: React.FC<CommandCenterDashboardProps> = ({
           {
             id: 'onboard-partner',
             label: 'Onboard Partner',
+
             icon: <span>➕</span>,
             shortcut: 'Alt+N',
             variant: 'default',
             onClick: () => onOpenOnboardingWizard?.()
+          },
+          {
+            id: 'bed-transfer-cmd',
+            label: isBedGridOpen ? 'Executive Dashboard' : 'Pan-India Bed Grid (Epic)',
+            icon: <span>🏥</span>,
+            variant: isBedGridOpen ? 'primary' : 'default',
+            onClick: () => setIsBedGridOpen((prev) => !prev)
           }
         ]}
         groups={[
@@ -572,6 +582,11 @@ export const CommandCenterDashboard: React.FC<CommandCenterDashboardProps> = ({
           </div>
         }
       />
+
+      {/* Pan-India Multi-Hospital Bed & Transfer Grid (Epic Hyperspace Benchmark) */}
+      {isBedGridOpen && (
+        <MultiFacilityBedTransferDeskView />
+      )}
 
       {/* 3D Interactive Spatial Operating Core */}
       {isWidgetVisible('3d-network-core') && (

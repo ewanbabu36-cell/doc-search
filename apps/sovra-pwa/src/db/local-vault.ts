@@ -2,10 +2,10 @@
 // Stores chat history, clinical cards, and offline outbox locally on the client.
 // Cost to hospital & developer: $0.00 / INR 0.00.
 
-import { Conversation, Message, MessageStatus, OutboxSyncItem, UserProfile } from '../types.js';
+import { Conversation, Message, MessageStatus, OutboxSyncItem, UserProfile, EmergencyMedicalCard } from '../types.js';
 
 const DB_NAME = 'sovra_local_vault_v1';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -44,6 +44,11 @@ function getDb(): Promise<IDBDatabase> {
       // 4. User Profile store
       if (!db.objectStoreNames.contains('userProfile')) {
         db.createObjectStore('userProfile', { keyPath: 'id' });
+      }
+
+      // 5. Encrypted Emergency Card store (AES-GCM at rest)
+      if (!db.objectStoreNames.contains('emergencyCard')) {
+        db.createObjectStore('emergencyCard', { keyPath: 'id' });
       }
     };
 
@@ -552,5 +557,114 @@ export const localVault = {
     await this.saveMessage(msg3_1);
 
     console.log('[Sovra LocalVault] Demo conversations successfully loaded into client-side IndexedDB');
+  },
+
+  // -------------------------------------------------------------
+  // Encrypted Offline Emergency Medical Card (AES-GCM at rest)
+  // -------------------------------------------------------------
+  async saveEncryptedEmergencyCard(card: EmergencyMedicalCard, passphrase = 'sovra-default-device-vault'): Promise<void> {
+    const db = await getDb();
+    const enc = new TextEncoder();
+    const salt = window.crypto.getRandomValues(new Uint8Array(16));
+    const iv = window.crypto.getRandomValues(new Uint8Array(12));
+
+    // Derive AES-GCM 256-bit key from passphrase using PBKDF2
+    const keyMaterial = await window.crypto.subtle.importKey(
+      'raw',
+      enc.encode(passphrase),
+      { name: 'PBKDF2' },
+      false,
+      ['deriveKey']
+    );
+
+    const aesKey = await window.crypto.subtle.deriveKey(
+      {
+        name: 'PBKDF2',
+        salt,
+        iterations: 100000,
+        hash: 'SHA-256'
+      },
+      keyMaterial,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['encrypt']
+    );
+
+    const serializedData = enc.encode(JSON.stringify(card));
+    const ciphertext = await window.crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv },
+      aesKey,
+      serializedData
+    );
+
+    const encryptedRecord = {
+      id: 'active_emergency_card',
+      ciphertext: Array.from(new Uint8Array(ciphertext)),
+      iv: Array.from(iv),
+      salt: Array.from(salt),
+      updatedAt: new Date().toISOString()
+    };
+
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('emergencyCard', 'readwrite');
+      const store = tx.objectStore('emergencyCard');
+      const req = store.put(encryptedRecord);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  },
+
+  async getDecryptedEmergencyCard(passphrase = 'sovra-default-device-vault'): Promise<EmergencyMedicalCard | null> {
+    const db = await getDb();
+
+    const record = await new Promise<any>((resolve, reject) => {
+      const tx = db.transaction('emergencyCard', 'readonly');
+      const store = tx.objectStore('emergencyCard');
+      const req = store.get('active_emergency_card');
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => reject(req.error);
+    });
+
+    if (!record) return null;
+
+    try {
+      const enc = new TextEncoder();
+      const salt = new Uint8Array(record.salt);
+      const iv = new Uint8Array(record.iv);
+      const ciphertext = new Uint8Array(record.ciphertext);
+
+      const keyMaterial = await window.crypto.subtle.importKey(
+        'raw',
+        enc.encode(passphrase),
+        { name: 'PBKDF2' },
+        false,
+        ['deriveKey']
+      );
+
+      const aesKey = await window.crypto.subtle.deriveKey(
+        {
+          name: 'PBKDF2',
+          salt,
+          iterations: 100000,
+          hash: 'SHA-256'
+        },
+        keyMaterial,
+        { name: 'AES-GCM', length: 256 },
+        false,
+        ['decrypt']
+      );
+
+      const decrypted = await window.crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv },
+        aesKey,
+        ciphertext
+      );
+
+      const dec = new TextDecoder();
+      return JSON.parse(dec.decode(decrypted)) as EmergencyMedicalCard;
+    } catch (err) {
+      console.error('[Sovra LocalVault] Failed to decrypt emergency card:', err);
+      return null;
+    }
   }
 };

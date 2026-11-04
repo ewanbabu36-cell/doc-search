@@ -8,6 +8,7 @@ import { MultiCurrencyGeoPricingView } from './MultiCurrencyGeoPricingView.js';
 import { PlanAbTestingEngineView } from './PlanAbTestingEngineView.js';
 import { B2bCorporateWellnessCustomizerView } from './B2bCorporateWellnessCustomizerView.js';
 import { LaunchOfferManagerView } from './LaunchOfferManagerView.js';
+import { MonetizationGodModeCockpit } from '../monetization/MonetizationGodModeCockpit.js';
 
 export interface CarePlan {
   id: string;
@@ -90,6 +91,7 @@ export const DEFAULT_CARE_PLANS: CarePlan[] = [
 ];
 
 export type GrowthTabId =
+  | 'MONETIZATION_ENGINE'
   | 'LAUNCH_OFFER_CONTROLLER'
   | 'PLAN_STUDIO'
   | 'AI_ELASTICITY'
@@ -167,12 +169,13 @@ const GROWTH_CATEGORIES: GrowthCategoryConfig[] = [
   },
   {
     id: 'REVENUE_SETTLEMENTS',
-    label: 'Revenue & Settlements',
+    label: 'Monetization & Settlements',
     icon: '💰',
-    badge: '2 Tools',
-    defaultTab: 'OVERVIEW',
-    tabIds: ['OVERVIEW', 'PARTNER_PAYOUTS'],
+    badge: '3 Tools',
+    defaultTab: 'MONETIZATION_ENGINE',
+    tabIds: ['MONETIZATION_ENGINE', 'OVERVIEW', 'PARTNER_PAYOUTS'],
     tools: [
+      { id: 'MONETIZATION_ENGINE', label: 'Monetization Engine & Partner Licenses', icon: '⚡', badge: '100% Free / Lowest Price' },
       { id: 'OVERVIEW', label: 'Network GMV & Growth KPIs', icon: '📊', badge: '15% Net Take' },
       { id: 'PARTNER_PAYOUTS', label: 'Partner Settlements Board', icon: '💸', badge: 'Escrow UPI' }
     ]
@@ -180,6 +183,9 @@ const GROWTH_CATEGORIES: GrowthCategoryConfig[] = [
 ];
 
 function getCategoryForGrowthTab(tabId: GrowthTabId): GrowthCategory {
+  if (tabId === 'MONETIZATION_ENGINE') {
+    return 'REVENUE_SETTLEMENTS';
+  }
   if (['LAUNCH_OFFER_CONTROLLER', 'PLAN_STUDIO', 'AI_ELASTICITY', 'MULTI_CURRENCY_GEO', 'AB_TESTING'].includes(tabId)) {
     return 'PLANS_PRICING';
   }
@@ -709,6 +715,11 @@ export const CompanyGrowthEngineDomainManager: React.FC<CompanyGrowthEngineDomai
           );
         })()}
       </div>
+
+      {/* Tab: Monetization Engine & Partner License Lifecycle HQ */}
+      {activeTab === 'MONETIZATION_ENGINE' && (
+        <MonetizationGodModeCockpit />
+      )}
 
       {/* Tab: Launch Offer & Limited Seats Quota Controller */}
       {activeTab === 'LAUNCH_OFFER_CONTROLLER' && (

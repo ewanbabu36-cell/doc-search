@@ -956,12 +956,12 @@ export const Partner360BigScreenModal: React.FC<Partner360BigScreenModalProps> =
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ color: '#94A3B8' }}>Login URL:</span>
                     <a
-                      href={meta.credentials?.loginUrl || 'http://localhost:5174/login'}
+                      href={meta.credentials?.loginUrl || (typeof window !== 'undefined' && window.location.hostname !== 'localhost' ? 'https://partner.docsearch.health/login' : 'http://localhost:5173/login')}
                       target="_blank"
                       rel="noreferrer"
                       style={{ color: '#38BDF8', textDecoration: 'none' }}
                     >
-                      {meta.credentials?.loginUrl || 'http://localhost:5174/login'} ↗
+                      {(meta.credentials?.loginUrl || (typeof window !== 'undefined' && window.location.hostname !== 'localhost' ? 'https://partner.docsearch.health/login' : 'http://localhost:5173/login'))} ↗
                     </a>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>

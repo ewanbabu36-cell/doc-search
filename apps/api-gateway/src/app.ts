@@ -55,6 +55,7 @@ import { aiFoundationRoutes } from './routes/partner/ai-foundation.routes.js';
 import { aiChatRoutes } from './routes/partner/ai-chat.routes.js';
 import { aiVoiceRoutes } from './routes/partner/ai-voice.routes.js';
 import { hardwareBridgeRoutes } from './routes/partner/hardware-bridge.routes.js';
+import { hardwareBridgeRoutes as hardwareDirectPrintRoutes } from './services/hardware/HardwareBridgeController.js';
 import { whatsappEngagementRoutes } from './routes/partner/whatsapp-engagement.routes.js';
 import { sovraWebhookRoutes } from './routes/partner/sovra-webhook.routes.js';
 import { executiveMisRoutes } from './routes/partner/executive-mis.routes.js';
@@ -69,8 +70,14 @@ import { documentVerificationRoutes } from './routes/compliance/document-verific
 import { workflowRoutes } from './routes/workflow.routes.js';
 import { businessHistoryRoutes } from './routes/partner/business-history.routes.js';
 import { paymentWebhookRoutes } from './routes/webhooks/payment-webhook.routes.js';
+import { whatsappWebhookRoutes } from './routes/communication/whatsapp-webhook.routes.js';
+import { codeBlueRoutes } from './routes/emergency/code-blue.routes.js';
 import { notificationWebhookRoutes } from './routes/webhooks/notification-webhook.routes.js';
 import { licenseGovernanceRoutes } from './routes/company/license-governance.routes.js';
+import { monetizationEngineRoutes } from './routes/company/monetization-engine.routes.js';
+import { microAddonRoutes } from './routes/company/micro-addon.routes.js';
+import { tpaFactoringRoutes } from './routes/company/tpa-factoring.routes.js';
+import { growthRetentionRoutes } from './routes/company/growth-retention.routes.js';
 import { commercialRoutes } from './routes/company/commercial.routes.js';
 import { partnerReliabilityRoutes } from './routes/partner/reliability.routes.js';
 import { hqReliabilityRoutes } from './routes/company/reliability-hq.routes.js';
@@ -101,6 +108,14 @@ import { ewanSuperBrainRoutes } from './routes/partner/ewan-super-brain.routes.j
 import { distributedLockRoutes } from './routes/locks.routes.js';
 import { commercialOperationsRoutes } from './routes/partner/commercial-operations.routes.js';
 import { workspaceLayoutRoutes } from './routes/partner/workspace-layout.routes.js';
+import { bedTelemetryRoutes } from './routes/executive/bed-telemetry.routes.js';
+import { revenueComplianceRoutes } from './routes/company/revenue-compliance.routes.js';
+import { poMatchingRoutes } from './routes/supply-chain/po-matching.routes.js';
+import { clinicalRegistryRoutes } from './routes/compliance/clinical-registry.routes.js';
+import { clinicalSentinelRoutes } from './routes/partner/clinical-sentinel.routes.js';
+import { antibiogramRoutes } from './routes/partner/antibiogram.routes.js';
+import { chronicRefillRoutes } from './routes/patient/chronic-refill.routes.js';
+import { revenueWaterfallRoutes } from './routes/company/revenue-waterfall.routes.js';
 import { AppError, sanitizeObjectPrototype } from '@docsearch/shared-core';
 import { ensureDatabaseReady, setTestDatabase } from '@docsearch/database';
 
@@ -143,7 +158,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   // ⚡ V8 Light-Speed HTTP Conditional ETag Hook (Sub-5ms Responses & Zero Bandwidth Waste)
   app.addHook('onSend', async (request, reply, payload) => {
     if (request.method === 'GET' && reply.statusCode === 200 && typeof payload === 'string') {
-      const etag = `W/"${crypto.createHash('md5').update(payload).digest('hex').slice(0, 16)}"`;
+      const etag = `W/"${crypto.createHash('sha256').update(payload).digest('hex').slice(0, 16)}"`;
       reply.header('ETag', etag);
 
       const clientEtag = request.headers['if-none-match'];
@@ -351,6 +366,8 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(billingManagementRoutes);
   await app.register(billingWebhookRoutes);
   await app.register(paymentWebhookRoutes);
+  await app.register(whatsappWebhookRoutes);
+  await app.register(codeBlueRoutes);
   await app.register(notificationWebhookRoutes);
   await app.register(mrdManagementRoutes);
   await app.register(masterCatalogsRoutes);
@@ -372,10 +389,18 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(founderApprovalRoutes);
   await app.register(partnerAccessControlRoutes);
   await app.register(licenseGovernanceRoutes);
+  await app.register(monetizationEngineRoutes);
+  await app.register(microAddonRoutes);
+  await app.register(tpaFactoringRoutes);
+  await app.register(growthRetentionRoutes);
   await app.register(hqCommandCenterRoutes);
   await app.register(godmodeAdminRoutes);
   await app.register(hqReliabilityRoutes);
   await app.register(hqAiIntelligenceRoutes);
+  await app.register(bedTelemetryRoutes);
+  await app.register(revenueComplianceRoutes);
+  await app.register(poMatchingRoutes);
+  await app.register(clinicalRegistryRoutes);
 
   // 5. Register Partner Platform Domain Routes (Radiology 2.17 & Dietary 2.18)
   await app.register(partnerCommandCenterRoutes);
@@ -396,6 +421,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(aiChatRoutes);
   await app.register(aiVoiceRoutes);
   await app.register(hardwareBridgeRoutes);
+  await app.register(hardwareDirectPrintRoutes);
   await app.register(whatsappEngagementRoutes);
   await app.register(sovraWebhookRoutes);
   await app.register(executiveMisRoutes);
@@ -431,6 +457,10 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(bloodBankSentinelRoutes);
   await app.register(ewanSuperBrainRoutes);
   await app.register(workspaceLayoutRoutes);
+  await app.register(clinicalSentinelRoutes);
+  await app.register(antibiogramRoutes);
+  await app.register(chronicRefillRoutes);
+  await app.register(revenueWaterfallRoutes);
 
   // Block any direct guessed physical storage URL access (/storage/*)
   app.get('/storage/*', async (_request, reply) => {

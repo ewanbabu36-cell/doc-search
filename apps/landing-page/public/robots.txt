@@ -1,0 +1,20 @@
+# DocSearch Sovereign Healthcare Operating System
+# Web Crawler Policy
+
+User-agent: *
+Allow: /
+Allow: /about
+Allow: /contact
+Allow: /pricing
+Allow: /partner-onboarding
+Allow: /careers
+Allow: /privacy
+Allow: /terms
+
+Disallow: /api/
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /portal/
+Disallow: /activate/
+
+Sitemap: https://docsearch.health/sitemap.xml

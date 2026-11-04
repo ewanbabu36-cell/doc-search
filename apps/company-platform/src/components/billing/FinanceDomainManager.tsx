@@ -27,6 +27,9 @@ import { MultiGatewaySmartRouterView } from './MultiGatewaySmartRouterView.js';
 import { MultiBranchInterCompanyBillingView } from './MultiBranchInterCompanyBillingView.js';
 import { PredictiveCashFlowRevenueSimulatorView } from './PredictiveCashFlowRevenueSimulatorView.js';
 import { CompanyCorporateBankSettingsView } from './CompanyCorporateBankSettingsView.js';
+import { RevenueRecognitionWaterfallView } from './RevenueRecognitionWaterfallView.js';
+import { SmartDunningRecoveryEngineView } from './SmartDunningRecoveryEngineView.js';
+import { GrossToNetRevenueWaterfallView } from './GrossToNetRevenueWaterfallView.js';
 
 import { Badge, Spinner, ErrorState, Button, DocSearchSpatialCore3D } from '@docsearch/ui-kit';
 
@@ -45,7 +48,10 @@ export type ActiveTab =
   | 'subscriptions'
   | 'billing-accounts'
   | 'invoices'
-  | 'payments';
+  | 'payments'
+  | 'asc606-waterfall'
+  | 'gross-to-net-waterfall'
+  | 'smart-dunning';
 
 export type FinanceCategory =
   | 'EXECUTIVE_SIMULATOR'
@@ -75,9 +81,9 @@ const FINANCE_CATEGORIES: FinanceCategoryConfig[] = [
     id: 'CORE_BILLING',
     label: 'Core Ledger & Accounts',
     icon: '💳',
-    subtitle: 'Invoices, Payments & Subscriptions',
+    subtitle: 'Invoices, ASC 606 & Smart Dunning',
     defaultTab: 'invoices',
-    tabIds: ['invoices', 'payments', 'subscriptions', 'billing-accounts']
+    tabIds: ['invoices', 'payments', 'subscriptions', 'billing-accounts', 'asc606-waterfall', 'gross-to-net-waterfall', 'smart-dunning']
   },
   {
     id: 'CONTRACTS_SETTLEMENTS',
@@ -101,7 +107,7 @@ function getCategoryForTab(tabId: ActiveTab): FinanceCategory {
   if (['overview', 'revenue-simulator', 'leakage-radar'].includes(tabId)) {
     return 'EXECUTIVE_SIMULATOR';
   }
-  if (['invoices', 'payments', 'subscriptions', 'billing-accounts'].includes(tabId)) {
+  if (['invoices', 'payments', 'subscriptions', 'billing-accounts', 'asc606-waterfall', 'gross-to-net-waterfall', 'smart-dunning'].includes(tabId)) {
     return 'CORE_BILLING';
   }
   if (['contract-builder', 'split', 'tpa'].includes(tabId)) {
@@ -448,6 +454,21 @@ export const FinanceDomainManager: React.FC = () => {
                   id: 'billing-accounts',
                   label: '🏢 Billing Accounts',
                   badge: <Badge variant="neutral">{billingAccounts.length}</Badge>
+                },
+                {
+                  id: 'asc606-waterfall',
+                  label: '📊 ASC 606 & Ind AS 115 Waterfall',
+                  badge: <Badge variant="success">GAAP Audit</Badge>
+                },
+                {
+                  id: 'gross-to-net-waterfall',
+                  label: '💸 Gross-to-Net Take-Rate & §194O',
+                  badge: <Badge variant="primary">Stripe Connect</Badge>
+                },
+                {
+                  id: 'smart-dunning',
+                  label: '🔄 AI Smart Dunning Recovery',
+                  badge: <Badge variant="primary">88.4% Recovery</Badge>
                 }
               ];
             } else if (activeCategory === 'CONTRACTS_SETTLEMENTS') {
@@ -602,6 +623,18 @@ export const FinanceDomainManager: React.FC = () => {
 
       {activeTab === 'payments' && (
         <PaymentRecordListView payments={payments} />
+      )}
+
+      {activeTab === 'asc606-waterfall' && (
+        <RevenueRecognitionWaterfallView />
+      )}
+
+      {activeTab === 'gross-to-net-waterfall' && (
+        <GrossToNetRevenueWaterfallView />
+      )}
+
+      {activeTab === 'smart-dunning' && (
+        <SmartDunningRecoveryEngineView />
       )}
 
       {/* Modals */}

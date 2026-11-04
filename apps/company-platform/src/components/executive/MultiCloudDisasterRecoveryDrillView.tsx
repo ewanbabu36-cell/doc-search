@@ -16,6 +16,22 @@ const INITIAL_REGIONS: CloudRegionState[] = [];
 
 export const MultiCloudDisasterRecoveryDrillView: React.FC = () => {
   const [regions, setRegions] = useState<CloudRegionState[]>(INITIAL_REGIONS);
+
+  const handleConfigureDrRegion = () => {
+    const newRegion: CloudRegionState = {
+      id: 'DR-' + Date.now().toString().slice(-4),
+      provider: 'GCP',
+      regionName: 'asia-south1 (Mumbai Standby)',
+      role: 'STANDBY_REPLICA',
+      replicationLagMs: 2,
+      status: 'HEALTHY',
+      connectedHospitalNodes: 120,
+      activeQps: 450
+    };
+    setRegions((prev) => [newRegion, ...prev]);
+    setDrillNotice('Disaster Recovery replica node provisioned with streaming replication.');
+    setTimeout(() => setDrillNotice(null), 5000);
+  };
   const [isDrillRunning, setIsDrillRunning] = useState(false);
   const [drillStep, setDrillStep] = useState(0);
   const [drillNotice, setDrillNotice] = useState<string | null>(null);
@@ -175,7 +191,7 @@ export const MultiCloudDisasterRecoveryDrillView: React.FC = () => {
                     </span>
                     <button
                       type="button"
-                      onClick={() => {}}
+                      onClick={handleConfigureDrRegion}
                       style={{
                         backgroundColor: '#1E293B',
                         border: '1px solid #334155',

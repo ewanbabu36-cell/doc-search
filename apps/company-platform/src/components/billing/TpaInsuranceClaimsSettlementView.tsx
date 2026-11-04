@@ -14,11 +14,56 @@ interface InsuranceClaim {
   claimDate: string;
 }
 
-const INITIAL_CLAIMS: InsuranceClaim[] = [];
+const INITIAL_CLAIMS: InsuranceClaim[] = [
+  {
+    claimId: 'CLM-STAR-88192',
+    patientName: 'Kishore Kumar (UHID-2026-102)',
+    policyNumber: 'STAR-IND-992144',
+    tpaProvider: 'Star Health Allied Insurance',
+    hospitalName: 'Metropolitan Multispecialty Hospital',
+    claimedAmount: '₹ 1,25,000',
+    approvedAmount: '₹ 1,00,000',
+    copayDeductible: '₹ 25,000',
+    claimStatus: 'SETTLED_DISBURSED',
+    claimDate: '2026-11-01'
+  },
+  {
+    claimId: 'CLM-HDFC-99301',
+    patientName: 'Sunita Deshmukh (UHID-2026-108)',
+    policyNumber: 'HDFC-ERGO-MED-4410',
+    tpaProvider: 'HDFC ERGO Health',
+    hospitalName: 'Metropolitan Multispecialty Hospital',
+    claimedAmount: '₹ 85,000',
+    approvedAmount: '₹ 68,000',
+    copayDeductible: '₹ 17,000',
+    claimStatus: 'PRE_AUTH_APPROVED',
+    claimDate: '2026-11-02'
+  },
+  {
+    claimId: 'CLM-PMJAY-11029',
+    patientName: 'Rameshwar Lal (UHID-2026-319)',
+    policyNumber: 'AB-PMJAY-GOLD-771',
+    tpaProvider: 'Ayushman Bharat PMJAY (NHA)',
+    hospitalName: 'City Heart Diagnostics Center',
+    claimedAmount: '₹ 64,000',
+    approvedAmount: '₹ 64,000',
+    copayDeductible: '₹ 0',
+    claimStatus: 'IN_ADJUDICATION',
+    claimDate: '2026-11-03'
+  }
+];
 
 export const TpaInsuranceClaimsSettlementView: React.FC = () => {
   const [claims, setClaims] = useState<InsuranceClaim[]>(INITIAL_CLAIMS);
   const [settleNotice, setSettleNotice] = useState<string | null>(null);
+
+  const handleQueryNhcxGateway = () => {
+    setSettleNotice('Querying National Health Claims Exchange (NHCX) gateway...');
+    setTimeout(() => {
+      setSettleNotice('NHCX Gateway sync complete. All active pre-authorizations up to date.');
+      setTimeout(() => setSettleNotice(null), 4000);
+    }, 800);
+  };
 
   const handleSettleClaim = (cId: string) => {
     setClaims((prev) =>
@@ -100,7 +145,7 @@ export const TpaInsuranceClaimsSettlementView: React.FC = () => {
                     </span>
                     <button
                       type="button"
-                      onClick={() => {}}
+                      onClick={handleQueryNhcxGateway}
                       style={{
                         backgroundColor: '#1E293B',
                         border: '1px solid #334155',

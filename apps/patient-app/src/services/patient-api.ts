@@ -7,6 +7,9 @@ export interface PatientProfile {
   phone: string;
   bloodGroup: string;
   allergies: string[];
+  abhaId?: string | undefined;
+  abhaAddress?: string | undefined;
+  relationship?: string | undefined;
   activeToken?: {
     tokenNumber: string;
     doctorName: string;

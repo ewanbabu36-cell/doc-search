@@ -1,3 +1,4 @@
+import { env } from '../../config/env.js';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import {
@@ -227,7 +228,7 @@ export const publicKioskRoutes: FastifyPluginAsync = async (app) => {
     const currentServingToken = Math.max(1, typeof tokenNumber === 'number' ? tokenNumber - 4 : 10);
     const tokensAhead = Math.max(0, typeof tokenNumber === 'number' ? tokenNumber - currentServingToken : 4);
     const estimatedWaitMinutes = Math.round(tokensAhead * 3.5);
-    const liveTokenUrl = `http://localhost:5173/live-token/${encounter.id}`;
+    const liveTokenUrl = `${env.PARTNER_PORTAL_URL}/live-token/${encounter.id}`;
 
     // 6. Zero-App Patient Journey: Dispatch WhatsApp Live Token Link
     const waText = `🙏 Namaste ${payload.fullName} ji! DOC SEARCH Smart Hospital mein aapka swagat hai.\n\n🎫 Aapka Token: #${tokenNumber}\n👨‍⚕️ Vibhaag: ${payload.departmentName}\n⏱️ Doctor room mein abhi Token #${currentServingToken} chal raha hai.\n⏳ Aapka number lagbhag ${estimatedWaitMinutes} minute mein aayega.\n\n📱 Live token status tracker: ${liveTokenUrl}\n\nKripya waiting lounge mein viraajen.`;

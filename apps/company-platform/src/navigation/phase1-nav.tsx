@@ -39,6 +39,14 @@ export const PHASE_1_DOMAINS: Phase1Domain[] = [
 
   // 2. Growth & Revenue (revenue)
   {
+    id: 'monetization-engine-hq',
+    title: 'Monetization Engine & Revenue Lifecycle HQ',
+    description: '100% Free Launch, lowest-price licenses, micro-addons, T-0 factoring & churn retention',
+    icon: '⚡',
+    category: 'revenue',
+    status: 'active'
+  },
+  {
     id: 'central-supply-chain',
     title: 'B2B Medical & Chemical Supply Chain HQ',
     description: 'Central wholesale medicine, chemical reagent & equipment depot, inbound hospital POs & margin control',

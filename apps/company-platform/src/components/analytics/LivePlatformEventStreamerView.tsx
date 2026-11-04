@@ -14,7 +14,26 @@ interface StreamEvent {
 const INITIAL_STREAM: StreamEvent[] = [];
 
 export const LivePlatformEventStreamerView: React.FC = () => {
-  const [events] = useState<StreamEvent[]>(INITIAL_STREAM);
+  const [events, setEvents] = useState<StreamEvent[]>(INITIAL_STREAM);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    setTimeout(() => {
+      setEvents([
+        {
+          id: 'EVT-' + Date.now().toString().slice(-4),
+          timeAgo: 'Just now',
+          category: 'CONSULTATION',
+          facilityName: 'Metro Multi-Specialty Hospital',
+          city: 'Patna',
+          description: 'OPD Consultation closed with signed prescription',
+          icon: '⚡'
+        }
+      ]);
+      setIsRefreshing(false);
+    }, 600);
+  };
   const [isStreaming, setIsStreaming] = useState(true);
 
   return (
@@ -65,7 +84,7 @@ export const LivePlatformEventStreamerView: React.FC = () => {
               </p>
               <button
                 type="button"
-                onClick={() => {}}
+                onClick={handleRefresh}
                 style={{
                   backgroundColor: '#1E293B',
                   border: '1px solid #334155',
@@ -77,7 +96,7 @@ export const LivePlatformEventStreamerView: React.FC = () => {
                   cursor: 'pointer'
                 }}
               >
-                ↻ Refresh Stream
+                {isRefreshing ? '↻ Refreshing...' : '↻ Refresh Stream'}
               </button>
             </div>
           ) : (

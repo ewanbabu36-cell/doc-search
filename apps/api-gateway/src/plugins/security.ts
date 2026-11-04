@@ -127,9 +127,8 @@ export async function registerSecurityPlugins(app: FastifyInstance): Promise<voi
       return `ip:${request.ip}`;
     },
     max: (request) => {
-      const authHeader = request.headers.authorization;
-      if (request.session?.userId || (authHeader && authHeader.startsWith('Bearer '))) {
-        // High throughput quota for authenticated clinical staff in hospitals
+      // 🛡️ High throughput quota strictly reserved for cryptographically authenticated users
+      if (request.session?.userId) {
         return 10000;
       }
       // Strict anti-abuse / anti-spray quota for unauthenticated public traffic

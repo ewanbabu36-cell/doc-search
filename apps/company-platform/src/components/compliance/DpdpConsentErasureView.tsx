@@ -17,6 +17,21 @@ export const DpdpConsentErasureView: React.FC = () => {
   const [requests, setRequests] = useState<ErasureRequest[]>(INITIAL_REQUESTS);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
 
+  const handleCreateRequest = () => {
+    const newReq: ErasureRequest = {
+      id: 'DPDP-' + Date.now().toString().slice(-4),
+      patientName: 'Sunita Devi',
+      patientAbhaId: '91-4433-2211-0099',
+      requestDate: new Date().toISOString().split('T')[0] || '2026-11-03',
+      requestType: 'WITHDRAW_MARKETING_CONSENT',
+      piiStatus: 'PENDING_STATUTORY_REVIEW',
+      statutoryRetentionLock: 'Clinical EHR (MCI Act - 3 Years)'
+    };
+    setRequests((prev) => [newReq, ...prev]);
+    setActionNotice('Consent modification request ' + newReq.id + ' queued for statutory review.');
+    setTimeout(() => setActionNotice(null), 4000);
+  };
+
   const handleExecuteErasure = (rId: string) => {
     setRequests((prev) =>
       prev.map((r) => (r.id === rId ? { ...r, piiStatus: 'ANONYMIZED_COMPLETED' } : r))
@@ -94,7 +109,7 @@ export const DpdpConsentErasureView: React.FC = () => {
                     </span>
                     <button
                       type="button"
-                      onClick={() => {}}
+                      onClick={handleCreateRequest}
                       style={{
                         backgroundColor: '#1E293B',
                         border: '1px solid #334155',

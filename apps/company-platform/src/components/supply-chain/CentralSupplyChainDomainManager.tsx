@@ -21,11 +21,12 @@ import {
   REGIONAL_DEPOT_NETWORK,
   resolveNearestDepotByPincode
 } from '../../services/central-supply-chain-service.js';
+import { ThreeWayPoMatchingEngineView } from './ThreeWayPoMatchingEngineView.js';
 
 export const CentralSupplyChainDomainManager: React.FC = () => {
   const [catalog, setCatalog] = useState<CentralCatalogItem[]>([]);
   const [purchaseOrders, setPurchaseOrders] = useState<HospitalPurchaseOrder[]>([]);
-  const [activeTab, setActiveTab] = useState<'INBOUND_POS' | 'CATALOG_MARGINS' | 'ANALYTICS' | 'REGIONAL_DEPOTS'>('INBOUND_POS');
+  const [activeTab, setActiveTab] = useState<'INBOUND_POS' | 'CATALOG_MARGINS' | 'ANALYTICS' | 'REGIONAL_DEPOTS' | 'THREE_WAY_MATCHING'>('INBOUND_POS');
   const [simulatedPincode, setSimulatedPincode] = useState('560001');
   const [statusFilter, setStatusFilter] = useState<HospitalPurchaseOrder['status'] | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -383,6 +384,26 @@ export const CentralSupplyChainDomainManager: React.FC = () => {
           }}
         >
           <span>🚚</span> Regional Depots & Fleet (4 Hubs)
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('THREE_WAY_MATCHING')}
+          style={{
+            background: activeTab === 'THREE_WAY_MATCHING' ? 'rgba(56, 189, 248, 0.18)' : '#0F172A',
+            color: activeTab === 'THREE_WAY_MATCHING' ? '#38BDF8' : '#94A3B8',
+            border: activeTab === 'THREE_WAY_MATCHING' ? '1px solid #38BDF8' : '1px solid #1E293B',
+            borderRadius: '10px',
+            padding: '8px 18px',
+            fontWeight: 800,
+            fontSize: '0.875rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          <span>⚖️</span> 3-Way PO Matching & ROP
         </button>
       </div>
 
@@ -834,6 +855,11 @@ export const CentralSupplyChainDomainManager: React.FC = () => {
             </div>
           </div>
         </Card>
+      )}
+
+      {/* Tab: SAP S/4HANA 3-Way PO Matching & ROP Sentinel */}
+      {activeTab === 'THREE_WAY_MATCHING' && (
+        <ThreeWayPoMatchingEngineView />
       )}
 
       {/* Dispatch Modal */}

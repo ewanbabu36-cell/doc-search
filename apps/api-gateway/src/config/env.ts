@@ -19,8 +19,9 @@ const EnvSchema = z.object({
     .default(
       'http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:5177,http://127.0.0.1:5173,http://127.0.0.1:5174,http://127.0.0.1:5175,http://127.0.0.1:5176,http://127.0.0.1:5177'
     ),
-  PARTNER_PORTAL_URL: z.string().default('http://localhost:5173'),
-  COMPANY_PORTAL_URL: z.string().default('http://localhost:5177'),
+  PARTNER_PORTAL_URL: z.string().default(process.env['NODE_ENV'] === 'production' ? 'https://partner.docsearch.health' : 'http://localhost:5173'),
+  COMPANY_PORTAL_URL: z.string().default(process.env['NODE_ENV'] === 'production' ? 'https://admin.docsearch.health' : 'http://localhost:5177'),
+  PATIENT_PORTAL_URL: z.string().default(process.env['NODE_ENV'] === 'production' ? 'https://my.docsearch.health' : 'http://localhost:5174'),
   RATE_LIMIT_MAX: z.coerce.number().default(100),
   RATE_LIMIT_TIME_WINDOW: z.coerce.number().default(60000),
   REDIS_URL: z.string().optional(),

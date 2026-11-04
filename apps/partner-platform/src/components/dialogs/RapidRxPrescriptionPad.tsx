@@ -644,18 +644,116 @@ export const RapidRxPrescriptionPad: React.FC<RapidRxPrescriptionPadProps> = ({
     setIsTimerRunning(true);
   }, [consultationId]);
 
+  const [dbMedications, setDbMedications] = useState<RapidDrugCatalogItem[]>([]);
+  const [dbClinicalKits, setDbClinicalKits] = useState<RapidClinicalKit[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchMasterData = async () => {
+      try {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('docsearch_partner_token') : null;
+        const [medRes, kitRes] = await Promise.all([
+          fetch('/api/v1/company/masters/medications?limit=300', {
+            headers: token ? { Authorization: `Bearer ${token}` } : {}
+          }),
+          fetch('/api/v1/company/masters/prescription-templates', {
+            headers: token ? { Authorization: `Bearer ${token}` } : {}
+          })
+        ]);
+
+        if (medRes.ok && isMounted) {
+          const medJson = await medRes.json();
+          if (Array.isArray(medJson.data) && medJson.data.length > 0) {
+            const mappedMeds: RapidDrugCatalogItem[] = medJson.data.map((m: any) => {
+              const dosageForm = (m.dosageForm || 'TABLET').toUpperCase();
+              let formulation: RapidDrugCatalogItem['formulation'] = 'TAB';
+              if (dosageForm.includes('CAP')) formulation = 'CAP';
+              else if (dosageForm.includes('SYR')) formulation = 'SYP';
+              else if (dosageForm.includes('INJ')) formulation = 'INJ';
+              else if (dosageForm.includes('OINT')) formulation = 'OINT';
+              else if (dosageForm.includes('DROP')) formulation = 'DROPS';
+              else if (dosageForm.includes('INHAL')) formulation = 'INHALER';
+
+              return {
+                id: m.id || m.medicationCode,
+                brandName: m.brandName,
+                genericName: m.genericName,
+                formulation,
+                defaultStrength: m.strength || '500mg',
+                defaultFrequency: '1 - 0 - 1',
+                defaultDurationDays: 5,
+                defaultTiming: 'AFTER_FOOD',
+                defaultDosage: '1 Tab',
+                instructions: m.metadata?.hindiInstructions || 'Take after meals',
+                janAushadhiEquivalent: {
+                  name: `Jan Aushadhi ${m.genericName}`,
+                  brandPrice: Number(m.metadata?.mrp || 60),
+                  janAushadhiPrice: Number(m.metadata?.janAushadhiPrice || 15)
+                },
+                keywords: [
+                  m.brandName.toLowerCase(),
+                  m.genericName.toLowerCase(),
+                  (m.medicationCode || '').toLowerCase()
+                ]
+              };
+            });
+            setDbMedications(mappedMeds);
+          }
+        }
+
+        if (kitRes.ok && isMounted) {
+          const kitJson = await kitRes.json();
+          if (Array.isArray(kitJson.data) && kitJson.data.length > 0) {
+            const mappedKits: RapidClinicalKit[] = kitJson.data.map((k: any) => ({
+              id: k.id || k.templateCode,
+              title: k.name,
+              hindiTitle: k.chiefComplaint || k.name,
+              icon: k.icon || '🩺',
+              badgeColor: '#0284C7',
+              diagnosis: k.diagnosis,
+              icd10: k.icd10Code || 'R50.9',
+              followUp: '3 Days',
+              treatmentPlan: k.treatmentPlan || 'Standard supportive care.',
+              medications: Array.isArray(k.medications)
+                ? k.medications.map((med: any) => ({
+                    medicationName: med.medicineName || med.medicationName || 'Medicine',
+                    strength: med.strength || '500mg',
+                    dosage: med.dose || med.dosage || '1 Tab',
+                    frequency: med.timing || med.frequency || '1 - 0 - 1',
+                    duration: 3,
+                    durationUnit: 'DAYS',
+                    beforeAfterFood: 'AFTER_FOOD',
+                    instructions: 'Take after meals with water'
+                  }))
+                : []
+            }));
+            setDbClinicalKits(mappedKits);
+          }
+        }
+      } catch (err) {
+        console.warn('Could not hydrate live medications from database, using cached formulary', err);
+      }
+    };
+
+    void fetchMasterData();
+    return () => { isMounted = false; };
+  }, []);
+
+  const activeDrugs = dbMedications.length > 0 ? dbMedications : RAPID_INDIAN_FORMULARY;
+  const activeClinicalKits = dbClinicalKits.length > 0 ? dbClinicalKits : RAPID_CLINICAL_KITS;
+
   // 0ms Predictive Filter (Matches on prefix, brand name, generic name, or common shortcode)
   const filteredDrugs = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) {
-      return RAPID_INDIAN_FORMULARY.slice(0, 8);
+      return activeDrugs.slice(0, 8);
     }
-    return RAPID_INDIAN_FORMULARY.filter((item) => {
+    return activeDrugs.filter((item) => {
       if (item.brandName.toLowerCase().includes(q)) return true;
       if (item.genericName.toLowerCase().includes(q)) return true;
       return item.keywords.some((k) => k.startsWith(q) || k.includes(q));
     });
-  }, [searchQuery]);
+  }, [searchQuery, activeDrugs]);
 
   const handleSelectDrug = (drug: RapidDrugCatalogItem) => {
     setSelectedDrug(drug);
@@ -863,7 +961,7 @@ export const RapidRxPrescriptionPad: React.FC<RapidRxPrescriptionPadProps> = ({
           1-Click Disease Kits (Instantly adds full Rx + advice in 1 second):
         </div>
         <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
-          {RAPID_CLINICAL_KITS.map((kit) => (
+          {activeClinicalKits.map((kit) => (
             <button
               key={kit.id}
               type="button"

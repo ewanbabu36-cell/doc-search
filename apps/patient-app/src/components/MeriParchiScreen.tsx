@@ -3,6 +3,7 @@ import { type Language, translations } from '../i18n.js';
 import { patientApiService, type PatientPrescription, type PatientLabReport, type ScannedParchiRecord } from '../services/patient-api.js';
 import { speakAdvice } from '../utils/voice-assistant.js';
 import { PaperParchiScannerModal } from './PaperParchiScannerModal.js';
+import { AiJargonFreeReportExplainerCard } from './reports/AiJargonFreeReportExplainerCard.js';
 
 interface Props {
   language: Language;
@@ -523,6 +524,15 @@ export const MeriParchiScreen: React.FC<Props> = ({ language, onBack }) => {
       {/* TAB 3: List of Lab Reports */}
       {activeTab === 'LAB' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* AI Jargon-Free Lab Explainer Card */}
+          <AiJargonFreeReportExplainerCard
+            initialLanguage={language === 'hi' ? 'hi' : 'hinglish'}
+          />
+
+          <div style={{ fontSize: '0.875rem', fontWeight: 800, color: '#94A3B8', marginTop: '4px' }}>
+            {language === 'hi' ? 'एनबीएल प्रमाणित लैब रिपोर्ट्स' : 'NABL Verified Lab Reports'} ({labReports.length})
+          </div>
+
           {labReports.map((lab) => (
             <div
               key={lab.id}

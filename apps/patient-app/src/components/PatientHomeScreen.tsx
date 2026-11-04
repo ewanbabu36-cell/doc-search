@@ -5,7 +5,9 @@ import { type PatientProfile } from '../services/patient-api.js';
 import { speakAdvice } from '../utils/voice-assistant.js';
 import { BookOpdModal } from './BookOpdModal.js';
 import { EmergencySosModal } from './EmergencySosModal.js';
-import { FamilyProfileSwitcherModal } from './FamilyProfileSwitcherModal.js';
+import { FamilyHealthCircleManagerModal } from './family/FamilyHealthCircleManagerModal.js';
+import { HouseholdHealthScorecardCard } from './family/HouseholdHealthScorecardCard.js';
+import { AiJargonFreeReportExplainerCard } from './reports/AiJargonFreeReportExplainerCard.js';
 import { DigitalReceiptModal } from './DigitalReceiptModal.js';
 import { PaperParchiScannerModal } from './PaperParchiScannerModal.js';
 import { DocSearchPlusSubscriptionModal } from './DocSearchPlusSubscriptionModal.js';
@@ -299,6 +301,19 @@ export const PatientHomeScreen: React.FC<Props> = ({
         </div>
       )}
 
+      {/* Household Health Scorecard & 1-Tap Chronic Dawa Smart-Refill Flywheel */}
+      <HouseholdHealthScorecardCard
+        householdName="Sharma Family Circle"
+        overallScore={88}
+        daysToRefillExhaustion={3}
+        onOrderRefill={() => {
+          setShowTata1mgModal(true);
+        }}
+        onBookCheckup={() => {
+          setShowBookModal(true);
+        }}
+      />
+
       {/* 4. Next Medicine Due with Voice Advice Button ("Doctor Ki Awaaz") */}
       <div
         onClick={() => onNavigate('DAWA')}
@@ -473,19 +488,36 @@ export const PatientHomeScreen: React.FC<Props> = ({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontSize: '1.5rem' }}>📸</span>
+          <span style={{ fontSize: '1.6rem' }}>📄</span>
           <div>
-            <div style={{ fontSize: '0.875rem', fontWeight: 800, color: '#F8FAFC' }}>
-              {language === 'hi' ? 'पुराने कागज़ पर्ची व टेस्ट रिपोर्ट स्कैन करें' : 'Scan Paper Parchi & Lab Reports'}
+            <div style={{ fontSize: '0.875rem', fontWeight: 900, color: '#F8FAFC', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>{language === 'hi' ? 'पुरानी डॉक्टर की पर्ची स्कैन करें' : 'Scan Old Paper Prescription'}</span>
+              <span style={{ fontSize: '0.625rem', backgroundColor: '#0284C7', color: '#FFFFFF', padding: '1px 6px', borderRadius: '4px', fontWeight: 900 }}>
+                AI PARSER
+              </span>
             </div>
             <div style={{ fontSize: '0.6875rem', color: '#38BDF8' }}>
-              {language === 'hi' ? 'AI से पुरानी पर्ची तुरंत डिजिटल टाइमलाइन में जोड़ें' : 'Instant AI Digitization • Eka Care Killer'}
+              {language === 'hi'
+                ? 'कैमरा से फोटो खींचें • डॉक्टर की लिखावट का दवा नाम व टाइम टेबल पाएं'
+                : 'Snap Camera Photo • Digitize handwriting into smart reminders'}
             </div>
           </div>
         </div>
-        <span style={{ backgroundColor: '#0284C7', color: '#FFFFFF', padding: '5px 10px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800 }}>
-          + Scan ➔
+        <span style={{ backgroundColor: '#0284C7', color: '#FFFFFF', padding: '5px 10px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 900 }}>
+          Scan ➔
         </span>
+      </div>
+
+      {/* 5c. Patient AI Jargon-Free Lab Explainer Card */}
+      <div style={{ marginBottom: '20px' }}>
+        <AiJargonFreeReportExplainerCard
+          initialLanguage={language === 'hi' ? 'hi' : 'hinglish'}
+          onBookConsultation={() => onNavigate('BOOK')}
+          onOrderRetest={() => {
+            setTata1mgInitialTab('LAB_TEST');
+            setShowTata1mgModal(true);
+          }}
+        />
       </div>
 
       {/* 5c. Practo Killer: Verified Doctor Marketplace Banner */}
@@ -715,13 +747,24 @@ export const PatientHomeScreen: React.FC<Props> = ({
         <EmergencySosModal language={language} onClose={() => setShowEmergencySos(false)} />
       )}
 
-      {/* Family Profile Switcher Modal */}
+      {/* Family Health Circle & Proxy Profiles Modal */}
       {showFamilyModal && (
-        <FamilyProfileSwitcherModal
-          language={language}
-          currentPatient={patient}
+        <FamilyHealthCircleManagerModal
+          isOpen={showFamilyModal}
           onClose={() => setShowFamilyModal(false)}
-          onSelectPatient={(selected) => onSelectPatient(selected)}
+          activeMemberId={patient.id}
+          onSelectActiveMember={(selected) => {
+            onSelectPatient({
+              ...patient,
+              id: selected.id,
+              fullName: selected.name,
+              age: selected.age,
+              gender: selected.gender,
+              abhaId: selected.abhaId,
+              abhaAddress: selected.abhaAddress,
+              relationship: selected.relationshipLabel
+            });
+          }}
         />
       )}
 

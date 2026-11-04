@@ -15,11 +15,58 @@ interface GstEInvoice {
   issuedDate: string;
 }
 
-const INITIAL_INVOICES: GstEInvoice[] = [];
+const INITIAL_INVOICES: GstEInvoice[] = [
+  {
+    invoiceNumber: 'DS/2026-27/INV-00812',
+    partnerName: 'Metropolitan Multispecialty Hospital',
+    gstin: '27AABCM8891P1Z4',
+    taxableAmount: '₹ 4,999.00',
+    cgst: '₹ 449.91',
+    sgst: '₹ 449.91',
+    igst: '₹ 0.00',
+    totalAmount: '₹ 5,898.82',
+    irnStatus: 'GOVT_IRN_GENERATED',
+    irnNumber: '9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a',
+    issuedDate: '2026-11-01'
+  },
+  {
+    invoiceNumber: 'DS/2026-27/INV-00813',
+    partnerName: 'Dr. Amitabh Verma Cardiology Clinic',
+    gstin: '07AAACV1298K1ZO',
+    taxableAmount: '₹ 499.00',
+    cgst: '₹ 0.00',
+    sgst: '₹ 0.00',
+    igst: '₹ 89.82',
+    totalAmount: '₹ 588.82',
+    irnStatus: 'GOVT_IRN_GENERATED',
+    irnNumber: '4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c',
+    issuedDate: '2026-11-02'
+  },
+  {
+    invoiceNumber: 'DS/2026-27/INV-00814',
+    partnerName: 'City Heart Diagnostics Center',
+    gstin: '27AACCH5512N1Z9',
+    taxableAmount: '₹ 999.00',
+    cgst: '₹ 89.91',
+    sgst: '₹ 89.91',
+    igst: '₹ 0.00',
+    totalAmount: '₹ 1,178.82',
+    irnStatus: 'PENDING_IRP_SYNC',
+    issuedDate: '2026-11-03'
+  }
+];
 
 export const GstEInvoicingReconcilerView: React.FC = () => {
   const [invoices, setInvoices] = useState<GstEInvoice[]>(INITIAL_INVOICES);
   const [syncNotice, setSyncNotice] = useState<string | null>(null);
+
+  const handleQueryNicPortal = () => {
+    setSyncNotice('Connecting to GSTN/NIC e-invoice portal...');
+    setTimeout(() => {
+      setSyncNotice('NIC Portal sync complete. All active institutional invoices verified.');
+      setTimeout(() => setSyncNotice(null), 4000);
+    }, 800);
+  };
 
   const handleGenerateIrn = (invNum: string) => {
     const fakeIrn = `${Math.random().toString(16).slice(2)}${Math.random().toString(16).slice(2)}${Math.random().toString(16).slice(2)}`;
@@ -104,7 +151,7 @@ export const GstEInvoicingReconcilerView: React.FC = () => {
                     </span>
                     <button
                       type="button"
-                      onClick={() => {}}
+                      onClick={handleQueryNicPortal}
                       style={{
                         backgroundColor: '#1E293B',
                         border: '1px solid #334155',

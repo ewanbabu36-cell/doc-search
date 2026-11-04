@@ -16,7 +16,24 @@ export interface AnalyzerDevice {
 const INITIAL_ANALYZERS: AnalyzerDevice[] = [];
 
 export const LimsHl7AstmIotDeviceHubView: React.FC = () => {
-  const [analyzers] = useState<AnalyzerDevice[]>(INITIAL_ANALYZERS);
+  const [analyzers, setAnalyzers] = useState<AnalyzerDevice[]>(INITIAL_ANALYZERS);
+
+  const handleConnectAnalyzer = () => {
+    const newAnalyzer: AnalyzerDevice = {
+      id: 'DEV-' + Date.now().toString().slice(-4),
+      analyzerName: 'Sysmex XN-550 (5-Part Hematology)',
+      manufacturer: 'Sysmex Corporation',
+      protocol: 'HL7_V2_5',
+      hospitalLabLocation: 'Central Pathology Laboratory',
+      testsProcessedToday: 128,
+      connectionStatus: 'ONLINE_STREAMING',
+      panicAlertsTriggered: 0,
+      lastPacketTimestamp: 'Just now'
+    };
+    setAnalyzers((prev) => [newAnalyzer, ...prev]);
+    setPanicNotice('Connected new ASTM/HL7 analyzer: Sysmex XN-550 socket listening on port 5001.');
+    setTimeout(() => setPanicNotice(null), 5000);
+  };
   const [panicNotice, setPanicNotice] = useState<string | null>(null);
 
   const handleSimulatePanicValue = () => {
@@ -128,7 +145,7 @@ export const LimsHl7AstmIotDeviceHubView: React.FC = () => {
                     </span>
                     <button
                       type="button"
-                      onClick={() => {}}
+                      onClick={handleConnectAnalyzer}
                       style={{
                         backgroundColor: '#1E293B',
                         border: '1px solid #334155',

@@ -20,6 +20,7 @@ import { AiVoiceWhatsAppAgentStudioView } from './AiVoiceWhatsAppAgentStudioView
 import { AbdmNationalHealthStackConsoleView } from './AbdmNationalHealthStackConsoleView.js';
 import { MultiCloudDisasterRecoveryDrillView } from './MultiCloudDisasterRecoveryDrillView.js';
 import { LimsHl7AstmIotDeviceHubView } from './LimsHl7AstmIotDeviceHubView.js';
+import { MultiFacilityBedTransferDeskView } from './MultiFacilityBedTransferDeskView.js';
 import { generateAndDownloadExecutiveBoardPdf } from '../../utils/clientExecutiveBoardPdf.js';
 import { PathologyPartnerOnboardingWizard } from '../crm/PathologyPartnerOnboardingWizard.js';
 
@@ -34,7 +35,8 @@ export type ExecutiveTabId =
   | 'AI_VOICE'
   | 'ABDM_STACK'
   | 'DR_FAILOVER'
-  | 'LIMS_IOT';
+  | 'LIMS_IOT'
+  | 'BED_TELEMETRY';
 
 export interface ExecutiveCommandCenterProps {
   initialTab?: ExecutiveTabId;
@@ -380,6 +382,17 @@ export const ExecutiveCommandCenter: React.FC<ExecutiveCommandCenterProps> = ({
               badgeColor: '#FB7185',
               badgeBg: 'rgba(225, 29, 72, 0.2)',
               spotlightClass: 'spotlight-rose'
+            },
+            {
+              id: 'BED_TELEMETRY' as const,
+              title: 'Pan-India Bed & Transfer Desk',
+              subtitle: 'Epic Grand Central Grid',
+              icon: '🏥',
+              bg: 'linear-gradient(135deg, #0891B2 0%, #06B6D4 100%)',
+              badge: 'Live Census',
+              badgeColor: '#38BDF8',
+              badgeBg: 'rgba(6, 182, 212, 0.15)',
+              spotlightClass: 'spotlight-cyan'
             }
           ].map((mod) => {
             const isActive = activeTab === mod.id;
@@ -533,6 +546,11 @@ export const ExecutiveCommandCenter: React.FC<ExecutiveCommandCenterProps> = ({
       {/* Tab: AI Outbreak & Billing Anomaly Alert Center */}
       {activeTab === 'ANOMALIES' && (
         <AiOutbreakBillingAnomalyCenterView />
+      )}
+
+      {/* Tab: Multi-Hospital Bed Telemetry & Transfer Desk (Epic Benchmark) */}
+      {activeTab === 'BED_TELEMETRY' && (
+        <MultiFacilityBedTransferDeskView />
       )}
 
       {/* Tab: Customizable Widget Grid */}

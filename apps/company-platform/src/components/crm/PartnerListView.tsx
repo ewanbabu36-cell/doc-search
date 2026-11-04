@@ -413,7 +413,7 @@ export const PartnerListView: React.FC<PartnerListViewProps> = ({ onSelectPartne
     const whatsappMessage = `*DOC SEARCH HQ — Account Credentials Updated*\n\n` +
       `Dear ${resetPasswordPartner.primaryContact?.name || resetPasswordPartner.tradeName},\n` +
       `Your Doc Search Partner Portal login credentials have been successfully updated by HQ.\n\n` +
-      `🌐 *Portal Login:* http://localhost:5173/\n` +
+      `🌐 *Portal Login:* ${typeof window !== 'undefined' && window.location.hostname !== 'localhost' ? 'https://partner.docsearch.health/' : 'http://localhost:5173/'}\n` +
       `👤 *User ID:* ${partnerEmail}\n` +
       `🔑 *New Password:* ${resetSuccessResult?.newPassword || newPasswordInput}\n\n` +
       `You can log in immediately with these credentials. Please keep them secure.\n\n` +

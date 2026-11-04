@@ -16,6 +16,20 @@ export const McaStatutoryRegisterVaultView: React.FC = () => {
   const [resolutions, setResolutions] = useState<BoardResolution[]>(INITIAL_RESOLUTIONS);
   const [sealNotice, setSealNotice] = useState<string | null>(null);
 
+  const handleFileNewResolution = () => {
+    const newRes: BoardResolution = {
+      resolutionId: 'RES-' + Date.now().toString().slice(-4),
+      resolutionTitle: 'Adoption of Statutory Disclosures & Compliance Audit',
+      mcaFormReference: 'Form MGT-14 / Section 179',
+      directorDinSignatory: 'DIN: 08492019 (Managing Director)',
+      passedDate: new Date().toISOString().split('T')[0] || '2026-11-03',
+      dscSealStatus: 'PENDING_DIRECTOR_SIGNATURE'
+    };
+    setResolutions((prev) => [newRes, ...prev]);
+    setSealNotice('Draft Board Resolution added to MCA Vault. Pending Class 3 DSC seal.');
+    setTimeout(() => setSealNotice(null), 4000);
+  };
+
   const handleSealDsc = (resId: string) => {
     setResolutions((prev) =>
       prev.map((r) =>
@@ -95,7 +109,7 @@ export const McaStatutoryRegisterVaultView: React.FC = () => {
                     </span>
                     <button
                       type="button"
-                      onClick={() => {}}
+                      onClick={handleFileNewResolution}
                       style={{
                         backgroundColor: '#1E293B',
                         border: '1px solid #334155',

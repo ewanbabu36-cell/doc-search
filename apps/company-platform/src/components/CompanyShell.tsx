@@ -21,8 +21,12 @@ import {
   SkeletonPage,
   EwanSystemTrainer,
   DocSearchLogo,
-  LiveSyncRefreshButton
+  LiveSyncRefreshButton,
+  DocSearchOmniSpotlightModal,
+  WorkspaceDensityProvider,
+  DensitySwitcherPill
 } from '@docsearch/ui-kit';
+import { GlobalActionInboxFlyout } from './common/GlobalActionInboxFlyout.js';
 import { buildPhase1NavSections, PHASE_1_DOMAINS, isDomainAllowedForRole } from '../navigation/phase1-nav.js';
 
 // Lazy-loaded domain managers for optimized bundle size & instantaneous initial load
@@ -45,6 +49,7 @@ const InfrastructureDomainManager = React.lazy(() => import('./infrastructure/In
 const CompanyAdminDomainManager = React.lazy(() => import('./company-admin/CompanyAdminDomainManager.js').then(m => ({ default: m.CompanyAdminDomainManager })));
 const CompanyGrowthEngineDomainManager = React.lazy(() => import('./growth/CompanyGrowthEngineDomainManager.js').then(m => ({ default: m.CompanyGrowthEngineDomainManager })));
 const CentralSupplyChainDomainManager = React.lazy(() => import('./supply-chain/CentralSupplyChainDomainManager.js').then(m => ({ default: m.CentralSupplyChainDomainManager })));
+const MonetizationGodModeCockpit = React.lazy(() => import('./monetization/MonetizationGodModeCockpit.js').then(m => ({ default: m.MonetizationGodModeCockpit })));
 import { GlobalFounderApprovalsModal } from './common/GlobalFounderApprovalsModal.js';
 import { useFounderApproval } from '../hooks/useFounderApproval.js';
 import { CompanyPulseTicker } from './common/CompanyPulseTicker.js';
@@ -317,6 +322,8 @@ const CompanyShellInner: React.FC<CompanyShellProps> = ({ currentUser, onLogout 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState<boolean>(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState<boolean>(false);
+  const [isSpotlightOpen, setIsSpotlightOpen] = useState<boolean>(false);
+  const [isActionInboxOpen, setIsActionInboxOpen] = useState<boolean>(false);
   const [isFounderApprovalsOpen, setIsFounderApprovalsOpen] = useState<boolean>(false);
   const [pendingVerificationCount, setPendingVerificationCount] = useState<number>(0);
   const [showA11yToolbar, setShowA11yToolbar] = useState<boolean>(false);
@@ -404,7 +411,7 @@ const CompanyShellInner: React.FC<CompanyShellProps> = ({ currentUser, onLogout 
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
-        setIsCommandPaletteOpen((prev) => !prev);
+        setIsSpotlightOpen((prev) => !prev);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -529,7 +536,7 @@ const CompanyShellInner: React.FC<CompanyShellProps> = ({ currentUser, onLogout 
               )}
               <button
                 type="button"
-                onClick={() => setIsCommandPaletteOpen(true)}
+                onClick={() => setIsSpotlightOpen(true)}
                 className="ds-spring-press"
                 style={{
                   backgroundColor: 'rgba(255, 255, 255, 0.05)',
@@ -570,6 +577,35 @@ const CompanyShellInner: React.FC<CompanyShellProps> = ({ currentUser, onLogout 
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, whiteSpace: 'nowrap' }}>
               {/* Universal Live Sync / Refresh Button */}
               <LiveSyncRefreshButton />
+
+              {/* Workspace Density Switcher (Zen Comfortable vs High-Density Terminal) */}
+              <DensitySwitcherPill />
+
+              {/* Enterprise Action Inbox Trigger */}
+              <button
+                type="button"
+                onClick={() => setIsActionInboxOpen(true)}
+                style={{
+                  backgroundColor: 'rgba(2, 132, 199, 0.15)',
+                  border: '1px solid #0284C7',
+                  color: '#38BDF8',
+                  padding: '3px 8px',
+                  borderRadius: '6px',
+                  fontSize: '0.75rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0
+                }}
+                title="Enterprise Action Inbox • Pending Dunning, NMC & POs"
+              >
+                <span>📬</span>
+                <span className="ds-hide-on-compact">Action Inbox</span>
+                <span style={{ backgroundColor: '#EF4444', color: '#FFF', padding: '1px 5px', borderRadius: '8px', fontSize: '0.625rem', fontWeight: 700 }}>4</span>
+              </button>
 
               {/* 1. Real-time Pending KYC Verification Alert */}
               {pendingVerificationCount > 0 && (
@@ -1320,6 +1356,11 @@ const CompanyShellInner: React.FC<CompanyShellProps> = ({ currentUser, onLogout 
                 <ExecutiveCommandCenter />
               </div>
             )}
+            {visitedDomains.has('monetization-engine-hq') && (
+              <div style={{ display: activeDomainId === 'monetization-engine-hq' ? 'block' : 'none' }}>
+                <MonetizationGodModeCockpit />
+              </div>
+            )}
             {visitedDomains.has('central-supply-chain') && (
               <div style={{ display: activeDomainId === 'central-supply-chain' ? 'block' : 'none' }}>
                 <CentralSupplyChainDomainManager />
@@ -1517,16 +1558,32 @@ const CompanyShellInner: React.FC<CompanyShellProps> = ({ currentUser, onLogout 
         } : undefined}
         onNavigate={(domainId) => setActiveDomainId(domainId)}
       />
+
+      {/* Omni-Spotlight Global Search Modal */}
+      <DocSearchOmniSpotlightModal
+        isOpen={isSpotlightOpen}
+        onClose={() => setIsSpotlightOpen(false)}
+        onNavigateToDomain={(d) => setActiveDomainId(d)}
+      />
+
+      {/* Global Enterprise Action Inbox Flyout */}
+      <GlobalActionInboxFlyout
+        isOpen={isActionInboxOpen}
+        onClose={() => setIsActionInboxOpen(false)}
+        onNavigateToDomain={(d) => setActiveDomainId(d)}
+      />
     </AppShell>
   );
 };
 
 export const CompanyShell: React.FC<CompanyShellProps> = (props) => {
   return (
-    <GlobalWhiteLabelProvider>
-      <GlobalCurrencyLocaleProvider>
-        <CompanyShellInner {...props} />
-      </GlobalCurrencyLocaleProvider>
-    </GlobalWhiteLabelProvider>
+    <WorkspaceDensityProvider>
+      <GlobalWhiteLabelProvider>
+        <GlobalCurrencyLocaleProvider>
+          <CompanyShellInner {...props} />
+        </GlobalCurrencyLocaleProvider>
+      </GlobalWhiteLabelProvider>
+    </WorkspaceDensityProvider>
   );
 };

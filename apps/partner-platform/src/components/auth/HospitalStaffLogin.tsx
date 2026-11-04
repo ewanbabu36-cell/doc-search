@@ -629,39 +629,20 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess, initialMod
   const handleRolePersonaLogin = async (persona: 'DOCTOR' | 'PATIENT' | 'PHARMACIST' | 'LAB_TECH' | 'NURSE' | 'FRONT_DESK' | 'DIRECTOR') => {
     let personaUser: HospitalStaffUser;
 
-    const personaCredentials: Record<string, { email: string; password: string; defaultTenantId: string }> = {
-      DOCTOR: { email: 'doctor@docsearch.health', password: 'DoctorPass123!', defaultTenantId: '11111111-1111-4111-8111-111111111111' },
-      PHARMACIST: { email: 'pharmacist@docsearch.health', password: 'PharmaPass123!', defaultTenantId: '33333333-3333-4333-8333-333333333333' },
-      LAB_TECH: { email: 'labtech@docsearch.health', password: 'PathologyPass123!', defaultTenantId: '22222222-2222-4222-8222-222222222222' },
-      DIRECTOR: { email: 'director@docsearch.health', password: 'Hospital@2026!', defaultTenantId: '11111111-1111-4111-8111-111111111111' },
-      NURSE: { email: 'nurse@docsearch.health', password: 'NursePass123!', defaultTenantId: '11111111-1111-4111-8111-111111111111' },
-      FRONT_DESK: { email: 'frontdesk@docsearch.health', password: 'FrontDeskPass123!', defaultTenantId: '11111111-1111-4111-8111-111111111111' },
-      PATIENT: { email: 'patient@docsearch.health', password: 'PatientPass123!', defaultTenantId: '11111111-1111-4111-8111-111111111111' },
+    const personaCredentials: Record<string, { email: string; defaultTenantId: string }> = {
+      DOCTOR: { email: 'doctor@docsearch.health', defaultTenantId: '11111111-1111-4111-8111-111111111111' },
+      PHARMACIST: { email: 'pharmacist@docsearch.health', defaultTenantId: '33333333-3333-4333-8333-333333333333' },
+      LAB_TECH: { email: 'labtech@docsearch.health', defaultTenantId: '22222222-2222-4222-8222-222222222222' },
+      DIRECTOR: { email: 'director@docsearch.health', defaultTenantId: '11111111-1111-4111-8111-111111111111' },
+      NURSE: { email: 'nurse@docsearch.health', defaultTenantId: '11111111-1111-4111-8111-111111111111' },
+      FRONT_DESK: { email: 'frontdesk@docsearch.health', defaultTenantId: '11111111-1111-4111-8111-111111111111' },
+      PATIENT: { email: 'patient@docsearch.health', defaultTenantId: '11111111-1111-4111-8111-111111111111' },
     };
 
     const creds = personaCredentials[persona];
     let liveAuthUser: any = null;
     if (creds) {
-      try {
-        const res = await fetch('/api/v1/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: creds.email, password: creds.password })
-        });
-        const json = await res.json();
-        if (res.ok && json.success && json.data?.accessToken) {
-          localStorage.setItem('docsearch_auth_token', json.data.accessToken);
-          if (json.data?.refreshToken) {
-            localStorage.setItem('docsearch_refresh_token', json.data.refreshToken);
-          }
-          if (json.data?.user) {
-            liveAuthUser = json.data.user;
-            localStorage.setItem('docsearch_user_session', JSON.stringify(json.data.user));
-          }
-        }
-      } catch (err) {
-        console.warn('Persona live authentication handshake note:', err);
-      }
+      setEmailInput(creds.email);
     }
 
     const resolvedTenantId = liveAuthUser?.tenantId || creds?.defaultTenantId || '11111111-1111-4111-8111-111111111111';
@@ -1409,6 +1390,7 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess, initialMod
                 />
                 <button
                   type="button"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                   onClick={() => setShowPassword(!showPassword)}
                   style={{
                     position: 'absolute',

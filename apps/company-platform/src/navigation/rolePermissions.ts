@@ -101,6 +101,7 @@ export function normalizeDomainId(id: string): string {
     case 'compliance-regulatory-legal': return 'compliance-data-governance';
     case 'platform-engineering-devops': return 'platform-engineering';
     case 'infrastructure-cloud-ops': return 'infrastructure-monitoring-dr';
+    case 'monetization-engine-hq': return 'growth-engine';
     default: return id;
   }
 }

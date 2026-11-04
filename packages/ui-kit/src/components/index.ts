@@ -10,3 +10,5 @@ export * from './adaptive/index';
 export * from './marketing/index';
 export * from './ewan/index';
 export * from './charts/index';
+export * from './spotlight/DocSearchOmniSpotlightModal';
+export * from './density/WorkspaceDensityProvider';

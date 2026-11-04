@@ -197,7 +197,7 @@ export class ActivationMailerService {
     });
 
     const preset = resolveIndustryPreset(params.industryType);
-    const baseUrl = params.portalUrl || process.env['PARTNER_PORTAL_URL'] || 'http://localhost:5173';
+    const baseUrl = params.portalUrl || process.env['PARTNER_PORTAL_URL'] || (process.env['NODE_ENV'] === 'production' ? 'https://partner.docsearch.health' : 'http://localhost:5173');
     const activationUrl = `${baseUrl}/activate?token=${encodeURIComponent(token)}&tenant=${encodeURIComponent(params.tenantId)}`;
 
     const htmlContent = this.buildActivationEmailHtml({

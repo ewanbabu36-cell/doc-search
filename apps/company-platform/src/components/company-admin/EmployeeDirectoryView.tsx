@@ -130,7 +130,7 @@ export const EmployeeDirectoryView: React.FC<EmployeeDirectoryViewProps> = ({
       roleTitle: designationTitle,
       roleCode: rbacRole,
       tempPassword: generatedPass,
-      portalUrl: 'http://localhost:5174',
+      portalUrl: typeof window !== 'undefined' && window.location.hostname !== 'localhost' ? 'https://partner.docsearch.health' : 'http://localhost:5173',
       forceResetFirstLogin,
       mfaEnforced
     });

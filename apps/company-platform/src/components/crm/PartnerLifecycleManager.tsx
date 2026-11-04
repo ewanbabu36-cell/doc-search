@@ -24,6 +24,7 @@ import { LeadToPartnerPipelineView } from './LeadToPartnerPipelineView.js';
 import { PathologyPartnerOnboardingWizard } from './PathologyPartnerOnboardingWizard.js';
 import { HqLicenseGovernanceView } from './HqLicenseGovernanceView.js';
 import { CommercialPipelineCockpitView } from './CommercialPipelineCockpitView.js';
+import { NmcPhysicianRegistryHubView } from './NmcPhysicianRegistryHubView.js';
 
 import { Spinner, ErrorState, Badge } from '@docsearch/ui-kit';
 
@@ -35,6 +36,7 @@ export type ActiveCrmTab =
   | 'COMMERCIAL_PIPELINE'
   | 'WHATSAPP'
   | 'NMC_BOT'
+  | 'NMC_REGISTRY_HUB'
   | 'HEALTH_RADAR'
   | 'ESCROW_PAYOUTS'
   | 'VERIFICATION'
@@ -72,7 +74,7 @@ const CRM_CATEGORIES: CategoryConfig[] = [
     label: 'AI Automation',
     icon: '🤖',
     defaultTab: 'WHATSAPP',
-    tabIds: ['WHATSAPP', 'NMC_BOT', 'HEALTH_RADAR']
+    tabIds: ['WHATSAPP', 'NMC_BOT', 'NMC_REGISTRY_HUB', 'HEALTH_RADAR']
   },
   {
     id: 'REVENUE_BILLING',
@@ -94,7 +96,7 @@ function getCategoryForTab(tabId: ActiveCrmTab): CrmCategory {
   if (['DIRECTORY', 'LICENSES', 'VERIFICATION', 'PIPELINE', 'ONBOARD_PATHOLOGY'].includes(tabId)) {
     return 'CORE_LIFECYCLE';
   }
-  if (['WHATSAPP', 'NMC_BOT', 'HEALTH_RADAR'].includes(tabId)) {
+  if (['WHATSAPP', 'NMC_BOT', 'NMC_REGISTRY_HUB', 'HEALTH_RADAR'].includes(tabId)) {
     return 'AI_AUTOMATION';
   }
   if (['ESCROW_PAYOUTS', 'BILLING', 'CONTRACTS', 'PLANS'].includes(tabId)) {
@@ -415,6 +417,11 @@ export const PartnerLifecycleManager: React.FC = () => {
                       badge: <Badge variant="primary">NMC API</Badge>
                     },
                     {
+                      id: 'NMC_REGISTRY_HUB',
+                      label: '🩺 NMC Physician Registry Hub',
+                      badge: <Badge variant="success">Statutory</Badge>
+                    },
+                    {
                       id: 'HEALTH_RADAR',
                       label: '📈 AI Partner Health & Churn Radar',
                       badge: <Badge variant="warning">Early Warning</Badge>
@@ -572,6 +579,10 @@ export const PartnerLifecycleManager: React.FC = () => {
 
       {activeTab === 'NMC_BOT' && (
         <DoctorNmcCredentialingBotView />
+      )}
+
+      {activeTab === 'NMC_REGISTRY_HUB' && (
+        <NmcPhysicianRegistryHubView />
       )}
 
       {activeTab === 'HEALTH_RADAR' && (

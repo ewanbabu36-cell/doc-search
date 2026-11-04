@@ -143,9 +143,14 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
     token = authHeader.substring(7).trim();
   }
 
-  // Handle development or local workstation fallback when token is missing or an offline token:
-  if (!token || token.startsWith('offline.')) {
-    if (isDev) {
+  // Handle development or local workstation fallback when explicitly enabled with an offline token:
+  if (!token) {
+    throw AppError.unauthorized('Missing or invalid Authorization header', ErrorCode.UNAUTHORIZED);
+  }
+
+  if (token.startsWith('offline.')) {
+    const allowDevBypass = isDev && process.env['ALLOW_DEV_AUTH_BYPASS'] === 'true';
+    if (allowDevBypass) {
       const tenantHeader = (request.headers['x-tenant-id'] as string) || '';
       const url = request.url || '';
 

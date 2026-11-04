@@ -1308,6 +1308,26 @@ export async function seedUniversalDatabase(db: NodePgDatabase<typeof schema>): 
           startDate: new Date('2026-01-01T00:00:00Z'),
           expiryDate: new Date('2027-12-31T23:59:59Z'),
           gracePeriodEnd: new Date('2028-01-15T23:59:59Z'),
+          metadata: {
+            commercialModel: 'Enterprise Hospital Suite',
+            partnerType: 'HOSPITAL',
+            includedModules: [
+              'CLINICAL_EMR',
+              'OPD_QUEUE',
+              'BILLING',
+              'PHARMACY_POS',
+              'PATHOLOGY_LIMS',
+              'RADIOLOGY_PACS',
+              'INPATIENT_IPD',
+              'OT_SURGERY',
+              'BLOOD_BANK',
+              'EMERGENCY_ICU',
+              'ABDM_GATEWAY',
+              'WHATSAPP_AUTOMATION',
+              'TPA_INSURANCE',
+              'OPERATIONS'
+            ]
+          },
           signature: crypto
             .createHmac(
               'sha256',

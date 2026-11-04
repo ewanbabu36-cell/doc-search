@@ -15,7 +15,23 @@ interface HealthPassport {
 const SAMPLE_PASSPORTS: HealthPassport[] = [];
 
 export const DataPortabilityPassportView: React.FC = () => {
-  const [passports] = useState<HealthPassport[]>(SAMPLE_PASSPORTS);
+  const [passports, setPassports] = useState<HealthPassport[]>(SAMPLE_PASSPORTS);
+
+  const handleGeneratePassport = () => {
+    const newPassport: HealthPassport = {
+      id: 'HPP-' + Date.now().toString().slice(-4),
+      patientName: 'Rameshwar Prasad',
+      abhaAddress: 'rameshwar@sbx',
+      recordsIncluded: 14,
+      fhirVersion: 'HL7 FHIR R4',
+      digitalSignatureSeal: 'SHA256-RSA-4096-SEALED',
+      generatedDate: new Date().toISOString().split('T')[0] || '2026-11-03',
+      status: 'CRYPTOGRAPHICALLY_SEALED'
+    };
+    setPassports((prev) => [newPassport, ...prev]);
+    setVerifyNotice('Generated cryptographically sealed health passport for ' + newPassport.patientName);
+    setTimeout(() => setVerifyNotice(null), 4000);
+  };
   const [verifyNotice, setVerifyNotice] = useState<string | null>(null);
 
   const handleVerify = (p: HealthPassport) => {
@@ -92,7 +108,7 @@ export const DataPortabilityPassportView: React.FC = () => {
                     </span>
                     <button
                       type="button"
-                      onClick={() => {}}
+                      onClick={handleGeneratePassport}
                       style={{
                         backgroundColor: '#1E293B',
                         border: '1px solid #334155',

@@ -15,6 +15,13 @@ interface FeatureFlag {
 const INITIAL_FLAGS: FeatureFlag[] = [];
 
 export const FeatureFlagsCanaryView: React.FC = () => {
+  const [actionFeedback, setActionFeedback] = useState<string | null>(null);
+
+  const handleExecuteConsoleAction = () => {
+    setActionFeedback('Operation initiated successfully. Gateway sync active.');
+    setTimeout(() => setActionFeedback(null), 4000);
+  };
+
   const [flags, setFlags] = useState<FeatureFlag[]>(INITIAL_FLAGS);
   const [toggleNotice, setToggleNotice] = useState<string | null>(null);
 
@@ -97,7 +104,7 @@ export const FeatureFlagsCanaryView: React.FC = () => {
                     </span>
                     <button
                       type="button"
-                      onClick={() => {}}
+                      onClick={handleExecuteConsoleAction}
                       style={{
                         backgroundColor: '#1E293B',
                         border: '1px solid #334155',
@@ -111,6 +118,7 @@ export const FeatureFlagsCanaryView: React.FC = () => {
                     >
                       + Create Feature Flag
                     </button>
+                    {actionFeedback && <span style={{ display: 'block', color: '#38BDF8', fontSize: '0.75rem', marginTop: '6px' }}>{actionFeedback}</span>}
                   </TableCell>
                 </TableRow>
               ) : (

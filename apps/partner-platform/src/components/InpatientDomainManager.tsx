@@ -79,7 +79,10 @@ import { BedOccupancyAnalyticsView } from './views/BedOccupancyAnalyticsView.js'
 import { InstantNhcxAutoAdjudicationView } from './views/InstantNhcxAutoAdjudicationView.js';
 import { OneClickAiDischargeSynthesizerView } from './views/OneClickAiDischargeSynthesizerView.js';
 import { SmartHospitalIotBedOrchestrationView } from './views/SmartHospitalIotBedOrchestrationView.js';
+import { Bedside5RightsEmarScannerView } from './clinical/Bedside5RightsEmarScannerView.js';
 import { TabOverflowMenu } from './common/TabOverflowMenu.js';
+import { PatientStoryboardRail } from './clinical/PatientStoryboardRail.js';
+import { ZeroMouseClinicalHotkeys } from './clinical/ZeroMouseClinicalHotkeys.js';
 
 // Dialogs
 import { CreateWardDialog } from './dialogs/CreateWardDialog.js';
@@ -146,6 +149,7 @@ export type InpatientTab =
   | 'discharge-summaries'
   | 'bed-turnaround'
   | 'smart-hospital-iot'
+  | 'bedside-emar'
   | 'bed-blocks'
   | 'analytics'
   | 'reports'
@@ -161,6 +165,7 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
   facilityName
 }) => {
   const [activeTab, setActiveTab] = useState<InpatientTab>(initialTab || 'bed-board');
+  const [isStoryboardCollapsed, setIsStoryboardCollapsed] = useState<boolean>(false);
 
   useEffect(() => {
     if (initialTab) {
@@ -611,7 +616,8 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
     { id: 'rounds', label: '4. Doctor Daily Rounds', icon: '👨‍⚕️' },
     { id: 'admissions', label: '5. Admission Requests', icon: '📝', count: safeRequests.filter((r) => r?.status === 'SUBMITTED').length },
     { id: 'discharge-workbench', label: '6. Discharge & Clearances', icon: '🚪', count: plannedDischargesCount },
-    { id: 'ai-discharge-synthesizer', label: '7. ⚡ AI Discharge Synthesizer', icon: '⚡' }
+    { id: 'ai-discharge-synthesizer', label: '7. ⚡ AI Discharge Synthesizer', icon: '⚡' },
+    { id: 'bedside-emar', label: '8. 💉 Bedside 5-Rights eMAR', icon: '💉' }
   ];
 
   const secondaryFacilityTabs: { id: InpatientTab; label: string; icon: string }[] = [
@@ -1027,17 +1033,48 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
       )}
 
       {activeTab === 'admission-detail' && (
-        <AdmissionDetailView
-          admission={selectedAdmission}
-          assessments={nursingAssessments}
-          vitals={vitals}
-          rounds={rounds}
-          onBack={() => setActiveTab('overview')}
-          onOpenTransfer={() => setIsCreateTransferOpen(true)}
-          onOpenRecordVital={() => setIsRecordVitalOpen(true)}
-          onOpenDoctorRound={() => setIsDoctorRoundOpen(true)}
-          onOpenRequestDischarge={() => setIsRequestDischargeOpen(true)}
-        />
+        <div style={{ display: 'flex', gap: '16px', alignItems: 'stretch' }}>
+          <PatientStoryboardRail
+            patient={selectedAdmission ? {
+              uhid: (selectedAdmission as any).patientMrn || (selectedAdmission as any).patientUhid || 'UHID-IPD-901',
+              name: selectedAdmission.patientName || 'Inpatient Admission',
+              ageGender: (selectedAdmission as any).ageGender || '45Y / Male',
+              bloodGroup: (selectedAdmission as any).bloodGroup || 'O Positive (O+)',
+              allergies: ['PENICILLIN ANAPHYLAXIS'],
+              codeStatus: 'FULL_CODE',
+              fallRisk: 'MODERATE',
+              dvtRisk: 'HIGH',
+              vitals: {
+                bp: '124/82',
+                pulse: 76,
+                spo2: 98,
+                temp: '98.6 °F',
+                weight: '68 kg',
+                bmi: '23.5',
+                painScore: 2
+              },
+              attendingDoctor: (selectedAdmission as any).attendingDoctorName || 'Dr. Meraj Sharif, MD',
+              department: (selectedAdmission as any).wardName || 'Inpatient Department',
+              location: (selectedAdmission as any).bedCode || (selectedAdmission as any).bedId || 'BED-101',
+              primaryDiagnosis: (selectedAdmission as any).admissionReason || 'Inpatient Observation'
+            } : undefined}
+            isCollapsed={isStoryboardCollapsed}
+            onToggleCollapse={() => setIsStoryboardCollapsed((prev) => !prev)}
+          />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <AdmissionDetailView
+              admission={selectedAdmission}
+              assessments={nursingAssessments}
+              vitals={vitals}
+              rounds={rounds}
+              onBack={() => setActiveTab('overview')}
+              onOpenTransfer={() => setIsCreateTransferOpen(true)}
+              onOpenRecordVital={() => setIsRecordVitalOpen(true)}
+              onOpenDoctorRound={() => setIsDoctorRoundOpen(true)}
+              onOpenRequestDischarge={() => setIsRequestDischargeOpen(true)}
+            />
+          </div>
+        </div>
       )}
 
       {activeTab === 'icu-telemetry' && (
@@ -1206,6 +1243,10 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
 
       {activeTab === 'ai-discharge-synthesizer' && (
         <OneClickAiDischargeSynthesizerView />
+      )}
+
+      {activeTab === 'bedside-emar' && (
+        <Bedside5RightsEmarScannerView />
       )}
 
       {activeTab === 'nhcx-auto-discharge' && (
@@ -1562,6 +1603,30 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
         onBillSettled={async () => {
           showNotification('IPD Consolidated Bill settled and cleared successfully!');
           await loadData();
+        }}
+      />
+
+      {/* Zero-Mouse Clinical Hotkeys for Inpatient Ward Cockpit */}
+      <ZeroMouseClinicalHotkeys
+        onNewPatient={() => {
+          setIsDirectAdmitOpen(true);
+        }}
+        onCallNextToken={() => {
+          if (admissions && admissions.length > 0 && admissions[0]) {
+            setSelectedAdmission(admissions[0]);
+          }
+        }}
+        onQuickBill={() => {
+          setIsConsolidatedBillingOpen(true);
+        }}
+        onOpenVitals={() => {
+          setActiveTab('vitals');
+        }}
+        onEmergencyBedAdmit={() => {
+          setIsDirectAdmitOpen(true);
+        }}
+        onPrintThermalSlip={() => {
+          window.print();
         }}
       />
     </div>

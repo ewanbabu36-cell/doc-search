@@ -40,6 +40,8 @@ export const TEST_SEEDS = {
   FEAT_INPATIENT_ID: '66666666-6666-4666-8666-666666666604',
   FEAT_BILLING_ID: '66666666-6666-4666-8666-666666666605',
   FEAT_RADIOLOGY_ID: '66666666-6666-4666-8666-666666666606',
+  FEAT_OT_ID: '66666666-6666-4666-8666-666666666607',
+  FEAT_BLOOD_BANK_ID: '66666666-6666-4666-8666-666666666608',
   SUBSCRIPTION_ID_A: '33333333-3333-4333-8333-333333333301',
   LICENSE_ID_A: '44444444-4444-4444-8444-444444444401',
   SUBSCRIPTION_ID_B: '33333333-3333-4333-8333-333333333302',
@@ -350,7 +352,9 @@ export async function createTestDatabase(options: { seedBaseline?: boolean; seed
       FEAT_LAB_ID,
       FEAT_INPATIENT_ID,
       FEAT_BILLING_ID,
-      FEAT_RADIOLOGY_ID
+      FEAT_RADIOLOGY_ID,
+      FEAT_OT_ID,
+      FEAT_BLOOD_BANK_ID
     } = TEST_SEEDS;
 
     // Platform System Infrastructure Tenant
@@ -400,7 +404,9 @@ export async function createTestDatabase(options: { seedBaseline?: boolean; seed
         ('${FEAT_LAB_ID}', 'LAB_DIAGNOSTICS', 'Laboratory & Diagnostics', 'Specimen accession, testing, and lab reports', 'MODULE_ACCESS', 'ACTIVE'),
         ('${FEAT_INPATIENT_ID}', 'INPATIENT_ADT', 'Inpatient Care & ADT', 'Admissions, discharges, transfers, and bed management', 'MODULE_ACCESS', 'ACTIVE'),
         ('${FEAT_BILLING_ID}', 'BILLING_INSURANCE', 'Billing & TPA Insurance', 'Invoicing, receipts, refunds, and insurance claims', 'MODULE_ACCESS', 'ACTIVE'),
-        ('${FEAT_RADIOLOGY_ID}', 'RADIOLOGY_PACS', 'Radiology, Imaging & PACS', 'Radiology imaging, modality worklist, PACS integration, and reports', 'MODULE_ACCESS', 'ACTIVE')
+        ('${FEAT_RADIOLOGY_ID}', 'RADIOLOGY_PACS', 'Radiology, Imaging & PACS', 'Radiology imaging, modality worklist, PACS integration, and reports', 'MODULE_ACCESS', 'ACTIVE'),
+        ('${FEAT_OT_ID}', 'OT_SURGERY', 'Operation Theatre & Surgery', 'OT rooms, scheduling, and operative notes', 'MODULE_ACCESS', 'ACTIVE'),
+        ('${FEAT_BLOOD_BANK_ID}', 'BLOOD_BANK', 'Blood Bank & Transfusion', 'Blood donor registry, testing, and transfusion', 'MODULE_ACCESS', 'ACTIVE')
       ON CONFLICT DO NOTHING;
     `);
 
@@ -410,11 +416,15 @@ export async function createTestDatabase(options: { seedBaseline?: boolean; seed
         ('55555555-5555-4555-8555-555555555001', '${PLAN_STARTER_ID}', '${FEAT_OPD_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
         ('55555555-5555-4555-8555-555555555002', '${PLAN_STARTER_ID}', '${FEAT_PHARMACY_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
         ('55555555-5555-4555-8555-555555555003', '${PLAN_STARTER_ID}', '${FEAT_BILLING_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555023', '${PLAN_STARTER_ID}', '${FEAT_OT_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
         ('55555555-5555-4555-8555-555555555004', '${PLAN_PRO_ID}', '${FEAT_OPD_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
         ('55555555-5555-4555-8555-555555555005', '${PLAN_PRO_ID}', '${FEAT_PHARMACY_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
         ('55555555-5555-4555-8555-555555555006', '${PLAN_PRO_ID}', '${FEAT_LAB_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
         ('55555555-5555-4555-8555-555555555007', '${PLAN_PRO_ID}', '${FEAT_BILLING_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
         ('55555555-5555-4555-8555-555555555014', '${PLAN_PRO_ID}', '${FEAT_RADIOLOGY_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555020', '${PLAN_PRO_ID}', '${FEAT_INPATIENT_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555021', '${PLAN_PRO_ID}', '${FEAT_OT_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555022', '${PLAN_PRO_ID}', '${FEAT_BLOOD_BANK_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
         ('55555555-5555-4555-8555-555555555008', '${PLAN_ENTERPRISE_ID}', '${FEAT_OPD_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
         ('55555555-5555-4555-8555-555555555009', '${PLAN_ENTERPRISE_ID}', '${FEAT_PHARMACY_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
         ('55555555-5555-4555-8555-555555555010', '${PLAN_ENTERPRISE_ID}', '${FEAT_LAB_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),

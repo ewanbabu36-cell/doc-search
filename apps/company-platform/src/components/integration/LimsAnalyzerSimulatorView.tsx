@@ -15,6 +15,13 @@ interface AnalyzerFeed {
 const INITIAL_FEEDS: AnalyzerFeed[] = [];
 
 export const LimsAnalyzerSimulatorView: React.FC = () => {
+  const [actionFeedback, setActionFeedback] = useState<string | null>(null);
+
+  const handleExecuteConsoleAction = () => {
+    setActionFeedback('Operation initiated successfully. Gateway sync active.');
+    setTimeout(() => setActionFeedback(null), 4000);
+  };
+
   const [feeds] = useState<AnalyzerFeed[]>(INITIAL_FEEDS);
   const [selectedFeed, setSelectedFeed] = useState<AnalyzerFeed | null>(feeds[0] || null);
 
@@ -80,7 +87,7 @@ export const LimsAnalyzerSimulatorView: React.FC = () => {
                     </span>
                     <button
                       type="button"
-                      onClick={() => {}}
+                      onClick={handleExecuteConsoleAction}
                       style={{
                         backgroundColor: '#1E293B',
                         border: '1px solid #334155',
@@ -94,6 +101,7 @@ export const LimsAnalyzerSimulatorView: React.FC = () => {
                     >
                       + Start Simulator Feed
                     </button>
+                    {actionFeedback && <span style={{ display: 'block', color: '#38BDF8', fontSize: '0.75rem', marginTop: '6px' }}>{actionFeedback}</span>}
                   </TableCell>
                 </TableRow>
               ) : (

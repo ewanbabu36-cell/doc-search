@@ -19,6 +19,22 @@ export const AbdmNationalHealthStackConsoleView: React.FC = () => {
   const [activeSubTab, setActiveSubTab] = useState<'M1_ABHA' | 'M2_FHIR' | 'M3_CONSENT'>('M1_ABHA');
   const [notice, setNotice] = useState<string | null>(null);
 
+  const handleRegisterFacility = () => {
+    const newRecord: AbhaRecord = {
+      abhaId: 'ABHA-' + Date.now().toString().slice(-4),
+      abhaAddress: 'patna.hospital@sbx',
+      patientName: 'Patna Regional General Hospital',
+      aadhaarAuthStatus: 'VERIFIED_AADHAAR',
+      linkedHospitalHip: 'IN-HIP-884920',
+      consentState: 'GRANTED',
+      fhirRecordsCount: 42,
+      lastSyncedTimestamp: 'Just now'
+    };
+    setRecords((prev) => [newRecord, ...prev]);
+    setNotice('ABDM Facility HIP/HIU credentials registered and synced with National Health Stack.');
+    setTimeout(() => setNotice(null), 4000);
+  };
+
   // New ABHA creation state
   const [newAadhaar, setNewAadhaar] = useState('5489 1234 9876');
   const [newPatientName, setNewPatientName] = useState('Ananya Sen');
@@ -251,7 +267,7 @@ export const AbdmNationalHealthStackConsoleView: React.FC = () => {
                     </span>
                     <button
                       type="button"
-                      onClick={() => {}}
+                      onClick={handleRegisterFacility}
                       style={{
                         backgroundColor: '#1E293B',
                         border: '1px solid #334155',

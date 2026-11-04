@@ -793,7 +793,7 @@ export const partnerRoutes: FastifyPluginAsync = async (fastify) => {
               legalName: updatedProfile?.tradeName || updatedProfile?.legalName || 'DocSearch Partner',
               email: primaryEmail,
               industryType: updatedProfile?.partnerType || 'HEALTHCARE',
-              portalUrl: process.env['PARTNER_PORTAL_URL'] || 'http://localhost:5173'
+              portalUrl: env.PARTNER_PORTAL_URL
             });
             fastify.log.info({ tenantId: targetTenantId, email: primaryEmail }, 'Activation email dispatched via partner lifecycle status update');
           } catch (mErr: any) {

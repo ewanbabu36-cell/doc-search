@@ -8,8 +8,16 @@ import {
   vacutainerTubeCatalog,
   inpatientWards,
   diagnosticHealthPackages,
+  medicationCatalog,
+  investigationCatalog,
+  insurancePayers,
+  surgicalProcedures,
+  corporateTpaClients,
   eq,
-  desc
+  desc,
+  ilike,
+  or,
+  and
 } from '@docsearch/database';
 
 export const masterCatalogsRoutes: FastifyPluginAsync = async (fastify) => {
@@ -361,5 +369,459 @@ export const masterCatalogsRoutes: FastifyPluginAsync = async (fastify) => {
     await db.delete(diagnosticHealthPackages).where(eq(diagnosticHealthPackages.id, id));
     notifyCatalogMutation('DIAGNOSTIC_PACKAGE');
     return { success: true, message: 'Diagnostic package deleted successfully' };
+  });
+
+  /**
+   * 5. NATIONAL FORMULARY / MEDICATION CATALOG (CRUD + Search)
+   */
+  fastify.get('/api/v1/company/masters/medications', async (request) => {
+    const db = getDatabase();
+    if (!db) return { success: true, data: [], total: 0 };
+    const { q, limit = '100', page = '1' } = (request.query as { q?: string; limit?: string; page?: string }) || {};
+    const pageLimit = Math.min(Number(limit) || 100, 500);
+    const offset = ((Number(page) || 1) - 1) * pageLimit;
+
+    let query = db.select().from(medicationCatalog);
+    if (q && q.trim()) {
+      const searchTerm = `%${q.trim()}%`;
+      query = query.where(
+        or(
+          ilike(medicationCatalog.brandName, searchTerm),
+          ilike(medicationCatalog.genericName, searchTerm),
+          ilike(medicationCatalog.medicationCode, searchTerm),
+          ilike(medicationCatalog.category, searchTerm)
+        )
+      ) as any;
+    }
+
+    const items = await query.orderBy(desc(medicationCatalog.createdAt)).limit(pageLimit).offset(offset);
+    return { success: true, data: items, total: items.length };
+  });
+
+  const CreateMedicationSchema = z.object({
+    medicationCode: z.string().min(2),
+    brandName: z.string().min(2),
+    genericName: z.string().min(2),
+    strength: z.string().min(1),
+    dosageForm: z.string().default('TABLET'),
+    manufacturer: z.string().min(2),
+    category: z.string().default('GENERAL'),
+    route: z.string().default('ORAL'),
+    controlledMedication: z.boolean().default(false),
+    prescriptionRequired: z.boolean().default(true),
+    metadata: z.record(z.any()).default({})
+  });
+
+  fastify.post('/api/v1/company/masters/medications', async (request, reply) => {
+    const body = CreateMedicationSchema.parse(request.body);
+    const db = getDatabase();
+    if (!db) return reply.status(500).send({ success: false, error: 'Database unavailable' });
+
+    const tenantId = request.session?.tenantId || '1e72b864-920a-c07d-98c5-183d3eb50428';
+    const partnerId = (request.session as any)?.partnerId || '6d29e8f7-ca9e-48a0-a1d0-4a8108e10c76';
+    const organizationId = tenantId;
+
+    const [created] = await db
+      .insert(medicationCatalog)
+      .values({
+        tenantId,
+        partnerId,
+        organizationId,
+        medicationCode: body.medicationCode,
+        brandName: body.brandName,
+        genericName: body.genericName,
+        strength: body.strength,
+        dosageForm: body.dosageForm,
+        manufacturer: body.manufacturer,
+        category: body.category,
+        route: body.route,
+        controlledMedication: body.controlledMedication,
+        prescriptionRequired: body.prescriptionRequired,
+        metadata: body.metadata,
+        status: 'ACTIVE'
+      })
+      .returning();
+
+    notifyCatalogMutation('MEDICATION');
+    return reply.status(201).send({ success: true, data: created });
+  });
+
+  fastify.patch('/api/v1/company/masters/medications/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const body = request.body as any;
+    const db = getDatabase();
+    if (!db) return reply.status(500).send({ success: false, error: 'Database unavailable' });
+
+    const [updated] = await db
+      .update(medicationCatalog)
+      .set({
+        ...body,
+        updatedAt: new Date()
+      })
+      .where(eq(medicationCatalog.id, id))
+      .returning();
+
+    notifyCatalogMutation('MEDICATION');
+    return { success: true, data: updated };
+  });
+
+  fastify.delete('/api/v1/company/masters/medications/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const db = getDatabase();
+    if (!db) return reply.status(500).send({ success: false, error: 'Database unavailable' });
+
+    await db.delete(medicationCatalog).where(eq(medicationCatalog.id, id));
+    notifyCatalogMutation('MEDICATION');
+    return { success: true, message: 'Medication removed from national formulary' };
+  });
+
+  /**
+   * 6. INVESTIGATION & PATHOLOGY CATALOG (CRUD + Search)
+   */
+  fastify.get('/api/v1/company/masters/investigations', async (request) => {
+    const db = getDatabase();
+    if (!db) return { success: true, data: [], total: 0 };
+    const { q, department, limit = '200' } = (request.query as { q?: string; department?: string; limit?: string }) || {};
+    const pageLimit = Math.min(Number(limit) || 200, 500);
+
+    let query = db.select().from(investigationCatalog);
+    const conditions = [];
+
+    if (q && q.trim()) {
+      const searchTerm = `%${q.trim()}%`;
+      conditions.push(
+        or(
+          ilike(investigationCatalog.testName, searchTerm),
+          ilike(investigationCatalog.testCode, searchTerm),
+          ilike(investigationCatalog.shortName, searchTerm),
+          ilike(investigationCatalog.department, searchTerm)
+        )
+      );
+    }
+
+    if (department && department !== 'ALL') {
+      conditions.push(ilike(investigationCatalog.department, `%${department}%`));
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
+    }
+
+    const items = await query.orderBy(desc(investigationCatalog.createdAt)).limit(pageLimit);
+    return { success: true, data: items, total: items.length };
+  });
+
+  const CreateInvestigationSchema = z.object({
+    testCode: z.string().min(2),
+    testName: z.string().min(2),
+    shortName: z.string().optional(),
+    category: z.string().default('BIOCHEMISTRY'),
+    department: z.string().default('Clinical Pathology'),
+    specimenType: z.string().default('WHOLE_BLOOD'),
+    clinicalDescription: z.string().optional(),
+    fastingRequired: z.boolean().default(false),
+    turnaroundTargetHours: z.number().default(24),
+    metadata: z.record(z.any()).default({})
+  });
+
+  fastify.post('/api/v1/company/masters/investigations', async (request, reply) => {
+    const body = CreateInvestigationSchema.parse(request.body);
+    const db = getDatabase();
+    if (!db) return reply.status(500).send({ success: false, error: 'Database unavailable' });
+
+    const tenantId = request.session?.tenantId || '1e72b864-920a-c07d-98c5-183d3eb50428';
+    const partnerId = (request.session as any)?.partnerId || '6d29e8f7-ca9e-48a0-a1d0-4a8108e10c76';
+    const organizationId = tenantId;
+
+    const [created] = await db
+      .insert(investigationCatalog)
+      .values({
+        tenantId,
+        partnerId,
+        organizationId,
+        testCode: body.testCode,
+        testName: body.testName,
+        shortName: body.shortName,
+        category: body.category,
+        department: body.department,
+        specimenType: body.specimenType,
+        clinicalDescription: body.clinicalDescription,
+        fastingRequired: body.fastingRequired,
+        turnaroundTargetHours: body.turnaroundTargetHours,
+        metadata: body.metadata,
+        status: 'ACTIVE'
+      })
+      .returning();
+
+    notifyCatalogMutation('INVESTIGATION');
+    return reply.status(201).send({ success: true, data: created });
+  });
+
+  fastify.patch('/api/v1/company/masters/investigations/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const body = request.body as any;
+    const db = getDatabase();
+    if (!db) return reply.status(500).send({ success: false, error: 'Database unavailable' });
+
+    const [updated] = await db
+      .update(investigationCatalog)
+      .set({
+        ...body,
+        updatedAt: new Date()
+      })
+      .where(eq(investigationCatalog.id, id))
+      .returning();
+
+    notifyCatalogMutation('INVESTIGATION');
+    return { success: true, data: updated };
+  });
+
+  fastify.delete('/api/v1/company/masters/investigations/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const db = getDatabase();
+    if (!db) return reply.status(500).send({ success: false, error: 'Database unavailable' });
+
+    await db.delete(investigationCatalog).where(eq(investigationCatalog.id, id));
+    notifyCatalogMutation('INVESTIGATION');
+    return { success: true, message: 'Investigation removed from master catalog' };
+  });
+
+  /**
+   * 7. INSURANCE PAYERS & AYUSHMAN PM-JAY TARIFFS (CRUD)
+   */
+  fastify.get('/api/v1/company/masters/insurance-payers', async () => {
+    const db = getDatabase();
+    if (!db) return { success: true, data: [] };
+    const items = await db.select().from(insurancePayers).orderBy(desc(insurancePayers.createdAt));
+    return { success: true, data: items };
+  });
+
+  const CreatePayerSchema = z.object({
+    payerCode: z.string().min(2),
+    payerName: z.string().min(2),
+    payerType: z.string().default('COMMERCIAL_INSURANCE'),
+    tpaName: z.string().optional(),
+    electronicPayerId: z.string().optional(),
+    contactPerson: z.string().optional(),
+    contactEmail: z.string().optional(),
+    contactPhone: z.string().optional(),
+    metadata: z.record(z.any()).default({})
+  });
+
+  fastify.post('/api/v1/company/masters/insurance-payers', async (request, reply) => {
+    const body = CreatePayerSchema.parse(request.body);
+    const db = getDatabase();
+    if (!db) return reply.status(500).send({ success: false, error: 'Database unavailable' });
+
+    const tenantId = request.session?.tenantId || '1e72b864-920a-c07d-98c5-183d3eb50428';
+    const partnerId = (request.session as any)?.partnerId || '6d29e8f7-ca9e-48a0-a1d0-4a8108e10c76';
+    const organizationId = tenantId;
+
+    const [created] = await db
+      .insert(insurancePayers)
+      .values({
+        tenantId,
+        partnerId,
+        organizationId,
+        payerCode: body.payerCode,
+        payerName: body.payerName,
+        payerType: body.payerType,
+        tpaName: body.tpaName,
+        electronicPayerId: body.electronicPayerId,
+        contactPerson: body.contactPerson,
+        contactEmail: body.contactEmail,
+        contactPhone: body.contactPhone,
+        status: 'ACTIVE',
+        metadata: body.metadata
+      })
+      .returning();
+
+    notifyCatalogMutation('INSURANCE_PAYER');
+    return reply.status(201).send({ success: true, data: created });
+  });
+
+  fastify.patch('/api/v1/company/masters/insurance-payers/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const body = request.body as any;
+    const db = getDatabase();
+    if (!db) return reply.status(500).send({ success: false, error: 'Database unavailable' });
+
+    const [updated] = await db
+      .update(insurancePayers)
+      .set({
+        ...body,
+        updatedAt: new Date()
+      })
+      .where(eq(insurancePayers.id, id))
+      .returning();
+
+    notifyCatalogMutation('INSURANCE_PAYER');
+    return { success: true, data: updated };
+  });
+
+  fastify.delete('/api/v1/company/masters/insurance-payers/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const db = getDatabase();
+    if (!db) return reply.status(500).send({ success: false, error: 'Database unavailable' });
+
+    await db.delete(insurancePayers).where(eq(insurancePayers.id, id));
+    notifyCatalogMutation('INSURANCE_PAYER');
+    return { success: true, message: 'Insurance payer deleted successfully' };
+  });
+
+  /**
+   * 8. DAYCARE PROCEDURES & SURGICAL TARIFFS (CRUD)
+   */
+  fastify.get('/api/v1/company/masters/daycare-procedures', async () => {
+    const db = getDatabase();
+    if (!db) return { success: true, data: [] };
+    const items = await db.select().from(surgicalProcedures).orderBy(desc(surgicalProcedures.createdAt));
+    return { success: true, data: items };
+  });
+
+  const CreateProcedureSchema = z.object({
+    procedureCode: z.string().min(2),
+    procedureName: z.string().min(2),
+    specialty: z.string().default('General Medicine'),
+    category: z.string().default('DAYCARE'),
+    defaultDurationMinutes: z.number().default(15),
+    baseProcedureCharge: z.number().or(z.string()).default('150.00'),
+    metadata: z.record(z.any()).default({})
+  });
+
+  fastify.post('/api/v1/company/masters/daycare-procedures', async (request, reply) => {
+    const body = CreateProcedureSchema.parse(request.body);
+    const db = getDatabase();
+    if (!db) return reply.status(500).send({ success: false, error: 'Database unavailable' });
+
+    const tenantId = request.session?.tenantId || '1e72b864-920a-c07d-98c5-183d3eb50428';
+    const partnerId = (request.session as any)?.partnerId || '6d29e8f7-ca9e-48a0-a1d0-4a8108e10c76';
+    const organizationId = tenantId;
+    const branchId = (request.session as any)?.branchId || '2f91a36c-734d-4c67-91b0-231e4090c33d';
+
+    const [created] = await db
+      .insert(surgicalProcedures)
+      .values({
+        tenantId,
+        partnerId,
+        organizationId,
+        branchId,
+        procedureCode: body.procedureCode,
+        procedureName: body.procedureName,
+        specialty: body.specialty,
+        category: body.category,
+        defaultDurationMinutes: body.defaultDurationMinutes,
+        baseProcedureCharge: body.baseProcedureCharge.toString(),
+        isActive: true,
+        metadata: body.metadata
+      })
+      .returning();
+
+    notifyCatalogMutation('DAYCARE_PROCEDURE');
+    return reply.status(201).send({ success: true, data: created });
+  });
+
+  fastify.patch('/api/v1/company/masters/daycare-procedures/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const body = request.body as any;
+    const db = getDatabase();
+    if (!db) return reply.status(500).send({ success: false, error: 'Database unavailable' });
+
+    const [updated] = await db
+      .update(surgicalProcedures)
+      .set({
+        ...body,
+        updatedAt: new Date()
+      })
+      .where(eq(surgicalProcedures.id, id))
+      .returning();
+
+    notifyCatalogMutation('DAYCARE_PROCEDURE');
+    return { success: true, data: updated };
+  });
+
+  fastify.delete('/api/v1/company/masters/daycare-procedures/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const db = getDatabase();
+    if (!db) return reply.status(500).send({ success: false, error: 'Database unavailable' });
+
+    await db.delete(surgicalProcedures).where(eq(surgicalProcedures.id, id));
+    notifyCatalogMutation('DAYCARE_PROCEDURE');
+    return { success: true, message: 'Daycare procedure deleted successfully' };
+  });
+
+  /**
+   * 9. CORPORATE & TPA CLIENT ACCOUNTS MASTER (CRUD)
+   */
+  fastify.get('/api/v1/company/masters/corporate-clients', async () => {
+    const db = getDatabase();
+    if (!db) return { success: true, data: [] };
+    const items = await db.select().from(corporateTpaClients).orderBy(desc(corporateTpaClients.createdAt));
+    return { success: true, data: items };
+  });
+
+  const CreateCorporateSchema = z.object({
+    clientCode: z.string().min(2),
+    clientName: z.string().min(2),
+    clientType: z.string().default('CORPORATE_TPA'),
+    creditLimit: z.number().or(z.string()).default('1000000'),
+    nhcxPayerCode: z.string().optional(),
+    contractValidUntil: z.string().optional()
+  });
+
+  fastify.post('/api/v1/company/masters/corporate-clients', async (request, reply) => {
+    const body = CreateCorporateSchema.parse(request.body);
+    const db = getDatabase();
+    if (!db) return reply.status(500).send({ success: false, error: 'Database unavailable' });
+
+    const tenantId = request.session?.tenantId || '1e72b864-920a-c07d-98c5-183d3eb50428';
+    const contractDate = body.contractValidUntil ? new Date(body.contractValidUntil) : new Date(Date.now() + 365 * 24 * 3600 * 1000);
+
+    const [created] = await db
+      .insert(corporateTpaClients)
+      .values({
+        tenantId,
+        clientCode: body.clientCode,
+        clientName: body.clientName,
+        clientType: body.clientType,
+        creditLimit: body.creditLimit.toString(),
+        nhcxPayerCode: body.nhcxPayerCode,
+        contractValidUntil: contractDate
+      })
+      .returning();
+
+    notifyCatalogMutation('CORPORATE_CLIENT');
+    return reply.status(201).send({ success: true, data: created });
+  });
+
+  fastify.patch('/api/v1/company/masters/corporate-clients/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const body = request.body as any;
+    const db = getDatabase();
+    if (!db) return reply.status(500).send({ success: false, error: 'Database unavailable' });
+
+    const [updated] = await db
+      .update(corporateTpaClients)
+      .set({
+        clientName: body.clientName,
+        creditLimit: body.creditLimit ? body.creditLimit.toString() : undefined,
+        outstandingReceivable: body.outstandingReceivable ? body.outstandingReceivable.toString() : undefined,
+        nhcxPayerCode: body.nhcxPayerCode
+      })
+      .where(eq(corporateTpaClients.id, id))
+      .returning();
+
+    notifyCatalogMutation('CORPORATE_CLIENT');
+    return { success: true, data: updated };
+  });
+
+  fastify.delete('/api/v1/company/masters/corporate-clients/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const db = getDatabase();
+    if (!db) return reply.status(500).send({ success: false, error: 'Database unavailable' });
+
+    await db.delete(corporateTpaClients).where(eq(corporateTpaClients.id, id));
+    notifyCatalogMutation('CORPORATE_CLIENT');
+    return { success: true, message: 'Corporate client removed successfully' };
   });
 };

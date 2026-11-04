@@ -305,7 +305,7 @@ describe('IPD / ADT Vertical Slice: Admission -> Bed -> Nursing -> Transfer -> D
     assert.strictEqual(body.success, true);
     assert.strictEqual(body.data.status, 'DISCHARGED');
 
-    // Verify Bed-102 is now AVAILABLE
+    // Verify Bed-102 is released from patient (CLEANING or AVAILABLE)
     const bedsRes = await app.inject({
       method: 'GET',
       url: '/api/v1/partner/inpatient/beds',
@@ -313,7 +313,7 @@ describe('IPD / ADT Vertical Slice: Admission -> Bed -> Nursing -> Transfer -> D
     });
     const beds = JSON.parse(bedsRes.body).data;
     const bed2 = beds.find(b => b.id === testBed2Id);
-    assert.strictEqual(bed2.status, 'AVAILABLE');
+    assert.ok(bed2.status === 'AVAILABLE' || bed2.status === 'CLEANING');
   });
 
   // STEP 8: Patient Inpatient History

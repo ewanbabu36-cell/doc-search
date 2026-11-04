@@ -1811,7 +1811,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
             legalName: facilityName || 'DocSearch Partner',
             email,
             industryType: rawOrgType,
-            portalUrl: process.env['PARTNER_PORTAL_URL'] || 'http://localhost:5173'
+            portalUrl: env.PARTNER_PORTAL_URL
           });
           request.log.info({ tenantId: id, email }, 'Activation email successfully dispatched upon admin approval');
         } catch (mailErr: any) {

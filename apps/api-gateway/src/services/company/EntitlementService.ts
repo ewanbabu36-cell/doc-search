@@ -404,6 +404,59 @@ export class EntitlementService {
         'PLAN-CLINIC-FREE-YR1',
         'PLAN-CLINIC-ANNUAL-YR2'
       ]);
+      const planHospitalIds = new Set([
+        toDeterministicUuid('plan-hospital-annual').toUpperCase(),
+        toDeterministicUuid('plan-enterprise-network').toUpperCase(),
+        '11111111-1111-4111-8111-111111111104',
+        '66666666-6666-4666-8666-666666666601',
+        'PLAN_HOSPITAL_ANNUAL',
+        'PLAN_ENTERPRISE_NETWORK'
+      ]);
+
+      if (planHospitalIds.has(planIdUpper)) {
+        const allowed = [
+          'OPERATIONS',
+          'CLINICAL_EMR',
+          'CLINICAL',
+          'OPD',
+          'OPD_QUEUE',
+          'INPATIENT',
+          'INPATIENT_IPD',
+          'OT',
+          'OT_SURGERY',
+          'BLOOD_BANK',
+          'EMERGENCY',
+          'EMERGENCY_ICU',
+          'PHARMACY',
+          'PHARMACY_POS',
+          'PATHOLOGY',
+          'PATHOLOGY_LIMS',
+          'LAB',
+          'RADIOLOGY',
+          'RADIOLOGY_PACS',
+          'BILLING',
+          'TPA_INSURANCE',
+          'STAFF',
+          'PATIENTS',
+          'APPOINTMENTS',
+          'ABDM',
+          'WHATSAPP',
+          'EXECUTIVE_COMMAND'
+        ];
+        return (
+          allowed.includes(normalizedCode) ||
+          normalizedCode.startsWith('CLINICAL_') ||
+          normalizedCode.startsWith('OPD_') ||
+          normalizedCode.startsWith('INPATIENT_') ||
+          normalizedCode.startsWith('OT_') ||
+          normalizedCode.startsWith('EMERGENCY_') ||
+          normalizedCode.startsWith('PHARMACY_') ||
+          normalizedCode.startsWith('LAB_') ||
+          normalizedCode.startsWith('PATHOLOGY_') ||
+          normalizedCode.startsWith('RADIOLOGY_') ||
+          normalizedCode.startsWith('BILLING_')
+        );
+      }
 
       if (planRadioIds.has(planIdUpper)) {
         const allowed = ['OPERATIONS', 'RADIOLOGY', 'RADIOLOGY_PACS', 'PATHOLOGY', 'PATHOLOGY_LIMS', 'LAB', 'BILLING', 'TPA_INSURANCE', 'STAFF', 'PATIENTS', 'APPOINTMENTS'];

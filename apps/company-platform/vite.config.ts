@@ -14,7 +14,6 @@ export default defineConfig({
       '@docsearch/ui-kit': path.resolve(__dirname, '../../packages/ui-kit/src/index.ts'),
       '@docsearch/api-contracts': path.resolve(__dirname, '../../packages/api-contracts/src/index.ts'),
       '@docsearch/auth': path.resolve(__dirname, '../../packages/auth/src/index.ts'),
-      '@docsearch/database': path.resolve(__dirname, '../../packages/database/src/index.ts'),
       '@docsearch/shared-core': path.resolve(__dirname, '../../packages/shared-core/src/index.ts')
     }
   },
@@ -40,6 +39,21 @@ export default defineConfig({
           }
           if (id.includes('/packages/shared-core/') || id.includes('/packages/api-contracts/')) {
             return 'vendor-core-contracts';
+          }
+          if (id.includes('/components/company-admin/')) {
+            return 'chunk-company-admin';
+          }
+          if (id.includes('/components/executive/')) {
+            return 'chunk-executive-consoles';
+          }
+          if (id.includes('/components/billing/')) {
+            return 'chunk-billing-finance';
+          }
+          if (id.includes('/components/compliance/') || id.includes('/components/security/')) {
+            return 'chunk-compliance-security';
+          }
+          if (id.includes('/components/crm/')) {
+            return 'chunk-partner-crm';
           }
           if (id.includes('node_modules')) {
             return 'vendor';

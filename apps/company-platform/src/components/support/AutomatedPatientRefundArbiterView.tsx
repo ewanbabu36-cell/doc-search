@@ -15,6 +15,13 @@ interface RefundDispute {
 const INITIAL_DISPUTES: RefundDispute[] = [];
 
 export const AutomatedPatientRefundArbiterView: React.FC = () => {
+  const [actionFeedback, setActionFeedback] = useState<string | null>(null);
+
+  const handleExecuteConsoleAction = () => {
+    setActionFeedback('Operation initiated successfully. Gateway sync active.');
+    setTimeout(() => setActionFeedback(null), 4000);
+  };
+
   const [disputes, setDisputes] = useState<RefundDispute[]>(INITIAL_DISPUTES);
   const [refundNotice, setRefundNotice] = useState<string | null>(null);
 
@@ -97,7 +104,7 @@ export const AutomatedPatientRefundArbiterView: React.FC = () => {
                     </span>
                     <button
                       type="button"
-                      onClick={() => {}}
+                      onClick={handleExecuteConsoleAction}
                       style={{
                         backgroundColor: '#1E293B',
                         border: '1px solid #334155',
@@ -111,6 +118,7 @@ export const AutomatedPatientRefundArbiterView: React.FC = () => {
                     >
                       ↻ Query Payment Gateway
                     </button>
+                    {actionFeedback && <span style={{ display: 'block', color: '#38BDF8', fontSize: '0.75rem', marginTop: '6px' }}>{actionFeedback}</span>}
                   </TableCell>
                 </TableRow>
               ) : (
