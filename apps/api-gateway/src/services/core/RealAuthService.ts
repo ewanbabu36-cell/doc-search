@@ -282,6 +282,22 @@ export function resolveStrictPermissionsForRoles(roles: RoleType[]): string[] {
   return Array.from(perms);
 }
 
+const DEV_TEST_PASSWORDS: Record<string, string> = {
+  'founder@docsearch.health': 'FounderPass123!',
+  'founder.alok@docsearch.health': 'FounderPass123!',
+  'doctor.rajesh@docsearch.health': 'DoctorPass123!',
+  'sunil.pharmacy@docsearch.health': 'PharmaPass123!',
+  'whitelabel.admin@docsearch.health': 'Hospital@2026!',
+  'doctor@docsearch.health': 'DoctorPass123!',
+  'pathology@docsearch.health': 'PathologyPass123!',
+  'pharmacist@docsearch.health': 'PharmaPass123!',
+  'labtech@docsearch.health': 'PathologyPass123!',
+  'director@docsearch.health': 'Hospital@2026!',
+  'nurse@docsearch.health': 'NursePass123!',
+  'frontdesk@docsearch.health': 'FrontDeskPass123!',
+  'patient@docsearch.health': 'PatientPass123!'
+};
+
 const DEV_TEST_USERS: Map<string, AuthenticatedUserRecord> =
   process.env['NODE_ENV'] === 'production'
     ? new Map()
@@ -747,6 +763,24 @@ export class RealAuthService {
   async authenticateUser(email: string, plainPassword: string): Promise<AuthenticatedUserRecord | null> {
     await this.flushPendingWrites();
     const emailNorm = email.toLowerCase().trim();
+
+    // 0. Development & Testing Direct Bypass for Authoritative Presets
+    if (process.env['NODE_ENV'] !== 'production' && DEV_TEST_USERS.has(emailNorm)) {
+      const devPreset = DEV_TEST_USERS.get(emailNorm)!;
+      const expectedPass = DEV_TEST_PASSWORDS[emailNorm];
+      const isDevPassValid =
+        (expectedPass && plainPassword === expectedPass) ||
+        (await verifyPasswordAsync(plainPassword, devPreset.passwordHash));
+
+      if (isDevPassValid) {
+        this.userCache.set(emailNorm, devPreset);
+        trackDbWrite(this.persistPresetToDatabase(devPreset).catch(() => {}));
+        return devPreset;
+      } else {
+        return null;
+      }
+    }
+
     let user = this.userCache.get(emailNorm);
 
     // 1. Try querying PostgreSQL database
@@ -1283,6 +1317,9 @@ export class RealAuthService {
   async getUserByEmailAsync(email: string): Promise<AuthenticatedUserRecord | undefined> {
     await this.flushPendingWrites();
     const emailNorm = email.toLowerCase().trim();
+    if (process.env['NODE_ENV'] !== 'production' && DEV_TEST_USERS.has(emailNorm)) {
+      return DEV_TEST_USERS.get(emailNorm);
+    }
     const db = getDatabase();
     if (db) {
       try {
@@ -1337,6 +1374,9 @@ export class RealAuthService {
 
   getUserByEmail(email: string): AuthenticatedUserRecord | undefined {
     const emailNorm = email.toLowerCase().trim();
+    if (process.env['NODE_ENV'] !== 'production' && DEV_TEST_USERS.has(emailNorm)) {
+      return DEV_TEST_USERS.get(emailNorm);
+    }
     let user = this.userCache.get(emailNorm);
     if (!user && process.env['NODE_ENV'] !== 'production') {
       const preset = SYSTEM_STAFF_PRESETS.get(emailNorm);

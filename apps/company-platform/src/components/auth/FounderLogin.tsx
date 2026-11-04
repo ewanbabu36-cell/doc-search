@@ -216,6 +216,43 @@ export const FounderLogin: React.FC<FounderLoginProps> = ({ onLoginSuccess }) =>
             </div>
           )}
 
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              backgroundColor: 'rgba(56, 189, 248, 0.08)',
+              border: '1px dashed rgba(56, 189, 248, 0.35)',
+              borderRadius: '8px',
+              padding: '8px 12px',
+              fontSize: '0.75rem',
+              color: '#38BDF8',
+              marginBottom: '4px'
+            }}
+          >
+            <span>⚡ Demo: <strong>founder@docsearch.health</strong> (Key: <code>FounderPass123!</code>)</span>
+            <button
+              type="button"
+              onClick={() => {
+                setEmail('founder@docsearch.health');
+                setPassword('FounderPass123!');
+                setAuthError(null);
+              }}
+              style={{
+                background: 'rgba(56, 189, 248, 0.2)',
+                border: '1px solid rgba(56, 189, 248, 0.4)',
+                color: '#38BDF8',
+                borderRadius: '6px',
+                padding: '4px 10px',
+                cursor: 'pointer',
+                fontWeight: 700,
+                fontSize: '0.75rem'
+              }}
+            >
+              1-Click Autofill
+            </button>
+          </div>
+
           <div>
             <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#CBD5E1', marginBottom: '6px' }}>
               Executive Work Email
