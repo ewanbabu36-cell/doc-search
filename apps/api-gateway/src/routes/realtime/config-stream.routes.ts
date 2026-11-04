@@ -1,13 +1,27 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { horizontalSocketGateway } from '../../services/realtime/HorizontalSocketGateway.js';
-import { createLogger } from '@docsearch/shared-core';
+import { createLogger, AppError, ErrorCode } from '@docsearch/shared-core';
+import { authenticate } from '../../plugins/auth-guard.js';
 
 const logger = createLogger('config-stream-routes');
 
 export const configStreamRoutes: FastifyPluginAsync = async (fastify) => {
-  fastify.get('/api/v1/realtime/config-stream', async (request, reply) => {
+  fastify.get('/api/v1/realtime/config-stream', { preHandler: [authenticate] }, async (request, reply) => {
+    const session = request.session;
     const query = (request.query || {}) as { tenantId?: string; clientId?: string };
-    const tenantId = query.tenantId || (request as any).session?.tenantId || '*';
+    const isSuperAdmin = session?.roles?.some((r: string) => r === 'SUPER_ADMIN' || r === 'FOUNDER');
+
+    let tenantId = session?.tenantId || '*';
+    if (query.tenantId && isSuperAdmin) {
+      tenantId = query.tenantId;
+    } else if (query.tenantId && query.tenantId !== session?.tenantId) {
+      throw new AppError({
+        message: 'Forbidden: Cannot subscribe to config-stream of other tenants',
+        code: ErrorCode.FORBIDDEN,
+        statusCode: 403
+      });
+    }
+
     const clientId = query.clientId || `client-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
     // Set SSE headers

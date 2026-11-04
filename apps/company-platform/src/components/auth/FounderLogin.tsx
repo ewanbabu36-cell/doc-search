@@ -48,8 +48,8 @@ const getClearanceLevel = (role: string): string => {
 };
 
 export const FounderLogin: React.FC<FounderLoginProps> = ({ onLoginSuccess }) => {
-  const [email, setEmail] = useState('founder@docsearch.health');
-  const [password, setPassword] = useState('FounderPass123!');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -216,42 +216,43 @@ export const FounderLogin: React.FC<FounderLoginProps> = ({ onLoginSuccess }) =>
             </div>
           )}
 
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              backgroundColor: 'rgba(56, 189, 248, 0.08)',
-              border: '1px dashed rgba(56, 189, 248, 0.35)',
-              borderRadius: '8px',
-              padding: '8px 12px',
-              fontSize: '0.75rem',
-              color: '#38BDF8',
-              marginBottom: '4px'
-            }}
-          >
-            <span>⚡ Demo: <strong>founder@docsearch.health</strong> (Key: <code>FounderPass123!</code>)</span>
-            <button
-              type="button"
-              onClick={() => {
-                setEmail('founder@docsearch.health');
-                setPassword('FounderPass123!');
-                setAuthError(null);
-              }}
+          {Boolean((import.meta as any).env?.DEV) && (
+            <div
               style={{
-                background: 'rgba(56, 189, 248, 0.2)',
-                border: '1px solid rgba(56, 189, 248, 0.4)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                backgroundColor: 'rgba(56, 189, 248, 0.08)',
+                border: '1px dashed rgba(56, 189, 248, 0.35)',
+                borderRadius: '8px',
+                padding: '8px 12px',
+                fontSize: '0.75rem',
                 color: '#38BDF8',
-                borderRadius: '6px',
-                padding: '4px 10px',
-                cursor: 'pointer',
-                fontWeight: 700,
-                fontSize: '0.75rem'
+                marginBottom: '4px'
               }}
             >
-              1-Click Autofill
-            </button>
-          </div>
+              <span>⚡ Dev Helper: <strong>founder@docsearch.health</strong></span>
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('founder@docsearch.health');
+                  setAuthError(null);
+                }}
+                style={{
+                  background: 'rgba(56, 189, 248, 0.2)',
+                  border: '1px solid rgba(56, 189, 248, 0.4)',
+                  color: '#38BDF8',
+                  borderRadius: '6px',
+                  padding: '4px 10px',
+                  cursor: 'pointer',
+                  fontWeight: 700,
+                  fontSize: '0.75rem'
+                }}
+              >
+                1-Click Dev Fill
+              </button>
+            </div>
+          )}
 
           <div>
             <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#CBD5E1', marginBottom: '6px' }}>

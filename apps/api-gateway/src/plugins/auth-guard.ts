@@ -119,7 +119,7 @@ export async function optionalAuthenticate(request: FastifyRequest, reply: Fasti
     return;
   }
   const authHeader = request.headers.authorization;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
+  if ((authHeader && authHeader.startsWith('Bearer ')) || (request.query as any)?.token) {
     return await authenticate(request, reply);
   }
   // No authorization header provided: leave request.session undefined
@@ -142,6 +142,8 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
   let token: string | null = null;
   if (authHeader && authHeader.startsWith('Bearer ')) {
     token = authHeader.substring(7).trim();
+  } else if ((request.query as any)?.token) {
+    token = String((request.query as any).token).trim();
   }
 
   // Handle development or local workstation fallback when explicitly enabled with an offline token:

@@ -1168,6 +1168,64 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     }
   });
 
+  // POST /api/v1/auth/forgot-password (Self-service password recovery initiation)
+  fastify.post('/api/v1/auth/forgot-password', async (request, reply) => {
+    const body = request.body as { email?: string };
+    if (!body?.email || typeof body.email !== 'string') {
+      throw new AppError({
+        message: 'A valid email address is required',
+        code: ErrorCode.VALIDATION_ERROR,
+        statusCode: 400
+      });
+    }
+
+    const { token } = await realAuthService.requestPasswordReset(body.email);
+
+    // In dev or test environments, token can be returned to assist automated verification;
+    // in strict production, token is delivered via out-of-band communication channel.
+    const isDev = process.env['NODE_ENV'] !== 'production';
+
+    return reply.status(200).send({
+      success: true,
+      message: 'If an account with that email exists, password reset instructions have been generated.',
+      ...(isDev && token ? { resetToken: token } : {})
+    });
+  });
+
+  // POST /api/v1/auth/reset-password (Secure password token consumption & session invalidation)
+  fastify.post('/api/v1/auth/reset-password', async (request, reply) => {
+    const body = request.body as { token?: string; newPassword?: string };
+    if (!body?.token || !body?.newPassword) {
+      throw new AppError({
+        message: 'Reset token and newPassword are required',
+        code: ErrorCode.VALIDATION_ERROR,
+        statusCode: 400
+      });
+    }
+
+    if (body.newPassword.length < 8) {
+      throw new AppError({
+        message: 'Password must be at least 8 characters in length',
+        code: ErrorCode.VALIDATION_ERROR,
+        statusCode: 400
+      });
+    }
+
+    try {
+      await realAuthService.resetPasswordWithToken(body.token, body.newPassword);
+      return reply.status(200).send({
+        success: true,
+        message: 'Password has been successfully reset. All active sessions have been invalidated across all devices.'
+      });
+    } catch (err: any) {
+      throw new AppError({
+        message: err.message || 'Password reset failed',
+        code: ErrorCode.BAD_REQUEST,
+        statusCode: 400
+      });
+    }
+  });
+
   // Shared Global State across all platforms (Port 5175, Port 5174, Port 5173)
   // POST /api/v1/auth/self-register
   fastify.post('/api/v1/auth/self-register', async (request, reply) => {

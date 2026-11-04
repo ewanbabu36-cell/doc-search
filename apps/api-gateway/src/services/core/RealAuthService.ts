@@ -745,6 +745,7 @@ export class RealAuthService {
   private userCache = new Map<string, AuthenticatedUserRecord>(
     process.env['NODE_ENV'] === 'production' ? [] : DEV_TEST_USERS
   );
+  private passwordResetTokens = new Map<string, { email: string; tokenHash: string; expiresAt: number }>();
 
   constructor() {
     // PostgreSQL is the single authoritative persistent source of truth.
@@ -766,20 +767,19 @@ export class RealAuthService {
 
     // 0. Development & Testing Direct Bypass for Authoritative Presets
     if (process.env['NODE_ENV'] !== 'production' && DEV_TEST_USERS.has(emailNorm)) {
+      const cached = this.userCache.get(emailNorm);
       const devPreset = DEV_TEST_USERS.get(emailNorm)!;
-      const expectedPass = DEV_TEST_PASSWORDS[emailNorm];
-      const isFounderSpecial = emailNorm === 'founder@docsearch.health' &&
-        (plainPassword === 'FounderPass123!' || plainPassword === '123456' || plainPassword === 'admin123' || plainPassword === 'DocSearch@2026!' || plainPassword === 'DocSearch2026!' || plainPassword === 'password');
+      const targetHash = cached?.passwordHash || devPreset.passwordHash;
+      const expectedPass = cached ? undefined : DEV_TEST_PASSWORDS[emailNorm];
       const isDevPassValid =
-        isFounderSpecial ||
         (expectedPass && plainPassword === expectedPass) ||
-        (plainPassword === '123456') ||
-        (await verifyPasswordAsync(plainPassword, devPreset.passwordHash));
+        (await verifyPasswordAsync(plainPassword, targetHash));
 
       if (isDevPassValid) {
-        this.userCache.set(emailNorm, devPreset);
-        trackDbWrite(this.persistPresetToDatabase(devPreset).catch(() => {}));
-        return devPreset;
+        const userToReturn = cached || devPreset;
+        this.userCache.set(emailNorm, userToReturn);
+        trackDbWrite(this.persistPresetToDatabase(userToReturn).catch(() => {}));
+        return userToReturn;
       } else {
         return null;
       }
@@ -799,7 +799,9 @@ export class RealAuthService {
             lastName: users.lastName,
             status: users.status,
             metadata: users.metadata,
-            passwordHash: userCredentials.passwordHash
+            passwordHash: userCredentials.passwordHash,
+            failedLoginAttempts: userCredentials.failedLoginAttempts,
+            lockedUntil: userCredentials.lockedUntil
           })
           .from(users)
           .innerJoin(userCredentials, eq(users.id, userCredentials.userId))
@@ -808,6 +810,12 @@ export class RealAuthService {
 
         if (rows && rows.length > 0 && rows[0]) {
           const row = rows[0];
+
+          // Progressive Account Lockout Check
+          if (row.lockedUntil && new Date(row.lockedUntil).getTime() > Date.now()) {
+            const remainingSec = Math.ceil((new Date(row.lockedUntil).getTime() - Date.now()) / 1000);
+            throw new Error(`Account is temporarily locked due to excessive failed attempts. Please try again in ${remainingSec} seconds.`);
+          }
           const meta = (row.metadata || {}) as Record<string, any>;
 
           user = {
@@ -983,22 +991,37 @@ export class RealAuthService {
     }
 
     // 3. Strict cryptographic scrypt password verification (non-blocking)
-    let isValid = await verifyPasswordAsync(plainPassword, user.passwordHash);
-    if (!isValid && emailNorm === 'founder@docsearch.health') {
-      const allowedFounderPasswords = [
-        'FounderPass123!',
-        'DocSearch@2026!',
-        'DocSearch2026!',
-        'admin123',
-        '123456',
-        'password'
-      ];
-      if (allowedFounderPasswords.includes(plainPassword)) {
-        isValid = true;
-      }
-    }
+    const isValid = await verifyPasswordAsync(plainPassword, user.passwordHash);
     if (!isValid) {
+      if (db && user.id && user.id.length === 36) {
+        try {
+          const [cred] = await db
+            .select({ failedLoginAttempts: userCredentials.failedLoginAttempts })
+            .from(userCredentials)
+            .where(eq(userCredentials.userId, user.id))
+            .limit(1);
+          const currentAttempts = (cred?.failedLoginAttempts || 0) + 1;
+          const lockTime = currentAttempts >= 5 ? new Date(Date.now() + 15 * 60 * 1000) : null;
+          await db
+            .update(userCredentials)
+            .set({ failedLoginAttempts: currentAttempts, lockedUntil: lockTime, updatedAt: new Date() })
+            .where(eq(userCredentials.userId, user.id));
+          if (currentAttempts >= 5) {
+            logger.warn('Account temporarily locked due to 5 consecutive failed login attempts', { email: emailNorm });
+          }
+        } catch {}
+      }
       return null;
+    }
+
+    // Reset failed login attempts on successful verification
+    if (db && user.id && user.id.length === 36) {
+      try {
+        await db
+          .update(userCredentials)
+          .set({ failedLoginAttempts: 0, lockedUntil: null, updatedAt: new Date() })
+          .where(eq(userCredentials.userId, user.id));
+      } catch {}
     }
 
     if (db && user.tenantId && user.branchId && user.branchId.length === 36 && user.tenantId.length === 36) {
@@ -1348,7 +1371,9 @@ export class RealAuthService {
             lastName: users.lastName,
             status: users.status,
             metadata: users.metadata,
-            passwordHash: userCredentials.passwordHash
+            passwordHash: userCredentials.passwordHash,
+            failedLoginAttempts: userCredentials.failedLoginAttempts,
+            lockedUntil: userCredentials.lockedUntil
           })
           .from(users)
           .innerJoin(userCredentials, eq(users.id, userCredentials.userId))
@@ -1357,6 +1382,12 @@ export class RealAuthService {
 
         if (rows && rows.length > 0 && rows[0]) {
           const row = rows[0];
+
+          // Progressive Account Lockout Check
+          if (row.lockedUntil && new Date(row.lockedUntil).getTime() > Date.now()) {
+            const remainingSec = Math.ceil((new Date(row.lockedUntil).getTime() - Date.now()) / 1000);
+            throw new Error(`Account is temporarily locked due to excessive failed attempts. Please try again in ${remainingSec} seconds.`);
+          }
           const meta = (row.metadata || {}) as Record<string, any>;
           const rec: AuthenticatedUserRecord = {
             id: row.id,
@@ -1420,6 +1451,11 @@ export class RealAuthService {
     }
     user.passwordHash = hashPassword(newPassword);
     this.userCache.set(emailNorm, user);
+    if (DEV_TEST_USERS.has(emailNorm)) {
+      const devRec = DEV_TEST_USERS.get(emailNorm)!;
+      devRec.passwordHash = user.passwordHash;
+      delete DEV_TEST_PASSWORDS[emailNorm];
+    }
 
     // Invalidate all existing sessions and tokens for this user immediately
     try {
@@ -1439,6 +1475,160 @@ export class RealAuthService {
           .catch(() => {})
       );
     }
+
+    return true;
+  }
+
+  async requestPasswordReset(email: string): Promise<{ token?: string; dispatched: boolean }> {
+    const emailNorm = email.toLowerCase().trim();
+    let user = this.userCache.get(emailNorm);
+    if (!user) {
+      try {
+        user = await this.getUserByEmailAsync(emailNorm);
+      } catch {
+        // Fallback to DB if account was temporarily locked
+        const db = getDatabase();
+        if (db) {
+          const rows = await db
+            .select({
+              id: users.id,
+              email: users.email,
+              firstName: users.firstName,
+              lastName: users.lastName,
+              status: users.status,
+              metadata: users.metadata,
+              passwordHash: userCredentials.passwordHash
+            })
+            .from(users)
+            .innerJoin(userCredentials, eq(users.id, userCredentials.userId))
+            .where(eq(users.email, emailNorm))
+            .limit(1);
+          if (rows && rows.length > 0 && rows[0]) {
+            const row = rows[0];
+            const meta = (row.metadata || {}) as Record<string, any>;
+            user = {
+              id: row.id,
+              email: row.email,
+              firstName: row.firstName,
+              lastName: row.lastName,
+              status: row.status,
+              tenantId: meta['tenantId'] || '11111111-1111-4111-8111-111111111111',
+              organizationId: meta['organizationId'] || '33333333-3333-4333-8333-333333333301',
+              branchId: meta['branchId'] || 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+              roles: meta['roles'] || ['DOCTOR'],
+              permissions: meta['permissions'] || ['clinical:patients:read'],
+              passwordHash: row.passwordHash
+            };
+          }
+        }
+      }
+    }
+
+    if (!user) {
+      return { dispatched: false };
+    }
+
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+    const expiresAt = Date.now() + 15 * 60 * 1000; // 15-minute token lifetime
+
+    this.passwordResetTokens.set(tokenHash, {
+      email: emailNorm,
+      tokenHash,
+      expiresAt
+    });
+
+    // Clean expired tokens
+    for (const [hash, entry] of this.passwordResetTokens.entries()) {
+      if (entry.expiresAt < Date.now()) {
+        this.passwordResetTokens.delete(hash);
+      }
+    }
+
+    return { token: rawToken, dispatched: true };
+  }
+
+  async resetPasswordWithToken(token: string, newPassword: string): Promise<boolean> {
+    if (!token || typeof token !== 'string') {
+      throw new Error('Valid reset token is required');
+    }
+    if (!newPassword || newPassword.length < 8) {
+      throw new Error('New password must be at least 8 characters long');
+    }
+
+    const tokenHash = crypto.createHash('sha256').update(token.trim()).digest('hex');
+    const entry = this.passwordResetTokens.get(tokenHash);
+    if (!entry || entry.expiresAt < Date.now()) {
+      if (entry) this.passwordResetTokens.delete(tokenHash);
+      throw new Error('Invalid or expired password reset token');
+    }
+
+    // Invalidate immediately (single-use)
+    this.passwordResetTokens.delete(tokenHash);
+
+    const emailNorm = entry.email;
+    let user = this.userCache.get(emailNorm);
+    if (!user) {
+      try {
+        user = await this.getUserByEmailAsync(emailNorm);
+      } catch {
+        // Locked user fallback
+      }
+    }
+
+    const newHash = hashPassword(newPassword);
+    if (user) {
+      user.passwordHash = newHash;
+      this.userCache.set(emailNorm, user);
+      if (DEV_TEST_USERS.has(emailNorm)) {
+        const devRec = DEV_TEST_USERS.get(emailNorm)!;
+        devRec.passwordHash = newHash;
+        delete DEV_TEST_PASSWORDS[emailNorm];
+      }
+    }
+
+    // Reset failedLoginAttempts and clear lockedUntil in Postgres
+    const db = getDatabase();
+    if (db) {
+      if (user && user.id && user.id.length === 36) {
+        trackDbWrite(
+          db.update(userCredentials)
+            .set({
+              passwordHash: newHash,
+              failedLoginAttempts: 0,
+              lockedUntil: null,
+              updatedAt: new Date()
+            })
+            .where(eq(userCredentials.userId, user.id))
+            .catch(() => {})
+        );
+      } else {
+        // Look up user id by email
+        trackDbWrite(
+          (async () => {
+            const rows = await db.select({ id: users.id }).from(users).where(eq(users.email, emailNorm)).limit(1);
+            if (rows.length > 0 && rows[0]?.id) {
+              await db.update(userCredentials)
+                .set({
+                  passwordHash: newHash,
+                  failedLoginAttempts: 0,
+                  lockedUntil: null,
+                  updatedAt: new Date()
+                })
+                .where(eq(userCredentials.userId, rows[0].id));
+            }
+          })().catch(() => {})
+        );
+      }
+    }
+
+    // Invalidate all existing sessions and refresh tokens for this user across all devices
+    try {
+      if (user?.id) {
+        await sessionRevocationService.revokeUserSessions(user.id);
+      }
+      await sessionRevocationService.revokeUserSessions(emailNorm);
+    } catch {}
 
     return true;
   }

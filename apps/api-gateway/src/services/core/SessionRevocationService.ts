@@ -238,6 +238,24 @@ export class SessionRevocationService {
   /**
    * Immediately revokes all active tokens and sessions for a user
    */
+  isUserRevoked(userId: string): boolean {
+    return this.userRevocations.has(userId);
+  }
+
+  async revokeUserSessions(userId: string, reason = 'Password reset session invalidation'): Promise<void> {
+    const now = Date.now();
+    this.userRevocations.set(userId, now);
+    const db = getDatabase();
+    if (db && userId.length === 36) {
+      try {
+        await db.update(sessions).set({ revokedAt: new Date(now) }).where(eq(sessions.userId, userId));
+      } catch (err) {
+        logger.warn('Failed to update sessions table during session invalidation', { userId, error: String(err) });
+      }
+    }
+    logger.info('All active user sessions invalidated:', { userId, reason });
+  }
+
   async revokeUser(userId: string, reason = 'User suspended by HQ', actor = 'DOC SEARCH Founder Command'): Promise<void> {
     const now = Date.now();
     this.userRevocations.set(userId, now);

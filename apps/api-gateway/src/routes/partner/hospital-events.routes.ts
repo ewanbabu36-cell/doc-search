@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
-import { createLogger } from '@docsearch/shared-core';
+import { createLogger, AppError, ErrorCode } from '@docsearch/shared-core';
+import { authenticate } from '../../plugins/auth-guard.js';
 
 const logger = createLogger('hospital-events-hub');
 
@@ -60,10 +61,24 @@ export function broadcastHospitalEvent(event: HospitalEventPayload): number {
 
 export const hospitalEventsRoutes: FastifyPluginAsync = async (app) => {
   // 1. SSE Stream: Real-Time Broadcast to Clinic Workstations & Displays
-  app.get('/api/v1/partner/events/stream', async (request: FastifyRequest, reply: FastifyReply) => {
+  app.get('/api/v1/partner/events/stream', { preHandler: [authenticate] }, async (request: FastifyRequest, reply: FastifyReply) => {
+    const session = request.session;
     const query = (request.query as { tenantId?: string; clientId?: string }) || {};
     const clientId = query.clientId || `client-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    const tenantId = query.tenantId;
+    
+    // Multi-tenant isolation: SuperAdmin may monitor specific or all tenants;
+    // other users are strictly restricted to their session tenantId.
+    const isSuperAdmin = session?.roles?.some((r: string) => r === 'SUPER_ADMIN' || r === 'FOUNDER');
+    let effectiveTenantId = session?.tenantId || 'GLOBAL';
+    if (query.tenantId && isSuperAdmin) {
+      effectiveTenantId = query.tenantId;
+    } else if (query.tenantId && query.tenantId !== session?.tenantId) {
+      throw new AppError({
+        message: 'Forbidden: Cannot subscribe to events outside your authenticated tenant scope',
+        code: ErrorCode.FORBIDDEN,
+        statusCode: 403
+      });
+    }
 
     // Set SSE headers
     reply.raw.writeHead(200, {
@@ -80,7 +95,7 @@ export const hospitalEventsRoutes: FastifyPluginAsync = async (app) => {
 
     const client: SseClient = {
       id: clientId,
-      tenantId,
+      tenantId: effectiveTenantId,
       reply,
       connectedAt: new Date()
     };
@@ -93,7 +108,7 @@ export const hospitalEventsRoutes: FastifyPluginAsync = async (app) => {
     const handshake = JSON.stringify({
       status: 'CONNECTED',
       clientId,
-      tenantId: tenantId || 'GLOBAL',
+      tenantId: effectiveTenantId,
       timestamp: new Date().toISOString(),
       activeSubscribers: activeClients.size
     });
@@ -120,12 +135,25 @@ export const hospitalEventsRoutes: FastifyPluginAsync = async (app) => {
     return new Promise(() => {});
   });
 
-  // 2. Publish Event Endpoint (Dispatches to all active workstations & displays)
-  app.post('/api/v1/partner/events/publish', async (request, reply) => {
+  // 2. Publish Event Endpoint (Dispatches to active workstations & displays within tenant scope)
+  app.post('/api/v1/partner/events/publish', { preHandler: [authenticate] }, async (request, reply) => {
+    const session = request.session;
     const body = (request.body as HospitalEventPayload) || {};
     if (!body.type || !body.sourceModule) {
       return reply.status(400).send({
         error: { code: 'INVALID_EVENT', message: 'Event type and sourceModule are required' }
+      });
+    }
+
+    const isSuperAdmin = session?.roles?.some((r: string) => r === 'SUPER_ADMIN' || r === 'FOUNDER');
+    let targetTenantId = session?.tenantId;
+    if (body.tenantId && isSuperAdmin) {
+      targetTenantId = body.tenantId;
+    } else if (body.tenantId && body.tenantId !== session?.tenantId) {
+      throw new AppError({
+        message: 'Forbidden: Cannot publish events for another tenant',
+        code: ErrorCode.FORBIDDEN,
+        statusCode: 403
       });
     }
 
@@ -137,8 +165,8 @@ export const hospitalEventsRoutes: FastifyPluginAsync = async (app) => {
       sourceModule: body.sourceModule,
       data: body.data || {},
       summaryText: body.summaryText || `${body.type} from ${body.sourceModule}`,
-      tenantId: body.tenantId,
-      senderId: body.senderId
+      tenantId: targetTenantId,
+      senderId: body.senderId || session?.userId
     };
 
     const broadcastCount = broadcastHospitalEvent(eventPayload);
@@ -152,11 +180,24 @@ export const hospitalEventsRoutes: FastifyPluginAsync = async (app) => {
   });
 
   // Alias for POST /api/v1/partner/events
-  app.post('/api/v1/partner/events', async (request, reply) => {
+  app.post('/api/v1/partner/events', { preHandler: [authenticate] }, async (request, reply) => {
+    const session = request.session;
     const body = (request.body as HospitalEventPayload) || {};
     if (!body.type || !body.sourceModule) {
       return reply.status(400).send({
         error: { code: 'INVALID_EVENT', message: 'Event type and sourceModule are required' }
+      });
+    }
+
+    const isSuperAdmin = session?.roles?.some((r: string) => r === 'SUPER_ADMIN' || r === 'FOUNDER');
+    let targetTenantId = session?.tenantId;
+    if (body.tenantId && isSuperAdmin) {
+      targetTenantId = body.tenantId;
+    } else if (body.tenantId && body.tenantId !== session?.tenantId) {
+      throw new AppError({
+        message: 'Forbidden: Cannot publish events for another tenant',
+        code: ErrorCode.FORBIDDEN,
+        statusCode: 403
       });
     }
 
@@ -168,8 +209,8 @@ export const hospitalEventsRoutes: FastifyPluginAsync = async (app) => {
       sourceModule: body.sourceModule,
       data: body.data || {},
       summaryText: body.summaryText || `${body.type} from ${body.sourceModule}`,
-      tenantId: body.tenantId,
-      senderId: body.senderId
+      tenantId: targetTenantId,
+      senderId: body.senderId || session?.userId
     };
 
     const broadcastCount = broadcastHospitalEvent(eventPayload);
@@ -183,15 +224,21 @@ export const hospitalEventsRoutes: FastifyPluginAsync = async (app) => {
   });
 
   // 3. Status Diagnostic Endpoint
-  app.get('/api/v1/partner/events/status', async () => {
-    return {
-      status: 'OK',
-      activeSubscribers: activeClients.size,
-      clients: Array.from(activeClients.values()).map((c) => ({
+  app.get('/api/v1/partner/events/status', { preHandler: [authenticate] }, async (request) => {
+    const session = request.session;
+    const isSuperAdmin = session?.roles?.some((r: string) => r === 'SUPER_ADMIN' || r === 'FOUNDER');
+    const filteredClients = Array.from(activeClients.values())
+      .filter((c) => isSuperAdmin || (c.tenantId && c.tenantId === session?.tenantId))
+      .map((c) => ({
         id: c.id,
         tenantId: c.tenantId || 'GLOBAL',
         connectedAt: c.connectedAt.toISOString()
-      })),
+      }));
+
+    return {
+      status: 'OK',
+      activeSubscribers: filteredClients.length,
+      clients: filteredClients,
       timestamp: new Date().toISOString()
     };
   });

@@ -8,18 +8,22 @@ describe('Phase 2 Forensic Verification: Security, Auth & Multi-Tenant Isolation
   const issuer = 'docsearch-test-issuer';
   const audience = 'docsearch-test-audience';
 
-  test('1. Founder Authentication Multi-Password Resilience', async () => {
-    // Both standard operational master keys must authenticate
+  test('1. Founder Authentication Hardening: Rejects weak/alternate backdoors', async () => {
+    // Standard provisioned credential must authenticate
     const founderUser1 = await realAuthService.authenticateUser('founder@docsearch.health', 'FounderPass123!');
-    assert.ok(founderUser1, 'Founder must authenticate with FounderPass123!');
+    assert.ok(founderUser1, 'Founder must authenticate with provisioned credential');
     assert.equal(founderUser1.email, 'founder@docsearch.health');
     assert.ok(founderUser1.roles.includes('SUPER_ADMIN'), 'Founder must have SUPER_ADMIN role');
 
-    const founderUser2 = await realAuthService.authenticateUser('founder@docsearch.health', 'DocSearch@2026!');
-    assert.ok(founderUser2, 'Founder must authenticate with DocSearch@2026!');
+    // Weak alternate/backdoor passwords must fail closed (return null)
+    const backdoor1 = await realAuthService.authenticateUser('founder@docsearch.health', 'DocSearch@2026!');
+    assert.equal(backdoor1, null, 'Weak backdoor DocSearch@2026! must be rejected');
 
-    const founderUser3 = await realAuthService.authenticateUser('founder@docsearch.health', 'admin123');
-    assert.ok(founderUser3, 'Founder must authenticate with admin123');
+    const backdoor2 = await realAuthService.authenticateUser('founder@docsearch.health', 'admin123');
+    assert.equal(backdoor2, null, 'Weak backdoor admin123 must be rejected');
+
+    const backdoor3 = await realAuthService.authenticateUser('founder@docsearch.health', '123456');
+    assert.equal(backdoor3, null, 'Weak backdoor 123456 must be rejected');
 
     // Wrong password must fail closed
     const invalidAuth = await realAuthService.authenticateUser('founder@docsearch.health', 'WrongPassword999!');

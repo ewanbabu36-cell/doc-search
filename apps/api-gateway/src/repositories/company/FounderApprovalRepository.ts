@@ -4,6 +4,15 @@ import crypto from 'node:crypto';
 
 const logger = createLogger('founder-approval-repository');
 
+export const DUAL_CONTROL_FINANCIAL_ENTITIES = new Set([
+  'BANKING_CHANGE',
+  'COMPANY_BANKING_CHANGE',
+  'REFUND_DISBURSEMENT',
+  'PAYOUT_SETTLEMENT',
+  'MERCHANT_CONFIG',
+  'COMMERCIAL_OVERRIDE'
+]);
+
 export interface SubmitApprovalInput {
   entityType: string;
   taskTitle: string;
@@ -55,8 +64,10 @@ export class FounderApprovalRepository {
     const isFounder = Boolean(input.isFounder);
     const reqNumber = `REQ-FND-${Date.now().toString().slice(-6)}-${Math.floor(100 + Math.random() * 900)}`;
 
-    const approvalStatus = isFounder ? 'APPROVED_BY_FOUNDER' : 'PENDING_FOUNDER_APPROVAL';
-    const taskStatus = isFounder ? 'COMPLETED' : 'AWAITING_FOUNDER_APPROVAL';
+    const requiresDualControl = DUAL_CONTROL_FINANCIAL_ENTITIES.has(input.entityType);
+    const isAutoApproved = isFounder && !requiresDualControl;
+    const approvalStatus = isAutoApproved ? 'APPROVED_BY_FOUNDER' : 'PENDING_FOUNDER_APPROVAL';
+    const taskStatus = isAutoApproved ? 'COMPLETED' : 'AWAITING_FOUNDER_APPROVAL';
 
     const [created] = await dbClient
       .insert(founderApprovalRequests)
@@ -123,6 +134,19 @@ export class FounderApprovalRepository {
         message: `Cannot approve request in '${existing.approvalStatus}' status. Only pending requests can be approved.`,
         code: ErrorCode.CONFLICT,
         statusCode: 409
+      });
+    }
+
+    if (
+      DUAL_CONTROL_FINANCIAL_ENTITIES.has(existing.entityType) &&
+      existing.submitterEmail &&
+      founderEmail &&
+      existing.submitterEmail.toLowerCase().trim() === founderEmail.toLowerCase().trim()
+    ) {
+      throw new AppError({
+        message: 'Maker-Checker dual authorization policy violation: Submitter cannot approve their own financial request. Approval by a distinct authorized checker is required.',
+        code: ErrorCode.FORBIDDEN,
+        statusCode: 403
       });
     }
 
@@ -198,6 +222,19 @@ export class FounderApprovalRepository {
         message: `Cannot reject request in '${existing.approvalStatus}' status. Only pending requests can be rejected.`,
         code: ErrorCode.CONFLICT,
         statusCode: 409
+      });
+    }
+
+    if (
+      DUAL_CONTROL_FINANCIAL_ENTITIES.has(existing.entityType) &&
+      existing.submitterEmail &&
+      founderEmail &&
+      existing.submitterEmail.toLowerCase().trim() === founderEmail.toLowerCase().trim()
+    ) {
+      throw new AppError({
+        message: 'Maker-Checker dual authorization policy violation: Submitter cannot approve their own financial request. Approval by a distinct authorized checker is required.',
+        code: ErrorCode.FORBIDDEN,
+        statusCode: 403
       });
     }
 
