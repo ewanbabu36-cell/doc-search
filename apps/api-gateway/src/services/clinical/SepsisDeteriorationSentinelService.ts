@@ -54,8 +54,35 @@ export class SepsisDeteriorationSentinelService {
    * Implements Surviving Sepsis Campaign 1-Hour Bundle Protocols.
    */
   public evaluatePatientRisk(request: SepsisAssessmentRequest): SepsisDeteriorationResult {
-    const isPediatric = request.isPediatric ?? (request.ageYears < 18);
     const vitals = request.vitals;
+    if (!vitals) {
+      throw new Error('Vital signs snapshot is required for clinical deterioration assessment');
+    }
+
+    // Physiological boundary validations to prevent misleading alerts or computation on erroneous data
+    if (vitals.systolicBp <= 30 || vitals.systolicBp > 300) {
+      throw new Error(`Physiologically invalid Systolic Blood Pressure: ${vitals.systolicBp} mmHg (valid clinical range: 30-300 mmHg)`);
+    }
+    if (vitals.diastolicBp < 10 || vitals.diastolicBp > 200 || vitals.diastolicBp >= vitals.systolicBp) {
+      throw new Error(`Physiologically invalid Diastolic Blood Pressure: ${vitals.diastolicBp} mmHg (must be 10-200 mmHg and lower than systolic)`);
+    }
+    if (vitals.respiratoryRate <= 0 || vitals.respiratoryRate > 120) {
+      throw new Error(`Physiologically invalid Respiratory Rate: ${vitals.respiratoryRate} bpm (valid clinical range: 1-120 bpm)`);
+    }
+    if (vitals.pulseBpm <= 0 || vitals.pulseBpm > 300) {
+      throw new Error(`Physiologically invalid Pulse: ${vitals.pulseBpm} bpm (valid clinical range: 1-300 bpm)`);
+    }
+    if (vitals.oxygenSaturationPercent <= 0 || vitals.oxygenSaturationPercent > 100) {
+      throw new Error(`Physiologically invalid Oxygen Saturation: ${vitals.oxygenSaturationPercent}% (valid clinical range: 1-100%)`);
+    }
+    if (vitals.temperatureCelsius < 25 || vitals.temperatureCelsius > 46) {
+      throw new Error(`Physiologically invalid Body Temperature: ${vitals.temperatureCelsius} °C (valid clinical range: 25-46 °C)`);
+    }
+    if (vitals.gcsScore !== undefined && (vitals.gcsScore < 3 || vitals.gcsScore > 15)) {
+      throw new Error(`Physiologically invalid GCS Score: ${vitals.gcsScore} (valid clinical range: 3-15)`);
+    }
+
+    const isPediatric = request.isPediatric ?? (request.ageYears < 18);
     const triggers: string[] = [];
 
     let scoreValue = 0;

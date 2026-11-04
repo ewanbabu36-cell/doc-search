@@ -196,9 +196,9 @@ console.log('\n[SUITE E] AiVoiceService Integration & Persistence Audit');
 
 await (async () => {
   const mockSession = {
-    userId: 'doc-user-123',
-    tenantId: 'tenant-city-hospital',
-    branchId: 'branch-main',
+    userId: '11111111-1111-4111-8111-111111111111',
+    tenantId: '22222222-2222-4222-8222-222222222222',
+    branchId: '33333333-3333-4333-8333-333333333333',
     role: 'SUPER_ADMIN',
     isSuperAdmin: true,
     permissions: ['*']

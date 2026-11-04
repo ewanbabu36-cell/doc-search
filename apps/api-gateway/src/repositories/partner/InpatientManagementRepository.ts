@@ -678,11 +678,13 @@ export class InpatientManagementRepository {
     const db = requireDb(dbClient);
 
     const executeInTx = async (tx: any): Promise<StoredAdmission> => {
-      // 1. Verify Bed Availability
-      const beds = await tx
+      // 1. Verify Bed Availability with pessimistic row locking
+      let bedQuery = tx
         .select()
         .from(inpatientBeds)
         .where(and(eq(inpatientBeds.tenantId, input.tenantId), eq(inpatientBeds.id, input.bedId)));
+      if (typeof bedQuery.for === 'function') bedQuery = bedQuery.for('update');
+      const beds = await bedQuery;
 
       const targetBed = beds[0];
       if (!targetBed) {
@@ -857,20 +859,24 @@ export class InpatientManagementRepository {
       }
 
       // 2. Fetch Source Bed
-      const sourceBeds = await tx
+      let srcQuery = tx
         .select()
         .from(inpatientBeds)
         .where(and(eq(inpatientBeds.tenantId, input.tenantId), eq(inpatientBeds.id, sourceBedId)));
+      if (typeof srcQuery.for === 'function') srcQuery = srcQuery.for('update');
+      const sourceBeds = await srcQuery;
       const sourceBed = sourceBeds[0];
       if (!sourceBed) {
         throw new AppError({ message: 'Source bed not found', code: ErrorCode.NOT_FOUND, statusCode: 404 });
       }
 
       // 3. Fetch Destination Bed
-      const destBeds = await tx
+      let dstQuery = tx
         .select()
         .from(inpatientBeds)
         .where(and(eq(inpatientBeds.tenantId, input.tenantId), eq(inpatientBeds.id, input.destinationBedId)));
+      if (typeof dstQuery.for === 'function') dstQuery = dstQuery.for('update');
+      const destBeds = await dstQuery;
       const destBed = destBeds[0];
       if (!destBed) {
         throw new AppError({ message: 'Destination bed not found', code: ErrorCode.NOT_FOUND, statusCode: 404 });
