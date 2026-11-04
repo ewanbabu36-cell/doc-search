@@ -85,14 +85,14 @@ export const GstEInvoicingReconcilerView: React.FC = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Header */}
       <div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: 'var(--ds-color-text-primary)' }}>
             🇮🇳 Automated GST E-Invoicing & GSTR-1 Tax Reconciler
           </h2>
-          <Badge variant="success">● NIC IRP API Connected (HSN/SAC 998311 - 18% GST)</Badge>
+          <Badge variant="warning">SANDBOX SIMULATION (NIC IRP Test Bed — HSN/SAC 998311)</Badge>
         </div>
         <p style={{ margin: '4px 0 0', fontSize: '0.8125rem', color: 'var(--ds-color-text-muted)' }}>
-          Direct Govt. E-Invoicing generation (IRN + Signed QR), CGST/SGST/IGST breakdown, and 1-click GSTR-1 monthly filing reconciliation
+          Direct Govt. E-Invoicing generation (IRN + Signed QR), CGST/SGST/IGST breakdown, and 1-click GSTR-1 monthly filing reconciliation. (Production mode requires whitelisted GSP e-Way/E-Invoice API credentials).
         </p>
       </div>
 

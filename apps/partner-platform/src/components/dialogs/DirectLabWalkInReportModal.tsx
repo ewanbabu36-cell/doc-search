@@ -472,11 +472,24 @@ export const DirectLabWalkInReportModal: React.FC<Props> = ({ isOpen, onClose })
 
   const persistWalkInReport = () => {
     try {
+      let activeTenantId = '22222222-2222-4222-8222-222222222222';
+      let activePartnerId = '00000000-0000-0000-0000-000000000001';
+      let activeOrgId = '00000000-0000-0000-0000-000000000001';
+      try {
+        const authStr = typeof window !== 'undefined' ? localStorage.getItem('docsearch_partner_staff_auth') : null;
+        if (authStr) {
+          const authObj = JSON.parse(authStr);
+          if (authObj.tenantId) activeTenantId = authObj.tenantId;
+          if (authObj.partnerId || authObj.id) activePartnerId = authObj.partnerId || authObj.id;
+          if (authObj.organizationId) activeOrgId = authObj.organizationId;
+        }
+      } catch {}
+
       const results = parameters.map((p, idx) => ({
         id: `res-${orderId}-${idx}`,
-        tenantId: '22222222-2222-4222-8222-222222222222',
-        partnerId: '00000000-0000-0000-0000-000000000001',
-        organizationId: '00000000-0000-0000-0000-000000000001',
+        tenantId: activeTenantId,
+        partnerId: activePartnerId,
+        organizationId: activeOrgId,
         orderId,
         patientId: patientMrn || `pat-${Date.now()}`,
         parameterId: p.id,
@@ -499,9 +512,9 @@ export const DirectLabWalkInReportModal: React.FC<Props> = ({ isOpen, onClose })
 
       const report = {
         id: reportId,
-        tenantId: '22222222-2222-4222-8222-222222222222',
-        partnerId: '00000000-0000-0000-0000-000000000001',
-        organizationId: '00000000-0000-0000-0000-000000000001',
+        tenantId: activeTenantId,
+        partnerId: activePartnerId,
+        organizationId: activeOrgId,
         orderId,
         patientId: patientMrn || `pat-${Date.now()}`,
         reportNumber,
@@ -519,9 +532,9 @@ export const DirectLabWalkInReportModal: React.FC<Props> = ({ isOpen, onClose })
 
       const newOrder = {
         id: orderId,
-        tenantId: '22222222-2222-4222-8222-222222222222',
-        partnerId: '00000000-0000-0000-0000-000000000001',
-        organizationId: '00000000-0000-0000-0000-000000000001',
+        tenantId: activeTenantId,
+        partnerId: activePartnerId,
+        organizationId: activeOrgId,
         organizationName: labName,
         orderNumber,
         patientId: patientMrn || `pat-${Date.now()}`,

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   Input,
@@ -26,48 +26,49 @@ export interface AuditEventItem {
   correlationId: string;
 }
 
-const mockAuditTrail: AuditEventItem[] = [
-  {
-    id: 'evt-20260829-001842',
-    timestamp: '2026-08-29T12:00:00.000Z',
-    actorEmail: 'executive.lead@docsearch.internal',
-    domain: 'SECURITY',
-    action: 'POLICY_TRANSITION',
-    resource: 'POL-SEC-MFA-001',
-    result: 'SUCCESS',
-    reason: 'Enforced hardware security key MFA mandate across all admin scopes.',
-    correlationId: 'corr-892f07c8-001'
-  },
-  {
-    id: 'evt-20260829-001843',
-    timestamp: '2026-08-29T12:15:00.000Z',
-    actorEmail: 'cmo.safety@docsearch.internal',
-    domain: 'AI_GOVERNANCE',
-    action: 'PROMPT_APPROVAL',
-    resource: 'TMPL-SUMMARIZE-DISCHARGE (v1.0.0)',
-    result: 'SUCCESS',
-    reason: 'Verified clinical anti-diagnosis safety boundaries for production release.',
-    correlationId: 'corr-892f07c8-002'
-  },
-  {
-    id: 'evt-20260829-001844',
-    timestamp: '2026-08-29T13:10:00.000Z',
-    actorEmail: 'unknown.intruder@external-probe.net',
-    domain: 'API_GATEWAY',
-    action: 'BULK_DATA_EXPORT_REQUEST',
-    resource: 'company.analytics_reports',
-    result: 'DENIED',
-    reason: 'Blocked by POL-SEC-EXPORT-001 rate limiter; unauthorized external IP.',
-    correlationId: 'corr-892f07c8-003'
-  }
-];
-
 export const AuditEventExplorerView: React.FC = () => {
+  const [events, setEvents] = useState<AuditEventItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [domainFilter, setDomainFilter] = useState('ALL');
   const [resultFilter, setResultFilter] = useState('ALL');
 
-  const filtered = mockAuditTrail.filter((evt) => {
+  useEffect(() => {
+    let isMounted = true;
+    const fetchAuditTraces = async () => {
+      try {
+        const token = localStorage.getItem('docsearch_company_token');
+        const res = await fetch('/api/v1/company/admin/audit-traces', {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data) && isMounted) {
+            const mapped: AuditEventItem[] = json.data.map((trace: any) => ({
+              id: trace.id || `evt-${trace.occurredAt || Date.now()}`,
+              timestamp: trace.occurredAt || trace.createdAt || new Date().toISOString(),
+              actorEmail: trace.actorEmail || trace.actorId || 'system',
+              domain: trace.domain || trace.entityType || 'CORE',
+              action: trace.action || 'MUTATION',
+              resource: trace.entityReference || trace.targetResource || 'system',
+              result: trace.result || (trace.status === 'SUCCESS' ? 'SUCCESS' : trace.status === 'DENIED' ? 'DENIED' : 'SUCCESS'),
+              reason: trace.rationale || trace.remarks || 'Standard audited administrative operation',
+              correlationId: trace.correlationId || trace.id || 'corr-none'
+            }));
+            setEvents(mapped);
+          }
+        }
+      } catch {
+        // Safe fail-closed empty state
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
+    void fetchAuditTraces();
+    return () => { isMounted = false; };
+  }, []);
+
+  const filtered = events.filter((evt) => {
     if (search.trim()) {
       const q = search.toLowerCase();
       if (
@@ -87,7 +88,7 @@ export const AuditEventExplorerView: React.FC = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       <Alert type="info" title="Authoritative Audit Source">
-        All entries are sourced directly from the immutable <code>core.audit_events</code> PostgreSQL write stream. Audit history cannot be edited, overwritten, or deleted by any administrative role.
+        All entries are sourced directly from the immutable <code>core.audit_events</code> and <code>company.audit_traces</code> PostgreSQL write stream. Audit history cannot be edited, overwritten, or deleted by any administrative role.
       </Alert>
 
       {/* Search & Filters */}
@@ -114,7 +115,8 @@ export const AuditEventExplorerView: React.FC = () => {
                 { label: 'Security', value: 'SECURITY' },
                 { label: 'AI Governance', value: 'AI_GOVERNANCE' },
                 { label: 'API Gateway', value: 'API_GATEWAY' },
-                { label: 'CRM', value: 'CRM' }
+                { label: 'CRM', value: 'CRM' },
+                { label: 'COMMERCIAL', value: 'COMMERCIAL' }
               ]}
               value={domainFilter}
               onChange={(e) => setDomainFilter(e.target.value)}
@@ -155,10 +157,16 @@ export const AuditEventExplorerView: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.length === 0 ? (
+              {isLoading ? (
                 <TableRow>
                   <TableCell colSpan={7} style={{ textAlign: 'center', color: 'var(--ds-color-text-muted)', padding: '24px' }}>
-                    No audit records match search filter.
+                    Loading immutable audit traces from PostgreSQL...
+                  </TableCell>
+                </TableRow>
+              ) : filtered.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} style={{ textAlign: 'center', color: 'var(--ds-color-text-muted)', padding: '24px' }}>
+                    No audit records match the current criteria. Audit log is clean.
                   </TableCell>
                 </TableRow>
               ) : (

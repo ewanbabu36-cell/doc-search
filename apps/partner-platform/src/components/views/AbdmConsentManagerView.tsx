@@ -17,62 +17,7 @@ export const AbdmConsentManagerView: React.FC<AbdmConsentManagerViewProps> = ({
   const [isPushing, setIsPushing] = useState<string | null>(null);
   const [downloadingAbha, setDownloadingAbha] = useState<string | null>(null);
 
-  const sampleConsents: AbdmConsentArtefactDto[] = consents.length > 0 ? consents : [
-    {
-      id: '00000000-0000-4000-8000-000000000001',
-      tenantId: '11111111-1111-4111-8111-111111111111',
-      consentRequestId: 'CR-2026-001',
-      artefactId: 'ART-ABDM-2026-9910',
-      patientAbhaAddress: 'kamlesh.verma@abdm',
-      patientName: 'Kamlesh Verma',
-      requesterHipOrHiu: 'DocSearch Multi-Specialty Hospital (HIP/HIU)',
-      status: 'GRANTED',
-      purposeCode: 'CARETREAT',
-      purposeDescription: 'Care Management & Inpatient Treatment Continuity',
-      dateFrom: '2026-10-01',
-      dateTo: '2026-11-01',
-      dataEraseDate: '2027-10-01',
-      linkedCareContextRefs: ['OPD-VISIT-2026-881', 'IPD-ADM-2026-104'],
-      grantedAt: '2026-10-27T08:00:00.000Z',
-      createdAt: '2026-10-27T08:00:00.000Z'
-    },
-    {
-      id: '00000000-0000-4000-8000-000000000002',
-      tenantId: '11111111-1111-4111-8111-111111111111',
-      consentRequestId: 'CR-2026-002',
-      artefactId: 'ART-ABDM-2026-9911',
-      patientAbhaAddress: 'priya.nair@abdm',
-      patientName: 'Priya Nair',
-      requesterHipOrHiu: 'Apollo Diagnostics Laboratory (HIU)',
-      status: 'REQUESTED',
-      purposeCode: 'CARETREAT',
-      purposeDescription: 'Pathology & Diagnostic Investigation Correlation',
-      dateFrom: '2026-10-27',
-      dateTo: '2026-10-30',
-      dataEraseDate: '2026-12-30',
-      linkedCareContextRefs: ['LAB-TEST-ACCESSION-904'],
-      grantedAt: null,
-      createdAt: '2026-10-27T10:15:00.000Z'
-    },
-    {
-      id: '00000000-0000-4000-8000-000000000003',
-      tenantId: '11111111-1111-4111-8111-111111111111',
-      consentRequestId: 'CR-2026-003',
-      artefactId: 'ART-ABDM-2026-9912',
-      patientAbhaAddress: 'rajesh.patel@abdm',
-      patientName: 'Rajesh Patel',
-      requesterHipOrHiu: 'Max Healthcare Network (HIP)',
-      status: 'REVOKED',
-      purposeCode: 'BTCHQ',
-      purposeDescription: 'Break the Glass Emergency Access',
-      dateFrom: '2026-09-01',
-      dateTo: '2026-09-15',
-      dataEraseDate: '2026-09-16',
-      linkedCareContextRefs: ['EMERGENCY-TRIAGE-2026'],
-      grantedAt: null,
-      createdAt: '2026-09-01T12:00:00.000Z'
-    }
-  ];
+  const sampleConsents: AbdmConsentArtefactDto[] = consents;
 
   const filteredConsents = sampleConsents.filter((c) => {
     if (activeFilter === 'ALL') return true;
@@ -160,7 +105,16 @@ export const AbdmConsentManagerView: React.FC<AbdmConsentManagerViewProps> = ({
 
       {/* Consent Cards Grid */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-        {filteredConsents.map((cs) => {
+        {filteredConsents.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '3rem 1rem', backgroundColor: '#f8fafc', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
+            <span style={{ fontSize: '2rem' }}>📜</span>
+            <h4 style={{ margin: '8px 0 4px', color: '#334155', fontWeight: 600 }}>No ABDM Consents Found</h4>
+            <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>
+              Patient consent artefacts granted via the National Health Authority ABHA App will appear here in real time.
+            </p>
+          </div>
+        ) : (
+          filteredConsents.map((cs) => {
           const isGranted = cs.status === 'GRANTED';
           return (
             <Card key={cs.id} style={{ padding: '1rem', border: '1px solid #e2e8f0' }}>
@@ -220,7 +174,7 @@ export const AbdmConsentManagerView: React.FC<AbdmConsentManagerViewProps> = ({
               )}
             </Card>
           );
-        })}
+        }))}
       </div>
     </div>
   );

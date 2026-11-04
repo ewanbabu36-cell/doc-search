@@ -342,7 +342,8 @@ class HardwareStatusService {
           detail: {
             analyzer: this.status.astmAnalyzer.model,
             sampleId,
-            parameters: mockParameters
+            parameters: mockParameters,
+            isDiagnosticSimulation: true
           }
         })
       );
