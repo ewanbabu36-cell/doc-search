@@ -285,6 +285,23 @@ export class CompanyFinancialService {
     }
 
     const current = this.getConfig();
+
+    // Maker-Checker Dual-Control Check
+    if (current.makerCheckerEnabled && (updates.accountNumber || updates.ifscCode || updates.businessUpiId)) {
+      const changeId = `CHG-${Date.now()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+      const pending: PendingFinancialChange = {
+        id: changeId,
+        proposedConfig: updates,
+        initiatedBy: session.actorEmail || session.userId || 'MAKER',
+        initiatedAt: new Date().toISOString(),
+        status: 'PENDING'
+      };
+      current.pendingChange = pending;
+      fs.writeFileSync(CONFIG_FILE, JSON.stringify(current, null, 2), 'utf-8');
+      this.configCache = current;
+      return current;
+    }
+
     const merged: CompanyCorporateFinancialConfig = {
       ...current,
       ...updates,
@@ -556,6 +573,11 @@ export class CompanyFinancialService {
     const current = this.getConfig();
     if (!current.pendingChange || current.pendingChange.id !== changeId) {
       throw new AppError({ message: 'Pending financial change not found.', statusCode: 404 });
+    }
+
+    const approverIdentifier = session.actorEmail || session.userId;
+    if (current.pendingChange.initiatedBy && approverIdentifier && current.pendingChange.initiatedBy === approverIdentifier) {
+      throw AppError.forbidden('Maker-Checker dual control violation: Change cannot be approved by the same user who initiated it.');
     }
 
     if (decision === 'REJECTED') {

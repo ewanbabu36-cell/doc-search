@@ -1722,6 +1722,30 @@ export class BillingManagementRepository {
           status: 'ISSUED'
         } as unknown as typeof billingReceipts.$inferInsert);
 
+        // General Ledger transaction for webhook payment
+        try {
+          await tx.insert(billingFinancialTransactions).values({
+            id: crypto.randomUUID(),
+            tenantId: input.tenantId,
+            partnerId: invoice.partnerId,
+            organizationId: invoice.organizationId,
+            branchId: invoice.branchId,
+            transactionNumber: `FTX-PG-${Date.now().toString(36).toUpperCase()}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`,
+            transactionType: 'PAYMENT',
+            referenceType: 'PAYMENT',
+            referenceId: paymentId,
+            patientId: invoice.patientId,
+            debit: '0.00',
+            credit: input.amount.toFixed(2),
+            balanceImpact: (-input.amount).toFixed(2),
+            currency: input.currency || 'INR',
+            actorId: `SYSTEM_WEBHOOK_${input.gateway}`,
+            notes: `Webhook payment reconciled for invoice ${invoice.invoiceNumber} via ${input.gateway}`
+          } as unknown as typeof billingFinancialTransactions.$inferInsert);
+        } catch (ftxErr) {
+          logger.warn('Could not record webhook billing financial transaction', { error: String(ftxErr) });
+        }
+
         await tx
           .update(billingInvoices)
           .set({
@@ -1885,38 +1909,64 @@ export class BillingManagementRepository {
     const newBalanceDue = (invoice.patientPayableAmount || invoice.totalAmount) - newPaidAmount;
 
     try {
-      await db.insert(billingPayments).values({
-        id: refundPaymentId,
-        tenantId: input.tenantId,
-        partnerId: invoice.partnerId,
-        organizationId: invoice.organizationId,
-        branchId: invoice.branchId,
-        invoiceId: invoice.id,
-        patientId: invoice.patientId,
-        paymentNumber: `REF-${input.gateway.substring(0, 3)}-${Math.floor(100000 + Math.random() * 900000)}`,
-        paymentMethod: 'ONLINE',
-        amount: -input.amount,
-        currency: 'INR',
-        referenceNumber: input.gatewayRefundId,
-        status: 'REFUNDED',
-        receivedBy: `SYSTEM_WEBHOOK_${input.gateway}`,
-        receivedAt: now,
-        notes: `Refund processed: ${input.reason || 'Requested by user/gateway'}`,
-        metadata: input.metadata || {}
-      } as unknown as typeof billingPayments.$inferInsert);
+      return await runInTx(db, async (tx: any) => {
+        await tx.insert(billingPayments).values({
+          id: refundPaymentId,
+          tenantId: input.tenantId,
+          partnerId: invoice.partnerId,
+          organizationId: invoice.organizationId,
+          branchId: invoice.branchId,
+          invoiceId: invoice.id,
+          patientId: invoice.patientId,
+          paymentNumber: `REF-${input.gateway.substring(0, 3)}-${Math.floor(100000 + Math.random() * 900000)}`,
+          paymentMethod: 'ONLINE',
+          amount: -input.amount,
+          currency: 'INR',
+          referenceNumber: input.gatewayRefundId,
+          status: 'REFUNDED',
+          receivedBy: `SYSTEM_WEBHOOK_${input.gateway}`,
+          receivedAt: now,
+          notes: `Refund processed: ${input.reason || 'Requested by user/gateway'}`,
+          metadata: input.metadata || {}
+        } as unknown as typeof billingPayments.$inferInsert);
 
-      await db
-        .update(billingInvoices)
-        .set({
-          paidAmount: newPaidAmount.toFixed(2),
-          dueAmount: newBalanceDue.toFixed(2),
-          status: newPaidAmount === 0 ? 'PENDING_PAYMENT' : 'PARTIALLY_PAID',
-          updatedAt: now
-        } as unknown as typeof billingInvoices.$inferInsert)
-        .where(and(eq(billingInvoices.tenantId, input.tenantId), eq(billingInvoices.id, invoice.id)));
+        try {
+          await tx.insert(billingFinancialTransactions).values({
+            id: crypto.randomUUID(),
+            tenantId: input.tenantId,
+            partnerId: invoice.partnerId,
+            organizationId: invoice.organizationId,
+            branchId: invoice.branchId,
+            transactionNumber: `FTX-WHREF-${Date.now().toString(36).toUpperCase()}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`,
+            transactionType: 'REFUND',
+            referenceType: 'REFUND',
+            referenceId: refundPaymentId,
+            patientId: invoice.patientId,
+            debit: input.amount.toFixed(2),
+            credit: '0.00',
+            balanceImpact: input.amount.toFixed(2),
+            currency: 'INR',
+            actorId: `SYSTEM_WEBHOOK_${input.gateway}`,
+            notes: `Webhook refund of ₹${input.amount.toFixed(2)} processed via ${input.gateway}: ${input.reason || 'Gateway refund'}`
+          } as unknown as typeof billingFinancialTransactions.$inferInsert);
+        } catch (ftxErr) {
+          logger.warn('Could not record webhook refund billing financial transaction', { error: String(ftxErr) });
+        }
 
-      return { success: true, refundPaymentId };
+        await tx
+          .update(billingInvoices)
+          .set({
+            paidAmount: newPaidAmount.toFixed(2),
+            dueAmount: newBalanceDue.toFixed(2),
+            status: newPaidAmount === 0 ? 'PENDING_PAYMENT' : 'PARTIALLY_PAID',
+            updatedAt: now
+          } as unknown as typeof billingInvoices.$inferInsert)
+          .where(and(eq(billingInvoices.tenantId, input.tenantId), eq(billingInvoices.id, invoice.id)));
+
+        return { success: true, refundPaymentId };
+      });
     } catch (err) {
+      if (err instanceof AppError) throw err;
       logger.error('Failed to record refund in database', err);
       throw new AppError({
         message: 'Database persistence failed during refund processing.',
