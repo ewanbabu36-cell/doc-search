@@ -5,9 +5,10 @@ import { Card, Alert, Button } from '@docsearch/ui-kit';
 export interface AlertsSectionProps {
   alerts: ExecutiveAlert[];
   onDismissAlert?: ((alertId: string) => void) | undefined;
+  onExecuteAlertAction?: ((alert: ExecutiveAlert) => void) | undefined;
 }
 
-export const AlertsSection: React.FC<AlertsSectionProps> = ({ alerts, onDismissAlert }) => {
+export const AlertsSection: React.FC<AlertsSectionProps> = ({ alerts, onDismissAlert, onExecuteAlertAction }) => {
   return (
     <Card
       title="Attention Required"
@@ -45,7 +46,17 @@ export const AlertsSection: React.FC<AlertsSectionProps> = ({ alerts, onDismissA
                 <p style={{ margin: 0 }}>{alert.description}</p>
                 {alert.actionRequired && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-                    <Button variant="subtle" size="sm">
+                    <Button
+                      variant="subtle"
+                      size="sm"
+                      onClick={() => {
+                        if (onExecuteAlertAction) {
+                          onExecuteAlertAction(alert);
+                        } else if (onDismissAlert) {
+                          onDismissAlert(alert.id);
+                        }
+                      }}
+                    >
                       {alert.actionRequired}
                     </Button>
                     <span style={{ fontSize: '0.75rem', color: 'var(--ds-color-text-muted)' }}>

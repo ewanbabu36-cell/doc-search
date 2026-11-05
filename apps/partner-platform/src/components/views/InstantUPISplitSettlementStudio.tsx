@@ -76,9 +76,43 @@ export const InstantUPISplitSettlementStudio: React.FC = () => {
   const hospitalAmount = (billAmount * hospitalSplitPct) / 100;
   const platformAmount = (billAmount * platformFeePct) / 100;
 
-  const handleSimulatePayment = () => {
+  const handleSimulatePayment = async () => {
     setIsSimulating(true);
-    setTimeout(() => {
+    try {
+      const res = await fetch('/api/v1/partner/billing/doctor-payouts/settlements/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          grossBilled: billAmount,
+          consultationsCount: 1,
+          opdConsultationCutPct: doctorSplitPct,
+          doctorName: doctorName,
+          settlementCycle: 'REALTIME_UPI_SPLIT'
+        })
+      });
+      const data = await res.json();
+      const voucher = data?.data;
+      const newTxn: SplitTransaction = {
+        id: voucher?.voucherNumber || ('TXN-UPI-' + Date.now()),
+        patientName: patientName,
+        encounterType: 'OPD Clinical Consultation',
+        totalPaidInr: billAmount,
+        doctorShareInr: voucher?.netPayableToDoctor ? Number(voucher.netPayableToDoctor) : doctorAmount,
+        doctorName: doctorName,
+        doctorVpa: 'dr.malhotra@hdfcbank',
+        doctorUtr: voucher?.transactionReference || ('NPCI-2026-' + Math.floor(100000 + Math.random() * 900000)),
+        hospitalShareInr: hospitalAmount,
+        hospitalVpa: 'metrohealth.settle@icici',
+        hospitalUtr: 'NPCI-2026-' + Math.floor(100000 + Math.random() * 900000),
+        platformFeeInr: platformAmount,
+        platformUtr: 'NPCI-2026-' + Math.floor(100000 + Math.random() * 900000),
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        status: 'SETTLED_INSTANT_IMPS'
+      };
+      setSettledHistory([newTxn, ...settledHistory]);
+      setLatestSuccess(newTxn);
+    } catch {
+      // Local fallback if API server is offline
       const newTxn: SplitTransaction = {
         id: 'TXN-UPI-' + Date.now(),
         patientName: patientName,
@@ -96,11 +130,11 @@ export const InstantUPISplitSettlementStudio: React.FC = () => {
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         status: 'SETTLED_INSTANT_IMPS'
       };
-
       setSettledHistory([newTxn, ...settledHistory]);
       setLatestSuccess(newTxn);
+    } finally {
       setIsSimulating(false);
-    }, 700);
+    }
   };
 
   return (

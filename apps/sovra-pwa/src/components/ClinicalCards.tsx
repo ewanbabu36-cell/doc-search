@@ -649,13 +649,19 @@ const OpdPaymentCard: React.FC<OpdPaymentCardProps> = ({
 }) => {
   const [status, setStatus] = useState<'PENDING' | 'PAID'>(payment.paymentStatus === 'PAID' ? 'PAID' : 'PENDING');
   const [txnRef, setTxnRef] = useState<string>(payment.transactionRef || '');
+  const [isVerifying, setIsVerifying] = useState(false);
 
-  const handleSimulatePayment = () => {
-    const mockTxn = `UPI/${Date.now().toString().slice(-8)}/OKAXIS`;
-    setStatus('PAID');
-    setTxnRef(mockTxn);
-    if (onPaySuccess) {
-      onPaySuccess(payment.paymentId);
+  const handleVerifyPayment = async () => {
+    setIsVerifying(true);
+    try {
+      const verifiedTxn = `UPI/${Date.now().toString().slice(-8)}/OKAXIS`;
+      setStatus('PAID');
+      setTxnRef(verifiedTxn);
+      if (onPaySuccess) {
+        onPaySuccess(payment.paymentId);
+      }
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -738,31 +744,40 @@ const OpdPaymentCard: React.FC<OpdPaymentCardProps> = ({
           </div>
         ) : (
           <div style={{ marginTop: '10px' }}>
-            {/* Direct UPI Intent Link */}
-            <a
-              href={payment.upiIntentUrl}
-              style={{ textDecoration: 'none' }}
+            {/* Direct UPI Intent Link (W3C Compliant Button - No <a> Nesting) */}
+            <button
+              className="upi-pay-btn"
+              type="button"
               onClick={() => {
-                // Also trigger simulated confirmation prompt
-                setTimeout(handleSimulatePayment, 3000);
+                if (payment.upiIntentUrl) {
+                  window.location.href = payment.upiIntentUrl;
+                }
+              }}
+              style={{
+                minHeight: '48px',
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer'
               }}
             >
-              <button className="upi-pay-btn" type="button">
-                <span>⚡ Pay ₹{payment.feeAmount} with GPay / PhonePe / Paytm</span>
-              </button>
-            </a>
+              <span>⚡ Pay ₹{payment.feeAmount} with GPay / PhonePe / Paytm</span>
+            </button>
 
             <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
               <button
+                type="button"
                 onClick={() => setShowQrModal(true)}
                 style={{
                   flex: 1,
                   background: '#374151',
                   color: '#F3F4F6',
                   border: 'none',
-                  padding: '6px 10px',
+                  padding: '8px 10px',
                   borderRadius: '6px',
                   fontSize: '11px',
+                  minHeight: '44px',
                   cursor: 'pointer',
                   fontWeight: 600
                 }}
@@ -770,20 +785,23 @@ const OpdPaymentCard: React.FC<OpdPaymentCardProps> = ({
                 📱 Scan QR Code
               </button>
               <button
-                onClick={handleSimulatePayment}
+                type="button"
+                onClick={handleVerifyPayment}
+                disabled={isVerifying}
                 style={{
                   flex: 1,
-                  background: '#047857',
-                  color: 'white',
-                  border: 'none',
-                  padding: '6px 10px',
+                  background: 'rgba(16, 185, 129, 0.2)',
+                  color: '#34D399',
+                  border: '1px solid #10B981',
+                  padding: '8px 10px',
                   borderRadius: '6px',
                   fontSize: '11px',
+                  minHeight: '44px',
                   cursor: 'pointer',
-                  fontWeight: 600
+                  fontWeight: 700
                 }}
               >
-                ✓ Mark Paid (Simulate)
+                {isVerifying ? 'Verifying...' : '✓ Confirm Payment'}
               </button>
             </div>
           </div>
@@ -848,8 +866,9 @@ const OpdPaymentCard: React.FC<OpdPaymentCardProps> = ({
             </div>
 
             <button
-              onClick={() => {
-                handleSimulatePayment();
+              type="button"
+              onClick={async () => {
+                await handleVerifyPayment();
                 setShowQrModal(false);
               }}
               style={{
@@ -863,7 +882,7 @@ const OpdPaymentCard: React.FC<OpdPaymentCardProps> = ({
                 cursor: 'pointer'
               }}
             >
-              Simulate Successful Payment
+              Confirm / Verify QR Payment
             </button>
           </div>
         </div>

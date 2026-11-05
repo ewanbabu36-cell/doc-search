@@ -137,7 +137,16 @@ export const DigitalReceiptModal: React.FC<Props> = ({ language, patient, onClos
           </button>
           <button
             type="button"
-            onClick={() => alert(`Receipt #${'RCP-3817'} shared to WhatsApp`)}
+            onClick={() => {
+              const text = `DocSearch OPD Digital Receipt #RCP-3817 for consultation. Total Paid: ₹500. View details: https://docsearch.in/receipt/RCP-3817`;
+              if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                navigator.clipboard.writeText(text).catch(() => {});
+              }
+              const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+              if (typeof window !== 'undefined') {
+                window.open(url, '_blank', 'noopener,noreferrer');
+              }
+            }}
             style={{
               backgroundColor: '#25D366',
               color: '#FFFFFF',

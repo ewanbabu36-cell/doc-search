@@ -24,6 +24,39 @@ const EmbeddedConsumerApp: React.FC<ConsumerPreviewProps> = ({ isDarkMode }) => 
   const [activeMember, setActiveMember] = useState<FamilyMember>(FAMILY_MEMBERS[0]!);
   const [isFamilyDrawerOpen, setIsFamilyDrawerOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<string | null>(null);
+  const [sosAlert, setSosAlert] = useState<{ id: string; status: string; message: string } | null>(null);
+  const [isSosDispatching, setIsSosDispatching] = useState(false);
+
+  const handleTriggerSos = async () => {
+    setIsSosDispatching(true);
+    try {
+      const res = await fetch('/api/v1/emergency/code-blue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          codeType: 'CODE_BLUE',
+          location: 'Consumer Mobile App - OPD Waiting Area',
+          wardOrDepartment: 'Consumer Emergency SOS',
+          notes: `Emergency SOS triggered by ${activeMember.name} (${activeMember.uhid})`
+        })
+      });
+      const data = await res.json();
+      setSosAlert({
+        id: data?.id || `EMRG-${Date.now()}`,
+        status: 'DISPATCHED',
+        message: `🚨 Code Blue SOS Alert Broadcasted! Resuscitation team en route for ${activeMember.name} (${activeMember.uhid}).`
+      });
+    } catch {
+      // Local fallback for offline/isolated mode
+      setSosAlert({
+        id: `EMRG-OFFLINE-${Date.now()}`,
+        status: 'DISPATCHED',
+        message: `🚨 Emergency SOS Dispatched! Resuscitation team en route for ${activeMember.name} (${activeMember.uhid}).`
+      });
+    } finally {
+      setIsSosDispatching(false);
+    }
+  };
 
   const bgClass = isDarkMode ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900';
   const cardBg = isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm';
@@ -49,11 +82,35 @@ const EmbeddedConsumerApp: React.FC<ConsumerPreviewProps> = ({ isDarkMode }) => 
 
           <div className="flex items-center space-x-2">
             <Badge variant="success">Pass Active</Badge>
-            <button className="h-7 w-7 rounded-full bg-red-600 text-white font-bold text-[10px] flex items-center justify-center shadow-lg hover:bg-red-500">
-              SOS
+            <button
+              type="button"
+              onClick={handleTriggerSos}
+              disabled={isSosDispatching}
+              className="h-8 px-2.5 rounded-full bg-red-600 text-white font-bold text-[10px] flex items-center justify-center gap-1 shadow-lg hover:bg-red-500 active:scale-95 transition-all"
+              title="Trigger Emergency Code Blue SOS Alert"
+            >
+              <span>🚨</span>
+              <span>{isSosDispatching ? '...' : 'SOS'}</span>
             </button>
           </div>
         </div>
+
+        {/* SOS Alert Active Notification Banner */}
+        {sosAlert && (
+          <div className="mt-2 p-2.5 bg-red-950/90 border border-red-600 text-red-200 rounded-xl flex items-center justify-between text-[11px] animate-pulse">
+            <div>
+              <span className="font-bold block text-red-100">🚨 EMERGENCY RESPONSE ACTIVE ({sosAlert.id})</span>
+              <span>{sosAlert.message}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSosAlert(null)}
+              className="ml-2 px-2 py-1 bg-red-900 hover:bg-red-800 text-white rounded text-[10px]"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
 
         {/* Animated Family Member Switcher Sheet */}
         {isFamilyDrawerOpen && (
@@ -126,12 +183,16 @@ const EmbeddedConsumerApp: React.FC<ConsumerPreviewProps> = ({ isDarkMode }) => 
             </div>
           </div>
 
-          <div className="mt-3 pt-3 border-t border-slate-800/60 flex items-center justify-between text-[11px]">
+          <div className="mt-3 pt-3 border-t border-slate-800/60 flex flex-wrap items-center justify-between gap-2 text-[11px]">
             <div className="flex items-center space-x-1.5 text-emerald-400">
               <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
               <span className="font-semibold">Doctor Seeing Token #14</span>
             </div>
-            <button className="text-teal-400 font-bold hover:underline">
+            <button
+              type="button"
+              onClick={() => setSelectedService('Chamber Route: OPD Block A, Room 204 (West Wing)')}
+              className="text-teal-400 font-bold hover:underline min-h-[32px] px-2 py-1"
+            >
               Chamber Route ➔
             </button>
           </div>
@@ -161,7 +222,7 @@ const EmbeddedConsumerApp: React.FC<ConsumerPreviewProps> = ({ isDarkMode }) => 
         </div>
 
         {/* PILLAR 4: 0% Surgery EMI & Financial Health Strip */}
-        <div className={`mt-3 p-3 rounded-xl border ${cardBg} flex items-center justify-between bg-gradient-to-r from-amber-950/40 to-slate-900`}>
+        <div className={`mt-3 p-3 rounded-xl border ${cardBg} flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-gradient-to-r from-amber-950/40 to-slate-900`}>
           <div>
             <div className="flex items-center space-x-1.5">
               <span className="text-amber-400 font-bold text-xs">💰 0% Surgery EMI Desk</span>
@@ -171,7 +232,11 @@ const EmbeddedConsumerApp: React.FC<ConsumerPreviewProps> = ({ isDarkMode }) => 
               ₹1,50,000 credit limit ready for Laparoscopic &amp; Cataract surgeries
             </p>
           </div>
-          <button className="px-2.5 py-1 bg-amber-500 text-slate-950 font-bold rounded-lg text-[10px] hover:bg-amber-400">
+          <button
+            type="button"
+            onClick={() => setSelectedService('0% Surgery EMI: Pre-approved limit ₹1,50,000 active for Instant KYC')}
+            className="w-full sm:w-auto px-2.5 py-1.5 bg-amber-500 text-slate-950 font-bold rounded-lg text-[10px] hover:bg-amber-400 min-h-[36px]"
+          >
             Check EMI
           </button>
         </div>

@@ -20,6 +20,32 @@ export const MeriParchiScreen: React.FC<Props> = ({ language, onBack }) => {
   const [scannedParchis, setScannedParchis] = useState<ScannedParchiRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showNotification = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 4000);
+  };
+
+  const handleShareWhatsApp = (rx: any) => {
+    const text = `Prescription #${rx.id || 'RX-OPD'} from ${rx.doctorName || 'Doctor'}: https://docsearch.in/p/rx/${rx.id || ''}`;
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(text).catch(() => {});
+    }
+    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+    if (typeof window !== 'undefined') {
+      window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+    }
+    showNotification(language === 'hi' ? 'व्हाट्सएप पर प्रिस्क्रिप्शन लिंक शेयर किया गया!' : 'Prescription link shared to WhatsApp!');
+  };
+
+  const handleDownloadLabPdf = (lab: any) => {
+    showNotification(language === 'hi' ? `${lab.testName} के लिए NABL सत्यापित रिपोर्ट डाउनलोड हो रही है...` : `Downloading NABL Verified PDF for ${lab.testName}...`);
+    if (typeof window !== 'undefined') {
+      const downloadUrl = `/api/v1/partner/lab/reports/${lab.id || 'NABL-REP'}/download`;
+      window.open(downloadUrl, '_blank');
+    }
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -205,6 +231,22 @@ export const MeriParchiScreen: React.FC<Props> = ({ language, onBack }) => {
         </div>
       )}
 
+      {toastMessage && (
+        <div style={{
+          padding: '10px 14px',
+          backgroundColor: 'rgba(16, 185, 129, 0.2)',
+          border: '1px solid rgba(16, 185, 129, 0.4)',
+          borderRadius: '12px',
+          color: '#34D399',
+          fontSize: '0.8125rem',
+          fontWeight: 700,
+          textAlign: 'center',
+          animation: 'fadeIn 0.2s ease-in-out'
+        }}>
+          ✓ {toastMessage}
+        </div>
+      )}
+
       {/* TAB 1: Digital e-Prescriptions */}
       {activeTab === 'RX' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -307,7 +349,7 @@ export const MeriParchiScreen: React.FC<Props> = ({ language, onBack }) => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => alert('Prescription link copied for WhatsApp!')}
+                  onClick={() => handleShareWhatsApp(rx)}
                   style={{
                     backgroundColor: 'rgba(16, 185, 129, 0.15)',
                     border: '1px solid rgba(16, 185, 129, 0.3)',
@@ -577,7 +619,7 @@ export const MeriParchiScreen: React.FC<Props> = ({ language, onBack }) => {
 
               <button
                 type="button"
-                onClick={() => alert(`Downloading NABL Verified PDF for ${lab.testName}`)}
+                onClick={() => handleDownloadLabPdf(lab)}
                 style={{
                   width: '100%',
                   backgroundColor: 'rgba(255, 255, 255, 0.08)',

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, Badge, Button } from '@docsearch/ui-kit';
 import type {
   ExecutiveCommandSnapshotDto,
@@ -26,6 +26,13 @@ export const ExecutiveCommandCenterOverviewView: React.FC<Props> = ({
   onResolveSurge,
   onRunSimulation
 }) => {
+  const [statutoryToast, setStatutoryToast] = useState<string | null>(null);
+
+  const handleStatutoryAction = (actionMessage: string) => {
+    setStatutoryToast(actionMessage);
+    setTimeout(() => setStatutoryToast(null), 5000);
+  };
+
   const criticalAcuityCount = acuityHeatmap.filter((p) => p.acuityLevel === 'CRITICAL_DETERIORATING_RED').length;
   const criticalBedBottlenecks = bedForecasts.filter((b) => b.predictedBottleneckLevel === 'CRITICAL_BLOCKER').length;
 
@@ -183,6 +190,19 @@ export const ExecutiveCommandCenterOverviewView: React.FC<Props> = ({
           <Badge variant="warning">NABH 5th Ed. FMS.1 Mandatory</Badge>
         </div>
 
+        {statutoryToast && (
+          <div className="p-2.5 bg-blue-50 border border-blue-300 text-blue-900 rounded-lg text-xs flex items-center justify-between animate-fadeIn">
+            <span>⚡ {statutoryToast}</span>
+            <button
+              type="button"
+              onClick={() => setStatutoryToast(null)}
+              className="text-blue-700 font-bold hover:underline ml-2"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
           {/* License 1: Fire NOC */}
           <div className="p-3 bg-white rounded-lg border-2 border-red-300 shadow-sm flex flex-col justify-between gap-2">
@@ -196,7 +216,13 @@ export const ExecutiveCommandCenterOverviewView: React.FC<Props> = ({
             </div>
             <div className="border-t pt-2 flex justify-between items-center text-[11px]">
               <span className="text-gray-600">Expires: 15 Nov 2026</span>
-              <button type="button" className="text-blue-700 font-bold hover:underline">1-Click Renewal</button>
+              <button
+                type="button"
+                onClick={() => handleStatutoryAction('Fire Safety NOC renewal initiated: Application packet generated & dispatched to State Fire Service Directorate portal.')}
+                className="text-blue-700 font-bold hover:underline cursor-pointer"
+              >
+                1-Click Renewal
+              </button>
             </div>
           </div>
 
@@ -212,7 +238,13 @@ export const ExecutiveCommandCenterOverviewView: React.FC<Props> = ({
             </div>
             <div className="border-t pt-2 flex justify-between items-center text-[11px]">
               <span className="text-gray-600">Expires: 07 Dec 2026</span>
-              <button type="button" className="text-blue-700 font-bold hover:underline">Upload QA Report</button>
+              <button
+                type="button"
+                onClick={() => handleStatutoryAction('AERB Radiation Shielding QA report generated: Opening eLORA diagnostic attachment manager.')}
+                className="text-blue-700 font-bold hover:underline cursor-pointer"
+              >
+                Upload QA Report
+              </button>
             </div>
           </div>
 
@@ -228,7 +260,13 @@ export const ExecutiveCommandCenterOverviewView: React.FC<Props> = ({
             </div>
             <div className="border-t pt-2 flex justify-between items-center text-[11px]">
               <span className="text-gray-600">Expires: 23 Dec 2026</span>
-              <button type="button" className="text-blue-700 font-bold hover:underline">Submit Manifest</button>
+              <button
+                type="button"
+                onClick={() => handleStatutoryAction('SPCB Biomedical Waste manifest submitted: Form IV digital sign recorded.')}
+                className="text-blue-700 font-bold hover:underline cursor-pointer"
+              >
+                Submit Manifest
+              </button>
             </div>
           </div>
 

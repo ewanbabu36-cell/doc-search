@@ -197,19 +197,13 @@ export const HospitalWhiteLabelStudioView: React.FC = () => {
               🖨️ Speed Post Dossier
             </Button>
 
-            <a
-              href="http://localhost:5175/"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ textDecoration: 'none' }}
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => window.open('http://localhost:5175/', '_blank', 'noopener,noreferrer')}
             >
-              <Button
-                variant="primary"
-                size="md"
-              >
-                ⚡ Test on Localhost :5175 ↗
-              </Button>
-            </a>
+              ⚡ Test on Localhost :5175 ↗
+            </Button>
           </div>
         </div>
 

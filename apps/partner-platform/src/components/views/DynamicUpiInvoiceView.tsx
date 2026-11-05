@@ -112,9 +112,24 @@ export const DynamicUpiInvoiceView: React.FC = () => {
     handleConfirmPayment(simUtr);
   };
 
-  const handleSendWhatsApp = () => {
+  const handleSendWhatsApp = async () => {
     setWhatsAppSent(true);
-    setTimeout(() => setWhatsAppSent(false), 3500);
+    try {
+      await fetch('/api/v1/communication/whatsapp/send-parchi', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          toPhone: patientMobile || '9876543210',
+          fileName: `Invoice-${invoiceNumber}.pdf`,
+          base64Pdf: 'JVBERi0xLjQKMSAwIG9iago8PAovVHlwZSAvQ2F0YWxvZwo...',
+          caption: `Your OPD consultation receipt #${invoiceNumber} for ₹${totalAmount}. Thank you for visiting.`
+        })
+      });
+    } catch {
+      // Non-blocking network catch
+    } finally {
+      setTimeout(() => setWhatsAppSent(false), 4000);
+    }
   };
 
   const [isProfileGuardAlertOpen, setIsProfileGuardAlertOpen] = useState(false);

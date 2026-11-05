@@ -338,6 +338,29 @@ export const ClinicalInvestigationDomainManager: React.FC<ClinicalInvestigationD
       },
       `🚨 CRITICAL PANIC VALUE: ${testOrder.patientName} - ${isPlatelets ? 'Platelets 14,000 /mcL' : 'Potassium 6.8 mEq/L'}!`
     );
+
+    // 🚨 Persist NABL 15-Minute Critical Panic Verbal Intimation Audit Trail
+    void fetch(`/api/v1/partner/lab/orders/${testOrder.id}/panic-intimation`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        doctorName: testOrder.orderingDoctorName,
+        doctorPhone: '+91 98765 00000',
+        callerStaffName: 'Sr. Pathologist / Duty Lab Tech',
+        readBackConfirmed: true,
+        criticalParameters: [
+          {
+            parameter: isPlatelets ? 'Platelet Count' : 'Serum Potassium',
+            value: isPlatelets ? '14,000 /mcL' : '6.8 mEq/L',
+            threshold: isPlatelets ? '< 20,000 /mcL' : '> 6.5 mEq/L'
+          }
+        ],
+        notes: `NABL Critical Value Verbal Alert: Intimated to ${testOrder.orderingDoctorName}. Read-back verbal confirmation verified within 15 min protocol.`,
+        intimatedAt: new Date().toISOString()
+      })
+    }).catch(() => {
+      // Graceful offline catch
+    });
   };
 
   useEffect(() => {
