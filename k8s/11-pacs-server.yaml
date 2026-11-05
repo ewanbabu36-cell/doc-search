@@ -1,3 +1,18 @@
+# ==============================================================================
+# DocSearch Radiology PACS Server Workload Specification
+# ==============================================================================
+# ARCHITECTURAL DECISION (Phase 7.1B):
+# Configured as Active-Passive Single Replica (replicas: 1) with Recreate strategy.
+# - Justification: The native PACS server daemon (scripts/docsearch-pacs-server.mjs)
+#   maintains a local metadata file index (pacs-index.json) on disk. Multiple concurrent
+#   pods sharing a ReadWriteOnce (RWO) AWS EBS volume causes Multi-Attach deadlocks
+#   across nodes and corrupts pacs-index.json via uncoordinated file writes.
+# - High Availability: Automated node-failure recovery is managed by Kubernetes:
+#   if the host node fails, the pod is automatically rescheduled onto an available node
+#   and re-attaches the persistent EBS volume.
+# - Multi-Replica Cloud Roadmap: For future horizontal multi-pod scaling, the study
+#   index will be migrated to the PostgreSQL cluster and raw DICOM blobs to Amazon S3.
+# ==============================================================================
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -8,9 +23,9 @@ metadata:
     app.kubernetes.io/part-of: docsearch
     app.kubernetes.io/component: radiology
 spec:
-  replicas: 2
+  replicas: 1
   strategy:
-    type: Recreate # Required when using ReadWriteOnce PVC across pods
+    type: Recreate # Clean volume detach/reattach on pod rescheduling
   selector:
     matchLabels:
       app.kubernetes.io/name: pacs-server
@@ -119,7 +134,7 @@ metadata:
     app.kubernetes.io/name: pacs-server
     app.kubernetes.io/part-of: docsearch
 spec:
-  minAvailable: 1
+  maxUnavailable: 1 # Allows node drain while honoring single-replica workload
   selector:
     matchLabels:
       app.kubernetes.io/name: pacs-server

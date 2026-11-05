@@ -1,3 +1,10 @@
+# ==============================================================================
+# DocSearch Persistent Storage Architecture Specification
+# ==============================================================================
+# 1. Primary Workload Storage: Dedicated AWS EBS gp3 (ReadWriteOnce)
+# Used by docsearch-pacs-server in Active-Passive mode (replicas: 1).
+# Offers guaranteed 3000 IOPS and 125 MB/s throughput with KMS AES-256 encryption.
+# ==============================================================================
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
@@ -29,3 +36,24 @@ spec:
   resources:
     requests:
       storage: 100Gi
+---
+# ==============================================================================
+# 2. Multi-Replica Horizontal Scaling Profile: AWS EFS (ReadWriteMany)
+# Pre-configured specification for clusters requiring multi-AZ shared PACS storage.
+# ==============================================================================
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: docsearch-pacs-efs
+  labels:
+    app.kubernetes.io/name: pacs-server
+    app.kubernetes.io/part-of: docsearch
+provisioner: efs.csi.aws.com
+volumeBindingMode: Immediate
+parameters:
+  provisioningMode: efs-ap
+  fileSystemId: fs-docsearch-pacs-placeholder # Overridden by Terraform output
+  directoryPerms: "700"
+  gidRangeStart: "1001"
+  gidRangeEnd: "2000"
+  basePath: "/pacs-storage"
