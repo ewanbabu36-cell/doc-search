@@ -39,6 +39,7 @@ resource "aws_eks_cluster" "main" {
     security_group_ids      = [aws_security_group.eks_cluster.id]
     endpoint_private_access = true
     endpoint_public_access  = true
+    public_access_cidrs     = var.eks_public_access_cidrs
   }
 
   # Envelope encryption for Kubernetes Secrets using dedicated KMS CMK

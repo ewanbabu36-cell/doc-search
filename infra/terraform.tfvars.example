@@ -7,7 +7,8 @@ environment               = "staging"
 aws_region                = "ap-south-1" # Mumbai (Primary)
 dr_region                 = "ap-south-2" # Hyderabad (Cross-Region DR)
 cluster_name              = "docsearch-staging-eks"
-kubernetes_version        = "1.30"
+kubernetes_version        = "1.31"
+eks_public_access_cidrs   = ["0.0.0.0/0"] # Restrict to corporate egress CIDR in production
 domain_name               = "docsearch.health"
 vpc_cidr                  = "10.0.0.0/16"
 

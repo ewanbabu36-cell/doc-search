@@ -46,9 +46,15 @@ variable "cluster_name" {
 }
 
 variable "kubernetes_version" {
-  description = "Target Kubernetes minor version conforming to validated manifest schemas"
+  description = "Target Kubernetes minor version conforming to validated manifest schemas (AWS EKS standard support)"
   type        = string
-  default     = "1.30"
+  default     = "1.31"
+}
+
+variable "eks_public_access_cidrs" {
+  description = "CIDR blocks allowed to access the EKS API Server public endpoint (restrict to corporate VPN / bastion in production)"
+  type        = list(string)
+  default     = ["0.0.0.0/0"]
 }
 
 variable "domain_name" {

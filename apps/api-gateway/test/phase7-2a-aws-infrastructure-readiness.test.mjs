@@ -149,7 +149,7 @@ test('Phase 7.2A: AWS Enterprise Cloud Infrastructure Readiness Certification', 
 
       // Verify terraform plan completes without resource destruction
       const planOutput = execSync('terraform plan -no-color', { cwd: infraDir, encoding: 'utf8' });
-      assert.match(planOutput, /Plan:\s*117 to add,\s*0 to change,\s*0 to destroy\./, 'Must plan 117 additions with 0 destructions');
+      assert.match(planOutput, /Plan:\s*128 to add,\s*0 to change,\s*0 to destroy\./, 'Must plan 128 additions with 0 destructions');
     });
   });
 });
