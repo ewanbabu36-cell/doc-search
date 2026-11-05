@@ -286,8 +286,9 @@ export class CompanyFinancialService {
 
     const current = this.getConfig();
 
-    // Maker-Checker Dual-Control Check
-    if (current.makerCheckerEnabled && (updates.accountNumber || updates.ifscCode || updates.businessUpiId)) {
+    // Maker-Checker Dual-Control Check (enforced by default for corporate treasury changes)
+    const isMakerCheckerRequired = current.makerCheckerEnabled !== false;
+    if (isMakerCheckerRequired && (updates.accountNumber || updates.ifscCode || updates.businessUpiId)) {
       const changeId = `CHG-${Date.now()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
       const pending: PendingFinancialChange = {
         id: changeId,

@@ -101,7 +101,11 @@ export const corporateB2bRoutes: FastifyPluginAsync = async (fastify) => {
         grandTotalPayable: grandTotal,
         paymentTermsDays: 30,
         cashlessSettlementStatus: 'CONSOLIDATED_MONTHLY_BILLED',
-        eInvoiceIrnGenerated: `IRN-${Date.now().toString(36).toUpperCase()}`
+        eInvoiceStatus: 'PROTOTYPE_SIMULATION',
+        eInvoiceIrnGenerated: null,
+        simulationReference: `SIM-IRN-${Date.now().toString(36).toUpperCase()}`,
+        statutoryRegistrationConfirmed: false,
+        statutoryDisclaimer: 'PROTOTYPE SIMULATION ONLY: This generated reference is not an officially registered government IRN issued by NIC IRP.'
       }
     });
   });

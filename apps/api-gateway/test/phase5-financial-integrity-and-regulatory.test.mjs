@@ -818,12 +818,12 @@ describe('Phase 5: Financial, Payment, Accounting, Taxation & Regulatory Integri
       }
     });
 
-    test('9.2 Taxable hospital services: Room Bed (5%) and General Administrative (18%)', async () => {
+    test('9.2 Taxable hospital services: Room Bed > ₹5000/day (5%) and General Administrative (18%)', async () => {
       const mockEmptyDb = { select: () => ({ from: () => ({ where: () => Promise.resolve([]) }) }) };
 
-      // Room Bed Charges (5% GST: 2.5% CGST + 2.5% SGST)
+      // Room Bed Charges exceeding ₹5,000/day (5% GST under Notification No. 04/2022-CT(R): 2.5% CGST + 2.5% SGST)
       const bedRes = await taxEngineService.calculateTaxes(
-        [{ serviceName: 'Deluxe Private Room Bed', category: 'BED_CHARGES', quantity: 2, unitPrice: 3000 }],
+        [{ serviceName: 'Super Deluxe Suite Bed', category: 'BED_CHARGES', quantity: 1, unitPrice: 6000 }],
         { tenantId, isInterstate: false },
         mockEmptyDb
       );
@@ -868,18 +868,19 @@ describe('Phase 5: Financial, Payment, Accounting, Taxation & Regulatory Integri
   // SCENARIO 10: Section 194O TDS Deductions & Tax Withholding
   // ==========================================================================
   describe('Scenario 10: Section 194O TDS Deductions & Tax Withholding', () => {
-    test('10.1 Platform waterfall computes 1% Section 194O TDS on gross marketplace GMV', () => {
+    test('10.1 Platform waterfall computes Section 194O TDS (0.1% amended rate) on gross marketplace GMV', () => {
       const waterfall = platformRevenueWaterfallService.getRevenueWaterfall();
 
       assert.ok(waterfall.totalGrossGmvInr > 0);
       assert.ok(waterfall.streams.length >= 4);
 
       for (const stream of waterfall.streams) {
-        const expectedTds = Math.round(stream.grossGmvInr * 0.01);
+        // Enacted 0.1% rate under Finance (No. 2) Act 2024 for October 2026
+        const expectedTds = Math.round(stream.grossGmvInr * 0.001);
         assert.equal(
           stream.tdsSection194OInr,
           expectedTds,
-          `TDS for ${stream.streamName} must be exactly 1% of gross GMV`
+          `TDS for ${stream.streamName} must be exactly 0.1% of gross GMV`
         );
 
         // Net settlement invariant check
@@ -898,7 +899,7 @@ describe('Phase 5: Financial, Payment, Accounting, Taxation & Regulatory Integri
         assert.ok(r.partnerLegalName);
         assert.ok(r.gstin);
         assert.ok(r.pan);
-        assert.equal(r.tdsDeductedInr, Math.round(r.grossTransactionValueInr * 0.01), 'TDS must be 1%');
+        assert.equal(r.tdsDeductedInr, Math.round(r.grossTransactionValueInr * 0.001), 'TDS must be 0.1% amended rate');
         assert.ok(r.challanNumber.startsWith('IT-CH-'));
         assert.ok(['READY_FOR_FILING', 'FILED_ACKNOWLEDGED'].includes(r.gstr1FilingStatus));
       }

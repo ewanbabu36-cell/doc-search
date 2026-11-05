@@ -30,6 +30,7 @@ export interface CalculatedTaxLineItem {
   netAmount: number;
   hsnSacCode: string;
   isExempt: boolean;
+  statutoryCitation: string;
 }
 
 export interface TaxCalculationResult {
@@ -195,8 +196,30 @@ export class TaxEngineService {
       const dbRule = rateMap.get(category);
       const defaultRule = DEFAULT_CATEGORY_RULES[category] || DEFAULT_CATEGORY_RULES['GENERAL'] || { hsnSacCode: '999319', cgst: 0, sgst: 0, igst: 0, isExempt: true };
 
-      const isExempt = dbRule ? Boolean(dbRule.isExempt) : Boolean(defaultRule.isExempt);
-      const hsnSacCode = dbRule?.hsnSacCode || defaultRule.hsnSacCode;
+      let isExempt = dbRule ? Boolean(dbRule.isExempt) : Boolean(defaultRule.isExempt);
+      let hsnSacCode = dbRule?.hsnSacCode || defaultRule.hsnSacCode;
+      let statutoryCitation = 'Notification No. 12/2017-Central Tax (Rate), Sl. No. 74';
+
+      // Notification No. 04/2022-Central Tax (Rate): Room rent exceeding ₹5,000/day per patient is taxable at 5% (non-ICU)
+      const isRoomOrBed = category === 'BED_CHARGES' || category === 'ROOM_BED';
+      const isIcuBed = (item.serviceName || '').toUpperCase().includes('ICU') || (item.serviceName || '').toUpperCase().includes('CCU') || (item.serviceName || '').toUpperCase().includes('NICU');
+
+      if (isRoomOrBed) {
+        if (isIcuBed || unitPrice <= 5000) {
+          isExempt = true;
+          statutoryCitation = isIcuBed
+            ? 'Notification No. 12/2017-CT(R) Sl. No. 74 Proviso (ICU/CCU/NICU beds unconditionally EXEMPT)'
+            : 'Notification No. 12/2017-CT(R) Sl. No. 74 (Inpatient room rent <= ₹5,000/day EXEMPT)';
+        } else {
+          isExempt = false;
+          hsnSacCode = '999311';
+          statutoryCitation = 'Notification No. 04/2022-CT(R) amending Notif 12/2017 (Room rent exceeding ₹5,000/day taxable at 5% without ITC)';
+        }
+      } else if (category === 'PHARMACY') {
+        statutoryCitation = 'CBIC GST Tariff Heading 3004 (Medicaments for therapeutic/prophylactic use - 5% GST)';
+      } else if (category === 'GENERAL') {
+        statutoryCitation = 'Administrative / Commercial Hospital Services (Standard 18% GST)';
+      }
 
       let cgstRatePercent = 0;
       let sgstRatePercent = 0;
@@ -245,7 +268,8 @@ export class TaxEngineService {
         taxAmount: itemTax,
         netAmount,
         hsnSacCode,
-        isExempt
+        isExempt,
+        statutoryCitation
       };
     });
 

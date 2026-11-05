@@ -31,6 +31,7 @@ import { AppError, ErrorCode, createLogger } from '@docsearch/shared-core';
 import crypto from 'node:crypto';
 import { transactionalOutbox } from '@docsearch/shared-core/server';
 import { env } from '../../config/env.js';
+import { doubleEntryAccountingService } from '../../services/finance/DoubleEntryAccountingService.js';
 
 export interface ProcessRefundInput {
   tenantId: string;
@@ -1220,6 +1221,32 @@ export class BillingManagementRepository {
           logger.warn('Could not record payment financial transaction ledger', { error: String(ftxErr) });
         }
 
+        // True Double-Entry: Post balanced journal entry (Debit Cash/Gateway, Credit Accounts Receivable)
+        try {
+          await doubleEntryAccountingService.postJournalEntry(
+            {
+              tenantId: input.tenantId,
+              partnerId: invoice.partnerId,
+              organizationId: invoice.organizationId,
+              branchId: invoice.branchId,
+              sourceReferenceType: 'PAYMENT',
+              sourceReferenceId: paymentId,
+              currency: 'INR',
+              lines: doubleEntryAccountingService.createPaymentLines({
+                amount: input.amount,
+                paymentMode: input.paymentMode || (input as any).paymentMethod || 'CASH',
+                invoiceNumber: invoice.invoiceNumber
+              }),
+              actorId: input.collectedBy || 'STAFF',
+              notes: `Payment collected for invoice ${invoice.invoiceNumber} via ${input.paymentMode}`,
+              patientId: invoice.patientId
+            },
+            tx
+          );
+        } catch (jrnErr) {
+          logger.warn('Could not post double-entry payment journal', { error: String(jrnErr) });
+        }
+
         // Tamper-evident billing audit trace for payment collection
         try {
           await tx.insert(billingAuditTraces).values({
@@ -1502,6 +1529,32 @@ export class BillingManagementRepository {
           logger.warn('Could not record refund financial transaction ledger', { error: String(ftxErr) });
         }
 
+        // True Double-Entry: Post balanced refund journal entry (Debit Refunds/Contra-Rev, Credit Gateway/Cash)
+        try {
+          await doubleEntryAccountingService.postJournalEntry(
+            {
+              tenantId: input.tenantId,
+              partnerId: invoice.partnerId,
+              organizationId: invoice.organizationId,
+              branchId: invoice.branchId,
+              sourceReferenceType: 'REFUND',
+              sourceReferenceId: refundId,
+              currency: 'INR',
+              lines: doubleEntryAccountingService.createRefundLines({
+                amount: input.amount,
+                invoiceNumber: invoice.invoiceNumber,
+                reason: cleanReason
+              }),
+              actorId: cleanSupervisorId,
+              notes: `Staff refund for invoice ${invoice.invoiceNumber}: ${cleanReason}`,
+              patientId: invoice.patientId
+            },
+            tx
+          );
+        } catch (jrnErr) {
+          logger.warn('Could not post double-entry refund journal', { error: String(jrnErr) });
+        }
+
         // Tamper-evident billing audit trace for refund
         try {
           await tx.insert(billingAuditTraces).values({
@@ -1746,6 +1799,32 @@ export class BillingManagementRepository {
           logger.warn('Could not record webhook billing financial transaction', { error: String(ftxErr) });
         }
 
+        // True Double-Entry: Post balanced journal entry for webhook payment (Debit Gateway, Credit Accounts Receivable)
+        try {
+          await doubleEntryAccountingService.postJournalEntry(
+            {
+              tenantId: input.tenantId,
+              partnerId: invoice.partnerId,
+              organizationId: invoice.organizationId,
+              branchId: invoice.branchId,
+              sourceReferenceType: 'PAYMENT',
+              sourceReferenceId: paymentId,
+              currency: input.currency || 'INR',
+              lines: doubleEntryAccountingService.createPaymentLines({
+                amount: input.amount,
+                paymentMode: input.gateway || 'RAZORPAY',
+                invoiceNumber: invoice.invoiceNumber
+              }),
+              actorId: `SYSTEM_WEBHOOK_${input.gateway}`,
+              notes: `Webhook payment reconciled for invoice ${invoice.invoiceNumber} via ${input.gateway}`,
+              patientId: invoice.patientId
+            },
+            tx
+          );
+        } catch (jrnErr) {
+          logger.warn('Could not post double-entry webhook payment journal', { error: String(jrnErr) });
+        }
+
         await tx
           .update(billingInvoices)
           .set({
@@ -1951,6 +2030,33 @@ export class BillingManagementRepository {
           } as unknown as typeof billingFinancialTransactions.$inferInsert);
         } catch (ftxErr) {
           logger.warn('Could not record webhook refund billing financial transaction', { error: String(ftxErr) });
+        }
+
+        // True Double-Entry: Post balanced journal entry for webhook refund (Debit Refunds, Credit Gateway)
+        try {
+          await doubleEntryAccountingService.postJournalEntry(
+            {
+              tenantId: input.tenantId,
+              partnerId: invoice.partnerId,
+              organizationId: invoice.organizationId,
+              branchId: invoice.branchId,
+              sourceReferenceType: 'REFUND',
+              sourceReferenceId: refundPaymentId,
+              currency: 'INR',
+              lines: doubleEntryAccountingService.createRefundLines({
+                amount: input.amount,
+                paymentMode: input.gateway,
+                invoiceNumber: invoice.invoiceNumber,
+                reason: input.reason || 'Webhook refund'
+              }),
+              actorId: `SYSTEM_WEBHOOK_${input.gateway}`,
+              notes: `Webhook refund for invoice ${invoice.invoiceNumber}`,
+              patientId: invoice.patientId
+            },
+            tx
+          );
+        } catch (jrnErr) {
+          logger.warn('Could not post double-entry webhook refund journal', { error: String(jrnErr) });
         }
 
         await tx
