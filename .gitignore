@@ -67,3 +67,12 @@ data/storage/
 data/mail-inbox/*.html
 
 .env.production
+
+
+# TLS / SSL Private Keys & Certificates (Strict Non-Exposure)
+*.pem
+*.key
+*.crt
+*.csr
+docker/nginx/ssl/*
+!docker/nginx/ssl/.gitkeep

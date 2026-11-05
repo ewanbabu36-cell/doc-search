@@ -1,0 +1,144 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: docsearch-enterprise-ingress
+  namespace: docsearch-production
+  labels:
+    app.kubernetes.io/name: ingress
+    app.kubernetes.io/part-of: docsearch
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-production"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-protocols: "TLSv1.2 TLSv1.3"
+    nginx.ingress.kubernetes.io/ssl-ciphers: "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305"
+    nginx.ingress.kubernetes.io/ssl-prefer-server-ciphers: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "15"
+    nginx.ingress.kubernetes.io/websocket-services: "docsearch-api-gateway-svc"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "Strict-Transport-Security: max-age=63072000; includeSubDomains; preload" always;
+      more_set_headers "X-Frame-Options: SAMEORIGIN" always;
+      more_set_headers "X-Content-Type-Options: nosniff" always;
+      more_set_headers "X-XSS-Protection: 1; mode=block" always;
+      more_set_headers "Referrer-Policy: strict-origin-when-cross-origin" always;
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - docsearch.health
+        - api.docsearch.health
+        - partner.docsearch.health
+        - patient.docsearch.health
+        - hq.docsearch.health
+        - pacs.docsearch.health
+      secretName: docsearch-production-tls
+  rules:
+    # 1. Dedicated API Gateway Subdomain
+    - host: api.docsearch.health
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: docsearch-api-gateway-svc
+                port:
+                  number: 4000
+
+    # 2. Dedicated PACS DICOMweb Subdomain
+    - host: pacs.docsearch.health
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: docsearch-pacs-svc
+                port:
+                  number: 8042
+
+    # 3. Hospital Partner Operations Platform
+    - host: partner.docsearch.health
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: docsearch-partner-platform-svc
+                port:
+                  number: 80
+
+    # 4. Patient Mobile Web App (Aarogya360 PWA)
+    - host: patient.docsearch.health
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: docsearch-patient-app-svc
+                port:
+                  number: 80
+
+    # 5. Company Headquarters SuperAdmin Tower
+    - host: hq.docsearch.health
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: docsearch-company-platform-svc
+                port:
+                  number: 80
+
+    # 6. Primary Domain (Path-Based Routing Fallback)
+    - host: docsearch.health
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: docsearch-api-gateway-svc
+                port:
+                  number: 4000
+          - path: /pacs
+            pathType: Prefix
+            backend:
+              service:
+                name: docsearch-pacs-svc
+                port:
+                  number: 8042
+          - path: /partner
+            pathType: Prefix
+            backend:
+              service:
+                name: docsearch-partner-platform-svc
+                port:
+                  number: 80
+          - path: /patient
+            pathType: Prefix
+            backend:
+              service:
+                name: docsearch-patient-app-svc
+                port:
+                  number: 80
+          - path: /hq
+            pathType: Prefix
+            backend:
+              service:
+                name: docsearch-company-platform-svc
+                port:
+                  number: 80
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: docsearch-landing-page-svc
+                port:
+                  number: 80

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: docsearch-production
+  labels:
+    app.kubernetes.io/name: docsearch
+    app.kubernetes.io/part-of: docsearch-enterprise
+    environment: production
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted

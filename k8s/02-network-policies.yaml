@@ -1,0 +1,96 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: docsearch-production
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-coredns-egress
+  namespace: docsearch-production
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-workloads
+  namespace: docsearch-production
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: In
+        values: ["api-gateway", "pacs-server", "partner-platform", "patient-app", "company-platform", "landing-page"]
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 4000
+        - protocol: TCP
+          port: 8042
+        - protocol: TCP
+          port: 11112
+        - protocol: TCP
+          port: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api-gateway-egress-policy
+  namespace: docsearch-production
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: api-gateway
+  policyTypes:
+    - Egress
+  egress:
+    # 1. Intra-cluster communication to PACS server
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: pacs-server
+      ports:
+        - protocol: TCP
+          port: 8042
+        - protocol: TCP
+          port: 11112
+    # 2. Managed Database (RDS PostgreSQL port 5432)
+    - ports:
+        - protocol: TCP
+          port: 5432
+    # 3. Managed Caching (ElastiCache Redis port 6379)
+    - ports:
+        - protocol: TCP
+          port: 6379
+    # 4. Outbound External HTTPS for ABDM, Razorpay, ClearTax, WhatsApp (port 443)
+    - ports:
+        - protocol: TCP
+          port: 443

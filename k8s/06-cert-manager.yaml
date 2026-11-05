@@ -1,0 +1,71 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-production
+  labels:
+    app.kubernetes.io/name: cert-manager
+    app.kubernetes.io/part-of: docsearch
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: security@docsearch.health
+    privateKeySecretRef:
+      name: letsencrypt-production-account-key
+    solvers:
+      - http01:
+          ingress:
+            ingressClassName: nginx
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+  labels:
+    app.kubernetes.io/name: cert-manager
+    app.kubernetes.io/part-of: docsearch
+spec:
+  acme:
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: security@docsearch.health
+    privateKeySecretRef:
+      name: letsencrypt-staging-account-key
+    solvers:
+      - http01:
+          ingress:
+            ingressClassName: nginx
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: docsearch-production-certificate
+  namespace: docsearch-production
+  labels:
+    app.kubernetes.io/name: docsearch-tls
+    app.kubernetes.io/part-of: docsearch
+spec:
+  secretName: docsearch-production-tls
+  duration: 2160h # 90 days
+  renewBefore: 720h # 30 days before expiration
+  subject:
+    organizations:
+      - DocSearch Healthcare Technologies
+    countries:
+      - IN
+  isCA: false
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  usages:
+    - server auth
+    - client auth
+  dnsNames:
+    - docsearch.health
+    - api.docsearch.health
+    - partner.docsearch.health
+    - patient.docsearch.health
+    - hq.docsearch.health
+    - pacs.docsearch.health
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+    group: cert-manager.io

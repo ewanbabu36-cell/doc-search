@@ -1,0 +1,31 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: docsearch-pacs-gp3
+  labels:
+    app.kubernetes.io/name: pacs-server
+    app.kubernetes.io/part-of: docsearch
+provisioner: ebs.csi.aws.com
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+parameters:
+  type: gp3
+  iops: "3000"
+  throughput: "125"
+  encrypted: "true"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: docsearch-pacs-pvc
+  namespace: docsearch-production
+  labels:
+    app.kubernetes.io/name: pacs-server
+    app.kubernetes.io/part-of: docsearch
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: docsearch-pacs-gp3
+  resources:
+    requests:
+      storage: 100Gi

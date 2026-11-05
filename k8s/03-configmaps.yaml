@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: docsearch-api-gateway-config
+  namespace: docsearch-production
+  labels:
+    app.kubernetes.io/name: api-gateway
+    app.kubernetes.io/part-of: docsearch
+data:
+  NODE_ENV: "production"
+  PORT: "4000"
+  HOST: "0.0.0.0"
+  LOG_LEVEL: "info"
+  JWT_ISSUER: "docsearch-api"
+  JWT_AUDIENCE: "docsearch-platform"
+  CIRCUIT_BREAKER_COOLDOWN_MS: "30000"
+  CIRCUIT_BREAKER_FAILURE_THRESHOLD: "5"
+  PACS_HTTP_PORT: "8042"
+  PACS_DICOM_PORT: "11112"
+  ENABLE_SWAGGER: "false"
+  BODY_LIMIT: "10mb"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: docsearch-pacs-config
+  namespace: docsearch-production
+  labels:
+    app.kubernetes.io/name: pacs-server
+    app.kubernetes.io/part-of: docsearch
+data:
+  NODE_ENV: "production"
+  PACS_AE_TITLE: "DOCSEARCH_PACS"
+  PACS_HTTP_PORT: "8042"
+  PACS_DICOM_PORT: "11112"
+  PACS_STORAGE_DIR: "/app/data/pacs-storage"
