@@ -1,0 +1,80 @@
+{
+  "phase": "7.2D.1",
+  "name": "CRITICAL KMS IAM REMEDIATION & INFRASTRUCTURE REVALIDATION",
+  "baseline_commit": "2083de08407f154406627eb6556ae0cf29fd66ec",
+  "execution_timestamp": "2026-11-05T06:56:50Z",
+  "finding_remediated": "F-01",
+  "remediation_status": "VERIFIED_PASS",
+  "test_suite": "apps/api-gateway/test/phase7-2d-1-kms-iam-remediation.test.mjs",
+  "summary": {
+    "total_tests": 14,
+    "passed": 14,
+    "failed": 0,
+    "duration_ms": 255.43,
+    "exit_code": 0
+  },
+  "invariants_verified": [
+    {
+      "id": "STATIC-HCL-F01",
+      "description": "eks_addons.tf grants KMS Decrypt on both aws_kms_key.rds.arn and aws_kms_key.storage.arn under least privilege",
+      "status": "PASS"
+    },
+    {
+      "id": "STATIC-HCL-IRSA",
+      "description": "eks_addons.tf IRSA trust policy permits both docsearch-app-sa and docsearch-api-gateway-sa",
+      "status": "PASS"
+    },
+    {
+      "id": "STATIC-HCL-REDIS",
+      "description": "secrets_manager.tf confirms Redis credentials secret uses aws_kms_key.storage.arn",
+      "status": "PASS"
+    },
+    {
+      "id": "INVARIANT-1",
+      "description": "Redis secret can be decrypted by authorized staging role",
+      "status": "PASS"
+    },
+    {
+      "id": "INVARIANT-2",
+      "description": "Unauthorized role cannot decrypt Redis secret",
+      "status": "PASS"
+    },
+    {
+      "id": "INVARIANT-3",
+      "description": "RDS key access remains functional",
+      "status": "PASS"
+    },
+    {
+      "id": "INVARIANT-4",
+      "description": "Redis role cannot decrypt unrelated secrets",
+      "status": "PASS"
+    },
+    {
+      "id": "INVARIANT-5",
+      "description": "Disabled or invalid KMS key fails safely",
+      "status": "PASS"
+    },
+    {
+      "id": "INVARIANT-6",
+      "description": "Missing KMS permission produces an explicit error (F-01 pre-remediation defect simulation)",
+      "status": "PASS"
+    },
+    {
+      "id": "INVARIANT-7",
+      "description": "Secret retrieval does not expose credentials in logs",
+      "status": "PASS"
+    },
+    {
+      "id": "INVARIANT-8",
+      "description": "Cross-tenant secrets remain inaccessible",
+      "status": "PASS"
+    },
+    {
+      "id": "INVARIANT-9",
+      "description": "EKS service account cannot assume unauthorized IAM roles",
+      "status": "PASS"
+    }
+  ],
+  "verification_mode": "ISOLATED_UNIT_TESTS",
+  "cloud_integration_status": "BLOCKED_PENDING_AUTHORIZED_AWS_CREDENTIALS"
+}

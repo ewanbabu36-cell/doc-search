@@ -77,7 +77,10 @@ resource "aws_iam_role" "external_secrets" {
       Action = "sts:AssumeRoleWithWebIdentity"
       Condition = {
         StringEquals = {
-          "${replace(aws_eks_cluster.main.identity[0].oidc[0].issuer, "https://", "")}:sub" = "system:serviceaccount:docsearch-production:docsearch-app-sa"
+          "${replace(aws_eks_cluster.main.identity[0].oidc[0].issuer, "https://", "")}:sub" = [
+            "system:serviceaccount:docsearch-production:docsearch-app-sa",
+            "system:serviceaccount:docsearch-production:docsearch-api-gateway-sa"
+          ]
           "${replace(aws_eks_cluster.main.identity[0].oidc[0].issuer, "https://", "")}:aud" = "sts.amazonaws.com"
         }
       }
@@ -111,7 +114,8 @@ resource "aws_iam_policy" "external_secrets" {
           "kms:DescribeKey"
         ]
         Resource = [
-          aws_kms_key.rds.arn
+          aws_kms_key.rds.arn,
+          aws_kms_key.storage.arn
         ]
       }
     ]

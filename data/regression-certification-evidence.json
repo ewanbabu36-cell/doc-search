@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-11-05T06:08:06.495Z",
-  "commit": "52f55fe",
+  "timestamp": "2026-11-05T07:04:15.349Z",
+  "commit": "2083de0",
   "totalTests": 196,
   "totalPass": 196,
   "totalFail": 0,
-  "totalDurationMs": 122555,
+  "totalDurationMs": 86692,
   "allPassed": true,
   "suites": [
     {
@@ -16,7 +16,7 @@
       "pass": 4,
       "fail": 0,
       "exitCode": 0,
-      "durationMs": 22514
+      "durationMs": 4521
     },
     {
       "id": "Phase 4",
@@ -27,7 +27,7 @@
       "pass": 23,
       "fail": 0,
       "exitCode": 0,
-      "durationMs": 9065
+      "durationMs": 3077
     },
     {
       "id": "Phase 5",
@@ -38,7 +38,7 @@
       "pass": 39,
       "fail": 0,
       "exitCode": 0,
-      "durationMs": 5973
+      "durationMs": 2646
     },
     {
       "id": "Phase 5.1",
@@ -49,7 +49,7 @@
       "pass": 25,
       "fail": 0,
       "exitCode": 0,
-      "durationMs": 3746
+      "durationMs": 3286
     },
     {
       "id": "Phase 6",
@@ -60,7 +60,7 @@
       "pass": 21,
       "fail": 0,
       "exitCode": 0,
-      "durationMs": 34758
+      "durationMs": 23399
     },
     {
       "id": "Phase 7.1A",
@@ -71,7 +71,7 @@
       "pass": 16,
       "fail": 0,
       "exitCode": 0,
-      "durationMs": 2336
+      "durationMs": 480
     },
     {
       "id": "Phase 7.1B",
@@ -82,7 +82,7 @@
       "pass": 13,
       "fail": 0,
       "exitCode": 0,
-      "durationMs": 805
+      "durationMs": 554
     },
     {
       "id": "Phase 7.2A",
@@ -93,7 +93,7 @@
       "pass": 16,
       "fail": 0,
       "exitCode": 0,
-      "durationMs": 13702
+      "durationMs": 12835
     },
     {
       "id": "Phase 7.2B",
@@ -104,7 +104,7 @@
       "pass": 16,
       "fail": 0,
       "exitCode": 0,
-      "durationMs": 17369
+      "durationMs": 11580
     },
     {
       "id": "Phase 7.2C",
@@ -115,7 +115,7 @@
       "pass": 23,
       "fail": 0,
       "exitCode": 0,
-      "durationMs": 12281
+      "durationMs": 24299
     }
   ]
 }

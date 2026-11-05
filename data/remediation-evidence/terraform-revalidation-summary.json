@@ -1,0 +1,50 @@
+{
+  "phase": "7.2D.1",
+  "name": "TERRAFORM REVALIDATION SUMMARY",
+  "execution_timestamp": "2026-11-05T06:57:29Z",
+  "baseline_commit": "2083de08407f154406627eb6556ae0cf29fd66ec",
+  "remediation_finding": "F-01",
+  "terraform_version": "1.10.5",
+  "aws_provider_version": "5.82.2",
+  "checks": {
+    "fmt": {
+      "command": "terraform -chdir=infra fmt -check",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    "validate": {
+      "command": "terraform -chdir=infra validate -no-color",
+      "status": "PASS",
+      "output": "Success! The configuration is valid.",
+      "exit_code": 0
+    },
+    "plan": {
+      "command": "terraform -chdir=infra plan -no-color",
+      "status": "PASS",
+      "resource_counts": {
+        "to_add": 128,
+        "to_change": 0,
+        "to_destroy": 0
+      },
+      "outputs_count": 21,
+      "state_locking": "ENABLED (Local)",
+      "remote_backend_activated": false,
+      "cloud_resources_provisioned": false,
+      "exit_code": 0
+    }
+  },
+  "iam_policy_diff_analysis": {
+    "modified_resource": "aws_iam_policy.external_secrets",
+    "file": "infra/eks_addons.tf",
+    "change_summary": "Added aws_kms_key.storage.arn to KMSDecryptAccess statement Resource array. Retained strict secretsmanager path constraint docsearch/${var.environment}/*.",
+    "wildcards_used": false,
+    "least_privilege_maintained": true
+  },
+  "irsa_trust_diff_analysis": {
+    "modified_resource": "aws_iam_role.external_secrets",
+    "file": "infra/eks_addons.tf",
+    "change_summary": "Expanded OIDC StringEquals :sub condition to allow both docsearch-app-sa and docsearch-api-gateway-sa in docsearch-production namespace.",
+    "wildcards_used": false,
+    "least_privilege_maintained": true
+  }
+}

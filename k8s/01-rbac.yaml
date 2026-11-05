@@ -11,6 +11,16 @@ automountServiceAccountToken: false
 apiVersion: v1
 kind: ServiceAccount
 metadata:
+  name: docsearch-app-sa
+  namespace: docsearch-production
+  labels:
+    app.kubernetes.io/name: external-secrets
+    app.kubernetes.io/part-of: docsearch
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
   name: docsearch-pacs-sa
   namespace: docsearch-production
   labels:
