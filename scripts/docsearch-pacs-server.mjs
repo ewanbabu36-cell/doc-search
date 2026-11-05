@@ -25,7 +25,7 @@ const rootDir = path.resolve(__dirname, '..');
 const DICOM_PORT = parseInt(process.env.PACS_DICOM_PORT || '11112', 10);
 const HTTP_PORT = parseInt(process.env.PACS_HTTP_PORT || '8042', 10);
 const PACS_AE_TITLE = (process.env.PACS_AE_TITLE || 'DOCSEARCH_PACS').padEnd(16).slice(0, 16);
-const STORAGE_DIR = path.resolve(rootDir, 'data', 'pacs-storage');
+const STORAGE_DIR = process.env.PACS_STORAGE_DIR ? path.resolve(process.env.PACS_STORAGE_DIR) : path.resolve(rootDir, 'data', 'pacs-storage');
 const INDEX_FILE = path.join(STORAGE_DIR, 'pacs-index.json');
 
 // Ensure storage directory exists
@@ -451,7 +451,7 @@ function createDicomwebHttpServer() {
     const pathname = url.pathname;
 
     // 1. Health & Status Telemetry
-    if (pathname === '/' || pathname === '/api/v1/pacs/status') {
+    if (pathname === '/' || pathname === '/api/v1/pacs/status' || pathname === '/health') {
       let totalSeries = 0;
       let totalInstances = 0;
       for (const s of pacsStudies) {
@@ -482,6 +482,19 @@ function createDicomwebHttpServer() {
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify(statusPayload, null, 2));
+    }
+
+    // 1b. PostgreSQL Metadata Sync & Re-index
+    if (pathname === '/api/v1/pacs/sync-postgres' && req.method === 'POST') {
+      try {
+        const { runPacsPostgresMigration } = await import('./migrate-pacs-to-postgres.mjs');
+        const syncResult = await runPacsPostgresMigration({ quiet: true });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify(syncResult, null, 2));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ error: err.message }, null, 2));
+      }
     }
 
     // 2. QIDO-RS: Query Studies
