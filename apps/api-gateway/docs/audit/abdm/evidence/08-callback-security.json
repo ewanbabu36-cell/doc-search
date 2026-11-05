@@ -1,0 +1,22 @@
+{
+  "testId": "ABDM-SEC-08",
+  "timestamp": "2026-11-05T07:46:21.533Z",
+  "milestone": "SECURITY_GATEWAY",
+  "certificationLevel": "NHA_SECURITY_AUDIT",
+  "environment": "ABDM_SANDBOX",
+  "external": false,
+  "securityStandard": "ABDM Gateway Webhook HMAC & Timestamp Guard",
+  "callbackEndpoint": "/api/v1/abdm/callback/v0.5/care-contexts/on-discover",
+  "signatureAlgorithm": "HMAC-SHA256",
+  "replayProtectionWindowSec": 300,
+  "securityControls": {
+    "constantTimeComparison": true,
+    "headerTimestampVerified": true,
+    "gatewayKeyRotationTTLSec": 86400,
+    "ipWhitelistActive": true
+  },
+  "status": "PASS",
+  "databaseVerified": false,
+  "callbackVerified": true,
+  "evidenceHash": "34abae50b78790bd22fbf392475fcb0e8256af1543610977d936df486699ca80"
+}

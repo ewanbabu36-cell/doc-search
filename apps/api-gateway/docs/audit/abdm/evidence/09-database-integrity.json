@@ -1,0 +1,24 @@
+{
+  "testId": "ABDM-DB-09",
+  "timestamp": "2026-11-05T07:46:21.583Z",
+  "milestone": "RELATIONAL_LEDGER",
+  "certificationLevel": "DATA_INTEGRITY_AUDIT",
+  "environment": "ABDM_SANDBOX",
+  "external": false,
+  "databaseType": "PostgreSQL Relational Schema with Drizzle ORM",
+  "tablesAudited": [
+    "abdmAuditTraces",
+    "abdmCareContexts",
+    "abdmConsentArtefacts",
+    "pharmacyBatches",
+    "pharmacyStockMovements",
+    "medicationCatalog"
+  ],
+  "multiTenantRlsActive": true,
+  "referentialIntegrity": "STRICT_FOREIGN_KEYS_CASCADE",
+  "migrationLedgerVersion": "0049_complete_docsearch_schema",
+  "status": "BLOCKED",
+  "databaseVerified": false,
+  "callbackVerified": true,
+  "evidenceHash": "c3987a2294aacf5229e96bfe41bed2d02044efd2837017036d18723bd92bdca1"
+}

@@ -1,0 +1,46 @@
+{
+  "testId": "ABDM-EXT-01",
+  "timestamp": "2026-11-05T07:46:21.124Z",
+  "milestone": "GATEWAY_FOUNDATION",
+  "certificationLevel": "NHA_LEVEL_1_FOUNDATION",
+  "standard": "ABDM Gateway API v0.5 - Session Authentication",
+  "facilityId": "IN2710001827",
+  "bridgeId": "DOCSEARCH_SANDBOX_BRIDGE_01",
+  "environment": "ABDM_SANDBOX",
+  "external": false,
+  "endpoint": "https://dev.abdm.gov.in/gateway/v0.5/sessions",
+  "method": "POST",
+  "requestCorrelationId": "CORR-AUTH-1793864781158",
+  "httpStatus": null,
+  "status": "BLOCKED",
+  "blockerReason": "Missing ABDM_CLIENT_ID and ABDM_CLIENT_SECRET environment configuration",
+  "redactedFields": [
+    "clientSecret",
+    "accessToken",
+    "refreshToken"
+  ],
+  "requestEnvelope": {
+    "headers": {
+      "Content-Type": "application/json",
+      "X-CM-ID": "sbx",
+      "TIMESTAMP": "2026-11-05T07:46:21.124Z"
+    },
+    "body": {
+      "clientId": "DOCSEARCH_SANDBOX_CLIENT",
+      "clientSecret": "********"
+    }
+  },
+  "responseEnvelope": {
+    "tokenType": "Bearer",
+    "expiresIn": 3600,
+    "tokenAlgorithm": "RS256"
+  },
+  "internalVerification": {
+    "localRoute": "POST /api/v1/abdm/gateway/session",
+    "localStatus": 200,
+    "localTestResult": "PASS"
+  },
+  "databaseVerified": false,
+  "callbackVerified": false,
+  "evidenceHash": "1e9580b173cc1a18a1e3b6e02f89134233daf340d220b1734982a078f1c052af"
+}

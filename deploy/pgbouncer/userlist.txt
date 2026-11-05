@@ -1,0 +1,2 @@
+"postgres" "password"
+"docsearch_app" "docsearch_app_secure_pass"

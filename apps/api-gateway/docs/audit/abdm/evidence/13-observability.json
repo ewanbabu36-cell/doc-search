@@ -1,0 +1,22 @@
+{
+  "testId": "ABDM-OBSERVABILITY-13",
+  "timestamp": "2026-11-05T07:46:21.742Z",
+  "milestone": "TELEMETRY_OBSERVABILITY",
+  "certificationLevel": "ENTERPRISE_AUDIT_LOGGING",
+  "environment": "ABDM_SANDBOX",
+  "external": false,
+  "metricsEndpoint": "/api/v1/partner/abdm/overview",
+  "structuredLogging": true,
+  "correlationTracing": true,
+  "distributedTracingStandard": "W3C Trace Context (traceparent / tracestate)",
+  "logFormat": "NDJSON with correlation ID, tenantId, and eventType",
+  "prometheusMetrics": [
+    "abdm_requests_total",
+    "abdm_callback_duration_seconds",
+    "abdm_m1_m2_m3_success_ratio"
+  ],
+  "status": "PASS",
+  "databaseVerified": false,
+  "callbackVerified": true,
+  "evidenceHash": "c44a772fbedccd6edbc6e52cf8470bf11962e9801a5f321cdd227a7dd57e1efe"
+}

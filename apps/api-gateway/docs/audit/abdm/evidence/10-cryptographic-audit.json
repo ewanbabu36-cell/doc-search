@@ -1,0 +1,17 @@
+{
+  "testId": "ABDM-CRYPTO-10",
+  "timestamp": "2026-11-05T07:46:21.623Z",
+  "milestone": "CRYPTOGRAPHY",
+  "certificationLevel": "END_TO_END_ENCRYPTION_AUDIT",
+  "environment": "ABDM_SANDBOX",
+  "external": false,
+  "hashChainingAlgorithm": "SHA-256 Chained Audit Trail",
+  "ecdhCurve": "Curve25519 (X25519 - RFC 7748) for FHIR Data Exchange",
+  "kdfStandard": "HKDF-SHA256 (RFC 5869)",
+  "payloadCipher": "AES-256-GCM with 128-bit authentication tag",
+  "keyZeroizationOnComplete": true,
+  "status": "PASS",
+  "databaseVerified": false,
+  "callbackVerified": true,
+  "evidenceHash": "9055af53003a29635c10fcf9220a423c55e0d5f7f6505077254c78fd9f293860"
+}

@@ -1,0 +1,32 @@
+{
+  "testId": "ABDM-FHIR-07",
+  "timestamp": "2026-11-05T07:46:21.489Z",
+  "milestone": "NRCES_FHIR_R4",
+  "certificationLevel": "NRCES_LEVEL_3_VALIDATION",
+  "standard": "NRCES India NDHM FHIR Implementation Guide v1.0",
+  "environment": "DOCSEARCH_INTERNAL_NRCES_VALIDATOR",
+  "external": false,
+  "profileStandard": "NRCES India FHIR R4 DocumentBundle",
+  "profileUrl": "https://nrces.in/ndhm/fhir/r4/StructureDefinition/DocumentBundle",
+  "bundleValidation": {
+    "bundleType": "document",
+    "schemaConformant": true,
+    "terminologyCoding": "SNOMED CT & LOINC"
+  },
+  "resourceTypesVerified": [
+    "Bundle",
+    "Composition",
+    "Patient",
+    "Practitioner",
+    "Organization",
+    "Condition",
+    "MedicationRequest",
+    "Encounter"
+  ],
+  "digitalSignatureAlgorithm": "SHA-256 with ECDSA",
+  "validationStatus": "VALID_FHIR_R4",
+  "status": "PASS",
+  "databaseVerified": false,
+  "callbackVerified": true,
+  "evidenceHash": "0002200b15b66a5984afee6168f77020995501241548bcc93a9cec090c7ddd4f"
+}

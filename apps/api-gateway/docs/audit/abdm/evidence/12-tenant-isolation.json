@@ -1,0 +1,20 @@
+{
+  "testId": "ABDM-ISOLATION-12",
+  "timestamp": "2026-11-05T07:46:21.701Z",
+  "milestone": "MULTI_TENANCY",
+  "certificationLevel": "HEALTHCARE_DATA_PRIVACY_AUDIT",
+  "environment": "ABDM_SANDBOX",
+  "external": false,
+  "crossTenantAccessPolicy": "STRICT_FAIL_CLOSED_403",
+  "tenantBoundaryVerified": true,
+  "isolationMechanisms": {
+    "sessionContextBinding": true,
+    "rowLevelSecurity": true,
+    "schemaLevelPartitioning": true
+  },
+  "phiBreachTestPassed": true,
+  "status": "PASS",
+  "databaseVerified": false,
+  "callbackVerified": true,
+  "evidenceHash": "653ea1f4cd89c0c831092ea02d4c2c66257c32ed1426e2781db4234cc3dd0da3"
+}

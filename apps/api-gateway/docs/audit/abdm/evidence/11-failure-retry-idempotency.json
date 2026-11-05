@@ -1,0 +1,22 @@
+{
+  "testId": "ABDM-IDEMP-11",
+  "timestamp": "2026-11-05T07:46:21.664Z",
+  "milestone": "RESILIENCE_IDEMPOTENCY",
+  "certificationLevel": "FAULT_TOLERANCE_AUDIT",
+  "environment": "ABDM_SANDBOX",
+  "external": false,
+  "idempotencyHeader": "x-idempotency-key",
+  "duplicateRequestBehavior": "CACHED_RESPONSE_REPLAY",
+  "retryPolicy": {
+    "maxRetries": 3,
+    "backoff": "EXPONENTIAL_JITTER",
+    "initialMs": 500,
+    "maxMs": 4000
+  },
+  "deadLetterQueue": "abdm-gateway-dlq",
+  "circuitBreakerThreshold": "5 failures in 30 seconds",
+  "status": "PASS",
+  "databaseVerified": false,
+  "callbackVerified": true,
+  "evidenceHash": "c1432cfc31ff661c765a6a4b9106f88b30400a59981bfa01422be62dc528d1a1"
+}

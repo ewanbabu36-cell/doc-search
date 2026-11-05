@@ -1,0 +1,66 @@
+{
+  "testId": "ABDM-EXT-05",
+  "timestamp": "2026-11-05T07:46:21.396Z",
+  "milestone": "M3",
+  "certificationLevel": "NHA_LEVEL_3_M3",
+  "standard": "ABDM Gateway API v0.5 - Health Information User (HIU) Consent Request Flow",
+  "facilityId": "IN2710001827",
+  "environment": "ABDM_SANDBOX",
+  "external": false,
+  "endpoint": "https://dev.abdm.gov.in/gateway/v0.5/consent-requests/init",
+  "method": "POST",
+  "requestCorrelationId": "CORR-CONSENT-1793864781445",
+  "httpStatus": null,
+  "status": "BLOCKED",
+  "blockerReason": "Missing live gateway keys for external consent init",
+  "consentArtefactSchema": {
+    "purpose": {
+      "code": "CAH",
+      "text": "Care Management"
+    },
+    "patient": {
+      "id": "rahul.sharma@abdm"
+    },
+    "hiu": {
+      "id": "IN2710001827"
+    },
+    "requester": {
+      "name": "Dr. Vikram Seth",
+      "identifier": {
+        "type": "REGNO",
+        "value": "MCI-2012-49102"
+      }
+    },
+    "hiTypes": [
+      "DiagnosticReport",
+      "Prescription",
+      "OPConsultation",
+      "DischargeSummary"
+    ],
+    "permission": {
+      "accessMode": "VIEW",
+      "dateRange": {
+        "from": "2025-01-01T00:00:00.000Z",
+        "to": "2026-09-09T00:00:00.000Z"
+      },
+      "dataEraseAt": "2026-10-09T00:00:00.000Z",
+      "frequency": {
+        "unit": "HOUR",
+        "value": 1
+      }
+    }
+  },
+  "callbackEvidence": {
+    "callbackEndpoint": "/api/v1/abdm/callback/v0.5/consent-requests/on-init",
+    "consentRequestId": "CRQ-1793864781445",
+    "status": "REQUESTED"
+  },
+  "internalVerification": {
+    "localRoute": "POST /api/v1/partner/abdm/m3/consent-requests",
+    "localStatus": 201,
+    "localTestResult": "PASS"
+  },
+  "databaseVerified": false,
+  "callbackVerified": false,
+  "evidenceHash": "7174e7cea7cf73edfd1b9b258e4da99767f7d8661ef4017aacb72382c7b1eaaa"
+}
