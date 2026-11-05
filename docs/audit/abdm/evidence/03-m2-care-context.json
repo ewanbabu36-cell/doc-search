@@ -1,6 +1,6 @@
 {
   "testId": "ABDM-EXT-03",
-  "timestamp": "2026-10-11T16:32:05.753Z",
+  "timestamp": "2026-11-05T09:36:19.656Z",
   "milestone": "M2",
   "certificationLevel": "NHA_LEVEL_2_M2",
   "standard": "ABDM Gateway API v0.5 - Health Information Provider (HIP) Care Context Linking",
@@ -9,7 +9,7 @@
   "external": false,
   "endpoint": "https://dev.abdm.gov.in/gateway/v0.5/links/link/add-contexts",
   "method": "POST",
-  "requestCorrelationId": "CORR-M2-1791736325836",
+  "requestCorrelationId": "CORR-M2-1793871379684",
   "httpStatus": null,
   "status": "BLOCKED",
   "blockerReason": "Missing live bridge credentials for external NHA care-context registration",
@@ -17,8 +17,8 @@
     "headers": {
       "Authorization": "Bearer <GATEWAY_TOKEN>",
       "X-CM-ID": "sbx",
-      "REQUEST-ID": "req-m2-1791736325836",
-      "TIMESTAMP": "2026-10-11T16:32:05.753Z"
+      "REQUEST-ID": "req-m2-1793871379684",
+      "TIMESTAMP": "2026-11-05T09:36:19.656Z"
     },
     "patientAbha": "rahul.sharma@abdm",
     "careContexts": [
@@ -47,5 +47,5 @@
   },
   "databaseVerified": false,
   "callbackVerified": false,
-  "evidenceHash": "14a9933bd0c1f994fc1e1313d280f6b9d2df66104908151ad906ca83862826e5"
+  "evidenceHash": "0cbaebe1da05d8433d9ca4fd19871003a977750553de83fcf1b522a2c444be20"
 }
