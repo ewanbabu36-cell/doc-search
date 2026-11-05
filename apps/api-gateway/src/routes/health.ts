@@ -1,15 +1,17 @@
 import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
-import { getDatabase, getDatabaseStatus } from '@docsearch/database';
+import { getDatabase, getDatabaseStatus, getDatabasePoolMetrics } from '@docsearch/database';
 import { distributedCache } from '../services/cache/DistributedCacheService.js';
 import { horizontalSocketGateway } from '../services/realtime/HorizontalSocketGateway.js';
+import { circuitBreakerRegistry } from '../services/reliability/CircuitBreakerService.js';
 
 export const healthRoutes: FastifyPluginAsync = async (app: FastifyInstance): Promise<void> => {
-  // Liveness Probe (process is alive)
-  const healthHandler = async (_req: any, reply: any) => {
+  // Liveness Probe (process is alive & event loop responsive)
+  const livenessHandler = async (_req: any, reply: any) => {
     const status = getDatabaseStatus();
     return reply.status(200).send({
       status: 'healthy',
       service: 'docsearch-api-gateway',
+      liveness: 'ALIVE',
       database: {
         ready: status.ready,
         mode: status.mode,
@@ -22,9 +24,13 @@ export const healthRoutes: FastifyPluginAsync = async (app: FastifyInstance): Pr
     });
   };
 
-  app.get('/health', healthHandler);
-  app.get('/api/health', healthHandler);
-  app.get('/api/v1/health', healthHandler);
+  app.get('/health', livenessHandler);
+  app.get('/api/health', livenessHandler);
+  app.get('/api/v1/health', livenessHandler);
+  app.get('/live', livenessHandler);
+  app.get('/livez', livenessHandler);
+  app.get('/api/livez', livenessHandler);
+  app.get('/api/v1/livez', livenessHandler);
 
   // Dedicated Cache Telemetry Probe
   app.get('/api/v1/health/cache', async (_req, reply) => {
@@ -40,6 +46,15 @@ export const healthRoutes: FastifyPluginAsync = async (app: FastifyInstance): Pr
     return reply.status(200).send({
       success: true,
       data: horizontalSocketGateway.getTelemetry(),
+      timestamp: new Date().toISOString()
+    });
+  });
+
+  // Dedicated Circuit Breakers Telemetry Probe
+  app.get('/api/v1/health/circuit-breakers', async (_req, reply) => {
+    return reply.status(200).send({
+      success: true,
+      data: circuitBreakerRegistry.getAllTelemetry(),
       timestamp: new Date().toISOString()
     });
   });
@@ -94,4 +109,49 @@ export const healthRoutes: FastifyPluginAsync = async (app: FastifyInstance): Pr
   app.get('/readyz', readyHandler);
   app.get('/api/readyz', readyHandler);
   app.get('/api/v1/readyz', readyHandler);
+
+  // Comprehensive Detailed APM Observability Probe
+  app.get('/api/v1/health/detailed', async (_req: any, reply: any) => {
+    const start = Date.now();
+    let dbConnected = false;
+    let dbLatencyMs = -1;
+    try {
+      const db = getDatabase();
+      if (db) {
+        await db.execute('SELECT 1;');
+        dbConnected = true;
+        dbLatencyMs = Date.now() - start;
+      }
+    } catch {
+      dbConnected = false;
+    }
+
+    const poolMetrics = getDatabasePoolMetrics();
+    const circuits = circuitBreakerRegistry.getAllTelemetry();
+    const cacheStats = distributedCache.getStats();
+    const clusterTelemetry = horizontalSocketGateway.getTelemetry();
+    const mem = process.memoryUsage();
+
+    const allCircuitsHealthy = Object.values(circuits).every(c => c.state !== 'OPEN');
+    const isOverallHealthy = dbConnected && allCircuitsHealthy;
+
+    return reply.status(isOverallHealthy ? 200 : 503).send({
+      status: isOverallHealthy ? 'HEALTHY' : 'DEGRADED',
+      database: {
+        connected: dbConnected,
+        latencyMs: dbLatencyMs,
+        pool: poolMetrics
+      },
+      circuitBreakers: circuits,
+      cache: cacheStats,
+      cluster: clusterTelemetry,
+      memory: {
+        rssMb: Math.round(mem.rss / 1024 / 1024),
+        heapUsedMb: Math.round(mem.heapUsed / 1024 / 1024),
+        heapTotalMb: Math.round(mem.heapTotal / 1024 / 1024)
+      },
+      uptimeSeconds: process.uptime(),
+      timestamp: new Date().toISOString()
+    });
+  });
 };
