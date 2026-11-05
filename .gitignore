@@ -76,3 +76,16 @@ data/mail-inbox/*.html
 *.csr
 docker/nginx/ssl/*
 !docker/nginx/ssl/.gitkeep
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc

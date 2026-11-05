@@ -1,0 +1,35 @@
+# ==============================================================================
+# DOC SEARCH AWS ENTERPRISE CLOUD INFRASTRUCTURE
+# Staging Environment Configuration Variables Example
+# ==============================================================================
+
+environment               = "staging"
+aws_region                = "ap-south-1" # Mumbai (Primary)
+dr_region                 = "ap-south-2" # Hyderabad (Cross-Region DR)
+cluster_name              = "docsearch-staging-eks"
+kubernetes_version        = "1.30"
+domain_name               = "docsearch.health"
+vpc_cidr                  = "10.0.0.0/16"
+
+# Cost Optimization: Single NAT Gateway in Staging (~₹6,000/month savings)
+enable_nat_gateway_per_az = false
+
+# EKS Compute: Graviton3 ARM t4g.xlarge (4 vCPU, 16 GiB RAM)
+eks_instance_types        = ["t4g.xlarge"]
+eks_node_min_size         = 3
+eks_node_desired_size     = 3
+eks_node_max_size         = 10
+
+# Database: RDS PostgreSQL 16 Multi-AZ (Graviton ARM db.t4g.xlarge)
+db_instance_class         = "db.t4g.xlarge"
+db_allocated_storage      = 500
+db_max_allocated_storage  = 3000
+
+# Cache & Queues: ElastiCache Redis 7.2 Multi-AZ
+redis_node_type           = "cache.t4g.medium"
+
+# Regulatory Backup Retention (Statutory 35-day continuous WAL)
+backup_retention_days     = 35
+
+# Deployment Mode: Set to false when running in live cloud CI/CD with AWS credentials
+offline_validation        = false

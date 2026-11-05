@@ -162,7 +162,7 @@ resource "aws_db_instance" "primary" {
   publicly_accessible = false
 
   # Continuous WAL Archiving & Backup Retention
-  backup_retention_period   = 35 # Minimum 35 continuous days
+  backup_retention_period   = 35            # Minimum 35 continuous days
   backup_window             = "18:30-19:30" # 00:00 - 01:00 IST (Low-traffic window)
   maintenance_window        = "Sun:20:00-Sun:21:00"
   copy_tags_to_snapshot     = true
