@@ -1,0 +1,111 @@
+{
+  "timestamp": "2026-11-05T05:23:11.665Z",
+  "commit": "9d517f8",
+  "totalTests": 196,
+  "totalPass": 196,
+  "totalFail": 0,
+  "totalDurationMs": 79827,
+  "allPassed": true,
+  "suites": [
+    {
+      "id": "Phase 3",
+      "name": "Enterprise Security Certification",
+      "file": "apps/api-gateway/test/phase3-enterprise-security-certification.test.mjs",
+      "status": "PASSED",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "durationMs": 5086
+    },
+    {
+      "id": "Phase 4",
+      "name": "Clinical Safety & Medical Workflows",
+      "file": "apps/api-gateway/test/phase4-clinical-safety-and-medical-workflows.test.mjs",
+      "status": "PASSED",
+      "tests": 23,
+      "pass": 23,
+      "fail": 0,
+      "durationMs": 3291
+    },
+    {
+      "id": "Phase 5",
+      "name": "Financial Integrity & Regulatory",
+      "file": "apps/api-gateway/test/phase5-financial-integrity-and-regulatory.test.mjs",
+      "status": "PASSED",
+      "tests": 39,
+      "pass": 39,
+      "fail": 0,
+      "durationMs": 3048
+    },
+    {
+      "id": "Phase 5.1",
+      "name": "Financial Corrective Audit",
+      "file": "apps/api-gateway/test/phase5-1-financial-corrective-audit.test.mjs",
+      "status": "PASSED",
+      "tests": 25,
+      "pass": 25,
+      "fail": 0,
+      "durationMs": 3657
+    },
+    {
+      "id": "Phase 6",
+      "name": "Infrastructure & Resilience",
+      "file": "apps/api-gateway/test/phase6-infrastructure-and-resilience.test.mjs",
+      "status": "PASSED",
+      "tests": 21,
+      "pass": 21,
+      "fail": 0,
+      "durationMs": 22815
+    },
+    {
+      "id": "Phase 7.1A",
+      "name": "Kubernetes & TLS Hardening",
+      "file": "apps/api-gateway/test/phase7-1a-kubernetes-and-tls.test.mjs",
+      "status": "PASSED",
+      "tests": 16,
+      "pass": 16,
+      "fail": 0,
+      "durationMs": 907
+    },
+    {
+      "id": "Phase 7.1B",
+      "name": "Kubernetes Staging Manifests",
+      "file": "apps/api-gateway/test/phase7-1b-kubernetes-staging-validation.test.mjs",
+      "status": "PASSED",
+      "tests": 13,
+      "pass": 13,
+      "fail": 0,
+      "durationMs": 852
+    },
+    {
+      "id": "Phase 7.2A",
+      "name": "AWS Cloud Readiness",
+      "file": "apps/api-gateway/test/phase7-2a-aws-infrastructure-readiness.test.mjs",
+      "status": "PASSED",
+      "tests": 16,
+      "pass": 16,
+      "fail": 0,
+      "durationMs": 18502
+    },
+    {
+      "id": "Phase 7.2B",
+      "name": "AWS Security & Compatibility",
+      "file": "apps/api-gateway/test/phase7-2b-aws-security-compatibility-audit.test.mjs",
+      "status": "PASSED",
+      "tests": 16,
+      "pass": 16,
+      "fail": 0,
+      "durationMs": 10516
+    },
+    {
+      "id": "Phase 7.2C",
+      "name": "Production Readiness Certification",
+      "file": "apps/api-gateway/test/phase7-2c-production-readiness-certification.test.mjs",
+      "status": "PASSED",
+      "tests": 23,
+      "pass": 23,
+      "fail": 0,
+      "durationMs": 11141
+    }
+  ]
+}
