@@ -23,6 +23,8 @@ export const RecordBmwLogDialog: React.FC<Props> = ({ isOpen, onClose, onSubmit 
   // Digital Scale IoT Sync & Reconciliation
   const [isScaleSyncing, setIsScaleSyncing] = useState(false);
   const [scaleSyncSuccess, setScaleSyncSuccess] = useState(false);
+  const [scaleError, setScaleError] = useState<string | null>(null);
+  const [scaleStatus, setScaleStatus] = useState<'ONLINE_CERTIFIED' | 'DEVICE_UNAVAILABLE' | 'IDLE'>('IDLE');
   const [wardGenerationWeightKg] = useState(396.2); // Sum of ward floor logs
   const [loading, setLoading] = useState(false);
 
@@ -35,29 +37,32 @@ export const RecordBmwLogDialog: React.FC<Props> = ({ isOpen, onClose, onSubmit 
 
   const handleSimulateDigitalScale = async () => {
     setIsScaleSyncing(true);
+    setScaleError(null);
     try {
       const res = await fetch('http://localhost:18080/api/v1/scale/read', {
         signal: AbortSignal.timeout(1200)
       });
       if (res.ok) {
-        const data = await res.json();
-        setYellowBagWeightKg(data.yellowBag ?? 145.5);
-        setRedBagWeightKg(data.redBag ?? 188.2);
-        setWhiteTranslucentWeightKg(data.whiteBag ?? 16.4);
-        setBlueBagWeightKg(data.blueBag ?? 44.8);
-      } else {
-        throw new Error('Hardware scale daemon response status ' + res.status);
+        const json = await res.json();
+        if (json.connected) {
+          setYellowBagWeightKg(json.yellowBag ?? 0);
+          setRedBagWeightKg(json.redBag ?? 0);
+          setWhiteTranslucentWeightKg(json.whiteBag ?? 0);
+          setBlueBagWeightKg(json.blueBag ?? 0);
+          setScaleStatus('ONLINE_CERTIFIED');
+          setScaleSyncSuccess(true);
+          setTimeout(() => setScaleSyncSuccess(false), 3000);
+          return;
+        }
       }
+      throw new Error('DEVICE_UNAVAILABLE');
     } catch {
-      // Fallback calibrated digital reading
-      setYellowBagWeightKg(145.5);
-      setRedBagWeightKg(188.2);
-      setWhiteTranslucentWeightKg(16.4);
-      setBlueBagWeightKg(44.8);
+      // Statutory BMW Compliance: NEVER fabricate clinical or statutory weight readings
+      setScaleStatus('DEVICE_UNAVAILABLE');
+      setScaleSyncSuccess(false);
+      setScaleError('⚠️ IoT Industrial Scale Disconnected (DEVICE_UNAVAILABLE on port 18080). Statutory PCB regulations strictly prohibit fabricated weights. Please enter manual weighbridge slip readings.');
     } finally {
       setIsScaleSyncing(false);
-      setScaleSyncSuccess(true);
-      setTimeout(() => setScaleSyncSuccess(false), 3000);
     }
   };
 
@@ -122,20 +127,30 @@ export const RecordBmwLogDialog: React.FC<Props> = ({ isOpen, onClose, onSubmit 
             <span className="text-xs font-bold text-blue-900 flex items-center gap-1.5">
               <span>⚖️</span> Exit Gate Industrial Digital Scale Sync
             </span>
-            <Button
-              type="button"
-              variant="primary"
-              size="sm"
-              onClick={handleSimulateDigitalScale}
-              disabled={isScaleSyncing}
-            >
-              {isScaleSyncing ? 'Capturing Tare & Weight...' : '⚡ 1-Tap IoT Scale Capture'}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Badge variant={scaleStatus === 'ONLINE_CERTIFIED' ? 'success' : scaleStatus === 'DEVICE_UNAVAILABLE' ? 'danger' : 'neutral'}>
+                {scaleStatus === 'ONLINE_CERTIFIED' ? 'SCALE ONLINE' : scaleStatus === 'DEVICE_UNAVAILABLE' ? 'DEVICE UNAVAILABLE' : 'SCALE READY'}
+              </Badge>
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                onClick={handleSimulateDigitalScale}
+                disabled={isScaleSyncing}
+              >
+                {isScaleSyncing ? 'Capturing Tare & Weight...' : '⚡ 1-Tap IoT Scale Capture'}
+              </Button>
+            </div>
           </div>
           {scaleSyncSuccess && (
             <p className="text-[11px] text-emerald-800 font-semibold bg-emerald-100 p-1.5 rounded animate-pulse">
               ✓ Digital Scale Stream Synced: 4 Bags Weighed & Certified.
             </p>
+          )}
+          {scaleError && (
+            <div className="p-2 bg-amber-50 border border-amber-300 rounded text-amber-900 text-[11px] font-medium leading-snug">
+              {scaleError}
+            </div>
           )}
         </div>
 

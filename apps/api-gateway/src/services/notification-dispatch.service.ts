@@ -436,6 +436,15 @@ export class NotificationDispatchService {
       else if (s === 'delivered') status = 'DELIVERED';
       else if (s === 'failed' || s === 'undelivered') status = 'FAILED';
       else status = 'SENT';
+    } else if (provider === 'META_WHATSAPP') {
+      const statusObj = payload?.entry?.[0]?.changes?.[0]?.value?.statuses?.[0] || payload?.statuses?.[0];
+      messageId = statusObj?.id || payload?.id || 'unknown';
+      const s = (statusObj?.status || payload?.status || '').toLowerCase();
+      if (s === 'read') status = 'READ';
+      else if (s === 'delivered') status = 'DELIVERED';
+      else if (s === 'sent') status = 'SENT';
+      else if (s === 'failed') status = 'FAILED';
+      else status = messageId !== 'unknown' ? 'SENT' : 'FAILED';
     }
 
     return {

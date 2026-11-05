@@ -365,7 +365,7 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
     return reply.status(201).send({ success: true, data: cfg });
   });
 
-  // Generate Automated EOD Doctor Settlement with TDS & NMC Ethics Declaration
+  // Generate Automated EOD Doctor Settlement with Dynamic Statutory TDS & NMC Ethics Declaration
   fastify.post('/api/v1/partner/billing/doctor-payouts/settlements/generate', async (request, reply) => {
     const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
     const body = request.body as any;
@@ -379,7 +379,33 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
 
     const facilityUsageFee = Math.round(grossBilled * (facilityUsagePct / 100)) + fixedRoomRental;
     const doctorGrossEarnings = Math.max(0, grossBilled - facilityUsageFee);
-    const tdsRate = 10.0; // Section 194J - 10% on professional services
+
+    // Dynamic Statutory TDS Calculation under Indian Income Tax Act
+    const payeeTaxCategory = body.payeeTaxCategory || 'SECTION_194J_PROFESSIONAL';
+    const hasValidPan = body.hasValidPan !== false;
+    let tdsRate = 10.0;
+    let statutorySection = 'Section 194J (10% - Professional Clinical Fees)';
+
+    if (!hasValidPan) {
+      tdsRate = 20.0;
+      statutorySection = 'Section 206AA (20% - Higher Rate for Non-Furnishing of PAN)';
+    } else if (payeeTaxCategory === 'SECTION_194J_TECHNICAL') {
+      tdsRate = 2.0;
+      statutorySection = 'Section 194J (2% - Technical / Equipment Maintenance Fees)';
+    } else if (payeeTaxCategory === 'SECTION_194C_INDIVIDUAL') {
+      tdsRate = 1.0;
+      statutorySection = 'Section 194C (1% - Individual / HUF Contractor)';
+    } else if (payeeTaxCategory === 'SECTION_194C_COMPANY') {
+      tdsRate = 2.0;
+      statutorySection = 'Section 194C (2% - Corporate Contractor / Firm)';
+    } else if (payeeTaxCategory === 'SECTION_197_LOWER_DEDUCTION') {
+      tdsRate = Number(body.lowerTdsRate ?? 1.5);
+      statutorySection = `Section 197 (Lower Deduction Certificate: ${body.certificate197Number || 'CERT-197-VERIFIED'} @ ${tdsRate}%)`;
+    } else if (typeof body.tdsRate === 'number') {
+      tdsRate = body.tdsRate;
+      statutorySection = `Custom Specified Tax Rate (${tdsRate}%)`;
+    }
+
     const tdsDeducted = Math.round(doctorGrossEarnings * (tdsRate / 100));
     const netPayable = doctorGrossEarnings - tdsDeducted;
 
@@ -388,7 +414,7 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
     const periodStart = new Date(now.setHours(0, 0, 0, 0));
     const periodEnd = new Date();
 
-    const nmcDeclaration = 'Certified strictly in accordance with National Medical Commission (NMC) Registered Medical Practitioner Regulations 2023. Payout represents legitimate professional clinical fees after deduction of hospital facility infrastructure, chamber equipment rental, and statutory TDS under Section 194J. No commercial kickbacks or referral fee-splitting involved.';
+    const nmcDeclaration = `Certified strictly in accordance with National Medical Commission (NMC) Registered Medical Practitioner Regulations 2023. Payout represents legitimate professional clinical fees after deduction of hospital facility infrastructure, chamber equipment rental, and statutory TDS under ${statutorySection}. No commercial kickbacks or referral fee-splitting involved.`;
 
     const [voucher] = await db.insert(doctorSettlementVouchers).values({
       tenantId,
@@ -410,7 +436,14 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
     return reply.status(201).send({
       success: true,
       message: 'NMC-Compliant EOD Doctor Settlement Voucher generated successfully!',
-      data: voucher
+      data: {
+        ...voucher,
+        payeeTaxCategory,
+        hasValidPan,
+        tdsRate,
+        statutorySection,
+        grossEarnings: doctorGrossEarnings
+      }
     });
   });
 

@@ -209,7 +209,7 @@ export const pharmacyPosSentinelRoutes: FastifyPluginAsync = async (fastify) => 
     });
   });
 
-  // 4. Pharmacy Counter POS Checkout & Thermal Receipt Payload
+  // 4. Pharmacy Counter POS Checkout & Thermal Receipt Payload (Atomic Transaction Boundary)
   fastify.post('/api/v1/partner/pharmacy-pos/bill/checkout', async (request, reply) => {
     const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
     const body = request.body as BillCheckoutRequest;
@@ -223,47 +223,129 @@ export const pharmacyPosSentinelRoutes: FastifyPluginAsync = async (fastify) => 
     const paymentMode = body.paymentMode || 'UPI_DYNAMIC_QR';
     const cashierName = body.cashierName || 'Cashier Pooja Sharma';
 
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return reply.status(400).send({
+        success: false,
+        error: 'INVALID_CART',
+        message: 'Cart cannot be empty for checkout'
+      });
+    }
+
     const grossAmount = items.reduce((acc, it) => acc + (it.quantity * it.unitPrice), 0);
     const netAmount = grossAmount;
 
     const db = getDatabase();
     try {
-      await db.execute(sql`
-        INSERT INTO pharmacy_pos_transactions (
-          tenant_id, invoice_number, patient_uhid, patient_name,
-          items_json, gross_amount, discount_amount, net_amount,
-          payment_mode, cashier_name
-        ) VALUES (
-          ${tenantId}, ${invoiceNumber}, ${patientUhId}, ${patientName},
-          ${JSON.stringify(items)}::jsonb, ${grossAmount}, 0, ${netAmount},
-          ${paymentMode}, ${cashierName}
-        )
-      `);
+      const checkoutResult = await db.transaction(async (tx) => {
+        const itemDeductions: any[] = [];
+        const todayStr = new Date().toISOString().slice(0, 10);
 
-      for (const item of items) {
-        await db.execute(sql`
-          UPDATE pharmacy_pos_inventory_batches
-          SET stock_qty = GREATEST(0, stock_qty - ${item.quantity})
-          WHERE tenant_id = ${tenantId} AND batch_number = ${item.batchNumber}
+        for (const item of items) {
+          if (!item.quantity || item.quantity <= 0) {
+            throw new Error(`INVALID_QUANTITY: Invalid quantity ${item.quantity} for item ${item.itemCode}`);
+          }
+
+          // Atomic row lock via FOR UPDATE
+          const batchRes = await tx.execute(sql`
+            SELECT id, tenant_id, item_code, batch_number, expiry_date, stock_qty, is_schedule_h1, is_narcotic
+            FROM pharmacy_pos_inventory_batches
+            WHERE tenant_id = ${tenantId} AND batch_number = ${item.batchNumber}
+            FOR UPDATE
+          `);
+
+          const batchRow = (batchRes as any)?.rows?.[0];
+          if (!batchRow) {
+            throw new Error(`BATCH_NOT_FOUND: Batch ${item.batchNumber} for item ${item.itemCode} does not exist in inventory.`);
+          }
+
+          // Validate Expiry
+          const expDate = String(batchRow.expiry_date).slice(0, 10);
+          if (expDate < todayStr) {
+            throw new Error(`BATCH_EXPIRED: Batch ${item.batchNumber} expired on ${expDate}. Dispensing is strictly prohibited.`);
+          }
+
+          // Validate Stock Sufficiency (Strictly Prevent Negative Stock)
+          const currentStock = Number(batchRow.stock_qty);
+          if (currentStock < item.quantity) {
+            throw new Error(`INSUFFICIENT_STOCK: Batch ${item.batchNumber} has only ${currentStock} units available, requested ${item.quantity}.`);
+          }
+
+          // Atomic Stock Deduction with optimistic guard
+          const deductRes = await tx.execute(sql`
+            UPDATE pharmacy_pos_inventory_batches
+            SET stock_qty = stock_qty - ${item.quantity}
+            WHERE id = ${batchRow.id} AND stock_qty >= ${item.quantity}
+            RETURNING stock_qty
+          `);
+
+          const remainingStock = Number((deductRes as any)?.rows?.[0]?.stock_qty);
+          if (deductRes.rowCount === 0 || isNaN(remainingStock)) {
+            throw new Error(`CONCURRENCY_CONFLICT: Stock deduction conflict on batch ${item.batchNumber}.`);
+          }
+
+          itemDeductions.push({
+            batchId: batchRow.id,
+            batchNumber: item.batchNumber,
+            itemCode: item.itemCode,
+            quantityDispensed: item.quantity,
+            previousStock: currentStock,
+            remainingStock
+          });
+        }
+
+        // Insert Transaction Record
+        await tx.execute(sql`
+          INSERT INTO pharmacy_pos_transactions (
+            tenant_id, invoice_number, patient_uhid, patient_name,
+            items_json, gross_amount, discount_amount, net_amount,
+            payment_mode, cashier_name
+          ) VALUES (
+            ${tenantId}, ${invoiceNumber}, ${patientUhId}, ${patientName},
+            ${JSON.stringify(items)}::jsonb, ${grossAmount}, 0, ${netAmount},
+            ${paymentMode}, ${cashierName}
+          )
         `);
-      }
-    } catch (err: any) {
-      fastify.log.warn(`[PharmacyPos] Checkout warning: ${err.message}`);
-    }
 
-    return reply.status(201).send({
-      success: true,
-      message: 'Pharmacy bill settled. Perpetual inventory deducted and thermal receipt generated.',
-      data: {
-        invoiceNumber,
-        patientName,
-        itemCount: items.length,
-        grossAmount,
-        netAmount,
-        paymentMode,
-        escposRasterPrinterReady: true,
-        timestamp: new Date().toISOString()
+        return { invoiceNumber, itemDeductions, grossAmount, netAmount };
+      });
+
+      return reply.status(201).send({
+        success: true,
+        message: 'Pharmacy bill settled. Perpetual inventory deducted and thermal receipt generated.',
+        data: {
+          invoiceNumber: checkoutResult.invoiceNumber,
+          patientName,
+          itemCount: items.length,
+          grossAmount: checkoutResult.grossAmount,
+          netAmount: checkoutResult.netAmount,
+          paymentMode,
+          escposRasterPrinterReady: true,
+          itemDeductions: checkoutResult.itemDeductions,
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (err: any) {
+      fastify.log.warn(`[PharmacyPos] Checkout failed: ${err.message}`);
+      const errMsg = err.message || 'Checkout failed';
+      if (errMsg.startsWith('INSUFFICIENT_STOCK') || errMsg.startsWith('CONCURRENCY_CONFLICT')) {
+        return reply.status(409).send({
+          success: false,
+          error: errMsg.split(':')[0],
+          message: errMsg
+        });
       }
-    });
+      if (errMsg.startsWith('BATCH_EXPIRED') || errMsg.startsWith('BATCH_NOT_FOUND') || errMsg.startsWith('INVALID_QUANTITY')) {
+        return reply.status(400).send({
+          success: false,
+          error: errMsg.split(':')[0],
+          message: errMsg
+        });
+      }
+      return reply.status(500).send({
+        success: false,
+        error: 'TRANSACTION_ABORTED',
+        message: errMsg
+      });
+    }
   });
 };

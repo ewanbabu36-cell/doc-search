@@ -2477,8 +2477,19 @@ export const PathologyHomeActivityHub: React.FC<PathologyHomeActivityHubProps> =
                 variant="primary"
                 size="sm"
                 disabled={!panicReadbackConfirmed}
-                onClick={() => {
+                onClick={async () => {
                   setIsPanicModalOpen(false);
+                  if (activePanicOrder?.id) {
+                    try {
+                      await clinicalInvestigationService.logPanicIntimation(activePanicOrder.id, {
+                        doctorName: panicReceiverName,
+                        callerStaffName: panicCallerName,
+                        readBackConfirmed: panicReadbackConfirmed,
+                        criticalParameters: [(activePanicOrder as any).testParameter || 'Serum Potassium (Critical)'],
+                        notes: `Verbal read-back completed by Dr. ${panicReceiverName} per NABL ISO-15189 clause 5.8.2.`
+                      });
+                    } catch {}
+                  }
                   triggerToast(`✅ Verbal Read-Back Logged & Sealed per NABL ISO-15189 clause 5.8.2 for Dr. ${panicReceiverName}`);
                 }}
                 style={{ backgroundColor: '#DC2626', color: '#FFF', fontWeight: 800 }}

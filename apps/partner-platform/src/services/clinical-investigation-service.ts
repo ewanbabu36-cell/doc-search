@@ -371,8 +371,12 @@ export class ClinicalInvestigationService implements IClinicalInvestigationServi
     return null;
   }
 
-  public async logPanicIntimation(_orderId: string, _payload: Partial<PanicIntimationRecord>): Promise<any> {
-    return { success: true };
+  public async logPanicIntimation(orderId: string, payload: Partial<PanicIntimationRecord>): Promise<any> {
+    const res = await apiRequest(`/api/v1/partner/lab/orders/${orderId}/panic-intimation`, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    return res;
   }
 
   public async getAuditTraces(_params: QueryInvestigationAuditRequest): Promise<InvestigationAuditTraceDto[]> {
