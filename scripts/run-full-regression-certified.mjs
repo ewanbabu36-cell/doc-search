@@ -59,9 +59,17 @@ async function runAll() {
       const failMatch = output.match(/ℹ fail (\d+)/);
       const testsMatch = output.match(/ℹ tests (\d+)/);
 
-      const passCount = passMatch ? parseInt(passMatch[1], 10) : suite.expected;
+      if (!passMatch || !testsMatch) {
+        throw new Error(`Malformed test output: could not parse test results from suite ${suite.file}`);
+      }
+
+      const passCount = parseInt(passMatch[1], 10);
       const failCount = failMatch ? parseInt(failMatch[1], 10) : 0;
-      const testsCount = testsMatch ? parseInt(testsMatch[1], 10) : passCount + failCount;
+      const testsCount = parseInt(testsMatch[1], 10);
+
+      if (failCount > 0 || passCount !== testsCount || passCount !== suite.expected) {
+        throw new Error(`Suite assertion mismatch: expected ${suite.expected} passed, got ${passCount} passed and ${failCount} failed.`);
+      }
 
       const durationMs = Date.now() - suiteStart;
       console.log(`PASS (${passCount}/${testsCount} tests, ${durationMs}ms)`);
@@ -74,6 +82,7 @@ async function runAll() {
         tests: testsCount,
         pass: passCount,
         fail: failCount,
+        exitCode: 0,
         durationMs
       });
 
@@ -82,7 +91,8 @@ async function runAll() {
       totalFail += failCount;
     } catch (err) {
       const durationMs = Date.now() - suiteStart;
-      console.log(`FAILED (${durationMs}ms)`);
+      const exitCode = typeof err.status === 'number' ? err.status : 1;
+      console.log(`FAILED (Exit Code ${exitCode}, ${durationMs}ms)`);
       console.error(err.stdout || err.message);
 
       suiteResults.push({
@@ -90,6 +100,10 @@ async function runAll() {
         name: suite.name,
         file: suite.file,
         status: 'FAILED',
+        tests: suite.expected,
+        pass: 0,
+        fail: suite.expected,
+        exitCode,
         error: err.message,
         durationMs
       });
@@ -103,14 +117,21 @@ async function runAll() {
   console.log(`Total Duration: ${(totalDurationMs / 1000).toFixed(2)}s`);
   console.log('================================================================================');
 
+  let currentCommit = '52f55fe';
+  try {
+    currentCommit = execSync('git rev-parse --short HEAD', { cwd: rootDir, encoding: 'utf8' }).trim();
+  } catch {
+    // fallback
+  }
+
   const evidence = {
     timestamp: new Date().toISOString(),
-    commit: '9d517f8',
+    commit: currentCommit,
     totalTests,
     totalPass,
     totalFail,
     totalDurationMs,
-    allPassed: totalFail === 0 && totalPass === totalTests,
+    allPassed: totalFail === 0 && totalPass === totalTests && totalTests === 196,
     suites: suiteResults
   };
 

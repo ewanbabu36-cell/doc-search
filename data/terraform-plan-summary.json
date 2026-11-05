@@ -1,0 +1,521 @@
+{
+  "timestamp": "2026-11-05T06:09:41.659Z",
+  "terraformVersion": "1.16.6",
+  "workspace": "default",
+  "totalResources": 128,
+  "planSummary": "Plan: 128 to add, 0 to change, 0 to destroy.",
+  "resources": [
+    {
+      "address": "aws_backup_plan.daily_plan",
+      "action": "create"
+    },
+    {
+      "address": "aws_backup_selection.primary_selection",
+      "action": "create"
+    },
+    {
+      "address": "aws_backup_vault.dr_vault",
+      "action": "create"
+    },
+    {
+      "address": "aws_backup_vault.primary_vault",
+      "action": "create"
+    },
+    {
+      "address": "aws_cloudtrail.main",
+      "action": "create"
+    },
+    {
+      "address": "aws_cloudwatch_metric_alarm.db_connections_spike",
+      "action": "create"
+    },
+    {
+      "address": "aws_cloudwatch_metric_alarm.db_cpu_high",
+      "action": "create"
+    },
+    {
+      "address": "aws_cloudwatch_metric_alarm.db_memory_low",
+      "action": "create"
+    },
+    {
+      "address": "aws_cloudwatch_metric_alarm.db_replica_lag",
+      "action": "create"
+    },
+    {
+      "address": "aws_cloudwatch_metric_alarm.db_storage_low",
+      "action": "create"
+    },
+    {
+      "address": "aws_cloudwatch_metric_alarm.redis_cpu_high",
+      "action": "create"
+    },
+    {
+      "address": "aws_cloudwatch_metric_alarm.redis_memory_high",
+      "action": "create"
+    },
+    {
+      "address": "aws_db_instance.primary",
+      "action": "create"
+    },
+    {
+      "address": "aws_db_parameter_group.pg16",
+      "action": "create"
+    },
+    {
+      "address": "aws_db_subnet_group.rds",
+      "action": "create"
+    },
+    {
+      "address": "aws_dynamodb_table.terraform_locks",
+      "action": "create"
+    },
+    {
+      "address": "aws_efs_access_point.pacs",
+      "action": "create"
+    },
+    {
+      "address": "aws_efs_file_system.pacs",
+      "action": "create"
+    },
+    {
+      "address": "aws_efs_mount_target.pacs[0]",
+      "action": "create"
+    },
+    {
+      "address": "aws_efs_mount_target.pacs[1]",
+      "action": "create"
+    },
+    {
+      "address": "aws_efs_mount_target.pacs[2]",
+      "action": "create"
+    },
+    {
+      "address": "aws_eip.nat[0]",
+      "action": "create"
+    },
+    {
+      "address": "aws_eks_addon.coredns",
+      "action": "create"
+    },
+    {
+      "address": "aws_eks_addon.ebs_csi",
+      "action": "create"
+    },
+    {
+      "address": "aws_eks_addon.efs_csi",
+      "action": "create"
+    },
+    {
+      "address": "aws_eks_addon.kube_proxy",
+      "action": "create"
+    },
+    {
+      "address": "aws_eks_addon.vpc_cni",
+      "action": "create"
+    },
+    {
+      "address": "aws_eks_cluster.main",
+      "action": "create"
+    },
+    {
+      "address": "aws_eks_node_group.nodes",
+      "action": "create"
+    },
+    {
+      "address": "aws_elasticache_parameter_group.redis7",
+      "action": "create"
+    },
+    {
+      "address": "aws_elasticache_replication_group.redis",
+      "action": "create"
+    },
+    {
+      "address": "aws_elasticache_subnet_group.redis",
+      "action": "create"
+    },
+    {
+      "address": "aws_iam_openid_connect_provider.oidc",
+      "action": "create"
+    },
+    {
+      "address": "aws_iam_policy.external_secrets",
+      "action": "create"
+    },
+    {
+      "address": "aws_iam_role.backup_service_role",
+      "action": "create"
+    },
+    {
+      "address": "aws_iam_role.ebs_csi",
+      "action": "create"
+    },
+    {
+      "address": "aws_iam_role.efs_csi",
+      "action": "create"
+    },
+    {
+      "address": "aws_iam_role.eks_cluster",
+      "action": "create"
+    },
+    {
+      "address": "aws_iam_role.eks_nodes",
+      "action": "create"
+    },
+    {
+      "address": "aws_iam_role.external_secrets",
+      "action": "create"
+    },
+    {
+      "address": "aws_iam_role.rds_monitoring",
+      "action": "create"
+    },
+    {
+      "address": "aws_iam_role_policy_attachment.backup_service_role",
+      "action": "create"
+    },
+    {
+      "address": "aws_iam_role_policy_attachment.ebs_csi",
+      "action": "create"
+    },
+    {
+      "address": "aws_iam_role_policy_attachment.efs_csi",
+      "action": "create"
+    },
+    {
+      "address": "aws_iam_role_policy_attachment.eks_cluster_policy",
+      "action": "create"
+    },
+    {
+      "address": "aws_iam_role_policy_attachment.eks_cni_policy",
+      "action": "create"
+    },
+    {
+      "address": "aws_iam_role_policy_attachment.eks_ecr_read_only",
+      "action": "create"
+    },
+    {
+      "address": "aws_iam_role_policy_attachment.eks_worker_node",
+      "action": "create"
+    },
+    {
+      "address": "aws_iam_role_policy_attachment.external_secrets",
+      "action": "create"
+    },
+    {
+      "address": "aws_iam_role_policy_attachment.rds_monitoring",
+      "action": "create"
+    },
+    {
+      "address": "aws_internet_gateway.igw",
+      "action": "create"
+    },
+    {
+      "address": "aws_kms_alias.backup",
+      "action": "create"
+    },
+    {
+      "address": "aws_kms_alias.eks_secrets",
+      "action": "create"
+    },
+    {
+      "address": "aws_kms_alias.rds",
+      "action": "create"
+    },
+    {
+      "address": "aws_kms_alias.storage",
+      "action": "create"
+    },
+    {
+      "address": "aws_kms_key.backup",
+      "action": "create"
+    },
+    {
+      "address": "aws_kms_key.eks_secrets",
+      "action": "create"
+    },
+    {
+      "address": "aws_kms_key.rds",
+      "action": "create"
+    },
+    {
+      "address": "aws_kms_key.storage",
+      "action": "create"
+    },
+    {
+      "address": "aws_launch_template.eks_nodes",
+      "action": "create"
+    },
+    {
+      "address": "aws_lb.nlb",
+      "action": "create"
+    },
+    {
+      "address": "aws_lb_listener.http",
+      "action": "create"
+    },
+    {
+      "address": "aws_lb_listener.https",
+      "action": "create"
+    },
+    {
+      "address": "aws_lb_target_group.http",
+      "action": "create"
+    },
+    {
+      "address": "aws_lb_target_group.https",
+      "action": "create"
+    },
+    {
+      "address": "aws_nat_gateway.nat[0]",
+      "action": "create"
+    },
+    {
+      "address": "aws_route53_record.services[\"\"]",
+      "action": "create"
+    },
+    {
+      "address": "aws_route53_record.services[\"api\"]",
+      "action": "create"
+    },
+    {
+      "address": "aws_route53_record.services[\"hq\"]",
+      "action": "create"
+    },
+    {
+      "address": "aws_route53_record.services[\"pacs\"]",
+      "action": "create"
+    },
+    {
+      "address": "aws_route53_record.services[\"partner\"]",
+      "action": "create"
+    },
+    {
+      "address": "aws_route53_record.services[\"patient\"]",
+      "action": "create"
+    },
+    {
+      "address": "aws_route53_zone.primary",
+      "action": "create"
+    },
+    {
+      "address": "aws_route_table.private_app[0]",
+      "action": "create"
+    },
+    {
+      "address": "aws_route_table.private_app[1]",
+      "action": "create"
+    },
+    {
+      "address": "aws_route_table.private_app[2]",
+      "action": "create"
+    },
+    {
+      "address": "aws_route_table.private_db",
+      "action": "create"
+    },
+    {
+      "address": "aws_route_table.public",
+      "action": "create"
+    },
+    {
+      "address": "aws_route_table_association.private_app[0]",
+      "action": "create"
+    },
+    {
+      "address": "aws_route_table_association.private_app[1]",
+      "action": "create"
+    },
+    {
+      "address": "aws_route_table_association.private_app[2]",
+      "action": "create"
+    },
+    {
+      "address": "aws_route_table_association.private_db[0]",
+      "action": "create"
+    },
+    {
+      "address": "aws_route_table_association.private_db[1]",
+      "action": "create"
+    },
+    {
+      "address": "aws_route_table_association.private_db[2]",
+      "action": "create"
+    },
+    {
+      "address": "aws_route_table_association.public[0]",
+      "action": "create"
+    },
+    {
+      "address": "aws_route_table_association.public[1]",
+      "action": "create"
+    },
+    {
+      "address": "aws_route_table_association.public[2]",
+      "action": "create"
+    },
+    {
+      "address": "aws_s3_bucket.cloudtrail",
+      "action": "create"
+    },
+    {
+      "address": "aws_s3_bucket.terraform_state",
+      "action": "create"
+    },
+    {
+      "address": "aws_s3_bucket_policy.cloudtrail",
+      "action": "create"
+    },
+    {
+      "address": "aws_s3_bucket_public_access_block.cloudtrail",
+      "action": "create"
+    },
+    {
+      "address": "aws_s3_bucket_public_access_block.terraform_state",
+      "action": "create"
+    },
+    {
+      "address": "aws_s3_bucket_server_side_encryption_configuration.cloudtrail",
+      "action": "create"
+    },
+    {
+      "address": "aws_s3_bucket_server_side_encryption_configuration.terraform_state",
+      "action": "create"
+    },
+    {
+      "address": "aws_s3_bucket_versioning.cloudtrail",
+      "action": "create"
+    },
+    {
+      "address": "aws_s3_bucket_versioning.terraform_state",
+      "action": "create"
+    },
+    {
+      "address": "aws_secretsmanager_secret.app_jwt_secrets",
+      "action": "create"
+    },
+    {
+      "address": "aws_secretsmanager_secret.db_credentials",
+      "action": "create"
+    },
+    {
+      "address": "aws_secretsmanager_secret.payment_credentials",
+      "action": "create"
+    },
+    {
+      "address": "aws_secretsmanager_secret.redis_credentials",
+      "action": "create"
+    },
+    {
+      "address": "aws_secretsmanager_secret_version.app_jwt_secrets",
+      "action": "create"
+    },
+    {
+      "address": "aws_secretsmanager_secret_version.db_credentials",
+      "action": "create"
+    },
+    {
+      "address": "aws_secretsmanager_secret_version.payment_credentials",
+      "action": "create"
+    },
+    {
+      "address": "aws_secretsmanager_secret_version.redis_credentials",
+      "action": "create"
+    },
+    {
+      "address": "aws_security_group.efs",
+      "action": "create"
+    },
+    {
+      "address": "aws_security_group.eks_cluster",
+      "action": "create"
+    },
+    {
+      "address": "aws_security_group.eks_nodes",
+      "action": "create"
+    },
+    {
+      "address": "aws_security_group.nlb",
+      "action": "create"
+    },
+    {
+      "address": "aws_security_group.rds",
+      "action": "create"
+    },
+    {
+      "address": "aws_security_group.redis",
+      "action": "create"
+    },
+    {
+      "address": "aws_security_group_rule.cluster_to_node_kubelet",
+      "action": "create"
+    },
+    {
+      "address": "aws_sns_topic.alerts",
+      "action": "create"
+    },
+    {
+      "address": "aws_subnet.private_app[0]",
+      "action": "create"
+    },
+    {
+      "address": "aws_subnet.private_app[1]",
+      "action": "create"
+    },
+    {
+      "address": "aws_subnet.private_app[2]",
+      "action": "create"
+    },
+    {
+      "address": "aws_subnet.private_db[0]",
+      "action": "create"
+    },
+    {
+      "address": "aws_subnet.private_db[1]",
+      "action": "create"
+    },
+    {
+      "address": "aws_subnet.private_db[2]",
+      "action": "create"
+    },
+    {
+      "address": "aws_subnet.public[0]",
+      "action": "create"
+    },
+    {
+      "address": "aws_subnet.public[1]",
+      "action": "create"
+    },
+    {
+      "address": "aws_subnet.public[2]",
+      "action": "create"
+    },
+    {
+      "address": "aws_vpc.main",
+      "action": "create"
+    },
+    {
+      "address": "aws_vpc_endpoint.s3",
+      "action": "create"
+    },
+    {
+      "address": "random_password.jwt_access_secret",
+      "action": "create"
+    },
+    {
+      "address": "random_password.jwt_refresh_secret",
+      "action": "create"
+    },
+    {
+      "address": "random_password.master_password",
+      "action": "create"
+    },
+    {
+      "address": "random_password.redis_auth_token",
+      "action": "create"
+    },
+    {
+      "address": "random_password.session_encryption_key",
+      "action": "create"
+    }
+  ]
+}
