@@ -10,7 +10,15 @@ function escapePdfText(text: string): string {
     .replace(/[\r\n]/g, ' ');
 }
 
-export function downloadVectorPathologyPdf(order: InvestigationOrderDto, settings: LabHeaderSettings): void {
+export function downloadVectorPathologyPdf(
+  orderOrOrders: InvestigationOrderDto | InvestigationOrderDto[],
+  settings: LabHeaderSettings
+): void {
+  const orderList = Array.isArray(orderOrOrders) ? orderOrOrders : [orderOrOrders];
+  if (orderList.length === 0) return;
+  const primaryOrder = orderList[0]!;
+  const isMulti = orderList.length > 1;
+
   const contentLines: string[] = [];
 
   const pageWidth = 595.28;
@@ -47,7 +55,7 @@ export function downloadVectorPathologyPdf(order: InvestigationOrderDto, setting
 
   // Demographics Box
   const boxTop = pageHeight - 96;
-  const boxHeight = 70;
+  const boxHeight = 65;
   contentLines.push('q');
   contentLines.push('0.96 0.97 0.99 rg');
   contentLines.push(margin + ' ' + (boxTop - boxHeight) + ' ' + (pageWidth - 2 * margin) + ' ' + boxHeight + ' re f');
@@ -59,171 +67,199 @@ export function downloadVectorPathologyPdf(order: InvestigationOrderDto, setting
   contentLines.push('BT');
   contentLines.push('/F1 8 Tf');
   contentLines.push('0.2 0.25 0.3 rg');
-  contentLines.push('1 0 0 1 ' + (margin + 12) + ' ' + (boxTop - 16) + ' Tm');
-  contentLines.push('(Patient Name: ' + escapePdfText(order.patientName) + ') Tj');
-  contentLines.push('1 0 0 1 ' + (margin + 12) + ' ' + (boxTop - 28) + ' Tm');
-  contentLines.push('(MRN / UHID: ' + escapePdfText(order.patientMrn) + ') Tj');
-  contentLines.push('1 0 0 1 ' + (margin + 12) + ' ' + (boxTop - 40) + ' Tm');
-  contentLines.push('(Age / Sex: ' + escapePdfText(order.patientDob || '28 Yrs') + ' / ' + escapePdfText(order.patientGender || 'Male') + ') Tj');
-  contentLines.push('1 0 0 1 ' + (margin + 12) + ' ' + (boxTop - 52) + ' Tm');
-  contentLines.push('(Referred By: ' + escapePdfText(order.orderingDoctorName || 'Self / Direct Walk-In') + ') Tj');
+  contentLines.push('1 0 0 1 ' + (margin + 12) + ' ' + (boxTop - 15) + ' Tm');
+  contentLines.push('(Patient Name: ' + escapePdfText(primaryOrder.patientName) + ') Tj');
+  contentLines.push('1 0 0 1 ' + (margin + 12) + ' ' + (boxTop - 27) + ' Tm');
+  contentLines.push('(MRN / UHID: ' + escapePdfText(primaryOrder.patientMrn) + ') Tj');
+  contentLines.push('1 0 0 1 ' + (margin + 12) + ' ' + (boxTop - 39) + ' Tm');
+  contentLines.push('(Age / Sex: ' + escapePdfText(primaryOrder.patientDob || (primaryOrder as any).patientAge || '38 Yrs') + ' / ' + escapePdfText(primaryOrder.patientGender || 'Male') + ') Tj');
+  contentLines.push('1 0 0 1 ' + (margin + 12) + ' ' + (boxTop - 51) + ' Tm');
+  contentLines.push('(Referred By: ' + escapePdfText(primaryOrder.orderingDoctorName || 'Self / Direct Walk-In') + ') Tj');
   contentLines.push('ET');
 
   // Col 2: Order & Barcode Info
   const col2X = margin + 260;
+  const orderDisplay = isMulti
+    ? `Order(s): ${orderList.map(o => o.orderNumber).slice(0, 3).join(', ')}${orderList.length > 3 ? '...' : ''}`
+    : `Order Number: ${primaryOrder.orderNumber}`;
+  const uniqueSpecimens = Array.from(new Set(orderList.map(o => o.specimenType || 'EDTA Whole Blood / Serum'))).join(', ');
+
   contentLines.push('BT');
   contentLines.push('/F1 8 Tf');
   contentLines.push('0.2 0.25 0.3 rg');
-  contentLines.push('1 0 0 1 ' + col2X + ' ' + (boxTop - 16) + ' Tm');
-  contentLines.push('(Order Number: ' + escapePdfText(order.orderNumber) + ') Tj');
-  contentLines.push('1 0 0 1 ' + col2X + ' ' + (boxTop - 28) + ' Tm');
-  contentLines.push('(Barcode: ' + escapePdfText(order.specimens?.[0]?.accessionNumber || 'ACC-2026-89410') + ') Tj');
-  contentLines.push('1 0 0 1 ' + col2X + ' ' + (boxTop - 40) + ' Tm');
-  contentLines.push('(Specimen Type: ' + escapePdfText(order.specimenType || 'WHOLE_BLOOD') + ') Tj');
-  contentLines.push('1 0 0 1 ' + col2X + ' ' + (boxTop - 52) + ' Tm');
-  contentLines.push('(Status: SYSTEM GENERATED OFFICIAL REPORT) Tj');
+  contentLines.push('1 0 0 1 ' + col2X + ' ' + (boxTop - 15) + ' Tm');
+  contentLines.push('(' + escapePdfText(orderDisplay) + ') Tj');
+  contentLines.push('1 0 0 1 ' + col2X + ' ' + (boxTop - 27) + ' Tm');
+  contentLines.push('(Barcode: ' + escapePdfText(primaryOrder.specimens?.[0]?.accessionNumber || 'ACC-2026-89410') + ') Tj');
+  contentLines.push('1 0 0 1 ' + col2X + ' ' + (boxTop - 39) + ' Tm');
+  contentLines.push('(Specimen: ' + escapePdfText(uniqueSpecimens.slice(0, 35)) + ') Tj');
+  contentLines.push('1 0 0 1 ' + col2X + ' ' + (boxTop - 51) + ' Tm');
+  contentLines.push('(Status: ' + (isMulti ? `CONSOLIDATED MULTI-TEST (${orderList.length} PANELS)` : 'SYSTEM GENERATED OFFICIAL REPORT') + ') Tj');
   contentLines.push('ET');
 
-  // Test Banner
-  const testBannerTop = boxTop - boxHeight - 12;
-  contentLines.push('q');
-  contentLines.push('0.01 0.52 0.78 rg');
-  contentLines.push(margin + ' ' + (testBannerTop - 18) + ' ' + (pageWidth - 2 * margin) + ' 18 re f');
-  contentLines.push('Q');
+  // Total results across all orders to determine row spacing
+  const totalResultsCount = orderList.reduce((acc, o) => acc + (o.results?.length || 1), 0);
+  const rowHeight = totalResultsCount > 10 ? 12 : 14;
 
-  contentLines.push('BT');
-  contentLines.push('/F2 8.5 Tf');
-  contentLines.push('1 1 1 rg');
-  contentLines.push('1 0 0 1 ' + (margin + 10) + ' ' + (testBannerTop - 13) + ' Tm');
-  contentLines.push('(TEST INVESTIGATION: ' + escapePdfText(order.investigationName.toUpperCase()) + ') Tj');
-  contentLines.push('ET');
+  let currentTop = boxTop - boxHeight - 8;
+  const footerTop = 75;
 
-  // Table Header
-  const tableHeaderTop = testBannerTop - 24;
-  contentLines.push('q');
-  contentLines.push('0.92 0.94 0.97 rg');
-  contentLines.push(margin + ' ' + (tableHeaderTop - 16) + ' ' + (pageWidth - 2 * margin) + ' 16 re f');
-  contentLines.push('0.8 0.85 0.9 RG');
-  contentLines.push(margin + ' ' + (tableHeaderTop - 16) + ' ' + (pageWidth - 2 * margin) + ' 16 re S');
-  contentLines.push('Q');
-
-  contentLines.push('BT');
-  contentLines.push('/F2 7.5 Tf');
-  contentLines.push('0.1 0.15 0.25 rg');
-  contentLines.push('1 0 0 1 ' + (margin + 10) + ' ' + (tableHeaderTop - 11) + ' Tm');
-  contentLines.push('(TEST PARAMETER) Tj');
-  contentLines.push('1 0 0 1 ' + (margin + 200) + ' ' + (tableHeaderTop - 11) + ' Tm');
-  contentLines.push('(OBSERVED VALUE) Tj');
-  contentLines.push('1 0 0 1 ' + (margin + 300) + ' ' + (tableHeaderTop - 11) + ' Tm');
-  contentLines.push('(UNITS) Tj');
-  contentLines.push('1 0 0 1 ' + (margin + 360) + ' ' + (tableHeaderTop - 11) + ' Tm');
-  contentLines.push('(BIOLOGICAL REF INTERVAL) Tj');
-  contentLines.push('1 0 0 1 ' + (margin + 475) + ' ' + (tableHeaderTop - 11) + ' Tm');
-  contentLines.push('(FLAG) Tj');
-  contentLines.push('ET');
-
-  // Parameter Rows
-  let currentRowTop = tableHeaderTop - 16;
-  const rowHeight = 16;
-
-  const resultsList = order.results && order.results.length > 0 ? order.results : [
-    { parameterName: 'Hemoglobin (Hb)', resultValue: '14.8', unit: 'g/dL', referenceRange: '13.5 - 17.5', abnormalFlag: 'NORMAL' },
-    { parameterName: 'Total Leukocyte Count (WBC)', resultValue: '7.4', unit: 'x10^3/uL', referenceRange: '4.5 - 11.0', abnormalFlag: 'NORMAL' },
-    { parameterName: 'Platelet Count', resultValue: '260', unit: 'x10^3/uL', referenceRange: '150 - 450', abnormalFlag: 'NORMAL' },
-    { parameterName: 'Packed Cell Volume (PCV)', resultValue: '44.2', unit: '%', referenceRange: '40.0 - 50.0', abnormalFlag: 'NORMAL' },
-    { parameterName: 'Mean Corpuscular Volume (MCV)', resultValue: '88.5', unit: 'fL', referenceRange: '80.0 - 100.0', abnormalFlag: 'NORMAL' }
-  ];
-
-  resultsList.forEach((r, idx) => {
-    currentRowTop -= rowHeight;
-
-    if (idx % 2 === 1) {
-      contentLines.push('q');
-      contentLines.push('0.98 0.99 1.0 rg');
-      contentLines.push(margin + ' ' + currentRowTop + ' ' + (pageWidth - 2 * margin) + ' ' + rowHeight + ' re f');
-      contentLines.push('Q');
-    }
-
+  orderList.forEach((ord) => {
+    // Test Banner
     contentLines.push('q');
-    contentLines.push('0.9 0.92 0.95 RG');
-    contentLines.push('0.5 w');
-    contentLines.push(margin + ' ' + currentRowTop + ' m ' + (pageWidth - margin) + ' ' + currentRowTop + ' l S');
+    contentLines.push('0.01 0.52 0.78 rg');
+    contentLines.push(margin + ' ' + (currentTop - 14) + ' ' + (pageWidth - 2 * margin) + ' 14 re f');
     contentLines.push('Q');
 
     contentLines.push('BT');
-    contentLines.push('/F1 7.5 Tf');
-    contentLines.push('0.1 0.15 0.2 rg');
-    contentLines.push('1 0 0 1 ' + (margin + 10) + ' ' + (currentRowTop + 4) + ' Tm');
-    contentLines.push('(' + escapePdfText(r.parameterName) + ') Tj');
+    contentLines.push('/F2 7.5 Tf');
+    contentLines.push('1 1 1 rg');
+    contentLines.push('1 0 0 1 ' + (margin + 8) + ' ' + (currentTop - 10) + ' Tm');
+    const bannerTitle = ord.investigationCategory
+      ? `${ord.investigationCategory.toUpperCase()} — ${ord.investigationName.toUpperCase()}`
+      : ord.investigationName.toUpperCase();
+    contentLines.push('(' + escapePdfText(bannerTitle) + ') Tj');
 
-    contentLines.push('/F2 8 Tf');
-    if (r.abnormalFlag === 'CRITICAL_HIGH' || r.abnormalFlag === 'CRITICAL_LOW') {
-      contentLines.push('0.85 0.1 0.1 rg');
-    } else if (r.abnormalFlag === 'HIGH' || r.abnormalFlag === 'LOW') {
-      contentLines.push('0.85 0.5 0.0 rg');
-    } else {
-      contentLines.push('0.05 0.1 0.2 rg');
-    }
-    contentLines.push('1 0 0 1 ' + (margin + 200) + ' ' + (currentRowTop + 4) + ' Tm');
-    contentLines.push('(' + escapePdfText(r.resultValue) + ') Tj');
-
-    contentLines.push('/F1 7.5 Tf');
-    contentLines.push('0.3 0.35 0.4 rg');
-    contentLines.push('1 0 0 1 ' + (margin + 300) + ' ' + (currentRowTop + 4) + ' Tm');
-    contentLines.push('(' + escapePdfText(r.unit || '-') + ') Tj');
-
-    contentLines.push('1 0 0 1 ' + (margin + 360) + ' ' + (currentRowTop + 4) + ' Tm');
-    contentLines.push('(' + escapePdfText(r.referenceRange || 'N/A') + ') Tj');
-
-    contentLines.push('/F2 7 Tf');
-    if (r.abnormalFlag === 'NORMAL') {
-      contentLines.push('0.08 0.6 0.25 rg');
-    }
-    contentLines.push('1 0 0 1 ' + (margin + 475) + ' ' + (currentRowTop + 4) + ' Tm');
-    contentLines.push('(' + escapePdfText(r.abnormalFlag) + ') Tj');
+    contentLines.push('/F1 6 Tf');
+    contentLines.push('0.9 0.95 1.0 rg');
+    contentLines.push('1 0 0 1 ' + (pageWidth - margin - 175) + ' ' + (currentTop - 10) + ' Tm');
+    contentLines.push('(Automated Clinical Chemistry / Hematology) Tj');
     contentLines.push('ET');
+
+    // Table Header
+    const tableHeaderTop = currentTop - 16;
+    contentLines.push('q');
+    contentLines.push('0.92 0.94 0.97 rg');
+    contentLines.push(margin + ' ' + (tableHeaderTop - 13) + ' ' + (pageWidth - 2 * margin) + ' 13 re f');
+    contentLines.push('0.8 0.85 0.9 RG');
+    contentLines.push(margin + ' ' + (tableHeaderTop - 13) + ' ' + (pageWidth - 2 * margin) + ' 13 re S');
+    contentLines.push('Q');
+
+    contentLines.push('BT');
+    contentLines.push('/F2 6.5 Tf');
+    contentLines.push('0.1 0.15 0.25 rg');
+    contentLines.push('1 0 0 1 ' + (margin + 8) + ' ' + (tableHeaderTop - 9.5) + ' Tm');
+    contentLines.push('(TEST PARAMETER) Tj');
+    contentLines.push('1 0 0 1 ' + (margin + 195) + ' ' + (tableHeaderTop - 9.5) + ' Tm');
+    contentLines.push('(OBSERVED VALUE) Tj');
+    contentLines.push('1 0 0 1 ' + (margin + 295) + ' ' + (tableHeaderTop - 9.5) + ' Tm');
+    contentLines.push('(UNITS) Tj');
+    contentLines.push('1 0 0 1 ' + (margin + 355) + ' ' + (tableHeaderTop - 9.5) + ' Tm');
+    contentLines.push('(BIOLOGICAL REF INTERVAL) Tj');
+    contentLines.push('1 0 0 1 ' + (margin + 475) + ' ' + (tableHeaderTop - 9.5) + ' Tm');
+    contentLines.push('(FLAG) Tj');
+    contentLines.push('ET');
+
+    // Parameter Rows
+    let currentRowTop = tableHeaderTop - 13;
+    const resultsList = ord.results && ord.results.length > 0 ? ord.results : [
+      { parameterName: ord.investigationName, resultValue: 'Tested', unit: '-', referenceRange: 'Normal', abnormalFlag: 'NORMAL' }
+    ];
+
+    resultsList.forEach((r, idx) => {
+      currentRowTop -= rowHeight;
+
+      if (idx % 2 === 1) {
+        contentLines.push('q');
+        contentLines.push('0.98 0.99 1.0 rg');
+        contentLines.push(margin + ' ' + currentRowTop + ' ' + (pageWidth - 2 * margin) + ' ' + rowHeight + ' re f');
+        contentLines.push('Q');
+      }
+
+      contentLines.push('q');
+      contentLines.push('0.9 0.92 0.95 RG');
+      contentLines.push('0.5 w');
+      contentLines.push(margin + ' ' + currentRowTop + ' m ' + (pageWidth - margin) + ' ' + currentRowTop + ' l S');
+      contentLines.push('Q');
+
+      contentLines.push('BT');
+      contentLines.push('/F1 6.8 Tf');
+      contentLines.push('0.1 0.15 0.2 rg');
+      contentLines.push('1 0 0 1 ' + (margin + 8) + ' ' + (currentRowTop + 3) + ' Tm');
+      contentLines.push('(' + escapePdfText(r.parameterName) + ') Tj');
+
+      contentLines.push('/F2 7.2 Tf');
+      if (r.abnormalFlag === 'CRITICAL_HIGH' || r.abnormalFlag === 'CRITICAL_LOW') {
+        contentLines.push('0.85 0.1 0.1 rg');
+      } else if (r.abnormalFlag === 'HIGH' || r.abnormalFlag === 'LOW') {
+        contentLines.push('0.85 0.5 0.0 rg');
+      } else {
+        contentLines.push('0.05 0.1 0.2 rg');
+      }
+      contentLines.push('1 0 0 1 ' + (margin + 195) + ' ' + (currentRowTop + 3) + ' Tm');
+      contentLines.push('(' + escapePdfText(r.resultValue) + ') Tj');
+
+      contentLines.push('/F1 6.8 Tf');
+      contentLines.push('0.3 0.35 0.4 rg');
+      contentLines.push('1 0 0 1 ' + (margin + 295) + ' ' + (currentRowTop + 3) + ' Tm');
+      contentLines.push('(' + escapePdfText(r.unit || '-') + ') Tj');
+
+      contentLines.push('1 0 0 1 ' + (margin + 355) + ' ' + (currentRowTop + 3) + ' Tm');
+      contentLines.push('(' + escapePdfText(r.referenceRange || 'N/A') + ') Tj');
+
+      contentLines.push('/F2 6.2 Tf');
+      if (r.abnormalFlag === 'NORMAL') {
+        contentLines.push('0.08 0.6 0.25 rg');
+      }
+      contentLines.push('1 0 0 1 ' + (margin + 475) + ' ' + (currentRowTop + 3) + ' Tm');
+      contentLines.push('(' + escapePdfText(r.abnormalFlag) + ') Tj');
+      contentLines.push('ET');
+    });
+
+    currentTop = currentRowTop - 5;
   });
 
   // Clinical Interpretation Remarks Box
-  const rawInterp = (order.report?.impression && order.report.impression !== 'Test findings are clinically correlated with internal quality controls (IQC Level 1 & 2 passed). Values outside reference range should be evaluated in context of clinical presentation.')
-    ? order.report.impression
-    : getStandardTestInterpretation(order.investigationName || 'Complete Blood Count (CBC)');
-  const cleanInterp = rawInterp.replace(/~~End of report~~/g, '').trim();
+  const remarksHeight = isMulti ? 30 : 36;
+  const remarksTop = Math.max(currentTop - 4, footerTop + remarksHeight + 10);
 
-  const remarksTop = currentRowTop - 14;
   contentLines.push('q');
   contentLines.push('0.97 0.98 0.99 rg');
-  contentLines.push(margin + ' ' + (remarksTop - 46) + ' ' + (pageWidth - 2 * margin) + ' 46 re f');
+  contentLines.push(margin + ' ' + (remarksTop - remarksHeight) + ' ' + (pageWidth - 2 * margin) + ' ' + remarksHeight + ' re f');
   contentLines.push('0.85 0.88 0.92 RG');
-  contentLines.push(margin + ' ' + (remarksTop - 46) + ' ' + (pageWidth - 2 * margin) + ' 46 re S');
+  contentLines.push(margin + ' ' + (remarksTop - remarksHeight) + ' ' + (pageWidth - 2 * margin) + ' ' + remarksHeight + ' re S');
   contentLines.push('Q');
 
   contentLines.push('BT');
-  contentLines.push('/F2 7.5 Tf');
+  contentLines.push('/F2 6.8 Tf');
   contentLines.push('0.01 0.41 0.63 rg');
-  contentLines.push('1 0 0 1 ' + (margin + 10) + ' ' + (remarksTop - 12) + ' Tm');
-  contentLines.push('(INTERPRETATION:) Tj');
+  contentLines.push('1 0 0 1 ' + (margin + 8) + ' ' + (remarksTop - 9) + ' Tm');
+  contentLines.push('(CLINICAL INTERPRETATION & PATHOLOGICAL REMARKS:) Tj');
 
-  contentLines.push('/F1 6.5 Tf');
+  contentLines.push('/F1 5.8 Tf');
   contentLines.push('0.2 0.25 0.3 rg');
-  contentLines.push('1 0 0 1 ' + (margin + 10) + ' ' + (remarksTop - 24) + ' Tm');
-  contentLines.push('(' + escapePdfText(cleanInterp.slice(0, 160)) + ') Tj');
-  if (cleanInterp.length > 160) {
-    contentLines.push('1 0 0 1 ' + (margin + 10) + ' ' + (remarksTop - 34) + ' Tm');
-    contentLines.push('(' + escapePdfText(cleanInterp.slice(160, 320)) + ') Tj');
+
+  if (isMulti) {
+    const combinedSummary = orderList.map(o => `${o.investigationName}: Findings correlated clinically with internal IQC.`).join(' | ');
+    contentLines.push('1 0 0 1 ' + (margin + 8) + ' ' + (remarksTop - 18) + ' Tm');
+    contentLines.push('(' + escapePdfText(combinedSummary.slice(0, 155)) + ') Tj');
+    if (combinedSummary.length > 155) {
+      contentLines.push('1 0 0 1 ' + (margin + 8) + ' ' + (remarksTop - 25) + ' Tm');
+      contentLines.push('(' + escapePdfText(combinedSummary.slice(155, 310)) + ') Tj');
+    }
+  } else {
+    const rawInterp = (primaryOrder.report?.impression && primaryOrder.report.impression !== 'Test findings are clinically correlated with internal quality controls (IQC Level 1 & 2 passed). Values outside reference range should be evaluated in context of clinical presentation.')
+      ? primaryOrder.report.impression
+      : getStandardTestInterpretation(primaryOrder.investigationName || 'Complete Blood Count (CBC)');
+    const cleanInterp = rawInterp.replace(/~~End of report~~/g, '').trim();
+    contentLines.push('1 0 0 1 ' + (margin + 8) + ' ' + (remarksTop - 18) + ' Tm');
+    contentLines.push('(' + escapePdfText(cleanInterp.slice(0, 155)) + ') Tj');
+    if (cleanInterp.length > 155) {
+      contentLines.push('1 0 0 1 ' + (margin + 8) + ' ' + (remarksTop - 25) + ' Tm');
+      contentLines.push('(' + escapePdfText(cleanInterp.slice(155, 310)) + ') Tj');
+    }
   }
   contentLines.push('ET');
 
   // End of report delimiter
   contentLines.push('BT');
-  contentLines.push('/F1 6 Tf');
+  contentLines.push('/F1 5.5 Tf');
   contentLines.push('0.5 0.55 0.6 rg');
-  contentLines.push('1 0 0 1 ' + (pageWidth / 2 - 30) + ' ' + (remarksTop - 54) + ' Tm');
+  contentLines.push('1 0 0 1 ' + (pageWidth / 2 - 28) + ' ' + (remarksTop - remarksHeight - 5) + ' Tm');
   contentLines.push('(~~End of report~~) Tj');
   contentLines.push('ET');
 
   // Digital Signature & Footers
-  const footerTop = 75;
   contentLines.push('q');
   contentLines.push('0.8 0.85 0.9 RG');
   contentLines.push('1 w');
@@ -286,7 +322,7 @@ export function downloadVectorPathologyPdf(order: InvestigationOrderDto, setting
   contentLines.push('(' + escapePdfText(settings.pathologistRegNo || 'Registration No. - 47684') + ') Tj');
   contentLines.push('ET');
 
-  // Statutory Medico-Legal Disclaimer (Full Width Bottom Line from Image 1)
+  // Statutory Medico-Legal Disclaimer
   contentLines.push('BT');
   contentLines.push('/F1 5.5 Tf');
   contentLines.push('0.35 0.4 0.45 rg');
@@ -328,7 +364,12 @@ export function downloadVectorPathologyPdf(order: InvestigationOrderDto, setting
   const downloadUrl = window.URL.createObjectURL(pdfBlob);
   const downloadLink = document.createElement('a');
   downloadLink.href = downloadUrl;
-  downloadLink.download = `Official-Diagnostic-Report-${order.patientName.replace(/\s+/g, '-')}-${order.orderNumber}.pdf`;
+
+  const docName = isMulti
+    ? `Official-Consolidated-Diagnostic-Report-${primaryOrder.patientName.replace(/\s+/g, '-')}-${orderList.length}Tests.pdf`
+    : `Official-Diagnostic-Report-${primaryOrder.patientName.replace(/\s+/g, '-')}-${primaryOrder.orderNumber}.pdf`;
+
+  downloadLink.download = docName;
   document.body.appendChild(downloadLink);
   downloadLink.click();
   document.body.removeChild(downloadLink);

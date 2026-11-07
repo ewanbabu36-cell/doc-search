@@ -199,10 +199,61 @@ export const DirectLabWalkInReportModal: React.FC<Props> = ({ isOpen, onClose })
 
   const [isProfileGuardAlertOpen, setIsProfileGuardAlertOpen] = useState(false);
   const [profileMissingFields, setProfileMissingFields] = useState<MissingProfileField[]>([]);
+  const [isAppendMode, setIsAppendMode] = useState<boolean>(false);
+  const [isCompactDensity, setIsCompactDensity] = useState<boolean>(true);
 
   if (!isOpen) return null;
 
+  const handleAppendPreset = (key: string) => {
+    const libProfile = mergedLibrary[key];
+    if (libProfile) {
+      const short = libProfile.shortName || libProfile.name;
+      setTestTitle(prev => prev.includes(short) ? prev : `${prev} + ${short}`);
+      const newParams = libProfile.parameters.map((p) => {
+        const resolved = resolveGenderSpecificParameter(p, patientGender);
+        return {
+          id: `${key}-${p.id}`,
+          name: p.name,
+          value: resolved.value,
+          unit: p.unit,
+          referenceRange: resolved.referenceRange,
+          flag: resolved.flag
+        };
+      });
+      setParameters(prev => [...prev, ...newParams]);
+      return;
+    }
+    const preset = PRESET_TESTS[key];
+    if (preset) {
+      setTestTitle(prev => prev.includes(key) ? prev : `${prev} + ${key}`);
+      const newParams = preset.parameters.map((p) => {
+        const mockDef = {
+          id: p.id,
+          code: p.name.slice(0, 6).toUpperCase(),
+          name: p.name,
+          unit: p.unit,
+          referenceRange: p.referenceRange,
+          defaultValue: p.value
+        };
+        const resolved = resolveGenderSpecificParameter(mockDef, patientGender);
+        return {
+          id: `${key}-${p.id}`,
+          name: p.name,
+          value: resolved.value,
+          unit: p.unit,
+          referenceRange: resolved.referenceRange,
+          flag: resolved.flag
+        };
+      });
+      setParameters(prev => [...prev, ...newParams]);
+    }
+  };
+
   const handleSelectLibraryProfile = (profile: ClinicalTestProfileDef, currentGender?: string) => {
+    if (isAppendMode) {
+      handleAppendPreset(profile.key);
+      return;
+    }
     setSelectedPresetKey(profile.key);
     setTestTitle(profile.name);
     setSpecimenType(profile.specimen);
@@ -222,6 +273,10 @@ export const DirectLabWalkInReportModal: React.FC<Props> = ({ isOpen, onClose })
   };
 
   const handleSelectPreset = (key: string) => {
+    if (isAppendMode) {
+      handleAppendPreset(key);
+      return;
+    }
     setSelectedPresetKey(key);
     const libProfile = mergedLibrary[key];
     if (libProfile) {
@@ -662,6 +717,10 @@ export const DirectLabWalkInReportModal: React.FC<Props> = ({ isOpen, onClose })
     }}>
       <style>{`
         @media print {
+          @page {
+            size: A4 portrait;
+            margin: 6mm;
+          }
           body * {
             visibility: hidden !important;
           }
@@ -669,15 +728,16 @@ export const DirectLabWalkInReportModal: React.FC<Props> = ({ isOpen, onClose })
             visibility: visible !important;
           }
           #printable-pathology-sheet {
-            position: fixed !important;
+            position: absolute !important;
             left: 0 !important;
             top: 0 !important;
             width: 100% !important;
             max-width: 100% !important;
             margin: 0 !important;
-            padding: 24px !important;
+            padding: 10mm 14mm !important;
             box-shadow: none !important;
             border-radius: 0 !important;
+            font-size: 9.5pt !important;
           }
         }
       `}</style>
@@ -796,6 +856,27 @@ export const DirectLabWalkInReportModal: React.FC<Props> = ({ isOpen, onClose })
                   }}
                 >
                   ← Edit Values
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsCompactDensity(!isCompactDensity)}
+                  style={{
+                    backgroundColor: isCompactDensity ? '#059669' : 'rgba(255,255,255,0.08)',
+                    color: '#FFF',
+                    border: `1.5px solid ${isCompactDensity ? '#10B981' : 'rgba(255,255,255,0.2)'}`,
+                    borderRadius: '8px',
+                    padding: '8px 14px',
+                    fontWeight: 700,
+                    fontSize: '0.8125rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                  title="Auto-tighten padding and font size to lock multiple tests onto 1 single A4 page"
+                >
+                  <span>{isCompactDensity ? '🌱' : '📄'}</span>
+                  <span>{isCompactDensity ? 'Eco 1-Page Active' : 'Normal Density'}</span>
                 </button>
                 <button
                   type="button"
@@ -967,6 +1048,31 @@ export const DirectLabWalkInReportModal: React.FC<Props> = ({ isOpen, onClose })
                 <span style={{ fontSize: '0.6875rem', color: '#64748B', fontWeight: 700, marginRight: '2px' }}>
                   {shortcutCategory === 'ALL' ? 'Popular Blood Tests:' : 'Category Tests:'}
                 </span>
+
+                {/* Multi-Test Append Mode Toggle */}
+                <button
+                  type="button"
+                  onClick={() => setIsAppendMode(!isAppendMode)}
+                  style={{
+                    backgroundColor: isAppendMode ? '#059669' : 'rgba(255,255,255,0.08)',
+                    color: isAppendMode ? '#FFF' : '#38BDF8',
+                    border: isAppendMode ? '1.5px solid #10B981' : '1px dashed #38BDF8',
+                    borderRadius: '6px',
+                    padding: '3px 8px',
+                    fontWeight: 800,
+                    fontSize: '0.6875rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    marginRight: '6px'
+                  }}
+                  title="When active, clicking any test appends its parameters into a consolidated multi-test report instead of replacing"
+                >
+                  <span>{isAppendMode ? '✓' : '+'}</span>
+                  <span>{isAppendMode ? 'Multi-Test Combine Active' : '+ Combine Multiple Tests'}</span>
+                </button>
+
                 {visibleShortcuts.map((k) => {
                   const testDef = MASTER_CLINICAL_TEST_LIBRARY[k];
                   if (!testDef) return null;
@@ -1245,13 +1351,13 @@ export const DirectLabWalkInReportModal: React.FC<Props> = ({ isOpen, onClose })
             <div id="printable-pathology-sheet" style={{
               backgroundColor: '#FFFFFF',
               color: '#0F172A',
-              padding: '40px 48px',
+              padding: isCompactDensity ? '20px 28px' : '40px 48px',
               borderRadius: '8px',
               boxShadow: '0 12px 40px rgba(0,0,0,0.65)',
               fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
               width: '100%',
               maxWidth: '920px',
-              minHeight: '1050px',
+              minHeight: isCompactDensity ? '850px' : '1050px',
               boxSizing: 'border-box'
             }}>
               {/* Lab Header & Accreditation */}
@@ -1313,14 +1419,14 @@ export const DirectLabWalkInReportModal: React.FC<Props> = ({ isOpen, onClose })
               </div>
 
               {/* Test Results Table */}
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem', marginBottom: '20px', border: '1px solid #CBD5E1' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: isCompactDensity ? '0.72rem' : '0.75rem', marginBottom: isCompactDensity ? '10px' : '20px', border: '1px solid #CBD5E1' }}>
                 <thead>
                   <tr style={{ backgroundColor: '#F1F5F9', borderBottom: '1.5px solid #94A3B8', textAlign: 'left', color: '#1E293B' }}>
-                    <th style={{ padding: '8px 10px' }}>TEST PARAMETER</th>
-                    <th style={{ textAlign: 'center', padding: '8px 10px' }}>OBSERVED VALUE</th>
-                    <th style={{ textAlign: 'center', padding: '8px 10px' }}>UNITS</th>
-                    <th style={{ textAlign: 'center', padding: '8px 10px' }}>BIOLOGICAL REFERENCE INTERVAL ({patientGender.toUpperCase()})</th>
-                    <th style={{ textAlign: 'center', padding: '8px 10px' }}>FLAG</th>
+                    <th style={{ padding: isCompactDensity ? '5px 8px' : '8px 10px' }}>TEST PARAMETER</th>
+                    <th style={{ textAlign: 'center', padding: isCompactDensity ? '5px 8px' : '8px 10px' }}>OBSERVED VALUE</th>
+                    <th style={{ textAlign: 'center', padding: isCompactDensity ? '5px 8px' : '8px 10px' }}>UNITS</th>
+                    <th style={{ textAlign: 'center', padding: isCompactDensity ? '5px 8px' : '8px 10px' }}>BIOLOGICAL REFERENCE INTERVAL ({patientGender.toUpperCase()})</th>
+                    <th style={{ textAlign: 'center', padding: isCompactDensity ? '5px 8px' : '8px 10px' }}>FLAG</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1328,13 +1434,13 @@ export const DirectLabWalkInReportModal: React.FC<Props> = ({ isOpen, onClose })
                     const isAbnormal = r.flag === 'HIGH' || r.flag === 'LOW' || r.flag === 'CRITICAL';
                     return (
                       <tr key={r.id || i} style={{ borderBottom: '1px solid #E2E8F0', backgroundColor: isAbnormal ? '#FEF2F2' : 'transparent' }}>
-                        <td style={{ padding: '8px 10px', fontWeight: 600, color: '#1E293B' }}>{r.name}</td>
-                        <td style={{ textAlign: 'center', padding: '8px 10px', fontWeight: 900, color: isAbnormal ? '#DC2626' : '#0F172A', fontSize: '0.8125rem' }}>
+                        <td style={{ padding: isCompactDensity ? '4px 8px' : '8px 10px', fontWeight: 600, color: '#1E293B' }}>{r.name}</td>
+                        <td style={{ textAlign: 'center', padding: isCompactDensity ? '4px 8px' : '8px 10px', fontWeight: 900, color: isAbnormal ? '#DC2626' : '#0F172A', fontSize: isCompactDensity ? '0.78rem' : '0.8125rem' }}>
                           {r.value}
                         </td>
-                        <td style={{ textAlign: 'center', padding: '8px 10px', color: '#64748B' }}>{r.unit}</td>
-                        <td style={{ textAlign: 'center', padding: '8px 10px', color: '#334155' }}>{r.referenceRange}</td>
-                        <td style={{ textAlign: 'center', padding: '8px 10px' }}>
+                        <td style={{ textAlign: 'center', padding: isCompactDensity ? '4px 8px' : '8px 10px', color: '#64748B' }}>{r.unit}</td>
+                        <td style={{ textAlign: 'center', padding: isCompactDensity ? '4px 8px' : '8px 10px', color: '#334155' }}>{r.referenceRange}</td>
+                        <td style={{ textAlign: 'center', padding: isCompactDensity ? '4px 8px' : '8px 10px' }}>
                           {isAbnormal ? (
                             <span style={{ backgroundColor: '#FEE2E2', color: '#DC2626', padding: '2px 6px', borderRadius: '4px', fontWeight: 900, fontSize: '0.6875rem' }}>
                               ⚠️ {r.flag}

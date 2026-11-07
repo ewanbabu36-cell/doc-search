@@ -93,6 +93,17 @@ export const InvestigationReportView: React.FC<InvestigationReportViewProps> = (
     return filteredOrders.find((o) => o.id === selectedOrderId) || filteredOrders[0] || ordersWithReports[0];
   }, [filteredOrders, selectedOrderId, ordersWithReports]);
 
+  // Consolidated Multi-Test Printing State
+  const [consolidatedOrdersToPrint, setConsolidatedOrdersToPrint] = useState<InvestigationOrderDto[] | null>(null);
+
+  // Sibling reports for the same patient (for 1-click single-page consolidated printing)
+  const siblingOrdersForSamePatient = useMemo(() => {
+    if (!selectedOrder) return [];
+    return ordersWithReports.filter(
+      (o) => (o.patientMrn && o.patientMrn === selectedOrder.patientMrn) || (o.patientName && o.patientName === selectedOrder.patientName)
+    );
+  }, [selectedOrder, ordersWithReports]);
+
   // Batch Operations State (Evening Rush-Hour Module)
   const [selectedBatchIds, setSelectedBatchIds] = useState<Set<string>>(new Set());
   const [isBulkWhatsAppModalOpen, setIsBulkWhatsAppModalOpen] = useState(false);
@@ -320,6 +331,34 @@ export const InvestigationReportView: React.FC<InvestigationReportViewProps> = (
             >
               <span>📥</span>
               <span>Vector PDFs</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (!checkGuard('Print Consolidated Multi-Test Report')) return;
+                const targetOrders = ordersWithReports.filter(o => selectedBatchIds.has(o.id));
+                setConsolidatedOrdersToPrint(targetOrders);
+                setIsPrintModalOpen(true);
+              }}
+              style={{
+                backgroundColor: '#0284C7',
+                color: '#FFF',
+                border: '1.5px solid #38BDF8',
+                borderRadius: '6px',
+                padding: '7px 13px',
+                fontSize: '0.78rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 2px 8px rgba(2, 132, 199, 0.4)'
+              }}
+              title="Consolidate selected reports onto a single compact A4 page"
+            >
+              <span>📄</span>
+              <span>Combine & Print 1-Page ({selectedBatchIds.size})</span>
             </button>
 
             <button
@@ -571,12 +610,39 @@ export const InvestigationReportView: React.FC<InvestigationReportViewProps> = (
                   variant="outline"
                   onClick={() => {
                     if (!checkGuard('Print NABL Report / WhatsApp')) return;
+                    setConsolidatedOrdersToPrint(null);
                     setIsPrintModalOpen(true);
                   }}
                   style={{ borderColor: 'rgba(255,255,255,0.2)', color: '#F8FAFC', minHeight: '38px' }}
                 >
                   🖨️ Print NABL Report
                 </Button>
+                {siblingOrdersForSamePatient.length > 1 && (
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    onClick={() => {
+                      if (!checkGuard('Print Consolidated Report')) return;
+                      setConsolidatedOrdersToPrint(siblingOrdersForSamePatient);
+                      setIsPrintModalOpen(true);
+                    }}
+                    style={{
+                      backgroundColor: '#0284C7',
+                      borderColor: '#38BDF8',
+                      color: '#FFFFFF',
+                      fontWeight: 800,
+                      minHeight: '38px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      boxShadow: '0 2px 8px rgba(2, 132, 199, 0.4)'
+                    }}
+                    title="Consolidate all tests for this patient into 1 single compact A4 page"
+                  >
+                    <span>📄</span>
+                    <span>Print Consolidated ({siblingOrdersForSamePatient.length} Tests 1-Page)</span>
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -863,8 +929,12 @@ export const InvestigationReportView: React.FC<InvestigationReportViewProps> = (
       {selectedOrder && (
         <PrintablePathologyReportModal
           isOpen={isPrintModalOpen}
-          onClose={() => setIsPrintModalOpen(false)}
-          order={selectedOrder}
+          onClose={() => {
+            setIsPrintModalOpen(false);
+            setConsolidatedOrdersToPrint(null);
+          }}
+          order={consolidatedOrdersToPrint ? undefined : selectedOrder}
+          orders={consolidatedOrdersToPrint || undefined}
         />
       )}
 
