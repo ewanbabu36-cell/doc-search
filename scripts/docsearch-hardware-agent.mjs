@@ -153,7 +153,7 @@ const server = http.createServer(async (req, res) => {
   };
 
   // 1. Health & Agent Overview
-  if (pathname === '/api/v1/hardware/health' || pathname === '/') {
+  if (pathname === '/api/v1/hardware/health' || pathname === '/health' || pathname === '/') {
     return sendJson(200, {
       status: 'healthy',
       agent: 'DocSearch Local Hardware Agent (LHA)',

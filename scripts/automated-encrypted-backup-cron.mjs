@@ -434,8 +434,42 @@ function pruneOldSnapshots() {
         } catch {}
       }
     }
+
+    // Prune uncompressed WAL archive segments (maintain last 5 files, ~80MB max)
+    pruneWalArchives();
   } catch (err) {
     console.warn('[DR Vault] Error pruning old snapshots:', err.message);
+  }
+}
+
+/**
+ * Prune uncompressed PostgreSQL WAL archive segments to prevent silent disk leaks.
+ */
+function pruneWalArchives(maxWalFiles = 5) {
+  try {
+    const walDir = path.join(rootDir, 'backups', 'wal_archive');
+    if (!fs.existsSync(walDir)) return;
+    const files = fs.readdirSync(walDir);
+    const walFiles = files
+      .filter((f) => /^[0-9A-F]{24}$/i.test(f))
+      .map((f) => ({
+        name: f,
+        fullPath: path.join(walDir, f),
+        time: fs.statSync(path.join(walDir, f)).mtimeMs
+      }))
+      .sort((a, b) => b.time - a.time);
+
+    if (walFiles.length > maxWalFiles) {
+      const toRemove = walFiles.slice(maxWalFiles);
+      for (const item of toRemove) {
+        try {
+          fs.unlinkSync(item.fullPath);
+          console.log(`  [-] Pruned old WAL archive segment: ${item.name}`);
+        } catch {}
+      }
+    }
+  } catch (err) {
+    console.warn('[DR Vault] Error pruning WAL archives:', err.message);
   }
 }
 

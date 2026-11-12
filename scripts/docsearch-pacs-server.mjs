@@ -436,7 +436,7 @@ function createDicomTcpServer() {
 // 2. DICOMweb WADO-RS / QIDO-RS / STOW-RS HTTP REST Server (Port 8042)
 // -----------------------------------------------------------------------------
 function createDicomwebHttpServer() {
-  const server = http.createServer((req, res) => {
+  const server = http.createServer(async (req, res) => {
     // Enable CORS for frontend applications
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
