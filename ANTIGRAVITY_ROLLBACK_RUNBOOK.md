@@ -7,7 +7,7 @@
 
 ## 1. Quick Reversion (Takes 10 Seconds)
 
-If at any point after migration you wish to revert back to having files directly on `C:` (before `antigravity.orig` is permanently deleted):
+If at any point after migration you wish to revert back to having files directly on `C:` (before `.orig` staging folders are deleted):
 
 ### Step 1: Close Antigravity
 Close all Antigravity windows and background processes.
@@ -17,14 +17,19 @@ Open Command Prompt as Administrator and run:
 ```cmd
 "D:\DOC SEARCH\scripts\rollback_antigravity_migration.bat"
 ```
-Or manually execute these two commands:
+Or manually execute these commands:
 ```cmd
+:: 1. Remove User Data junction and restore folder
 rmdir "C:\Users\alamr\.gemini\antigravity"
 ren "C:\Users\alamr\.gemini\antigravity.orig" antigravity
+
+:: 2. Remove App Binaries junction and restore folder
+rmdir "C:\Users\alamr\AppData\Local\Programs\antigravity"
+ren "C:\Users\alamr\AppData\Local\Programs\antigravity.orig" antigravity
 ```
 
 > [!NOTE]
-> In Windows NTFS, running `rmdir` on a directory junction removes **only the link pointer**. It does **NOT** delete the actual files inside `D:\AntigravityData`!
+> In Windows NTFS, running `rmdir` on a directory junction removes **only the link pointer**. It does **NOT** delete the actual files inside `D:\AntigravityData` or `D:\Programs\Antigravity`!
 
 ### Step 3: Re-launch Antigravity
 Launch Antigravity normally. Your original state on `C:` is immediately active.
@@ -45,6 +50,9 @@ rmdir /S /Q "C:\Users\alamr\.gemini\antigravity"
 
 :: 2. Restore directly from snapshot vault
 robocopy "D:\Antigravity_Migration_Backup\snapshot_20261113_1611\gemini_antigravity" "C:\Users\alamr\.gemini\antigravity" /E /COPYALL /R:1 /W:1
+
+:: 3. Restore App Binaries
+robocopy "D:\Programs\Antigravity" "C:\Users\alamr\AppData\Local\Programs\antigravity" /E /COPYALL /R:1 /W:1
 ```
 
 ---

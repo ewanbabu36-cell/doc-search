@@ -9,14 +9,15 @@
 
 | # | Test Case Description | Expected Result | Verification Command / Step | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| **T01** | **NTFS Directory Junction Status** | Reparse point attributes set, pointing to `D:\AntigravityData` | `cmd /c dir /a "C:\Users\alamr\.gemini"` shows `<JUNCTION> antigravity [D:\AntigravityData]` | Pre-tested / Verified syntax |
-| **T02** | **Antigravity App Launch** | Antigravity opens without DLL, path, or Electron errors | Launch `Antigravity.exe` | Staged for handover |
-| **T03** | **Google Account Authentication** | User remains signed in, OAuth tokens valid | Check user profile avatar and model status | Pre-verified (Roaming preserved) |
-| **T04** | **Conversation History Accessibility** | All previous chat sessions appear in sidebar | Open sidebar, browse older chat sessions | Pre-verified (summaries DB intact) |
-| **T05** | **Agent Memory & Brain Checkpoints** | Current conversation context and subagents loaded | Check conversation history | Pre-verified (139k files intact) |
-| **T06** | **DOC SEARCH Workspace Integrity** | Project opens cleanly, package.json and tsconfig valid | `git status` clean on `b68216f` | Verified clean |
-| **T07** | **PostgreSQL Cluster Health** | PostgreSQL 18.4 running, 580 tables, 39,056 rows intact | `node scripts/automated-encrypted-backup-cron.mjs --now` | Verified (Backup created) |
-| **T08** | **C: Drive Space Recovery** | Free space on C: increases by ~7.45 GB | `Get-PSDrive C` | Staged for final deletion step |
+| **T01** | **NTFS User Data Junction Status** | Reparse point attributes set, pointing to `D:\AntigravityData` | `cmd /c dir /a "C:\Users\alamr\.gemini"` shows `<JUNCTION> antigravity [D:\AntigravityData]` | Pre-tested / Verified syntax |
+| **T02** | **NTFS App Binaries Junction Status** | Reparse point attributes set, pointing to `D:\Programs\Antigravity` | `cmd /c dir /a "C:\Users\alamr\AppData\Local\Programs"` shows `<JUNCTION> antigravity [D:\Programs\Antigravity]` | Pre-tested / 426 files staged |
+| **T03** | **Antigravity App Launch** | Antigravity opens without DLL, path, or Electron errors | Launch `Antigravity.exe` | Staged for handover |
+| **T04** | **Google Account Authentication** | User remains signed in, OAuth tokens valid | Check user profile avatar and model status | Pre-verified (Roaming preserved) |
+| **T05** | **Conversation History Accessibility** | All previous chat sessions appear in sidebar | Open sidebar, browse older chat sessions | Pre-verified (summaries DB intact) |
+| **T06** | **Agent Memory & Brain Checkpoints** | Current conversation context and subagents loaded | Check conversation history | Pre-verified (139k files intact) |
+| **T07** | **DOC SEARCH Workspace Integrity** | Project opens cleanly, package.json and tsconfig valid | `git status` clean on `354b454` | Verified clean |
+| **T08** | **PostgreSQL Cluster Health** | PostgreSQL 18.4 running, 580 tables, 39,056 rows intact | `node scripts/automated-encrypted-backup-cron.mjs --now` | Verified (Backup created) |
+| **T09** | **C: Drive Space Recovery** | Free space on C: increases by ~8.03 GB | `Get-PSDrive C` | Staged for final deletion step |
 
 ---
 

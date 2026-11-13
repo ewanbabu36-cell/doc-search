@@ -48,6 +48,8 @@ console.log('=== VERIFYING ANTIGRAVITY DATA COPIES ===');
 const cPath = 'C:\\Users\\alamr\\.gemini\\antigravity';
 const dData = 'D:\\AntigravityData';
 const backupData = 'D:\\Antigravity_Migration_Backup\\snapshot_20261113_1611\\gemini_antigravity';
+const cAppPath = 'C:\\Users\\alamr\\AppData\\Local\\Programs\\antigravity';
+const dAppPath = 'D:\\Programs\\Antigravity';
 
 console.log('\n--- 1. Critical Index Database: conversation_summaries.db ---');
 const cDb = getFileHashAndSize(path.join(cPath, 'conversation_summaries.db'));
@@ -67,11 +69,18 @@ for (const file of ['installation_id', 'version.txt', 'config.json']) {
   }
 }
 
-console.log('\n--- 3. Target D:\\AntigravityData Volume Stats ---');
+console.log('\n--- 3. Target D:\\Programs\\Antigravity Application Binaries Stats ---');
+const cAppStats = countDir(cAppPath);
+const dAppStats = countDir(dAppPath);
+console.log(`C App Binaries: ${cAppStats.fileCount} files, ${cAppStats.dirCount} folders, ${cAppStats.mb} MB`);
+console.log(`D App Binaries: ${dAppStats.fileCount} files, ${dAppStats.dirCount} folders, ${dAppStats.mb} MB`);
+console.log(`App Binaries Match: ${cAppStats.fileCount === dAppStats.fileCount && cAppStats.mb === dAppStats.mb}`);
+
+console.log('\n--- 4. Target D:\\AntigravityData Volume Stats ---');
 const dStats = countDir(dData);
 console.log(`D:\\AntigravityData: ${dStats.fileCount} files, ${dStats.dirCount} folders, ${dStats.mb} MB`);
 
-console.log('\n--- 4. Drive Space Check ---');
+console.log('\n--- 5. Drive Space Check ---');
 import { execSync } from 'child_process';
 const driveInfo = execSync('powershell -NoProfile -Command "Get-PSDrive C, D | Select-Object Name, @{N=\'UsedGB\';E={[math]::Round($_.Used/1GB,2)}}, @{N=\'FreeGB\';E={[math]::Round($_.Free/1GB,2)}} | ConvertTo-Json"').toString();
 console.log(driveInfo);
