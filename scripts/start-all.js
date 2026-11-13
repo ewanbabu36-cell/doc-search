@@ -231,14 +231,6 @@ async function main() {
       executable: process.execPath,
       args: [path.join(rootDir, 'apps/landing-page/node_modules/vite/bin/vite.js'), '--port', '5175', '--host', '--strictPort'],
       color: '\x1b[33m'
-    },
-    {
-      name: 'Sovra Healthcare PWA',
-      port: 5176,
-      cwd: path.join(rootDir, 'apps/sovra-pwa'),
-      executable: process.execPath,
-      args: [path.join(rootDir, 'apps/sovra-pwa/node_modules/vite/bin/vite.js'), '--port', '5176', '--host', '--strictPort'],
-      color: '\x1b[32m'
     }
   ];
 

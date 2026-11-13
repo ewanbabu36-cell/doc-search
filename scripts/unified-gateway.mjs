@@ -8,7 +8,6 @@ const SERVICES = {
   landing: { port: 5175, name: 'Landing & Public Booking', icon: '🌐', path: '/' },
   partner: { port: 5173, name: 'Partner Platform (ERP)', icon: '🏥', path: '/partner/' },
   company: { port: 5177, name: 'Company Platform (Admin)', icon: '🏢', path: '/hq/' },
-  pwa:     { port: 5176, name: 'Sovra Healthcare PWA', icon: '📱', path: '/pwa/' },
   patient: { port: 5174, name: 'Patient Mobile App', icon: '📲', path: '/patient/' },
   api:     { port: 4000, name: 'API Gateway', icon: '⚡', path: '/api/' },
   pacs:    { port: 8042, name: 'Radiology PACS Viewer', icon: '🩻', path: '/pacs/' },
@@ -25,7 +24,6 @@ function resolveUpstream(req) {
   // 1. Subdomain resolution (e.g. partner.localhost, partner.127.0.0.1.nip.io, partner.docsearch.local)
   if (host.startsWith('partner.')) return { port: SERVICES.partner.port, service: SERVICES.partner.name };
   if (host.startsWith('admin.') || host.startsWith('hq.') || host.startsWith('company.')) return { port: SERVICES.company.port, service: SERVICES.company.name };
-  if (host.startsWith('pwa.')) return { port: SERVICES.pwa.port, service: SERVICES.pwa.name };
   if (host.startsWith('patient.')) return { port: SERVICES.patient.port, service: SERVICES.patient.name };
   if (host.startsWith('api.')) return { port: SERVICES.api.port, service: SERVICES.api.name };
   if (host.startsWith('pacs.')) return { port: SERVICES.pacs.port, service: SERVICES.pacs.name };
@@ -278,10 +276,7 @@ function renderHubHtml(activeApp = 'partner') {
       <button class="app-tab ${activeApp === 'company' ? 'active' : ''}" onclick="switchApp('company', 'http://127.0.0.1:5177')">
         <span class="icon">🏢</span> Company Platform (Admin)
       </button>
-      <button class="app-tab ${activeApp === 'pwa' ? 'active' : ''}" onclick="switchApp('pwa', 'http://127.0.0.1:5176')">
-        <span class="icon">📱</span> Sovra Patient PWA
-      </button>
-      <button class="app-tab ${activeApp === 'pacs' ? 'active' : ''}" onclick="switchApp('pacs', 'http://127.0.0.1:8042/dicom-web/studies')">
+            <button class="app-tab ${activeApp === 'pacs' ? 'active' : ''}" onclick="switchApp('pacs', 'http://127.0.0.1:8042/dicom-web/studies')">
         <span class="icon">🩻</span> PACS Server
       </button>
       <button class="app-tab ${activeApp === 'api' ? 'active' : ''}" onclick="switchApp('api', 'http://127.0.0.1:4000/api/v1/health')">
@@ -327,11 +322,7 @@ function renderHubHtml(activeApp = 'partner') {
         <div class="item-meta"><span>🏢 Company Admin Console</span></div>
         <span class="item-port">:5177</span>
       </a>
-      <a href="javascript:void(0)" onclick="switchApp('pwa', 'http://127.0.0.1:5176')" class="grid-item">
-        <div class="item-meta"><span>📱 Sovra Healthcare PWA</span></div>
-        <span class="item-port">:5176</span>
-      </a>
-      <a href="javascript:void(0)" onclick="switchApp('patient', 'http://127.0.0.1:5174')" class="grid-item">
+            <a href="javascript:void(0)" onclick="switchApp('patient', 'http://127.0.0.1:5174')" class="grid-item">
         <div class="item-meta"><span>📲 Patient Mobile App</span></div>
         <span class="item-port">:5174</span>
       </a>

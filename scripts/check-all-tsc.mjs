@@ -9,7 +9,6 @@ const tsconfigs = [
   'apps/api-gateway/tsconfig.json',
   'apps/partner-platform/tsconfig.json',
   'apps/patient-app/tsconfig.json',
-  'apps/sovra-pwa/tsconfig.json',
   'apps/company-platform/tsconfig.json',
   'apps/landing-page/tsconfig.json'
 ];
@@ -32,6 +31,6 @@ if (failed > 0) {
   console.error(`\n❌ ${failed} TypeScript configurations failed.`);
   process.exit(1);
 } else {
-  console.log(`\n✅ All 11/11 TypeScript configurations PASSED.`);
+  console.log(`\n✅ All 10/10 TypeScript configurations PASSED.`);
   process.exit(0);
 }
