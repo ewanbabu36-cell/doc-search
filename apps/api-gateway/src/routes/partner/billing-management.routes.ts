@@ -6,7 +6,8 @@ import {
   doctorProfiles,
   eq,
   and,
-  desc
+  desc,
+  sql
 } from '@docsearch/database';
 import crypto from 'node:crypto';
 import { z } from 'zod';
@@ -1717,17 +1718,36 @@ export const billingManagementRoutes: FastifyPluginAsync = async (fastify) => {
       const { tenantId } = request.session;
       const query = (request.query || {}) as { category?: string; searchTerm?: string };
       const db = getDatabase();
-      const res = await (db as any).execute({
-        text: `
-          SELECT * FROM clinical.billing_service_catalog 
-          WHERE tenant_id = $1 
-            AND ($2::text IS NULL OR category = $2)
-            AND ($3::text IS NULL OR service_name ILIKE '%' || $3 || '%' OR service_code ILIKE '%' || $3 || '%')
-          ORDER BY service_name ASC
-        `,
-        values: [tenantId, query.category || null, query.searchTerm || null]
-      });
-      return reply.send({ success: true, data: res.rows || [] });
+      const cat = query.category || null;
+      const term = query.searchTerm ? `%${query.searchTerm}%` : null;
+      const res = await db.execute(sql`
+        SELECT * FROM clinical.billing_service_catalog 
+        WHERE tenant_id = ${tenantId}
+          AND (${cat}::text IS NULL OR category = ${cat})
+          AND (${term}::text IS NULL OR service_name ILIKE ${term} OR service_code ILIKE ${term})
+        ORDER BY service_name ASC
+      `);
+      return reply.send({ success: true, data: (res as any).rows || res || [] });
+    }
+  );
+
+  fastify.get(
+    '/api/v1/partner/billing/service-catalog',
+    { preHandler: [authenticate] },
+    async (request, reply) => {
+      const { tenantId } = request.session;
+      const query = (request.query || {}) as { category?: string; searchTerm?: string };
+      const db = getDatabase();
+      const cat = query.category || null;
+      const term = query.searchTerm ? `%${query.searchTerm}%` : null;
+      const res = await db.execute(sql`
+        SELECT * FROM clinical.billing_service_catalog 
+        WHERE tenant_id = ${tenantId}
+          AND (${cat}::text IS NULL OR category = ${cat})
+          AND (${term}::text IS NULL OR service_name ILIKE ${term} OR service_code ILIKE ${term})
+        ORDER BY service_name ASC
+      `);
+      return reply.send({ success: true, data: (res as any).rows || res || [] });
     }
   );
 
@@ -1738,26 +1758,33 @@ export const billingManagementRoutes: FastifyPluginAsync = async (fastify) => {
       const { tenantId } = request.session;
       const b = request.body as any;
       const db = getDatabase();
-      const res = await (db as any).execute({
-        text: `
-          INSERT INTO clinical.billing_service_catalog (
-            id, tenant_id, partner_id, organization_id, branch_id,
-            service_code, service_name, description, category, department,
-            service_type, unit, base_price, taxable, tax_code, active, effective_from
-          ) VALUES (
-            gen_random_uuid(), $1, $2, $3, $4,
-            $5, $6, $7, $8, $9,
-            $10, $11, $12, $13, $14, true, NOW()
-          ) RETURNING *
-        `,
-        values: [
-          tenantId, b.partnerId || tenantId, b.organizationId || tenantId, b.branchId || null,
-          (b.serviceCode || 'SRV-' + Date.now()).toUpperCase(), b.serviceName, b.description || '',
-          b.category || 'GENERAL', b.department || 'GENERAL', b.serviceType || 'PROCEDURE',
-          b.unit || 'SESSION', Number(b.basePrice || 0), Boolean(b.taxable), b.taxCode || null
-        ]
-      });
-      return reply.status(201).send({ success: true, data: res.rows?.[0] });
+      const serviceCode = (b.serviceCode || 'SRV-' + Date.now()).toUpperCase();
+      const serviceName = b.serviceName;
+      const description = b.description || '';
+      const category = b.category || 'GENERAL';
+      const department = b.department || 'GENERAL';
+      const serviceType = b.serviceType || 'PROCEDURE';
+      const unit = b.unit || 'SESSION';
+      const basePrice = Number(b.basePrice || 0);
+      const taxable = Boolean(b.taxable);
+      const taxCode = b.taxCode || null;
+      const partnerId = b.partnerId || tenantId;
+      const orgId = b.organizationId || tenantId;
+      const branchId = b.branchId || null;
+
+      const res = await db.execute(sql`
+        INSERT INTO clinical.billing_service_catalog (
+          id, tenant_id, partner_id, organization_id, branch_id,
+          service_code, service_name, description, category, department,
+          service_type, unit, base_price, taxable, tax_code, active, effective_from
+        ) VALUES (
+          gen_random_uuid(), ${tenantId}, ${partnerId}, ${orgId}, ${branchId},
+          ${serviceCode}, ${serviceName}, ${description}, ${category}, ${department},
+          ${serviceType}, ${unit}, ${basePrice}, ${taxable}, ${taxCode}, true, NOW()
+        ) RETURNING *
+      `);
+      const rows = (res as any).rows || res || [];
+      return reply.status(201).send({ success: true, data: rows[0] });
     }
   );
 
@@ -1769,21 +1796,25 @@ export const billingManagementRoutes: FastifyPluginAsync = async (fastify) => {
       const { id } = request.params as { id: string };
       const b = request.body as any;
       const db = getDatabase();
-      const res = await (db as any).execute({
-        text: `
-          UPDATE clinical.billing_service_catalog
-          SET service_name = COALESCE($3, service_name),
-              description = COALESCE($4, description),
-              base_price = COALESCE($5, base_price),
-              taxable = COALESCE($6, taxable),
-              active = COALESCE($7, active),
-              updated_at = NOW()
-          WHERE id = $1 AND tenant_id = $2
-          RETURNING *
-        `,
-        values: [id, tenantId, b.serviceName || null, b.description || null, b.basePrice !== undefined ? Number(b.basePrice) : null, b.taxable !== undefined ? Boolean(b.taxable) : null, b.active !== undefined ? Boolean(b.active) : null]
-      });
-      return reply.send({ success: true, data: res.rows?.[0] });
+      const serviceName = b.serviceName || null;
+      const description = b.description || null;
+      const basePrice = b.basePrice !== undefined ? Number(b.basePrice) : null;
+      const taxable = b.taxable !== undefined ? Boolean(b.taxable) : null;
+      const active = b.active !== undefined ? Boolean(b.active) : null;
+
+      const res = await db.execute(sql`
+        UPDATE clinical.billing_service_catalog
+        SET service_name = COALESCE(${serviceName}, service_name),
+            description = COALESCE(${description}, description),
+            base_price = COALESCE(${basePrice}, base_price),
+            taxable = COALESCE(${taxable}, taxable),
+            active = COALESCE(${active}, active),
+            updated_at = NOW()
+        WHERE id = ${id} AND tenant_id = ${tenantId}
+        RETURNING *
+      `);
+      const rows = (res as any).rows || res || [];
+      return reply.send({ success: true, data: rows[0] });
     }
   );
 
@@ -1795,17 +1826,16 @@ export const billingManagementRoutes: FastifyPluginAsync = async (fastify) => {
       const { tenantId } = request.session;
       const query = (request.query || {}) as { patientId?: string; status?: string };
       const db = getDatabase();
-      const res = await (db as any).execute({
-        text: `
-          SELECT * FROM clinical.billing_charges 
-          WHERE tenant_id = $1 
-            AND ($2::uuid IS NULL OR patient_id = $2)
-            AND ($3::text IS NULL OR status = $3)
-          ORDER BY created_at DESC
-        `,
-        values: [tenantId, query.patientId || null, query.status || null]
-      });
-      return reply.send({ success: true, data: res.rows || [] });
+      const patId = query.patientId || null;
+      const statusParam = query.status || null;
+      const res = await db.execute(sql`
+        SELECT * FROM clinical.billing_charges 
+        WHERE tenant_id = ${tenantId}
+          AND (${patId}::uuid IS NULL OR patient_id = ${patId}::uuid)
+          AND (${statusParam}::text IS NULL OR status = ${statusParam})
+        ORDER BY created_at DESC
+      `);
+      return reply.send({ success: true, data: (res as any).rows || res || [] });
     }
   );
 
@@ -1816,28 +1846,32 @@ export const billingManagementRoutes: FastifyPluginAsync = async (fastify) => {
       const { tenantId, userId } = request.session;
       const b = request.body as any;
       const db = getDatabase();
-      const res = await (db as any).execute({
-        text: `
-          INSERT INTO clinical.billing_charges (
-            id, tenant_id, partner_id, organization_id, branch_id,
-            patient_id, charge_number, source_domain, status,
-            subtotal, discount_total, tax_total, grand_total,
-            captured_by, captured_at
-          ) VALUES (
-            gen_random_uuid(), $1, $2, $3, $4,
-            $5, $6, $7, 'CAPTURED',
-            $8, $9, $10, $11,
-            $12, NOW()
-          ) RETURNING *
-        `,
-        values: [
-          tenantId, b.partnerId || tenantId, b.organizationId || tenantId, b.branchId || tenantId,
-          b.patientId, 'CHG-' + Date.now(), b.sourceDomain || 'MANUAL',
-          Number(b.subtotal || b.amount || 0), Number(b.discount || 0), Number(b.tax || 0), Number(b.grandTotal || b.amount || 0),
-          userId || 'SYSTEM'
-        ]
-      });
-      return reply.status(201).send({ success: true, data: res.rows?.[0] });
+      const partnerId = b.partnerId || tenantId;
+      const orgId = b.organizationId || tenantId;
+      const branchId = b.branchId || tenantId;
+      const chargeNum = 'CHG-' + Date.now();
+      const sourceDomain = b.sourceDomain || 'MANUAL';
+      const subtotal = Number(b.subtotal || b.amount || 0);
+      const discount = Number(b.discount || 0);
+      const tax = Number(b.tax || 0);
+      const grandTotal = Number(b.grandTotal || b.amount || 0);
+      const capturedBy = userId || 'SYSTEM';
+
+      const res = await db.execute(sql`
+        INSERT INTO clinical.billing_charges (
+          id, tenant_id, partner_id, organization_id, branch_id,
+          patient_id, charge_number, source_domain, status,
+          subtotal, discount_total, tax_total, grand_total,
+          captured_by, captured_at
+        ) VALUES (
+          gen_random_uuid(), ${tenantId}, ${partnerId}, ${orgId}, ${branchId},
+          ${b.patientId}, ${chargeNum}, ${sourceDomain}, 'CAPTURED',
+          ${subtotal}, ${discount}, ${tax}, ${grandTotal},
+          ${capturedBy}, NOW()
+        ) RETURNING *
+      `);
+      const rows = (res as any).rows || res || [];
+      return reply.status(201).send({ success: true, data: rows[0] });
     }
   );
 
@@ -1849,16 +1883,14 @@ export const billingManagementRoutes: FastifyPluginAsync = async (fastify) => {
       const { tenantId } = request.session;
       const query = (request.query || {}) as { status?: string };
       const db = getDatabase();
-      const res = await (db as any).execute({
-        text: `
-          SELECT * FROM clinical.billing_cashier_sessions 
-          WHERE tenant_id = $1 
-            AND ($2::text IS NULL OR status = $2)
-          ORDER BY opened_at DESC
-        `,
-        values: [tenantId, query.status || null]
-      });
-      return reply.send({ success: true, data: res.rows || [] });
+      const statusParam = query.status || null;
+      const res = await db.execute(sql`
+        SELECT * FROM clinical.billing_cashier_sessions 
+        WHERE tenant_id = ${tenantId}
+          AND (${statusParam}::text IS NULL OR status = ${statusParam})
+        ORDER BY opened_at DESC
+      `);
+      return reply.send({ success: true, data: (res as any).rows || res || [] });
     }
   );
 
@@ -1869,25 +1901,27 @@ export const billingManagementRoutes: FastifyPluginAsync = async (fastify) => {
       const { tenantId, userId } = request.session;
       const b = request.body as any;
       const db = getDatabase();
-      const res = await (db as any).execute({
-        text: `
-          INSERT INTO clinical.billing_cashier_sessions (
-            id, tenant_id, partner_id, organization_id, branch_id,
-            cashier_id, cashier_name, session_number, opening_balance,
-            cash_received, cash_refunded, expected_closing_balance, status, opened_at
-          ) VALUES (
-            gen_random_uuid(), $1, $2, $3, $4,
-            $5, $6, $7, $8,
-            0, 0, $8, 'OPEN', NOW()
-          ) RETURNING *
-        `,
-        values: [
-          tenantId, b.partnerId || tenantId, b.organizationId || tenantId, b.branchId || tenantId,
-          userId || 'CASHIER', b.cashierName || 'Cashier', 'CSH-' + Date.now(),
-          Number(b.openingBalance || 0)
-        ]
-      });
-      return reply.status(201).send({ success: true, data: res.rows?.[0] });
+      const partnerId = b.partnerId || tenantId;
+      const orgId = b.organizationId || tenantId;
+      const branchId = b.branchId || tenantId;
+      const cashierId = userId || 'CASHIER';
+      const cashierName = b.cashierName || 'Cashier';
+      const sessionNum = 'CSH-' + Date.now();
+      const openingBal = Number(b.openingBalance || 0);
+
+      const res = await db.execute(sql`
+        INSERT INTO clinical.billing_cashier_sessions (
+          id, tenant_id, partner_id, organization_id, branch_id,
+          cashier_id, cashier_name, session_number, opening_balance,
+          cash_received, cash_refunded, expected_closing_balance, status, opened_at
+        ) VALUES (
+          gen_random_uuid(), ${tenantId}, ${partnerId}, ${orgId}, ${branchId},
+          ${cashierId}, ${cashierName}, ${sessionNum}, ${openingBal},
+          0, 0, ${openingBal}, 'OPEN', NOW()
+        ) RETURNING *
+      `);
+      const rows = (res as any).rows || res || [];
+      return reply.status(201).send({ success: true, data: rows[0] });
     }
   );
 
@@ -1898,20 +1932,21 @@ export const billingManagementRoutes: FastifyPluginAsync = async (fastify) => {
       const { tenantId } = request.session;
       const b = request.body as any;
       const db = getDatabase();
-      const res = await (db as any).execute({
-        text: `
-          UPDATE clinical.billing_cashier_sessions
-          SET closing_balance = $3,
-              notes = $4,
-              status = 'CLOSED',
-              closed_at = NOW(),
-              updated_at = NOW()
-          WHERE id = $1 AND tenant_id = $2
-          RETURNING *
-        `,
-        values: [b.sessionId, tenantId, Number(b.closingBalance || 0), b.notes || '']
-      });
-      return reply.send({ success: true, data: res.rows?.[0] });
+      const closingBal = Number(b.closingBalance || 0);
+      const notes = b.notes || '';
+
+      const res = await db.execute(sql`
+        UPDATE clinical.billing_cashier_sessions
+        SET closing_balance = ${closingBal},
+            notes = ${notes},
+            status = 'CLOSED',
+            closed_at = NOW(),
+            updated_at = NOW()
+        WHERE id = ${b.sessionId} AND tenant_id = ${tenantId}
+        RETURNING *
+      `);
+      const rows = (res as any).rows || res || [];
+      return reply.send({ success: true, data: rows[0] });
     }
   );
 
@@ -1922,18 +1957,18 @@ export const billingManagementRoutes: FastifyPluginAsync = async (fastify) => {
       const { tenantId } = request.session;
       const b = request.body as any;
       const db = getDatabase();
-      const res = await (db as any).execute({
-        text: `
-          UPDATE clinical.billing_cashier_sessions
-          SET status = 'RECONCILED',
-              notes = COALESCE(notes, '') || ' [Reconciled: ' || $3 || ']',
-              updated_at = NOW()
-          WHERE id = $1 AND tenant_id = $2
-          RETURNING *
-        `,
-        values: [b.sessionId, tenantId, b.reconciliationNotes || 'Verified matching cash drawer']
-      });
-      return reply.send({ success: true, data: res.rows?.[0] });
+      const recNotes = b.reconciliationNotes || 'Verified matching cash drawer';
+
+      const res = await db.execute(sql`
+        UPDATE clinical.billing_cashier_sessions
+        SET status = 'RECONCILED',
+            notes = COALESCE(notes, '') || ' [Reconciled: ' || ${recNotes} || ']',
+            updated_at = NOW()
+        WHERE id = ${b.sessionId} AND tenant_id = ${tenantId}
+        RETURNING *
+      `);
+      const rows = (res as any).rows || res || [];
+      return reply.send({ success: true, data: rows[0] });
     }
   );
 

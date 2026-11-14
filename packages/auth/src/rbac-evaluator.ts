@@ -103,14 +103,23 @@ export class RBACEvaluator {
       return true;
     }
 
+    // Plural / Singular Harmonization (e.g., 'clinical:consultations' <-> 'clinical:consultation')
+    const altResource = resource.endsWith('s') ? resource.slice(0, -1) : `${resource}s`;
+    if (matchesResource(altResource)) {
+      return true;
+    }
+
     // Check namespaced resources (e.g., 'clinical:patients' -> sub-resource 'patients', root 'clinical')
     if (resource.includes(':')) {
       const parts = resource.split(':');
       const rootNamespace = parts[0];
       const subResource = parts.slice(1).join(':');
 
-      if (subResource && matchesResource(subResource)) {
-        return true;
+      if (subResource) {
+        const altSub = subResource.endsWith('s') ? subResource.slice(0, -1) : `${subResource}s`;
+        if (matchesResource(subResource) || matchesResource(altSub)) {
+          return true;
+        }
       }
       if (rootNamespace && matchesResource(rootNamespace)) {
         return true;

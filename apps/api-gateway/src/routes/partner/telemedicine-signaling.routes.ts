@@ -229,4 +229,23 @@ export const telemedicineSignalingRoutes: FastifyPluginAsync = async (app) => {
       receiptNumber: `REC-TELE-${Date.now().toString().slice(-6)}`
     });
   });
+
+  /**
+   * 5. List Active & Scheduled Teleconsultation Sessions
+   */
+  app.get('/api/v1/partner/telemedicine/sessions', async (_req, reply) => {
+    const list = Array.from(activeSessions.values());
+    return reply.status(200).send({
+      success: true,
+      data: list
+    });
+  });
+
+  app.get('/api/v1/telemedicine/sessions', async (_req, reply) => {
+    const list = Array.from(activeSessions.values());
+    return reply.status(200).send({
+      success: true,
+      data: list
+    });
+  });
 };

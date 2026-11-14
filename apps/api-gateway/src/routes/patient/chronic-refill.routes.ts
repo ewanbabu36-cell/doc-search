@@ -25,6 +25,18 @@ export const chronicRefillRoutes: FastifyPluginAsync = async (fastify) => {
     }
   );
 
+  fastify.get(
+    '/api/v1/patient-mobile/chronic-refill/status/:patientId',
+    async (request) => {
+      const { patientId } = request.params as { patientId: string };
+      const data = chronicRefillPredictorService.getChronicRefillStatus(patientId);
+      return {
+        success: true,
+        data
+      };
+    }
+  );
+
   /**
    * POST /api/v1/patient/chronic-refill/order
    * Places an expedited chronic medicine refill order.

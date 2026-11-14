@@ -128,6 +128,16 @@ export const abdmRoutes: FastifyPluginAsync = async (app) => {
     }
   );
 
+  app.get(
+    '/api/v1/partner/abdm/care-contexts',
+    { preHandler: [authenticate] },
+    async (request, reply) => {
+      const { tenantId } = request.session;
+      const data = await service.getCareContexts(tenantId);
+      return reply.send({ success: true, data });
+    }
+  );
+
   app.post(
     '/api/v1/partner/abdm/m2/care-contexts',
     { preHandler: [authenticate] },

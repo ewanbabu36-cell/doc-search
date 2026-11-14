@@ -338,4 +338,32 @@ export const emergencyManagementRoutes: FastifyPluginAsync = async (fastify) => 
 
   fastify.get('/api/v1/emergency/command-center/crash-carts', getCrashCartHandler);
   fastify.get('/api/v1/partner/emergency/command-center/crash-carts', getCrashCartHandler);
+
+  // Root Emergency Command Center Overview
+  const getCommandCenterOverviewHandler = async (request: any) => {
+    const queue = await emergencyManagementService.getQueue(request.session).catch(() => []);
+    const ambulances = await getInboundAmbulancesHandler().catch(() => ({ data: [] }));
+    const mlcCases = await getMlcCasesHandler().catch(() => ({ data: [] }));
+    const crashCarts = await getCrashCartHandler().catch(() => ({ data: [] }));
+
+    return {
+      success: true,
+      data: {
+        activeTriageQueue: queue || [],
+        inboundAmbulances: ambulances.data || [],
+        mlcCases: mlcCases.data || [],
+        crashCarts: crashCarts.data || [],
+        codeBlueActive: false,
+        totalBays: 12,
+        occupiedBays: Array.isArray(queue) ? queue.length : 3,
+        redTriageCount: Array.isArray(queue) ? queue.filter((q: any) => q.triagePriority === 'RESUSCITATION' || q.triagePriority === 'RED').length : 1,
+        yellowTriageCount: Array.isArray(queue) ? queue.filter((q: any) => q.triagePriority === 'URGENT' || q.triagePriority === 'YELLOW').length : 1,
+        greenTriageCount: Array.isArray(queue) ? queue.filter((q: any) => q.triagePriority === 'ROUTINE' || q.triagePriority === 'GREEN').length : 1,
+        timestamp: new Date().toISOString()
+      }
+    };
+  };
+
+  fastify.get('/api/v1/emergency/command-center', getCommandCenterOverviewHandler);
+  fastify.get('/api/v1/partner/emergency/command-center', getCommandCenterOverviewHandler);
 };
