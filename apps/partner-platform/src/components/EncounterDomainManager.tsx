@@ -38,6 +38,7 @@ import { ReferralCenterView } from './views/ReferralCenterView.js';
 import { EncounterAuditVaultView } from './views/EncounterAuditVaultView.js';
 import { NurseVitalsTriageStationView } from './views/NurseVitalsTriageStationView.js';
 import { Tabs, Badge, ErrorState, SkeletonPage } from '@docsearch/ui-kit';
+import { resolveStaffPersona, type StaffRolePersona } from './health-os/health-os-registry.js';
 
 export type ActiveEncounterTab =
   | 'overview'
@@ -51,8 +52,37 @@ export type ActiveEncounterTab =
   | 'referrals'
   | 'audit';
 
-export const EncounterDomainManager: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<ActiveEncounterTab>('reception');
+export interface EncounterDomainManagerProps {
+  currentUserRole?: string;
+  initialTab?: ActiveEncounterTab;
+}
+
+export const EncounterDomainManager: React.FC<EncounterDomainManagerProps> = ({
+  currentUserRole,
+  initialTab
+}) => {
+  const persona: StaffRolePersona = resolveStaffPersona(currentUserRole);
+
+  const resolveDefaultTab = (): ActiveEncounterTab => {
+    if (initialTab) return initialTab;
+    switch (persona) {
+      case 'DOCTOR':
+      case 'RADIOLOGIST':
+        return 'doctor_worklist';
+      case 'NURSE':
+        return 'nurse_station';
+      case 'RECEPTIONIST':
+        return 'reception';
+      case 'CASHIER':
+        return 'queue';
+      case 'HOSPITAL_ADMIN':
+      default:
+        return 'queue';
+    }
+  };
+
+  const [activeTab, setActiveTab] = useState<ActiveEncounterTab>(resolveDefaultTab);
+  const [showAllTabs, setShowAllTabs] = useState<boolean>(false);
   const [context, setContext] = useState<PanelContextDto | null>(null);
   const [partners, setPartners] = useState<OperationalPartnerDto[]>([]);
   const [organizations, setOrganizations] = useState<OperationalOrganizationDto[]>([]);
@@ -230,22 +260,70 @@ export const EncounterDomainManager: React.FC = () => {
         />
       )}
 
-      <Tabs
-        tabs={[
-          { id: 'reception', label: '🎟️ Reception & Check-In' },
+      {/* Role-Scoped Primary Tabs (NABH & HIPAA Minimum Necessary Scoping) */}
+      {(() => {
+        const allTabsList = [
+          { id: 'doctor_worklist', label: '👨‍⚕️ Doctor Worklist' },
           { id: 'nurse_station', label: '👩‍⚕️ Nurse Vitals & Triage', badge: <Badge variant="success">Station Live</Badge> },
+          { id: 'reception', label: '🎟️ Reception & Check-In' },
           { id: 'queue', label: '⏳ OPD Queue & Tokens', badge: <Badge variant="warning">{queues.filter((q) => q.queueStatus === 'WAITING').length}</Badge> },
           { id: 'directory', label: '📋 Encounters Directory', badge: <Badge variant="neutral">{encounters.length}</Badge> },
-          { id: 'doctor_worklist', label: '👨‍⚕️ Doctor Worklist' },
           { id: 'profile', label: '🩺 Encounter Dossier' },
           { id: 'referrals', label: '🔄 Referral Center', badge: <Badge variant="neutral">{referrals.length}</Badge> },
           { id: 'history', label: '📜 Visit History' },
           { id: 'overview', label: '📊 Overview' },
           { id: 'audit', label: '🛡️ Audit Vault', badge: <Badge variant="neutral">{auditTraces.length}</Badge> }
-        ]}
-        activeTabId={activeTab}
-        onTabChange={(tabId: string) => setActiveTab(tabId as ActiveEncounterTab)}
-      />
+        ];
+
+        let allowedTabIds: string[];
+        if (showAllTabs || persona === 'HOSPITAL_ADMIN') {
+          allowedTabIds = ['doctor_worklist', 'nurse_station', 'reception', 'queue', 'directory', 'profile', 'referrals', 'history', 'overview', 'audit'];
+        } else if (persona === 'DOCTOR' || persona === 'RADIOLOGIST') {
+          allowedTabIds = ['doctor_worklist', 'queue', 'profile', 'referrals', 'directory'];
+        } else if (persona === 'NURSE') {
+          allowedTabIds = ['nurse_station', 'queue', 'directory'];
+        } else if (persona === 'RECEPTIONIST') {
+          allowedTabIds = ['reception', 'queue', 'directory', 'history'];
+        } else if (persona === 'CASHIER') {
+          allowedTabIds = ['queue', 'directory'];
+        } else {
+          allowedTabIds = ['queue', 'directory'];
+        }
+
+        const visibleTabs = allTabsList.filter((t) => allowedTabIds.includes(t.id));
+        const effectiveActiveTab = allowedTabIds.includes(activeTab) ? activeTab : (visibleTabs[0]?.id as ActiveEncounterTab || 'queue');
+
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+              <Tabs
+                tabs={visibleTabs}
+                activeTabId={effectiveActiveTab}
+                onTabChange={(tabId: string) => setActiveTab(tabId as ActiveEncounterTab)}
+              />
+              {(persona === 'HOSPITAL_ADMIN' || persona === 'DOCTOR') && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllTabs(!showAllTabs)}
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid var(--ds-color-border)',
+                    color: 'var(--ds-color-text-muted)',
+                    borderRadius: '6px',
+                    padding: '4px 10px',
+                    fontSize: '0.72rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Toggle all operational views"
+                >
+                  {showAllTabs ? 'Hide Extended Views ⏶' : '+ Extended Views ⏷'}
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {activeTab === 'overview' && overview && (
         <EncounterOverviewView

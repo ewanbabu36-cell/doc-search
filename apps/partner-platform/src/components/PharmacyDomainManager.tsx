@@ -125,7 +125,19 @@ export const PharmacyDomainManager: React.FC<PharmacyDomainManagerProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<ActivePharmacyTab>(initialTab || 'pos');
   const [isScopeExpanded, setIsScopeExpanded] = useState(false);
-  const [operatingMode, setOperatingMode] = useState<PlatformOperatingMode>(() => platformModeService.getMode());
+  const isPharmacyLead =
+    currentUser?.role === 'SUPER_ADMIN' ||
+    currentUser?.role === 'HOSPITAL_ADMIN' ||
+    currentUser?.role === 'HOSPITAL_DIRECTOR' ||
+    currentUser?.role === 'PHARMACY_DIRECTOR' ||
+    currentUser?.role === 'PHARMACY_MANAGER' ||
+    (currentUser?.role || '').includes('ADMIN') ||
+    (currentUser?.role || '').includes('DIRECTOR') ||
+    (currentUser?.role || '').includes('LEAD');
+
+  const [operatingMode, setOperatingMode] = useState<PlatformOperatingMode>(() => {
+    return isPharmacyLead ? platformModeService.getMode() : 'EXPRESS';
+  });
 
   useEffect(() => {
     const unsubscribe = platformModeService.subscribe((mode) => {

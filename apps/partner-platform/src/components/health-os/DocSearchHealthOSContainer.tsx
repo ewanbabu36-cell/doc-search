@@ -51,6 +51,12 @@ export const DocSearchHealthOSContainer: React.FC<DocSearchHealthOSContainerProp
     if (roleUpper.includes('PATIENT')) {
       return HEALTH_OS_APPS.find((a) => a.id === 'patient-portal') || HEALTH_OS_APPS[0]!;
     }
+    if (roleUpper.includes('RADIO') || deptUpper.includes('RADIO') || deptUpper.includes('IMAGING')) {
+      return HEALTH_OS_APPS.find((a) => a.id === 'radiology-pacs') || HEALTH_OS_APPS[0]!;
+    }
+    if (roleUpper.includes('RECEPT') || roleUpper.includes('FRONT_DESK') || deptUpper.includes('RECEPTION') || deptUpper.includes('REGISTRATION')) {
+      return HEALTH_OS_APPS.find((a) => a.id === 'patient-registration') || HEALTH_OS_APPS[0]!;
+    }
     if (orgType === 'PHARMACY' || roleUpper.includes('PHARMAC') || deptUpper.includes('PHARMACY')) {
       return HEALTH_OS_APPS.find((a) => a.id === 'pharmacy-medication') || HEALTH_OS_APPS[0]!;
     }
@@ -63,7 +69,7 @@ export const DocSearchHealthOSContainer: React.FC<DocSearchHealthOSContainerProp
     if (roleUpper.includes('NURSE') || deptUpper.includes('INPATIENT') || deptUpper.includes('WARD')) {
       return HEALTH_OS_APPS.find((a) => a.id === 'inpatient-management') || HEALTH_OS_APPS[0]!;
     }
-    if (roleUpper.includes('CASHIER') || roleUpper.includes('FRONT_DESK') || deptUpper.includes('BILLING')) {
+    if (roleUpper.includes('CASHIER') || deptUpper.includes('BILLING') || deptUpper.includes('ACCOUNTS') || deptUpper.includes('FINANCE')) {
       return HEALTH_OS_APPS.find((a) => a.id === 'billing-revenue-cycle') || HEALTH_OS_APPS[0]!;
     }
     if (roleUpper.includes('ADMIN') || roleUpper.includes('EXECUTIVE') || roleUpper.includes('DIRECTOR')) {
@@ -285,7 +291,7 @@ export const DocSearchHealthOSContainer: React.FC<DocSearchHealthOSContainerProp
               {visitedModules.has('encounters-visits') && (
                 <div style={{ display: activeApp.id === 'encounters-visits' ? 'block' : 'none' }}>
                   <DomainErrorBoundary domainName="Appointments & OPD Token Queue">
-                    <EncounterDomainManager />
+                    <EncounterDomainManager currentUserRole={currentUser.role} />
                   </DomainErrorBoundary>
                 </div>
               )}
@@ -450,6 +456,7 @@ export const DocSearchHealthOSContainer: React.FC<DocSearchHealthOSContainerProp
         onSelectApp={handleLaunchApp}
         onClose={() => setIsAppDrawerOpen(false)}
         profile={currentUser.organizationType || 'HOSPITAL'}
+        currentUser={currentUser}
       />
 
       {/* 4. Multitasking Recent Apps Switcher [ ||| ] */}

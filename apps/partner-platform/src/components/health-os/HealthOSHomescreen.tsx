@@ -1,6 +1,6 @@
 import React from 'react';
 import { type HealthOSAppItem } from './health-os-types.js';
-import { getCoreAppsForProfile, getAppsForProfile } from './health-os-registry.js';
+import { getCoreAppsForStaff, getAppsForStaff, resolveStaffPersona } from './health-os-registry.js';
 import type { OrganizationWorkspaceType, HospitalStaffUser } from '../auth/HospitalStaffLogin.js';
 import './health-os.css';
 
@@ -22,8 +22,11 @@ export const HealthOSHomescreen: React.FC<HealthOSHomescreenProps> = ({
   const effectiveProfile: OrganizationWorkspaceType =
     profile || currentUser?.organizationType || 'HOSPITAL';
 
-  const coreApps = getCoreAppsForProfile(effectiveProfile);
-  const totalAppsForProfile = getAppsForProfile(effectiveProfile).length;
+  const staffRole = currentUser?.role;
+  const persona = resolveStaffPersona(staffRole);
+
+  const coreApps = getCoreAppsForStaff(effectiveProfile, staffRole);
+  const totalAppsForStaff = getAppsForStaff(effectiveProfile, staffRole).length;
 
   const todayDateStr = new Date().toLocaleDateString('en-IN', {
     weekday: 'long',
@@ -57,12 +60,66 @@ export const HealthOSHomescreen: React.FC<HealthOSHomescreenProps> = ({
         };
       case 'HOSPITAL':
       default:
-        return {
-          title: 'Multi-Specialty Hospital Command',
-          subtitle: 'Inpatient Beds • OPD Queue • OT Suite • 100% Free Lifetime',
-          drawerLabel: 'All Hospital Applications',
-          sectionHeading: 'Hospital Operating Applications',
-        };
+        // Hospital Workspace: Tailor heading to Persona
+        switch (persona) {
+          case 'DOCTOR':
+            return {
+              title: 'Clinician OPD & Patient Care Desk',
+              subtitle: 'Doctor Smart Rx Pad • Token Caller • Telehealth Video • Zero Clutter',
+              drawerLabel: 'Doctor Clinical Suite',
+              sectionHeading: 'My Clinical Applications',
+            };
+          case 'NURSE':
+            return {
+              title: 'Nursing Station & Inpatient Ward',
+              subtitle: 'Bed Census HUD • Manchester Triage • Ward Vitals HUD',
+              drawerLabel: 'Nursing Station Tools',
+              sectionHeading: 'Nursing & Ward Applications',
+            };
+          case 'RECEPTIONIST':
+            return {
+              title: 'Patient Front Desk & Express Registration',
+              subtitle: 'ABHA Creation • OPD Token Generation • Doctor Rosters',
+              drawerLabel: 'Front Desk Applications',
+              sectionHeading: 'Front Desk & Reception Tools',
+            };
+          case 'CASHIER':
+            return {
+              title: 'Cashier Counter & POS Collections',
+              subtitle: 'Instant UPI Settlement • Shift Cash Handover • Zero Distraction',
+              drawerLabel: 'Cashier Applications',
+              sectionHeading: 'Counter Billing Applications',
+            };
+          case 'PHARMACIST':
+            return {
+              title: 'Hospital Pharmacy Dispensary',
+              subtitle: 'Real-Time Batch Stock • Schedule H1 • Fast POS Dispensing',
+              drawerLabel: 'Pharmacy Tools',
+              sectionHeading: 'Pharmacy Applications',
+            };
+          case 'LAB_TECHNICIAN':
+            return {
+              title: 'Pathology & LIMS Processing Center',
+              subtitle: 'Phlebotomy Queue • Barcode Accessioning • Auto-Analyzer Integration',
+              drawerLabel: 'Pathology Tools',
+              sectionHeading: 'Diagnostic Laboratory Tools',
+            };
+          case 'RADIOLOGIST':
+            return {
+              title: 'Radiology Imaging & DICOM PACS Cockpit',
+              subtitle: 'Modality Worklist (MWL) • STAT AI Copilot • Zero-Footprint PACS',
+              drawerLabel: 'Radiology Applications',
+              sectionHeading: 'Imaging & Diagnostics Applications',
+            };
+          case 'HOSPITAL_ADMIN':
+          default:
+            return {
+              title: 'Multi-Specialty Hospital Command',
+              subtitle: 'Inpatient Beds • OPD Queue • OT Suite • 100% Free Lifetime',
+              drawerLabel: 'All Hospital Applications',
+              sectionHeading: 'Hospital Operating Applications',
+            };
+        }
     }
   })();
 
@@ -71,108 +128,228 @@ export const HealthOSHomescreen: React.FC<HealthOSHomescreenProps> = ({
       {/* 1. Top Section: Hospital Ambient Glance HUD */}
       <div>
         <div className="hos-hud-date">
-          {todayDateStr} • <span style={{ color: '#34d399', fontWeight: 700 }}>100% Full Enterprise Free for Lifetime</span>
+          {todayDateStr} • <span style={{ color: '#34d399', fontWeight: 700 }}>Role: {persona.replace(/_/g, ' ')}</span>
         </div>
         <h1 className="hos-hud-facility">
           {hospitalName || profileDetails.title}
         </h1>
 
-        {/* 4 Distinct Glance Telemetry HUDs based on Medical Domain */}
+        {/* Tailored Glance Telemetry HUDs based on Medical Domain & Persona */}
         <div className="hos-widgets-grid">
           {/* ========================================================
               PROFILE 1: MULTI-SPECIALTY HOSPITAL (HOSPITAL)
               ======================================================== */}
           {effectiveProfile === 'HOSPITAL' && (
             <>
-              {/* Widget 1: Hospital Live OPD Token Queue */}
-              <div
-                onClick={() => {
-                  const opdApp = coreApps.find((a) => a.id === 'encounters-visits');
-                  if (opdApp) onLaunchApp(opdApp);
-                }}
-                className="hos-widget-card"
-              >
-                <div className="hos-widget-header">
-                  <div className="hos-widget-header-title">
-                    <span>⏱️</span>
-                    <span>OPD Token Queue</span>
+              {/* Doctor / Receptionist / Admin OPD Queue Widget */}
+              {(persona === 'DOCTOR' || persona === 'RECEPTIONIST' || persona === 'CASHIER' || persona === 'HOSPITAL_ADMIN') && (
+                <div
+                  onClick={() => {
+                    const opdApp = coreApps.find((a) => a.id === 'encounters-visits') || coreApps[0];
+                    if (opdApp) onLaunchApp(opdApp);
+                  }}
+                  className="hos-widget-card"
+                >
+                  <div className="hos-widget-header">
+                    <div className="hos-widget-header-title">
+                      <span>⏱️</span>
+                      <span>OPD Token Queue</span>
+                    </div>
+                    <span className="hos-widget-status" style={{ color: '#34d399' }}>Room 4 Active</span>
                   </div>
-                  <span className="hos-widget-status" style={{ color: '#34d399' }}>Room 4 Active</span>
-                </div>
-                <div className="hos-widget-body">
-                  <div>
-                    <div className="hos-widget-caption">Now Calling</div>
-                    <div className="hos-widget-val">Token #42</div>
-                    <div className="hos-widget-sub">Amit Verma (34M)</div>
+                  <div className="hos-widget-body">
+                    <div>
+                      <div className="hos-widget-caption">Now Calling</div>
+                      <div className="hos-widget-val">Token #42</div>
+                      <div className="hos-widget-sub">Amit Verma (34M)</div>
+                    </div>
+                    <span className="hos-widget-action-pill">
+                      Call Next ➔
+                    </span>
                   </div>
-                  <span className="hos-widget-action-pill">
-                    Call Next ➔
-                  </span>
                 </div>
-              </div>
+              )}
 
-              {/* Widget 2: Bed Census HUD */}
-              <div
-                onClick={() => {
-                  const ipdApp = coreApps.find((a) => a.id === 'inpatient-management');
-                  if (ipdApp) onLaunchApp(ipdApp);
-                }}
-                className="hos-widget-card"
-              >
-                <div className="hos-widget-header">
-                  <div className="hos-widget-header-title">
-                    <span>🛏️</span>
-                    <span>Inpatient Bed Census</span>
+              {/* Nurse / Doctor / Admin Inpatient Bed Census Widget */}
+              {(persona === 'NURSE' || persona === 'DOCTOR' || persona === 'HOSPITAL_ADMIN') && (
+                <div
+                  onClick={() => {
+                    const ipdApp = coreApps.find((a) => a.id === 'inpatient-management') || coreApps[0];
+                    if (ipdApp) onLaunchApp(ipdApp);
+                  }}
+                  className="hos-widget-card"
+                >
+                  <div className="hos-widget-header">
+                    <div className="hos-widget-header-title">
+                      <span>🛏️</span>
+                      <span>Inpatient Bed Census</span>
+                    </div>
+                    <span className="hos-widget-status" style={{ color: '#cbd5e1' }}>180/200</span>
                   </div>
-                  <span className="hos-widget-status" style={{ color: '#cbd5e1' }}>180/200</span>
-                </div>
-                <div className="hos-widget-body">
-                  <div>
-                    <div className="hos-widget-caption">Occupancy Rate</div>
-                    <div className="hos-widget-val" style={{ color: '#f43f5e' }}>90% Full</div>
-                    <div className="hos-widget-sub" style={{ color: '#34d399' }}>20 Beds Vacant</div>
+                  <div className="hos-widget-body">
+                    <div>
+                      <div className="hos-widget-caption">Occupancy Rate</div>
+                      <div className="hos-widget-val" style={{ color: '#f43f5e' }}>90% Full</div>
+                      <div className="hos-widget-sub" style={{ color: '#34d399' }}>20 Beds Vacant</div>
+                    </div>
+                    <span className="hos-widget-action-pill" style={{ background: 'rgba(244, 63, 94, 0.25)', color: '#fda4af' }}>
+                      Census ➔
+                    </span>
                   </div>
-                  <span className="hos-widget-action-pill" style={{ background: 'rgba(244, 63, 94, 0.25)', color: '#fda4af' }}>
-                    Census ➔
-                  </span>
                 </div>
-              </div>
+              )}
 
-              {/* Widget 3: Cashier Desk Collections */}
-              <div
-                onClick={() => {
-                  const billingApp = coreApps.find((a) => a.id === 'billing-revenue-cycle');
-                  if (billingApp) onLaunchApp(billingApp);
-                }}
-                className="hos-widget-card"
-              >
-                <div className="hos-widget-header">
-                  <div className="hos-widget-header-title">
-                    <span>💳</span>
-                    <span>Cashier Counter Desk</span>
+              {/* Cashier / Admin Billing Collections Widget */}
+              {(persona === 'CASHIER' || persona === 'HOSPITAL_ADMIN') && (
+                <div
+                  onClick={() => {
+                    const billingApp = coreApps.find((a) => a.id === 'billing-revenue-cycle') || coreApps[0];
+                    if (billingApp) onLaunchApp(billingApp);
+                  }}
+                  className="hos-widget-card"
+                >
+                  <div className="hos-widget-header">
+                    <div className="hos-widget-header-title">
+                      <span>💳</span>
+                      <span>Cashier Counter Desk</span>
+                    </div>
+                    <span className="hos-widget-status" style={{ color: '#34d399' }}>Shift #1 Open</span>
                   </div>
-                  <span className="hos-widget-status" style={{ color: '#34d399' }}>Shift #1 Open</span>
-                </div>
-                <div className="hos-widget-body">
-                  <div>
-                    <div className="hos-widget-caption">Today's Collections</div>
-                    <div className="hos-widget-val" style={{ color: '#34d399' }}>₹1,48,250</div>
-                    <div className="hos-widget-sub">UPI: ₹78k • Cash: ₹32k</div>
+                  <div className="hos-widget-body">
+                    <div>
+                      <div className="hos-widget-caption">Today's Collections</div>
+                      <div className="hos-widget-val" style={{ color: '#34d399' }}>₹1,48,250</div>
+                      <div className="hos-widget-sub">UPI: ₹78k • Cash: ₹32k</div>
+                    </div>
+                    <span className="hos-widget-action-pill" style={{ background: 'rgba(16, 185, 129, 0.25)', color: '#6ee7b7' }}>
+                      Billing ➔
+                    </span>
                   </div>
-                  <span className="hos-widget-action-pill" style={{ background: 'rgba(16, 185, 129, 0.25)', color: '#6ee7b7' }}>
-                    Billing ➔
-                  </span>
                 </div>
-              </div>
+              )}
+
+              {/* Pharmacist Live Stock & Expiry Widgets */}
+              {persona === 'PHARMACIST' && (
+                <>
+                  <div
+                    onClick={() => {
+                      const pharmaApp = coreApps.find((a) => a.id === 'pharmacy-medication') || coreApps[0];
+                      if (pharmaApp) onLaunchApp(pharmaApp);
+                    }}
+                    className="hos-widget-card"
+                  >
+                    <div className="hos-widget-header">
+                      <div className="hos-widget-header-title">
+                        <span>💊</span>
+                        <span>Medicine Live Stock</span>
+                      </div>
+                      <span className="hos-widget-status" style={{ color: '#a855f7' }}>1,420 Active SKUs</span>
+                    </div>
+                    <div className="hos-widget-body">
+                      <div>
+                        <div className="hos-widget-caption">Inventory Health</div>
+                        <div className="hos-widget-val" style={{ color: '#fbbf24' }}>4 Reorder Alerts</div>
+                        <div className="hos-widget-sub">Amoxicillin 500 & Paracetamol</div>
+                      </div>
+                      <span className="hos-widget-action-pill" style={{ background: 'rgba(168, 85, 247, 0.25)', color: '#d8b4fe' }}>
+                        Stock ➔
+                      </span>
+                    </div>
+                  </div>
+
+                  <div
+                    onClick={() => {
+                      const pharmaApp = coreApps.find((a) => a.id === 'pharmacy-medication') || coreApps[0];
+                      if (pharmaApp) onLaunchApp(pharmaApp);
+                    }}
+                    className="hos-widget-card"
+                  >
+                    <div className="hos-widget-header">
+                      <div className="hos-widget-header-title">
+                        <span>⏳</span>
+                        <span>Near-Expiry Radar</span>
+                      </div>
+                      <span className="hos-widget-status" style={{ color: '#fb7185' }}>&lt;90 Days</span>
+                    </div>
+                    <div className="hos-widget-body">
+                      <div>
+                        <div className="hos-widget-caption">FEFO Alert</div>
+                        <div className="hos-widget-val" style={{ color: '#fb7185' }}>3 Batches</div>
+                        <div className="hos-widget-sub">Return to Supplier Pending</div>
+                      </div>
+                      <span className="hos-widget-action-pill" style={{ background: 'rgba(251, 113, 133, 0.25)', color: '#fecdd3' }}>
+                        Batches ➔
+                      </span>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Lab Technician LIMS Specimen Queue Widget */}
+              {persona === 'LAB_TECHNICIAN' && (
+                <div
+                  onClick={() => {
+                    const labApp = coreApps.find((a) => a.id === 'clinical-investigation') || coreApps[0];
+                    if (labApp) onLaunchApp(labApp);
+                  }}
+                  className="hos-widget-card"
+                >
+                  <div className="hos-widget-header">
+                    <div className="hos-widget-header-title">
+                      <span>🧪</span>
+                      <span>Specimen Accessioning</span>
+                    </div>
+                    <span className="hos-widget-status" style={{ color: '#38bdf8' }}>18 Pending</span>
+                  </div>
+                  <div className="hos-widget-body">
+                    <div>
+                      <div className="hos-widget-caption">Auto-Analyzer Queue</div>
+                      <div className="hos-widget-val" style={{ color: '#38bdf8' }}>12 Tests Ready</div>
+                      <div className="hos-widget-sub">CBC, LFT, Lipid Profile</div>
+                    </div>
+                    <span className="hos-widget-action-pill" style={{ background: 'rgba(56, 189, 248, 0.25)', color: '#7dd3fc' }}>
+                      Process ➔
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Radiologist DICOM PACS Worklist Widget */}
+              {persona === 'RADIOLOGIST' && (
+                <div
+                  onClick={() => {
+                    const radApp = coreApps.find((a) => a.id === 'radiology-pacs') || coreApps[0];
+                    if (radApp) onLaunchApp(radApp);
+                  }}
+                  className="hos-widget-card"
+                >
+                  <div className="hos-widget-header">
+                    <div className="hos-widget-header-title">
+                      <span>🩻</span>
+                      <span>DICOM PACS Worklist</span>
+                    </div>
+                    <span className="hos-widget-status" style={{ color: '#f87171' }}>2 STAT Flags</span>
+                  </div>
+                  <div className="hos-widget-body">
+                    <div>
+                      <div className="hos-widget-caption">Today's Scans</div>
+                      <div className="hos-widget-val" style={{ color: '#38bdf8' }}>14 Studies</div>
+                      <div className="hos-widget-sub" style={{ color: '#fca5a5' }}>CT Brain (SDH) • Pneumothorax</div>
+                    </div>
+                    <span className="hos-widget-action-pill" style={{ background: 'rgba(56, 189, 248, 0.25)', color: '#7dd3fc' }}>
+                      Open PACS ➔
+                    </span>
+                  </div>
+                </div>
+              )}
             </>
           )}
 
           {/* ========================================================
-              PROFILE 2: SINGLE DOCTOR CLINIC (CLINIC)
+              PROFILE 2: SINGLE DOCTOR OPD CLINIC (CLINIC)
               ======================================================== */}
           {effectiveProfile === 'CLINIC' && (
             <>
-              {/* Widget 1: Live OPD Token Calling */}
               <div
                 onClick={() => {
                   const opdApp = coreApps.find((a) => a.id === 'encounters-visits') || coreApps[0];
@@ -182,73 +359,45 @@ export const HealthOSHomescreen: React.FC<HealthOSHomescreenProps> = ({
               >
                 <div className="hos-widget-header">
                   <div className="hos-widget-header-title">
+                    <span>⏱️</span>
+                    <span>OPD Token Live</span>
+                  </div>
+                  <span className="hos-widget-status" style={{ color: '#34d399' }}>Token #12</span>
+                </div>
+                <div className="hos-widget-body">
+                  <div>
+                    <div className="hos-widget-caption">Chamber 1</div>
+                    <div className="hos-widget-val">Ramesh Patil</div>
+                    <div className="hos-widget-sub">Follow-up Hypertension</div>
+                  </div>
+                  <span className="hos-widget-action-pill">
+                    Call ➔
+                  </span>
+                </div>
+              </div>
+
+              <div
+                onClick={() => {
+                  const rxApp = coreApps.find((a) => a.id === 'clinical-consultation') || coreApps[0];
+                  if (rxApp) onLaunchApp(rxApp);
+                }}
+                className="hos-widget-card"
+              >
+                <div className="hos-widget-header">
+                  <div className="hos-widget-header-title">
                     <span>🩺</span>
-                    <span>OPD Consultation Desk</span>
+                    <span>15-Sec SmartRx</span>
                   </div>
-                  <span className="hos-widget-status" style={{ color: '#38bdf8' }}>Dr. Desk Active</span>
+                  <span className="hos-widget-status" style={{ color: '#38bdf8' }}>AI Active</span>
                 </div>
                 <div className="hos-widget-body">
                   <div>
-                    <div className="hos-widget-caption">Now Calling</div>
-                    <div className="hos-widget-val" style={{ color: '#38bdf8' }}>Token #18</div>
-                    <div className="hos-widget-sub">Pooja Gupta (28F) • Next: #19</div>
+                    <div className="hos-widget-caption">Today's Consults</div>
+                    <div className="hos-widget-val" style={{ color: '#38bdf8' }}>14 Completed</div>
+                    <div className="hos-widget-sub">Avg Consult Time: 4.2m</div>
                   </div>
-                  <span className="hos-widget-action-pill" style={{ background: 'rgba(56, 189, 248, 0.2)', color: '#38bdf8' }}>
-                    Rx Pad ➔
-                  </span>
-                </div>
-              </div>
-
-              {/* Widget 2: Today's OPD Appointments */}
-              <div
-                onClick={() => {
-                  const consultApp = coreApps.find((a) => a.id === 'clinical-consultation') || coreApps[0];
-                  if (consultApp) onLaunchApp(consultApp);
-                }}
-                className="hos-widget-card"
-              >
-                <div className="hos-widget-header">
-                  <div className="hos-widget-header-title">
-                    <span>📅</span>
-                    <span>Today's Appointments</span>
-                  </div>
-                  <span className="hos-widget-status" style={{ color: '#34d399' }}>24 Total</span>
-                </div>
-                <div className="hos-widget-body">
-                  <div>
-                    <div className="hos-widget-caption">Patient Flow</div>
-                    <div className="hos-widget-val" style={{ color: '#34d399' }}>16 Completed</div>
-                    <div className="hos-widget-sub" style={{ color: '#cbd5e1' }}>8 Waiting in Lobby</div>
-                  </div>
-                  <span className="hos-widget-action-pill" style={{ background: 'rgba(16, 185, 129, 0.25)', color: '#6ee7b7' }}>
-                    Queue ➔
-                  </span>
-                </div>
-              </div>
-
-              {/* Widget 3: Clinic Consultation Fee Till */}
-              <div
-                onClick={() => {
-                  const billingApp = coreApps.find((a) => a.id === 'billing-revenue-cycle') || coreApps[0];
-                  if (billingApp) onLaunchApp(billingApp);
-                }}
-                className="hos-widget-card"
-              >
-                <div className="hos-widget-header">
-                  <div className="hos-widget-header-title">
-                    <span>💰</span>
-                    <span>Consultation Fee Till</span>
-                  </div>
-                  <span className="hos-widget-status" style={{ color: '#34d399' }}>UPI Till Active</span>
-                </div>
-                <div className="hos-widget-body">
-                  <div>
-                    <div className="hos-widget-caption">Today's Receipts</div>
-                    <div className="hos-widget-val" style={{ color: '#34d399' }}>₹14,500</div>
-                    <div className="hos-widget-sub">₹500 / Consult • 29 Receipts</div>
-                  </div>
-                  <span className="hos-widget-action-pill" style={{ background: 'rgba(16, 185, 129, 0.25)', color: '#6ee7b7' }}>
-                    Till Receipts ➔
+                  <span className="hos-widget-action-pill" style={{ background: 'rgba(56, 189, 248, 0.25)', color: '#7dd3fc' }}>
+                    Consult ➔
                   </span>
                 </div>
               </div>
@@ -260,7 +409,6 @@ export const HealthOSHomescreen: React.FC<HealthOSHomescreenProps> = ({
               ======================================================== */}
           {effectiveProfile === 'PATHOLOGY' && (
             <>
-              {/* Widget 1: Phlebotomy & Sample Accession */}
               <div
                 onClick={() => {
                   const labApp = coreApps.find((a) => a.id === 'clinical-investigation') || coreApps[0];
@@ -270,16 +418,16 @@ export const HealthOSHomescreen: React.FC<HealthOSHomescreenProps> = ({
               >
                 <div className="hos-widget-header">
                   <div className="hos-widget-header-title">
-                    <span>🩸</span>
-                    <span>Phlebotomy & Samples</span>
+                    <span>🧪</span>
+                    <span>Sample Accessioning</span>
                   </div>
-                  <span className="hos-widget-status" style={{ color: '#f59e0b' }}>Barcodes Active</span>
+                  <span className="hos-widget-status" style={{ color: '#f59e0b' }}>18 Pending</span>
                 </div>
                 <div className="hos-widget-body">
                   <div>
-                    <div className="hos-widget-caption">Today Accessioned</div>
-                    <div className="hos-widget-val" style={{ color: '#f59e0b' }}>84 Samples</div>
-                    <div className="hos-widget-sub">12 In Phlebotomy • 4 Stat</div>
+                    <div className="hos-widget-caption">Auto-Analyzer Sync</div>
+                    <div className="hos-widget-val" style={{ color: '#f59e0b' }}>ASTM E1381 Ready</div>
+                    <div className="hos-widget-sub">Mindray BC-5000 Connected</div>
                   </div>
                   <span className="hos-widget-action-pill" style={{ background: 'rgba(245, 158, 11, 0.25)', color: '#fcd34d' }}>
                     Accession ➔
@@ -287,34 +435,6 @@ export const HealthOSHomescreen: React.FC<HealthOSHomescreenProps> = ({
                 </div>
               </div>
 
-              {/* Widget 2: Analyzer Testing Workbenches */}
-              <div
-                onClick={() => {
-                  const labApp = coreApps.find((a) => a.id === 'clinical-investigation') || coreApps[0];
-                  if (labApp) onLaunchApp(labApp);
-                }}
-                className="hos-widget-card"
-              >
-                <div className="hos-widget-header">
-                  <div className="hos-widget-header-title">
-                    <span>🔬</span>
-                    <span>Analyzer Workbenches</span>
-                  </div>
-                  <span className="hos-widget-status" style={{ color: '#34d399' }}>LIS Online</span>
-                </div>
-                <div className="hos-widget-body">
-                  <div>
-                    <div className="hos-widget-caption">Automated Tests</div>
-                    <div className="hos-widget-val" style={{ color: '#34d399' }}>68 Verified</div>
-                    <div className="hos-widget-sub">16 Running on Beckman Coulter</div>
-                  </div>
-                  <span className="hos-widget-action-pill" style={{ background: 'rgba(16, 185, 129, 0.25)', color: '#6ee7b7' }}>
-                    Workbench ➔
-                  </span>
-                </div>
-              </div>
-
-              {/* Widget 3: NABL Panic Value Radar */}
               <div
                 onClick={() => {
                   const labApp = coreApps.find((a) => a.id === 'clinical-investigation') || coreApps[0];
@@ -325,18 +445,18 @@ export const HealthOSHomescreen: React.FC<HealthOSHomescreenProps> = ({
                 <div className="hos-widget-header">
                   <div className="hos-widget-header-title">
                     <span>🚨</span>
-                    <span>Panic Value Radar</span>
+                    <span>NABL Panic Intimation</span>
                   </div>
-                  <span className="hos-widget-status" style={{ color: '#34d399' }}>All Clear</span>
+                  <span className="hos-widget-status" style={{ color: '#34d399' }}>0 Open Critical</span>
                 </div>
                 <div className="hos-widget-body">
                   <div>
-                    <div className="hos-widget-caption">Critical Telemetry</div>
-                    <div className="hos-widget-val" style={{ color: '#34d399' }}>0 Pending</div>
-                    <div className="hos-widget-sub">Avg NABL TAT: 42 Mins</div>
+                    <div className="hos-widget-caption">Quality Control</div>
+                    <div className="hos-widget-val" style={{ color: '#34d399' }}>100% Calibrated</div>
+                    <div className="hos-widget-sub">ISO-15189 Audit Passed</div>
                   </div>
-                  <span className="hos-widget-action-pill" style={{ background: 'rgba(16, 185, 129, 0.25)', color: '#6ee7b7' }}>
-                    Dispatch ➔
+                  <span className="hos-widget-action-pill">
+                    Audit ➔
                   </span>
                 </div>
               </div>
@@ -344,38 +464,10 @@ export const HealthOSHomescreen: React.FC<HealthOSHomescreenProps> = ({
           )}
 
           {/* ========================================================
-              PROFILE 4: RETAIL & HOSPITAL PHARMACY (PHARMACY)
+              PROFILE 4: RETAIL CHEMIST & PHARMACY POS (PHARMACY)
               ======================================================== */}
           {effectiveProfile === 'PHARMACY' && (
             <>
-              {/* Widget 1: Chemist Daily Cash Galla */}
-              <div
-                onClick={() => {
-                  const billingApp = coreApps.find((a) => a.id === 'billing-revenue-cycle') || coreApps[0];
-                  if (billingApp) onLaunchApp(billingApp);
-                }}
-                className="hos-widget-card"
-              >
-                <div className="hos-widget-header">
-                  <div className="hos-widget-header-title">
-                    <span>💵</span>
-                    <span>Daily Cash Galla</span>
-                  </div>
-                  <span className="hos-widget-status" style={{ color: '#34d399' }}>Counter #1 Open</span>
-                </div>
-                <div className="hos-widget-body">
-                  <div>
-                    <div className="hos-widget-caption">Today's POS Sales</div>
-                    <div className="hos-widget-val" style={{ color: '#34d399' }}>₹42,650</div>
-                    <div className="hos-widget-sub">Cash: ₹18k • UPI: ₹24.6k</div>
-                  </div>
-                  <span className="hos-widget-action-pill" style={{ background: 'rgba(16, 185, 129, 0.25)', color: '#6ee7b7' }}>
-                    POS Till ➔
-                  </span>
-                </div>
-              </div>
-
-              {/* Widget 2: Live Stock & Reorder Triggers */}
               <div
                 onClick={() => {
                   const pharmaApp = coreApps.find((a) => a.id === 'pharmacy-medication') || coreApps[0];
@@ -402,7 +494,6 @@ export const HealthOSHomescreen: React.FC<HealthOSHomescreenProps> = ({
                 </div>
               </div>
 
-              {/* Widget 3: Expiry Radar (<90 Days) */}
               <div
                 onClick={() => {
                   const pharmaApp = coreApps.find((a) => a.id === 'pharmacy-medication') || coreApps[0];
@@ -433,7 +524,7 @@ export const HealthOSHomescreen: React.FC<HealthOSHomescreenProps> = ({
         </div>
       </div>
 
-      {/* 2. Middle Section: Android Pristine Core App Grid Tailored to Profile */}
+      {/* 2. Middle Section: Android Pristine Core App Grid Tailored to Profile & Role */}
       <div className="hos-apps-section">
         <div className="hos-apps-heading">
           {profileDetails.sectionHeading}
@@ -448,19 +539,32 @@ export const HealthOSHomescreen: React.FC<HealthOSHomescreenProps> = ({
               <div
                 className="hos-app-squircle"
                 style={{
-                  background: app.id === 'billing-revenue-cycle'
-                    ? 'linear-gradient(135deg, #2563eb, #4338ca)'
-                    : app.id === 'encounters-visits'
-                    ? 'linear-gradient(135deg, #0284c7, #2563eb)'
-                    : app.id === 'clinical-consultation'
-                    ? 'linear-gradient(135deg, #10b981, #0f766e)'
-                    : app.id === 'pharmacy-medication'
-                    ? 'linear-gradient(135deg, #9333ea, #4f46e5)'
-                    : app.id === 'clinical-investigation'
-                    ? 'linear-gradient(135deg, #f59e0b, #ea580c)'
-                    : app.id === 'inpatient-management'
-                    ? 'linear-gradient(135deg, #f43f5e, #be123c)'
-                    : 'linear-gradient(135deg, #334155, #0f172a)'
+                  background:
+                    app.id === 'billing-revenue-cycle'
+                      ? 'linear-gradient(135deg, #2563eb, #4338ca)'
+                      : app.id === 'encounters-visits'
+                      ? 'linear-gradient(135deg, #0284c7, #2563eb)'
+                      : app.id === 'clinical-consultation'
+                      ? 'linear-gradient(135deg, #10b981, #0f766e)'
+                      : app.id === 'pharmacy-medication'
+                      ? 'linear-gradient(135deg, #9333ea, #4f46e5)'
+                      : app.id === 'clinical-investigation'
+                      ? 'linear-gradient(135deg, #f59e0b, #ea580c)'
+                      : app.id === 'inpatient-management'
+                      ? 'linear-gradient(135deg, #f43f5e, #be123c)'
+                      : app.id === 'patient-registration'
+                      ? 'linear-gradient(135deg, #0d9488, #065f46)'
+                      : app.id === 'patient-portal'
+                      ? 'linear-gradient(135deg, #0284c7, #1e40af)'
+                      : app.id === 'telemedicine-rpm'
+                      ? 'linear-gradient(135deg, #3b82f6, #4f46e5)'
+                      : app.id === 'emergency-trauma'
+                      ? 'linear-gradient(135deg, #dc2626, #991b1b)'
+                      : app.id === 'whatsapp-portal'
+                      ? 'linear-gradient(135deg, #059669, #15803d)'
+                      : app.id === 'offers-rewards-hub'
+                      ? 'linear-gradient(135deg, #d97706, #a16207)'
+                      : 'linear-gradient(135deg, #334155, #0f172a)',
                 }}
               >
                 {app.icon}
@@ -484,7 +588,7 @@ export const HealthOSHomescreen: React.FC<HealthOSHomescreenProps> = ({
         >
           <span style={{ color: '#60a5fa' }}>:::</span>
           <span>{profileDetails.drawerLabel}</span>
-          <span style={{ color: '#94a3b8', fontWeight: 400 }}>({totalAppsForProfile} Apps)</span>
+          <span style={{ color: '#94a3b8', fontWeight: 400 }}>({totalAppsForStaff} Apps)</span>
         </button>
       </div>
     </div>

@@ -166,6 +166,7 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<InpatientTab>(initialTab || 'bed-board');
   const [isStoryboardCollapsed, setIsStoryboardCollapsed] = useState<boolean>(false);
+  const [showSpatial3D, setShowSpatial3D] = useState<boolean>(false);
 
   useEffect(() => {
     if (initialTab) {
@@ -643,38 +644,65 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
 
   return (
     <div style={{ padding: '1.5rem', maxWidth: '1600px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.25rem', boxSizing: 'border-box', overflowX: 'hidden' }}>
-      {/* 3D Spatial Feature Core: Inpatient IPD */}
-      <DocSearchSpatialCore3D
-        preset="inpatient"
-        height={360}
-        interactive={true}
-        onNodeClick={(id) => {
-          if (id === 'bed-board') {
-            setActiveTab('bed-board');
-          } else if (id === 'nursing-desk') {
-            setActiveTab('nursing-station');
-          } else if (id === 'ot-surgery') {
-            setActiveTab('rounds');
-          } else if (id === 'sbar-handover') {
-            setActiveTab('patient-census');
-          } else if (id === 'diet-kitchen') {
-            setActiveTab('overview');
-          } else if (id === 'icu-telemetry') {
-            setActiveTab('smart-hospital-iot');
-          } else if (id === 'discharge-clearance') {
-            setActiveTab('discharge-workbench');
-          }
-        }}
-      />
-
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '8px' }}>
+      {/* Header Context & 3D Spatial Twin Ergonomic Collapse Toggle */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '8px' }}>
         <span style={{ fontSize: '0.75rem', backgroundColor: 'var(--ds-color-primary)', color: 'var(--ds-color-primary-foreground, white)', padding: '0.25rem 0.75rem', borderRadius: '6px', fontWeight: 800 }}>
           🏥 HOSPITAL IPD OPERATIONAL MATRIX
         </span>
-        <span style={{ fontSize: '0.8rem', color: 'var(--ds-color-text-muted)' }}>
-          Tenant: {tenantId.slice(0, 8)}... | Branch: {branchId ? branchId.slice(0, 8) : 'All'}...
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ fontSize: '0.8rem', color: 'var(--ds-color-text-muted)' }}>
+            Tenant: {tenantId.slice(0, 8)}... | Branch: {branchId ? branchId.slice(0, 8) : 'All'}...
+          </span>
+          <button
+            type="button"
+            onClick={() => setShowSpatial3D(!showSpatial3D)}
+            style={{
+              backgroundColor: showSpatial3D ? 'var(--ds-color-primary-subtle, rgba(2, 132, 199, 0.2))' : 'var(--ds-color-surface-subtle, rgba(255, 255, 255, 0.05))',
+              border: '1px solid var(--ds-color-border)',
+              color: showSpatial3D ? 'var(--ds-color-primary)' : 'var(--ds-color-text-secondary)',
+              borderRadius: '6px',
+              padding: '4px 10px',
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '5px',
+              transition: 'all 0.15s ease'
+            }}
+            title="Toggle 3D Digital Twin View"
+          >
+            <span>🌐</span>
+            <span>{showSpatial3D ? 'Hide 3D Digital Twin ⏶' : 'View 3D Digital Twin ⏷'}</span>
+          </button>
+        </div>
       </div>
+
+      {/* 3D Spatial Feature Core: Inpatient IPD (Collapsed by default for shift speed) */}
+      {showSpatial3D && (
+        <DocSearchSpatialCore3D
+          preset="inpatient"
+          height={360}
+          interactive={true}
+          onNodeClick={(id) => {
+            if (id === 'bed-board') {
+              setActiveTab('bed-board');
+            } else if (id === 'nursing-desk') {
+              setActiveTab('nursing-station');
+            } else if (id === 'ot-surgery') {
+              setActiveTab('rounds');
+            } else if (id === 'sbar-handover') {
+              setActiveTab('patient-census');
+            } else if (id === 'diet-kitchen') {
+              setActiveTab('overview');
+            } else if (id === 'icu-telemetry') {
+              setActiveTab('smart-hospital-iot');
+            } else if (id === 'discharge-clearance') {
+              setActiveTab('discharge-workbench');
+            }
+          }}
+        />
+      )}
 
       {notification && (
         <div style={{ marginBottom: '1rem' }}>

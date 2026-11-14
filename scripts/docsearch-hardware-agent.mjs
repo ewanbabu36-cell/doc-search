@@ -240,7 +240,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // 3. Silent Thermal Receipt Printing (ESC/POS)
-  if (pathname === '/api/v1/hardware/print/escpos' && req.method === 'POST') {
+  if ((pathname === '/api/v1/hardware/print/escpos' || pathname === '/api/v1/printers/test-receipt' || pathname === '/api/v1/hardware/print/test-receipt') && req.method === 'POST') {
     state.totalPrints++;
     const slipData = body.slipData || {};
     const paperWidth = body.paperWidth || '80mm';

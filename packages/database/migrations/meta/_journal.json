@@ -484,6 +484,20 @@
       "when": 1788549000000,
       "tag": "0068_tenant_isolation_performance_indices",
       "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1788550000000,
+      "tag": "0069_comprehensive_tenant_rls_hardening",
+      "breakpoints": true
+    },
+    {
+      "idx": 70,
+      "version": "7",
+      "when": 1788551000000,
+      "tag": "0070_create_least_privilege_app_role",
+      "breakpoints": true
     }
   ]
 }

@@ -110,6 +110,7 @@ type TabBadgeVariant = 'neutral' | 'primary' | 'success' | 'warning' | 'danger';
 export const BloodBankDomainManager: React.FC<Props> = ({ tenantId }) => {
   const [activeTab, setActiveTab] = useState<TabType>('command-center');
   const [loading, setLoading] = useState(true);
+  const [showSpatial3D, setShowSpatial3D] = useState<boolean>(false);
 
   // Domain State
   const [metrics, setMetrics] = useState<BloodBankOverviewMetricsDto | null>(null);
@@ -236,29 +237,65 @@ export const BloodBankDomainManager: React.FC<Props> = ({ tenantId }) => {
 
   return (
     <div className="space-y-6">
-      {/* 3D Spatial Feature Core: Blood Bank & Transfusion Medicine */}
-      <DocSearchSpatialCore3D
-        preset="blood-bank"
-        height={360}
-        interactive={true}
-        onNodeClick={(id) => {
-          if (id === 'donor-registry') {
-            setActiveTab('donors');
-          } else if (id === 'separation') {
-            setActiveTab('components');
-          } else if (id === 'crossmatch') {
-            setActiveTab('crossmatch');
-          } else if (id === 'cold-chain') {
-            setActiveTab('temperature');
-          } else if (id === 'stat-transfuse') {
-            setActiveTab('transfusion');
-          } else if (id === 'plasma-cryo') {
-            setActiveTab('inventory');
-          } else if (id === 'regulatory-trace') {
-            setActiveTab('audit-vault');
-          }
-        }}
-      />
+      {/* 3D Spatial Feature Core Toggle: Zero-Scroll Blood Bank Ergonomics */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '0.75rem', backgroundColor: '#BE123C', color: '#FFFFFF', padding: '0.25rem 0.75rem', borderRadius: '6px', fontWeight: 800 }}>
+            🩸 BLOOD BANK & TRANSFUSION MEDICINE
+          </span>
+          <span style={{ fontSize: '0.8rem', color: 'var(--ds-color-text-muted)' }}>
+            Cold-Chain Inventory & Crossmatch Manifest
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowSpatial3D(!showSpatial3D)}
+          style={{
+            backgroundColor: showSpatial3D ? 'rgba(190, 18, 60, 0.2)' : 'var(--ds-color-surface)',
+            border: `1px solid ${showSpatial3D ? '#E11D48' : 'var(--ds-color-border)'}`,
+            color: showSpatial3D ? '#FB7185' : 'var(--ds-color-text-secondary)',
+            borderRadius: '6px',
+            padding: '4px 10px',
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '5px',
+            transition: 'all 0.15s ease'
+          }}
+          title="Toggle 3D Digital Twin View"
+        >
+          <span>🌐</span>
+          <span>{showSpatial3D ? 'Hide 3D Digital Twin ⏶' : 'View 3D Digital Twin ⏷'}</span>
+        </button>
+      </div>
+
+      {/* 3D Spatial Feature Core: Blood Bank & Transfusion Medicine (Collapsed for speed) */}
+      {showSpatial3D && (
+        <DocSearchSpatialCore3D
+          preset="blood-bank"
+          height={360}
+          interactive={true}
+          onNodeClick={(id) => {
+            if (id === 'donor-registry') {
+              setActiveTab('donors');
+            } else if (id === 'separation') {
+              setActiveTab('components');
+            } else if (id === 'crossmatch') {
+              setActiveTab('crossmatch');
+            } else if (id === 'cold-chain') {
+              setActiveTab('temperature');
+            } else if (id === 'stat-transfuse') {
+              setActiveTab('transfusion');
+            } else if (id === 'plasma-cryo') {
+              setActiveTab('inventory');
+            } else if (id === 'regulatory-trace') {
+              setActiveTab('audit-vault');
+            }
+          }}
+        />
+      )}
 
       <div
         style={{

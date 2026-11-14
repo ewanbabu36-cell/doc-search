@@ -477,7 +477,7 @@ function pruneWalArchives(maxWalFiles = 5) {
 // CLI Execution or Supervisor Daemon Loop
 // -----------------------------------------------------------------------------
 const isDirectRun = process.argv[1] === fileURLToPath(import.meta.url);
-const runNowFlag = process.argv.includes('--now');
+const runNowFlag = process.argv.includes('--now') || process.argv.includes('--once');
 
 if (isDirectRun) {
   if (runNowFlag) {

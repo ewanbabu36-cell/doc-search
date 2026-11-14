@@ -1,5 +1,73 @@
-import { type HealthOSAppItem } from './health-os-types.js';
+import { type HealthOSAppItem, type StaffRolePersona } from './health-os-types.js';
 import type { OrganizationWorkspaceType } from '../auth/HospitalStaffLogin.js';
+
+export { type StaffRolePersona } from './health-os-types.js';
+
+/**
+ * Normalizes any role string (e.g. 'CARDIOLOGIST', 'FRONT_DESK_EXECUTIVE', 'CHIEF_NURSE')
+ * into an authoritative StaffRolePersona.
+ */
+export function resolveStaffPersona(role?: string): StaffRolePersona {
+  const r = (role || '').toUpperCase();
+  if (!r) return 'DOCTOR';
+  if (
+    r.includes('ADMIN') ||
+    r.includes('EXECUTIVE') ||
+    r.includes('DIRECTOR') ||
+    r.includes('SUPER') ||
+    r.includes('FOUNDER') ||
+    r.includes('MANAGEMENT') ||
+    r.includes('CMO') ||
+    r.includes('SUPERINTENDENT')
+  ) {
+    return 'HOSPITAL_ADMIN';
+  }
+  if (r.includes('NURSE') || r.includes('WARD') || r.includes('MATRON') || r.includes('SISTER')) {
+    return 'NURSE';
+  }
+  if (r.includes('PHARMAC') || r.includes('CHEMIST') || r.includes('DRUGGIST') || r.includes('DISPENSER') || r.includes('AUSHADHI')) {
+    return 'PHARMACIST';
+  }
+  if (
+    r.includes('RADIO') ||
+    r.includes('IMAG') ||
+    r.includes('XRAY') ||
+    r.includes('X-RAY') ||
+    r.includes('CT') ||
+    r.includes('MRI') ||
+    r.includes('SONO') ||
+    r.includes('SCAN')
+  ) {
+    return 'RADIOLOGIST';
+  }
+  if (
+    r.includes('LAB') ||
+    r.includes('PATHO') ||
+    r.includes('PHLEBOTOM') ||
+    r.includes('BIOCHEM') ||
+    r.includes('MICROBIO') ||
+    r.includes('HISTOPATH') ||
+    r.includes('TECHNICIAN')
+  ) {
+    return 'LAB_TECHNICIAN';
+  }
+  if (r.includes('CASHIER') || r.includes('BILLING') || r.includes('ACCOUNTS') || r.includes('FINANCE')) {
+    return 'CASHIER';
+  }
+  if (
+    r.includes('RECEPT') ||
+    r.includes('FRONT') ||
+    r.includes('DESK') ||
+    r.includes('REGISTR') ||
+    r.includes('TOKEN') ||
+    r.includes('CLERK') ||
+    r.includes('ADMISSION')
+  ) {
+    return 'RECEPTIONIST';
+  }
+  // Default to DOCTOR for all clinicians, physicians, surgeons, specialists, consultants
+  return 'DOCTOR';
+}
 
 export const HEALTH_OS_APPS: HealthOSAppItem[] = [
   // --- 1. BILLING & COLLECTIONS ---
@@ -15,6 +83,7 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     badge: '₹1.48L Today',
     isCoreHomeApp: true,
     applicableProfiles: ['HOSPITAL', 'CLINIC', 'PATHOLOGY', 'PHARMACY', 'DIAGNOSTIC_CENTRE', 'ENTERPRISE_COMMAND'],
+    applicableRoles: ['CASHIER', 'RECEPTIONIST', 'HOSPITAL_ADMIN'],
   },
 
   // --- 2. APPOINTMENTS & OPD QUEUE ---
@@ -30,6 +99,7 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     badge: 'Token #42',
     isCoreHomeApp: true,
     applicableProfiles: ['HOSPITAL', 'CLINIC', 'ENTERPRISE_COMMAND'],
+    applicableRoles: ['DOCTOR', 'NURSE', 'RECEPTIONIST', 'CASHIER', 'RADIOLOGIST', 'HOSPITAL_ADMIN'],
   },
 
   // --- 3. CLINICAL CONSULTATION & SMART RX PAD ---
@@ -45,6 +115,7 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     badge: 'Active Desk',
     isCoreHomeApp: true,
     applicableProfiles: ['HOSPITAL', 'CLINIC', 'ENTERPRISE_COMMAND'],
+    applicableRoles: ['DOCTOR', 'HOSPITAL_ADMIN'],
   },
 
   // --- 4. PHARMACY DISPENSARY & LIVE STOCK ---
@@ -60,6 +131,7 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     badge: 'Stock Live',
     isCoreHomeApp: true,
     applicableProfiles: ['HOSPITAL', 'PHARMACY', 'ENTERPRISE_COMMAND'],
+    applicableRoles: ['PHARMACIST', 'HOSPITAL_ADMIN'],
   },
 
   // --- 5. DIAGNOSTIC PATHOLOGY & LIMS ---
@@ -75,6 +147,7 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     badge: '18 Orders',
     isCoreHomeApp: true,
     applicableProfiles: ['HOSPITAL', 'PATHOLOGY', 'DIAGNOSTIC_CENTRE', 'ENTERPRISE_COMMAND'],
+    applicableRoles: ['LAB_TECHNICIAN', 'RADIOLOGIST', 'HOSPITAL_ADMIN'],
   },
 
   // --- 6. INPATIENT WARD & BED CENSUS ---
@@ -90,6 +163,7 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     badge: '82% Occupied',
     isCoreHomeApp: true,
     applicableProfiles: ['HOSPITAL', 'ENTERPRISE_COMMAND'],
+    applicableRoles: ['NURSE', 'DOCTOR', 'HOSPITAL_ADMIN'],
   },
 
   // --- 7. SETTINGS & ADMINISTRATION ---
@@ -105,6 +179,7 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     badge: 'Config',
     isCoreHomeApp: true,
     applicableProfiles: ['HOSPITAL', 'CLINIC', 'PATHOLOGY', 'PHARMACY', 'DIAGNOSTIC_CENTRE', 'ENTERPRISE_COMMAND'],
+    applicableRoles: ['HOSPITAL_ADMIN'],
   },
 
   // --- 8. PATIENT REGISTRATION & FRONT DESK ---
@@ -118,6 +193,7 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     route: '/partner/registration',
     description: 'Fast OPD registration, biometric ABHA lookup & photo capture',
     applicableProfiles: ['HOSPITAL', 'CLINIC', 'PATHOLOGY', 'ENTERPRISE_COMMAND'],
+    applicableRoles: ['RECEPTIONIST', 'HOSPITAL_ADMIN'],
   },
 
   // --- 9. PATIENT HEALTH 360 & ABHA LOCKER ---
@@ -133,6 +209,7 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     badge: 'ABHA Linked',
     isCoreHomeApp: true,
     applicableProfiles: ['HOSPITAL', 'CLINIC', 'PATHOLOGY', 'PHARMACY', 'ENTERPRISE_COMMAND'],
+    applicableRoles: ['DOCTOR', 'RECEPTIONIST', 'HOSPITAL_ADMIN'],
   },
 
   // --- 10. EMERGENCY & MANCHESTER TRIAGE ---
@@ -147,6 +224,7 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     description: '5-level Manchester triage, trauma resuscitation & red-alert bed sync',
     badge: 'Code Blue Ready',
     applicableProfiles: ['HOSPITAL', 'ENTERPRISE_COMMAND'],
+    applicableRoles: ['DOCTOR', 'NURSE', 'HOSPITAL_ADMIN'],
   },
 
   // --- 11. RADIOLOGY IMAGING & DICOM PACS ---
@@ -160,6 +238,7 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     route: '/partner/radiology',
     description: 'X-Ray, CT, MRI study viewer with web DICOM zero-footprint viewer',
     applicableProfiles: ['HOSPITAL', 'DIAGNOSTIC_CENTRE', 'ENTERPRISE_COMMAND'],
+    applicableRoles: ['RADIOLOGIST', 'DOCTOR', 'HOSPITAL_ADMIN'],
   },
 
   // --- 12. OPERATION THEATRE SUITES ---
@@ -173,6 +252,7 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     route: '/partner/ot',
     description: 'Surgical scheduling, anaesthesia charts, PAC clearances & post-op recovery',
     applicableProfiles: ['HOSPITAL', 'ENTERPRISE_COMMAND'],
+    applicableRoles: ['DOCTOR', 'NURSE', 'HOSPITAL_ADMIN'],
   },
 
   // --- 13. BLOOD BANK & DONOR TRANSFUSION ---
@@ -186,6 +266,7 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     route: '/partner/blood-bank',
     description: 'Cross-matching, component inventory (PRBC, FFP, Platelets) & transfusion safety',
     applicableProfiles: ['HOSPITAL', 'ENTERPRISE_COMMAND'],
+    applicableRoles: ['DOCTOR', 'NURSE', 'HOSPITAL_ADMIN'],
   },
 
   // --- 14. TELEMEDICINE & REMOTE CLINIC ---
@@ -199,6 +280,7 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     route: '/partner/telemedicine',
     description: 'Encrypted HD video consultations with real-time patient vitals HUD',
     applicableProfiles: ['HOSPITAL', 'CLINIC', 'ENTERPRISE_COMMAND'],
+    applicableRoles: ['DOCTOR', 'HOSPITAL_ADMIN'],
   },
 
   // --- 15. ABDM AYUSHMAN BHARAT GATEWAY ---
@@ -212,6 +294,7 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     route: '/partner/abdm',
     description: 'ABHA creation, Scan & Share counter QR and Ayushman PM-JAY claims',
     applicableProfiles: ['HOSPITAL', 'CLINIC', 'PATHOLOGY', 'ENTERPRISE_COMMAND'],
+    applicableRoles: ['RECEPTIONIST', 'DOCTOR', 'LAB_TECHNICIAN', 'HOSPITAL_ADMIN'],
   },
 
   // --- 16. AI CLINICAL COPILOT & CDSS ---
@@ -225,6 +308,7 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     route: '/partner/ai-cdss',
     description: 'Evidence-based differential diagnoses, antibiotic stewardship & drug interactions',
     applicableProfiles: ['HOSPITAL', 'CLINIC', 'ENTERPRISE_COMMAND'],
+    applicableRoles: ['DOCTOR', 'RADIOLOGIST', 'HOSPITAL_ADMIN'],
   },
 
   // --- 17. WHATSAPP PATIENT AUTOMATED DISPATCH ---
@@ -238,6 +322,7 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     route: '/partner/whatsapp',
     description: 'Instant PDF prescriptions, lab result dispatch & appointment reminders',
     applicableProfiles: ['HOSPITAL', 'CLINIC', 'PATHOLOGY', 'PHARMACY', 'ENTERPRISE_COMMAND'],
+    applicableRoles: ['RECEPTIONIST', 'PHARMACIST', 'LAB_TECHNICIAN', 'HOSPITAL_ADMIN'],
   },
 
   // --- 18. EXECUTIVE COMMAND & ANALYTICS ---
@@ -251,6 +336,7 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     route: '/partner/analytics',
     description: 'Facility EBITDA, turnaround times, average wait times & doctor occupancy',
     applicableProfiles: ['HOSPITAL', 'PATHOLOGY', 'ENTERPRISE_COMMAND'],
+    applicableRoles: ['HOSPITAL_ADMIN'],
   },
 
   // --- 19. FACTORY-DIRECT WHOLESALE SOURCING DEPOT ---
@@ -264,6 +350,7 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     route: '/partner/rewards',
     description: 'Wholesale factory-rate medicine, pathology reagents and surgical replenishment',
     applicableProfiles: ['HOSPITAL', 'CLINIC', 'PATHOLOGY', 'PHARMACY', 'ENTERPRISE_COMMAND'],
+    applicableRoles: ['PHARMACIST', 'HOSPITAL_ADMIN'],
   },
 ];
 
@@ -277,32 +364,113 @@ export function getAppsForProfile(profile: OrganizationWorkspaceType = 'HOSPITAL
 }
 
 /**
- * Filter profile-specific core homescreen applications.
+ * Filter applications matching both the organization profile AND the staff user's role.
+ * Enforces HIPAA Minimum Necessary and NABH least-privilege scoping.
  */
-export function getCoreAppsForProfile(profile: OrganizationWorkspaceType = 'HOSPITAL'): HealthOSAppItem[] {
-  const apps = getAppsForProfile(profile);
+export function getAppsForStaff(
+  profile: OrganizationWorkspaceType = 'HOSPITAL',
+  role?: string
+): HealthOSAppItem[] {
+  const orgApps = getAppsForProfile(profile);
+  const persona = resolveStaffPersona(role);
 
-  // Profile-specific home application layouts
+  // SuperAdmins, Medical Directors and Hospital Administrators see everything in their facility
+  if (persona === 'HOSPITAL_ADMIN') {
+    return orgApps;
+  }
+
+  // Counter & Clinical staff see only applications explicitly granted to their role
+  return orgApps.filter(
+    (app) => !app.applicableRoles || app.applicableRoles.includes(persona)
+  );
+}
+
+/**
+ * Filter profile- and role-specific core homescreen applications.
+ */
+export function getCoreAppsForStaff(
+  profile: OrganizationWorkspaceType = 'HOSPITAL',
+  role?: string
+): HealthOSAppItem[] {
+  const persona = resolveStaffPersona(role);
+  const staffApps = getAppsForStaff(profile, role);
+
+  // Standalone Specialized Facilities retain domain-specific home apps
   switch (profile) {
     case 'CLINIC':
-      return apps.filter((a) =>
-        ['clinical-consultation', 'encounters-visits', 'patient-portal', 'billing-revenue-cycle', 'abdm-fhir', 'telemedicine-rpm', 'staff-administration'].includes(a.id)
+      return staffApps.filter((a) =>
+        ['clinical-consultation', 'encounters-visits', 'patient-portal', 'billing-revenue-cycle', 'abdm-fhir', 'telemedicine-rpm'].includes(a.id)
       );
 
     case 'PATHOLOGY':
-      return apps.filter((a) =>
-        ['clinical-investigation', 'patient-registration', 'billing-revenue-cycle', 'whatsapp-portal', 'abdm-fhir', 'staff-administration', 'offers-rewards-hub'].includes(a.id)
+      return staffApps.filter((a) =>
+        ['clinical-investigation', 'patient-registration', 'whatsapp-portal', 'abdm-fhir', 'offers-rewards-hub'].includes(a.id)
       );
 
     case 'PHARMACY':
-      return apps.filter((a) =>
-        ['pharmacy-medication', 'billing-revenue-cycle', 'whatsapp-portal', 'staff-administration', 'offers-rewards-hub', 'patient-portal'].includes(a.id)
+      return staffApps.filter((a) =>
+        ['pharmacy-medication', 'whatsapp-portal', 'offers-rewards-hub', 'patient-portal'].includes(a.id)
       );
 
     case 'HOSPITAL':
     default:
-      return apps.filter((a) =>
-        ['inpatient-management', 'encounters-visits', 'clinical-consultation', 'billing-revenue-cycle', 'pharmacy-medication', 'clinical-investigation', 'staff-administration'].includes(a.id)
-      );
+      // Multi-Specialty Hospital: Tailor homescreen strictly to staff persona
+      switch (persona) {
+        case 'DOCTOR':
+          return staffApps.filter((a) =>
+            ['clinical-consultation', 'encounters-visits', 'patient-portal', 'telemedicine-rpm'].includes(a.id)
+          );
+
+        case 'NURSE':
+          return staffApps.filter((a) =>
+            ['inpatient-management', 'emergency-trauma', 'encounters-visits'].includes(a.id)
+          );
+
+        case 'RECEPTIONIST':
+          return staffApps.filter((a) =>
+            ['patient-registration', 'encounters-visits', 'patient-portal'].includes(a.id)
+          );
+
+        case 'CASHIER':
+          return staffApps.filter((a) =>
+            ['billing-revenue-cycle', 'encounters-visits'].includes(a.id)
+          );
+
+        case 'PHARMACIST':
+          return staffApps.filter((a) =>
+            ['pharmacy-medication', 'whatsapp-portal', 'offers-rewards-hub'].includes(a.id)
+          );
+
+        case 'LAB_TECHNICIAN':
+          return staffApps.filter((a) =>
+            ['clinical-investigation', 'patient-registration', 'whatsapp-portal'].includes(a.id)
+          );
+
+        case 'RADIOLOGIST':
+          return staffApps.filter((a) =>
+            ['radiology-pacs', 'encounters-visits', 'clinical-investigation', 'ai-cdss'].includes(a.id)
+          );
+
+        case 'HOSPITAL_ADMIN':
+        default:
+          return staffApps.filter((a) =>
+            [
+              'inpatient-management',
+              'encounters-visits',
+              'clinical-consultation',
+              'billing-revenue-cycle',
+              'pharmacy-medication',
+              'clinical-investigation',
+              'staff-administration',
+            ].includes(a.id)
+          );
+      }
   }
+}
+
+/**
+ * Backward compatibility alias for legacy callers.
+ */
+export function getCoreAppsForProfile(profile: OrganizationWorkspaceType = 'HOSPITAL'): HealthOSAppItem[] {
+  return getCoreAppsForStaff(profile, 'HOSPITAL_ADMIN');
 }

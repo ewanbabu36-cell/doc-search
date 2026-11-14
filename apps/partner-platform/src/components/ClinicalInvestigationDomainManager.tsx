@@ -97,6 +97,7 @@ export const ClinicalInvestigationDomainManager: React.FC<ClinicalInvestigationD
 }) => {
   const [activeTab, setActiveTab] = useState<ActiveInvestigationTab>(initialTab || 'specimens');
   const [operatingMode, setOperatingMode] = useState<PlatformOperatingMode>(() => platformModeService.getMode());
+  const [showDevQaTools, setShowDevQaTools] = useState<boolean>(false);
 
   useEffect(() => {
     const unsubscribe = platformModeService.subscribe((mode) => {
@@ -917,56 +918,9 @@ export const ClinicalInvestigationDomainManager: React.FC<ClinicalInvestigationD
             </div>
           </div>
 
-          {/* Action Toolbar */}
+          {/* Action Toolbar — NABL ISO 15189 De-Cluttered Workbench */}
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-            {/* Quick NABL Panic Test Buttons */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <button
-                type="button"
-                onClick={() => handleSimulatePanicAlert('platelets')}
-                style={{
-                  backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                  border: '1px solid rgba(239, 68, 68, 0.45)',
-                  color: '#F87171',
-                  borderRadius: '8px',
-                  padding: '7px 12px',
-                  fontSize: '0.78rem',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '5px'
-                }}
-                title="Simulate critical platelet count < 20,000 /uL"
-              >
-                <span>🚨</span>
-                <span>Test Platelet (&lt; 20k)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleSimulatePanicAlert('potassium')}
-                style={{
-                  backgroundColor: 'rgba(245, 158, 11, 0.15)',
-                  border: '1px solid rgba(245, 158, 11, 0.45)',
-                  color: '#FBBF24',
-                  borderRadius: '8px',
-                  padding: '7px 12px',
-                  fontSize: '0.78rem',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '5px'
-                }}
-                title="Simulate critical serum potassium > 6.5 mEq/L"
-              >
-                <span>⚡</span>
-                <span>Test Potassium (&gt; 6.5)</span>
-              </button>
-            </div>
-
-            {/* Express Direct Walk-In Test & Instant Print Action */}
+            {/* Primary Action 1: Express Direct Walk-In Test & Instant Print */}
             <button
               type="button"
               onClick={() => setIsWalkInReportOpen(true)}
@@ -991,32 +945,7 @@ export const ClinicalInvestigationDomainManager: React.FC<ClinicalInvestigationD
               <span>+ Walk-In Test & Print</span>
             </button>
 
-            {/* 📖 Pathology Report History Book (रजिस्टर / Diagnostic Archive) */}
-            <button
-              type="button"
-              onClick={() => setIsHistoryBookOpen(true)}
-              style={{
-                backgroundColor: 'rgba(2, 132, 199, 0.2)',
-                color: '#38BDF8',
-                border: '1.5px solid #0284C7',
-                borderRadius: '8px',
-                padding: '8px 16px',
-                fontWeight: 900,
-                fontSize: '0.85rem',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                boxShadow: '0 4px 14px rgba(2, 132, 199, 0.25)',
-                transition: 'all 0.15s ease'
-              }}
-              title="Pathology Report History Book & Register of all finalized reports"
-            >
-              <span>📖</span>
-              <span>Report History Book ({orders.filter(o => Boolean(o.report || o.status === 'VERIFIED' || o.status === 'REVIEWED' || (o.metadata as any)?.observedValues)).length})</span>
-            </button>
-
-            {/* Unified Primary Walk-In Billing Action */}
+            {/* Primary Action 2: Unified Walk-In Registration & POS Billing */}
             <button
               type="button"
               onClick={() => setIsBillingModalOpen(true)}
@@ -1041,14 +970,14 @@ export const ClinicalInvestigationDomainManager: React.FC<ClinicalInvestigationD
               <span>+ New Walk-In & Billing</span>
             </button>
 
-            {/* 💰 Revenue & Daily Collection Desk Action */}
+            {/* Primary Action 3: Pathology Report History Book (रजिस्टर / Diagnostic Archive) */}
             <button
               type="button"
-              onClick={() => setActiveTab('revenue')}
+              onClick={() => setIsHistoryBookOpen(true)}
               style={{
-                backgroundColor: activeTab === 'revenue' ? '#10B981' : 'rgba(16, 185, 129, 0.15)',
-                color: activeTab === 'revenue' ? '#064E3B' : '#34D399',
-                border: '1.5px solid #10B981',
+                backgroundColor: 'rgba(2, 132, 199, 0.2)',
+                color: '#38BDF8',
+                border: '1.5px solid #0284C7',
                 borderRadius: '8px',
                 padding: '8px 16px',
                 fontWeight: 900,
@@ -1057,39 +986,39 @@ export const ClinicalInvestigationDomainManager: React.FC<ClinicalInvestigationD
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
-                boxShadow: '0 4px 14px rgba(16, 185, 129, 0.25)',
+                boxShadow: '0 4px 14px rgba(2, 132, 199, 0.25)',
                 transition: 'all 0.15s ease'
               }}
-              title="Daily cash collection register, 7-day/30-day/custom-date revenue telemetry"
+              title="Pathology Report History Book & Register of all finalized reports"
             >
-              <span>💰</span>
-              <span>Revenue & Collection</span>
+              <span>📖</span>
+              <span>Report History Book ({orders.filter(o => Boolean(o.report || o.status === 'VERIFIED' || o.status === 'REVIEWED' || (o.metadata as any)?.observedValues)).length})</span>
             </button>
 
-            {/* ⚙️ Custom Test Library & Laboratory Branding Manager */}
+            {/* Primary Action 4: ASTM / HL7 Analyzer Sync */}
             <button
               type="button"
-              onClick={() => setIsCustomTestLibraryManagerOpen(true)}
+              onClick={() => setIsAutoAnalyzerOpen(true)}
               style={{
                 backgroundColor: '#0F172A',
-                border: '1px solid rgba(168, 85, 247, 0.4)',
-                color: '#C084FC',
+                border: '1px solid rgba(6, 182, 212, 0.4)',
+                color: '#38BDF8',
                 borderRadius: '8px',
-                padding: '7px 12px',
-                fontSize: '0.78rem',
+                padding: '8px 14px',
+                fontSize: '0.82rem',
                 fontWeight: 700,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px'
               }}
-              title="Custom test profiles, parameters, ranges, prices & lab branding"
+              title="Synchronize ASTM / HL7 serial instruments"
             >
-              <span>⚙️</span>
-              <span>Customize Tests & Lab</span>
+              <span>📡</span>
+              <span>Analyzer Sync</span>
             </button>
 
-            {/* OPD Doctor Orders Badge */}
+            {/* Contextual Action: OPD Doctor Orders Badge */}
             {pendingDoctorLabOrders.length > 0 && (
               <button
                 type="button"
@@ -1117,171 +1046,219 @@ export const ClinicalInvestigationDomainManager: React.FC<ClinicalInvestigationD
               </button>
             )}
 
-            {/* Instrument Analyzer Sync */}
+            {/* Executive Tools: Only for Hospital Administrators */}
+            {isHospitalExecutive(currentUserRole) && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('revenue')}
+                  style={{
+                    backgroundColor: activeTab === 'revenue' ? '#10B981' : 'rgba(16, 185, 129, 0.15)',
+                    color: activeTab === 'revenue' ? '#064E3B' : '#34D399',
+                    border: '1.5px solid #10B981',
+                    borderRadius: '8px',
+                    padding: '8px 14px',
+                    fontWeight: 800,
+                    fontSize: '0.82rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                  title="Daily cash collection register, revenue telemetry"
+                >
+                  <span>💰</span>
+                  <span>Revenue</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsCustomTestLibraryManagerOpen(true)}
+                  style={{
+                    backgroundColor: '#0F172A',
+                    border: '1px solid rgba(168, 85, 247, 0.4)',
+                    color: '#C084FC',
+                    borderRadius: '8px',
+                    padding: '7px 12px',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                  title="Custom test profiles, parameters, ranges, prices & lab branding"
+                >
+                  <span>⚙️</span>
+                  <span>Customize Tests</span>
+                </button>
+              </>
+            )}
+
+            {/* QA & Utilities Drawer Toggle (Separates Sandbox from Live Bench) */}
             <button
               type="button"
-              onClick={() => setIsAutoAnalyzerOpen(true)}
+              onClick={() => setShowDevQaTools(!showDevQaTools)}
               style={{
-                backgroundColor: '#0F172A',
-                border: '1px solid rgba(6, 182, 212, 0.4)',
-                color: '#38BDF8',
+                backgroundColor: showDevQaTools ? 'rgba(148, 163, 184, 0.2)' : 'transparent',
+                border: '1px solid rgba(148, 163, 184, 0.3)',
+                color: '#94A3B8',
                 borderRadius: '8px',
                 padding: '7px 12px',
                 fontSize: '0.78rem',
-                fontWeight: 700,
+                fontWeight: 600,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px'
               }}
-              title="Synchronize ASTM / HL7 serial instruments"
+              title="Toggle QA Simulators and Advanced Bench Tools"
             >
-              <span>📡</span>
-              <span>Analyzer Sync</span>
-            </button>
-
-            {/* 🚨 Simulate Critical Panic Result Action */}
-            <button
-              type="button"
-              onClick={() => handleSimulatePanicAlert('platelets')}
-              style={{
-                backgroundColor: 'rgba(239, 68, 68, 0.18)',
-                border: '1.5px solid #EF4444',
-                color: '#FCA5A5',
-                borderRadius: '8px',
-                padding: '7px 12px',
-                fontSize: '0.78rem',
-                fontWeight: 800,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                boxShadow: '0 2px 8px rgba(239, 68, 68, 0.25)'
-              }}
-              title="Simulate Critical Panic Finding (Platelets: 14,000 /µL) to test Red Flag HUD and NABL 15-min protocol"
-            >
-              <span>🚨</span>
-              <span>Test Panic Alert (PLT 14k)</span>
-            </button>
-
-            {/* AI Smear Scanner */}
-            <button
-              type="button"
-              onClick={() => setIsMicroscopeScannerOpen(true)}
-              style={{
-                backgroundColor: '#0F172A',
-                border: '1px solid rgba(168, 85, 247, 0.4)',
-                color: '#C084FC',
-                borderRadius: '8px',
-                padding: '7px 12px',
-                fontSize: '0.78rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
-              title="Digital Pathology & Whole Slide Imaging (WSI) blood smear examination"
-            >
-              <span>🔬</span>
-              <span>Digital Pathology / WSI Viewer</span>
-            </button>
-
-            {/* Public QR Code Verification */}
-            <button
-              type="button"
-              onClick={() => setIsPublicVerifyOpen(true)}
-              style={{
-                backgroundColor: '#0F172A',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                color: '#CBD5E1',
-                borderRadius: '8px',
-                padding: '7px 12px',
-                fontSize: '0.78rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
-              title="Verify public QR code cryptographic integrity"
-            >
-              <span>🔒</span>
-              <span>Verify QR</span>
-            </button>
-
-            {/* ⛶ Fullscreen LIMS Station */}
-            <button
-              type="button"
-              onClick={() => {
-                if (!document.fullscreenElement) {
-                  if (document.documentElement.requestFullscreen) {
-                    document.documentElement.requestFullscreen().catch(() => {});
-                  } else if ((document.documentElement as any).webkitRequestFullscreen) {
-                    (document.documentElement as any).webkitRequestFullscreen();
-                  }
-                } else {
-                  if (document.exitFullscreen) {
-                    document.exitFullscreen().catch(() => {});
-                  } else if ((document as any).webkitExitFullscreen) {
-                    (document as any).webkitExitFullscreen();
-                  }
-                }
-              }}
-              style={{
-                backgroundColor: '#0F172A',
-                border: '1px solid rgba(56, 189, 248, 0.4)',
-                color: '#38BDF8',
-                borderRadius: '8px',
-                padding: '7px 12px',
-                fontSize: '0.78rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
-              title="Toggle Fullscreen Pathology LIMS Station Mode (F11)"
-            >
-              <span>⛶</span>
-              <span>Fullscreen LIMS</span>
-            </button>
-
-            {/* 🧹 1-Click Clear Test & Mock Data Action */}
-            <button
-              type="button"
-              onClick={() => {
-                const confirmed = window.confirm(
-                  'Are you sure you want to clear all test & mock data?\n\nThis will purge all test patient orders, reports, and billing invoices. Master clinical test catalogs (CBC, LFT, KFT, custom tests) will remain safe.'
-                );
-                if (confirmed) {
-                  clinicalInvestigationService.clearAllMockAndTestData();
-                  setPendingDoctorLabOrders([]);
-                  void loadData();
-                  setMicroscopeSuccessToast('🧹 All test & mock data has been purged successfully! Laboratory is now clean.');
-                  setTimeout(() => setMicroscopeSuccessToast(null), 5000);
-                }
-              }}
-              style={{
-                backgroundColor: 'rgba(239, 68, 68, 0.12)',
-                border: '1px solid rgba(239, 68, 68, 0.4)',
-                color: '#F87171',
-                borderRadius: '8px',
-                padding: '7px 12px',
-                fontSize: '0.78rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
-              title="Purge all test orders, reports & mock billing invoices"
-            >
-              <span>🧹</span>
-              <span>Clear Test Data</span>
+              <span>🛠️</span>
+              <span>{showDevQaTools ? 'Hide QA Tools ⏶' : 'QA Simulators ⏷'}</span>
             </button>
           </div>
         </div>
+
+        {/* Collapsible Sandbox & QA Utility Drawer */}
+        {showDevQaTools && (
+          <div style={{
+            backgroundColor: 'rgba(15, 23, 42, 0.8)',
+            border: '1px dashed rgba(148, 163, 184, 0.4)',
+            borderRadius: '10px',
+            padding: '10px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '10px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                QA Sandbox & Diagnostic Tests:
+              </span>
+              <button
+                type="button"
+                onClick={() => handleSimulatePanicAlert('platelets')}
+                style={{
+                  backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                  border: '1px solid rgba(239, 68, 68, 0.45)',
+                  color: '#F87171',
+                  borderRadius: '6px',
+                  padding: '5px 10px',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+                title="Simulate critical platelet count < 20,000 /uL"
+              >
+                <span>🚨</span>
+                <span>Test Platelet (&lt; 20k)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSimulatePanicAlert('potassium')}
+                style={{
+                  backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                  border: '1px solid rgba(245, 158, 11, 0.45)',
+                  color: '#FBBF24',
+                  borderRadius: '6px',
+                  padding: '5px 10px',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+                title="Simulate critical serum potassium > 6.5 mEq/L"
+              >
+                <span>⚡</span>
+                <span>Test Potassium (&gt; 6.5)</span>
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => setIsMicroscopeScannerOpen(true)}
+                style={{
+                  backgroundColor: '#0F172A',
+                  border: '1px solid rgba(168, 85, 247, 0.4)',
+                  color: '#C084FC',
+                  borderRadius: '6px',
+                  padding: '5px 10px',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                <span>🔬</span>
+                <span>Digital WSI</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsPublicVerifyOpen(true)}
+                style={{
+                  backgroundColor: '#0F172A',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  color: '#CBD5E1',
+                  borderRadius: '6px',
+                  padding: '5px 10px',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                <span>🔒</span>
+                <span>Verify QR</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const confirmed = window.confirm(
+                    'Are you sure you want to clear all test & mock data?\n\nThis will purge all test patient orders, reports, and billing invoices. Master clinical test catalogs (CBC, LFT, KFT, custom tests) will remain safe.'
+                  );
+                  if (confirmed) {
+                    clinicalInvestigationService.clearAllMockAndTestData();
+                    setPendingDoctorLabOrders([]);
+                    void loadData();
+                    setMicroscopeSuccessToast('🧹 All test & mock data has been purged successfully! Laboratory is now clean.');
+                    setTimeout(() => setMicroscopeSuccessToast(null), 5000);
+                  }
+                }}
+                style={{
+                  backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                  border: '1px solid rgba(239, 68, 68, 0.4)',
+                  color: '#F87171',
+                  borderRadius: '6px',
+                  padding: '5px 10px',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                <span>🧹</span>
+                <span>Clear Test Data</span>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* ========================================================================= */}
         {/* OPERATIONAL MODE: DAILY EXPRESS VS ADVANCE PRO LIMS PIPELINE                */}

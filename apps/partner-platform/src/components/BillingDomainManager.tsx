@@ -184,6 +184,20 @@ export const BillingDomainManager: React.FC<BillingDomainManagerProps> = ({
   const [selectedRefund, setSelectedRefund] = useState<BillingRefundDto | null>(null);
   const [selectedSession, setSelectedSession] = useState<BillingCashierSessionDto | null>(null);
 
+  // Supervisory Role Clearance Filter (De-Cluttering for Cashiers)
+  const isBillingLead =
+    currentUserRole === 'BILLING_DIRECTOR' ||
+    currentUserRole === 'SUPER_ADMIN' ||
+    currentUserRole === 'HOSPITAL_ADMIN' ||
+    currentUserRole === 'HOSPITAL_DIRECTOR' ||
+    currentUserRole?.includes('ADMIN') ||
+    currentUserRole?.includes('DIRECTOR') ||
+    currentUserRole?.includes('FINANCE') ||
+    currentUserRole?.includes('MANAGER') ||
+    !currentUserRole;
+
+  const [showSupervisorTools, setShowSupervisorTools] = useState<boolean>(isBillingLead);
+
   // Dialog Visibility Flags
   const [isCreateServiceOpen, setIsCreateServiceOpen] = useState(false);
   const [isCreatePriceListOpen, setIsCreatePriceListOpen] = useState(false);
@@ -510,57 +524,62 @@ export const BillingDomainManager: React.FC<BillingDomainManagerProps> = ({
           <span style={{ fontSize: '1.4rem' }}>💵</span>
         </div>
 
-        {/* Pillar 3: 📑 TPA / Insurance Claims Desk */}
-        <div
-          onClick={() => setActiveTab('claims-desk')}
-          style={{
-            backgroundColor: activeTab === 'claims-desk' ? 'rgba(245, 158, 11, 0.2)' : 'var(--ds-color-surface)',
-            border: `1.5px solid ${activeTab === 'claims-desk' ? 'var(--ds-color-warning)' : 'var(--ds-color-border, rgba(255,255,255,0.08))'}`,
-            borderRadius: '10px',
-            padding: '12px 16px',
-            cursor: 'pointer',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            transition: 'all 0.15s ease'
-          }}
-        >
-          <div>
-            <span style={{ fontSize: '0.68rem', color: 'var(--ds-color-warning)', fontWeight: 700, textTransform: 'uppercase' }}>
-              📑 3. TPA / Insurance Desk
-            </span>
-            <div style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--ds-color-warning)' }}>
-              4 Pre-Auths
+        {/* Supervisor Pillar 3 & 4: TPA / Insurance & Anti-Leakage (Guarded) */}
+        {showSupervisorTools && (
+          <>
+            {/* Pillar 3: 📑 TPA / Insurance Claims Desk */}
+            <div
+              onClick={() => setActiveTab('claims-desk')}
+              style={{
+                backgroundColor: activeTab === 'claims-desk' ? 'rgba(245, 158, 11, 0.2)' : 'var(--ds-color-surface)',
+                border: `1.5px solid ${activeTab === 'claims-desk' ? 'var(--ds-color-warning)' : 'var(--ds-color-border, rgba(255,255,255,0.08))'}`,
+                borderRadius: '10px',
+                padding: '12px 16px',
+                cursor: 'pointer',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <div>
+                <span style={{ fontSize: '0.68rem', color: 'var(--ds-color-warning)', fontWeight: 700, textTransform: 'uppercase' }}>
+                  📑 3. TPA / Insurance Desk
+                </span>
+                <div style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--ds-color-warning)' }}>
+                  4 Pre-Auths
+                </div>
+              </div>
+              <span style={{ fontSize: '1.4rem' }}>📑</span>
             </div>
-          </div>
-          <span style={{ fontSize: '1.4rem' }}>📑</span>
-        </div>
 
-        {/* Pillar 4: 🛡️ Anti-Leakage & RCM Desk */}
-        <div
-          onClick={() => setActiveTab('rcm-anti-leakage')}
-          style={{
-            backgroundColor: activeTab === 'rcm-anti-leakage' ? 'rgba(239, 68, 68, 0.2)' : 'var(--ds-color-surface)',
-            border: `1.5px solid ${activeTab === 'rcm-anti-leakage' ? '#EF4444' : 'var(--ds-color-border, rgba(255,255,255,0.08))'}`,
-            borderRadius: '10px',
-            padding: '12px 16px',
-            cursor: 'pointer',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            transition: 'all 0.15s ease'
-          }}
-        >
-          <div>
-            <span style={{ fontSize: '0.68rem', color: '#EF4444', fontWeight: 700, textTransform: 'uppercase' }}>
-              🛡️ 4. Anti-Leakage Desk
-            </span>
-            <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#EF4444' }}>
-              ₹38.4k Recovered
+            {/* Pillar 4: 🛡️ Anti-Leakage & RCM Desk */}
+            <div
+              onClick={() => setActiveTab('rcm-anti-leakage')}
+              style={{
+                backgroundColor: activeTab === 'rcm-anti-leakage' ? 'rgba(239, 68, 68, 0.2)' : 'var(--ds-color-surface)',
+                border: `1.5px solid ${activeTab === 'rcm-anti-leakage' ? '#EF4444' : 'var(--ds-color-border, rgba(255,255,255,0.08))'}`,
+                borderRadius: '10px',
+                padding: '12px 16px',
+                cursor: 'pointer',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <div>
+                <span style={{ fontSize: '0.68rem', color: '#EF4444', fontWeight: 700, textTransform: 'uppercase' }}>
+                  🛡️ 4. Anti-Leakage Desk
+                </span>
+                <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#EF4444' }}>
+                  ₹38.4k Recovered
+                </div>
+              </div>
+              <span style={{ fontSize: '1.4rem' }}>🛡️</span>
             </div>
-          </div>
-          <span style={{ fontSize: '1.4rem' }}>🛡️</span>
-        </div>
+          </>
+        )}
 
         {/* Pillar 5: 🔄 Shift Handover Sign-off */}
         <div
@@ -607,15 +626,17 @@ export const BillingDomainManager: React.FC<BillingDomainManagerProps> = ({
         {[
           { id: 'instant-settlement', label: '⚡ Instant Settlement' },
           { id: 'cash-ledger', label: '💵 Daily Cash Ledger' },
-          { id: 'claims-desk', label: '📑 TPA / Insurance Claims' },
-          { id: 'rcm-anti-leakage', label: '🛡️ Anti-Leakage Desk' },
           { id: 'shift-handover', label: '🔄 Shift Handover' },
           { id: 'invoices', label: `🧾 Invoices (${(invoices || []).length})` },
-          { id: 'create-invoice', label: '➕ Full Tax Invoice' },
-          { id: 'payment-collection', label: `💳 Payment Ledger (${(payments || []).length})` },
-          { id: 'charges', label: `📑 Charges (${(charges || []).length})` },
-          { id: 'receivables', label: `⏳ Receivables (${(invoices || []).filter((i) => Number(i?.dueAmount || 0) > 0).length})` },
-          { id: 'overview', label: '📊 Billing Overview' },
+          ...(showSupervisorTools ? [
+            { id: 'claims-desk', label: '📑 TPA / Insurance Claims' },
+            { id: 'rcm-anti-leakage', label: '🛡️ Anti-Leakage Desk' },
+            { id: 'create-invoice', label: '➕ Full Tax Invoice' },
+            { id: 'payment-collection', label: `💳 Payment Ledger (${(payments || []).length})` },
+            { id: 'charges', label: `📑 Charges (${(charges || []).length})` },
+            { id: 'receivables', label: `⏳ Receivables (${(invoices || []).filter((i) => Number(i?.dueAmount || 0) > 0).length})` },
+            { id: 'overview', label: '📊 Billing Overview' }
+          ] : []),
           ...(selectedInvoice && activeTab === 'invoice-detail' ? [{ id: 'invoice-detail', label: `Invoice ${selectedInvoice.invoiceNumber}` }] : [])
         ].map((tab) => {
           const isActive = activeTab === tab.id;
@@ -675,6 +696,30 @@ export const BillingDomainManager: React.FC<BillingDomainManagerProps> = ({
           accentColor="var(--ds-color-primary)"
           activeBorderColor="var(--ds-color-accent)"
         />
+
+        {/* Supervisor Tools Quick Toggle */}
+        <button
+          type="button"
+          onClick={() => setShowSupervisorTools((prev) => !prev)}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '6px 12px',
+            borderRadius: '6px',
+            border: '1px dashed rgba(56, 189, 248, 0.45)',
+            backgroundColor: showSupervisorTools ? 'rgba(56, 189, 248, 0.15)' : 'rgba(255, 255, 255, 0.04)',
+            color: showSupervisorTools ? '#38bdf8' : 'var(--ds-color-text-muted)',
+            fontWeight: 700,
+            fontSize: '0.78rem',
+            cursor: 'pointer',
+            marginLeft: 'auto',
+            transition: 'all 0.15s ease'
+          }}
+          title="Toggle Supervisory TPA, Anti-Leakage & RCM Tools"
+        >
+          <span>{showSupervisorTools ? '🛡️ Hide Supervisor Tools' : '⚙️ +7 Supervisor Tools'}</span>
+        </button>
       </div>
 
       {/* Active Cross-Department Patient Context Banner */}

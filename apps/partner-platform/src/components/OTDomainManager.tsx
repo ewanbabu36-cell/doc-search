@@ -103,6 +103,7 @@ export const OTDomainManager: React.FC<Props> = ({
   branchId = '44444444-4444-4444-8444-444444444444'
 }) => {
   const [activeTab, setActiveTab] = useState<string>('overview');
+  const [showSpatial3D, setShowSpatial3D] = useState<boolean>(false);
 
   // Datasets
   const [metrics, setMetrics] = useState<OTOverviewMetricsDto | null>(null);
@@ -278,29 +279,65 @@ export const OTDomainManager: React.FC<Props> = ({
 
   return (
     <div className="space-y-4">
-      {/* 3D Spatial Feature Core: Operation Theatre & Surgical Suite */}
-      <DocSearchSpatialCore3D
-        preset="ot"
-        height={360}
-        interactive={true}
-        onNodeClick={(id) => {
-          if (id === 'ot-roster') {
-            setActiveTab('ot-schedules');
-          } else if (id === 'pac-clearance') {
-            setActiveTab('preop-workbench');
-          } else if (id === 'who-checklist') {
-            setActiveTab('safety-checklists');
-          } else if (id === 'intraop-telemetry') {
-            setActiveTab('intraoperative');
-          } else if (id === 'pacu-recovery') {
-            setActiveTab('pacu-recovery');
-          } else if (id === 'implant-ledger') {
-            setActiveTab('implants');
-          } else if (id === 'cssd-sterilization') {
-            setActiveTab('consumables');
-          }
-        }}
-      />
+      {/* 3D Spatial Feature Core Toggle: Zero-Scroll OT Flight Board Ergonomics */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '0.75rem', backgroundColor: '#4F46E5', color: '#FFFFFF', padding: '0.25rem 0.75rem', borderRadius: '6px', fontWeight: 800 }}>
+            🔪 OPERATION THEATRE & SURGICAL SUITES
+          </span>
+          <span style={{ fontSize: '0.8rem', color: 'var(--ds-color-text-muted)' }}>
+            Live Cath Lab & Cath-OT Flight Board
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowSpatial3D(!showSpatial3D)}
+          style={{
+            backgroundColor: showSpatial3D ? 'rgba(79, 70, 229, 0.2)' : 'var(--ds-color-surface)',
+            border: `1px solid ${showSpatial3D ? '#6366F1' : 'var(--ds-color-border)'}`,
+            color: showSpatial3D ? '#818CF8' : 'var(--ds-color-text-secondary)',
+            borderRadius: '6px',
+            padding: '4px 10px',
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '5px',
+            transition: 'all 0.15s ease'
+          }}
+          title="Toggle 3D Digital Twin View"
+        >
+          <span>🌐</span>
+          <span>{showSpatial3D ? 'Hide 3D Digital Twin ⏶' : 'View 3D Digital Twin ⏷'}</span>
+        </button>
+      </div>
+
+      {/* 3D Spatial Feature Core: Operation Theatre & Surgical Suite (Collapsed for speed) */}
+      {showSpatial3D && (
+        <DocSearchSpatialCore3D
+          preset="ot"
+          height={360}
+          interactive={true}
+          onNodeClick={(id) => {
+            if (id === 'ot-roster') {
+              setActiveTab('ot-schedules');
+            } else if (id === 'pac-clearance') {
+              setActiveTab('preop-workbench');
+            } else if (id === 'who-checklist') {
+              setActiveTab('safety-checklists');
+            } else if (id === 'intraop-telemetry') {
+              setActiveTab('intraoperative');
+            } else if (id === 'pacu-recovery') {
+              setActiveTab('pacu-recovery');
+            } else if (id === 'implant-ledger') {
+              setActiveTab('implants');
+            } else if (id === 'cssd-sterilization') {
+              setActiveTab('consumables');
+            }
+          }}
+        />
+      )}
 
       {/* Sub-page Navigation Tabs */}
       <div

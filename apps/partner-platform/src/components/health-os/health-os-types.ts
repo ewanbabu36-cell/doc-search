@@ -23,6 +23,16 @@ export type HealthOSModuleKey =
 
 export type HealthOSCategory = 'CORE' | 'CLINICAL' | 'OPERATIONS' | 'DIAGNOSTICS' | 'EXECUTIVE';
 
+export type StaffRolePersona =
+  | 'DOCTOR'
+  | 'NURSE'
+  | 'RECEPTIONIST'
+  | 'CASHIER'
+  | 'PHARMACIST'
+  | 'LAB_TECHNICIAN'
+  | 'RADIOLOGIST'
+  | 'HOSPITAL_ADMIN';
+
 export interface HealthOSAppItem {
   id: HealthOSModuleKey;
   label: string;
@@ -35,6 +45,7 @@ export interface HealthOSAppItem {
   badge?: string;
   isCoreHomeApp?: boolean;
   applicableProfiles: OrganizationWorkspaceType[];
+  applicableRoles?: StaffRolePersona[];
 }
 
 export interface HealthOSRecentTask {

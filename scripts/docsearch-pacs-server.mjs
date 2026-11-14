@@ -451,7 +451,7 @@ function createDicomwebHttpServer() {
     const pathname = url.pathname;
 
     // 1. Health & Status Telemetry
-    if (pathname === '/' || pathname === '/api/v1/pacs/status' || pathname === '/health') {
+    if (pathname === '/' || pathname === '/api/v1/pacs/status' || pathname === '/health' || pathname === '/system') {
       let totalSeries = 0;
       let totalInstances = 0;
       for (const s of pacsStudies) {

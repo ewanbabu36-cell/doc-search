@@ -122,6 +122,7 @@ export const EmergencyDomainManager: React.FC<Props> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<EmergencyTab>('command-center');
   const [loading, setLoading] = useState(true);
+  const [showSpatial3D, setShowSpatial3D] = useState<boolean>(false);
 
   // Datasets
   const [department, setDepartment] = useState<EmergencyDepartmentDto | null>(null);
@@ -237,29 +238,65 @@ export const EmergencyDomainManager: React.FC<Props> = ({
 
   return (
     <div className="space-y-6">
-      {/* 3D Spatial Feature Core: Emergency & Trauma */}
-      <DocSearchSpatialCore3D
-        preset="emergency"
-        height={360}
-        interactive={true}
-        onNodeClick={(id) => {
-          if (id === 'esi-triage') {
-            setActiveTab('triage');
-          } else if (id === 'crash-cart') {
-            setActiveTab('crash-cart');
-          } else if (id === 'stat-bed') {
-            setActiveTab('queue');
-          } else if (id === 'blood-bank') {
-            setActiveTab('resuscitation');
-          } else if (id === 'trauma-call') {
-            setActiveTab('trauma');
-          } else if (id === 'mlc-registry') {
-            setActiveTab('mlc');
-          } else if (id === 'ambulance-gps') {
-            setActiveTab('ambulance');
-          }
-        }}
-      />
+      {/* 3D Spatial Feature Core Toggle: Zero-Scroll Emergency Triage Ergonomics */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '0.75rem', backgroundColor: 'var(--ds-color-danger, #DC2626)', color: '#FFFFFF', padding: '0.25rem 0.75rem', borderRadius: '6px', fontWeight: 800 }}>
+            🚨 EMERGENCY & TRAUMA OPERATIONS
+          </span>
+          <span style={{ fontSize: '0.8rem', color: 'var(--ds-color-text-muted)' }}>
+            Code Blue & Manchester Triage Hub
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowSpatial3D(!showSpatial3D)}
+          style={{
+            backgroundColor: showSpatial3D ? 'rgba(220, 38, 38, 0.2)' : 'var(--ds-color-surface)',
+            border: `1px solid ${showSpatial3D ? 'var(--ds-color-danger, #DC2626)' : 'var(--ds-color-border)'}`,
+            color: showSpatial3D ? 'var(--ds-color-danger, #EF4444)' : 'var(--ds-color-text-secondary)',
+            borderRadius: '6px',
+            padding: '4px 10px',
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '5px',
+            transition: 'all 0.15s ease'
+          }}
+          title="Toggle 3D Digital Twin View"
+        >
+          <span>🌐</span>
+          <span>{showSpatial3D ? 'Hide 3D Digital Twin ⏶' : 'View 3D Digital Twin ⏷'}</span>
+        </button>
+      </div>
+
+      {/* 3D Spatial Feature Core: Emergency & Trauma (Collapsed by default for rapid triage) */}
+      {showSpatial3D && (
+        <DocSearchSpatialCore3D
+          preset="emergency"
+          height={360}
+          interactive={true}
+          onNodeClick={(id) => {
+            if (id === 'esi-triage') {
+              setActiveTab('triage');
+            } else if (id === 'crash-cart') {
+              setActiveTab('crash-cart');
+            } else if (id === 'stat-bed') {
+              setActiveTab('queue');
+            } else if (id === 'blood-bank') {
+              setActiveTab('resuscitation');
+            } else if (id === 'trauma-call') {
+              setActiveTab('trauma');
+            } else if (id === 'mlc-registry') {
+              setActiveTab('mlc');
+            } else if (id === 'ambulance-gps') {
+              setActiveTab('ambulance');
+            }
+          }}
+        />
+      )}
 
       {/* Tab Navigation */}
       <div
