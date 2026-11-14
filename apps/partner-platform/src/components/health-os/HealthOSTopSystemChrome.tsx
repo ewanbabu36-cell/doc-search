@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { type HospitalStaffUser } from '../auth/HospitalStaffLogin.js';
+import { type ActivePatientTab } from './health-os-types.js';
 import './health-os.css';
 
 export interface HealthOSTopSystemChromeProps {
@@ -7,6 +8,13 @@ export interface HealthOSTopSystemChromeProps {
   currentUser: HospitalStaffUser;
   onLogout: () => void;
   activeModuleName?: string | undefined;
+  // Multi-Patient Pinned Tabstrip
+  patientTabs?: ActivePatientTab[];
+  activePatientTabId?: string | null;
+  onSelectPatientTab?: (encounterId: string) => void;
+  onClosePatientTab?: (encounterId: string) => void;
+  onNewPatientTab?: () => void;
+  onOpenCommandPalette?: () => void;
 }
 
 const STAFF_PERSONAS = [
@@ -25,6 +33,12 @@ export const HealthOSTopSystemChrome: React.FC<HealthOSTopSystemChromeProps> = (
   currentUser,
   onLogout,
   activeModuleName,
+  patientTabs = [],
+  activePatientTabId,
+  onSelectPatientTab,
+  onClosePatientTab,
+  onNewPatientTab,
+  onOpenCommandPalette,
 }) => {
   const [timeStr, setTimeStr] = useState<string>('');
 
@@ -79,7 +93,7 @@ export const HealthOSTopSystemChrome: React.FC<HealthOSTopSystemChromeProps> = (
 
   return (
     <header className="hos-top-chrome">
-      {/* 1. Left: Hospital Identity & Active Department */}
+      {/* 1. Left: Hospital Identity & Omnipresent Command Search Button */}
       <div className="hos-chrome-left">
         <div className="hos-brand-badge">
           <span>🏥</span>
@@ -101,9 +115,73 @@ export const HealthOSTopSystemChrome: React.FC<HealthOSTopSystemChromeProps> = (
             )}
           </div>
         </div>
+
+        {/* Global Omnipresent Command Palette Trigger */}
+        <button
+          type="button"
+          onClick={onOpenCommandPalette}
+          className="hos-command-search-btn"
+          title="Universal Spotlight Command Palette (Ctrl+K or Cmd+K)"
+        >
+          <span>🔍</span>
+          <span className="hos-command-search-text">Search...</span>
+          <kbd className="hos-kbd-shortcut">Ctrl K</kbd>
+        </button>
       </div>
 
-      {/* 2. Right: Quick Persona Switcher, Staff Profile Pill, Clock & Logout */}
+      {/* 2. Center: Multi-Patient Pinned Tabstrip (VS Code / Browser-in-Browser Ergonomics) */}
+      <div className="hos-chrome-center">
+        <div className="hos-patient-tabstrip" role="tablist" aria-label="Active Patient Encounters">
+          {patientTabs.map((tab) => {
+            const isActive = tab.encounterId === activePatientTabId;
+            const acuityColor =
+              tab.acuity === 'EMERGENCY' ? '#ef4444' : tab.acuity === 'URGENT' ? '#f59e0b' : '#10b981';
+            return (
+              <div
+                key={tab.encounterId}
+                className={`hos-patient-tab ${isActive ? 'hos-patient-tab-active' : ''}`}
+                onClick={() => onSelectPatientTab?.(tab.encounterId)}
+                role="tab"
+                aria-selected={isActive}
+                title={`${tab.patientName} (${tab.mrn}) • Acuity: ${tab.acuity}`}
+              >
+                <span
+                  className="hos-tab-acuity-dot"
+                  style={{
+                    backgroundColor: acuityColor,
+                    boxShadow: tab.acuity === 'EMERGENCY' ? '0 0 6px #ef4444' : undefined
+                  }}
+                />
+                <span className="hos-tab-patient-name">{tab.patientName}</span>
+                <span className="hos-tab-token-badge">
+                  {tab.bedNumber || (tab.mrn ? tab.mrn.slice(-4) : 'OPD')}
+                </span>
+                <button
+                  type="button"
+                  className="hos-tab-close-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onClosePatientTab?.(tab.encounterId);
+                  }}
+                  title={`Close ${tab.patientName}'s workspace`}
+                >
+                  ✕
+                </button>
+              </div>
+            );
+          })}
+          <button
+            type="button"
+            className="hos-patient-tab-add"
+            onClick={onNewPatientTab || onOpenCommandPalette}
+            title="Open / Switch another patient chart (Ctrl+K)"
+          >
+            +
+          </button>
+        </div>
+      </div>
+
+      {/* 3. Right: Quick Persona Switcher, Staff Profile Pill, Clock & Logout */}
       <div className="hos-chrome-right">
         {/* Quick Staff Persona Switcher */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>

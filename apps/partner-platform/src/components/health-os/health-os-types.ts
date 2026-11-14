@@ -54,3 +54,44 @@ export interface HealthOSRecentTask {
   lastActiveTime: string;
   timestamp: number;
 }
+
+export type PatientAcuityLevel = 'ROUTINE' | 'URGENT' | 'EMERGENCY';
+
+export interface PatientVitalsSummary {
+  systolicBp?: number;
+  diastolicBp?: number;
+  bp?: string;
+  pulseBpm?: number;
+  pulse?: number;
+  spo2Percentage?: number;
+  spo2?: number;
+  temperatureCelsius?: number;
+  temp?: number;
+  respiratoryRate?: number;
+  news2Score?: number;
+  news2?: number;
+  recordedAt?: string;
+}
+
+export interface ActivePatientTab {
+  encounterId: string;
+  patientId: string;
+  patientName: string;
+  mrn: string;
+  acuity: PatientAcuityLevel;
+  draftNotes?: Record<string, any>;
+  activeSubModule?: string;
+  bedNumber?: string;
+  ageGender?: string;
+  gender?: string;
+  age?: number | string;
+  abhaId?: string;
+  allergies?: string[];
+  vitals?: PatientVitalsSummary;
+  chronicConditions?: string[];
+  department?: string;
+  attendingDoctor?: string;
+  chiefComplaint?: string;
+}
+
+export type SlideOverTrayType = 'QUICK_RX' | 'QUICK_LAB' | 'INSTANT_SETTLE' | 'QUICK_VITALS' | null;

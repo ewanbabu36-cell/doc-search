@@ -1,6 +1,12 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { type HospitalStaffUser } from '../auth/HospitalStaffLogin.js';
-import { type HealthOSAppItem, type HealthOSModuleKey, type HealthOSRecentTask } from './health-os-types.js';
+import {
+  type HealthOSAppItem,
+  type HealthOSModuleKey,
+  type HealthOSRecentTask,
+  type ActivePatientTab,
+  type SlideOverTrayType,
+} from './health-os-types.js';
 import { HEALTH_OS_APPS } from './health-os-registry.js';
 import { HealthOSTopSystemChrome } from './HealthOSTopSystemChrome.js';
 import { HealthOSHomescreen } from './HealthOSHomescreen.js';
@@ -8,6 +14,9 @@ import { HealthOSAppDrawer } from './HealthOSAppDrawer.js';
 import { HealthOSAppWindow } from './HealthOSAppWindow.js';
 import { HealthOSRecentsDeck } from './HealthOSRecentsDeck.js';
 import { HealthOSNavigationBar } from './HealthOSNavigationBar.js';
+import { PersistentPatientStoryboard } from './PersistentPatientStoryboard.js';
+import { HealthOSCommandPalette } from './HealthOSCommandPalette.js';
+import { SlideOverActionTray } from './SlideOverActionTray.js';
 import { DocSearch3DLogoLoader } from '@docsearch/ui-kit';
 import { DomainErrorBoundary } from '../common/DomainErrorBoundary.js';
 import './health-os.css';
@@ -154,6 +163,175 @@ export const DocSearchHealthOSContainer: React.FC<DocSearchHealthOSContainerProp
     }
   }, []);
 
+  // --- MULTI-PATIENT SESSION MEMORY & TABSTRIP STATE ---
+  const [patientTabs, setPatientTabs] = useState<ActivePatientTab[]>([
+    {
+      encounterId: 'enc-2026-0001',
+      patientId: 'pat-2026-0001',
+      patientName: 'Aarav Sharma',
+      mrn: 'MRN-2026-0001',
+      acuity: 'ROUTINE',
+      ageGender: '34y / Male',
+      gender: 'MALE',
+      age: 34,
+      abhaId: '91-8842-1094-3321',
+      bedNumber: 'OPD Token Q-001',
+      allergies: ['Penicillin (Severe)', 'Amoxicillin'],
+      chronicConditions: ['Type 2 Diabetes (E11.9)', 'Essential Hypertension (I10)'],
+      department: 'General Medicine',
+      attendingDoctor: 'Dr. Rajesh Sharma, MD',
+      chiefComplaint: 'Severe headache, dizziness, BP 160/100 mmHg',
+      vitals: {
+        bp: '160/100',
+        pulse: 88,
+        spo2: 98,
+        temp: 98.6,
+        news2: 2,
+      },
+      activeSubModule: 'clinical-consultation',
+    },
+    {
+      encounterId: 'enc-2026-0002',
+      patientId: 'pat-2026-0002',
+      patientName: 'Priya Patel',
+      mrn: 'MRN-2026-0002',
+      acuity: 'EMERGENCY',
+      ageGender: '28y / Female',
+      gender: 'FEMALE',
+      age: 28,
+      abhaId: '91-4412-9981-1122',
+      bedNumber: 'ICU Bed 01',
+      allergies: ['Sulfa Antibiotics', 'Aspirin'],
+      chronicConditions: ['Acute Severe Sepsis', 'Severe Hyperkalemia (K+ 6.8 mEq/L)'],
+      department: 'Critical Care / ICU',
+      attendingDoctor: 'Dr. Alok Verma, MD (Crit Care)',
+      chiefComplaint: 'Septic shock, high fever 102.8°F, dyspnea, oliguria',
+      vitals: {
+        bp: '85/55',
+        pulse: 128,
+        spo2: 91,
+        temp: 102.8,
+        news2: 9,
+      },
+      activeSubModule: 'inpatient-management',
+    },
+  ]);
+
+  const [activePatientTabId, setActivePatientTabId] = useState<string | null>('enc-2026-0001');
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState<boolean>(false);
+  const [activeTrayType, setActiveTrayType] = useState<SlideOverTrayType>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Active patient object derived from active tab ID
+  const activePatient = patientTabs.find((p) => p.encounterId === activePatientTabId) || patientTabs[0] || null;
+
+  // Show auto-dismissing toast notification
+  const handleShowToast = useCallback((msg: string) => {
+    setToastMessage(msg);
+  }, []);
+
+  useEffect(() => {
+    if (!toastMessage) return;
+    const timer = setTimeout(() => {
+      setToastMessage(null);
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [toastMessage]);
+
+  // Select patient tab
+  const handleSelectPatientTab = useCallback((tabId: string) => {
+    setActivePatientTabId(tabId);
+    const target = patientTabs.find((p) => p.encounterId === tabId);
+    if (target?.activeSubModule) {
+      const matchingApp = HEALTH_OS_APPS.find((a) => a.id === target.activeSubModule);
+      if (matchingApp) {
+        handleLaunchApp(matchingApp);
+      }
+    }
+  }, [patientTabs, handleLaunchApp]);
+
+  // Close patient tab
+  const handleClosePatientTab = useCallback((tabId: string) => {
+    setPatientTabs((prev) => {
+      const filtered = prev.filter((p) => p.encounterId !== tabId);
+      if (activePatientTabId === tabId) {
+        const nextActive = filtered[filtered.length - 1]?.encounterId || null;
+        setActivePatientTabId(nextActive);
+      }
+      return filtered;
+    });
+  }, [activePatientTabId]);
+
+  // Add or switch to patient from search/palette
+  const handleAddOrSelectPatient = useCallback((patient: ActivePatientTab) => {
+    setPatientTabs((prev) => {
+      const exists = prev.find((p) => p.encounterId === patient.encounterId);
+      if (exists) return prev;
+      return [...prev, patient];
+    });
+    setActivePatientTabId(patient.encounterId);
+    if (patient.activeSubModule) {
+      const matchingApp = HEALTH_OS_APPS.find((a) => a.id === patient.activeSubModule);
+      if (matchingApp) {
+        handleLaunchApp(matchingApp);
+      }
+    }
+  }, [handleLaunchApp]);
+
+  // New patient tab triggered from '+' button in top chrome
+  const handleNewPatientTab = useCallback(() => {
+    setIsCommandPaletteOpen(true);
+  }, []);
+
+  // Ergonomic keyboard navigation: Ctrl+Tab (Cycle Patients), Alt+W/Ctrl+W (Close Tab), Ctrl+K (Command Palette)
+  useEffect(() => {
+    const handleGlobalShortcuts = (e: KeyboardEvent) => {
+      // Ctrl+K or Cmd+K: Command Palette
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen((prev) => !prev);
+        return;
+      }
+
+      // Ctrl+Tab / Ctrl+Shift+Tab: Cycle Patients
+      if (e.ctrlKey && e.key === 'Tab') {
+        e.preventDefault();
+        if (patientTabs.length <= 1) return;
+        const currentIndex = patientTabs.findIndex((p) => p.encounterId === activePatientTabId);
+        if (e.shiftKey) {
+          const prevIndex = (currentIndex - 1 + patientTabs.length) % patientTabs.length;
+          handleSelectPatientTab(patientTabs[prevIndex]!.encounterId);
+        } else {
+          const nextIndex = (currentIndex + 1) % patientTabs.length;
+          handleSelectPatientTab(patientTabs[nextIndex]!.encounterId);
+        }
+        return;
+      }
+
+      // Alt+W or Ctrl+W: Close Patient Chart
+      if ((e.altKey && e.key.toLowerCase() === 'w') || (e.ctrlKey && e.key.toLowerCase() === 'w')) {
+        if (activePatientTabId) {
+          e.preventDefault();
+          handleClosePatientTab(activePatientTabId);
+          handleShowToast('Closed patient chart tab.');
+        }
+        return;
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalShortcuts);
+    return () => window.removeEventListener('keydown', handleGlobalShortcuts);
+  }, [patientTabs, activePatientTabId, handleSelectPatientTab, handleClosePatientTab, handleShowToast]);
+
+  // Listen to custom event dispatched by components: 'docsearch:open-command-palette'
+  useEffect(() => {
+    const handleCustomPaletteOpen = () => {
+      setIsCommandPaletteOpen(true);
+    };
+    window.addEventListener('docsearch:open-command-palette', handleCustomPaletteOpen);
+    return () => window.removeEventListener('docsearch:open-command-palette', handleCustomPaletteOpen);
+  }, []);
+
   // 2. Navigation Bar: [ ||| ] Left Recents Switcher
   const handlePressRecent = useCallback(() => {
     setIsAppDrawerOpen(false);
@@ -232,6 +410,12 @@ export const DocSearchHealthOSContainer: React.FC<DocSearchHealthOSContainerProp
         currentUser={currentUser}
         onLogout={onLogout}
         activeModuleName={activeApp?.label}
+        patientTabs={patientTabs}
+        activePatientTabId={activePatientTabId}
+        onSelectPatientTab={handleSelectPatientTab}
+        onClosePatientTab={handleClosePatientTab}
+        onNewPatientTab={handleNewPatientTab}
+        onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
       />
 
       {/* 2. Main Content Canvas */}
@@ -249,11 +433,19 @@ export const DocSearchHealthOSContainer: React.FC<DocSearchHealthOSContainerProp
 
         {/* Active Fullscreen Hospital Module Window Runner */}
         {activeApp && !isRecentsOpen && (
-          <HealthOSAppWindow
-            app={activeApp}
-            onClose={() => setActiveApp(null)}
-            onMinimize={() => setActiveApp(null)}
-          >
+          <div className="hos-split-workspace">
+            {/* STEP 2: Persistent Patient Storyboard (Left Telemetry Rail) */}
+            <PersistentPatientStoryboard
+              patient={activePatient}
+              onOpenTray={(tray) => setActiveTrayType(tray)}
+            />
+
+            <div className="hos-workspace-main-panel">
+              <HealthOSAppWindow
+                app={activeApp}
+                onClose={() => setActiveApp(null)}
+                onMinimize={() => setActiveApp(null)}
+              >
             <React.Suspense
               fallback={
                 <div style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', gap: '1rem' }}>
@@ -447,6 +639,8 @@ export const DocSearchHealthOSContainer: React.FC<DocSearchHealthOSContainerProp
               )}
             </React.Suspense>
           </HealthOSAppWindow>
+            </div>
+          </div>
         )}
       </main>
 
@@ -478,6 +672,52 @@ export const DocSearchHealthOSContainer: React.FC<DocSearchHealthOSContainerProp
         isRecentsOpen={isRecentsOpen}
         hasActiveApp={Boolean(activeApp)}
       />
+
+      {/* STEP 3: Global Omnipresent Command Palette (Ctrl + K) */}
+      <HealthOSCommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        onSelectPatient={(p) => {
+          handleAddOrSelectPatient(p);
+          setIsCommandPaletteOpen(false);
+          handleShowToast(`Switched chart to ${p.patientName} (${p.mrn})`);
+        }}
+        onSelectApp={(appId) => {
+          const target = HEALTH_OS_APPS.find((a) => a.id === appId);
+          if (target) handleLaunchApp(target);
+          setIsCommandPaletteOpen(false);
+        }}
+        onOpenTray={(tray) => {
+          setActiveTrayType(tray);
+          setIsCommandPaletteOpen(false);
+        }}
+      />
+
+      {/* STEP 4: Slide-Over Quick Action Trays (Zero-Route Transitions) */}
+      {activeTrayType && (
+        <SlideOverActionTray
+          trayType={activeTrayType}
+          patient={activePatient}
+          onClose={() => setActiveTrayType(null)}
+          onSuccessAction={(msg) => handleShowToast(msg)}
+        />
+      )}
+
+      {/* Universal Feedback Toast */}
+      {toastMessage && (
+        <div className="hos-global-toast" role="status" aria-live="polite">
+          <span className="hos-toast-icon">✨</span>
+          <span className="hos-toast-text">{toastMessage}</span>
+          <button
+            type="button"
+            className="hos-toast-close"
+            onClick={() => setToastMessage(null)}
+            aria-label="Dismiss notification"
+          >
+            ✕
+          </button>
+        </div>
+      )}
     </div>
   );
 };
