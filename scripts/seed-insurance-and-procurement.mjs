@@ -24,13 +24,14 @@ async function seed() {
   const orgRes = await client.query('SELECT id FROM clinical.operational_organizations WHERE tenant_id = $1 LIMIT 1', [tenantId]);
   const organizationId = orgRes.rows[0]?.id || tenantId;
 
-  let facRes = await client.query('SELECT id FROM clinical.operational_facilities WHERE tenant_id = $1 LIMIT 1', [tenantId]);
+  let facRes = await client.query('SELECT id FROM clinical.operational_facilities WHERE facility_code = $1 OR tenant_id = $2 LIMIT 1', ['FAC-MAIN-001', tenantId]);
   let branchId = facRes.rows[0]?.id;
   if (!branchId) {
     const newFac = await client.query(`
       INSERT INTO clinical.operational_facilities (
         tenant_id, partner_id, organization_id, facility_code, facility_name, facility_type, address_street, address_city, address_state, address_postal_code, contact_email, contact_phone, status
       ) VALUES ($1, $2, $3, 'FAC-MAIN-001', 'DocSearch Central Hospital', 'INPATIENT_HOSPITAL', 'Sector 44, Institutional Area', 'Gurugram', 'Haryana', '122003', 'hospital@docsearch.in', '+91-124-4567890', 'ACTIVE')
+      ON CONFLICT (facility_code) DO UPDATE SET tenant_id = EXCLUDED.tenant_id
       RETURNING id;
     `, [tenantId, partnerId, organizationId]);
     branchId = newFac.rows[0].id;

@@ -13,11 +13,11 @@ const ports = [
 function checkPort(p) {
   return new Promise((resolve) => {
     const req = http.request({
-      hostname: 'localhost',
+      hostname: '127.0.0.1',
       port: p.port,
       path: p.path,
       method: 'GET',
-      timeout: 3000
+      timeout: 6000
     }, (res) => {
       resolve({ name: p.name, port: p.port, status: res.statusCode, ok: true });
     });
