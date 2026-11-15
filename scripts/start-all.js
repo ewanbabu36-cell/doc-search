@@ -263,32 +263,36 @@ async function main() {
       port: 5173,
       cwd: path.join(rootDir, 'apps/partner-platform'),
       executable: process.execPath,
-      args: [path.join(rootDir, 'apps/partner-platform/node_modules/vite/bin/vite.js'), '--port', '5173', '--host', '--strictPort'],
-      color: '\x1b[36m'
+      args: ['--max-old-space-size=1024', path.join(rootDir, 'apps/partner-platform/node_modules/vite/bin/vite.js'), '--port', '5173', '--host', '--strictPort'],
+      color: '\x1b[36m',
+      autoRestart: true
     },
     {
       name: 'Patient Mobile App',
       port: 5174,
       cwd: path.join(rootDir, 'apps/patient-app'),
       executable: process.execPath,
-      args: [path.join(rootDir, 'apps/patient-app/node_modules/vite/bin/vite.js'), '--port', '5174', '--host', '--strictPort'],
-      color: '\x1b[35m'
+      args: ['--max-old-space-size=1024', path.join(rootDir, 'apps/patient-app/node_modules/vite/bin/vite.js'), '--port', '5174', '--host', '--strictPort'],
+      color: '\x1b[35m',
+      autoRestart: true
     },
     {
       name: 'Company Platform',
       port: 5177,
       cwd: path.join(rootDir, 'apps/company-platform'),
       executable: process.execPath,
-      args: [path.join(rootDir, 'apps/company-platform/node_modules/vite/bin/vite.js'), '--port', '5177', '--host', '--strictPort'],
-      color: '\x1b[32m'
+      args: ['--max-old-space-size=1024', path.join(rootDir, 'apps/company-platform/node_modules/vite/bin/vite.js'), '--port', '5177', '--host', '--strictPort'],
+      color: '\x1b[32m',
+      autoRestart: true
     },
     {
       name: 'Landing Page',
       port: 5175,
       cwd: path.join(rootDir, 'apps/landing-page'),
       executable: process.execPath,
-      args: [path.join(rootDir, 'apps/landing-page/node_modules/vite/bin/vite.js'), '--port', '5175', '--host', '--strictPort'],
-      color: '\x1b[33m'
+      args: ['--max-old-space-size=1024', path.join(rootDir, 'apps/landing-page/node_modules/vite/bin/vite.js'), '--port', '5175', '--host', '--strictPort'],
+      color: '\x1b[33m',
+      autoRestart: true
     }
   ];
 
