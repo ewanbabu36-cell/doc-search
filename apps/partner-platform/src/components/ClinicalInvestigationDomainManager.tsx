@@ -98,6 +98,7 @@ export const ClinicalInvestigationDomainManager: React.FC<ClinicalInvestigationD
   const [activeTab, setActiveTab] = useState<ActiveInvestigationTab>(initialTab || 'specimens');
   const [operatingMode, setOperatingMode] = useState<PlatformOperatingMode>(() => platformModeService.getMode());
   const [showDevQaTools, setShowDevQaTools] = useState<boolean>(false);
+  const [confirmClearDataModalOpen, setConfirmClearDataModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
     const unsubscribe = platformModeService.subscribe((mode) => {
@@ -1227,18 +1228,7 @@ export const ClinicalInvestigationDomainManager: React.FC<ClinicalInvestigationD
 
               <button
                 type="button"
-                onClick={() => {
-                  const confirmed = window.confirm(
-                    'Are you sure you want to clear all test & mock data?\n\nThis will purge all test patient orders, reports, and billing invoices. Master clinical test catalogs (CBC, LFT, KFT, custom tests) will remain safe.'
-                  );
-                  if (confirmed) {
-                    clinicalInvestigationService.clearAllMockAndTestData();
-                    setPendingDoctorLabOrders([]);
-                    void loadData();
-                    setMicroscopeSuccessToast('🧹 All test & mock data has been purged successfully! Laboratory is now clean.');
-                    setTimeout(() => setMicroscopeSuccessToast(null), 5000);
-                  }
-                }}
+                onClick={() => setConfirmClearDataModalOpen(true)}
                 style={{
                   backgroundColor: 'rgba(239, 68, 68, 0.12)',
                   border: '1px solid rgba(239, 68, 68, 0.4)',
@@ -2215,6 +2205,27 @@ export const ClinicalInvestigationDomainManager: React.FC<ClinicalInvestigationD
                 void loadData();
               }}
             />
+          )}
+          {confirmClearDataModalOpen && (
+            <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+              <div style={{ backgroundColor: '#1E293B', border: '1px solid #EF4444', borderRadius: '12px', padding: '24px', maxWidth: '480px', width: '100%', color: '#F8FAFC' }}>
+                <h3 style={{ margin: '0 0 12px', color: '#F87171', fontSize: '1.1rem', fontWeight: 800 }}>⚠️ Clear All Test & Mock Data</h3>
+                <p style={{ margin: '0 0 20px', fontSize: '0.875rem', color: '#CBD5E1', lineHeight: 1.5 }}>
+                  Are you sure you want to clear all test & mock data? This will purge test patient orders, reports, and billing invoices. Master clinical test catalogs (CBC, LFT, KFT) will remain safe.
+                </p>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                  <button type="button" onClick={() => setConfirmClearDataModalOpen(false)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #475569', backgroundColor: 'transparent', color: '#CBD5E1', cursor: 'pointer', fontWeight: 600 }}>Cancel</button>
+                  <button type="button" onClick={() => {
+                    clinicalInvestigationService.clearAllMockAndTestData();
+                    setPendingDoctorLabOrders([]);
+                    void loadData();
+                    setConfirmClearDataModalOpen(false);
+                    setMicroscopeSuccessToast('🧹 All test & mock data has been purged successfully! Laboratory is now clean.');
+                    setTimeout(() => setMicroscopeSuccessToast(null), 5000);
+                  }} style={{ padding: '8px 16px', borderRadius: '6px', border: 'none', backgroundColor: '#EF4444', color: '#FFF', cursor: 'pointer', fontWeight: 700 }}>Purge Test Data</button>
+                </div>
+              </div>
+            </div>
           )}
         </>
       )}

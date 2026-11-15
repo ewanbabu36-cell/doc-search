@@ -1,6 +1,6 @@
 export function speakAdvice(text: string, language: 'hi' | 'en' = 'hi') {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-    alert(text);
+    console.info('[VoiceAssistant] Speech synthesis not supported in this browser:', text);
     return;
   }
 

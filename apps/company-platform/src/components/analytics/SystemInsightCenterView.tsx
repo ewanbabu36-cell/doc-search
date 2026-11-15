@@ -10,7 +10,8 @@ import {
   TableBody,
   TableRow,
   TableHead,
-  TableCell
+  TableCell,
+  Alert
 } from '@docsearch/ui-kit';
 
 export interface SystemInsightCenterViewProps {
@@ -23,13 +24,16 @@ export const SystemInsightCenterView: React.FC<SystemInsightCenterViewProps> = (
   onAcknowledge
 }) => {
   const [submittingId, setSubmittingId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const handleAck = async (id: string) => {
     setSubmittingId(id);
+    setActionError(null);
     try {
       await onAcknowledge(id, 'Acknowledged by platform operations engineer.');
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to acknowledge alert');
+      setActionError(err instanceof Error ? err.message : 'Failed to acknowledge alert');
+      setTimeout(() => setActionError(null), 5000);
     } finally {
       setSubmittingId(null);
     }
@@ -41,6 +45,13 @@ export const SystemInsightCenterView: React.FC<SystemInsightCenterViewProps> = (
       subtitle="Automated performance anomaly detectors, index optimization recommendations, and compliance warnings"
       padding="none"
     >
+      {actionError && (
+        <div style={{ padding: '12px 16px' }}>
+          <Alert type="error" title="Action Error">
+            {actionError}
+          </Alert>
+        </div>
+      )}
       <TableContainer style={{ border: 'none', borderRadius: '0' }}>
         <Table>
           <TableHeader>

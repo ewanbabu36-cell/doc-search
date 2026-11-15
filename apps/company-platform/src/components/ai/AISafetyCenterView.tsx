@@ -26,13 +26,16 @@ export const AISafetyCenterView: React.FC<AISafetyCenterViewProps> = ({
   onResolve
 }) => {
   const [actingId, setActingId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const handleAck = async (id: string) => {
     setActingId(id);
+    setActionError(null);
     try {
       await onAcknowledge(id, 'Acknowledged by AI safety officer.');
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to acknowledge safety event');
+      setActionError(err instanceof Error ? err.message : 'Failed to acknowledge safety event');
+      setTimeout(() => setActionError(null), 5000);
     } finally {
       setActingId(null);
     }
@@ -40,10 +43,12 @@ export const AISafetyCenterView: React.FC<AISafetyCenterViewProps> = ({
 
   const handleRes = async (id: string) => {
     setActingId(id);
+    setActionError(null);
     try {
       await onResolve(id, 'Investigated and verified against governance policy.');
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to resolve safety event');
+      setActionError(err instanceof Error ? err.message : 'Failed to resolve safety event');
+      setTimeout(() => setActionError(null), 5000);
     } finally {
       setActingId(null);
     }
@@ -51,6 +56,11 @@ export const AISafetyCenterView: React.FC<AISafetyCenterViewProps> = ({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {actionError && (
+        <Alert type="error" title="Action Notice">
+          {actionError}
+        </Alert>
+      )}
       <Alert type="warning" title="AI Safety Monitoring Center">
         Real-time interception of policy boundary violations, prohibited prompt attempts, and human-in-the-loop escalation queues.
       </Alert>

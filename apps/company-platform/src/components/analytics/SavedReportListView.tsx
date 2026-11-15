@@ -25,15 +25,18 @@ export const SavedReportListView: React.FC<SavedReportListViewProps> = ({
 }) => {
   const [generatingId, setGeneratingId] = useState<string | null>(null);
   const [statusNotice, setStatusNotice] = useState<string | null>(null);
+  const [errorNotice, setErrorNotice] = useState<string | null>(null);
 
   const handleGenerate = async (id: string) => {
     setGeneratingId(id);
     setStatusNotice(null);
+    setErrorNotice(null);
     try {
       await onGenerateReport(id, 'Last 30 Days');
       setStatusNotice('Report snapshot compiled and stored in audit vault.');
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to generate report');
+      setErrorNotice(err instanceof Error ? err.message : 'Failed to generate report');
+      setTimeout(() => setErrorNotice(null), 5000);
     } finally {
       setGeneratingId(null);
     }
@@ -41,6 +44,11 @@ export const SavedReportListView: React.FC<SavedReportListViewProps> = ({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {errorNotice && (
+        <Alert type="error" title="Report Error">
+          {errorNotice}
+        </Alert>
+      )}
       {statusNotice && (
         <Alert type="success" title="Report Generation Successful">
           {statusNotice}

@@ -544,7 +544,8 @@ export const RapidRxPrescriptionPad: React.FC<RapidRxPrescriptionPadProps> = ({
     if (typeof window === 'undefined') return;
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      alert('Speech recognition is not supported in this browser. Please use Google Chrome or Microsoft Edge.');
+      setVoiceInterimTranscript('⚠️ Speech dictation is not supported in this browser (Safari/Firefox). Please use Chrome/Edge or type directly.');
+      setTimeout(() => setVoiceInterimTranscript(''), 6000);
       return;
     }
 
@@ -607,9 +608,10 @@ export const RapidRxPrescriptionPad: React.FC<RapidRxPrescriptionPadProps> = ({
         }
       };
 
-      recognition.onerror = () => {
+      recognition.onerror = (e: any) => {
         setIsListeningVoice(false);
-        setVoiceInterimTranscript('');
+        setVoiceInterimTranscript('⚠️ Mic notice: ' + (e?.error || 'Interrupted. Please type directly.'));
+        setTimeout(() => setVoiceInterimTranscript(''), 5000);
       };
 
       recognition.onend = () => {

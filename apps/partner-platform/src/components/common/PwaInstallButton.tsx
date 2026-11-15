@@ -13,19 +13,14 @@ export const PwaInstallButton: React.FC = () => {
   } = usePwa();
 
   const [installing, setInstalling] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(false);
 
   const handleInstall = async () => {
     setInstalling(true);
     try {
       const res = await installApp();
       if (res === 'unavailable') {
-        // Fallback for browsers that require menu install (e.g. desktop Chrome / Edge / Safari)
-        alert(
-          'To install DOC SEARCH on your device:\n\n' +
-          '• Chrome / Edge: Click the (⊕) or install icon in your browser address bar at the top right.\n' +
-          '• Safari / iOS: Tap Share (box with arrow) -> "Add to Home Screen".\n' +
-          '• Android: Tap browser menu (⋮) -> "Install App" or "Add to Home screen".'
-        );
+        setShowInstructions(true);
       }
     } finally {
       setInstalling(false);
@@ -122,39 +117,55 @@ export const PwaInstallButton: React.FC = () => {
 
   // 4. Default in browser tab: Offer 1-Click Installation
   return (
-    <button
-      type="button"
-      onClick={handleInstall}
-      disabled={installing}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '6px',
-        padding: '4px 10px',
-        borderRadius: '8px',
-        backgroundColor: 'rgba(14, 165, 233, 0.18)',
-        border: '1px solid rgba(56, 189, 248, 0.4)',
-        color: '#38bdf8',
-        fontSize: '0.75rem',
-        fontWeight: 700,
-        cursor: 'pointer',
-        transition: 'all 0.15s ease',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)'
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = '#0284c7';
-        e.currentTarget.style.color = '#ffffff';
-        e.currentTarget.style.borderColor = '#38bdf8';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = 'rgba(14, 165, 233, 0.18)';
-        e.currentTarget.style.color = '#38bdf8';
-        e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.4)';
-      }}
-      title="Install DOC SEARCH as a desktop / mobile app for 1-click launch and offline resilience"
-    >
-      <span>📲</span>
-      <span>{installing ? 'Installing...' : 'Install App'}</span>
-    </button>
+    <div style={{ position: 'relative', display: 'inline-block' }}>
+      <button
+        type="button"
+        onClick={handleInstall}
+        disabled={installing}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          padding: '4px 10px',
+          borderRadius: '8px',
+          backgroundColor: 'rgba(14, 165, 233, 0.18)',
+          border: '1px solid rgba(56, 189, 248, 0.4)',
+          color: '#38bdf8',
+          fontSize: '0.75rem',
+          fontWeight: 700,
+          cursor: 'pointer',
+          transition: 'all 0.15s ease',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = '#0284c7';
+          e.currentTarget.style.color = '#ffffff';
+          e.currentTarget.style.borderColor = '#38bdf8';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = 'rgba(14, 165, 233, 0.18)';
+          e.currentTarget.style.color = '#38bdf8';
+          e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.4)';
+        }}
+        title="Install DOC SEARCH as a desktop / mobile app for 1-click launch and offline resilience"
+      >
+        <span>📲</span>
+        <span>{installing ? 'Installing...' : 'Install App'}</span>
+      </button>
+
+      {showInstructions && (
+        <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', width: '280px', backgroundColor: '#1E293B', border: '1px solid #38BDF8', borderRadius: '10px', padding: '14px', zIndex: 1000, boxShadow: '0 10px 25px rgba(0,0,0,0.5)', color: '#F8FAFC', fontSize: '0.78rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <strong style={{ color: '#38BDF8' }}>Install DOC SEARCH</strong>
+            <button type="button" onClick={() => setShowInstructions(false)} style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', fontWeight: 700 }}>✕</button>
+          </div>
+          <ul style={{ margin: 0, paddingLeft: '16px', lineHeight: 1.4, color: '#CBD5E1' }}>
+            <li><strong>Chrome/Edge:</strong> Click install icon (⊕) in browser address bar.</li>
+            <li><strong>Safari/iOS:</strong> Tap Share icon → "Add to Home Screen".</li>
+            <li><strong>Android:</strong> Tap menu (⋮) → "Install app".</li>
+          </ul>
+        </div>
+      )}
+    </div>
   );
 };

@@ -287,7 +287,8 @@ export const EwanSuperBrainCommandView: React.FC<EwanSuperBrainCommandViewProps>
         window.speechSynthesis.speak(utterance);
         setIsPlayingAudio(true);
       } else {
-        alert(briefing.voiceScriptText);
+        setEscalationSuccessMsg(briefing.voiceScriptText);
+        setTimeout(() => setEscalationSuccessMsg(null), 8000);
       }
     }
   };

@@ -94,6 +94,7 @@ export const QualityInfectionDomainManager: React.FC<Props> = ({ tenantId }) => 
   const [triagingIncident, setTriagingIncident] = useState<HospitalIncidentDto | null>(null);
   const [rcaTargetIncident, setRcaTargetIncident] = useState<HospitalIncidentDto | null>(null);
   const [verifyingCapa, setVerifyingCapa] = useState<QualityCapaDto | null>(null);
+  const [qualityAuditNotice, setQualityAuditNotice] = useState<string | null>(null);
 
   // Data states
   const [metrics, setMetrics] = useState<QualityOverviewMetricsDto | null>(null);
@@ -247,6 +248,12 @@ export const QualityInfectionDomainManager: React.FC<Props> = ({ tenantId }) => 
 
   return (
     <div className="space-y-4">
+      {qualityAuditNotice && (
+        <div style={{ padding: '10px 14px', borderRadius: '8px', backgroundColor: 'rgba(239, 68, 68, 0.15)', border: '1px solid #EF4444', color: '#FCA5A5', fontSize: '0.85rem', fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>{qualityAuditNotice}</span>
+          <button type="button" onClick={() => setQualityAuditNotice(null)} style={{ background: 'none', border: 'none', color: '#FCA5A5', cursor: 'pointer', fontWeight: 700 }}>✕</button>
+        </div>
+      )}
       {/* Domain Navigation Tabs */}
       <div
         style={{
@@ -353,7 +360,8 @@ export const QualityInfectionDomainManager: React.FC<Props> = ({ tenantId }) => 
         <QualityCommandCenterView
           standards={standards}
           onAuditStandard={(std) => {
-            alert(`Auditing criteria for chapter ${std.chapter} (${std.standardCode})`);
+            setQualityAuditNotice(`Auditing criteria for chapter ${std.chapter} (${std.standardCode}): Standard active.`);
+            setTimeout(() => setQualityAuditNotice(null), 5000);
           }}
         />
       )}

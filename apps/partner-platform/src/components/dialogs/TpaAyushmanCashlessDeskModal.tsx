@@ -551,7 +551,10 @@ export const TpaAyushmanCashlessDeskModal: React.FC<TpaAyushmanCashlessDeskModal
 
             <button
               type="button"
-              onClick={() => alert(`Pre-Auth status and cashless pass sent via WhatsApp to patient ${patientName}!`)}
+              onClick={() => {
+                setStatusMessage(`📲 Pre-Auth status and cashless pass sent via WhatsApp to patient ${patientName}!`);
+                setTimeout(() => setStatusMessage(null), 5000);
+              }}
               style={{
                 backgroundColor: 'rgba(16, 185, 129, 0.15)',
                 border: '1px solid #10B981',

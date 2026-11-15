@@ -59,6 +59,7 @@ export const GlobalCommandPalette: React.FC<Props> = ({
   const [isListening, setIsListening] = useState(false);
   const [voiceConfirmationAction, setVoiceConfirmationAction] = useState<{ title: string; action: () => void } | null>(null);
   const [liveEntityCommands, setLiveEntityCommands] = useState<CommandItem[]>([]);
+  const [speechNotice, setSpeechNotice] = useState<string | null>(null);
 
   // Seeded / Benchmark Entities matching exact clinician interactions
   const benchmarkEntities = useMemo<CommandItem[]>(() => [
@@ -428,7 +429,8 @@ export const GlobalCommandPalette: React.FC<Props> = ({
   const startVoiceRecognition = () => {
     const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRec) {
-      alert('Speech recognition is not supported in this browser environment.');
+      setSpeechNotice('🎙️ Voice dictation not supported on this browser (Safari/Firefox). Please use Chrome or type query.');
+      setTimeout(() => setSpeechNotice(null), 5000);
       return;
     }
     try {
@@ -437,13 +439,25 @@ export const GlobalCommandPalette: React.FC<Props> = ({
       recognition.interimResults = false;
       recognition.lang = 'en-IN';
 
-      recognition.onstart = () => setIsListening(true);
-      recognition.onend = () => setIsListening(false);
-      recognition.onerror = () => setIsListening(false);
+      recognition.onstart = () => {
+        setIsListening(true);
+        setSpeechNotice('🎙️ Listening... Speak clinical command or patient name now.');
+      };
+      recognition.onend = () => {
+        setIsListening(false);
+        setTimeout(() => setSpeechNotice(null), 2000);
+      };
+      recognition.onerror = (e: any) => {
+        setIsListening(false);
+        setSpeechNotice('Microphone notice: ' + (e?.error || 'Speech capture interrupted. Use keyboard query.'));
+        setTimeout(() => setSpeechNotice(null), 4000);
+      };
       recognition.onresult = (event: any) => {
         const transcript = event.results?.[0]?.[0]?.transcript || '';
         if (transcript) {
           setQuery(transcript);
+          setSpeechNotice(`Heard: "${transcript}"`);
+          setTimeout(() => setSpeechNotice(null), 2500);
           const lower = transcript.toLowerCase();
           if (lower.includes('break glass') || lower.includes('override')) {
             setVoiceConfirmationAction({
@@ -456,6 +470,8 @@ export const GlobalCommandPalette: React.FC<Props> = ({
       recognition.start();
     } catch {
       setIsListening(false);
+      setSpeechNotice('Unable to initialize microphone. Type your search command.');
+      setTimeout(() => setSpeechNotice(null), 4000);
     }
   };
 
@@ -681,6 +697,13 @@ export const GlobalCommandPalette: React.FC<Props> = ({
             ESC
           </span>
         </div>
+
+        {speechNotice && (
+          <div style={{ padding: '8px 16px', backgroundColor: 'rgba(56, 189, 248, 0.15)', borderBottom: '1px solid rgba(56, 189, 248, 0.3)', color: '#38BDF8', fontSize: '0.8125rem', fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>{speechNotice}</span>
+            <button type="button" onClick={() => setSpeechNotice(null)} style={{ background: 'none', border: 'none', color: '#38BDF8', cursor: 'pointer', fontWeight: 700 }}>✕</button>
+          </div>
+        )}
 
         {/* Raycast / Linear Category Filter Ribbon */}
         <div

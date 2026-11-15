@@ -160,6 +160,7 @@ export const TpaInsuranceClaimsDeskView: React.FC = () => {
   // NHCX FHIR Bundle Inspection Modal State
   const [isFhirModalOpen, setIsFhirModalOpen] = useState(false);
   const [fhirBundlePayload, setFhirBundlePayload] = useState<string>('');
+  const [isCopiedFhir, setIsCopiedFhir] = useState(false);
   const [, setBundleDigest] = useState<string>('');
   const [pmjayCardInput, setPmjayCardInput] = useState('');
   const [cardValidationMessage, setCardValidationMessage] = useState<{ isValid: boolean; message: string } | null>(null);
@@ -1170,10 +1171,11 @@ export const TpaInsuranceClaimsDeskView: React.FC = () => {
                 size="sm"
                 onClick={() => {
                   navigator.clipboard.writeText(fhirBundlePayload);
-                  alert('FHIR JSON copied to clipboard!');
+                  setIsCopiedFhir(true);
+                  setTimeout(() => setIsCopiedFhir(false), 3000);
                 }}
               >
-                📋 Copy JSON
+                {isCopiedFhir ? '✓ Copied to Clipboard!' : '📋 Copy JSON'}
               </Button>
             </div>
           </div>

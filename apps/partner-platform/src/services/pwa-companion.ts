@@ -149,11 +149,7 @@ class PwaCompanion {
    */
   public async promptInstall(): Promise<'accepted' | 'dismissed' | 'unavailable'> {
     if (!this.deferredInstallPrompt) {
-      // In iOS Safari, guide the user to Add to Home Screen
-      if (this.isIos()) {
-        alert("To install DOC SEARCH on iOS:\n1. Tap the Share button in Safari (box with arrow)\n2. Scroll down and tap 'Add to Home Screen' (+)\n3. Tap 'Add' to launch in full-screen app mode.");
-        return 'dismissed';
-      }
+      // In iOS Safari or unsupported desktop browser, signal unavailable so UI can show non-blocking guide
       return 'unavailable';
     }
 
