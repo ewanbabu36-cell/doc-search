@@ -26,26 +26,49 @@ export const VirtualConsultationRoomView: React.FC<Props> = ({ session: initialS
 
   const CALL_ID = initialSession?.webrtcRoomId || 'TELE-2026-9042';
 
-  // Live EMR Editable State
-  const [diagnosis, setDiagnosis] = useState('Essential Hypertension & Seasonal Allergic Rhinitis');
-  const [vitals] = useState({ pulse: 74, spo2: 99, bp: '128/82', temp: '98.6°F' });
-  const [medications] = useState([
-    {
-      drug: 'Tab. Telmisartan 40mg',
-      genericName: 'Telmisartan IP (Jan Aushadhi #JA-312)',
-      dose: '1 Tab OD morning after breakfast',
-      days: '30 Days',
-      savingsPercent: 78
-    },
-    {
-      drug: 'Tab. Levocetirizine 5mg',
-      genericName: 'Levocetirizine Dihydrochloride (Jan Aushadhi #JA-089)',
-      dose: '1 Tab OD at bedtime',
-      days: '7 Days',
-      savingsPercent: 82
+  // Live EMR Editable State (Initialized from active session with clinical fallback)
+  type LiveMed = TeleLivePrescription['medications'][number];
+  const [diagnosis, setDiagnosis] = useState<string>(
+    initialSession?.clinicalSoapSummary ||
+    (initialSession as any)?.diagnosis ||
+    (initialSession as any)?.chiefComplaint ||
+    'Essential Hypertension & Seasonal Allergic Rhinitis'
+  );
+  const [vitals] = useState(
+    (initialSession as any)?.vitals || { pulse: 74, spo2: 99, bp: '128/82', temp: '98.6°F' }
+  );
+  const [medications] = useState<LiveMed[]>(
+    Array.isArray((initialSession as any)?.medications) && (initialSession as any).medications.length > 0
+      ? (initialSession as any).medications
+      : [
+          {
+            drug: 'Tab. Telmisartan 40mg',
+            genericName: 'Telmisartan IP (Jan Aushadhi #JA-312)',
+            dose: '1 Tab OD morning after breakfast',
+            days: '30 Days',
+            savingsPercent: 78
+          },
+          {
+            drug: 'Tab. Levocetirizine 5mg',
+            genericName: 'Levocetirizine Dihydrochloride (Jan Aushadhi #JA-089)',
+            dose: '1 Tab OD at bedtime',
+            days: '7 Days',
+            savingsPercent: 82
+          }
+        ]
+  );
+  const [doctorAdvice, setDoctorAdvice] = useState<string>(
+    (initialSession as any)?.doctorAdvice ||
+    (initialSession as any)?.advice ||
+    'Maintain low sodium diet (<5g/day). Deep breathing exercises. Follow-up in 14 days.'
+  );
+
+  // Sync state if session updates dynamically
+  useEffect(() => {
+    if (initialSession?.clinicalSoapSummary) {
+      setDiagnosis(initialSession.clinicalSoapSummary);
     }
-  ]);
-  const [doctorAdvice, setDoctorAdvice] = useState('Maintain low sodium diet (<5g/day). Deep breathing exercises. Follow-up in 14 days.');
+  }, [initialSession?.clinicalSoapSummary]);
 
   // Call duration timer
   useEffect(() => {
@@ -442,7 +465,7 @@ export const VirtualConsultationRoomView: React.FC<Props> = ({ session: initialS
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {medications.map((med, idx) => (
+              {medications.map((med: LiveMed, idx: number) => (
                 <div
                   key={idx}
                   style={{

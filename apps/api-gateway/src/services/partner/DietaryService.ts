@@ -8,13 +8,13 @@ export class DietaryService {
   // 1. Overview & Telemetry
   async getOverviewMetrics(session: SessionContext) {
     return withSecurityContext(getDatabase(), session, async () => {
-      return dietaryRepository.getOverviewMetrics();
+      return dietaryRepository.getOverviewMetrics(session.tenantId);
     });
   }
 
   async getAnalytics(session: SessionContext) {
     return withSecurityContext(getDatabase(), session, async () => {
-      return dietaryRepository.getAnalytics();
+      return dietaryRepository.getAnalytics(session.tenantId);
     });
   }
 
