@@ -104,6 +104,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
     proposedDocDataUrl: '',
     reasonForChange: ''
   });
+  const [hardwareNotice, setHardwareNotice] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isExecutive) {
@@ -4201,6 +4202,12 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
           {/* ENTERPRISE PILLAR 5: HARDWARE & PERIPHERAL SELF-SERVE HUB */}
           {activeTab === 'HARDWARE_HUB' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {hardwareNotice && (
+                <div style={{ padding: '12px 16px', borderRadius: '10px', backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid #10B981', color: '#6EE7B7', fontWeight: 600, fontSize: '0.88rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>{hardwareNotice}</span>
+                  <button type="button" onClick={() => setHardwareNotice(null)} style={{ background: 'none', border: 'none', color: '#6EE7B7', cursor: 'pointer', fontWeight: 700, fontSize: '1rem' }}>✕</button>
+                </div>
+              )}
               <div
                 style={{
                   background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.9) 100%)',
@@ -4300,9 +4307,9 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                             })
                           });
                           const json = await res.json();
-                          alert('⚡ Test Print Success: ' + (json.message || 'Thermal receipt printed via ESC/POS!'));
+                          setHardwareNotice('⚡ Test Print Success: ' + (json.message || 'Thermal receipt printed via ESC/POS!'));
                         } catch {
-                          alert('⚡ Test Receipt Dispatched: Simulating ESC/POS print raster to thermal printer.');
+                          setHardwareNotice('⚡ Test Receipt Dispatched: Simulating ESC/POS print raster to thermal printer.');
                         }
                       }}
                       style={{
@@ -4384,9 +4391,9 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                             })
                           });
                           const json = await res.json();
-                          alert('🔊 Soundbox Chime Triggered: ' + (json.spokenText || 'Chime sent to speaker!'));
+                          setHardwareNotice('🔊 Soundbox Chime Triggered: ' + (json.spokenText || 'Chime sent to speaker!'));
                         } catch {
-                          alert('🔊 Soundbox Chime Dispatched: "डॉक्सर्च पर 500 रुपये प्राप्त हुए"');
+                          setHardwareNotice('🔊 Soundbox Chime Dispatched: "डॉक्सर्च पर 500 रुपये प्राप्त हुए"');
                         }
                       }}
                       style={{
@@ -4471,9 +4478,9 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                             })
                           });
                           const json = await res.json();
-                          alert('📡 Analyzer Ping Success: ' + (json.message || 'Connected in 14ms!'));
+                          setHardwareNotice('📡 Analyzer Ping Success: ' + (json.message || 'Connected in 14ms!'));
                         } catch {
-                          alert('📡 Analyzer Ping Success: Handshake verified with Roche Cobas c311 (14ms latency).');
+                          setHardwareNotice('📡 Analyzer Ping Success: Handshake verified with Roche Cobas c311 (14ms latency).');
                         }
                       }}
                       style={{

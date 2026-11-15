@@ -367,7 +367,7 @@ export const GodModeSuperAdminStudioView: React.FC<GodModeSuperAdminStudioViewPr
   >('IMPERSONATE');
 
   // Enclave 1: Impersonation
-  const [targetTenantId, setTargetTenantId] = useState('6855be07-5298-4148-a571-c51ac49ac7f3');
+  const [targetTenantId, setTargetTenantId] = useState('11111111-1111-4111-8111-111111111111');
   const [targetTenantName, setTargetTenantName] = useState('Apollo City Multi-Specialty Hospital');
   const [targetUserId, setTargetUserId] = useState('DOC-CHIEF-001');
   const [targetUserName, setTargetUserName] = useState('Dr. Vikramaditya Sen (Chief of Surgery)');
@@ -376,6 +376,7 @@ export const GodModeSuperAdminStudioView: React.FC<GodModeSuperAdminStudioViewPr
   const [sessionMode, setSessionMode] = useState<'READ_ONLY_AUDITED' | 'BREAK_GLASS_MUTATION'>('READ_ONLY_AUDITED');
   const [activeGhostSession, setActiveGhostSession] = useState<any>(null);
   const [isStartingImpersonate, setIsStartingImpersonate] = useState(false);
+  const [studioNotice, setStudioNotice] = useState<string | null>(null);
 
   // Enclave 2: Feature Flags
   const [featureFlags, setFeatureFlags] = useState<FeatureFlag[]>([]);
@@ -497,7 +498,7 @@ export const GodModeSuperAdminStudioView: React.FC<GodModeSuperAdminStudioViewPr
         prev.map((f) => (f.flag_key === flag.flag_key ? { ...f, is_globally_enabled: newEnabledState } : f))
       );
     } catch (err: any) {
-      alert(`Flag toggle notice: ${err.message}`);
+      setStudioNotice(`Flag toggle notice: ${err.message}`);
     }
   };
 
@@ -516,7 +517,7 @@ export const GodModeSuperAdminStudioView: React.FC<GodModeSuperAdminStudioViewPr
         prev.map((f) => (f.flag_key === flag.flag_key ? { ...f, circuit_breaker_active: nextCircuit } : f))
       );
     } catch (err: any) {
-      alert(`Circuit breaker toggle notice: ${err.message}`);
+      setStudioNotice(`Circuit breaker toggle notice: ${err.message}`);
     }
   };
 
@@ -550,7 +551,7 @@ export const GodModeSuperAdminStudioView: React.FC<GodModeSuperAdminStudioViewPr
         prev.map((a) => (a.id === alertItem.id ? { ...a, is_quarantined: true, auto_action_taken: 'STAFF_ACCOUNT_SUSPENDED' } : a))
       );
     } catch (err: any) {
-      alert(`Staff quarantine notice: ${err.message}`);
+      setStudioNotice(`Staff quarantine notice: ${err.message}`);
     }
   };
 
@@ -611,7 +612,7 @@ export const GodModeSuperAdminStudioView: React.FC<GodModeSuperAdminStudioViewPr
         setActiveGhostSession(data);
       }
     } catch (err: any) {
-      alert(`Impersonation notice: ${err.message}`);
+      setStudioNotice(`Impersonation notice: ${err.message}`);
     } finally {
       setIsStartingImpersonate(false);
     }
@@ -629,7 +630,7 @@ export const GodModeSuperAdminStudioView: React.FC<GodModeSuperAdminStudioViewPr
       });
       setActiveGhostSession(null);
     } catch (err: any) {
-      alert(`End impersonation notice: ${err.message}`);
+      setStudioNotice(`End impersonation notice: ${err.message}`);
     }
   };
 
@@ -680,9 +681,9 @@ export const GodModeSuperAdminStudioView: React.FC<GodModeSuperAdminStudioViewPr
         })
       });
       setSnoopAlerts((prev) => prev.map((a) => (a.id === alertItem.id ? { ...a, is_locked: true } : a)));
-      alert(`Staff ${alertItem.actor_name} biometric and credential access revoked immediately.`);
+      setStudioNotice(`Staff ${alertItem.actor_name} biometric and credential access revoked immediately.`);
     } catch (err: any) {
-      alert(`Staff lock notice: ${err.message}`);
+      setStudioNotice(`Staff lock notice: ${err.message}`);
     }
   };
 
@@ -732,9 +733,9 @@ export const GodModeSuperAdminStudioView: React.FC<GodModeSuperAdminStudioViewPr
       setCollusionRecords((prev) =>
         prev.map((r) => (r.id === record.id ? { ...r, mandate_generic_substitution: true } : r))
       );
-      alert(`Doctor ${record.doctor_name} prescription system locked to generic molecule (${record.generic_alternative_name}).`);
+      setStudioNotice(`Doctor ${record.doctor_name} prescription system locked to generic molecule (${record.generic_alternative_name}).`);
     } catch (err: any) {
-      alert(`Generic mandate notice: ${err.message}`);
+      setStudioNotice(`Generic mandate notice: ${err.message}`);
     }
   };
 
@@ -771,9 +772,9 @@ export const GodModeSuperAdminStudioView: React.FC<GodModeSuperAdminStudioViewPr
             : p
         )
       );
-      alert(`Friction tier ${tier} applied to ${partner.hospital_name}.`);
+      setStudioNotice(`Friction tier ${tier} applied to ${partner.hospital_name}.`);
     } catch (err: any) {
-      alert(`Dunning notice: ${err.message}`);
+      setStudioNotice(`Dunning notice: ${err.message}`);
     }
   };
 
@@ -798,7 +799,7 @@ export const GodModeSuperAdminStudioView: React.FC<GodModeSuperAdminStudioViewPr
         setVaultChallenge(data);
       }
     } catch (err: any) {
-      alert(`Vault request notice: ${err.message}`);
+      setStudioNotice(`Vault request notice: ${err.message}`);
     } finally {
       setIsRequestingVault(false);
     }
@@ -824,7 +825,7 @@ export const GodModeSuperAdminStudioView: React.FC<GodModeSuperAdminStudioViewPr
         setVaultChallenge(null);
       }
     } catch (err: any) {
-      alert(`Vault authorize notice: ${err.message}`);
+      setStudioNotice(`Vault authorize notice: ${err.message}`);
     } finally {
       setIsAuthorizingVault(false);
     }
@@ -848,7 +849,7 @@ export const GodModeSuperAdminStudioView: React.FC<GodModeSuperAdminStudioViewPr
         setNabhBinder(data);
       }
     } catch (err: any) {
-      alert(`NABH compilation notice: ${err.message}`);
+      setStudioNotice(`NABH compilation notice: ${err.message}`);
     } finally {
       setIsCompilingNabh(false);
     }
@@ -877,7 +878,7 @@ export const GodModeSuperAdminStudioView: React.FC<GodModeSuperAdminStudioViewPr
       const data = (res as any)?.evidence;
       if (data) setDecodedEvidence(data);
     } catch (err: any) {
-      alert(`Stego decode notice: ${err.message}`);
+      setStudioNotice(`Stego decode notice: ${err.message}`);
     } finally {
       setIsDecodingStego(false);
     }
@@ -911,9 +912,9 @@ export const GodModeSuperAdminStudioView: React.FC<GodModeSuperAdminStudioViewPr
         })
       });
       await fetchHoneytokens();
-      alert('Canary decoy trap injected into patient database.');
+      setStudioNotice('Canary decoy trap injected into patient database.');
     } catch (err: any) {
-      alert(`Canary inject notice: ${err.message}`);
+      setStudioNotice(`Canary inject notice: ${err.message}`);
     } finally {
       setIsInjectingTrap(false);
     }
@@ -928,9 +929,9 @@ export const GodModeSuperAdminStudioView: React.FC<GodModeSuperAdminStudioViewPr
       setHoneytokenIncidents((prev) =>
         prev.map((i) => (i.actor_id === actorId ? { ...i, is_isolated: true } : i))
       );
-      alert(`Intruder ${actorId} isolated: credentials revoked & biometric locked.`);
+      setStudioNotice(`Intruder ${actorId} isolated: credentials revoked & biometric locked.`);
     } catch (err: any) {
-      alert(`Isolate notice: ${err.message}`);
+      setStudioNotice(`Isolate notice: ${err.message}`);
     }
   };
 
@@ -960,9 +961,9 @@ export const GodModeSuperAdminStudioView: React.FC<GodModeSuperAdminStudioViewPr
         })
       });
       await fetchTpaStream();
-      alert(`Statutory IRDAI Rebuttal notice dispatched for Claim ${claim.claim_id}.`);
+      setStudioNotice(`Statutory IRDAI Rebuttal notice dispatched for Claim ${claim.claim_id}.`);
     } catch (err: any) {
-      alert(`Rebuttal notice: ${err.message}`);
+      setStudioNotice(`Rebuttal notice: ${err.message}`);
     } finally {
       setIsGeneratingRebuttal(false);
     }
@@ -989,9 +990,9 @@ export const GodModeSuperAdminStudioView: React.FC<GodModeSuperAdminStudioViewPr
       setCartelRecords((prev) =>
         prev.map((r) => (r.doctor_id === record.doctor_id ? { ...r, status: 'UNDER_FORENSIC_INVESTIGATION' } : r))
       );
-      alert(`Doctor ${record.doctor_name} placed under discrete clinical audit.`);
+      setStudioNotice(`Doctor ${record.doctor_name} placed under discrete clinical audit.`);
     } catch (err: any) {
-      alert(`Cartel flag notice: ${err.message}`);
+      setStudioNotice(`Cartel flag notice: ${err.message}`);
     }
   };
 
@@ -1015,9 +1016,9 @@ export const GodModeSuperAdminStudioView: React.FC<GodModeSuperAdminStudioViewPr
         body: JSON.stringify({ healAction: 'RECONCILE_ALL_DISCREPANCIES' })
       });
       await fetchFinRecon();
-      alert('Split-brain ledgers reconciled. Orphan webhooks matched to cash receipts.');
+      setStudioNotice('Split-brain ledgers reconciled. Orphan webhooks matched to cash receipts.');
     } catch (err: any) {
-      alert(`Auto-heal notice: ${err.message}`);
+      setStudioNotice(`Auto-heal notice: ${err.message}`);
     } finally {
       setIsAutoHealing(false);
     }
@@ -1071,6 +1072,12 @@ export const GodModeSuperAdminStudioView: React.FC<GodModeSuperAdminStudioViewPr
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans">
+      {studioNotice && (
+        <div className="mb-6 p-4 rounded-xl bg-amber-500/20 border border-amber-500 text-amber-200 font-semibold flex items-center justify-between shadow-lg">
+          <span>{studioNotice}</span>
+          <button type="button" onClick={() => setStudioNotice(null)} className="text-amber-300 hover:text-white font-bold ml-4">✕</button>
+        </div>
+      )}
       {/* 👑 Top God-Level Founder Banner */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-950/80 via-slate-900 to-indigo-950 border border-amber-500/40 p-6 mb-8 shadow-2xl backdrop-blur-xl">
         <div className="absolute top-0 right-0 -mt-8 -mr-8 w-72 h-72 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -2796,7 +2803,7 @@ export const GodModeSuperAdminStudioView: React.FC<GodModeSuperAdminStudioViewPr
                   <div className="pt-2">
                     <Button
                       variant="danger"
-                      onClick={() => alert(`Staff ${decodedEvidence.decodedActorName} suspended. Forensic evidence file generated for Cyber Police.`)}
+                      onClick={() => setStudioNotice(`Staff ${decodedEvidence.decodedActorName} suspended. Forensic evidence file generated for Cyber Police.`)}
                       className="w-full text-xs font-bold py-1.5"
                     >
                       Instant Biometric Revocation & File Cyber Docket

@@ -66,6 +66,7 @@ export const CustomizableSubscriptionPlanManager: React.FC = () => {
   const [negotiationNotes, setNegotiationNotes] = useState<string>('');
   const [isSubmittingDeal, setIsSubmittingDeal] = useState<boolean>(false);
   const [dealSuccessMsg, setDealSuccessMsg] = useState<string | null>(null);
+  const [dealErrorMsg, setDealErrorMsg] = useState<string | null>(null);
 
   const loadAuthoritativeData = async () => {
     try {
@@ -183,11 +184,13 @@ export const CustomizableSubscriptionPlanManager: React.FC = () => {
 
   const handleAuthorizeDeal = async () => {
     if (!selectedPartnerId || !selectedDealPlanId) {
-      alert('Please select both a Partner and a Plan Tier.');
+      setDealErrorMsg('Please select both a Partner and a Plan Tier.');
+      setTimeout(() => setDealErrorMsg(null), 5000);
       return;
     }
     setIsSubmittingDeal(true);
     setDealSuccessMsg(null);
+    setDealErrorMsg(null);
     try {
       const payload: any = {
         partnerId: selectedPartnerId,
@@ -213,10 +216,12 @@ export const CustomizableSubscriptionPlanManager: React.FC = () => {
         setDealSuccessMsg(`Contract successfully authorized! Partner final payable amount: ₹${calculatedFinalPayable.toLocaleString('en-IN')} for ${dealTenure.label}.`);
         setTimeout(() => setDealSuccessMsg(null), 6000);
       } else {
-        alert(res.error?.message || 'Failed to authorize deal.');
+        setDealErrorMsg(res.error?.message || 'Failed to authorize deal.');
+        setTimeout(() => setDealErrorMsg(null), 6000);
       }
     } catch (err: any) {
-      alert(err.message || 'Error communicating with Deal Desk service.');
+      setDealErrorMsg(err.message || 'Error communicating with Deal Desk service.');
+      setTimeout(() => setDealErrorMsg(null), 6000);
     } finally {
       setIsSubmittingDeal(false);
     }
@@ -388,6 +393,11 @@ export const CustomizableSubscriptionPlanManager: React.FC = () => {
           {dealSuccessMsg && (
             <span style={{ backgroundColor: '#10B981', color: '#070C16', padding: '6px 14px', borderRadius: '8px', fontWeight: 800, fontSize: '0.8125rem' }}>
               ✓ {dealSuccessMsg}
+            </span>
+          )}
+          {dealErrorMsg && (
+            <span style={{ backgroundColor: '#EF4444', color: '#FFFFFF', padding: '6px 14px', borderRadius: '8px', fontWeight: 800, fontSize: '0.8125rem' }}>
+              ⚠ {dealErrorMsg}
             </span>
           )}
         </div>

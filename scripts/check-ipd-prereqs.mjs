@@ -1,0 +1,12 @@
+import pg from 'pg';
+const client = new pg.Client({ connectionString: 'postgresql://postgres:password@127.0.0.1:5432/docsearch' });
+await client.connect();
+const wards = await client.query('SELECT * FROM clinical.inpatient_wards');
+const beds = await client.query('SELECT * FROM clinical.inpatient_beds');
+const admissions = await client.query('SELECT * FROM clinical.inpatient_admissions');
+console.log('Wards:', wards.rows.length);
+console.log('Beds:', beds.rows.length);
+console.log('Admissions:', admissions.rows.length);
+if (wards.rows.length > 0) console.log('Sample ward:', wards.rows[0]);
+if (beds.rows.length > 0) console.log('Sample bed:', beds.rows[0]);
+await client.end();

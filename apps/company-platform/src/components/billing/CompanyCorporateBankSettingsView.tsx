@@ -270,13 +270,16 @@ export const CompanyCorporateBankSettingsView: React.FC = () => {
       });
       const json = await res.json();
       if (res.ok && json.success) {
-        alert(decision === 'APPROVED' ? '✓ Payment verified! Partner subscription and license extended.' : 'Payment rejected.');
+        setSaveSuccess(decision === 'APPROVED' ? '✓ Payment verified! Partner subscription and license extended.' : 'Payment rejected.');
+        setTimeout(() => setSaveSuccess(null), 6000);
         await loadData();
       } else {
-        alert(json.message || 'Failed to verify payment.');
+        setErrorMessage(json.message || 'Failed to verify payment.');
+        setTimeout(() => setErrorMessage(null), 6000);
       }
     } catch (err: any) {
-      alert(err.message || 'Network error during verification.');
+      setErrorMessage(err.message || 'Network error during verification.');
+      setTimeout(() => setErrorMessage(null), 6000);
     } finally {
       setIsVerifying(null);
     }

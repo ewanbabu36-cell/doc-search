@@ -167,6 +167,7 @@ export const AiJargonFreeReportExplainerCard: React.FC<AiJargonFreeReportExplain
   const [language, setLanguage] = useState<'en' | 'hi' | 'hinglish'>(initialLanguage);
   const [selectedBiomarkerId, setSelectedBiomarkerId] = useState<string>('bio-hba1c');
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
+  const [actionToast, setActionToast] = useState<string | null>(null);
 
   const selectedBiomarker =
     BIOMARKER_DATASET.find((b) => b.id === selectedBiomarkerId) || BIOMARKER_DATASET[0]!;
@@ -181,7 +182,8 @@ export const AiJargonFreeReportExplainerCard: React.FC<AiJargonFreeReportExplain
   // Text-To-Speech audio synthesizer for patients
   const handlePlayVoiceExplainer = () => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-      alert('Voice assistant not supported on this browser.');
+      setActionToast('Voice assistant not supported on this browser.');
+      setTimeout(() => setActionToast(null), 4000);
       return;
     }
 
@@ -223,6 +225,12 @@ export const AiJargonFreeReportExplainerCard: React.FC<AiJargonFreeReportExplain
       }}
     >
       {/* HEADER: AI BADGE & LANGUAGE TOGGLE */}
+      {actionToast && (
+        <div style={{ padding: '10px 14px', borderRadius: '8px', backgroundColor: 'rgba(56, 189, 248, 0.2)', border: '1px solid #38BDF8', color: '#7DD3FC', fontWeight: 600, fontSize: '0.85rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>{actionToast}</span>
+          <button type="button" onClick={() => setActionToast(null)} style={{ background: 'none', border: 'none', color: '#7DD3FC', cursor: 'pointer', fontWeight: 700 }}>✕</button>
+        </div>
+      )}
       <div
         style={{
           display: 'flex',
@@ -513,7 +521,10 @@ export const AiJargonFreeReportExplainerCard: React.FC<AiJargonFreeReportExplain
         {/* 1-Tap Book Specialist Consult */}
         <button
           type="button"
-          onClick={onBookConsultation || (() => alert('Opening Direct Specialist OPD Booking for ' + selectedBiomarker.name))}
+          onClick={onBookConsultation || (() => {
+            setActionToast('Opening Direct Specialist OPD Booking for ' + selectedBiomarker.name);
+            setTimeout(() => setActionToast(null), 4000);
+          })}
           style={{
             backgroundColor: '#0284C7',
             border: 'none',
@@ -537,7 +548,10 @@ export const AiJargonFreeReportExplainerCard: React.FC<AiJargonFreeReportExplain
         {/* 1-Tap Order Home Retest via 1mg / DocSearch */}
         <button
           type="button"
-          onClick={onOrderRetest || (() => alert('Booking NABL Verified Home Lab Retest via Tata 1mg for ' + selectedBiomarker.name))}
+          onClick={onOrderRetest || (() => {
+            setActionToast('Booking NABL Verified Home Lab Retest via Tata 1mg for ' + selectedBiomarker.name);
+            setTimeout(() => setActionToast(null), 4000);
+          })}
           style={{
             backgroundColor: 'rgba(16, 185, 129, 0.15)',
             border: '1.5px solid #10B981',

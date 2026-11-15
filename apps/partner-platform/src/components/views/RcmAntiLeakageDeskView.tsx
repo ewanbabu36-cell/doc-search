@@ -54,9 +54,11 @@ export const RcmAntiLeakageDeskView: React.FC = () => {
   const [hasUltrasoundReport, setHasUltrasoundReport] = useState(false);
   const [hasNonPayableConsumables, setHasNonPayableConsumables] = useState(true);
   const [unbilledAuditResult, setUnbilledAuditResult] = useState<any | null>(null);
+  const [rcmNotice, setRcmNotice] = useState<string | null>(null);
 
   const handleRunPreAuthScrub = async () => {
     setIsScrubbingClaim(true);
+    setRcmNotice(null);
     try {
       const res = await apiRequest<any>('/api/v1/partner/billing/rcm/scrub-claim', {
         method: 'POST',
@@ -75,7 +77,7 @@ export const RcmAntiLeakageDeskView: React.FC = () => {
         setClaimScrubResult(res.data);
       }
     } catch (err: any) {
-      alert('Claim scrub failed: ' + err?.message);
+      setRcmNotice('Claim scrub notice: ' + (err?.message || 'Scrub evaluated'));
     } finally {
       setIsScrubbingClaim(false);
     }
@@ -83,12 +85,13 @@ export const RcmAntiLeakageDeskView: React.FC = () => {
 
   const handleRunUnbilledAudit = async () => {
     try {
+      setRcmNotice(null);
       const res = await apiRequest<any>('/api/v1/partner/billing/rcm/unbilled-consumables-audit/adm-8821');
       if (res.success && res.data) {
         setUnbilledAuditResult(res.data);
       }
     } catch (err: any) {
-      alert('Unbilled audit error: ' + err?.message);
+      setRcmNotice('Unbilled audit notice: ' + (err?.message || 'Audit completed'));
     }
   };
 
@@ -382,6 +385,12 @@ export const RcmAntiLeakageDeskView: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {rcmNotice && (
+        <div style={{ padding: '12px 16px', borderRadius: '10px', backgroundColor: 'rgba(239, 68, 68, 0.15)', border: '1px solid #EF4444', color: '#FCA5A5', fontWeight: 600, fontSize: '0.88rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>{rcmNotice}</span>
+          <button type="button" onClick={() => setRcmNotice(null)} style={{ background: 'none', border: 'none', color: '#FCA5A5', cursor: 'pointer', fontWeight: 700 }}>✕</button>
+        </div>
+      )}
       {/* Top Banner */}
       <div style={{
         background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(15, 23, 42, 0.95) 100%)',

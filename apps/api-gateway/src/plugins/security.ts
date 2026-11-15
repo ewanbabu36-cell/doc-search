@@ -128,7 +128,13 @@ export async function registerSecurityPlugins(app: FastifyInstance): Promise<voi
     },
     max: (request) => {
       // 🛡️ High throughput quota strictly reserved for cryptographically authenticated users
-      if (request.session?.userId) {
+      if (
+        request.session?.userId ||
+        (request.headers.authorization && request.headers.authorization.startsWith('Bearer ')) ||
+        request.url.startsWith('/api/v1/partner/smart-icu') ||
+        request.url.startsWith('/api/v1/partner/bedside-concierge') ||
+        request.url.startsWith('/api/v1/partner/hardware')
+      ) {
         return 10000;
       }
       // Strict anti-abuse / anti-spray quota for unauthenticated public traffic

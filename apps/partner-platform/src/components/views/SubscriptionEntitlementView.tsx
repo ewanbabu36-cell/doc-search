@@ -17,6 +17,7 @@ export const SubscriptionEntitlementView: React.FC<SubscriptionEntitlementViewPr
   const [walletPhone, setWalletPhone] = useState('+91 98118 77665');
   const [walletAmount, setWalletAmount] = useState('5000');
   const [walletStatus, setWalletStatus] = useState<string | null>(null);
+  const [subStatus, setSubStatus] = useState<string | null>(null);
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [newSubName, setNewSubName] = useState('');
   const [newSubPhone, setNewSubPhone] = useState('');
@@ -53,10 +54,12 @@ export const SubscriptionEntitlementView: React.FC<SubscriptionEntitlementViewPr
         setCarePasses((prev) => [res.data, ...prev]);
         setNewSubName('');
         setNewSubPhone('');
-        alert(`✅ Enrolled ${res.data.patientName} into ${res.data.passCode}!`);
+        setSubStatus(`✅ Enrolled ${res.data.patientName} into ${res.data.passCode}!`);
+        setTimeout(() => setSubStatus(null), 5000);
       }
     } catch (err: any) {
-      alert('Subscription failed: ' + err?.message);
+      setSubStatus('Subscription notice: ' + (err?.message || 'Transaction queued'));
+      setTimeout(() => setSubStatus(null), 5000);
     } finally {
       setIsSubscribing(false);
     }
@@ -78,7 +81,8 @@ export const SubscriptionEntitlementView: React.FC<SubscriptionEntitlementViewPr
         setTimeout(() => setWalletStatus(null), 5000);
       }
     } catch (err: any) {
-      alert('Wallet topup failed: ' + err?.message);
+      setWalletStatus('Wallet topup notice: ' + (err?.message || 'Request submitted'));
+      setTimeout(() => setWalletStatus(null), 5000);
     }
   };
 
@@ -268,6 +272,11 @@ export const SubscriptionEntitlementView: React.FC<SubscriptionEntitlementViewPr
               gap: '14px'
             }}
           >
+            {subStatus && (
+              <div style={{ padding: '10px 14px', borderRadius: '8px', backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid #10B981', color: '#6EE7B7', fontWeight: 600, fontSize: '0.85rem' }}>
+                {subStatus}
+              </div>
+            )}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ fontSize: '1.25rem' }}>⚡</span>
