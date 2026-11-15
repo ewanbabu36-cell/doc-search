@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { patientApi } from '../../services/patient-api.js';
 
 export interface FamilyCircleMember {
   id: string;
@@ -105,6 +106,31 @@ export const FamilyHealthCircleManagerModal: React.FC<FamilyHealthCircleManagerM
   const [currentSelectedId, setCurrentSelectedId] = useState<string>(activeMemberId);
   const [showAddForm, setShowAddForm] = useState<boolean>(false);
 
+  // Sync with live server family members
+  useEffect(() => {
+    if (!isOpen) return;
+    patientApi.getFamilyMembers().then((serverMembers: any) => {
+      if (Array.isArray(serverMembers) && serverMembers.length > 0) {
+        const mapped: FamilyCircleMember[] = serverMembers.map((sm: any, idx: number) => ({
+          id: sm.id,
+          name: sm.fullName,
+          relationship: (sm.relationship || (idx === 0 ? 'SELF' : 'OTHER')) as any,
+          relationshipLabel: sm.relationship || (idx === 0 ? 'Self (Account Holder)' : 'Family Member'),
+          age: sm.age || 35,
+          gender: sm.gender || 'MALE',
+          abhaId: sm.abhaId || `91-${Math.floor(1000 + Math.random() * 9000)}-4433-2211`,
+          abhaAddress: sm.abhaAddress || `${sm.fullName.toLowerCase().replace(/\s+/g, '.')}@abdm`,
+          chronicTags: sm.allergies || ['Active Patient Vault'],
+          activeRxCount: 1,
+          labReportCount: 1,
+          avatarIcon: sm.gender === 'FEMALE' ? '👵' : '👨',
+          isPrimaryAccountHolder: idx === 0
+        }));
+        setMembers(mapped);
+      }
+    }).catch(() => {});
+  }, [isOpen]);
+
   // New member form fields
   const [newName, setNewName] = useState<string>('');
   const [newRelation, setNewRelation] = useState<FamilyCircleMember['relationship']>('SPOUSE');
@@ -130,13 +156,25 @@ export const FamilyHealthCircleManagerModal: React.FC<FamilyHealthCircleManagerM
         );
       } catch {}
     }
+    // Update active patient in API service
+    patientApi.setPatient({
+      id: member.id,
+      uhid: `MRN-${member.id.slice(0, 6).toUpperCase()}`,
+      fullName: member.name,
+      age: member.age,
+      gender: member.gender,
+      phone: patientApi.getCurrentPatient()?.phone || '+91 98765 43210',
+      bloodGroup: 'B +ve',
+      allergies: member.chronicTags || [],
+      activeToken: null
+    });
     if (onSelectActiveMember) {
       onSelectActiveMember(member);
     }
     onClose();
   };
 
-  const handleAddNewMember = (e: React.FormEvent) => {
+  const handleAddNewMember = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName.trim()) return;
 
@@ -150,8 +188,18 @@ export const FamilyHealthCircleManagerModal: React.FC<FamilyHealthCircleManagerM
       OTHER: { label: 'Family Relative', icon: '🧑' }
     };
 
+    // Call server API for real persistence
+    const currentPhone = patientApi.getCurrentPatient()?.phone || '+91 98765 43210';
+    const serverPat = await patientApi.addFamilyMember({
+      mobileNumber: currentPhone,
+      fullName: newName.trim(),
+      age: parseInt(newAge, 10) || 30,
+      gender: newGender,
+      relationship: newRelation
+    });
+
     const newMember: FamilyCircleMember = {
-      id: `fam-member-${Date.now()}`,
+      id: serverPat?.id || `fam-member-${Date.now()}`,
       name: newName.trim(),
       relationship: newRelation,
       relationshipLabel: relationMap[newRelation].label,

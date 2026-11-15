@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Button, Badge } from '@docsearch/ui-kit';
+import { patientApi } from '../services/patient-api.js';
 
 export interface PaperlessPreArrivalIntakeModalProps {
   isOpen: boolean;
@@ -95,7 +96,7 @@ export const PaperlessPreArrivalIntakeModal: React.FC<PaperlessPreArrivalIntakeM
     }, 1200);
   };
 
-  const handleFinishIntake = () => {
+  const handleFinishIntake = async () => {
     const intakeResult: IntakeData = {
       patientName,
       mobile,
@@ -113,6 +114,10 @@ export const PaperlessPreArrivalIntakeModal: React.FC<PaperlessPreArrivalIntakeM
     };
 
     try {
+      const serverRes = await patientApi.submitPreArrivalIntake(intakeResult);
+      if (serverRes?.fastPassQrCode) {
+        intakeResult.fastPassQrCode = serverRes.fastPassQrCode;
+      }
       localStorage.setItem('docsearch_patient_pre_intake', JSON.stringify(intakeResult));
       window.dispatchEvent(new CustomEvent('docsearch:patient_pre_intake_submitted', { detail: intakeResult }));
     } catch {

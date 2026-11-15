@@ -367,9 +367,11 @@ class PatientApiService {
     };
   }
 
-  async getFamilyMembers(phone: string): Promise<PatientProfile[]> {
+  async getFamilyMembers(phone?: string): Promise<PatientProfile[]> {
+    const targetPhone = phone || this.currentPatient?.phone;
+    if (!targetPhone) return [];
     try {
-      const res = await fetch(`/api/v1/patient/family-members?phone=${encodeURIComponent(phone)}`, {
+      const res = await fetch(`/api/v1/patient/family-members?phone=${encodeURIComponent(targetPhone)}`, {
         headers: this.getAuthHeaders()
       });
       if (res.ok) {
@@ -385,9 +387,14 @@ class PatientApiService {
   }
 
   async addFamilyMember(
-    phone: string,
-    member: { fullName: string; age: number; gender: 'MALE' | 'FEMALE' | 'OTHER'; relationship?: string; bloodGroup?: string }
+    phoneOrMember: string | { fullName: string; age: number; gender: 'MALE' | 'FEMALE' | 'OTHER'; relationship?: string; bloodGroup?: string; mobileNumber?: string },
+    maybeMember?: { fullName: string; age: number; gender: 'MALE' | 'FEMALE' | 'OTHER'; relationship?: string; bloodGroup?: string }
   ): Promise<PatientProfile | null> {
+    const phone = typeof phoneOrMember === 'string'
+      ? phoneOrMember
+      : (phoneOrMember.mobileNumber || this.currentPatient?.phone || '9876543210');
+    const member = typeof phoneOrMember === 'string' ? maybeMember! : phoneOrMember;
+
     try {
       const res = await fetch('/api/v1/patient/family-members/add', {
         method: 'POST',
@@ -412,6 +419,22 @@ class PatientApiService {
     }
 
     return null;
+  }
+
+  async submitPreArrivalIntake(intakeData: any): Promise<{ success: boolean; fastPassQrCode?: string; message?: string }> {
+    try {
+      const res = await fetch('/api/v1/patient/intake/submit', {
+        method: 'POST',
+        headers: this.getAuthHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(intakeData)
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (err) {
+      console.warn('Pre-arrival intake submit offline:', err);
+    }
+    return { success: false, message: 'Offline or failed to submit' };
   }
 
   getCurrentPatient(): PatientProfile | null {
@@ -627,3 +650,4 @@ class PatientApiService {
 }
 
 export const patientApiService = new PatientApiService();
+export const patientApi = patientApiService;

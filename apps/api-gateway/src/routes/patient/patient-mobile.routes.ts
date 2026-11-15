@@ -126,12 +126,19 @@ export const PatientVerifyOtpSchema = z.object({
 });
 
 export const PatientAddFamilyMemberSchema = z.object({
-  mobileNumber: z.string().trim().min(10, 'Mobile number must be at least 10 digits'),
+  mobileNumber: z.string().trim().optional(),
+  phone: z.string().trim().optional(),
   fullName: z.string().trim().min(2, 'Name must be at least 2 characters'),
   age: z.number().int().min(1).max(130).default(30),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER']).default('MALE'),
   relationship: z.string().trim().optional(),
   bloodGroup: z.string().trim().optional()
+}).transform((data) => ({
+  ...data,
+  mobileNumber: (data.mobileNumber || data.phone || '').trim()
+})).refine((data) => data.mobileNumber.length >= 10, {
+  message: 'Mobile number must be at least 10 digits',
+  path: ['mobileNumber']
 });
 
 export const PatientDelayAlertSchema = z.object({
@@ -420,7 +427,7 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
   });
 
   // 2b. Fetch All Family Members Linked to Mobile Number
-  app.get('/api/v1/patient/family-members', async (request, reply) => {
+  const getFamilyMembersHandler = async (request: any, reply: any) => {
     const { phone } = request.query as { phone?: string };
     if (!phone) {
       throw new AppError({
@@ -489,10 +496,13 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
       success: true,
       familyMembers: members
     });
-  });
+  };
+
+  app.get('/api/v1/patient/family-members', getFamilyMembersHandler);
+  app.get('/api/v1/patient/auth/family', getFamilyMembersHandler);
 
   // 2c. Add New Family Member under Same Mobile Number
-  app.post('/api/v1/patient/family-members/add', async (request, reply) => {
+  const addFamilyMemberHandler = async (request: any, reply: any) => {
     const payload = PatientAddFamilyMemberSchema.parse(request.body);
 
     // 🛡️ IDOR PROTECTION: Verify caller owns this phone number
@@ -568,6 +578,98 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
         allergies: [],
         activeToken: null
       }
+    });
+  };
+
+  app.post('/api/v1/patient/family-members/add', addFamilyMemberHandler);
+  app.post('/api/v1/patient/auth/family/add', addFamilyMemberHandler);
+
+  // 2d. Paperless Pre-Arrival Digital Intake Submission
+  app.post('/api/v1/patient/intake/submit', async (request, reply) => {
+    const body = (request.body || {}) as any;
+    const phone = body.mobile || body.mobileNumber || body.phone;
+    if (!phone) {
+      throw new AppError({ message: 'Phone number is required for pre-arrival intake', statusCode: 400 });
+    }
+    const { withCountry } = normalizePhone(phone);
+    const db = getDatabase();
+
+    const [partner] = await db
+      .select({ id: operationalPartners.id, tenantId: operationalPartners.tenantId })
+      .from(operationalPartners)
+      .limit(1);
+
+    const tenantId = partner?.tenantId || '11111111-1111-4111-8111-111111111111';
+    const patientName = String(body.patientName || 'Patient').trim();
+    const parts = patientName.split(/\s+/);
+    const firstName = parts[0] || 'Patient';
+    const lastName = parts.slice(1).join(' ') || 'Kumar';
+
+    // Find or create patient
+    const [existingContact] = await db
+      .select({ patientId: patientContacts.patientId })
+      .from(patientContacts)
+      .where(eq(patientContacts.primaryMobile, withCountry))
+      .limit(1);
+
+    let patientId = existingContact?.patientId;
+    if (!patientId) {
+      const newPat = await clinicalWorkflowRepository.createPatient({
+        tenantId,
+        firstName,
+        lastName,
+        gender: 'OTHER',
+        mobileNumber: withCountry
+      });
+      patientId = newPat.id;
+    }
+
+    const [patRecord] = await db.select({ tenantId: patients.tenantId }).from(patients).where(eq(patients.id, patientId)).limit(1);
+    const effectiveTenantId = patRecord?.tenantId || tenantId;
+
+    // Save intake details in metadata
+    await db.execute(sql`
+      UPDATE clinical.patients 
+      SET metadata = jsonb_set(
+        COALESCE(metadata, '{}'::jsonb),
+        '{preArrivalIntake}',
+        ${JSON.stringify({
+          insurance: {
+            insurerName: body.insurerName,
+            policyNumber: body.policyNumber,
+            memberId: body.memberId
+          },
+          abhaId: body.abhaId,
+          chiefComplaints: body.chiefComplaints,
+          allergies: body.allergies || [],
+          chronicConditions: body.chronicConditions || [],
+          currentMedications: body.currentMedications,
+          submittedAt: new Date().toISOString()
+        })}::jsonb
+      )
+      WHERE id = ${patientId};
+    `);
+
+    // Create OPD encounter
+    const encounter = await clinicalWorkflowRepository.createEncounter({
+      tenantId: effectiveTenantId,
+      patientId,
+      encounterType: 'OPD',
+      chiefComplaint: body.chiefComplaints || 'Pre-arrival Paperless Intake'
+    });
+
+    const queueToken = await clinicalWorkflowRepository.createQueueToken({
+      tenantId: effectiveTenantId,
+      encounterId: encounter.id,
+      estimatedWaitMinutes: 10
+    });
+
+    return reply.status(201).send({
+      success: true,
+      message: 'Pre-arrival digital intake recorded! FastPass generated.',
+      fastPassQrCode: `FASTPASS-${queueToken.tokenNumber}-${patientId.slice(0, 6).toUpperCase()}`,
+      tokenNumber: queueToken.tokenNumber,
+      estimatedWaitMinutes: 10
     });
   });
 
