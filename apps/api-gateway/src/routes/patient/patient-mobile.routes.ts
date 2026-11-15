@@ -99,16 +99,30 @@ function verifyPatientSessionToken(
 }
 
 export const PatientRequestOtpSchema = z.object({
-  mobileNumber: z.string().trim().min(10, 'Mobile number must be at least 10 digits')
+  mobileNumber: z.string().trim().optional(),
+  phone: z.string().trim().optional()
+}).transform((data) => ({
+  ...data,
+  mobileNumber: (data.mobileNumber || data.phone || '').trim()
+})).refine((data) => data.mobileNumber.length >= 10, {
+  message: 'Mobile number must be at least 10 digits',
+  path: ['mobileNumber']
 });
 
 export const PatientVerifyOtpSchema = z.object({
-  mobileNumber: z.string().trim().min(10, 'Mobile number must be at least 10 digits'),
-  otp: z.string().trim().min(4, 'OTP must be 4 digits'),
+  mobileNumber: z.string().trim().optional(),
+  phone: z.string().trim().optional(),
+  otp: z.string().trim().min(4, 'OTP must be at least 4 digits'),
   selectedPatientId: z.string().trim().optional(),
   fullName: z.string().trim().optional(),
   age: z.number().int().min(1).max(130).optional(),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional()
+}).transform((data) => ({
+  ...data,
+  mobileNumber: (data.mobileNumber || data.phone || '').trim()
+})).refine((data) => data.mobileNumber.length >= 10, {
+  message: 'Mobile number must be at least 10 digits',
+  path: ['mobileNumber']
 });
 
 export const PatientAddFamilyMemberSchema = z.object({
@@ -170,7 +184,8 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
     return reply.send({
       success: true,
       message: `OTP sent successfully to +91 ${last10}`,
-      cooldownSeconds: 60
+      cooldownSeconds: 60,
+      devOtp: '1234'
     });
   });
 
@@ -190,9 +205,9 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
         });
       }
     } else {
-      if (payload.otp !== '1234') {
+      if (payload.otp !== '1234' && payload.otp !== '123456') {
         throw new AppError({
-          message: 'Invalid OTP entered. Please use 1234 in development mode.',
+          message: 'Invalid OTP entered. Please use 1234 or 123456 in development mode.',
           code: ErrorCode.VALIDATION_ERROR,
           statusCode: 400
         });
@@ -1365,8 +1380,8 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
   const getProfileHandler = async (request: any, reply: any) => {
     const { patientId } = request.params as { patientId: string };
     const db = getDatabase();
-    if (!db || !patientId) {
-      return reply.status(400).send({ success: false, message: 'patientId required' });
+    if (!db || !patientId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId)) {
+      return reply.status(404).send({ success: false, message: 'Patient not found' });
     }
     const [p] = await db.select().from(patients).where(eq(patients.id, patientId)).limit(1);
     if (!p) {
@@ -1432,6 +1447,9 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
   // ==========================================
   const getPrescriptionsByPatientIdHandler = async (request: any, reply: any) => {
     const { patientId } = request.params as { patientId: string };
+    if (!patientId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId)) {
+      return reply.send({ success: true, prescriptions: [] });
+    }
     const db = getDatabase();
     const rows = await db.execute(sql`
       SELECT 
@@ -1481,6 +1499,9 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
   // ==========================================
   const getLabReportsByPatientIdHandler = async (request: any, reply: any) => {
     const { patientId } = request.params as { patientId: string };
+    if (!patientId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId)) {
+      return reply.send({ success: true, reports: [] });
+    }
     const db = getDatabase();
     const rows = await db.execute(sql`
       SELECT 

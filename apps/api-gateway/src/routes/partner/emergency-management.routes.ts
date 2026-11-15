@@ -26,6 +26,20 @@ export const emergencyManagementRoutes: FastifyPluginAsync = async (fastify) => 
     }
   );
 
+
+  // 1b. Emergency Triage Queue Alias
+  fastify.get(
+    '/api/v1/partner/emergency/triage-queue',
+    {
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'read')]
+    },
+    async (request) => {
+      const query = request.query as { status?: string; priority?: string };
+      const data = await emergencyManagementService.getQueue(request.session, query?.status, query?.priority);
+      return { success: true, data };
+    }
+  );
+
   // 2. Emergency Registration
   fastify.post(
     '/api/v1/partner/emergency/registrations',

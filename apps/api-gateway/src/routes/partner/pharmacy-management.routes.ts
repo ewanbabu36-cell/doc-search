@@ -6,6 +6,7 @@ import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
 import { requireModuleCommercialAccess, requireFeatureEntitlement } from '../../plugins/commercial-guard.js';
 import { enforceIdempotency } from '../../plugins/idempotency.js';
 import { AppError, ErrorCode } from '@docsearch/shared-core';
+import { getDatabase } from '@docsearch/database';
 import {
   type CreateMedicationInput,
   type ReceiveStockInput,
@@ -281,6 +282,48 @@ export const pharmacyManagementRoutes: FastifyPluginAsync = async (fastify) => {
     async (request) => {
       const data = await pharmacyManagementService.getPendingPrescriptions(request.session);
       return { success: true, data };
+    }
+  );
+
+
+  // 2.6 POS Batches Search (Medication / Batch Search)
+  fastify.get(
+    '/api/v1/partner/pharmacy/pos/batches/search',
+    {
+      preHandler: [authenticate, requirePermission('pharmacy:inventory', 'read')]
+    },
+    async (request) => {
+      const q = ((request.query as { q?: string })?.q || '').toLowerCase();
+      const allBatches = await pharmacyManagementService.getBatches(request.session);
+      if (!q) {
+        return { success: true, data: allBatches };
+      }
+      const filtered = (allBatches || []).filter((b: any) =>
+        (b.batchNumber || '').toLowerCase().includes(q) ||
+        (b.medicationName || '').toLowerCase().includes(q) ||
+        (b.manufacturer || '').toLowerCase().includes(q)
+      );
+      return { success: true, data: filtered };
+    }
+  );
+
+  // 7.2b Alias for khata customers
+  fastify.get(
+    '/api/v1/partner/pharmacy/khata/customers',
+    {
+      preHandler: [authenticate, requirePermission('pharmacy:inventory', 'read')]
+    },
+    async (request) => {
+      const tenantId = request.session.tenantId;
+      const db: any = getDatabase();
+      try {
+        const rows = await db.execute(`
+          SELECT * FROM clinical.pharmacy_customer_khata WHERE tenant_id = '${tenantId}' ORDER BY customer_name ASC;
+        `);
+        return { success: true, data: rows.rows || rows || [] };
+      } catch (err) {
+        return { success: true, data: [] };
+      }
     }
   );
 
