@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { showToast } from '../utils/feedback';
 
 export type SandboxPersona = 'SOLO_CLINIC' | 'HOSPITAL' | 'PHARMACY' | 'PATHOLOGY';
 
@@ -1204,7 +1205,7 @@ export const InteractiveClinicSandbox: React.FC<Props> = ({
 
                 <button
                   type="button"
-                  onClick={() => alert('Automated audio PBX dispatch sent to attending Physician!')}
+                  onClick={() => showToast('Automated audio PBX dispatch sent to attending Physician!', 'success')}
                   style={{
                     backgroundColor: '#EF4444',
                     color: '#FFF',

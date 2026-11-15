@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Badge, Button } from '@docsearch/ui-kit';
+import { showToast } from '../../utils/feedback.js';
 
 export interface GmvStreamItem {
   streamName: string;
@@ -230,7 +231,7 @@ export const GrossToNetRevenueWaterfallView: React.FC = () => {
             <Button
               size="sm"
               variant="secondary"
-              onClick={() => alert('📄 Form 26Q Electronic Text File Exported for NSDL e-Gov Portal')}
+              onClick={() => showToast('📄 Form 26Q Electronic Text File Exported for NSDL e-Gov Portal', 'success')}
             >
               📥 Export Form 26Q (NSDL)
             </Button>

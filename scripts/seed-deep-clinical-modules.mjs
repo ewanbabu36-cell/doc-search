@@ -1,3 +1,6 @@
+if (!process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = 'postgresql://postgres:password@127.0.0.1:5432/docsearch';
+}
 import { getDatabase, sql } from '../packages/database/dist/index.js';
 
 const CANONICAL_TENANT = '11111111-1111-4111-8111-111111111111';

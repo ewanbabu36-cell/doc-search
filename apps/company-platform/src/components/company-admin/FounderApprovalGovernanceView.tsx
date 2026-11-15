@@ -37,7 +37,8 @@ export const FounderApprovalGovernanceView: React.FC<Props> = ({
 
   const handleApprove = async (id: string) => {
     if (!isFounder) {
-      alert('Access Denied: Only Founder MERAJ SHARIF has the authority to approve form submissions and complete tasks.');
+      setActionMessage('⚠️ Access Denied: Only Founder MERAJ SHARIF has the authority to approve form submissions and complete tasks.');
+      setTimeout(() => setActionMessage(null), 5000);
       return;
     }
     await founderApprovalService.approveRequest(id, 'Approved by Founder MERAJ SHARIF. Task Completed.');
@@ -48,7 +49,8 @@ export const FounderApprovalGovernanceView: React.FC<Props> = ({
 
   const handleReject = async (id: string) => {
     if (!isFounder) {
-      alert('Access Denied: Only Founder MERAJ SHARIF has the authority to reject form submissions.');
+      setActionMessage('⚠️ Access Denied: Only Founder MERAJ SHARIF has the authority to reject form submissions.');
+      setTimeout(() => setActionMessage(null), 5000);
       return;
     }
     const remarks = window.prompt('Enter rejection remarks / reason:');

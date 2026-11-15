@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Input, Select, Badge, TableContainer, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@docsearch/ui-kit';
+import { showConfirm } from '../../utils/feedback.js';
 
 export interface DaycareProcedureMasterItem {
   id: string;
@@ -103,7 +104,8 @@ export const DaycareProcedureMasterView: React.FC = () => {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to remove procedure "${name}"?`)) return;
+    const confirmed = await showConfirm(`Are you sure you want to remove procedure "${name}"?`, 'Remove Procedure');
+    if (!confirmed) return;
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('docsearch_company_token') : null;
       const res = await fetch(`/api/v1/company/masters/daycare-procedures/${id}`, {

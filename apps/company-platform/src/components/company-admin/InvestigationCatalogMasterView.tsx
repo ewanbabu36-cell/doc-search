@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Input, Select, Badge, TableContainer, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@docsearch/ui-kit';
+import { showConfirm } from '../../utils/feedback';
 
 export interface InvestigationMasterItem {
   id: string;
@@ -131,7 +132,8 @@ export const InvestigationCatalogMasterView: React.FC = () => {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to remove "${name}" from the Investigation Catalog?`)) return;
+    const ok = await showConfirm(`Are you sure you want to remove "${name}" from the Investigation Catalog?`, 'Remove Investigation');
+    if (!ok) return;
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('docsearch_company_token') : null;
       const res = await fetch(`/api/v1/company/masters/investigations/${id}`, {

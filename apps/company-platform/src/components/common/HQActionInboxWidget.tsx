@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Badge, Button } from '@docsearch/ui-kit';
+import { showConfirm } from '../../utils/feedback.js';
 import {
   verifyDocumentWithAI,
   type DocumentAiScorecard,
@@ -233,8 +234,9 @@ export const HQActionInboxWidget: React.FC<HQActionInboxWidgetProps> = ({
 
   const handleApprove = async (partner: PendingPartnerItem, scorecard: DocumentAiScorecard) => {
     if (scorecard.status === 'HIGH_RISK_SUSPICIOUS') {
-      const confirmOverride = confirm(
-        `⚠️ HIGH RISK WARNING from EWAN AI:\n\n${scorecard.summary}\n\nAre you absolutely sure you want to bypass AI compliance and approve "${partner.name}"?`
+      const confirmOverride = await showConfirm(
+        `⚠️ HIGH RISK WARNING from EWAN AI:\n\n${scorecard.summary}\n\nAre you absolutely sure you want to bypass AI compliance and approve "${partner.name}"?`,
+        'High Risk Compliance Override'
       );
       if (!confirmOverride) return;
     }
@@ -353,7 +355,11 @@ export const HQActionInboxWidget: React.FC<HQActionInboxWidgetProps> = ({
   };
 
   const handleReject = async (partner: PendingPartnerItem) => {
-    if (!confirm(`Reject partner registration for "${partner.name}"? Registration will be blocked.`)) {
+    const confirmed = await showConfirm(
+      `Reject partner registration for "${partner.name}"? Registration will be blocked.`,
+      'Reject Registration'
+    );
+    if (!confirmed) {
       return;
     }
 

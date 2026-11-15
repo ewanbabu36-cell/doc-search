@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Badge, Button, Card } from '@docsearch/ui-kit';
+import { showConfirm } from '../../utils/feedback';
 import { getAuthToken } from '../../services/api-client.js';
 import {
   type PromotionalCampaignConfig,
@@ -1263,8 +1264,9 @@ export const LaunchOfferManagerView: React.FC = () => {
               <Button
                 variant="outline"
                 size="md"
-                onClick={() => {
-                  if (window.confirm('Reset offer to original launch defaults?')) {
+                onClick={async () => {
+                  const ok = await showConfirm('Reset offer to original launch defaults?', 'Reset Launch Offer');
+                  if (ok) {
                     handleSaveCampaign(DEFAULT_PROMOTIONAL_CAMPAIGN);
                   }
                 }}

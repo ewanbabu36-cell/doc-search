@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { showConfirm } from '../../utils/feedback.js';
 import {
   Card,
   Button,
@@ -335,7 +336,8 @@ export const HqLicenseGovernanceView: React.FC = () => {
 
   const handleRevokeSeat = async (nodeId: string) => {
     if (!selectedLicenseForSeats) return;
-    if (!window.confirm(`Are you sure you want to REVOKE terminal seat ${nodeId}?`)) return;
+    const confirmed = await showConfirm(`Are you sure you want to REVOKE terminal seat ${nodeId}?`, 'Revoke Seat Node');
+    if (!confirmed) return;
     try {
       const token = typeof window !== 'undefined'
         ? (localStorage.getItem('docsearch_company_token') || localStorage.getItem('docsearch_auth_token'))

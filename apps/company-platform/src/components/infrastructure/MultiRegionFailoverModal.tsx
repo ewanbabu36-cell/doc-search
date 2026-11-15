@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { showToast } from '../../utils/feedback';
 
 interface Props {
   isOpen: boolean;
@@ -22,7 +23,7 @@ export const MultiRegionFailoverModal: React.FC<Props> = ({
   const handleExecuteFailover = (e: React.FormEvent) => {
     e.preventDefault();
     if (confirmCode !== 'FAILOVER-CONFIRM') {
-      alert('Please enter FAILOVER-CONFIRM to authorize emergency traffic diversion.');
+      showToast('Please enter FAILOVER-CONFIRM to authorize emergency traffic diversion.', 'warning');
       return;
     }
 

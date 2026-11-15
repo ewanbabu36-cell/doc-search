@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Input, Badge, TableContainer, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@docsearch/ui-kit';
+import { showConfirm } from '../../utils/feedback';
 
 export interface VacutainerItem {
   id: string;
@@ -104,7 +105,8 @@ export const VacutainerCatalogMasterView: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to remove this vacutainer specification from the master catalog?')) return;
+    const ok = await showConfirm('Are you sure you want to remove this vacutainer specification from the master catalog?', 'Remove Vacutainer');
+    if (!ok) return;
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('docsearch_company_token') : null;
       const res = await fetch(`/api/v1/company/masters/vacutainer-tubes/${id}`, {

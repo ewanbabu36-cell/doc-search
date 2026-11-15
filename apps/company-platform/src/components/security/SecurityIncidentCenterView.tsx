@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { SecurityIncidentDto } from '@docsearch/api-contracts';
+import { showToast } from '../../utils/feedback';
 import {
   Card,
   Badge,
@@ -31,8 +32,9 @@ export const SecurityIncidentCenterView: React.FC<SecurityIncidentCenterViewProp
     setActingId(id);
     try {
       await onAcknowledge(id, 'Security officer assigned and actively investigating incident.');
+      showToast('Incident acknowledged.', 'info');
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to acknowledge incident');
+      showToast(err instanceof Error ? err.message : 'Failed to acknowledge incident', 'error');
     } finally {
       setActingId(null);
     }
@@ -42,8 +44,9 @@ export const SecurityIncidentCenterView: React.FC<SecurityIncidentCenterViewProp
     setActingId(id);
     try {
       await onResolve(id, 'Mitigated and verified against security policy baseline.');
+      showToast('Incident resolved successfully.', 'success');
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to resolve incident');
+      showToast(err instanceof Error ? err.message : 'Failed to resolve incident', 'error');
     } finally {
       setActingId(null);
     }

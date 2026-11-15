@@ -13,6 +13,7 @@ import {
   TableCell
 } from '@docsearch/ui-kit';
 import { EmployeeStatusDialog } from './EmployeeStatusDialog.js';
+import { showConfirm } from '../../utils/feedback.js';
 
 export interface EmployeeDirectoryViewProps {
   employees: InternalEmployeeDto[];
@@ -50,8 +51,12 @@ export const EmployeeDirectoryView: React.FC<EmployeeDirectoryViewProps> = ({
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
   const [successBanner, setSuccessBanner] = useState<string | null>(null);
 
-  const handleDeleteEmployee = (emp: InternalEmployeeDto) => {
-    if (!window.confirm(`Founder Master Action: Are you sure you want to permanently terminate and remove staff member "${emp.firstName} ${emp.lastName}" (${emp.employeeCode})?`)) {
+  const handleDeleteEmployee = async (emp: InternalEmployeeDto) => {
+    const confirmed = await showConfirm(
+      `Founder Master Action: Are you sure you want to permanently terminate and remove staff member "${emp.firstName} ${emp.lastName}" (${emp.employeeCode})?`,
+      'Permanent Staff Termination'
+    );
+    if (!confirmed) {
       return;
     }
     if (onDeleteEmployee) {

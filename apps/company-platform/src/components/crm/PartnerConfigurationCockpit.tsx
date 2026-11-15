@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { showConfirm } from '../../utils/feedback';
 
 export interface CapabilityItem {
   code: string;
@@ -189,7 +190,8 @@ export const PartnerConfigurationCockpit: React.FC<PartnerConfigurationCockpitPr
 
   // Rollback to version
   const handleRollback = async (targetVer: number) => {
-    if (!window.confirm(`Are you sure you want to rollback ${partnerName} to configuration version v${targetVer}?`)) {
+    const ok = await showConfirm(`Are you sure you want to rollback ${partnerName} to configuration version v${targetVer}?`, 'Rollback Configuration');
+    if (!ok) {
       return;
     }
     setStatusMsg(null);

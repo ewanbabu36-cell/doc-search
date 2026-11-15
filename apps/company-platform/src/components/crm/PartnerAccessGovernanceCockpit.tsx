@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Badge } from '@docsearch/ui-kit';
+import { showConfirm } from '../../utils/feedback';
 
 export interface GovernanceModule {
   code: string;
@@ -340,7 +341,8 @@ export const PartnerAccessGovernanceCockpit: React.FC<PartnerAccessGovernanceCoc
     const promptMsg = targetVal
       ? `⚠️ DANGER: Are you sure you want to ENGAGE emergency ${switchType} for ${facilityName}? This takes effect immediately.`
       : `Are you sure you want to RELEASE ${switchType} for ${facilityName}?`;
-    if (!window.confirm(promptMsg)) return;
+    const ok = await showConfirm(promptMsg, 'Emergency Kill Switch');
+    if (!ok) return;
 
     // Optimistic UI update
     setData((prev) => {
@@ -952,8 +954,9 @@ export const PartnerAccessGovernanceCockpit: React.FC<PartnerAccessGovernanceCoc
                                 </button>
                                 {u.status === 'ACTIVE' ? (
                                   <button
-                                    onClick={() => {
-                                      if (window.confirm(`Suspend staff user ${u.name}?`)) {
+                                    onClick={async () => {
+                                      const ok = await showConfirm(`Suspend staff user ${u.name}?`, 'Suspend Staff Member');
+                                      if (ok) {
                                         fetch(`/api/v1/company/partners/${partnerId}/governance/staff/${u.id}`, {
                                           method: 'PATCH',
                                           headers: { 'Content-Type': 'application/json' },

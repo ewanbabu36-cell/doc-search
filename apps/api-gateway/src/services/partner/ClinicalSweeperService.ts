@@ -287,12 +287,47 @@ export class ClinicalSweeperService {
 
   /**
    * 3. Run all scheduled sweepers in sequence
+   * Protected with PostgreSQL distributed advisory locks for multi-pod horizontal scalability.
    */
-  async runAllSweepers(tenantId?: string): Promise<AllSweepersResult> {
+  async runAllSweepers(
+    tenantId: string = '11111111-1111-4111-8111-111111111111'
+  ): Promise<AllSweepersResult> {
     if (this.isSweepInProgress) {
       logger.debug('[ClinicalSweeperService] Sweep cycle already in progress; skipping concurrent trigger');
     }
     this.isSweepInProgress = true;
+
+    const db = getDatabase();
+    let lockAcquired = false;
+
+    if (db) {
+      try {
+        const res = await db.execute(sql`SELECT pg_try_advisory_lock(849200) as acquired`);
+        lockAcquired = Boolean((res as any)?.rows?.[0]?.acquired);
+        if (!lockAcquired) {
+          logger.info('[ClinicalSweeperService] Another cluster pod is currently executing clinical sweep; skipping cycle');
+          return {
+            bloodBank: {
+              unitsAutoReleasedCount: 0,
+              releasedUnits: [],
+              preventedBloodWastage: false,
+              timestamp: new Date().toISOString()
+            },
+            bedTurnaround: {
+              escalatedCount: 0,
+              escalatedMissions: [],
+              slaThresholdMinutes: 20,
+              timestamp: new Date().toISOString()
+            },
+            timestamp: new Date().toISOString()
+          };
+        }
+      } catch (err: any) {
+        logger.warn(`[ClinicalSweeperService] Advisory lock check failed (fallback to local mutex): ${err.message}`);
+        lockAcquired = false;
+      }
+    }
+
     try {
       const bloodBank = await this.runBloodBankCrossmatchSweep(tenantId);
       const bedTurnaround = await this.runBedTurnaroundEscalationSweep(tenantId);
@@ -302,6 +337,13 @@ export class ClinicalSweeperService {
         timestamp: new Date().toISOString()
       };
     } finally {
+      if (lockAcquired && db) {
+        try {
+          await db.execute(sql`SELECT pg_advisory_unlock(849200)`);
+        } catch (err: any) {
+          logger.warn(`[ClinicalSweeperService] Error releasing advisory lock: ${err.message}`);
+        }
+      }
       this.isSweepInProgress = false;
     }
   }

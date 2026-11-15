@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { showToast } from '../utils/feedback';
 import {
   resolveIndustryPreset,
   type IndustryVertical,
@@ -140,7 +141,7 @@ export const PublicUniversalBookingView: React.FC<PublicUniversalBookingViewProp
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customerName.trim() || !customerMobile.trim()) {
-      alert('Please fill in your name and a valid mobile number.');
+      showToast('Please fill in your name and a valid mobile number.', 'warning');
       return;
     }
 

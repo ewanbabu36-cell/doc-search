@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { showConfirm } from '../../utils/feedback.js';
 import {
   Card,
   Button,
@@ -368,7 +369,11 @@ export const CommercialPipelineCockpitView: React.FC = () => {
 
   // Handle Plan Archive
   const handleArchivePlan = async (planId: string) => {
-    if (!window.confirm('Are you sure you want to soft-delete / archive this plan? Historical orders remain protected.')) {
+    const confirmed = await showConfirm(
+      'Are you sure you want to soft-delete / archive this plan? Historical orders remain protected.',
+      'Archive Commercial Plan'
+    );
+    if (!confirmed) {
       return;
     }
     try {

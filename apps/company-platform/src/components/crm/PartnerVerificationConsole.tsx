@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Badge } from '@docsearch/ui-kit';
 import { isCompanyDestructiveActionAllowed } from '../../navigation/rolePermissions.js';
+import { showConfirm } from '../../utils/feedback.js';
 
 export interface PendingVerificationItem {
   id: string;
@@ -1201,7 +1202,11 @@ export const PartnerVerificationConsole: React.FC = () => {
     const item = queue.find((q) => q.id === id);
     if (!item) return;
 
-    if (!window.confirm(`Founder Master Action: Are you sure you want to permanently delete the application card for "${item.partnerName}"?`)) {
+    const confirmed = await showConfirm(
+      `Founder Master Action: Are you sure you want to permanently delete the application card for "${item.partnerName}"?`,
+      'Permanent Card Deletion'
+    );
+    if (!confirmed) {
       return;
     }
 

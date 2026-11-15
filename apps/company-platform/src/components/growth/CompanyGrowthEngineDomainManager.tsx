@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Badge, Button, DocSearchSpatialCore3D } from '@docsearch/ui-kit';
+import { showConfirm } from '../../utils/feedback';
 import { HyperlocalClinicSeoRankView } from './HyperlocalClinicSeoRankView.js';
 import { DoctorAffiliateReferralEngineView } from './DoctorAffiliateReferralEngineView.js';
 import { HospitalWhiteLabelStudioView } from './HospitalWhiteLabelStudioView.js';
@@ -310,8 +311,9 @@ export const CompanyGrowthEngineDomainManager: React.FC<CompanyGrowthEngineDomai
     savePlans(updated);
   };
 
-  const handleResetPlansToDefault = () => {
-    if (confirm('Are you sure you want to reset all plans to factory defaults? Any custom created plans will be reset.')) {
+  const handleResetPlansToDefault = async () => {
+    const ok = await showConfirm('Are you sure you want to reset all plans to factory defaults? Any custom created plans will be reset.', 'Reset Care Plans');
+    if (ok) {
       savePlans(DEFAULT_CARE_PLANS);
       setApprovalNotice({
         status: 'APPROVED',
@@ -421,9 +423,10 @@ export const CompanyGrowthEngineDomainManager: React.FC<CompanyGrowthEngineDomai
     setTimeout(() => setApprovalNotice(null), 6000);
   };
 
-  const handleDeletePlan = (id: string) => {
+  const handleDeletePlan = async (id: string) => {
     const planToDelete = plans.find((p) => p.id === id);
-    if (!confirm(`Are you sure you want to permanently delete plan "${planToDelete?.name || id}"?`)) {
+    const ok = await showConfirm(`Are you sure you want to permanently delete plan "${planToDelete?.name || id}"?`, 'Delete Care Plan');
+    if (!ok) {
       return;
     }
     const updated = plans.filter((p) => p.id !== id);

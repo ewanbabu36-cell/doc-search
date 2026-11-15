@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Badge, useTheme, themes, DocSearchLogo } from '@docsearch/ui-kit';
+import { showToast } from '../utils/feedback';
 
 // Lazy-loaded heavy modals and full-page views to drastically reduce landing page bundle size
 const UnifiedHealthcareLoginModal = React.lazy(() => import('./UnifiedHealthcareLoginModal.js').then(m => ({ default: m.UnifiedHealthcareLoginModal })));
@@ -236,7 +237,7 @@ export const DocSearchLandingPage: React.FC = () => {
     e.preventDefault();
     if (!demoForm.hospitalName || !demoForm.phone) return;
     if (demoForm.phone.length !== 10 || !/^[6-9]/.test(demoForm.phone)) {
-      alert('Kripya valid 10-digit Indian mobile number enter karein (starts with 6, 7, 8, or 9).');
+      showToast('Kripya valid 10-digit Indian mobile number enter karein (starts with 6, 7, 8, or 9).', 'warning');
       return;
     }
 

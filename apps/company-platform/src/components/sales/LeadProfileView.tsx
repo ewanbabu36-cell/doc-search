@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { LeadDto, LeadStatus } from '@docsearch/api-contracts';
 import { Card, Button, Badge, FormField, Select } from '@docsearch/ui-kit';
+import { showToast } from '../../utils/feedback';
 
 export interface LeadProfileViewProps {
   lead: LeadDto;
@@ -28,15 +29,16 @@ export const LeadProfileView: React.FC<LeadProfileViewProps> = ({
 
   const handleUpdateStatus = async () => {
     if (!reason.trim()) {
-      alert('Please provide a brief reason for changing the lead status.');
+      showToast('Please provide a brief reason for changing the lead status.', 'warning');
       return;
     }
     setIsSubmitting(true);
     try {
       await onTransitionLead(selectedStatus, reason.trim());
       setReason('');
+      showToast('Lead status updated successfully.', 'success');
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to update lead');
+      showToast(err instanceof Error ? err.message : 'Failed to update lead', 'error');
     } finally {
       setIsSubmitting(false);
     }

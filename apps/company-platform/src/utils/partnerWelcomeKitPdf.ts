@@ -8,6 +8,8 @@
  * - Speed Post / Courier Consignment Docket Information
  */
 
+import { showToast } from './feedback';
+
 export interface PartnerWelcomeKitData {
   partnerId: string;
   partnerName: string;
@@ -481,7 +483,7 @@ export function generateAndDownloadWelcomeKitPdf(data: PartnerWelcomeKitData): v
 export function openPrintableSpeedPostDossier(data: PartnerWelcomeKitData): void {
   const win = window.open('', '_blank', 'width=950,height=800');
   if (!win) {
-    alert('Please allow popups to view printable Speed Post Dossier.');
+    showToast('Please allow popups to view printable Speed Post Dossier.', 'warning');
     return;
   }
 

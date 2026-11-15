@@ -9,6 +9,7 @@ import { Partner360BigScreenModal } from './Partner360BigScreenModal.js';
 import { ExecutiveBentoGrid } from '../common/ExecutiveBentoGrid.js';
 import { UnifiedFilterRibbon, type UnifiedPartnerFilterType } from './UnifiedFilterRibbon.js';
 import { SlideOverPartnerDrawer } from './SlideOverPartnerDrawer.js';
+import { showConfirm } from '../../utils/feedback.js';
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import type {
@@ -1214,7 +1215,11 @@ export const PartnerListView: React.FC<PartnerListViewProps> = ({ onSelectPartne
   };
 
   const handleDeletePartner = async (partnerId: string, tradeName: string, email?: string, slug?: string) => {
-    if (!window.confirm(`Founder Master Action: Are you sure you want to permanently delete partner "${tradeName}"? This action cannot be undone.`)) {
+    const confirmed = await showConfirm(
+      `Founder Master Action: Are you sure you want to permanently delete partner "${tradeName}"? This action cannot be undone.`,
+      'Permanent Partner Deletion'
+    );
+    if (!confirmed) {
       return;
     }
 

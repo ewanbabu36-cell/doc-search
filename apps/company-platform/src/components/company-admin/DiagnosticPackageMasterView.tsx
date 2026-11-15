@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Input, Badge, TableContainer, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@docsearch/ui-kit';
+import { showConfirm } from '../../utils/feedback.js';
 
 export interface DiagnosticPackageItem {
   id: string;
@@ -97,7 +98,8 @@ export const DiagnosticPackageMasterView: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to remove this health package from the master catalog?')) return;
+    const confirmed = await showConfirm('Are you sure you want to remove this health package from the master catalog?', 'Remove Package');
+    if (!confirmed) return;
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('docsearch_company_token') : null;
       const res = await fetch(`/api/v1/company/masters/diagnostic-packages/${id}`, {

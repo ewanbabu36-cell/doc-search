@@ -5,6 +5,7 @@ import type {
   TicketStatus
 } from '@docsearch/api-contracts';
 import { Card, Button, Badge, FormField } from '@docsearch/ui-kit';
+import { showToast } from '../../utils/feedback';
 import { TicketTransitionDialog } from './TicketTransitionDialog.js';
 
 export interface TicketProfileViewProps {
@@ -34,8 +35,9 @@ export const TicketProfileView: React.FC<TicketProfileViewProps> = ({
     try {
       await onAddComment(newComment.trim(), isInternalOnly);
       setNewComment('');
+      showToast('Comment posted successfully.', 'success');
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to post comment');
+      showToast(err instanceof Error ? err.message : 'Failed to post comment', 'error');
     } finally {
       setIsSubmitting(false);
     }
