@@ -140,6 +140,12 @@ export const SurgicalCareConciergeView: React.FC = () => {
   const [kycAadhaarPan, setKycAadhaarPan] = useState('');
   const [kycEligibilityStatus, setKycEligibilityStatus] = useState<string | null>(null);
   const [isApplyingLoan, setIsApplyingLoan] = useState(false);
+  const [conciergeNotice, setConciergeNotice] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const showConciergeNotice = (message: string, type: 'success' | 'error' = 'success') => {
+    setConciergeNotice({ message, type });
+    setTimeout(() => setConciergeNotice(null), 4000);
+  };
 
   useEffect(() => {
     async function loadRealLeads() {
@@ -200,7 +206,7 @@ export const SurgicalCareConciergeView: React.FC = () => {
 
   const handleCheckEmiEligibility = async () => {
     if (!kycMobile || kycMobile.length < 10) {
-      alert('Please enter a valid 10-digit mobile number');
+      showConciergeNotice('Please enter a valid 10-digit mobile number', 'error');
       return;
     }
     setKycEligibilityStatus('VERIFYING');
@@ -242,10 +248,10 @@ export const SurgicalCareConciergeView: React.FC = () => {
         })
       });
       if (res.success && res.data) {
-        alert(`✅ Loan Application Dispatched! Loan Ref: ${res.data.loanReferenceNumber} (${res.data.status})`);
+        showConciergeNotice(`✅ Loan Application Dispatched! Loan Ref: ${res.data.loanReferenceNumber} (${res.data.status})`, 'success');
       }
     } catch (e: any) {
-      alert('Application error: ' + (e?.message || 'Failed'));
+      showConciergeNotice('Application error: ' + (e?.message || 'Failed'), 'error');
     } finally {
       setIsApplyingLoan(false);
     }
@@ -253,6 +259,33 @@ export const SurgicalCareConciergeView: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minHeight: '100%' }}>
+      {conciergeNotice && (
+        <aside
+          role="status"
+          style={{
+            backgroundColor: conciergeNotice.type === 'success' ? '#064E3B' : '#7F1D1D',
+            color: '#FFFFFF',
+            border: `1px solid ${conciergeNotice.type === 'success' ? '#10B981' : '#EF4444'}`,
+            borderRadius: '10px',
+            padding: '12px 18px',
+            fontSize: '0.875rem',
+            fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            boxShadow: '0 4px 14px rgba(0,0,0,0.3)'
+          }}
+        >
+          <span>{conciergeNotice.message}</span>
+          <button
+            type="button"
+            onClick={() => setConciergeNotice(null)}
+            style={{ background: 'none', border: 'none', color: '#FFFFFF', fontSize: '1.1rem', cursor: 'pointer' }}
+          >
+            ×
+          </button>
+        </aside>
+      )}
       {/* Top Banner - Zero Aggregator Commission Promise */}
       <div
         style={{

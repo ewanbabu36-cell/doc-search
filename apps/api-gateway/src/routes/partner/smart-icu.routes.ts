@@ -63,7 +63,7 @@ export const smartIcuRoutes: FastifyPluginAsync = async (fastify) => {
 
   // 1. Ingest Continuous Vitals & Calculate Real-Time NEWS2 / Sepsis Risk Score
   fastify.post('/api/v1/partner/smart-icu/telemetry/ingest', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = (request.body || {}) as IngestTelemetryRequest;
 
     const hr = Number(body.heartRate) || 84;

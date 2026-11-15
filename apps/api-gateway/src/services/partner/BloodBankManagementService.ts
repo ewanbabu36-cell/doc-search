@@ -196,6 +196,58 @@ export class BloodBankManagementService {
       return bloodBankManagementRepository.getPatientTransfusionHistory(session.tenantId, patientId, tx);
     });
   }
+
+  async getDonors(session: SessionContext) {
+    return bloodBankManagementRepository.getDonors(session.tenantId);
+  }
+
+  async getDonations(session: SessionContext) {
+    return bloodBankManagementRepository.getDonations(session.tenantId);
+  }
+
+  async getComponents(session: SessionContext) {
+    return bloodBankManagementRepository.getComponents(session.tenantId);
+  }
+
+  async getRequests(session: SessionContext) {
+    return bloodBankManagementRepository.getRequests(session.tenantId);
+  }
+
+  async getCrossmatches(session: SessionContext) {
+    return bloodBankManagementRepository.getCrossmatches(session.tenantId);
+  }
+
+  async getIssues(session: SessionContext) {
+    return bloodBankManagementRepository.getIssues(session.tenantId);
+  }
+
+  async getTransfusions(session: SessionContext) {
+    return bloodBankManagementRepository.getTransfusions(session.tenantId);
+  }
+
+  async getTests(session: SessionContext) {
+    return bloodBankManagementRepository.getTests(session.tenantId);
+  }
+
+  async getTemperatureLogs(session: SessionContext) {
+    return bloodBankManagementRepository.getTemperatureLogs(session.tenantId);
+  }
+
+  async getScreenings(session: SessionContext) {
+    return bloodBankManagementRepository.getScreenings(session.tenantId);
+  }
+
+  async getQualityChecks(session: SessionContext) {
+    return bloodBankManagementRepository.getQualityChecks(session.tenantId);
+  }
+
+  async getDiscards(session: SessionContext) {
+    return bloodBankManagementRepository.getDiscards(session.tenantId);
+  }
+
+  async getAuditTraces(session: SessionContext) {
+    return bloodBankManagementRepository.getAuditTraces(session.tenantId);
+  }
 }
 
 export const bloodBankManagementService = new BloodBankManagementService();

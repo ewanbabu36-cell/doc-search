@@ -479,7 +479,7 @@ export const rosterRoutes: FastifyPluginAsync = async (fastify) => {
     '/api/v1/partner/roster/yield-optimizer/evaluate-slots',
     { preHandler: [authenticate] },
     async (request, reply) => {
-      const tenantId = request.session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+      const tenantId = request.session?.tenantId || '11111111-1111-4111-8111-111111111111';
       void tenantId;
       const body = (request.body || {}) as {
         doctorId?: string;
@@ -530,7 +530,7 @@ export const rosterRoutes: FastifyPluginAsync = async (fastify) => {
     '/api/v1/partner/roster/yield-optimizer/dispatch-standby-tokens',
     { preHandler: [authenticate] },
     async (request, reply) => {
-      const tenantId = request.session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+      const tenantId = request.session?.tenantId || '11111111-1111-4111-8111-111111111111';
       void tenantId;
       const body = (request.body || {}) as {
         doctorId?: string;

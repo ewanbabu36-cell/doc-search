@@ -43,6 +43,7 @@ export const CustomTestLibraryManagerModal: React.FC<Props> = ({
   const [formPreparation, setFormPreparation] = useState('Routine outpatient non-fasting sample.');
   const [formPrice, setFormPrice] = useState('450');
   const [formParameters, setFormParameters] = useState<ClinicalParameterDef[]>([]);
+  const [deleteConfirmKey, setDeleteConfirmKey] = useState<string | null>(null);
 
   const refreshTests = () => {
     const merged = getMergedClinicalTestLibrary();
@@ -155,13 +156,17 @@ export const CustomTestLibraryManagerModal: React.FC<Props> = ({
   };
 
   const handleDelete = (key: string) => {
-    if (window.confirm(`Delete customized test profile "${key}"?`)) {
-      deleteCustomTestProfile(key);
-      refreshTests();
-      setSelectedKey('CBC');
-      setIsEditing(false);
-      if (onSaved) onSaved();
-    }
+    setDeleteConfirmKey(key);
+  };
+
+  const confirmDeleteAction = () => {
+    if (!deleteConfirmKey) return;
+    deleteCustomTestProfile(deleteConfirmKey);
+    refreshTests();
+    setSelectedKey('CBC');
+    setIsEditing(false);
+    if (onSaved) onSaved();
+    setDeleteConfirmKey(null);
   };
 
   const handleAddParam = () => {
@@ -697,6 +702,89 @@ export const CustomTestLibraryManagerModal: React.FC<Props> = ({
           </div>
         </div>
       </div>
+
+      {deleteConfirmKey && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.75)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 100000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px'
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: '#1E293B',
+              color: '#F8FAFC',
+              borderRadius: '16px',
+              border: '1.5px solid rgba(239, 68, 68, 0.4)',
+              boxShadow: '0 20px 45px rgba(0, 0, 0, 0.6)',
+              padding: '24px',
+              maxWidth: '440px',
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: '1.8rem' }}>⚠️</span>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#EF4444' }}>
+                  Delete Custom Test Profile?
+                </h3>
+                <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#94A3B8' }}>
+                  Profile: {deleteConfirmKey}
+                </p>
+              </div>
+            </div>
+            <p style={{ fontSize: '0.875rem', color: '#CBD5E1', lineHeight: '1.5', margin: 0 }}>
+              Are you sure you want to delete customized test profile "{deleteConfirmKey}"? This action will restore canonical default parameters.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmKey(null)}
+                style={{
+                  backgroundColor: '#334155',
+                  color: '#F8FAFC',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '8px 16px',
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteAction}
+                style={{
+                  backgroundColor: '#EF4444',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '8px 16px',
+                  fontWeight: 800,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Confirm Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -70,7 +70,7 @@ export const ewanSuperBrainRoutes: FastifyPluginAsync = async (fastify) => {
   // ENCLAVE 2: AUTONOMOUS REVENUE LEAKAGE SENTINEL & AUTO-HEAL ENGINE
   // =========================================================================
   fastify.get('/api/v1/partner/ewan/leakage/live-audit', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const db = getDatabase();
 
     let unbilledConsumablesAmount = 3450.00;
@@ -207,7 +207,7 @@ export const ewanSuperBrainRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   fastify.post('/api/v1/partner/ewan/leakage/auto-heal', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = (request.body as AutoHealRequest) || {};
     const db = getDatabase();
 
@@ -302,7 +302,7 @@ export const ewanSuperBrainRoutes: FastifyPluginAsync = async (fastify) => {
   // ENCLAVE 3: SYSTEM-WIDE PENDING BOTTLENECK RADAR & SLA ESCALATION
   // =========================================================================
   fastify.get('/api/v1/partner/ewan/bottlenecks/radar', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const db = getDatabase();
 
     const bottlenecks: any[] = [];
@@ -432,7 +432,7 @@ export const ewanSuperBrainRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   fastify.post('/api/v1/partner/ewan/bottlenecks/escalate', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = request.body as EscalateBottleneckRequest;
     const db = getDatabase();
 
@@ -478,7 +478,7 @@ export const ewanSuperBrainRoutes: FastifyPluginAsync = async (fastify) => {
   // ENCLAVE 4: AUTONOMOUS EXECUTIVE CHIEF OF STAFF & NABH AUDIT BINDER
   // =========================================================================
   fastify.post('/api/v1/partner/ewan/executive/briefing/generate', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = (request.body as BriefingRequest) || {};
     const db = getDatabase();
 
@@ -550,7 +550,7 @@ export const ewanSuperBrainRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   fastify.post('/api/v1/partner/ewan/audit/nabh-binder', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = (request.body as NabhBinderRequest) || {};
     const db = getDatabase();
 

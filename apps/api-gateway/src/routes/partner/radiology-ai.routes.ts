@@ -16,7 +16,7 @@ export const radiologyAiRoutes: FastifyPluginAsync = async (fastify) => {
 
   // 1. Analyze DICOM / ECG Scan with Multi-Modal Computer Vision Engine (<10s Latency)
   fastify.post('/api/v1/partner/radiology-ai/analyze-scan', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = (request.body || {}) as AnalyzeScanRequest;
     const modality = body.modality || 'CR';
     const studyUid = body.studyUid || `STUDY-${Date.now().toString().slice(-8)}`;

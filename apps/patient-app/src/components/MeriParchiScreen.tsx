@@ -21,6 +21,7 @@ export const MeriParchiScreen: React.FC<Props> = ({ language, onBack }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [deleteParchiId, setDeleteParchiId] = useState<string | null>(null);
 
   const showNotification = (msg: string) => {
     setToastMessage(msg);
@@ -69,13 +70,18 @@ export const MeriParchiScreen: React.FC<Props> = ({ language, onBack }) => {
   };
 
   const handleDeleteScanned = (id: string) => {
-    if (confirm(language === 'hi' ? 'क्या आप इस स्कैन किए गए पर्चे को हटाना चाहते हैं?' : 'Delete this scanned record?')) {
-      patientApiService.deleteScannedParchi(id);
-      setScannedParchis((prev) => prev.filter((r) => r.id !== id));
-      if (selectedScannedRecord?.id === id) {
-        setSelectedScannedRecord(null);
-      }
+    setDeleteParchiId(id);
+  };
+
+  const confirmDeleteParchi = () => {
+    if (!deleteParchiId) return;
+    patientApiService.deleteScannedParchi(deleteParchiId);
+    setScannedParchis((prev) => prev.filter((r) => r.id !== deleteParchiId));
+    if (selectedScannedRecord?.id === deleteParchiId) {
+      setSelectedScannedRecord(null);
     }
+    showNotification(language === 'hi' ? 'स्कैन किया गया पर्चा हटा दिया गया है।' : 'Scanned record deleted.');
+    setDeleteParchiId(null);
   };
 
   return (
@@ -723,6 +729,86 @@ export const MeriParchiScreen: React.FC<Props> = ({ language, onBack }) => {
         language={language}
         onRecordSaved={handleRecordSaved}
       />
+
+      {deleteParchiId && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.75)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 100000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px'
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: '#1E293B',
+              color: '#F8FAFC',
+              borderRadius: '16px',
+              border: '1.5px solid rgba(239, 68, 68, 0.4)',
+              boxShadow: '0 20px 45px rgba(0, 0, 0, 0.6)',
+              padding: '24px',
+              maxWidth: '400px',
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: '1.8rem' }}>🗑️</span>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#EF4444' }}>
+                  {language === 'hi' ? 'पर्चा हटाएं?' : 'Delete Record?'}
+                </h3>
+              </div>
+            </div>
+            <p style={{ fontSize: '0.875rem', color: '#CBD5E1', lineHeight: '1.5', margin: 0 }}>
+              {language === 'hi' ? 'क्या आप इस स्कैन किए गए पर्चे को हटाना चाहते हैं?' : 'Are you sure you want to delete this scanned record?'}
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setDeleteParchiId(null)}
+                style={{
+                  backgroundColor: '#334155',
+                  color: '#F8FAFC',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '8px 16px',
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer'
+                }}
+              >
+                {language === 'hi' ? 'रद्द करें' : 'Cancel'}
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteParchi}
+                style={{
+                  backgroundColor: '#EF4444',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '8px 16px',
+                  fontWeight: 800,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer'
+                }}
+              >
+                {language === 'hi' ? 'हटाएं' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

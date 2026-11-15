@@ -162,4 +162,122 @@ export const bloodBankManagementRoutes: FastifyPluginAsync = async (fastify) => 
       return { success: true, data };
     }
   );
+
+  // 11. Blood Bank Dashboard Queries (GET Lists)
+  fastify.get(
+    '/api/v1/partner/blood-bank/donors',
+    { preHandler: [authenticate, requirePermission('clinical:encounters', 'read')] },
+    async (request) => {
+      const data = await bloodBankManagementService.getDonors(request.session);
+      return { success: true, data };
+    }
+  );
+
+  fastify.get(
+    '/api/v1/partner/blood-bank/donations',
+    { preHandler: [authenticate, requirePermission('clinical:encounters', 'read')] },
+    async (request) => {
+      const data = await bloodBankManagementService.getDonations(request.session);
+      return { success: true, data };
+    }
+  );
+
+  fastify.get(
+    '/api/v1/partner/blood-bank/components',
+    { preHandler: [authenticate, requirePermission('clinical:encounters', 'read')] },
+    async (request) => {
+      const data = await bloodBankManagementService.getComponents(request.session);
+      return { success: true, data };
+    }
+  );
+
+  fastify.get(
+    '/api/v1/partner/blood-bank/requests',
+    { preHandler: [authenticate, requirePermission('clinical:encounters', 'read')] },
+    async (request) => {
+      const data = await bloodBankManagementService.getRequests(request.session);
+      return { success: true, data };
+    }
+  );
+
+  fastify.get(
+    '/api/v1/partner/blood-bank/crossmatches',
+    { preHandler: [authenticate, requirePermission('clinical:encounters', 'read')] },
+    async (request) => {
+      const data = await bloodBankManagementService.getCrossmatches(request.session);
+      return { success: true, data };
+    }
+  );
+
+  fastify.get(
+    '/api/v1/partner/blood-bank/issues',
+    { preHandler: [authenticate, requirePermission('clinical:encounters', 'read')] },
+    async (request) => {
+      const data = await bloodBankManagementService.getIssues(request.session);
+      return { success: true, data };
+    }
+  );
+
+  fastify.get(
+    '/api/v1/partner/blood-bank/transfusions',
+    { preHandler: [authenticate, requirePermission('clinical:encounters', 'read')] },
+    async (request) => {
+      const data = await bloodBankManagementService.getTransfusions(request.session);
+      return { success: true, data };
+    }
+  );
+
+  fastify.get(
+    '/api/v1/partner/blood-bank/tests',
+    { preHandler: [authenticate, requirePermission('clinical:encounters', 'read')] },
+    async (request) => {
+      const data = await bloodBankManagementService.getTests(request.session);
+      return { success: true, data };
+    }
+  );
+
+  fastify.get(
+    '/api/v1/partner/blood-bank/temperature-logs',
+    { preHandler: [authenticate, requirePermission('clinical:encounters', 'read')] },
+    async (request) => {
+      const data = await bloodBankManagementService.getTemperatureLogs(request.session);
+      return { success: true, data };
+    }
+  );
+
+  fastify.get(
+    '/api/v1/partner/blood-bank/screenings',
+    { preHandler: [authenticate, requirePermission('clinical:encounters', 'read')] },
+    async (request) => {
+      const data = await bloodBankManagementService.getScreenings(request.session);
+      return { success: true, data };
+    }
+  );
+
+  fastify.get(
+    '/api/v1/partner/blood-bank/quality-checks',
+    { preHandler: [authenticate, requirePermission('clinical:encounters', 'read')] },
+    async (request) => {
+      const data = await bloodBankManagementService.getQualityChecks(request.session);
+      return { success: true, data };
+    }
+  );
+
+  fastify.get(
+    '/api/v1/partner/blood-bank/discards',
+    { preHandler: [authenticate, requirePermission('clinical:encounters', 'read')] },
+    async (request) => {
+      const data = await bloodBankManagementService.getDiscards(request.session);
+      return { success: true, data };
+    }
+  );
+
+  fastify.get(
+    '/api/v1/partner/blood-bank/audit-traces',
+    { preHandler: [authenticate, requirePermission('clinical:encounters', 'read')] },
+    async (request) => {
+      const data = await bloodBankManagementService.getAuditTraces(request.session);
+      return { success: true, data };
+    }
+  );
 };

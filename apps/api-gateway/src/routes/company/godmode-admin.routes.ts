@@ -651,7 +651,7 @@ export const godmodeAdminRoutes: FastifyPluginAsync = async (fastify) => {
   // =========================================================================
   fastify.get('/api/v1/company/godmode/time-travel/replay', async (request, reply) => {
     const query = request.query as any;
-    const tenantId = query.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = query.tenantId || '11111111-1111-4111-8111-111111111111';
     const db = getDatabase();
     let events: any[] = [];
 
@@ -904,7 +904,7 @@ export const godmodeAdminRoutes: FastifyPluginAsync = async (fastify) => {
     const session = (request as any).session;
     const compiledBy = session?.name || session?.actorName || 'Chief Clinical Auditor (Autonomous Ewan Brain)';
     const body = request.body as NabhBinderCompileRequest;
-    const tenantId = body.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = body.tenantId || '11111111-1111-4111-8111-111111111111';
     const tenantName = body.tenantName || 'Apollo City Multi-Specialty Hospital';
 
     const sealPayload = `NABH-5TH-${tenantId}-${Date.now()}`;
@@ -955,7 +955,7 @@ export const godmodeAdminRoutes: FastifyPluginAsync = async (fastify) => {
   // =========================================================================
   fastify.get('/api/v1/company/godmode/steganography/pattern', async (request, reply) => {
     const session = (request as any).session;
-    const tenantId = session?.tenantId || (request.query as any)?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = session?.tenantId || (request.query as any)?.tenantId || '11111111-1111-4111-8111-111111111111';
     const actorId = session?.userId || (request.query as any)?.actorId || 'STAFF-RN-9921';
     const actorName = session?.name || 'Staff Nurse Sunita Rao';
     const clientIp = request.ip || '192.168.31.84';
@@ -1031,7 +1031,7 @@ export const godmodeAdminRoutes: FastifyPluginAsync = async (fastify) => {
       actor_id: 'STAFF-RN-9921',
       actor_name: 'Staff Nurse Sunita Rao',
       client_ip: '192.168.31.84',
-      tenant_id: '6855be07-5298-4148-a571-c51ac49ac7f3',
+      tenant_id: '11111111-1111-4111-8111-111111111111',
       session_hash: '9f82d1c68e3a241b7f0e95c812d4a6f7b3c2e1a90d8f7e6c5b4a3210fedcba98',
       created_at: new Date().toISOString()
     };
@@ -1092,7 +1092,7 @@ export const godmodeAdminRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.post('/api/v1/company/godmode/honeytokens/inject', async (request, reply) => {
     const body = request.body as HoneytokenInjectRequest;
-    const tenantId = body.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = body.tenantId || '11111111-1111-4111-8111-111111111111';
     const tokenType = body.tokenType || 'PATIENT_CHART';
     const decoyEntityId = body.decoyEntityId || `CANARY-${tokenType}-${Date.now().toString(36).toUpperCase()}`;
     const decoyPayload = body.decoyPayload || {
@@ -1199,7 +1199,7 @@ export const godmodeAdminRoutes: FastifyPluginAsync = async (fastify) => {
       return reply.status(400).send({ success: false, error: 'MISSING_CLAIM_ID' });
     }
 
-    const tenantId = body.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = body.tenantId || '11111111-1111-4111-8111-111111111111';
     const insurerId = body.insurerId || 'STAR_HEALTH_ALLIED';
     const justification = body.clinicalJustification || 'Clinical documentation, pre-op diagnostic Troponin-I and invasive coronary angiogram films fully satisfy IRDAI Master Circular 2024 Chapter IV standards.';
     const irdaRef = 'IRDAI/HLT/REG/CIR/2024/084 (Mandatory 48-Hour Settlement & Non-Arbitrary Denial Rule)';

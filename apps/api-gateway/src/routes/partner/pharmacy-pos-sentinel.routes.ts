@@ -41,7 +41,7 @@ export const pharmacyPosSentinelRoutes: FastifyPluginAsync = async (fastify) => 
 
   // 1. GS1 2D DataMatrix & EAN-13 Barcode Parser (<50ms)
   fastify.post('/api/v1/partner/pharmacy-pos/barcode/scan', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = request.body as BarcodeScanRequest;
     const rawBarcode = body.rawBarcodeString || '08901234567891';
 
@@ -108,7 +108,7 @@ export const pharmacyPosSentinelRoutes: FastifyPluginAsync = async (fastify) => 
 
   // 2. Strict FEFO (First-Expiry-First-Out) Transaction Lock
   fastify.post('/api/v1/partner/pharmacy-pos/fefo/validate-batch', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = request.body as FefoValidateRequest;
 
     const itemCode = body.itemCode || 'MED-AUG-625';
@@ -160,7 +160,7 @@ export const pharmacyPosSentinelRoutes: FastifyPluginAsync = async (fastify) => 
 
   // 3. Statutory Schedule H1 / Schedule X Narcotics Dual-Signature Register
   fastify.post('/api/v1/partner/pharmacy-pos/schedule-h1/dispense', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = request.body as ScheduleH1DispenseRequest;
 
     const entryId = `H1-REG-${Date.now().toString(36).toUpperCase()}`;
@@ -211,7 +211,7 @@ export const pharmacyPosSentinelRoutes: FastifyPluginAsync = async (fastify) => 
 
   // 4. Pharmacy Counter POS Checkout & Thermal Receipt Payload (Atomic Transaction Boundary)
   fastify.post('/api/v1/partner/pharmacy-pos/bill/checkout', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = request.body as BillCheckoutRequest;
 
     const invoiceNumber = `PHARM-INV-${Date.now().toString(36).toUpperCase()}`;

@@ -10,7 +10,8 @@ import {
   transfusionRecords,
   eq,
   and,
-  desc
+  desc,
+  sql
 } from '@docsearch/database';
 import { AppError, ErrorCode, createLogger } from '@docsearch/shared-core';
 
@@ -1115,6 +1116,82 @@ export class BloodBankManagementRepository {
         statusCode: 503
       });
     }
+  }
+
+  async getDonors(tenantId: string) {
+    const db = requireDb();
+    const rows = await db.select().from(bloodDonors).where(eq(bloodDonors.tenantId, tenantId)).orderBy(desc(bloodDonors.createdAt));
+    return rows;
+  }
+
+  async getDonations(tenantId: string) {
+    const db = requireDb();
+    const rows = await db.select().from(bloodDonations).where(eq(bloodDonations.tenantId, tenantId)).orderBy(desc(bloodDonations.collectedAt));
+    return rows;
+  }
+
+  async getComponents(tenantId: string) {
+    return this.getInventory(tenantId);
+  }
+
+  async getRequests(tenantId: string) {
+    const db = requireDb();
+    const rows = await db.select().from(bloodRequests).where(eq(bloodRequests.tenantId, tenantId)).orderBy(desc(bloodRequests.requestedAt));
+    return rows;
+  }
+
+  async getCrossmatches(tenantId: string) {
+    const db = requireDb();
+    const rows = await db.select().from(bloodCrossmatches).where(eq(bloodCrossmatches.tenantId, tenantId)).orderBy(desc(bloodCrossmatches.crossmatchedAt));
+    return rows;
+  }
+
+  async getIssues(tenantId: string) {
+    const db = requireDb();
+    const rows = await db.select().from(bloodIssues).where(eq(bloodIssues.tenantId, tenantId)).orderBy(desc(bloodIssues.issuedAt));
+    return rows;
+  }
+
+  async getTransfusions(tenantId: string) {
+    const db = requireDb();
+    const rows = await db.select().from(transfusionRecords).where(eq(transfusionRecords.tenantId, tenantId)).orderBy(desc(transfusionRecords.startTime));
+    return rows;
+  }
+
+  async getTests(tenantId: string) {
+    const db = requireDb();
+    const rows = await db.select().from(bloodTests).where(eq(bloodTests.tenantId, tenantId)).orderBy(desc(bloodTests.testedAt));
+    return rows;
+  }
+
+  async getTemperatureLogs(tenantId: string) {
+    const db = requireDb();
+    const res = await db.execute(sql`SELECT * FROM clinical.blood_temperature_logs WHERE tenant_id = ${tenantId} ORDER BY recorded_at DESC LIMIT 50`);
+    return res.rows || [];
+  }
+
+  async getScreenings(tenantId: string) {
+    const db = requireDb();
+    const res = await db.execute(sql`SELECT * FROM clinical.blood_donor_screenings WHERE tenant_id = ${tenantId} ORDER BY screened_at DESC LIMIT 50`);
+    return res.rows || [];
+  }
+
+  async getQualityChecks(tenantId: string) {
+    const db = requireDb();
+    const res = await db.execute(sql`SELECT * FROM clinical.blood_quality_checks WHERE tenant_id = ${tenantId} ORDER BY checked_at DESC LIMIT 50`);
+    return res.rows || [];
+  }
+
+  async getDiscards(tenantId: string) {
+    const db = requireDb();
+    const res = await db.execute(sql`SELECT * FROM clinical.blood_discard_records WHERE tenant_id = ${tenantId} ORDER BY discarded_at DESC LIMIT 50`);
+    return res.rows || [];
+  }
+
+  async getAuditTraces(tenantId: string) {
+    const db = requireDb();
+    const res = await db.execute(sql`SELECT * FROM clinical.blood_bank_audit_events WHERE tenant_id = ${tenantId} ORDER BY "timestamp" DESC LIMIT 50`);
+    return res.rows || [];
   }
 }
 

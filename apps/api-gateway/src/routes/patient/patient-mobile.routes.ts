@@ -357,7 +357,7 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
         .where(eq(operationalFacilities.tenantId, partner?.tenantId || ''))
         .limit(1);
 
-      const tenantId = partner?.tenantId || '00000000-0000-0000-0000-000000000000';
+      const tenantId = partner?.tenantId || '11111111-1111-4111-8111-111111111111';
       const partnerId = partner?.id;
       const organizationId = org?.id;
       const branchId = facility?.id;
@@ -537,7 +537,7 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
       .where(eq(operationalFacilities.tenantId, partner?.tenantId || ''))
       .limit(1);
 
-    const tenantId = partner?.tenantId || '00000000-0000-0000-0000-000000000000';
+    const tenantId = partner?.tenantId || '11111111-1111-4111-8111-111111111111';
     const partnerId = partner?.id;
     const organizationId = org?.id;
     const branchId = facility?.id;
@@ -1351,7 +1351,7 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
         .from(operationalPartners)
         .limit(1);
 
-      const tenantId = partner?.tenantId || '00000000-0000-0000-0000-000000000000';
+      const tenantId = partner?.tenantId || '11111111-1111-4111-8111-111111111111';
       const createdInput: any = {
         tenantId,
         firstName: 'Patient',

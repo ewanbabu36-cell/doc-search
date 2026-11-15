@@ -21,7 +21,7 @@ export const bloodBankSentinelRoutes: FastifyPluginAsync = async (fastify) => {
 
   // 1. Ingest Continuous Cold-Chain Temperature Telemetry
   fastify.post('/api/v1/partner/blood-bank/iot/telemetry-stream', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = request.body as IotTelemetryRequest;
 
     const storageUnitId = body.storageUnitId || 'PRBC-CHILLER-01';
@@ -75,7 +75,7 @@ export const bloodBankSentinelRoutes: FastifyPluginAsync = async (fastify) => {
 
   // 2. Surgical Cross-Match Reservation (48-Hour Hold)
   fastify.post('/api/v1/partner/blood-bank/crossmatch/reserve', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = request.body as CrossmatchReserveRequest;
 
     const reservationId = `RES-${Date.now().toString(36).toUpperCase()}`;
@@ -124,7 +124,7 @@ export const bloodBankSentinelRoutes: FastifyPluginAsync = async (fastify) => {
 
   // 3. Automated 48-Hour Cross-Match Reservation Sweep
   fastify.post('/api/v1/partner/blood-bank/crossmatch/auto-expire-sweep', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const db = getDatabase();
 
     const simulatedExpiredUnits = [
@@ -174,7 +174,7 @@ export const bloodBankSentinelRoutes: FastifyPluginAsync = async (fastify) => {
 
   // 4. Real-Time Blood Bank Inventory Summary
   fastify.get('/api/v1/partner/blood-bank/inventory/summary', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const db = getDatabase();
 
     let units: any[] = [];

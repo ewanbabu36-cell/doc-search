@@ -83,7 +83,7 @@ export const pmjaySchemeRoutes: FastifyPluginAsync = async (fastify) => {
 
   // 3. Pre-Auth Initiation with Mandatory Documentation Gate
   fastify.post('/api/v1/partner/pmjay/pre-auth/initiate', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = request.body as InitiatePreauthRequest;
 
     const beneficiaryName = body.beneficiaryName || 'Chhote Lal';
@@ -143,7 +143,7 @@ export const pmjaySchemeRoutes: FastifyPluginAsync = async (fastify) => {
 
   // 4. Zero-Balance Billing Claim Adjudication
   fastify.post('/api/v1/partner/pmjay/claims/adjudicate-package', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = request.body as AdjudicatePackageClaimRequest;
 
     const caseRef = body.caseRef || 'PMJAY-CASE-DEMO';

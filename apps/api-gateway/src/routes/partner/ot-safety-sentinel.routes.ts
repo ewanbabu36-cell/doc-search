@@ -39,7 +39,7 @@ export const otSafetySentinelRoutes: FastifyPluginAsync = async (fastify) => {
 
   // 1. Anaesthesia Pre-Op Clearance (PAC) Hard-Gate
   fastify.post('/api/v1/partner/ot-safety/pac/sign-clearance', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = request.body as PacSignRequest;
 
     const caseId = body.caseId || `OT-CASE-${Date.now().toString(36).toUpperCase()}`;
@@ -119,7 +119,7 @@ export const otSafetySentinelRoutes: FastifyPluginAsync = async (fastify) => {
 
   // 2. Digital WHO 3-Phase Safe Surgery Checklist
   fastify.post('/api/v1/partner/ot-safety/checklist/phase', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = request.body as ChecklistPhaseRequest;
 
     const caseId = body.caseId;
@@ -168,7 +168,7 @@ export const otSafetySentinelRoutes: FastifyPluginAsync = async (fastify) => {
 
   // 3. Dual-Nurse Surgical Count Reconciliation
   fastify.post('/api/v1/partner/ot-safety/reconciliation/count-tray', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = request.body as CountTrayRequest;
 
     const caseId = body.caseId;
@@ -225,7 +225,7 @@ export const otSafetySentinelRoutes: FastifyPluginAsync = async (fastify) => {
 
   // 4. CSSD Sterile Autoclave Batches Query
   fastify.get('/api/v1/partner/ot-safety/cssd/autoclave-batches', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const db = getDatabase();
 
     let batches: any[] = [];

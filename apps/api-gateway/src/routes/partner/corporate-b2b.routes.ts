@@ -37,7 +37,7 @@ export const corporateB2bRoutes: FastifyPluginAsync = async (fastify) => {
 
   // 2. Bulk Enroll Corporate Employees & Allocate Family Health Passes
   fastify.post('/api/v1/partner/corporate-b2b/employees/bulk-enroll', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = (request.body || {}) as BulkEnrollRequest;
     const emps = body.employees || [];
     const contractCode = body.contractCode || 'CORP-TCS-2026';

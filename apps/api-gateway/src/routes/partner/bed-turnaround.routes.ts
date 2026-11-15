@@ -21,7 +21,7 @@ export const bedTurnaroundRoutes: FastifyPluginAsync = async (fastify) => {
 
   // 1. Dispatch Cleaning Mission upon Discharge Sign-Off
   fastify.post('/api/v1/partner/bed-turnaround/dispatch-cleaning-token', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = (request.body || {}) as DispatchCleaningRequest;
 
     const bedNumber = body.bedNumber || 'BED-204-DELUXE';
@@ -62,7 +62,7 @@ export const bedTurnaroundRoutes: FastifyPluginAsync = async (fastify) => {
 
   // 2. Scan Headboard QR to Update Bed Cleaning & Sterilization Status
   fastify.post('/api/v1/partner/bed-turnaround/scan-bed-status', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = (request.body || {}) as ScanBedStatusRequest;
 
     const bedNumber = body.bedNumber || 'BED-204-DELUXE';

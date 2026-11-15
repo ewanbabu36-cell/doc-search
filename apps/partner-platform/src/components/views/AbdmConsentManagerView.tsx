@@ -50,7 +50,7 @@ export const AbdmConsentManagerView: React.FC<AbdmConsentManagerViewProps> = ({
     setDownloadingAbha(abhaAddress);
     setTimeout(() => {
       setDownloadingAbha(null);
-      alert(`🪪 ABDM Health ID Card generated for ${name} (${abhaAddress}). NHA QR Code & Digital Signature Verified.`);
+      setPushStatus(`🪪 ABDM Health ID Card generated for ${name} (${abhaAddress}). NHA QR Code & Digital Signature Verified.`);
     }, 600);
   };
 

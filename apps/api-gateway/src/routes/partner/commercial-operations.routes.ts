@@ -97,7 +97,7 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
 
   // Apply for Surgery 0% EMI Loan
   fastify.post('/api/v1/partner/billing/surgery-financing/apply', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = request.body as any;
     const db = getDatabase();
 
@@ -137,7 +137,7 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
 
   // List Surgery EMI Applications
   fastify.get('/api/v1/partner/billing/surgery-financing/applications', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const db = getDatabase();
 
     const apps = await db.select().from(surgeryEmiApplications)
@@ -149,7 +149,7 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
 
   // List Surgery Concierge Leads
   fastify.get('/api/v1/partner/billing/surgery-concierge/leads', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const db = getDatabase();
 
     const leads = await db.select().from(surgeryConciergeLeads)
@@ -242,7 +242,7 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
 
   // Disburse 0% Medical Loan to Hospital Escrow
   fastify.post('/api/v1/partner/commercial/surgery-financing/disburse-loan', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = (request.body || {}) as {
       patientUhId?: string;
       patientName?: string;
@@ -301,7 +301,7 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
 
   // Create or Update Surgery Concierge Lead
   fastify.post('/api/v1/partner/billing/surgery-concierge/leads', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = request.body as any;
     const db = getDatabase();
 
@@ -333,7 +333,7 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
 
   // Get Doctor Payout Configurations
   fastify.get('/api/v1/partner/billing/doctor-payouts/configs', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const db = getDatabase();
 
     const configs = await db.select().from(doctorPayoutConfigurations)
@@ -345,7 +345,7 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
 
   // Create or Update Doctor Payout Configuration
   fastify.post('/api/v1/partner/billing/doctor-payouts/configs', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = request.body as any;
     const db = getDatabase();
 
@@ -367,7 +367,7 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
 
   // Generate Automated EOD Doctor Settlement with Dynamic Statutory TDS & NMC Ethics Declaration
   fastify.post('/api/v1/partner/billing/doctor-payouts/settlements/generate', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = request.body as any;
     const db = getDatabase();
 
@@ -449,7 +449,7 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
 
   // Get Settlement Vouchers
   fastify.get('/api/v1/partner/billing/doctor-payouts/settlements', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const db = getDatabase();
 
     const vouchers = await db.select().from(doctorSettlementVouchers)
@@ -501,7 +501,7 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
 
   // Subscribe to Care Pass
   fastify.post('/api/v1/partner/billing/care-passes/subscribe', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = request.body as any;
     const db = getDatabase();
 
@@ -537,7 +537,7 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
 
   // Get Active Care Passes
   fastify.get('/api/v1/partner/billing/care-passes/active', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const db = getDatabase();
 
     const passes = await db.select().from(patientCarePasses)
@@ -549,7 +549,7 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
 
   // Topup Health Wallet with Promotional Bonus
   fastify.post('/api/v1/partner/billing/care-passes/wallet-topup', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = request.body as any;
     const db = getDatabase();
 
@@ -579,7 +579,7 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
 
   // Generic PMBJP Substitution Catalog
   fastify.get('/api/v1/partner/pharmacy/generic-substitutions', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const query = (request.query as any)?.q?.toLowerCase() || '';
     const db = getDatabase();
 
@@ -608,7 +608,7 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
 
   // Chronic Refill Radar
   fastify.get('/api/v1/partner/pharmacy/chronic-refills/radar', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const db = getDatabase();
 
     const radars = await db.select().from(pharmacyChronicRefillRadars)
@@ -644,7 +644,7 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
 
   // Phlebotomist Fleet
   fastify.get('/api/v1/partner/diagnostics/phlebotomist-fleet', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const db = getDatabase();
 
     const fleet = await db.select().from(phlebotomistFleets)
@@ -656,7 +656,7 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
 
   // Home Collection Orders
   fastify.get('/api/v1/partner/diagnostics/home-collections', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const db = getDatabase();
 
     const orders = await db.select().from(homeCollectionOrders)
@@ -706,7 +706,7 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
 
   // Pre-Auth Claim Scrubber Engine (Pre-scrubs before IRDAI / NHCX 2.0 submission)
   fastify.post('/api/v1/partner/billing/rcm/scrub-claim', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = request.body as any;
     const db = getDatabase();
 
@@ -852,7 +852,7 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
   });
 
   fastify.get('/api/v1/partner/billing/doctor-payouts/volume-tiers', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const db = getDatabase();
     const tiers = await db.select().from(doctorVolumePayoutTiers).where(eq(doctorVolumePayoutTiers.tenantId, tenantId));
     return reply.send({ success: true, data: tiers });
@@ -874,7 +874,7 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
 
   // --- PILLAR 2: Family Health Tree, OTP Wallet Deduction & Cart Recovery ---
   fastify.get('/api/v1/partner/billing/care-passes/family-tree', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const phone = (request.query as any)?.phone || '+91 98118 77665';
     const db = getDatabase();
     const members = await db.select().from(patientFamilyHealthMembers)
@@ -884,7 +884,7 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
   });
 
   fastify.post('/api/v1/partner/billing/care-passes/family-tree', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = request.body as any;
     const db = getDatabase();
 
@@ -939,7 +939,7 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
 
   // --- PILLAR 3: Pharmacy B2B POs, GRN Inspector & RTV Debit Notes ---
   fastify.post('/api/v1/partner/pharmacy/b2b/generate-po', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = request.body as any;
     const db = getDatabase();
 
@@ -985,7 +985,7 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
   });
 
   fastify.post('/api/v1/partner/pharmacy/b2b/generate-rtv-debit-note', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = request.body as any;
     const db = getDatabase();
 
@@ -1026,7 +1026,7 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
 
   // --- PILLAR 4: Diagnostic Health Packages & Sign-and-Dispatch ---
   fastify.get('/api/v1/partner/diagnostics/packages', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const db = getDatabase();
     const pkgs = await db.select().from(diagnosticHealthPackages).where(eq(diagnosticHealthPackages.tenantId, tenantId));
     return reply.send({ success: true, data: pkgs });
@@ -1048,14 +1048,14 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
 
   // --- PILLAR 5: Corporate TPA Master, AR Aging & NHCX 2.0 Payload ---
   fastify.get('/api/v1/partner/billing/tpa/corporate-clients', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const db = getDatabase();
     const clients = await db.select().from(corporateTpaClients).where(eq(corporateTpaClients.tenantId, tenantId));
     return reply.send({ success: true, data: clients });
   });
 
   fastify.get('/api/v1/partner/billing/tpa/ar-aging', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const db = getDatabase();
     const clients = await db.select().from(corporateTpaClients).where(eq(corporateTpaClients.tenantId, tenantId));
 
@@ -1151,14 +1151,14 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
   });
 
   fastify.get('/api/v1/partner/commercial/comm-wallet', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const db = getDatabase();
     const [wallet] = await db.select().from(saasCommunicationWallets).where(eq(saasCommunicationWallets.tenantId, tenantId));
     return reply.send({ success: true, data: wallet });
   });
 
   fastify.post('/api/v1/partner/commercial/comm-wallet/recharge', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const amount = Number((request.body as any)?.amount) || 1000;
     const db = getDatabase();
 
@@ -1178,14 +1178,14 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
   });
 
   fastify.get('/api/v1/partner/commercial/addons', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const db = getDatabase();
     const addons = await db.select().from(saasMarketplaceAddons).where(eq(saasMarketplaceAddons.tenantId, tenantId));
     return reply.send({ success: true, data: addons });
   });
 
   fastify.post('/api/v1/partner/commercial/addons/toggle', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = request.body as any;
     const db = getDatabase();
 

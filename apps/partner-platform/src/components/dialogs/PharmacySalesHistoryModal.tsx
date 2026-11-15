@@ -21,6 +21,7 @@ export const PharmacySalesHistoryModal: React.FC<PharmacySalesHistoryModalProps>
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPeriod, setFilterPeriod] = useState<'ALL' | 'TODAY' | 'WEEK'>('ALL');
+  const [confirmAction, setConfirmAction] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
 
   // Filter invoices dynamically based on search query and date period
   const filteredInvoices = useMemo(() => {
@@ -112,9 +113,13 @@ export const PharmacySalesHistoryModal: React.FC<PharmacySalesHistoryModalProps>
               <Button
                 variant="outline"
                 onClick={() => {
-                  if (window.confirm('Are you sure you want to clear the entire sales history?')) {
-                    onClearHistory();
-                  }
+                  setConfirmAction({
+                    title: 'Clear Entire Sales History?',
+                    message: 'Are you sure you want to clear the entire sales history? This action cannot be undone.',
+                    onConfirm: () => {
+                      if (onClearHistory) onClearHistory();
+                    }
+                  });
                 }}
                 style={{ fontSize: '0.72rem', padding: '4px 8px', color: '#EF4444', borderColor: '#FCA5A5' }}
               >
@@ -392,9 +397,13 @@ export const PharmacySalesHistoryModal: React.FC<PharmacySalesHistoryModalProps>
                           <button
                             type="button"
                             onClick={() => {
-                              if (window.confirm(`Are you sure you want to delete invoice #${inv.invoiceNumber}?`)) {
-                                onDeleteInvoice(inv.invoiceNumber);
-                              }
+                              setConfirmAction({
+                                title: 'Delete Invoice?',
+                                message: `Are you sure you want to delete invoice #${inv.invoiceNumber}?`,
+                                onConfirm: () => {
+                                  onDeleteInvoice(inv.invoiceNumber);
+                                }
+                              });
                             }}
                             style={{
                               background: 'none',
@@ -415,6 +424,90 @@ export const PharmacySalesHistoryModal: React.FC<PharmacySalesHistoryModalProps>
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {confirmAction && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            style={{
+              position: 'fixed',
+              inset: 0,
+              backgroundColor: 'rgba(15, 23, 42, 0.75)',
+              backdropFilter: 'blur(4px)',
+              zIndex: 100000,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '16px'
+            }}
+          >
+            <div
+              style={{
+                backgroundColor: '#1E293B',
+                color: '#F8FAFC',
+                borderRadius: '16px',
+                border: '1.5px solid rgba(239, 68, 68, 0.4)',
+                boxShadow: '0 20px 45px rgba(0, 0, 0, 0.6)',
+                padding: '24px',
+                maxWidth: '440px',
+                width: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontSize: '1.8rem' }}>⚠️</span>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#EF4444' }}>
+                    {confirmAction.title}
+                  </h3>
+                </div>
+              </div>
+              <p style={{ fontSize: '0.875rem', color: '#CBD5E1', lineHeight: '1.5', margin: 0 }}>
+                {confirmAction.message}
+              </p>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setConfirmAction(null)}
+                  style={{
+                    backgroundColor: '#334155',
+                    color: '#F8FAFC',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '8px 16px',
+                    fontWeight: 700,
+                    fontSize: '0.85rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const action = confirmAction.onConfirm;
+                    setConfirmAction(null);
+                    action();
+                  }}
+                  style={{
+                    backgroundColor: '#EF4444',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '8px 16px',
+                    fontWeight: 800,
+                    fontSize: '0.85rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Confirm
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

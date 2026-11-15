@@ -135,7 +135,7 @@ export const emergencyManagementRoutes: FastifyPluginAsync = async (fastify) => 
     '/api/v1/partner/emergency/ambulance/telemetry-stream',
     { preHandler: [authenticate] },
     async (request, reply) => {
-      const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+      const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
       const body = (request.body || {}) as {
         vehicleNumber?: string;
         patientName?: string;
@@ -197,7 +197,7 @@ export const emergencyManagementRoutes: FastifyPluginAsync = async (fastify) => 
     '/api/v1/partner/emergency/ambulance/stage-trauma-bay',
     { preHandler: [authenticate] },
     async (request, reply) => {
-      const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+      const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
       const body = (request.body || {}) as {
         vehicleNumber?: string;
         patientName?: string;
