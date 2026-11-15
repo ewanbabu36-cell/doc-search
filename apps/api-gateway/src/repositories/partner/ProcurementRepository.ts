@@ -15,7 +15,11 @@ import {
   eq,
   and,
   desc,
-  count
+  count,
+  inArray,
+  ilike,
+  or,
+  sql
 } from '@docsearch/database';
 import { createLogger } from '@docsearch/shared-core';
 
@@ -135,6 +139,8 @@ export interface PurchaseOrderRecord {
   totalMinorUnits: number;
   paymentTerms: string;
   shippingAddress: string;
+  deliveryLocation?: string;
+  isEmergency?: boolean;
   status?: string;
   approvedBy?: string;
   approvedAt?: Date;
@@ -606,22 +612,140 @@ export class ProcurementRepository {
     return null;
   }
 
-  // 4. Purchase Orders
-  async getPurchaseOrders(tenantId: string) {
+  // 4. Purchase Orders (Dynamic Query Permutations: Departments, Status, Vendor, Search)
+  async getPurchaseOrders(tenantId: string, filters?: {
+    departments?: string | string[];
+    department?: string | string[];
+    status?: string | string[];
+    vendorId?: string | string[];
+    isEmergency?: string | boolean;
+    search?: string;
+    limit?: number | string;
+    offset?: number | string;
+    page?: number | string;
+  }) {
+    const deptRaw = filters?.departments || filters?.department;
+    const deptList: string[] = Array.isArray(deptRaw)
+      ? deptRaw.map(String).map((s) => s.trim()).filter(Boolean)
+      : deptRaw
+      ? String(deptRaw).split(',').map((s) => s.trim()).filter(Boolean)
+      : [];
+
+    const statusRaw = filters?.status;
+    const statusList: string[] = Array.isArray(statusRaw)
+      ? statusRaw.map(String).map((s) => s.trim()).filter(Boolean)
+      : statusRaw
+      ? String(statusRaw).split(',').map((s) => s.trim()).filter(Boolean)
+      : [];
+
+    const vendorId = filters?.vendorId ? String(filters.vendorId).trim() : undefined;
+    const search = filters?.search ? String(filters.search).trim() : undefined;
+    const isEmergency = filters?.isEmergency !== undefined
+      ? String(filters.isEmergency).toLowerCase() === 'true'
+      : undefined;
+
     const db = getDb();
     if (db) {
       try {
-        const rows = await db
+        const conditions: any[] = [eq(purchaseOrders.tenantId, tenantId)];
+
+        if (statusList.length > 0) {
+          conditions.push(inArray(purchaseOrders.status, statusList));
+        }
+        if (vendorId) {
+          conditions.push(eq(purchaseOrders.vendorId, vendorId));
+        }
+        if (isEmergency !== undefined) {
+          conditions.push(eq(purchaseOrders.isEmergency, isEmergency));
+        }
+        if (deptList.length > 0) {
+          const deptSubqueries = deptList.map(
+            (dept) => sql`(EXISTS (
+              SELECT 1 FROM clinical.purchase_requisitions pr
+              WHERE pr.id = ${purchaseOrders.requisitionId}
+                AND pr.department_name ILIKE ${'%' + dept + '%'}
+            ) OR ${purchaseOrders.deliveryLocation} ILIKE ${'%' + dept + '%'})`
+          );
+          conditions.push(or(...deptSubqueries)!);
+        }
+        if (search) {
+          conditions.push(
+            or(
+              ilike(purchaseOrders.poNumber, '%' + search + '%'),
+              ilike(purchaseOrders.vendorName, '%' + search + '%'),
+              ilike(purchaseOrders.deliveryLocation, '%' + search + '%')
+            )!
+          );
+        }
+
+        let query = db
           .select()
           .from(purchaseOrders)
-          .where(eq(purchaseOrders.tenantId, tenantId))
+          .where(and(...conditions))
           .orderBy(desc(purchaseOrders.createdAt));
-        if (rows.length > 0) return rows;
+
+        const limitNum = filters?.limit ? Math.max(1, Number(filters.limit) || 50) : undefined;
+        const pageNum = filters?.page ? Math.max(1, Number(filters.page) || 1) : 1;
+        const offsetNum = filters?.offset !== undefined
+          ? Math.max(0, Number(filters.offset) || 0)
+          : limitNum ? (pageNum - 1) * limitNum : undefined;
+
+        if (limitNum) {
+          query = query.limit(limitNum) as any;
+        }
+        if (offsetNum !== undefined && offsetNum > 0) {
+          query = query.offset(offsetNum) as any;
+        }
+
+        const rows = await query;
+        if (rows.length > 0 || deptList.length > 0 || statusList.length > 0 || vendorId || search) {
+          return rows;
+        }
       } catch (err) {
         logger.warn('DB getPurchaseOrders fallback:');
       }
     }
-    return this.poStore.filter(p => p.tenantId === tenantId);
+
+    // Identical In-Memory Filter Pipeline (Zero In-Memory vs SQL Drift)
+    let memoryRows = this.poStore.filter((p) => p.tenantId === tenantId);
+    if (statusList.length > 0) {
+      memoryRows = memoryRows.filter((p) => statusList.includes(String(p.status)));
+    }
+    if (vendorId) {
+      memoryRows = memoryRows.filter((p) => p.vendorId === vendorId);
+    }
+    if (isEmergency !== undefined) {
+      memoryRows = memoryRows.filter((p) => Boolean(p['isEmergency']) === isEmergency);
+    }
+    if (deptList.length > 0) {
+      memoryRows = memoryRows.filter((p) => {
+        const loc = String(p['deliveryLocation'] || p.shippingAddress || '').toLowerCase();
+        const dName = String((p as any).departmentName || (p as any).department || '').toLowerCase();
+        return deptList.some(
+          (d) => loc.includes(d.toLowerCase()) || dName.includes(d.toLowerCase())
+        );
+      });
+    }
+    if (search) {
+      const s = search.toLowerCase();
+      memoryRows = memoryRows.filter(
+        (p) =>
+          String(p.poNumber || '').toLowerCase().includes(s) ||
+          String(p.vendorName || '').toLowerCase().includes(s) ||
+          String(p['deliveryLocation'] || '').toLowerCase().includes(s)
+      );
+    }
+
+    if (filters?.limit) {
+      const lim = Math.max(1, Number(filters.limit) || 50);
+      const pageNum = filters?.page ? Math.max(1, Number(filters.page) || 1) : 1;
+      const off = filters?.offset !== undefined
+        ? Math.max(0, Number(filters.offset) || 0)
+        : (pageNum - 1) * lim;
+      memoryRows = memoryRows.slice(off, off + lim);
+    }
+
+    return memoryRows;
   }
 
   async getPurchaseOrderById(tenantId: string, id: string) {

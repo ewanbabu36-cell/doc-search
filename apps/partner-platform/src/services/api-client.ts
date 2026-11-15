@@ -181,7 +181,15 @@ export async function apiRequest<T>(
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      const errMsg = err?.error?.message || err?.message || res.statusText;
+      const errMsg =
+        (typeof err?.error === 'string' ? err.error : err?.error?.message) ||
+        err?.message ||
+        res.statusText ||
+        'Request failed';
+      const errCode =
+        (typeof err?.error === 'object' && err?.error !== null && err.error.code)
+          ? err.error.code
+          : err?.errorCode || err?.code || 'HTTP_ERROR';
       const isAuthIssue =
         res.status === 401 ||
         errMsg.includes('Authorization') ||
@@ -198,12 +206,15 @@ export async function apiRequest<T>(
       }
 
       if (!isMockFallbackAllowed()) {
-        throw new ApiError(errMsg, err?.error?.code || 'HTTP_ERROR', res.status);
+        throw new ApiError(errMsg, errCode, res.status);
       }
 
       return {
         success: false,
-        error: err.error || { code: 'HTTP_ERROR', message: errMsg }
+        error:
+          typeof err?.error === 'object' && err?.error !== null
+            ? err.error
+            : { code: errCode, message: errMsg }
       };
     }
 

@@ -109,7 +109,8 @@ export const procurementRoutes: FastifyPluginAsync = async (app) => {
   // 5. Purchase Orders
   const getOrdersHandler = async (request: any, reply: any) => {
     const { tenantId } = request.session;
-    const data = await service.getPurchaseOrders(tenantId);
+    const query = request.query || {};
+    const data = await service.getPurchaseOrders(tenantId, query);
     return reply.send({ success: true, data });
   };
   const postOrdersHandler = async (request: any, reply: any) => {

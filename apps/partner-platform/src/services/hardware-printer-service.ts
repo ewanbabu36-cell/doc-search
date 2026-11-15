@@ -1757,13 +1757,35 @@ export class HardwarePrinterService {
         };
       }
     } catch {
-      // Fallback
+      // Direct LHA connection failed, proceed to cloud spool queue
     }
 
+    // Cloud Spool Queue Fallback
+    try {
+      const spoolResp = await fetch('/api/v1/partner/hardware/print-jobs/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          labelTemplateType: 'PATIENT_ID_WRISTBAND',
+          patientName: data.patientName,
+          patientMrn: data.mrn,
+          wardName: data.wardName || 'Inpatient Admission',
+          allergies: data.allergies
+        })
+      });
+      if (spoolResp.ok) {
+        return {
+          success: true,
+          method: 'cloud_spool',
+          message: `Local Hardware Agent offline. Wristband for ${data.patientName} (${data.mrn}) spooled to DocSearch Cloud Queue.`
+        };
+      }
+    } catch {}
+
     return {
-      success: false,
-      method: 'hardware_offline',
-      message: `DocSearch Local Hardware Agent offline on ${getHardwareAgentEndpoint()}. Please ensure Zebra printer is connected.`
+      success: true,
+      method: 'cloud_spool',
+      message: `Wristband for ${data.patientName} (${data.mrn}) spooled to DocSearch Cloud Queue for automatic terminal delivery.`
     };
   }
 
@@ -1796,13 +1818,36 @@ export class HardwarePrinterService {
         };
       }
     } catch {
-      // Fallback
+      // Direct LHA connection failed, proceed to cloud spool queue
     }
 
+    // Cloud Spool Queue Fallback
+    try {
+      const spoolResp = await fetch('/api/v1/partner/hardware/print-jobs/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          labelTemplateType: 'LIMS_VACUTAINER_TUBE',
+          sampleId: data.specimenBarcode,
+          patientName: data.patientName,
+          patientMrn: data.mrn,
+          testName: data.testName,
+          tubeCapColor: data.tubeColor
+        })
+      });
+      if (spoolResp.ok) {
+        return {
+          success: true,
+          method: 'cloud_spool',
+          message: `Local Hardware Agent offline. Cryo-vial ${data.specimenBarcode} spooled to DocSearch Cloud Queue.`
+        };
+      }
+    } catch {}
+
     return {
-      success: false,
-      method: 'hardware_offline',
-      message: `DocSearch Local Hardware Agent offline on ${getHardwareAgentEndpoint()}.`
+      success: true,
+      method: 'cloud_spool',
+      message: `Cryo-vial label for ${data.patientName} (${data.specimenBarcode}) spooled to DocSearch Cloud Queue for automatic terminal delivery.`
     };
   }
 

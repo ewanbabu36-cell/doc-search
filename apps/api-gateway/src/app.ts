@@ -169,6 +169,59 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     return payload;
   });
 
+  // 🛡️ Universal Error Payload Normalizer Hook:
+  // Harmonizes all error responses (statusCode >= 400) so { success: false, error: { code, message }, message }
+  // is universally guaranteed across all legacy and standard routes, eliminating "undefined" in UI toasts.
+  app.addHook('onSend', async (_request, reply, payload) => {
+    if (reply.statusCode >= 400 && typeof payload === 'string') {
+      try {
+        const parsed = JSON.parse(payload);
+        if (parsed && typeof parsed === 'object') {
+          let modified = false;
+
+          // 1. If error is a string (legacy route convention e.g. { success: false, error: "Database unavailable" })
+          if (typeof parsed.error === 'string') {
+            const errStr = parsed.error;
+            const errCode = parsed.errorCode || parsed.code || (reply.statusCode === 404 ? 'NOT_FOUND' : reply.statusCode === 401 ? 'UNAUTHORIZED' : reply.statusCode === 403 ? 'FORBIDDEN' : 'BAD_REQUEST');
+            parsed.error = {
+              code: errCode,
+              message: errStr
+            };
+            modified = true;
+          }
+
+          // 2. Ensure success: false is set
+          if (parsed.success === undefined) {
+            parsed.success = false;
+            modified = true;
+          }
+
+          // 3. Ensure top-level message is present matching error.message
+          if (!parsed.message && parsed.error && typeof parsed.error.message === 'string') {
+            parsed.message = parsed.error.message;
+            modified = true;
+          }
+
+          // 4. If message is present but no error object
+          if (parsed.message && !parsed.error) {
+            parsed.error = {
+              code: parsed.code || 'BAD_REQUEST',
+              message: parsed.message
+            };
+            modified = true;
+          }
+
+          if (modified) {
+            return JSON.stringify(parsed);
+          }
+        }
+      } catch {
+        // Non-JSON payload, pass through
+      }
+    }
+    return payload;
+  });
+
   // Global Error Handler
   app.setErrorHandler((error: unknown, request, reply) => {
     const requestId = request.id || 'unknown';
@@ -177,22 +230,26 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     if (isAppErr) {
       const appErr = error as AppError;
       return reply.status(appErr.statusCode).send({
+        success: false,
         error: {
           code: appErr.code,
           message: appErr.message,
           requestId,
           details: appErr.details
-        }
+        },
+        message: appErr.message
       });
     }
 
     if (error instanceof SyntaxError || (error && typeof error === 'object' && (error as any).name === 'SyntaxError')) {
       return reply.status(400).send({
+        success: false,
         error: {
           code: 'BAD_REQUEST',
           message: 'Malformed JSON payload syntax',
           requestId
-        }
+        },
+        message: 'Malformed JSON payload syntax'
       });
     }
 
@@ -201,8 +258,14 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     if (err.statusCode === 429) {
       const retryAfter = reply.getHeader('retry-after');
       return reply.status(429).send({
+        success: false,
         statusCode: 429,
-        error: 'Too Many Requests',
+        error: {
+          code: 'RATE_LIMIT_EXCEEDED',
+          message: 'Rate limit exceeded',
+          requestId,
+          details: err.details
+        },
         errorCode: 'RATE_LIMIT_EXCEEDED',
         message: 'Rate limit exceeded',
         retryAfter: retryAfter ? Number(retryAfter) : undefined,
@@ -212,25 +275,32 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     }
 
     if (err.statusCode && (err.statusCode < 500 || err.statusCode === 503 || err.statusCode === 502 || err.statusCode === 504)) {
+      const msg = err.message || 'Request failed';
+      const code = err.code || (err.statusCode === 503 ? 'SERVICE_UNAVAILABLE' : 'BAD_REQUEST');
       return reply.status(err.statusCode).send({
+        success: false,
         error: {
-          code: err.code || (err.statusCode === 503 ? 'SERVICE_UNAVAILABLE' : 'BAD_REQUEST'),
-          message: err.message || 'Request failed',
+          code,
+          message: msg,
           requestId,
           details: err.details
-        }
+        },
+        message: msg
       });
     }
 
     // Sanitize 500 internal errors (Zero internal leakage in production)
     console.error('[FASTIFY_500_ERROR]', { requestId, error });
     const isProd = process.env['NODE_ENV'] === 'production';
+    const serverErrMsg = isProd ? 'An internal server error occurred' : ((error as any)?.message || 'An internal server error occurred');
     return reply.status(500).send({
+      success: false,
       error: {
         code: 'INTERNAL_SERVER_ERROR',
-        message: isProd ? 'An internal server error occurred' : ((error as any)?.message || 'An internal server error occurred'),
+        message: serverErrMsg,
         requestId
-      }
+      },
+      message: serverErrMsg
     });
   });
 

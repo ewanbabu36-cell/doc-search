@@ -788,6 +788,59 @@ export class HardwareBridgeService {
     return await this.repo.getPrintJobs(tenantId);
   }
 
+  // 4b. Cloud Print Spooler (Offline / Remote Terminal Fallback)
+  async spoolThermalReceiptJob(
+    tenantId: string,
+    branchId: string,
+    actorId: string,
+    receiptJob: Record<string, unknown>
+  ) {
+    const paperWidth = receiptJob['paperWidth'] === '58MM' ? 58 : 80;
+    const printJob = await this.repo.createPrintJob({
+      tenantId,
+      branchId,
+      printerDeviceId: String(receiptJob['printerType'] || 'THERMAL_ESC_POS'),
+      labelTemplateType: 'THERMAL_RECEIPT',
+      labelDimensionsMm: { widthMm: paperWidth, heightMm: 140 },
+      dpi: 203,
+      rawZplPayload: JSON.stringify(receiptJob),
+      status: 'SPOOLED_CLOUD',
+      printedCopies: 1,
+      jobId: String(receiptJob['jobId'] || `PRN-${Date.now().toString(36).toUpperCase()}`)
+    });
+
+    const hash = this.computeHash({
+      event: 'THERMAL_JOB_SPOOLED_CLOUD',
+      printJobId: printJob.id,
+      jobId: receiptJob['jobId']
+    });
+
+    await this.repo.appendAuditTrace({
+      tenantId,
+      branchId,
+      traceNumber: 'TRACE-' + Date.now().toString().slice(-6),
+      entityType: 'THERMAL_PRINT_JOB',
+      entityId: printJob.id as string,
+      entityCode: String(receiptJob['jobId'] || printJob.id),
+      action: 'SPOOL_TO_CLOUD_QUEUE',
+      actorName: actorId || 'CLINIC_DOCTOR_REMOTE',
+      actorRole: 'ATTENDING_PHYSICIAN',
+      justification:
+        'Local Hardware Agent unreachable on client terminal. Print job successfully spooled to DocSearch Cloud Queue.',
+      integrityHash: hash
+    });
+
+    return printJob;
+  }
+
+  async getSpooledPrintJobs(tenantId: string, branchId?: string) {
+    return await this.repo.getSpooledPrintJobs(tenantId, branchId);
+  }
+
+  async completeSpooledPrintJob(tenantId: string, jobId: string) {
+    return await this.repo.markPrintJobCompleted(tenantId, jobId);
+  }
+
   // Audit Traces
   async getAuditTraces(tenantId: string) {
     return await this.repo.getAuditTraces(tenantId);

@@ -325,6 +325,25 @@ export class HardwareBridgeRepository {
     return this.printStore.filter(p => p.tenantId === tenantId);
   }
 
+  async getSpooledPrintJobs(tenantId: string, branchId?: string) {
+    return this.printStore.filter(
+      p =>
+        p.tenantId === tenantId &&
+        (p.status === 'SPOOLED_CLOUD' || p.status === 'PENDING_LOCAL_AGENT') &&
+        (!branchId || p.branchId === branchId)
+    );
+  }
+
+  async markPrintJobCompleted(tenantId: string, jobId: string) {
+    const job = this.printStore.find(p => p.tenantId === tenantId && (p.id === jobId || (p as any).jobId === jobId));
+    if (job) {
+      job.status = 'PRINTED_SUCCESS';
+      (job as any).completedAt = new Date();
+      return job;
+    }
+    return null;
+  }
+
   async createPrintJob(data: ZplPrintJobRecord) {
     const record: ZplPrintJobRecord = {
       id: data.id || 'prt_' + Math.random().toString(36).substring(2, 9),

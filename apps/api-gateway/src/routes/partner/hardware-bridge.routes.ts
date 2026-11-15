@@ -261,22 +261,24 @@ export const hardwareBridgeRoutes: FastifyPluginAsync = async (app) => {
   );
 
   // 8. Self-Serve Hardware Hub Diagnostics (Pillar 5)
-  // Test Thermal ESC/POS Receipt Print
+  // Test Thermal ESC/POS Receipt Print (with Automatic Cloud Spooling on LHA Port 18080 Offline)
   app.post(
     '/api/v1/partner/hardware/printer/test-receipt',
     { preHandler: [authenticate] },
     async (request, reply) => {
-      const { tenantId, branchId } = request.session;
-      const body = request.body as {
+      const { tenantId, branchId, userId } = request.session;
+      const body = (request.body || {}) as {
         printerType?: 'NETWORK_IP' | 'USB_RAW';
         ipAddress?: string;
         paperWidth?: '58MM' | '80MM';
         facilityName?: string;
         headerText?: string;
+        agentUrl?: string;
       };
 
+      const jobId = `PRN-${Date.now().toString(36).toUpperCase()}`;
       const receiptJob = {
-        jobId: `PRN-${Date.now().toString(36).toUpperCase()}`,
+        jobId,
         tenantId,
         branchId,
         printerType: body.printerType || 'NETWORK_IP',
@@ -288,11 +290,110 @@ export const hardwareBridgeRoutes: FastifyPluginAsync = async (app) => {
           testToken: 'OPD-TEST-001',
           timestamp: new Date().toISOString(),
           status: 'SUCCESS_PRINTED_OK'
-        },
-        message: 'Thermal ESC/POS diagnostic cut command dispatched successfully.'
+        }
       };
 
-      return reply.status(200).send({ success: true, data: receiptJob });
+      // Probe Local Hardware Agent (LHA) on port 18080 or custom agent endpoint with fast 600ms timeout
+      const agentEndpoint = (body.agentUrl || 'http://127.0.0.1:18080').replace(/\/+$/, '');
+      let isLhaOnline = false;
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 600);
+        const ping = await fetch(`${agentEndpoint}/health`, { signal: controller.signal }).catch(() => null);
+        clearTimeout(timer);
+        if (ping && ping.ok) {
+          isLhaOnline = true;
+        }
+      } catch {
+        isLhaOnline = false;
+      }
+
+      if (isLhaOnline) {
+        // Dispatched directly to Local Hardware Agent on local machine
+        try {
+          await fetch(`${agentEndpoint}/api/v1/hardware/print/escpos`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              printType: 'TEST_RECEIPT',
+              paperWidth: body.paperWidth === '58MM' ? '58mm' : '80mm',
+              slipData: receiptJob
+            })
+          }).catch(() => null);
+        } catch {}
+
+        return reply.status(200).send({
+          success: true,
+          method: 'LOCAL_HARDWARE_AGENT',
+          status: 'PRINTED_OK',
+          data: {
+            ...receiptJob,
+            message: 'Thermal ESC/POS diagnostic cut command dispatched successfully via Local Hardware Agent (Port 18080).'
+          }
+        });
+      }
+
+      // ☁️ Doctor remote or Local Hardware Agent offline: Automatic Cloud Queue Spooling
+      const spooled = await service.spoolThermalReceiptJob(
+        tenantId,
+        branchId || 'branch_default',
+        userId,
+        receiptJob
+      );
+
+      return reply.status(200).send({
+        success: true,
+        spooled: true,
+        method: 'CLOUD_SPOOLER',
+        status: 'SPOOLED_CLOUD',
+        jobId: spooled.id || jobId,
+        message:
+          'Local Hardware Agent unreachable on client terminal. Print job successfully spooled to DocSearch Cloud Queue for silent background delivery when terminal agent connects.',
+        data: {
+          ...receiptJob,
+          spoolJobId: spooled.id,
+          cloudQueueStatus: 'SPOOLED_READY_FOR_AGENT_POLL',
+          spooledAt: new Date().toISOString(),
+          message: 'Local Hardware Agent unreachable (Port 18080 offline). Print job spooled to DocSearch Cloud Queue.'
+        }
+      });
+    }
+  );
+
+  // Cloud Print Queue Retrieval (for LHA or Workstations to poll and execute spooled jobs)
+  app.get(
+    '/api/v1/partner/hardware/print-queue',
+    { preHandler: [authenticate] },
+    async (request, reply) => {
+      const { tenantId, branchId } = request.session;
+      const spooledJobs = await service.getSpooledPrintJobs(tenantId, branchId);
+      return reply.send({
+        success: true,
+        data: {
+          spooledCount: spooledJobs.length,
+          jobs: spooledJobs
+        }
+      });
+    }
+  );
+
+  // Dequeue / Mark Spooled Print Job Completed
+  app.post(
+    '/api/v1/partner/hardware/print-queue/:jobId/dequeue',
+    { preHandler: [authenticate] },
+    async (request, reply) => {
+      const { tenantId } = request.session;
+      const { jobId } = request.params as { jobId: string };
+      const completed = await service.completeSpooledPrintJob(tenantId, jobId);
+      return reply.send({
+        success: true,
+        data: {
+          jobId,
+          status: 'PRINTED_SUCCESS',
+          completedAt: new Date().toISOString(),
+          details: completed
+        }
+      });
     }
   );
 

@@ -179,8 +179,8 @@ export class ProcurementService {
   }
 
   // Purchase Orders
-  async getPurchaseOrders(tenantId: string) {
-    return await this.repo.getPurchaseOrders(tenantId);
+  async getPurchaseOrders(tenantId: string, filters?: any) {
+    return await this.repo.getPurchaseOrders(tenantId, filters);
   }
 
   async createPurchaseOrder(tenantId: string, branchId: string, actorId: string, payload: Record<string, unknown>) {
