@@ -23,7 +23,8 @@ import {
   patients,
   eq,
   and,
-  desc
+  desc,
+  or
 } from '@docsearch/database';
 import { AppError, ErrorCode, createLogger } from '@docsearch/shared-core';
 import { entitlementService } from '../../services/company/EntitlementService.js';
@@ -380,6 +381,25 @@ export interface StoredTransfer {
   transferReason: string;
   transferredBy: string;
   transferredAt: Date;
+}
+
+
+export interface CreateHousekeepingTaskInput {
+  tenantId: string;
+  partnerId?: string | undefined;
+  organizationId?: string | undefined;
+  branchId?: string | undefined;
+  bedId?: string | undefined;
+  bedCode?: string | undefined;
+  wardId?: string | undefined;
+  wardName?: string | undefined;
+  admissionId?: string | undefined;
+  patientName?: string | undefined;
+  vacatedByPatientId?: string | undefined;
+  cleaningType?: string | undefined;
+  assignedHousekeeper?: string | undefined;
+  priority?: string | undefined;
+  notes?: string | undefined;
 }
 
 export interface StoredNursingNote {
@@ -1883,6 +1903,116 @@ export class InpatientManagementRepository {
       return await executeInTx(db);
     }
   }
+
+  async createHousekeepingTask(input: CreateHousekeepingTaskInput, dbClient = getDatabase()) {
+    const db = requireDb(dbClient);
+    const now = new Date();
+
+    let targetBedId = input.bedId;
+    let targetWardId = input.wardId;
+    let bedCode = input.bedCode || 'BED';
+
+    // If bedId is missing, look up bed by bedNumber or bedCode
+    if (!targetBedId && input.bedCode) {
+      const [foundBed] = await db
+        .select()
+        .from(inpatientBeds)
+        .where(
+          and(
+            eq(inpatientBeds.tenantId, input.tenantId),
+            or(eq(inpatientBeds.bedNumber, input.bedCode), eq(inpatientBeds.bedCode, input.bedCode))
+          )
+        )
+        .limit(1);
+
+      if (foundBed) {
+        targetBedId = foundBed.id;
+        if (!targetWardId) targetWardId = foundBed.wardId;
+      }
+    }
+
+    // If wardId is still missing, look up first active ward or bed's ward
+    if (!targetWardId) {
+      const [firstWard] = await db
+        .select()
+        .from(inpatientWards)
+        .where(eq(inpatientWards.tenantId, input.tenantId))
+        .limit(1);
+      if (firstWard) {
+        targetWardId = firstWard.id;
+      }
+    }
+
+    // If bedId is still missing, find any bed in ward or tenant
+    if (!targetBedId) {
+      const [fallbackBed] = await db
+        .select()
+        .from(inpatientBeds)
+        .where(eq(inpatientBeds.tenantId, input.tenantId))
+        .limit(1);
+      if (fallbackBed) {
+        targetBedId = fallbackBed.id;
+        if (!targetWardId) targetWardId = fallbackBed.wardId;
+        bedCode = fallbackBed.bedNumber || fallbackBed.bedCode || bedCode;
+      }
+    }
+
+    const { partnerId, organizationId } = await resolvePartnerAndOrg(db, input.tenantId, input.partnerId, input.organizationId);
+    const branchId = await resolveBranchId(db, input.tenantId, input.branchId);
+
+    const taskId = crypto.randomUUID();
+    const turnaroundNumber = `CLN-${Date.now().toString().slice(-6)}-${Math.floor(100 + Math.random() * 900)}`;
+
+    const newRecord = {
+      id: taskId,
+      tenantId: input.tenantId,
+      partnerId,
+      organizationId,
+      branchId,
+      turnaroundNumber,
+      bedId: targetBedId!,
+      bedCode,
+      wardId: targetWardId!,
+      vacatedByPatientId: input.vacatedByPatientId || null,
+      cleaningType: input.cleaningType || 'TERMINAL_DISCHARGE_DISINFECTION',
+      requestedAt: now,
+      assignedHousekeeper: input.assignedHousekeeper || 'Rapid Turnover Housekeeping Team',
+      status: 'PENDING_CLEANING',
+      environmentalInspectionPassed: false,
+      notes: input.notes || `Accelerated turnaround for bed ${bedCode} (Priority: ${input.priority || 'HIGH'})`,
+      createdAt: now,
+      updatedAt: now
+    };
+
+    if (targetBedId && targetWardId) {
+      await db.insert(inpatientBedTurnaround).values(newRecord as unknown as typeof inpatientBedTurnaround.$inferInsert);
+      try {
+        await db
+          .update(inpatientBeds)
+          .set({ status: 'CLEANING', updatedAt: now })
+          .where(and(eq(inpatientBeds.tenantId, input.tenantId), eq(inpatientBeds.id, targetBedId)));
+      } catch {
+        // Tolerant bed status sync
+      }
+    }
+
+    return newRecord;
+  }
+
+  async getHousekeepingTasks(tenantId: string, status?: string, dbClient = getDatabase()) {
+    const db = requireDb(dbClient);
+    const records = await db
+      .select()
+      .from(inpatientBedTurnaround)
+      .where(eq(inpatientBedTurnaround.tenantId, tenantId))
+      .orderBy(desc(inpatientBedTurnaround.createdAt));
+
+    if (status) {
+      return records.filter((r) => r.status === status);
+    }
+    return records;
+  }
+
 }
 
 export const inpatientManagementRepository = new InpatientManagementRepository();

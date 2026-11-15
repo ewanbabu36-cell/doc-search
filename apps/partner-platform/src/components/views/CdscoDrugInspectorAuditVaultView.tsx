@@ -336,7 +336,8 @@ export const CdscoDrugInspectorAuditVaultView: React.FC<CdscoDrugInspectorAuditV
   const handleCreateManualEntry = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPatientName.trim() || !newDoctorName.trim() || !newDoctorNmcReg.trim() || !newDrugName.trim()) {
-      alert('Patient Name, Doctor Name, Doctor NMC Reg # aur Drug Name anivarya hain.');
+      setToastMessage('⚠️ Patient Name, Doctor Name, Doctor NMC Reg # aur Drug Name anivarya hain.');
+      setTimeout(() => setToastMessage(null), 4000);
       return;
     }
 

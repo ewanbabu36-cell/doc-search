@@ -202,6 +202,7 @@ export const DpdpPrivacyConsentHubView: React.FC = () => {
   const [isUnmaskModalOpen, setIsUnmaskModalOpen] = useState<boolean>(false);
   const [activeUnmaskId, setActiveUnmaskId] = useState<MaskedIdentityItem | null>(null);
   const [unmaskCountdown, setUnmaskCountdown] = useState<number>(0);
+  const [unmaskError, setUnmaskError] = useState<string | null>(null);
 
   // Erasure states in memory (no localStorage business truth)
   const [erasureRequests, setErasureRequests] = useState<ErasureRequestItem[]>(INITIAL_ERASURE_REQUESTS);
@@ -299,9 +300,10 @@ export const DpdpPrivacyConsentHubView: React.FC = () => {
   // Trigger KYC Audited Unmask
   const handleConfirmUnmask = () => {
     if (unmaskOfficerPin !== '2026') {
-      alert('Invalid KYC Officer PIN. Unauthorized unmask attempt logged.');
+      setUnmaskError('Invalid KYC Officer PIN. Unauthorized unmask attempt logged.');
       return;
     }
+    setUnmaskError(null);
     if (!activeUnmaskId) return;
 
     setUnmaskedPatientId(activeUnmaskId.patientId);
@@ -885,8 +887,14 @@ export const DpdpPrivacyConsentHubView: React.FC = () => {
                 <span>🔐</span>
                 <span>Audited KYC Aadhaar Unmask Request</span>
               </h3>
-              <button onClick={() => setIsUnmaskModalOpen(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+              <button onClick={() => { setIsUnmaskModalOpen(false); setUnmaskError(null); }} className="text-gray-400 hover:text-gray-600">✕</button>
             </div>
+
+            {unmaskError && (
+              <div className="p-2.5 bg-red-50 border border-red-300 rounded-lg text-xs font-semibold text-red-700">
+                ⚠️ {unmaskError}
+              </div>
+            )}
 
             <p className="text-xs text-gray-600">
               Under UIDAI Section 29(4), unmasking plaintext Aadhaar requires statutory justification and officer authentication. This event will be logged in the permanent audit ledger.
@@ -926,7 +934,7 @@ export const DpdpPrivacyConsentHubView: React.FC = () => {
             </div>
 
             <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" size="sm" onClick={() => setIsUnmaskModalOpen(false)}>
+              <Button variant="outline" size="sm" onClick={() => { setIsUnmaskModalOpen(false); setUnmaskError(null); }}>
                 Cancel
               </Button>
               <Button variant="danger" size="sm" onClick={handleConfirmUnmask}>

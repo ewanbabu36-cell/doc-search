@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Card, Badge, Button, Input } from '@docsearch/ui-kit';
+import { Card, Badge, Button, Input, Alert } from '@docsearch/ui-kit';
 import type { TransfusionRecordDto, BloodIssueDto, BloodComponentDto, TransfusionBloodGroup } from '@docsearch/api-contracts';
 import { hospitalEventBus } from '../../services/hospital-event-bus.js';
 
@@ -61,6 +61,11 @@ export const TransfusionWorkbenchView: React.FC<TransfusionWorkbenchViewProps> =
   const [verificationFeedback, setVerificationFeedback] = useState<string | null>(
     'Dual-scan cross-match PASSED. Lock token COMPAT-LOCK-ABO-88219 armed.'
   );
+  const [transfusionNotice, setTransfusionNotice] = useState<{
+    type: 'error' | 'warning' | 'info' | 'success';
+    title: string;
+    message: string;
+  } | null>(null);
 
   // Cold Chain Live Transit Timer (30-Minute Bedside Hang Rule)
   const [coldChainMinutesElapsed, setColdChainMinutesElapsed] = useState(14);
@@ -159,7 +164,11 @@ export const TransfusionWorkbenchView: React.FC<TransfusionWorkbenchViewProps> =
     }
 
     if (!dualNurseConfirmed) {
-      alert('NABH Transfusion Safety Policy requires Dual-Nurse sign-off before unlocking token.');
+      setTransfusionNotice({
+        type: 'warning',
+        title: 'Dual-Nurse Sign-Off Required',
+        message: 'NABH Transfusion Safety Policy requires Dual-Nurse sign-off before unlocking token.'
+      });
       return;
     }
 
@@ -203,7 +212,11 @@ export const TransfusionWorkbenchView: React.FC<TransfusionWorkbenchViewProps> =
       },
       `COLD-CHAIN BREACH ALERT: Unit ${iss.componentCode} issued to ${iss.destinationDepartment} has exceeded 30-min window (${iss.elapsedMinutes}m elapsed). Administration blocked.`
     );
-    alert(`🚨 Cold-Chain Breach reported for Unit ${iss.componentCode}. Blood Bank Medical Officer notified.`);
+    setTransfusionNotice({
+      type: 'error',
+      title: '🚨 Cold-Chain Breach Dispatched',
+      message: `Cold-Chain Breach reported for Unit ${iss.componentCode}. Administration blocked and Blood Bank Medical Officer notified.`
+    });
   };
 
   const handleShareWhatsAppHemovigilance = (t: TransfusionRecordDto) => {
@@ -227,6 +240,15 @@ export const TransfusionWorkbenchView: React.FC<TransfusionWorkbenchViewProps> =
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {transfusionNotice && (
+        <Alert
+          type={transfusionNotice.type}
+          title={transfusionNotice.title}
+          onClose={() => setTransfusionNotice(null)}
+        >
+          {transfusionNotice.message}
+        </Alert>
+      )}
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
         <div>

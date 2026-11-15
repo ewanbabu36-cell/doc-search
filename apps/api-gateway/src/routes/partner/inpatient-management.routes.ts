@@ -377,4 +377,34 @@ export const inpatientManagementRoutes: FastifyPluginAsync = async (fastify) => 
       return { success: true, data };
     }
   );
+
+  // 12. Housekeeping & Bed Sanitization Turnaround
+  fastify.get(
+    '/api/v1/partner/inpatient/housekeeping-tasks',
+    {
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'read')]
+    },
+    async (request) => {
+      const query = request.query as { status?: string };
+      const data = await inpatientManagementService.getHousekeepingTasks(request.session, query?.status);
+      return { success: true, data };
+    }
+  );
+
+  fastify.post(
+    '/api/v1/partner/inpatient/housekeeping-tasks',
+    {
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'create')]
+    },
+    async (request, reply) => {
+      const payload = request.body as any;
+      const data = await inpatientManagementService.createHousekeepingTask(payload, request.session);
+
+      await horizontalSocketGateway.broadcast(request.session.tenantId, 'BED_SANITIZATION_REQUESTED', data);
+
+      reply.status(201);
+      return { success: true, data };
+    }
+  );
+
 };

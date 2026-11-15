@@ -152,6 +152,7 @@ export const InvestigationProcessingView: React.FC<InvestigationProcessingViewPr
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [panicDispatchNotice, setPanicDispatchNotice] = useState<string | null>(null);
 
   // Microbiology Culture & AST State
   const [specimenSource, setSpecimenSource] = useState('Clean Catch Midstream Urine');
@@ -669,6 +670,13 @@ export const InvestigationProcessingView: React.FC<InvestigationProcessingViewPr
             </div>
 
             {/* Alert / Success messages */}
+            {panicDispatchNotice && (
+              <div style={{ marginBottom: '12px' }}>
+                <Alert type="warning" title="🚨 CrelioHealth Panic Alert Dispatched" onClose={() => setPanicDispatchNotice(null)}>
+                  {panicDispatchNotice}
+                </Alert>
+              </div>
+            )}
             {error && <div style={{ marginBottom: '12px' }}><Alert type="error" title="Error">{error}</Alert></div>}
             {saveSuccess && (
               <div style={{ marginBottom: '12px', padding: '10px 14px', backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid #10B981', borderRadius: '8px', color: '#A7F3D0', fontSize: '0.8125rem', fontWeight: 700 }}>
@@ -1108,7 +1116,9 @@ export const InvestigationProcessingView: React.FC<InvestigationProcessingViewPr
                               type="button"
                               onClick={(e) => {
                                 e.preventDefault();
-                                alert(`🚨 CrelioHealth Panic Alert Dispatched:\n\nParameter: ${param.parameterName}\nCritical Value: ${param.resultValue} ${param.unit}\nPatient: ${selectedOrder.patientName} (MRN: ${selectedOrder.patientMrn})\nDoctor: Dr. ${selectedOrder.orderingDoctorName || 'Consulting Physician'}\n\n✓ Urgent call/WhatsApp readback logged under ISO 15189 protocol.`);
+                                setPanicDispatchNotice(
+                                  `Dispatched to Dr. ${selectedOrder.orderingDoctorName || 'Consulting Physician'} for Patient ${selectedOrder.patientName} (MRN: ${selectedOrder.patientMrn}): ${param.parameterName} = ${param.resultValue} ${param.unit}. Urgent call/WhatsApp readback logged under ISO 15189 protocol.`
+                                );
                               }}
                               style={{
                                 marginTop: '4px',

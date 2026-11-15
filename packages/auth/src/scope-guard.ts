@@ -167,7 +167,9 @@ export class ScopeGuard {
       if (
         scope.branchId &&
         recBranch &&
-        recBranch !== String(scope.branchId)
+        recBranch !== String(scope.branchId) &&
+        !item.isGlobal &&
+        !item.isHospitalWide
       ) {
         return false;
       }

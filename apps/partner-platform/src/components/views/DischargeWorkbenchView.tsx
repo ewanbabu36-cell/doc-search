@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, Button, Badge } from '@docsearch/ui-kit';
 import type { InpatientAdmissionDto } from '@docsearch/api-contracts';
 import { hospitalEventBus } from '../../services/hospital-event-bus.js';
+import { apiRequest } from '../../services/api-client.js';
 
 export interface DischargeWorkbenchViewProps {
   admissions: InpatientAdmissionDto[];
@@ -43,7 +44,43 @@ export const DischargeWorkbenchView: React.FC<DischargeWorkbenchViewProps> = ({
     }
   });
 
-  const handleTriggerAcceleratedPipeline = (adm: InpatientAdmissionDto) => {
+
+  React.useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        const res = await apiRequest<any[]>('/api/v1/partner/inpatient/housekeeping-tasks');
+        if (isMounted && Array.isArray(res)) {
+          setActivePipelines((prev) => {
+            const next = { ...prev };
+            res.forEach((task) => {
+              if (task.bedCode) {
+                const matchingAdm = safeAdmissions.find((a) => a.bedCode === task.bedCode);
+                const key = matchingAdm ? matchingAdm.id : task.bedCode;
+                if (!next[key]) {
+                  next[key] = {
+                    minutesLeft: Math.max(15, 60 - Math.floor((Date.now() - new Date(task.requestedAt || task.createdAt).getTime()) / 60000)),
+                    pharmacyReturn: true,
+                    labDues: true,
+                    tpaBill: true,
+                    sanitizationDispatched: true
+                  };
+                }
+              }
+            });
+            return next;
+          });
+        }
+      } catch {
+        // Silently tolerate if offline or unauthenticated
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, [safeAdmissions]);
+
+  const handleTriggerAcceleratedPipeline = async (adm: InpatientAdmissionDto) => {
     setActivePipelines((prev) => ({
       ...prev,
       [adm.id]: {
@@ -78,6 +115,26 @@ export const DischargeWorkbenchView: React.FC<DischargeWorkbenchViewProps> = ({
       },
       `Housekeeping sanitization alert dispatched for Bed ${adm.bedCode}`
     );
+
+    try {
+      await apiRequest('/api/v1/partner/inpatient/housekeeping-tasks', {
+        method: 'POST',
+        body: JSON.stringify({
+          bedCode: adm.bedCode,
+          bedId: (adm as any).bedId,
+          wardName: adm.wardName,
+          wardId: (adm as any).wardId,
+          admissionId: adm.id,
+          patientName: adm.patientName,
+          vacatedByPatientId: adm.patientId,
+          priority: 'ACCELERATED_DISCHARGE',
+          cleaningType: 'TERMINAL_DISCHARGE_DISINFECTION',
+          notes: `Accelerated 60-minute discharge bed sanitization for ${adm.patientName} (${adm.bedCode || 'Bed'})`
+        })
+      });
+    } catch {
+      // Non-blocking fallback
+    }
   };
 
   return (

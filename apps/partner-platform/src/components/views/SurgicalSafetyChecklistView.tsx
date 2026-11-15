@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Table, Badge, Button } from '@docsearch/ui-kit';
+import { Card, Table, Badge, Button, Alert } from '@docsearch/ui-kit';
 import type { SurgicalSafetyChecklistDto, OTScheduleDto } from '@docsearch/api-contracts';
 import { hospitalEventBus } from '../../services/hospital-event-bus.js';
 
@@ -89,6 +89,11 @@ export const SurgicalSafetyChecklistView: React.FC<Props> = ({
 
   // Interactive WHO Stage Checklist Modal State
   const [selectedScheduleForWho, setSelectedScheduleForWho] = useState<OTScheduleDto | null>(null);
+  const [toastNotification, setToastNotification] = useState<{
+    type: 'error' | 'warning' | 'info' | 'success';
+    title: string;
+    message: string;
+  } | null>(null);
   const [whoPhase, setWhoPhase] = useState<'SIGN_IN' | 'TIME_OUT' | 'SIGN_OUT'>('TIME_OUT');
   const [signInChecks, setSignInChecks] = useState({
     identityVerified: true,
@@ -375,13 +380,21 @@ export const SurgicalSafetyChecklistView: React.FC<Props> = ({
         `CSSD Instrument Tray ${found.trayBarcode} verified passed (Bio: PASS) for ${selectedScheduleForWho?.procedureName}`
       );
     } else {
-      alert(`Invalid or unverified tray barcode "${code}". Sterility indicator check failed!`);
+      setToastNotification({
+        type: 'error',
+        title: 'Sterility Indicator Check Failed',
+        message: `Invalid or unverified tray barcode "${code}". Sterility indicator check failed!`
+      });
     }
   };
 
   const handleApplyRsiOverrideInModal = () => {
     if (!rsiOverrideReason.trim()) {
-      alert('Please specify the clinical emergency reason for RSI NPO Override (e.g. Ruptured Ectopic, Perforated Viscus).');
+      setToastNotification({
+        type: 'warning',
+        title: 'RSI Override Specification Required',
+        message: 'Please specify the clinical emergency reason for RSI NPO Override (e.g. Ruptured Ectopic, Perforated Viscus).'
+      });
       return;
     }
     setIsRsiOverrideActive(true);
@@ -423,13 +436,21 @@ export const SurgicalSafetyChecklistView: React.FC<Props> = ({
     if (whoPhase === 'SIGN_IN') {
       const dep = computeDependencyGate(selectedScheduleForWho);
       if (!dep.isNpoSafe && !isRsiOverrideActive) {
-        alert('CRITICAL ASPIRATION HARD-LOCK: Patient has not completed mandatory NPO fasting duration. Induction is blocked unless Anesthesiologist activates Emergency RSI Protocol Override.');
+        setToastNotification({
+          type: 'error',
+          title: 'Critical Aspiration Hard-Lock',
+          message: 'Patient has not completed mandatory NPO fasting duration. Induction is blocked unless Anesthesiologist activates Emergency RSI Protocol Override.'
+        });
         return;
       }
     }
 
     if (whoPhase === 'TIME_OUT' && !timeOutChecks.cssdTrayBarcodeScanned) {
-      alert('CRITICAL STERILITY BLOCK: CSSD Instrument Tray barcode must be scanned and biological indicator certified before surgical incision.');
+      setToastNotification({
+        type: 'error',
+        title: 'Critical Sterility Block',
+        message: 'CSSD Instrument Tray barcode must be scanned and biological indicator certified before surgical incision.'
+      });
       return;
     }
 
@@ -528,6 +549,15 @@ export const SurgicalSafetyChecklistView: React.FC<Props> = ({
 
   return (
     <div className="space-y-6" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+      {toastNotification && (
+        <Alert
+          type={toastNotification.type}
+          title={toastNotification.title}
+          onClose={() => setToastNotification(null)}
+        >
+          {toastNotification.message}
+        </Alert>
+      )}
       {/* Top OT Header */}
       <div
         style={{
@@ -1324,6 +1354,16 @@ export const SurgicalSafetyChecklistView: React.FC<Props> = ({
               </div>
               <button type="button" onClick={() => setSelectedScheduleForWho(null)} style={{ background: 'none', border: 'none', color: '#94A3B8', fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
             </div>
+
+            {toastNotification && (
+              <Alert
+                type={toastNotification.type}
+                title={toastNotification.title}
+                onClose={() => setToastNotification(null)}
+              >
+                {toastNotification.message}
+              </Alert>
+            )}
 
             {whoSignedSuccess ? (
               <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.2)', border: '1px solid #10B981', color: '#6EE7B7', padding: '16px', borderRadius: '8px', fontSize: '0.88rem', fontWeight: 800, textAlign: 'center' }}>

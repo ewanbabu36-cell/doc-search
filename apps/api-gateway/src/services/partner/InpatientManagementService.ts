@@ -373,6 +373,57 @@ export class InpatientManagementService {
       return result;
     });
   }
+
+  async createHousekeepingTask(
+    payload: {
+      bedId?: string | undefined;
+      bedCode?: string | undefined;
+      wardId?: string | undefined;
+      wardName?: string | undefined;
+      vacatedByPatientId?: string | undefined;
+      cleaningType?: string | undefined;
+      assignedHousekeeper?: string | undefined;
+      priority?: string | undefined;
+      notes?: string | undefined;
+    },
+    session: SessionContext
+  ) {
+    const scope = ScopeGuard.resolveEffectiveQueryScope(session);
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      const result = await inpatientManagementRepository.createHousekeepingTask(
+        {
+          ...payload,
+          tenantId: scope.tenantId,
+          organizationId: session.organizationId,
+          branchId: scope.branchId || session.branchId
+        },
+        tx
+      );
+
+      await auditRepository.recordEvent({
+        eventType: 'HOUSEKEEPING_TASK_CREATED',
+        resourceType: 'inpatient_bed_turnaround',
+        resourceId: result.id,
+        tenantId: scope.tenantId,
+        branchId: scope.branchId || session.branchId,
+        metadata: { bedCode: result.bedCode, status: result.status, turnaroundNumber: result.turnaroundNumber }
+      }, session, tx);
+
+      return result;
+    });
+  }
+
+  async getHousekeepingTasks(
+    session: SessionContext,
+    status?: string | undefined,
+    requestedScope?: { tenantId?: string | undefined; branchId?: string | undefined; departmentId?: string | undefined }
+  ) {
+    const scope = ScopeGuard.resolveEffectiveQueryScope(session, requestedScope);
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      return await inpatientManagementRepository.getHousekeepingTasks(scope.tenantId, status, tx);
+    });
+  }
+
 }
 
 export const inpatientManagementService = new InpatientManagementService();
