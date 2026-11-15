@@ -39,6 +39,7 @@ export const PrescriptionCameraOcrModal: React.FC<PrescriptionCameraOcrModalProp
   const [isCapturing, setIsCapturing] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [parsedRx, setParsedRx] = useState<ParsedDoctorPrescription | null>(null);
@@ -140,9 +141,10 @@ export const PrescriptionCameraOcrModal: React.FC<PrescriptionCameraOcrModalProp
     const selectedItems = parsedRx.medicines.filter((m) => m.selected && m.matchedMedication);
 
     if (selectedItems.length === 0) {
-      alert('Please select at least one medicine to import into POS cart.');
+      setImportError('Please select at least one medicine to import into POS cart.');
       return;
     }
+    setImportError(null);
 
     const cartItems = selectedItems.map((item) => {
       const med = item.matchedMedication;
@@ -627,6 +629,32 @@ export const PrescriptionCameraOcrModal: React.FC<PrescriptionCameraOcrModalProp
             </div>
           )}
         </div>
+
+        {importError && (
+          <div
+            role="alert"
+            style={{
+              padding: '8px 20px',
+              backgroundColor: 'rgba(239, 68, 68, 0.15)',
+              borderTop: '1px solid #EF4444',
+              color: '#FCA5A5',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}
+          >
+            <span>⚠️ {importError}</span>
+            <button
+              type="button"
+              onClick={() => setImportError(null)}
+              style={{ background: 'none', border: 'none', color: '#F87171', fontSize: '1rem', cursor: 'pointer' }}
+            >
+              ×
+            </button>
+          </div>
+        )}
 
         {/* Modal Footer */}
         <div

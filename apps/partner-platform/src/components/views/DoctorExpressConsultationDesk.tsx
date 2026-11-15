@@ -767,6 +767,13 @@ export const DoctorExpressConsultationDesk: React.FC<DoctorExpressConsultationDe
   const [ipdWardType, setIpdWardType] = useState<string>('GENERAL_WARD');
   const [ipdPriority, setIpdPriority] = useState<'ROUTINE' | 'URGENT' | 'STAT'>('ROUTINE');
   const [ipdAdmissionReason, setIpdAdmissionReason] = useState<string>('');
+  const [unsavedLeaveAction, setUnsavedLeaveAction] = useState<(() => void) | null>(null);
+  const [deskToastMessage, setDeskToastMessage] = useState<string | null>(null);
+
+  const showDeskToast = (msg: string) => {
+    setDeskToastMessage(msg);
+    setTimeout(() => setDeskToastMessage(null), 3500);
+  };
 
   // 📐 Universal Adaptive Device Detection (Mobile <768px, Tablet 768-1024px, Desktop >1024px)
   const [isMobileScreen, setIsMobileScreen] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 768 : false);
@@ -958,10 +965,12 @@ export const DoctorExpressConsultationDesk: React.FC<DoctorExpressConsultationDe
         medList.length !== (consultation.medications?.length || 0));
 
     if (hasUnsavedContent) {
-      const confirmLeave = window.confirm(
-        'You have unsaved prescription changes on the current patient. Switch patient anyway?'
-      );
-      if (!confirmLeave) return;
+      setUnsavedLeaveAction(() => () => {
+        if (onSelectConsultation) {
+          onSelectConsultation(patientId);
+        }
+      });
+      return;
     }
 
     if (onSelectConsultation) {
@@ -1948,10 +1957,10 @@ export const DoctorExpressConsultationDesk: React.FC<DoctorExpressConsultationDe
       medList.length !== (consultation.medications?.length || 0)
     );
     if (hasUnsavedContent) {
-      const confirmLeave = window.confirm(
-        'You have active consultation notes or medications that may not be saved. Return to queue without saving?'
-      );
-      if (!confirmLeave) return;
+      setUnsavedLeaveAction(() => () => {
+        onBackToQueue();
+      });
+      return;
     }
     onBackToQueue();
   };
@@ -1979,6 +1988,135 @@ export const DoctorExpressConsultationDesk: React.FC<DoctorExpressConsultationDe
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '1440px', margin: '0 auto', width: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
+      
+      {/* ⚠️ Non-blocking Unsaved Changes Confirmation Modal */}
+      {unsavedLeaveAction && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.75)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 100000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px'
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: '#1E293B',
+              color: '#F8FAFC',
+              borderRadius: '16px',
+              border: '1.5px solid rgba(239, 68, 68, 0.4)',
+              boxShadow: '0 20px 45px rgba(0, 0, 0, 0.6)',
+              padding: '24px',
+              maxWidth: '480px',
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: '1.8rem' }}>⚠️</span>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#EF4444' }}>
+                  Unsaved Consultation Changes
+                </h3>
+                <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: '#94A3B8' }}>
+                  You have active consultation notes or medications that may not be saved.
+                </p>
+              </div>
+            </div>
+            <p style={{ fontSize: '0.9rem', color: '#CBD5E1', lineHeight: '1.5', margin: 0 }}>
+              Leaving or switching patients now will discard any unsaved entries on the current prescription pad. Do you want to proceed anyway?
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setUnsavedLeaveAction(null)}
+                style={{
+                  backgroundColor: '#334155',
+                  color: '#F8FAFC',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '10px 18px',
+                  fontWeight: 700,
+                  fontSize: '0.875rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Stay & Save
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const action = unsavedLeaveAction;
+                  setUnsavedLeaveAction(null);
+                  if (action) action();
+                }}
+                style={{
+                  backgroundColor: '#EF4444',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '10px 18px',
+                  fontWeight: 800,
+                  fontSize: '0.875rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Discard & Leave
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🔔 Non-blocking Toast Feedback */}
+      {deskToastMessage && (
+        <aside
+          aria-live="polite"
+          style={{
+            position: 'fixed',
+            bottom: '24px',
+            right: '24px',
+            zIndex: 99999,
+            backgroundColor: '#0F172A',
+            border: '1.5px solid #10B981',
+            borderRadius: '12px',
+            color: '#F8FAFC',
+            padding: '14px 20px',
+            boxShadow: '0 12px 32px rgba(0, 0, 0, 0.5), 0 0 15px rgba(16, 185, 129, 0.25)',
+            maxWidth: '460px',
+            fontSize: '0.875rem',
+            fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px'
+          }}
+        >
+          <span style={{ fontSize: '1.2rem' }}>✓</span>
+          <span style={{ flex: 1 }}>{deskToastMessage}</span>
+          <button
+            type="button"
+            onClick={() => setDeskToastMessage(null)}
+            style={{
+              backgroundColor: 'transparent',
+              border: 'none',
+              color: '#94A3B8',
+              fontSize: '1.2rem',
+              cursor: 'pointer'
+            }}
+          >
+            ×
+          </button>
+        </aside>
+      )}
       
       {/* 🖨️ Printable Modal */}
       {isPrintModalOpen && (
@@ -2095,8 +2233,8 @@ export const DoctorExpressConsultationDesk: React.FC<DoctorExpressConsultationDe
             <button
               type="button"
               onClick={() => {
-                alert(
-                  `📞 Attending Doctor Verbal Read-Back Confirmed:\n\nPatient: ${criticalPanicAlert.patientName}\nAnalyte: ${criticalPanicAlert.analyte} = ${criticalPanicAlert.measuredValue} ${criticalPanicAlert.unit}\nStatus: Verbal Read-Back Verified & Logged in ISO 15189 Audit Trail.`
+                showDeskToast(
+                  `📞 Attending Doctor Verbal Read-Back Confirmed: ${criticalPanicAlert.patientName} (${criticalPanicAlert.analyte} = ${criticalPanicAlert.measuredValue} ${criticalPanicAlert.unit}) logged in ISO 15189 Audit Trail.`
                 );
                 setCriticalPanicAlert(null);
               }}
@@ -2148,7 +2286,7 @@ export const DoctorExpressConsultationDesk: React.FC<DoctorExpressConsultationDe
             <button
               type="button"
               onClick={() => {
-                alert(`📋 Lab Report for Patient: ${labReportAlert.patientName}\n\nTests: ${labReportAlert.investigationName}\nStatus: VERIFIED & FINALIZED\nReport archived in Patient EMR.`);
+                showDeskToast(`📋 Lab Report for Patient: ${labReportAlert.patientName} • Tests: ${labReportAlert.investigationName} • VERIFIED & FINALIZED in Patient EMR.`);
               }}
               style={{
                 backgroundColor: '#10B981',

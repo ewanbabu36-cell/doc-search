@@ -31,7 +31,7 @@ export const nhcxInsuranceRoutes: FastifyPluginAsync = async (fastify) => {
 
   // 1. Initiate 3-Minute Instant Pre-Auth via National Health Claims Exchange (NHCX)
   fastify.post('/api/v1/partner/insurance/nhcx/pre-auth/initiate', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = (request.body || {}) as NhcxPreAuthRequest;
     const db = getDatabase();
 
@@ -85,7 +85,7 @@ export const nhcxInsuranceRoutes: FastifyPluginAsync = async (fastify) => {
 
   // 2. Submit Final Clinical Discharge Bundle for Instant Adjudication & Settlement (<180 Secs)
   fastify.post('/api/v1/partner/insurance/nhcx/claim/submit-discharge-bundle', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '6855be07-5298-4148-a571-c51ac49ac7f3';
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = (request.body || {}) as NhcxDischargeClaimRequest;
     const db = getDatabase();
 

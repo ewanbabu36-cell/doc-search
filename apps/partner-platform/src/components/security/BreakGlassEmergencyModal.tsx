@@ -32,14 +32,16 @@ export const BreakGlassEmergencyModal: React.FC<BreakGlassEmergencyModalProps> =
   const [isExecuting, setIsExecuting] = useState<boolean>(false);
   const [overrideCompleted, setOverrideCompleted] = useState<boolean>(false);
   const [cmoAlertStatus, setCmoAlertStatus] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
   const handleExecuteBreakGlass = () => {
     if (!doctorAck) {
-      alert('Please check the statutory affirmation checkbox to proceed.');
+      setFormError('Please check the statutory affirmation checkbox to proceed.');
       return;
     }
+    setFormError(null);
 
     setIsExecuting(true);
 
@@ -227,6 +229,13 @@ export const BreakGlassEmergencyModal: React.FC<BreakGlassEmergencyModalProps> =
                 className="w-full p-2.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 text-xs focus:outline-none focus:border-red-500"
               />
             </div>
+
+            {formError && (
+              <div className="p-2.5 bg-red-950/80 border border-red-600 rounded-lg text-red-200 text-xs font-semibold flex items-center justify-between">
+                <span>⚠️ {formError}</span>
+                <button type="button" onClick={() => setFormError(null)} className="text-red-400 font-bold ml-2">×</button>
+              </div>
+            )}
 
             <div className="p-3 bg-slate-800/70 rounded-xl border border-slate-700 flex items-start gap-2.5">
               <input

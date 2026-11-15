@@ -39,6 +39,7 @@ export const PharmacyCustomerKhataDeskView: React.FC = () => {
   const [newAddress, setNewAddress] = useState('');
   const [newUhid, setNewUhid] = useState('');
   const [newCreditLimit, setNewCreditLimit] = useState('5000');
+  const [formError, setFormError] = useState<string | null>(null);
 
   const reloadData = () => {
     setAccounts(pharmacyCreditKhataService.getAccounts());
@@ -60,9 +61,10 @@ export const PharmacyCustomerKhataDeskView: React.FC = () => {
   const handleCreateAccount = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName.trim() || !newPhone.trim()) {
-      alert('Please provide customer name and phone number.');
+      setFormError('Please provide customer name and phone number.');
       return;
     }
+    setFormError(null);
 
     try {
       pharmacyCreditKhataService.createOrUpdateAccount({
@@ -81,7 +83,7 @@ export const PharmacyCustomerKhataDeskView: React.FC = () => {
       setNewCreditLimit('5000');
       reloadData();
     } catch (err: any) {
-      alert(`Error creating account: ${err.message}`);
+      setFormError(`Error creating account: ${err.message}`);
     }
   };
 
@@ -911,6 +913,32 @@ export const PharmacyCustomerKhataDeskView: React.FC = () => {
             </div>
 
             <form onSubmit={handleCreateAccount} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {formError && (
+                <div
+                  role="alert"
+                  style={{
+                    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                    border: '1px solid #EF4444',
+                    borderRadius: '8px',
+                    padding: '10px 14px',
+                    color: '#FCA5A5',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}
+                >
+                  <span>⚠️ {formError}</span>
+                  <button
+                    type="button"
+                    onClick={() => setFormError(null)}
+                    style={{ background: 'none', border: 'none', color: '#F87171', fontSize: '1rem', cursor: 'pointer' }}
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
               <div>
                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '4px' }}>
                   Customer Full Name *

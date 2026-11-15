@@ -16,6 +16,7 @@ export const VideoConsultationScreen: React.FC<Props> = ({ language, onBack }) =
   const [showLiveRxDrawer, setShowLiveRxDrawer] = useState(true);
   const [liveRx, setLiveRx] = useState<TeleLivePrescription | null>(null);
   const [callConnected, setCallConnected] = useState(false);
+  const [callNotice, setCallNotice] = useState<string | null>(null);
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -115,7 +116,7 @@ export const VideoConsultationScreen: React.FC<Props> = ({ language, onBack }) =
   const handleEndCall = async () => {
     await telemedicineWebRtcClient.endSession(CALL_ID, callDuration, 'Patient ended video consultation call.');
     setIsCallActive(false);
-    alert(
+    setCallNotice(
       language === 'hi'
         ? 'कॉल समाप्त हो गई है। डॉक्टर का डिजिटल पर्चा "मेरी पर्ची" में सुरक्षित कर दिया गया है!'
         : 'Call ended. Doctor prescription has been saved to "Meri Parchi"!'
@@ -160,6 +161,36 @@ export const VideoConsultationScreen: React.FC<Props> = ({ language, onBack }) =
 
       {!isCallActive ? (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '20px' }}>
+          {callNotice && (
+            <div
+              role="status"
+              style={{
+                backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                border: '1.5px solid #10B981',
+                borderRadius: '12px',
+                padding: '12px 18px',
+                color: '#34D399',
+                fontSize: '0.875rem',
+                fontWeight: 700,
+                maxWidth: '380px',
+                marginBottom: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                textAlign: 'left'
+              }}
+            >
+              <span style={{ fontSize: '1.3rem' }}>✅</span>
+              <span style={{ flex: 1 }}>{callNotice}</span>
+              <button
+                type="button"
+                onClick={() => setCallNotice(null)}
+                style={{ background: 'none', border: 'none', color: '#6EE7B7', fontSize: '1.1rem', cursor: 'pointer' }}
+              >
+                ×
+              </button>
+            </div>
+          )}
           <div
             style={{
               width: '120px',

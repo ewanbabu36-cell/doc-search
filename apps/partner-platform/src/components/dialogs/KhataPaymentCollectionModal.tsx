@@ -33,6 +33,7 @@ export const KhataPaymentCollectionModal: React.FC<KhataPaymentCollectionModalPr
     entry: PharmacyKhataLedgerEntry;
     waiver?: PharmacyKhataLedgerEntry | undefined;
   } | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   // Initialize payment amount to full outstanding when opened
   useEffect(() => {
@@ -43,6 +44,7 @@ export const KhataPaymentCollectionModal: React.FC<KhataPaymentCollectionModalPr
       setWaiverAmount('');
       setNotes('');
       setCompletedReceipt(null);
+      setFormError(null);
       setPharmacistName(profile.pharmacistName || '');
     }
   }, [account, isOpen, profile.pharmacistName]);
@@ -63,9 +65,10 @@ export const KhataPaymentCollectionModal: React.FC<KhataPaymentCollectionModalPr
 
   const handleSubmitPayment = () => {
     if (numericPay <= 0 && numericWaiver <= 0) {
-      alert('Please enter a valid payment or waiver amount.');
+      setFormError('Please enter a valid payment or waiver amount.');
       return;
     }
+    setFormError(null);
 
     try {
       const result = pharmacyCreditKhataService.recordPaymentCredit({
@@ -86,7 +89,7 @@ export const KhataPaymentCollectionModal: React.FC<KhataPaymentCollectionModalPr
         onPaymentSuccess(result.paymentEntry.referenceId || '');
       }
     } catch (err: any) {
-      alert(`Error saving repayment: ${err.message}`);
+      setFormError(`Error saving repayment: ${err.message}`);
     }
   };
 
@@ -317,6 +320,33 @@ export const KhataPaymentCollectionModal: React.FC<KhataPaymentCollectionModalPr
             /* INPUT FORM VIEW                                                          */
             /* ========================================================================= */
             <>
+              {formError && (
+                <div
+                  role="alert"
+                  style={{
+                    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                    border: '1px solid #EF4444',
+                    borderRadius: '8px',
+                    padding: '10px 14px',
+                    color: '#FCA5A5',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: '14px'
+                  }}
+                >
+                  <span>⚠️ {formError}</span>
+                  <button
+                    type="button"
+                    onClick={() => setFormError(null)}
+                    style={{ background: 'none', border: 'none', color: '#F87171', fontSize: '1rem', cursor: 'pointer' }}
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
               {/* Outstanding Banner */}
               <div
                 style={{

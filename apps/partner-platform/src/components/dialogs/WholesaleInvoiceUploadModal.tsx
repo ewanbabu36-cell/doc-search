@@ -88,7 +88,8 @@ Telma 40mg Tab 15s,BTH-TLM-512,2028-08-31,50,5,74.00,114.00,12
     );
 
     if (discrepancyItems.length === 0) {
-      alert('All items have been verified in full with zero damage! No shortfall claim is needed.');
+      setInwardSuccess('✓ All items have been verified in full with zero damage! No shortfall claim is needed.');
+      setTimeout(() => setInwardSuccess(null), 4000);
       return;
     }
 

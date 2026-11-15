@@ -31,7 +31,7 @@ export const phiWiretapPlugin: FastifyPluginAsync = async (fastify) => {
     try {
       const session = (request as any).session;
       const url = request.url;
-      const tenantId = session?.tenantId || (request.headers['x-tenant-id'] as string) || '6855be07-5298-4148-a571-c51ac49ac7f3';
+      const tenantId = session?.tenantId || (request.headers['x-tenant-id'] as string) || '11111111-1111-4111-8111-111111111111';
       const actorId = session?.userId || 'ANONYMOUS_STAFF';
       const actorName = session?.name || 'Staff User';
       const actorRole = session?.roles?.[0] || 'RECEPTIONIST';

@@ -34,6 +34,7 @@ export const SepsisEarlyWarningRadarModal: React.FC<SepsisRadarProps> = ({
     crystalloids: false,
     vasopressors: false
   });
+  const [activationSuccess, setActivationSuccess] = useState<string | null>(null);
 
   const toggleCheck = (id: string) => {
     setBundleChecks((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -241,19 +242,42 @@ export const SepsisEarlyWarningRadarModal: React.FC<SepsisRadarProps> = ({
           </div>
         </div>
 
+        {activationSuccess && (
+          <div
+            role="alert"
+            style={{
+              padding: '12px 16px',
+              backgroundColor: 'rgba(239, 68, 68, 0.2)',
+              border: '1.5px solid #EF4444',
+              borderRadius: '8px',
+              color: '#FCA5A5',
+              fontSize: '0.9rem',
+              fontWeight: 800,
+              textAlign: 'center',
+              marginTop: '12px',
+              animation: 'fadeIn 0.2s ease-in-out'
+            }}
+          >
+            {activationSuccess}
+          </div>
+        )}
+
         {/* Footer actions */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
-          <Button variant="secondary" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose} disabled={Boolean(activationSuccess)}>
             Dismiss Sentinel
           </Button>
           <Button
             variant="danger"
+            disabled={Boolean(activationSuccess)}
             onClick={() => {
-              alert(`🚨 CODE SEPSIS ACTIVATED: Emergency Resuscitation Team & ICU Registrar Paged for ${patientName} (${bedId})`);
-              onClose();
+              setActivationSuccess(`🚨 CODE SEPSIS ACTIVATED: Emergency Resuscitation Team & ICU Registrar Paged for ${patientName} (${bedId})`);
+              setTimeout(() => {
+                onClose();
+              }, 1800);
             }}
           >
-            🚨 Activate Code Sepsis & Page RRT
+            {activationSuccess ? 'Paging Resuscitation Team...' : '🚨 Activate Code Sepsis & Page RRT'}
           </Button>
         </div>
       </div>

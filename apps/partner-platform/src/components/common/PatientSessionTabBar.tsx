@@ -16,6 +16,7 @@ export const PatientSessionTabBar: React.FC<PatientSessionTabBarProps> = ({
   const [tabs, setTabs] = useState<PatientSessionTab[]>([]);
   const [activeTabId, setActiveTabId] = useState<string | null>(null);
   const [isNewMenuOpen, setIsNewMenuOpen] = useState(false);
+  const [tabToCloseWithUnsaved, setTabToCloseWithUnsaved] = useState<PatientSessionTab | null>(null);
   const newMenuRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -53,10 +54,8 @@ export const PatientSessionTabBar: React.FC<PatientSessionTabBarProps> = ({
   const handleCloseTab = (e: React.MouseEvent, tab: PatientSessionTab) => {
     e.stopPropagation();
     if (tab.isDirty) {
-      const confirmClose = window.confirm(
-        `Close "${tab.title}"? You have unsaved changes in this session that will be discarded.`
-      );
-      if (!confirmClose) return;
+      setTabToCloseWithUnsaved(tab);
+      return;
     }
     patientSessionTabService.closeTab(tab.id);
   };
@@ -438,6 +437,94 @@ export const PatientSessionTabBar: React.FC<PatientSessionTabBarProps> = ({
           <span>close</span>
         </span>
       </div>
+
+      {/* ⚠️ Non-blocking Unsaved Changes Confirmation Modal */}
+      {tabToCloseWithUnsaved && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.75)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 100000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px'
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: '#1E293B',
+              color: '#F8FAFC',
+              borderRadius: '16px',
+              border: '1.5px solid rgba(239, 68, 68, 0.4)',
+              boxShadow: '0 20px 45px rgba(0, 0, 0, 0.6)',
+              padding: '24px',
+              maxWidth: '440px',
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: '1.8rem' }}>⚠️</span>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#EF4444' }}>
+                  Close Tab with Unsaved Changes?
+                </h3>
+                <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#94A3B8' }}>
+                  Session: {tabToCloseWithUnsaved.title}
+                </p>
+              </div>
+            </div>
+            <p style={{ fontSize: '0.875rem', color: '#CBD5E1', lineHeight: '1.5', margin: 0 }}>
+              You have unsaved changes in this session that will be discarded. Do you wish to close this tab anyway?
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setTabToCloseWithUnsaved(null)}
+                style={{
+                  backgroundColor: '#334155',
+                  color: '#F8FAFC',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '8px 16px',
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const t = tabToCloseWithUnsaved;
+                  setTabToCloseWithUnsaved(null);
+                  if (t) patientSessionTabService.closeTab(t.id);
+                }}
+                style={{
+                  backgroundColor: '#EF4444',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '8px 16px',
+                  fontWeight: 800,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Discard & Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

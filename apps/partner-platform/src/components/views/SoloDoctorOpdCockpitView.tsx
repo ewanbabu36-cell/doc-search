@@ -849,11 +849,13 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
 
   const handleSaveCurrentAsProtocol = () => {
     if (!newProtoName.trim()) {
-      alert('Please enter a protocol name');
+      setStatusMessage('⚠️ Please enter a protocol name.');
+      setTimeout(() => setStatusMessage(null), 3000);
       return;
     }
     if (medList.length === 0) {
-      alert('No medicines currently in prescription pad to save.');
+      setStatusMessage('⚠️ No medicines currently in prescription pad to save.');
+      setTimeout(() => setStatusMessage(null), 3000);
       return;
     }
     const newProto: ClinicalQuickProtocol = {
@@ -6604,9 +6606,10 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
               <button
                 type="button"
                 onClick={() => {
-                  alert(
-                    `📞 Attending Doctor Verbal Read-Back Confirmed:\n\nPatient: ${criticalPanicAlert.patientName}\nAnalyte: ${criticalPanicAlert.analyte} = ${criticalPanicAlert.measuredValue} ${criticalPanicAlert.unit}\nStatus: Verbal Read-Back Verified & Logged in ISO 15189 Audit Trail.`
+                  setStatusMessage(
+                    `📞 Attending Doctor Verbal Read-Back Confirmed: ${criticalPanicAlert.patientName} (${criticalPanicAlert.analyte} = ${criticalPanicAlert.measuredValue} ${criticalPanicAlert.unit}) logged in ISO 15189 Audit Trail.`
                   );
+                  setTimeout(() => setStatusMessage(null), 4000);
                   setCriticalPanicAlert(null);
                 }}
                 style={{

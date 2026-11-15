@@ -18,6 +18,12 @@ export const Tata1mgQuickOrderModal: React.FC<Tata1mgQuickOrderModalProps> = ({
   initialTab = 'MEDICINE'
 }) => {
   const [activeTab, setActiveTab] = useState<'MEDICINE' | 'LAB_TEST' | 'ABHA_CARD'>(initialTab);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
 
   // Pharmacy Order State
   const [useGenericSubstitution, setUseGenericSubstitution] = useState(true);
@@ -843,7 +849,7 @@ export const Tata1mgQuickOrderModal: React.FC<Tata1mgQuickOrderModalProps> = ({
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <button
                   type="button"
-                  onClick={() => alert('Official ABDM ABHA Card downloaded to storage.')}
+                  onClick={() => showToast('Official ABDM ABHA Card downloaded to storage.')}
                   style={{
                     backgroundColor: '#1E293B',
                     border: '1px solid rgba(255,255,255,0.15)',
@@ -860,7 +866,7 @@ export const Tata1mgQuickOrderModal: React.FC<Tata1mgQuickOrderModalProps> = ({
 
                 <button
                   type="button"
-                  onClick={() => alert('Consent manager permissions updated.')}
+                  onClick={() => showToast('Consent manager permissions updated.')}
                   style={{
                     backgroundColor: '#0284C7',
                     border: 'none',
@@ -875,6 +881,34 @@ export const Tata1mgQuickOrderModal: React.FC<Tata1mgQuickOrderModalProps> = ({
                   ⚙️ Manage Consent
                 </button>
               </div>
+            </div>
+          )}
+
+          {/* Non-blocking Toast Feedback */}
+          {toastMessage && (
+            <div
+              role="status"
+              style={{
+                position: 'fixed',
+                bottom: '24px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                backgroundColor: '#0F172A',
+                border: '1.5px solid #0284C7',
+                color: '#F8FAFC',
+                borderRadius: '10px',
+                padding: '10px 18px',
+                fontSize: '0.85rem',
+                fontWeight: 700,
+                zIndex: 9999,
+                boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              <span>✓</span>
+              <span>{toastMessage}</span>
             </div>
           )}
         </div>

@@ -107,6 +107,7 @@ export const FastOpdRegistrationDrawer: React.FC<FastOpdRegistrationDrawerProps>
   const [printerStatus, setPrinterStatus] = useState<HardwarePrinterStatus>(() => hardwarePrinterService.getStatus());
   const [printFeedback, setPrintFeedback] = useState<{ type: 'success' | 'warning' | 'error'; message: string } | null>(null);
   const [autoPrintThermal, setAutoPrintThermal] = useState(true);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const handlePairPrinter = async (type: 'usb' | 'serial') => {
     try {
@@ -219,11 +220,11 @@ export const FastOpdRegistrationDrawer: React.FC<FastOpdRegistrationDrawerProps>
     e.preventDefault();
     const cleanMob = mobile.trim();
     if (!cleanMob || cleanMob.length !== 10 || !/^[6-9]/.test(cleanMob)) {
-      alert('Kripya valid 10-digit Indian mobile number enter karein (starts with 6, 7, 8, or 9).');
+      setFormError('Kripya valid 10-digit Indian mobile number enter karein (starts with 6, 7, 8, or 9).');
       return;
     }
     if (!fullName || fullName.trim().length < 2) {
-      alert('Kripya patient ka pura naam enter karein.');
+      setFormError('Kripya patient ka pura naam enter karein.');
       return;
     }
 
@@ -257,7 +258,7 @@ export const FastOpdRegistrationDrawer: React.FC<FastOpdRegistrationDrawerProps>
         persistedPatientId = pRes.data.id;
       } else if (!isMockFallbackAllowed() && pRes.error) {
         setIsSubmitting(false);
-        alert(`Server registration error: ${pRes.error.message || 'Failed to register patient'}`);
+        setFormError(`Server registration error: ${pRes.error.message || 'Failed to register patient'}`);
         return;
       }
     } catch (apiErr: any) {
@@ -750,6 +751,38 @@ export const FastOpdRegistrationDrawer: React.FC<FastOpdRegistrationDrawerProps>
           ) : (
             /* 1-Screen Quick Intake Form */
             <form onSubmit={handleQuickSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              {formError && (
+                <div
+                  role="alert"
+                  style={{
+                    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                    border: '1px solid #EF4444',
+                    borderRadius: '8px',
+                    padding: '10px 14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '10px'
+                  }}
+                >
+                  <span style={{ fontSize: '0.85rem', color: '#FCA5A5', fontWeight: 600 }}>
+                    ⚠️ {formError}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setFormError(null)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#F87171',
+                      fontSize: '1rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
               {/* Phone & Name Row */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#94A3B8' }}>

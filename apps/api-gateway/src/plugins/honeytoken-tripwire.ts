@@ -37,7 +37,7 @@ export const honeytokenTripwirePlugin: FastifyPluginAsync = async (fastify) => {
 
       if (matchedKeyword) {
         const session = (request as any).session;
-        const tenantId = session?.tenantId || (request.headers['x-tenant-id'] as string) || '6855be07-5298-4148-a571-c51ac49ac7f3';
+        const tenantId = session?.tenantId || (request.headers['x-tenant-id'] as string) || '11111111-1111-4111-8111-111111111111';
         const actorId = session?.userId || 'INSIDER-UNKNOWN';
         const actorName = session?.name || 'Rogue Staff / DB Scraper';
         const actorRole = session?.roles?.[0] || 'UNAUTHORIZED_SNOOPER';
