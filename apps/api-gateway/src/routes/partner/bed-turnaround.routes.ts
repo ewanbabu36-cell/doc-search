@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { getDatabase, sql } from '@docsearch/database';
 import { authenticate } from '../../plugins/auth-guard.js';
+import { clinicalSweeperService } from '../../services/partner/ClinicalSweeperService.js';
 
 interface DispatchCleaningRequest {
   bedId?: string;
@@ -191,6 +192,18 @@ export const bedTurnaroundRoutes: FastifyPluginAsync = async (fastify) => {
         totalMissionsCount: hasFilter ? 5 : 17,
         filterApplied: hasFilter ? { departments: deptList } : null
       }
+    });
+  });
+
+  // 4. Automated Bed Cleaning Turnaround SLA Escalation Sweep
+  fastify.post('/api/v1/partner/bed-turnaround/auto-escalate-sweep', async (request, reply) => {
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+    const result = await clinicalSweeperService.runBedTurnaroundEscalationSweep(tenantId);
+
+    return reply.status(200).send({
+      success: true,
+      message: 'Automated bed turnaround cleaning SLA escalation sweep completed.',
+      data: result
     });
   });
 };

@@ -64,6 +64,12 @@ export const PricingCatalogView: React.FC<PricingCatalogViewProps> = ({
 
   // Live Multi-Payer Schedules
   const [priceLists, setPriceLists] = useState<BillingPriceListDto[]>(initialPriceLists);
+
+  // Synchronize state immediately when parent table refetches or props update on modal close
+  useEffect(() => {
+    setPriceLists(initialPriceLists);
+  }, [initialPriceLists]);
+
   const [selectedScheduleId, setSelectedScheduleId] = useState<string>('');
   const [multiplierInput, setMultiplierInput] = useState<string>('15');
   const [multiplierReason] = useState<string>('Annual corporate TPA tariff revision');

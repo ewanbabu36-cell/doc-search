@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Dialog, Button, Input, Alert } from '@docsearch/ui-kit';
 import type { CompleteCleaningRequest, InpatientBedTurnaroundDto } from '@docsearch/api-contracts';
+import { triggerDataRefresh } from '../../services/data-refresh-bus.js';
 
 export interface CompleteCleaningDialogProps {
   isOpen: boolean;
@@ -37,6 +38,7 @@ export const CompleteCleaningDialog: React.FC<CompleteCleaningDialogProps> = ({
         passed,
         notes
       });
+      triggerDataRefresh('inpatient', { action: 'COMPLETE_CLEANING', entityId: turnaround.id });
       onClose();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to complete cleaning inspection');

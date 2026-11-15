@@ -38,6 +38,7 @@ import { OpdSlotManagerView } from './views/OpdSlotManagerView.js';
 import { ConsultationFeeMatrixView } from './views/ConsultationFeeMatrixView.js';
 import { DoctorAuditVaultView } from './views/DoctorAuditVaultView.js';
 import { Tabs, Badge, ErrorState, DocSearchSpatialCore3D, SkeletonPage } from '@docsearch/ui-kit';
+import { useDataRefreshListener, triggerDataRefresh } from '../services/data-refresh-bus.js';
 
 type ActiveDoctorTab =
   | 'overview'
@@ -134,6 +135,11 @@ export const DoctorRosterDomainManager: React.FC = () => {
     void loadData();
   }, []);
 
+  // Universal Data Refresh Listener: Auto-refetch when any doctor schedule or roster modal saves
+  useDataRefreshListener('doctor-roster', () => {
+    void loadData();
+  });
+
   const handleContextChange = async (newContext: Partial<PanelContextDto>) => {
     const updated = await partnerFoundationService.setPanelContext(newContext);
     setContext(updated);
@@ -144,55 +150,51 @@ export const DoctorRosterDomainManager: React.FC = () => {
 
   const handleCreateDoctor = async (req: CreateDoctorProfileRequest) => {
     const d = await doctorRosterService.createDoctorProfile(req);
-    setDoctors((prev) => [...prev, d]);
     setSelectedDoctorId(d.id);
+    await loadData();
+    triggerDataRefresh('doctor-roster', { action: 'CREATE_DOCTOR', entityId: d.id });
   };
 
   const handleUpdateDoctor = async (req: UpdateDoctorProfileRequest) => {
     const updated = await doctorRosterService.updateDoctorProfile(req);
-    setDoctors((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
+    await loadData();
+    triggerDataRefresh('doctor-roster', { action: 'UPDATE_DOCTOR', entityId: updated.id });
   };
 
   const handleCreateSchedule = async (req: CreateDoctorScheduleRequest) => {
     const s = await doctorRosterService.createSchedule(req);
-    setSchedules((prev) => [...prev, s]);
-    if (context) {
-      const refreshedSlots = await doctorRosterService.getOpdSlots(context.activeTenantId);
-      setSlots(refreshedSlots);
-    }
+    await loadData();
+    triggerDataRefresh('doctor-roster', { action: 'CREATE_SCHEDULE', entityId: s.id });
   };
 
   const handleAddLeave = async (req: AddDoctorLeaveRequest) => {
     const l = await doctorRosterService.addLeave(req);
-    setLeaves((prev) => [l, ...prev]);
-    if (context) {
-      const [refreshedDocs, refreshedSlots] = await Promise.all([
-        doctorRosterService.getDoctors(context.activeTenantId),
-        doctorRosterService.getOpdSlots(context.activeTenantId)
-      ]);
-      setDoctors(refreshedDocs);
-      setSlots(refreshedSlots);
-    }
+    await loadData();
+    triggerDataRefresh('doctor-roster', { action: 'ADD_LEAVE', entityId: l.id });
   };
 
   const handleApproveLeave = async (req: ApproveDoctorLeaveRequest) => {
     const updated = await doctorRosterService.approveLeave(req);
-    setLeaves((prev) => prev.map((l) => (l.id === updated.id ? updated : l)));
+    await loadData();
+    triggerDataRefresh('doctor-roster', { action: 'APPROVE_LEAVE', entityId: updated.id });
   };
 
   const handleBlockSlot = async (req: BlockOpdSlotRequest) => {
     const updated = await doctorRosterService.blockOpdSlot(req);
-    setSlots((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+    await loadData();
+    triggerDataRefresh('doctor-roster', { action: 'BLOCK_SLOT', entityId: updated.id });
   };
 
   const handleUnblockSlot = async (req: UnblockOpdSlotRequest) => {
     const updated = await doctorRosterService.unblockOpdSlot(req);
-    setSlots((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+    await loadData();
+    triggerDataRefresh('doctor-roster', { action: 'UNBLOCK_SLOT', entityId: updated.id });
   };
 
   const handleCreateFee = async (req: CreateConsultationFeeRequest) => {
     const f = await doctorRosterService.createConsultationFee(req);
-    setFees((prev) => [...prev, f]);
+    await loadData();
+    triggerDataRefresh('doctor-roster', { action: 'CREATE_FEE', entityId: f.id });
   };
 
   const handleAssignLocation = async (req: AssignDoctorLocationRequest) => {

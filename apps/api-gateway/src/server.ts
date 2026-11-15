@@ -25,11 +25,16 @@ async function start(): Promise<void> {
     await app.listen({ port: env.PORT, host: env.HOST });
     logger.info(`Doc Search API Gateway running at http://${env.HOST}:${env.PORT}`);
 
+    // Start Autonomous Scheduled Clinical Sweepers Daemon (Crossmatch expiry & Bed SLA escalation)
+    const { clinicalSweeperService } = await import('./services/partner/ClinicalSweeperService.js');
+    clinicalSweeperService.start(parseInt(process.env['CLINICAL_SWEEPER_INTERVAL_MS'] || '60000', 10));
+
     // Graceful Shutdown
     const signals = ['SIGINT', 'SIGTERM'];
     for (const signal of signals) {
       process.on(signal, async () => {
         logger.info(`Received ${signal}, initiating graceful shutdown...`);
+        clinicalSweeperService.stop();
         await app.close();
         await closeDatabase();
         process.exit(0);

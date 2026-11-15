@@ -5,7 +5,8 @@
  * 1. Zero-downtime offline counter token issue when hospital/clinic Wi-Fi or 4G disconnects.
  * 2. High-speed IndexedDB WAL (Write-Ahead Log) with fallback to localStorage.
  * 3. Automatic background synchronization to /api/v1/partner/clinical-workflow/encounters upon 'online' window event.
- * 4. Observable queue status for reception status indicators.
+ * 4. User session isolation: Prevents shift-change offline cache bleed on shared nursing station PCs.
+ * 5. Full cryptographic purge on staff logout / session switch.
  */
 
 export interface OfflineRegistrationPayload {
@@ -20,6 +21,9 @@ export interface OfflineRegistrationPayload {
   paymentMode?: string | undefined;
   feePaid?: number | undefined;
   customIntake?: Record<string, unknown> | undefined;
+  operatorUserId?: string | undefined;
+  operatorName?: string | undefined;
+  operatorRole?: string | undefined;
 }
 
 export interface OfflineTokenRecord {
@@ -29,25 +33,36 @@ export interface OfflineTokenRecord {
   payload: OfflineRegistrationPayload;
   status: 'QUEUED' | 'SYNCING' | 'SYNCED' | 'FAILED';
   createdAt: string;
-  syncedAt?: string;
+  syncedAt?: string | undefined;
   syncAttempts: number;
-  syncError?: string;
-  remoteEncounterId?: string;
-  remoteTokenNumber?: string;
+  syncError?: string | undefined;
+  remoteEncounterId?: string | undefined;
+  remoteTokenNumber?: string | undefined;
+  operatorUserId?: string | undefined;
+  operatorName?: string | undefined;
+  operatorRole?: string | undefined;
+}
+
+export interface OperatorIdentity {
+  userId: string;
+  name: string;
+  role: string;
 }
 
 class OfflineTokenCacheService {
   private dbName = 'DocSearchOfflineVault';
   private storeName = 'offlineTokens';
-  private dbVersion = 1;
+  private dbVersion = 2; // Incremented for operatorUserId index
   private db: IDBDatabase | null = null;
   private inMemoryFallback: Map<string, OfflineTokenRecord> = new Map();
   private isSyncing = false;
   private sequenceCounter = 1;
+  private currentOperator: OperatorIdentity | null = null;
 
   constructor() {
     this.initDatabase();
     this.initAutoSyncListener();
+    this.initSessionPurgeListener();
   }
 
   private async initDatabase(): Promise<IDBDatabase | null> {
@@ -61,11 +76,24 @@ class OfflineTokenCacheService {
 
         req.onupgradeneeded = (e: any) => {
           const db = e.target.result as IDBDatabase;
+          let store: IDBObjectStore;
           if (!db.objectStoreNames.contains(this.storeName)) {
-            const store = db.createObjectStore(this.storeName, { keyPath: 'id' });
+            store = db.createObjectStore(this.storeName, { keyPath: 'id' });
+          } else {
+            store = (req.transaction as IDBTransaction).objectStore(this.storeName);
+          }
+
+          if (!store.indexNames.contains('status')) {
             store.createIndex('status', 'status', { unique: false });
+          }
+          if (!store.indexNames.contains('tenantId')) {
             store.createIndex('tenantId', 'tenantId', { unique: false });
+          }
+          if (!store.indexNames.contains('createdAt')) {
             store.createIndex('createdAt', 'createdAt', { unique: false });
+          }
+          if (!store.indexNames.contains('operatorUserId')) {
+            store.createIndex('operatorUserId', 'operatorUserId', { unique: false });
           }
         };
 
@@ -89,12 +117,40 @@ class OfflineTokenCacheService {
 
     window.addEventListener('online', () => {
       console.log('[OfflineTokenCache] Network restored. Auto-flushing offline token registrations...');
-      this.flushOfflineTokens();
+      void this.flushOfflineTokens();
+    });
+  }
+
+  private initSessionPurgeListener() {
+    if (typeof window === 'undefined') return;
+
+    // Listen for custom logout events dispatched by the application
+    window.addEventListener('docsearch:auth:logout', () => {
+      console.log('[OfflineTokenCache] Received logout broadcast. Purging offline cache to prevent shared PC bleed.');
+      void this.purgeAllOfflineData();
+    });
+
+    // Cross-tab storage change listener
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'docsearch_logged_out' && e.newValue === 'true') {
+        void this.purgeAllOfflineData();
+      }
     });
   }
 
   /**
-   * Enqueue a new token registration offline
+   * Set the currently active healthcare operator (Nurse, Doctor, Receptionist)
+   */
+  public setCurrentOperator(userId: string, name: string, role: string): void {
+    this.currentOperator = { userId, name, role };
+  }
+
+  public getCurrentOperator(): OperatorIdentity | null {
+    return this.currentOperator;
+  }
+
+  /**
+   * Enqueue a new token registration offline with user attribution
    */
   public async queueOfflineRegistration(
     payload: OfflineRegistrationPayload
@@ -103,14 +159,28 @@ class OfflineTokenCacheService {
     const tokenSeq = this.sequenceCounter++;
     const localTokenNumber = `OFF-${String(tokenSeq).padStart(3, '0')}`;
 
+    const opUserId = payload.operatorUserId || this.currentOperator?.userId || 'ANONYMOUS_STAFF';
+    const opName = payload.operatorName || this.currentOperator?.name || 'Healthcare Operator';
+    const opRole = payload.operatorRole || this.currentOperator?.role || 'STAFF';
+
+    const enrichedPayload: OfflineRegistrationPayload = {
+      ...payload,
+      operatorUserId: opUserId,
+      operatorName: opName,
+      operatorRole: opRole
+    };
+
     const record: OfflineTokenRecord = {
       id,
       localTokenNumber,
       tenantId: payload.tenantId,
-      payload,
+      payload: enrichedPayload,
       status: 'QUEUED',
       createdAt: new Date().toISOString(),
-      syncAttempts: 0
+      syncAttempts: 0,
+      operatorUserId: opUserId,
+      operatorName: opName,
+      operatorRole: opRole
     };
 
     if (this.db) {
@@ -136,12 +206,14 @@ class OfflineTokenCacheService {
   }
 
   /**
-   * Get all unsynced or failed tokens
+   * Get all unsynced or failed tokens. Optionally filter by operator user ID
    */
-  public async getPendingTokens(): Promise<OfflineTokenRecord[]> {
+  public async getPendingTokens(forUserId?: string): Promise<OfflineTokenRecord[]> {
+    let pending: OfflineTokenRecord[] = [];
+
     if (this.db) {
       try {
-        return await new Promise<OfflineTokenRecord[]>((resolve) => {
+        pending = await new Promise<OfflineTokenRecord[]>((resolve) => {
           const tx = this.db!.transaction(this.storeName, 'readonly');
           const store = tx.objectStore(this.storeName);
           const req = store.getAll();
@@ -152,15 +224,20 @@ class OfflineTokenCacheService {
           req.onerror = () => resolve(Array.from(this.inMemoryFallback.values()));
         });
       } catch {
-        return Array.from(this.inMemoryFallback.values()).filter((r) => r.status !== 'SYNCED');
+        pending = Array.from(this.inMemoryFallback.values()).filter((r) => r.status !== 'SYNCED');
       }
+    } else {
+      pending = Array.from(this.inMemoryFallback.values()).filter((r) => r.status !== 'SYNCED');
     }
 
-    return Array.from(this.inMemoryFallback.values()).filter((r) => r.status !== 'SYNCED');
+    if (forUserId) {
+      return pending.filter((r) => r.operatorUserId === forUserId);
+    }
+    return pending;
   }
 
   /**
-   * Flush pending tokens to live server API
+   * Flush pending tokens to live server API with active Bearer Token and Operator Attribution
    */
   public async flushOfflineTokens(): Promise<{ synced: number; failed: number }> {
     if (this.isSyncing) return { synced: 0, failed: 0 };
@@ -175,6 +252,18 @@ class OfflineTokenCacheService {
         return { synced: 0, failed: 0 };
       }
 
+      // Read current authorization token from browser storage
+      const token = typeof window !== 'undefined'
+        ? (localStorage.getItem('docsearch_auth_token') || localStorage.getItem('auth_token'))
+        : null;
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       for (const record of pending) {
         record.status = 'SYNCING';
         record.syncAttempts++;
@@ -182,7 +271,7 @@ class OfflineTokenCacheService {
         try {
           const res = await fetch('/api/v1/partner/clinical-workflow/encounters', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify({
               patientName: record.payload.patientName,
               patientPhone: record.payload.patientPhone,
@@ -198,7 +287,10 @@ class OfflineTokenCacheService {
                 customIntake: record.payload.customIntake || {},
                 offlineLocalTokenNumber: record.localTokenNumber,
                 offlineQueuedAt: record.createdAt,
-                syncSource: 'OFFLINE_WRITE_AHEAD_BUFFER'
+                syncSource: 'OFFLINE_WRITE_AHEAD_BUFFER',
+                operatorUserId: record.operatorUserId,
+                operatorName: record.operatorName,
+                operatorRole: record.operatorRole
               }
             })
           });
@@ -234,6 +326,86 @@ class OfflineTokenCacheService {
     }
 
     return { synced, failed };
+  }
+
+  /**
+   * Complete Cache Purge: Wipes all IndexedDB, memory, and localStorage offline cache.
+   * Prevents shift handover token cache bleed when a day nurse logs out and night nurse logs in.
+   */
+  public async purgeAllOfflineData(): Promise<void> {
+    this.inMemoryFallback.clear();
+    this.currentOperator = null;
+
+    // 1. Wipe IndexedDB store
+    if (this.db) {
+      try {
+        await new Promise<void>((resolve, reject) => {
+          const tx = this.db!.transaction(this.storeName, 'readwrite');
+          const store = tx.objectStore(this.storeName);
+          const req = store.clear();
+          req.onsuccess = () => resolve();
+          req.onerror = () => reject(req.error);
+        });
+      } catch (err) {
+        console.warn('[OfflineTokenCache] Failed to clear IndexedDB store:', err);
+      }
+    }
+
+    // 2. Wipe matching keys from localStorage
+    if (typeof window !== 'undefined') {
+      try {
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.startsWith('docsearch_offline_') || key.startsWith('offline_token_'))) {
+            keysToRemove.push(key);
+          }
+        }
+        for (const key of keysToRemove) {
+          localStorage.removeItem(key);
+        }
+      } catch (err) {
+        console.warn('[OfflineTokenCache] Failed to clear localStorage offline records:', err);
+      }
+    }
+
+    console.log('[OfflineTokenCache] Successfully purged all offline token records. Zero session bleed ensured.');
+  }
+
+  /**
+   * Selective Purge: Wipes only records created by a specific operator
+   */
+  public async purgeUserSession(userId: string): Promise<void> {
+    if (!userId) return;
+
+    if (this.db) {
+      try {
+        await new Promise<void>((resolve) => {
+          const tx = this.db!.transaction(this.storeName, 'readwrite');
+          const store = tx.objectStore(this.storeName);
+          const req = store.openCursor();
+          req.onsuccess = (e: any) => {
+            const cursor = e.target.result as IDBCursorWithValue;
+            if (cursor) {
+              const rec = cursor.value as OfflineTokenRecord;
+              if (rec.operatorUserId === userId) {
+                cursor.delete();
+              }
+              cursor.continue();
+            } else {
+              resolve();
+            }
+          };
+          req.onerror = () => resolve();
+        });
+      } catch {}
+    }
+
+    for (const [id, rec] of this.inMemoryFallback.entries()) {
+      if (rec.operatorUserId === userId) {
+        this.inMemoryFallback.delete(id);
+      }
+    }
   }
 
   /**

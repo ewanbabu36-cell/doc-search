@@ -10,6 +10,7 @@ import { type HospitalStaffUser } from './components/auth/HospitalStaffLogin.js'
 import { HospitalPortalLandingPage } from './components/landing/HospitalPortalLandingPage.js';
 import { ensureAuthToken, isTokenExpired } from './services/api-client.js';
 import { pwaCompanion } from './services/pwa-companion.js';
+import { offlineTokenCacheService } from './services/offline-token-cache.js';
 import '../../../packages/ui-kit/src/styles/themes.css';
 import '../../../packages/ui-kit/src/styles/base.css';
 
@@ -54,7 +55,7 @@ const App: React.FC = () => {
       // Check for token dispatched via SSO URL query parameter
       try {
         const urlParams = new URLSearchParams(window.location.search);
-        const tokenParam = urlParams.get('token');
+        const tokenParam = urlParams.get('token') || urlParams.get('sso_token');
         if (tokenParam) {
           localStorage.setItem('docsearch_auth_token', tokenParam);
           localStorage.removeItem('docsearch_logged_out');
@@ -113,6 +114,19 @@ const App: React.FC = () => {
 
           setCurrentUser(verifiedUser);
           localStorage.setItem('docsearch_partner_staff_auth', JSON.stringify(verifiedUser));
+
+          // Set active operator in offline token cache to isolate mutations
+          offlineTokenCacheService.setCurrentOperator(verifiedUser.id, verifiedUser.name, verifiedUser.role);
+
+          // Synchronize session token with Unified Gateway Master Hub via postMessage
+          if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
+            window.parent.postMessage({
+              type: 'DOCSEARCH_SSO_SYNC',
+              token,
+              user: verifiedUser,
+              origin: window.location.origin
+            }, '*');
+          }
         } else {
           // Token is rejected or invalid
           localStorage.removeItem('docsearch_partner_staff_auth');
@@ -131,11 +145,46 @@ const App: React.FC = () => {
     };
 
     void verifyBackendSession();
+
+    // Listen for SSO token broadcast from Unified Gateway Hub
+    const handleSsoMessage = (e: MessageEvent) => {
+      if (e.data?.type === 'DOCSEARCH_SSO_CREDENTIALS' && e.data.token) {
+        const existing = localStorage.getItem('docsearch_auth_token');
+        if (!existing || existing !== e.data.token) {
+          localStorage.setItem('docsearch_auth_token', e.data.token);
+          localStorage.removeItem('docsearch_logged_out');
+          void verifyBackendSession();
+        }
+      }
+    };
+    window.addEventListener('message', handleSsoMessage);
+
+    // If loaded inside Unified Gateway Hub iframe, request active SSO credentials
+    if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: 'DOCSEARCH_SSO_INIT', origin: window.location.origin }, '*');
+    }
+
+    return () => {
+      window.removeEventListener('message', handleSsoMessage);
+    };
   }, []);
 
   const handleLogin = (user: HospitalStaffUser) => {
     localStorage.removeItem('docsearch_logged_out');
     localStorage.setItem('docsearch_partner_staff_auth', JSON.stringify(user));
+    offlineTokenCacheService.setCurrentOperator(user.id, user.name, user.role);
+
+    // Broadcast authenticated SSO token to Master Gateway Hub
+    const curToken = localStorage.getItem('docsearch_auth_token');
+    if (typeof window !== 'undefined' && window.parent && window.parent !== window && curToken) {
+      window.parent.postMessage({
+        type: 'DOCSEARCH_SSO_SYNC',
+        token: curToken,
+        user,
+        origin: window.location.origin
+      }, '*');
+    }
+
     React.startTransition(() => {
       setCurrentUser(user);
     });
@@ -183,12 +232,24 @@ const App: React.FC = () => {
     } catch (e) {
       console.error('Logout error:', e);
     } finally {
+      // Purge all offline token queue mutations to prevent shared PC shift cache bleed
+      try {
+        await offlineTokenCacheService.purgeAllOfflineData();
+      } catch (err) {
+        console.warn('Offline cache purge notice:', err);
+      }
+
       localStorage.setItem('docsearch_logged_out', 'true');
       localStorage.removeItem('docsearch_partner_staff_auth');
       localStorage.removeItem('docsearch_auth_token');
       localStorage.removeItem('docsearch_user_session');
       setCurrentUser(null);
+
       if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('docsearch:auth:logout'));
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'DOCSEARCH_SSO_LOGOUT', origin: window.location.origin }, '*');
+        }
         window.history.replaceState({}, document.title, '/');
       }
     }

@@ -276,7 +276,10 @@ function renderHubHtml(activeApp = 'partner') {
       <button class="app-tab ${activeApp === 'company' ? 'active' : ''}" onclick="switchApp('company', 'http://127.0.0.1:5177')">
         <span class="icon">🏢</span> Company Platform (Admin)
       </button>
-            <button class="app-tab ${activeApp === 'pacs' ? 'active' : ''}" onclick="switchApp('pacs', 'http://127.0.0.1:8042/dicom-web/studies')">
+      <button class="app-tab ${activeApp === 'patient' ? 'active' : ''}" onclick="switchApp('patient', 'http://127.0.0.1:5174')">
+        <span class="icon">📲</span> Patient Mobile App
+      </button>
+      <button class="app-tab ${activeApp === 'pacs' ? 'active' : ''}" onclick="switchApp('pacs', 'http://127.0.0.1:8042/dicom-web/studies')">
         <span class="icon">🩻</span> PACS Server
       </button>
       <button class="app-tab ${activeApp === 'api' ? 'active' : ''}" onclick="switchApp('api', 'http://127.0.0.1:4000/api/v1/health')">
@@ -343,12 +346,64 @@ function renderHubHtml(activeApp = 'partner') {
 
   <script>
     let currentUrl = 'http://127.0.0.1:5173';
+    let activeSsoToken = '';
+    try {
+      activeSsoToken = localStorage.getItem('docsearch_sso_master_token') || '';
+    } catch {}
+
+    function buildSsoUrl(baseUrl) {
+      if (!activeSsoToken) return baseUrl;
+      try {
+        const u = new URL(baseUrl);
+        u.searchParams.set('token', activeSsoToken);
+        u.searchParams.set('sso_token', activeSsoToken);
+        return u.toString();
+      } catch {
+        const sep = baseUrl.includes('?') ? '&' : '?';
+        return baseUrl + sep + 'token=' + encodeURIComponent(activeSsoToken) + '&sso_token=' + encodeURIComponent(activeSsoToken);
+      }
+    }
+
+    // Set initial frame with SSO token if available
+    window.addEventListener('DOMContentLoaded', () => {
+      if (activeSsoToken) {
+        const frame = document.getElementById('main-frame');
+        if (frame) frame.src = buildSsoUrl(currentUrl);
+      }
+    });
+
+    // Cross-portal SSO Listener
+    window.addEventListener('message', (event) => {
+      if (event.data?.type === 'DOCSEARCH_SSO_SYNC' && event.data.token) {
+        activeSsoToken = event.data.token;
+        try {
+          localStorage.setItem('docsearch_sso_master_token', activeSsoToken);
+        } catch {}
+      } else if (event.data?.type === 'DOCSEARCH_SSO_INIT') {
+        if (activeSsoToken) {
+          const frame = document.getElementById('main-frame');
+          frame?.contentWindow?.postMessage({
+            type: 'DOCSEARCH_SSO_CREDENTIALS',
+            token: activeSsoToken
+          }, '*');
+        }
+      } else if (event.data?.type === 'DOCSEARCH_SSO_LOGOUT') {
+        activeSsoToken = '';
+        try {
+          localStorage.removeItem('docsearch_sso_master_token');
+        } catch {}
+      }
+    });
 
     function switchApp(appKey, url) {
       currentUrl = url;
-      document.getElementById('main-frame').src = url;
+      const targetUrl = buildSsoUrl(url);
+      const frame = document.getElementById('main-frame');
+      if (frame) frame.src = targetUrl;
       document.querySelectorAll('.app-tab').forEach(t => t.classList.remove('active'));
-      event.currentTarget.classList.add('active');
+      if (event && event.currentTarget && event.currentTarget.classList) {
+        event.currentTarget.classList.add('active');
+      }
       document.getElementById('switcher-modal').classList.remove('open');
     }
 
@@ -357,7 +412,7 @@ function renderHubHtml(activeApp = 'partner') {
     }
 
     function openExternal() {
-      window.open(currentUrl, '_blank');
+      window.open(buildSsoUrl(currentUrl), '_blank');
     }
 
     // Keyboard shortcut (Alt + S or Ctrl + K) to toggle switcher

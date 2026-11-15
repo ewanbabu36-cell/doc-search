@@ -274,8 +274,16 @@ export const DocSearchLandingPage: React.FC = () => {
     setDemoSubmitted(true);
   };
 
-  const partnerPortalUrl = ((import.meta as any)?.env?.VITE_PARTNER_URL as string) || (typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 'http://localhost:5173' : '/partner/');
-  const companyPortalUrl = ((import.meta as any)?.env?.VITE_COMPANY_URL as string) || (typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 'http://localhost:5174' : '/hq/');
+  const ssoToken = typeof window !== 'undefined'
+    ? (localStorage.getItem('docsearch_auth_token') || localStorage.getItem('docsearch_company_token') || localStorage.getItem('auth_token'))
+    : null;
+  const ssoQuery = ssoToken ? `?token=${encodeURIComponent(ssoToken)}&sso_token=${encodeURIComponent(ssoToken)}` : '';
+
+  const partnerPortalBase = ((import.meta as any)?.env?.VITE_PARTNER_URL as string) || (typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 'http://localhost:5173' : '/partner/');
+  const companyPortalBase = ((import.meta as any)?.env?.VITE_COMPANY_URL as string) || (typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 'http://localhost:5177' : '/hq/');
+
+  const partnerPortalUrl = partnerPortalBase + ssoQuery;
+  const companyPortalUrl = companyPortalBase + ssoQuery;
 
   // Calculated ROI Metrics
       

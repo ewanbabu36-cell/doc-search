@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { getDatabase, sql } from '@docsearch/database';
 import { authenticate } from '../../plugins/auth-guard.js';
+import { clinicalSweeperService } from '../../services/partner/ClinicalSweeperService.js';
 
 interface IotTelemetryRequest {
   storageUnitId?: string;
@@ -125,50 +126,12 @@ export const bloodBankSentinelRoutes: FastifyPluginAsync = async (fastify) => {
   // 3. Automated 48-Hour Cross-Match Reservation Sweep
   fastify.post('/api/v1/partner/blood-bank/crossmatch/auto-expire-sweep', async (request, reply) => {
     const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
-    const db = getDatabase();
-
-    const simulatedExpiredUnits = [
-      {
-        unitBarcode: 'BLD-PRBC-B-POS-9003',
-        patientName: 'Vikas Dubey (Cancelled OT)',
-        holdElapsedHours: 51.4,
-        action: 'RELEASED_TO_EMERGENCY_STOCK'
-      }
-    ];
-
-    try {
-      await db.execute(sql`
-        UPDATE blood_bank_unit_inventory
-        SET status = 'AVAILABLE_UNRESERVED'
-        WHERE tenant_id = ${tenantId} AND unit_barcode IN (
-          SELECT unit_barcode FROM blood_bank_crossmatch_reservations
-          WHERE tenant_id = ${tenantId}
-            AND reservation_status = 'ACTIVE_SURGERY_HOLD'
-            AND expires_at < NOW()
-        )
-      `);
-
-      await db.execute(sql`
-        UPDATE blood_bank_crossmatch_reservations
-        SET reservation_status = 'EXPIRED_RELEASED_TO_GENERAL_POOL',
-            released_at = NOW()
-        WHERE tenant_id = ${tenantId}
-          AND reservation_status = 'ACTIVE_SURGERY_HOLD'
-          AND expires_at < NOW()
-      `);
-    } catch (err: any) {
-      fastify.log.warn(`[BloodBank] Sweep warning: ${err.message}`);
-    }
+    const result = await clinicalSweeperService.runBloodBankCrossmatchSweep(tenantId);
 
     return reply.status(200).send({
       success: true,
       message: 'Automated 48-hour blood reservation sweep completed. Unutilized units returned to general inventory.',
-      data: {
-        unitsAutoReleasedCount: simulatedExpiredUnits.length,
-        releasedUnits: simulatedExpiredUnits,
-        preventedBloodWastage: true,
-        timestamp: new Date().toISOString()
-      }
+      data: result
     });
   });
 

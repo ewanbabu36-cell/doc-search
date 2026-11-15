@@ -42,9 +42,16 @@ console.log('🚀 STARTING DOC SEARCH 4-SERVICE SUITE SUPERVISOR');
 console.log('============================================================\n');
 
 const children = [];
+let isShuttingDown = false;
 
 function spawnService(svc) {
-  console.log(`[+] Launching ${svc.name} on port ${svc.port}...`);
+  svc.restartCount = svc.restartCount || 0;
+  svc.lastCrashTime = svc.lastCrashTime || 0;
+  svc.maxRestarts = svc.maxRestarts !== undefined ? svc.maxRestarts : 10;
+  svc.restartCooldownMs = svc.restartCooldownMs || 1500;
+  svc.autoRestart = svc.autoRestart !== undefined ? svc.autoRestart : true;
+
+  console.log(`[+] Launching ${svc.name}${svc.port ? ` on port ${svc.port}` : ''}...`);
   const child = spawn(svc.executable, svc.args, {
     cwd: svc.cwd,
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -62,19 +69,59 @@ function spawnService(svc) {
   child.stdout.on('data', (data) => {
     const text = data.toString().trim();
     if (text) {
-      console.log(`${svc.color}[${svc.name}:${svc.port}]\x1b[0m ${text}`);
+      console.log(`${svc.color}[${svc.name}${svc.port ? `:${svc.port}` : ''}]\x1b[0m ${text}`);
     }
   });
 
   child.stderr.on('data', (data) => {
     const text = data.toString().trim();
     if (text) {
-      console.error(`${svc.color}[${svc.name}:${svc.port} ERR]\x1b[0m ${text}`);
+      console.error(`${svc.color}[${svc.name}${svc.port ? `:${svc.port}` : ''} ERR]\x1b[0m ${text}`);
     }
   });
 
-  child.on('close', (code) => {
-    console.log(`[-] ${svc.name} exited with code ${code}`);
+  child.on('close', (code, signal) => {
+    if (isShuttingDown) {
+      console.log(`[-] ${svc.name} exited cleanly during supervisor shutdown.`);
+      return;
+    }
+    console.log(`[-] ${svc.name} exited with code ${code}${signal ? ` (Signal: ${signal})` : ''}`);
+
+    if (svc.autoRestart && (code !== 0 || signal)) {
+      const now = Date.now();
+      // Reset crash count if running stably for more than 5 minutes
+      if (now - svc.lastCrashTime > 300000) {
+        svc.restartCount = 0;
+      }
+      svc.lastCrashTime = now;
+
+      if (svc.restartCount < svc.maxRestarts) {
+        svc.restartCount++;
+        const delay = svc.restartCooldownMs;
+        console.warn(
+          `[\x1b[33m!\x1b[0m] SUPERVISOR SELF-HEALING: ${svc.name}${svc.port ? ` (Port ${svc.port})` : ''} died. Auto-recovering instance in ${delay}ms... (Attempt ${svc.restartCount}/${svc.maxRestarts})`
+        );
+        setTimeout(() => {
+          if (isShuttingDown) return;
+          if (svc.port && svc.port > 0) {
+            try {
+              const out = execSync(`netstat -ano | findstr :${svc.port} | findstr LISTENING`, { encoding: 'utf8' });
+              const pid = out.trim().split(/\s+/).pop();
+              if (pid && pid !== '0' && pid !== String(process.pid)) {
+                execSync(`taskkill /F /PID ${pid}`);
+              }
+            } catch {}
+          }
+          const newChild = spawnService(svc);
+          const idx = children.indexOf(child);
+          if (idx !== -1) children[idx] = newChild;
+        }, delay);
+      } else {
+        console.error(
+          `[\x1b[31m✖\x1b[0m] CRITICAL: ${svc.name} exceeded maximum restart threshold (${svc.maxRestarts} crashes in 5m). Supervisor halting restart loop for this service.`
+        );
+      }
+    }
   });
 
   return child;
@@ -146,8 +193,9 @@ async function main() {
     port: 4000,
     cwd: path.join(rootDir, 'apps/api-gateway'),
     executable: process.execPath,
-    args: ['--env-file=' + path.join(rootDir, '.env'), 'dist/server.js'],
-    color: '\x1b[35m'
+    args: ['--max-old-space-size=2048', '--env-file=' + path.join(rootDir, '.env'), 'dist/server.js'],
+    color: '\x1b[35m',
+    autoRestart: true
   };
   spawnService(gateway);
 
@@ -166,8 +214,9 @@ async function main() {
     port: 18080,
     cwd: rootDir,
     executable: process.execPath,
-    args: ['scripts/docsearch-hardware-agent.mjs'],
-    color: '\x1b[32m'
+    args: ['--max-old-space-size=512', 'scripts/docsearch-hardware-agent.mjs'],
+    color: '\x1b[32m',
+    autoRestart: true
   };
   spawnService(hardwareAgent);
 
@@ -177,8 +226,9 @@ async function main() {
     port: 8042,
     cwd: rootDir,
     executable: process.execPath,
-    args: ['scripts/docsearch-pacs-server.mjs'],
-    color: '\x1b[36m'
+    args: ['--max-old-space-size=2048', 'scripts/docsearch-pacs-server.mjs'],
+    color: '\x1b[36m',
+    autoRestart: true
   };
   spawnService(pacsServer);
 
@@ -188,10 +238,23 @@ async function main() {
     port: 5432,
     cwd: rootDir,
     executable: process.execPath,
-    args: ['scripts/automated-encrypted-backup-cron.mjs'],
-    color: '\x1b[33m'
+    args: ['--max-old-space-size=512', 'scripts/automated-encrypted-backup-cron.mjs'],
+    color: '\x1b[33m',
+    autoRestart: true
   };
   spawnService(backupCron);
+
+  // Step 1.8: Start Autonomous Clinical Sweepers Daemon (Crossmatch Expiry & Bed SLA Escalation)
+  const clinicalSweepers = {
+    name: 'Clinical Sweepers',
+    port: 0,
+    cwd: rootDir,
+    executable: process.execPath,
+    args: ['--max-old-space-size=512', 'scripts/clinical-sweepers-daemon.mjs'],
+    color: '\x1b[34m',
+    autoRestart: true
+  };
+  spawnService(clinicalSweepers);
 
   // Step 2: Start frontend services with dual-stack host flag
   const frontends = [
@@ -241,8 +304,9 @@ async function main() {
     port: 3000,
     cwd: rootDir,
     executable: process.execPath,
-    args: ['scripts/unified-gateway.mjs'],
-    color: '\x1b[36m'
+    args: ['--max-old-space-size=512', 'scripts/unified-gateway.mjs'],
+    color: '\x1b[36m',
+    autoRestart: true
   };
   spawnService(unifiedGateway);
 
@@ -251,6 +315,7 @@ async function main() {
 }
 
 const cleanup = () => {
+  isShuttingDown = true;
   console.log('\n[!] Shutting down all services...');
   children.forEach((c) => {
     try {

@@ -2496,6 +2496,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                 const storedGhost = localStorage.getItem('docsearch_ghost_session');
                 const parsed = storedGhost ? JSON.parse(storedGhost) : null;
                 const sessionId = parsed?.sessionId || (currentUser as any)?.ghostSessionId;
+                const returnToken = parsed?.founderToken || parsed?.originToken || '';
                 if (sessionId) {
                   await fetch('http://127.0.0.1:4000/api/v1/company/godmode/impersonate/end', {
                     method: 'POST',
@@ -2503,11 +2504,16 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                     body: JSON.stringify({ sessionId })
                   }).catch(() => {});
                 }
-              } catch {}
-              localStorage.removeItem('docsearch_ghost_session');
-              localStorage.removeItem('docsearch_partner_staff_auth');
-              localStorage.removeItem('docsearch_auth_token');
-              window.location.href = 'http://localhost:5174';
+                localStorage.removeItem('docsearch_ghost_session');
+                localStorage.removeItem('docsearch_partner_staff_auth');
+                localStorage.removeItem('docsearch_auth_token');
+                const returnUrl = returnToken
+                  ? `http://localhost:5177/?token=${encodeURIComponent(returnToken)}&sso_token=${encodeURIComponent(returnToken)}`
+                  : 'http://localhost:5177';
+                window.location.href = returnUrl;
+              } catch {
+                window.location.href = 'http://localhost:5177';
+              }
             }}
             style={{
               backgroundColor: '#DC2626',

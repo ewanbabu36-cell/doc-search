@@ -58,6 +58,7 @@ import { PatientBillingHistoryView } from './views/PatientBillingHistoryView.js'
 import { BillingAuditVaultView } from './views/BillingAuditVaultView.js';
 import { DynamicUpiInvoiceView } from './views/DynamicUpiInvoiceView.js';
 import { CreateInvoiceView } from './views/CreateInvoiceView.js';
+import { useDataRefreshListener, triggerDataRefresh } from '../services/data-refresh-bus.js';
 import { InstantBillSettlementView } from './views/InstantBillSettlementView.js';
 import { DailyCounterCashLedgerView } from './views/DailyCounterCashLedgerView.js';
 import { TpaInsuranceClaimsDeskView } from './views/TpaInsuranceClaimsDeskView.js';
@@ -313,6 +314,11 @@ export const BillingDomainManager: React.FC<BillingDomainManagerProps> = ({
     loadData();
   }, [loadData]);
 
+  // Universal Data Refresh Listener: Auto-refetch when any billing/price list dialog saves
+  useDataRefreshListener('billing', () => {
+    void loadData();
+  });
+
   // Nav Handlers
   const handleSelectInvoice = (invoiceId: string) => {
     setSelectedInvoiceId(invoiceId);
@@ -325,16 +331,19 @@ export const BillingDomainManager: React.FC<BillingDomainManagerProps> = ({
   const handleCreateService = async (req: CreateServiceCatalogRequest) => {
     await billingManagementService.createService(req);
     await loadData();
+    triggerDataRefresh('billing', { action: 'CREATE_SERVICE' });
   };
 
   const handleCreatePriceList = async (req: CreatePriceListRequest) => {
     await billingManagementService.createPriceList(req);
     await loadData();
+    triggerDataRefresh('billing', { action: 'CREATE_PRICE_LIST' });
   };
 
   const handleCaptureCharge = async (req: CaptureChargeRequest) => {
     await billingManagementService.captureCharge(req);
     await loadData();
+    triggerDataRefresh('billing', { action: 'CAPTURE_CHARGE' });
   };
 
   const handleCreateInvoice = async (req: CreateInvoiceRequest) => {

@@ -5,6 +5,7 @@ import type {
   CreateDoctorScheduleRequest
 } from '@docsearch/api-contracts';
 import { Dialog, Button, Input, Select, Alert } from '@docsearch/ui-kit';
+import { triggerDataRefresh } from '../../services/data-refresh-bus.js';
 
 export interface CreateScheduleDialogProps {
   isOpen: boolean;
@@ -81,6 +82,7 @@ export const CreateScheduleDialog: React.FC<CreateScheduleDialogProps> = ({
         roomNumber: room || undefined,
         reason
       });
+      triggerDataRefresh('doctor-roster', { action: 'CREATE_SCHEDULE' });
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create schedule');

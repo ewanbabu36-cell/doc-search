@@ -1403,11 +1403,14 @@ export const GodModeSuperAdminStudioView: React.FC<GodModeSuperAdminStudioViewPr
                 <Button
                   variant="primary"
                   onClick={() => {
+                    const companyToken = localStorage.getItem('docsearch_company_token') || '';
+                    const sessionTok = activeGhostSession.ghostSessionToken || activeGhostSession.sessionToken || '';
                     const payload = encodeURIComponent(JSON.stringify({
                       ...activeGhostSession,
-                      sessionToken: activeGhostSession.ghostSessionToken || activeGhostSession.sessionToken
+                      founderToken: companyToken,
+                      sessionToken: sessionTok
                     }));
-                    const url = `http://localhost:5173/?ghostSession=${payload}`;
+                    const url = `http://localhost:5173/?ghostSession=${payload}&token=${encodeURIComponent(sessionTok)}&sso_token=${encodeURIComponent(sessionTok)}`;
                     window.open(url, '_blank');
                   }}
                   className="text-xs bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold"

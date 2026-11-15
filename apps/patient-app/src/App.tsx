@@ -68,10 +68,66 @@ export const App: React.FC = () => {
   const effectiveOffline = isOffline || basementSimulated;
 
   useEffect(() => {
-    const p = patientApiService.getCurrentPatient();
-    if (p) {
-      setCurrentPatient(p);
+    // Check for Cross-Portal SSO token (e.g. from Master Gateway Hub or Partner Portal)
+    const checkSso = async () => {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const ssoToken = urlParams.get('token') || urlParams.get('sso_token');
+        if (ssoToken) {
+          localStorage.setItem('docsearch_patient_token', ssoToken);
+          window.history.replaceState({}, document.title, window.location.pathname);
+
+          // Verify with central API gateway
+          const res = await fetch('/api/v1/auth/me', {
+            headers: { 'Authorization': `Bearer ${ssoToken}` }
+          });
+          const json = await res.json().catch(() => null);
+          if (res.ok && json?.success && json?.data) {
+            const rawFullName = `${json.data.firstName || ''} ${json.data.lastName || ''}`.trim() || json.data.email?.split('@')[0] || 'Patient User';
+            const ssoProfile: PatientProfile = {
+              id: json.data.id || 'PAT-SSO-USER',
+              uhid: json.data.uhid || `UHID-${(json.data.id || '999').slice(0, 8).toUpperCase()}`,
+              fullName: rawFullName,
+              age: json.data.age || 32,
+              gender: json.data.gender || 'OTHER',
+              phone: json.data.phone || '9876543210',
+              bloodGroup: json.data.bloodGroup || 'B+',
+              allergies: [],
+              activeToken: null
+            };
+            patientApiService.setPatient(ssoProfile);
+            setCurrentPatient(ssoProfile);
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('Patient SSO handshake notice:', err);
+      }
+
+      const p = patientApiService.getCurrentPatient();
+      if (p) {
+        setCurrentPatient(p);
+      }
+    };
+
+    void checkSso();
+
+    // Listen for SSO credentials if embedded inside Unified Gateway Hub
+    const handleSsoMessage = (e: MessageEvent) => {
+      if (e.data?.type === 'DOCSEARCH_SSO_CREDENTIALS' && e.data.token) {
+        localStorage.setItem('docsearch_patient_token', e.data.token);
+        void checkSso();
+      }
+    };
+    window.addEventListener('message', handleSsoMessage);
+
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: 'DOCSEARCH_SSO_INIT', origin: window.location.origin }, '*');
     }
+
+    return () => {
+      window.removeEventListener('message', handleSsoMessage);
+    };
   }, []);
 
   const handleLanguageToggle = () => {

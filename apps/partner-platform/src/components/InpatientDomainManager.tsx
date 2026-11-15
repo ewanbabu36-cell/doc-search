@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Alert, DocSearchSpatialCore3D } from '@docsearch/ui-kit';
+import { useDataRefreshListener, triggerDataRefresh } from '../services/data-refresh-bus.js';
 import type {
   InpatientOverviewMetricsDto,
   InpatientAnalyticsDto,
@@ -316,6 +317,14 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
   useEffect(() => {
     loadData();
 
+    // Universal Data Refresh Listener: Auto-refetch when any bed, turnaround or admission modal saves
+  }, [loadData]);
+
+  useDataRefreshListener('inpatient', () => {
+    void loadData();
+  });
+
+  useEffect(() => {
     const unsubscribe = hospitalEventBus.subscribe('PATIENT_SELECTED', (payload: HospitalEventPayload) => {
       const selected = payload.data as ActivePatientSummary;
       if (selected && (selected.id || selected.uhid)) {
@@ -542,12 +551,14 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
   const handleReleaseBed = async (req: ReleaseBedRequest) => {
     await inpatientManagementService.releaseBed(req);
     await loadData();
+    triggerDataRefresh('inpatient', { action: 'RELEASE_BED' });
     showNotification('Bed released to housekeeping queue.');
   };
 
   const handleCompleteCleaning = async (req: CompleteCleaningRequest) => {
     await inpatientManagementService.completeCleaning(req);
     await loadData();
+    triggerDataRefresh('inpatient', { action: 'COMPLETE_CLEANING' });
     showNotification('Bed sanitization certified. Bed is now AVAILABLE.');
   };
 
@@ -561,6 +572,7 @@ export const InpatientDomainManager: React.FC<InpatientDomainManagerProps> = ({
       notes: 'Bed sanitized and ready for new patient admission'
     });
     await loadData();
+    triggerDataRefresh('inpatient', { action: 'QUICK_CLEANING' });
     showNotification(`✅ Bed ${bed.bedCode} sanitized and ready for new patient admission.`);
   };
 

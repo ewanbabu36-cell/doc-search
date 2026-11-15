@@ -10,6 +10,7 @@ import type {
   CreatePriceListRequest,
   BillingServiceCatalogDto
 } from '@docsearch/api-contracts';
+import { triggerDataRefresh } from '../../services/data-refresh-bus.js';
 
 export interface CreatePriceListDialogProps {
   isOpen: boolean;
@@ -80,6 +81,7 @@ export const CreatePriceListDialog: React.FC<CreatePriceListDialogProps> = ({
         actorRole: 'Billing Manager',
         justification: justification.trim()
       });
+      triggerDataRefresh('billing', { action: 'CREATE_PRICE_LIST' });
       onClose();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to create fee schedule.');
