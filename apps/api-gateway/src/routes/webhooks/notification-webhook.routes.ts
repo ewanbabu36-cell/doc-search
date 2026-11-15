@@ -49,7 +49,10 @@ export const notificationWebhookRoutes: FastifyPluginAsync = async (fastify) => 
     if (!recipientPhone || !channel || !templateId) {
       return reply.status(400).send({
         success: false,
-        error: 'Missing required parameters: recipientPhone, channel, templateId'
+        error: {
+          code: 'INVALID_PARAMETERS',
+          message: 'Missing required parameters: recipientPhone, channel, templateId'
+        }
       });
     }
 
@@ -67,7 +70,10 @@ export const notificationWebhookRoutes: FastifyPluginAsync = async (fastify) => 
       logger.error('Failed to dispatch notification', { error: err.message });
       return reply.status(500).send({
         success: false,
-        error: err.message
+        error: {
+          code: 'DISPATCH_ERROR',
+          message: err.message
+        }
       });
     }
   });
