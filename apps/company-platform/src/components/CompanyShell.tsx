@@ -576,14 +576,19 @@ const CompanyShellInner: React.FC<CompanyShellProps> = ({ currentUser, onLogout 
           userSlot={
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, whiteSpace: 'nowrap' }}>
               {/* Universal Live Sync / Refresh Button */}
-              <LiveSyncRefreshButton />
+              <div className="ds-hide-on-mobile" style={{ flexShrink: 0 }}>
+                <LiveSyncRefreshButton />
+              </div>
 
               {/* Workspace Density Switcher (Zen Comfortable vs High-Density Terminal) */}
-              <DensitySwitcherPill />
+              <div className="ds-hide-on-mobile" style={{ flexShrink: 0 }}>
+                <DensitySwitcherPill />
+              </div>
 
               {/* Enterprise Action Inbox Trigger */}
               <button
                 type="button"
+                className="ds-hide-on-mobile"
                 onClick={() => setIsActionInboxOpen(true)}
                 style={{
                   backgroundColor: 'rgba(2, 132, 199, 0.15)',

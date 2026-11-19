@@ -151,8 +151,8 @@ export const LegacyDataMigrationModal: React.FC<LegacyDataMigrationModalProps> =
     >
       <div
         style={{
-          width: '840px',
-          maxWidth: '100%',
+          width: 'min(840px, 94vw)',
+          maxWidth: '94vw',
           maxHeight: '92vh',
           backgroundColor: '#0F172A',
           border: '1.5px solid rgba(56, 189, 248, 0.4)',

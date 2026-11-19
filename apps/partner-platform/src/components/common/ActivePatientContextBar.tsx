@@ -351,7 +351,7 @@ export const ActivePatientContextBar: React.FC<ActivePatientContextBarProps> = (
             </div>
 
             {/* Quick Cross-Department Action Buttons (Contextual: Hides button for current module to eliminate duplicate reload) */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+            <div className="ds-active-patient-actions" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
               <button
                 type="button"
                 onClick={() => setShowPatient360(true)}

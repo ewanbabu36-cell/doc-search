@@ -34,6 +34,8 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
       style={{
         flex: '1 1 auto',
         width: '100%',
+        minWidth: 0,
+        boxSizing: 'border-box',
         maxWidth: maxWidthMap[maxWidth],
         margin: '0 auto',
         padding: paddingMap[padding],

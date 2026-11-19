@@ -3312,6 +3312,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
               {/* Universal Daily Express ⟷ Advance Pro Mode Switcher */}
               <div
+                className="ds-hide-on-mobile"
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -3374,6 +3375,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
               {/* EWAN 2.0 Master Brain Quick Access Pill */}
               <button
                 type="button"
+                className="ds-hide-on-mobile"
                 onClick={() => {
                   setActiveModule('ewan-super-brain');
                   setVisitedModules((prev) => new Set(prev).add('ewan-super-brain'));
@@ -3398,9 +3400,13 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                 <span style={{ fontSize: '1rem' }}>🧠</span>
                 <span className="ds-hide-on-compact">EWAN 2.0 Brain</span>
               </button>
-              <SoundboxAudioPlayer facilityName={cleanFacilityBrand} />
+              <div className="ds-hide-on-mobile" style={{ flexShrink: 0 }}>
+                <SoundboxAudioPlayer facilityName={cleanFacilityBrand} />
+              </div>
               {/* DocSearch Offline-First Background Sync Indicator */}
-              <OptimisticSyncBadge />
+              <div className="ds-hide-on-mobile" style={{ flexShrink: 0 }}>
+                <OptimisticSyncBadge />
+              </div>
 
               {/* PWA 1-Click Installation - tucked into profile on clinic */}
               {!isClinicVertical && (
@@ -3901,6 +3907,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                         top: 'calc(100% + 8px)',
                         right: 0,
                         width: '320px',
+                        maxWidth: '92vw',
                         maxHeight: '85vh',
                         overflowY: 'auto',
                         backgroundColor: 'var(--ds-color-surface, #0F172A)',
@@ -3914,6 +3921,65 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                         gap: '8px'
                       }}
                     >
+                      {/* CARD 0: Mobile Operating Mode Switcher */}
+                      <div
+                        className="ds-show-on-mobile"
+                        style={{
+                          backgroundColor: 'rgba(15, 23, 42, 0.75)',
+                          border: '1px solid rgba(255, 255, 255, 0.08)',
+                          borderRadius: '10px',
+                          padding: '10px 12px'
+                        }}
+                      >
+                        <div style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px' }}>
+                          Operating Mode
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                          <button
+                            type="button"
+                            onClick={() => platformModeService.setMode('EXPRESS')}
+                            style={{
+                              padding: '6px 8px',
+                              borderRadius: '6px',
+                              border: 'none',
+                              background: operatingMode === 'EXPRESS' ? 'linear-gradient(135deg, #0284C7, #0EA5E9)' : 'rgba(255,255,255,0.05)',
+                              color: operatingMode === 'EXPRESS' ? '#FFFFFF' : '#94A3B8',
+                              fontWeight: 800,
+                              fontSize: '0.74rem',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '4px'
+                            }}
+                          >
+                            <span>⚡</span>
+                            <span>Express</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => platformModeService.setMode('ADVANCED')}
+                            style={{
+                              padding: '6px 8px',
+                              borderRadius: '6px',
+                              border: 'none',
+                              background: operatingMode === 'ADVANCED' ? 'linear-gradient(135deg, #6366F1, #8B5CF6)' : 'rgba(255,255,255,0.05)',
+                              color: operatingMode === 'ADVANCED' ? '#FFFFFF' : '#94A3B8',
+                              fontWeight: 800,
+                              fontSize: '0.74rem',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '4px'
+                            }}
+                          >
+                            <span>⚙️</span>
+                            <span>Advance</span>
+                          </button>
+                        </div>
+                      </div>
+
                       {/* CARD 1: User & Facility Profile + LiveSync Telemetry */}
                       <div
                         style={{

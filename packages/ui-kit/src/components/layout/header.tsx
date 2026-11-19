@@ -208,6 +208,7 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Center Slot: Organization / Universal Search / Command Bar */}
       {organizationSlot && (
         <div
+          className="ds-header-center-slot"
           style={{
             flex: '0 1 420px',
             minWidth: 0,
@@ -238,7 +239,7 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={toggleFullscreen}
             aria-label={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
             title={isFullscreen ? 'Exit Fullscreen (Esc / F11 / Ctrl+Shift+F)' : 'Full Screen Mode (F11 / Ctrl+Shift+F)'}
-            className="ds-interactive ds-spring-press"
+            className="ds-interactive ds-spring-press ds-hide-on-mobile"
             style={{
               padding: '5px 10px',
               borderRadius: '7px',

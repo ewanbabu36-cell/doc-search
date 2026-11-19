@@ -212,7 +212,7 @@ export const App: React.FC = () => {
   }
 
   return (
-    <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', backgroundColor: '#0B0F19', boxShadow: '0 0 40px rgba(0,0,0,0.8)', position: 'relative' }}>
+    <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', backgroundColor: '#0B0F19', boxShadow: '0 0 40px rgba(0,0,0,0.8)', position: 'relative', paddingBottom: '74px', boxSizing: 'border-box' }}>
       {/* Hospital Basement / Offline Vault Sticky Banner */}
       {effectiveOffline && (
         <div

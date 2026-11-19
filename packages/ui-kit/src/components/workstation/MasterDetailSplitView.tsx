@@ -50,7 +50,7 @@ export const MasterDetailSplitView: React.FC<MasterDetailSplitViewProps> = ({
     >
       {/* Master Left Pane */}
       <div
-        className="ds-master-pane"
+        className="ds-master-pane ds-split-master"
         style={{
           width: isMasterCollapsed ? '48px' : masterWidth,
           flexShrink: 0,

@@ -148,8 +148,8 @@ export const MandatoryPrescriberComplianceModal: React.FC<MandatoryPrescriberCom
     >
       <div
         style={{
-          width: '620px',
-          maxWidth: '100%',
+          width: 'min(620px, 94vw)',
+          maxWidth: '94vw',
           backgroundColor: '#0F172A',
           border: '1.5px solid #EF4444',
           borderRadius: '16px',
