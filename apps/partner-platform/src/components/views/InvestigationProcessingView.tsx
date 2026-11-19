@@ -474,7 +474,7 @@ export const InvestigationProcessingView: React.FC<InvestigationProcessingViewPr
       </div>
 
       {/* SPLIT SCREEN WORKBENCH CONTAINER */}
-      <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: '20px', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 360px), 1fr))', gap: '20px', alignItems: 'start' }}>
         
         {/* LEFT PANEL: ACTIVE WORKLIST QUEUE */}
         <div style={{ backgroundColor: '#0B132B', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px', overflow: 'hidden' }}>
@@ -898,8 +898,8 @@ export const InvestigationProcessingView: React.FC<InvestigationProcessingViewPr
                   </div>
 
                   {/* Antibiotic Table Grid */}
-                  <div style={{ border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', overflow: 'hidden' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.6fr 1.6fr 1.8fr 36px', padding: '10px 14px', backgroundColor: 'rgba(30, 41, 59, 0.9)', color: '#94A3B8', fontSize: '0.75rem', fontWeight: 800 }}>
+                  <div style={{ border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', overflowX: 'auto', overflowY: 'hidden' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.6fr 1.6fr 1.8fr 36px', minWidth: '550px', padding: '10px 14px', backgroundColor: 'rgba(30, 41, 59, 0.9)', color: '#94A3B8', fontSize: '0.75rem', fontWeight: 800 }}>
                       <div>ANTIBIOTIC</div>
                       <div>DRUG CLASS</div>
                       <div>ZONE / MIC</div>
@@ -907,7 +907,7 @@ export const InvestigationProcessingView: React.FC<InvestigationProcessingViewPr
                       <div style={{ textAlign: 'center' }}>DEL</div>
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', maxHeight: '420px', overflowY: 'auto' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', maxHeight: '420px', overflowY: 'auto', minWidth: '550px' }}>
                       {antibioticPanel.length === 0 ? (
                         <div style={{ padding: '24px', textAlign: 'center', color: '#94A3B8', fontSize: '0.8125rem' }}>
                           No antibiotic sensitivity required (Sterile culture or no pathogenic growth).
@@ -1024,7 +1024,7 @@ export const InvestigationProcessingView: React.FC<InvestigationProcessingViewPr
                 </div>
               ) : (
                 /* STANDARD PARAMETERS TABLE GRID WITH AUTO-FLAGGING & DELTA CHECK BADGES */
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '18px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '18px', overflowX: 'auto' }}>
                   {results.map((param, idx) => {
                     const isCritical = param.abnormalFlag === 'CRITICAL_HIGH' || param.abnormalFlag === 'CRITICAL_LOW';
                     const isHigh = param.abnormalFlag === 'HIGH';
@@ -1044,6 +1044,7 @@ export const InvestigationProcessingView: React.FC<InvestigationProcessingViewPr
                           backgroundColor: isCritical ? 'rgba(220, 38, 38, 0.15)' : isHigh || isLow ? 'rgba(245, 158, 11, 0.1)' : 'rgba(30, 41, 59, 0.5)',
                           display: 'grid',
                           gridTemplateColumns: '2.2fr 1.2fr 1fr 1.6fr 1.4fr 36px',
+                          minWidth: '560px',
                           gap: '8px',
                           alignItems: 'center'
                         }}

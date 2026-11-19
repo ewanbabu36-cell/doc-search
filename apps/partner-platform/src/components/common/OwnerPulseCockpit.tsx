@@ -604,7 +604,7 @@ export const OwnerPulseCockpit: React.FC<OwnerPulseCockpitProps> = ({
                   </button>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '14px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '8px', marginBottom: '14px' }}>
                   <div style={{ backgroundColor: '#0B132B', padding: '12px', borderRadius: '10px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.08)' }}>
                     <span style={{ fontSize: '0.6875rem', color: '#94A3B8' }}>PENDING ACCESSION / RESULT</span>
                     <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#FBBF24', margin: '4px 0' }}>{metrics.labPending}</div>

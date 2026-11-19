@@ -172,7 +172,7 @@ export const OperationTheatreManagerView: React.FC = () => {
       </div>
 
       {/* Main Grid: Cases List on Left, Active Cockpit on Right */}
-      <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: '1.5rem' }}>
         {/* Left: OT Cases Queue */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase' }}>

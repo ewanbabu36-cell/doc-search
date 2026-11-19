@@ -246,7 +246,7 @@ export const CentralHelpDeskExitHubView: React.FC<CentralHelpDeskExitHubViewProp
       </div>
 
       {/* 2-Column Layout */}
-      <div style={{ display: 'grid', gridTemplateColumns: '400px 1fr', gap: '1.25rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 360px), 1fr))', gap: '1.25rem' }}>
         {/* Left Column: Waiting Exit Queue */}
         <Card padding="md">
           <h3 style={{ margin: '0 0 0.75rem', fontSize: '0.95rem', fontWeight: 700, color: 'var(--ds-color-text-primary)' }}>

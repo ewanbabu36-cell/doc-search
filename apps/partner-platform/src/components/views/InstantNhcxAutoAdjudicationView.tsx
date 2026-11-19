@@ -485,7 +485,7 @@ export const InstantNhcxAutoAdjudicationView: React.FC = () => {
       </div>
 
       {/* Core Grid: Left = 4-Pillar Multi-Source Auto-Reconciliation | Right = ABDM NHCX Live Push & Gate Pass */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(380px, 1.2fr) minmax(340px, 1fr)', gap: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 360px), 1fr))', gap: '20px' }}>
         {/* Left Column: 4-Pillar Reconciliation Matrix */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {/* Pillar 1: Clinical SOAP Notes */}

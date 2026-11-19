@@ -1320,7 +1320,22 @@ export const SubscriptionCustomizerModal: React.FC<SubscriptionCustomizerModalPr
         </div>
 
         {/* Main Body: Dual-Pane Studio Layout */}
-        <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        <style>{`
+          @media (max-width: 900px) {
+            .ds-sub-studio-body {
+              flex-direction: column !important;
+              overflow-y: auto !important;
+            }
+            .ds-sub-studio-body > div,
+            .ds-sub-studio-body > form {
+              width: 100% !important;
+              max-width: 100% !important;
+              border-left: none !important;
+              border-top: 1.5px solid #1E293B !important;
+            }
+          }
+        `}</style>
+        <div className="ds-sub-studio-body" style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
           {/* Left Pane (Scrollable Customizer Form) */}
           <form
             onSubmit={handleSubmit}
@@ -2423,7 +2438,8 @@ export const SubscriptionCustomizerModal: React.FC<SubscriptionCustomizerModalPr
           {/* Right Pane: Sticky Live Contract Ledger & Invoicing HUD */}
           <div
             style={{
-              width: '380px',
+              width: 'min(380px, 100%)',
+              maxWidth: '100%',
               backgroundColor: '#0A1124',
               borderLeft: '1.5px solid #1E293B',
               overflowY: 'auto',

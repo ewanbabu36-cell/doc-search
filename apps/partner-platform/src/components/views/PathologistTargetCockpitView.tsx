@@ -639,7 +639,7 @@ export const PathologistTargetCockpitView: React.FC<PathologistTargetCockpitView
       <main
         style={{
           display: 'grid',
-          gridTemplateColumns: 'minmax(280px, 1.15fr) minmax(440px, 1.95fr) minmax(320px, 1.35fr)',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))',
           gap: '16px',
           alignItems: 'start'
         }}

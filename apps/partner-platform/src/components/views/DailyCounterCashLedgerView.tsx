@@ -487,7 +487,7 @@ export const DailyCounterCashLedgerView: React.FC<DailyCounterCashLedgerViewProp
                   key={d.denom}
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: '120px 100px 1fr',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 110px), 1fr))',
                     alignItems: 'center',
                     gap: '12px',
                     padding: '8px 12px',
@@ -824,7 +824,7 @@ export const DailyCounterCashLedgerView: React.FC<DailyCounterCashLedgerViewProp
               <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#34D399', textTransform: 'uppercase' }}>
                 2. Finance Admin Verification & Sign-off
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px', gap: '8px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '8px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.72rem', color: '#94A3B8', marginBottom: '4px' }}>
                     Finance Admin Name

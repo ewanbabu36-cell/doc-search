@@ -346,7 +346,7 @@ export const WebDicomAiHeatmapViewer: React.FC<Props> = ({ onClose }) => {
       )}
 
       {/* Main Workspace Layout */}
-      <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '20px' }}>
         
         {/* Left Column: Radiologist Reading Worklist with Priority #1 Pinning */}
         <Card padding="md" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -631,8 +631,9 @@ export const WebDicomAiHeatmapViewer: React.FC<Props> = ({ onClose }) => {
               <div
                 style={{
                   position: 'relative',
-                  width: '380px',
-                  height: '380px',
+                  width: 'min(380px, 92vw)',
+                  height: 'min(380px, 92vw)',
+                  maxWidth: '92vw',
                   transform: `scale(${zoomLevel})`,
                   transition: 'transform 0.15s ease',
                   filter:

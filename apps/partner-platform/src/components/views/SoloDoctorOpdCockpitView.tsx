@@ -8618,7 +8618,7 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
             </div>
 
             {/* Diagnosis & ICD-10 Compact Bar */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 130px', gap: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: '10px' }}>
               <div style={{ position: 'relative' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '3px' }}>
                   <label style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#38BDF8' }}>
@@ -9879,7 +9879,7 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
                     </span>
                   )}
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 75px 85px 50px 95px auto', gap: '6px', alignItems: 'center' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 130px), 1fr))', gap: '6px', alignItems: 'center' }}>
                   <div style={{ position: 'relative' }}>
                     <input
                       type="text"
@@ -9916,7 +9916,8 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
                           position: 'absolute',
                           bottom: 'calc(100% + 6px)',
                           left: 0,
-                          width: '380px',
+                          width: 'min(380px, 92vw)',
+                          maxWidth: '92vw',
                           maxHeight: '260px',
                           overflowY: 'auto',
                           backgroundColor: '#0F172A',

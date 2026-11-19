@@ -197,10 +197,24 @@ export const PartnerTemplateManager: React.FC<PartnerTemplateManagerProps> = ({
         </div>
 
         {/* Body Container (2 Columns) */}
-        <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        <style>{`
+          @media (max-width: 900px) {
+            .ds-template-mgr-body {
+              flex-direction: column !important;
+              overflow-y: auto !important;
+            }
+            .ds-template-mgr-body > div {
+              width: 100% !important;
+              max-width: 100% !important;
+              border-right: none !important;
+              border-bottom: 1px solid #1E293B !important;
+            }
+          }
+        `}</style>
+        <div className="ds-template-mgr-body" style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
           {/* Left Column: Blueprint Selector & Filters */}
           <div style={{
-            width: '380px',
+            width: 'min(380px, 100%)', maxWidth: '100%',
             borderRight: '1px solid #1E293B',
             display: 'flex',
             flexDirection: 'column',

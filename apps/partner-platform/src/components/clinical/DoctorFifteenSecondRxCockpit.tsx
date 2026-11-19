@@ -611,8 +611,9 @@ export const DoctorFifteenSecondRxCockpit: React.FC<DoctorFifteenSecondRxCockpit
       <div
         style={{
           width: '100%',
-          maxWidth: '1240px',
+          maxWidth: 'min(96vw, 1240px)',
           height: '92vh',
+          maxHeight: '94vh',
           backgroundColor: '#0F172A',
           border: '1.5px solid #0284C7',
           borderRadius: '16px',
@@ -982,7 +983,7 @@ export const DoctorFifteenSecondRxCockpit: React.FC<DoctorFifteenSecondRxCockpit
           style={{
             flex: 1,
             display: 'grid',
-            gridTemplateColumns: '1.2fr 1fr',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 380px), 1fr))',
             overflow: 'hidden',
             backgroundColor: '#0F172A'
           }}
@@ -999,7 +1000,7 @@ export const DoctorFifteenSecondRxCockpit: React.FC<DoctorFifteenSecondRxCockpit
             }}
           >
             {/* Chief Complaints & Clinical Impression */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: '12px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#94A3B8', marginBottom: '4px' }}>
                   CHIEF COMPLAINTS
@@ -1126,10 +1127,11 @@ export const DoctorFifteenSecondRxCockpit: React.FC<DoctorFifteenSecondRxCockpit
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        gap: '10px'
+                        gap: '10px',
+                        flexWrap: 'wrap'
                       }}
                     >
-                      <div style={{ minWidth: '180px' }}>
+                      <div style={{ minWidth: 'min(100%, 180px)', flex: '1 1 auto' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <span style={{ color: '#38BDF8', fontWeight: 800, fontSize: '0.85rem' }}>
                             {idx + 1}. {med.name}
@@ -1453,7 +1455,7 @@ export const DoctorFifteenSecondRxCockpit: React.FC<DoctorFifteenSecondRxCockpit
           </div>
 
           {/* Action Triggers */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
             {/* Thermal Slip Dispatch */}
             <button
               type="button"

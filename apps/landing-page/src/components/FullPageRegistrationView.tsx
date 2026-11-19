@@ -869,7 +869,7 @@ export const FullPageRegistrationView: React.FC<FullPageRegistrationViewProps> =
         style={{
           flex: 1,
           display: 'grid',
-          gridTemplateColumns: 'minmax(360px, 480px) 1fr',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 380px), 1fr))',
           minHeight: 'calc(100vh - 70px)',
           maxWidth: '1600px',
           width: '100%',

@@ -105,7 +105,7 @@ export const AddInsuranceDialog: React.FC<AddInsuranceDialogProps> = ({
           <Input value={payerName} onChange={(e) => setPayerName(e.target.value)} required />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: '8px' }}>
           <div>
             <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: '600', marginBottom: '4px' }}>
               Policy / Contract Number *
@@ -120,7 +120,7 @@ export const AddInsuranceDialog: React.FC<AddInsuranceDialogProps> = ({
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '8px' }}>
           <div>
             <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: '600', marginBottom: '4px' }}>
               Health Plan Name *
@@ -149,7 +149,7 @@ export const AddInsuranceDialog: React.FC<AddInsuranceDialogProps> = ({
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: '8px' }}>
           <div>
             <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: '600', marginBottom: '4px' }}>
               Effective Date *

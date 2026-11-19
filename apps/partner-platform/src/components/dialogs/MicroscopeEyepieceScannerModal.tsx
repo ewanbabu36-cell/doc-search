@@ -362,7 +362,7 @@ export const MicroscopeEyepieceScannerModal: React.FC<MicroscopeEyepieceScannerM
           style={{
             padding: '20px',
             display: 'grid',
-            gridTemplateColumns: '380px 1fr',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))',
             gap: '20px',
             overflowY: 'auto'
           }}
@@ -372,8 +372,9 @@ export const MicroscopeEyepieceScannerModal: React.FC<MicroscopeEyepieceScannerM
             <div
               style={{
                 position: 'relative',
-                width: '360px',
-                height: '360px',
+                width: 'min(360px, 86vw)',
+                height: 'min(360px, 86vw)',
+                maxWidth: '86vw',
                 borderRadius: '50%',
                 backgroundColor: '#020617',
                 overflow: 'hidden',

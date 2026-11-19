@@ -1001,7 +1001,7 @@ export const RapidRxPrescriptionPad: React.FC<RapidRxPrescriptionPadProps> = ({
       </div>
 
       {/* 2-Letter Predictive Drug Search Input Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 80px 100px 90px 110px auto', gap: '8px', alignItems: 'center', position: 'relative' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '8px', alignItems: 'center', position: 'relative' }}>
         {/* Drug Input & Dropdown */}
         <div style={{ position: 'relative' }}>
           <input

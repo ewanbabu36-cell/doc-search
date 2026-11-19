@@ -494,7 +494,7 @@ export const HospitalPlanUpgradeModal: React.FC<HospitalPlanUpgradeModalProps> =
                   </span>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '0.78rem', color: '#E2E8F0' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: '8px', fontSize: '0.78rem', color: '#E2E8F0' }}>
                   {verticalConfig.features.map((feat, i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span>{feat}</span>
@@ -803,7 +803,7 @@ export const HospitalPlanUpgradeModal: React.FC<HospitalPlanUpgradeModalProps> =
                   </span>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '14px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '14px' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
                       12-DIGIT UTR / TRANSACTION ID *

@@ -83,6 +83,7 @@ export const PatientStoryboardRail: React.FC<PatientStoryboardRailProps> = ({
   if (collapsed) {
     return (
       <aside
+        className="ds-patient-storyboard-rail ds-storyboard-collapsed"
         style={{
           width: '54px',
           backgroundColor: '#090D16',
@@ -163,6 +164,7 @@ export const PatientStoryboardRail: React.FC<PatientStoryboardRailProps> = ({
 
   return (
     <aside
+      className="ds-patient-storyboard-rail"
       style={{
         width: '280px',
         minWidth: '280px',

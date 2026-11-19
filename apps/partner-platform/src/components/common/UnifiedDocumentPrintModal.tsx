@@ -764,7 +764,7 @@ export const UnifiedDocumentPrintModal: React.FC<UnifiedDocumentPrintModalProps>
               </div>
 
               {/* Bill-To & Doctor Meta Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px', backgroundColor: '#F8FAFC', padding: '12px 16px', borderRadius: '8px', border: '1px solid #E2E8F0', marginBottom: '16px', fontSize: '0.82rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '20px', backgroundColor: '#F8FAFC', padding: '12px 16px', borderRadius: '8px', border: '1px solid #E2E8F0', marginBottom: '16px', fontSize: '0.82rem' }}>
                 <div>
                   <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', marginBottom: '4px' }}>
                     Billed To Patient:
@@ -846,7 +846,7 @@ export const UnifiedDocumentPrintModal: React.FC<UnifiedDocumentPrintModalProps>
               </table>
 
               {/* Bottom Summary Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px', borderTop: '2px solid #0F172A', paddingTop: '16px', marginBottom: '20px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '20px', borderTop: '2px solid #0F172A', paddingTop: '16px', marginBottom: '20px' }}>
                 {/* Left: Bank Details & UPI QR */}
                 <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                   <img

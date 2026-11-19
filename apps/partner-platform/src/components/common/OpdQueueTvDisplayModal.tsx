@@ -529,7 +529,7 @@ export const OpdQueueTvDisplayModal: React.FC<OpdQueueTvDisplayModalProps> = ({
         style={{
           flex: 1,
           display: 'grid',
-          gridTemplateColumns: '2fr 1fr',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 360px), 1fr))',
           gap: '24px',
           padding: '32px',
           overflow: 'hidden'
@@ -609,7 +609,7 @@ export const OpdQueueTvDisplayModal: React.FC<OpdQueueTvDisplayModalProps> = ({
                   borderRadius: '16px',
                   padding: '24px',
                   display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))',
                   gap: '16px',
                   border: '1px solid rgba(255, 255, 255, 0.08)'
                 }}

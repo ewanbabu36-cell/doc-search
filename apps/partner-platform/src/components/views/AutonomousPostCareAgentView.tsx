@@ -263,7 +263,7 @@ export const AutonomousPostCareAgentView: React.FC = () => {
       </div>
 
       {/* Main Grid: Left = WhatsApp Phone Simulator | Right = Clinical Triage Rules & Live Monitor */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(340px, 440px) 1fr', gap: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 360px), 1fr))', gap: '20px' }}>
         {/* WhatsApp Mobile Bezel Simulator */}
         <div
           style={{

@@ -390,7 +390,7 @@ export const AbdmScanAndShareModal: React.FC<AbdmScanAndShareModalProps> = ({
         )}
 
         {/* Body Layout: Left QR Code Counter, Right Inbound Scans */}
-        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '320px 1fr', overflow: 'hidden' }}>
+        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', overflow: 'hidden' }}>
           {/* Left: Dynamic Counter QR Standee */}
           <div
             style={{

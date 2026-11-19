@@ -400,7 +400,7 @@ export const InteractiveClinicSandbox: React.FC<Props> = ({
         {/* MODE 1: SOLO PEDIATRIC & OPD DOCTOR WORKSPACE                             */}
         {/* ========================================================================= */}
         {activePersona === 'SOLO_CLINIC' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 320px) 1fr', gap: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '20px' }}>
             {/* Left Column: Live Queue */}
             <div
               style={{

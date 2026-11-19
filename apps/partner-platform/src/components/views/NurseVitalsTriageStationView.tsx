@@ -796,7 +796,7 @@ export const NurseVitalsTriageStationView: React.FC<NurseVitalsTriageStationView
 
       {/* TAB 1: 🩺 RECORD VITALS & TRIAGE */}
       {activeTab === 'RECORD_VITALS' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1fr) minmax(440px, 1.4fr)', gap: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: '16px' }}>
           {/* Left Panel: Arriving Patients Queue */}
           <Card
             style={{
@@ -1354,7 +1354,7 @@ export const NurseVitalsTriageStationView: React.FC<NurseVitalsTriageStationView
 
       {/* TAB 3: 🛏️ INPATIENT WARD CARE */}
       {activeTab === 'INPATIENT_WARD' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 1fr) minmax(480px, 1.8fr)', gap: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: '16px' }}>
           {/* Bed List */}
           <Card
             style={{

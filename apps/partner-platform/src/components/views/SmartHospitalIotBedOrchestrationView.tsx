@@ -602,7 +602,7 @@ export const SmartHospitalIotBedOrchestrationView: React.FC = () => {
 
       {/* SUB-TAB 2: BLE BLUEPRINT MAP & ASSET TRACKER */}
       {activeSubTab === 'BLE_BLUEPRINT' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(420px, 2fr) minmax(320px, 1fr)', gap: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 360px), 1fr))', gap: '20px' }}>
           {/* Left: Interactive Hospital Floor Blueprint */}
           <div
             style={{

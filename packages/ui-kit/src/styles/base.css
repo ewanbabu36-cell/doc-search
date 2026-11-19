@@ -817,12 +817,97 @@ textarea:hover {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)) !important;
   }
 
+  /* Universal Multi-Column Grid Stacking on tablet/mobile (< 768px) */
+  [style*="grid-template-columns: 1fr 1fr"],
+  [style*="grid-template-columns:1fr 1fr"],
+  [style*="grid-template-columns: 1.2fr 1fr"],
+  [style*="grid-template-columns:1.2fr 1fr"],
+  [style*="grid-template-columns: 1.4fr 1fr"],
+  [style*="grid-template-columns:1.4fr 1fr"],
+  [style*="grid-template-columns: 1.5fr 1fr"],
+  [style*="grid-template-columns:1.5fr 1fr"],
+  [style*="grid-template-columns: 2fr 1fr"],
+  [style*="grid-template-columns:2fr 1fr"],
+  [style*="grid-template-columns: 3fr 1fr"],
+  [style*="grid-template-columns:3fr 1fr"],
+  [style*="grid-template-columns: 1fr 2fr"],
+  [style*="grid-template-columns:1fr 2fr"],
+  [style*="grid-template-columns: 1fr 1.5fr"],
+  [style*="grid-template-columns:1fr 1.5fr"],
+  [style*="grid-template-columns: 1fr 1.6fr"],
+  [style*="grid-template-columns:1fr 1.6fr"],
+  [style*="grid-template-columns: 1.2fr 0.8fr"],
+  [style*="grid-template-columns:1.2fr 0.8fr"],
+  [style*="grid-template-columns: 1fr 1fr 1fr"],
+  [style*="grid-template-columns:1fr 1fr 1fr"],
+  [style*="grid-template-columns: 1fr 1fr 1fr 1fr"],
+  [style*="grid-template-columns:1fr 1fr 1fr 1fr"],
+  [style*="grid-template-columns: 280px 1fr"],
+  [style*="grid-template-columns:280px 1fr"],
+  [style*="grid-template-columns: 320px 1fr"],
+  [style*="grid-template-columns:320px 1fr"],
+  [style*="grid-template-columns: 340px 1fr"],
+  [style*="grid-template-columns:340px 1fr"],
+  [style*="grid-template-columns: 380px 1fr"],
+  [style*="grid-template-columns:380px 1fr"],
+  [style*="grid-template-columns: 400px 1fr"],
+  [style*="grid-template-columns:400px 1fr"],
+  [style*="grid-template-columns: 1fr 100px"],
+  [style*="grid-template-columns:1fr 100px"],
+  [style*="grid-template-columns: 1fr 90px"],
+  [style*="grid-template-columns:1fr 90px"],
+  [style*="grid-template-columns: 1fr 120px"],
+  [style*="grid-template-columns:1fr 120px"],
+  [style*="grid-template-columns: 1fr 130px"],
+  [style*="grid-template-columns:1fr 130px"],
+  [style*="grid-template-columns: 120px 1fr"],
+  [style*="grid-template-columns:120px 1fr"],
+  [style*="grid-template-columns: 120px 100px 1fr"],
+  [style*="grid-template-columns:120px 100px 1fr"],
+  [style*="grid-template-columns: minmax(3"],
+  [style*="grid-template-columns:minmax(3"],
+  [style*="grid-template-columns: minmax(4"],
+  [style*="grid-template-columns:minmax(4"],
+  [style*="grid-template-columns: minmax(2"],
+  [style*="grid-template-columns:minmax(2"],
+  [style*="grid-template-columns: minmax(0, 2"],
+  [style*="grid-template-columns:minmax(0, 2"],
+  [style*="grid-template-columns: minmax(0, 1"],
+  [style*="grid-template-columns:minmax(0, 1"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Universal Mobile Table Containment */
+  table {
+    display: block !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* Storyboard Rail Mobile Protection: Give 100% width to clinical workspace */
+  .ds-patient-storyboard-rail {
+    display: none !important;
+  }
+
   /* Universal Anti-Clutter Flex Action Wrap */
   .ds-action-bar,
   .ds-button-group,
   .ds-card-actions,
   .ds-filter-row {
     flex-wrap: wrap !important;
+  }
+
+  /* Form & Media Containment */
+  input,
+  select,
+  textarea {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  img {
+    max-width: 100% !important;
   }
 
   /* Modal Viewport Overflow Clamping */
@@ -839,6 +924,14 @@ textarea:hover {
     bottom: 0 !important;
     z-index: 60 !important;
     box-shadow: var(--ds-shadow-xl) !important;
+  }
+}
+
+@media (max-width: 540px) {
+  /* 2-Equal-Column Grids: Stack vertically on small screens (< 540px) */
+  [style*="grid-template-columns: 1fr 1fr"],
+  [style*="grid-template-columns: 120px 1fr"] {
+    grid-template-columns: 1fr !important;
   }
 }
 

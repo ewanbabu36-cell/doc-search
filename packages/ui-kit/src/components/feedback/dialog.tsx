@@ -241,6 +241,12 @@ export const Dialog: React.FC<DialogProps> = ({
           .ds-modal-sheet-responsive select,
           .ds-modal-sheet-responsive textarea {
             font-size: 16px !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+          }
+          .ds-modal-sheet-responsive [style*="grid-template-columns"],
+          .ds-modal-sheet-responsive [style*="gridTemplateColumns"] {
+            grid-template-columns: 1fr !important;
           }
           .ds-modal-sheet-responsive button:not(.ds-dialog-close-btn),
           .ds-modal-sheet-responsive .ds-touch-target {

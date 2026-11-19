@@ -1705,7 +1705,7 @@ export const OpdOneFlowExpressView: React.FC<OpdOneFlowExpressViewProps> = ({
       {/* STAGE 4: DOCTOR WORKSTATION & CLINICAL CONSULTATION (EMR & Rx) */}
       {/* ========================================================================= */}
       {currentStep === 4 && (
-        <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '1.25rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '1.25rem' }}>
           {/* Left Pane: Pre-Populated Vitals & Patient Profile from Step 3 */}
           <Card padding="md">
             <h3 style={{ margin: '0 0 0.75rem', fontSize: '0.95rem', fontWeight: 800, color: 'var(--ds-color-text-primary)' }}>

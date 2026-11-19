@@ -423,7 +423,7 @@ export const News2ClinicalAlertModal: React.FC<News2ClinicalAlertModalProps> = (
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))',
               gap: '12px'
             }}
           >
@@ -595,7 +595,7 @@ export const News2ClinicalAlertModal: React.FC<News2ClinicalAlertModalProps> = (
               <strong style={{ color: '#FCD34D', fontSize: '0.85rem' }}>
                 ⚡ Sepsis-6 Resuscitation Protocol (Deliver within 1 Hour):
               </strong>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginTop: '8px', fontSize: '0.78rem', color: '#E2E8F0' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '6px', marginTop: '8px', fontSize: '0.78rem', color: '#E2E8F0' }}>
                 <div>☑ 1. Give high-flow oxygen (Target SpO2 94-98%)</div>
                 <div>☑ 2. Take blood cultures before antibiotics</div>
                 <div>☑ 3. Administer IV broad-spectrum antibiotics</div>

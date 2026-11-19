@@ -91,7 +91,7 @@ export const AddDiagnosisDialog: React.FC<AddDiagnosisDialogProps> = ({
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {error && <Alert type="error" title="Error">{error}</Alert>}
 
-        <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 120px), 1fr))', gap: '12px' }}>
           <div>
             <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '4px' }}>
               ICD Code *
@@ -106,7 +106,7 @@ export const AddDiagnosisDialog: React.FC<AddDiagnosisDialogProps> = ({
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 130px), 1fr))', gap: '12px' }}>
           <div>
             <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '4px' }}>
               Diagnosis Type

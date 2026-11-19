@@ -790,7 +790,7 @@ export const MonetizationEngineView: React.FC = () => {
             zIndex: 99999
           }}
         >
-          <Card style={{ backgroundColor: '#111827', border: '1px solid #334155', borderRadius: '12px', padding: '1.5rem', width: '460px', color: '#f8fafc' }}>
+          <Card style={{ backgroundColor: '#111827', border: '1px solid #334155', borderRadius: '12px', padding: '1.5rem', width: 'min(460px, 92vw)', maxWidth: '92vw', color: '#f8fafc' }}>
             <h3 style={{ margin: '0 0 8px', fontSize: '1.15rem', fontWeight: 'bold' }}>
               Extend 100% Free Period
             </h3>
@@ -864,7 +864,7 @@ export const MonetizationEngineView: React.FC = () => {
             zIndex: 99999
           }}
         >
-          <Card style={{ backgroundColor: '#111827', border: '1px solid #334155', borderRadius: '12px', padding: '1.5rem', width: '480px', color: '#f8fafc' }}>
+          <Card style={{ backgroundColor: '#111827', border: '1px solid #334155', borderRadius: '12px', padding: '1.5rem', width: 'min(480px, 92vw)', maxWidth: '92vw', color: '#f8fafc' }}>
             <h3 style={{ margin: '0 0 8px', fontSize: '1.15rem', fontWeight: 'bold' }}>
               Disruptive Lowest-Price Renewal
             </h3>

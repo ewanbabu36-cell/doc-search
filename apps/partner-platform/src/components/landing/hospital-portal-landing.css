@@ -626,13 +626,28 @@
 
 @media (max-width: 640px) {
   .ds-landing-header {
-    padding: 0 1rem;
+    padding: 0 0.75rem;
+    height: 56px;
   }
   .ds-brand-subtitle-block {
     display: none;
   }
+  .ds-btn-register {
+    display: none;
+  }
+  .ds-btn-login {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.75rem;
+  }
   .ds-operations-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important;
+  }
+  .ds-hero-pill-badge {
+    white-space: normal !important;
+    text-align: center !important;
+    font-size: 0.72rem !important;
+    line-height: 1.35 !important;
+    max-width: 95vw !important;
   }
   .ds-hero-ctas {
     flex-direction: column;
@@ -642,6 +657,19 @@
   .ds-hero-secondary-btn {
     width: 100%;
     justify-content: center;
+  }
+}
+
+@media (max-width: 420px) {
+  .ds-operations-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.5rem !important;
+  }
+  .ds-operation-card {
+    padding: 0.85rem 0.5rem !important;
+  }
+  .ds-hero-headline {
+    font-size: 1.85rem !important;
   }
 }
 

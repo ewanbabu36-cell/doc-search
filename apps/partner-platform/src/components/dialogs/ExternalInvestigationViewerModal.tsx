@@ -236,7 +236,7 @@ export const ExternalInvestigationViewerModal: React.FC<ExternalInvestigationVie
         )}
 
         {/* Main Split Layout: Left Report Selector | Right Document Display */}
-        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '280px 1fr', overflow: 'hidden' }}>
+        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', overflow: 'hidden' }}>
           {/* Left Report Directory */}
           <div style={{ borderRight: '1px solid rgba(255,255,255,0.08)', backgroundColor: 'rgba(15, 23, 42, 0.6)', overflowY: 'auto', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <div style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '4px' }}>

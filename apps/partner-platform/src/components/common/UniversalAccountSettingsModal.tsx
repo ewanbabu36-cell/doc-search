@@ -3496,7 +3496,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                     <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: '#F1F5F9', marginBottom: '8px' }}>
                       LETTERHEAD PRINT MODE *
                     </label>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '10px' }}>
                       <button
                         type="button"
                         onClick={() => setBrandingData({ ...brandingData, letterheadMode: 'FULL_DIGITAL' })}
@@ -3623,7 +3623,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                             )}
                           </div>
 
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '8px', marginBottom: '8px' }}>
                             <div>
                               <label style={{ display: 'block', fontSize: '0.6875rem', color: '#94A3B8', marginBottom: '2px' }}>PATHOLOGIST NAME</label>
                               <input
@@ -3646,7 +3646,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                             </div>
                           </div>
 
-                          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '8px', alignItems: 'center' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '8px', alignItems: 'center' }}>
                             <div>
                               <label style={{ display: 'block', fontSize: '0.6875rem', color: '#94A3B8', marginBottom: '2px' }}>COUNCIL REG NO.</label>
                               <input
@@ -3693,7 +3693,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                             )}
                           </div>
 
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '8px', marginBottom: '8px' }}>
                             <div>
                               <label style={{ display: 'block', fontSize: '0.6875rem', color: '#94A3B8', marginBottom: '2px' }}>TECHNOLOGIST NAME</label>
                               <input
@@ -3716,7 +3716,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                             </div>
                           </div>
 
-                          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '8px', alignItems: 'center' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '8px', alignItems: 'center' }}>
                             <div>
                               <label style={{ display: 'block', fontSize: '0.6875rem', color: '#94A3B8', marginBottom: '2px' }}>REG NO. / STAFF ID</label>
                               <input
@@ -4274,7 +4274,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                       </select>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: '8px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '8px' }}>
                       <div>
                         <label style={{ display: 'block', color: '#94A3B8', marginBottom: '3px' }}>Printer IP Address</label>
                         <input type="text" defaultValue="192.168.1.200" style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', backgroundColor: '#1E293B', border: '1px solid #334155', color: '#FFF', fontFamily: 'monospace' }} />
@@ -4447,7 +4447,7 @@ export const UniversalAccountSettingsModal: React.FC<UniversalAccountSettingsMod
                       </select>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 90px', gap: '8px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '8px' }}>
                       <div>
                         <label style={{ display: 'block', color: '#94A3B8', marginBottom: '3px' }}>Socket IP / COM Port</label>
                         <input type="text" defaultValue="192.168.1.250" style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', backgroundColor: '#1E293B', border: '1px solid #334155', color: '#FFF', fontFamily: 'monospace' }} />

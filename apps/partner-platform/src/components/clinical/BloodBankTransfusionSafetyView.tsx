@@ -120,7 +120,7 @@ export const BloodBankTransfusionSafetyView: React.FC = () => {
       </div>
 
       {/* Main Verification Cockpit */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '1.5rem' }}>
         {/* Recipient Patient Details */}
         <Card style={{ backgroundColor: '#111827', border: '1px solid #1f2937', padding: '1.5rem', borderRadius: '8px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem' }}>
@@ -226,7 +226,7 @@ export const BloodBankTransfusionSafetyView: React.FC = () => {
               />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '1rem' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.8rem', color: '#94a3b8', marginBottom: '4px' }}>
                   COMPONENT TYPE
@@ -334,7 +334,7 @@ export const BloodBankTransfusionSafetyView: React.FC = () => {
           3. Mandatory Dual-Nurse Bedside Cross-Verification
         </h2>
         <form onSubmit={handleVerifyAndRelease}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', color: '#94a3b8', marginBottom: '4px' }}>
                 PRIMARY NURSE STAFF ID / PIN *
