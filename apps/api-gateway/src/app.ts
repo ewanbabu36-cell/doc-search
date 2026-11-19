@@ -41,6 +41,7 @@ import { hqCommandCenterRoutes } from './routes/company/hq-command-center.routes
 import { godmodeAdminRoutes } from './routes/company/godmode-admin.routes.js';
 import { phiWiretapPlugin } from './plugins/phi-wiretap.js';
 import { honeytokenTripwirePlugin } from './plugins/honeytoken-tripwire.js';
+import { universalMutationAuditPlugin } from './plugins/universal-auditor.js';
 import { partnerCommandCenterRoutes } from './routes/partner/command-center.routes.js';
 import { radiologyRoutes } from './routes/partner/radiology.routes.js';
 import { dietaryRoutes } from './routes/partner/dietary.routes.js';
@@ -417,6 +418,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(healthRoutes);
   await app.register(phiWiretapPlugin);
   await app.register(honeytokenTripwirePlugin);
+  await app.register(universalMutationAuditPlugin);
   await app.register(authRoutes);
   await app.register(distributedLockRoutes);
 

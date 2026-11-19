@@ -10,7 +10,8 @@ import {
   corporatePolicies,
   complianceOfficers,
   governanceEvents,
-  companyAuditTraces
+  companyAuditTraces,
+  auditEvents
 } from '@docsearch/database';
 import type {
   InternalEmployeeDto,
@@ -921,23 +922,58 @@ export class CompanyAdminRepository {
     ];
   }
 
-  // --- AUDIT TRACES ---
+  // --- AUDIT TRACES (Unified Cryptographic Merkle Stream + Company Governance) ---
   async getAuditTraces(dbClient = getDatabase()): Promise<CompanyAuditTraceDto[]> {
     if (dbClient) {
       try {
-        const rows = await dbClient.select().from(companyAuditTraces).orderBy(desc(companyAuditTraces.occurredAt)).limit(50);
-        if (rows.length > 0) {
-          return rows.map((r: any) => ({
-            id: r.id,
-            traceId: r.traceId,
-            actorEmail: r.actorEmail,
-            action: r.action,
-            entityReference: r.entityReference,
-            operationStatus: r.operationStatus as any,
-            occurredAt: r.occurredAt instanceof Date ? r.occurredAt.toISOString() : String(r.occurredAt),
-            reason: (r.metadata?.reason as string) || 'Governance audit event logged',
-            metadata: (r.metadata as Record<string, unknown>) ?? {}
-          }));
+        const traces: CompanyAuditTraceDto[] = [];
+
+        // 1. Fetch Company Governance Audit Traces
+        try {
+          const compRows = await dbClient.select().from(companyAuditTraces).orderBy(desc(companyAuditTraces.occurredAt)).limit(50);
+          for (const r of compRows) {
+            traces.push({
+              id: r.id,
+              traceId: r.traceId,
+              actorEmail: r.actorEmail,
+              action: r.action,
+              entityReference: r.entityReference,
+              operationStatus: r.operationStatus as any,
+              occurredAt: r.occurredAt instanceof Date ? r.occurredAt.toISOString() : String(r.occurredAt),
+              reason: ((r.metadata as any)?.reason as string) || 'Governance audit event logged',
+              metadata: (r.metadata as Record<string, unknown>) ?? {}
+            });
+          }
+        } catch {}
+
+        // 2. Fetch Core Cryptographically Hashed Security Audit Events
+        try {
+          const coreRows = await dbClient.select().from(auditEvents).orderBy(desc(auditEvents.timestamp)).limit(50);
+          for (const r of coreRows) {
+            traces.push({
+              id: r.id,
+              traceId: r.correlationId || r.id,
+              actorEmail: r.actorId || 'system',
+              action: r.eventType,
+              entityReference: `${r.resourceType}${r.resourceId ? `:${r.resourceId}` : ''}`,
+              operationStatus: 'SUCCESS',
+              occurredAt: r.timestamp instanceof Date ? r.timestamp.toISOString() : String(r.timestamp),
+              reason: `Cryptographic Merkle Proof: ${r.integrityHash ? r.integrityHash.slice(0, 16) + '...' : 'Genesis'}`,
+              metadata: {
+                ...((r.metadata as Record<string, unknown>) ?? {}),
+                integrityHash: r.integrityHash,
+                previousHash: r.previousHash,
+                ipAddress: r.ipAddress,
+                userAgent: r.userAgent
+              }
+            });
+          }
+        } catch {}
+
+        if (traces.length > 0) {
+          // Sort merged stream descending by occurredAt
+          traces.sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime());
+          return traces.slice(0, 100);
         }
       } catch (err) {
         console.error('[CompanyAdminRepository] getAuditTraces DB error:', err);

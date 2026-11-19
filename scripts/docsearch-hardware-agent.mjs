@@ -611,13 +611,16 @@ const server = http.createServer(async (req, res) => {
     };
 
     const dscLogPath = path.join(DSC_DIR, 'dsc-signature-log.json');
+    const dscJsonlPath = path.join(DSC_DIR, 'dsc-signature-audit.jsonl');
     let logs = [];
     if (fs.existsSync(dscLogPath)) {
       try { logs = JSON.parse(fs.readFileSync(dscLogPath, 'utf8')); } catch {}
     }
     logs.unshift(auditRecord);
-    if (logs.length > 50) logs.pop();
+    // Keep 5000 in memory index, append-only in jsonl for permanent forensic record
+    if (logs.length > 5000) logs.pop();
     fs.writeFileSync(dscLogPath, JSON.stringify(logs, null, 2));
+    fs.appendFileSync(dscJsonlPath, JSON.stringify(auditRecord) + '\n');
 
     return sendJson(200, {
       success: true,

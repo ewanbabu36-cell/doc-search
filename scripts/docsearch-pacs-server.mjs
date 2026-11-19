@@ -27,10 +27,30 @@ const HTTP_PORT = parseInt(process.env.PACS_HTTP_PORT || '8042', 10);
 const PACS_AE_TITLE = (process.env.PACS_AE_TITLE || 'DOCSEARCH_PACS').padEnd(16).slice(0, 16);
 const STORAGE_DIR = process.env.PACS_STORAGE_DIR ? path.resolve(process.env.PACS_STORAGE_DIR) : path.resolve(rootDir, 'data', 'pacs-storage');
 const INDEX_FILE = path.join(STORAGE_DIR, 'pacs-index.json');
+const AUDIT_FILE = path.join(STORAGE_DIR, 'pacs-audit-events.jsonl');
 
 // Ensure storage directory exists
 if (!fs.existsSync(STORAGE_DIR)) {
   fs.mkdirSync(STORAGE_DIR, { recursive: true });
+}
+
+/**
+ * 🛡️ Forensic PACS Audit Logger (Immutable Append-Only Audit Trail)
+ */
+function recordPacsAuditEvent(action, details = {}, req = null) {
+  try {
+    const auditRecord = {
+      auditId: `PACS-AUD-${Date.now()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`,
+      timestamp: new Date().toISOString(),
+      action,
+      clientIp: req ? (req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '127.0.0.1') : '127.0.0.1',
+      userAgent: req ? (req.headers['user-agent'] || 'DICOM Client') : 'DICOM Client',
+      ...details
+    };
+    fs.appendFileSync(AUDIT_FILE, JSON.stringify(auditRecord) + '\n');
+  } catch (err) {
+    console.warn('[PACS AUDIT] Failed to persist audit record:', err.message);
+  }
 }
 
 // In-Memory PACS Study Registry
@@ -497,8 +517,22 @@ function createDicomwebHttpServer() {
       }
     }
 
+    // 1.8. Query PACS Audit Traces
+    if (pathname === '/api/v1/pacs/audit-traces') {
+      let traces = [];
+      if (fs.existsSync(AUDIT_FILE)) {
+        try {
+          const lines = fs.readFileSync(AUDIT_FILE, 'utf8').trim().split('\n').filter(Boolean);
+          traces = lines.slice(-100).map(l => JSON.parse(l)).reverse();
+        } catch {}
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ success: true, count: traces.length, data: traces }, null, 2));
+    }
+
     // 2. QIDO-RS: Query Studies
     if (pathname === '/dicom-web/studies') {
+      recordPacsAuditEvent('QIDO_STUDIES_QUERY', { queryCount: pacsStudies.length }, req);
       const qidoStudies = pacsStudies.map((s) => ({
         '0020000D': { vr: 'UI', Value: [s.studyInstanceUid] },
         '00080050': { vr: 'SH', Value: [s.accessionNumber] },
@@ -575,6 +609,8 @@ function createDicomwebHttpServer() {
       const instanceUid = renderedMatch[3];
       const preset = url.searchParams.get('preset') || 'DEFAULT';
 
+      recordPacsAuditEvent('WADO_RENDER_SLICE', { studyUid, seriesUid, instanceUid, preset }, req);
+
       const study = pacsStudies.find((s) => s.studyInstanceUid === studyUid);
       const ser = study?.series?.find((s) => s.seriesInstanceUid === seriesUid);
       const inst = ser?.instances?.find((i) => i.sopInstanceUid === instanceUid);
@@ -613,6 +649,8 @@ function createDicomwebHttpServer() {
       const studyUid = fileMatch[1];
       const seriesUid = fileMatch[2];
       const instanceUid = fileMatch[3];
+
+      recordPacsAuditEvent('WADO_FILE_DOWNLOAD', { studyUid, seriesUid, instanceUid }, req);
 
       const study = pacsStudies.find((s) => s.studyInstanceUid === studyUid);
       const ser = study?.series?.find((s) => s.seriesInstanceUid === seriesUid);

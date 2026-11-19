@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import crypto from 'node:crypto';
+import { getDatabase, securityIncidents } from '@docsearch/database';
 
 export interface WiretapEvent {
   id: string;
@@ -62,6 +63,29 @@ export const phiWiretapPlugin: FastifyPluginAsync = async (fastify) => {
       };
 
       pushWiretapEvent(event);
+
+      // Persist suspicious PHI snooping incidents directly into PostgreSQL security_incidents
+      if (isSnoopSuspicious) {
+        const db = getDatabase();
+        if (db) {
+          db.insert(securityIncidents).values({
+            id: crypto.randomUUID(),
+            incidentCode: `INC-SNOOP-${Date.now().toString(36).toUpperCase()}`,
+            category: 'UNAUTHORIZED_ACCESS_ATTEMPT',
+            severity: 'HIGH',
+            title: 'Suspicious Patient Chart Access (PHI Snooping)',
+            description: `Staff member [${actorName}] with role [${actorRole}] accessed patient record without clinical justification via ${request.method} ${url}`,
+            source: 'PHI_WIRETAP_SENTINEL',
+            status: 'OPEN',
+            metadata: {
+              url,
+              method: request.method,
+              patientId,
+              clientIp: request.ip || '127.0.0.1'
+            }
+          }).catch(() => {});
+        }
+      }
     } catch {
       // Non-blocking telemetry
     }

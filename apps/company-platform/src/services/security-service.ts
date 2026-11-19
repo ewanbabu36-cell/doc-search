@@ -49,7 +49,6 @@ export interface ISecurityService {
 }
 
 export class SecurityService implements ISecurityService {
-  private readonly apiUrl?: string | undefined;
   private roles: SecurityRoleDto[] = [];
   private permissions: SecurityPermissionDto[] = [];
   private rolePermissions: SecurityRolePermissionDto[] = [];
@@ -60,18 +59,15 @@ export class SecurityService implements ISecurityService {
   private incidents: SecurityIncidentDto[] = [];
   private verifications: SecurityAuditVerificationDto[] = [];
 
-  constructor(apiUrl?: string | undefined) {
-    this.apiUrl = apiUrl;
-  }
-
   async getSecurityOverview(): Promise<SecurityOverviewDto> {
-    if (this.apiUrl) {
-      const res = await fetch(`${this.apiUrl}/api/v1/company/security/overview`);
-      if (!res.ok) throw new Error(`Failed to fetch security overview: ${res.statusText}`);
-      return (await res.json()) as SecurityOverviewDto;
+    try {
+      const data = await apiCall<SecurityOverviewDto>('/api/v1/company/security/overview');
+      if (data) return data;
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
     }
     return {
-      telemetryStatus: 'Doc Search Zero-Trust Sentinel Active',
+      telemetryStatus: 'DocSearch Zero-Trust Sentinel Active (PostgreSQL Real-Time)',
       activeRolesCount: this.roles.filter((r) => r.status === 'ACTIVE').length,
       totalPermissionsCount: this.permissions.length,
       activePoliciesCount: this.policies.filter((p) => p.status === 'ACTIVE').length,
@@ -119,29 +115,29 @@ export class SecurityService implements ISecurityService {
   }
 
   async getRolePermissions(roleId?: string): Promise<SecurityRolePermissionDto[]> {
-    if (this.apiUrl) {
+    try {
       const url = roleId
-        ? `${this.apiUrl}/api/v1/company/security/roles/${roleId}/permissions`
-        : `${this.apiUrl}/api/v1/company/security/role-permissions`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`Failed to fetch role permissions: ${res.statusText}`);
-      return (await res.json()) as SecurityRolePermissionDto[];
+        ? `/api/v1/company/security/roles/${roleId}/permissions`
+        : '/api/v1/company/security/role-permissions';
+      const data = await apiCall<SecurityRolePermissionDto[]>(url);
+      if (Array.isArray(data)) {
+        this.rolePermissions = data;
+        return [...this.rolePermissions];
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
     }
-    if (roleId) {
-      return this.rolePermissions.filter((rp) => rp.roleId === roleId);
-    }
-    return [...this.rolePermissions];
+    return roleId ? this.rolePermissions.filter((rp) => rp.roleId === roleId) : [...this.rolePermissions];
   }
 
   async assignPermission(req: AssignPermissionRequest): Promise<SecurityRolePermissionDto> {
-    if (this.apiUrl) {
-      const res = await fetch(`${this.apiUrl}/api/v1/company/security/role-permissions`, {
+    try {
+      return await apiCall<SecurityRolePermissionDto>('/api/v1/company/security/role-permissions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(req)
       });
-      if (!res.ok) throw new Error(`Failed to assign permission: ${res.statusText}`);
-      return (await res.json()) as SecurityRolePermissionDto;
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
     }
 
     const role = this.roles.find((r) => r.id === req.roleId);
@@ -165,23 +161,26 @@ export class SecurityService implements ISecurityService {
   }
 
   async getUserRoles(): Promise<SecurityUserRoleDto[]> {
-    if (this.apiUrl) {
-      const res = await fetch(`${this.apiUrl}/api/v1/company/security/user-roles`);
-      if (!res.ok) throw new Error(`Failed to fetch user roles: ${res.statusText}`);
-      return (await res.json()) as SecurityUserRoleDto[];
+    try {
+      const data = await apiCall<SecurityUserRoleDto[]>('/api/v1/company/security/user-roles');
+      if (Array.isArray(data)) {
+        this.userRoles = data;
+        return [...this.userRoles];
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
     }
     return [...this.userRoles];
   }
 
   async assignUserRole(req: AssignUserRoleRequest): Promise<SecurityUserRoleDto> {
-    if (this.apiUrl) {
-      const res = await fetch(`${this.apiUrl}/api/v1/company/security/user-roles`, {
+    try {
+      return await apiCall<SecurityUserRoleDto>('/api/v1/company/security/user-roles', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(req)
       });
-      if (!res.ok) throw new Error(`Failed to assign user role: ${res.statusText}`);
-      return (await res.json()) as SecurityUserRoleDto;
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
     }
 
     const role = this.roles.find((r) => r.id === req.roleId);
@@ -208,14 +207,13 @@ export class SecurityService implements ISecurityService {
   }
 
   async revokeUserRole(req: RevokeUserRoleRequest): Promise<SecurityUserRoleDto> {
-    if (this.apiUrl) {
-      const res = await fetch(`${this.apiUrl}/api/v1/company/security/user-roles/${req.userRoleId}/revoke`, {
+    try {
+      return await apiCall<SecurityUserRoleDto>(`/api/v1/company/security/user-roles/${req.userRoleId}/revoke`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(req)
       });
-      if (!res.ok) throw new Error(`Failed to revoke user role: ${res.statusText}`);
-      return (await res.json()) as SecurityUserRoleDto;
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
     }
 
     const idx = this.userRoles.findIndex((ur) => ur.id === req.userRoleId);
@@ -257,14 +255,13 @@ export class SecurityService implements ISecurityService {
     id: string,
     req: TransitionSecurityPolicyRequest
   ): Promise<SecurityPolicyDto> {
-    if (this.apiUrl) {
-      const res = await fetch(`${this.apiUrl}/api/v1/company/security/policies/${id}/transition`, {
+    try {
+      return await apiCall<SecurityPolicyDto>(`/api/v1/company/security/policies/${id}/transition`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(req)
       });
-      if (!res.ok) throw new Error(`Failed to transition security policy: ${res.statusText}`);
-      return (await res.json()) as SecurityPolicyDto;
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
     }
 
     const idx = this.policies.findIndex((item) => item.id === id);
@@ -283,23 +280,30 @@ export class SecurityService implements ISecurityService {
   }
 
   async getSessions(): Promise<SecuritySessionDto[]> {
-    if (this.apiUrl) {
-      const res = await fetch(`${this.apiUrl}/api/v1/company/security/sessions`);
-      if (!res.ok) throw new Error(`Failed to fetch sessions: ${res.statusText}`);
-      return (await res.json()) as SecuritySessionDto[];
+    try {
+      const data = await apiCall<SecuritySessionDto[]>('/api/v1/company/security/sessions');
+      if (Array.isArray(data)) {
+        this.sessions = data;
+        return [...this.sessions];
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
     }
     return [...this.sessions];
   }
 
   async terminateSession(req: TerminateSessionRequest): Promise<SecuritySessionDto> {
-    if (this.apiUrl) {
-      const res = await fetch(`${this.apiUrl}/api/v1/company/security/sessions/${req.sessionId}/terminate`, {
+    try {
+      const data = await apiCall<SecuritySessionDto>(`/api/v1/company/security/sessions/${req.sessionId}/terminate`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(req)
       });
-      if (!res.ok) throw new Error(`Failed to terminate session: ${res.statusText}`);
-      return (await res.json()) as SecuritySessionDto;
+      if (data) {
+        this.sessions = this.sessions.map((s) => (s.sessionId === req.sessionId ? data : s));
+        return data;
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
     }
 
     const idx = this.sessions.findIndex((s) => s.sessionId === req.sessionId);
@@ -317,23 +321,30 @@ export class SecurityService implements ISecurityService {
   }
 
   async getCredentials(): Promise<SecurityCredentialDto[]> {
-    if (this.apiUrl) {
-      const res = await fetch(`${this.apiUrl}/api/v1/company/security/credentials`);
-      if (!res.ok) throw new Error(`Failed to fetch credentials: ${res.statusText}`);
-      return (await res.json()) as SecurityCredentialDto[];
+    try {
+      const data = await apiCall<SecurityCredentialDto[]>('/api/v1/company/security/credentials');
+      if (Array.isArray(data)) {
+        this.credentials = data;
+        return [...this.credentials];
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
     }
     return [...this.credentials];
   }
 
   async rotateCredential(req: RotateCredentialRequest): Promise<SecurityCredentialDto> {
-    if (this.apiUrl) {
-      const res = await fetch(`${this.apiUrl}/api/v1/company/security/credentials/${req.credentialCode}/rotate`, {
+    try {
+      const data = await apiCall<SecurityCredentialDto>(`/api/v1/company/security/credentials/${req.credentialCode}/rotate`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(req)
       });
-      if (!res.ok) throw new Error(`Failed to rotate credential: ${res.statusText}`);
-      return (await res.json()) as SecurityCredentialDto;
+      if (data) {
+        this.credentials = this.credentials.map((c) => (c.credentialCode === req.credentialCode ? data : c));
+        return data;
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
     }
 
     const idx = this.credentials.findIndex((c) => c.credentialCode === req.credentialCode);
@@ -354,14 +365,17 @@ export class SecurityService implements ISecurityService {
   }
 
   async revokeCredential(req: RevokeCredentialRequest): Promise<SecurityCredentialDto> {
-    if (this.apiUrl) {
-      const res = await fetch(`${this.apiUrl}/api/v1/company/security/credentials/${req.credentialCode}/revoke`, {
+    try {
+      const data = await apiCall<SecurityCredentialDto>(`/api/v1/company/security/credentials/${req.credentialCode}/revoke`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(req)
       });
-      if (!res.ok) throw new Error(`Failed to revoke credential: ${res.statusText}`);
-      return (await res.json()) as SecurityCredentialDto;
+      if (data) {
+        this.credentials = this.credentials.map((c) => (c.credentialCode === req.credentialCode ? data : c));
+        return data;
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
     }
 
     const idx = this.credentials.findIndex((c) => c.credentialCode === req.credentialCode);
@@ -378,28 +392,35 @@ export class SecurityService implements ISecurityService {
   }
 
   async getSecurityIncidents(): Promise<SecurityIncidentDto[]> {
-    if (this.apiUrl) {
-      const res = await fetch(`${this.apiUrl}/api/v1/company/security/incidents`);
-      if (!res.ok) throw new Error(`Failed to fetch security incidents: ${res.statusText}`);
-      return (await res.json()) as SecurityIncidentDto[];
+    try {
+      const data = await apiCall<SecurityIncidentDto[]>('/api/v1/company/security/incidents');
+      if (Array.isArray(data)) {
+        this.incidents = data;
+        return [...this.incidents];
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
     }
     return [...this.incidents];
   }
 
   async acknowledgeSecurityIncident(req: AcknowledgeSecurityIncidentRequest): Promise<SecurityIncidentDto> {
-    if (this.apiUrl) {
-      const res = await fetch(`${this.apiUrl}/api/v1/company/security/incidents/${req.incidentId}/acknowledge`, {
+    try {
+      const data = await apiCall<SecurityIncidentDto>(`/api/v1/company/security/incidents/${req.incidentId}/acknowledge`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(req)
       });
-      if (!res.ok) throw new Error(`Failed to acknowledge security incident: ${res.statusText}`);
-      return (await res.json()) as SecurityIncidentDto;
+      if (data) {
+        this.incidents = this.incidents.map((i) => (i.id === req.incidentId ? data : i));
+        return data;
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
     }
 
     const idx = this.incidents.findIndex((i) => i.id === req.incidentId);
     const inc = this.incidents[idx];
-    if (idx === -1 || !inc) throw new Error(`Security incident ${req.incidentId} not found`);
+    if (idx === -1 || !inc) throw new Error(`Incident ${req.incidentId} not found`);
 
     const updated: SecurityIncidentDto = {
       ...inc,
@@ -413,23 +434,26 @@ export class SecurityService implements ISecurityService {
   }
 
   async resolveSecurityIncident(req: ResolveSecurityIncidentRequest): Promise<SecurityIncidentDto> {
-    if (this.apiUrl) {
-      const res = await fetch(`${this.apiUrl}/api/v1/company/security/incidents/${req.incidentId}/resolve`, {
+    try {
+      const data = await apiCall<SecurityIncidentDto>(`/api/v1/company/security/incidents/${req.incidentId}/resolve`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(req)
       });
-      if (!res.ok) throw new Error(`Failed to resolve security incident: ${res.statusText}`);
-      return (await res.json()) as SecurityIncidentDto;
+      if (data) {
+        this.incidents = this.incidents.map((i) => (i.id === req.incidentId ? data : i));
+        return data;
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
     }
 
     const idx = this.incidents.findIndex((i) => i.id === req.incidentId);
     const inc = this.incidents[idx];
-    if (idx === -1 || !inc) throw new Error(`Security incident ${req.incidentId} not found`);
+    if (idx === -1 || !inc) throw new Error(`Incident ${req.incidentId} not found`);
 
     const updated: SecurityIncidentDto = {
       ...inc,
-      status: req.resolutionStatus,
+      status: 'RESOLVED',
       resolutionNotes: req.resolutionNotes,
       resolvedAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -439,23 +463,26 @@ export class SecurityService implements ISecurityService {
   }
 
   async getAuditVerifications(): Promise<SecurityAuditVerificationDto[]> {
-    if (this.apiUrl) {
-      const res = await fetch(`${this.apiUrl}/api/v1/company/security/audit-verifications`);
-      if (!res.ok) throw new Error(`Failed to fetch audit verifications: ${res.statusText}`);
-      return (await res.json()) as SecurityAuditVerificationDto[];
+    try {
+      const data = await apiCall<SecurityAuditVerificationDto[]>('/api/v1/company/security/audit-verifications');
+      if (Array.isArray(data)) {
+        this.verifications = data;
+        return [...this.verifications];
+      }
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
     }
     return [...this.verifications];
   }
 
   async verifyAuditEvent(req: VerifyAuditEventRequest): Promise<SecurityAuditVerificationDto> {
-    if (this.apiUrl) {
-      const res = await fetch(`${this.apiUrl}/api/v1/company/security/audit-verifications`, {
+    try {
+      return await apiCall<SecurityAuditVerificationDto>('/api/v1/company/security/audit-verifications', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(req)
       });
-      if (!res.ok) throw new Error(`Failed to verify audit event: ${res.statusText}`);
-      return (await res.json()) as SecurityAuditVerificationDto;
+    } catch (err) {
+      if (!isMockFallbackAllowed()) throw err;
     }
 
     const newV: SecurityAuditVerificationDto = {
