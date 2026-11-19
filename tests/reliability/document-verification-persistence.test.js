@@ -46,6 +46,17 @@ async function runDocumentVerificationTests() {
     'x-branch-id': compAuth.branchId
   };
 
+  // Simulate database outage by injecting failing DB handle
+  const outageDb = {
+    select: () => { throw new Error('connection refused: database offline'); },
+    insert: () => { throw new Error('connection refused: database offline'); },
+    update: () => { throw new Error('connection refused: database offline'); },
+    delete: () => { throw new Error('connection refused: database offline'); },
+    execute: () => { throw new Error('connection refused: database offline'); },
+    transaction: async () => { throw new Error('connection refused: database offline'); }
+  };
+  setTestDatabase(outageDb);
+
   // 1. Requirements during outage
   const reqOutageRes = await appOutage.inject({
     method: 'GET',
@@ -253,6 +264,7 @@ async function runDocumentVerificationTests() {
 
   // Step 2: Upload MBBS Degree (Version 1)
   console.log('    ➔ Step 2: Uploading MBBS degree certificate (v1)...');
+  const samplePdfBase64 = Buffer.from('%PDF-1.4\n%mock-mbbs-degree-certificate-content\n%%EOF').toString('base64');
   const uploadV1Res = await app.inject({
     method: 'POST',
     url: '/api/v1/compliance/documents/upload',
@@ -267,7 +279,8 @@ async function runDocumentVerificationTests() {
       issueDate: '2020-06-15',
       fileName: 'mbbs_degree_original.pdf',
       mimeType: 'application/pdf',
-      fileSizeBytes: 2048000
+      fileSizeBytes: 2048000,
+      fileBase64: samplePdfBase64
     }
   });
   assert.strictEqual(uploadV1Res.statusCode, 201);
@@ -302,7 +315,8 @@ async function runDocumentVerificationTests() {
       issueDate: '2020-06-15',
       fileName: 'mbbs_degree_revised.pdf',
       mimeType: 'application/pdf',
-      fileSizeBytes: 2150000
+      fileSizeBytes: 2150000,
+      fileBase64: samplePdfBase64
     }
   });
   assert.strictEqual(uploadV2Res.statusCode, 201);

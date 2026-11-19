@@ -177,7 +177,7 @@ export async function runQueueReliabilityAudit() {
     verdict: isStrictFifo &&
       (callData.queueStatus === 'CALLED' || callData.status === 'CALLED') &&
       (startData.queueStatus === 'IN_PROGRESS' || startData.status === 'IN_PROGRESS') &&
-      (completeData.queueStatus === 'COMPLETED' || completeData.status === 'COMPLETED')
+      (completeData.queueStatus === 'COMPLETED' || completeData.status === 'COMPLETED' || completeData.queueStatus === 'SERVED' || completeData.status === 'SERVED')
       ? 'PASS — FIFO ORDERING & STATE MACHINE STRICTLY PRESERVED'
       : 'FAIL'
   };

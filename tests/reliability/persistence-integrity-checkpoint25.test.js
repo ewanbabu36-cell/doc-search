@@ -512,7 +512,7 @@ async function runCheckpoint25Harness() {
   const docVerify1 = await documentVerificationRepository.verifyDocument(
     testDocId,
     { action: 'VERIFY', reason: 'Verified doctor degree certificate' },
-    { id: 'verifier-01', email: 'compliance@docsearch.health' }
+    { id: 'verifier-01', email: 'compliance@docsearch.health', roles: ['COMPLIANCE_OFFICER'] }
   );
   assert.strictEqual(docVerify1.verificationStatus, 'VERIFIED');
 
@@ -520,7 +520,7 @@ async function runCheckpoint25Harness() {
     await documentVerificationRepository.verifyDocument(
       testDocId,
       { action: 'REJECT', reason: 'Conflicting reject attempt' },
-      { id: 'verifier-02', email: 'compliance2@docsearch.health' }
+      { id: 'verifier-02', email: 'compliance2@docsearch.health', roles: ['COMPLIANCE_OFFICER'] }
     );
     assert.fail('Expected second state transition on finalized document to fail with 409 Conflict');
   } catch (err) {

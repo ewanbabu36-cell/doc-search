@@ -283,17 +283,6 @@ export class EntitlementService {
         return false;
       }
 
-      if (planEntitlements.length > 0) {
-        const hasAnyEnabledEntitlement = planEntitlements.some(
-          (e) => !(e.value && typeof e.value === 'object' && (e.value as any).enabled === false)
-        );
-        if (!hasAnyEnabledEntitlement) {
-          return false;
-        }
-        const corePlatformCapabilities = ['OPERATIONS', 'STAFF', 'PATIENTS', 'APPOINTMENTS', 'BILLING'];
-        return corePlatformCapabilities.includes(normalizedCode);
-      }
-
       if (hasExplicitIncludedModules && metaModules.length > 0) {
         const matchesIncludedModule = metaModules.some((m) => {
           if (m === normalizedCode) return true;
@@ -351,9 +340,37 @@ export class EntitlementService {
           ) {
             return true;
           }
+          if (
+            (normalizedCode === 'WHATSAPP' ||
+              normalizedCode === 'WHATSAPP_AUTOMATION' ||
+              normalizedCode === 'WHATSAPP_PATIENT_PORTAL') &&
+            (m.includes('WHATSAPP') || m.includes('COMMUNICATION'))
+          ) {
+            return true;
+          }
           return false;
         });
-        return matchesIncludedModule || ['OPERATIONS', 'STAFF', 'PATIENTS'].includes(normalizedCode);
+        if (matchesIncludedModule) return true;
+      }
+
+      if (planEntitlements.length > 0) {
+        const hasAnyEnabledEntitlement = planEntitlements.some(
+          (e) => !(e.value && typeof e.value === 'object' && (e.value as any).enabled === false)
+        );
+        if (!hasAnyEnabledEntitlement) {
+          return false;
+        }
+        const corePlatformCapabilities = [
+          'OPERATIONS',
+          'STAFF',
+          'PATIENTS',
+          'APPOINTMENTS',
+          'BILLING',
+          'WHATSAPP',
+          'WHATSAPP_AUTOMATION',
+          'WHATSAPP_PATIENT_PORTAL'
+        ];
+        return corePlatformCapabilities.includes(normalizedCode);
       }
 
       // Authoritative source 3: Canonical vertical plan IDs for Pathology, Pharmacy (Retail & Wholesale), Clinic, Diagnostic Centre

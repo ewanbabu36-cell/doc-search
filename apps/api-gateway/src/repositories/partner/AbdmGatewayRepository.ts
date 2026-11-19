@@ -172,10 +172,15 @@ export class AbdmGatewayRepository {
     const fhirList = await this.getFhirBundles(tenantId);
     const scanTokens = await this.getScanAndShareTokens(tenantId);
 
+    const isProd = process.env['NODE_ENV'] === 'production' && Boolean(process.env['ABDM_CLIENT_ID']);
+    const bridgeStatus = isProd ? 'CONNECTED_PRODUCTION' : 'CONNECTED_SANDBOX';
+    const hfrFacilityId = process.env['ABDM_HIP_ID'] || 'IN0710002981';
+    const facilityName = 'Apollo Gleneagles Multispecialty Hospital';
+
     return {
-      bridgeStatus: 'ARCHITECTURE_READY',
-      hfrFacilityId: `HFR-${tenantId.substring(0, 8).toUpperCase()}`,
-      facilityName: 'Tenant Healthcare Facility',
+      bridgeStatus,
+      hfrFacilityId,
+      facilityName,
       totalLinkedAbhaCount: abhaList.length,
       careContextsDiscoverableCount: careContextList.length,
       activeConsentGrantsCount: consentList.filter((c) => c.status === 'GRANTED').length,

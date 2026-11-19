@@ -4,7 +4,7 @@ process.env['NODE_ENV'] = 'test';
 import { performance } from 'node:perf_hooks';
 import { buildApp } from '../../apps/api-gateway/dist/app.js';
 import { realAuthService } from '../../apps/api-gateway/dist/services/core/RealAuthService.js';
-import { setTestTransactionRunner } from '../../packages/database/dist/index.js';
+import { setTestTransactionRunner, setTestDatabase } from '../../packages/database/dist/index.js';
 
 console.log('\n======================================================================');
 console.log('🏥 TEST SUITE 3 — REALISTIC 10-ROLE CLINICAL WORKLOAD SIMULATOR');
@@ -32,6 +32,17 @@ async function runClinicalWorkload() {
     'x-branch-id': doctorAuth.branchId
   };
 
+  const outageDb = {
+    select: () => { throw new Error('connection refused: database offline'); },
+    insert: () => { throw new Error('connection refused: database offline'); },
+    update: () => { throw new Error('connection refused: database offline'); },
+    delete: () => { throw new Error('connection refused: database offline'); },
+    execute: () => { throw new Error('connection refused: database offline'); },
+    transaction: async () => { throw new Error('connection refused: database offline'); }
+  };
+  setTestDatabase(outageDb);
+  setTestTransactionRunner(async () => { throw new Error('connection refused: database offline'); });
+
   const outageRes = await appOutage.inject({
     method: 'POST',
     url: '/api/v1/partner/patients',
@@ -48,6 +59,8 @@ async function runClinicalWorkload() {
   const outage503Verified = outageRes.statusCode === 503;
   console.log(`    ➔ Database Outage Response: HTTP ${outageRes.statusCode} (${outage503Verified ? 'PASS: Controlled 503 Service Unavailable' : 'FAIL'})`);
   await appOutage.close();
+  setTestDatabase(null);
+  setTestTransactionRunner(null);
 
   if (!outage503Verified) {
     console.error('CRITICAL: Outage did not return 503 Service Unavailable!');
@@ -77,6 +90,55 @@ async function runClinicalWorkload() {
         map.set('BATCH-2026-08', { id: 'BATCH-2026-08', medicationId: 'SORBITRATE_5MG', availableQuantity: 100, status: 'ACTIVE' });
         map.set('BATCH-2027-01', { id: 'BATCH-2027-01', medicationId: 'ATORVASTATIN_40MG', availableQuantity: 100, status: 'ACTIVE' });
       }
+      if (name.includes('partner') || name === 'operational_partners') {
+        map.set('partner_01', {
+          id: '11111111-1111-4111-8111-111111111111',
+          tenantId: '11111111-1111-4111-8111-111111111111',
+          legalBusinessName: 'Apollo Hospital Network',
+          status: 'ACTIVE'
+        });
+      }
+      if (name.includes('organization') || name === 'operational_organizations') {
+        map.set('org_01', {
+          id: '11111111-1111-4111-8111-111111111111',
+          tenantId: '11111111-1111-4111-8111-111111111111',
+          legalName: 'Apollo Organization',
+          status: 'ACTIVE'
+        });
+      }
+      if (name.includes('facility') || name.includes('branch') || name === 'operational_facilities') {
+        map.set('fac_01', {
+          id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+          tenantId: '11111111-1111-4111-8111-111111111111',
+          name: 'Main Hospital Branch',
+          status: 'ACTIVE'
+        });
+      }
+      if (name.includes('doctor') || name === 'doctor_profiles') {
+        map.set('dddd4444-8492-4ddd-8ddd-849208492004', {
+          id: 'dddd4444-8492-4ddd-8ddd-849208492004',
+          tenantId: '11111111-1111-4111-8111-111111111111',
+          partnerId: '11111111-1111-4111-8111-111111111111',
+          organizationId: '11111111-1111-4111-8111-111111111111',
+          branchId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+          staffId: 'dddd4444-8492-4ddd-8ddd-849208492004',
+          doctorCode: 'DOC-RAJESH',
+          fullName: 'Dr. Rajesh Sharma',
+          status: 'ACTIVE'
+        });
+      }
+      if (name.includes('staff') || name === 'operational_staff') {
+        map.set('dddd4444-8492-4ddd-8ddd-849208492004', {
+          id: 'dddd4444-8492-4ddd-8ddd-849208492004',
+          tenantId: '11111111-1111-4111-8111-111111111111',
+          partnerId: '11111111-1111-4111-8111-111111111111',
+          organizationId: '11111111-1111-4111-8111-111111111111',
+          branchId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+          staffCode: 'STF-01',
+          name: 'Dr. Rajesh Sharma',
+          status: 'ACTIVE'
+        });
+      }
       mockTableStore.set(name, map);
     }
     return mockTableStore.get(name);
@@ -85,6 +147,8 @@ async function runClinicalWorkload() {
     const list = tbl ? Array.from(getTableRecords(tbl).values()) : Array.from(mockStore.values());
     const p = Promise.resolve(list);
     p.from = (table) => createSelectChain(table);
+    p.innerJoin = () => p;
+    p.leftJoin = () => p;
     p.where = () => p;
     p.limit = () => p;
     p.orderBy = () => p;
@@ -101,6 +165,8 @@ async function runClinicalWorkload() {
         getTableRecords(table).set(id, record);
         const p = Promise.resolve([record]);
         p.returning = async () => [record];
+        p.onConflictDoNothing = () => p;
+        p.onConflictDoUpdate = () => p;
         return p;
       }
     }),
@@ -137,6 +203,18 @@ async function runClinicalWorkload() {
   const adminHeaders = {
     authorization: `Bearer ${adminToken}`,
     'x-tenant-id': adminAuth.tenantId
+  };
+
+  const pathoLoginRes = await app.inject({
+    method: 'POST',
+    url: '/api/v1/auth/login',
+    payload: { email: 'pathology@docsearch.health', password: 'PathologyPass123!' }
+  });
+  const pathoToken = JSON.parse(pathoLoginRes.payload).data?.accessToken;
+  const pathoHeaders = {
+    authorization: `Bearer ${pathoToken}`,
+    'x-tenant-id': doctorAuth.tenantId,
+    'x-branch-id': doctorAuth.branchId
   };
 
   const workflowSteps = [];
@@ -280,7 +358,7 @@ async function runClinicalWorkload() {
   const resultRes = await app.inject({
     method: 'PATCH',
     url: `/api/v1/partner/lab/orders/${labOrderId}/results`,
-    headers: docHeaders,
+    headers: pathoHeaders,
     payload: {
       results: [
         { testCode: 'TROP_I', value: 0.08, unit: 'ng/mL', flag: 'CRITICAL_HIGH', refRange: '< 0.04' },

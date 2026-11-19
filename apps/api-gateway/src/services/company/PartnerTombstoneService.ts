@@ -55,16 +55,18 @@ export class PartnerTombstoneService {
   loadFromDisk(): void {
     try {
       if (fs.existsSync(PURGED_PARTNERS_FILE)) {
-        const raw = fs.readFileSync(PURGED_PARTNERS_FILE, 'utf-8');
-        const list = JSON.parse(raw);
-        if (Array.isArray(list)) {
-          this.tombstones = list;
-          this.purgedTokens.clear();
-          for (const item of list) {
-            this.indexTombstone(item);
+        const raw = fs.readFileSync(PURGED_PARTNERS_FILE, 'utf-8').trim();
+        if (raw) {
+          const list = JSON.parse(raw);
+          if (Array.isArray(list)) {
+            this.tombstones = list;
+            this.purgedTokens.clear();
+            for (const item of list) {
+              this.indexTombstone(item);
+            }
+            logger.info(`Loaded ${this.tombstones.length} purged partner tombstone(s) from disk.`);
+            return;
           }
-          logger.info(`Loaded ${this.tombstones.length} purged partner tombstone(s) from disk.`);
-          return;
         }
       }
     } catch (err) {

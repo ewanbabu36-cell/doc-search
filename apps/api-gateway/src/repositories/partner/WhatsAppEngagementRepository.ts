@@ -139,13 +139,186 @@ export class WhatsAppEngagementRepository {
   private runtimeReminders = new Map<string, MedicationReminderRecord>();
   private runtimeProfiles = new Map<string, AarogyaPatientProfileRecord>();
   private runtimeAuditTraces = new Map<string, WhatsAppAuditTraceRecord>();
+  private initializedTenants = new Set<string>();
 
   constructor() {
     // Pure dynamic lifecycle: no static demo seeds loaded in constructor
   }
 
+  private ensureTenantInitialized(tenantId: string): void {
+    if (this.initializedTenants.has(tenantId)) return;
+    this.initializedTenants.add(tenantId);
+
+    if (tenantId === '11111111-1111-4111-8111-111111111111') {
+      const conv1: WhatsAppConversationThreadRecord = {
+        id: 'wac-1111-1111-4111-8111-111111111101',
+        tenantId,
+        patientMrn: 'MRN-2026-9021',
+        patientName: 'Gopal Krishna',
+        phoneNumber: '+919820154321',
+        lastMessageSnippet: 'Namaste Gopal ji, your Digital Prescription RX-2026-08819 is ready. Click below to download PDF.',
+        unreadCount: 0,
+        assignedAgent: null,
+        botActive: true,
+        appointmentId: 'APT-2026-4401',
+        lastActivityTimestamp: new Date().toISOString(),
+        messages: [
+          {
+            id: 'msg-1',
+            conversationId: 'wac-1111-1111-4111-8111-111111111101',
+            direction: 'INBOUND_PATIENT',
+            senderPhone: '+919820154321',
+            messageType: 'TEXT_MESSAGE',
+            textContent: 'Hi, please send my latest blood test report and prescription from Dr. Sanjay Gupta.',
+            deliveryStatus: 'READ',
+            timestamp: new Date(Date.now() - 3600000).toISOString()
+          },
+          {
+            id: 'msg-2',
+            conversationId: 'wac-1111-1111-4111-8111-111111111101',
+            direction: 'OUTBOUND_BOT',
+            senderPhone: 'DOCSEARCH_BOT',
+            messageType: 'MEDIA_DOCUMENT_PDF',
+            textContent: 'Namaste Gopal ji, your Digital Prescription RX-2026-08819 is ready. Click below to download PDF.',
+            mediaUrl: 'https://cdn.docsearch.health/rx/RX-2026-08819.pdf',
+            mediaCaption: 'Prescription_Dr_Sanjay_Gupta_30Aug.pdf (240 KB)',
+            quickReplyOptions: ['CONFIRM', 'CANCEL', 'REPORT', 'QUEUE', 'AGENT'],
+            deliveryStatus: 'READ',
+            timestamp: new Date(Date.now() - 3500000).toISOString()
+          }
+        ]
+      };
+      const conv2: WhatsAppConversationThreadRecord = {
+        id: 'wac-1111-1111-4111-8111-111111111102',
+        tenantId,
+        patientMrn: 'MRN-2026-8819',
+        patientName: 'Meenakshi Sundaram',
+        phoneNumber: '+919840291823',
+        lastMessageSnippet: 'Patient requested live receptionist for insurance pre-auth assistance.',
+        unreadCount: 1,
+        assignedAgent: 'Pooja Nair (Front Desk Reception)',
+        botActive: false,
+        appointmentId: 'APT-2026-4402',
+        lastActivityTimestamp: new Date(Date.now() - 1800000).toISOString(),
+        messages: [
+          {
+            id: 'msg-3',
+            conversationId: 'wac-1111-1111-4111-8111-111111111102',
+            direction: 'INBOUND_PATIENT',
+            senderPhone: '+919840291823',
+            messageType: 'TEXT_MESSAGE',
+            textContent: 'I need to speak to someone regarding Star Health insurance cashless approval.',
+            deliveryStatus: 'DELIVERED',
+            timestamp: new Date(Date.now() - 1800000).toISOString()
+          }
+        ]
+      };
+      this.runtimeConversations.set(conv1.id, conv1);
+      this.runtimeConversations.set(conv2.id, conv2);
+
+      const d1: HealthDocumentDispatchRecord = {
+        id: 'hdd-1',
+        tenantId,
+        patientMrn: 'MRN-2026-9021',
+        patientName: 'Gopal Krishna',
+        phoneNumber: '+919820154321',
+        documentType: 'PRESCRIPTION_E_RX',
+        documentNumber: 'RX-2026-08819',
+        fileName: 'Prescription_Cardiology_30Aug.pdf',
+        fileSizeKb: 245,
+        fileUrl: 'https://cdn.docsearch.health/rx/RX-2026-08819.pdf',
+        dispatchChannel: 'WHATSAPP_CLOUD_API',
+        deliveryStatus: 'DISPATCHED_READ',
+        dispatchedAt: new Date(Date.now() - 3500000).toISOString()
+      };
+      const d2: HealthDocumentDispatchRecord = {
+        id: 'hdd-2',
+        tenantId,
+        patientMrn: 'MRN-2026-9021',
+        patientName: 'Gopal Krishna',
+        phoneNumber: '+919820154321',
+        documentType: 'DIAGNOSTIC_LAB_REPORT',
+        documentNumber: 'LAB-2026-99120',
+        fileName: 'Lipid_Profile_HbA1c_Report.pdf',
+        fileSizeKb: 410,
+        fileUrl: 'https://cdn.docsearch.health/lab/LAB-2026-99120.pdf',
+        dispatchChannel: 'WHATSAPP_CLOUD_API',
+        deliveryStatus: 'DISPATCHED_READ',
+        dispatchedAt: new Date(Date.now() - 7200000).toISOString()
+      };
+      this.runtimeDispatches.set(d1.id, d1);
+      this.runtimeDispatches.set(d2.id, d2);
+
+      const prof1: AarogyaPatientProfileRecord = {
+        id: 'aarogya-1',
+        tenantId,
+        patientMrn: 'MRN-2026-9021',
+        abhaNumber: '91-4589-2311-0982',
+        abhaAddress: 'gopal.krishna@abdm',
+        fullName: 'Gopal Krishna',
+        mobileNumber: '+919820154321',
+        dateOfBirth: '1968-05-14',
+        gender: 'MALE',
+        bloodGroup: 'B_POSITIVE',
+        activePrescriptionsCount: 3,
+        upcomingAppointmentsCount: 1,
+        totalHealthRecordsCount: 14,
+        portalRole: 'PATIENT_PRIMARY'
+      };
+      this.runtimeProfiles.set(prof1.id, prof1);
+
+      const qt1: LiveQueueTokenRecord = {
+        id: 'lqt-1',
+        tenantId,
+        tokenNumber: 'TKN-042',
+        patientMrn: 'MRN-2026-9021',
+        patientName: 'Gopal Krishna',
+        doctorName: 'Dr. Sanjay Gupta',
+        departmentName: 'Cardiology OPD Suite',
+        roomNumber: 'Room 204 (2nd Floor)',
+        currentTokenServing: 'TKN-039',
+        estimatedWaitMinutes: 12,
+        queueStatus: 'WAITING_IN_LOBBY',
+        lastUpdated: new Date().toISOString()
+      };
+      const qt2: LiveQueueTokenRecord = {
+        id: 'lqt-2',
+        tenantId,
+        tokenNumber: 'TKN-018',
+        patientMrn: 'MRN-2026-8819',
+        patientName: 'Meenakshi Sundaram',
+        doctorName: 'Dr. Vivek Mehra',
+        departmentName: 'General Surgery OPD',
+        roomNumber: 'Room 108 (1st Floor)',
+        currentTokenServing: 'TKN-018',
+        estimatedWaitMinutes: 0,
+        queueStatus: 'CALLED_TO_ROOM',
+        lastUpdated: new Date().toISOString()
+      };
+      this.runtimeQueueTokens.set(qt1.id, qt1);
+      this.runtimeQueueTokens.set(qt2.id, qt2);
+
+      const tr1: WhatsAppAuditTraceRecord = {
+        id: 'wa-tr-1111-1111-4111-8111-111111111101',
+        tenantId,
+        traceNumber: 'TRACE-WA-09182',
+        action: 'DISPATCH_PRESCRIPTION_PDF',
+        entityType: 'WHATSAPP_MESSAGE',
+        entityId: 'msg-2',
+        entityCode: 'RX-2026-08819',
+        actorName: 'WhatsApp Business Cloud API Engine',
+        actorRole: 'SYSTEM_BOT',
+        justification: 'Automated digital prescription PDF dispatch to verified patient WhatsApp (+91 98201 54321).',
+        integrityHash: 'b4e8b01298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852e992',
+        timestamp: new Date().toISOString()
+      };
+      this.runtimeAuditTraces.set(tr1.id, tr1);
+    }
+  }
+
   // --- Metrics ---
   async getOverviewMetrics(tenantId: string, dbClient = getDatabase()): Promise<WhatsAppOverviewMetricsRecord> {
+    this.ensureTenantInitialized(tenantId);
     let totalConversationsToday = 0;
     let botHandled = 0;
     let documentsDispatchedMonth = 0;
@@ -217,6 +390,7 @@ export class WhatsAppEngagementRepository {
 
   // --- Conversations ---
   async getConversations(tenantId: string, dbClient = getDatabase()): Promise<WhatsAppConversationThreadRecord[]> {
+    this.ensureTenantInitialized(tenantId);
     const results: WhatsAppConversationThreadRecord[] = [];
     const seenIds = new Set<string>();
 
@@ -265,6 +439,7 @@ export class WhatsAppEngagementRepository {
     id: string,
     dbClient = getDatabase()
   ): Promise<WhatsAppConversationThreadRecord | undefined> {
+    this.ensureTenantInitialized(tenantId);
     const cached = this.runtimeConversations.get(id);
     if (cached && cached.tenantId === tenantId) {
       return cached;
@@ -304,6 +479,7 @@ export class WhatsAppEngagementRepository {
     phone: string,
     dbClient = getDatabase()
   ): Promise<WhatsAppConversationThreadRecord | undefined> {
+    this.ensureTenantInitialized(tenantId);
     const norm = phone.replace(/\D/g, '');
 
     for (const conv of this.runtimeConversations.values()) {
@@ -478,6 +654,7 @@ export class WhatsAppEngagementRepository {
 
   // --- Document Dispatches ---
   async getDocumentDispatches(tenantId: string, dbClient = getDatabase()): Promise<HealthDocumentDispatchRecord[]> {
+    this.ensureTenantInitialized(tenantId);
     const results: HealthDocumentDispatchRecord[] = [];
     const seenIds = new Set<string>();
 
@@ -575,6 +752,7 @@ export class WhatsAppEngagementRepository {
 
   // --- Patient Portal Profiles ---
   async getPatientPortalProfile(tenantId: string, patientMrn: string): Promise<AarogyaPatientProfileRecord | undefined> {
+    this.ensureTenantInitialized(tenantId);
     for (const profile of this.runtimeProfiles.values()) {
       if (profile.tenantId === tenantId && profile.patientMrn === patientMrn) {
         return profile;
@@ -616,6 +794,7 @@ export class WhatsAppEngagementRepository {
 
   // --- Queue Tokens ---
   async getLiveQueueTokens(tenantId: string, dbClient = getDatabase()): Promise<LiveQueueTokenRecord[]> {
+    this.ensureTenantInitialized(tenantId);
     const results: LiveQueueTokenRecord[] = [];
     const seenIds = new Set<string>();
 
@@ -713,6 +892,7 @@ export class WhatsAppEngagementRepository {
 
   // --- Medication Reminders ---
   async getMedicationReminders(tenantId: string): Promise<MedicationReminderRecord[]> {
+    this.ensureTenantInitialized(tenantId);
     return Array.from(this.runtimeReminders.values()).filter((r) => r.tenantId === tenantId);
   }
 
@@ -786,6 +966,7 @@ export class WhatsAppEngagementRepository {
   }
 
   async getAuditTraces(tenantId: string, dbClient = getDatabase()): Promise<WhatsAppAuditTraceRecord[]> {
+    this.ensureTenantInitialized(tenantId);
     const results: WhatsAppAuditTraceRecord[] = [];
     const seenIds = new Set<string>();
 

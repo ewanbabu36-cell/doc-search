@@ -11,19 +11,19 @@
       "initial": "WAITING",
       "afterCall": "CALLED",
       "afterStart": "IN_PROGRESS",
-      "afterComplete": "COMPLETED"
+      "afterComplete": "SERVED"
     },
     "transitionDurationsMs": {
-      "issueTokensAvg": 23.73,
-      "callToken": 20.98,
-      "startToken": 35.3,
-      "completeToken": 25.91
+      "issueTokensAvg": 19.61,
+      "callToken": 52.22,
+      "startToken": 27.84,
+      "completeToken": 24.48
     },
     "verdict": "PASS — FIFO ORDERING & STATE MACHINE STRICTLY PRESERVED"
   },
   "backgroundJobsReconciliation": {
     "statusCode": 200,
-    "jobDurationMs": 15.37,
+    "jobDurationMs": 11.89,
     "activeSubscriptionsScanned": 2,
     "expiringSoonCount": 0,
     "gracePeriodCount": 0,

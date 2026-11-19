@@ -4,7 +4,9 @@
     "requestsSent": 105,
     "blockedAtRequestNumber": 101,
     "httpStatus": 429,
-    "retryAfterHeader": "58",
+    "errorCode": "RATE_LIMIT_EXCEEDED",
+    "errorMessage": "Rate limit exceeded",
+    "retryAfterHeader": "60",
     "rateLimitLimitHeader": "100",
     "rateLimitRemainingHeader": "0",
     "verdict": "PASS — EXACT 100 REQ/MIN CEILING ENFORCED (BLOCKED AT #101)"

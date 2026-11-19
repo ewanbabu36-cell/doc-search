@@ -65,6 +65,9 @@ function resolveDatabaseSsl(config?: DatabaseConfig): boolean | pg.PoolConfig['s
 }
 
 export function getDatabasePool(config?: DatabaseConfig): pg.Pool {
+  if (activeEmbeddedPool) {
+    return activeEmbeddedPool;
+  }
   if (!pool) {
     const envUrl = process.env['DATABASE_URL'];
     const connectionString = config?.connectionString ?? envUrl;
@@ -275,6 +278,7 @@ export async function ensureDatabaseReady(config?: DatabaseConfig): Promise<Node
       } catch {}
       pool = null;
     }
+    dbInstance = null;
 
     const allowDemo =
       process.env['SEED_DEMO_FIXTURES'] === 'true' ||
@@ -290,6 +294,7 @@ export async function ensureDatabaseReady(config?: DatabaseConfig): Promise<Node
       logger.warn('[LIVE-DB] Embedded universal seed warning: ' + String(seedErr));
     }
 
+    dbInstance = instance.db;
     testDatabaseInstance = instance.db;
     databaseMode = 'EMBEDDED_POSTGRES';
     isDatabaseReady = true;
@@ -307,15 +312,16 @@ export async function withSecurityContext<T>(
     throw AppError.forbidden('Tenant context is mandatory for security-scoped database operations');
   }
 
-  // Ensure DB is ready or auto-healed if not yet initialized
-  if (!isDatabaseReady && !testDatabaseInstance) {
-    try {
-      db = await ensureDatabaseReady();
-    } catch (initErr) {
-      logger.error('Failed to auto-ready database in withSecurityContext: ' + String(initErr));
-    }
-  } else if (testDatabaseInstance) {
+  if (testDatabaseInstance) {
     db = testDatabaseInstance;
+  }
+
+  if (!db) {
+    throw new AppError({
+      message: 'Database service is unavailable. Writes and clinical transactions are halted: Database connection is null or offline',
+      code: ErrorCode.SERVICE_UNAVAILABLE,
+      statusCode: 503
+    });
   }
 
   try {

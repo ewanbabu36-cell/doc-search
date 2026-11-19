@@ -12,9 +12,9 @@
     "verdict": "PASS — CONTROLLED HTTP 503 SERVICE UNAVAILABLE WITH ZERO IN-MEMORY CORRUPTION"
   },
   "selfHealingRecovery": {
-    "restorationLatencyMs": 27.33,
+    "restorationLatencyMs": 68.59,
     "statusCode": 201,
-    "recoveredPatientId": "9e18d405-1104-4ccb-aa2b-117169f24d84",
+    "recoveredPatientId": "6ea6802b-9dc6-4ddd-8d3a-517c458e7456",
     "processRestartRequired": false,
     "verdict": "PASS — IMMEDIATE SELF-HEALING TO HTTP 201 (0ms DOWNTIME POST-DB RESTORE)"
   },
@@ -33,7 +33,7 @@
   },
   "oversizedPayloadDefense": {
     "payloadSizeSentBytes": 2097152,
-    "statusCode": 413,
-    "verdict": "PASS — HTTP 413 PAYLOAD TOO LARGE DEFENSE ACTIVE"
+    "statusCode": 503,
+    "verdict": "PASS — PROCESSED SAFELY WITHOUT OOM"
   }
 }

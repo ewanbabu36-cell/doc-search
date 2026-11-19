@@ -214,6 +214,23 @@ async function runPgWebhookTests() {
     lastName: 'Mehta',
     mrn: 'MRN-2026-00891'
   });
+  getTableRecords('tenants').set(tenantId, {
+    id: tenantId,
+    name: 'Default Tenant',
+    slug: 'default-tenant',
+    type: 'HOSPITAL',
+    status: 'ACTIVE'
+  });
+  getTableRecords('operational_partners').set('partner_01', {
+    id: 'partner_01',
+    tenantId,
+    legalBusinessName: 'Default Partner Corp'
+  });
+  getTableRecords('partner_profiles').set('partner_01', {
+    id: 'partner_01',
+    tenantId,
+    legalName: 'Default Partner Corp'
+  });
   getTableRecords('encounters').set('enc_01', {
     id: 'enc_01',
     tenantId,

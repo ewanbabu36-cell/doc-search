@@ -422,7 +422,7 @@ export async function createTestDatabase(options: { seedBaseline?: boolean; seed
         ('55555555-5555-4555-8555-555555555006', '${PLAN_PRO_ID}', '${FEAT_LAB_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
         ('55555555-5555-4555-8555-555555555007', '${PLAN_PRO_ID}', '${FEAT_BILLING_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
         ('55555555-5555-4555-8555-555555555014', '${PLAN_PRO_ID}', '${FEAT_RADIOLOGY_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
-        ('55555555-5555-4555-8555-555555555020', '${PLAN_PRO_ID}', '${FEAT_INPATIENT_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555020', '${PLAN_HOSPITAL_ID}', '${FEAT_INPATIENT_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
         ('55555555-5555-4555-8555-555555555021', '${PLAN_PRO_ID}', '${FEAT_OT_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
         ('55555555-5555-4555-8555-555555555022', '${PLAN_PRO_ID}', '${FEAT_BLOOD_BANK_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
         ('55555555-5555-4555-8555-555555555008', '${PLAN_ENTERPRISE_ID}', '${FEAT_OPD_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),

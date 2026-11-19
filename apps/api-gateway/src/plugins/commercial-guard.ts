@@ -341,6 +341,8 @@ export function requireModuleCommercialAccess(moduleCode: string) {
         }
       } else if (moduleCode === 'CLINICAL_EMR' && rawUrl.includes('/patients')) {
         effectiveModuleCode = 'PATIENTS';
+      } else if (moduleCode === 'WHATSAPP_AUTOMATION') {
+        effectiveModuleCode = 'WHATSAPP';
       }
 
       const activeLicense = (request as any).__activeCommercialLicense;

@@ -293,6 +293,7 @@ const DEV_TEST_PASSWORDS: Record<string, string> = {
   'pharmacist@docsearch.health': 'PharmaPass123!',
   'labtech@docsearch.health': 'PathologyPass123!',
   'director@docsearch.health': 'Hospital@2026!',
+  'admin.singhal@docsearch.health': 'AdminPass123!',
   'nurse@docsearch.health': 'NursePass123!',
   'frontdesk@docsearch.health': 'FrontDeskPass123!',
   'patient@docsearch.health': 'PatientPass123!'
@@ -457,6 +458,28 @@ const DEV_TEST_USERS: Map<string, AuthenticatedUserRecord> =
       ],
       phone: '+91 98765 43210',
       passwordHash: hashPassword('Hospital@2026!')
+    }
+  ],
+  [
+    'admin.singhal@docsearch.health',
+    {
+      id: 'aaaa1111-8492-4aaa-8aaa-849208492003',
+      email: 'admin.singhal@docsearch.health',
+      firstName: 'Admin',
+      lastName: 'Singhal',
+      status: 'ACTIVE',
+      tenantId: '11111111-1111-4111-8111-111111111111',
+      organizationId: '33333333-3333-4333-8333-333333333301',
+      branchId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      roles: ['HOSPITAL_ADMIN', 'HOSPITAL_DIRECTOR'] as RoleType[],
+      permissions: ['*'],
+      tenantName: 'DocSearch Apollo Multispecialty Hospital',
+      organizationType: 'HOSPITAL',
+      planTier: 'Enterprise Hospital Network',
+      planExpiryDate: 'Enterprise Active',
+      accessibleFeatures: ['Hospital Core HIS & IPD Suite', 'Bed Census & Admissions', 'Emergency & Nurse Station', 'OT & ICU Scheduling', 'E-Prescriptions & Telehealth', 'White-Label Hospital Studio'],
+      phone: '+91 98765 43210',
+      passwordHash: hashPassword('AdminPass123!')
     }
   ],
   [
@@ -674,6 +697,28 @@ const DEV_TEST_USERS: Map<string, AuthenticatedUserRecord> =
       accessibleFeatures: ['Hospital Core HIS & IPD Suite', 'Bed Census & Admissions', 'Emergency & Nurse Station', 'OT & ICU Scheduling', 'E-Prescriptions & Telehealth', 'White-Label Hospital Studio'],
       phone: '+91 98765 43210',
       passwordHash: hashPassword('Hospital@2026!')
+    }
+  ],
+  [
+    'admin.singhal@docsearch.health',
+    {
+      id: 'aaaa1111-8492-4aaa-8aaa-849208492003',
+      email: 'admin.singhal@docsearch.health',
+      firstName: 'Admin',
+      lastName: 'Singhal',
+      status: 'ACTIVE',
+      tenantId: '11111111-1111-4111-8111-111111111111',
+      organizationId: '33333333-3333-4333-8333-333333333301',
+      branchId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      roles: ['HOSPITAL_ADMIN', 'HOSPITAL_DIRECTOR'] as RoleType[],
+      permissions: ['*'],
+      tenantName: 'DocSearch Apollo Multispecialty Hospital',
+      organizationType: 'HOSPITAL',
+      planTier: 'Enterprise Hospital Network',
+      planExpiryDate: 'Enterprise Active',
+      accessibleFeatures: ['Hospital Core HIS & IPD Suite', 'Bed Census & Admissions', 'Emergency & Nurse Station', 'OT & ICU Scheduling', 'E-Prescriptions & Telehealth', 'White-Label Hospital Studio'],
+      phone: '+91 98765 43210',
+      passwordHash: hashPassword('AdminPass123!')
     }
   ],
   [
