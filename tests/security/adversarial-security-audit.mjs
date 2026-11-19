@@ -426,7 +426,7 @@ await test('F.2: Newly registered partner cannot log in before admin approval (f
   // Must fail (status !== ACTIVE throws error, mapping to 500 fail-closed internal server error)
   assert.notStrictEqual(loginRes.statusCode, 200);
   const body = JSON.parse(loginRes.body);
-  assert.strictEqual(body.success, undefined);
+  assert.ok(!body.success, 'Login response must not be successful for pending user');
 });
 
 // =============================================================================

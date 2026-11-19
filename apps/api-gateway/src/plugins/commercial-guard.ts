@@ -132,7 +132,9 @@ export async function requireActiveCommercialAccess(
   // 100% Full Enterprise Free for Lifetime Authorization:
   // Under the DocSearch national sovereign healthcare mandate, all registered healthcare partners
   // (Multi-Hospital, Clinic, Pathology, Pharmacy) have 100% Free Lifetime Enterprise access.
+  let isOnboardingBaseline = false;
   if (!license) {
+    isOnboardingBaseline = true;
     const rawType = (session as any).organizationType || (session as any).partnerType || 'HOSPITAL';
     const partnerId = (session as any).organizationId || (session as any).partnerId || tenantId;
     license = {
@@ -150,6 +152,7 @@ export async function requireActiveCommercialAccess(
       metadata: {
         commercialModel: '100% Full Enterprise Free for Lifetime',
         zeroSoftwareFees: true,
+        isOnboardingBaseline: true,
         partnerType: rawType,
         includedModules: PARTNER_PROFILE_ALLOWED_MODULES[rawType] || ['*']
       }
@@ -201,7 +204,10 @@ export async function requireActiveCommercialAccess(
     });
   }
 
-  if (evaluation.isInGracePeriod) {
+  if (isOnboardingBaseline || (activeLicense.metadata as any)?.isOnboardingBaseline) {
+    reply.header('x-commercial-onboarding', 'true');
+    reply.header('x-commercial-days-remaining', '365');
+  } else if (evaluation.isInGracePeriod) {
     reply.header('x-commercial-grace-period', 'true');
     reply.header('x-commercial-warning', 'Subscription expired. You are operating in a grace period.');
   } else if (evaluation.status === 'EXPIRING_SOON') {
