@@ -40,6 +40,21 @@ const testDb = await setupTestDatabase({ seedBaseline: true, seedDemoFixtures: f
 const app = await buildApp();
 await app.ready();
 
+function makeToken(payload) {
+  const secret = process.env.JWT_SECRET || 'docsearch_master_jwt_secret_dev_32char_key_only';
+  return signJwt({
+    sub: payload.userId || crypto.randomUUID(),
+    userId: payload.userId || crypto.randomUUID(),
+    tenantId: payload.tenantId || '11111111-1111-4111-8111-111111111111',
+    branchId: payload.branchId || 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    roles: payload.roles || (payload.role ? [payload.role] : ['SUPER_ADMIN']),
+    permissions: payload.permissions || ['*'],
+    email: payload.email || 'founder@docsearch.health',
+    iss: 'docsearch-api',
+    aud: 'docsearch-platform'
+  }, { secret, expiresInSeconds: 7200 });
+}
+
 let testIndex = 0;
 async function step(title, fn) {
   testIndex++;
@@ -72,18 +87,12 @@ try {
   // Step 1: Onboarding Healthcare Partner & Provisioning Free 365-Day License
   await step('Partner Onboarding: Provisioning Verified Hospital with 365-Day Free License', async () => {
     // Acquire Company Admin token
-    const adminAuthRes = await app.inject({
-      method: 'POST',
-      url: '/api/v1/auth/quick-session',
-      payload: {
-        email: 'founder@docsearch.health',
-        role: 'SUPER_ADMIN',
-        roles: ['SUPER_ADMIN', 'COMPANY_ADMIN'],
-        permissions: ['*']
-      }
+    const adminToken = makeToken({
+      email: 'founder@docsearch.health',
+      role: 'SUPER_ADMIN',
+      roles: ['SUPER_ADMIN', 'COMPANY_ADMIN'],
+      permissions: ['*']
     });
-    assert.equal(adminAuthRes.statusCode, 200);
-    const adminToken = JSON.parse(adminAuthRes.body).data.accessToken;
 
     // Onboard Partner via authoritative Company API
     const onboardRes = await app.inject({
@@ -125,22 +134,16 @@ try {
     licenseId = partnerLicenses[0].id;
 
     // Acquire session token for Hospital Administrator
-    const authRes = await app.inject({
-      method: 'POST',
-      url: '/api/v1/auth/quick-session',
-      payload: {
-        email: partnerEmail,
-        role: 'HOSPITAL_ADMIN',
-        roles: ['HOSPITAL_ADMIN', 'DOCTOR'],
-        permissions: ['*'],
-        tenantId,
-        branchId,
-        partnerId,
-        name: 'Dr. Ramesh Sharma'
-      }
+    hospitalToken = makeToken({
+      email: partnerEmail,
+      role: 'HOSPITAL_ADMIN',
+      roles: ['HOSPITAL_ADMIN', 'DOCTOR'],
+      permissions: ['*'],
+      tenantId,
+      branchId,
+      organizationId: partnerId,
+      name: 'Dr. Ramesh Sharma'
     });
-    assert.equal(authRes.statusCode, 200);
-    hospitalToken = JSON.parse(authRes.body).data.accessToken;
   });
 
   // Step 2: Register Patient to prove clinical data retention

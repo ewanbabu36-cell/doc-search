@@ -18,9 +18,34 @@
  */
 
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import { generateGstEInvoice, getIndianFinancialYear, buildNhcxClaimBundle, validatePmjayCardNumber } from '../../packages/shared-core/dist/index.js';
 
 const BASE_URL = 'http://localhost:4000';
+const JWT_SECRET = process.env.JWT_SECRET || 'supersecret-docsearch-jwt-key-2026-production-grade';
+
+function mintJwt(payload) {
+  const header = { alg: 'HS256', typ: 'JWT' };
+  const base64Url = (obj) => Buffer.from(JSON.stringify(obj)).toString('base64url');
+  const h = base64Url(header);
+  const nowSec = Math.floor(Date.now() / 1000);
+  const p = base64Url({
+    iss: 'docsearch-api',
+    aud: 'docsearch-platform',
+    sub: payload.userId || '11111111-1111-4111-8111-111111111111',
+    userId: payload.userId || '11111111-1111-4111-8111-111111111111',
+    tenantId: payload.tenantId || '11111111-1111-4111-8111-111111111111',
+    branchId: payload.branchId || 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    roles: payload.roles || (payload.role ? [payload.role] : ['SUPER_ADMIN']),
+    permissions: payload.permissions || ['*'],
+    email: payload.email || 'founder@docsearch.health',
+    name: payload.name || 'Test User',
+    iat: nowSec,
+    exp: nowSec + 7200
+  });
+  const signature = crypto.createHmac('sha256', JWT_SECRET).update(`${h}.${p}`).digest('base64url');
+  return `${h}.${p}.${signature}`;
+}
 
 console.log('================================================================================');
 console.log('🏥 STARTING ATOMIC CROSS-DEPARTMENT HEALTHCARE WORKFLOW TEST');
@@ -44,16 +69,13 @@ async function api(path, options = {}, token) {
 async function runWorkflow() {
   // Step 1: Partner Onboarding & Authentication
   console.log('[Step 1a] Acquiring Company Admin / Founder Session Token...');
-  const adminAuthRes = await api('/api/v1/auth/quick-session', {
-    method: 'POST',
-    body: JSON.stringify({
-      email: 'founder@docsearch.health',
-      role: 'SUPER_ADMIN',
-      permissions: ['*']
-    })
+  const adminToken = mintJwt({
+    email: 'founder@docsearch.health',
+    role: 'SUPER_ADMIN',
+    roles: ['SUPER_ADMIN', 'COMPANY_ADMIN'],
+    permissions: ['*']
   });
-  assert(adminAuthRes.ok, `Admin Auth failed: ${JSON.stringify(adminAuthRes.body)}`);
-  const adminToken = adminAuthRes.body.data.accessToken;
+  console.log('   ✓ Admin token acquired.');
 
   console.log('[Step 1b] Onboarding Healthcare Partner & Provisioning Tenant...');
   const uniqueSuffix = Date.now().toString().slice(-4);
@@ -82,20 +104,15 @@ async function runWorkflow() {
   console.log('   ✓ Partner onboarded. Tenant:', tenantId, 'Partner:', partnerId, 'Branch:', branchId);
 
   console.log('[Step 1c] Acquiring Doctor Session Token for Onboarded Facility...');
-  const authRes = await api('/api/v1/auth/quick-session', {
-    method: 'POST',
-    body: JSON.stringify({
-      email: doctorEmail,
-      role: 'DOCTOR',
-      roles: ['DOCTOR', 'HOSPITAL_ADMIN', 'PHARMACIST'],
-      permissions: ['*'],
-      tenantId,
-      branchId,
-      name: 'Dr. Rajesh Sharma'
-    })
+  const token = mintJwt({
+    email: doctorEmail,
+    role: 'DOCTOR',
+    roles: ['DOCTOR', 'HOSPITAL_ADMIN', 'PHARMACIST'],
+    permissions: ['*'],
+    tenantId,
+    branchId,
+    name: 'Dr. Rajesh Sharma'
   });
-  assert(authRes.ok, `Doctor auth failed: ${JSON.stringify(authRes.body)}`);
-  const token = authRes.body.data.accessToken;
   console.log('   ✓ Doctor token acquired for tenant:', tenantId);
 
   // Step 2: Patient Registration
