@@ -154,7 +154,7 @@ try {
         '2027-10-15', 'CALIBRATED_VALID', true,
         $20, 'Er. Rajesh K. Varma (Lead BME)', 99.4, true,
         NOW(), NOW()
-      ) ON CONFLICT (id) DO NOTHING;
+      ) ON CONFLICT (tenant_id, asset_code) DO NOTHING;
     `, [
       a.id, CANONICAL_TENANT, CANONICAL_PARTNER, CANONICAL_ORG, CANONICAL_BRANCH,
       a.code, a.name, a.model, a.serial, a.manufacturer,
@@ -212,7 +212,7 @@ try {
         '2026-10-15', '2027-10-14', 'NABL Accredited Metrology Labs (Cert #CC-8821)', 'Dr. S. K. Narang (Chief Metrologist)',
         'Fluke ESA620 Electrical Safety Analyzer (S/N: 29019)', 'Flow error < 1.2%, Pressure error < 0.8% (Well within IEC 60601 limits)',
         'VALID', true, 'Asset cleared for high-risk critical ICU utilization.', NOW()
-      ) ON CONFLICT (id) DO NOTHING;
+      ) ON CONFLICT (tenant_id, certificate_number) DO NOTHING;
     `, [
       crypto.randomUUID(), CANONICAL_TENANT, CANONICAL_PARTNER, CANONICAL_ORG, CANONICAL_BRANCH,
       `CAL-NABL-2026-00${i+1}`, a.id, a.code, a.name
@@ -291,7 +291,7 @@ try {
         $1, $2, $3, $4, $5,
         $6, $7, $8, $9, $9,
         'ACTIVE', $10, NOW(), NOW()
-      ) ON CONFLICT (id) DO NOTHING;
+      ) ON CONFLICT (advance_number) DO NOTHING;
     `, [
       crypto.randomUUID(), CANONICAL_TENANT, CANONICAL_PARTNER, CANONICAL_ORG, CANONICAL_BRANCH,
       patId, encId, `ADV-2026-000${i+1}`, adv.amount,
@@ -320,7 +320,7 @@ try {
         $1, $2, $3, $4, $5,
         $6, $7, $8, $9, $10,
         $11, true, $12, NOW(), NOW()
-      ) ON CONFLICT (id) DO NOTHING;
+      ) ON CONFLICT (tenant_id, package_code) DO NOTHING;
     `, [
       crypto.randomUUID(), CANONICAL_TENANT, CANONICAL_PARTNER, CANONICAL_ORG, CANONICAL_BRANCH,
       pkg.code, pkg.name, pkg.desc, pkg.cat, pkg.price,
