@@ -895,7 +895,7 @@ export const TpaInsuranceClaimsDeskView: React.FC = () => {
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', fontSize: '0.75rem', textAlign: 'center' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '8px', fontSize: '0.75rem', textAlign: 'center' }}>
                     <div style={{ padding: '8px', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '6px' }}>
                       <span style={{ color: '#94A3B8', display: 'block' }}>TPA Covered</span>
                       <strong style={{ color: '#10B981', fontSize: '0.95rem' }}>₹{selectedClaim.approvedAmount.toLocaleString('en-IN')}</strong>

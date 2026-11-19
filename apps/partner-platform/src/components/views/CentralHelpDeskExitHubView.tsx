@@ -322,7 +322,7 @@ export const CentralHelpDeskExitHubView: React.FC<CentralHelpDeskExitHubViewProp
             </div>
 
             {/* Clearance Checklist Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '1rem', marginBottom: '2rem' }}>
               {/* 1. Doctor Prescription */}
               <div style={{ padding: '12px', borderRadius: '8px', border: '1px solid #16a34a', backgroundColor: 'rgba(22, 163, 74, 0.12)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>

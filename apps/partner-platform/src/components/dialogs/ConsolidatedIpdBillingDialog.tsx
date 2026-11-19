@@ -373,7 +373,7 @@ export const ConsolidatedIpdBillingDialog: React.FC<ConsolidatedIpdBillingDialog
                       <Badge variant="success">Bajaj / SaveIN Approved</Badge>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '8px' }}>
                       {([3, 6, 12] as const).map((tenure) => {
                         const isSel = emiTenureMonths === tenure;
                         const subventionRate = tenure === 3 ? 0.025 : tenure === 6 ? 0.03 : 0.04;

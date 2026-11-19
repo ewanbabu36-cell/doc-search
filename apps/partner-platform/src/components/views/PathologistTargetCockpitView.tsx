@@ -1103,7 +1103,7 @@ export const PathologistTargetCockpitView: React.FC<PathologistTargetCockpitView
                 border: '1px solid rgba(255, 255, 255, 0.06)'
               }}
             >
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '8px' }}>
                 {activeSpecimen.deltaCheck.visits.map((visit, i) => {
                   const isCurrent = i === activeSpecimen.deltaCheck.visits.length - 1;
                   return (

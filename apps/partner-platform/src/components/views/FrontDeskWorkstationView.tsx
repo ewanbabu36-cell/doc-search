@@ -1965,7 +1965,7 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
         </div>
 
         {/* Live Patient Search Input */}
-        <div style={{ minWidth: '320px', flex: '1', maxWidth: '480px' }}>
+        <div style={{ minWidth: 'min(100%, 320px)', flex: '1 1 auto', maxWidth: '480px', width: '100%' }}>
           <div style={{ position: 'relative', width: '100%' }}>
             <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8', fontSize: '0.9rem' }}>
               🔍
@@ -2947,7 +2947,7 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
                   )}
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 130px), 1fr))', gap: '6px' }}>
                   {/* [⚡ Walk-in] */}
                   <button
                     type="button"
@@ -4356,7 +4356,7 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
             </div>
 
             {/* Token Summary Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '8px' }}>
               <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '10px', padding: '10px', textAlign: 'center' }}>
                 <div style={{ fontSize: '0.7rem', color: '#94A3B8', fontWeight: 700 }}>TOTAL TOKENS</div>
                 <div style={{ fontSize: '1.3rem', fontWeight: 900, color: '#F8FAFC', marginTop: '2px' }}>{shiftStats.totalTokens}</div>
@@ -4615,7 +4615,7 @@ export const FrontDeskWorkstationView: React.FC<FrontDeskWorkstationViewProps> =
                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1' }}>
                   Fee Refund Mode:
                 </label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '8px' }}>
                   <button
                     type="button"
                     onClick={() => setCancelRefundMode('CASH_RETURNED')}

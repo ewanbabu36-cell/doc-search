@@ -3920,7 +3920,7 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
           </div>
 
           {/* Counters: आज के कुल टोकन (Waiting/In/Done) */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 70px), 1fr))', gap: '6px' }}>
             <div style={{
               padding: '6px',
               borderRadius: '6px',
@@ -4981,7 +4981,7 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
               </button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '8px', marginBottom: '16px' }}>
               <div style={{ backgroundColor: 'rgba(255,255,255,0.03)', padding: '8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)' }}>
                 <div style={{ fontSize: '0.625rem', color: '#94A3B8' }}>RECORDED BP:</div>
                 <div style={{ fontSize: '0.85rem', fontWeight: 900, color: '#38BDF8' }}>{selectedHistoricalVisit.bp} mmHg</div>

@@ -1154,7 +1154,7 @@ export const FrontDeskMobileWorkstationView: React.FC<FrontDeskMobileWorkstation
               </div>
 
               {/* Payment Mode Selector */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginBottom: '10px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 130px), 1fr))', gap: '6px', marginBottom: '10px' }}>
                 {[
                   { mode: 'UPI_QR' as const, label: '📱 UPI QR' },
                   { mode: 'CASH' as const, label: '💵 Cash' },
@@ -1646,7 +1646,7 @@ export const FrontDeskMobileWorkstationView: React.FC<FrontDeskMobileWorkstation
                 </div>
 
                 {/* 4 DISPATCH ACTIONS */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 120px), 1fr))', gap: '6px' }}>
                   {/* Action 1: Call Chime */}
                   <button
                     type="button"

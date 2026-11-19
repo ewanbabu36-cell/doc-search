@@ -628,7 +628,7 @@ export const OtCathLabLiveFlightBoardView: React.FC<OtCathLabLiveFlightBoardView
               </div>
 
               {/* Row 3: 5-Phase Animated Progress Stepper */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '6px' }}>
                 {[
                   { key: 'PRE_OP_HOLDING', label: '1. Holding' },
                   { key: 'ANAESTHESIA_INDUCTION', label: '2. Induction' },

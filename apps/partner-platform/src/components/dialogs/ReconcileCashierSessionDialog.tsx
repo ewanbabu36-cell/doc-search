@@ -237,7 +237,7 @@ export const ReconcileCashierSessionDialog: React.FC<ReconcileCashierSessionDial
           </div>
 
           {useDenominationCounter ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '0.5rem' }}>
               {['500', '200', '100', '50', '20', '10', '2000', 'coins'].map((denom) => (
                 <div key={denom} style={{ display: 'flex', flexDirection: 'column' }}>
                   <label style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>

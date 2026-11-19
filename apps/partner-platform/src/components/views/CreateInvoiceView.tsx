@@ -860,7 +860,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
                   <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--ds-color-text-secondary)', marginBottom: '6px' }}>
                     Payment Mode *
                   </label>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '8px' }}>
                     {[
                       { id: 'UPI', label: '📱 UPI / QR Scan' },
                       { id: 'CASH', label: '💵 Cash Currency' },

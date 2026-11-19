@@ -411,7 +411,7 @@ export const InstantBillSettlementView: React.FC<InstantBillSettlementViewProps>
               💳 Select Payment Channel
             </span>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 130px), 1fr))', gap: '8px', marginBottom: '16px' }}>
               {[
                 { id: 'UPI', label: '📱 Dynamic UPI', icon: '📱' },
                 { id: 'CASH', label: '💵 Cash Counter', icon: '💵' },

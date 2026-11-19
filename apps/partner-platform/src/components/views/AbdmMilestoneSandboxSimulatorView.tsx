@@ -213,7 +213,7 @@ export const AbdmMilestoneSandboxSimulatorView: React.FC = () => {
       </div>
 
       {/* 3-Milestone Navigation Tabs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '12px' }}>
         <button
           type="button"
           onClick={() => setActiveMilestone('M1')}

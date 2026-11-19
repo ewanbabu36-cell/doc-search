@@ -242,7 +242,7 @@ export const LegacyDataMigrationWizardView: React.FC<LegacyDataMigrationWizardVi
       </div>
 
       {/* Wizard Step Progress Tracker */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: '12px', marginBottom: '24px' }}>
         {[
           { num: 1, title: 'Select Legacy Software', desc: 'Practo, Marg, Vyapar, LiveHealth' },
           { num: 2, title: 'Import & Field Mapping', desc: 'CSV Intake & Auto-Detection' },
@@ -525,7 +525,7 @@ export const LegacyDataMigrationWizardView: React.FC<LegacyDataMigrationWizardVi
           </div>
 
           {/* KPI Stat Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '12px', marginBottom: '20px' }}>
             <div style={{ padding: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
               <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>TOTAL ROWS</div>
               <div style={{ fontSize: '22px', fontWeight: 800, color: '#0f172a', marginTop: '4px' }}>

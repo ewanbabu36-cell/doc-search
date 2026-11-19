@@ -326,7 +326,7 @@ export const PreLlmPhiRedactorStudioModal: React.FC<PreLlmPhiRedactorStudioModal
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
             gap: '12px',
             padding: '14px 24px',
             backgroundColor: 'rgba(15, 23, 42, 0.6)',

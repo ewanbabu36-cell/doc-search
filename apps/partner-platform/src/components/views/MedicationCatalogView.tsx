@@ -770,7 +770,7 @@ export const MedicationCatalogView: React.FC<MedicationCatalogViewProps> = ({
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '12px' }}>
             <div style={{ backgroundColor: '#1E293B', padding: '12px', borderRadius: '8px', border: '1px solid #334155' }}>
               <div style={{ fontSize: '0.72rem', color: '#94A3B8', fontWeight: 700 }}>DOSAGE FORMS</div>
               <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#34D399', marginTop: '2px' }}>

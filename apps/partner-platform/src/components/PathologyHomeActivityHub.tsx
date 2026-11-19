@@ -2737,7 +2737,7 @@ export const PathologyHomeActivityHub: React.FC<PathologyHomeActivityHubProps> =
             </div>
 
             {/* Westgard Rules Compliance Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '8px' }}>
               {[
                 { rule: '1-2s (Warning)', status: 'PASS', desc: 'Single run < 2 SD' },
                 { rule: '1-3s (Random)', status: 'PASS', desc: 'No point > 3 SD' },

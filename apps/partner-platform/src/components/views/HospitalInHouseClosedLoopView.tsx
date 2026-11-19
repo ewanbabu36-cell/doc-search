@@ -1076,7 +1076,7 @@ export const HospitalInHouseClosedLoopView: React.FC<HospitalInHouseClosedLoopVi
               </div>
             </div>
 
-            <div style={{ minWidth: '300px' }}>
+            <div style={{ minWidth: 'min(100%, 300px)', flex: '1 1 auto', width: '100%' }}>
               <Input
                 placeholder="🔍 Search department, baseline or solution..."
                 value={auditSearchQuery}

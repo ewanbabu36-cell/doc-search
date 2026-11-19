@@ -636,7 +636,7 @@ export const AutonomousGuidedWorkflowTunnel: React.FC<AutonomousGuidedWorkflowTu
             backgroundColor: '#0B111E',
             borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
             display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))',
             gap: '8px'
           }}
         >

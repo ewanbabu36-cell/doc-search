@@ -579,7 +579,7 @@ export const SurgicalCareConciergeView: React.FC = () => {
               <label style={{ fontSize: '0.78rem', color: '#CBD5E1', fontWeight: 700, display: 'block', marginBottom: '6px' }}>
                 Tenure Duration (Months):
               </label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '8px' }}>
                 {[3, 6, 9, 12].map((m) => (
                   <button
                     key={m}

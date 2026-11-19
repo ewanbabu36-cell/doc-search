@@ -547,7 +547,7 @@ export const BedsideBcmaScannerModal: React.FC<BedsideBcmaScannerModalProps> = (
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(5, 1fr)',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))',
               gap: '8px',
               backgroundColor: 'rgba(255, 255, 255, 0.02)',
               padding: '10px',

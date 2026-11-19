@@ -884,7 +884,7 @@ export const OpdOneFlowExpressView: React.FC<OpdOneFlowExpressViewProps> = ({
         borderRadius: '14px',
         border: '1px solid var(--ds-color-border, #1e293b)'
       }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '10px' }}>
           {[
             {
               step: 1,

@@ -923,7 +923,7 @@ export const CdscoDrugInspectorAuditVaultView: React.FC<CdscoDrugInspectorAuditV
           </div>
 
           {/* Search Box */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '320px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 'min(100%, 320px)', flex: '1 1 auto', width: '100%' }}>
             <input
               type="text"
               value={searchQuery}

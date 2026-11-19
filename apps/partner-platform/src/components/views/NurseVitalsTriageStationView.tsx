@@ -969,7 +969,7 @@ export const NurseVitalsTriageStationView: React.FC<NurseVitalsTriageStationView
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '6px' }}>
                     Triage Urgency Priority:
                   </label>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '6px' }}>
                     {[
                       { key: 'NORMAL', label: '🟢 Routine / Stable', desc: 'Standard chamber wait' },
                       { key: 'URGENT', label: '🟡 Priority Care', desc: 'Accelerated calling' },
@@ -1024,7 +1024,7 @@ export const NurseVitalsTriageStationView: React.FC<NurseVitalsTriageStationView
                 </div>
 
                 {/* Vitals Numeric Grid */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '10px' }}>
                   {/* BP */}
                   <div style={{ backgroundColor: 'rgba(15, 23, 42, 0.6)', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
                     <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 800, color: '#94A3B8', marginBottom: '4px' }}>
@@ -1845,7 +1845,7 @@ export const NurseVitalsTriageStationView: React.FC<NurseVitalsTriageStationView
               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', marginBottom: '4px' }}>
                 Triage Priority Level
               </label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 110px), 1fr))', gap: '6px' }}>
                 {[
                   { cat: 'RED' as const, label: '🔴 Red', desc: 'Immediate' },
                   { cat: 'YELLOW' as const, label: '🟡 Yellow', desc: 'Urgent' },
@@ -1969,7 +1969,7 @@ export const NurseVitalsTriageStationView: React.FC<NurseVitalsTriageStationView
 
             <div>
               <label style={{ display: 'block', fontSize: '0.75rem', color: '#CBD5E1', marginBottom: '4px' }}>Route</label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(60px, 1fr))', gap: '4px' }}>
                 {(['IV', 'ORAL', 'SC', 'IM', 'NEB'] as const).map((r) => (
                   <button
                     key={r}

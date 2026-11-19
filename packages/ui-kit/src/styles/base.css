@@ -804,6 +804,34 @@ textarea:hover {
     -webkit-overflow-scrolling: touch !important;
   }
 
+  /* Universal Anti-Collapse Inline Grid Protection on Mobile (< 768px) */
+  [style*="grid-template-columns: repeat(4"],
+  [style*="grid-template-columns: repeat(5"],
+  [style*="grid-template-columns: repeat(6"],
+  [style*="grid-template-columns: repeat(7"],
+  [style*="grid-template-columns: repeat(8"] {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr)) !important;
+  }
+
+  [style*="grid-template-columns: repeat(3"] {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)) !important;
+  }
+
+  /* Universal Anti-Clutter Flex Action Wrap */
+  .ds-action-bar,
+  .ds-button-group,
+  .ds-card-actions,
+  .ds-filter-row {
+    flex-wrap: wrap !important;
+  }
+
+  /* Modal Viewport Overflow Clamping */
+  .ds-modal,
+  .ds-dialog,
+  [role="dialog"] > div {
+    max-width: 95vw !important;
+  }
+
   .ds-sidebar-mobile-drawer {
     position: fixed !important;
     top: 0 !important;
@@ -811,6 +839,16 @@ textarea:hover {
     bottom: 0 !important;
     z-index: 60 !important;
     box-shadow: var(--ds-shadow-xl) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* High-Density Smartphone Adaptation (<= 480px) */
+  [style*="grid-template-columns: repeat(3"],
+  [style*="grid-template-columns: repeat(4"],
+  [style*="grid-template-columns: repeat(5"],
+  [style*="grid-template-columns: repeat(6"] {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr)) !important;
   }
 }
 

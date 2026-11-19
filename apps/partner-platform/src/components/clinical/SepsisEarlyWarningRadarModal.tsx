@@ -97,7 +97,7 @@ export const SepsisEarlyWarningRadarModal: React.FC<SepsisRadarProps> = ({
           <div style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--ds-color-text-muted)', marginBottom: '8px' }}>
             qSOFA Bedside Score Breakdown
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
             {/* 1. Tachypnea */}
             <div
               style={{

@@ -1010,7 +1010,7 @@ export const LiveIcuTelemetryCodeBlueView: React.FC<LiveIcuTelemetryCodeBlueView
                 />
 
                 {/* Vitals Telemetry Numbers Bar */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px', textAlign: 'center' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(64px, 1fr))', gap: '6px', textAlign: 'center' }}>
                   <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.08)', borderRadius: '6px', padding: '4px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
                     <div style={{ fontSize: '0.58rem', color: '#6EE7B7', fontWeight: 700 }}>HR</div>
                     <div style={{ fontSize: '1.05rem', fontWeight: 900, color: isCodeBlue ? '#EF4444' : '#10B981', fontFamily: 'monospace' }}>
@@ -1212,7 +1212,7 @@ export const LiveIcuTelemetryCodeBlueView: React.FC<LiveIcuTelemetryCodeBlueView
               </div>
 
               {/* Real-Time Parameter Numbers Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', textAlign: 'center' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(64px, 1fr))', gap: '8px', textAlign: 'center' }}>
                 <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '8px', padding: '8px' }}>
                   <div style={{ fontSize: '0.6rem', color: '#A7F3D0', fontWeight: 700 }}>HR / PULSE</div>
                   <div style={{ fontSize: '1.45rem', fontWeight: 900, color: codeBlueActive && selectedBed === 'BED_04' ? '#EF4444' : '#10B981', fontFamily: 'monospace' }}>

@@ -617,7 +617,7 @@ export const AmbulanceTransferView: React.FC<AmbulanceTransferViewProps> = ({
               </div>
 
               {/* Parameter Numbers Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', textAlign: 'center' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(64px, 1fr))', gap: '8px', textAlign: 'center' }}>
                 <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '8px', padding: '6px' }}>
                   <div style={{ fontSize: '0.58rem', color: '#A7F3D0', fontWeight: 700 }}>HR</div>
                   <div style={{ fontSize: '1.3rem', fontWeight: 900, color: '#10B981', fontFamily: 'monospace' }}>
