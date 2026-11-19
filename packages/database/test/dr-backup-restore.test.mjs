@@ -28,30 +28,39 @@ describe('Disaster Recovery & Encrypted Backup/Restore Verification Gate', () =>
   });
 
   it('3. Restored database state matches authoritative source with zero record loss', async () => {
-    const client = new pg.Client({
+    const sourceDbUrl = process.env.DATABASE_URL || 'postgresql://postgres:password@127.0.0.1:5432/docsearch';
+    const sourceClient = new pg.Client({ connectionString: sourceDbUrl });
+    const restoredClient = new pg.Client({
       connectionString: `postgresql://postgres:password@127.0.0.1:5432/${TEST_RESTORE_DB}`
     });
-    await client.connect();
 
-    const tenants = await client.query('SELECT count(*)::int as count FROM "core"."tenants"');
-    assert.equal(tenants.rows[0].count, 97, 'Restored tenants must equal 97');
+    await sourceClient.connect();
+    await restoredClient.connect();
 
-    const batches = await client.query('SELECT count(*)::int as count FROM "clinical"."pharmacy_batches"');
-    assert.equal(batches.rows[0].count, 22, 'Restored pharmacy batches must equal 22');
+    const srcTenants = await sourceClient.query('SELECT count(*)::int as count FROM "core"."tenants"');
+    const resTenants = await restoredClient.query('SELECT count(*)::int as count FROM "core"."tenants"');
+    assert.equal(resTenants.rows[0].count, srcTenants.rows[0].count, 'Restored tenants must match source');
 
-    const controlled = await client.query('SELECT count(*)::int as count FROM "pharmacy"."controlled_substance_records"');
-    assert.equal(controlled.rows[0].count, 6, 'Restored controlled substances must equal 6');
+    const srcBatches = await sourceClient.query('SELECT count(*)::int as count FROM "clinical"."pharmacy_batches"');
+    const resBatches = await restoredClient.query('SELECT count(*)::int as count FROM "clinical"."pharmacy_batches"');
+    assert.equal(resBatches.rows[0].count, srcBatches.rows[0].count, 'Restored pharmacy batches must match source');
 
-    const partners = await client.query('SELECT count(*)::int as count FROM "company"."partner_profiles"');
-    assert.equal(partners.rows[0].count, 46, 'Restored partner profiles must equal 46');
+    const srcControlled = await sourceClient.query('SELECT count(*)::int as count FROM "pharmacy"."controlled_substance_records"');
+    const resControlled = await restoredClient.query('SELECT count(*)::int as count FROM "pharmacy"."controlled_substance_records"');
+    assert.equal(resControlled.rows[0].count, srcControlled.rows[0].count, 'Restored controlled substances must match source');
 
-    await client.end();
+    const srcPartners = await sourceClient.query('SELECT count(*)::int as count FROM "company"."partner_profiles"');
+    const resPartners = await restoredClient.query('SELECT count(*)::int as count FROM "company"."partner_profiles"');
+    assert.equal(resPartners.rows[0].count, srcPartners.rows[0].count, 'Restored partner profiles must match source');
+
+    await sourceClient.end();
+    await restoredClient.end();
   });
 
   it('4. Cleanup isolated test recovery database', async () => {
     const rootClient = new pg.Client({ connectionString: 'postgresql://postgres:password@127.0.0.1:5432/postgres' });
     await rootClient.connect();
-    await rootClient.query(`DROP DATABASE IF EXISTS "${TEST_RESTORE_DB}";`);
+    await rootClient.query(`DROP DATABASE IF EXISTS "${TEST_RESTORE_DB}" WITH (FORCE);`);
     await rootClient.end();
   });
 });

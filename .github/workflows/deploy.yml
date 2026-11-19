@@ -44,8 +44,13 @@ jobs:
       - name: Install Monorepo Dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Verify Production Docker & Mobile Topologies
-        run: node scripts/verify-docker-production.mjs
+      - name: Execute Automated Database Migrations (Prisma Migration Deploy)
+        run: pnpm --filter @docsearch/database prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL || 'postgresql://postgres:password@localhost:5432/docsearch' }}
+
+      - name: Run Production Smoke Tests & Gate Verifications
+        run: node tests/production-truth/test-production-truth.js
 
   deploy-to-vps:
     name: 🚀 Rollout to Production Cloud Server

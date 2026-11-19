@@ -139,6 +139,19 @@ async function run() {
       'x-tenant-id': doctorTenantId
     };
 
+    const founderLoginRes = await request('/api/v1/auth/login', {
+      method: 'POST',
+      body: {
+        email: 'founder@docsearch.health',
+        password: 'FounderPass123!'
+      }
+    });
+    const founderToken = founderLoginRes.data?.data?.accessToken;
+    const founderHeaders = {
+      Authorization: `Bearer ${founderToken}`,
+      'x-tenant-id': doctorTenantId
+    };
+
     // -------------------------------------------------------------------------
     // 3. PATIENT REGISTRATION (MPI PERSISTENCE)
     // -------------------------------------------------------------------------
@@ -283,12 +296,13 @@ async function run() {
     // -------------------------------------------------------------------------
     const sampleCollectRes = await request(`/api/v1/partner/lab/orders/${orderId}/collect-sample`, {
       method: 'POST',
-      headers: authHeaders,
+      headers: pathoHeaders,
       body: {
         specimenType: 'WHOLE_BLOOD',
         containerType: 'LAVENDER_EDTA_4ML',
         collectedBy: 'Pooja Sharma, BMLT',
-        collectionNotes: 'Venipuncture left antecubital vein, free flow sample'
+        collectionNotes: 'Venipuncture left antecubital vein, free flow sample',
+        deferredBilling: true
       }
     });
 
@@ -347,7 +361,7 @@ async function run() {
 
     const resultEntryRes = await request(`/api/v1/partner/lab/orders/${orderId}/results`, {
       method: 'POST',
-      headers: authHeaders,
+      headers: pathoHeaders,
       body: resultEntryPayload
     });
 
@@ -477,7 +491,7 @@ async function run() {
     const webhookRes = await request('/api/v1/company/integration/webhooks/dispatch-test', {
       method: 'POST',
       headers: {
-        ...authHeaders,
+        ...founderHeaders,
         'Content-Type': 'application/json'
       },
       body: {
