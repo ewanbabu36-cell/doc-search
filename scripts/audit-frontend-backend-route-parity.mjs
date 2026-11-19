@@ -12,8 +12,8 @@ function getBackendRoutes() {
       if (e.isDirectory()) scan(full);
       else if (e.name.endsWith('.ts')) {
         const content = fs.readFileSync(full, 'utf8');
-        // Match fastify.get('/url' or fastify.post('/url'
-        const regex = /fastify\.(get|post|put|delete|patch)\(\s*['"`]([^'"`]+)['"`]/g;
+        // Match fastify.get('/url' or app.get('/url'
+        const regex = /(?:fastify|app)\.(get|post|put|delete|patch)\(\s*['"`]([^'"`]+)['"`]/g;
         let match;
         while ((match = regex.exec(content)) !== null) {
           routes.add(`${match[1].toUpperCase()} ${match[2]}`);

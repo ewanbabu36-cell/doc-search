@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Badge, Button } from '@docsearch/ui-kit';
+import { showToast } from '../../utils/feedback';
 
 export interface HospitalCityHub {
   id: string;
@@ -586,7 +587,7 @@ export const LiveGeographicHospitalBedHeatmapView: React.FC = () => {
                 color: activeHub.zoneType === 'RED_SURGE' ? '#FFF' : '#070C16',
                 fontWeight: 900
               }}
-              onClick={() => alert(`✓ Emergency Standby Alert & Surge Protocol successfully triggered for ${activeHub.cityName}!`)}
+              onClick={() => showToast(`✓ Emergency Standby Alert & Surge Protocol successfully triggered for ${activeHub.cityName}!`, 'success')}
             >
               🚨 {activeHub.zoneType === 'RED_SURGE' ? 'Trigger Epidemic Surge Protocol' : `Alert ${activeHub.cityName.split(' ')[0]} ER Desk`}
             </Button>

@@ -564,6 +564,20 @@ export const clinicalWorkflowRoutes: FastifyPluginAsync = async (fastify) => {
     }
   );
 
+  // Alias for offline-token-cache replay
+  fastify.post(
+    '/api/v1/partner/clinical-workflow/encounters',
+    {
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'create')]
+    },
+    async (request, reply) => {
+      const payload = validateBody(CreateEncounterSchema, request.body) as Omit<CreateEncounterInput, 'tenantId'>;
+      const data = await clinicalWorkflowService.checkInEncounter(payload, request.session);
+      reply.status(201);
+      return { success: true, data };
+    }
+  );
+
   fastify.post(
     '/api/v1/partner/clinical/encounters',
     {
