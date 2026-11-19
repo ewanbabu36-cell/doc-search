@@ -88,8 +88,28 @@ const state = {
   lastPrinterUsed: 'TVS RP 3200 Plus (80mm)',
   lastZplUsed: 'Zebra ZD220 (2-inch)',
   analyzerPort: 'COM3 (9600-8-N-1 / Mindray BC-5000)',
-  analyzerPackets: []
+  analyzerPackets: [],
+  isHardwareLocked: false,
+  lockedBy: null,
+  lockReason: null,
+  lockedAt: null
 };
+
+function recordHardwareAuditEvent(action, details = {}, req = null) {
+  try {
+    const auditRecord = {
+      auditId: `HW-AUD-${Date.now()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`,
+      timestamp: new Date().toISOString(),
+      action,
+      clientIp: req ? (req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '127.0.0.1') : '127.0.0.1',
+      ...details
+    };
+    const hwLogFile = path.join(PRINTERS_DIR, 'hardware-audit-events.jsonl');
+    fs.appendFileSync(hwLogFile, JSON.stringify(auditRecord) + '\n');
+  } catch (err) {
+    console.warn('[HW AUDIT] Failed to persist hardware audit:', err.message);
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Helper: Check Physical RD Service on 127.0.0.1:11100
@@ -151,6 +171,22 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(statusCode, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(payload, null, 2));
   };
+
+  // Hardware Admin Lockout Enforcement
+  if (state.isHardwareLocked && req.method === 'POST') {
+    if (
+      pathname.includes('/print') ||
+      pathname.includes('/dsc/sign') ||
+      pathname.includes('/biometric')
+    ) {
+      recordHardwareAuditEvent('HARDWARE_MUTATION_REJECTED_LOCKED', { path: pathname, reason: state.lockReason }, req);
+      return sendJson(403, {
+        success: false,
+        error: 'HARDWARE_LOCKED_BY_ADMIN',
+        message: `Hardware Agent is locked by Administrator (${state.lockedBy || 'Admin'}). Reason: ${state.lockReason || 'Security lockdown'}`
+      });
+    }
+  }
 
   // 1. Health & Agent Overview
   if (pathname === '/api/v1/hardware/health' || pathname === '/health' || pathname === '/') {
@@ -658,6 +694,66 @@ const server = http.createServer(async (req, res) => {
       status: isValid ? 'VALID_CERTIFIED_SIGNATURE' : 'SIGNATURE_INVALID_OR_MODIFIED',
       verificationStandard: 'ISO 15189:2022 & IT Act 2000 Section 3A',
       verifiedAt: new Date().toISOString()
+    });
+  }
+
+  // 12. Admin Hardware Lock & Sentinel Controls
+  if (pathname === '/api/v1/hardware/admin/status' && req.method === 'GET') {
+    return sendJson(200, {
+      success: true,
+      data: {
+        isHardwareLocked: state.isHardwareLocked,
+        lockedBy: state.lockedBy,
+        lockReason: state.lockReason,
+        lockedAt: state.lockedAt,
+        totalPrints: state.totalPrints,
+        totalZplPrints: state.totalZplPrints,
+        totalBiometricCaptures: state.totalBiometricCaptures,
+        totalDscSignatures: state.totalDscSignatures,
+        lastPrinterUsed: state.lastPrinterUsed,
+        lastDscTokenUsed: state.lastDscTokenUsed,
+        startedAt: state.startedAt
+      }
+    });
+  }
+
+  if (pathname === '/api/v1/hardware/admin/lock' && req.method === 'POST') {
+    const shouldLock = Boolean(body.locked);
+    state.isHardwareLocked = shouldLock;
+    state.lockedBy = shouldLock ? (body.actor || 'Administrator') : null;
+    state.lockReason = shouldLock ? (body.reason || 'Manual security lockdown triggered by Admin') : null;
+    state.lockedAt = shouldLock ? new Date().toISOString() : null;
+
+    recordHardwareAuditEvent(shouldLock ? 'HARDWARE_LOCKED_BY_ADMIN' : 'HARDWARE_UNLOCKED_BY_ADMIN', {
+      actor: state.lockedBy,
+      reason: state.lockReason
+    }, req);
+
+    return sendJson(200, {
+      success: true,
+      message: shouldLock ? 'Hardware Agent locked down. All print and crypto operations suspended.' : 'Hardware Agent unlocked and resumed normal operations.',
+      data: {
+        isHardwareLocked: state.isHardwareLocked,
+        lockedBy: state.lockedBy,
+        lockReason: state.lockReason,
+        lockedAt: state.lockedAt
+      }
+    });
+  }
+
+  if (pathname === '/api/v1/hardware/audit-traces' && req.method === 'GET') {
+    const hwLogFile = path.join(PRINTERS_DIR, 'hardware-audit-events.jsonl');
+    let traces = [];
+    if (fs.existsSync(hwLogFile)) {
+      try {
+        const lines = fs.readFileSync(hwLogFile, 'utf8').trim().split('\n');
+        traces = lines.filter(Boolean).map(l => JSON.parse(l)).reverse().slice(0, 100);
+      } catch {}
+    }
+    return sendJson(200, {
+      success: true,
+      count: traces.length,
+      traces
     });
   }
 

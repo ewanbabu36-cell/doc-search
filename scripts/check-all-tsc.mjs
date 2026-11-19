@@ -17,7 +17,7 @@ let failed = 0;
 for (const p of tsconfigs) {
   process.stdout.write(`Checking ${p}... `);
   try {
-    execSync(`npx tsc --noEmit -p ${p}`, { stdio: 'pipe' });
+    execSync(`node node_modules/typescript/bin/tsc --noEmit -p ${p}`, { stdio: 'pipe' });
     console.log('PASSED');
   } catch (err) {
     console.log('FAILED');

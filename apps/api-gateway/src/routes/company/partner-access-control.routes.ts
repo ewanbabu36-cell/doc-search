@@ -1159,4 +1159,82 @@ export const partnerAccessControlRoutes: FastifyPluginAsync = async (fastify) =>
     { preHandler: [authenticate] },
     handleBreakGlassRevoke
   );
+
+  const handleGetBreakGlassSessions = async (request: any, reply: any) => {
+    const session = request.session;
+    const db = getDatabase();
+    if (!db) {
+      return reply.status(200).send({ success: true, data: [] });
+    }
+
+    try {
+      const sessionTenantUuid = toDeterministicUuid(session.tenantId);
+      const query = session.isSuperAdmin
+        ? db.select().from(breakGlassAccess).orderBy(desc(breakGlassAccess.triggeredAt)).limit(100)
+        : db
+            .select()
+            .from(breakGlassAccess)
+            .where(
+              and(
+                eq(breakGlassAccess.tenantId, sessionTenantUuid)
+              )
+            )
+            .orderBy(desc(breakGlassAccess.triggeredAt))
+            .limit(100);
+
+      const rows = await query;
+      const now = Date.now();
+      const data = rows.map((r: any) => {
+        const expiresAtMs = r.expiresAt ? new Date(r.expiresAt).getTime() : 0;
+        let status: 'ACTIVE_EMERGENCY' | 'EXPIRED' | 'REVOKED' = 'ACTIVE_EMERGENCY';
+        if (r.revokedAt) {
+          status = 'REVOKED';
+        } else if (expiresAtMs > 0 && expiresAtMs < now) {
+          status = 'EXPIRED';
+        }
+
+        const remainingMs = Math.max(0, expiresAtMs - now);
+        const remainingMins = Math.floor(remainingMs / 60000);
+        const remainingHours = Math.floor(remainingMins / 60);
+        const minsLeft = remainingMins % 60;
+        const expiresIn = r.revokedAt
+          ? `Terminated by ${r.revokedBy || 'Admin'}`
+          : remainingMs <= 0
+            ? 'Expired'
+            : `${remainingHours}h ${minsLeft}m remaining`;
+
+        return {
+          id: r.id,
+          doctorName: r.userEmail || `User ${r.userId?.slice(0, 8)}`,
+          department: (r as any).department || 'Accident & Emergency',
+          patientName: (r as any).patientName || `Patient UHID-${r.patientId?.slice(0, 8)}`,
+          patientUhid: r.patientId,
+          emergencyJustification: r.reason,
+          grantedAt: r.triggeredAt instanceof Date ? r.triggeredAt.toISOString() : String(r.triggeredAt),
+          expiresIn,
+          status,
+          cisoAlertSent: true,
+          revokedAt: r.revokedAt ? (r.revokedAt instanceof Date ? r.revokedAt.toISOString() : String(r.revokedAt)) : null,
+          revokedBy: r.revokedBy || null
+        };
+      });
+
+      return reply.status(200).send({ success: true, data });
+    } catch (err: any) {
+      request.log?.warn?.(`[BreakGlass] Failed to fetch break glass sessions: ${err?.message}`);
+      return reply.status(200).send({ success: true, data: [] });
+    }
+  };
+
+  fastify.get(
+    '/api/v1/company/break-glass',
+    { preHandler: [authenticate] },
+    handleGetBreakGlassSessions
+  );
+
+  fastify.get(
+    '/api/v1/partner/break-glass',
+    { preHandler: [authenticate] },
+    handleGetBreakGlassSessions
+  );
 };

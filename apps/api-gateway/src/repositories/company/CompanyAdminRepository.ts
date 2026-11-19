@@ -29,6 +29,8 @@ import type {
   CreateDesignationRequest
 } from '@docsearch/api-contracts';
 import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
 
 export class CompanyAdminRepository {
   private fallbackEmployees: InternalEmployeeDto[] = [
@@ -967,6 +969,75 @@ export class CompanyAdminRepository {
                 userAgent: r.userAgent
               }
             });
+          }
+        } catch {}
+
+        // 3. Ingest Physical PACS Radiology Audit Events
+        try {
+          const pacsAuditPath = path.resolve(process.cwd(), 'data', 'pacs-storage', 'pacs-audit-events.jsonl');
+          if (fs.existsSync(pacsAuditPath)) {
+            const lines = fs.readFileSync(pacsAuditPath, 'utf8').trim().split('\n').filter(Boolean).slice(-25);
+            for (const line of lines) {
+              try {
+                const p = JSON.parse(line);
+                traces.push({
+                  id: p.auditId || crypto.randomUUID(),
+                  traceId: p.auditId || `pacs-${Date.now()}`,
+                  actorEmail: `PACS:${p.clientIp || '127.0.0.1'}`,
+                  action: `PACS_${p.action || 'STUDY_QUERY'}`,
+                  entityReference: `DICOM:${p.studyInstanceUid || p.sopInstanceUid || 'MODALITY'}`,
+                  operationStatus: 'SUCCESS',
+                  occurredAt: p.timestamp || new Date().toISOString(),
+                  reason: `Radiology PACS Access: ${p.action || 'QUERY'}`,
+                  metadata: p
+                });
+              } catch {}
+            }
+          }
+        } catch {}
+
+        // 4. Ingest Local Hardware & DSC Signatures Audit Events
+        try {
+          const dscAuditPath = path.resolve(process.cwd(), 'data', 'dsc-vault', 'dsc-signature-audit.jsonl');
+          if (fs.existsSync(dscAuditPath)) {
+            const lines = fs.readFileSync(dscAuditPath, 'utf8').trim().split('\n').filter(Boolean).slice(-25);
+            for (const line of lines) {
+              try {
+                const d = JSON.parse(line);
+                traces.push({
+                  id: d.auditId || crypto.randomUUID(),
+                  traceId: d.auditId || `dsc-${Date.now()}`,
+                  actorEmail: d.signerName || 'Class 3 USB DSC Token',
+                  action: 'DSC_REPORT_DIGITALLY_SIGNED',
+                  entityReference: `DOC:${d.documentId || d.reportHash?.slice(0, 10)}`,
+                  operationStatus: 'SUCCESS',
+                  occurredAt: d.timestamp || new Date().toISOString(),
+                  reason: `Class 3 Digital Certificate Sign: ${d.signerName}`,
+                  metadata: d
+                });
+              } catch {}
+            }
+          }
+
+          const hwLogFile = path.resolve(process.cwd(), 'data', 'printers', 'hardware-audit-events.jsonl');
+          if (fs.existsSync(hwLogFile)) {
+            const hwLines = fs.readFileSync(hwLogFile, 'utf8').trim().split('\n').filter(Boolean).slice(-25);
+            for (const line of hwLines) {
+              try {
+                const h = JSON.parse(line);
+                traces.push({
+                  id: h.auditId || crypto.randomUUID(),
+                  traceId: h.auditId || `hw-${Date.now()}`,
+                  actorEmail: `HW_AGENT:${h.clientIp || '127.0.0.1'}`,
+                  action: h.action || 'HARDWARE_IO',
+                  entityReference: 'HARDWARE:LHA-18080',
+                  operationStatus: 'SUCCESS',
+                  occurredAt: h.timestamp || new Date().toISOString(),
+                  reason: `Local Hardware Agent: ${h.action}`,
+                  metadata: h
+                });
+              } catch {}
+            }
           }
         } catch {}
 

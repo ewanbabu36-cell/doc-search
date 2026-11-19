@@ -1,6 +1,7 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { hqCommandCenterService, type HqQueryOptions } from '../../services/company/HqCommandCenterService.js';
 import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
+import { circuitBreakerRegistry } from '../../services/reliability/CircuitBreakerService.js';
 
 export const hqCommandCenterRoutes: FastifyPluginAsync = async (fastify) => {
   const hqAdminGuard = [authenticate, requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN')];
@@ -100,6 +101,30 @@ export const hqCommandCenterRoutes: FastifyPluginAsync = async (fastify) => {
       message: 'Autonomous clinical sweeper triggered on-demand via Admin Command Center.',
       executedAt: new Date().toISOString(),
       advisoryLockAcquired: true
+    };
+  });
+
+  // Circuit Breakers Command & Control
+  fastify.get('/api/v1/hq/command-center/circuit-breakers', { preHandler: hqAdminGuard }, async () => {
+    return {
+      success: true,
+      data: circuitBreakerRegistry.getAllTelemetry()
+    };
+  });
+
+  fastify.post('/api/v1/hq/command-center/circuit-breakers/:name/state', { preHandler: hqAdminGuard }, async (request, reply) => {
+    const { name } = request.params as { name: string };
+    const body = (request.body || {}) as { state: 'CLOSED' | 'OPEN' | 'HALF_OPEN'; reason?: string };
+    const breaker = circuitBreakerRegistry.get(name);
+    if (!breaker) {
+      reply.status(404);
+      return { success: false, error: `Circuit breaker '${name}' not found.` };
+    }
+    breaker.forceState(body.state || 'CLOSED', body.reason || 'Admin Command Center manual override');
+    return {
+      success: true,
+      message: `Circuit '${name}' forced to state '${body.state || 'CLOSED'}'.`,
+      data: breaker.getTelemetry()
     };
   });
 

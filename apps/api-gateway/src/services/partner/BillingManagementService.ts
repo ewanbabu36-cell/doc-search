@@ -1,5 +1,6 @@
 import {
   billingManagementRepository,
+  validateSupervisorOverrideToken,
   type CreateInvoiceInput,
   type RecordInsurancePreAuthInput,
   type CollectPaymentInput,
@@ -8,7 +9,7 @@ import {
   type ProcessRefundInput
 } from '../../repositories/partner/BillingManagementRepository.js';
 import { auditRepository } from '../../repositories/core/AuditRepository.js';
-import { type SessionContext, ScopeGuard, RBACEvaluator, verifyRazorpaySignature, verifyPayUSignature } from '@docsearch/auth';
+import { type SessionContext, ScopeGuard, RBACEvaluator, signJwt, verifyRazorpaySignature, verifyPayUSignature } from '@docsearch/auth';
 import type { RoleType } from '@docsearch/api-contracts';
 import {
   withSecurityContext,
@@ -248,13 +249,23 @@ export class BillingManagementService {
   ) {
     // 1. Separation of duties: Check refund permission or supervisor override token
     if (!session.isSuperAdmin) {
+      let hasValidSupervisorOverride = false;
+      if (input.supervisorOverrideToken) {
+        try {
+          validateSupervisorOverrideToken(input.supervisorOverrideToken, input.supervisorUserId);
+          hasValidSupervisorOverride = true;
+        } catch {
+          hasValidSupervisorOverride = false;
+        }
+      }
+
       const canRefund = RBACEvaluator.hasPermission(session, 'billing:invoices', 'refund') ||
                         RBACEvaluator.hasPermission(session, 'billing:refund', 'approve') ||
                         RBACEvaluator.hasPermission(session, 'billing:invoices', 'update') ||
-                        Boolean(input.supervisorOverrideToken);
+                        hasValidSupervisorOverride;
       if (!canRefund) {
         throw new AppError({
-          message: 'Access denied: Insufficient permissions to issue refunds on invoices. billing:invoices:refund or supervisorOverrideToken required.',
+          message: 'Access denied: Insufficient permissions to issue refunds on invoices. billing:invoices:refund or validated supervisorOverrideToken required.',
           code: ErrorCode.INSUFFICIENT_PERMISSIONS,
           statusCode: 403
         });
@@ -309,6 +320,67 @@ export class BillingManagementService {
 
       return result;
     });
+  }
+
+  async generateSupervisorOverrideToken(
+    input: { invoiceId: string; purpose?: string; reason: string; durationMinutes?: number },
+    session: SessionContext
+  ) {
+    const ALLOWED_SUPERVISORS = new Set(['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'BILLING_SUPERVISOR', 'MEDICAL_DIRECTOR', 'ADMIN', 'COMPANY_ADMIN']);
+    const hasRole = session.isSuperAdmin || (session.roles || []).some((r: string) => ALLOWED_SUPERVISORS.has(String(r).toUpperCase()));
+    if (!hasRole) {
+      throw new AppError({
+        message: 'Access denied: Only Hospital Administrators, Billing Supervisors, or Medical Directors can issue supervisor override tokens.',
+        code: ErrorCode.FORBIDDEN,
+        statusCode: 403
+      });
+    }
+
+    const durationMins = input.durationMinutes && input.durationMinutes > 0 && input.durationMinutes <= 60
+      ? input.durationMinutes
+      : 15;
+    const nowSec = Math.floor(Date.now() / 1000);
+    const expSec = nowSec + (durationMins * 60);
+
+    const payload = {
+      sub: session.userId,
+      userId: session.userId,
+      roles: session.roles || ['SUPERVISOR'],
+      purpose: input.purpose || 'INVOICE_VOID_OVERRIDE',
+      override: true,
+      invoiceId: input.invoiceId,
+      reason: input.reason,
+      tenantId: session.tenantId,
+      exp: expSec
+    };
+
+    const token = signJwt(payload, { secret: env.JWT_SECRET, expiresInSeconds: durationMins * 60 });
+
+    await auditRepository.recordEvent(
+      {
+        eventType: 'SUPERVISOR_OVERRIDE_TOKEN_ISSUED',
+        resourceType: 'billing_invoice',
+        resourceId: input.invoiceId,
+        tenantId: session.tenantId,
+        branchId: session.branchId,
+        metadata: {
+          supervisorId: session.userId,
+          supervisorEmail: session.actorEmail || session.userId,
+          purpose: input.purpose || 'INVOICE_VOID_OVERRIDE',
+          reason: input.reason,
+          durationMinutes: durationMins,
+          expiresAt: new Date(expSec * 1000).toISOString()
+        }
+      },
+      session
+    );
+
+    return {
+      token,
+      expiresAt: new Date(expSec * 1000).toISOString(),
+      supervisorId: session.userId,
+      purpose: input.purpose || 'INVOICE_VOID_OVERRIDE'
+    };
   }
 
   async processRazorpayWebhook(

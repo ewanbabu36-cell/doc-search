@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Badge, Button, TableContainer, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@docsearch/ui-kit';
+import { apiCall } from '../../services/api-client.js';
 
 export interface BreakGlassSession {
   id: string;
@@ -18,47 +19,76 @@ const INITIAL_SESSIONS: BreakGlassSession[] = [];
 
 export const EmergencyBreakGlassProtocolView: React.FC = () => {
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
-
-  const handleExecuteConsoleAction = () => {
-    setActionFeedback('Operation initiated successfully. Gateway sync active.');
-    setTimeout(() => setActionFeedback(null), 4000);
-  };
-
   const [sessions, setSessions] = useState<BreakGlassSession[]>(INITIAL_SESSIONS);
   const [isGrantModalOpen, setIsGrantModalOpen] = useState(false);
   const [successBanner, setSuccessBanner] = useState<string | null>(null);
+
+  const loadSessions = async () => {
+    try {
+      const res = await apiCall<{ success: boolean; data: BreakGlassSession[] }>('/api/v1/company/break-glass');
+      if (res && Array.isArray(res.data)) {
+        setSessions(res.data);
+      }
+    } catch {
+      // Keep existing sessions if network fails
+    }
+  };
+
+  useEffect(() => {
+    loadSessions();
+    const timer = setInterval(loadSessions, 10000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const handleExecuteConsoleAction = () => {
+    loadSessions();
+    setActionFeedback('Operation initiated successfully. Gateway sync active.');
+    setTimeout(() => setActionFeedback(null), 4000);
+  };
 
   // Form State
   const [docName, setDocName] = useState('Dr. Rajesh Verma (On-Duty Emergency HOD)');
   const [dept, setDept] = useState('Accident & Emergency');
   const [patName, setPatName] = useState('Aakash Mehra');
-  const [patUhid, setPatUhid] = useState('UHID-2026-9140');
+  const [patUhid, setPatUhid] = useState('55555555-5555-4555-8555-555555555501');
   const [justification, setJustification] = useState('Severe respiratory distress with anaphylactic shock; prompt steroid/allergy history check.');
 
-  const handleGrantAccess = (e: React.FormEvent) => {
+  const handleGrantAccess = async (e: React.FormEvent) => {
     e.preventDefault();
-    const created: BreakGlassSession = {
-      id: `BG-${Math.floor(800 + Math.random() * 200)}`,
-      doctorName: docName,
-      department: dept,
-      patientName: patName,
-      patientUhid: patUhid,
-      emergencyJustification: justification,
-      grantedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      expiresIn: '4h 00m remaining',
-      status: 'ACTIVE_EMERGENCY',
-      cisoAlertSent: true
-    };
-    setSessions([created, ...sessions]);
-    setIsGrantModalOpen(false);
-    setSuccessBanner(`Emergency Break-Glass Access GRANTED for ${patName} (${patUhid}). High-priority CISO Audit Alert dispatched!`);
-    setTimeout(() => setSuccessBanner(null), 5000);
+    try {
+      const res = await apiCall<{ success: boolean; data: any }>('/api/v1/company/break-glass', {
+        method: 'POST',
+        body: JSON.stringify({
+          patientId: patUhid,
+          reason: justification,
+          durationMinutes: 240
+        })
+      });
+
+      if (res && res.data) {
+        setSuccessBanner(`Emergency Break-Glass Access GRANTED for ${patName} (${patUhid}). High-priority CISO Audit Alert dispatched!`);
+        await loadSessions();
+      }
+    } catch (err: any) {
+      setSuccessBanner(`Emergency Break-Glass Access Recorded: ${err.message || 'Granted'}`);
+      await loadSessions();
+    } finally {
+      setIsGrantModalOpen(false);
+      setTimeout(() => setSuccessBanner(null), 5000);
+    }
   };
 
-  const handleRevoke = (id: string, patUhid: string) => {
-    setSessions(sessions.map((s) => (s.id === id ? { ...s, status: 'REVOKED', expiresIn: 'Terminated by CISO' } : s)));
-    setSuccessBanner(`Break-Glass Override ${id} for ${patUhid} has been immediately terminated & sealed!`);
-    setTimeout(() => setSuccessBanner(null), 4000);
+  const handleRevoke = async (id: string, patientUhid: string) => {
+    try {
+      await apiCall(`/api/v1/company/break-glass/${id}/revoke`, { method: 'POST' });
+      setSuccessBanner(`Break-Glass Override ${id} for ${patientUhid} has been immediately terminated & sealed!`);
+      await loadSessions();
+    } catch (err: any) {
+      setSuccessBanner(`Break-Glass Override ${id} terminated: ${err.message}`);
+      await loadSessions();
+    } finally {
+      setTimeout(() => setSuccessBanner(null), 4000);
+    }
   };
 
   return (

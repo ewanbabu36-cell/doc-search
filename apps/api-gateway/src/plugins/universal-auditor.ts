@@ -37,12 +37,20 @@ function deriveResourceDetails(url: string, method: string) {
 
 export const universalMutationAuditPlugin: FastifyPluginAsync = async (fastify) => {
   fastify.addHook('onResponse', async (request: FastifyRequest, reply: FastifyReply) => {
-    // Only audit state-mutating HTTP methods
-    if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)) {
+    const url = request.url || '';
+
+    // Data Loss Prevention (DLP): Audit bulk data exports even on GET
+    const isExport = request.method === 'GET' && (
+      url.includes('/export') ||
+      url.includes('/download') ||
+      url.includes('format=csv') ||
+      url.includes('format=xlsx')
+    );
+
+    // Only audit state-mutating HTTP methods or bulk export extractions
+    if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method) && !isExport) {
       return;
     }
-
-    const url = request.url || '';
     if (EXCLUDED_PREFIXES.some(prefix => url.startsWith(prefix))) {
       return;
     }
@@ -61,7 +69,9 @@ export const universalMutationAuditPlugin: FastifyPluginAsync = async (fastify) 
       isSuperAdmin: false
     };
 
-    const { eventType, resourceType } = deriveResourceDetails(url, request.method);
+    const derived = deriveResourceDetails(url, request.method);
+    const eventType = isExport ? 'DATA_LOSS_PREVENTION_BULK_EXPORT' : derived.eventType;
+    const resourceType = isExport ? 'BULK_DATA_EXPORT' : derived.resourceType;
     const ipAddress = request.ip || (request.headers['x-forwarded-for'] as string) || '127.0.0.1';
     const userAgent = (request.headers['user-agent'] as string) || 'API Client';
 

@@ -577,6 +577,30 @@ export const billingManagementRoutes: FastifyPluginAsync = async (fastify) => {
     handleRefund
   );
 
+  // 6c. Supervisor Override Token Generation (Dual Custody Governance)
+  fastify.post(
+    '/api/v1/partner/billing/supervisors/override-token',
+    {
+      preHandler: [authenticate]
+    },
+    async (request, reply) => {
+      const body = (request.body || {}) as { invoiceId: string; purpose?: string; reason: string; durationMinutes?: number };
+      if (!body.invoiceId || !body.reason) {
+        reply.status(400);
+        return {
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'invoiceId and reason are mandatory to issue a supervisor override token'
+          }
+        };
+      }
+      const data = await billingManagementService.generateSupervisorOverrideToken(body, request.session);
+      reply.status(200);
+      return { success: true, data };
+    }
+  );
+
   // 7. Patient Billing History
   fastify.get(
     '/api/v1/partner/patients/:id/billing-history',
