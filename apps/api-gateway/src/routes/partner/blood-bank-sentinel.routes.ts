@@ -74,6 +74,33 @@ export const bloodBankSentinelRoutes: FastifyPluginAsync = async (fastify) => {
     });
   });
 
+  // 1b. Query Active Cold-Chain Temperature Breaches (Medical Superintendent & Blood Bank Admin)
+  fastify.get('/api/v1/partner/blood-bank/iot/breaches', async (request, reply) => {
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+    const db = getDatabase();
+    try {
+      const res = await db.execute(sql`
+        SELECT id, storage_unit_id, unit_type, current_temperature,
+               min_allowed_temp, max_allowed_temp, breach_detected, created_at
+        FROM blood_bank_cold_chain_logs
+        WHERE tenant_id = ${tenantId} AND breach_detected = true
+        ORDER BY created_at DESC
+        LIMIT 50
+      `);
+      return reply.status(200).send({
+        success: true,
+        count: (res as any)?.rows?.length || 0,
+        data: (res as any)?.rows || []
+      });
+    } catch {
+      return reply.status(200).send({
+        success: true,
+        count: 0,
+        data: []
+      });
+    }
+  });
+
   // 2. Surgical Cross-Match Reservation (48-Hour Hold)
   fastify.post('/api/v1/partner/blood-bank/crossmatch/reserve', async (request, reply) => {
     const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';

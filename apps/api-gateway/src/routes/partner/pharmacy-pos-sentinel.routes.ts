@@ -209,6 +209,35 @@ export const pharmacyPosSentinelRoutes: FastifyPluginAsync = async (fastify) => 
     });
   });
 
+  // 3b. CDSCO Drug Inspector Statutory Schedule H1 / Narcotics Register Query
+  fastify.get('/api/v1/partner/pharmacy-pos/schedule-h1/register', async (request, reply) => {
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+    const db = getDatabase();
+    try {
+      const res = await db.execute(sql`
+        SELECT entry_id, drug_name, batch_number, quantity_dispensed,
+               patient_name, patient_id_proof, prescribing_doctor_name,
+               doctor_reg_number, dispensing_pharmacist_sign, medical_superintendent_sign,
+               created_at
+        FROM pharmacy_schedule_h1_register
+        WHERE tenant_id = ${tenantId}
+        ORDER BY created_at DESC
+        LIMIT 200
+      `);
+      return reply.status(200).send({
+        success: true,
+        count: (res as any)?.rows?.length || 0,
+        data: (res as any)?.rows || []
+      });
+    } catch {
+      return reply.status(200).send({
+        success: true,
+        count: 0,
+        data: []
+      });
+    }
+  });
+
   // 4. Pharmacy Counter POS Checkout & Thermal Receipt Payload (Atomic Transaction Boundary)
   fastify.post('/api/v1/partner/pharmacy-pos/bill/checkout', async (request, reply) => {
     const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
