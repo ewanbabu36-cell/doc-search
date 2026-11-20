@@ -352,6 +352,22 @@ export const HEALTH_OS_APPS: HealthOSAppItem[] = [
     applicableProfiles: ['HOSPITAL', 'CLINIC', 'PATHOLOGY', 'PHARMACY', 'ENTERPRISE_COMMAND'],
     applicableRoles: ['PHARMACIST', 'HOSPITAL_ADMIN'],
   },
+
+  // --- 20. DOCTOR AWARENESS STUDIO & SWASTHYA SHORTS ---
+  {
+    id: 'doctor-awareness-studio',
+    label: 'Doctor Awareness Studio & Swasthya Shorts',
+    shortLabel: 'Creator Studio',
+    category: 'CLINICAL',
+    icon: '🎬',
+    gradient: 'from-rose-500 to-pink-600',
+    route: '/partner/clinical/reels-studio',
+    description: 'Record & publish verified Swasthya Shorts reels with teleprompter guide and OPD booking CTA',
+    badge: '38k Views',
+    isCoreHomeApp: true,
+    applicableProfiles: ['HOSPITAL', 'CLINIC', 'DIAGNOSTIC_CENTRE', 'ENTERPRISE_COMMAND'],
+    applicableRoles: ['DOCTOR', 'HOSPITAL_ADMIN'],
+  },
 ];
 
 /**
@@ -399,7 +415,7 @@ export function getCoreAppsForStaff(
   switch (profile) {
     case 'CLINIC':
       return staffApps.filter((a) =>
-        ['clinical-consultation', 'encounters-visits', 'patient-portal', 'billing-revenue-cycle', 'abdm-fhir', 'telemedicine-rpm'].includes(a.id)
+        ['clinical-consultation', 'encounters-visits', 'patient-portal', 'billing-revenue-cycle', 'abdm-fhir', 'telemedicine-rpm', 'doctor-awareness-studio'].includes(a.id)
       );
 
     case 'PATHOLOGY':
@@ -418,7 +434,7 @@ export function getCoreAppsForStaff(
       switch (persona) {
         case 'DOCTOR':
           return staffApps.filter((a) =>
-            ['clinical-consultation', 'encounters-visits', 'patient-portal', 'telemedicine-rpm'].includes(a.id)
+            ['clinical-consultation', 'encounters-visits', 'patient-portal', 'telemedicine-rpm', 'doctor-awareness-studio'].includes(a.id)
           );
 
         case 'NURSE':
@@ -462,6 +478,7 @@ export function getCoreAppsForStaff(
               'pharmacy-medication',
               'clinical-investigation',
               'staff-administration',
+              'doctor-awareness-studio',
             ].includes(a.id)
           );
       }

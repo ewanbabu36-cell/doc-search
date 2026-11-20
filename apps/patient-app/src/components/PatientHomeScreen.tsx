@@ -13,12 +13,16 @@ import { PaperParchiScannerModal } from './PaperParchiScannerModal.js';
 import { DocSearchPlusSubscriptionModal } from './DocSearchPlusSubscriptionModal.js';
 import { PaperlessPreArrivalIntakeModal } from './PaperlessPreArrivalIntakeModal.js';
 import { Tata1mgQuickOrderModal } from './Tata1mgQuickOrderModal.js';
+import { doctorReelsService } from '../services/doctor-reels-data.js';
 
 interface Props {
   language: Language;
   onLanguageToggle: () => void;
   patient: PatientProfile;
-  onNavigate: (screen: 'QUEUE' | 'PARCHI' | 'DAWA' | 'VIDEO' | 'BOOK' | 'PROFILE' | 'MARKETPLACE' | 'PLUS') => void;
+  onNavigate: (
+    screen: 'QUEUE' | 'PARCHI' | 'DAWA' | 'VIDEO' | 'BOOK' | 'PROFILE' | 'MARKETPLACE' | 'PLUS' | 'REELS',
+    extra?: { initialReelId?: string }
+  ) => void;
   onSelectPatient: (p: PatientProfile) => void;
 }
 
@@ -30,6 +34,7 @@ export const PatientHomeScreen: React.FC<Props> = ({
   onSelectPatient
 }) => {
   const t = translations[language];
+  const [doctorReels] = useState(() => doctorReelsService.getReels());
   const [showQrPass, setShowQrPass] = useState(false);
   const [showEmergencySos, setShowEmergencySos] = useState(false);
   const [showFamilyModal, setShowFamilyModal] = useState(false);
@@ -212,6 +217,162 @@ export const PatientHomeScreen: React.FC<Props> = ({
             <span>👤</span>
             <span>{t.profile}</span>
           </button>
+        </div>
+      </div>
+
+      {/* 2.5 Daily Doctor Health Bites (Stories Carousel) */}
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '1.1rem' }}>🎬</span>
+            <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#F8FAFC' }}>
+              {language === 'hi' ? 'स्वास्थ्य शॉट्स • डॉक्टर रील्स' : 'Swasthya Shorts • Doctor Reels'}
+            </span>
+            <span
+              style={{
+                backgroundColor: '#EF4444',
+                color: '#FFF',
+                fontSize: '0.5625rem',
+                fontWeight: 900,
+                padding: '1px 5px',
+                borderRadius: '4px',
+                textTransform: 'uppercase'
+              }}
+            >
+              60s
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => onNavigate('REELS')}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#38BDF8',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              padding: 0
+            }}
+          >
+            {language === 'hi' ? 'सभी देखें ➔' : 'See All ➔'}
+          </button>
+        </div>
+
+        {/* Stories Horizontal Scroll Track */}
+        <div
+          style={{
+            display: 'flex',
+            gap: '12px',
+            overflowX: 'auto',
+            paddingBottom: '6px',
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none'
+          }}
+        >
+          {doctorReels.map((reel) => {
+            const shortDocName = reel.doctorName.replace(/^Dr\.\s*/, '').split(' ')[0];
+            return (
+              <button
+                key={reel.id}
+                type="button"
+                onClick={() => onNavigate('REELS', { initialReelId: reel.id })}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: 0,
+                  flexShrink: 0,
+                  width: '68px',
+                  textAlign: 'center'
+                }}
+              >
+                {/* Glowing Story Ring */}
+                <div
+                  style={{
+                    width: '60px',
+                    height: '60px',
+                    borderRadius: '50%',
+                    padding: '2px',
+                    background: 'linear-gradient(135deg, #F43F5E 0%, #FB923C 50%, #38BDF8 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    position: 'relative',
+                    boxShadow: '0 4px 12px rgba(244, 63, 94, 0.25)'
+                  }}
+                >
+                  <img
+                    src={reel.doctorAvatarUrl}
+                    alt={reel.doctorName}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      border: '2px solid #0B0F19'
+                    }}
+                  />
+                  {/* Category Micro Badge */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      bottom: '-2px',
+                      right: '-2px',
+                      backgroundColor: '#0F172A',
+                      borderRadius: '50%',
+                      width: '18px',
+                      height: '18px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '0.625rem',
+                      border: '1.5px solid #38BDF8'
+                    }}
+                  >
+                    {reel.category === 'CARDIOLOGY'
+                      ? '❤️'
+                      : reel.category === 'PEDIATRICS'
+                      ? '👶'
+                      : reel.category === 'DIABETES_METABOLIC'
+                      ? '🩸'
+                      : reel.category === 'WOMEN_HEALTH'
+                      ? '🤰'
+                      : '🦴'}
+                  </div>
+                </div>
+                <span
+                  style={{
+                    fontSize: '0.6875rem',
+                    fontWeight: 700,
+                    color: '#F8FAFC',
+                    marginTop: '6px',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    width: '100%'
+                  }}
+                >
+                  Dr. {shortDocName}
+                </span>
+                <span
+                  style={{
+                    fontSize: '0.5625rem',
+                    color: '#94A3B8',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    width: '100%'
+                  }}
+                >
+                  {reel.category.slice(0, 7)}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 

@@ -19,7 +19,8 @@ export type HealthOSModuleKey =
   | 'executive-command-center'
   | 'offers-rewards-hub'
   | 'patient-registration'
-  | 'patient-portal';
+  | 'patient-portal'
+  | 'doctor-awareness-studio';
 
 export type HealthOSCategory = 'CORE' | 'CLINICAL' | 'OPERATIONS' | 'DIAGNOSTICS' | 'EXECUTIVE';
 

@@ -10,14 +10,16 @@ import { VideoConsultationScreen } from './components/VideoConsultationScreen.js
 import { PatientProfileScreen } from './components/PatientProfileScreen.js';
 import { BookOpdModal } from './components/BookOpdModal.js';
 import { MeritDoctorMarketplaceScreen } from './components/MeritDoctorMarketplaceScreen.js';
+import { DoctorHealthReelsScreen } from './components/DoctorHealthReelsScreen.js';
 import { nativeBridge } from './services/native-bridge.js';
 
-export type PatientScreen = 'HOME' | 'QUEUE' | 'PARCHI' | 'DAWA' | 'VIDEO' | 'BOOK' | 'PROFILE' | 'MARKETPLACE' | 'PLUS';
+export type PatientScreen = 'HOME' | 'QUEUE' | 'PARCHI' | 'DAWA' | 'VIDEO' | 'BOOK' | 'PROFILE' | 'MARKETPLACE' | 'PLUS' | 'REELS';
 
 export const App: React.FC = () => {
   const [language, setLanguage] = useState<Language>('hi');
   const [currentPatient, setCurrentPatient] = useState<PatientProfile | null>(null);
   const [activeScreen, setActiveScreen] = useState<PatientScreen>('HOME');
+  const [selectedReelId, setSelectedReelId] = useState<string | undefined>(undefined);
   const [showBookModal, setShowBookModal] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [basementSimulated, setBasementSimulated] = useState(false);
@@ -270,14 +272,28 @@ export const App: React.FC = () => {
           language={language}
           onLanguageToggle={handleLanguageToggle}
           patient={currentPatient}
-          onNavigate={(screen) => {
+          onNavigate={(screen, extra) => {
             if (screen === 'BOOK') {
               setShowBookModal(true);
+            } else if (screen === 'REELS') {
+              setSelectedReelId(extra?.initialReelId);
+              setActiveScreen('REELS');
             } else {
               setActiveScreen(screen);
             }
           }}
           onSelectPatient={(p) => setCurrentPatient(p)}
+        />
+      )}
+
+      {activeScreen === 'REELS' && (
+        <DoctorHealthReelsScreen
+          language={language}
+          initialReelId={selectedReelId}
+          onBack={() => setActiveScreen('HOME')}
+          onBookDoctor={() => {
+            setShowBookModal(true);
+          }}
         />
       )}
 
@@ -343,7 +359,7 @@ export const App: React.FC = () => {
           backgroundColor: '#0F172A',
           borderTop: '1px solid rgba(255, 255, 255, 0.1)',
           display: 'grid',
-          gridTemplateColumns: 'repeat(5, 1fr)',
+          gridTemplateColumns: 'repeat(6, 1fr)',
           padding: '8px 0',
           zIndex: 150,
           boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.6)'
@@ -367,6 +383,38 @@ export const App: React.FC = () => {
         >
           <span style={{ fontSize: '1.25rem' }}>🏠</span>
           <span>{language === 'hi' ? 'होम' : 'Home'}</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => navigateToScreen('REELS')}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: activeScreen === 'REELS' ? '#F43F5E' : '#94A3B8',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '4px',
+            fontSize: '0.6875rem',
+            fontWeight: 800,
+            cursor: 'pointer',
+            position: 'relative'
+          }}
+        >
+          <span style={{ fontSize: '1.25rem' }}>🎬</span>
+          <span>{language === 'hi' ? 'रील्स' : 'Reels'}</span>
+          <span
+            style={{
+              position: 'absolute',
+              top: '-2px',
+              right: '12px',
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              backgroundColor: '#F43F5E'
+            }}
+          />
         </button>
 
         <button
@@ -506,6 +554,7 @@ export const App: React.FC = () => {
           onClose={() => setShowBookModal(false)}
           onSuccess={(updated) => {
             setCurrentPatient(updated);
+            setShowBookModal(false);
             navigateToScreen('QUEUE');
           }}
         />

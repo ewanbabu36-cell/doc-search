@@ -41,6 +41,7 @@ const ExecutiveCommandDomainManager = React.lazy(() => import('../ExecutiveComma
 const PatientRegistrationDomainManager = React.lazy(() => import('../PatientRegistrationDomainManager.js').then((m) => ({ default: m.PatientRegistrationDomainManager })));
 const Aarogya360PatientPortalView = React.lazy(() => import('../views/Aarogya360PatientPortalView.js').then((m) => ({ default: m.Aarogya360PatientPortalView })));
 const PartnerOffersRewardsHub = React.lazy(() => import('../offers/PartnerOffersRewardsHub.js').then((m) => ({ default: m.PartnerOffersRewardsHub })));
+const DoctorAwarenessStudioView = React.lazy(() => import('../views/DoctorAwarenessStudioView.js').then((m) => ({ default: m.DoctorAwarenessStudioView })));
 
 export interface DocSearchHealthOSContainerProps {
   currentUser: HospitalStaffUser;
@@ -634,6 +635,14 @@ export const DocSearchHealthOSContainer: React.FC<DocSearchHealthOSContainerProp
                 <div style={{ display: activeApp.id === 'offers-rewards-hub' ? 'block' : 'none' }}>
                   <DomainErrorBoundary domainName="Partner Rewards & Tier Benefits">
                     <PartnerOffersRewardsHub currentUser={currentUser} />
+                  </DomainErrorBoundary>
+                </div>
+              )}
+
+              {visitedModules.has('doctor-awareness-studio') && (
+                <div style={{ display: activeApp.id === 'doctor-awareness-studio' ? 'block' : 'none' }}>
+                  <DomainErrorBoundary domainName="Doctor Awareness Studio & Swasthya Shorts">
+                    <DoctorAwarenessStudioView currentUser={currentUser} />
                   </DomainErrorBoundary>
                 </div>
               )}
