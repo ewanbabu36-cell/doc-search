@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Card, Badge, Button } from '@docsearch/ui-kit';
+import { getAuthToken } from '../../services/api-client.js';
 
 export type DepartmentKey = 'ALL' | 'HEMATOLOGY' | 'BIOCHEMISTRY' | 'MICROBIOLOGY' | 'HISTOPATHOLOGY';
 export type WorklistFilterKey = 'CRITICAL_FIRST' | 'ABNORMAL' | 'BIOPSY' | 'ROUTINE' | 'ALL';
@@ -146,7 +147,10 @@ export const PathologistTargetCockpitView: React.FC<PathologistTargetCockpitView
     if (specimens && specimens.length > 0) {
       setLiveSpecimens(specimens);
     } else {
-      fetch('/api/v1/laboratory/specimens/cockpit')
+      const token = getAuthToken();
+      fetch('/api/v1/laboratory/specimens/cockpit', {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      })
         .then((r) => r.json())
         .then((res) => {
           if (res.success && Array.isArray(res.data) && res.data.length > 0) {

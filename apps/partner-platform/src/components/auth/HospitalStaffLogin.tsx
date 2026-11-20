@@ -884,6 +884,8 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess, initialMod
 
         if (json.data?.accessToken) {
           localStorage.setItem('docsearch_auth_token', json.data.accessToken);
+          localStorage.setItem('docsearch_partner_token', json.data.accessToken);
+          localStorage.setItem('docsearch_sso_master_token', json.data.accessToken);
           localStorage.setItem('docsearch_user_session', JSON.stringify(returnedUser));
         }
         if (json.data?.refreshToken) {

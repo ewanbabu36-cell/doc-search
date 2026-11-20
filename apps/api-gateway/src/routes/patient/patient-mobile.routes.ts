@@ -59,7 +59,7 @@ function verifyPatientSessionToken(
   }
 
   const token = authHeader.replace(/^Bearer\s+/i, '').trim();
-  if (!token) {
+  if (!token || token === 'null' || token === 'undefined' || token === '[object Object]') {
     return { valid: false, statusCode: 401, reason: 'Missing or empty Bearer token.' };
   }
 

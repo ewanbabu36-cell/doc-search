@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Card, Button, Badge, Input, Select } from '@docsearch/ui-kit';
 import { getUnifiedPartnerProfile } from '../../utils/roleProfileResolver.js';
+import { getAuthToken } from '../../services/api-client.js';
 
 export interface SplitTransaction {
   id: string;
@@ -79,9 +80,13 @@ export const InstantUPISplitSettlementStudio: React.FC = () => {
   const handleSimulatePayment = async () => {
     setIsSimulating(true);
     try {
+      const token = getAuthToken();
       const res = await fetch('/api/v1/partner/billing/doctor-payouts/settlements/generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({
           grossBilled: billAmount,
           consultationsCount: 1,

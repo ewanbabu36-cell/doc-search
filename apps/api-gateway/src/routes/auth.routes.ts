@@ -28,6 +28,7 @@ import {
 import { activationMailerService } from '../services/mail/ActivationMailerService.js';
 import type { RoleType } from '@docsearch/api-contracts';
 import { env } from '../config/env.js';
+import { extractAuthTokenFromRequest } from '../plugins/auth-guard.js';
 import { authenticate, requireRoles } from '../plugins/auth-guard.js';
 import { partnerOnboardingRepository } from '../repositories/company/PartnerOnboardingRepository.js';
 import { registrationFormPolicyService, resolveCanonicalRequestedPlan } from '../services/core/RegistrationFormPolicyService.js';
@@ -298,24 +299,13 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     // 2. Require cryptographically verified Bearer JWT header — never allow unauthenticated session minting
-    const authHeader = request.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return reply.status(401).send({
-        success: false,
-        error: {
-          code: 'UNAUTHORIZED',
-          message: 'Authentication required: Unauthenticated session minting is strictly prohibited.'
-        }
-      });
-    }
-
-    const bearerToken = authHeader.substring(7).trim();
+    const bearerToken = extractAuthTokenFromRequest(request);
     if (!bearerToken) {
       return reply.status(401).send({
         success: false,
         error: {
           code: 'UNAUTHORIZED',
-          message: 'Authentication required: Empty bearer token.'
+          message: 'Authentication required: Unauthenticated session minting is strictly prohibited.'
         }
       });
     }
@@ -633,13 +623,12 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
 
   // POST /api/v1/auth/logout
   fastify.post('/api/v1/auth/logout', async (request, reply) => {
-    const authHeader = request.headers.authorization;
     let sessionId: string | undefined;
     let userId: string | undefined;
     let sessionContext: any = null;
 
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7).trim();
+    const token = extractAuthTokenFromRequest(request);
+    if (token) {
       try {
         const claims = verifyJwt<VerifiedTokenClaims>(token, {
           secret: env.JWT_SECRET,
@@ -853,18 +842,20 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     const facilityName = (query?.facilityName || '').toLowerCase().trim();
 
     // Support bearer token if email query is omitted
-    if (!email && request.headers.authorization) {
-      try {
-        const token = request.headers.authorization.replace('Bearer ', '').trim();
-        const verified: any = verifyJwt(token, {
-          secret: env.JWT_SECRET,
-          expectedIssuer: env.JWT_ISSUER,
-          expectedAudience: env.JWT_AUDIENCE
-        });
-        if (verified?.actorEmail) {
-          email = verified.actorEmail.toLowerCase().trim();
-        }
-      } catch {}
+    if (!email) {
+      const token = extractAuthTokenFromRequest(request);
+      if (token) {
+        try {
+          const verified: any = verifyJwt(token, {
+            secret: env.JWT_SECRET,
+            expectedIssuer: env.JWT_ISSUER,
+            expectedAudience: env.JWT_AUDIENCE
+          });
+          if (verified?.actorEmail) {
+            email = verified.actorEmail.toLowerCase().trim();
+          }
+        } catch {}
+      }
     }
 
     if (!email && !facilityName) {

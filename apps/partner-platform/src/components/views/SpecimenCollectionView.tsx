@@ -13,7 +13,7 @@ import {
   TableCell
 } from '@docsearch/ui-kit';
 import type { InvestigationOrderDto } from '@docsearch/api-contracts';
-import { apiRequest } from '../../services/api-client.js';
+import { apiRequest, getAuthToken } from '../../services/api-client.js';
 import {
   useHardwareBarcodeScanner,
   playScannerAudioChime,
@@ -124,7 +124,10 @@ export const SpecimenCollectionView: React.FC<SpecimenCollectionViewProps> = ({
   const [tubes, setTubes] = useState<VacutainerTubeConfig[]>(CRELIO_VACUTAINER_TUBES);
 
   React.useEffect(() => {
-    fetch('/api/v1/laboratory/vacutainer-tubes')
+    const token = getAuthToken();
+    fetch('/api/v1/laboratory/vacutainer-tubes', {
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+    })
       .then((r) => r.json())
       .then((res) => {
         if (res.success && Array.isArray(res.data) && res.data.length > 0) {

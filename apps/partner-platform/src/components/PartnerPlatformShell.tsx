@@ -12,6 +12,7 @@ import {
 } from '@docsearch/shared-core';
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { encounterService } from '../services/encounter-service.js';
+import { getAuthToken } from '../services/api-client.js';
 
 // Lazy-loaded secondary modals & drawers for minimal initial partner platform shell bundle
 const UniversalAccountSettingsModal = React.lazy(() => import('./common/UniversalAccountSettingsModal.js').then(m => ({ default: m.UniversalAccountSettingsModal })));
@@ -756,7 +757,10 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
   const [partnerAccountPlan, setPartnerAccountPlan] = useState<any>(null);
 
   useEffect(() => {
-    fetch('/api/v1/partner/account/plan-and-features')
+    const token = getAuthToken();
+    fetch('/api/v1/partner/account/plan-and-features', {
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+    })
       .then((r) => r.json())
       .then((json) => {
         if (json?.success && json?.data) {
@@ -5698,7 +5702,10 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
               if (currentUser) {
                 currentUser.planTier = newPlanTier;
               }
-              fetch('/api/v1/partner/account/plan-and-features')
+              const token = getAuthToken();
+              fetch('/api/v1/partner/account/plan-and-features', {
+                headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+              })
                 .then((r) => r.json())
                 .then((json) => {
                   if (json?.success && json?.data) {

@@ -3,6 +3,7 @@ import helmet from '@fastify/helmet';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import { env } from '../config/env.js';
+import { extractAuthTokenFromRequest } from './auth-guard.js';
 
 export async function registerSecurityPlugins(app: FastifyInstance): Promise<void> {
   // 1. Security Headers via Helmet
@@ -107,11 +108,10 @@ export async function registerSecurityPlugins(app: FastifyInstance): Promise<voi
       if (request.session?.userId) {
         return `auth:${request.session.tenantId}:${request.session.userId}`;
       }
-      // 2. If Authorization header contains Bearer JWT token, extract sub & tenantId
-      const authHeader = request.headers.authorization;
-      if (authHeader && authHeader.startsWith('Bearer ')) {
+      // 2. If Authorization / token header contains JWT token, extract sub & tenantId
+      const token = extractAuthTokenFromRequest(request);
+      if (token) {
         try {
-          const token = authHeader.slice(7).trim();
           const parts = token.split('.');
           if (parts.length === 3 && parts[1]) {
             const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
@@ -130,7 +130,7 @@ export async function registerSecurityPlugins(app: FastifyInstance): Promise<voi
       // 🛡️ High throughput quota strictly reserved for cryptographically authenticated users
       if (
         request.session?.userId ||
-        (request.headers.authorization && request.headers.authorization.startsWith('Bearer ')) ||
+        Boolean(extractAuthTokenFromRequest(request)) ||
         request.url.startsWith('/api/v1/partner/smart-icu') ||
         request.url.startsWith('/api/v1/partner/bedside-concierge') ||
         request.url.startsWith('/api/v1/partner/hardware')

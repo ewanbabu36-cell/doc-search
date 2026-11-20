@@ -246,20 +246,16 @@ class PatientApiService {
   }
 
   getToken(): string | null {
-    const t = this.token || (typeof window !== 'undefined' ? localStorage.getItem('docsearch_patient_token') : null);
-    if (!t) return null;
-    if (t.startsWith('PAT-')) {
-      try {
-        const raw = atob(t.slice(4));
-        const parts = raw.split(':');
-        const ts = parts[2] ? parseInt(parts[2], 10) : 0;
-        if (ts && Date.now() - ts > 30 * 24 * 60 * 60 * 1000) {
-          console.warn('Patient session token expired. Clearing session.');
-          this.setPatient(null);
-          return null;
-        }
-      } catch {}
-    }
+    const t = (
+      this.token ||
+      (typeof window !== 'undefined'
+        ? (localStorage.getItem('docsearch_patient_token') ||
+           localStorage.getItem('docsearch_auth_token') ||
+           localStorage.getItem('docsearch_sso_master_token') ||
+           localStorage.getItem('token'))
+        : null)
+    )?.trim();
+    if (!t || t === 'null' || t === 'undefined' || t === '[object Object]') return null;
     return t;
   }
 

@@ -16,15 +16,25 @@ export class ApiError extends Error {
 
 export function getAuthToken(): string {
   if (typeof window === 'undefined') return '';
-  return (
+  const token = (
     window.localStorage?.getItem('docsearch_company_token') ||
     window.localStorage?.getItem('docsearch_auth_token') ||
+    window.localStorage?.getItem('docsearch_partner_token') ||
+    window.localStorage?.getItem('docsearch_sso_master_token') ||
+    window.localStorage?.getItem('auth_token') ||
     window.localStorage?.getItem('token') ||
     window.sessionStorage?.getItem('docsearch_company_token') ||
     window.sessionStorage?.getItem('docsearch_auth_token') ||
+    window.sessionStorage?.getItem('docsearch_partner_token') ||
     window.sessionStorage?.getItem('token') ||
     ''
-  );
+  ).trim();
+
+  if (!token || token === 'null' || token === 'undefined' || token === '[object Object]') {
+    return '';
+  }
+
+  return token;
 }
 
 export function isMockFallbackAllowed(): boolean {

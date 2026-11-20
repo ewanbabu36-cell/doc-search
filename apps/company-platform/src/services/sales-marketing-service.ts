@@ -11,7 +11,7 @@ import type {
   TransitionLeadRequest,
   TransitionOpportunityRequest
 } from '@docsearch/api-contracts';
-import { apiCall, isMockFallbackAllowed } from './api-client.js';
+import { apiCall, isMockFallbackAllowed, getAuthToken } from './api-client.js';
 
 export interface LeadFilters {
   status?: LeadStatus | 'ALL' | undefined;
@@ -302,7 +302,10 @@ export class SalesMarketingService implements ISalesMarketingService {
       if (filters?.campaignId) params.set('campaignId', filters.campaignId);
       if (filters?.partnerId) params.set('partnerId', filters.partnerId);
       if (filters?.leadId) params.set('leadId', filters.leadId);
-      const res = await fetch(`${this.apiUrl}/api/v1/company/marketing/activities?${params.toString()}`);
+      const token = getAuthToken();
+      const res = await fetch(`${this.apiUrl}/api/v1/company/marketing/activities?${params.toString()}`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
       if (!res.ok) throw new Error(`Failed to fetch marketing activities: ${res.statusText}`);
       return (await res.json()) as MarketingActivityDto[];
     }
@@ -325,7 +328,10 @@ export class SalesMarketingService implements ISalesMarketingService {
       const params = new URLSearchParams();
       if (filters?.status && filters.status !== 'ALL') params.set('status', filters.status);
       if (filters?.assignedUserEmail) params.set('assignedUserEmail', filters.assignedUserEmail);
-      const res = await fetch(`${this.apiUrl}/api/v1/company/sales/tasks?${params.toString()}`);
+      const token = getAuthToken();
+      const res = await fetch(`${this.apiUrl}/api/v1/company/sales/tasks?${params.toString()}`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
       if (!res.ok) throw new Error(`Failed to fetch sales tasks: ${res.statusText}`);
       return (await res.json()) as SalesTaskDto[];
     }
@@ -342,8 +348,13 @@ export class SalesMarketingService implements ISalesMarketingService {
 
   async completeSalesTask(id: string): Promise<SalesTaskDto> {
     if (this.apiUrl) {
+      const token = getAuthToken();
       const res = await fetch(`${this.apiUrl}/api/v1/company/sales/tasks/${id}/complete`, {
-        method: 'POST'
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
       });
       if (!res.ok) throw new Error(`Failed to complete task: ${res.statusText}`);
       return (await res.json()) as SalesTaskDto;

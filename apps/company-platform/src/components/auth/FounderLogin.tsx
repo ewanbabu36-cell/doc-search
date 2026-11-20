@@ -93,6 +93,8 @@ export const FounderLogin: React.FC<FounderLoginProps> = ({ onLoginSuccess }) =>
 
       if (json.data?.accessToken) {
         localStorage.setItem('docsearch_company_token', json.data.accessToken);
+        localStorage.setItem('docsearch_auth_token', json.data.accessToken);
+        localStorage.setItem('docsearch_sso_master_token', json.data.accessToken);
         localStorage.setItem('docsearch_company_session', JSON.stringify(userData));
       }
 

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getAuthToken } from '../../services/api-client.js';
 
 export interface HqLicenseKeyGeneratorModalProps {
   isOpen: boolean;
@@ -45,12 +46,12 @@ export const HqLicenseKeyGeneratorModal: React.FC<HqLicenseKeyGeneratorModalProp
     setErrorMsg(null);
 
     try {
-      const token = localStorage.getItem('docsearch_auth_token');
+      const token = getAuthToken();
       const res = await fetch('/api/v1/company/license/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token || ''}`
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
         body: JSON.stringify({
           partnerId: initialPartner?.id || 'partner-manual',

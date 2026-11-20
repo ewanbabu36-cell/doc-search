@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import type { CockpitMedItem } from '../views/SoloDoctorOpdCockpitView.js';
 import { pharmacyStockService } from '../../services/pharmacy-stock-service.js';
+import { getAuthToken } from '../../services/api-client.js';
 
 export interface RapidRxPrescriptionPadProps {
   onAddMedication: (med: CockpitMedItem) => void;
@@ -653,7 +654,7 @@ export const RapidRxPrescriptionPad: React.FC<RapidRxPrescriptionPadProps> = ({
     let isMounted = true;
     const fetchMasterData = async () => {
       try {
-        const token = typeof window !== 'undefined' ? localStorage.getItem('docsearch_partner_token') : null;
+        const token = getAuthToken();
         const [medRes, kitRes] = await Promise.all([
           fetch('/api/v1/company/masters/medications?limit=300', {
             headers: token ? { Authorization: `Bearer ${token}` } : {}

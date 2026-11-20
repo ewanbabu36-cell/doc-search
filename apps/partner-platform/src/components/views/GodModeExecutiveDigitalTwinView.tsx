@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Badge, Alert } from '@docsearch/ui-kit';
+import { getAuthToken } from '../../services/api-client.js';
 
 export interface DigitalTwinData {
   timestamp: string;
@@ -48,7 +49,10 @@ export const GodModeExecutiveDigitalTwinView: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/v1/partner/billing/executive/live-digital-twin');
+      const token = getAuthToken();
+      const res = await fetch('/api/v1/partner/billing/executive/live-digital-twin', {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
       const json = await res.json();
       if (!res.ok || !json.success) {
         throw new Error(json.error?.message || 'Failed to fetch executive digital twin.');
@@ -71,9 +75,13 @@ export const GodModeExecutiveDigitalTwinView: React.FC = () => {
     setIsClawingBack(true);
     setClawbackMessage(null);
     try {
+      const token = getAuthToken();
       const res = await fetch('/api/v1/partner/billing/doctor-payouts/clawback', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({
           doctorId: 'doc-ortho-007',
           doctorName: 'Dr. Vikram Malhotra (Orthopedic Surgeon)',
@@ -99,7 +107,10 @@ export const GodModeExecutiveDigitalTwinView: React.FC = () => {
   const handleDownloadPnlExport = async () => {
     setExportingPnl(true);
     try {
-      const res = await fetch('/api/v1/partner/billing/executive/automated-pnl-export');
+      const token = getAuthToken();
+      const res = await fetch('/api/v1/partner/billing/executive/automated-pnl-export', {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
       const json = await res.json();
       if (!res.ok || !json.success) {
         throw new Error(json.error?.message || 'Failed to generate P&L export.');

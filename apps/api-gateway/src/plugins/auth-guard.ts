@@ -102,6 +102,60 @@ declare module 'fastify' {
   }
 }
 
+/**
+ * Authoritative, robust token extractor that supports:
+ * 1. Authorization: Bearer / bearer (case-insensitive) or bare JWT
+ * 2. x-auth-token / x-access-token / x-token headers
+ * 3. query.token
+ * 4. cookies.docsearch_auth_token / cookies.docsearch_company_token / cookies.token
+ * Rejects falsy string values ('null', 'undefined', '[object Object]')
+ */
+export function extractAuthTokenFromRequest(request: FastifyRequest): string | null {
+  const authHeader = request.headers.authorization;
+  let raw: string | null = null;
+
+  if (typeof authHeader === 'string') {
+    const trimmed = authHeader.trim();
+    if (/^Bearer\s+/i.test(trimmed)) {
+      raw = trimmed.replace(/^Bearer\s+/i, '').trim();
+    } else if (trimmed.includes('.') && trimmed.split('.').length === 3) {
+      // Direct raw JWT sent in authorization header without 'Bearer ' prefix
+      raw = trimmed;
+    }
+  }
+
+  if (!raw) {
+    const xAuth = request.headers['x-auth-token'] || request.headers['x-access-token'] || request.headers['x-token'];
+    if (typeof xAuth === 'string' && xAuth.trim()) {
+      raw = xAuth.trim().replace(/^Bearer\s+/i, '').trim();
+    }
+  }
+
+  if (!raw && (request.query as any)?.token) {
+    const qToken = String((request.query as any).token).trim();
+    if (qToken) {
+      raw = qToken.replace(/^Bearer\s+/i, '').trim();
+    }
+  }
+
+  if (!raw && (request as any).cookies) {
+    const cookieToken =
+      (request as any).cookies['docsearch_auth_token'] ||
+      (request as any).cookies['docsearch_company_token'] ||
+      (request as any).cookies['token'];
+    if (typeof cookieToken === 'string' && cookieToken.trim()) {
+      raw = cookieToken.trim();
+    }
+  }
+
+  // Reject falsy string values commonly passed by buggy frontend string interpolation
+  if (!raw || raw === 'null' || raw === 'undefined' || raw === '[object Object]') {
+    return null;
+  }
+
+  return raw;
+}
+
 export const authGuardPlugin: FastifyPluginAsync = async (app: FastifyInstance): Promise<void> => {
   // Decorate fastify request with session property
   app.decorateRequest('session', null as unknown as SessionContext);
@@ -118,8 +172,8 @@ export async function optionalAuthenticate(request: FastifyRequest, reply: Fasti
   if (request.session) {
     return;
   }
-  const authHeader = request.headers.authorization;
-  if ((authHeader && authHeader.startsWith('Bearer ')) || (request.query as any)?.token) {
+  const token = extractAuthTokenFromRequest(request);
+  if (token) {
     return await authenticate(request, reply);
   }
   // No authorization header provided: leave request.session undefined
@@ -136,15 +190,8 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
     return;
   }
 
-  const authHeader = request.headers.authorization;
   const isDev = env.NODE_ENV !== 'production';
-
-  let token: string | null = null;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    token = authHeader.substring(7).trim();
-  } else if ((request.query as any)?.token) {
-    token = String((request.query as any).token).trim();
-  }
+  const token = extractAuthTokenFromRequest(request);
 
   // Handle development or local workstation fallback when explicitly enabled with an offline token:
   if (!token) {

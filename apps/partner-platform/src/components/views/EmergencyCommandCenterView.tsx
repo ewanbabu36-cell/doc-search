@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, Badge, Button } from '@docsearch/ui-kit';
 import type { EmergencyOverviewMetricsDto, EmergencyEncounterDto, EmergencyZoneDto } from '@docsearch/api-contracts';
 import { hospitalEventBus } from '../../services/hospital-event-bus.js';
+import { getAuthToken } from '../../services/api-client.js';
 
 export interface InboundAmbulance {
   id: string;
@@ -69,7 +70,10 @@ export const EmergencyCommandCenterView: React.FC<Props> = ({
   const [crashCartItems, setCrashCartItems] = useState<CrashCartItem[]>([]);
 
   React.useEffect(() => {
-    fetch('/api/v1/emergency/command-center/inbound-ambulances')
+    const token = getAuthToken();
+    const authHeaders = token ? { 'Authorization': `Bearer ${token}` } : {};
+
+    fetch('/api/v1/emergency/command-center/inbound-ambulances', { headers: authHeaders })
       .then((r) => r.json())
       .then((res) => {
         if (res.success && Array.isArray(res.data) && res.data.length > 0) {
@@ -78,7 +82,7 @@ export const EmergencyCommandCenterView: React.FC<Props> = ({
       })
       .catch((err) => console.warn('Failed to load inbound ambulances:', err));
 
-    fetch('/api/v1/emergency/command-center/mlc-cases')
+    fetch('/api/v1/emergency/command-center/mlc-cases', { headers: authHeaders })
       .then((r) => r.json())
       .then((res) => {
         if (res.success && Array.isArray(res.data) && res.data.length > 0) {
@@ -87,7 +91,7 @@ export const EmergencyCommandCenterView: React.FC<Props> = ({
       })
       .catch((err) => console.warn('Failed to load MLC cases:', err));
 
-    fetch('/api/v1/emergency/command-center/crash-carts')
+    fetch('/api/v1/emergency/command-center/crash-carts', { headers: authHeaders })
       .then((r) => r.json())
       .then((res) => {
         if (res.success && Array.isArray(res.data) && res.data.length > 0) {

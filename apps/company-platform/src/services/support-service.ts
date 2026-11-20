@@ -9,7 +9,7 @@ import type {
   TransitionTicketRequest,
   CreateTicketCommentRequest
 } from '@docsearch/api-contracts';
-import { apiCall, isMockFallbackAllowed } from './api-client.js';
+import { apiCall, isMockFallbackAllowed, getAuthToken } from './api-client.js';
 
 export interface TicketFilters {
   status?: TicketStatus | 'ALL' | undefined;
@@ -187,7 +187,10 @@ export class SupportService implements ISupportService {
       const url = partnerId
         ? `${this.apiUrl}/api/v1/company/support/checkins?partnerId=${partnerId}`
         : `${this.apiUrl}/api/v1/company/support/checkins`;
-      const res = await fetch(url);
+      const token = getAuthToken();
+      const res = await fetch(url, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
       if (!res.ok) throw new Error(`Failed to fetch success checkins: ${res.statusText}`);
       return (await res.json()) as SuccessCheckinDto[];
     }

@@ -14,6 +14,7 @@ import {
   processWholesaleRows,
   parseCsvLines
 } from '../workers/wholesale-inventory.worker.js';
+import { getAuthToken } from './api-client.js';
 
 export interface ProcessWholesaleCsvOptions {
   supplierName?: string;
@@ -167,7 +168,7 @@ export class WholesaleInventoryProcessor {
       }))
     };
 
-    const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
+    const token = getAuthToken();
     const response = await fetch(`${apiBaseUrl}/api/v1/partner/pharmacy/invoices/ingest-wholesale`, {
       method: 'POST',
       headers: {

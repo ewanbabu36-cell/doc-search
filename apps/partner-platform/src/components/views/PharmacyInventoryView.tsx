@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Badge, TableContainer, Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@docsearch/ui-kit';
-import { apiRequest } from '../../services/api-client.js';
+import { apiRequest, getAuthToken } from '../../services/api-client.js';
 
 export interface PharmacyInventoryViewProps {
   initialTab?: 'PMBJP_SUBSTITUTE' | 'REFILL_RADAR' | 'INVENTORY_OVERVIEW';
@@ -23,9 +23,13 @@ export const PharmacyInventoryView: React.FC<PharmacyInventoryViewProps> = ({
 
   const handleGenericSwap = async (item: any) => {
     try {
+      const token = getAuthToken();
       await fetch('/api/v1/partner/pharmacy-pos/fefo/validate-batch', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({
           itemCode: `GEN-${item.id}`,
           genericName: item.genericName,

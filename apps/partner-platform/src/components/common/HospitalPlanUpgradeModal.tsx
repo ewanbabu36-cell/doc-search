@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { HospitalStaffUser } from '../auth/HospitalStaffLogin.js';
+import { getAuthToken } from '../../services/api-client.js';
 
 export interface HospitalPlanUpgradeModalProps {
   isOpen: boolean;
@@ -159,9 +160,11 @@ export const HospitalPlanUpgradeModal: React.FC<HospitalPlanUpgradeModalProps> =
   // Fetch plan & company corporate payment details on mount
   useEffect(() => {
     if (!isOpen) return;
+    const token = getAuthToken();
+    const authHeaders = token ? { 'Authorization': `Bearer ${token}` } : {};
 
     // 1. Fetch Plan details
-    fetch('/api/v1/commercial/plans')
+    fetch('/api/v1/commercial/plans', { headers: authHeaders })
       .then((r) => r.json())
       .then((json) => {
         const list: any[] = json?.data || [];
@@ -172,7 +175,7 @@ export const HospitalPlanUpgradeModal: React.FC<HospitalPlanUpgradeModalProps> =
       .catch(() => {});
 
     // 2. Fetch Partner profile
-    fetch('/api/v1/partner/account/plan-and-features')
+    fetch('/api/v1/partner/account/plan-and-features', { headers: authHeaders })
       .then((r) => r.json())
       .then((json) => {
         if (json?.data?.organizationProfile) {
@@ -182,7 +185,7 @@ export const HospitalPlanUpgradeModal: React.FC<HospitalPlanUpgradeModalProps> =
       .catch(() => {});
 
     // 3. Fetch Company HQ Corporate Bank & Business UPI details
-    fetch(`/api/v1/commercial/company-payment-details?amount=${finalPayableAmount}&invoiceRef=${verticalConfig.invoiceRefPrefix}`)
+    fetch(`/api/v1/commercial/company-payment-details?amount=${finalPayableAmount}&invoiceRef=${verticalConfig.invoiceRefPrefix}`, { headers: authHeaders })
       .then((r) => r.json())
       .then((json) => {
         if (json.success && json.data) {

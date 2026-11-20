@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Badge, Button, Select } from '@docsearch/ui-kit';
 import type { OperationalStaffDto, OperationalDepartmentDto } from '@docsearch/api-contracts';
+import { getAuthToken } from '../../services/api-client.js';
 
 export interface DutyShiftSchedule {
   id: string;
@@ -88,7 +89,10 @@ export const StaffDutyRosterView: React.FC<StaffDutyRosterViewProps> = ({
   const fetchSchedules = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/v1/partner/roster/schedules?tenantId=${tenantId}`);
+      const token = getAuthToken();
+      const res = await fetch(`/api/v1/partner/roster/schedules?tenantId=${tenantId}`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
       if (res.ok) {
         const json = await res.json();
         const raw = json.data || json || [];
@@ -223,9 +227,13 @@ export const StaffDutyRosterView: React.FC<StaffDutyRosterViewProps> = ({
         status: 'ACTIVE'
       };
 
+      const token = getAuthToken();
       await fetch('/api/v1/partner/roster/schedules', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
         body: JSON.stringify(payload)
       });
 

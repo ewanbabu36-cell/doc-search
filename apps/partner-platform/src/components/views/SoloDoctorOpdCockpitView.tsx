@@ -18,6 +18,7 @@ import { OpdDaycareProcedureModal, type DaycareProcedureItem } from '../dialogs/
 import { OpdMlcRecordModal, type MlcDetails } from '../dialogs/OpdMlcRecordModal.js';
 import { OpdTeleTriageDeskModal } from '../dialogs/OpdTeleTriageDeskModal.js';
 import { OpdDuplicatePatientMergeModal } from '../dialogs/OpdDuplicatePatientMergeModal.js';
+import { getAuthToken } from '../../services/api-client.js';
 import { OpdAllergyHardLockModal, type AllergyConflictData } from '../dialogs/OpdAllergyHardLockModal.js';
 import { OpdChamberPaymentModal } from '../dialogs/OpdChamberPaymentModal.js';
 import { VernacularPrescriptionPreviewModal } from '../dialogs/VernacularPrescriptionPreviewModal.js';
@@ -524,7 +525,10 @@ export const SoloDoctorOpdCockpitView: React.FC<SoloDoctorOpdCockpitViewProps> =
   const [cockpitTemplates, setCockpitTemplates] = useState<ClinicalTemplatePreset[]>([]);
 
   React.useEffect(() => {
-    fetch('/api/v1/clinical/prescription-templates')
+    const token = getAuthToken();
+    fetch('/api/v1/clinical/prescription-templates', {
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+    })
       .then((r) => r.json())
       .then((res) => {
         if (res.success && Array.isArray(res.data) && res.data.length > 0) {

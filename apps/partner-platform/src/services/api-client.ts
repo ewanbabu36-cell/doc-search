@@ -41,11 +41,13 @@ export function clearAllAuthTokens(): void {
   } catch {}
   try {
     window.localStorage?.removeItem('docsearch_auth_token');
+    window.localStorage?.removeItem('docsearch_partner_token');
     window.localStorage?.removeItem('auth_token');
     window.localStorage?.removeItem('token');
     window.localStorage?.removeItem('docsearch_auth_session');
     window.localStorage?.removeItem('docsearch_partner_session');
     window.sessionStorage?.removeItem('docsearch_auth_token');
+    window.sessionStorage?.removeItem('docsearch_partner_token');
     window.sessionStorage?.removeItem('auth_token');
   } catch {}
 }
@@ -54,15 +56,29 @@ export function getAuthToken(): string {
   if (typeof window === 'undefined') return '';
   const token = (
     window.localStorage?.getItem('docsearch_auth_token') ||
+    window.localStorage?.getItem('docsearch_partner_token') ||
+    window.localStorage?.getItem('docsearch_company_token') ||
+    window.localStorage?.getItem('docsearch_sso_master_token') ||
+    window.localStorage?.getItem('docsearch_patient_token') ||
     window.localStorage?.getItem('auth_token') ||
     window.localStorage?.getItem('token') ||
     window.sessionStorage?.getItem('docsearch_auth_token') ||
+    window.sessionStorage?.getItem('docsearch_partner_token') ||
+    window.sessionStorage?.getItem('docsearch_company_token') ||
     window.sessionStorage?.getItem('auth_token') ||
+    window.sessionStorage?.getItem('token') ||
     ''
-  );
+  ).trim();
+
+  // Guard against invalid string literal representations commonly set by buggy string interpolation
+  if (!token || token === 'null' || token === 'undefined' || token === '[object Object]') {
+    return '';
+  }
+
   if (token && isTokenExpired(token)) {
     try {
       window.localStorage?.removeItem('docsearch_auth_token');
+      window.localStorage?.removeItem('docsearch_partner_token');
     } catch {}
     return '';
   }

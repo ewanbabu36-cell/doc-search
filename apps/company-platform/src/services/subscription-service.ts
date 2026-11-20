@@ -7,7 +7,7 @@ import type {
   PaymentRecordDto,
   TransitionSubscriptionRequest
 } from '@docsearch/api-contracts';
-import { apiCall, isMockFallbackAllowed } from './api-client.js';
+import { apiCall, isMockFallbackAllowed, getAuthToken } from './api-client.js';
 
 export interface SubscriptionFilters {
   partnerId?: string | undefined;
@@ -99,7 +99,10 @@ export class SubscriptionService implements ISubscriptionService {
       const url = partnerId
         ? `${this.apiUrl}/api/v1/company/billing-accounts?partnerId=${partnerId}`
         : `${this.apiUrl}/api/v1/company/billing-accounts`;
-      const res = await fetch(url);
+      const token = getAuthToken();
+      const res = await fetch(url, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
       if (!res.ok) throw new Error(`Failed to fetch billing accounts: ${res.statusText}`);
       return (await res.json()) as BillingAccountDto[];
     }
@@ -116,7 +119,10 @@ export class SubscriptionService implements ISubscriptionService {
       if (filters?.billingAccountId) params.set('billingAccountId', filters.billingAccountId);
       if (filters?.subscriptionId) params.set('subscriptionId', filters.subscriptionId);
       if (filters?.status && filters.status !== 'ALL') params.set('status', filters.status);
-      const res = await fetch(`${this.apiUrl}/api/v1/company/invoices?${params.toString()}`);
+      const token = getAuthToken();
+      const res = await fetch(`${this.apiUrl}/api/v1/company/invoices?${params.toString()}`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
       if (!res.ok) throw new Error(`Failed to fetch invoices: ${res.statusText}`);
       return (await res.json()) as InvoiceDto[];
     }
@@ -136,7 +142,10 @@ export class SubscriptionService implements ISubscriptionService {
 
   async getInvoiceById(id: string): Promise<InvoiceDto | null> {
     if (this.apiUrl) {
-      const res = await fetch(`${this.apiUrl}/api/v1/company/invoices/${id}`);
+      const token = getAuthToken();
+      const res = await fetch(`${this.apiUrl}/api/v1/company/invoices/${id}`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
       if (res.status === 404) return null;
       if (!res.ok) throw new Error(`Failed to fetch invoice: ${res.statusText}`);
       return (await res.json()) as InvoiceDto;
@@ -150,7 +159,10 @@ export class SubscriptionService implements ISubscriptionService {
       const url = invoiceId
         ? `${this.apiUrl}/api/v1/company/payments?invoiceId=${invoiceId}`
         : `${this.apiUrl}/api/v1/company/payments`;
-      const res = await fetch(url);
+      const token = getAuthToken();
+      const res = await fetch(url, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
       if (!res.ok) throw new Error(`Failed to fetch payment records: ${res.statusText}`);
       return (await res.json()) as PaymentRecordDto[];
     }
