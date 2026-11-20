@@ -1,7 +1,7 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { whatsAppCloudApiService } from '../../services/communication/WhatsAppCloudApiService.js';
 import { createLogger } from '@docsearch/shared-core';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
 
 const logger = createLogger('whatsapp-webhook-routes');
 
@@ -62,7 +62,11 @@ export const whatsappWebhookRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // 3. Automated PDF "Meri Parchi" Media Transmission (POST)
-  fastify.post('/api/v1/communication/whatsapp/send-parchi', { preHandler: [authenticate] }, async (request, reply) => {
+  // 🛡️ Guarded: Only authorized clinical & desk staff can dispatch medical parchis via WhatsApp Cloud API
+  fastify.post(
+    '/api/v1/communication/whatsapp/send-parchi',
+    { preHandler: [authenticate, requireRoles('DOCTOR', 'NURSE', 'RECEPTIONIST', 'HOSPITAL_ADMIN', 'SUPER_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER')] },
+    async (request, reply) => {
     const body = (request.body as any) || {};
     const { toPhone, base64Pdf, fileName, caption } = body;
 

@@ -1,12 +1,25 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { AbdmGatewayService } from '../../services/partner/AbdmGatewayService.js';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
 import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 
 const service = new AbdmGatewayService();
 
+const ABDM_AUTHORIZED_ROLES = [
+  'DOCTOR',
+  'NURSE',
+  'RECEPTIONIST',
+  'HOSPITAL_ADMIN',
+  'SUPER_ADMIN',
+  'COMPANY_ADMIN',
+  'CLINIC_ADMIN',
+  'CHIEF_MEDICAL_OFFICER'
+] as const;
+
 export const abdmRoutes: FastifyPluginAsync = async (app) => {
   const commercialGuard = requireModuleCommercialAccess('ABDM_GATEWAY');
+  const abdmGuard = [authenticate, requireRoles(...ABDM_AUTHORIZED_ROLES)];
+
   app.addHook('preHandler', async (request, reply) => {
     if (request.url.startsWith('/api/v1/abdm/callback/')) {
       return;
@@ -19,7 +32,7 @@ export const abdmRoutes: FastifyPluginAsync = async (app) => {
   // --------------------------------------------------------------------------
   app.get(
     '/api/v1/partner/abdm/overview',
-    { preHandler: [authenticate] },
+    { preHandler: abdmGuard },
     async (request, reply) => {
       const { tenantId } = request.session;
       const data = await service.getOverviewMetrics(tenantId);
@@ -29,7 +42,7 @@ export const abdmRoutes: FastifyPluginAsync = async (app) => {
 
   app.get(
     '/api/v1/partner/abdm/gateway-status',
-    { preHandler: [authenticate] },
+    { preHandler: abdmGuard },
     async (_request, reply) => {
       const data = await service.getGatewayStatus();
       return reply.send({ success: true, data });
@@ -41,7 +54,7 @@ export const abdmRoutes: FastifyPluginAsync = async (app) => {
   // --------------------------------------------------------------------------
   app.post(
     '/api/v1/partner/abdm/m1/generate-aadhaar-otp',
-    { preHandler: [authenticate] },
+    { preHandler: abdmGuard },
     async (request, reply) => {
       const { tenantId, branchId, userId } = request.session;
       const payload = (request.body || {}) as Record<string, unknown>;
@@ -52,7 +65,7 @@ export const abdmRoutes: FastifyPluginAsync = async (app) => {
 
   app.post(
     '/api/v1/partner/abdm/m1/verify-aadhaar-otp',
-    { preHandler: [authenticate] },
+    { preHandler: abdmGuard },
     async (request, reply) => {
       const { tenantId, branchId, userId } = request.session;
       const payload = (request.body || {}) as Record<string, unknown>;
@@ -63,7 +76,7 @@ export const abdmRoutes: FastifyPluginAsync = async (app) => {
 
   app.post(
     '/api/v1/partner/abdm/m1/generate-mobile-otp',
-    { preHandler: [authenticate] },
+    { preHandler: abdmGuard },
     async (request, reply) => {
       const { tenantId, branchId, userId } = request.session;
       const payload = (request.body || {}) as Record<string, unknown>;
@@ -74,7 +87,7 @@ export const abdmRoutes: FastifyPluginAsync = async (app) => {
 
   app.post(
     '/api/v1/partner/abdm/m1/verify-mobile-otp',
-    { preHandler: [authenticate] },
+    { preHandler: abdmGuard },
     async (request, reply) => {
       const { tenantId, branchId, userId } = request.session;
       const payload = (request.body || {}) as Record<string, unknown>;
@@ -85,7 +98,7 @@ export const abdmRoutes: FastifyPluginAsync = async (app) => {
 
   app.post(
     '/api/v1/partner/abdm/m1/verify-demographics',
-    { preHandler: [authenticate] },
+    { preHandler: abdmGuard },
     async (request, reply) => {
       const { tenantId } = request.session;
       const payload = (request.body || {}) as Record<string, unknown>;
@@ -96,7 +109,7 @@ export const abdmRoutes: FastifyPluginAsync = async (app) => {
 
   app.post(
     '/api/v1/partner/abdm/m1/search-by-health-id',
-    { preHandler: [authenticate] },
+    { preHandler: abdmGuard },
     async (request, reply) => {
       const { tenantId } = request.session;
       const { abhaAddress } = (request.body || {}) as { abhaAddress: string };
@@ -107,7 +120,7 @@ export const abdmRoutes: FastifyPluginAsync = async (app) => {
 
   app.get(
     '/api/v1/partner/abdm/m1/abha-accounts',
-    { preHandler: [authenticate] },
+    { preHandler: abdmGuard },
     async (request, reply) => {
       const { tenantId } = request.session;
       const data = await service.getAbhaAccounts(tenantId);
@@ -120,7 +133,7 @@ export const abdmRoutes: FastifyPluginAsync = async (app) => {
   // --------------------------------------------------------------------------
   app.get(
     '/api/v1/partner/abdm/m2/care-contexts',
-    { preHandler: [authenticate] },
+    { preHandler: abdmGuard },
     async (request, reply) => {
       const { tenantId } = request.session;
       const data = await service.getCareContexts(tenantId);
@@ -130,7 +143,7 @@ export const abdmRoutes: FastifyPluginAsync = async (app) => {
 
   app.get(
     '/api/v1/partner/abdm/care-contexts',
-    { preHandler: [authenticate] },
+    { preHandler: abdmGuard },
     async (request, reply) => {
       const { tenantId } = request.session;
       const data = await service.getCareContexts(tenantId);
@@ -140,7 +153,7 @@ export const abdmRoutes: FastifyPluginAsync = async (app) => {
 
   app.post(
     '/api/v1/partner/abdm/m2/care-contexts',
-    { preHandler: [authenticate] },
+    { preHandler: abdmGuard },
     async (request, reply) => {
       const { tenantId, branchId, userId } = request.session;
       const payload = (request.body || {}) as Record<string, unknown>;
@@ -151,7 +164,7 @@ export const abdmRoutes: FastifyPluginAsync = async (app) => {
 
   app.post(
     '/api/v1/partner/abdm/m2/care-contexts/discover',
-    { preHandler: [authenticate] },
+    { preHandler: abdmGuard },
     async (request, reply) => {
       const { tenantId } = request.session;
       const { patientAbhaAddress } = (request.body || {}) as { patientAbhaAddress: string };
@@ -162,7 +175,7 @@ export const abdmRoutes: FastifyPluginAsync = async (app) => {
 
   app.post(
     '/api/v1/partner/abdm/m2/care-contexts/link/init',
-    { preHandler: [authenticate] },
+    { preHandler: abdmGuard },
     async (request, reply) => {
       const { tenantId, branchId, userId } = request.session;
       const payload = (request.body || {}) as Record<string, unknown>;
@@ -173,7 +186,7 @@ export const abdmRoutes: FastifyPluginAsync = async (app) => {
 
   app.post(
     '/api/v1/partner/abdm/m2/care-contexts/link/confirm',
-    { preHandler: [authenticate] },
+    { preHandler: abdmGuard },
     async (request, reply) => {
       const { tenantId, branchId, userId } = request.session;
       const payload = (request.body || {}) as Record<string, unknown>;
@@ -184,7 +197,7 @@ export const abdmRoutes: FastifyPluginAsync = async (app) => {
 
   app.get(
     '/api/v1/partner/abdm/m2/scan-and-share/tokens',
-    { preHandler: [authenticate] },
+    { preHandler: abdmGuard },
     async (request, reply) => {
       const { tenantId } = request.session;
       const data = await service.getScanAndShareTokens(tenantId);
@@ -194,7 +207,7 @@ export const abdmRoutes: FastifyPluginAsync = async (app) => {
 
   app.post(
     '/api/v1/partner/abdm/m2/scan-and-share',
-    { preHandler: [authenticate] },
+    { preHandler: abdmGuard },
     async (request, reply) => {
       const { tenantId, branchId, userId } = request.session;
       const payload = (request.body || {}) as Record<string, unknown>;
@@ -208,7 +221,7 @@ export const abdmRoutes: FastifyPluginAsync = async (app) => {
   // --------------------------------------------------------------------------
   app.get(
     '/api/v1/partner/abdm/m3/consent-requests',
-    { preHandler: [authenticate] },
+    { preHandler: abdmGuard },
     async (request, reply) => {
       const { tenantId } = request.session;
       const data = await service.getConsentArtefacts(tenantId);
@@ -218,7 +231,7 @@ export const abdmRoutes: FastifyPluginAsync = async (app) => {
 
   app.post(
     '/api/v1/partner/abdm/m3/consent-requests',
-    { preHandler: [authenticate] },
+    { preHandler: abdmGuard },
     async (request, reply) => {
       const { tenantId, branchId, userId } = request.session;
       const payload = (request.body || {}) as Record<string, unknown>;
@@ -229,7 +242,7 @@ export const abdmRoutes: FastifyPluginAsync = async (app) => {
 
   app.post(
     '/api/v1/partner/abdm/m3/consents/revoke',
-    { preHandler: [authenticate] },
+    { preHandler: abdmGuard },
     async (request, reply) => {
       const { tenantId, branchId, userId } = request.session;
       const { artefactId } = (request.body || {}) as { artefactId: string };
@@ -240,7 +253,7 @@ export const abdmRoutes: FastifyPluginAsync = async (app) => {
 
   app.get(
     '/api/v1/partner/abdm/m3/fhir-bundles',
-    { preHandler: [authenticate] },
+    { preHandler: abdmGuard },
     async (request, reply) => {
       const { tenantId } = request.session;
       const data = await service.getFhirBundles(tenantId);
@@ -250,7 +263,7 @@ export const abdmRoutes: FastifyPluginAsync = async (app) => {
 
   app.post(
     '/api/v1/partner/abdm/m3/fhir-bundles/generate',
-    { preHandler: [authenticate] },
+    { preHandler: abdmGuard },
     async (request, reply) => {
       const { tenantId, branchId, userId } = request.session;
       const payload = (request.body || {}) as Record<string, unknown>;
@@ -261,7 +274,7 @@ export const abdmRoutes: FastifyPluginAsync = async (app) => {
 
   app.post(
     '/api/v1/partner/abdm/m3/health-information/request',
-    { preHandler: [authenticate] },
+    { preHandler: abdmGuard },
     async (request, reply) => {
       const { tenantId, branchId, userId } = request.session;
       const payload = (request.body || {}) as Record<string, unknown>;
@@ -272,7 +285,7 @@ export const abdmRoutes: FastifyPluginAsync = async (app) => {
 
   app.post(
     '/api/v1/partner/abdm/m3/health-information/encrypt-payload',
-    { preHandler: [authenticate] },
+    { preHandler: abdmGuard },
     async (request, reply) => {
       const { receiverPublicKeyPem, plainTextPayload } = (request.body || {}) as {
         receiverPublicKeyPem: string;
@@ -285,7 +298,7 @@ export const abdmRoutes: FastifyPluginAsync = async (app) => {
 
   app.post(
     '/api/v1/partner/abdm/m3/health-information/decrypt-payload',
-    { preHandler: [authenticate] },
+    { preHandler: abdmGuard },
     async (request, reply) => {
       const { privateKeyPem, senderPublicKeyPem, encryptedData, iv, authTag } = (request.body || {}) as {
         privateKeyPem: string;
@@ -304,7 +317,7 @@ export const abdmRoutes: FastifyPluginAsync = async (app) => {
   // --------------------------------------------------------------------------
   app.get(
     '/api/v1/partner/abdm/audit-traces',
-    { preHandler: [authenticate] },
+    { preHandler: abdmGuard },
     async (request, reply) => {
       const { tenantId } = request.session;
       const data = await service.getAuditTraces(tenantId);

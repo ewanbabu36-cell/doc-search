@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { getDatabase, sql } from '@docsearch/database';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
 import { clinicalSweeperService } from '../../services/partner/ClinicalSweeperService.js';
 
 interface DispatchCleaningRequest {
@@ -17,52 +17,71 @@ interface ScanBedStatusRequest {
   cleaningStaffName?: string;
 }
 
+const HOUSEKEEPING_ROLES = [
+  'NURSE',
+  'HOSPITAL_ADMIN',
+  'SUPER_ADMIN',
+  'COMPANY_ADMIN',
+  'CLINIC_ADMIN',
+  'BRANCH_MANAGER',
+  'DOCTOR'
+] as const;
+
 export const bedTurnaroundRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.addHook('preHandler', authenticate);
 
   // 1. Dispatch Cleaning Mission upon Discharge Sign-Off
-  fastify.post('/api/v1/partner/bed-turnaround/dispatch-cleaning-token', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
-    const body = (request.body || {}) as DispatchCleaningRequest;
+  // 🛡️ Guarded: Only authorized nursing or clinical leads can trigger terminal bed turnaround missions
+  fastify.post(
+    '/api/v1/partner/bed-turnaround/dispatch-cleaning-token',
+    { preHandler: [requireRoles(...HOUSEKEEPING_ROLES)] },
+    async (request, reply) => {
+      const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+      const body = (request.body || {}) as DispatchCleaningRequest;
 
-    const bedNumber = body.bedNumber || 'BED-204-DELUXE';
-    const wardName = body.wardName || 'Surgical Post-Op Ward A';
-    const dischargedPatient = body.dischargedPatientName || 'Kailash Mehra';
-    const bedId = body.bedId || `BED-${bedNumber}`;
+      const bedNumber = body.bedNumber || 'BED-204-DELUXE';
+      const wardName = body.wardName || 'Surgical Post-Op Ward A';
+      const dischargedPatient = body.dischargedPatientName || 'Kailash Mehra';
+      const bedId = body.bedId || `BED-${bedNumber}`;
 
-    const db = getDatabase();
-    try {
-      await db.execute(sql`
-        INSERT INTO bed_turnaround_missions (
-          tenant_id, bed_id, bed_number, ward_name, discharged_patient_name,
-          cleaning_staff_name, cleaning_status, dispatch_time
-        ) VALUES (
-          ${tenantId}, ${bedId}, ${bedNumber}, ${wardName}, ${dischargedPatient},
-          'Sunil Housekeeping (Shift Lead)', 'DISPATCHED', NOW()
-        )
-      `);
-    } catch (err: any) {
-      fastify.log.warn(`[BedTurnaround] Dispatch insert warning: ${err.message}`);
-    }
-
-    return reply.status(201).send({
-      success: true,
-      message: 'Housekeeping cleaning mission dispatched instantly upon discharge sign-off',
-      data: {
-        bedNumber,
-        wardName,
-        dischargedPatient,
-        cleaningStatus: 'DISPATCHED',
-        assignedTeam: 'Infection Control & Terminal Housekeeping',
-        targetSlaMinutes: 20,
-        qrScanRequiredAtBedHeadboard: true,
-        timestamp: new Date().toISOString()
+      const db = getDatabase();
+      try {
+        await db.execute(sql`
+          INSERT INTO bed_turnaround_missions (
+            tenant_id, bed_id, bed_number, ward_name, discharged_patient_name,
+            cleaning_staff_name, cleaning_status, dispatch_time
+          ) VALUES (
+            ${tenantId}, ${bedId}, ${bedNumber}, ${wardName}, ${dischargedPatient},
+            'Sunil Housekeeping (Shift Lead)', 'DISPATCHED', NOW()
+          )
+        `);
+      } catch (err: any) {
+        fastify.log.warn(`[BedTurnaround] Dispatch insert warning: ${err.message}`);
       }
-    });
-  });
+
+      return reply.status(201).send({
+        success: true,
+        message: 'Housekeeping cleaning mission dispatched instantly upon discharge sign-off',
+        data: {
+          bedNumber,
+          wardName,
+          dischargedPatient,
+          cleaningStatus: 'DISPATCHED',
+          assignedTeam: 'Infection Control & Terminal Housekeeping',
+          targetSlaMinutes: 20,
+          qrScanRequiredAtBedHeadboard: true,
+          timestamp: new Date().toISOString()
+        }
+      });
+    }
+  );
 
   // 2. Scan Headboard QR to Update Bed Cleaning & Sterilization Status
-  fastify.post('/api/v1/partner/bed-turnaround/scan-bed-status', async (request, reply) => {
+  // 🛡️ Guarded: Prevents unauthorized users from falsifying bed terminal sterilization status
+  fastify.post(
+    '/api/v1/partner/bed-turnaround/scan-bed-status',
+    { preHandler: [requireRoles(...HOUSEKEEPING_ROLES)] },
+    async (request, reply) => {
     const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = (request.body || {}) as ScanBedStatusRequest;
 
@@ -196,7 +215,10 @@ export const bedTurnaroundRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // 4. Automated Bed Cleaning Turnaround SLA Escalation Sweep
-  fastify.post('/api/v1/partner/bed-turnaround/auto-escalate-sweep', async (request, reply) => {
+  fastify.post(
+    '/api/v1/partner/bed-turnaround/auto-escalate-sweep',
+    { preHandler: [requireRoles('HOSPITAL_ADMIN', 'SUPER_ADMIN', 'COMPANY_ADMIN', 'CLINIC_ADMIN', 'BRANCH_MANAGER')] },
+    async (request, reply) => {
     const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const result = await clinicalSweeperService.runBedTurnaroundEscalationSweep(tenantId);
 

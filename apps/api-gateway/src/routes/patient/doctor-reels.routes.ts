@@ -187,9 +187,12 @@ export const doctorReelsRoutes: FastifyPluginAsync = async (fastify) => {
 
   /**
    * POST /api/v1/reels/presigned-upload
-   * Simulates cloud presigned S3 / Cloudflare R2 upload credentials for high-throughput mobile video ingest.
+   * 🛡️ Guarded: Only verified medical professionals and admins can generate presigned upload URLs.
    */
-  fastify.post('/api/v1/reels/presigned-upload', async (request) => {
+  fastify.post(
+    '/api/v1/reels/presigned-upload',
+    { preHandler: [authenticate, requireRoles('DOCTOR', 'SUPER_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN')] },
+    async (request) => {
     const body = (request.body || {}) as { fileName?: string; fileType?: string; durationSeconds?: number };
     const fileId = `reel-raw-${Date.now()}`;
     const key = `uploads/doctor-reels/${fileId}.${body.fileType?.split('/')[1] || 'mp4'}`;
@@ -309,9 +312,12 @@ export const doctorReelsRoutes: FastifyPluginAsync = async (fastify) => {
 
   /**
    * POST /api/v1/reels/:id/engage
-   * Records interactive Like, Save, WhatsApp Share, or Consultation Booking events.
+   * 🛡️ Guarded: Only authenticated users/patients can submit engagement interactions.
    */
-  fastify.post('/api/v1/reels/:id/engage', async (request, reply) => {
+  fastify.post(
+    '/api/v1/reels/:id/engage',
+    { preHandler: [authenticate] },
+    async (request, reply) => {
     const { id } = request.params as { id: string };
     const { action } = (request.body || {}) as { action: ReelEngagementAction };
     const reel = IN_MEMORY_REELS.find((r) => r.id === id);

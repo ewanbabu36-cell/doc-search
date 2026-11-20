@@ -1,11 +1,18 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { threeWayPoMatchingService } from '../../services/supply-chain/ThreeWayPoMatchingService.js';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
+
+const SUPPLY_CHAIN_FINANCE_ROLES = [
+  'FINANCE_MANAGER',
+  'HOSPITAL_ADMIN',
+  'SUPER_ADMIN',
+  'COMPANY_ADMIN'
+] as const;
 
 export const poMatchingRoutes: FastifyPluginAsync = async (fastify) => {
   // 1. List 3-Way PO Matching Discrepancies
-  fastify.get('/api/v1/supply-chain/matching/discrepancies', { preHandler: [authenticate] }, async (request) => {
+  fastify.get('/api/v1/supply-chain/matching/discrepancies', { preHandler: [authenticate, requireRoles(...SUPPLY_CHAIN_FINANCE_ROLES)] }, async (request) => {
     const query = (request.query as Record<string, string>) || {};
     const discrepancies = threeWayPoMatchingService.getDiscrepancies(query['status'] || query['exceptionType']);
     return {
@@ -15,7 +22,7 @@ export const poMatchingRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // 2. List Automated Reorder Point (ROP) Alerts
-  fastify.get('/api/v1/supply-chain/rop/alerts', { preHandler: [authenticate] }, async () => {
+  fastify.get('/api/v1/supply-chain/rop/alerts', { preHandler: [authenticate, requireRoles(...SUPPLY_CHAIN_FINANCE_ROLES)] }, async () => {
     const alerts = threeWayPoMatchingService.getRopAlerts();
     return {
       success: true,
@@ -30,7 +37,8 @@ export const poMatchingRoutes: FastifyPluginAsync = async (fastify) => {
     notes: z.string().optional()
   });
 
-  fastify.post('/api/v1/supply-chain/matching/reconcile', { preHandler: [authenticate] }, async (request) => {
+  // 🛡️ Guarded: Only authorized Finance Managers and Admins can reconcile invoice discrepancies
+  fastify.post('/api/v1/supply-chain/matching/reconcile', { preHandler: [authenticate, requireRoles(...SUPPLY_CHAIN_FINANCE_ROLES)] }, async (request) => {
     const parsed = ReconcileSchema.parse(request.body || {});
     const result = threeWayPoMatchingService.reconcileDiscrepancy({
       discrepancyId: parsed.discrepancyId,
@@ -48,7 +56,8 @@ export const poMatchingRoutes: FastifyPluginAsync = async (fastify) => {
     sku: z.string()
   });
 
-  fastify.post('/api/v1/supply-chain/rop/auto-po', { preHandler: [authenticate] }, async (request) => {
+  // 🛡️ Guarded: Triggering automated purchase orders requires Finance/Admin role authority
+  fastify.post('/api/v1/supply-chain/rop/auto-po', { preHandler: [authenticate, requireRoles(...SUPPLY_CHAIN_FINANCE_ROLES)] }, async (request) => {
     const parsed = AutoPoSchema.parse(request.body || {});
     const result = threeWayPoMatchingService.triggerAutoPurchaseOrder(parsed.sku);
     return {

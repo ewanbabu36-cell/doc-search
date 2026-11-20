@@ -1,7 +1,7 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { getDatabase, sql } from '@docsearch/database';
 import { emergencyManagementService } from '../../services/partner/EmergencyManagementService.js';
-import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
+import { authenticate, requirePermission, requireRoles } from '../../plugins/auth-guard.js';
 import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 import {
   type EmergencyRegistrationInput,
@@ -130,10 +130,20 @@ export const emergencyManagementRoutes: FastifyPluginAsync = async (fastify) => 
     }
   );
 
+  const EMERGENCY_STAFF_ROLES = [
+    'DOCTOR',
+    'NURSE',
+    'CHIEF_MEDICAL_OFFICER',
+    'HOSPITAL_ADMIN',
+    'SUPER_ADMIN',
+    'COMPANY_ADMIN'
+  ] as const;
+
   // 7. 5G Smart Ambulance Tele-Emergency Telemetry Stream
+  // 🛡️ Guarded: Only authorized emergency clinical personnel can ingest ambulance vitals and telemetry
   fastify.post(
     '/api/v1/partner/emergency/ambulance/telemetry-stream',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requireRoles(...EMERGENCY_STAFF_ROLES)] },
     async (request, reply) => {
       const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
       const body = (request.body || {}) as {
@@ -193,9 +203,10 @@ export const emergencyManagementRoutes: FastifyPluginAsync = async (fastify) => 
   );
 
   // 8. 1-Click Prepare Trauma Bay & Emergency OT Pre-Staging
+  // 🛡️ Guarded: Only emergency clinicians and surgical teams can reserve emergency OT bays
   fastify.post(
     '/api/v1/partner/emergency/ambulance/stage-trauma-bay',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requireRoles(...EMERGENCY_STAFF_ROLES)] },
     async (request, reply) => {
       const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
       const body = (request.body || {}) as {
@@ -238,16 +249,17 @@ export const emergencyManagementRoutes: FastifyPluginAsync = async (fastify) => 
     }
   );
 
-  // 9. Active Fleet Query
+  // 9. Active Fleet Query (Tenant-scoped & Role-guarded)
   fastify.get(
     '/api/v1/partner/emergency/ambulance/active-fleet',
-    { preHandler: [authenticate] },
-    async (_request, reply) => {
+    { preHandler: [authenticate, requireRoles(...EMERGENCY_STAFF_ROLES)] },
+    async (request, reply) => {
+      const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
       const db = getDatabase();
       try {
         const res = await db.execute(sql`
           SELECT * FROM smart_ambulance_missions
-          WHERE status = 'EN_ROUTE'
+          WHERE tenant_id = ${tenantId} AND status = 'EN_ROUTE'
           ORDER BY created_at DESC
           LIMIT 10
         `);
@@ -263,12 +275,14 @@ export const emergencyManagementRoutes: FastifyPluginAsync = async (fastify) => 
   // 10. EMERGENCY COMMAND CENTER: LIVE FEEDS
   // ==========================================
 
-  // Inbound Ambulances
-  const getInboundAmbulancesHandler = async () => {
+  // Inbound Ambulances (Tenant Scoped & Guarded)
+  const getInboundAmbulancesHandler = async (request: any) => {
+    const tenantId = request?.session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const db = getDatabase();
     try {
       const res = await db.execute(sql`
         SELECT * FROM clinical.emergency_ambulance_transfers
+        WHERE tenant_id = ${tenantId}
         ORDER BY created_at DESC
         LIMIT 20
       `);
@@ -291,15 +305,19 @@ export const emergencyManagementRoutes: FastifyPluginAsync = async (fastify) => 
     }
   };
 
-  fastify.get('/api/v1/emergency/command-center/inbound-ambulances', getInboundAmbulancesHandler);
-  fastify.get('/api/v1/partner/emergency/command-center/inbound-ambulances', getInboundAmbulancesHandler);
+  const commandCenterGuard = { preHandler: [authenticate, requireRoles(...EMERGENCY_STAFF_ROLES)] };
 
-  // MLC Cases
-  const getMlcCasesHandler = async () => {
+  fastify.get('/api/v1/emergency/command-center/inbound-ambulances', commandCenterGuard, getInboundAmbulancesHandler);
+  fastify.get('/api/v1/partner/emergency/command-center/inbound-ambulances', commandCenterGuard, getInboundAmbulancesHandler);
+
+  // MLC Cases (Protected Medico-Legal Records - Tenant Isolated)
+  const getMlcCasesHandler = async (request: any) => {
+    const tenantId = request?.session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const db = getDatabase();
     try {
       const res = await db.execute(sql`
         SELECT * FROM clinical.emergency_mlc_cases
+        WHERE tenant_id = ${tenantId}
         ORDER BY created_at DESC
         LIMIT 20
       `);
@@ -324,15 +342,17 @@ export const emergencyManagementRoutes: FastifyPluginAsync = async (fastify) => 
     }
   };
 
-  fastify.get('/api/v1/emergency/command-center/mlc-cases', getMlcCasesHandler);
-  fastify.get('/api/v1/partner/emergency/command-center/mlc-cases', getMlcCasesHandler);
+  fastify.get('/api/v1/emergency/command-center/mlc-cases', commandCenterGuard, getMlcCasesHandler);
+  fastify.get('/api/v1/partner/emergency/command-center/mlc-cases', commandCenterGuard, getMlcCasesHandler);
 
-  // Crash Cart Inventory
-  const getCrashCartHandler = async () => {
+  // Crash Cart Inventory (Tenant Isolated)
+  const getCrashCartHandler = async (request: any) => {
+    const tenantId = request?.session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const db = getDatabase();
     try {
       const res = await db.execute(sql`
         SELECT * FROM clinical.emergency_crash_carts
+        WHERE tenant_id = ${tenantId}
         LIMIT 20
       `);
       const list = (res.rows || []).map((r: any) => ({
@@ -350,15 +370,15 @@ export const emergencyManagementRoutes: FastifyPluginAsync = async (fastify) => 
     }
   };
 
-  fastify.get('/api/v1/emergency/command-center/crash-carts', getCrashCartHandler);
-  fastify.get('/api/v1/partner/emergency/command-center/crash-carts', getCrashCartHandler);
+  fastify.get('/api/v1/emergency/command-center/crash-carts', commandCenterGuard, getCrashCartHandler);
+  fastify.get('/api/v1/partner/emergency/command-center/crash-carts', commandCenterGuard, getCrashCartHandler);
 
   // Root Emergency Command Center Overview
   const getCommandCenterOverviewHandler = async (request: any) => {
     const queue = await emergencyManagementService.getQueue(request.session).catch(() => []);
-    const ambulances = await getInboundAmbulancesHandler().catch(() => ({ data: [] }));
-    const mlcCases = await getMlcCasesHandler().catch(() => ({ data: [] }));
-    const crashCarts = await getCrashCartHandler().catch(() => ({ data: [] }));
+    const ambulances = await getInboundAmbulancesHandler(request).catch(() => ({ data: [] }));
+    const mlcCases = await getMlcCasesHandler(request).catch(() => ({ data: [] }));
+    const crashCarts = await getCrashCartHandler(request).catch(() => ({ data: [] }));
 
     return {
       success: true,
@@ -378,6 +398,6 @@ export const emergencyManagementRoutes: FastifyPluginAsync = async (fastify) => 
     };
   };
 
-  fastify.get('/api/v1/emergency/command-center', getCommandCenterOverviewHandler);
-  fastify.get('/api/v1/partner/emergency/command-center', getCommandCenterOverviewHandler);
+  fastify.get('/api/v1/emergency/command-center', commandCenterGuard, getCommandCenterOverviewHandler);
+  fastify.get('/api/v1/partner/emergency/command-center', commandCenterGuard, getCommandCenterOverviewHandler);
 };
