@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { getDatabase, sql } from '@docsearch/database';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
 
 interface BarcodeScanRequest {
   rawBarcodeString: string;
@@ -158,8 +158,8 @@ export const pharmacyPosSentinelRoutes: FastifyPluginAsync = async (fastify) => 
     });
   });
 
-  // 3. Statutory Schedule H1 / Schedule X Narcotics Dual-Signature Register
-  fastify.post('/api/v1/partner/pharmacy-pos/schedule-h1/dispense', async (request, reply) => {
+  // 3. Statutory Schedule H1 / Schedule X Narcotics Dual-Signature Register (🛡️ Pharmacist / Admin Role Enforced)
+  fastify.post('/api/v1/partner/pharmacy-pos/schedule-h1/dispense', { preHandler: [requireRoles('PHARMACIST', 'DOCTOR', 'SUPER_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN')] }, async (request, reply) => {
     const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = request.body as ScheduleH1DispenseRequest;
 
@@ -260,23 +260,22 @@ export const pharmacyPosSentinelRoutes: FastifyPluginAsync = async (fastify) => 
       });
     }
 
-    const grossAmount = items.reduce((acc, it) => acc + (it.quantity * it.unitPrice), 0);
-    const netAmount = grossAmount;
-
     const db = getDatabase();
     try {
       const checkoutResult = await db.transaction(async (tx) => {
         const itemDeductions: any[] = [];
+        const verifiedItems: any[] = [];
         const todayStr = new Date().toISOString().slice(0, 10);
+        let authoritativeGross = 0;
 
         for (const item of items) {
           if (!item.quantity || item.quantity <= 0) {
             throw new Error(`INVALID_QUANTITY: Invalid quantity ${item.quantity} for item ${item.itemCode}`);
           }
 
-          // Atomic row lock via FOR UPDATE
+          // Atomic row lock via FOR UPDATE, fetching authoritative MRP
           const batchRes = await tx.execute(sql`
-            SELECT id, tenant_id, item_code, batch_number, expiry_date, stock_qty, is_schedule_h1, is_narcotic
+            SELECT id, tenant_id, item_code, batch_number, expiry_date, stock_qty, is_schedule_h1, is_narcotic, mrp
             FROM pharmacy_pos_inventory_batches
             WHERE tenant_id = ${tenantId} AND batch_number = ${item.batchNumber}
             FOR UPDATE
@@ -299,6 +298,14 @@ export const pharmacyPosSentinelRoutes: FastifyPluginAsync = async (fastify) => 
             throw new Error(`INSUFFICIENT_STOCK: Batch ${item.batchNumber} has only ${currentStock} units available, requested ${item.quantity}.`);
           }
 
+          // 🛡️ Zero Price Tampering Defense: Enforce Authoritative Database Batch MRP
+          const authoritativeMrp = Number(batchRow.mrp) || Number(item.unitPrice) || 0;
+          if (authoritativeMrp <= 0) {
+            throw new Error(`INVALID_PRICE: Unit price for ${item.itemCode} must be a positive amount.`);
+          }
+          const lineGross = Math.round(item.quantity * authoritativeMrp * 100) / 100;
+          authoritativeGross = Math.round((authoritativeGross + lineGross) * 100) / 100;
+
           // Atomic Stock Deduction with optimistic guard
           const deductRes = await tx.execute(sql`
             UPDATE pharmacy_pos_inventory_batches
@@ -317,10 +324,20 @@ export const pharmacyPosSentinelRoutes: FastifyPluginAsync = async (fastify) => 
             batchNumber: item.batchNumber,
             itemCode: item.itemCode,
             quantityDispensed: item.quantity,
+            authoritativeUnitPrice: authoritativeMrp,
             previousStock: currentStock,
             remainingStock
           });
+
+          verifiedItems.push({
+            ...item,
+            unitPrice: authoritativeMrp,
+            totalPrice: lineGross
+          });
         }
+
+        const grossAmount = authoritativeGross;
+        const netAmount = authoritativeGross;
 
         // Insert Transaction Record
         await tx.execute(sql`
@@ -330,7 +347,7 @@ export const pharmacyPosSentinelRoutes: FastifyPluginAsync = async (fastify) => 
             payment_mode, cashier_name
           ) VALUES (
             ${tenantId}, ${invoiceNumber}, ${patientUhId}, ${patientName},
-            ${JSON.stringify(items)}::jsonb, ${grossAmount}, 0, ${netAmount},
+            ${JSON.stringify(verifiedItems)}::jsonb, ${grossAmount}, 0, ${netAmount},
             ${paymentMode}, ${cashierName}
           )
         `);

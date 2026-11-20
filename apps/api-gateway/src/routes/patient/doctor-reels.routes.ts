@@ -210,7 +210,7 @@ export const doctorReelsRoutes: FastifyPluginAsync = async (fastify) => {
    * POST /api/v1/reels/publish (🛡️ Doctor / Admin Authenticated)
    * Doctor Creator Studio publishes a verified Swasthya Short with NMC Ethics & Drug Brand checks.
    */
-  fastify.post('/api/v1/reels/publish', { preHandler: [authenticate, requireRoles('DOCTOR', 'SUPER_ADMIN', 'PARTNER_ADMIN')] }, async (request, reply) => {
+  fastify.post('/api/v1/reels/publish', { preHandler: [authenticate, requireRoles('DOCTOR', 'SUPER_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN')] }, async (request, reply) => {
     const body = request.body as Partial<DoctorReelDto>;
 
     if (!body.title || !body.videoUrl || !body.category) {

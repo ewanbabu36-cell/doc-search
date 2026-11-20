@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { getDatabase, sql } from '@docsearch/database';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
 import { auditRepository } from '../../repositories/core/AuditRepository.js';
 
 interface IngestTelemetryRequest {
@@ -115,8 +115,9 @@ export const smartIcuRoutes: FastifyPluginAsync = async (fastify) => {
     });
   });
 
-  // 2. Query Deterioration Early Warning Radar (Multi-Bed ICU Grid)
-  fastify.get('/api/v1/partner/smart-icu/deterioration-radar', async (_request, reply) => {
+  // 2. Query Deterioration Early Warning Radar (Multi-Bed ICU Grid - Tenant Scoped)
+  fastify.get('/api/v1/partner/smart-icu/deterioration-radar', async (request, reply) => {
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const db = getDatabase();
     try {
       const res = await db.execute(sql`
@@ -125,6 +126,7 @@ export const smartIcuRoutes: FastifyPluginAsync = async (fastify) => {
           heart_rate, systolic_bp, respiratory_rate, spo2, temperature, avpu,
           news2_score, deterioration_risk, created_at
         FROM smart_icu_telemetry_logs
+        WHERE tenant_id = ${tenantId}
         ORDER BY bed_number, created_at DESC
         LIMIT 20
       `);
@@ -140,7 +142,7 @@ export const smartIcuRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // 3. Dispatch Rapid Response Team (RRT) / Code Blue
-  fastify.post('/api/v1/partner/smart-icu/rrt/dispatch-code', async (request, reply) => {
+  fastify.post('/api/v1/partner/smart-icu/rrt/dispatch-code', { preHandler: [requireRoles('DOCTOR', 'NURSE', 'CHIEF_MEDICAL_OFFICER', 'HOSPITAL_ADMIN', 'SUPER_ADMIN')] }, async (request, reply) => {
     const body = (request.body || {}) as {
       bedNumber?: string;
       codeType?: string;

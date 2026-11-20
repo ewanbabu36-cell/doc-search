@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { createLogger } from '@docsearch/shared-core';
+import { authenticate } from '../../plugins/auth-guard.js';
 
 const logger = createLogger('telemedicine-signaling');
 
@@ -14,6 +15,7 @@ export interface TeleSignalPacket {
 
 export interface TeleSessionRecord {
   callId: string;
+  tenantId?: string;
   doctorName: string;
   patientName: string;
   patientPhone: string;
@@ -70,10 +72,14 @@ activeSessions.set('TELE-2026-9042', {
 });
 
 export const telemedicineSignalingRoutes: FastifyPluginAsync = async (app) => {
+  // 🛡️ Require authentication for all telemedicine signaling endpoints
+  app.addHook('preHandler', authenticate);
+
   /**
    * 1. Initiate or Get Teleconsultation Session
    */
   app.post('/api/v1/telemedicine/session/initiate', async (req, reply) => {
+    const tenantId = (req as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const schema = z.object({
       callId: z.string().default('TELE-2026-9042'),
       doctorName: z.string().optional(),
@@ -88,6 +94,7 @@ export const telemedicineSignalingRoutes: FastifyPluginAsync = async (app) => {
     if (!session) {
       session = {
         callId: body.callId,
+        tenantId,
         doctorName: body.doctorName || 'Dr. Vivek Sharma (MD)',
         patientName: body.patientName || 'Ramesh Kumar',
         patientPhone: body.patientPhone || '+91 98765 43210',
@@ -231,18 +238,20 @@ export const telemedicineSignalingRoutes: FastifyPluginAsync = async (app) => {
   });
 
   /**
-   * 5. List Active & Scheduled Teleconsultation Sessions
+   * 5. List Active & Scheduled Teleconsultation Sessions (Tenant Scoped)
    */
-  app.get('/api/v1/partner/telemedicine/sessions', async (_req, reply) => {
-    const list = Array.from(activeSessions.values());
+  app.get('/api/v1/partner/telemedicine/sessions', async (req, reply) => {
+    const tenantId = (req as any).session?.tenantId;
+    const list = Array.from(activeSessions.values()).filter(s => !tenantId || !s.tenantId || s.tenantId === tenantId);
     return reply.status(200).send({
       success: true,
       data: list
     });
   });
 
-  app.get('/api/v1/telemedicine/sessions', async (_req, reply) => {
-    const list = Array.from(activeSessions.values());
+  app.get('/api/v1/telemedicine/sessions', async (req, reply) => {
+    const tenantId = (req as any).session?.tenantId;
+    const list = Array.from(activeSessions.values()).filter(s => !tenantId || !s.tenantId || s.tenantId === tenantId);
     return reply.status(200).send({
       success: true,
       data: list
