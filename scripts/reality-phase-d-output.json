@@ -1,0 +1,38 @@
+[
+  {
+    "id": "FIN-REALITY-01",
+    "name": "Live Ledger Double-Entry Posting Invariant",
+    "pass": true,
+    "details": "Debit: ₹800, Credit: ₹800, Balanced: true"
+  },
+  {
+    "id": "FIN-REALITY-02",
+    "name": "Zero-Balance Invariant & Duplicate Settlement Guard",
+    "pass": true,
+    "details": "Invoice with zero outstanding balance strictly prevents duplicate payment collection"
+  },
+  {
+    "id": "FIN-REALITY-03",
+    "name": "Patient Refund Contra-Revenue Balancing",
+    "pass": true,
+    "details": "Contra-Expense Debit: ₹800, Cash Asset Credit: ₹800"
+  },
+  {
+    "id": "FIN-REALITY-04",
+    "name": "Section 194-O TDS Withholding on Payout Disbursement",
+    "pass": true,
+    "details": "Base: ₹410000, Rate: 0.1%, TDS: ₹410"
+  },
+  {
+    "id": "FIN-REALITY-05",
+    "name": "Section 206AA Penal 5% Withholding Guard (Missing PAN)",
+    "pass": true,
+    "details": "Rate applied: 5%, TDS: ₹5000"
+  },
+  {
+    "id": "FIN-REALITY-06",
+    "name": "ASC 606 / Ind AS 115 5-Step Revenue Amortization",
+    "pass": true,
+    "details": "Audit Score: 100/100, Contracts Active: 3"
+  }
+]

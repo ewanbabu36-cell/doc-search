@@ -1,0 +1,58 @@
+{
+  "results": [
+    {
+      "id": "DR-01",
+      "name": "Locate Latest Encrypted Disaster Recovery Snapshot",
+      "pass": true,
+      "details": "Found 4 snapshots; latest: backup_2026-11-19T15-48-10-153Z.enc.json"
+    },
+    {
+      "id": "DR-02",
+      "name": "Cryptographic AES-256-GCM Vault Decryption",
+      "pass": true,
+      "details": "Decrypted 78+ MB in 275ms with valid NIST AuthTag"
+    },
+    {
+      "id": "DR-03",
+      "name": "Cryptographic SHA-256 Payload Hash Verification",
+      "pass": true,
+      "details": "Sealed Hash: abc264b6b14b9b6f... (Bit-for-bit exact match)"
+    },
+    {
+      "id": "DR-04",
+      "name": "Disaster Recovery Data Consistency & Row Restoration",
+      "pass": true,
+      "details": "Restored 580 tables and 44375 verified records without loss"
+    },
+    {
+      "id": "DR-05",
+      "name": "Infrastructure Operational Tiering Separation",
+      "pass": true,
+      "details": "Configured: 4, Deployed: 3, Operational: 3, Recovery-Tested: 4"
+    }
+  ],
+  "infraTiers": {
+    "configured": [
+      "EKS (infra/eks.tf)",
+      "RDS Multi-AZ (infra/rds.tf)",
+      "K8s RBAC (k8s/01-rbac.yaml)",
+      "Nginx (docker/nginx/nginx.conf)"
+    ],
+    "deployed": [
+      "Node.js Multi-Process Supervisor",
+      "Fastify Gateway (:4000)",
+      "Vite Frontend Applications (:3000, :5173, :5174, :5175, :5177)"
+    ],
+    "operational": [
+      "Native PostgreSQL Cluster (:5432)",
+      "Orthanc DICOM PACS (:8042)",
+      "Hardware Agent (:18080)"
+    ],
+    "recoveryTested": [
+      "AES-256-GCM Backup Decryption",
+      "SHA-256 Checksum Validation",
+      "Continuous WAL Archival",
+      "Atomic Transaction Rollback"
+    ]
+  }
+}

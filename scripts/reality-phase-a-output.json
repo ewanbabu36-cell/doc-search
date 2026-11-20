@@ -1,0 +1,211 @@
+{
+  "totalInteractiveTags": 9589,
+  "classification": {
+    "genuineLiveApi": 0,
+    "genuineDatabaseBacked": 3274,
+    "offlineFallback": 2693,
+    "localStateOnly": 6040,
+    "simulated": 0,
+    "broken": 0,
+    "unverified": 275
+  },
+  "appBreakdown": {
+    "partner-platform": {
+      "filesScanned": 1038,
+      "genuineLiveApi": 0,
+      "genuineDatabaseBacked": 1923,
+      "offlineFallback": 1582,
+      "localStateOnly": 4884,
+      "simulated": 0,
+      "broken": 0,
+      "unverified": 231,
+      "totalTags": 7038
+    },
+    "patient-app": {
+      "filesScanned": 28,
+      "genuineLiveApi": 0,
+      "genuineDatabaseBacked": 151,
+      "offlineFallback": 69,
+      "localStateOnly": 51,
+      "simulated": 0,
+      "broken": 0,
+      "unverified": 0,
+      "totalTags": 202
+    },
+    "company-platform": {
+      "filesScanned": 393,
+      "genuineLiveApi": 0,
+      "genuineDatabaseBacked": 1027,
+      "offlineFallback": 901,
+      "localStateOnly": 1076,
+      "simulated": 0,
+      "broken": 0,
+      "unverified": 44,
+      "totalTags": 2147
+    },
+    "landing-page": {
+      "filesScanned": 15,
+      "genuineLiveApi": 0,
+      "genuineDatabaseBacked": 173,
+      "offlineFallback": 141,
+      "localStateOnly": 29,
+      "simulated": 0,
+      "broken": 0,
+      "unverified": 0,
+      "totalTags": 202
+    }
+  },
+  "criticalButtonsCount": 56,
+  "criticalButtonsSample": [
+    {
+      "app": "partner-platform",
+      "file": "apps\\partner-platform\\src\\components\\dialogs\\ConsolidatedIpdBillingDialog.tsx",
+      "tag": "Button",
+      "snippet": " variant=\"primary\" type=\"button\" disabled={isSettling || isLoading || !summary} onClick={handl"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps\\partner-platform\\src\\components\\dialogs\\KhataPaymentCollectionModal.tsx",
+      "tag": "Button",
+      "snippet": " variant=\"primary\" onClick={handleSubmitPayment} disabled={numericPay <= 0 && numericWaiver <= 0"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps\\partner-platform\\src\\components\\dialogs\\OpdChamberPaymentModal.tsx",
+      "tag": "button",
+      "snippet": " type=\"button\" disabled={isProcessing || Boolean(settledReceipt)} onClick={handleCollectPayment} style"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps\\partner-platform\\src\\components\\dialogs\\OpdDaycareProcedureModal.tsx",
+      "tag": "button",
+      "snippet": " type=\"button\" disabled={selectedItems.length === 0 || isSuccessDispatched} onClick={handleDispatchOrder} "
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps\\partner-platform\\src\\components\\health-os\\HealthOSTopSystemChrome.tsx",
+      "tag": "button",
+      "snippet": " onClick={onLogout} className=\"hos-logout-btn\" title=\"Sign out of HealthOS\" "
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps\\partner-platform\\src\\components\\health-os\\SlideOverActionTray.tsx",
+      "tag": "button",
+      "snippet": " type=\"button\" className=\"hos-tray-primary-btn\" onClick={handleSignRx}"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps\\partner-platform\\src\\components\\health-os\\SlideOverActionTray.tsx",
+      "tag": "button",
+      "snippet": " type=\"button\" className=\"hos-tray-primary-btn\" onClick={handleCompleteSettle}"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps\\partner-platform\\src\\components\\views\\AdmissionDetailView.tsx",
+      "tag": "Button",
+      "snippet": " variant=\"primary\" onClick={onOpenRequestDischarge}"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps\\partner-platform\\src\\components\\views\\AiInsuranceDenialPredictorView.tsx",
+      "tag": "Button",
+      "snippet": " size=\"sm\" variant=\"success\" onClick={handleSimulateUpiPayment} "
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps\\partner-platform\\src\\components\\views\\B2BWholesaleMarketplaceView.tsx",
+      "tag": "Button",
+      "snippet": " variant=\"primary\" onClick={handleDispatchOrder} style={{ background: 'linea"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps\\partner-platform\\src\\components\\views\\BedsideSmartConciergeView.tsx",
+      "tag": "Button",
+      "snippet": " variant=\"primary\" disabled={isSubmitting || dietOrdered} onClick={handleOrderDiet} "
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps\\partner-platform\\src\\components\\views\\BillingOverviewView.tsx",
+      "tag": "Button",
+      "snippet": " variant=\"outline\" onClick={onOpenRecordPayment}"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps\\partner-platform\\src\\components\\views\\ClaimDetailView.tsx",
+      "tag": "Button",
+      "snippet": " variant=\"primary\" onClick={onOpenRecordSettlement}"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps\\partner-platform\\src\\components\\views\\DailyCounterCashLedgerView.tsx",
+      "tag": "Button",
+      "snippet": " variant=\"primary\" onClick={handleExecuteDualSignoff} disabled={isHandoverSubmitting || !financeAdminP"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps\\partner-platform\\src\\components\\views\\DietaryOverviewView.tsx",
+      "tag": "Button",
+      "snippet": " variant=\"primary\" size=\"sm\" onClick={onOpenNewOrder}"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps\\partner-platform\\src\\components\\views\\DietOrderDirectoryView.tsx",
+      "tag": "Button",
+      "snippet": " variant=\"primary\" size=\"sm\" onClick={onNewOrder}"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps\\partner-platform\\src\\components\\views\\DoctorOpdWorkstationView.tsx",
+      "tag": "Button",
+      "snippet": " variant=\"primary\" size=\"md\" onClick={handleSignAndIssueRx} disabled={isProcessing || "
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps\\partner-platform\\src\\components\\views\\DynamicUpiInvoiceView.tsx",
+      "tag": "Button",
+      "snippet": " type=\"button\" variant=\"primary\" size=\"md\" onClick={handleSimulatePayment}"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps\\partner-platform\\src\\components\\views\\HospitalInHouseClosedLoopView.tsx",
+      "tag": "Button",
+      "snippet": " variant=\"primary\" disabled={dischargeSpawned} onClick={handleSpawnDischargePipeline} "
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps\\partner-platform\\src\\components\\views\\InstantBillSettlementView.tsx",
+      "tag": "button",
+      "snippet": " type=\"button\" onClick={handleSettleBill} style={{ width: '100%', "
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps\\partner-platform\\src\\components\\views\\InstantUPISplitSettlementStudio.tsx",
+      "tag": "Button",
+      "snippet": " type=\"button\" variant=\"success\" size=\"md\" disabled={isSimulating} onClick={handleSimulatePayment}"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps\\partner-platform\\src\\components\\views\\InsuranceOverviewView.tsx",
+      "tag": "Button",
+      "snippet": " variant=\"outline\" onClick={onOpenCreatePayer}"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps\\partner-platform\\src\\components\\views\\InvestigationOrderDirectoryView.tsx",
+      "tag": "Button",
+      "snippet": " variant=\"primary\" onClick={onOpenCreateOrder} style={{ backgroundColor: '#10B981', borderColor: '#10B981', color:"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps\\partner-platform\\src\\components\\views\\InvestigationOverviewView.tsx",
+      "tag": "Button",
+      "snippet": " variant=\"primary\" onClick={onOpenNewOrder} style={{ backgroundColor: '#10B981', borderColor: '#10B981', color: '#"
+    },
+    {
+      "app": "partner-platform",
+      "file": "apps\\partner-platform\\src\\components\\views\\NursingCareView.tsx",
+      "tag": "Button",
+      "snippet": " variant=\"outline\" size=\"sm\" onClick={handleSimulateDoctorRoundOrder} style={{ fontSiz"
+    }
+  ]
+}
