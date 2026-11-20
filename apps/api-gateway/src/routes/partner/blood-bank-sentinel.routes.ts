@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { getDatabase, sql } from '@docsearch/database';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
 import { clinicalSweeperService } from '../../services/partner/ClinicalSweeperService.js';
 
 interface IotTelemetryRequest {
@@ -101,8 +101,8 @@ export const bloodBankSentinelRoutes: FastifyPluginAsync = async (fastify) => {
     }
   });
 
-  // 2. Surgical Cross-Match Reservation (48-Hour Hold)
-  fastify.post('/api/v1/partner/blood-bank/crossmatch/reserve', async (request, reply) => {
+  // 2. Surgical Cross-Match Reservation (48-Hour Hold - 🛡️ Clinical Role Guarded)
+  fastify.post('/api/v1/partner/blood-bank/crossmatch/reserve', { preHandler: [requireRoles('DOCTOR', 'LAB_TECHNICIAN', 'CHIEF_MEDICAL_OFFICER', 'HOSPITAL_ADMIN', 'SUPER_ADMIN')] }, async (request, reply) => {
     const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = request.body as CrossmatchReserveRequest;
 
@@ -115,6 +115,31 @@ export const bloodBankSentinelRoutes: FastifyPluginAsync = async (fastify) => {
 
     const db = getDatabase();
     try {
+      // 🛡️ Availability & Expiry Pre-Check
+      const checkRes = await db.execute(sql`
+        SELECT id, unit_barcode, status, expiry_date
+        FROM blood_bank_unit_inventory
+        WHERE tenant_id = ${tenantId} AND unit_barcode = ${unitBarcode}
+        LIMIT 1
+      `);
+      const unit = (checkRes as any)?.rows?.[0];
+      if (unit) {
+        if (unit.status !== 'AVAILABLE') {
+          return reply.status(400).send({
+            success: false,
+            error: 'BLOOD_UNIT_UNAVAILABLE',
+            message: `Blood unit ${unitBarcode} is currently '${unit.status}' and cannot be reserved.`
+          });
+        }
+        if (unit.expiry_date && new Date(unit.expiry_date) <= new Date()) {
+          return reply.status(400).send({
+            success: false,
+            error: 'BLOOD_UNIT_EXPIRED',
+            message: `Blood unit ${unitBarcode} expired on ${unit.expiry_date} and cannot be reserved for surgery.`
+          });
+        }
+      }
+
       await db.execute(sql`
         INSERT INTO blood_bank_crossmatch_reservations (
           tenant_id, reservation_id, unit_barcode, patient_uhid,
@@ -150,8 +175,8 @@ export const bloodBankSentinelRoutes: FastifyPluginAsync = async (fastify) => {
     });
   });
 
-  // 3. Automated 48-Hour Cross-Match Reservation Sweep
-  fastify.post('/api/v1/partner/blood-bank/crossmatch/auto-expire-sweep', async (request, reply) => {
+  // 3. Automated 48-Hour Cross-Match Reservation Sweep (🛡️ Clinical Role Guarded)
+  fastify.post('/api/v1/partner/blood-bank/crossmatch/auto-expire-sweep', { preHandler: [requireRoles('DOCTOR', 'LAB_TECHNICIAN', 'CHIEF_MEDICAL_OFFICER', 'HOSPITAL_ADMIN', 'SUPER_ADMIN')] }, async (request, reply) => {
     const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const result = await clinicalSweeperService.runBloodBankCrossmatchSweep(tenantId);
 

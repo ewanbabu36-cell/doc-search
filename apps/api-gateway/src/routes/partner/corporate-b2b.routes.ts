@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { getDatabase, sql } from '@docsearch/database';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
 
 interface BulkEnrollRequest {
   contractCode: string;
@@ -17,8 +17,9 @@ interface BulkEnrollRequest {
 export const corporateB2bRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.addHook('preHandler', authenticate);
 
-  // 1. List Corporate Enterprise Accounts
-  fastify.get('/api/v1/partner/corporate-b2b/clients', async (_request, reply) => {
+  // 1. List Corporate Enterprise Accounts (🛡️ Multi-Tenant Scoped)
+  fastify.get('/api/v1/partner/corporate-b2b/clients', async (request, reply) => {
+    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const db = getDatabase();
     try {
       const res = await db.execute(sql`
@@ -26,6 +27,7 @@ export const corporateB2bRoutes: FastifyPluginAsync = async (fastify) => {
           id, company_name, contract_code, total_enrolled_employees,
           monthly_allowance_per_emp, current_month_billed_amount, gstin, status
         FROM corporate_b2b_accounts
+        WHERE tenant_id = ${tenantId}
         ORDER BY total_enrolled_employees DESC
       `);
       return reply.send({ success: true, data: res.rows || [] });
@@ -35,8 +37,8 @@ export const corporateB2bRoutes: FastifyPluginAsync = async (fastify) => {
     }
   });
 
-  // 2. Bulk Enroll Corporate Employees & Allocate Family Health Passes
-  fastify.post('/api/v1/partner/corporate-b2b/employees/bulk-enroll', async (request, reply) => {
+  // 2. Bulk Enroll Corporate Employees & Allocate Family Health Passes (🛡️ Admin Role Enforced)
+  fastify.post('/api/v1/partner/corporate-b2b/employees/bulk-enroll', { preHandler: [requireRoles('HOSPITAL_ADMIN', 'SUPER_ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER')] }, async (request, reply) => {
     const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = (request.body || {}) as BulkEnrollRequest;
     const emps = body.employees || [];
@@ -67,8 +69,8 @@ export const corporateB2bRoutes: FastifyPluginAsync = async (fastify) => {
     });
   });
 
-  // 3. Generate Monthly Consolidated Cashless Corporate Invoice (GST Itemized)
-  fastify.post('/api/v1/partner/corporate-b2b/invoicing/generate-monthly-ledger', async (request, reply) => {
+  // 3. Generate Monthly Consolidated Cashless Corporate Invoice (🛡️ Billing / Finance Role Enforced)
+  fastify.post('/api/v1/partner/corporate-b2b/invoicing/generate-monthly-ledger', { preHandler: [requireRoles('BILLING_CLERK', 'FINANCE_MANAGER', 'HOSPITAL_ADMIN', 'SUPER_ADMIN', 'COMPANY_ADMIN')] }, async (request, reply) => {
     const body = (request.body || {}) as {
       contractCode?: string;
       billingMonth?: string;

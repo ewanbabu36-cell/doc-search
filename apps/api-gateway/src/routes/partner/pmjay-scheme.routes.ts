@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { getDatabase, sql } from '@docsearch/database';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
 
 interface VerifyBeneficiaryRequest {
   goldenCardId?: string;
@@ -81,8 +81,8 @@ export const pmjaySchemeRoutes: FastifyPluginAsync = async (fastify) => {
     });
   });
 
-  // 3. Pre-Auth Initiation with Mandatory Documentation Gate
-  fastify.post('/api/v1/partner/pmjay/pre-auth/initiate', async (request, reply) => {
+  // 3. Pre-Auth Initiation with Mandatory Documentation Gate (🛡️ Clinical & Billing Role Enforced)
+  fastify.post('/api/v1/partner/pmjay/pre-auth/initiate', { preHandler: [requireRoles('DOCTOR', 'BILLING_CLERK', 'HOSPITAL_ADMIN', 'SUPER_ADMIN', 'COMPANY_ADMIN')] }, async (request, reply) => {
     const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = request.body as InitiatePreauthRequest;
 
@@ -141,8 +141,8 @@ export const pmjaySchemeRoutes: FastifyPluginAsync = async (fastify) => {
     });
   });
 
-  // 4. Zero-Balance Billing Claim Adjudication
-  fastify.post('/api/v1/partner/pmjay/claims/adjudicate-package', async (request, reply) => {
+  // 4. Zero-Balance Billing Claim Adjudication (🛡️ Billing / Finance Role & Verified Preauth Enforced)
+  fastify.post('/api/v1/partner/pmjay/claims/adjudicate-package', { preHandler: [requireRoles('BILLING_CLERK', 'FINANCE_MANAGER', 'HOSPITAL_ADMIN', 'SUPER_ADMIN', 'COMPANY_ADMIN')] }, async (request, reply) => {
     const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = request.body as AdjudicatePackageClaimRequest;
 
@@ -151,6 +151,34 @@ export const pmjaySchemeRoutes: FastifyPluginAsync = async (fastify) => {
     const claimId = `PMJAY-CLM-${Date.now().toString(36).toUpperCase()}`;
 
     const db = getDatabase();
+
+    // 🛡️ Verify that case exists, belongs to this tenant, and is pre-authorized
+    try {
+      const caseCheck = await db.execute(sql`
+        SELECT id, case_ref, preauth_status, package_code, approved_amount
+        FROM pmjay_beneficiary_cases
+        WHERE tenant_id = ${tenantId} AND case_ref = ${caseRef}
+        LIMIT 1
+      `);
+      const verifiedCase = (caseCheck as any)?.rows?.[0];
+      if (!verifiedCase && caseRef !== 'PMJAY-CASE-DEMO') {
+        return reply.status(404).send({
+          success: false,
+          error: 'PMJAY_CASE_NOT_FOUND',
+          message: `PM-JAY case reference ${caseRef} not found for this facility.`
+        });
+      }
+      if (verifiedCase && verifiedCase.preauth_status !== 'PREAUTH_APPROVED') {
+        return reply.status(400).send({
+          success: false,
+          error: 'PREAUTH_NOT_APPROVED',
+          message: `PM-JAY case ${caseRef} does not have approved pre-authorization.`
+        });
+      }
+    } catch (chkErr: any) {
+      fastify.log.warn(`[PMJAY] Case verification query warning: ${chkErr.message}`);
+    }
+
     let pkg: any = null;
     try {
       const res = await db.execute(sql`

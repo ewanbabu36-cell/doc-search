@@ -1,6 +1,7 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { billingManagementService } from '../../services/partner/BillingManagementService.js';
 import { AppError, ErrorCode, createLogger } from '@docsearch/shared-core';
+import { env } from '../../config/env.js';
 
 const logger = createLogger('billing-webhook-routes');
 
@@ -73,10 +74,20 @@ export const billingWebhookRoutes: FastifyPluginAsync = async (fastify) => {
     }
   );
 
-  // 3. Dynamic UPI Soundbox Instant Ingestion Webhook (Paytm, PhonePe, Razorpay POS)
+  // 3. Dynamic UPI Soundbox Instant Ingestion Webhook (Paytm, PhonePe, Razorpay POS - 🛡️ Secret Token Verified)
   fastify.post(
     '/api/v1/partner/billing/webhooks/upi-soundbox',
     async (request, reply) => {
+      const soundboxSecretHeader = request.headers['x-soundbox-secret'] || request.headers['x-soundbox-signature'] || request.headers['x-api-key'];
+      const expectedSecret = env.UPI_SOUNDBOX_WEBHOOK_SECRET;
+      if (!soundboxSecretHeader || soundboxSecretHeader !== expectedSecret) {
+        throw new AppError({
+          message: 'Unauthorized Soundbox webhook: Missing or invalid secret key header.',
+          code: ErrorCode.UNAUTHORIZED,
+          statusCode: 401
+        });
+      }
+
       const payload = (request.body || {}) as Record<string, unknown>;
 
       const txnRef = String(payload['txnRef'] || payload['transactionReference'] || payload['orderId'] || '');

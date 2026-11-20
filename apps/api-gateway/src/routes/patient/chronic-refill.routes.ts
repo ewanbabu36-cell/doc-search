@@ -15,8 +15,19 @@ export const chronicRefillRoutes: FastifyPluginAsync = async (fastify) => {
     {
       preHandler: [authenticate]
     },
-    async (request) => {
+    async (request, reply) => {
       const { patientId } = request.params as { patientId: string };
+      const session = (request as any).session;
+      if (session?.roles?.includes('PATIENT')) {
+        const callerPatientId = session.patientId || session.userId;
+        if (callerPatientId && callerPatientId !== patientId) {
+          return reply.status(403).send({
+            success: false,
+            error: 'FORBIDDEN',
+            message: 'Access denied: You are not authorized to view another patient prescription refill status.'
+          });
+        }
+      }
       const data = chronicRefillPredictorService.getChronicRefillStatus(patientId);
       return {
         success: true,
@@ -25,10 +36,27 @@ export const chronicRefillRoutes: FastifyPluginAsync = async (fastify) => {
     }
   );
 
+  /**
+   * GET /api/v1/patient-mobile/chronic-refill/status/:patientId (🛡️ Authenticated & BOLA Protected)
+   */
   fastify.get(
     '/api/v1/patient-mobile/chronic-refill/status/:patientId',
-    async (request) => {
+    {
+      preHandler: [authenticate]
+    },
+    async (request, reply) => {
       const { patientId } = request.params as { patientId: string };
+      const session = (request as any).session;
+      if (session?.roles?.includes('PATIENT')) {
+        const callerPatientId = session.patientId || session.userId;
+        if (callerPatientId && callerPatientId !== patientId) {
+          return reply.status(403).send({
+            success: false,
+            error: 'FORBIDDEN',
+            message: 'Access denied: You are not authorized to view another patient prescription refill status.'
+          });
+        }
+      }
       const data = chronicRefillPredictorService.getChronicRefillStatus(patientId);
       return {
         success: true,
@@ -46,8 +74,19 @@ export const chronicRefillRoutes: FastifyPluginAsync = async (fastify) => {
     {
       preHandler: [authenticate]
     },
-    async (request) => {
+    async (request, reply) => {
       const body = request.body as ChronicRefillOrderRequest;
+      const session = (request as any).session;
+      if (session?.roles?.includes('PATIENT')) {
+        const callerPatientId = session.patientId || session.userId;
+        if (callerPatientId && body.patientId && callerPatientId !== body.patientId) {
+          return reply.status(403).send({
+            success: false,
+            error: 'FORBIDDEN',
+            message: 'Access denied: You cannot order prescription refills for another patient.'
+          });
+        }
+      }
       const order = chronicRefillPredictorService.createRefillOrder(body);
       return {
         success: true,

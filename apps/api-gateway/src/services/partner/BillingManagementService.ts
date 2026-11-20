@@ -1000,6 +1000,13 @@ export class BillingManagementService {
     let txn = this.upiTransactions.get(payload.txnRef);
 
     if (!txn && payload.invoiceId) {
+      if (Number(payload.amount) <= 0) {
+        throw new AppError({
+          message: 'Invalid Soundbox payment: Amount must be greater than zero.',
+          code: ErrorCode.VALIDATION_ERROR,
+          statusCode: 400
+        });
+      }
       txn = {
         txnRef: payload.txnRef,
         invoiceId: payload.invoiceId,
@@ -1026,6 +1033,14 @@ export class BillingManagementService {
         status: 'IGNORED',
         message: 'Transaction reference not found in active UPI cache'
       };
+    }
+
+    if (payload.amount <= 0 || (txn.amount > 0 && payload.amount < txn.amount)) {
+      throw new AppError({
+        message: `Soundbox Webhook: Payment amount ${payload.amount} is invalid or less than required invoice amount ${txn.amount}`,
+        code: ErrorCode.VALIDATION_ERROR,
+        statusCode: 400
+      });
     }
 
     if (payload.status !== 'SUCCESS') {
