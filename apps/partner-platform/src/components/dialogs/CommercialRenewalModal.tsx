@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Button, Spinner } from '@docsearch/ui-kit';
+import { getAuthToken } from '../../services/api-client.js';
 
 export interface CommercialRenewalModalProps {
   isOpen: boolean;
@@ -92,7 +93,10 @@ export const CommercialRenewalModal: React.FC<CommercialRenewalModalProps> = ({
   useEffect(() => {
     if (!isOpen) return;
     const amt = calculation?.finalAmountInr || 20000;
-    fetch(`/api/v1/commercial/company-payment-details?amount=${amt}&invoiceRef=RENEWAL`)
+    const token = getAuthToken();
+    fetch(`/api/v1/commercial/company-payment-details?amount=${amt}&invoiceRef=RENEWAL`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    })
       .then((r) => r.json())
       .then((json) => {
         if (json.success && json.data) setCompanyDetails(json.data);
@@ -109,9 +113,13 @@ export const CommercialRenewalModal: React.FC<CommercialRenewalModalProps> = ({
       setIsCalculating(true);
       setErrorMessage(null);
       try {
+        const token = getAuthToken();
         const res = await fetch('/api/v1/commercial/calculate-order', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          },
           body: JSON.stringify({
             planId: currentPlan.id,
             durationYears: selectedDurationYears,
@@ -182,9 +190,13 @@ export const CommercialRenewalModal: React.FC<CommercialRenewalModalProps> = ({
     setSuccessMessage(null);
 
     try {
+      const token = getAuthToken();
       const res = await fetch('/api/v1/commercial/create-checkout-order', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({
           partnerId,
           planId: currentPlan.id,
@@ -227,9 +239,13 @@ export const CommercialRenewalModal: React.FC<CommercialRenewalModalProps> = ({
     setErrorMessage(null);
 
     try {
+      const token = getAuthToken();
       const res = await fetch('/api/v1/commercial/submit-payment-proof', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({
           partnerId,
           planId: currentPlan.id,

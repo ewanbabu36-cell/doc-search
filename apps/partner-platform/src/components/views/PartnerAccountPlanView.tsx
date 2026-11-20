@@ -6,6 +6,7 @@ import {
   type PartnerAccountPlanFeaturesData,
   type FeatureEntitlementDto
 } from '../../services/partner-account-service.js';
+import { getAuthToken } from '../../services/api-client.js';
 import {
   Card,
   Badge,
@@ -53,7 +54,10 @@ export const PartnerAccountPlanView: React.FC<PartnerAccountPlanViewProps> = ({
   const [machineNodeFp, setMachineNodeFp] = useState<string>('MPR-NODE-ACTIVE');
 
   useEffect(() => {
-    fetch('/api/v1/license/machine-fingerprint')
+    const token = getAuthToken();
+    fetch('/api/v1/license/machine-fingerprint', {
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    })
       .then((r) => r.json())
       .then((json) => {
         if (json?.data?.fingerprint) setMachineNodeFp(json.data.fingerprint);

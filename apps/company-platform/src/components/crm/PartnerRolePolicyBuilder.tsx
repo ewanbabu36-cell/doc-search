@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getAuthToken } from '../../services/api-client.js';
 
 export interface PermissionPackDto {
   code: string;
@@ -67,9 +68,11 @@ export const PartnerRolePolicyBuilder: React.FC<PartnerRolePolicyBuilderProps> =
   const loadData = async () => {
     setLoading(true);
     try {
+      const token = getAuthToken();
+      const authH = token ? { Authorization: `Bearer ${token}` } : {};
       const [packRes, polRes] = await Promise.all([
-        fetch('/api/v1/company/permission-packs'),
-        fetch(`/api/v1/company/partners/${partnerId}/policies`)
+        fetch('/api/v1/company/permission-packs', { headers: authH }),
+        fetch(`/api/v1/company/partners/${partnerId}/policies`, { headers: authH })
       ]);
 
       if (packRes.ok) {
@@ -97,9 +100,13 @@ export const PartnerRolePolicyBuilder: React.FC<PartnerRolePolicyBuilderProps> =
     setCreatingRole(true);
     setStatusMsg(null);
     try {
+      const token = getAuthToken();
       const res = await fetch(`/api/v1/company/partners/${partnerId}/roles`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({
           name: roleName.trim(),
           code: roleCode.trim().toUpperCase(),
@@ -156,9 +163,13 @@ export const PartnerRolePolicyBuilder: React.FC<PartnerRolePolicyBuilderProps> =
         : null;
 
     try {
+      const token = getAuthToken();
       const res = await fetch(`/api/v1/company/partners/${partnerId}/policies`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({
           code: policyCode.trim().toUpperCase(),
           name: policyName.trim(),

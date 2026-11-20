@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { getAuthToken } from '../../services/api-client.js';
 
 export type CurrencyCode = 'INR' | 'USD' | 'EUR' | 'GBP' | 'AED' | 'SGD' | 'SAR';
 export type LocaleCode = 'en' | 'es' | 'fr' | 'de' | 'ar' | 'hi';
@@ -239,7 +240,10 @@ export const GlobalCurrencyLocaleProvider: React.FC<{ children: React.ReactNode 
 
   const refreshLiveFxRates = useCallback(async () => {
     try {
-      const res = await fetch('/api/v1/company/treasury/fx-rates');
+      const token = getAuthToken();
+      const res = await fetch('/api/v1/company/treasury/fx-rates', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
       if (res.ok) {
         const json = await res.json();
         if (json.data && json.data.rates) {

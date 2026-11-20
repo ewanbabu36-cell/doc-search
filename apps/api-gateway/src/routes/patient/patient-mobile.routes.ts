@@ -1,4 +1,4 @@
-import type { FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import {
   getDatabase,
@@ -29,6 +29,7 @@ import { AppError, ErrorCode, createLogger } from '@docsearch/shared-core';
 import { signJwt, verifyJwt, type BaseJwtClaims } from '@docsearch/auth';
 import { env } from '../../config/env.js';
 import { otpAntiBombingGuard } from '../../services/security/otpAntiBombingGuard.js';
+import { extractAuthTokenFromRequest } from '../../plugins/auth-guard.js';
 
 const logger = createLogger('patient-mobile-routes');
 
@@ -49,18 +50,25 @@ function normalizePhone(raw: string): { rawDigits: string; last10: string; withC
  * Validates cryptographically signed patient JWT and ensures subject belongs to requested patient.
  */
 function verifyPatientSessionToken(
-  authHeader: string | undefined,
+  requestOrHeader: FastifyRequest | string | undefined,
   targetPhone?: string
 ): { valid: boolean; statusCode?: number; reason?: string; patientId?: string; phone?: string | undefined } {
   const normalizedTarget = targetPhone ? normalizePhone(targetPhone).last10 : null;
 
-  if (!authHeader) {
-    return { valid: false, statusCode: 401, reason: 'Missing Authorization header. Valid Bearer token required.' };
+  let token: string | null = null;
+  if (typeof requestOrHeader === 'string') {
+    const trimmed = requestOrHeader.trim();
+    if (/^Bearer\s+/i.test(trimmed)) {
+      token = trimmed.replace(/^Bearer\s+/i, '').trim();
+    } else {
+      token = trimmed;
+    }
+  } else if (requestOrHeader && typeof requestOrHeader === 'object') {
+    token = extractAuthTokenFromRequest(requestOrHeader as FastifyRequest);
   }
 
-  const token = authHeader.replace(/^Bearer\s+/i, '').trim();
   if (!token || token === 'null' || token === 'undefined' || token === '[object Object]') {
-    return { valid: false, statusCode: 401, reason: 'Missing or empty Bearer token.' };
+    return { valid: false, statusCode: 401, reason: 'Missing or invalid Authorization header. Valid Bearer token required.' };
   }
 
   try {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getAuthToken } from '../../services/api-client.js';
 
 export interface TemplateBlueprint {
   id: string;
@@ -51,7 +52,10 @@ export const PartnerTemplateManager: React.FC<PartnerTemplateManagerProps> = ({
   const fetchTemplates = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/v1/company/templates');
+      const token = getAuthToken();
+      const res = await fetch('/api/v1/company/templates', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
       if (res.ok) {
         const json = await res.json();
         const list: TemplateBlueprint[] = json.data || [];
@@ -69,7 +73,10 @@ export const PartnerTemplateManager: React.FC<PartnerTemplateManagerProps> = ({
 
   const fetchVersions = async (templateId: string) => {
     try {
-      const res = await fetch(`/api/v1/company/templates/${templateId}/versions`);
+      const token = getAuthToken();
+      const res = await fetch(`/api/v1/company/templates/${templateId}/versions`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
       if (res.ok) {
         const json = await res.json();
         setVersions(json.data || []);
@@ -94,9 +101,13 @@ export const PartnerTemplateManager: React.FC<PartnerTemplateManagerProps> = ({
     setApplying(true);
     setApplyResult(null);
     try {
+      const token = getAuthToken();
       const res = await fetch(`/api/v1/company/templates/${selectedTemplate.id}/apply/${targetPartnerId.trim()}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({ versionNumber: selectedTemplate.currentVersion })
       });
       const data = await res.json();
@@ -120,9 +131,13 @@ export const PartnerTemplateManager: React.FC<PartnerTemplateManagerProps> = ({
     setCreatingVersion(true);
     try {
       const latestVer = versions[0];
+      const token = getAuthToken();
       const res = await fetch(`/api/v1/company/templates/${selectedTemplate.id}/versions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({
           changeSummary: newVersionSummary.trim(),
           capabilities: latestVer?.capabilities || [],

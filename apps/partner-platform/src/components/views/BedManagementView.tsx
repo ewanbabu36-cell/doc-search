@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, Button, Input, Select, Badge } from '@docsearch/ui-kit';
 import type { InpatientBedDto, InpatientWardDto, InpatientAdmissionRequestDto } from '@docsearch/api-contracts';
 import { PrintableBedsideQrCardModal } from '../dialogs/PrintableBedsideQrCardModal.js';
+import { getAuthToken } from '../../services/api-client.js';
 
 export interface BedManagementViewProps {
   beds: InpatientBedDto[];
@@ -75,7 +76,10 @@ export const BedManagementView: React.FC<BedManagementViewProps> = ({
         equipmentTags: (w as any).equipmentTags || ['Central O2 Pipeline']
       })));
     } else {
-      fetch('/api/v1/partner/inpatient/wards')
+      const token = getAuthToken();
+      fetch('/api/v1/partner/inpatient/wards', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      })
         .then((r) => r.json())
         .then((data) => {
           if (data.success && Array.isArray(data.data) && data.data.length > 0) {

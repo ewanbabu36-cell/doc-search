@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DocSearchLogo, DocSearch3DLogoLoader } from '@docsearch/ui-kit';
 import { getUrlForModule } from '../../utils/urlRouter.js';
+import { getAuthToken } from '../../services/api-client.js';
 import {
   normalizeFacilityProfile,
   HOSPITAL_PRO_TIER_NAME,
@@ -572,7 +573,10 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess, initialMod
 
         let apiPartners: any[] = [];
         try {
-          const res = await fetch('/api/v1/auth/live-partners');
+          const token = getAuthToken();
+          const res = await fetch('/api/v1/auth/live-partners', {
+            headers: token ? { Authorization: `Bearer ${token}` } : {}
+          });
           if (res.ok) {
             const j = await res.json();
             if (j.data) apiPartners = j.data;

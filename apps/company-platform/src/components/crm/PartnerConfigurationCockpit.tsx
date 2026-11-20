@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { showConfirm } from '../../utils/feedback';
+import { getAuthToken } from '../../services/api-client.js';
 
 export interface CapabilityItem {
   code: string;
@@ -51,10 +52,12 @@ export const PartnerConfigurationCockpit: React.FC<PartnerConfigurationCockpitPr
     const loadInitData = async () => {
       setLoading(true);
       try {
+        const token = getAuthToken();
+        const authH = token ? { Authorization: `Bearer ${token}` } : {};
         const [capRes, tplRes, histRes] = await Promise.all([
-          fetch('/api/v1/company/capabilities'),
-          fetch('/api/v1/company/templates'),
-          fetch(`/api/v1/company/partners/${partnerId}/configuration/history`)
+          fetch('/api/v1/company/capabilities', { headers: authH }),
+          fetch('/api/v1/company/templates', { headers: authH }),
+          fetch(`/api/v1/company/partners/${partnerId}/configuration/history`, { headers: authH })
         ]);
 
         if (capRes.ok) {
@@ -107,9 +110,13 @@ export const PartnerConfigurationCockpit: React.FC<PartnerConfigurationCockpitPr
   const handleSaveCapabilities = async () => {
     setStatusMsg(null);
     try {
+      const token = getAuthToken();
       const res = await fetch(`/api/v1/company/partners/${partnerId}/capabilities`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({
           activeCapabilities: Array.from(selectedCapabilities),
           reason: 'Manual capability synchronization from Cockpit'
@@ -132,9 +139,13 @@ export const PartnerConfigurationCockpit: React.FC<PartnerConfigurationCockpitPr
     if (!selectedBlueprintId) return;
     setStatusMsg(null);
     try {
+      const token = getAuthToken();
       const res = await fetch(`/api/v1/company/templates/${selectedBlueprintId}/apply/${partnerId}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({})
       });
       const data = await res.json();
@@ -154,9 +165,13 @@ export const PartnerConfigurationCockpit: React.FC<PartnerConfigurationCockpitPr
     if (!saveTemplateName || !saveTemplateCode) return;
     setStatusMsg(null);
     try {
+      const token = getAuthToken();
       const res = await fetch(`/api/v1/company/partners/${partnerId}/save-as-template`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({
           templateName: saveTemplateName.trim(),
           templateCode: saveTemplateCode.trim().toUpperCase()
@@ -178,7 +193,10 @@ export const PartnerConfigurationCockpit: React.FC<PartnerConfigurationCockpitPr
   // Fetch Diff
   const handleComputeDiff = async () => {
     try {
-      const res = await fetch(`/api/v1/company/partners/${partnerId}/configuration/diff?v1=${v1}&v2=${v2}`);
+      const token = getAuthToken();
+      const res = await fetch(`/api/v1/company/partners/${partnerId}/configuration/diff?v1=${v1}&v2=${v2}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
       if (res.ok) {
         const data = await res.json();
         setDiffResult(data.data);
@@ -196,9 +214,13 @@ export const PartnerConfigurationCockpit: React.FC<PartnerConfigurationCockpitPr
     }
     setStatusMsg(null);
     try {
+      const token = getAuthToken();
       const res = await fetch(`/api/v1/company/partners/${partnerId}/configuration/rollback`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({ targetVersion: targetVer })
       });
       const data = await res.json();

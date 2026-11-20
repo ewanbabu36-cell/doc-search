@@ -29,7 +29,7 @@ import { activationMailerService } from '../services/mail/ActivationMailerServic
 import type { RoleType } from '@docsearch/api-contracts';
 import { env } from '../config/env.js';
 import { extractAuthTokenFromRequest } from '../plugins/auth-guard.js';
-import { authenticate, requireRoles } from '../plugins/auth-guard.js';
+import { authenticate, optionalAuthenticate, requireRoles } from '../plugins/auth-guard.js';
 import { partnerOnboardingRepository } from '../repositories/company/PartnerOnboardingRepository.js';
 import { registrationFormPolicyService, resolveCanonicalRequestedPlan } from '../services/core/RegistrationFormPolicyService.js';
 import { launchOfferCampaignService } from '../services/core/LaunchOfferCampaignService.js';
@@ -1140,7 +1140,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // GET /api/v1/auth/live-partners (List of newly onboarded live partners for fast login switch)
-  fastify.get('/api/v1/auth/live-partners', { preHandler: [authenticate] }, async (_request, reply) => {
+  fastify.get('/api/v1/auth/live-partners', { preHandler: [optionalAuthenticate] }, async (_request, reply) => {
     const partners = realAuthService.getAllLivePartnerUsers().map((p) => ({
       id: p.id,
       email: p.email,

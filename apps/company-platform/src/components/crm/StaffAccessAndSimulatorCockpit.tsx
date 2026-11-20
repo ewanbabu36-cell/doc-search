@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getAuthToken } from '../../services/api-client.js';
 
 export interface DecisionTierTrace {
   tierNumber: number;
@@ -57,9 +58,13 @@ export const StaffAccessAndSimulatorCockpit: React.FC<StaffAccessAndSimulatorCoc
     setSimulating(true);
     setSimulationResult(null);
     try {
+      const token = getAuthToken();
       const res = await fetch('/api/v1/company/access/simulate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({
           partnerId,
           role: simRole,
@@ -85,8 +90,12 @@ export const StaffAccessAndSimulatorCockpit: React.FC<StaffAccessAndSimulatorCoc
     setEvaluating(true);
     setLiveResult(null);
     try {
+      const token = getAuthToken();
       const res = await fetch(
-        `/api/v1/company/partners/${partnerId}/effective-access?role=${encodeURIComponent(liveRole)}&action=${encodeURIComponent(liveAction)}`
+        `/api/v1/company/partners/${partnerId}/effective-access?role=${encodeURIComponent(liveRole)}&action=${encodeURIComponent(liveAction)}`,
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        }
       );
       const data = await res.json();
       if (res.ok) {
@@ -103,9 +112,13 @@ export const StaffAccessAndSimulatorCockpit: React.FC<StaffAccessAndSimulatorCoc
   const handleTriggerBreakGlass = async () => {
     if (!emergencyReason.trim()) return;
     try {
+      const token = getAuthToken();
       const res = await fetch('/api/v1/company/break-glass', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({
           partnerId,
           reason: emergencyReason.trim(),

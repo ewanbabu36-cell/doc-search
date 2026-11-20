@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@docsearch/ui-kit';
+import { getAuthToken } from '../../services/api-client.js';
 
 export interface OfflineLicenseActivationModalProps {
   isOpen: boolean;
@@ -39,7 +40,10 @@ export const OfflineLicenseActivationModal: React.FC<OfflineLicenseActivationMod
   const fetchFingerprint = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch('/api/v1/license/machine-fingerprint');
+      const token = getAuthToken();
+      const res = await fetch('/api/v1/license/machine-fingerprint', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
       const json = await res.json();
       if (json.success && json.data) {
         setMachineFingerprint(json.data.fingerprint);
@@ -89,9 +93,13 @@ export const OfflineLicenseActivationModal: React.FC<OfflineLicenseActivationMod
     setSuccessMsg(null);
 
     try {
+      const token = getAuthToken();
       const res = await fetch('/api/v1/license/activate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({ licenseToken: licenseTokenInput.trim() })
       });
 
@@ -121,9 +129,13 @@ export const OfflineLicenseActivationModal: React.FC<OfflineLicenseActivationMod
     setSuccessMsg(null);
 
     try {
+      const token = getAuthToken();
       const res = await fetch('/api/v1/license/import-file', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({ fileContent })
       });
 

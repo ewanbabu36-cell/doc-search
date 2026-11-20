@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { type Language } from '../i18n.js';
-import { type PatientProfile } from '../services/patient-api.js';
+import { type PatientProfile, patientApi } from '../services/patient-api.js';
 
 export interface Tata1mgQuickOrderModalProps {
   isOpen: boolean;
@@ -67,7 +67,7 @@ export const Tata1mgQuickOrderModal: React.FC<Tata1mgQuickOrderModalProps> = ({
 
     // Load dynamic lab packages from live database API
     setIsLoadingPackages(true);
-    fetch('/api/v1/patient/diagnostic-packages')
+    fetch('/api/v1/patient/diagnostic-packages', { headers: patientApi.getAuthHeaders() })
       .then(res => res.json())
       .then(data => {
         if (data.success && Array.isArray(data.packages) && data.packages.length > 0) {
@@ -79,7 +79,7 @@ export const Tata1mgQuickOrderModal: React.FC<Tata1mgQuickOrderModalProps> = ({
       .finally(() => setIsLoadingPackages(false));
 
     // Load initial medicines for cart from database catalog
-    fetch('/api/v1/patient/medicines/search?q=tab')
+    fetch('/api/v1/patient/medicines/search?q=tab', { headers: patientApi.getAuthHeaders() })
       .then(res => res.json())
       .then(data => {
         if (data.success && Array.isArray(data.medicines) && data.medicines.length > 0) {
@@ -94,7 +94,7 @@ export const Tata1mgQuickOrderModal: React.FC<Tata1mgQuickOrderModalProps> = ({
       .catch(err => console.warn('Failed to load medicines:', err));
 
     // Load ABHA linked records
-    fetch('/api/v1/patient/abha/records')
+    fetch('/api/v1/patient/abha/records', { headers: patientApi.getAuthHeaders() })
       .then(res => res.json())
       .then(data => {
         if (data.success && Array.isArray(data.records)) {
@@ -111,7 +111,7 @@ export const Tata1mgQuickOrderModal: React.FC<Tata1mgQuickOrderModalProps> = ({
       setSearchResults([]);
       return;
     }
-    fetch(`/api/v1/patient/medicines/search?q=${encodeURIComponent(q)}`)
+    fetch(`/api/v1/patient/medicines/search?q=${encodeURIComponent(q)}`, { headers: patientApi.getAuthHeaders() })
       .then(res => res.json())
       .then(data => {
         if (data.success && Array.isArray(data.medicines)) {

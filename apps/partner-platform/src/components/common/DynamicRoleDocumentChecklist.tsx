@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getAuthToken } from '../../services/api-client.js';
 import type {
   RoleDocumentRequirementsResponse,
   RoleDocumentRequirementItem
@@ -40,8 +41,12 @@ export const DynamicRoleDocumentChecklist: React.FC<DynamicRoleDocumentChecklist
     try {
       const role = currentUser?.role || 'DOCTOR';
       const facilityType = currentUser?.organizationType || 'LABORATORY';
+      const token = getAuthToken();
       const res = await fetch(
-        `/api/v1/compliance/documents/requirements?role=${encodeURIComponent(role)}&facilityType=${encodeURIComponent(facilityType)}&tenantId=11111111-1111-4111-8111-111111111111`
+        `/api/v1/compliance/documents/requirements?role=${encodeURIComponent(role)}&facilityType=${encodeURIComponent(facilityType)}&tenantId=11111111-1111-4111-8111-111111111111`,
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        }
       );
       if (res.ok) {
         const json = await res.json();
@@ -109,13 +114,15 @@ export const DynamicRoleDocumentChecklist: React.FC<DynamicRoleDocumentChecklist
         fileSizeBytes: uploadFormData.fileSize
       };
 
+      const token = getAuthToken();
       const res = await fetch('/api/v1/compliance/documents/upload', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'x-user-id': '99999999-9999-4999-8999-999999999999',
           'x-user-email': currentUser?.email || 'staff@tatapathology.com',
-          'x-tenant-id': '11111111-1111-4111-8111-111111111111'
+          'x-tenant-id': '11111111-1111-4111-8111-111111111111',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
         },
         body: JSON.stringify(payload)
       });

@@ -11,7 +11,7 @@ import {
   TableBody,
   TableCell
 } from '@docsearch/ui-kit';
-import { apiRequest } from '../../services/api-client.js';
+import { apiRequest, getAuthToken } from '../../services/api-client.js';
 
 export type LegacySourceSystem = 'PRACTO_RAY' | 'MARG_ERP' | 'VYAPAR_TALLY' | 'LIVEHEALTH_CRELIO';
 
@@ -93,7 +93,10 @@ export const LegacyDataMigrationWizardView: React.FC<LegacyDataMigrationWizardVi
 
   const handleDownloadTemplate = async (sys: LegacySourceSystem) => {
     try {
-      const res = await fetch(`/api/v1/partner/migration/sample-template/${sys}`);
+      const token = getAuthToken();
+      const res = await fetch(`/api/v1/partner/migration/sample-template/${sys}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
       if (res.ok) {
         const blob = await res.blob();
         const url = window.URL.createObjectURL(blob);

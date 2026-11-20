@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { showConfirm } from '../../utils/feedback.js';
+import { getAuthToken } from '../../services/api-client.js';
 import {
   Card,
   Button,
@@ -146,9 +147,7 @@ export const CommercialPipelineCockpitView: React.FC = () => {
       if (stageFilter && stageFilter !== 'ALL') params.append('stage', stageFilter);
       if (searchQuery.trim()) params.append('search', searchQuery.trim());
 
-      const token = typeof window !== 'undefined'
-        ? (localStorage.getItem('docsearch_company_token') || localStorage.getItem('docsearch_auth_token'))
-        : null;
+      const token = getAuthToken();
 
       const res = await fetch(`/api/v1/commercial/hq/pipeline?${params.toString()}`, {
         headers: {
@@ -182,9 +181,7 @@ export const CommercialPipelineCockpitView: React.FC = () => {
     setDetailData(null);
     setActiveDetailTab('IDENTITY');
     try {
-      const token = typeof window !== 'undefined'
-        ? (localStorage.getItem('docsearch_company_token') || localStorage.getItem('docsearch_auth_token'))
-        : null;
+      const token = getAuthToken();
 
       const res = await fetch(`/api/v1/commercial/hq/partner/${partnerId}`, {
         headers: {
@@ -208,7 +205,10 @@ export const CommercialPipelineCockpitView: React.FC = () => {
   // Fetch Plans for Plan Drawer
   const fetchCatalogPlans = async () => {
     try {
-      const res = await fetch('/api/v1/commercial/plans');
+      const token = getAuthToken();
+      const res = await fetch('/api/v1/commercial/plans', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
       const json = await res.json();
       if (res.ok && json.success) {
         setCatalogPlans(json.data || []);
@@ -227,9 +227,7 @@ export const CommercialPipelineCockpitView: React.FC = () => {
   // Fetch Partner Types for Types Drawer
   const fetchPartnerTypes = async () => {
     try {
-      const token = typeof window !== 'undefined'
-        ? (localStorage.getItem('docsearch_company_token') || localStorage.getItem('docsearch_auth_token'))
-        : null;
+      const token = getAuthToken();
       const res = await fetch('/api/v1/commercial/hq/partner-types', {
         headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
       });
@@ -253,9 +251,7 @@ export const CommercialPipelineCockpitView: React.FC = () => {
     if (!graceModalPartner) return;
     setIsSubmittingGrace(true);
     try {
-      const token = typeof window !== 'undefined'
-        ? (localStorage.getItem('docsearch_company_token') || localStorage.getItem('docsearch_auth_token'))
-        : null;
+      const token = getAuthToken();
 
       const res = await fetch('/api/v1/commercial/hq/extend-grace', {
         method: 'POST',
@@ -294,9 +290,7 @@ export const CommercialPipelineCockpitView: React.FC = () => {
     }
     setIsSubmittingOffline(true);
     try {
-      const token = typeof window !== 'undefined'
-        ? (localStorage.getItem('docsearch_company_token') || localStorage.getItem('docsearch_auth_token'))
-        : null;
+      const token = getAuthToken();
 
       const res = await fetch('/api/v1/commercial/hq/record-offline-payment', {
         method: 'POST',
@@ -335,9 +329,7 @@ export const CommercialPipelineCockpitView: React.FC = () => {
   const handleUpdatePlan = async (planId: string) => {
     setIsSavingPlan(true);
     try {
-      const token = typeof window !== 'undefined'
-        ? (localStorage.getItem('docsearch_company_token') || localStorage.getItem('docsearch_auth_token'))
-        : null;
+      const token = getAuthToken();
 
       const res = await fetch(`/api/v1/commercial/hq/plans/${planId}`, {
         method: 'PUT',
@@ -377,9 +369,7 @@ export const CommercialPipelineCockpitView: React.FC = () => {
       return;
     }
     try {
-      const token = typeof window !== 'undefined'
-        ? (localStorage.getItem('docsearch_company_token') || localStorage.getItem('docsearch_auth_token'))
-        : null;
+      const token = getAuthToken();
 
       const res = await fetch(`/api/v1/commercial/hq/plans/${planId}`, {
         method: 'DELETE',
@@ -408,9 +398,7 @@ export const CommercialPipelineCockpitView: React.FC = () => {
     }
     setIsSavingType(true);
     try {
-      const token = typeof window !== 'undefined'
-        ? (localStorage.getItem('docsearch_company_token') || localStorage.getItem('docsearch_auth_token'))
-        : null;
+      const token = getAuthToken();
 
       const res = await fetch('/api/v1/commercial/hq/partner-types', {
         method: 'POST',
