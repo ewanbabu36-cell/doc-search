@@ -131,12 +131,20 @@ export const publicKioskRoutes: FastifyPluginAsync = async (app) => {
     const tokensAhead = Math.max(0, typeof tokenNumber === 'number' ? tokenNumber - currentServingToken : 4);
     const estimatedWaitMinutes = tokensAhead * 3.5;
 
+    // 🛡️ DPDP Act 2023 Masking for Public Waiting Display / Tracker
+    const maskName = (name: string) => {
+      const parts = name.split(/\s+/);
+      return parts.map(p => p.length <= 2 ? p : `${p[0]}${'*'.repeat(Math.max(1, p.length - 2))}${p[p.length - 1]}`).join(' ');
+    };
+    const maskedPatientName = maskName(patientName);
+    const maskedMrn = mrn.length > 6 ? `${mrn.slice(0, 3)}-***-${mrn.slice(-3)}` : 'MRN-***';
+
     return reply.send({
       success: true,
       data: {
         encounterId: enc.id,
-        patientName,
-        patientMrn: mrn,
+        patientName: maskedPatientName,
+        patientMrn: maskedMrn,
         departmentName,
         doctorName,
         tokenNumber: `#${tokenNumber}`,
@@ -145,7 +153,7 @@ export const publicKioskRoutes: FastifyPluginAsync = async (app) => {
         estimatedWaitMinutes: Math.round(estimatedWaitMinutes),
         queueStatus: tokenRecord?.queueStatus || 'WAITING',
         hospitalName: 'DOC SEARCH Smart Healthcare OS',
-        messageHinglish: `Namaste ${patientName} ji! Aapka Token #${tokenNumber} hai. Abhi Doctor ke room mein Token #${currentServingToken} chal raha hai. Aapka number lagbhag ${Math.round(estimatedWaitMinutes)} minute mein aayega.`,
+        messageHinglish: `Namaste ${maskedPatientName} ji! Aapka Token #${tokenNumber} hai. Abhi Doctor ke room mein Token #${currentServingToken} chal raha hai. Aapka number lagbhag ${Math.round(estimatedWaitMinutes)} minute mein aayega.`,
         lastUpdated: new Date().toISOString()
       }
     });

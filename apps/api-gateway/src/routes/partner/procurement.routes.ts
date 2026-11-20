@@ -1,9 +1,25 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { ProcurementService } from '../../services/partner/ProcurementService.js';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
 import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 
 const service = new ProcurementService();
+
+const PROCUREMENT_APPROVAL_ROLES = [
+  'FINANCE_MANAGER',
+  'HOSPITAL_ADMIN',
+  'SUPER_ADMIN',
+  'COMPANY_ADMIN'
+] as const;
+
+const EMERGENCY_ORDER_ROLES = [
+  'FINANCE_MANAGER',
+  'HOSPITAL_ADMIN',
+  'SUPER_ADMIN',
+  'COMPANY_ADMIN',
+  'DOCTOR',
+  'CHIEF_MEDICAL_OFFICER'
+] as const;
 
 export const procurementRoutes: FastifyPluginAsync = async (app) => {
   app.addHook('preHandler', requireModuleCommercialAccess('OPERATIONS'));
@@ -95,9 +111,11 @@ export const procurementRoutes: FastifyPluginAsync = async (app) => {
     }
   );
 
+  // 4. Purchase Requisitions Approval
+  // 🛡️ Guarded: Only Finance and Administrative leads can approve procurement requisitions
   app.patch(
     '/api/v1/partner/procurement/requisitions/:id/approve',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requireRoles(...PROCUREMENT_APPROVAL_ROLES)] },
     async (request, reply) => {
       const { tenantId, userId } = request.session;
       const { id } = request.params as { id: string };
@@ -143,9 +161,10 @@ export const procurementRoutes: FastifyPluginAsync = async (app) => {
     }
   );
 
-  app.patch('/api/v1/partner/procurement/purchase-orders/:id/approve', { preHandler: [authenticate] }, approveOrderHandler);
-  app.patch('/api/v1/partner/procurement/orders/:id/approve', { preHandler: [authenticate] }, approveOrderHandler);
-  app.post('/api/v1/partner/procurement/orders/:id/approve', { preHandler: [authenticate] }, approveOrderHandler);
+  // 🛡️ Guarded: Purchase order approvals require verified financial authority
+  app.patch('/api/v1/partner/procurement/purchase-orders/:id/approve', { preHandler: [authenticate, requireRoles(...PROCUREMENT_APPROVAL_ROLES)] }, approveOrderHandler);
+  app.patch('/api/v1/partner/procurement/orders/:id/approve', { preHandler: [authenticate, requireRoles(...PROCUREMENT_APPROVAL_ROLES)] }, approveOrderHandler);
+  app.post('/api/v1/partner/procurement/orders/:id/approve', { preHandler: [authenticate, requireRoles(...PROCUREMENT_APPROVAL_ROLES)] }, approveOrderHandler);
 
   app.patch(
     '/api/v1/partner/procurement/orders/:id/send',
@@ -157,7 +176,7 @@ export const procurementRoutes: FastifyPluginAsync = async (app) => {
 
   app.patch(
     '/api/v1/partner/procurement/orders/:id/cancel',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requireRoles(...PROCUREMENT_APPROVAL_ROLES)] },
     async (_request, reply) => {
       return reply.send({ success: true, data: { status: 'CANCELLED', cancelledAt: new Date().toISOString() } });
     }
@@ -169,8 +188,9 @@ export const procurementRoutes: FastifyPluginAsync = async (app) => {
     const data = await service.createEmergencyPurchase(tenantId, branchId || 'branch_default', userId, payload);
     return reply.status(201).send({ success: true, data });
   };
-  app.post('/api/v1/partner/procurement/purchase-orders/emergency', { preHandler: [authenticate] }, emergencyOrderHandler);
-  app.post('/api/v1/partner/procurement/emergency-orders', { preHandler: [authenticate] }, emergencyOrderHandler);
+  // 🛡️ Guarded: Emergency orders restricted to clinical leadership & finance
+  app.post('/api/v1/partner/procurement/purchase-orders/emergency', { preHandler: [authenticate, requireRoles(...EMERGENCY_ORDER_ROLES)] }, emergencyOrderHandler);
+  app.post('/api/v1/partner/procurement/emergency-orders', { preHandler: [authenticate, requireRoles(...EMERGENCY_ORDER_ROLES)] }, emergencyOrderHandler);
 
   // 5b. Contracts, Approvals, Exceptions Aliases
   app.get(

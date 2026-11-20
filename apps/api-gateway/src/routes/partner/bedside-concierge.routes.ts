@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { getDatabase, sql } from '@docsearch/database';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
 
 interface TriggerBellRequest {
   bedNumber?: string;
@@ -79,39 +79,46 @@ export const bedsideConciergeRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // 2. Acknowledge Nurse Call Bell
-  fastify.post('/api/v1/partner/bedside/call-bell/acknowledge', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
-    const body = request.body as AcknowledgeBellRequest;
+  // 🛡️ Guarded: Only authorized nursing and clinical staff can acknowledge call-bells and fulfill SLA
+  fastify.post(
+    '/api/v1/partner/bedside/call-bell/acknowledge',
+    { preHandler: [authenticate, requireRoles('NURSE', 'DOCTOR', 'HOSPITAL_ADMIN', 'SUPER_ADMIN')] },
+    async (request, reply) => {
+      const session = (request as any).session;
+      const tenantId = session?.tenantId || '11111111-1111-4111-8111-111111111111';
+      const body = request.body as AcknowledgeBellRequest;
 
-    const eventId = body.eventId;
-    const nurseName = body.nurseName || 'Sister Mary (Floor RN)';
-    const nfcTagScanned = body.nfcTagScanned || 'NFC-BED-304-VERIFIED';
+      const eventId = body.eventId;
+      // Enforce authenticated staff identity rather than user-supplied client spoofing
+      const nurseName = session?.user?.fullName || session?.email || body.nurseName || 'Sister Mary (Floor RN)';
+      const nfcTagScanned = body.nfcTagScanned || 'NFC-BED-304-VERIFIED';
 
-    const db = getDatabase();
-    try {
-      await db.execute(sql`
-        UPDATE bedside_call_bell_events
-        SET acknowledged_at = NOW(),
-            acknowledged_by = ${nurseName},
-            sla_status = 'RESOLVED_WITHIN_SLA'
-        WHERE tenant_id = ${tenantId} AND event_id = ${eventId}
-      `);
-    } catch (err: any) {
-      fastify.log.warn(`[BedsideConcierge] Acknowledge warning: ${err.message}`);
-    }
-
-    return reply.status(200).send({
-      success: true,
-      message: 'Call bell acknowledged at bedside. SLA fulfilled.',
-      data: {
-        eventId,
-        acknowledgedBy: nurseName,
-        nfcTagScanned,
-        slaStatus: 'RESOLVED_WITHIN_SLA',
-        timestamp: new Date().toISOString()
+      const db = getDatabase();
+      try {
+        await db.execute(sql`
+          UPDATE bedside_call_bell_events
+          SET acknowledged_at = NOW(),
+              acknowledged_by = ${nurseName},
+              sla_status = 'RESOLVED_WITHIN_SLA'
+          WHERE tenant_id = ${tenantId} AND event_id = ${eventId}
+        `);
+      } catch (err: any) {
+        fastify.log.warn(`[BedsideConcierge] Acknowledge warning: ${err.message}`);
       }
-    });
-  });
+
+      return reply.status(200).send({
+        success: true,
+        message: 'Call bell acknowledged at bedside. SLA fulfilled.',
+        data: {
+          eventId,
+          acknowledgedBy: nurseName,
+          nfcTagScanned,
+          slaStatus: 'RESOLVED_WITHIN_SLA',
+          timestamp: new Date().toISOString()
+        }
+      });
+    }
+  );
 
   // 3. Auto-Escalate Expired Call Bells
   fastify.post('/api/v1/partner/bedside/call-bell/escalate-expired', async (request, reply) => {
@@ -155,7 +162,11 @@ export const bedsideConciergeRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // 4. Ingest IoT IV Drip Infusion Sensor Telemetry
-  fastify.post('/api/v1/partner/bedside/iv-telemetry/ingest', async (request, reply) => {
+  // 🛡️ Guarded: Only authorized clinical staff or biomedical telemetry integrations can ingest infusion data
+  fastify.post(
+    '/api/v1/partner/bedside/iv-telemetry/ingest',
+    { preHandler: [authenticate, requireRoles('NURSE', 'DOCTOR', 'HOSPITAL_ADMIN', 'SUPER_ADMIN', 'CHIEF_MEDICAL_OFFICER')] },
+    async (request, reply) => {
     const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = request.body as IvTelemetryRequest;
 
