@@ -1,7 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify';
 import crypto from 'node:crypto';
 import { getDatabase, sql } from '@docsearch/database';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
 import { env } from '../../config/env.js';
 import { wiretapRingBuffer } from '../../plugins/phi-wiretap.js';
 
@@ -124,6 +124,7 @@ interface FinancialReconAutoHealRequest {
 
 export const godmodeAdminRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.addHook('preHandler', authenticate);
+  fastify.addHook('preHandler', requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN'));
 
   // =========================================================================
   // ENCLAVE 1: GOD-MODE IMPERSONATION & SESSION GHOSTING

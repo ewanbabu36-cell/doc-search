@@ -1,0 +1,62 @@
+[
+  {
+    "id": "API-01",
+    "name": "API Gateway Liveness Probe",
+    "pass": true,
+    "details": "Status: 200, Service: docsearch-api-gateway"
+  },
+  {
+    "id": "API-02",
+    "name": "Doctor JWT Credential Issuance",
+    "pass": true,
+    "details": "Token Issued, Tenant: 11111111-1111-4111-8111-111111111111"
+  },
+  {
+    "id": "API-03",
+    "name": "Pathologist JWT Issuance",
+    "pass": true,
+    "details": "Role: PATHOLOGIST"
+  },
+  {
+    "id": "API-04",
+    "name": "Zod Input Schema Validation Enforcement",
+    "pass": true,
+    "details": "Rejected with HTTP 400"
+  },
+  {
+    "id": "API-05",
+    "name": "Protected Partner Account Plan Access",
+    "pass": true,
+    "details": "Plan: Active"
+  },
+  {
+    "id": "API-06",
+    "name": "SQL Injection Immunity on Query Parameters",
+    "pass": true,
+    "details": "Handled gracefully, Status: 200"
+  },
+  {
+    "id": "API-07",
+    "name": "Multi-Tenant IDOR Scope Isolation",
+    "pass": true,
+    "details": "Status: 403, Leakage: 0 records"
+  },
+  {
+    "id": "API-08",
+    "name": "Enterprise Rate Limiting & Telemetry Headers",
+    "pass": true,
+    "details": "Limit: 10000"
+  },
+  {
+    "id": "API-09",
+    "name": "Swasthya Shorts Public Health Feed",
+    "pass": true,
+    "details": "Reels Count: 2"
+  },
+  {
+    "id": "API-10",
+    "name": "Malformed JWT Signature Rejection",
+    "pass": true,
+    "details": "Status: 401 Unauthorized"
+  }
+]

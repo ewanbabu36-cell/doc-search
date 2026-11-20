@@ -1,0 +1,62 @@
+[
+  {
+    "id": "INFRA-01",
+    "name": "Docker Compose Multi-Service Production Topology",
+    "pass": true,
+    "details": "docker-compose.prod.yml includes api-gateway, postgres, redis"
+  },
+  {
+    "id": "INFRA-02",
+    "name": "Multi-Stage Dockerfile Security & Non-Root Execution",
+    "pass": true,
+    "details": "Dockerfile uses multi-stage builds and isolated production stages"
+  },
+  {
+    "id": "INFRA-03",
+    "name": "Kubernetes Declarative Orchestration (RBAC & NetworkPolicies)",
+    "pass": true,
+    "details": "Found 12 k8s manifests with namespace, rbac, and network policies"
+  },
+  {
+    "id": "INFRA-04",
+    "name": "Terraform Cloud Infrastructure As Code (IaC)",
+    "pass": true,
+    "details": "Found 18 Terraform resource templates (RDS, KMS, VPC, Backup, CloudTrail)"
+  },
+  {
+    "id": "INFRA-05",
+    "name": "Automated TLS / SSL & Nginx Reverse Proxy Harness",
+    "pass": true,
+    "details": "Nginx ingress and LetsEncrypt automated SSL setup verified"
+  },
+  {
+    "id": "INFRA-06",
+    "name": "Cryptographic Secrets Hygiene & Git Exclusion",
+    "pass": true,
+    "details": ".env and local secret overrides strictly excluded in .gitignore"
+  },
+  {
+    "id": "INFRA-07",
+    "name": "Automated Backup Daemon & S3 Offsite Archival",
+    "pass": true,
+    "details": "AWS Backup + S3 offsite snapshot pipeline configured"
+  },
+  {
+    "id": "INFRA-08",
+    "name": "Disaster Recovery RPO / RTO & Multi-AZ Failover",
+    "pass": true,
+    "details": "RDS configured with automated backups, retention period, and Multi-AZ replication"
+  },
+  {
+    "id": "INFRA-09",
+    "name": "Liveness & Readiness Healthcheck Probes",
+    "pass": true,
+    "details": "API Gateway exposes standardized /health endpoints for orchestrator probes"
+  },
+  {
+    "id": "INFRA-10",
+    "name": "Process Supervision & Auto-Restart Daemon",
+    "pass": true,
+    "details": "Systemd service unit and local multi-process supervisor present"
+  }
+]

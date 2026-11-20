@@ -1,0 +1,38 @@
+[
+  {
+    "id": "INT-01",
+    "name": "Multi-Service Port Mesh Topology Health",
+    "pass": true,
+    "details": "Active ports: 8/8 responding cleanly"
+  },
+  {
+    "id": "INT-02",
+    "name": "Full E2E Clinical Truth Harness (17/17 Gates)",
+    "pass": true,
+    "details": "All 17 gates passed: MPI, OPD, Prescriptions, LIMS, Barcode, Signoff, PDF, Invoice, Settlement"
+  },
+  {
+    "id": "INT-03",
+    "name": "Concurrent Throughput Burst (50 Parallel Requests)",
+    "pass": true,
+    "details": "50/50 succeeded in 24ms (Zero connection pool exhaustion)"
+  },
+  {
+    "id": "INT-04",
+    "name": "Swasthya Shorts Public Feed Latency",
+    "pass": true,
+    "details": "Feed returned in 2ms with verified specialist content"
+  },
+  {
+    "id": "INT-05",
+    "name": "Event Telemetry & Webhook Dispatch Pipeline",
+    "pass": true,
+    "details": "Telemetry gateway response: 404"
+  },
+  {
+    "id": "INT-06",
+    "name": "Database Connection Pool & Service Health",
+    "pass": true,
+    "details": "Gateway health reports status: healthy"
+  }
+]

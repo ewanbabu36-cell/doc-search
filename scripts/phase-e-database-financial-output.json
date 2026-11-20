@@ -1,0 +1,62 @@
+[
+  {
+    "id": "DB-01",
+    "name": "PostgreSQL Native Connection & Handshake",
+    "pass": true,
+    "details": "Connected to port 5432"
+  },
+  {
+    "id": "DB-02",
+    "name": "Database Table Census across Application Schemas",
+    "pass": true,
+    "details": "Found 579 base tables (clinical: 346, company: 135, public: 65, core: 33, pharmacy: 1)"
+  },
+  {
+    "id": "DB-03",
+    "name": "Primary Key Coverage & Constraint Verification",
+    "pass": true,
+    "details": "574 tables have verified primary keys across application schemas"
+  },
+  {
+    "id": "DB-04",
+    "name": "ACID Transaction Atomic Rollback Immunity",
+    "pass": true,
+    "details": "Uncommitted transaction atomicity verified (probe record not persisted)"
+  },
+  {
+    "id": "DB-05",
+    "name": "Double-Entry Invariant (Debit == Credit)",
+    "pass": true,
+    "details": "Debit: ₹1500, Credit: ₹1500, Balanced: true"
+  },
+  {
+    "id": "DB-06",
+    "name": "Accounting Fraud Prevention: Imbalanced Entry Rejection",
+    "pass": true,
+    "details": "Imbalanced entry strictly rejected with validation error"
+  },
+  {
+    "id": "DB-07",
+    "name": "Statutory TDS Withholding Engine (Section 194-O)",
+    "pass": true,
+    "details": "Base: ₹82000, Rate: 0.1%, TDS: ₹82"
+  },
+  {
+    "id": "DB-08",
+    "name": "Section 206AA Penal TDS Enforcement (5% on missing PAN)",
+    "pass": true,
+    "details": "Rate applied: 5%, TDS: ₹2500"
+  },
+  {
+    "id": "DB-09",
+    "name": "ASC 606 / Ind AS 115 Revenue Recognition Waterfall",
+    "pass": true,
+    "details": "Booked TCV: ₹2304000, Compliance Score: 100/100, Contracts: 3"
+  },
+  {
+    "id": "DB-10",
+    "name": "Multi-Tenant Database Tenant Registry Verification",
+    "pass": true,
+    "details": "Active verified tenants in registry: 97"
+  }
+]

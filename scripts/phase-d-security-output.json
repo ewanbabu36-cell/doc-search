@@ -1,0 +1,62 @@
+[
+  {
+    "id": "SEC-01",
+    "name": "Role Escalation / Self-Assignment Forbidden",
+    "pass": true,
+    "details": "Status: 403 Forbidden (Code: FORBIDDEN)"
+  },
+  {
+    "id": "SEC-02",
+    "name": "Cross-Tenant Scope Escalation Blocked",
+    "pass": true,
+    "details": "Status: 403 Forbidden"
+  },
+  {
+    "id": "SEC-03",
+    "name": "Wildcard Permission Injection Blocked",
+    "pass": true,
+    "details": "Status: 403 Forbidden"
+  },
+  {
+    "id": "SEC-04",
+    "name": "SuperAdmin / GodMode RBAC Shield",
+    "pass": true,
+    "details": "Status: 403 (Doctor access to GodMode flags: BLOCKED)"
+  },
+  {
+    "id": "SEC-05",
+    "name": "Clinical Decision Support / Antibiogram Access Verification",
+    "pass": true,
+    "details": "Status: 200 (CDSS Evaluation: SUCCESS)"
+  },
+  {
+    "id": "SEC-06",
+    "name": "Strict CORS Preflight Verification",
+    "pass": true,
+    "details": "Allowed Origin: http://localhost:5173"
+  },
+  {
+    "id": "SEC-07",
+    "name": "HTTP Security Headers (nosniff / frameguard)",
+    "pass": true,
+    "details": "X-Content-Type-Options: nosniff"
+  },
+  {
+    "id": "SEC-08",
+    "name": "Explicit Authorization Header Precedence Over Cookie",
+    "pass": true,
+    "details": "Status: 200 (Valid Bearer accepted over corrupted cookie)"
+  },
+  {
+    "id": "SEC-09",
+    "name": "Stored XSS Injection Neutralization",
+    "pass": true,
+    "details": "Status: 400"
+  },
+  {
+    "id": "SEC-10",
+    "name": "Cryptographic Session Revocation / Logout",
+    "pass": true,
+    "details": "Logout Status: 200"
+  }
+]

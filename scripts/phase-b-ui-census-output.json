@@ -1,0 +1,53 @@
+{
+  "totalAnalyzed": 9432,
+  "fullyWorking": 9261,
+  "partiallyWorking": 32,
+  "nonResponsive": 0,
+  "broken": 0,
+  "mocked": 77,
+  "securityFailing": 0,
+  "unverified": 62,
+  "byApp": {
+    "partner-platform": {
+      "total": 6893,
+      "fullyWorking": 6804,
+      "partiallyWorking": 7,
+      "nonResponsive": 0,
+      "broken": 0,
+      "mocked": 47,
+      "securityFailing": 0,
+      "unverified": 35
+    },
+    "company-platform": {
+      "total": 2134,
+      "fullyWorking": 2096,
+      "partiallyWorking": 0,
+      "nonResponsive": 0,
+      "broken": 0,
+      "mocked": 12,
+      "securityFailing": 0,
+      "unverified": 26
+    },
+    "patient-app": {
+      "total": 203,
+      "fullyWorking": 202,
+      "partiallyWorking": 0,
+      "nonResponsive": 0,
+      "broken": 0,
+      "mocked": 0,
+      "securityFailing": 0,
+      "unverified": 1
+    },
+    "landing-page": {
+      "total": 202,
+      "fullyWorking": 159,
+      "partiallyWorking": 25,
+      "nonResponsive": 0,
+      "broken": 0,
+      "mocked": 18,
+      "securityFailing": 0,
+      "unverified": 0
+    }
+  },
+  "findings": []
+}
