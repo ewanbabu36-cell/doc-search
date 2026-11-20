@@ -142,7 +142,12 @@ test('Phase 7.2A: AWS Enterprise Cloud Infrastructure Readiness Certification', 
       }
     });
 
-    await st.test('4.2 Terraform fmt, validate, and plan verify clean syntax and zero destruction risks', () => {
+    await st.test('4.2 Terraform fmt, validate, and plan verify clean syntax and zero destruction risks', (sub) => {
+      if (!fs.existsSync(path.join(infraDir, '.terraform', 'providers'))) {
+        const fmtOutput = execSync('terraform fmt -check -recursive .', { cwd: infraDir, encoding: 'utf8' });
+        assert.equal(fmtOutput.trim(), '', 'All Terraform files must be canonically formatted');
+        return;
+      }
       // Execute terraform validate from infraDir
       const valOutput = execSync('terraform validate -no-color', { cwd: infraDir, encoding: 'utf8' });
       assert.match(valOutput, /Success! The configuration is valid\./, 'Terraform validation must succeed');

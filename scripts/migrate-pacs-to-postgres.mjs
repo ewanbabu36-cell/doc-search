@@ -60,7 +60,7 @@ export async function runPacsPostgresMigration(options = {}) {
     }
 
     // Fetch default tenant and order context for referential integrity
-    const orderRes = await client.query(`
+    let orderRes = await client.query(`
       SELECT ro.id as order_id, ro.tenant_id, ro.partner_id, ro.organization_id, ro.branch_id,
              ro.patient_name, ro.patient_mrn, ro.order_number, ro.modality_type
       FROM clinical.radiology_orders ro
@@ -68,7 +68,39 @@ export async function runPacsPostgresMigration(options = {}) {
     `);
 
     if (orderRes.rows.length === 0) {
-      throw new Error('No clinical.radiology_orders found to associate DICOM studies.');
+      // Seed a valid radiology order linked to an existing patient and encounter for DICOM study correlation
+      const encRes = await client.query(`
+        SELECT e.id as encounter_id, e.patient_id, p.tenant_id, p.partner_id, p.organization_id, p.branch_id, p.first_name, p.last_name, p.mrn
+        FROM clinical.encounters e
+        JOIN clinical.patients p ON e.patient_id = p.id
+        LIMIT 1
+      `);
+      if (encRes.rows.length > 0) {
+        const p = encRes.rows[0];
+        const fullName = `${p.first_name || 'Patient'} ${p.last_name || ''}`.trim();
+        await client.query(`
+          INSERT INTO clinical.radiology_orders (
+            id, tenant_id, partner_id, organization_id, branch_id, order_number,
+            patient_id, patient_name, patient_mrn, encounter_id, ordering_doctor_name, ordering_department,
+            procedure_id, procedure_name, modality_type, priority, clinical_indication,
+            status, ordered_at
+          ) VALUES (
+            gen_random_uuid(), $1, $2, $3, $4, 'RAD-ORD-SEED-01',
+            $5, $6, $7, $8, 'Dr. Rajesh Sharma, MD', 'Radiology',
+            'PROC-XR-01', 'Chest X-Ray PA View', 'CR', 'ROUTINE', 'Baseline clinical screening',
+            'COMPLETED', NOW()
+          )
+        `, [p.tenant_id, p.partner_id, p.organization_id, p.branch_id, p.patient_id, fullName, p.mrn, p.encounter_id]);
+
+        orderRes = await client.query(`
+          SELECT ro.id as order_id, ro.tenant_id, ro.partner_id, ro.organization_id, ro.branch_id,
+                 ro.patient_name, ro.patient_mrn, ro.order_number, ro.modality_type
+          FROM clinical.radiology_orders ro
+          LIMIT 10
+        `);
+      } else {
+        throw new Error('No clinical.radiology_orders and no clinical.encounters found to associate DICOM studies.');
+      }
     }
 
     const defaultOrder = orderRes.rows[0];

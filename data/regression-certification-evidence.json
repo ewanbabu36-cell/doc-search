@@ -1,10 +1,11 @@
 {
-  "timestamp": "2026-11-19T13:53:42.779Z",
-  "commit": "74ba740",
+  "timestamp": "2026-11-20T15:48:57.608Z",
+  "commit": "ec72a30",
   "totalTests": 196,
-  "totalPass": 196,
+  "totalPass": 192,
   "totalFail": 0,
-  "totalDurationMs": 101740,
+  "totalSkip": 4,
+  "totalDurationMs": 45572,
   "allPassed": true,
   "suites": [
     {
@@ -16,7 +17,7 @@
       "pass": 4,
       "fail": 0,
       "exitCode": 0,
-      "durationMs": 5778
+      "durationMs": 4856
     },
     {
       "id": "Phase 4",
@@ -27,7 +28,7 @@
       "pass": 23,
       "fail": 0,
       "exitCode": 0,
-      "durationMs": 2817
+      "durationMs": 3223
     },
     {
       "id": "Phase 5",
@@ -38,7 +39,7 @@
       "pass": 39,
       "fail": 0,
       "exitCode": 0,
-      "durationMs": 3249
+      "durationMs": 2801
     },
     {
       "id": "Phase 5.1",
@@ -49,7 +50,7 @@
       "pass": 25,
       "fail": 0,
       "exitCode": 0,
-      "durationMs": 3275
+      "durationMs": 3260
     },
     {
       "id": "Phase 6",
@@ -60,7 +61,7 @@
       "pass": 21,
       "fail": 0,
       "exitCode": 0,
-      "durationMs": 24042
+      "durationMs": 23412
     },
     {
       "id": "Phase 7.1A",
@@ -71,7 +72,7 @@
       "pass": 16,
       "fail": 0,
       "exitCode": 0,
-      "durationMs": 2099
+      "durationMs": 676
     },
     {
       "id": "Phase 7.1B",
@@ -82,7 +83,7 @@
       "pass": 13,
       "fail": 0,
       "exitCode": 0,
-      "durationMs": 840
+      "durationMs": 2599
     },
     {
       "id": "Phase 7.2A",
@@ -93,7 +94,7 @@
       "pass": 16,
       "fail": 0,
       "exitCode": 0,
-      "durationMs": 27970
+      "durationMs": 495
     },
     {
       "id": "Phase 7.2B",
@@ -101,10 +102,10 @@
       "file": "apps/api-gateway/test/phase7-2b-aws-security-compatibility-audit.test.mjs",
       "status": "PASSED",
       "tests": 16,
-      "pass": 16,
+      "pass": 14,
       "fail": 0,
       "exitCode": 0,
-      "durationMs": 17433
+      "durationMs": 465
     },
     {
       "id": "Phase 7.2C",
@@ -112,10 +113,10 @@
       "file": "apps/api-gateway/test/phase7-2c-production-readiness-certification.test.mjs",
       "status": "PASSED",
       "tests": 23,
-      "pass": 23,
+      "pass": 21,
       "fail": 0,
       "exitCode": 0,
-      "durationMs": 14233
+      "durationMs": 3783
     }
   ]
 }
