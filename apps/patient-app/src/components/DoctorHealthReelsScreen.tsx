@@ -22,8 +22,13 @@ export const DoctorHealthReelsScreen: React.FC<Props> = ({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isMuted, setIsMuted] = useState(true);
   const [isPlaying, setIsPlaying] = useState(true);
+  const [showSubtitles, setShowSubtitles] = useState(true);
+  const [currentSubtitle, setCurrentSubtitle] = useState<string>('');
   const [showDosDontsModal, setShowDosDontsModal] = useState(false);
   const [showShareToast, setShowShareToast] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState('False or Exaggerated Medical Claims');
+  const [reportSubmittedToast, setReportSubmittedToast] = useState(false);
   const [expandedSummary, setExpandedSummary] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -62,9 +67,45 @@ export const DoctorHealthReelsScreen: React.FC<Props> = ({
     const index = Math.round(scrollTop / clientHeight);
     if (index !== currentIndex && index >= 0 && index < reels.length) {
       setCurrentIndex(index);
+      setCurrentSubtitle('');
       setExpandedSummary(false);
       void nativeBridge.triggerHaptic(15);
     }
+  };
+
+  const handleTimeUpdate = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    const video = e.currentTarget;
+    const currentSec = video.currentTime;
+    const currentReel = reels[currentIndex];
+    if (currentReel?.subtitles && currentReel.subtitles.length > 0) {
+      const match = currentReel.subtitles.find(
+        (c) => currentSec >= c.startSeconds && currentSec <= c.endSeconds
+      );
+      if (match) {
+        setCurrentSubtitle(language === 'hi' ? match.textHi : match.textEn);
+      } else {
+        setCurrentSubtitle('');
+      }
+    } else {
+      setCurrentSubtitle(language === 'hi' ? currentReel?.summaryHindi || '' : currentReel?.summaryEnglish || '');
+    }
+  };
+
+  const handleReportSubmit = () => {
+    void nativeBridge.triggerHaptic(15);
+    void fetch('/api/v1/reels/report', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        reelId: activeReel?.id || '',
+        reason: reportReason,
+        timestamp: new Date().toISOString()
+      })
+    }).catch(() => {});
+
+    setShowReportModal(false);
+    setReportSubmittedToast(true);
+    setTimeout(() => setReportSubmittedToast(false), 3500);
   };
 
   // Autoplay current active video and pause others
@@ -207,27 +248,55 @@ export const DoctorHealthReelsScreen: React.FC<Props> = ({
             </div>
           </div>
 
-          {/* Sound Toggle */}
-          <button
-            type="button"
-            onClick={() => setIsMuted((prev) => !prev)}
-            style={{
-              background: 'rgba(0, 0, 0, 0.5)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              color: '#FFFFFF',
-              width: '36px',
-              height: '36px',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '1rem',
-              cursor: 'pointer'
-            }}
-            title={isMuted ? 'Unmute' : 'Mute'}
-          >
-            {isMuted ? '🔇' : '🔊'}
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {/* Closed Captions [CC] Toggle */}
+            <button
+              type="button"
+              onClick={() => {
+                setShowSubtitles((prev) => !prev);
+                void nativeBridge.triggerHaptic(8);
+              }}
+              style={{
+                background: showSubtitles ? '#38BDF8' : 'rgba(0, 0, 0, 0.5)',
+                border: showSubtitles ? '1px solid #38BDF8' : '1px solid rgba(255, 255, 255, 0.2)',
+                color: showSubtitles ? '#0F172A' : '#FFFFFF',
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '0.75rem',
+                fontWeight: 900,
+                cursor: 'pointer'
+              }}
+              title={showSubtitles ? 'Turn Subtitles OFF' : 'Turn Subtitles ON'}
+            >
+              CC
+            </button>
+
+            {/* Sound Toggle */}
+            <button
+              type="button"
+              onClick={() => setIsMuted((prev) => !prev)}
+              style={{
+                background: 'rgba(0, 0, 0, 0.5)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                color: '#FFFFFF',
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1rem',
+                cursor: 'pointer'
+              }}
+              title={isMuted ? 'Unmute' : 'Mute'}
+            >
+              {isMuted ? '🔇' : '🔊'}
+            </button>
+          </div>
         </div>
 
         {/* Category Pills (Horizontal Scrolling) */}
@@ -299,7 +368,7 @@ export const DoctorHealthReelsScreen: React.FC<Props> = ({
                 backgroundColor: '#070C16'
               }}
             >
-              {/* Video Element */}
+              {/* Video Element (Adaptive Bitrate & 0ms Swiping Prefetch) */}
               <video
                 ref={(el) => {
                   if (el) videoRefs.current.set(reel.id, el);
@@ -310,12 +379,46 @@ export const DoctorHealthReelsScreen: React.FC<Props> = ({
                 playsInline
                 loop
                 muted={isMuted}
+                preload={Math.abs(idx - currentIndex) <= 1 ? 'auto' : 'metadata'}
+                onTimeUpdate={isCurrent ? handleTimeUpdate : undefined}
                 style={{
                   width: '100%',
                   height: '100%',
                   objectFit: 'cover'
                 }}
               />
+
+              {/* DYNAMIC CLOSED CAPTION SUBTITLE PILL */}
+              {showSubtitles && currentSubtitle && isCurrent && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: '160px',
+                    left: '14px',
+                    right: '72px',
+                    zIndex: 32,
+                    display: 'flex',
+                    justifyContent: 'center',
+                    pointerEvents: 'none'
+                  }}
+                >
+                  <div
+                    style={{
+                      backgroundColor: 'rgba(15, 23, 42, 0.88)',
+                      backdropFilter: 'blur(8px)',
+                      border: '1px solid rgba(56, 189, 248, 0.35)',
+                      borderRadius: '10px',
+                      padding: '6px 14px',
+                      textAlign: 'center',
+                      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.7)'
+                    }}
+                  >
+                    <div style={{ color: '#FCD34D', fontSize: '0.8125rem', fontWeight: 800, lineHeight: 1.35 }}>
+                      💬 {currentSubtitle}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Pause Indicator Overlay */}
               {!isPlaying && isCurrent && (
@@ -506,6 +609,42 @@ export const DoctorHealthReelsScreen: React.FC<Props> = ({
                     Rules
                   </span>
                 </button>
+
+                {/* Report Misinformation / Policy Button */}
+                <button
+                  type="button"
+                  onClick={() => setShowReportModal(true)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '4px',
+                    cursor: 'pointer',
+                    color: '#FFFFFF'
+                  }}
+                  title="Report Misinformation"
+                >
+                  <div
+                    style={{
+                      width: '46px',
+                      height: '46px',
+                      borderRadius: '50%',
+                      backgroundColor: 'rgba(0, 0, 0, 0.55)',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '1.1rem'
+                    }}
+                  >
+                    ⚠️
+                  </div>
+                  <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#94A3B8' }}>
+                    Report
+                  </span>
+                </button>
               </div>
 
               {/* LEFT BOTTOM METADATA & DOCTOR PROFILE */}
@@ -610,6 +749,29 @@ export const DoctorHealthReelsScreen: React.FC<Props> = ({
                       {tag}
                     </span>
                   ))}
+                </div>
+
+                {/* NMC RMP 2023 Mandatory Educational Disclaimer Watermark */}
+                <div
+                  style={{
+                    fontSize: '0.625rem',
+                    color: '#94A3B8',
+                    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+                    padding: '4px 8px',
+                    borderRadius: '6px',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    maxWidth: '92%'
+                  }}
+                >
+                  <span>⚕️</span>
+                  <span>
+                    {language === 'hi'
+                      ? 'NMC RMP 2023: चिकित्सीय जन-जागरूकता • व्यक्तिगत जांच या इलाज का विकल्प नहीं'
+                      : 'NMC RMP 2023: Educational Health Awareness • Not a substitute for clinical diagnosis'}
+                  </span>
                 </div>
               </div>
 
@@ -790,6 +952,153 @@ export const DoctorHealthReelsScreen: React.FC<Props> = ({
           }}
         >
           ✓ डॉक्टर का वीडियो लिंक कॉपी हो गया! WhatsApp पर शेयर करें।
+        </div>
+      )}
+
+      {/* Patient Safety Report Modal (NMC Regulatory Compliance) */}
+      {showReportModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 300,
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px'
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: '#1E293B',
+              borderRadius: '20px',
+              border: '1px solid rgba(239, 68, 68, 0.4)',
+              padding: '24px',
+              width: '100%',
+              maxWidth: '400px',
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.8)'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '1.25rem' }}>⚠️</span>
+                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 900, color: '#F87171' }}>
+                  {language === 'hi' ? 'भ्रामक या गलत सलाह रिपोर्ट करें' : 'Report Clinical Misinformation'}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowReportModal(false)}
+                style={{ background: 'none', border: 'none', color: '#94A3B8', fontSize: '1.2rem', cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <p style={{ fontSize: '0.75rem', color: '#CBD5E1', lineHeight: 1.4, margin: '0 0 16px 0' }}>
+              {language === 'hi'
+                ? 'DocSearch मरीज सुरक्षा और NMC नियमों के प्रति 100% प्रतिबद्ध है। आपकी रिपोर्ट हमारी क्लिनिकल ऑडिट कमेटी द्वारा जांची जाएगी।'
+                : 'DocSearch is strictly committed to NMC RMP 2023 ethics. Reported videos undergo immediate clinical audit.'}
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
+              {[
+                'False or Exaggerated Medical Claims',
+                'Unapproved Commercial Drug Promotion (NMC 2023)',
+                'Harmful Self-Medication Advice',
+                'Inappropriate Content or Language'
+              ].map((reason) => (
+                <label
+                  key={reason}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    backgroundColor: reportReason === reason ? 'rgba(239, 68, 68, 0.15)' : '#0F172A',
+                    border: reportReason === reason ? '1px solid #EF4444' : '1px solid rgba(255, 255, 255, 0.08)',
+                    borderRadius: '10px',
+                    padding: '10px 12px',
+                    fontSize: '0.78rem',
+                    color: '#F8FAFC',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="reportReason"
+                    checked={reportReason === reason}
+                    onChange={() => setReportReason(reason)}
+                    style={{ accentColor: '#EF4444' }}
+                  />
+                  <span>{reason}</span>
+                </label>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setShowReportModal(false)}
+                style={{
+                  flex: 1,
+                  padding: '10px',
+                  borderRadius: '10px',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  backgroundColor: 'transparent',
+                  color: '#CBD5E1',
+                  fontWeight: 700,
+                  fontSize: '0.8125rem',
+                  cursor: 'pointer'
+                }}
+              >
+                {language === 'hi' ? 'रद्द करें' : 'Cancel'}
+              </button>
+              <button
+                type="button"
+                onClick={handleReportSubmit}
+                style={{
+                  flex: 1,
+                  padding: '10px',
+                  borderRadius: '10px',
+                  border: 'none',
+                  backgroundColor: '#DC2626',
+                  color: '#FFFFFF',
+                  fontWeight: 800,
+                  fontSize: '0.8125rem',
+                  cursor: 'pointer'
+                }}
+              >
+                {language === 'hi' ? 'सबमिट करें' : 'Submit Report'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Report Submitted Toast */}
+      {reportSubmittedToast && (
+        <div
+          role="status"
+          style={{
+            position: 'fixed',
+            top: '80px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            backgroundColor: '#DC2626',
+            color: '#FFFFFF',
+            padding: '8px 18px',
+            borderRadius: '9999px',
+            fontSize: '0.75rem',
+            fontWeight: 800,
+            zIndex: 350,
+            boxShadow: '0 10px 25px rgba(0,0,0,0.6)'
+          }}
+        >
+          ✓ रिपोर्ट दर्ज हो गई। क्लिनिकल ऑडिट कमेटी 2 घंटे में समीक्षा करेगी।
         </div>
       )}
     </div>

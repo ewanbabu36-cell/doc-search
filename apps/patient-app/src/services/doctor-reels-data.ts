@@ -1,4 +1,8 @@
-import { type DoctorReelDto, type ReelCategory } from '@docsearch/api-contracts';
+import {
+  type DoctorReelDto,
+  type ReelCategory,
+  DEFAULT_NMC_HEALTH_DISCLAIMER
+} from '@docsearch/api-contracts';
 
 export const INITIAL_DOCTOR_REELS: DoctorReelDto[] = [
   {
@@ -13,6 +17,21 @@ export const INITIAL_DOCTOR_REELS: DoctorReelDto[] = [
     videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-doctor-explaining-a-treatment-to-a-patient-40543-large.mp4',
     thumbnailUrl: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600&auto=format&fit=crop&q=80',
     durationSeconds: 52,
+    streamLadder: {
+      hlsMasterUrl: 'https://cdn.docsearch.health/reels/cardio-01/master.m3u8',
+      fallbackMp4Url: 'https://assets.mixkit.co/videos/preview/mixkit-doctor-explaining-a-treatment-to-a-patient-40543-large.mp4',
+      resolutions: [
+        { label: '360p', bitrateKbps: 600, width: 360, height: 640, streamUrl: 'https://cdn.docsearch.health/reels/cardio-01/360p.m3u8' },
+        { label: '720p', bitrateKbps: 2200, width: 720, height: 1280, streamUrl: 'https://cdn.docsearch.health/reels/cardio-01/720p.m3u8' }
+      ]
+    },
+    subtitles: [
+      { id: 'sub-1', startSeconds: 0, endSeconds: 6, textHi: 'सुबह खाली पेट BP स्पाइक और हार्ट अटैक का खतरा — 3 गोल्डन रूल्स', textEn: 'Morning BP surge & heart attack risk — 3 cardiology rules' },
+      { id: 'sub-2', startSeconds: 6, endSeconds: 16, textHi: 'सुबह 5 से 8 बजे के बीच कॉर्टिसोल हार्मोन प्राकृतिक रूप से चरम पर होता है।', textEn: 'Between 5 AM and 8 AM cortisol surges naturally in the blood.' },
+      { id: 'sub-3', startSeconds: 16, endSeconds: 28, textHi: 'बिना पानी पिए भारी वजन उठाना या कसरत धमनियों पर दबाव बढ़ाता है।', textEn: 'Heavy lifting before hydration severely strains arterial walls.' },
+      { id: 'sub-4', startSeconds: 28, endSeconds: 42, textHi: 'उठते ही 1 गिलास गुनगुना पानी पिएं और खाली पेट सिगरेट न पिएं।', textEn: 'Hydrate upon waking and strictly avoid empty-stomach nicotine.' },
+      { id: 'sub-5', startSeconds: 42, endSeconds: 52, textHi: 'अगर बीपी 140/90 से ज्यादा है तो तुरंत नीचे दिए बटन से टोकन लें।', textEn: 'If BP exceeds 140/90, tap below for an instant OPD appointment.' }
+    ],
     title: 'सुबह खाली पेट BP स्पाइक और हार्ट अटैक का खतरा — 3 कार्डियोलॉजी गोल्डन रूल्स',
     summaryHindi: 'सुबह 5 से 8 बजे के बीच कॉर्टिसोल और एड्रेनालिन हार्मोन नैचुरली हाई होते हैं। अगर आप अचानक तेज एक्सरसाइज या भारी तनाव लेते हैं तो बीपी खतरनाक स्तर पर पहुंच सकता है।',
     summaryEnglish: 'Morning blood pressure surges naturally between 5 AM and 8 AM due to cortisol peaks. Avoid abrupt high-intensity strain before basic hydration.',
@@ -37,6 +56,16 @@ export const INITIAL_DOCTOR_REELS: DoctorReelDto[] = [
     isLikedByPatient: false,
     isSavedByPatient: false,
     isNmcVerified: true,
+    disclaimerText: DEFAULT_NMC_HEALTH_DISCLAIMER,
+    nmcCompliance: {
+      isNmcVerified: true,
+      nmcRegistrationNumber: 'NMC-CARD-184920',
+      stateMedicalCouncil: 'Delhi Medical Council',
+      disclaimerText: DEFAULT_NMC_HEALTH_DISCLAIMER,
+      genericPrescriptionCompliant: true,
+      flaggedCommercialBrands: [],
+      signedAt: '2026-11-18T10:30:00Z'
+    },
     publishedAt: '2026-11-18T10:30:00Z'
   },
   {
@@ -51,6 +80,20 @@ export const INITIAL_DOCTOR_REELS: DoctorReelDto[] = [
     videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-doctor-checking-a-little-girl-in-a-clinic-40545-large.mp4',
     thumbnailUrl: 'https://images.unsplash.com/photo-1631815589968-fdb09a223b1e?w=600&auto=format&fit=crop&q=80',
     durationSeconds: 48,
+    streamLadder: {
+      hlsMasterUrl: 'https://cdn.docsearch.health/reels/pedia-02/master.m3u8',
+      fallbackMp4Url: 'https://assets.mixkit.co/videos/preview/mixkit-doctor-checking-a-little-girl-in-a-clinic-40545-large.mp4',
+      resolutions: [
+        { label: '360p', bitrateKbps: 600, width: 360, height: 640, streamUrl: 'https://cdn.docsearch.health/reels/pedia-02/360p.m3u8' },
+        { label: '720p', bitrateKbps: 2200, width: 720, height: 1280, streamUrl: 'https://cdn.docsearch.health/reels/pedia-02/720p.m3u8' }
+      ]
+    },
+    subtitles: [
+      { id: 'sub-p1', startSeconds: 0, endSeconds: 6, textHi: 'बच्चों में 102°F तेज बुखार: भारी कंबल में लपेटना सबसे बड़ी गलती है!', textEn: 'High infant fever: bundling in heavy blankets traps excessive heat!' },
+      { id: 'sub-p2', startSeconds: 6, endSeconds: 18, textHi: 'बुखार बच्चे के इम्यून सिस्टम की बीमारी से लड़ने की प्राकृतिक प्रतिक्रिया है।', textEn: 'Fever is your child’s natural immune mechanism fighting infection.' },
+      { id: 'sub-p3', startSeconds: 18, endSeconds: 32, textHi: 'माथे और गर्दन पर सामान्य पानी की पट्टियां रखें और हल्के सूती कपड़े पहनाएं।', textEn: 'Use room-temperature sponge baths and dress in light cotton.' },
+      { id: 'sub-p4', startSeconds: 32, endSeconds: 48, textHi: 'यदि बच्चा सुस्त है या खाना छोड़ दे, तो 1-टैप में बाल रोग विशेषज्ञ टोकन बुक करें।', textEn: 'If child is lethargic or refuses feeds, book an instant pediatric consult.' }
+    ],
     title: 'बच्चों में 102°F तेज बुखार: कब घबराएं और कौन सी 2 गलतियां कभी न करें!',
     summaryHindi: 'बुखार बच्चे के इम्यून सिस्टम की बीमारी से लड़ने की प्राकृतिक प्रतिक्रिया है। बुखार होने पर बच्चे को भारी कंबलों में लपेटना सबसे बड़ी गलती है।',
     summaryEnglish: 'Fever is your child\'s immune defense mechanism. Do not overbundle the child in heavy blankets or give unprescribed aspirin.',
@@ -75,6 +118,16 @@ export const INITIAL_DOCTOR_REELS: DoctorReelDto[] = [
     isLikedByPatient: true,
     isSavedByPatient: true,
     isNmcVerified: true,
+    disclaimerText: DEFAULT_NMC_HEALTH_DISCLAIMER,
+    nmcCompliance: {
+      isNmcVerified: true,
+      nmcRegistrationNumber: 'NMC-PED-294011',
+      stateMedicalCouncil: 'Maharashtra Medical Council',
+      disclaimerText: DEFAULT_NMC_HEALTH_DISCLAIMER,
+      genericPrescriptionCompliant: true,
+      flaggedCommercialBrands: [],
+      signedAt: '2026-11-17T14:15:00Z'
+    },
     publishedAt: '2026-11-17T14:15:00Z'
   },
   {
@@ -89,6 +142,20 @@ export const INITIAL_DOCTOR_REELS: DoctorReelDto[] = [
     videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-medical-staff-working-in-a-laboratory-40540-large.mp4',
     thumbnailUrl: 'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=600&auto=format&fit=crop&q=80',
     durationSeconds: 58,
+    streamLadder: {
+      hlsMasterUrl: 'https://cdn.docsearch.health/reels/diab-03/master.m3u8',
+      fallbackMp4Url: 'https://assets.mixkit.co/videos/preview/mixkit-medical-staff-working-in-a-laboratory-40540-large.mp4',
+      resolutions: [
+        { label: '360p', bitrateKbps: 600, width: 360, height: 640, streamUrl: 'https://cdn.docsearch.health/reels/diab-03/360p.m3u8' },
+        { label: '720p', bitrateKbps: 2200, width: 720, height: 1280, streamUrl: 'https://cdn.docsearch.health/reels/diab-03/720p.m3u8' }
+      ]
+    },
+    subtitles: [
+      { id: 'sub-d1', startSeconds: 0, endSeconds: 8, textHi: 'रोटी vs चावल: डायबिटीज और HbA1c कंट्रोल करने का क्लिनिकल फॉर्मूला', textEn: 'Roti vs Rice: Evidence-based nutrition strategy for HbA1c control' },
+      { id: 'sub-d2', startSeconds: 8, endSeconds: 22, textHi: 'सिर्फ चावल छोड़ना हल नहीं है। असली सीक्रेट है 50% फाइबर वाली प्लेट मेथड।', textEn: 'Eliminating rice alone is ineffective. Adopt the 50% salad Plate Method.' },
+      { id: 'sub-d3', startSeconds: 22, endSeconds: 40, textHi: 'कार्ब्स खाने से पहले प्रोटीन और सलाद खाएं ताकि शुगर स्पाइक धीमा रहे।', textEn: 'Consume fiber and protein before carbs to blunt glycemic excursions.' },
+      { id: 'sub-d4', startSeconds: 40, endSeconds: 58, textHi: 'अपनी फास्टिंग रिपोर्ट और इंसुलिन डोजिंग रिव्यू के लिए डायबिटोलॉजी टोकन लें।', textEn: 'Book a diabetology consultation for personalized insulin titration.' }
+    ],
     title: 'रोटी vs चावल: डायबिटीज और HbA1c कंट्रोल करने का असली क्लिनिकल फॉर्मूला',
     summaryHindi: 'सिर्फ चावल छोड़ने से शुगर कंट्रोल नहीं होती। 2 पतली चपाती और 1 छोटी कटोरी बासमती चावल का ग्लाइसेमिक लोड लगभग बराबर होता है। सीक्रेट है "प्लेट मेथड"।',
     summaryEnglish: 'Managing diabetes is not just eliminating rice. The real secret is the Plate Method: 50% fiber salad, 25% protein dal/paneer, 25% complex carbs.',
@@ -113,6 +180,16 @@ export const INITIAL_DOCTOR_REELS: DoctorReelDto[] = [
     isLikedByPatient: false,
     isSavedByPatient: false,
     isNmcVerified: true,
+    disclaimerText: DEFAULT_NMC_HEALTH_DISCLAIMER,
+    nmcCompliance: {
+      isNmcVerified: true,
+      nmcRegistrationNumber: 'NMC-ENDO-105829',
+      stateMedicalCouncil: 'Karnataka Medical Council',
+      disclaimerText: DEFAULT_NMC_HEALTH_DISCLAIMER,
+      genericPrescriptionCompliant: true,
+      flaggedCommercialBrands: [],
+      signedAt: '2026-11-16T18:00:00Z'
+    },
     publishedAt: '2026-11-16T18:00:00Z'
   },
   {
@@ -127,6 +204,20 @@ export const INITIAL_DOCTOR_REELS: DoctorReelDto[] = [
     videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-doctor-talking-to-a-patient-in-an-office-40544-large.mp4',
     thumbnailUrl: 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?w=600&auto=format&fit=crop&q=80',
     durationSeconds: 45,
+    streamLadder: {
+      hlsMasterUrl: 'https://cdn.docsearch.health/reels/ortho-04/master.m3u8',
+      fallbackMp4Url: 'https://assets.mixkit.co/videos/preview/mixkit-doctor-talking-to-a-patient-in-an-office-40544-large.mp4',
+      resolutions: [
+        { label: '360p', bitrateKbps: 600, width: 360, height: 640, streamUrl: 'https://cdn.docsearch.health/reels/ortho-04/360p.m3u8' },
+        { label: '720p', bitrateKbps: 2200, width: 720, height: 1280, streamUrl: 'https://cdn.docsearch.health/reels/ortho-04/720p.m3u8' }
+      ]
+    },
+    subtitles: [
+      { id: 'sub-o1', startSeconds: 0, endSeconds: 7, textHi: 'मोबाइल व कंप्यूटर नेक: 30 सेकंड का क्लिनिकल पोस्चर रीसेट', textEn: 'Mobile & computer text-neck: 30-second clinical posture reset' },
+      { id: 'sub-o2', startSeconds: 7, endSeconds: 20, textHi: '45 डिग्री झुकने पर गर्दन पर 22 किलो वजन पड़ता है जिससे नर्व दबती है।', textEn: 'Looking down at 45° adds 22 kg of load, compressing cervical roots.' },
+      { id: 'sub-o3', startSeconds: 20, endSeconds: 34, textHi: 'हर 45 मिनट में चिन टक करें और मोबाइल को आंखों के लेवल पर रखें।', textEn: 'Perform chin-tucks every 45 mins and elevate your phone to eye level.' },
+      { id: 'sub-o4', startSeconds: 34, endSeconds: 45, textHi: 'हाथों में सुन्नपन या कंधे के दर्द के लिए ऑर्थोपेडिक कंसल्टेशन लें।', textEn: 'Consult our orthopedic specialist if you experience arm numbness.' }
+    ],
     title: 'कंप्यूटर और मोबाइल नेक (Text Neck): 30 सेकंड का पोस्चर रीसेट एक्सरसाइज',
     summaryHindi: 'जब सिर 45 डिग्री आगे झुकता है, तो गर्दन पर 22 किलो का वजन पड़ता है। इसी से सर्वाइकल स्पोंडिलोसिस और कंधों का जकड़न शुरू होता है।',
     summaryEnglish: 'Looking down at mobile phones at 45° adds 22 kg of load to cervical vertebrae. Practice the Chin Tuck exercise every 45 minutes.',
@@ -135,11 +226,11 @@ export const INITIAL_DOCTOR_REELS: DoctorReelDto[] = [
     clinicalDos: [
       'मोबाइल को हमेशा आंखों के समानांतर (Eye Level) पर रखकर इस्तेमाल करें।',
       'हर 45 मिनट के बाद "Chin Tuck": ठोड़ी को पीछे खींचकर 5 सेकंड रोकें।',
-      'सोते समय बहुत मोटा या 2 तकिया लगाने से बचें, केवल गर्दन को सपोर्ट देने वाला पतला तकिया लें।'
+      'सोते समय केवल गर्दन को सपोर्ट देने वाला पतला तकिया लें।'
     ],
     clinicalDonts: [
       'गर्दन में तेज कटक-कटक आवाज निकालकर जबरदस्ती ट्विस्ट कभी न करें।',
-      'बिना जांच कराए गर्दन में अचानक शुरू हुए सुन्नपन (Numbness) को नजरअंदाज न करें।'
+      'बिना जांच कराए गर्दन में अचानक शुरू हुए सुन्नपन को नजरअंदाज न करें।'
     ],
     opdConsultationFee: 600,
     nextAvailableSlot: 'Today 6:00 PM',
@@ -151,6 +242,16 @@ export const INITIAL_DOCTOR_REELS: DoctorReelDto[] = [
     isLikedByPatient: false,
     isSavedByPatient: false,
     isNmcVerified: true,
+    disclaimerText: DEFAULT_NMC_HEALTH_DISCLAIMER,
+    nmcCompliance: {
+      isNmcVerified: true,
+      nmcRegistrationNumber: 'NMC-ORTH-440192',
+      stateMedicalCouncil: 'Delhi Medical Council',
+      disclaimerText: DEFAULT_NMC_HEALTH_DISCLAIMER,
+      genericPrescriptionCompliant: true,
+      flaggedCommercialBrands: [],
+      signedAt: '2026-11-15T09:45:00Z'
+    },
     publishedAt: '2026-11-15T09:45:00Z'
   },
   {
@@ -165,6 +266,20 @@ export const INITIAL_DOCTOR_REELS: DoctorReelDto[] = [
     videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-pregnant-woman-talking-with-a-doctor-40547-large.mp4',
     thumbnailUrl: 'https://images.unsplash.com/photo-1584515933487-779824d29309?w=600&auto=format&fit=crop&q=80',
     durationSeconds: 50,
+    streamLadder: {
+      hlsMasterUrl: 'https://cdn.docsearch.health/reels/obgyn-05/master.m3u8',
+      fallbackMp4Url: 'https://assets.mixkit.co/videos/preview/mixkit-pregnant-woman-talking-with-a-doctor-40547-large.mp4',
+      resolutions: [
+        { label: '360p', bitrateKbps: 600, width: 360, height: 640, streamUrl: 'https://cdn.docsearch.health/reels/obgyn-05/360p.m3u8' },
+        { label: '720p', bitrateKbps: 2200, width: 720, height: 1280, streamUrl: 'https://cdn.docsearch.health/reels/obgyn-05/720p.m3u8' }
+      ]
+    },
+    subtitles: [
+      { id: 'sub-w1', startSeconds: 0, endSeconds: 7, textHi: 'प्रेग्नेंसी का पहला तिमाही (First Trimester): 3 गलतियां जो बिल्कुल न करें!', textEn: 'First trimester pregnancy: 3 critical mistakes to avoid strictly!' },
+      { id: 'sub-w2', startSeconds: 7, endSeconds: 20, textHi: 'शुरुआती 12 हफ्तों में फॉलिक एसिड लेना न्यूरल ट्यूब डिफेक्ट से 90% सुरक्षा देता है।', textEn: 'Folic acid during the first 12 weeks prevents 90% of neural tube defects.' },
+      { id: 'sub-w3', startSeconds: 20, endSeconds: 36, textHi: 'बिना डॉक्टर की सलाह के सिरदर्द या उल्टी की भी कोई दवा न लें।', textEn: 'Never take OTC medications without obstetric clearance.' },
+      { id: 'sub-w4', startSeconds: 36, endSeconds: 50, textHi: 'एंटीनेटल चेकअप व सोनोग्राफी स्कैन के लिए ओपीडी अपॉइंटमेंट लें।', textEn: 'Book an antenatal ultrasound screening consultation with 1 tap.' }
+    ],
     title: 'प्रेग्नेंसी का पहला तिमाही (First Trimester): 3 गलतियां जो बिल्कुल न करें!',
     summaryHindi: 'शुरुआती 12 हफ्तों में भ्रूण के प्रमुख अंगों का निर्माण होता है। फॉलिक एसिड सप्लीमेंट समय पर लेना न्यूरल ट्यूब डिफेक्ट से 90% सुरक्षा देता है।',
     summaryEnglish: 'The first 12 weeks of pregnancy are critical for fetal organogenesis. Daily Folic Acid intake is non-negotiable for neural tube protection.',
@@ -173,22 +288,32 @@ export const INITIAL_DOCTOR_REELS: DoctorReelDto[] = [
     clinicalDos: [
       'डॉक्टर की सलाह से 5mg फॉलिक एसिड पहले दिन से ही शुरू करें।',
       'दिन भर में 8-10 गिलास पानी और ताजे घर के बने पौष्टिक सूप पिएं।',
-      'कोई भी दवा (सिरदर्द या उल्टी की भी) बिना अपने स्त्री रोग विशेषज्ञ से पूछे न लें।'
+      'कोई भी दवा बिना अपने स्त्री रोग विशेषज्ञ से पूछे न लें।'
     ],
     clinicalDonts: [
       'कच्चा पपीता, अनानास या अधपका भोजन खाने से बचें।',
-      'भारी वजन उठाना, तेज झटके वाली यात्रा या अत्यधिक गर्म पानी से नहाना टालें।'
+      'भारी वजन उठाना या तेज झटके वाली यात्रा टालें।'
     ],
-    opdConsultationFee: 550,
-    nextAvailableSlot: 'Tomorrow 11:30 AM',
+    opdConsultationFee: 500,
+    nextAvailableSlot: 'Today 4:00 PM',
     isTeleconsultAvailable: true,
-    viewsCount: 27500,
-    likesCount: 2310,
+    viewsCount: 26800,
+    likesCount: 2190,
     sharesCount: 1120,
-    consultsBookedCount: 62,
-    isLikedByPatient: true,
+    consultsBookedCount: 68,
+    isLikedByPatient: false,
     isSavedByPatient: false,
     isNmcVerified: true,
+    disclaimerText: DEFAULT_NMC_HEALTH_DISCLAIMER,
+    nmcCompliance: {
+      isNmcVerified: true,
+      nmcRegistrationNumber: 'NMC-GYN-330198',
+      stateMedicalCouncil: 'Tamil Nadu Medical Council',
+      disclaimerText: DEFAULT_NMC_HEALTH_DISCLAIMER,
+      genericPrescriptionCompliant: true,
+      flaggedCommercialBrands: [],
+      signedAt: '2026-11-14T11:20:00Z'
+    },
     publishedAt: '2026-11-14T11:20:00Z'
   }
 ];
@@ -197,19 +322,18 @@ export const REEL_CATEGORY_CONFIG: Record<
   ReelCategory | 'ALL',
   { labelHi: string; labelEn: string; icon: string }
 > = {
-  ALL: { labelHi: 'सभी', labelEn: 'All Topics', icon: '🌟' },
-  CARDIOLOGY: { labelHi: 'हार्ट केयर', labelEn: 'Heart', icon: '🫀' },
-  PEDIATRICS: { labelHi: 'शिशु रोग', labelEn: 'Child Care', icon: '👶' },
-  DIABETES_METABOLIC: { labelHi: 'डायबिटीज', labelEn: 'Diabetes', icon: '🩸' },
-  WOMEN_HEALTH: { labelHi: 'महिला स्वास्थ्य', labelEn: 'Women Health', icon: '🤰' },
-  ORTHOPEDICS: { labelHi: 'हड्डी व जोड़', labelEn: 'Bones & Spine', icon: '🦴' },
-  SEASONAL_INFECTIONS: { labelHi: 'वायरल व फ्लू', labelEn: 'Flu & Infections', icon: '🦠' },
-  EYE_CARE: { labelHi: 'नेत्र सुरक्षा', labelEn: 'Eye Care', icon: '👁️' },
-  MENTAL_WELLNESS: { labelHi: 'मानसिक तनाव', labelEn: 'Mental Peace', icon: '🧠' },
-  PRE_POST_SURGERY: { labelHi: 'सर्जरी देखभाल', labelEn: 'Post Surgery', icon: '🩺' }
+  ALL: { labelHi: 'सभी रील्स', labelEn: 'All Health Shorts', icon: '🎬' },
+  CARDIOLOGY: { labelHi: 'दिल की सेहत (Cardio)', labelEn: 'Cardiology', icon: '❤️' },
+  PEDIATRICS: { labelHi: 'शिशु एवं बाल रोग', labelEn: 'Pediatrics', icon: '👶' },
+  DIABETES_METABOLIC: { labelHi: 'शुगर & थायरॉइड', labelEn: 'Diabetes & Metabolic', icon: '🩸' },
+  WOMEN_HEALTH: { labelHi: 'महिला स्वास्थ्य & मातृत्व', labelEn: 'Women Health', icon: '🤰' },
+  ORTHOPEDICS: { labelHi: 'हड्डी, जोड़ व पीठ दर्द', labelEn: 'Orthopedics', icon: '🦴' },
+  SEASONAL_INFECTIONS: { labelHi: 'मौसमी संक्रमण & फ्लू', labelEn: 'Seasonal Infections', icon: '🌡️' },
+  EYE_CARE: { labelHi: 'आँखों की देखभाल', labelEn: 'Eye Care', icon: '👁️' },
+  MENTAL_WELLNESS: { labelHi: 'मानसिक स्वास्थ्य & तनाव', labelEn: 'Mental Wellness', icon: '🧠' },
+  PRE_POST_SURGERY: { labelHi: 'सर्जरी पूर्व व पश्चात देखभाल', labelEn: 'Pre/Post Surgery', icon: '🏥' }
 };
 
-// In-Memory & LocalStorage Service for Patient Engagement Tracking
 class DoctorReelsService {
   private reels: DoctorReelDto[] = [];
 
@@ -221,14 +345,14 @@ class DoctorReelsService {
     try {
       const stored = localStorage.getItem('docsearch_doctor_reels');
       if (stored) {
-        this.reels = JSON.parse(stored);
-      } else {
-        this.reels = [...INITIAL_DOCTOR_REELS];
-        this.saveReels();
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          this.reels = parsed;
+          return;
+        }
       }
-    } catch {
-      this.reels = [...INITIAL_DOCTOR_REELS];
-    }
+    } catch {}
+    this.reels = [...INITIAL_DOCTOR_REELS];
   }
 
   private saveReels() {
@@ -255,6 +379,14 @@ class DoctorReelsService {
     reel.isLikedByPatient = !reel.isLikedByPatient;
     reel.likesCount += reel.isLikedByPatient ? 1 : -1;
     this.saveReels();
+
+    // Async sync to backend
+    void fetch(`/api/v1/reels/${reelId}/engage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: reel.isLikedByPatient ? 'LIKE' : 'UNLIKE' })
+    }).catch(() => {});
+
     return { isLiked: reel.isLikedByPatient, newCount: reel.likesCount };
   }
 
@@ -264,6 +396,13 @@ class DoctorReelsService {
 
     reel.isSavedByPatient = !reel.isSavedByPatient;
     this.saveReels();
+
+    void fetch(`/api/v1/reels/${reelId}/engage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: reel.isSavedByPatient ? 'SAVE' : 'UNSAVE' })
+    }).catch(() => {});
+
     return reel.isSavedByPatient;
   }
 
@@ -272,6 +411,13 @@ class DoctorReelsService {
     if (!reel) return 0;
     reel.sharesCount += 1;
     this.saveReels();
+
+    void fetch(`/api/v1/reels/${reelId}/engage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'SHARE' })
+    }).catch(() => {});
+
     return reel.sharesCount;
   }
 
@@ -280,6 +426,12 @@ class DoctorReelsService {
     if (reel) {
       reel.consultsBookedCount += 1;
       this.saveReels();
+
+      void fetch(`/api/v1/reels/${reelId}/engage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'BOOK_CONSULT' })
+      }).catch(() => {});
     }
   }
 

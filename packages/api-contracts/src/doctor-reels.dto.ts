@@ -14,6 +14,36 @@ export type ReelCategory =
   | 'MENTAL_WELLNESS'
   | 'PRE_POST_SURGERY';
 
+export interface ReelSubtitleCue {
+  id: string;
+  startSeconds: number;
+  endSeconds: number;
+  textHi: string;
+  textEn: string;
+}
+
+export interface ReelStreamLadder {
+  hlsMasterUrl: string; // e.g., "https://cdn.docsearch.health/reels/hls/master.m3u8"
+  fallbackMp4Url: string;
+  resolutions: {
+    label: '360p' | '480p' | '720p' | '1080p';
+    bitrateKbps: number;
+    width: number;
+    height: number;
+    streamUrl: string;
+  }[];
+}
+
+export interface NmcComplianceReport {
+  isNmcVerified: boolean;
+  nmcRegistrationNumber: string;
+  stateMedicalCouncil: string;
+  disclaimerText: string;
+  genericPrescriptionCompliant: boolean;
+  flaggedCommercialBrands: string[];
+  signedAt: string;
+}
+
 export interface DoctorReelDto {
   id: string;
   doctorId: string;
@@ -24,10 +54,12 @@ export interface DoctorReelDto {
   hospitalName: string;
   doctorAvatarUrl: string;
 
-  // Media & Video
+  // Media & Video (HLS + Progressive MP4 Fallback)
   videoUrl: string;
   thumbnailUrl: string;
   durationSeconds: number;
+  streamLadder?: ReelStreamLadder | undefined;
+  subtitles?: ReelSubtitleCue[] | undefined;
 
   // Content & Clinical Guidance
   title: string;
@@ -48,11 +80,13 @@ export interface DoctorReelDto {
   likesCount: number;
   sharesCount: number;
   consultsBookedCount: number;
-  isLikedByPatient?: boolean;
-  isSavedByPatient?: boolean;
+  isLikedByPatient?: boolean | undefined;
+  isSavedByPatient?: boolean | undefined;
 
-  // Regulatory & Trust
+  // Regulatory & Trust (NMC RMP 2023 Compliance)
   isNmcVerified: boolean;
+  disclaimerText?: string | undefined;
+  nmcCompliance?: NmcComplianceReport | undefined;
   publishedAt: string;
 }
 
@@ -60,7 +94,7 @@ export interface CreateDoctorReelRequest {
   title: string;
   category: ReelCategory;
   videoUrl: string;
-  thumbnailUrl?: string;
+  thumbnailUrl?: string | undefined;
   durationSeconds: number;
   summaryHindi: string;
   summaryEnglish: string;
@@ -70,6 +104,7 @@ export interface CreateDoctorReelRequest {
   nextAvailableSlot: string;
   opdConsultationFee: number;
   isTeleconsultAvailable: boolean;
+  subtitles?: ReelSubtitleCue[] | undefined;
 }
 
 export type ReelEngagementAction = 'LIKE' | 'UNLIKE' | 'SAVE' | 'UNSAVE' | 'SHARE' | 'BOOK_CONSULT';
@@ -80,3 +115,30 @@ export interface ReelEngagementEvent {
   action: ReelEngagementAction;
   timestamp: string;
 }
+
+/**
+ * NMC RMP Ethics 2023 Commercial Drug Brand Mapper
+ * Maps trade names to recommended generic INN formulations
+ */
+export const COMMERCIAL_DRUG_BRAND_MAP: Record<string, string> = {
+  crocin: 'Paracetamol',
+  dolo: 'Paracetamol',
+  calpol: 'Paracetamol',
+  augmentin: 'Amoxicillin + Clavulanic Acid',
+  voveran: 'Diclofenac',
+  combiflam: 'Ibuprofen + Paracetamol',
+  meftal: 'Mefenamic Acid',
+  'meftal-spas': 'Mefenamic Acid + Dicyclomine',
+  'pan-d': 'Pantoprazole + Domperidone',
+  pantocid: 'Pantoprazole',
+  zifi: 'Cefixime',
+  azithral: 'Azithromycin',
+  allegra: 'Fexofenadine',
+  montek: 'Montelukast',
+  'montek-lc': 'Levocetirizine + Montelukast',
+  glycomet: 'Metformin',
+  telma: 'Telmisartan'
+};
+
+export const DEFAULT_NMC_HEALTH_DISCLAIMER =
+  '⚕️ चिकित्सीय अस्वीकरण (Medical Disclaimer): यह स्वास्थ्य रील NMC (National Medical Commission) आचार संहिता 2023 के तहत केवल जन-जागरूकता हेतु है। यह व्यक्तिगत चिकित्सीय जांच या इलाज का विकल्प नहीं है। लक्षण होने पर पंजीकृत डॉक्टर से परामर्श अवश्य लें।';

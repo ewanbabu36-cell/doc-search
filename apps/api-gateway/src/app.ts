@@ -115,6 +115,7 @@ import { clinicalRegistryRoutes } from './routes/compliance/clinical-registry.ro
 import { clinicalSentinelRoutes } from './routes/partner/clinical-sentinel.routes.js';
 import { antibiogramRoutes } from './routes/partner/antibiogram.routes.js';
 import { chronicRefillRoutes } from './routes/patient/chronic-refill.routes.js';
+import { doctorReelsRoutes } from './routes/patient/doctor-reels.routes.js';
 import { revenueWaterfallRoutes } from './routes/company/revenue-waterfall.routes.js';
 import { AppError, sanitizeObjectPrototype } from '@docsearch/shared-core';
 import { ensureDatabaseReady, setTestDatabase } from '@docsearch/database';
@@ -530,6 +531,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(clinicalSentinelRoutes);
   await app.register(antibiogramRoutes);
   await app.register(chronicRefillRoutes);
+  await app.register(doctorReelsRoutes);
   await app.register(revenueWaterfallRoutes);
 
   // Block any direct guessed physical storage URL access (/storage/*)
