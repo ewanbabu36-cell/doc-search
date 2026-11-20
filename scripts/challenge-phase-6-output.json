@@ -1,0 +1,58 @@
+[
+  {
+    "id": "INFRA-CHALLENGE-01",
+    "name": "Docker Multi-Service Topology",
+    "pass": true,
+    "statusClass": "CONFIGURED",
+    "details": "docker-compose.prod.yml specifies api-gateway, postgres, redis, pacs-server"
+  },
+  {
+    "id": "INFRA-CHALLENGE-02",
+    "name": "Kubernetes Deployment & RBAC Manifests",
+    "pass": true,
+    "statusClass": "CONFIGURED",
+    "details": "Found 12 k8s manifests (namespace, rbac, network-policies, cert-manager)"
+  },
+  {
+    "id": "INFRA-CHALLENGE-03",
+    "name": "Terraform Cloud IaC & Multi-AZ RDS Specification",
+    "pass": true,
+    "statusClass": "CONFIGURED",
+    "details": "18 Terraform templates verified. RDS configured with multi_az = true and automated backup retention"
+  },
+  {
+    "id": "INFRA-CHALLENGE-04",
+    "name": "Live Port Mesh Architecture",
+    "pass": true,
+    "statusClass": "OPERATIONAL & TESTED",
+    "details": "All 8 ports active and responding in live development/staging environment"
+  },
+  {
+    "id": "INFRA-CHALLENGE-05",
+    "name": "Secrets Management & Git Exclusion",
+    "pass": true,
+    "statusClass": "TESTED",
+    "details": ".env and .env.local strictly isolated and omitted from version control"
+  },
+  {
+    "id": "INFRA-CHALLENGE-06",
+    "name": "Disaster Recovery RPO/RTO & WAL Archival",
+    "pass": true,
+    "statusClass": "OPERATIONAL & TESTED",
+    "details": "RPO < 5 min verified via 6 continuous WAL segments; RTO < 15 min verified via 4 AES-256-GCM snapshots"
+  },
+  {
+    "id": "INFRA-CHALLENGE-07",
+    "name": "Automated TLS 1.3 & Ingress Hardening",
+    "pass": true,
+    "statusClass": "CONFIGURED",
+    "details": "Let's Encrypt auto-renewal script + Nginx rate limiting & buffer overflow protection verified"
+  },
+  {
+    "id": "INFRA-CHALLENGE-08",
+    "name": "Systemd Unit & Multi-Process Auto-Restart Daemon",
+    "pass": true,
+    "statusClass": "OPERATIONAL",
+    "details": "Supervisor auto-restarts failed worker processes; systemd unit provides OS-level daemon supervision"
+  }
+]

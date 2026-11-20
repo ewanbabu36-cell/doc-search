@@ -1,0 +1,54 @@
+{
+  "burst50": {
+    "label": "Burst 1 (50 Concurrent)",
+    "requestCount": 50,
+    "durationMs": 60,
+    "throughputRps": 833.3,
+    "errorCount": 0,
+    "errorRatePct": 0,
+    "stats": {
+      "min": "26.74",
+      "max": "54.66",
+      "avg": "40.39",
+      "p50": "41.38",
+      "p95": "53.50",
+      "p99": "54.66"
+    },
+    "memoryDeltaMB": "0.97"
+  },
+  "burst100": {
+    "label": "Burst 2 (100 Concurrent)",
+    "requestCount": 100,
+    "durationMs": 103,
+    "throughputRps": 970.9,
+    "errorCount": 0,
+    "errorRatePct": 0,
+    "stats": {
+      "min": "40.65",
+      "max": "93.93",
+      "avg": "60.74",
+      "p50": "54.52",
+      "p95": "91.42",
+      "p99": "93.93"
+    },
+    "memoryDeltaMB": "-0.41"
+  },
+  "mixedWorkload": {
+    "totalRequests": 50,
+    "durationMs": 78,
+    "errorCount": 0,
+    "stats": {
+      "min": "6.40",
+      "max": "76.33",
+      "avg": "40.18",
+      "p50": "36.53",
+      "p95": "72.80",
+      "p99": "76.33"
+    }
+  },
+  "recoveryProbe": {
+    "status": 200,
+    "latencyMs": 2.1788,
+    "isRecovered": true
+  }
+}

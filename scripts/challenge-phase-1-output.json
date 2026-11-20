@@ -1,0 +1,88 @@
+{
+  "totalScannedTags": 9589,
+  "calculatedWorkingPct": 25.04,
+  "phase8ReportedPct": 98.19,
+  "variance": 73.15,
+  "componentMetrics": {
+    "buttons": 5175,
+    "inputs": 2948,
+    "selects": 773,
+    "forms": 460,
+    "modals": 216,
+    "tabs": 17
+  },
+  "classification": {
+    "fullyWorking": 2401,
+    "partiallyWorking": 6863,
+    "mocked": 1,
+    "nonResponsive": 0,
+    "broken": 0,
+    "securityFailing": 0,
+    "unverified": 324
+  },
+  "appBreakdown": {
+    "partner-platform": {
+      "filesScanned": 1038,
+      "buttons": 3636,
+      "inputs": 2304,
+      "selects": 551,
+      "forms": 360,
+      "modals": 182,
+      "tabs": 5,
+      "fullyWorking": 1582,
+      "partiallyWorking": 5203,
+      "mocked": 1,
+      "nonResponsive": 0,
+      "unverified": 252
+    },
+    "patient-app": {
+      "filesScanned": 28,
+      "buttons": 157,
+      "inputs": 32,
+      "selects": 7,
+      "forms": 6,
+      "modals": 0,
+      "tabs": 0,
+      "fullyWorking": 137,
+      "partiallyWorking": 65,
+      "mocked": 0,
+      "nonResponsive": 0,
+      "unverified": 0
+    },
+    "company-platform": {
+      "filesScanned": 393,
+      "buttons": 1249,
+      "inputs": 553,
+      "selects": 212,
+      "forms": 87,
+      "modals": 34,
+      "tabs": 12,
+      "fullyWorking": 627,
+      "partiallyWorking": 1449,
+      "mocked": 0,
+      "nonResponsive": 0,
+      "unverified": 71
+    },
+    "landing-page": {
+      "filesScanned": 15,
+      "buttons": 133,
+      "inputs": 59,
+      "selects": 3,
+      "forms": 7,
+      "modals": 0,
+      "tabs": 0,
+      "fullyWorking": 55,
+      "partiallyWorking": 146,
+      "mocked": 0,
+      "nonResponsive": 0,
+      "unverified": 1
+    }
+  },
+  "emptyCallbacks": [],
+  "mockDetections": [
+    {
+      "file": "apps\\partner-platform\\src\\components\\views\\InternalAuditsView.tsx",
+      "tag": "Button"
+    }
+  ]
+}

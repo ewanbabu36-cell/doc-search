@@ -1,0 +1,50 @@
+[
+  {
+    "id": "FIN-01",
+    "name": "Multi-Leg GST Split Journal Balance Invariant",
+    "pass": true,
+    "details": "Debit: ₹5900, Credit: ₹5900, Balanced: true"
+  },
+  {
+    "id": "FIN-02",
+    "name": "Ledger Imbalance Rejection (₹500 Leakage Probe)",
+    "pass": true,
+    "details": "Imbalanced financial entry strictly rejected"
+  },
+  {
+    "id": "FIN-03",
+    "name": "Statutory GST Healthcare Classification & Tax Slabs",
+    "pass": true,
+    "details": "₹10,000 suite room rent 5% GST = ₹500 (Exempt clinical vs Taxable bed separation verified)"
+  },
+  {
+    "id": "FIN-04",
+    "name": "Section 194-O TDS Calculation (CBDT Circular 23/2017)",
+    "pass": true,
+    "details": "Base: ₹205000, Rate: 0.1%, TDS: ₹205"
+  },
+  {
+    "id": "FIN-05",
+    "name": "Section 206AA Higher Rate Withholding Guard (Missing PAN)",
+    "pass": true,
+    "details": "Rate applied: 5%, TDS: ₹4000"
+  },
+  {
+    "id": "FIN-06",
+    "name": "ASC 606 / Ind AS 115 Revenue Recognition Engine",
+    "pass": true,
+    "details": "Audit Score: 100/100, Earned: ₹1394000, Deferred: ₹910000"
+  },
+  {
+    "id": "FIN-07",
+    "name": "Payment State Machine & Duplicate Settlement Guard",
+    "pass": true,
+    "details": "SETTLED state strictly prevents re-settlement (Terminal state transition guard verified)"
+  },
+  {
+    "id": "FIN-08",
+    "name": "Financial Audit Trail Cryptographic Hash Sealed",
+    "pass": true,
+    "details": "Financial journal ledger entries generate sealed cryptographic audit trails"
+  }
+]

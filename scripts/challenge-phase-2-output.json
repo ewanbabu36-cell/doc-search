@@ -1,0 +1,202 @@
+{
+  "totalEndpoints": 1021,
+  "domainDistribution": {
+    "api/v1/auth": 39,
+    "api/v1/communication": 3,
+    "api/v1/company": 288,
+    "api/v1/hq": 13,
+    "api/v1/commercial": 26,
+    "api/v1/license": 5,
+    "api/v1/partner": 591,
+    "api/v1/compliance": 6,
+    "requirements": 1,
+    "upload": 1,
+    ":id/verify": 1,
+    "verification-queue": 1,
+    ":id": 1,
+    ":id/download": 1,
+    ":id/revoke": 1,
+    "storage/*": 1,
+    "api/v1/emergency": 7,
+    "api/v1/executive": 4,
+    "api/v1/laboratory": 1,
+    "api/v1/patient": 3,
+    "api/v1/patient-mobile": 1,
+    "api/v1/reels": 6,
+    "api/v1/realtime": 1,
+    "api/v1/supply-chain": 4,
+    "api/v1/webhooks": 1,
+    "api/v1/notifications": 1,
+    "definitions": 2,
+    "definitions/:code": 1,
+    "definitions/:code/version": 1,
+    "instances": 2,
+    "instances/:id": 1,
+    "instances/:id/transition": 1,
+    "instances/:id/requirements": 1,
+    "offers": 2,
+    "licences": 1,
+    "pricing/calculate": 1
+  },
+  "probeResults": [
+    {
+      "id": "PROBE-01",
+      "name": "Liveness Probe",
+      "method": "GET",
+      "path": "/health",
+      "token": null,
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "pass": true
+    },
+    {
+      "id": "PROBE-02",
+      "name": "Public Health Reels",
+      "method": "GET",
+      "path": "/api/v1/reels",
+      "token": null,
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "pass": true
+    },
+    {
+      "id": "PROBE-03",
+      "name": "Public Drug Master Search",
+      "method": "GET",
+      "path": "/api/v1/public/pharmacy/search?q=paracetamol",
+      "token": null,
+      "expectedStatus": [
+        200,
+        404
+      ],
+      "actualStatus": 404,
+      "pass": true
+    },
+    {
+      "id": "PROBE-04",
+      "name": "Auth Schema Validation (Missing Password)",
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "body": {
+        "email": "test@docsearch.health"
+      },
+      "token": null,
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "pass": true
+    },
+    {
+      "id": "PROBE-05",
+      "name": "Auth Invalid Credentials",
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "body": {
+        "email": "invalid@docsearch.health",
+        "password": "WrongPassword!"
+      },
+      "token": null,
+      "expectedStatus": [
+        401,
+        400
+      ],
+      "actualStatus": 401,
+      "pass": true
+    },
+    {
+      "id": "PROBE-06",
+      "name": "Partner Plan & Features (Valid Bearer)",
+      "method": "GET",
+      "path": "/api/v1/partner/account/plan-and-features",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZGRkNDQ0NC04NDkyLTRkZGQtOGRkZC04NDkyMDg0OTIwMDQiLCJlbWFpbCI6ImRvY3RvckBkb2NzZWFyY2guaGVhbHRoIiwidGVuYW50SWQiOiIxMTExMTExMS0xMTExLTQxMTEtODExMS0xMTExMTExMTExMTEiLCJvcmdhbml6YXRpb25JZCI6IjAwMDAwMDAwLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMDAwMiIsImJyYW5jaElkIjoiYWFhYWFhYWEtYWFhYS00YWFhLThhYWEtYWFhYWFhYWFhYWFhIiwicm9sZXMiOlsiQ0xJTklDX0RPQ1RPUiIsIkRPQ1RPUiJdLCJwZXJtaXNzaW9ucyI6WyJjbGluaWNhbDpjb25zdWx0YXRpb25zOnJlYWQiLCJjbGluaWNhbDpjb25zdWx0YXRpb25zOmNyZWF0ZSIsImNsaW5pY2FsOmNvbnN1bHRhdGlvbnM6dXBkYXRlIiwiY2xpbmljYWw6Y29uc3VsdGF0aW9uczphdXRob3IiLCJjbGluaWNhbDpjb25zdWx0YXRpb246cmVhZCIsImNsaW5pY2FsOmNvbnN1bHRhdGlvbjpjcmVhdGUiLCJjbGluaWNhbDpjb25zdWx0YXRpb246dXBkYXRlIiwiY2xpbmljYWw6Y29uc3VsdGF0aW9uOmF1dGhvciIsImNsaW5pY2FsOnBhdGllbnRzOnJlYWQiLCJjbGluaWNhbDpwYXRpZW50czpjcmVhdGUiLCJjbGluaWNhbDpwYXRpZW50czp1cGRhdGUiLCJjbGluaWNhbDplbmNvdW50ZXJzOnJlYWQiLCJjbGluaWNhbDplbmNvdW50ZXJzOmNyZWF0ZSIsImNsaW5pY2FsOnByZXNjcmlwdGlvbnM6Y3JlYXRlIiwiY2xpbmljYWw6cHJlc2NyaXB0aW9uczpyZWFkIiwiY2xpbmljYWw6cHJlc2NyaXB0aW9uOmNyZWF0ZSIsImNsaW5pY2FsOnByZXNjcmlwdGlvbjpzaWduIiwiY2xpbmljYWw6cHJlc2NyaXB0aW9uOnJlYWQiLCJjbGluaWNhbDppbnZlc3RpZ2F0aW9uczpjcmVhdGUiLCJjbGluaWNhbDppbnZlc3RpZ2F0aW9uczpyZWFkIiwiY2xpbmljYWw6ZGlhZ25vc2lzOmVudGVyIiwiY2xpbmljYWw6ZGlhZ25vc2lzOnZpZXciLCJjbGluaWNhbDp2aXRhbHM6cmVjb3JkIiwiY2xpbmljYWw6dml0YWxzOnZpZXciLCJwYXRpZW50OnJlY29yZDp2aWV3IiwicGF0aWVudDpyZWNvcmQ6Y3JlYXRlIiwicGF0aWVudDp2aXRhbHM6dmlldyIsInBhdGllbnQ6dml0YWxzOnJlY29yZCIsImJpbGxpbmc6aW52b2ljZXM6cmVhZCIsImJpbGxpbmc6aW52b2ljZXM6Y3JlYXRlIiwicGhhcm1hY3k6aW52ZW50b3J5OnJlYWQiLCJwaGFybWFjeTptZWRpY2F0aW9uczpyZWFkIiwibGFiOm9yZGVyczpyZWFkIiwibGFiOm9yZGVyczpjcmVhdGUiLCJsYWI6b3JkZXJzOnByaW50IiwibGFiOnNwZWNpbWVuczpjcmVhdGUiLCJsYWI6cmVzdWx0czpjcmVhdGUiLCJsYWI6Y2F0YWxvZzpyZWFkIiwicmFkaW9sb2d5Om9yZGVyczpyZWFkIiwiaW5wYXRpZW50OnJlYWQiLCJlbWVyZ2VuY3k6cmVhZCIsInRlbGVtZWRpY2luZTphY2Nlc3MiLCJhaV9jb3BpbG90OnNvYXA6Z2VuZXJhdGUiLCJhaV9jb3BpbG90OnNvYXA6YXBwcm92ZSIsImFpX2NvcGlsb3Q6c2Vwc2lzOmV2YWx1YXRlIiwiYWlfY29waWxvdDpkZGk6ZXZhbHVhdGUiLCJhaV9jb3BpbG90OnBhbmljOnJlYWQiXSwidG9rZW5GYW1pbHlJZCI6ImMyODdlZmRmLWIyMzYtNGU5NC05NzVhLTQzNDQ4NjQwN2NkZSIsImp0aSI6IjZlM2ZkNDNjLTgyYjYtNDU1YS1hMGZlLWM3ODY3YTYwM2IwYSIsImlhdCI6MTc5NTE3NjgxNCwiZXhwIjoxNzk1MjYzMjE0LCJzZXNzaW9uSWQiOiI2ZTNmZDQzYy04MmI2LTQ1NWEtYTBmZS1jNzg2N2E2MDNiMGEiLCJpc3MiOiJkb2NzZWFyY2gtYXBpIiwiYXVkIjoiZG9jc2VhcmNoLXBsYXRmb3JtIn0.M3q8g3O3jTvpj3JIMddDRxibrihCHd89zD-5I3W5wOw",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "pass": true
+    },
+    {
+      "id": "PROBE-07",
+      "name": "Partner Plan (Unauthenticated)",
+      "method": "GET",
+      "path": "/api/v1/partner/account/plan-and-features",
+      "token": null,
+      "expectedStatus": 401,
+      "actualStatus": 401,
+      "pass": true
+    },
+    {
+      "id": "PROBE-08",
+      "name": "Clinical Encounters Retrieval",
+      "method": "GET",
+      "path": "/api/v1/partner/clinical/encounters",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZGRkNDQ0NC04NDkyLTRkZGQtOGRkZC04NDkyMDg0OTIwMDQiLCJlbWFpbCI6ImRvY3RvckBkb2NzZWFyY2guaGVhbHRoIiwidGVuYW50SWQiOiIxMTExMTExMS0xMTExLTQxMTEtODExMS0xMTExMTExMTExMTEiLCJvcmdhbml6YXRpb25JZCI6IjAwMDAwMDAwLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMDAwMiIsImJyYW5jaElkIjoiYWFhYWFhYWEtYWFhYS00YWFhLThhYWEtYWFhYWFhYWFhYWFhIiwicm9sZXMiOlsiQ0xJTklDX0RPQ1RPUiIsIkRPQ1RPUiJdLCJwZXJtaXNzaW9ucyI6WyJjbGluaWNhbDpjb25zdWx0YXRpb25zOnJlYWQiLCJjbGluaWNhbDpjb25zdWx0YXRpb25zOmNyZWF0ZSIsImNsaW5pY2FsOmNvbnN1bHRhdGlvbnM6dXBkYXRlIiwiY2xpbmljYWw6Y29uc3VsdGF0aW9uczphdXRob3IiLCJjbGluaWNhbDpjb25zdWx0YXRpb246cmVhZCIsImNsaW5pY2FsOmNvbnN1bHRhdGlvbjpjcmVhdGUiLCJjbGluaWNhbDpjb25zdWx0YXRpb246dXBkYXRlIiwiY2xpbmljYWw6Y29uc3VsdGF0aW9uOmF1dGhvciIsImNsaW5pY2FsOnBhdGllbnRzOnJlYWQiLCJjbGluaWNhbDpwYXRpZW50czpjcmVhdGUiLCJjbGluaWNhbDpwYXRpZW50czp1cGRhdGUiLCJjbGluaWNhbDplbmNvdW50ZXJzOnJlYWQiLCJjbGluaWNhbDplbmNvdW50ZXJzOmNyZWF0ZSIsImNsaW5pY2FsOnByZXNjcmlwdGlvbnM6Y3JlYXRlIiwiY2xpbmljYWw6cHJlc2NyaXB0aW9uczpyZWFkIiwiY2xpbmljYWw6cHJlc2NyaXB0aW9uOmNyZWF0ZSIsImNsaW5pY2FsOnByZXNjcmlwdGlvbjpzaWduIiwiY2xpbmljYWw6cHJlc2NyaXB0aW9uOnJlYWQiLCJjbGluaWNhbDppbnZlc3RpZ2F0aW9uczpjcmVhdGUiLCJjbGluaWNhbDppbnZlc3RpZ2F0aW9uczpyZWFkIiwiY2xpbmljYWw6ZGlhZ25vc2lzOmVudGVyIiwiY2xpbmljYWw6ZGlhZ25vc2lzOnZpZXciLCJjbGluaWNhbDp2aXRhbHM6cmVjb3JkIiwiY2xpbmljYWw6dml0YWxzOnZpZXciLCJwYXRpZW50OnJlY29yZDp2aWV3IiwicGF0aWVudDpyZWNvcmQ6Y3JlYXRlIiwicGF0aWVudDp2aXRhbHM6dmlldyIsInBhdGllbnQ6dml0YWxzOnJlY29yZCIsImJpbGxpbmc6aW52b2ljZXM6cmVhZCIsImJpbGxpbmc6aW52b2ljZXM6Y3JlYXRlIiwicGhhcm1hY3k6aW52ZW50b3J5OnJlYWQiLCJwaGFybWFjeTptZWRpY2F0aW9uczpyZWFkIiwibGFiOm9yZGVyczpyZWFkIiwibGFiOm9yZGVyczpjcmVhdGUiLCJsYWI6b3JkZXJzOnByaW50IiwibGFiOnNwZWNpbWVuczpjcmVhdGUiLCJsYWI6cmVzdWx0czpjcmVhdGUiLCJsYWI6Y2F0YWxvZzpyZWFkIiwicmFkaW9sb2d5Om9yZGVyczpyZWFkIiwiaW5wYXRpZW50OnJlYWQiLCJlbWVyZ2VuY3k6cmVhZCIsInRlbGVtZWRpY2luZTphY2Nlc3MiLCJhaV9jb3BpbG90OnNvYXA6Z2VuZXJhdGUiLCJhaV9jb3BpbG90OnNvYXA6YXBwcm92ZSIsImFpX2NvcGlsb3Q6c2Vwc2lzOmV2YWx1YXRlIiwiYWlfY29waWxvdDpkZGk6ZXZhbHVhdGUiLCJhaV9jb3BpbG90OnBhbmljOnJlYWQiXSwidG9rZW5GYW1pbHlJZCI6ImMyODdlZmRmLWIyMzYtNGU5NC05NzVhLTQzNDQ4NjQwN2NkZSIsImp0aSI6IjZlM2ZkNDNjLTgyYjYtNDU1YS1hMGZlLWM3ODY3YTYwM2IwYSIsImlhdCI6MTc5NTE3NjgxNCwiZXhwIjoxNzk1MjYzMjE0LCJzZXNzaW9uSWQiOiI2ZTNmZDQzYy04MmI2LTQ1NWEtYTBmZS1jNzg2N2E2MDNiMGEiLCJpc3MiOiJkb2NzZWFyY2gtYXBpIiwiYXVkIjoiZG9jc2VhcmNoLXBsYXRmb3JtIn0.M3q8g3O3jTvpj3JIMddDRxibrihCHd89zD-5I3W5wOw",
+      "headers": {
+        "x-tenant-id": "11111111-1111-4111-8111-111111111111"
+      },
+      "expectedStatus": [
+        200,
+        403
+      ],
+      "actualStatus": 200,
+      "pass": true
+    },
+    {
+      "id": "PROBE-09",
+      "name": "Cross-Tenant Access Rejection (IDOR Probe)",
+      "method": "GET",
+      "path": "/api/v1/partner/clinical/encounters",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZGRkNDQ0NC04NDkyLTRkZGQtOGRkZC04NDkyMDg0OTIwMDQiLCJlbWFpbCI6ImRvY3RvckBkb2NzZWFyY2guaGVhbHRoIiwidGVuYW50SWQiOiIxMTExMTExMS0xMTExLTQxMTEtODExMS0xMTExMTExMTExMTEiLCJvcmdhbml6YXRpb25JZCI6IjAwMDAwMDAwLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMDAwMiIsImJyYW5jaElkIjoiYWFhYWFhYWEtYWFhYS00YWFhLThhYWEtYWFhYWFhYWFhYWFhIiwicm9sZXMiOlsiQ0xJTklDX0RPQ1RPUiIsIkRPQ1RPUiJdLCJwZXJtaXNzaW9ucyI6WyJjbGluaWNhbDpjb25zdWx0YXRpb25zOnJlYWQiLCJjbGluaWNhbDpjb25zdWx0YXRpb25zOmNyZWF0ZSIsImNsaW5pY2FsOmNvbnN1bHRhdGlvbnM6dXBkYXRlIiwiY2xpbmljYWw6Y29uc3VsdGF0aW9uczphdXRob3IiLCJjbGluaWNhbDpjb25zdWx0YXRpb246cmVhZCIsImNsaW5pY2FsOmNvbnN1bHRhdGlvbjpjcmVhdGUiLCJjbGluaWNhbDpjb25zdWx0YXRpb246dXBkYXRlIiwiY2xpbmljYWw6Y29uc3VsdGF0aW9uOmF1dGhvciIsImNsaW5pY2FsOnBhdGllbnRzOnJlYWQiLCJjbGluaWNhbDpwYXRpZW50czpjcmVhdGUiLCJjbGluaWNhbDpwYXRpZW50czp1cGRhdGUiLCJjbGluaWNhbDplbmNvdW50ZXJzOnJlYWQiLCJjbGluaWNhbDplbmNvdW50ZXJzOmNyZWF0ZSIsImNsaW5pY2FsOnByZXNjcmlwdGlvbnM6Y3JlYXRlIiwiY2xpbmljYWw6cHJlc2NyaXB0aW9uczpyZWFkIiwiY2xpbmljYWw6cHJlc2NyaXB0aW9uOmNyZWF0ZSIsImNsaW5pY2FsOnByZXNjcmlwdGlvbjpzaWduIiwiY2xpbmljYWw6cHJlc2NyaXB0aW9uOnJlYWQiLCJjbGluaWNhbDppbnZlc3RpZ2F0aW9uczpjcmVhdGUiLCJjbGluaWNhbDppbnZlc3RpZ2F0aW9uczpyZWFkIiwiY2xpbmljYWw6ZGlhZ25vc2lzOmVudGVyIiwiY2xpbmljYWw6ZGlhZ25vc2lzOnZpZXciLCJjbGluaWNhbDp2aXRhbHM6cmVjb3JkIiwiY2xpbmljYWw6dml0YWxzOnZpZXciLCJwYXRpZW50OnJlY29yZDp2aWV3IiwicGF0aWVudDpyZWNvcmQ6Y3JlYXRlIiwicGF0aWVudDp2aXRhbHM6dmlldyIsInBhdGllbnQ6dml0YWxzOnJlY29yZCIsImJpbGxpbmc6aW52b2ljZXM6cmVhZCIsImJpbGxpbmc6aW52b2ljZXM6Y3JlYXRlIiwicGhhcm1hY3k6aW52ZW50b3J5OnJlYWQiLCJwaGFybWFjeTptZWRpY2F0aW9uczpyZWFkIiwibGFiOm9yZGVyczpyZWFkIiwibGFiOm9yZGVyczpjcmVhdGUiLCJsYWI6b3JkZXJzOnByaW50IiwibGFiOnNwZWNpbWVuczpjcmVhdGUiLCJsYWI6cmVzdWx0czpjcmVhdGUiLCJsYWI6Y2F0YWxvZzpyZWFkIiwicmFkaW9sb2d5Om9yZGVyczpyZWFkIiwiaW5wYXRpZW50OnJlYWQiLCJlbWVyZ2VuY3k6cmVhZCIsInRlbGVtZWRpY2luZTphY2Nlc3MiLCJhaV9jb3BpbG90OnNvYXA6Z2VuZXJhdGUiLCJhaV9jb3BpbG90OnNvYXA6YXBwcm92ZSIsImFpX2NvcGlsb3Q6c2Vwc2lzOmV2YWx1YXRlIiwiYWlfY29waWxvdDpkZGk6ZXZhbHVhdGUiLCJhaV9jb3BpbG90OnBhbmljOnJlYWQiXSwidG9rZW5GYW1pbHlJZCI6ImMyODdlZmRmLWIyMzYtNGU5NC05NzVhLTQzNDQ4NjQwN2NkZSIsImp0aSI6IjZlM2ZkNDNjLTgyYjYtNDU1YS1hMGZlLWM3ODY3YTYwM2IwYSIsImlhdCI6MTc5NTE3NjgxNCwiZXhwIjoxNzk1MjYzMjE0LCJzZXNzaW9uSWQiOiI2ZTNmZDQzYy04MmI2LTQ1NWEtYTBmZS1jNzg2N2E2MDNiMGEiLCJpc3MiOiJkb2NzZWFyY2gtYXBpIiwiYXVkIjoiZG9jc2VhcmNoLXBsYXRmb3JtIn0.M3q8g3O3jTvpj3JIMddDRxibrihCHd89zD-5I3W5wOw",
+      "headers": {
+        "x-tenant-id": "00000000-0000-0000-0000-000000000000"
+      },
+      "expectedStatus": [
+        403,
+        400
+      ],
+      "actualStatus": 403,
+      "pass": true
+    },
+    {
+      "id": "PROBE-10",
+      "name": "Antibiogram CDSS Rx Evaluation",
+      "method": "POST",
+      "path": "/api/v1/partner/clinical/antibiogram/evaluate-rx",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZGRkNDQ0NC04NDkyLTRkZGQtOGRkZC04NDkyMDg0OTIwMDQiLCJlbWFpbCI6ImRvY3RvckBkb2NzZWFyY2guaGVhbHRoIiwidGVuYW50SWQiOiIxMTExMTExMS0xMTExLTQxMTEtODExMS0xMTExMTExMTExMTEiLCJvcmdhbml6YXRpb25JZCI6IjAwMDAwMDAwLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMDAwMiIsImJyYW5jaElkIjoiYWFhYWFhYWEtYWFhYS00YWFhLThhYWEtYWFhYWFhYWFhYWFhIiwicm9sZXMiOlsiQ0xJTklDX0RPQ1RPUiIsIkRPQ1RPUiJdLCJwZXJtaXNzaW9ucyI6WyJjbGluaWNhbDpjb25zdWx0YXRpb25zOnJlYWQiLCJjbGluaWNhbDpjb25zdWx0YXRpb25zOmNyZWF0ZSIsImNsaW5pY2FsOmNvbnN1bHRhdGlvbnM6dXBkYXRlIiwiY2xpbmljYWw6Y29uc3VsdGF0aW9uczphdXRob3IiLCJjbGluaWNhbDpjb25zdWx0YXRpb246cmVhZCIsImNsaW5pY2FsOmNvbnN1bHRhdGlvbjpjcmVhdGUiLCJjbGluaWNhbDpjb25zdWx0YXRpb246dXBkYXRlIiwiY2xpbmljYWw6Y29uc3VsdGF0aW9uOmF1dGhvciIsImNsaW5pY2FsOnBhdGllbnRzOnJlYWQiLCJjbGluaWNhbDpwYXRpZW50czpjcmVhdGUiLCJjbGluaWNhbDpwYXRpZW50czp1cGRhdGUiLCJjbGluaWNhbDplbmNvdW50ZXJzOnJlYWQiLCJjbGluaWNhbDplbmNvdW50ZXJzOmNyZWF0ZSIsImNsaW5pY2FsOnByZXNjcmlwdGlvbnM6Y3JlYXRlIiwiY2xpbmljYWw6cHJlc2NyaXB0aW9uczpyZWFkIiwiY2xpbmljYWw6cHJlc2NyaXB0aW9uOmNyZWF0ZSIsImNsaW5pY2FsOnByZXNjcmlwdGlvbjpzaWduIiwiY2xpbmljYWw6cHJlc2NyaXB0aW9uOnJlYWQiLCJjbGluaWNhbDppbnZlc3RpZ2F0aW9uczpjcmVhdGUiLCJjbGluaWNhbDppbnZlc3RpZ2F0aW9uczpyZWFkIiwiY2xpbmljYWw6ZGlhZ25vc2lzOmVudGVyIiwiY2xpbmljYWw6ZGlhZ25vc2lzOnZpZXciLCJjbGluaWNhbDp2aXRhbHM6cmVjb3JkIiwiY2xpbmljYWw6dml0YWxzOnZpZXciLCJwYXRpZW50OnJlY29yZDp2aWV3IiwicGF0aWVudDpyZWNvcmQ6Y3JlYXRlIiwicGF0aWVudDp2aXRhbHM6dmlldyIsInBhdGllbnQ6dml0YWxzOnJlY29yZCIsImJpbGxpbmc6aW52b2ljZXM6cmVhZCIsImJpbGxpbmc6aW52b2ljZXM6Y3JlYXRlIiwicGhhcm1hY3k6aW52ZW50b3J5OnJlYWQiLCJwaGFybWFjeTptZWRpY2F0aW9uczpyZWFkIiwibGFiOm9yZGVyczpyZWFkIiwibGFiOm9yZGVyczpjcmVhdGUiLCJsYWI6b3JkZXJzOnByaW50IiwibGFiOnNwZWNpbWVuczpjcmVhdGUiLCJsYWI6cmVzdWx0czpjcmVhdGUiLCJsYWI6Y2F0YWxvZzpyZWFkIiwicmFkaW9sb2d5Om9yZGVyczpyZWFkIiwiaW5wYXRpZW50OnJlYWQiLCJlbWVyZ2VuY3k6cmVhZCIsInRlbGVtZWRpY2luZTphY2Nlc3MiLCJhaV9jb3BpbG90OnNvYXA6Z2VuZXJhdGUiLCJhaV9jb3BpbG90OnNvYXA6YXBwcm92ZSIsImFpX2NvcGlsb3Q6c2Vwc2lzOmV2YWx1YXRlIiwiYWlfY29waWxvdDpkZGk6ZXZhbHVhdGUiLCJhaV9jb3BpbG90OnBhbmljOnJlYWQiXSwidG9rZW5GYW1pbHlJZCI6ImMyODdlZmRmLWIyMzYtNGU5NC05NzVhLTQzNDQ4NjQwN2NkZSIsImp0aSI6IjZlM2ZkNDNjLTgyYjYtNDU1YS1hMGZlLWM3ODY3YTYwM2IwYSIsImlhdCI6MTc5NTE3NjgxNCwiZXhwIjoxNzk1MjYzMjE0LCJzZXNzaW9uSWQiOiI2ZTNmZDQzYy04MmI2LTQ1NWEtYTBmZS1jNzg2N2E2MDNiMGEiLCJpc3MiOiJkb2NzZWFyY2gtYXBpIiwiYXVkIjoiZG9jc2VhcmNoLXBsYXRmb3JtIn0.M3q8g3O3jTvpj3JIMddDRxibrihCHd89zD-5I3W5wOw",
+      "headers": {
+        "x-tenant-id": "11111111-1111-4111-8111-111111111111"
+      },
+      "body": {
+        "facilityId": "FAC-01",
+        "prescribedDrugName": "CIPROFLOXACIN"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "pass": true
+    },
+    {
+      "id": "PROBE-11",
+      "name": "Rate Limiting Headers",
+      "method": "GET",
+      "path": "/api/v1/reels",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZGRkNDQ0NC04NDkyLTRkZGQtOGRkZC04NDkyMDg0OTIwMDQiLCJlbWFpbCI6ImRvY3RvckBkb2NzZWFyY2guaGVhbHRoIiwidGVuYW50SWQiOiIxMTExMTExMS0xMTExLTQxMTEtODExMS0xMTExMTExMTExMTEiLCJvcmdhbml6YXRpb25JZCI6IjAwMDAwMDAwLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMDAwMiIsImJyYW5jaElkIjoiYWFhYWFhYWEtYWFhYS00YWFhLThhYWEtYWFhYWFhYWFhYWFhIiwicm9sZXMiOlsiQ0xJTklDX0RPQ1RPUiIsIkRPQ1RPUiJdLCJwZXJtaXNzaW9ucyI6WyJjbGluaWNhbDpjb25zdWx0YXRpb25zOnJlYWQiLCJjbGluaWNhbDpjb25zdWx0YXRpb25zOmNyZWF0ZSIsImNsaW5pY2FsOmNvbnN1bHRhdGlvbnM6dXBkYXRlIiwiY2xpbmljYWw6Y29uc3VsdGF0aW9uczphdXRob3IiLCJjbGluaWNhbDpjb25zdWx0YXRpb246cmVhZCIsImNsaW5pY2FsOmNvbnN1bHRhdGlvbjpjcmVhdGUiLCJjbGluaWNhbDpjb25zdWx0YXRpb246dXBkYXRlIiwiY2xpbmljYWw6Y29uc3VsdGF0aW9uOmF1dGhvciIsImNsaW5pY2FsOnBhdGllbnRzOnJlYWQiLCJjbGluaWNhbDpwYXRpZW50czpjcmVhdGUiLCJjbGluaWNhbDpwYXRpZW50czp1cGRhdGUiLCJjbGluaWNhbDplbmNvdW50ZXJzOnJlYWQiLCJjbGluaWNhbDplbmNvdW50ZXJzOmNyZWF0ZSIsImNsaW5pY2FsOnByZXNjcmlwdGlvbnM6Y3JlYXRlIiwiY2xpbmljYWw6cHJlc2NyaXB0aW9uczpyZWFkIiwiY2xpbmljYWw6cHJlc2NyaXB0aW9uOmNyZWF0ZSIsImNsaW5pY2FsOnByZXNjcmlwdGlvbjpzaWduIiwiY2xpbmljYWw6cHJlc2NyaXB0aW9uOnJlYWQiLCJjbGluaWNhbDppbnZlc3RpZ2F0aW9uczpjcmVhdGUiLCJjbGluaWNhbDppbnZlc3RpZ2F0aW9uczpyZWFkIiwiY2xpbmljYWw6ZGlhZ25vc2lzOmVudGVyIiwiY2xpbmljYWw6ZGlhZ25vc2lzOnZpZXciLCJjbGluaWNhbDp2aXRhbHM6cmVjb3JkIiwiY2xpbmljYWw6dml0YWxzOnZpZXciLCJwYXRpZW50OnJlY29yZDp2aWV3IiwicGF0aWVudDpyZWNvcmQ6Y3JlYXRlIiwicGF0aWVudDp2aXRhbHM6dmlldyIsInBhdGllbnQ6dml0YWxzOnJlY29yZCIsImJpbGxpbmc6aW52b2ljZXM6cmVhZCIsImJpbGxpbmc6aW52b2ljZXM6Y3JlYXRlIiwicGhhcm1hY3k6aW52ZW50b3J5OnJlYWQiLCJwaGFybWFjeTptZWRpY2F0aW9uczpyZWFkIiwibGFiOm9yZGVyczpyZWFkIiwibGFiOm9yZGVyczpjcmVhdGUiLCJsYWI6b3JkZXJzOnByaW50IiwibGFiOnNwZWNpbWVuczpjcmVhdGUiLCJsYWI6cmVzdWx0czpjcmVhdGUiLCJsYWI6Y2F0YWxvZzpyZWFkIiwicmFkaW9sb2d5Om9yZGVyczpyZWFkIiwiaW5wYXRpZW50OnJlYWQiLCJlbWVyZ2VuY3k6cmVhZCIsInRlbGVtZWRpY2luZTphY2Nlc3MiLCJhaV9jb3BpbG90OnNvYXA6Z2VuZXJhdGUiLCJhaV9jb3BpbG90OnNvYXA6YXBwcm92ZSIsImFpX2NvcGlsb3Q6c2Vwc2lzOmV2YWx1YXRlIiwiYWlfY29waWxvdDpkZGk6ZXZhbHVhdGUiLCJhaV9jb3BpbG90OnBhbmljOnJlYWQiXSwidG9rZW5GYW1pbHlJZCI6ImMyODdlZmRmLWIyMzYtNGU5NC05NzVhLTQzNDQ4NjQwN2NkZSIsImp0aSI6IjZlM2ZkNDNjLTgyYjYtNDU1YS1hMGZlLWM3ODY3YTYwM2IwYSIsImlhdCI6MTc5NTE3NjgxNCwiZXhwIjoxNzk1MjYzMjE0LCJzZXNzaW9uSWQiOiI2ZTNmZDQzYy04MmI2LTQ1NWEtYTBmZS1jNzg2N2E2MDNiMGEiLCJpc3MiOiJkb2NzZWFyY2gtYXBpIiwiYXVkIjoiZG9jc2VhcmNoLXBsYXRmb3JtIn0.M3q8g3O3jTvpj3JIMddDRxibrihCHd89zD-5I3W5wOw",
+      "checkHeader": "x-ratelimit-limit",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "pass": true
+    },
+    {
+      "id": "PROBE-12",
+      "name": "Non-Existent API Route",
+      "method": "GET",
+      "path": "/api/v1/non-existent-probe-route-999",
+      "token": null,
+      "expectedStatus": 404,
+      "actualStatus": 404,
+      "pass": true
+    }
+  ],
+  "classification": {
+    "activelyTested": 39,
+    "structurallyVerified": 981,
+    "blockedByExternalDependencies": 1,
+    "failed": 0
+  }
+}

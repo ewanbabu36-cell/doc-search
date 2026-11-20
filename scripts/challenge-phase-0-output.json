@@ -1,0 +1,136 @@
+{
+  "git": {
+    "targetCommit": "a0d8e90",
+    "gitHead": "a0d8e90542b64fdaed1618fba719b0b75a85d3b1",
+    "headMatches": true,
+    "status": "?? scripts/audit-disk-space.mjs\n?? scripts/challenge-phase-0-preservation.mjs"
+  },
+  "phase8Reports": [
+    {
+      "report": "DOCSEARCH_PHASE_8_MASTER_FORENSIC_AUDIT.md",
+      "exists": true,
+      "size": 6329
+    },
+    {
+      "report": "DOCSEARCH_PHASE_8_UI_FUNCTIONALITY_CENSUS.md",
+      "exists": true,
+      "size": 5650
+    },
+    {
+      "report": "DOCSEARCH_PHASE_8_API_SECURITY_AUDIT.md",
+      "exists": true,
+      "size": 6351
+    },
+    {
+      "report": "DOCSEARCH_PHASE_8_DATABASE_INTEGRITY_AUDIT.md",
+      "exists": true,
+      "size": 5370
+    },
+    {
+      "report": "DOCSEARCH_PHASE_8_INFRASTRUCTURE_AUDIT.md",
+      "exists": true,
+      "size": 4219
+    },
+    {
+      "report": "DOCSEARCH_PHASE_8_E2E_VERIFICATION.md",
+      "exists": true,
+      "size": 5034
+    },
+    {
+      "report": "DOCSEARCH_PHASE_8_REMEDIATION_REGISTER.md",
+      "exists": true,
+      "size": 3856
+    },
+    {
+      "report": "DOCSEARCH_PHASE_8_FINAL_CERTIFICATION.md",
+      "exists": true,
+      "size": 4731
+    }
+  ],
+  "auditSuiteFiles": [
+    {
+      "file": "scripts/audit-phase-a-inventory.mjs",
+      "exists": true,
+      "size": 7513
+    },
+    {
+      "file": "scripts/phase-a-inventory-output.json",
+      "exists": true,
+      "size": 866584
+    },
+    {
+      "file": "scripts/audit-phase-b-ui-census.mjs",
+      "exists": true,
+      "size": 4382
+    },
+    {
+      "file": "scripts/phase-b-ui-census-output.json",
+      "exists": true,
+      "size": 1102
+    },
+    {
+      "file": "scripts/audit-phase-c-api.mjs",
+      "exists": true,
+      "size": 5438
+    },
+    {
+      "file": "scripts/phase-c-api-output.json",
+      "exists": true,
+      "size": 1418
+    },
+    {
+      "file": "scripts/audit-phase-d-security.mjs",
+      "exists": true,
+      "size": 7056
+    },
+    {
+      "file": "scripts/phase-d-security-output.json",
+      "exists": true,
+      "size": 1552
+    },
+    {
+      "file": "scripts/audit-phase-e-database-financial.mjs",
+      "exists": true,
+      "size": 7821
+    },
+    {
+      "file": "scripts/phase-e-database-financial-output.json",
+      "exists": true,
+      "size": 1791
+    },
+    {
+      "file": "scripts/audit-phase-f-infrastructure.mjs",
+      "exists": true,
+      "size": 5674
+    },
+    {
+      "file": "scripts/phase-f-infrastructure-output.json",
+      "exists": true,
+      "size": 1958
+    },
+    {
+      "file": "scripts/audit-phase-g-integration.mjs",
+      "exists": true,
+      "size": 4672
+    },
+    {
+      "file": "scripts/phase-g-integration-output.json",
+      "exists": true,
+      "size": 1050
+    }
+  ],
+  "mockInventorySummary": {
+    "total": 3343,
+    "byPackage": {
+      "api-gateway": 13,
+      "company-platform": 129,
+      "landing-page": 5,
+      "partner-platform": 194,
+      "d-vs-c-comparison-report.json": 2,
+      "shared-core": 2,
+      "reports": 455,
+      "scripts": 2541,
+      "tooling": 2
+    }
+  }
+}

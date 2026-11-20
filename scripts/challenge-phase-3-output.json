@@ -1,0 +1,50 @@
+[
+  {
+    "id": "GM-01",
+    "name": "Doctor Account Forbidden from GodMode Flags",
+    "pass": true,
+    "details": "HTTP 403 (Code: FORBIDDEN)"
+  },
+  {
+    "id": "GM-02",
+    "name": "Doctor Account Forbidden from War-Room Telemetry",
+    "pass": true,
+    "details": "HTTP 403"
+  },
+  {
+    "id": "GM-03",
+    "name": "Doctor Account Forbidden from Impersonation Start",
+    "pass": true,
+    "details": "HTTP 403"
+  },
+  {
+    "id": "GM-04",
+    "name": "Pathologist Account Forbidden from GodMode Flags",
+    "pass": true,
+    "details": "HTTP 403"
+  },
+  {
+    "id": "GM-05",
+    "name": "Missing Token Unauthenticated Rejection",
+    "pass": true,
+    "details": "HTTP 401 (Code: UNAUTHORIZED)"
+  },
+  {
+    "id": "GM-06",
+    "name": "Forged/Invalid JWT Token Rejection",
+    "pass": true,
+    "details": "HTTP 401"
+  },
+  {
+    "id": "GM-07",
+    "name": "Zero Alternative Route Bypass (Router Scope Shield)",
+    "pass": true,
+    "details": "All 3 auxiliary godmode endpoints returned HTTP 403"
+  },
+  {
+    "id": "GM-08",
+    "name": "Authorized Administrator Permitted Access",
+    "pass": true,
+    "details": "Verified via RBACEvaluator unit test logic"
+  }
+]
