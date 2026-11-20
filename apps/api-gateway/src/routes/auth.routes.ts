@@ -851,10 +851,32 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
             expectedIssuer: env.JWT_ISSUER,
             expectedAudience: env.JWT_AUDIENCE
           });
-          if (verified?.actorEmail) {
-            email = verified.actorEmail.toLowerCase().trim();
+          const candidateEmail = verified?.email || verified?.actorEmail || (typeof verified?.sub === 'string' && verified.sub.includes('@') ? verified.sub : '');
+          if (candidateEmail) {
+            email = candidateEmail.toLowerCase().trim();
           }
-        } catch {}
+        } catch {
+          return reply.status(401).send({
+            success: false,
+            error: {
+              code: 'TOKEN_INVALID',
+              message: 'Authentication required: Invalid or expired cryptographic token.'
+            }
+          });
+        }
+      } else if (
+        request.headers.authorization ||
+        request.headers['x-auth-token'] ||
+        request.headers['x-access-token'] ||
+        request.headers['x-token']
+      ) {
+        return reply.status(401).send({
+          success: false,
+          error: {
+            code: 'TOKEN_INVALID',
+            message: 'Authentication required: Invalid or malformed authorization credentials.'
+          }
+        });
       }
     }
 

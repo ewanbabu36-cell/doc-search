@@ -138,11 +138,35 @@ export function extractAuthTokenFromRequest(request: FastifyRequest): string | n
     }
   }
 
+  if (!raw && typeof request.headers.cookie === 'string') {
+    const rawCookie = request.headers.cookie;
+    const cookiePairs = rawCookie.split(';');
+    for (const pair of cookiePairs) {
+      const eqIdx = pair.indexOf('=');
+      if (eqIdx !== -1) {
+        const key = pair.slice(0, eqIdx).trim();
+        const val = pair.slice(eqIdx + 1).trim();
+        if (
+          key === 'docsearch_auth_token' ||
+          key === 'docsearch_company_token' ||
+          key === 'docsearch_partner_token' ||
+          key === 'token' ||
+          key === 'auth_token'
+        ) {
+          raw = decodeURIComponent(val);
+          break;
+        }
+      }
+    }
+  }
+
   if (!raw && (request as any).cookies) {
     const cookieToken =
       (request as any).cookies['docsearch_auth_token'] ||
       (request as any).cookies['docsearch_company_token'] ||
-      (request as any).cookies['token'];
+      (request as any).cookies['docsearch_partner_token'] ||
+      (request as any).cookies['token'] ||
+      (request as any).cookies['auth_token'];
     if (typeof cookieToken === 'string' && cookieToken.trim()) {
       raw = cookieToken.trim();
     }
