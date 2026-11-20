@@ -135,8 +135,31 @@ async function checkPhysicalRdService(timeoutMs = 600) {
 // HTTP Request Dispatcher
 // ---------------------------------------------------------------------------
 const server = http.createServer(async (req, res) => {
-  // CORS Headers for browser cross-origin requests from localhost:5173 / localhost:5177
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // 🛡️ Drive-By Attack Defense: Validate Origin against authorized local frontends & hospital domains
+  const origin = req.headers['origin'];
+  const isAllowedOrigin = !origin || 
+    origin.startsWith('http://localhost:') || 
+    origin.startsWith('https://localhost:') || 
+    origin.startsWith('http://127.0.0.1:') || 
+    origin.startsWith('https://127.0.0.1:') ||
+    origin.endsWith('.docsearch.health') ||
+    origin.endsWith('.docsearch.internal');
+
+  if (origin && isAllowedOrigin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+  } else if (!origin) {
+    res.setHeader('Access-Control-Allow-Origin', 'http://localhost:5173');
+  } else {
+    // Untrusted cross-origin domain attempting to control local hardware
+    res.writeHead(403, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      error: 'CORS_FORBIDDEN',
+      message: 'Cross-origin access to Local Hardware Agent from untrusted external domain is strictly forbidden.'
+    }));
+    return;
+  }
+
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
   res.setHeader('Access-Control-Max-Age', '86400');

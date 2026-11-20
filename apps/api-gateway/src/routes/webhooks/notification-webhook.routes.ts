@@ -14,6 +14,7 @@ import {
   type NotificationProvider
 } from '../../services/notification-dispatch.service.js';
 import { createLogger } from '@docsearch/shared-core';
+import { authenticate } from '../../plugins/auth-guard.js';
 
 const logger = createLogger('notification-webhook-routes');
 
@@ -42,8 +43,8 @@ export const notificationWebhookRoutes: FastifyPluginAsync = async (fastify) => 
     });
   });
 
-  // 2. Dispatch Trigger API Endpoint
-  fastify.post('/api/v1/notifications/dispatch', async (request: any, reply: any) => {
+  // 2. Dispatch Trigger API Endpoint (🛡️ Authenticated)
+  fastify.post('/api/v1/notifications/dispatch', { preHandler: [authenticate] }, async (request: any, reply: any) => {
     const { recipientPhone, channel, templateId, params, preferredProvider } = request.body || {};
 
     if (!recipientPhone || !channel || !templateId) {

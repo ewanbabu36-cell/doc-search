@@ -1527,8 +1527,13 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     });
   });
 
-  // GET /api/v1/auth/mail-inbox (Development & audit inspection of activation emails)
-  fastify.get('/api/v1/auth/mail-inbox', async (_request, reply) => {
+  const adminVerificationGuard = async (request: FastifyRequest, reply: FastifyReply) => {
+    await authenticate(request, reply);
+    await requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN')(request, reply);
+  };
+
+  // GET /api/v1/auth/mail-inbox (Development & audit inspection of activation emails - 🛡️ Admin Only)
+  fastify.get('/api/v1/auth/mail-inbox', { preHandler: [adminVerificationGuard] }, async (_request, reply) => {
     const emails = activationMailerService.getDispatchedEmails();
     return reply.status(200).send({
       success: true,
@@ -1537,8 +1542,8 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     });
   });
 
-  // GET /api/v1/auth/mail-inbox/:fileName (Render email HTML directly)
-  fastify.get('/api/v1/auth/mail-inbox/:fileName', async (request, reply) => {
+  // GET /api/v1/auth/mail-inbox/:fileName (Render email HTML directly - 🛡️ Admin Only)
+  fastify.get('/api/v1/auth/mail-inbox/:fileName', { preHandler: [adminVerificationGuard] }, async (request, reply) => {
     const { fileName } = request.params as { fileName: string };
     const html = activationMailerService.getEmailContent(fileName);
     if (!html) {
@@ -1555,11 +1560,6 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       statusCode: 403
     });
   });
-
-  const adminVerificationGuard = async (request: FastifyRequest, reply: FastifyReply) => {
-    await authenticate(request, reply);
-    await requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN')(request, reply);
-  };
 
   // GET /api/v1/auth/registration-form-config (Public policy for registration forms)
   fastify.get('/api/v1/auth/registration-form-config', async (_request, reply) => {

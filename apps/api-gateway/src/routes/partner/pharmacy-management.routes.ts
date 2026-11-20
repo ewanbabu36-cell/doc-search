@@ -6,7 +6,7 @@ import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
 import { requireModuleCommercialAccess, requireFeatureEntitlement } from '../../plugins/commercial-guard.js';
 import { enforceIdempotency } from '../../plugins/idempotency.js';
 import { AppError, ErrorCode } from '@docsearch/shared-core';
-import { getDatabase } from '@docsearch/database';
+import { getDatabase, sql } from '@docsearch/database';
 import {
   type CreateMedicationInput,
   type ReceiveStockInput,
@@ -317,10 +317,10 @@ export const pharmacyManagementRoutes: FastifyPluginAsync = async (fastify) => {
       const tenantId = request.session.tenantId;
       const db: any = getDatabase();
       try {
-        const rows = await db.execute(`
-          SELECT * FROM clinical.pharmacy_customer_khata WHERE tenant_id = '${tenantId}' ORDER BY customer_name ASC;
+        const rows = await db.execute(sql`
+          SELECT * FROM clinical.pharmacy_customer_khata WHERE tenant_id = ${tenantId} ORDER BY customer_name ASC;
         `);
-        return { success: true, data: rows.rows || rows || [] };
+        return { success: true, data: (rows as any).rows || rows || [] };
       } catch (err) {
         return { success: true, data: [] };
       }
@@ -596,31 +596,15 @@ export const pharmacyManagementRoutes: FastifyPluginAsync = async (fastify) => {
       preHandler: [authenticate, requirePermission('pharmacy:inventory', 'read')]
     },
     async (request) => {
-      const tenantId = request.session.tenantId || '33333333-3333-4333-8333-333333333333';
+      const tenantId = request.session.tenantId;
       const db = (request.server as any).db || (await import('@docsearch/database')).getDatabase();
       try {
-        await db.execute(`
-          CREATE TABLE IF NOT EXISTS clinical.pharmacy_customer_khata (
-            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-            tenant_id VARCHAR(100) NOT NULL,
-            customer_name VARCHAR(255) NOT NULL,
-            customer_phone VARCHAR(50) NOT NULL,
-            customer_address TEXT,
-            credit_limit NUMERIC(12, 2) DEFAULT 5000,
-            max_credit_days INT DEFAULT 30,
-            current_balance NUMERIC(12, 2) DEFAULT 0,
-            total_billed NUMERIC(12, 2) DEFAULT 0,
-            total_paid NUMERIC(12, 2) DEFAULT 0,
-            total_waived NUMERIC(12, 2) DEFAULT 0,
-            status VARCHAR(20) DEFAULT 'ACTIVE',
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-          );
+        const rows = await db.execute(sql`
+          SELECT * FROM clinical.pharmacy_customer_khata 
+          WHERE tenant_id = ${tenantId} 
+          ORDER BY customer_name ASC;
         `);
-        const rows = await db.execute(`
-          SELECT * FROM clinical.pharmacy_customer_khata WHERE tenant_id = '${tenantId}' ORDER BY customer_name ASC;
-        `);
-        return { success: true, data: rows.rows || rows || [] };
+        return { success: true, data: (rows as any).rows || rows || [] };
       } catch (err) {
         return { success: true, data: [] };
       }
@@ -634,38 +618,30 @@ export const pharmacyManagementRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request, reply) => {
       const body = (request.body || {}) as any;
-      const tenantId = request.session.tenantId || body.tenantId || '33333333-3333-4333-8333-333333333333';
+      const tenantId = request.session.tenantId;
       const db = (request.server as any).db || (await import('@docsearch/database')).getDatabase();
       try {
-        await db.execute(`
-          CREATE TABLE IF NOT EXISTS clinical.pharmacy_customer_khata (
-            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-            tenant_id VARCHAR(100) NOT NULL,
-            customer_name VARCHAR(255) NOT NULL,
-            customer_phone VARCHAR(50) NOT NULL,
-            customer_address TEXT,
-            credit_limit NUMERIC(12, 2) DEFAULT 5000,
-            max_credit_days INT DEFAULT 30,
-            current_balance NUMERIC(12, 2) DEFAULT 0,
-            total_billed NUMERIC(12, 2) DEFAULT 0,
-            total_paid NUMERIC(12, 2) DEFAULT 0,
-            total_waived NUMERIC(12, 2) DEFAULT 0,
-            status VARCHAR(20) DEFAULT 'ACTIVE',
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-          );
-        `);
-        const res = await db.execute(`
+        const customerName = String(body.customerName || '').trim();
+        const customerPhone = String(body.customerPhone || '').trim();
+        const customerAddress = String(body.customerAddress || '').trim();
+        const creditLimit = Number(body.creditLimit) || 5000;
+        const maxCreditDays = Number(body.maxCreditDays) || 30;
+        const initialBalance = Number(body.currentBalance) || 0;
+        const status = body.status || 'ACTIVE';
+
+        if (!customerName || !customerPhone) {
+          return reply.status(400).send({ success: false, message: 'customerName and customerPhone are required.' });
+        }
+
+        const res = await db.execute(sql`
           INSERT INTO clinical.pharmacy_customer_khata (
             tenant_id, customer_name, customer_phone, customer_address, credit_limit, max_credit_days, current_balance, status
           ) VALUES (
-            '${tenantId}', '${(body.customerName || '').replace(/'/g, "''")}', '${(body.customerPhone || '').replace(/'/g, "''")}',
-            '${(body.customerAddress || '').replace(/'/g, "''")}', ${Number(body.creditLimit) || 5000}, ${Number(body.maxCreditDays) || 30},
-            ${Number(body.currentBalance) || 0}, '${body.status || 'ACTIVE'}'
+            ${tenantId}, ${customerName}, ${customerPhone}, ${customerAddress}, ${creditLimit}, ${maxCreditDays}, ${initialBalance}, ${status}
           ) RETURNING *;
         `);
         reply.status(201);
-        return { success: true, data: res.rows?.[0] || body };
+        return { success: true, data: (res as any).rows?.[0] || body };
       } catch (err: any) {
         return { success: false, message: err?.message || 'Failed to save khata account' };
       }
@@ -679,30 +655,15 @@ export const pharmacyManagementRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request) => {
       const { accountId } = request.params as { accountId: string };
+      const tenantId = request.session.tenantId;
       const db = (request.server as any).db || (await import('@docsearch/database')).getDatabase();
       try {
-        await db.execute(`
-          CREATE TABLE IF NOT EXISTS clinical.pharmacy_khata_ledger (
-            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-            account_id UUID NOT NULL,
-            tenant_id VARCHAR(100) NOT NULL,
-            customer_name VARCHAR(255) NOT NULL,
-            customer_phone VARCHAR(50) NOT NULL,
-            entry_type VARCHAR(50) NOT NULL,
-            reference_id VARCHAR(100),
-            amount NUMERIC(12, 2) NOT NULL,
-            previous_balance NUMERIC(12, 2) NOT NULL,
-            new_balance NUMERIC(12, 2) NOT NULL,
-            payment_mode VARCHAR(50),
-            collected_by VARCHAR(255),
-            notes TEXT,
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-          );
+        const rows = await db.execute(sql`
+          SELECT * FROM clinical.pharmacy_khata_ledger 
+          WHERE account_id = ${accountId} AND tenant_id = ${tenantId}
+          ORDER BY created_at DESC;
         `);
-        const rows = await db.execute(`
-          SELECT * FROM clinical.pharmacy_khata_ledger WHERE account_id = '${accountId}' ORDER BY created_at DESC;
-        `);
-        return { success: true, data: rows.rows || rows || [] };
+        return { success: true, data: (rows as any).rows || rows || [] };
       } catch {
         return { success: true, data: [] };
       }
@@ -716,55 +677,69 @@ export const pharmacyManagementRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request, reply) => {
       const body = (request.body || {}) as any;
-      const tenantId = request.session.tenantId || body.tenantId || '33333333-3333-4333-8333-333333333333';
+      const tenantId = request.session.tenantId;
       const db = (request.server as any).db || (await import('@docsearch/database')).getDatabase();
       try {
-        await db.execute(`
-          CREATE TABLE IF NOT EXISTS clinical.pharmacy_khata_ledger (
-            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-            account_id UUID NOT NULL,
-            tenant_id VARCHAR(100) NOT NULL,
-            customer_name VARCHAR(255) NOT NULL,
-            customer_phone VARCHAR(50) NOT NULL,
-            entry_type VARCHAR(50) NOT NULL,
-            reference_id VARCHAR(100),
-            amount NUMERIC(12, 2) NOT NULL,
-            previous_balance NUMERIC(12, 2) NOT NULL,
-            new_balance NUMERIC(12, 2) NOT NULL,
-            payment_mode VARCHAR(50),
-            collected_by VARCHAR(255),
-            notes TEXT,
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-          );
-        `);
+        const accountId = String(body.accountId || '').trim();
+        const entryType = String(body.entryType || '').trim();
+        const amount = Math.abs(Number(body.amount) || 0);
 
-        // Insert ledger row
-        const res = await db.execute(`
+        if (!accountId || !entryType || amount <= 0) {
+          return reply.status(400).send({ success: false, message: 'Valid accountId, entryType, and positive amount are required.' });
+        }
+
+        // 🛡️ Multi-Tenant Guard: Verify account exists and belongs to this tenant
+        const accountCheck = await db.execute(sql`
+          SELECT id, current_balance, customer_name, customer_phone 
+          FROM clinical.pharmacy_customer_khata 
+          WHERE id = ${accountId} AND tenant_id = ${tenantId};
+        `);
+        const accountRows = (accountCheck as any).rows || accountCheck || [];
+        if (!accountRows.length) {
+          return reply.status(404).send({ success: false, message: 'Customer khata account not found or access denied.' });
+        }
+
+        const currentAcc = accountRows[0];
+        const previousBalance = Number(currentAcc.current_balance) || 0;
+        let calculatedNewBalance = previousBalance;
+
+        if (entryType === 'DEBIT_INVOICE') {
+          calculatedNewBalance = Math.round((previousBalance + amount) * 100) / 100;
+        } else if (entryType === 'CREDIT_PAYMENT' || entryType === 'SETTLEMENT_WAIVER') {
+          calculatedNewBalance = Math.round((previousBalance - amount) * 100) / 100;
+        }
+
+        const customerName = String(body.customerName || currentAcc.customer_name || '').trim();
+        const customerPhone = String(body.customerPhone || currentAcc.customer_phone || '').trim();
+        const referenceId = String(body.referenceId || '').trim();
+        const paymentMode = String(body.paymentMode || 'CASH').trim();
+        const collectedBy = String(body.collectedByPharmacist || '').trim();
+        const notes = String(body.notes || '').trim();
+
+        // 1. Insert ledger entry (Parameterized)
+        const res = await db.execute(sql`
           INSERT INTO clinical.pharmacy_khata_ledger (
             account_id, tenant_id, customer_name, customer_phone, entry_type, reference_id,
             amount, previous_balance, new_balance, payment_mode, collected_by, notes
           ) VALUES (
-            '${body.accountId}', '${tenantId}', '${(body.customerName || '').replace(/'/g, "''")}',
-            '${(body.customerPhone || '').replace(/'/g, "''")}', '${body.entryType}', '${body.referenceId || ''}',
-            ${Number(body.amount) || 0}, ${Number(body.previousBalance) || 0}, ${Number(body.newBalance) || 0},
-            '${body.paymentMode || 'CASH'}', '${(body.collectedByPharmacist || '').replace(/'/g, "''")}',
-            '${(body.notes || '').replace(/'/g, "''")}'
+            ${accountId}, ${tenantId}, ${customerName}, ${customerPhone}, ${entryType}, ${referenceId},
+            ${amount}, ${previousBalance}, ${calculatedNewBalance}, ${paymentMode}, ${collectedBy}, ${notes}
           ) RETURNING *;
         `);
 
-        // Update current balance in customer khata
-        await db.execute(`
+        // 2. Atomically update customer balance strictly matching BOTH id AND tenant_id (IDOR Shield)
+        await db.execute(sql`
           UPDATE clinical.pharmacy_customer_khata
-          SET current_balance = ${Number(body.newBalance) || 0},
-              total_billed = total_billed + ${body.entryType === 'DEBIT_INVOICE' ? Number(body.amount) : 0},
-              total_paid = total_paid + ${body.entryType === 'CREDIT_PAYMENT' ? Number(body.amount) : 0},
-              total_waived = total_waived + ${body.entryType === 'SETTLEMENT_WAIVER' ? Number(body.amount) : 0},
+          SET current_balance = ${calculatedNewBalance},
+              total_billed = total_billed + ${entryType === 'DEBIT_INVOICE' ? amount : 0},
+              total_paid = total_paid + ${entryType === 'CREDIT_PAYMENT' ? amount : 0},
+              total_waived = total_waived + ${entryType === 'SETTLEMENT_WAIVER' ? amount : 0},
               updated_at = NOW()
-          WHERE id = '${body.accountId}';
+          WHERE id = ${accountId} AND tenant_id = ${tenantId};
         `);
 
         reply.status(201);
-        return { success: true, data: res.rows?.[0] || body };
+        return { success: true, data: (res as any).rows?.[0] || body };
       } catch (err: any) {
         return { success: false, message: err?.message || 'Failed to record khata ledger entry' };
       }

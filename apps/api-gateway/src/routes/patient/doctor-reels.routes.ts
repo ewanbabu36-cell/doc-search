@@ -7,6 +7,7 @@ import {
   DEFAULT_NMC_HEALTH_DISCLAIMER
 } from '@docsearch/api-contracts';
 import { createLogger } from '@docsearch/shared-core';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
 
 const logger = createLogger('doctor-reels-routes');
 
@@ -206,10 +207,10 @@ export const doctorReelsRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   /**
-   * POST /api/v1/reels/publish
+   * POST /api/v1/reels/publish (🛡️ Doctor / Admin Authenticated)
    * Doctor Creator Studio publishes a verified Swasthya Short with NMC Ethics & Drug Brand checks.
    */
-  fastify.post('/api/v1/reels/publish', async (request, reply) => {
+  fastify.post('/api/v1/reels/publish', { preHandler: [authenticate, requireRoles('DOCTOR', 'SUPER_ADMIN', 'PARTNER_ADMIN')] }, async (request, reply) => {
     const body = request.body as Partial<DoctorReelDto>;
 
     if (!body.title || !body.videoUrl || !body.category) {

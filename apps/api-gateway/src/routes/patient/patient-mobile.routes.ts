@@ -1485,10 +1485,16 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
   });
 
   // ==========================================
-  // Patient Profile by ID
+  // Patient Profile by ID (🛡️ IDOR Protected)
   // ==========================================
   const getProfileHandler = async (request: any, reply: any) => {
     const { patientId } = request.params as { patientId: string };
+    const authCheck = verifyPatientSessionToken(request.headers?.authorization);
+    if (!authCheck.valid) {
+      const status = authCheck.statusCode || 401;
+      return reply.status(status).send({ success: false, error: status === 401 ? 'UNAUTHORIZED' : 'FORBIDDEN', message: authCheck.reason });
+    }
+
     const db = getDatabase();
     if (!db || !patientId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId)) {
       return reply.status(404).send({ success: false, message: 'Patient not found' });
@@ -1497,8 +1503,21 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
     if (!p) {
       return reply.status(404).send({ success: false, message: 'Patient not found' });
     }
-    const activeToken = await resolveActiveTokenForPatient(db, p.id);
+
     const meta = (p.metadata as Record<string, any>) || {};
+    const patientPhone = normalizePhone(meta['phone'] || meta['mobile'] || meta['mobileNumber'] || '').last10;
+    const tokenPhone = authCheck.phone ? normalizePhone(authCheck.phone).last10 : null;
+
+    // 🛡️ IDOR Check: Ensure patientId matches token subject OR caller phone matches patient phone
+    if (authCheck.patientId !== p.id && (!tokenPhone || tokenPhone !== patientPhone)) {
+      return reply.status(403).send({
+        success: false,
+        error: 'IDOR_ACCESS_DENIED',
+        message: 'Access denied: Token identity does not have permission to access this patient profile.'
+      });
+    }
+
+    const activeToken = await resolveActiveTokenForPatient(db, p.id);
     return reply.send({
       success: true,
       patient: {
@@ -1521,9 +1540,15 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
   app.get('/api/v1/patient-mobile/profile/:patientId', getProfileHandler);
 
   // ==========================================
-  // Prescription Scan & Upload (Parchi OCR)
+  // Prescription Scan & Upload (Parchi OCR - Authenticated)
   // ==========================================
   const uploadParchiHandler = async (request: any, reply: any) => {
+    const authCheck = verifyPatientSessionToken(request.headers?.authorization);
+    if (!authCheck.valid) {
+      const status = authCheck.statusCode || 401;
+      return reply.status(status).send({ success: false, error: status === 401 ? 'UNAUTHORIZED' : 'FORBIDDEN', message: authCheck.reason });
+    }
+
     const body = (request.body || {}) as Record<string, any>;
     const scanId = `PARCHI-${Date.now().toString(36).toUpperCase()}`;
     const scannedRecord = {
@@ -1553,14 +1578,35 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
   app.post('/api/v1/patient-mobile/prescriptions/upload', uploadParchiHandler);
 
   // ==========================================
-  // Direct Patient Prescriptions by ID
+  // Direct Patient Prescriptions by ID (🛡️ IDOR Protected)
   // ==========================================
   const getPrescriptionsByPatientIdHandler = async (request: any, reply: any) => {
     const { patientId } = request.params as { patientId: string };
+    const authCheck = verifyPatientSessionToken(request.headers?.authorization);
+    if (!authCheck.valid) {
+      const status = authCheck.statusCode || 401;
+      return reply.status(status).send({ success: false, error: status === 401 ? 'UNAUTHORIZED' : 'FORBIDDEN', message: authCheck.reason });
+    }
+
     if (!patientId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId)) {
       return reply.send({ success: true, prescriptions: [] });
     }
+
     const db = getDatabase();
+    const [p] = await db.select({ id: patients.id, metadata: patients.metadata }).from(patients).where(eq(patients.id, patientId)).limit(1);
+    if (p) {
+      const meta = (p.metadata as Record<string, any>) || {};
+      const patientPhone = normalizePhone(meta['phone'] || meta['mobile'] || meta['mobileNumber'] || '').last10;
+      const tokenPhone = authCheck.phone ? normalizePhone(authCheck.phone).last10 : null;
+      if (authCheck.patientId !== p.id && (!tokenPhone || tokenPhone !== patientPhone)) {
+        return reply.status(403).send({
+          success: false,
+          error: 'IDOR_ACCESS_DENIED',
+          message: 'Access denied: Token identity does not have permission to access these prescriptions.'
+        });
+      }
+    }
+
     const rows = await db.execute(sql`
       SELECT 
         p.id,
@@ -1605,14 +1651,35 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
   app.get('/api/v1/patient-mobile/prescriptions/:patientId', getPrescriptionsByPatientIdHandler);
 
   // ==========================================
-  // Direct Patient Lab Reports by ID
+  // Direct Patient Lab Reports by ID (🛡️ IDOR Protected)
   // ==========================================
   const getLabReportsByPatientIdHandler = async (request: any, reply: any) => {
     const { patientId } = request.params as { patientId: string };
+    const authCheck = verifyPatientSessionToken(request.headers?.authorization);
+    if (!authCheck.valid) {
+      const status = authCheck.statusCode || 401;
+      return reply.status(status).send({ success: false, error: status === 401 ? 'UNAUTHORIZED' : 'FORBIDDEN', message: authCheck.reason });
+    }
+
     if (!patientId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId)) {
       return reply.send({ success: true, reports: [] });
     }
+
     const db = getDatabase();
+    const [p] = await db.select({ id: patients.id, metadata: patients.metadata }).from(patients).where(eq(patients.id, patientId)).limit(1);
+    if (p) {
+      const meta = (p.metadata as Record<string, any>) || {};
+      const patientPhone = normalizePhone(meta['phone'] || meta['mobile'] || meta['mobileNumber'] || '').last10;
+      const tokenPhone = authCheck.phone ? normalizePhone(authCheck.phone).last10 : null;
+      if (authCheck.patientId !== p.id && (!tokenPhone || tokenPhone !== patientPhone)) {
+        return reply.status(403).send({
+          success: false,
+          error: 'IDOR_ACCESS_DENIED',
+          message: 'Access denied: Token identity does not have permission to access these lab reports.'
+        });
+      }
+    }
+
     const rows = await db.execute(sql`
       SELECT 
         o.id,

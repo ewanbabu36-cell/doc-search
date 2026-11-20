@@ -32,21 +32,21 @@
   },
   "saasPaymentInstructions": "Authoritative Corporate Account for DocSearch SaaS Subscriptions & Plan Upgrades only. All patient OPD consultation, lab testing, and pharmacy collections remain isolated in each partner hospital/clinic account.",
   "autoReconciliation": true,
-  "lastUpdatedAt": "2026-11-20T15:48:22.709Z",
+  "lastUpdatedAt": "2026-11-20T16:39:35.650Z",
   "updatedBy": "cfo@docsearch.internal",
   "beneficiaryName": "DOCSEARCH HEALTHCARE TECHNOLOGIES PRIVATE LIMITED",
   "notes": "Audited corporate treasury account with enforced Maker-Checker dual control",
   "pennyDropStatus": "VERIFIED",
-  "pennyDropVerifiedAt": "2026-11-20T15:48:22.685Z",
-  "pennyDropRrn": "IMPS897026854691",
+  "pennyDropVerifiedAt": "2026-11-20T16:39:35.621Z",
+  "pennyDropRrn": "IMPS927756201417",
   "makerCheckerEnabled": true,
   "pendingChange": {
-    "id": "CHG-1795189704474-257863",
+    "id": "CHG-1795192777786-4AD066",
     "proposedConfig": {
       "businessUpiId": "docsearch.maker@hdfcbank"
     },
     "initiatedBy": "treasury_maker@docsearch.internal",
-    "initiatedAt": "2026-11-20T15:48:24.474Z",
+    "initiatedAt": "2026-11-20T16:39:37.786Z",
     "status": "PENDING"
   }
 }

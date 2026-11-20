@@ -1,5 +1,23 @@
 [
   {
+    "id": "proof_1795192775573_ddb08193",
+    "partnerId": "32ce209c-cd9d-4249-b6d8-73a1d64f1b56",
+    "tenantId": "0b0f400f-3fcd-4b76-b935-a912b68517f0",
+    "partnerName": "Partner Facility",
+    "planId": "plan_enterprise_hospital",
+    "planName": "Enterprise Hospital Tier",
+    "planCode": "ENTERPRISE",
+    "durationYears": 1,
+    "payableAmountInr": 96000,
+    "paymentMethod": "NEFT_RTGS_IMPS",
+    "utrNumber": "HDFCN26189912001",
+    "paymentDate": "2026-11-20T16:39:35.573Z",
+    "submittedAt": "2026-11-20T16:39:35.573Z",
+    "status": "APPROVED",
+    "verifiedAt": "2026-11-20T16:39:35.574Z",
+    "verifiedBy": "cfo@docsearch.internal"
+  },
+  {
     "id": "proof_1795189702640_dc7434b9",
     "partnerId": "0a32c7eb-3227-4347-93a9-018e407e0a23",
     "tenantId": "b9ed4340-844c-40d2-b98d-fdc81d0a536f",
