@@ -1,0 +1,1077 @@
+{
+  "timestamp": "2026-11-21T11:50:05.527Z",
+  "rootPackage": {
+    "name": "doc-search",
+    "scripts": {
+      "dev:all": "node scripts/start-all.js",
+      "build": "pnpm -r build",
+      "lint": "eslint .",
+      "typecheck": "pnpm -r typecheck",
+      "test": "node --test --test-concurrency=1 packages/auth/test/*.test.mjs packages/database/test/*.test.mjs apps/api-gateway/test/*.test.mjs",
+      "test:unit": "node --test packages/auth/test/*.test.mjs",
+      "test:db": "node --test --test-concurrency=1 packages/database/test/*.test.mjs",
+      "test:integration": "node --test --test-concurrency=1 apps/api-gateway/test/*.test.mjs",
+      "test:security": "node tests/security/adversarial-security-audit.mjs && node tests/security/p0-production-security-audit.mjs",
+      "test:production-certification": "node scripts/production-certification-runner.mjs",
+      "format": "prettier --write \"**/*.{ts,tsx,md,json,css}\"",
+      "format:check": "prettier --check \"**/*.{ts,tsx,md,json,css}\"",
+      "clean": "pnpm -r clean"
+    },
+    "packageManager": "pnpm@9.15.4",
+    "workspaces": []
+  },
+  "applications": [
+    {
+      "name": "api-gateway",
+      "packageName": "@docsearch/api-gateway",
+      "version": "1.0.0",
+      "scripts": {
+        "build": "tsc",
+        "typecheck": "tsc --noEmit",
+        "start": "node dist/server.js",
+        "start:cluster": "node dist/server-cluster.js",
+        "dev": "node --watch src/server.ts",
+        "clean": "rm -rf dist"
+      },
+      "dependenciesCount": 11,
+      "devDependenciesCount": 5,
+      "dependencies": [
+        "@docsearch/api-contracts",
+        "@docsearch/auth",
+        "@docsearch/database",
+        "@docsearch/shared-core",
+        "@fastify/cors",
+        "@fastify/helmet",
+        "@fastify/rate-limit",
+        "fastify",
+        "ioredis",
+        "nodemailer",
+        "zod"
+      ],
+      "files": 489,
+      "lines": 227607
+    },
+    {
+      "name": "company-platform",
+      "packageName": "@docsearch/company-platform",
+      "version": "1.0.0",
+      "scripts": {
+        "dev": "vite --port 5177 --strictPort",
+        "build": "tsc && vite build",
+        "preview": "vite preview",
+        "typecheck": "tsc --noEmit",
+        "clean": "rm -rf dist"
+      },
+      "dependenciesCount": 7,
+      "devDependenciesCount": 7,
+      "dependencies": [
+        "@docsearch/api-contracts",
+        "@docsearch/auth",
+        "@docsearch/database",
+        "@docsearch/shared-core",
+        "@docsearch/ui-kit",
+        "react",
+        "react-dom"
+      ],
+      "files": 398,
+      "lines": 131666
+    },
+    {
+      "name": "landing-page",
+      "packageName": "@docsearch/landing-page",
+      "version": "1.0.0",
+      "scripts": {
+        "dev": "vite --port 5175 --strictPort",
+        "build": "tsc && vite build",
+        "preview": "vite preview",
+        "typecheck": "tsc --noEmit",
+        "clean": "rm -rf dist"
+      },
+      "dependenciesCount": 4,
+      "devDependenciesCount": 7,
+      "dependencies": [
+        "@docsearch/shared-core",
+        "@docsearch/ui-kit",
+        "react",
+        "react-dom"
+      ],
+      "files": 20,
+      "lines": 14896
+    },
+    {
+      "name": "partner-platform",
+      "packageName": "@docsearch/partner-platform",
+      "version": "1.0.0",
+      "scripts": {
+        "dev": "vite --port 5173 --strictPort",
+        "build": "tsc && vite build",
+        "preview": "vite preview",
+        "typecheck": "tsc --noEmit",
+        "clean": "rm -rf dist"
+      },
+      "dependenciesCount": 6,
+      "devDependenciesCount": 9,
+      "dependencies": [
+        "@docsearch/api-contracts",
+        "@docsearch/auth",
+        "@docsearch/shared-core",
+        "@docsearch/ui-kit",
+        "react",
+        "react-dom"
+      ],
+      "files": 1051,
+      "lines": 363110
+    },
+    {
+      "name": "patient-app",
+      "packageName": "@docsearch/patient-app",
+      "version": "1.0.0",
+      "scripts": {
+        "dev": "vite --port 5174 --host --strictPort",
+        "build": "tsc && vite build",
+        "preview": "vite preview",
+        "typecheck": "tsc --noEmit",
+        "clean": "rm -rf dist",
+        "cap:sync": "cap sync android",
+        "cap:copy": "cap copy android",
+        "cap:build:apk": "tsc && vite build && node scripts/build-apk.mjs"
+      },
+      "dependenciesCount": 14,
+      "devDependenciesCount": 8,
+      "dependencies": [
+        "@capacitor/android",
+        "@capacitor/camera",
+        "@capacitor/core",
+        "@capacitor/haptics",
+        "@capacitor/local-notifications",
+        "@capacitor/network",
+        "@capacitor/splash-screen",
+        "@capacitor/status-bar",
+        "@docsearch/api-contracts",
+        "@docsearch/auth",
+        "@docsearch/shared-core",
+        "@docsearch/ui-kit",
+        "react",
+        "react-dom"
+      ],
+      "files": 51,
+      "lines": 13620
+    }
+  ],
+  "packages": [
+    {
+      "name": "api-contracts",
+      "packageName": "@docsearch/api-contracts",
+      "version": "1.0.0",
+      "scripts": {
+        "build": "tsc",
+        "typecheck": "tsc --noEmit",
+        "clean": "rm -rf dist"
+      },
+      "dependenciesCount": 1,
+      "devDependenciesCount": 3,
+      "dependencies": [
+        "zod"
+      ],
+      "files": 58,
+      "lines": 22087
+    },
+    {
+      "name": "auth",
+      "packageName": "@docsearch/auth",
+      "version": "1.0.0",
+      "scripts": {
+        "build": "tsc",
+        "typecheck": "tsc --noEmit",
+        "test": "node --test test/*.test.mjs",
+        "clean": "rm -rf dist"
+      },
+      "dependenciesCount": 4,
+      "devDependenciesCount": 4,
+      "dependencies": [
+        "@docsearch/api-contracts",
+        "@docsearch/shared-core",
+        "ioredis",
+        "zod"
+      ],
+      "files": 16,
+      "lines": 3145
+    },
+    {
+      "name": "database",
+      "packageName": "@docsearch/database",
+      "version": "1.0.0",
+      "scripts": {
+        "build": "tsc",
+        "typecheck": "tsc --noEmit",
+        "db:generate": "drizzle-kit generate",
+        "db:migrate": "drizzle-kit migrate",
+        "clean": "rm -rf dist"
+      },
+      "dependenciesCount": 5,
+      "devDependenciesCount": 6,
+      "dependencies": [
+        "@docsearch/api-contracts",
+        "@docsearch/shared-core",
+        "drizzle-orm",
+        "pg",
+        "zod"
+      ],
+      "files": 155,
+      "lines": 1766362
+    },
+    {
+      "name": "shared-core",
+      "packageName": "@docsearch/shared-core",
+      "version": "1.0.0",
+      "scripts": {
+        "build": "tsc",
+        "typecheck": "tsc --noEmit",
+        "clean": "rm -rf dist"
+      },
+      "dependenciesCount": 2,
+      "devDependenciesCount": 3,
+      "dependencies": [
+        "@docsearch/api-contracts",
+        "zod"
+      ],
+      "files": 38,
+      "lines": 7976
+    },
+    {
+      "name": "ui-kit",
+      "packageName": "@docsearch/ui-kit",
+      "version": "1.0.0",
+      "scripts": {
+        "build": "tsc",
+        "typecheck": "tsc --noEmit",
+        "clean": "rm -rf dist"
+      },
+      "dependenciesCount": 1,
+      "devDependenciesCount": 7,
+      "dependencies": [
+        "@docsearch/shared-core"
+      ],
+      "files": 86,
+      "lines": 21268
+    }
+  ],
+  "migrations": {
+    "totalSqlFiles": 73,
+    "sqlFiles": [
+      "0000_curvy_stature.sql",
+      "0001_left_iron_monger.sql",
+      "0002_kind_power_man.sql",
+      "0003_fluffy_boomerang.sql",
+      "0004_panoramic_mattie_franklin.sql",
+      "0005_chilly_green_goblin.sql",
+      "0006_young_agent_brand.sql",
+      "0007_wandering_hardball.sql",
+      "0008_dusty_sauron.sql",
+      "0009_perfect_ezekiel_stane.sql",
+      "0010_watery_kylun.sql",
+      "0011_flimsy_stardust.sql",
+      "0012_yummy_enchantress.sql",
+      "0013_new_rage.sql",
+      "0014_giant_nighthawk.sql",
+      "0015_productive_machine_man.sql",
+      "0016_tiresome_proemial_gods.sql",
+      "0017_parallel_nocturne.sql",
+      "0018_late_energizer.sql",
+      "0019_fancy_mole_man.sql",
+      "0020_dark_stark_industries.sql",
+      "0021_superb_ultimatum.sql",
+      "0022_narrow_liz_osborn.sql",
+      "0023_colorful_major_mapleleaf.sql",
+      "0024_lumpy_blink.sql",
+      "0025_illegal_venom.sql",
+      "0026_wooden_spencer_smythe.sql",
+      "0027_wild_greymalkin.sql",
+      "0028_sloppy_cassandra_nova.sql",
+      "0029_dizzy_micromax.sql",
+      "0030_oval_human_fly.sql",
+      "0031_slimy_paper_doll.sql",
+      "0032_blushing_blur.sql",
+      "0033_goofy_scourge.sql",
+      "0034_mute_shiver_man.sql",
+      "0035_medical_bruce_banner.sql",
+      "0036_long_iceman.sql",
+      "0037_stormy_jigsaw.sql",
+      "0038_damp_toro.sql",
+      "0039_hard_taskmaster.sql",
+      "0040_fair_lord_hawal.sql",
+      "0041_security_wave_1_rls_and_audit.sql",
+      "0042_complete_multi_tenant_rls.sql",
+      "0043_commercial_licenses.sql",
+      "0044_clinical_ai_rls.sql",
+      "0045_ai_chat_conversations.sql",
+      "0046_patient_contacts_phone_unique.sql",
+      "0047_partner_classifications.sql",
+      "0048_founder_approval_requests.sql",
+      "0049_universal_engine_rls.sql",
+      "0050_partner_onboarding_staged_registrations.sql",
+      "0051_kyc_workflow_enhancements.sql",
+      "0052_dynamic_workflow_engine.sql",
+      "0053_hq_master_control_plane.sql",
+      "0054_declarative_partitioning.sql",
+      "0055_p0_scalability_outbox_and_idempotency.sql",
+      "0056_partner_config_templates_and_access_policies.sql",
+      "0057_patient_uhid_unique.sql",
+      "0058_commercial_pricing_and_snapshots.sql",
+      "0059_commercial_overrides_and_classifications.sql",
+      "0060_commercial_price_version_hardening.sql",
+      "0061_architecture_p0_p1_remediation.sql",
+      "0062_phase8_radiology_series_instances_amendments.sql",
+      "0063_phase11_finance_commercial_packages_credits_eod_gst.sql",
+      "0064_phase12_supply_chain.sql",
+      "0065_phase14_reliability_enterprise_controls.sql",
+      "0066_phase15_ai_intelligence_governance.sql",
+      "0067_compliance_document_verification.sql",
+      "0068_tenant_isolation_performance_indices.sql",
+      "0069_comprehensive_tenant_rls_hardening.sql",
+      "0070_create_least_privilege_app_role.sql",
+      "0072_fix_missing_patient_fks.sql",
+      "0073_performance_indexes_and_encounter_fix.sql"
+    ],
+    "journalEntriesCount": 71,
+    "journalEntries": [
+      {
+        "idx": 0,
+        "tag": "0000_curvy_stature",
+        "when": 1787985886410
+      },
+      {
+        "idx": 1,
+        "tag": "0001_left_iron_monger",
+        "when": 1787987692765
+      },
+      {
+        "idx": 2,
+        "tag": "0002_kind_power_man",
+        "when": 1787988102219
+      },
+      {
+        "idx": 3,
+        "tag": "0003_fluffy_boomerang",
+        "when": 1787988483546
+      },
+      {
+        "idx": 4,
+        "tag": "0004_panoramic_mattie_franklin",
+        "when": 1787988742344
+      },
+      {
+        "idx": 5,
+        "tag": "0005_chilly_green_goblin",
+        "when": 1787989211811
+      },
+      {
+        "idx": 6,
+        "tag": "0006_young_agent_brand",
+        "when": 1787989557401
+      },
+      {
+        "idx": 7,
+        "tag": "0007_wandering_hardball",
+        "when": 1787989905757
+      },
+      {
+        "idx": 8,
+        "tag": "0008_dusty_sauron",
+        "when": 1787990268728
+      },
+      {
+        "idx": 9,
+        "tag": "0009_perfect_ezekiel_stane",
+        "when": 1787990665853
+      },
+      {
+        "idx": 10,
+        "tag": "0010_watery_kylun",
+        "when": 1787991395836
+      },
+      {
+        "idx": 11,
+        "tag": "0011_flimsy_stardust",
+        "when": 1787991968683
+      },
+      {
+        "idx": 12,
+        "tag": "0012_yummy_enchantress",
+        "when": 1788002727829
+      },
+      {
+        "idx": 13,
+        "tag": "0013_new_rage",
+        "when": 1788003570399
+      },
+      {
+        "idx": 14,
+        "tag": "0014_giant_nighthawk",
+        "when": 1788004333870
+      },
+      {
+        "idx": 15,
+        "tag": "0015_productive_machine_man",
+        "when": 1788005677609
+      },
+      {
+        "idx": 16,
+        "tag": "0016_tiresome_proemial_gods",
+        "when": 1788011910400
+      },
+      {
+        "idx": 17,
+        "tag": "0017_parallel_nocturne",
+        "when": 1788012740405
+      },
+      {
+        "idx": 18,
+        "tag": "0018_late_energizer",
+        "when": 1788013591240
+      },
+      {
+        "idx": 19,
+        "tag": "0019_fancy_mole_man",
+        "when": 1788014339848
+      },
+      {
+        "idx": 20,
+        "tag": "0020_dark_stark_industries",
+        "when": 1788015568343
+      },
+      {
+        "idx": 21,
+        "tag": "0021_superb_ultimatum",
+        "when": 1788016742331
+      },
+      {
+        "idx": 22,
+        "tag": "0022_narrow_liz_osborn",
+        "when": 1788017668860
+      },
+      {
+        "idx": 23,
+        "tag": "0023_colorful_major_mapleleaf",
+        "when": 1788018744089
+      },
+      {
+        "idx": 24,
+        "tag": "0024_lumpy_blink",
+        "when": 1788020216053
+      },
+      {
+        "idx": 25,
+        "tag": "0025_illegal_venom",
+        "when": 1788021127794
+      },
+      {
+        "idx": 26,
+        "tag": "0026_wooden_spencer_smythe",
+        "when": 1788023362312
+      },
+      {
+        "idx": 27,
+        "tag": "0027_wild_greymalkin",
+        "when": 1788024786761
+      },
+      {
+        "idx": 28,
+        "tag": "0028_sloppy_cassandra_nova",
+        "when": 1788025215274
+      },
+      {
+        "idx": 29,
+        "tag": "0029_dizzy_micromax",
+        "when": 1788025849336
+      },
+      {
+        "idx": 30,
+        "tag": "0030_oval_human_fly",
+        "when": 1788026356315
+      },
+      {
+        "idx": 31,
+        "tag": "0031_slimy_paper_doll",
+        "when": 1788026858001
+      },
+      {
+        "idx": 32,
+        "tag": "0032_blushing_blur",
+        "when": 1788049325294
+      },
+      {
+        "idx": 33,
+        "tag": "0033_goofy_scourge",
+        "when": 1788050423992
+      },
+      {
+        "idx": 34,
+        "tag": "0034_mute_shiver_man",
+        "when": 1788051180340
+      },
+      {
+        "idx": 35,
+        "tag": "0035_medical_bruce_banner",
+        "when": 1788052215196
+      },
+      {
+        "idx": 36,
+        "tag": "0036_long_iceman",
+        "when": 1788052729892
+      },
+      {
+        "idx": 37,
+        "tag": "0037_stormy_jigsaw",
+        "when": 1788053128451
+      },
+      {
+        "idx": 38,
+        "tag": "0038_damp_toro",
+        "when": 1788053647524
+      },
+      {
+        "idx": 39,
+        "tag": "0039_hard_taskmaster",
+        "when": 1788054063818
+      },
+      {
+        "idx": 40,
+        "tag": "0040_fair_lord_hawal",
+        "when": 1788054563749
+      },
+      {
+        "idx": 41,
+        "tag": "0041_security_wave_1_rls_and_audit",
+        "when": 1788055000000
+      },
+      {
+        "idx": 42,
+        "tag": "0042_complete_multi_tenant_rls",
+        "when": 1788056000000
+      },
+      {
+        "idx": 43,
+        "tag": "0043_commercial_licenses",
+        "when": 1788057000000
+      },
+      {
+        "idx": 44,
+        "tag": "0044_clinical_ai_rls",
+        "when": 1788058000000
+      },
+      {
+        "idx": 45,
+        "tag": "0045_ai_chat_conversations",
+        "when": 1788059000000
+      },
+      {
+        "idx": 46,
+        "tag": "0046_patient_contacts_phone_unique",
+        "when": 1788060000000
+      },
+      {
+        "idx": 47,
+        "tag": "0047_partner_classifications",
+        "when": 1788529166654
+      },
+      {
+        "idx": 48,
+        "tag": "0048_founder_approval_requests",
+        "when": 1788529900000
+      },
+      {
+        "idx": 49,
+        "tag": "0049_universal_engine_rls",
+        "when": 1788530000000
+      },
+      {
+        "idx": 50,
+        "tag": "0050_partner_onboarding_staged_registrations",
+        "when": 1788531000000
+      },
+      {
+        "idx": 51,
+        "tag": "0051_kyc_workflow_enhancements",
+        "when": 1788532000000
+      },
+      {
+        "idx": 52,
+        "tag": "0052_dynamic_workflow_engine",
+        "when": 1788533000000
+      },
+      {
+        "idx": 53,
+        "tag": "0053_hq_master_control_plane",
+        "when": 1788534000000
+      },
+      {
+        "idx": 54,
+        "tag": "0054_declarative_partitioning",
+        "when": 1788535000000
+      },
+      {
+        "idx": 55,
+        "tag": "0055_p0_scalability_outbox_and_idempotency",
+        "when": 1788536000000
+      },
+      {
+        "idx": 56,
+        "tag": "0056_partner_config_templates_and_access_policies",
+        "when": 1788537000000
+      },
+      {
+        "idx": 57,
+        "tag": "0057_patient_uhid_unique",
+        "when": 1788538000000
+      },
+      {
+        "idx": 58,
+        "tag": "0058_commercial_pricing_and_snapshots",
+        "when": 1788539000000
+      },
+      {
+        "idx": 59,
+        "tag": "0059_commercial_overrides_and_classifications",
+        "when": 1788540000000
+      },
+      {
+        "idx": 60,
+        "tag": "0060_commercial_price_version_hardening",
+        "when": 1788541000000
+      },
+      {
+        "idx": 61,
+        "tag": "0061_architecture_p0_p1_remediation",
+        "when": 1788542000000
+      },
+      {
+        "idx": 62,
+        "tag": "0062_phase8_radiology_series_instances_amendments",
+        "when": 1788543000000
+      },
+      {
+        "idx": 63,
+        "tag": "0063_phase11_finance_commercial_packages_credits_eod_gst",
+        "when": 1788544000000
+      },
+      {
+        "idx": 64,
+        "tag": "0064_phase12_supply_chain",
+        "when": 1788545000000
+      },
+      {
+        "idx": 65,
+        "tag": "0065_phase14_reliability_enterprise_controls",
+        "when": 1788546000000
+      },
+      {
+        "idx": 66,
+        "tag": "0066_phase15_ai_intelligence_governance",
+        "when": 1788547000000
+      },
+      {
+        "idx": 67,
+        "tag": "0067_compliance_document_verification",
+        "when": 1788548000000
+      },
+      {
+        "idx": 68,
+        "tag": "0068_tenant_isolation_performance_indices",
+        "when": 1788549000000
+      },
+      {
+        "idx": 69,
+        "tag": "0069_comprehensive_tenant_rls_hardening",
+        "when": 1788550000000
+      },
+      {
+        "idx": 70,
+        "tag": "0070_create_least_privilege_app_role",
+        "when": 1788551000000
+      }
+    ]
+  },
+  "environmentSecurity": [
+    {
+      "file": ".env",
+      "exists": true,
+      "isTracked": false,
+      "keyCount": 15,
+      "keys": [
+        "NODE_ENV",
+        "PORT",
+        "HOST",
+        "DATABASE_URL",
+        "ALLOW_EMBEDDED_POSTGRES",
+        "SEED_DEMO_FIXTURES",
+        "DATABASE_SSL",
+        "JWT_SECRET",
+        "SESSION_SECRET",
+        "ENCRYPTION_KEY",
+        "CORS_ORIGIN",
+        "PARTNER_PORTAL_URL",
+        "COMPANY_PORTAL_URL",
+        "RATE_LIMIT_MAX",
+        "RATE_LIMIT_TIME_WINDOW"
+      ]
+    },
+    {
+      "file": ".env.example",
+      "exists": true,
+      "isTracked": true,
+      "keyCount": 12,
+      "keys": [
+        "NODE_ENV",
+        "PORT",
+        "HOST",
+        "DATABASE_URL",
+        "DATABASE_SSL",
+        "JWT_SECRET",
+        "JWT_ISSUER",
+        "JWT_AUDIENCE",
+        "ENCRYPTION_KEY",
+        "CORS_ORIGIN",
+        "RATE_LIMIT_MAX",
+        "RATE_LIMIT_TIME_WINDOW"
+      ]
+    },
+    {
+      "file": ".env.local",
+      "exists": true,
+      "isTracked": false,
+      "keyCount": 12,
+      "keys": [
+        "NODE_ENV",
+        "PORT",
+        "HOST",
+        "DATABASE_URL",
+        "DATABASE_SSL",
+        "REDIS_URL",
+        "JWT_SECRET",
+        "JWT_ISSUER",
+        "JWT_AUDIENCE",
+        "CORS_ORIGIN",
+        "RATE_LIMIT_MAX",
+        "RATE_LIMIT_TIME_WINDOW"
+      ]
+    },
+    {
+      "file": ".env.production",
+      "exists": true,
+      "isTracked": false,
+      "keyCount": 47,
+      "keys": [
+        "NODE_ENV",
+        "LOG_LEVEL",
+        "PORT",
+        "HOST",
+        "PRIMARY_DOMAIN",
+        "PARTNER_PORTAL_DOMAIN",
+        "PATIENT_APP_DOMAIN",
+        "COMPANY_HQ_DOMAIN",
+        "API_GATEWAY_DOMAIN",
+        "PACS_SERVER_DOMAIN",
+        "JWT_SECRET",
+        "JWT_ISSUER",
+        "JWT_AUDIENCE",
+        "JWT_ACCESS_EXPIRY",
+        "JWT_REFRESH_EXPIRY",
+        "ENCRYPTION_KEY",
+        "SESSION_SECRET",
+        "INTERNAL_API_KEY",
+        "POSTGRES_USER",
+        "POSTGRES_PASSWORD",
+        "POSTGRES_DB",
+        "DATABASE_URL",
+        "DATABASE_SSL",
+        "DB_POOL_MIN",
+        "DB_POOL_MAX",
+        "DB_IDLE_TIMEOUT_MS",
+        "DB_CONNECTION_TIMEOUT_MS",
+        "REDIS_URL",
+        "REDIS_PASSWORD",
+        "CORS_ORIGIN",
+        "RATE_LIMIT_MAX",
+        "RATE_LIMIT_WINDOW_MS",
+        "PACS_DICOM_PORT",
+        "PACS_HTTP_PORT",
+        "PACS_AE_TITLE",
+        "PACS_STORAGE_DIR",
+        "NOTIFICATION_PROVIDER",
+        "DLT_ENTITY_ID",
+        "DLT_HEADER_SMS",
+        "BACKUP_RETENTION_DAYS",
+        "BACKUP_INTERVAL_HOURS",
+        "BACKUP_ENCRYPTION_KEY",
+        "S3_BACKUP_ENABLED",
+        "S3_BUCKET_NAME",
+        "S3_REGION",
+        "LOCAL_HARDWARE_AGENT_URL",
+        "ESC_POS_DEFAULT_WIDTH"
+      ]
+    },
+    {
+      "file": ".env.production.example",
+      "exists": true,
+      "isTracked": true,
+      "keyCount": 43,
+      "keys": [
+        "NODE_ENV",
+        "LOG_LEVEL",
+        "PRIMARY_DOMAIN",
+        "PARTNER_PORTAL_DOMAIN",
+        "PATIENT_APP_DOMAIN",
+        "COMPANY_HQ_DOMAIN",
+        "PACS_SERVER_DOMAIN",
+        "API_GATEWAY_DOMAIN",
+        "POSTGRES_USER",
+        "POSTGRES_PASSWORD",
+        "POSTGRES_DB",
+        "DATABASE_URL",
+        "DATABASE_POOL_MIN",
+        "DATABASE_POOL_MAX",
+        "DATABASE_SSL",
+        "REDIS_URL",
+        "REDIS_PASSWORD",
+        "JWT_SECRET",
+        "JWT_ISSUER",
+        "JWT_AUDIENCE",
+        "JWT_ACCESS_EXPIRY",
+        "JWT_REFRESH_EXPIRY",
+        "ENCRYPTION_KEY",
+        "PORT",
+        "HOST",
+        "CORS_ORIGIN",
+        "RATE_LIMIT_MAX",
+        "RATE_LIMIT_WINDOW_MS",
+        "PACS_DICOM_PORT",
+        "PACS_HTTP_PORT",
+        "PACS_AE_TITLE",
+        "PACS_STORAGE_DIR",
+        "BACKUP_RETENTION_DAYS",
+        "BACKUP_INTERVAL_HOURS",
+        "BACKUP_ENCRYPTION_KEY",
+        "S3_BACKUP_ENABLED",
+        "S3_BUCKET_NAME",
+        "S3_REGION",
+        "S3_ACCESS_KEY_ID",
+        "S3_SECRET_ACCESS_KEY",
+        "S3_ENDPOINT",
+        "CERTBOT_EMAIL",
+        "STAGING_SSL"
+      ]
+    },
+    {
+      "file": ".env.docker.example",
+      "exists": true,
+      "isTracked": true,
+      "keyCount": 12,
+      "keys": [
+        "POSTGRES_USER",
+        "POSTGRES_PASSWORD",
+        "POSTGRES_DB",
+        "DATABASE_URL",
+        "REDIS_URL",
+        "JWT_SECRET",
+        "JWT_ISSUER",
+        "JWT_AUDIENCE",
+        "NODE_ENV",
+        "PORT",
+        "HOST",
+        "LOG_LEVEL"
+      ]
+    }
+  ],
+  "existingAuditDocsCount": 188,
+  "existingAuditDocs": [
+    "AI_CHAT_CERTIFICATION.md",
+    "AI_FOUNDATION_CERTIFICATION.md",
+    "AI_FOUNDATION_PRE_IMPLEMENTATION_AUDIT.md",
+    "AI_STEP5_CERTIFICATION.md",
+    "AI_VOICE_CERTIFICATION.md",
+    "ANTIGRAVITY_MIGRATION_AUDIT.md",
+    "ANTIGRAVITY_MIGRATION_REPORT.md",
+    "AUDIT_PHASE_1_SECURITY_BASELINE.md",
+    "CHAT_PRE_IMPLEMENTATION_AUDIT.md",
+    "CHAT_PRODUCTION_CERTIFICATION.md",
+    "DOCSEARCH_API_CONNECTIVITY_AUDIT.md",
+    "DOCSEARCH_BUTTON_AUDIT_BASELINE.md",
+    "DOCSEARCH_BUTTON_FUNCTIONALITY_AUDIT.md",
+    "DOCSEARCH_BUTTON_REGRESSION_TEST_REPORT.md",
+    "DOCSEARCH_DATABASE_PERSISTENCE_AUDIT.md",
+    "DOCSEARCH_DR_INDEPENDENT_RESTORE_REPORT.md",
+    "DOCSEARCH_EXECUTIVE_AUDIT_SUMMARY.md",
+    "DOCSEARCH_FEATURE_FUNCTIONALITY_AUDIT.md",
+    "DOCSEARCH_FINAL_RELEASE_DECISION.md",
+    "DOCSEARCH_FINANCIAL_ACCEPTANCE_REPORT.md",
+    "DOCSEARCH_HEALTHCARE_WORKFLOW_AUDIT.md",
+    "DOCSEARCH_MASTER_GAP_REGISTER.md",
+    "DOCSEARCH_MASTER_PRODUCTION_READINESS_AUDIT.md",
+    "DOCSEARCH_P0_CLINICAL_ACCEPTANCE_REPORT.md",
+    "DOCSEARCH_PARTIAL_FUNCTIONALITY_REPORT.md",
+    "DOCSEARCH_PHASE0_1_FINAL_TRUTH_REPORT.md",
+    "DOCSEARCH_PHASE0_1_SIMULATION_CONTRADICTION_REPORT.md",
+    "DOCSEARCH_PHASE0_2_ADVERSARIAL_TEST_REPORT.md",
+    "DOCSEARCH_PHASE0_2_CONNECTION_POOL_ISOLATION_REPORT.md",
+    "DOCSEARCH_PHASE0_2_DATABASE_ROLE_AUDIT.md",
+    "DOCSEARCH_PHASE0_2_FINAL_SECURITY_CERTIFICATION.md",
+    "DOCSEARCH_PHASE0_2_REGRESSION_TEST_REPORT.md",
+    "DOCSEARCH_PHASE3_BROWSER_E2E_REPORT.md",
+    "DOCSEARCH_PHASE3_DATABASE_PERSISTENCE_REPORT.md",
+    "DOCSEARCH_PHASE3_FINANCIAL_INTEGRITY_CERTIFICATION.md",
+    "DOCSEARCH_PHASE3_P0_CLINICAL_SAFETY_CERTIFICATION.md",
+    "DOCSEARCH_PHASE3_PHARMACY_WORKFLOW_CERTIFICATION.md",
+    "DOCSEARCH_PHASE3_REMEDIATION_REPORT.md",
+    "DOCSEARCH_PHASE3_SECURITY_REGRESSION_REPORT.md",
+    "DOCSEARCH_PHASE4_INDEPENDENT_ACCEPTANCE_REPORT.md",
+    "DOCSEARCH_PHASE5_FINAL_RELEASE_DECISION.md",
+    "DOCSEARCH_PHASE_2_CONNECTION_POOL_REPORT.md",
+    "DOCSEARCH_PHASE_2_DATABASE_SECURITY_REPORT.md",
+    "DOCSEARCH_PHASE_2_ENCRYPTION_REPORT.md",
+    "DOCSEARCH_PHASE_2_PERFORMANCE_REPORT.md",
+    "DOCSEARCH_PHASE_2_PRIVACY_REMEDIATION_REPORT.md",
+    "DOCSEARCH_PHASE_2_PRODUCTION_GAP_AUDIT_REPORT.md",
+    "DOCSEARCH_PHASE_2_PRODUCTION_READINESS_DECISION.md",
+    "DOCSEARCH_PHASE_2_REGRESSION_TEST_REPORT.md",
+    "DOCSEARCH_PHASE_3_ENTERPRISE_SECURITY_CERTIFICATION.md",
+    "DOCSEARCH_PHASE_4_CLINICAL_SAFETY_CERTIFICATION.md",
+    "DOCSEARCH_PHASE_5_1_FINANCIAL_CORRECTIVE_AUDIT.md",
+    "DOCSEARCH_PHASE_5_FINANCIAL_REGULATORY_CERTIFICATION.md",
+    "DOCSEARCH_PHASE_6_INFRASTRUCTURE_RESILIENCE_CERTIFICATION.md",
+    "DOCSEARCH_PHASE_7_2B_INFRASTRUCTURE_SECURITY_AUDIT.md",
+    "DOCSEARCH_PHASE_7_2C_PRODUCTION_READINESS_CERTIFICATION.md",
+    "DOCSEARCH_PHASE_7_2D_1_INFRASTRUCTURE_RISK_REGISTER.md",
+    "DOCSEARCH_PHASE_7_2D_2_GIT_COMMIT_FORENSIC_AUDIT.md",
+    "DOCSEARCH_PHASE_7_2D_FINAL_ACCEPTANCE_DECISION.md",
+    "DOCSEARCH_PHASE_7_2D_TERRAFORM_RESOURCE_FORENSIC_AUDIT.md",
+    "DOCSEARCH_PRODUCTION_BLOCKER_REGISTER.md",
+    "DOCSEARCH_RESPONSIVENESS_AUDIT.md",
+    "DOCSEARCH_SECURITY_AND_PERMISSION_AUDIT.md",
+    "DOC_SEARCH_CURRENT_SYSTEM_INVENTORY_AUDIT.md",
+    "DOC_SEARCH_FINAL_CONDITIONAL_CLOSURE_AUDIT.md",
+    "DOC_SEARCH_FINAL_PRODUCTION_FREEZE_GATE_AUDIT.md",
+    "DOC_SEARCH_FINAL_WHOLE_PROJECT_UI_DUPLICATION_AUDIT.md",
+    "DOC_SEARCH_GLOBAL_INTERSTELLAR_DESIGN_SYSTEM_POST_IMPLEMENTATION_AUDIT.md",
+    "DOC_SEARCH_GLOBAL_INTERSTELLAR_DESIGN_SYSTEM_REPORT.md",
+    "DOC_SEARCH_MASTER_ARCHITECTURE_REMEDIATION_REPORT.md",
+    "DOC_SEARCH_MASTER_DEVELOPMENT_BLUEPRINT_ARCHITECTURE_AUDIT.md",
+    "DOC_SEARCH_MASTER_DEVELOPMENT_BLUEPRINT_AUDIT.md",
+    "DOC_SEARCH_MASTER_PRODUCTION_AUDIT_REPORT.md",
+    "DOC_SEARCH_OPERATIONAL_REMEDIATION_REPORT.md",
+    "DOC_SEARCH_P0_P1_CONTROLLED_REMEDIATION_INDEPENDENT_RETEST_REPORT.md",
+    "DOC_SEARCH_P0_P1_REMEDIATION_REPORT.md",
+    "DOC_SEARCH_P0_P1_REMEDIATION_V2_REPORT.md",
+    "DOC_SEARCH_PHASE10_ARCHITECTURE_REPORT.md",
+    "DOC_SEARCH_PHASE10_AUDIT_REPORT.md",
+    "DOC_SEARCH_PHASE10_FREEZE_REPORT.md",
+    "DOC_SEARCH_PHASE10_IMPLEMENTATION_REPORT.md",
+    "DOC_SEARCH_PHASE10_INDEPENDENT_VERIFICATION_REPORT.md",
+    "DOC_SEARCH_PHASE10_SECURITY_REPORT.md",
+    "DOC_SEARCH_PHASE10_TEST_REPORT.md",
+    "DOC_SEARCH_PHASE15_FREEZE_REPORT.md",
+    "DOC_SEARCH_PHASE16_MASTER_FREEZE_REPORT.md",
+    "DOC_SEARCH_PHASE17_ENTERPRISE_CONTROL_PLANE_REPORT.md",
+    "DOC_SEARCH_PHASE18_FINAL_CLOSURE_REPORT.md",
+    "DOC_SEARCH_PHASE18_PERSISTENT_WORKFLOW_REPORT.md",
+    "DOC_SEARCH_PHASE19_CLINICAL_ERP_REPORT.md",
+    "DOC_SEARCH_PHASE20_FINANCE_SUPPLY_CHAIN_REPORT.md",
+    "DOC_SEARCH_PHASE21_INTEGRATION_REPORT.md",
+    "DOC_SEARCH_PHASE22_SECURITY_COMPLIANCE_REPORT.md",
+    "DOC_SEARCH_PHASE23_COMMAND_CENTER_BI_AUDIT.md",
+    "DOC_SEARCH_PHASE23_E2E_REPORT.md",
+    "DOC_SEARCH_PHASE23_FREEZE_REPORT.md",
+    "DOC_SEARCH_PHASE23_GAP_REGISTER.md",
+    "DOC_SEARCH_PHASE23_RECONCILIATION_REPORT.md",
+    "DOC_SEARCH_PHASE23_SECURITY_REPORT.md",
+    "DOC_SEARCH_PHASE24_EWAN_AI_GOVERNANCE_REPORT.md",
+    "DOC_SEARCH_PHASE25_MASTER_PRODUCTION_CERTIFICATION_REPORT.md",
+    "DOC_SEARCH_PHASE4_WORKFLOW_ENGINE_AUDIT.md",
+    "DOC_SEARCH_PHASE4_WORKFLOW_ENGINE_IMPLEMENTATION_REPORT.md",
+    "DOC_SEARCH_PHASE4_WORKFLOW_ENGINE_TEST_REPORT.md",
+    "DOC_SEARCH_PHASE5_PATIENT360_AUDIT.md",
+    "DOC_SEARCH_PHASE5_PATIENT360_IMPLEMENTATION_REPORT.md",
+    "DOC_SEARCH_PHASE5_PATIENT360_TEST_REPORT.md",
+    "DOC_SEARCH_PHASE6_AUDIT.md",
+    "DOC_SEARCH_PHASE6_FREEZE_REPORT.md",
+    "DOC_SEARCH_PHASE6_IMPLEMENTATION_REPORT.md",
+    "DOC_SEARCH_PHASE6_TEST_REPORT.md",
+    "DOC_SEARCH_PHASE_06_PATIENT_360_AUDIT.md",
+    "DOC_SEARCH_PHASE_06_PATIENT_360_CONTROLLED_DEVELOPMENT_REPORT.md",
+    "DOC_SEARCH_PHASE_07_AUDIT.md",
+    "DOC_SEARCH_PHASE_07_CONTROLLED_DEVELOPMENT_REPORT.md",
+    "DOC_SEARCH_PHASE_0_P0_P1_INDEPENDENT_VERIFICATION_REPORT.md",
+    "DOC_SEARCH_PHASE_0_TO_5_INDEPENDENT_AUDIT_REPORT.md",
+    "DOC_SEARCH_PHASE_10_FREEZE_REPORT.md",
+    "DOC_SEARCH_PHASE_1_MASTER_FOUNDATION_AUDIT.md",
+    "DOC_SEARCH_PHASE_1_MASTER_FOUNDATION_FINAL_FREEZE_REPORT.md",
+    "DOC_SEARCH_PHASE_1_MASTER_FOUNDATION_IMPLEMENTATION_REPORT.md",
+    "DOC_SEARCH_PHASE_1_MASTER_FOUNDATION_VERIFICATION_REPORT.md",
+    "DOC_SEARCH_PHASE_26_PRODUCTION_CERTIFICATION_MATRIX.md",
+    "DOC_SEARCH_PHASE_26_ULTIMATE_PRODUCTION_CERTIFICATION.md",
+    "DOC_SEARCH_PHASE_2_PARTNER_CONFIGURATION_AUDIT_AND_DESIGN.md",
+    "DOC_SEARCH_PHASE_2_PARTNER_CONFIGURATION_IMPLEMENTATION_REPORT.md",
+    "DOC_SEARCH_PHASE_2_PARTNER_CONFIGURATION_VERIFICATION_REPORT.md",
+    "DOC_SEARCH_PHASE_3_IDENTITY_RBAC_ABAC_AUDIT_AND_DESIGN.md",
+    "DOC_SEARCH_PHASE_3_IDENTITY_RBAC_ABAC_VERIFICATION_REPORT.md",
+    "DOC_SEARCH_PHASE_4_COMMERCIAL_CONTROL_AUDIT_AND_DESIGN.md",
+    "DOC_SEARCH_PHASE_4_COMMERCIAL_CONTROL_VERIFICATION_REPORT.md",
+    "DOC_SEARCH_PHASE_4_PATIENT_360_UNIVERSAL_ID_AUDIT_AND_DESIGN.md",
+    "DOC_SEARCH_PHASE_4_PATIENT_360_UNIVERSAL_ID_VERIFICATION_REPORT.md",
+    "DOC_SEARCH_PHASE_5_CONTINUITY_TEST_REPORT.md",
+    "DOC_SEARCH_PHASE_5_DATA_MIGRATION_RISK_REPORT.md",
+    "DOC_SEARCH_PHASE_5_FREEZE_REPORT.md",
+    "DOC_SEARCH_PHASE_5_INDEPENDENT_VERIFICATION_REPORT.md",
+    "DOC_SEARCH_PHASE_5_PATIENT_360_ARCHITECTURE_AUDIT.md",
+    "DOC_SEARCH_POST_REMEDIATION_VERIFICATION_AUDIT.md",
+    "DOC_SEARCH_POST_REM_ARCHITECTURE_GROUP_A_REPORT.md",
+    "DOC_SEARCH_POST_REM_ARCHITECTURE_GROUP_B_REPORT.md",
+    "DOC_SEARCH_POST_REM_ARCHITECTURE_GROUP_C_REPORT.md",
+    "DOC_SEARCH_POST_REM_CAP_01_04_REMEDIATION_REPORT.md",
+    "DOC_SEARCH_POST_REM_CAP_02_CAP_03_REMEDIATION_REPORT.md",
+    "DOC_SEARCH_POST_REM_CAP_INDEPENDENT_VERIFICATION_REPORT.md",
+    "DOC_SEARCH_REMAINING_P1_REMEDIATION_VERIFICATION_REPORT.md",
+    "DOC_SEARCH_REMEDIATION_REPORT.md",
+    "DOC_SEARCH_STATIC_VS_DYNAMIC_DATA_AUDIT_REPORT.md",
+    "DOC_SEARCH_STEP_3_CONTROLLED_DEVELOPMENT_GATE_AND_EXECUTION_REPORT.md",
+    "DOC_SEARCH_UI_REMEDIATION_MASTER_REPORT.md",
+    "DOC_SEARCH_ULTIMATE_MASTER_DEEP_AUDIT.md",
+    "DOC_SEARCH_WHOLE_PROJECT_REDEMPTION_REPORT.md",
+    "DOC_SEARCH_WHOLE_PROJECT_UI_REAL_WORLD_MASTER_AUDIT.md",
+    "DOC_SEARCH_WHOLE_PROJECT_UI_REAL_WORLD_USABILITY_AUDIT.md",
+    "DOC_SEARCH_WHOLE_PROJECT_UI_REMEDIATION_REPORT.md",
+    "EWAN_COMPANY_CAPABILITY_AUDIT.md",
+    "FINAL_LIMS_REAL_WORLD_E2E_REPORT.md",
+    "FINAL_PHASE2_BROWSER_ACCEPTANCE_REPORT.md",
+    "FINAL_PHASE2_LIMS_REAL_WORLD_E2E_REPORT.md",
+    "FINAL_PHASE3_CLINICAL_SAFETY_DATA_INTEGRITY_AUDIT.md",
+    "FINAL_PHASE3_IMPLEMENTATION_REPORT.md",
+    "FINAL_PHASE3_REAL_WORLD_E2E_REPORT.md",
+    "FINAL_PRODUCTION_TRUTH_REPORT.md",
+    "FINAL_READ_ONLY_AUDIT_VERDICT.md",
+    "HQ_MASTER_CONTROL_PRODUCTION_ACCEPTANCE_REPORT.md",
+    "HQ_MASTER_CONTROL_REMEDIATION_REPORT.md",
+    "INDEPENDENT_UNUSED_CODE_AUDIT.md",
+    "KYC_PENDING_DEEP_AUDIT.md",
+    "MAMTA_COMPLETE_DELETION_FINAL_AUDIT.md",
+    "P1-01_PRODUCTION_DR_REMEDIATION_REPORT.md",
+    "PARTNER_DIRECTORY_IMPLEMENTATION_REPORT.md",
+    "PHASE16_REMEDIATION_CLOSURE_AND_VERIFICATION_REPORT.md",
+    "PHASE16_REMEDIATION_REGISTER.md",
+    "PHASE17_CONTROL_PLANE_REGISTER.md",
+    "PHASE18_WORKFLOW_REGISTER.md",
+    "PHASE_0_BASELINE_AUDIT.md",
+    "PHASE_1_STEP_2_SECURITY_HARDENING_REPORT.md",
+    "PHASE_2_PERSISTENCE_AUDIT.md",
+    "PHASE_2_REAL_DATABASE_PERSISTENCE_AUDIT.md",
+    "PHASE_3_CLINICAL_WORKFLOW_AUDIT.md",
+    "PHASE_4_REVENUE_PROTECTION_AUDIT.md",
+    "PHASE_6_PERFORMANCE_RELIABILITY_AUDIT.md",
+    "PHASE_7_PRODUCTION_CERTIFICATION.md",
+    "PHASE_8_REVENUE_LAUNCH_CERTIFICATION.md",
+    "PRODUCTION_RELEASE_DEPLOYMENT_AUDIT_REPORT.md",
+    "STEP4_ROLE_AI_AUDIT.md",
+    "STEP4_ROLE_AI_CERTIFICATION.md",
+    "UNUSED_DEPENDENCIES_AUDIT.md"
+  ]
+}
