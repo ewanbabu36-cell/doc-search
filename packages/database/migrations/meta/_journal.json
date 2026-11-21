@@ -498,6 +498,34 @@
       "when": 1788551000000,
       "tag": "0070_create_least_privilege_app_role",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1788552000000,
+      "tag": "0071_system_catalog_and_tenant_baseline",
+      "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1788553000000,
+      "tag": "0072_fix_missing_patient_fks",
+      "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1788554000000,
+      "tag": "0073_performance_indexes_and_encounter_fix",
+      "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1788555000000,
+      "tag": "0074_phase3_database_remediation",
+      "breakpoints": true
     }
   ]
 }

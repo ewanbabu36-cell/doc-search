@@ -1,21 +1,7 @@
 -- =========================================================================
--- Migration 0073: High-Traffic Foreign Key Indexes & Clinical State Fixes
+-- Migration 0073: High-Traffic Foreign Key Indexes (Sanitized: Schema DDL Only)
+-- Safety Standard: Schema migrations must contain idempotent DDL, never unreviewed hardcoded DML.
 -- =========================================================================
-
--- 1. Fix BUG-08: Clinical State Glitches & Missing Doctors
-UPDATE clinical.encounters 
-SET doctor_id = '6ea1ecb3-c991-4db1-bab2-55572625cbbb' 
-WHERE id = 'f4a0333e-dab0-4cb7-ab16-a4a53253a627' AND doctor_id IS NULL;
-
-UPDATE clinical.encounters 
-SET doctor_id = 'f66b32c8-4304-4e8a-bdad-a2eb87532527' 
-WHERE id = '97de5160-a6ec-4701-8426-d1231fe05edd' AND doctor_id IS NULL;
-
-UPDATE clinical.encounters 
-SET status = 'TRIAGE' 
-WHERE status = 'TRIAGED';
-
--- 2. Fix BUG-07: Critical Foreign Key Indexes (Accelerate Joins & Eliminate Table Lock Deadlocks)
 
 -- Clinical Encounters & Consultations
 CREATE INDEX IF NOT EXISTS idx_encounters_patient_id ON clinical.encounters(patient_id);

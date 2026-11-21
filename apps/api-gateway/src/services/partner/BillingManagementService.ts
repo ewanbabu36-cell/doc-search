@@ -442,8 +442,8 @@ export class BillingManagementService {
         dataScope: 'tenant',
         isSuperAdmin: true,
         tenantId: resolvedTenantId,
-        organizationId: '00000000-0000-4000-8000-000000000002',
-        branchId: '00000000-0000-4000-8000-000000000003'
+        organizationId: resolvedTenantId,
+        branchId: resolvedTenantId
       };
 
       return withSecurityContext(getDatabase(), systemSession, async (tx) => {
@@ -585,8 +585,8 @@ export class BillingManagementService {
       dataScope: 'tenant',
       isSuperAdmin: true,
       tenantId: resolvedTenantId,
-      organizationId: '00000000-0000-4000-8000-000000000002',
-      branchId: '00000000-0000-4000-8000-000000000003'
+      organizationId: resolvedTenantId,
+      branchId: resolvedTenantId
     };
 
     if (status === 'success') {
@@ -705,7 +705,7 @@ export class BillingManagementService {
       isSuperAdmin: true,
       tenantId: partner.tenantId,
       organizationId: partner.tenantId,
-      branchId: '00000000-0000-4000-8000-000000000003'
+      branchId: partner.tenantId
     };
 
     return withSecurityContext(db, systemSession, async (tx) => {
@@ -1020,8 +1020,8 @@ export class BillingManagementService {
         upiUri: '',
         qrPayloadBase64: '',
         status: 'PENDING',
-        tenantId: '00000000-0000-4000-8000-000000000001',
-        branchId: '00000000-0000-4000-8000-000000000003',
+        tenantId: this.session.tenantId,
+        branchId: this.session.branchId || this.session.tenantId,
         createdAt: new Date().toISOString(),
         expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString()
       };
@@ -1071,7 +1071,7 @@ export class BillingManagementService {
       isSuperAdmin: true,
       tenantId: txn.tenantId,
       organizationId: txn.tenantId,
-      branchId: txn.branchId || '00000000-0000-4000-8000-000000000003'
+      branchId: txn.branchId || txn.tenantId
     };
 
     try {

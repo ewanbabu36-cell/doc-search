@@ -630,9 +630,9 @@ export class BillingManagementRepository {
     const record: StoredInvoice = {
       id,
       tenantId: input.tenantId,
-      partnerId: input.partnerId || '00000000-0000-4000-8000-000000000001',
-      organizationId: input.organizationId || '00000000-0000-4000-8000-000000000002',
-      branchId: input.branchId || '00000000-0000-4000-8000-000000000003',
+      partnerId: input.partnerId || input.tenantId,
+      organizationId: input.organizationId || input.tenantId,
+      branchId: input.branchId || input.tenantId,
       invoiceNumber,
       patientId: input.patientId,
       patientName: input.patientName || 'Patient',
@@ -2313,7 +2313,7 @@ export class BillingManagementRepository {
                 } as any)
                 .where(and(eq(pharmacyBatches.tenantId, input.tenantId), eq(pharmacyBatches.id, item.batchId)));
             }
-          } else {
+          } else if (disp.medicationId && disp.batchId) {
             // If no granular dispensing items row, record a quarantine movement for the dispensing record itself
             quarantinedCount++;
             await tx.insert(pharmacyStockMovements).values({
@@ -2322,8 +2322,8 @@ export class BillingManagementRepository {
               partnerId: disp.partnerId || invoice.partnerId,
               organizationId: disp.organizationId || invoice.organizationId,
               branchId: disp.branchId || invoice.branchId,
-              medicationId: disp.medicationId || '00000000-0000-4000-8000-000000000000',
-              batchId: disp.batchId || '00000000-0000-4000-8000-000000000000',
+              medicationId: disp.medicationId,
+              batchId: disp.batchId,
               movementType: 'QUARANTINE',
               quantity: 1,
               beforeQuantity: 0,
