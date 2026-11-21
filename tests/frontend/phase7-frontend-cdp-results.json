@@ -1,0 +1,142 @@
+{
+  "timestamp": "2026-11-21T17:58:20.581Z",
+  "passCount": 5,
+  "total": 5,
+  "results": [
+    {
+      "name": "Landing Page (Port 5175) Public Rendering",
+      "status": "PASS",
+      "details": {
+        "scenarioName": "Landing Page (Port 5175) Public Rendering",
+        "success": true,
+        "dom": {
+          "title": "DOC SEARCH — Next-Gen Intelligent Hospital Operating System",
+          "bodyLength": 9728,
+          "rootChildren": 1,
+          "hasWhiteScreen": false,
+          "hasCrashBoundary": false,
+          "scrollWidth": 1910,
+          "innerWidth": 1920,
+          "hasHorizontalOverflow": false,
+          "invisibleTextCount": 0,
+          "hasActiveModal": false,
+          "tableCount": 0,
+          "inputCount": 1,
+          "buttonCount": 55,
+          "textSnippet": "NEW RELEASE\n✨ ABDM M1/M2/M3 National Health Gateway, Ambient Voice Scribe 3.0 & Hardware Bridge now live.\n🎮 Try 10-Sec Live Demo →\nDOC\nSEARCH\nENTERPRISE OS\n●\n12ms\nINTELLIGENT HEALTHCARE OS\nOverview\n\ud83c"
+        },
+        "consoleErrors": [],
+        "uncaughtExceptions": [],
+        "screenshot": "audit-results/screenshots/Landing Page (Port 5175) Public Rendering.png"
+      }
+    },
+    {
+      "name": "Patient Mobile PWA (Port 5174) Mobile Viewport",
+      "status": "PASS",
+      "details": {
+        "scenarioName": "Patient Mobile PWA (Port 5174) Mobile Viewport",
+        "success": true,
+        "dom": {
+          "title": "DOC SEARCH — Patient Mobile App",
+          "bodyLength": 347,
+          "rootChildren": 1,
+          "hasWhiteScreen": false,
+          "hasCrashBoundary": false,
+          "scrollWidth": 390,
+          "innerWidth": 390,
+          "hasHorizontalOverflow": false,
+          "invisibleTextCount": 0,
+          "hasActiveModal": false,
+          "tableCount": 0,
+          "inputCount": 1,
+          "buttonCount": 5,
+          "textSnippet": "DOC\nSEARCH\n🇮🇳 English\nनमस्ते 👋\n\nDOC SEARCH — आपका डिजिटल हेल्थ साथी\n\n📲⚡\nअस्पताल गेट इंस्टेंट पास (Zero-Download)\nबिना 40MB ऐप डाउनलोड किए 1 सेकंड में टोकन प्राप्त करें\n⚡ तुरंत टोकन लें\n💬 WhatsApp"
+        },
+        "consoleErrors": [],
+        "uncaughtExceptions": [],
+        "screenshot": "audit-results/screenshots/Patient Mobile PWA (Port 5174) Mobile Viewport.png"
+      }
+    },
+    {
+      "name": "Company Executive Platform (Port 5177) Unauthenticated Shell",
+      "status": "PASS",
+      "details": {
+        "scenarioName": "Company Executive Platform (Port 5177) Unauthenticated Shell",
+        "success": true,
+        "dom": {
+          "title": "Doc Search — Company Platform",
+          "bodyLength": 517,
+          "rootChildren": 1,
+          "hasWhiteScreen": false,
+          "hasCrashBoundary": false,
+          "scrollWidth": 1920,
+          "innerWidth": 1920,
+          "hasHorizontalOverflow": false,
+          "invisibleTextCount": 0,
+          "hasActiveModal": false,
+          "tableCount": 0,
+          "inputCount": 2,
+          "buttonCount": 4,
+          "textSnippet": "3D HEALTHCARE ECOSYSTEM MESH\nREAL-TIME SYNCHRONIZED\nLATENCY: 12ms\nSATELLITES: 7 CONNECTED\nDOC\nSEARCH\nENTERPRISE HQ\n●\n12ms\nExecutive & Founder Authentication\n\nCentral SuperAdmin Governance & Healthcare"
+        },
+        "consoleErrors": [],
+        "uncaughtExceptions": [],
+        "screenshot": "audit-results/screenshots/Company Executive Platform (Port 5177) Unauthenticated Shell.png"
+      }
+    },
+    {
+      "name": "Partner Platform (Port 5173) Unauthenticated Shell",
+      "status": "PASS",
+      "details": {
+        "scenarioName": "Partner Platform (Port 5173) Unauthenticated Shell",
+        "success": true,
+        "dom": {
+          "title": "DOC SEARCH — Healthcare Operating System",
+          "bodyLength": 8870,
+          "rootChildren": 1,
+          "hasWhiteScreen": false,
+          "hasCrashBoundary": false,
+          "scrollWidth": 1920,
+          "innerWidth": 1920,
+          "hasHorizontalOverflow": false,
+          "invisibleTextCount": 0,
+          "hasActiveModal": false,
+          "tableCount": 0,
+          "inputCount": 1,
+          "buttonCount": 28,
+          "textSnippet": "🏥 DR. SHARMA HEART & GENERAL OPD CLINIC\n|\nDr. Alok Sharma, MD\n🚪 Room 101\n▾\n● Live OPD Connected\n⚡15-Sec SmartRx\n📊Reports & Audit\n⚙️Chamber Settings\n✕Exit Cockpit\n⚡\nPATIENT 360 STORYBOARD\n◀\nKK\nKis"
+        },
+        "consoleErrors": [],
+        "uncaughtExceptions": [],
+        "screenshot": "audit-results/screenshots/Partner Platform (Port 5173) Unauthenticated Shell.png"
+      }
+    },
+    {
+      "name": "Partner Platform (Port 5173) Authenticated Doctor Dashboard",
+      "status": "PASS",
+      "details": {
+        "scenarioName": "Partner Platform (Port 5173) Authenticated Doctor Dashboard",
+        "success": true,
+        "dom": {
+          "title": "DOC SEARCH — Healthcare Operating System",
+          "bodyLength": 8870,
+          "rootChildren": 1,
+          "hasWhiteScreen": false,
+          "hasCrashBoundary": false,
+          "scrollWidth": 1920,
+          "innerWidth": 1920,
+          "hasHorizontalOverflow": false,
+          "invisibleTextCount": 0,
+          "hasActiveModal": false,
+          "tableCount": 0,
+          "inputCount": 1,
+          "buttonCount": 28,
+          "textSnippet": "🏥 DR. SHARMA HEART & GENERAL OPD CLINIC\n|\nDr. Alok Sharma, MD\n🚪 Room 101\n▾\n● Live OPD Connected\n⚡15-Sec SmartRx\n📊Reports & Audit\n⚙️Chamber Settings\n✕Exit Cockpit\n⚡\nPATIENT 360 STORYBOARD\n◀\nKK\nKis"
+        },
+        "consoleErrors": [],
+        "uncaughtExceptions": [],
+        "screenshot": "audit-results/screenshots/Partner Platform (Port 5173) Authenticated Doctor Dashboard.png"
+      }
+    }
+  ]
+}

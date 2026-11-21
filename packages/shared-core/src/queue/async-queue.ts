@@ -35,15 +35,18 @@ export interface QueueMetrics {
   pendingCount: number;
 }
 
+const isNode = typeof process !== 'undefined' && Boolean(process.versions?.node) && typeof (globalThis as any).window === 'undefined';
+
 const getDurableQueueDir = (): string => {
-  if (typeof process !== 'undefined' && process.env && process.env['DOCSEARCH_QUEUE_DIR']) {
+  if (isNode && process.env && process.env['DOCSEARCH_QUEUE_DIR']) {
     return process.env['DOCSEARCH_QUEUE_DIR'];
   }
   try {
-    return path.resolve(os.tmpdir(), 'docsearch_durable_queue');
-  } catch {
-    return '/tmp/docsearch_durable_queue';
-  }
+    if (isNode && typeof os.tmpdir === 'function') {
+      return path.resolve(os.tmpdir(), 'docsearch_durable_queue');
+    }
+  } catch {}
+  return '/tmp/docsearch_durable_queue';
 };
 
 const DURABLE_QUEUE_DIR = getDurableQueueDir();
@@ -61,12 +64,14 @@ export class HighThroughputAsyncQueue {
 
   constructor(maxConcurrency = 10) {
     this.maxConcurrency = maxConcurrency;
-    try {
-      fs.mkdirSync(DURABLE_QUEUE_DIR, { recursive: true });
-    } catch {}
+    if (isNode && fs && typeof fs.mkdirSync === 'function') {
+      try {
+        fs.mkdirSync(DURABLE_QUEUE_DIR, { recursive: true });
+      } catch {}
 
-    // Automatically recover in-flight/pending jobs from crash journal
-    this.recoverPendingJobs();
+      // Automatically recover in-flight/pending jobs from crash journal
+      this.recoverPendingJobs();
+    }
   }
 
   /**

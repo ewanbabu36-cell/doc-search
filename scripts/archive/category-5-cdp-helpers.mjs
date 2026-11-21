@@ -1,7 +1,7 @@
 import { spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
-import { signJwt } from '../packages/auth/dist/index.js';
+import { signJwt } from '../../packages/auth/dist/index.js';
 
 const CHROME_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
 const DEBUG_PORT = 9222;
@@ -268,7 +268,7 @@ export async function runBrowserScenario({
         // Active polling for React hydration (up to 7000ms)
         for (let i = 0; i < 28; i++) {
           const check = await send('Runtime.evaluate', {
-            expression: '!!(document.getElementById("root")?.children?.length > 0 && document.body.innerText.trim().length > 30)'
+            expression: '!!(document.getElementById("root")?.children?.length > 0 && document.body.innerText.trim().length > 30 && !document.body.innerText.includes("Authenticating Session"))'
           });
           if (check?.result?.value === true) {
             break;

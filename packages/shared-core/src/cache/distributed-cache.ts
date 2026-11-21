@@ -29,15 +29,18 @@ interface CacheEntry<T> {
   tags: string[];
 }
 
+const isNode = typeof process !== 'undefined' && Boolean(process.versions?.node) && typeof (globalThis as any).window === 'undefined';
+
 const getSharedCacheDir = (): string => {
-  if (typeof process !== 'undefined' && process.env && process.env['DOCSEARCH_CACHE_DIR']) {
+  if (isNode && process.env && process.env['DOCSEARCH_CACHE_DIR']) {
     return process.env['DOCSEARCH_CACHE_DIR'];
   }
   try {
-    return path.resolve(os.tmpdir(), 'docsearch_shared_cache');
-  } catch {
-    return '/tmp/docsearch_shared_cache';
-  }
+    if (isNode && typeof os.tmpdir === 'function') {
+      return path.resolve(os.tmpdir(), 'docsearch_shared_cache');
+    }
+  } catch {}
+  return '/tmp/docsearch_shared_cache';
 };
 
 const SHARED_CACHE_DIR = getSharedCacheDir();
@@ -53,9 +56,11 @@ export class DistributedCache {
 
   constructor(maxMemoryEntries = 50000, cleanupIntervalMs = 60000) {
     this.maxMemoryEntries = maxMemoryEntries;
-    try {
-      fs.mkdirSync(SHARED_CACHE_DIR, { recursive: true });
-    } catch {}
+    if (isNode && fs && typeof fs.mkdirSync === 'function') {
+      try {
+        fs.mkdirSync(SHARED_CACHE_DIR, { recursive: true });
+      } catch {}
+    }
 
     // Background eviction for expired items
     if (typeof setInterval !== 'undefined') {

@@ -9,6 +9,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      'node:fs': path.resolve(__dirname, './src/shims/browser-fs.ts'),
+      'fs': path.resolve(__dirname, './src/shims/browser-fs.ts'),
       '@docsearch/ui-kit/styles/themes.css': path.resolve(__dirname, '../../packages/ui-kit/src/styles/themes.css'),
       '@docsearch/ui-kit/styles/base.css': path.resolve(__dirname, '../../packages/ui-kit/src/styles/base.css'),
       '@docsearch/ui-kit': path.resolve(__dirname, '../../packages/ui-kit/src/index.ts'),

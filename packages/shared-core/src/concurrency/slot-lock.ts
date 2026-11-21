@@ -24,15 +24,18 @@ export interface LockResult {
   expiresAt: number;
 }
 
+const isNode = typeof process !== 'undefined' && Boolean(process.versions?.node) && typeof (globalThis as any).window === 'undefined';
+
 const getSharedLockDir = (): string => {
-  if (typeof process !== 'undefined' && process.env && process.env['DOCSEARCH_LOCK_DIR']) {
+  if (isNode && process.env && process.env['DOCSEARCH_LOCK_DIR']) {
     return process.env['DOCSEARCH_LOCK_DIR'];
   }
   try {
-    return path.resolve(os.tmpdir(), 'docsearch_distributed_locks');
-  } catch {
-    return '/tmp/docsearch_distributed_locks';
-  }
+    if (isNode && typeof os.tmpdir === 'function') {
+      return path.resolve(os.tmpdir(), 'docsearch_distributed_locks');
+    }
+  } catch {}
+  return '/tmp/docsearch_distributed_locks';
 };
 
 const SHARED_LOCK_DIR = getSharedLockDir();
@@ -42,9 +45,11 @@ export class SlotLockManager {
   private cleanupTimer: NodeJS.Timeout | null = null;
 
   constructor(cleanupIntervalMs = 5000) {
-    try {
-      fs.mkdirSync(SHARED_LOCK_DIR, { recursive: true });
-    } catch {}
+    if (isNode && fs && typeof fs.mkdirSync === 'function') {
+      try {
+        fs.mkdirSync(SHARED_LOCK_DIR, { recursive: true });
+      } catch {}
+    }
 
     if (typeof setInterval !== 'undefined') {
       this.cleanupTimer = setInterval(() => {

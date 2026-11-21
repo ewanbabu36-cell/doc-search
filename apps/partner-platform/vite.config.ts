@@ -87,6 +87,14 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      'node:fs': path.resolve(__dirname, './src/shims/browser-fs.ts'),
+      'fs': path.resolve(__dirname, './src/shims/browser-fs.ts'),
+      'node:os': path.resolve(__dirname, './src/shims/browser-os.ts'),
+      'os': path.resolve(__dirname, './src/shims/browser-os.ts'),
+      'node:path': path.resolve(__dirname, './src/shims/browser-path.ts'),
+      'path': path.resolve(__dirname, './src/shims/browser-path.ts'),
+      'node:crypto': path.resolve(__dirname, './src/shims/browser-crypto.ts'),
+      'crypto': path.resolve(__dirname, './src/shims/browser-crypto.ts'),
       '@docsearch/ui-kit/styles/themes.css': path.resolve(__dirname, '../../packages/ui-kit/src/styles/themes.css'),
       '@docsearch/ui-kit/styles/base.css': path.resolve(__dirname, '../../packages/ui-kit/src/styles/base.css'),
       '@docsearch/ui-kit': path.resolve(__dirname, '../../packages/ui-kit/src/index.ts'),
