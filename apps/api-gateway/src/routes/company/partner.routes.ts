@@ -284,7 +284,7 @@ export const partnerRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/company/partners',
     {
-      preHandler: [authenticate, requirePermission('partners', 'create')]
+      preHandler: [authenticate, requirePermission('partners', 'create'), requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN')]
     },
     async (request, reply) => {
       const parseResult = CreatePartnerSchema.safeParse(request.body);
@@ -1006,7 +1006,7 @@ export const partnerRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/company/partner-classifications',
     {
-      preHandler: [authenticate, requirePermission('partners', 'create')]
+      preHandler: [authenticate, requirePermission('partners', 'create'), requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN')]
     },
     async (request, reply) => {
       const body = request.body as {

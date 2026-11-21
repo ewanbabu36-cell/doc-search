@@ -1,6 +1,24 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { commandCenterService, type CommandCenterQueryOptions } from '../../services/partner/CommandCenterService.js';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
+
+const staffGuard = [
+  authenticate,
+  requireRoles(
+    'SUPER_ADMIN',
+    'COMPANY_ADMIN',
+    'HOSPITAL_ADMIN',
+    'CLINIC_ADMIN',
+    'BRANCH_MANAGER',
+    'CHIEF_MEDICAL_OFFICER',
+    'FINANCE_MANAGER',
+    'DOCTOR',
+    'NURSE',
+    'PHARMACIST',
+    'LAB_TECHNICIAN',
+    'BILLING_CLERK'
+  )
+];
 
 export const partnerCommandCenterRoutes: FastifyPluginAsync = async (fastify) => {
   // Common handler for Overview
@@ -117,40 +135,40 @@ export const partnerCommandCenterRoutes: FastifyPluginAsync = async (fastify) =>
   // -------------------------------------------------------------------------
   // Primary Routes: /api/v1/partner/command-center/*
   // -------------------------------------------------------------------------
-  fastify.get('/api/v1/partner/command-center/overview', { preHandler: [authenticate] }, handleOverview);
-  fastify.get('/api/v1/partner/command-center/patients', { preHandler: [authenticate] }, handlePatients);
-  fastify.get('/api/v1/partner/command-center/opd', { preHandler: [authenticate] }, handleOpd);
-  fastify.get('/api/v1/partner/command-center/ipd', { preHandler: [authenticate] }, handleIpd);
-  fastify.get('/api/v1/partner/command-center/lab', { preHandler: [authenticate] }, handleLab);
-  fastify.get('/api/v1/partner/command-center/radiology', { preHandler: [authenticate] }, handleRadiology);
-  fastify.get('/api/v1/partner/command-center/pharmacy', { preHandler: [authenticate] }, handlePharmacy);
-  fastify.get('/api/v1/partner/command-center/revenue', { preHandler: [authenticate] }, handleRevenue);
-  fastify.get('/api/v1/partner/command-center/inventory', { preHandler: [authenticate] }, handleInventory);
-  fastify.get('/api/v1/partner/command-center/pending-queue', { preHandler: [authenticate] }, handlePendingQueue);
-  fastify.get('/api/v1/partner/command-center/slas', { preHandler: [authenticate] }, handleSlas);
-  fastify.get('/api/v1/partner/command-center/staff-workload', { preHandler: [authenticate] }, handleStaffWorkload);
-  fastify.get('/api/v1/partner/command-center/wholesale', { preHandler: [authenticate] }, handleWholesale);
-  fastify.get('/api/v1/partner/command-center/ai-telemetry', { preHandler: [authenticate] }, handleAiTelemetry);
-  fastify.get('/api/v1/partner/command-center/license', { preHandler: [authenticate] }, handleLicense);
-  fastify.get('/api/v1/partner/command-center/export', { preHandler: [authenticate] }, handleExport);
+  fastify.get('/api/v1/partner/command-center/overview', { preHandler: staffGuard }, handleOverview);
+  fastify.get('/api/v1/partner/command-center/patients', { preHandler: staffGuard }, handlePatients);
+  fastify.get('/api/v1/partner/command-center/opd', { preHandler: staffGuard }, handleOpd);
+  fastify.get('/api/v1/partner/command-center/ipd', { preHandler: staffGuard }, handleIpd);
+  fastify.get('/api/v1/partner/command-center/lab', { preHandler: staffGuard }, handleLab);
+  fastify.get('/api/v1/partner/command-center/radiology', { preHandler: staffGuard }, handleRadiology);
+  fastify.get('/api/v1/partner/command-center/pharmacy', { preHandler: staffGuard }, handlePharmacy);
+  fastify.get('/api/v1/partner/command-center/revenue', { preHandler: staffGuard }, handleRevenue);
+  fastify.get('/api/v1/partner/command-center/inventory', { preHandler: staffGuard }, handleInventory);
+  fastify.get('/api/v1/partner/command-center/pending-queue', { preHandler: staffGuard }, handlePendingQueue);
+  fastify.get('/api/v1/partner/command-center/slas', { preHandler: staffGuard }, handleSlas);
+  fastify.get('/api/v1/partner/command-center/staff-workload', { preHandler: staffGuard }, handleStaffWorkload);
+  fastify.get('/api/v1/partner/command-center/wholesale', { preHandler: staffGuard }, handleWholesale);
+  fastify.get('/api/v1/partner/command-center/ai-telemetry', { preHandler: staffGuard }, handleAiTelemetry);
+  fastify.get('/api/v1/partner/command-center/license', { preHandler: staffGuard }, handleLicense);
+  fastify.get('/api/v1/partner/command-center/export', { preHandler: staffGuard }, handleExport);
 
   // -------------------------------------------------------------------------
   // Path Aliases: /api/v1/partner/analytics/*
   // -------------------------------------------------------------------------
-  fastify.get('/api/v1/partner/analytics/overview', { preHandler: [authenticate] }, handleOverview);
-  fastify.get('/api/v1/partner/analytics/patients', { preHandler: [authenticate] }, handlePatients);
-  fastify.get('/api/v1/partner/analytics/opd', { preHandler: [authenticate] }, handleOpd);
-  fastify.get('/api/v1/partner/analytics/ipd', { preHandler: [authenticate] }, handleIpd);
-  fastify.get('/api/v1/partner/analytics/lab', { preHandler: [authenticate] }, handleLab);
-  fastify.get('/api/v1/partner/analytics/radiology', { preHandler: [authenticate] }, handleRadiology);
-  fastify.get('/api/v1/partner/analytics/pharmacy', { preHandler: [authenticate] }, handlePharmacy);
-  fastify.get('/api/v1/partner/analytics/revenue', { preHandler: [authenticate] }, handleRevenue);
-  fastify.get('/api/v1/partner/analytics/inventory', { preHandler: [authenticate] }, handleInventory);
-  fastify.get('/api/v1/partner/analytics/pending-queue', { preHandler: [authenticate] }, handlePendingQueue);
-  fastify.get('/api/v1/partner/analytics/slas', { preHandler: [authenticate] }, handleSlas);
-  fastify.get('/api/v1/partner/analytics/staff-workload', { preHandler: [authenticate] }, handleStaffWorkload);
-  fastify.get('/api/v1/partner/analytics/wholesale', { preHandler: [authenticate] }, handleWholesale);
-  fastify.get('/api/v1/partner/analytics/ai-telemetry', { preHandler: [authenticate] }, handleAiTelemetry);
-  fastify.get('/api/v1/partner/analytics/license', { preHandler: [authenticate] }, handleLicense);
-  fastify.get('/api/v1/partner/analytics/export', { preHandler: [authenticate] }, handleExport);
+  fastify.get('/api/v1/partner/analytics/overview', { preHandler: staffGuard }, handleOverview);
+  fastify.get('/api/v1/partner/analytics/patients', { preHandler: staffGuard }, handlePatients);
+  fastify.get('/api/v1/partner/analytics/opd', { preHandler: staffGuard }, handleOpd);
+  fastify.get('/api/v1/partner/analytics/ipd', { preHandler: staffGuard }, handleIpd);
+  fastify.get('/api/v1/partner/analytics/lab', { preHandler: staffGuard }, handleLab);
+  fastify.get('/api/v1/partner/analytics/radiology', { preHandler: staffGuard }, handleRadiology);
+  fastify.get('/api/v1/partner/analytics/pharmacy', { preHandler: staffGuard }, handlePharmacy);
+  fastify.get('/api/v1/partner/analytics/revenue', { preHandler: staffGuard }, handleRevenue);
+  fastify.get('/api/v1/partner/analytics/inventory', { preHandler: staffGuard }, handleInventory);
+  fastify.get('/api/v1/partner/analytics/pending-queue', { preHandler: staffGuard }, handlePendingQueue);
+  fastify.get('/api/v1/partner/analytics/slas', { preHandler: staffGuard }, handleSlas);
+  fastify.get('/api/v1/partner/analytics/staff-workload', { preHandler: staffGuard }, handleStaffWorkload);
+  fastify.get('/api/v1/partner/analytics/wholesale', { preHandler: staffGuard }, handleWholesale);
+  fastify.get('/api/v1/partner/analytics/ai-telemetry', { preHandler: staffGuard }, handleAiTelemetry);
+  fastify.get('/api/v1/partner/analytics/license', { preHandler: staffGuard }, handleLicense);
+  fastify.get('/api/v1/partner/analytics/export', { preHandler: staffGuard }, handleExport);
 };

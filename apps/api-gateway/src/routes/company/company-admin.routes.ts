@@ -1,6 +1,6 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { companyAdminService } from '../../services/company/CompanyAdminService.js';
-import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
+import { authenticate, requirePermission, requireRoles } from '../../plugins/auth-guard.js';
 import type {
   CreateInternalEmployeeRequest,
   CreateLegalEntityRequest,
@@ -24,7 +24,7 @@ export const companyAdminRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/company/admin/internal-employees',
     {
-      preHandler: [authenticate, requirePermission('admin', 'create')]
+      preHandler: [authenticate, requirePermission('admin', 'create'), requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN')]
     },
     async (request) => {
       const body = request.body as CreateInternalEmployeeRequest;
@@ -36,7 +36,7 @@ export const companyAdminRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.patch(
     '/api/v1/company/admin/internal-employees/:id/status',
     {
-      preHandler: [authenticate, requirePermission('admin', 'update')]
+      preHandler: [authenticate, requirePermission('admin', 'update'), requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN')]
     },
     async (request) => {
       const { id } = request.params as { id: string };
@@ -49,7 +49,7 @@ export const companyAdminRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.delete(
     '/api/v1/company/admin/internal-employees/:id',
     {
-      preHandler: [authenticate, requirePermission('admin', 'delete')]
+      preHandler: [authenticate, requirePermission('admin', 'delete'), requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN')]
     },
     async (request) => {
       const { id } = request.params as { id: string };
@@ -73,7 +73,7 @@ export const companyAdminRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/company/admin/legal-entities',
     {
-      preHandler: [authenticate, requirePermission('admin', 'create')]
+      preHandler: [authenticate, requirePermission('admin', 'create'), requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN')]
     },
     async (request) => {
       const body = request.body as CreateLegalEntityRequest;
@@ -97,7 +97,7 @@ export const companyAdminRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/company/admin/departments',
     {
-      preHandler: [authenticate, requirePermission('admin', 'create')]
+      preHandler: [authenticate, requirePermission('admin', 'create'), requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN')]
     },
     async (request) => {
       const body = request.body as CreateDepartmentRequest;
@@ -121,7 +121,7 @@ export const companyAdminRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/company/admin/designations',
     {
-      preHandler: [authenticate, requirePermission('admin', 'create')]
+      preHandler: [authenticate, requirePermission('admin', 'create'), requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN')]
     },
     async (request) => {
       const body = request.body as CreateDesignationRequest;

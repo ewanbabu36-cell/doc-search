@@ -1150,13 +1150,23 @@ export const partnerAccessControlRoutes: FastifyPluginAsync = async (fastify) =>
 
   fastify.post(
     '/api/v1/company/break-glass/:id/revoke',
-    { preHandler: [authenticate] },
+    {
+      preHandler: [
+        authenticate,
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'COMPLIANCE_OFFICER')
+      ]
+    },
     handleBreakGlassRevoke
   );
 
   fastify.post(
     '/api/v1/partner/break-glass/:id/revoke',
-    { preHandler: [authenticate] },
+    {
+      preHandler: [
+        authenticate,
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'COMPLIANCE_OFFICER')
+      ]
+    },
     handleBreakGlassRevoke
   );
 

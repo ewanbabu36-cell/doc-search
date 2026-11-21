@@ -1,6 +1,6 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { platformRevenueWaterfallService } from '../../services/finance/PlatformRevenueWaterfallService.js';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
 
 export const revenueWaterfallRoutes: FastifyPluginAsync = async (fastify) => {
   /**
@@ -10,7 +10,7 @@ export const revenueWaterfallRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     '/api/v1/company/revenue/gmv-waterfall',
     {
-      preHandler: [authenticate]
+      preHandler: [authenticate, requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'FINANCE_MANAGER')]
     },
     async () => {
       const report = platformRevenueWaterfallService.getRevenueWaterfall();
@@ -28,7 +28,7 @@ export const revenueWaterfallRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     '/api/v1/company/revenue/tds-gstr1-ledger',
     {
-      preHandler: [authenticate]
+      preHandler: [authenticate, requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'FINANCE_MANAGER')]
     },
     async () => {
       const records = platformRevenueWaterfallService.getTdsGstr1Ledger();

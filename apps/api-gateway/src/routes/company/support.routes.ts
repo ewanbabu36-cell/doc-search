@@ -1,6 +1,6 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { supportService } from '../../services/company/SupportService.js';
-import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
+import { authenticate, requirePermission, requireRoles } from '../../plugins/auth-guard.js';
 
 export const supportRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
@@ -30,7 +30,7 @@ export const supportRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     '/api/v1/company/support/health',
     {
-      preHandler: [authenticate, requirePermission('support', 'read')]
+      preHandler: [authenticate, requirePermission('support', 'read'), requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'SUPPORT_LEAD')]
     },
     async (request) => {
       const query = request.query as { partnerId?: string };
@@ -42,7 +42,7 @@ export const supportRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     '/api/v1/company/support/partner-health',
     {
-      preHandler: [authenticate, requirePermission('support', 'read')]
+      preHandler: [authenticate, requirePermission('support', 'read'), requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'SUPPORT_LEAD')]
     },
     async (request) => {
       const query = request.query as { partnerId?: string };

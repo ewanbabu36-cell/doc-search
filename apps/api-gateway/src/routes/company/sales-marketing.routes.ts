@@ -67,7 +67,7 @@ export const salesMarketingRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/company/sales/leads/:id/convert',
     {
-      preHandler: [authenticate, requirePermission('sales', 'create')]
+      preHandler: [authenticate, requirePermission('sales', 'create'), requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN')]
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };

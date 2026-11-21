@@ -1,6 +1,6 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { partnerAccountService } from '../../services/partner/PartnerAccountService.js';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
 import { horizontalSocketGateway } from '../../services/realtime/HorizontalSocketGateway.js';
 
 export const partnerAccountRoutes: FastifyPluginAsync = async (fastify) => {
@@ -60,7 +60,7 @@ export const partnerAccountRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.put(
     '/api/v1/partner/account/profile',
     {
-      preHandler: [authenticate]
+      preHandler: [authenticate, requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'BRANCH_MANAGER')]
     },
     async (request) => {
       const data = await partnerAccountService.updateProfile(request.session, request.body as any);
@@ -71,7 +71,7 @@ export const partnerAccountRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.put(
     '/api/v1/partner/profile',
     {
-      preHandler: [authenticate]
+      preHandler: [authenticate, requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'BRANCH_MANAGER')]
     },
     async (request) => {
       const data = await partnerAccountService.updateProfile(request.session, request.body as any);
@@ -82,7 +82,7 @@ export const partnerAccountRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.patch(
     '/api/v1/partner/account/profile',
     {
-      preHandler: [authenticate]
+      preHandler: [authenticate, requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'BRANCH_MANAGER')]
     },
     async (request) => {
       const data = await partnerAccountService.updateProfile(request.session, request.body as any);
@@ -93,7 +93,7 @@ export const partnerAccountRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.patch(
     '/api/v1/partner/profile',
     {
-      preHandler: [authenticate]
+      preHandler: [authenticate, requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'BRANCH_MANAGER')]
     },
     async (request) => {
       const data = await partnerAccountService.updateProfile(request.session, request.body as any);

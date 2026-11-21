@@ -2,7 +2,7 @@ import { type FastifyPluginAsync } from 'fastify';
 import crypto from 'crypto';
 import { performance } from 'perf_hooks';
 import { integrationService } from '../../services/company/IntegrationService.js';
-import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
+import { authenticate, requirePermission, requireRoles } from '../../plugins/auth-guard.js';
 
 export const integrationRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
@@ -42,7 +42,7 @@ export const integrationRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/company/integration/webhooks/dispatch-test',
     {
-      preHandler: [authenticate, requirePermission('integrations', 'manage')]
+      preHandler: [authenticate, requirePermission('integrations', 'manage'), requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN')]
     },
     async (request) => {
       const body = (request.body || {}) as {

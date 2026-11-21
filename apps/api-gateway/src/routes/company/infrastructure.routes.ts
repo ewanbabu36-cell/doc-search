@@ -1,12 +1,12 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { infrastructureService } from '../../services/company/InfrastructureService.js';
-import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
+import { authenticate, requirePermission, requireRoles } from '../../plugins/auth-guard.js';
 
 export const infrastructureRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     '/api/v1/company/infrastructure/clusters',
     {
-      preHandler: [authenticate, requirePermission('infrastructure', 'read')]
+      preHandler: [authenticate, requirePermission('infrastructure', 'read'), requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN')]
     },
     async (request) => {
       const clusters = await infrastructureService.getClusters(request.session);
@@ -17,7 +17,7 @@ export const infrastructureRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     '/api/v1/company/infrastructure/databases',
     {
-      preHandler: [authenticate, requirePermission('infrastructure', 'read')]
+      preHandler: [authenticate, requirePermission('infrastructure', 'read'), requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN')]
     },
     async (request) => {
       const dbs = await infrastructureService.getDatabases(request.session);
@@ -28,7 +28,7 @@ export const infrastructureRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     '/api/v1/company/infrastructure/dr',
     {
-      preHandler: [authenticate, requirePermission('infrastructure', 'read')]
+      preHandler: [authenticate, requirePermission('infrastructure', 'read'), requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN')]
     },
     async (request) => {
       const dr = await infrastructureService.getDRPlans(request.session);

@@ -5,7 +5,7 @@ import { licenseService } from '../../services/company/LicenseService.js';
 import { commercialFinanceService } from '../../services/company/CommercialFinanceService.js';
 import { billingManagementService } from '../../services/partner/BillingManagementService.js';
 import { companyFinancialService } from '../../services/company/CompanyFinancialService.js';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
 import { AppError, ErrorCode } from '@docsearch/shared-core';
 import {
   getDatabase,
@@ -165,7 +165,7 @@ export const commercialRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/commercial/create-checkout-order',
     {
-      preHandler: [authenticate]
+      preHandler: [authenticate, requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'FINANCE_MANAGER', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN')]
     },
     async (request, reply) => {
       const parseResult = CreateCheckoutOrderSchema.safeParse(request.body);
@@ -1472,7 +1472,7 @@ export const commercialRoutes: FastifyPluginAsync = async (fastify) => {
   // POST /api/v1/commercial/submit-payment-proof (Partner submits UTR after NEFT/UPI transfer)
   fastify.post(
     '/api/v1/commercial/submit-payment-proof',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'FINANCE_MANAGER', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'BRANCH_MANAGER')] },
     async (request, reply) => {
       const Schema = z.object({
         partnerId: z.string().uuid(),

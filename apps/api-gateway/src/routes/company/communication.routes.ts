@@ -1,6 +1,6 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { communicationService } from '../../services/company/CommunicationService.js';
-import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
+import { authenticate, requirePermission, requireRoles } from '../../plugins/auth-guard.js';
 
 export const communicationRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
@@ -53,7 +53,7 @@ export const communicationRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/company/communication/items/:id/transition',
     {
-      preHandler: [authenticate, requirePermission('communication', 'update')]
+      preHandler: [authenticate, requirePermission('communication', 'update'), requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN')]
     },
     async (request) => {
       const { id } = request.params as { id: string };
@@ -78,7 +78,7 @@ export const communicationRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/company/communication/dispatch',
     {
-      preHandler: [authenticate, requirePermission('communication', 'create')]
+      preHandler: [authenticate, requirePermission('communication', 'create'), requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN')]
     },
     async (request) => {
       const body = request.body as any;
