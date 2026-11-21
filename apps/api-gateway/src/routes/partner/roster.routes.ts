@@ -1,6 +1,6 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { getDatabase, doctorSchedules, eq, and, desc, sql } from '@docsearch/database';
-import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
+import { authenticate, requirePermission, requireRoles } from '../../plugins/auth-guard.js';
 import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 import { distributedCache } from '../../services/cache/DistributedCacheService.js';
 import { horizontalSocketGateway } from '../../services/realtime/HorizontalSocketGateway.js';
@@ -226,7 +226,11 @@ export const rosterRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.patch(
     '/api/v1/partner/roster/leaves/:id/approve',
     {
-      preHandler: [authenticate, requirePermission('partners', 'update')]
+      preHandler: [
+        authenticate,
+        requirePermission('partners', 'update'),
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'BRANCH_MANAGER')
+      ]
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
@@ -237,7 +241,7 @@ export const rosterRoutes: FastifyPluginAsync = async (fastify) => {
         return { success: false, error: { code: 'LEAVE_NOT_FOUND', message: 'Leave record not found' } };
       }
       leave.approvalStatus = req.approvalStatus;
-      leave.approvedBy = req.actorId;
+      leave.approvedBy = request.session.userId || req.actorId;
       leave.updatedAt = new Date().toISOString();
 
       await distributedCache.delPattern(`docsearch:cache:${request.session.tenantId}:roster:*`);
@@ -433,7 +437,12 @@ export const rosterRoutes: FastifyPluginAsync = async (fastify) => {
   // 6. Cross-Facility Visiting Doctor Smart Roster & Delay Cascade Resolver (Pillar 4)
   fastify.post(
     '/api/v1/partner/roster/cross-facility-delay-cascade',
-    { preHandler: [authenticate] },
+    {
+      preHandler: [
+        authenticate,
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR', 'NURSE', 'RECEPTIONIST')
+      ]
+    },
     async (request, reply) => {
       const body = (request.body || {}) as {
         doctorId?: string;
@@ -477,7 +486,12 @@ export const rosterRoutes: FastifyPluginAsync = async (fastify) => {
   // 7. Predictive OPD Surge & Chamber Yield Optimizer (Competitor Hegemony Engine)
   fastify.post(
     '/api/v1/partner/roster/yield-optimizer/evaluate-slots',
-    { preHandler: [authenticate] },
+    {
+      preHandler: [
+        authenticate,
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR', 'NURSE', 'RECEPTIONIST')
+      ]
+    },
     async (request, reply) => {
       const tenantId = request.session?.tenantId || '11111111-1111-4111-8111-111111111111';
       void tenantId;
@@ -528,7 +542,12 @@ export const rosterRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.post(
     '/api/v1/partner/roster/yield-optimizer/dispatch-standby-tokens',
-    { preHandler: [authenticate] },
+    {
+      preHandler: [
+        authenticate,
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR', 'NURSE', 'RECEPTIONIST')
+      ]
+    },
     async (request, reply) => {
       const tenantId = request.session?.tenantId || '11111111-1111-4111-8111-111111111111';
       void tenantId;

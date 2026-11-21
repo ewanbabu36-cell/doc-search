@@ -1,7 +1,7 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { productService } from '../../services/company/ProductService.js';
-import { authenticate, optionalAuthenticate, requirePermission } from '../../plugins/auth-guard.js';
+import { authenticate, optionalAuthenticate, requirePermission, requireRoles } from '../../plugins/auth-guard.js';
 import { AppError, ErrorCode } from '@docsearch/shared-core';
 
 const CreateProductSchema = z.object({
@@ -40,7 +40,7 @@ export const productRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/company/products',
     {
-      preHandler: [authenticate, requirePermission('products', 'create')]
+      preHandler: [authenticate, requirePermission('products', 'create'), requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN')]
     },
     async (request, reply) => {
       const parseResult = CreateProductSchema.safeParse(request.body);
@@ -88,7 +88,7 @@ export const productRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/company/plans',
     {
-      preHandler: [authenticate, requirePermission('products', 'create')]
+      preHandler: [authenticate, requirePermission('products', 'create'), requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN')]
     },
     async (request, reply) => {
       const body = request.body as any;
@@ -107,7 +107,7 @@ export const productRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.put(
     '/api/v1/company/plans/:planId',
     {
-      preHandler: [authenticate, requirePermission('products', 'update')]
+      preHandler: [authenticate, requirePermission('products', 'update'), requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN')]
     },
     async (request, reply) => {
       const { planId } = request.params as { planId: string };
@@ -120,7 +120,7 @@ export const productRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.patch(
     '/api/v1/company/plans/:planId/status',
     {
-      preHandler: [authenticate, requirePermission('products', 'update')]
+      preHandler: [authenticate, requirePermission('products', 'update'), requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN')]
     },
     async (request, reply) => {
       const { planId } = request.params as { planId: string };
@@ -140,7 +140,7 @@ export const productRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.delete(
     '/api/v1/company/plans/:planId',
     {
-      preHandler: [authenticate, requirePermission('products', 'delete')]
+      preHandler: [authenticate, requirePermission('products', 'delete'), requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN')]
     },
     async (request, reply) => {
       const { planId } = request.params as { planId: string };
@@ -164,7 +164,7 @@ export const productRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/company/plans/:planId/entitlements',
     {
-      preHandler: [authenticate, requirePermission('products', 'update')]
+      preHandler: [authenticate, requirePermission('products', 'update'), requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN')]
     },
     async (request, reply) => {
       const { planId } = request.params as { planId: string };
@@ -190,7 +190,7 @@ export const productRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.delete(
     '/api/v1/company/plans/:planId/entitlements/:featureId',
     {
-      preHandler: [authenticate, requirePermission('products', 'update')]
+      preHandler: [authenticate, requirePermission('products', 'update'), requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN')]
     },
     async (request, reply) => {
       const { planId, featureId } = request.params as { planId: string; featureId: string };

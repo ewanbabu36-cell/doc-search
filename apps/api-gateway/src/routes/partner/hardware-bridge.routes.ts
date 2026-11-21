@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { HardwareBridgeService } from '../../services/partner/HardwareBridgeService.js';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
 import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 
 const service = new HardwareBridgeService();
@@ -32,7 +32,12 @@ export const hardwareBridgeRoutes: FastifyPluginAsync = async (app) => {
 
   app.post(
     '/api/v1/partner/hardware/devices',
-    { preHandler: [authenticate] },
+    {
+      preHandler: [
+        authenticate,
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'BRANCH_MANAGER', 'LAB_TECHNICIAN', 'NURSE', 'PHARMACIST')
+      ]
+    },
     async (request, reply) => {
       const { tenantId, branchId, userId } = request.session;
       const payload = (request.body || {}) as Record<string, unknown>;
@@ -76,7 +81,12 @@ export const hardwareBridgeRoutes: FastifyPluginAsync = async (app) => {
 
   app.post(
     '/api/v1/partner/hardware/rfid-reads',
-    { preHandler: [authenticate] },
+    {
+      preHandler: [
+        authenticate,
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'BRANCH_MANAGER', 'LAB_TECHNICIAN', 'NURSE', 'PHARMACIST')
+      ]
+    },
     async (request, reply) => {
       const { tenantId, branchId, userId } = request.session;
       const payload = (request.body || {}) as Record<string, unknown>;
@@ -98,7 +108,12 @@ export const hardwareBridgeRoutes: FastifyPluginAsync = async (app) => {
 
   app.post(
     '/api/v1/partner/hardware/print-jobs/generate',
-    { preHandler: [authenticate] },
+    {
+      preHandler: [
+        authenticate,
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'BRANCH_MANAGER', 'LAB_TECHNICIAN', 'NURSE', 'PHARMACIST')
+      ]
+    },
     async (request, reply) => {
       const { tenantId, branchId, userId } = request.session;
       const payload = (request.body || {}) as Record<string, unknown>;
@@ -136,7 +151,12 @@ export const hardwareBridgeRoutes: FastifyPluginAsync = async (app) => {
   // Register Analyzer
   app.post(
     '/api/v1/partner/hardware/analyzers',
-    { preHandler: [authenticate] },
+    {
+      preHandler: [
+        authenticate,
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'BRANCH_MANAGER', 'LAB_TECHNICIAN')
+      ]
+    },
     async (request, reply) => {
       const { tenantId, branchId, userId } = request.session;
       const payload = (request.body || {}) as Record<string, unknown>;

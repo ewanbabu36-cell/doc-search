@@ -1,6 +1,6 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { securityAdminService } from '../../services/company/SecurityAdminService.js';
-import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
+import { authenticate, requirePermission, requireRoles } from '../../plugins/auth-guard.js';
 
 export const securityAdminRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
@@ -62,7 +62,11 @@ export const securityAdminRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/company/security/sessions/:id/terminate',
     {
-      preHandler: [authenticate, requirePermission('security', 'delete')]
+      preHandler: [
+        authenticate,
+        requirePermission('security', 'delete'),
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'COMPLIANCE_OFFICER')
+      ]
     },
     async (request) => {
       const { id } = request.params as { id: string };
@@ -87,7 +91,11 @@ export const securityAdminRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/company/security/credentials/:id/rotate',
     {
-      preHandler: [authenticate, requirePermission('security', 'update')]
+      preHandler: [
+        authenticate,
+        requirePermission('security', 'update'),
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'COMPLIANCE_OFFICER')
+      ]
     },
     async (request) => {
       const { id } = request.params as { id: string };
@@ -100,7 +108,11 @@ export const securityAdminRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/company/security/credentials/:id/revoke',
     {
-      preHandler: [authenticate, requirePermission('security', 'delete')]
+      preHandler: [
+        authenticate,
+        requirePermission('security', 'delete'),
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'COMPLIANCE_OFFICER')
+      ]
     },
     async (request) => {
       const { id } = request.params as { id: string };
@@ -125,7 +137,11 @@ export const securityAdminRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/company/security/incidents/:id/acknowledge',
     {
-      preHandler: [authenticate, requirePermission('security', 'update')]
+      preHandler: [
+        authenticate,
+        requirePermission('security', 'update'),
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'COMPLIANCE_OFFICER')
+      ]
     },
     async (request) => {
       const { id } = request.params as { id: string };
@@ -137,7 +153,11 @@ export const securityAdminRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/company/security/incidents/:id/resolve',
     {
-      preHandler: [authenticate, requirePermission('security', 'update')]
+      preHandler: [
+        authenticate,
+        requirePermission('security', 'update'),
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'COMPLIANCE_OFFICER')
+      ]
     },
     async (request) => {
       const { id } = request.params as { id: string };
@@ -162,7 +182,11 @@ export const securityAdminRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/company/security/audit-verifications',
     {
-      preHandler: [authenticate, requirePermission('security', 'create')]
+      preHandler: [
+        authenticate,
+        requirePermission('security', 'create'),
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'COMPLIANCE_OFFICER')
+      ]
     },
     async (request) => {
       const body = request.body as any;

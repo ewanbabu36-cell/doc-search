@@ -1,6 +1,6 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { analyticsService } from '../../services/company/AnalyticsService.js';
-import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
+import { authenticate, requirePermission, requireRoles } from '../../plugins/auth-guard.js';
 
 export const analyticsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
@@ -51,7 +51,7 @@ export const analyticsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     '/api/v1/company/analytics/cross-tenant-aggregates',
     {
-      preHandler: [authenticate, requirePermission('analytics', 'read')]
+      preHandler: [authenticate, requirePermission('analytics', 'read'), requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN')]
     },
     async (request) => {
       const aggs = await analyticsService.getCrossTenantAggregates(request.session);
@@ -62,7 +62,7 @@ export const analyticsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     '/api/v1/company/analytics/api-telemetry',
     {
-      preHandler: [authenticate, requirePermission('analytics', 'read')]
+      preHandler: [authenticate, requirePermission('analytics', 'read'), requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN')]
     },
     async (request) => {
       const telemetry = await analyticsService.getApiTelemetry(request.session);

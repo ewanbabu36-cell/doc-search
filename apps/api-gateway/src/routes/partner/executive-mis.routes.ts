@@ -1,5 +1,5 @@
 import { type FastifyPluginAsync } from 'fastify';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
 import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 import { ExecutiveMisService, executiveMisService } from '../../services/partner/ExecutiveMisService.js';
 import type {
@@ -50,7 +50,12 @@ export const executiveMisRoutes: FastifyPluginAsync = async (app) => {
   // 4. Resolve Unbilled Encounter (Charge Capture Correction)
   app.post(
     '/api/v1/partner/executive-mis/billing/unbilled-encounters/:encounterId/resolve',
-    { preHandler: [authenticate] },
+    {
+      preHandler: [
+        authenticate,
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'FINANCE_MANAGER', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'BILLING_CLERK')
+      ]
+    },
     async (request, reply) => {
       const { tenantId, actorEmail } = request.session;
       const { encounterId } = request.params as { encounterId: string };
@@ -86,7 +91,12 @@ export const executiveMisRoutes: FastifyPluginAsync = async (app) => {
   // 7. Record Physical Inventory Audit / Shrinkage Incident
   app.post(
     '/api/v1/partner/executive-mis/inventory/shrinkage-audit',
-    { preHandler: [authenticate] },
+    {
+      preHandler: [
+        authenticate,
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'FINANCE_MANAGER', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'PHARMACIST')
+      ]
+    },
     async (request, reply) => {
       const { tenantId, actorEmail } = request.session;
       const item = request.body as InventoryShrinkageItemDto;
@@ -110,7 +120,12 @@ export const executiveMisRoutes: FastifyPluginAsync = async (app) => {
   // 9. Approve Doctor Payout Settlement
   app.post(
     '/api/v1/partner/executive-mis/doctors/payouts/:doctorId/approve',
-    { preHandler: [authenticate] },
+    {
+      preHandler: [
+        authenticate,
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'FINANCE_MANAGER', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN')
+      ]
+    },
     async (request, reply) => {
       const { tenantId, actorEmail } = request.session;
       const { doctorId } = request.params as { doctorId: string };
@@ -133,7 +148,12 @@ export const executiveMisRoutes: FastifyPluginAsync = async (app) => {
   // 11. Declare Surge Event
   app.post(
     '/api/v1/partner/executive-mis/command/surge',
-    { preHandler: [authenticate] },
+    {
+      preHandler: [
+        authenticate,
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER')
+      ]
+    },
     async (request, reply) => {
       const { tenantId } = request.session;
       const payload = request.body as DeclareSurgeEventRequest;
@@ -145,7 +165,12 @@ export const executiveMisRoutes: FastifyPluginAsync = async (app) => {
   // 12. Resolve Surge Event
   app.post(
     '/api/v1/partner/executive-mis/command/surge/resolve',
-    { preHandler: [authenticate] },
+    {
+      preHandler: [
+        authenticate,
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER')
+      ]
+    },
     async (request, reply) => {
       const { tenantId } = request.session;
       const payload = request.body as ResolveSurgeEventRequest;
@@ -246,7 +271,12 @@ export const executiveMisRoutes: FastifyPluginAsync = async (app) => {
   // 21. Bed Allocation Override
   app.post(
     '/api/v1/partner/executive-mis/command/bed-override',
-    { preHandler: [authenticate] },
+    {
+      preHandler: [
+        authenticate,
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'NURSE')
+      ]
+    },
     async (request, reply) => {
       const { tenantId } = request.session;
       const payload = request.body as OverrideBedAllocationRequest;

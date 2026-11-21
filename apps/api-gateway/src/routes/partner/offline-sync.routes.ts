@@ -1,11 +1,16 @@
 import type { FastifyPluginAsync } from 'fastify';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
 
 export const offlineSyncRoutes: FastifyPluginAsync = async (app) => {
   // 1. Replay Offline Queue (Idempotent Batch Replay)
   app.post(
     '/api/v1/partner/offline-sync/batch-replay',
-    { preHandler: [authenticate] },
+    {
+      preHandler: [
+        authenticate,
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'BRANCH_MANAGER', 'RECEPTIONIST', 'BILLING_CLERK')
+      ]
+    },
     async (request, reply) => {
       const body = (request.body || {}) as {
         tokens?: Array<{

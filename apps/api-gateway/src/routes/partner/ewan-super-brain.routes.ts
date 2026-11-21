@@ -1,7 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify';
 import crypto from 'node:crypto';
 import { getDatabase, sql } from '@docsearch/database';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
 import { searchEwanKnowledge, EWAN_15_DOMAIN_KNOWLEDGE } from '../../services/ewan/ewan-knowledge-engine.js';
 
 interface KnowledgeSearchQuery {
@@ -206,7 +206,14 @@ export const ewanSuperBrainRoutes: FastifyPluginAsync = async (fastify) => {
     });
   });
 
-  fastify.post('/api/v1/partner/ewan/leakage/auto-heal', async (request, reply) => {
+  fastify.post(
+    '/api/v1/partner/ewan/leakage/auto-heal',
+    {
+      preHandler: [
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'FINANCE_MANAGER')
+      ]
+    },
+    async (request, reply) => {
     const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = (request.body as AutoHealRequest) || {};
     const db = getDatabase();
@@ -431,7 +438,14 @@ export const ewanSuperBrainRoutes: FastifyPluginAsync = async (fastify) => {
     });
   });
 
-  fastify.post('/api/v1/partner/ewan/bottlenecks/escalate', async (request, reply) => {
+  fastify.post(
+    '/api/v1/partner/ewan/bottlenecks/escalate',
+    {
+      preHandler: [
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR', 'NURSE')
+      ]
+    },
+    async (request, reply) => {
     const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = request.body as EscalateBottleneckRequest;
     const db = getDatabase();
@@ -477,7 +491,14 @@ export const ewanSuperBrainRoutes: FastifyPluginAsync = async (fastify) => {
   // =========================================================================
   // ENCLAVE 4: AUTONOMOUS EXECUTIVE CHIEF OF STAFF & NABH AUDIT BINDER
   // =========================================================================
-  fastify.post('/api/v1/partner/ewan/executive/briefing/generate', async (request, reply) => {
+  fastify.post(
+    '/api/v1/partner/ewan/executive/briefing/generate',
+    {
+      preHandler: [
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'FINANCE_MANAGER')
+      ]
+    },
+    async (request, reply) => {
     const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = (request.body as BriefingRequest) || {};
     const db = getDatabase();
@@ -549,7 +570,14 @@ export const ewanSuperBrainRoutes: FastifyPluginAsync = async (fastify) => {
     });
   });
 
-  fastify.post('/api/v1/partner/ewan/audit/nabh-binder', async (request, reply) => {
+  fastify.post(
+    '/api/v1/partner/ewan/audit/nabh-binder',
+    {
+      preHandler: [
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'COMPLIANCE_OFFICER')
+      ]
+    },
+    async (request, reply) => {
     const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = (request.body as NabhBinderRequest) || {};
     const db = getDatabase();

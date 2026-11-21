@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 import { createLogger, AppError, ErrorCode } from '@docsearch/shared-core';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
 
 const logger = createLogger('hospital-events-hub');
 
@@ -136,7 +136,15 @@ export const hospitalEventsRoutes: FastifyPluginAsync = async (app) => {
   });
 
   // 2. Publish Event Endpoint (Dispatches to active workstations & displays within tenant scope)
-  app.post('/api/v1/partner/events/publish', { preHandler: [authenticate] }, async (request, reply) => {
+  app.post(
+    '/api/v1/partner/events/publish',
+    {
+      preHandler: [
+        authenticate,
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'BRANCH_MANAGER', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR', 'NURSE', 'LAB_TECHNICIAN', 'PHARMACIST', 'RECEPTIONIST')
+      ]
+    },
+    async (request, reply) => {
     const session = request.session;
     const body = (request.body as HospitalEventPayload) || {};
     if (!body.type || !body.sourceModule) {
@@ -180,7 +188,15 @@ export const hospitalEventsRoutes: FastifyPluginAsync = async (app) => {
   });
 
   // Alias for POST /api/v1/partner/events
-  app.post('/api/v1/partner/events', { preHandler: [authenticate] }, async (request, reply) => {
+  app.post(
+    '/api/v1/partner/events',
+    {
+      preHandler: [
+        authenticate,
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'BRANCH_MANAGER', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR', 'NURSE', 'LAB_TECHNICIAN', 'PHARMACIST', 'RECEPTIONIST')
+      ]
+    },
+    async (request, reply) => {
     const session = request.session;
     const body = (request.body as HospitalEventPayload) || {};
     if (!body.type || !body.sourceModule) {

@@ -1,6 +1,6 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { radiologyService } from '../../services/partner/RadiologyService.js';
-import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
+import { authenticate, requirePermission, requireRoles } from '../../plugins/auth-guard.js';
 import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 import type { RadiologyInputRecord } from '../../services/partner/RadiologyService.js';
 
@@ -351,7 +351,11 @@ export const radiologyRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/partner/radiology/reports/:id/finalize',
     {
-      preHandler: [authenticate, requirePermission('clinical:radiology', 'update')]
+      preHandler: [
+        authenticate,
+        requirePermission('clinical:radiology', 'update'),
+        requireRoles('SUPER_ADMIN', 'HOSPITAL_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR')
+      ]
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
@@ -363,7 +367,11 @@ export const radiologyRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/partner/radiology/reports/:id/amend',
     {
-      preHandler: [authenticate, requirePermission('clinical:radiology', 'update')]
+      preHandler: [
+        authenticate,
+        requirePermission('clinical:radiology', 'update'),
+        requireRoles('SUPER_ADMIN', 'HOSPITAL_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR')
+      ]
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
@@ -375,7 +383,11 @@ export const radiologyRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/partner/radiology/reports/:id/review',
     {
-      preHandler: [authenticate, requirePermission('clinical:radiology', 'update')]
+      preHandler: [
+        authenticate,
+        requirePermission('clinical:radiology', 'update'),
+        requireRoles('SUPER_ADMIN', 'HOSPITAL_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR')
+      ]
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
@@ -388,7 +400,11 @@ export const radiologyRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/partner/radiology/orders/:id/bill',
     {
-      preHandler: [authenticate, requirePermission('clinical:radiology', 'create')]
+      preHandler: [
+        authenticate,
+        requirePermission('clinical:radiology', 'create'),
+        requireRoles('SUPER_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'BILLING_CLERK', 'FINANCE_MANAGER')
+      ]
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };

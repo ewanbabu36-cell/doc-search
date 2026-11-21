@@ -2,7 +2,7 @@ import { type FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { subscriptionService } from '../../services/company/SubscriptionService.js';
 import { licenseService } from '../../services/company/LicenseService.js';
-import { authenticate, optionalAuthenticate, requirePermission } from '../../plugins/auth-guard.js';
+import { authenticate, optionalAuthenticate, requirePermission, requireRoles } from '../../plugins/auth-guard.js';
 import { AppError, ErrorCode } from '@docsearch/shared-core';
 
 const RenewSubscriptionSchema = z.object({
@@ -54,7 +54,11 @@ export const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/company/subscriptions/negotiate-deal',
     {
-      preHandler: [authenticate, requirePermission('subscriptions', 'create')]
+      preHandler: [
+        authenticate,
+        requirePermission('subscriptions', 'create'),
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'FINANCE_MANAGER')
+      ]
     },
     async (request, reply) => {
       const parseResult = NegotiateDealSchema.safeParse(request.body);
@@ -104,7 +108,11 @@ export const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/company/subscriptions/:id/renew',
     {
-      preHandler: [authenticate, requirePermission('subscriptions', 'create')]
+      preHandler: [
+        authenticate,
+        requirePermission('subscriptions', 'create'),
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'FINANCE_MANAGER')
+      ]
     },
     async (request) => {
       const { id } = request.params as { id: string };
@@ -125,7 +133,11 @@ export const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/company/subscriptions/:id/change-plan',
     {
-      preHandler: [authenticate, requirePermission('subscriptions', 'create')]
+      preHandler: [
+        authenticate,
+        requirePermission('subscriptions', 'create'),
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'FINANCE_MANAGER')
+      ]
     },
     async (request) => {
       const { id } = request.params as { id: string };
@@ -146,7 +158,11 @@ export const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/company/subscriptions/:id/cancel',
     {
-      preHandler: [authenticate, requirePermission('subscriptions', 'create')]
+      preHandler: [
+        authenticate,
+        requirePermission('subscriptions', 'create'),
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'FINANCE_MANAGER')
+      ]
     },
     async (request) => {
       const { id } = request.params as { id: string };
@@ -167,7 +183,11 @@ export const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/company/subscriptions/reconcile-expiries',
     {
-      preHandler: [authenticate, requirePermission('subscriptions', 'create')]
+      preHandler: [
+        authenticate,
+        requirePermission('subscriptions', 'create'),
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'FINANCE_MANAGER')
+      ]
     },
     async (request) => {
       const counts = await subscriptionService.reconcileExpiries(request.session);
@@ -227,7 +247,11 @@ export const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/company/subscriptions/:id/suspend',
     {
-      preHandler: [authenticate, requirePermission('subscriptions', 'update')]
+      preHandler: [
+        authenticate,
+        requirePermission('subscriptions', 'update'),
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'FINANCE_MANAGER')
+      ]
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
@@ -245,7 +269,11 @@ export const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/company/subscriptions/:id/reactivate',
     {
-      preHandler: [authenticate, requirePermission('subscriptions', 'update')]
+      preHandler: [
+        authenticate,
+        requirePermission('subscriptions', 'update'),
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'FINANCE_MANAGER')
+      ]
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
@@ -258,7 +286,11 @@ export const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/company/licenses/:id/revoke',
     {
-      preHandler: [authenticate, requirePermission('subscriptions', 'update')]
+      preHandler: [
+        authenticate,
+        requirePermission('subscriptions', 'update'),
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'FINANCE_MANAGER')
+      ]
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
@@ -275,7 +307,11 @@ export const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/company/licenses/:id/reactivate',
     {
-      preHandler: [authenticate, requirePermission('subscriptions', 'update')]
+      preHandler: [
+        authenticate,
+        requirePermission('subscriptions', 'update'),
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'FINANCE_MANAGER')
+      ]
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
@@ -288,7 +324,11 @@ export const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/company/licenses/:id/renew',
     {
-      preHandler: [authenticate, requirePermission('subscriptions', 'update')]
+      preHandler: [
+        authenticate,
+        requirePermission('subscriptions', 'update'),
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'FINANCE_MANAGER')
+      ]
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };

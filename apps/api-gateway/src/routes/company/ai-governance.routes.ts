@@ -1,6 +1,6 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { aiGovernanceService } from '../../services/company/AIGovernanceService.js';
-import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
+import { authenticate, requirePermission, requireRoles } from '../../plugins/auth-guard.js';
 
 export const aiGovernanceRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
@@ -29,7 +29,11 @@ export const aiGovernanceRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.patch(
     '/api/v1/company/ai/models/:id',
     {
-      preHandler: [authenticate, requirePermission('ai:governance', 'update')]
+      preHandler: [
+        authenticate,
+        requirePermission('ai:governance', 'update'),
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'COMPLIANCE_OFFICER')
+      ]
     },
     async (request) => {
       const { id } = request.params as { id: string };
@@ -65,7 +69,11 @@ export const aiGovernanceRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/company/ai/policies/:id/transition',
     {
-      preHandler: [authenticate, requirePermission('ai:governance', 'update')]
+      preHandler: [
+        authenticate,
+        requirePermission('ai:governance', 'update'),
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'COMPLIANCE_OFFICER')
+      ]
     },
     async (request) => {
       const { id } = request.params as { id: string };
@@ -113,7 +121,11 @@ export const aiGovernanceRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/company/ai/prompts/versions/approve',
     {
-      preHandler: [authenticate, requirePermission('ai:governance', 'update')]
+      preHandler: [
+        authenticate,
+        requirePermission('ai:governance', 'update'),
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'COMPLIANCE_OFFICER')
+      ]
     },
     async (request) => {
       const body = request.body as any;
@@ -169,7 +181,11 @@ export const aiGovernanceRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/company/ai/safety-events/acknowledge',
     {
-      preHandler: [authenticate, requirePermission('ai:governance', 'update')]
+      preHandler: [
+        authenticate,
+        requirePermission('ai:governance', 'update'),
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'COMPLIANCE_OFFICER')
+      ]
     },
     async (request) => {
       const body = request.body as { eventId: string; reason: string };
@@ -181,7 +197,11 @@ export const aiGovernanceRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/company/ai/safety-events/resolve',
     {
-      preHandler: [authenticate, requirePermission('ai:governance', 'update')]
+      preHandler: [
+        authenticate,
+        requirePermission('ai:governance', 'update'),
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'COMPLIANCE_OFFICER')
+      ]
     },
     async (request) => {
       const body = request.body as { eventId: string; resolutionStatus: string; resolutionNotes: string };
