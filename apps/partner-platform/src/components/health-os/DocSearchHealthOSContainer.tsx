@@ -135,6 +135,11 @@ export const DocSearchHealthOSContainer: React.FC<DocSearchHealthOSContainerProp
 
   const [isRecentsOpen, setIsRecentsOpen] = useState<boolean>(false);
   const [isAppDrawerOpen, setIsAppDrawerOpen] = useState<boolean>(false);
+  const [isStoryboardCollapsed, setIsStoryboardCollapsed] = useState<boolean>(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1200) return true;
+    const initial = resolveRoleDefaultApp();
+    return initial.id === 'pharmacy-medication';
+  });
 
   const resolvedTenantId = currentUser.tenantId || '11111111-1111-4111-8111-111111111111';
   const facilityBrand = currentUser.tenantName || 'DocSearch Apollo Multispecialty Hospital';
@@ -145,6 +150,10 @@ export const DocSearchHealthOSContainer: React.FC<DocSearchHealthOSContainerProp
     setIsAppDrawerOpen(false);
     setActiveApp(app);
     setVisitedModules((prev) => new Set(prev).add(app.id));
+
+    if (app.id === 'pharmacy-medication') {
+      setIsStoryboardCollapsed(true);
+    }
 
     setRecentTasks((prev) => {
       const filtered = prev.filter((t) => t.id !== app.id);
@@ -439,6 +448,8 @@ export const DocSearchHealthOSContainer: React.FC<DocSearchHealthOSContainerProp
             <PersistentPatientStoryboard
               patient={activePatient}
               onOpenTray={(tray) => setActiveTrayType(tray)}
+              isCollapsed={isStoryboardCollapsed}
+              onToggleCollapse={() => setIsStoryboardCollapsed((prev) => !prev)}
             />
 
             <div className="hos-workspace-main-panel">

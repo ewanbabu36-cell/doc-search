@@ -5,19 +5,34 @@ import './health-os.css';
 export interface PersistentPatientStoryboardProps {
   patient: ActivePatientTab | null;
   onOpenTray?: (tray: SlideOverTrayType) => void;
+  defaultCollapsed?: boolean;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 export const PersistentPatientStoryboard: React.FC<PersistentPatientStoryboardProps> = ({
   patient,
   onOpenTray,
+  defaultCollapsed = false,
+  isCollapsed: controlledIsCollapsed,
+  onToggleCollapse,
 }) => {
-  const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
+  const [internalCollapsed, setInternalCollapsed] = useState<boolean>(defaultCollapsed);
+  const isCollapsed = controlledIsCollapsed !== undefined ? controlledIsCollapsed : internalCollapsed;
+
+  const handleToggle = () => {
+    if (onToggleCollapse) {
+      onToggleCollapse();
+    } else {
+      setInternalCollapsed((prev) => !prev);
+    }
+  };
 
   if (!patient) {
     return (
       <aside className={`hos-storyboard ${isCollapsed ? 'hos-storyboard-collapsed' : ''}`}>
-        <div className="hos-storyboard-empty">
-          <span style={{ fontSize: '1.75rem' }}>🩺</span>
+        <div className="hos-storyboard-empty" onClick={isCollapsed ? handleToggle : undefined} style={{ cursor: isCollapsed ? 'pointer' : 'default' }}>
+          <span style={{ fontSize: '1.75rem' }} title={isCollapsed ? 'Expand Patient Storyboard' : undefined}>🩺</span>
           {!isCollapsed && (
             <>
               <span className="hos-sb-empty-title">No Patient Selected</span>
@@ -68,7 +83,7 @@ export const PersistentPatientStoryboard: React.FC<PersistentPatientStoryboardPr
         <button
           type="button"
           className="hos-sb-toggle-btn"
-          onClick={() => setIsCollapsed((prev) => !prev)}
+          onClick={handleToggle}
           title={isCollapsed ? 'Expand Patient Storyboard' : 'Collapse Storyboard'}
         >
           {isCollapsed ? '▶' : '◀'}

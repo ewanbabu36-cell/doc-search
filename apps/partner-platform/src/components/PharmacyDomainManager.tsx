@@ -715,11 +715,12 @@ export const PharmacyDomainManager: React.FC<PharmacyDomainManagerProps> = ({
           alignItems: 'center',
           flexWrap: 'wrap',
           gap: '12px',
-          padding: '12px 18px',
+          padding: activeTab === 'pos' ? '8px 14px' : '12px 18px',
           backgroundColor: '#0F172A',
           border: '1px solid #1E293B',
           borderRadius: '12px',
-          color: '#F8FAFC'
+          color: '#F8FAFC',
+          marginBottom: activeTab === 'pos' ? '0.5rem' : '1rem'
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
@@ -941,110 +942,112 @@ export const PharmacyDomainManager: React.FC<PharmacyDomainManagerProps> = ({
           backgroundColor: '#0F172A',
           border: '1px solid #1E293B',
           borderRadius: '12px',
-          padding: '12px 16px',
-          marginBottom: '1.25rem',
+          padding: activeTab === 'pos' ? '8px 12px' : '12px 16px',
+          marginBottom: activeTab === 'pos' ? '0.5rem' : '1.25rem',
           display: 'flex',
           flexDirection: 'column',
-          gap: '12px',
+          gap: activeTab === 'pos' ? '6px' : '12px',
           boxShadow: '0 4px 16px rgba(0,0,0,0.25)'
         }}
       >
         {/* Top Row: Context & Direct Page Action Buttons */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '10px'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '1.2rem' }}>💊</span>
-            <div>
-              <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#F8FAFC' }}>
-                Pharmacy Operations & POS Dispensary
-              </div>
-              <div style={{ fontSize: '0.72rem', color: '#94A3B8' }}>
-                Fast walk-in POS billing, digital e-prescriptions, FEFO batch stock, and CDSCO H1 compliance
+        {activeTab !== 'pos' && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '10px'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '1.2rem' }}>💊</span>
+              <div>
+                <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#F8FAFC' }}>
+                  Pharmacy Operations & POS Dispensary
+                </div>
+                <div style={{ fontSize: '0.72rem', color: '#94A3B8' }}>
+                  Fast walk-in POS billing, digital e-prescriptions, FEFO batch stock, and CDSCO H1 compliance
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Direct Action Buttons Right on the Page */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            {/* Direct Action Buttons Right on the Page */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
 
-            <button
-              type="button"
-              onClick={() => setIsCreateMedOpen(true)}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '7px 12px',
-                borderRadius: '8px',
-                backgroundColor: '#1E293B',
-                border: '1px solid #334155',
-                color: '#CBD5E1',
-                fontSize: '0.78rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 0.15s ease'
-              }}
-              title="Add a new brand or molecule to master formulary"
-            >
-              <span>+ Add Drug</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setIsReceiveStockOpen(true)}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '7px 12px',
-                borderRadius: '8px',
-                backgroundColor: '#1E293B',
-                border: '1px solid #334155',
-                color: '#CBD5E1',
-                fontSize: '0.78rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 0.15s ease'
-              }}
-              title="Receive stock manually or via delivery challan"
-            >
-              <span>+ Receive Stock (GRN)</span>
-            </button>
-
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px',
-                fontSize: '0.6875rem',
-                color: '#10B981',
-                fontWeight: 700,
-                backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                padding: '5px 9px',
-                borderRadius: '8px',
-                border: '1px solid rgba(16, 185, 129, 0.25)'
-              }}
-            >
-              <span
+              <button
+                type="button"
+                onClick={() => setIsCreateMedOpen(true)}
                 style={{
-                  width: '6px',
-                  height: '6px',
-                  borderRadius: '50%',
-                  backgroundColor: '#10B981',
-                  boxShadow: '0 0 8px #10B981'
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '7px 12px',
+                  borderRadius: '8px',
+                  backgroundColor: '#1E293B',
+                  border: '1px solid #334155',
+                  color: '#CBD5E1',
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
                 }}
-              />
-              POS Terminal Online
+                title="Add a new brand or molecule to master formulary"
+              >
+                <span>+ Add Drug</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsReceiveStockOpen(true)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '7px 12px',
+                  borderRadius: '8px',
+                  backgroundColor: '#1E293B',
+                  border: '1px solid #334155',
+                  color: '#CBD5E1',
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+                title="Receive stock manually or via delivery challan"
+              >
+                <span>+ Receive Stock (GRN)</span>
+              </button>
+
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  fontSize: '0.6875rem',
+                  color: '#10B981',
+                  fontWeight: 700,
+                  backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                  padding: '5px 9px',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(16, 185, 129, 0.25)'
+                }}
+              >
+                <span
+                  style={{
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    backgroundColor: '#10B981',
+                    boxShadow: '0 0 8px #10B981'
+                  }}
+                />
+                POS Terminal Online
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* ========================================================================= */}
         {/* OPERATIONAL MODE: DAILY EXPRESS VS ADVANCE PRO PIPELINE                     */}

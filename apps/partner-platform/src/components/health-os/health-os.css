@@ -1351,26 +1351,50 @@
   gap: 0.45rem;
 }
 
+.hos-sb-vital-box,
 .hos-sb-vital-item {
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 6px;
-  padding: 0.35rem;
+  padding: 0.4rem 0.5rem;
   display: flex;
   flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  overflow: hidden;
 }
 
-.hos-sb-vital-val {
-  font-family: ui-monospace, monospace;
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: #f1f5f9;
-}
-
+.hos-vital-metric-label,
 .hos-sb-vital-label {
   font-size: 0.62rem;
   color: #94a3b8;
-  margin-top: 0.05rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.hos-vital-metric-val,
+.hos-sb-vital-val {
+  font-family: ui-monospace, monospace;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.hos-vital-metric-unit {
+  font-size: 0.62rem;
+  color: #64748b;
+  font-weight: 500;
+  display: block;
 }
 
 /* Chronic Conditions & ICD-10 Chips */
