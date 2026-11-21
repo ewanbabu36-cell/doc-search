@@ -3313,140 +3313,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
             </div>
           }
           userSlot={
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-              {/* Universal Daily Express ⟷ Advance Pro Mode Switcher */}
-              <div
-                className="ds-hide-on-mobile"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  background: 'rgba(15, 23, 42, 0.85)',
-                  border: '1px solid rgba(255, 255, 255, 0.14)',
-                  borderRadius: '10px',
-                  padding: '2px',
-                  gap: '2px',
-                  flexShrink: 0
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={() => platformModeService.setMode('EXPRESS')}
-                  style={{
-                    padding: '4px 10px',
-                    borderRadius: '8px',
-                    border: 'none',
-                    background: operatingMode === 'EXPRESS' ? 'linear-gradient(135deg, #0284C7, #0EA5E9)' : 'transparent',
-                    color: operatingMode === 'EXPRESS' ? '#FFFFFF' : '#94A3B8',
-                    fontWeight: 800,
-                    fontSize: '0.74rem',
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '5px',
-                    boxShadow: operatingMode === 'EXPRESS' ? '0 2px 8px rgba(2, 132, 199, 0.4)' : 'none',
-                    transition: 'all 0.15s ease'
-                  }}
-                  title="Daily Express: Only primary daily workflows on-screen (Alt+A to switch)"
-                >
-                  <span style={{ fontSize: '0.85rem' }}>⚡</span>
-                  <span className="ds-hide-on-compact">Daily Express</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => platformModeService.setMode('ADVANCED')}
-                  style={{
-                    padding: '4px 10px',
-                    borderRadius: '8px',
-                    border: 'none',
-                    background: operatingMode === 'ADVANCED' ? 'linear-gradient(135deg, #6366F1, #8B5CF6)' : 'transparent',
-                    color: operatingMode === 'ADVANCED' ? '#FFFFFF' : '#94A3B8',
-                    fontWeight: 800,
-                    fontSize: '0.74rem',
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '5px',
-                    boxShadow: operatingMode === 'ADVANCED' ? '0 2px 8px rgba(99, 102, 241, 0.4)' : 'none',
-                    transition: 'all 0.15s ease'
-                  }}
-                  title="Advance Pro: Deep enterprise tooling, regulatory vaults, analytics & wholesale sync (Alt+A)"
-                >
-                  <span style={{ fontSize: '0.85rem' }}>⚙️</span>
-                  <span className="ds-hide-on-compact">Advance Pro</span>
-                </button>
-              </div>
-
-              {/* EWAN 2.0 Master Brain Quick Access Pill */}
-              <button
-                type="button"
-                className="ds-hide-on-mobile"
-                onClick={() => {
-                  setActiveModule('ewan-super-brain');
-                  setVisitedModules((prev) => new Set(prev).add('ewan-super-brain'));
-                }}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '5px 12px',
-                  borderRadius: '8px',
-                  background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.2) 0%, rgba(99, 102, 241, 0.25) 100%)',
-                  border: '1px solid rgba(6, 182, 212, 0.5)',
-                  color: '#38BDF8',
-                  fontWeight: 800,
-                  fontSize: '0.8125rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                  flexShrink: 0
-                }}
-                title="EWAN 2.0 Master Brain: 15-Domain Matrix, Revenue Leakage Auto-Heal & Bottleneck Radar"
-              >
-                <span style={{ fontSize: '1rem' }}>🧠</span>
-                <span className="ds-hide-on-compact">EWAN 2.0 Brain</span>
-              </button>
-              <div className="ds-hide-on-mobile" style={{ flexShrink: 0 }}>
-                <SoundboxAudioPlayer facilityName={cleanFacilityBrand} />
-              </div>
-              {/* DocSearch Offline-First Background Sync Indicator */}
-              <div className="ds-hide-on-mobile" style={{ flexShrink: 0 }}>
-                <OptimisticSyncBadge />
-              </div>
-
-              {/* PWA 1-Click Installation - tucked into profile on clinic */}
-              {!isClinicVertical && (
-                <div className="ds-hide-on-compact" style={{ flexShrink: 0 }}>
-                  <PwaInstallButton />
-                </div>
-              )}
-
-              {/* Zero-Friction Autonomous Express Tunnels Trigger */}
-              {!isClinicVertical && (
-                <button
-                  type="button"
-                  className="ds-hide-on-compact"
-                  onClick={() => setIsAutonomousDischargeTunnelOpen(true)}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '5px 12px',
-                    borderRadius: '8px',
-                    backgroundColor: 'rgba(56, 189, 248, 0.15)',
-                    border: '1px solid rgba(56, 189, 248, 0.4)',
-                    color: '#38BDF8',
-                    fontWeight: 800,
-                    fontSize: '0.8125rem',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                    flexShrink: 0
-                  }}
-                  title="Zero-Friction Express Tunnels: 3-Min Discharge, 1-Screen Admission, BCMA Bedside, TPA Claim Scrubber"
-                >
-                  <span>⚡</span>
-                  <span>Express Tunnels</span>
-                </button>
-              )}
-
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
               {/* Universal 1-Click Quick Add Menu */}
               <div ref={quickAddRef} style={{ position: 'relative', flexShrink: 0 }}>
                 <button
@@ -3925,9 +3792,8 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                         gap: '8px'
                       }}
                     >
-                      {/* CARD 0: Mobile Operating Mode Switcher */}
+                      {/* CARD 0: Operating Mode Switcher */}
                       <div
-                        className="ds-show-on-mobile"
                         style={{
                           backgroundColor: 'rgba(15, 23, 42, 0.75)',
                           border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -4046,6 +3912,15 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                           </span>
                         </div>
                         <div style={{ marginTop: '10px', borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '8px' }}>
+                            <OptimisticSyncBadge />
+                            <SoundboxAudioPlayer facilityName={cleanFacilityBrand} />
+                          </div>
+                          {!isClinicVertical && (
+                            <div style={{ marginBottom: '8px' }}>
+                              <PwaInstallButton />
+                            </div>
+                          )}
                           <LiveSyncRefreshButton compact={false} style={{ width: '100%', justifyContent: 'center' }} />
                         </div>
                       </div>
@@ -4663,8 +4538,75 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                         }}
                       >
                         <div style={{ padding: '4px 6px', fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                          Admin & Security Controls
+                          Enterprise Tools & Intelligence
                         </div>
+
+                        {/* 0. EWAN 2.0 Master Brain */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsUserMenuOpen(false);
+                            setActiveModule('ewan-super-brain');
+                            setVisitedModules((prev) => new Set(prev).add('ewan-super-brain'));
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '6px 8px',
+                            borderRadius: '6px',
+                            background: 'rgba(6, 182, 212, 0.12)',
+                            border: '1px solid rgba(6, 182, 212, 0.3)',
+                            color: '#38BDF8',
+                            fontSize: '0.78rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.12s ease'
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.22)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.12)')}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>🧠</span>
+                            <span>EWAN 2.0 Master Brain</span>
+                          </div>
+                          <span style={{ fontSize: '0.625rem', color: '#38BDF8', fontWeight: 700 }}>15-Domain</span>
+                        </button>
+
+                        {/* 0.1 Hospital Express Tunnels */}
+                        {!isClinicVertical && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsUserMenuOpen(false);
+                              setIsAutonomousDischargeTunnelOpen(true);
+                            }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              padding: '6px 8px',
+                              borderRadius: '6px',
+                              background: 'transparent',
+                              border: 'none',
+                              color: '#CBD5E1',
+                              fontSize: '0.78rem',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                              transition: 'all 0.12s ease'
+                            }}
+                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)')}
+                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span>⚡</span>
+                              <span>Express Discharge Tunnels</span>
+                            </div>
+                            <span style={{ fontSize: '0.625rem', color: '#94A3B8' }}>3-Min Fast</span>
+                          </button>
+                        )}
 
                         {/* 1. Master Modules Directory */}
                         <button

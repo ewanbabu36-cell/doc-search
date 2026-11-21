@@ -637,7 +637,7 @@ export function renderPrescriptionSlipToCanvas(
       // Vernacular Indic Dosage Instruction Line
       if (med.regionalTiming) {
         ctx.font = 'bold 18px "Nirmala UI", "Mangal", "Noto Sans Devanagari", "Bangla", "Segoe UI", sans-serif';
-        ctx.fillText(`   ðŸ‡®ðŸ‡³ à¤–à¥à¤°à¤¾à¤•: ${med.regionalTiming}`, 16, y);
+        ctx.fillText(`   🇮🇳 खुराक: ${med.regionalTiming}`, 16, y);
         y += 26;
       } else if (med.timing || med.instructions) {
         ctx.font = '16px "Nirmala UI", "Segoe UI", sans-serif';
@@ -1557,7 +1557,7 @@ export class HardwarePrinterService {
           const medName = cells[1]?.querySelector('strong')?.textContent?.trim() || cells[1]?.textContent?.trim() || '';
           const dosage = cells[2]?.textContent?.trim() || '';
           const freqLine = cells[3]?.textContent?.trim() || '';
-          const regionalTiming = cells[3]?.querySelector('div:last-child')?.textContent?.replace(/^ðŸ‡®ðŸ‡³\s*/, '').trim();
+          const regionalTiming = cells[3]?.querySelector('div:last-child')?.textContent?.replace(/^🇮🇳\s*/, '').trim();
           const duration = cells[4]?.textContent?.trim() || '';
           const instructions = cells[5]?.textContent?.trim() || '';
           if (medName) {

@@ -125,6 +125,7 @@ export const PharmacyDomainManager: React.FC<PharmacyDomainManagerProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<ActivePharmacyTab>(initialTab || 'pos');
   const [isScopeExpanded, setIsScopeExpanded] = useState(false);
+  const [isStoreToolsOpen, setIsStoreToolsOpen] = useState(false);
   const isPharmacyLead =
     currentUser?.role === 'SUPER_ADMIN' ||
     currentUser?.role === 'HOSPITAL_ADMIN' ||
@@ -828,34 +829,8 @@ export const PharmacyDomainManager: React.FC<PharmacyDomainManagerProps> = ({
           </div>
         </div>
 
-        {/* Right side: Wholesale Inward, Reset Action, Active Facility Branch & Scope Switcher Toggle */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          {/* Quick Action: Clear / Reset Pharmacy Data */}
-          <button
-            type="button"
-            onClick={() => {
-              setResetMode('CLEAR_ALL');
-              setIsResetConfirmOpen(true);
-            }}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '7px 14px',
-              borderRadius: '8px',
-              backgroundColor: 'rgba(239, 68, 68, 0.15)',
-              border: '1px solid rgba(239, 68, 68, 0.4)',
-              color: '#FCA5A5',
-              fontSize: '0.8rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease'
-            }}
-            title="Clear or reset pharmacy store data"
-          >
-            <span>🧹 Clear / Reset Store Data</span>
-          </button>
-
+        {/* Right side: Wholesale Inward & Consolidated Store Tools Dropdown */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           {/* Real-World Quick Action: Inward Stockist Purchase Invoice */}
           <button
             type="button"
@@ -864,12 +839,12 @@ export const PharmacyDomainManager: React.FC<PharmacyDomainManagerProps> = ({
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              padding: '7px 16px',
+              padding: '6px 14px',
               borderRadius: '8px',
               backgroundColor: 'rgba(16, 185, 129, 0.2)',
               border: '1.5px solid #10B981',
               color: '#34D399',
-              fontSize: '0.82rem',
+              fontSize: '0.8rem',
               fontWeight: 800,
               cursor: 'pointer',
               transition: 'all 0.15s ease',
@@ -880,46 +855,113 @@ export const PharmacyDomainManager: React.FC<PharmacyDomainManagerProps> = ({
             <span>📦 + Inward Wholesale Bill</span>
           </button>
 
-          <div
-            style={{
-              padding: '6px 12px',
-              borderRadius: '8px',
-              backgroundColor: '#1E293B',
-              border: '1px solid #334155',
-              fontSize: '0.8rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
-          >
-            <span style={{ color: '#38BDF8' }}>📍</span>
-            <span style={{ color: '#E2E8F0', fontWeight: 600 }}>
-              {facilities.find((f) => f.id === context?.activeFacilityId)?.facilityName || 'Central Dispensary Counter'}
-            </span>
-          </div>
+          {/* Consolidated Store Settings & Scope Menu */}
+          <div style={{ position: 'relative' }}>
+            <button
+              type="button"
+              onClick={() => setIsStoreToolsOpen(!isStoreToolsOpen)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                borderRadius: '8px',
+                backgroundColor: isStoreToolsOpen ? '#334155' : '#1E293B',
+                border: '1px solid #475569',
+                color: '#F1F5F9',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              title="Store tools, branch switcher, and data reset"
+            >
+              <span>⚙️ Store Tools</span>
+              <span style={{ fontSize: '0.65rem' }}>{isStoreToolsOpen ? '▲' : '▼'}</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setIsScopeExpanded(!isScopeExpanded)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '6px 12px',
-              borderRadius: '8px',
-              backgroundColor: isScopeExpanded ? '#334155' : 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid #475569',
-              color: '#F1F5F9',
-              fontSize: '0.78rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease'
-            }}
-            title="Switch partner, organization, or facility branch"
-          >
-            <span>⇄ Switch Branch</span>
-            <span style={{ fontSize: '0.7rem' }}>{isScopeExpanded ? '▲' : '▼'}</span>
-          </button>
+            {isStoreToolsOpen && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 6px)',
+                  right: 0,
+                  zIndex: 1005,
+                  backgroundColor: '#0F172A',
+                  border: '1.5px solid #334155',
+                  borderRadius: '10px',
+                  padding: '8px',
+                  minWidth: '260px',
+                  boxShadow: '0 12px 30px rgba(0,0,0,0.7)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px'
+                }}
+              >
+                <div style={{ padding: '4px 8px', fontSize: '0.68rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase' }}>
+                  Branch & Counter
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsScopeExpanded(!isScopeExpanded);
+                    setIsStoreToolsOpen(false);
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '7px 10px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    backgroundColor: 'rgba(255,255,255,0.04)',
+                    color: '#E2E8F0',
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    textAlign: 'left'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>📍</span>
+                    <span>{facilities.find((f) => f.id === context?.activeFacilityId)?.facilityName || 'Central Dispensary Counter'}</span>
+                  </div>
+                  <span style={{ fontSize: '0.7rem', color: '#38BDF8' }}>Switch ⇄</span>
+                </button>
+
+                <div style={{ margin: '4px 0', borderTop: '1px solid #1E293B' }} />
+
+                <div style={{ padding: '4px 8px', fontSize: '0.68rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase' }}>
+                  Admin Actions
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setResetMode('CLEAR_ALL');
+                    setIsResetConfirmOpen(true);
+                    setIsStoreToolsOpen(false);
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '7px 10px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                    color: '#FCA5A5',
+                    fontSize: '0.76rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    textAlign: 'left'
+                  }}
+                >
+                  <span>🧹</span>
+                  <span>Clear / Reset Store Data (Admin)</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

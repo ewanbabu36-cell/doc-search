@@ -356,7 +356,7 @@ export const AutoAnalyzerSyncModal: React.FC<AutoAnalyzerSyncModalProps> = ({
               color: activeView === 'table' ? '#FFFFFF' : '#475569'
             }}
           >
-            ðŸ“‹ Parsed Values (Zero-Typing Table)
+            📋 Parsed Values (Zero-Typing Table)
           </button>
           <button
             type="button"

@@ -414,7 +414,7 @@ export const ScheduleH1DrugRegisterModal: React.FC<ScheduleH1DrugRegisterModalPr
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, maxWidth: '450px' }}>
-            <span>ðŸ”</span>
+            <span>🔍</span>
             <input
               type="text"
               value={searchQuery}
