@@ -8,10 +8,13 @@ const DANGEROUS_HTML_PATTERNS = [
   /<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi,
   /<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi,
   /<embed\b[^<]*(?:(?!<\/embed>)<[^<]*)*<\/embed>/gi,
+  /<svg\b[^<]*(?:(?!<\/svg>)<[^<]*)*<\/svg>/gi,
   /\bon\w+\s*=\s*(?:'[^']*'|"[^"]*"|[^\s>]+)/gi, // onerror=..., onload=..., onclick=...
+  /\bformaction\s*=\s*(?:'[^']*'|"[^"]*"|[^\s>]+)/gi,
   /javascript\s*:/gi,
   /vbscript\s*:/gi,
-  /data\s*:\s*text\/html/gi
+  /data\s*:\s*text\/html/gi,
+  /data\s*:\s*image\/svg\+xml/gi
 ];
 
 /**

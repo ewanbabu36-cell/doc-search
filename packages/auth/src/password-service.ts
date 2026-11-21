@@ -72,10 +72,18 @@ export function verifyPassword(password: string, storedHash: string): boolean {
     const salt = Buffer.from(saltHex, 'hex');
     const expectedKey = Buffer.from(hashHex, 'hex');
 
+    const paramsStr = parts[2] || '';
+    const nMatch = paramsStr.match(/N=(\d+)/);
+    const rMatch = paramsStr.match(/r=(\d+)/);
+    const pMatch = paramsStr.match(/p=(\d+)/);
+    const N = nMatch && nMatch[1] ? parseInt(nMatch[1], 10) : SCRYPT_PARAMS.N;
+    const r = rMatch && rMatch[1] ? parseInt(rMatch[1], 10) : SCRYPT_PARAMS.r;
+    const p = pMatch && pMatch[1] ? parseInt(pMatch[1], 10) : SCRYPT_PARAMS.p;
+
     const derivedKey = scryptSync(password, salt, expectedKey.length, {
-      N: SCRYPT_PARAMS.N,
-      r: SCRYPT_PARAMS.r,
-      p: SCRYPT_PARAMS.p,
+      N,
+      r,
+      p,
       maxmem: 32 * 1024 * 1024
     });
 
@@ -105,15 +113,23 @@ export async function verifyPasswordAsync(password: string, storedHash: string):
     const salt = Buffer.from(saltHex, 'hex');
     const expectedKey = Buffer.from(hashHex, 'hex');
 
+    const paramsStr = parts[2] || '';
+    const nMatch = paramsStr.match(/N=(\d+)/);
+    const rMatch = paramsStr.match(/r=(\d+)/);
+    const pMatch = paramsStr.match(/p=(\d+)/);
+    const N = nMatch && nMatch[1] ? parseInt(nMatch[1], 10) : SCRYPT_PARAMS.N;
+    const r = rMatch && rMatch[1] ? parseInt(rMatch[1], 10) : SCRYPT_PARAMS.r;
+    const p = pMatch && pMatch[1] ? parseInt(pMatch[1], 10) : SCRYPT_PARAMS.p;
+
     return new Promise<boolean>((resolve) => {
       scrypt(
         password,
         salt,
         expectedKey.length,
         {
-          N: SCRYPT_PARAMS.N,
-          r: SCRYPT_PARAMS.r,
-          p: SCRYPT_PARAMS.p,
+          N,
+          r,
+          p,
           maxmem: 32 * 1024 * 1024
         },
         (err, derivedKey) => {

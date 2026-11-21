@@ -692,7 +692,6 @@ export const partnerRoutes: FastifyPluginAsync = async (fastify) => {
       // 2. Update partnerOnboardingStagedRegistrations in database by primary key
       try {
         const allStaged = await db.select().from(partnerOnboardingStagedRegistrations);
-        fastify.log.info({ partnerId, deterministicId, count: allStaged.length, ids: allStaged.map(s => s.id) }, 'DEBUG-STAGED-LOOKUP');
         const matchedStaged = allStaged.find(
           (s) =>
             s.id === partnerId ||
@@ -715,8 +714,6 @@ export const partnerRoutes: FastifyPluginAsync = async (fastify) => {
             })
             .where(eq(partnerOnboardingStagedRegistrations.id, matchedStaged.id))
             .returning();
-
-          fastify.log.info({ matched: !!matchedStaged, updated: !!updStaged, matchedId: matchedStaged?.id }, 'DEBUG-STAGED-RESULT');
 
           if (updStaged) {
             if (updStaged.contactEmail) emailsToSync.add(updStaged.contactEmail.toLowerCase().trim());

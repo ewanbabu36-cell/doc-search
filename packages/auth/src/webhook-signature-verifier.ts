@@ -73,9 +73,15 @@ export function verifyPayUSignature(
     const udf3 = (params['udf3'] as string) || '';
     const udf4 = (params['udf4'] as string) || '';
     const udf5 = (params['udf5'] as string) || '';
+    const udf6 = (params['udf6'] as string) || '';
+    const udf7 = (params['udf7'] as string) || '';
+    const udf8 = (params['udf8'] as string) || '';
+    const udf9 = (params['udf9'] as string) || '';
+    const udf10 = (params['udf10'] as string) || '';
 
-    // Reverse hash sequence according to PayU documentation
-    const hashString = `${salt}|${status}||||||${udf5}|${udf4}|${udf3}|${udf2}|${udf1}|${email}|${firstname}|${productinfo}|${amount}|${txnid}|${key}`;
+    // Reverse hash sequence according to PayU documentation:
+    // sha512(SALT|status|udf10|udf9|udf8|udf7|udf6|udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key)
+    const hashString = `${salt}|${status}|${udf10}|${udf9}|${udf8}|${udf7}|${udf6}|${udf5}|${udf4}|${udf3}|${udf2}|${udf1}|${email}|${firstname}|${productinfo}|${amount}|${txnid}|${key}`;
     const calculatedHash = crypto.createHash('sha512').update(hashString).digest('hex').toLowerCase();
 
     const receivedBuffer = Buffer.from(receivedHash, 'utf8');
@@ -110,7 +116,12 @@ export function generatePayUResponseHash(
   const udf3 = (params['udf3'] as string) || '';
   const udf4 = (params['udf4'] as string) || '';
   const udf5 = (params['udf5'] as string) || '';
+  const udf6 = (params['udf6'] as string) || '';
+  const udf7 = (params['udf7'] as string) || '';
+  const udf8 = (params['udf8'] as string) || '';
+  const udf9 = (params['udf9'] as string) || '';
+  const udf10 = (params['udf10'] as string) || '';
 
-  const hashString = `${salt}|${status}||||||${udf5}|${udf4}|${udf3}|${udf2}|${udf1}|${email}|${firstname}|${productinfo}|${amount}|${txnid}|${key}`;
+  const hashString = `${salt}|${status}|${udf10}|${udf9}|${udf8}|${udf7}|${udf6}|${udf5}|${udf4}|${udf3}|${udf2}|${udf1}|${email}|${firstname}|${productinfo}|${amount}|${txnid}|${key}`;
   return crypto.createHash('sha512').update(hashString).digest('hex').toLowerCase();
 }

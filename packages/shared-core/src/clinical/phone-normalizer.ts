@@ -19,21 +19,31 @@ export function clean10DigitMobile(raw: unknown): string {
   const digits = str.replace(/\D/g, '');
 
   // Exact 10-digit
-  if (digits.length === 10) {
+  if (digits.length === 10 && INDIAN_MOBILE_REGEX.test(digits)) {
     return digits;
   }
 
   // 12-digit starting with 91 (e.g. 919876543210 -> 9876543210)
   if (digits.length === 12 && digits.startsWith('91')) {
-    return digits.slice(2);
+    const candidate = digits.slice(2);
+    if (INDIAN_MOBILE_REGEX.test(candidate)) return candidate;
   }
 
   // 11-digit starting with 0 (e.g. 09876543210 -> 9876543210)
   if (digits.length === 11 && digits.startsWith('0')) {
-    return digits.slice(1);
+    const candidate = digits.slice(1);
+    if (INDIAN_MOBILE_REGEX.test(candidate)) return candidate;
   }
 
-  return digits.length > 10 ? digits.slice(0, 10) : digits;
+  // Generic prefix stripping: take trailing 10 digits if valid Indian mobile
+  if (digits.length > 10) {
+    const trailing10 = digits.slice(-10);
+    if (INDIAN_MOBILE_REGEX.test(trailing10)) {
+      return trailing10;
+    }
+  }
+
+  return digits.length === 10 ? digits : '';
 }
 
 /**
